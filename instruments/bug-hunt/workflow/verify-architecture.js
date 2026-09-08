@@ -5,7 +5,8 @@
 // PARTIAL | ABSENT | NOT-A-DEFECT, default ABSENT; output bound to the pass by nonce and sha.
 //
 // Args: { schema_version, round, pass_dir, repo, range, nonce, graded_sha256, package,
-//         findings: [{id, title, file, second_location, mechanism, claimed_fix}], models: {economy} }
+//         findings: [{id, title}], findings_path, models: {economy} }  (the per-id blocks — location,
+//         mechanism, claimed fix — are in the file, Revision 9)
 export const meta = {
   name: 'verify-architecture',
   description: 'Audit whether each architecture-class fix eliminated the defect or merely relocated it',
@@ -13,7 +14,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['round', 'pass_dir', 'repo', 'range', 'nonce', 'graded_sha256', 'findings', 'package', 'models']) if (A[k] === undefined) throw new Error(`verify-architecture.js: args.${k} is required`)
+for (const k of ['round', 'pass_dir', 'repo', 'range', 'nonce', 'graded_sha256', 'findings', 'findings_path', 'package', 'models']) if (A[k] === undefined) throw new Error(`verify-architecture.js: args.${k} is required`)
 if (!A.findings.length) throw new Error('verify-architecture.js: an empty audit must not report success')
 
 const SCHEMA = {
@@ -32,12 +33,10 @@ const out = await parallel(A.findings.map(f => () => agent(
 `You are auditing ONE claimed fix to an architecture defect in ${A.package.name} at ${A.repo}. You are not the person who made it and you owe it no benefit of the doubt.
 
   finding:      ${f.id} — ${f.title}
-  location:     ${f.file}${f.second_location ? '   and   ' + f.second_location : ''}
-  mechanism:    ${f.mechanism}
-  claimed fix:  ${f.claimed_fix || '(unstated — establish from the tree and the diff what was done)'}
+  its record:   the block "--- ${f.id} ---" in ${A.findings_path} (location, second location, mechanism, claimed fix) — read it first; that file is the ONLY file under .gbg/ you may open
   the fix pass: \`git -C "${A.repo}" diff ${A.range}\`
 
-READ THE CURRENT TREE (never .gbg/ or ~/.gbg/), not only the diff. Then decide between:
+READ THE CURRENT TREE (nothing else under .gbg/, never ~/.gbg/), not only the diff. Then decide between:
 
   FIXED        — the defect is gone. For a duplication that means ONE definition remains and every former site reaches it; quote the single definition and at least one call site.
   RELOCATED    — the shape changed but the defect survives: the duplicate moved to a new file, the literal became a differently-spelled literal, the two copies became two wrappers around two bodies. THIS IS THE VERDICT THE INSTRUMENT EXISTS TO CATCH, because a relocation reads exactly like a fix in a diff and exactly like a defect in the tree.

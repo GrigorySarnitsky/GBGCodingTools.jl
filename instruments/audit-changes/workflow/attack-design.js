@@ -2,8 +2,8 @@
 // audit-changes/attack-design.js. Changes: generic — the default CONTEXT is removed and `subject` is
 // REQUIRED; the design arrives as text; the result is Written to `out`.
 //
-// Args: { schema_version, round, repo, design, subject: {object, defect, defects, lanes, context,
-//         directions, standpoint, source}, out, models: {economy} }
+// Args: { schema_version, round, repo, design_path, subject: {object, defect, defects, lanes, context,
+//         directions, standpoint, source}, out, models: {economy} }  (Revision 9: the design is a file)
 export const meta = {
   name: 'attack-design',
   description: 'Adversarial attack on ANY instrument\'s lens set: what defect passes every lane?',
@@ -11,7 +11,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['repo', 'design', 'subject', 'out', 'models']) if (A[k] === undefined) throw new Error(`attack-design.js: args.${k} is required`)
+for (const k of ['repo', 'design_path', 'subject', 'out', 'models']) if (A[k] === undefined) throw new Error(`attack-design.js: args.${k} is required`)
 const S = A.subject
 for (const k of ['object', 'defects', 'context', 'standpoint', 'source']) if (!S[k]) throw new Error(`attack-design.js: subject.${k} is required — the attacker has no default subject`)
 const DEFECTS = S.defects, OBJECT = S.object
@@ -42,11 +42,9 @@ CONTEXT. ${S.context}
 
 WHY THIS ATTACK EXISTS. A hand-written list of lenses is a hypothesis about where defects live: on a real corpus eight hand-specified lanes reported themselves COMPLETE while missing an entire class, and two unconstrained readers then found nine defects the eight could not see. This lens set was written by the same author as the thing it audits. Assume it is inadequate and find out how.
 
-THE DESIGN UNDER ATTACK:
+THE DESIGN UNDER ATTACK: read it in full from ${A.design_path} — the ONLY file under .gbg/ you may open.
 
-${A.design}
-
-YOUR OUTPUT MUST CONTAIN CONCRETE EVADING EXAMPLES. A gap asserted in the abstract is worth nothing here. What is worth something is: here is a specific instance in this package (read the real material at ${S.source}; never .gbg/ or ~/.gbg/), it is harmful, and here is why each lane individually fails to fire on it. Walk the lanes one at a time. If you cannot construct such an example for a gap you suspect, say so plainly. Say SOUND if you genuinely cannot break it; that verdict is permitted and will be believed.`
+YOUR OUTPUT MUST CONTAIN CONCRETE EVADING EXAMPLES. A gap asserted in the abstract is worth nothing here. What is worth something is: here is a specific instance in this package (read the real material at ${S.source}; nothing else under .gbg/, never ~/.gbg/), it is harmful, and here is why each lane individually fails to fire on it. Walk the lanes one at a time. If you cannot construct such an example for a gap you suspect, say so plainly. Say SOUND if you genuinely cannot break it; that verdict is permitted and will be believed.`
 
 const ROLES = [
   { key: 'logician', anchor: true, brief: `You are a LOGICIAN. Treat the lens set as a proposed partition of a space and test it AS a partition. Is the space itself well-defined — what is the set of all possible ${DEFECTS} for this instrument's object (${OBJECT}), and under what relation are the lenses a cover of it? Attack on structure: (a) DUALS — for each lens, does its logical dual have a lane? (b) QUANTIFIERS — find the scope restriction the instrument's own question carries, state it, and name what falls outside it. (c) COMPOSITION — each lens judges items one at a time; what harm exists only in the CONJUNCTION of two individually-innocent ones? (d) NEGATIVE SPACE — every lens examines something PRESENT; what about a harmful ABSENCE? (e) OVERLAP vs GAP — where two lenses both plausibly own something, does it fall between them?` },

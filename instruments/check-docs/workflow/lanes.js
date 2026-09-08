@@ -2,11 +2,12 @@
 // lanes. Sources: IT check-docs/lanes.js (the fan-out), PF check-docs.md (Write-first banking, the
 // family and cold-reader lanes, the `?name` substrate rule). Changes: surfaces and lanes arrive
 // RESOLVED from args (engine lanes + lanes_extra + cross lanes, numbered by the CLI); no package string,
-// path or round datum in the source; the rendered policy arrives as text; the lane file is the ONE
-// finding shape of the fleet; the operational-claims lane runs on the docstring surface.
+// path or round datum in the source; the lane file is the ONE finding shape of the fleet; the
+// operational-claims lane runs on the docstring surface. PAYLOADS ARE FILES (Revision 9): the rendered
+// policy and each lane's brief are files preflight wrote; args name their paths.
 //
 // Args (instruments/check-docs/schema.json): { schema_version, round, round_dir, repo, package,
-//   preamble, lanes: [{nn, key, kind, brief, files, anchor}], policy: {file: text}, finding_types,
+//   preamble, lanes: [{nn, key, kind, brief_path, files, anchor}], policy_path, finding_types,
 //   models: {economy}, strength }
 export const meta = {
   name: 'check-docs-lanes',
@@ -15,7 +16,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'models']) if (A[k] === undefined) throw new Error(`lanes.js: args.${k} is required`)
+for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'models', 'policy_path']) if (A[k] === undefined) throw new Error(`lanes.js: args.${k} is required`)
 const STRENGTH = A.strength === 'full' ? 'full' : 'economy'
 const ECONOMY = A.models.economy
 const TYPES = A.finding_types || ['math', 'notation', 'structure', 'citation', 'style', 'operational', 'currency', 'self-containment']
@@ -46,17 +47,16 @@ const SCHEMA = {
   required: ['schema_version', 'round', 'lane', 'candidates_found', 'checked', 'findings'],
 }
 
-const POLICY = A.policy ? Object.entries(A.policy).map(([f, t]) => `--- rendered policy file ${f} ---\n${t}`).join('\n\n') : ''
-
 const prompt = (l) => `${A.preamble}
 
-THE RULEBOOK (authoritative; given verbatim):
-${POLICY}
+FILES UNDER .gbg/ YOU MAY OPEN — exactly these two, with Read, and nothing else under .gbg/ or ~/.gbg/:
+    ${A.policy_path}    (THE RULEBOOK — authoritative; read it in full first)
+    ${l.brief_path}     (YOUR LANE BRIEF — read it in full second; it is your procedure)
+Scope every search with \`--glob '!.gbg/**'\`.
 
-GROUND TRUTH IS ${A.repo}/src (and ext/): verify every claim against the code and quote the decisive line. NEVER read anything under .gbg/ or ~/.gbg/; scope searches with \`--glob '!.gbg/**'\`.
+GROUND TRUTH IS ${A.repo}/src (and ext/): verify every claim against the code and quote the decisive line.
 
 YOUR LANE: ${l.key} (${l.kind})
-${l.brief}
 
 SURFACE TO AUDIT (read every file fully):
 ${(l.files && l.files.length) ? l.files.map(f => `  ${A.repo}/${f}`).join('\n') : '  (the whole source surface, as your brief says)'}

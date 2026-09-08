@@ -4,11 +4,13 @@
 // arrive from the catalogue via args (briefs with the guard symbols and invariants substituted);
 // previously_worked ∈ yes|no|unknown REQUIRED on the behaviour-change lane; the diffstat, the claims and
 // the covered paths from args (the "605 lines…" preamble and the round-specific candidate lists are
-// gone); severity is the unified blocker|major|minor|nit; meta.name = 'audit-changes'.
+// gone); severity is the unified blocker|major|minor|nit; meta.name = 'audit-changes'. PAYLOADS ARE
+// FILES (Revision 9): the diff, the diffstat, the claims and each lane's brief are files preflight
+// wrote under the round's scratch; args name their paths.
 //
 // Args (instruments/audit-changes/schema.json): { schema_version, round, round_dir, repo, package,
-//   base, head, kind, covered, diffstat, diff, claims, lanes: [{nn, key, kind, brief, anchor}],
-//   models: {economy}, strength }
+//   base, head, kind, covered, diff_path, diffstat_path, claims_path, lanes: [{nn, key, kind,
+//   brief_path, anchor}], models: {economy}, strength }
 export const meta = {
   name: 'audit-changes',
   description: 'Audit a change set: was each edit justified, and did it silently alter behaviour that worked before?',
@@ -16,7 +18,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['round', 'round_dir', 'repo', 'base', 'head', 'kind', 'lanes', 'package', 'models']) if (A[k] === undefined) throw new Error(`audit.js: args.${k} is required (base is the commit the norm is read at)`)
+for (const k of ['round', 'round_dir', 'repo', 'base', 'head', 'kind', 'lanes', 'package', 'models', 'diff_path']) if (A[k] === undefined) throw new Error(`audit.js: args.${k} is required (base is the commit the norm is read at)`)
 const STRENGTH = A.strength === 'full' ? 'full' : 'economy'
 const ECONOMY = A.models.economy
 
@@ -51,10 +53,13 @@ const SCHEMA = {
   required: ['schema_version', 'round', 'lane', 'verdict', 'checked', 'candidates_found', 'findings'],
 }
 
-const PREAMBLE = `You are auditing a CHANGE SET in ${A.package.name} — ${A.package.description}
-${A.diffstat ? `\nTHE CHANGE SET: ${A.diffstat}` : ''}
-THE DIFF: base ${A.base} → head ${A.head}, over ${(A.covered || []).join(', ')} — run \`git -C "${A.repo}" diff ${A.base}..${A.head} -- ${(A.covered || []).join(' ')}\` (scope with a path when large).${A.diff ? ` It is also given verbatim at the end of this prompt.` : ''}
-THE CODE: ${A.repo} — read the current files, not only the diff. NEVER read anything under .gbg/ or ~/.gbg/.
+const permitted = (lane) => [A.diff_path, A.diffstat_path, lane.brief_path, ...(lane.key === 'claim-versus-edit' && A.claims_path ? [A.claims_path] : [])].filter(Boolean)
+const PREAMBLE = (lane) => `You are auditing a CHANGE SET in ${A.package.name} — ${A.package.description}
+
+FILES UNDER .gbg/ YOU MAY OPEN — exactly these, with Read, and nothing else under .gbg/ or ~/.gbg/:
+${permitted(lane).map(p => `    ${p}`).join('\n')}
+THE DIFF: base ${A.base} → head ${A.head}, over ${(A.covered || []).join(', ')} — read it IN FULL and FIRST from ${A.diff_path} (the diffstat is ${A.diffstat_path || 'not written'}); \`git -C "${A.repo}" diff ${A.base}..${A.head} -- <path>\` scopes it when you need one file.
+THE CODE: ${A.repo} — read the current files, not only the diff.
 
 PIN THE NORM AT BASE, NOT AT HEAD. The docstrings, comments and tests you would naturally treat as the standard were themselves EDITED in the window you are auditing — the audited party rewrote the description of the thing you are auditing. When you need to know what the package PROMISED, read it at base: \`git -C "${A.repo}" show ${A.base}:<file>\`. A contract quietly rewritten to match a changed behaviour is the defect, not the baseline.
 
@@ -66,12 +71,11 @@ READ THE CODE FIRST AND FORM YOUR VERDICT BEFORE reading any commit message. The
 
 AUDIT ONLY. Do not edit, create or delete any file. Quote the before and after from the diff for every finding. Return CLEAN honestly if your lens turns up nothing — with a non-empty checked[]. A lane returning CONCERNS with an empty findings array is a contradiction and is read as dead. Cap: your 8 most substantial findings; report candidates_found.`
 
-const CLAIMS = A.claims ? `\n\nTHE CLAIMS (the commit messages of the audited range):\n${A.claims}` : ''
-const DIFF = A.diff ? `\n\nTHE DIFF, verbatim:\n${A.diff}` : ''
+const CLAIMS = A.claims_path ? `\n\nTHE CLAIMS (the commit messages of the audited range) are in ${A.claims_path} — your lens reads them, after the code.` : ''
 
 phase('Audit')
 const results = await parallel(A.lanes.map(lane => () => agent(
-  `${PREAMBLE}\n\nYOUR LENS: ${lane.key}\n\n${lane.brief}${lane.key === 'claim-versus-edit' ? CLAIMS : ''}${DIFF}\n\nWhen done, FIRST use the Write tool to save the structured object as JSON to ${A.round_dir}/findings/${lane.nn}-${lane.key}.json with schema_version=${A.schema_version}, round="${A.round}", lane="${lane.key}". THEN return the same object.`,
+  `${PREAMBLE(lane)}\n\nYOUR LENS: ${lane.key} — read your brief in full from ${lane.brief_path}; it is your procedure.${lane.key === 'claim-versus-edit' ? CLAIMS : ''}\n\nWhen done, FIRST use the Write tool to save the structured object as JSON to ${A.round_dir}/findings/${lane.nn}-${lane.key}.json with schema_version=${A.schema_version}, round="${A.round}", lane="${lane.key}". THEN return the same object.`,
   { label: `audit:${lane.key}`, phase: 'Audit', schema: SCHEMA, agentType: 'general-purpose',
     ...((STRENGTH === 'economy' && !lane.anchor) ? { model: ECONOMY } : {}) })))
 

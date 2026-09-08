@@ -2,13 +2,16 @@
 // Sources: PF check-consistency/panel.js (parallel, dead/empty/TRUNCATED), IT check-consistency/panel.js
 // (profile/subset, hats.json). Changes: hats arrive RESOLVED and NUMBERED in args (the CLI applied the
 // profile and assigned NN); no census agent, no hats.json; no package string, path or round datum in
-// this source; manuscripts and rulebook texts arrive as TEXT; every hat Writes its lane file FIRST.
+// this source; every hat Writes its lane file FIRST. PAYLOADS ARE FILES (ARCHITECTURE Revision 9): a
+// Workflow script has no filesystem and its args are re-emitted by the session, so the manuscripts,
+// the rulebook and the personas are files preflight wrote under the round's scratch, named in args;
+// each hat may open exactly the paths its args name under .gbg/ and nothing else there.
 //
 // Args (instruments/check-consistency/schema.json, rendered by `gbg preflight`):
 //   { schema_version, round, round_dir, repo, rawhtml, package: {name, description, domain, terms,
-//     deliberate_absences}, preamble, manuscripts: {full, siteonly}, rulebook: {policy: {file: text},
-//     sections: [{anchor, text}]}, hats: [{nn, key, persona, substrate, needs, anchor}],
-//     adjudicated_titles, finding_types, cost, strength, models: {economy}, opened }
+//     deliberate_absences}, preamble, manuscripts: {full: path, siteonly: path}, rulebook_path,
+//     hats: [{nn, key, persona_path, substrate, needs, anchor}], adjudicated_titles, finding_types,
+//     cost, strength, models: {economy}, opened }
 export const meta = {
   name: 'check-consistency-panel',
   description: 'Fresh-eyed panel auditing the RENDERED docs for consistency, mathematics, typesetting, structure and design (concurrent, collect-only)',
@@ -16,7 +19,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['round', 'round_dir', 'repo', 'manuscripts', 'hats', 'preamble', 'models']) {
+for (const k of ['round', 'round_dir', 'repo', 'manuscripts', 'hats', 'preamble', 'models', 'package']) {
   if (A[k] === undefined) throw new Error(`panel.js: args.${k} is required`)
 }
 const ECONOMY = A.models.economy
@@ -53,9 +56,17 @@ const ADJ = (A.adjudicated_titles && A.adjudicated_titles.length)
   ? `\n- ALREADY ADJUDICATED. The following findings were raised by an earlier panel and settled by the owner as NOT defects (extraction artefacts of the manuscript, or design decisions closed deliberately). Do NOT spend a finding on anything they cover. Nothing merely FIXED is listed here, so everything else is fair game:\n${A.adjudicated_titles.map(t => `    - ${t}`).join('\n')}\n`
   : ''
 
-const RULES = `
+const permitted = (h) => {
+  const p = [h.substrate === 'siteonly' ? A.manuscripts.siteonly : A.manuscripts.full, h.persona_path]
+  if ((h.needs || []).includes('rulebook') && A.rulebook_path) p.push(A.rulebook_path)
+  return p
+}
+
+const rules = (h) => `
 RULES:
-- Read ONLY what your substrate below gives you. Unless your substrate EXPLICITLY grants it, do NOT open src/, tests, the rulebook, memory, or anything else — you judge the docs AS WRITTEN, from your own expertise. NEVER read anything under .gbg/ or ~/.gbg/ (the one file you touch there is the lane file you WRITE, named below).
+- FILES UNDER .gbg/ YOU MAY OPEN — exactly these, with the Read tool, and NOTHING else under .gbg/ or ~/.gbg/ (other rounds' verdicts and this round's answer key live there):
+${permitted(h).map(p => `    ${p}`).join('\n')}
+  plus the ONE file you WRITE, named at the end. Read ONLY what your substrate below grants. Unless it EXPLICITLY grants more, do NOT open src/, tests, the rulebook, memory, or anything else — you judge the docs AS WRITTEN, from your own expertise.
 - COLLECT findings only. Do NOT edit anything and do NOT apply fixes.
 - A PRIMARY goal is INTERNAL CONSISTENCY: flag anything defined, stated, valued, or formatted one way in one place and DIFFERENTLY in a similar place. Cross-reference relentlessly across every page you are given.
 - ALSO flag anything that contradicts your expert knowledge or instinct ("this smells wrong").
@@ -68,25 +79,20 @@ RULES:
 
 const substrateText = (h) => {
   const parts = []
-  if (h.substrate === 'siteonly') parts.push(`THE RENDERED USER-FACING SITE, the design docs EXCLUDED on purpose (the manuscript follows, verbatim; each page is delimited by a "===== PAGE: <name> =====" banner):\n\n${A.manuscripts.siteonly}`)
-  else parts.push(`THE WHOLE RENDERED SITE incl. the design docs (the manuscript follows, verbatim; each page is delimited by a "===== PAGE: <name> =====" banner):\n\n${A.manuscripts.full}`)
+  if (h.substrate === 'siteonly') parts.push(`THE RENDERED USER-FACING SITE, the design docs EXCLUDED on purpose. Read it IN FULL, first, from:\n    ${A.manuscripts.siteonly}\n(one reader-text manuscript; each page is delimited by a "===== PAGE: <name> =====" banner; math is its TeX). It is long — read it in successive chunks until the end; a hat that reads half the site reports half the defects and does not know it.`)
+  else parts.push(`THE WHOLE RENDERED SITE incl. the design docs. Read it IN FULL, first, from:\n    ${A.manuscripts.full}\n(one reader-text manuscript; each page is delimited by a "===== PAGE: <name> =====" banner; math is its TeX). It is long — read it in successive chunks until the end.`)
   const needs = h.needs || []
   if (needs.includes('html')) parts.push(`ALSO inspect the RAW built HTML under: ${A.rawhtml}`)
   if (needs.includes('source')) parts.push(`ALSO the AUTHORED SOURCE (read it with Read/Grep; quote findings at file:line): the docstrings under ${A.repo}/src/ and ${A.repo}/ext/, the pages under ${A.repo}/docs/src/, and the rationale documents under ${A.repo}/docs/.`)
-  if (needs.includes('rulebook')) {
-    const pol = A.rulebook && A.rulebook.policy ? Object.entries(A.rulebook.policy).map(([f, t]) => `--- rendered policy file ${f} ---\n${t}`).join('\n\n') : ''
-    const sec = A.rulebook && A.rulebook.sections ? A.rulebook.sections.map(s => `--- rulebook section ${s.anchor} ---\n${s.text}`).join('\n\n') : ''
-    parts.push(`THE RULEBOOK (AUTHORITATIVE — read it first; it is given here verbatim):\n\n${pol}\n\n${sec}`)
-  }
-  if (needs.includes('git')) parts.push(`HISTORY: you may use Bash with git (log, diff, show, grep) and Read inside ${A.repo}. Never open .gbg/ or ~/.gbg/.`)
+  if (needs.includes('rulebook')) parts.push(`THE RULEBOOK (AUTHORITATIVE — read it first, in full): ${A.rulebook_path}`)
+  if (needs.includes('git')) parts.push(`HISTORY: you may use Bash with git (log, diff, show, grep) and Read inside ${A.repo}. Never open anything under .gbg/ beyond the files named above, and never ~/.gbg/.`)
   return parts.join('\n\n')
 }
 
 const prompt = (h) => `${A.preamble}
-${RULES}
+${rules(h)}
 
-YOUR HAT (${h.key}):
-${h.persona}
+YOUR HAT (${h.key}): read your persona in full from ${h.persona_path} before anything else; it is who you are for this review.
 
 YOUR SUBSTRATE:
 ${substrateText(h)}

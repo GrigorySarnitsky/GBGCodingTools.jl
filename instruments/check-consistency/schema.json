@@ -16,7 +16,7 @@
         "package",
         "preamble",
         "manuscripts",
-        "rulebook",
+        "rulebook_path",
         "hats",
         "adjudicated_titles",
         "finding_types",
@@ -31,42 +31,6 @@
             "type": "string"
           },
           "type": "array"
-        },
-        "rulebook": {
-          "additionalProperties": false,
-          "required": [
-            "policy",
-            "sections"
-          ],
-          "properties": {
-            "policy": {
-              "additionalProperties": true,
-              "required": [],
-              "properties": {},
-              "type": "object",
-              "description": "file → text"
-            },
-            "sections": {
-              "items": {
-                "additionalProperties": false,
-                "required": [
-                  "anchor",
-                  "text"
-                ],
-                "properties": {
-                  "anchor": {
-                    "type": "string"
-                  },
-                  "text": {
-                    "type": "string"
-                  }
-                },
-                "type": "object"
-              },
-              "type": "array"
-            }
-          },
-          "type": "object"
         },
         "models": {
           "additionalProperties": false,
@@ -119,6 +83,7 @@
           "type": "string"
         },
         "manuscripts": {
+          "type": "object",
           "additionalProperties": false,
           "required": [
             "full",
@@ -126,13 +91,14 @@
           ],
           "properties": {
             "full": {
-              "type": "string"
+              "type": "string",
+              "description": "an absolute path under the round's scratch (.gbg/scratch/<round>/workflow/payload/), written by preflight; the agent may Read it and nothing else under .gbg/"
             },
             "siteonly": {
-              "type": "string"
+              "type": "string",
+              "description": "an absolute path under the round's scratch (.gbg/scratch/<round>/workflow/payload/), written by preflight; the agent may Read it and nothing else under .gbg/"
             }
-          },
-          "type": "object"
+          }
         },
         "cost": {
           "type": "string",
@@ -147,7 +113,7 @@
             "required": [
               "nn",
               "key",
-              "persona",
+              "persona_path",
               "substrate",
               "needs",
               "anchor"
@@ -163,9 +129,6 @@
                 },
                 "type": "array"
               },
-              "persona": {
-                "type": "string"
-              },
               "substrate": {
                 "type": "string"
               },
@@ -175,6 +138,10 @@
               "nn": {
                 "pattern": "^\\d{2}$",
                 "type": "string"
+              },
+              "persona_path": {
+                "type": "string",
+                "description": "an absolute path under the round's scratch (.gbg/scratch/<round>/workflow/payload/), written by preflight; the agent may Read it and nothing else under .gbg/"
               }
             },
             "type": "object"
@@ -214,6 +181,10 @@
           },
           "minItems": 1,
           "type": "array"
+        },
+        "rulebook_path": {
+          "type": "string",
+          "description": "an absolute path under the round's scratch (.gbg/scratch/<round>/workflow/payload/), written by preflight; the agent may Read it and nothing else under .gbg/"
         }
       },
       "type": "object"

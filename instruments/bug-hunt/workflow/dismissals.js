@@ -4,8 +4,8 @@
 // bug-hunt/dismissals.js (`complete = dead == 0 && reopened == []`, the third shape). Changes: the
 // package-specific postmortem examples removed; items arrive as text; the result is Written to `out`.
 //
-// Args: { schema_version, round, repo, package, items: [{id, title, location, claim, verdict, reasoning}],
-//         out, models: {economy} }
+// Args: { schema_version, round, repo, package, items: [{id, title}], items_path, out, models: {economy} }
+//   (the per-id blocks — location, claim, verdict, reasoning — are in items_path, Revision 9)
 export const meta = {
   name: 'dismissals',
   description: 'Re-examine every candidate a round dismissed or adjudicated, defaulting to "the dismissal is unsafe"',
@@ -13,7 +13,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['repo', 'items', 'out', 'package', 'models']) if (A[k] === undefined) throw new Error(`dismissals.js: args.${k} is required`)
+for (const k of ['repo', 'items', 'items_path', 'out', 'package', 'models']) if (A[k] === undefined) throw new Error(`dismissals.js: args.${k} is required`)
 if (!A.items.length) throw new Error('dismissals.js: an EMPTY audit is not a clean one — the CLI does not invoke this over nothing')
 
 const SCHEMA = {
@@ -33,12 +33,9 @@ const out = await parallel(A.items.map(d => () => agent(
 
   id:         ${d.id}
   claim:      ${d.title}
-  location:   ${d.location || '?'}
-  mechanism:  ${d.claim || '(not recorded)'}
-  verdict:    ${d.verdict || '(not recorded)'}
-  reasoning:  ${d.reasoning || '(not recorded)'}
+  its record: the block "--- ${d.id} ---" in ${A.items_path} (location, mechanism, the verdict and its reasoning) — read it first; that file is the ONLY file under .gbg/ you may open
 
-Read the CURRENT tree at ${A.repo} (never .gbg/ or ~/.gbg/) and decide:
+Read the CURRENT tree at ${A.repo} (nothing else under .gbg/, never ~/.gbg/) and decide:
 
   DISMISSAL-SOUND — the claim is genuinely not a defect and you can SHOW why from the code or the text. Quote the lines that settle it.
   UNSAFE          — you cannot establish that it is not a defect. THIS IS YOUR DEFAULT.

@@ -32,7 +32,7 @@
             "required": [
               "nn",
               "key",
-              "brief",
+              "brief_path",
               "anchor"
             ],
             "properties": {
@@ -41,9 +41,6 @@
                 "type": "string"
               },
               "kind": {
-                "type": "string"
-              },
-              "brief": {
                 "type": "string"
               },
               "files": {
@@ -58,6 +55,10 @@
               "nn": {
                 "pattern": "^\\d{2}$",
                 "type": "string"
+              },
+              "brief_path": {
+                "type": "string",
+                "description": "an absolute path under the round's scratch (.gbg/scratch/<round>/workflow/payload/), written by preflight; the agent may Read it and nothing else under .gbg/"
               }
             },
             "type": "object"
@@ -114,9 +115,6 @@
           },
           "type": "array"
         },
-        "invariants": {
-          "type": "string"
-        },
         "repo": {
           "type": "string"
         },
@@ -125,10 +123,8 @@
         },
         "witness_env": {
           "additionalProperties": true,
-          "required": [
-          ],
-          "properties": {
-          },
+          "required": [],
+          "properties": {},
           "type": "object"
         },
         "round_dir": {
@@ -149,6 +145,10 @@
         "round": {
           "pattern": "^\\d{4}-\\d{2}-\\d{2}-(check-docs|check-consistency|bug-hunt|audit-changes)-\\d{2}$",
           "type": "string"
+        },
+        "invariants_path": {
+          "type": "string",
+          "description": "an absolute path under the round's scratch (.gbg/scratch/<round>/workflow/payload/), written by preflight; the agent may Read it and nothing else under .gbg/"
         }
       },
       "type": "object"

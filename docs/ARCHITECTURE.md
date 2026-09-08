@@ -396,7 +396,14 @@ directly. V1 (2026-09-09, `Aiporetne`, §11) is why: the Workflow tool accepts a
 returned, or a file you can already read"); a `Read` of the pinned copy is exactly the out-of-project
 read D6 forbids. A path inside the working directory needs neither. No package string in
 any script: description, deliberate absences, surfaces, hats, lanes, oracles, claims arrive in
-`args`. Catalogues are data — `catalog/hats/*.toml` (generic hats with `{package.*}` placeholders:
+`args`. **Payloads are files, args carry paths** (Revision 9, 2026-09-09): a Workflow script has no
+filesystem and its `args` are re-emitted verbatim by the session from the text preflight printed, so a
+manuscript, a diff, a rulebook or a persona can never travel inside `args`; preflight (and `pass open`)
+writes every such payload under `.gbg/scratch/<round>/workflow/payload/` and `args` names the paths,
+and each agent's prompt lists exactly the paths it may `Read` under `.gbg/` — nothing else there and
+nothing under `~/.gbg/`. The forbidding of `.gbg/**` therefore reads "except the payload paths named
+in your args"; during the panel the payload directory holds only the seeded manuscripts, the rulebook
+and the personas, and the ground truth is written at bank, so the exception exposes no answer key. Catalogues are data — `catalog/hats/*.toml` (generic hats with `{package.*}` placeholders:
 the eight shared by PF and IT — `consistency-matrix`, `software-architect`, `structure-consistency`,
 `latex-typesetter`, `api-user`, `citations-integrity`, `style-editor`, `cold-reader` — IT's generic
 lenses, and the three **rulebook hats** `naming-policy`, `doc-policy`, `invariants-and-decisions`,
@@ -1423,9 +1430,10 @@ at the tool root, which must work when the dev checkout IS the consumer.
 4. **Panel.** `Workflow({scriptPath: "<root>/.gbg/scratch/<round>/workflow/panel.js", args})` — the
    copy preflight wrote from the pinned copy's `instruments/check-consistency/workflow/` (D7, V1).
    Hats run in parallel; each is told to `Write` `findings/NN-<key>.json` FIRST, then return the same
-   object (schema-forced); each is forbidden to open `.gbg/**` and `~/.gbg/**` (the manuscripts are
-   handed to it as text in `args`). The script returns `{written, dead, empty, truncated}` and logs the
-   next line. No tally.
+   object (schema-forced); each is forbidden to open `.gbg/**` and `~/.gbg/**` except the payload
+   files its `args` name — its manuscript, its persona, the rulebook where its substrate grants it —
+   under `.gbg/scratch/<round>/workflow/payload/` (D7, Revision 9). The script returns `{written, dead,
+   empty, truncated}` and logs the next line. No tally.
 5. **Bank.** `gbg round bank <round>` (like every `gbg round` verb it runs `gbg self verify` and
    `CFG.TORN` first): refuses a changed `config_sha` (exit 2 → `pass open
    --regrade`); validates each expected lane file against `instruments/check-consistency/schema.json`;
@@ -2465,3 +2473,24 @@ in `.gbg/requests/`; a concluded one is deleted. **`CLAUDE.md` skeleton**: D12 d
 order (`templates/CLAUDE.md.skeleton`) and the tracked `docs/ROADMAP.md` for live plans, §4 lists both;
 §9 gains the two rows and reclassifies the hook and `settings.json` rows as collapses; §10 gains
 residuals 13–15.
+
+## Revision 9 (2026-09-09) — payloads are files, args carry paths
+
+Found at implementation of the preflight (Phase 1): the `workflow-authoring` reference states that a
+Workflow script has no filesystem or Node API and that `args` is the value the session passes in the
+tool call — the session re-emits the printed call verbatim. A `/check-consistency` manuscript is
+0.4–1.1 MB (PF and IT, measured at the 1.6 acceptance), an `/audit-changes` diff is unbounded, a hat's
+persona is a kilobyte; none can travel inside `args`, and a printed call the session must retype has
+to stay in the low kilobytes. D7 and §6.2 step 4 now state the rule: preflight writes every payload —
+manuscripts, rulebook and rulebook sections, personas, lane briefs, the diff, diffstat and claims, the
+findings' unabridged text for the verifiers, the dismissal and severity items, the design under attack
+— under `.gbg/scratch/<round>/workflow/payload/` (gitignored, inside the project), `args` carries
+their paths and small scalars only, and every agent prompt lists the exact paths it may `Read` under
+`.gbg/`; everything else under `.gbg/` and all of `~/.gbg/` stay forbidden. The eleven scripts and the
+four `instruments/<name>/schema.json` args objects carry the new keys (`persona_path`, `brief_path`,
+`policy_path`, `rulebook_path`, `findings_path`, `items_path`, `diff_path`, `diffstat_path`,
+`claims_path`, `invariants_path`, `design_path`, `personas_path`, `defect_path`, `substrate_path`;
+`manuscripts.{full,siteonly}` are paths). The seed-secrecy argument of §6.4 is unchanged: the payload
+directory holds the seeded copies alone until bank writes the ground truth. §11 gains this as the
+second platform residue beside V1; nothing in the vocabularies, the round contract's files or the
+closure channels changes.

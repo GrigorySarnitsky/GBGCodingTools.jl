@@ -3,10 +3,10 @@
 // class_surfaces, batches). Changes: the verdict object is {id, verdict, question, evidence,
 // class_surfaces[{surface, swept, evidence}]}; output carries graded_sha256 and pass_nonce from args;
 // `range` required; mode ∈ lanes|batches from args; NO demotion here (the CLI applies it); finding text
-// arrives unabridged in args; no census (the CLI knows the denominator).
+// arrives unabridged in a FILE named by args (Revision 9); no census (the CLI knows the denominator).
 //
 // Args: { schema_version, round, round_dir, pass_dir, repo, range, nonce, graded_sha256, mode,
-//         lanes: [{nn, key, expected}], batches?: [[from,to]], findings: [{id, lane, n, title, text}],
+//         lanes: [{nn, key, expected}], batches?: [[from,to]], findings: [{id, lane, n, title}], findings_path,
 //         adjudicated_titles, rulebook_summary?, package, models: {economy}, strength }
 export const meta = {
   name: 'verify-act',
@@ -15,7 +15,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['round', 'pass_dir', 'repo', 'range', 'nonce', 'graded_sha256', 'findings', 'models']) {
+for (const k of ['round', 'pass_dir', 'repo', 'range', 'nonce', 'graded_sha256', 'findings', 'findings_path', 'models']) {
   if (A[k] === undefined) throw new Error(`verify-act.js: args.${k} is required — without a range a lane grades edits it cannot see`)
 }
 const MODE = A.mode === 'batches' ? 'batches' : 'lanes'
@@ -56,7 +56,7 @@ const PREAMBLE = `You are an ADVERSARIAL FIX AUDITOR for ${A.package.name} — $
 
 A review panel banked findings against this package's documentation, and a fix pass then ran. YOU AUDIT THE FIXES. Your allegiance is to the findings, not to the fixer: assume a fix is deficient until its evidence convinces you otherwise. You are NOT re-reviewing the docs and you are NOT looking for new defects.
 
-You have: (1) THE FINDINGS, each given below UNABRIDGED — the text is ground truth for what was asked; (2) THE DIFF — run \`git -C "${A.repo}" log --stat ${A.range}\` and \`git -C "${A.repo}" diff ${A.range}\` (scope with \`-- <path>\` when large). The ACT is what you audit, so how the text changed matters as much as what it now says; (3) THE CURRENT CORPUS under ${A.repo} (src/, ext/, docs/). NEVER read anything under .gbg/ or ~/.gbg/, and scope every search with \`--glob '!.gbg/**'\`: earlier passes' verdicts live there and they are an answer key.
+You have: (1) THE FINDINGS, UNABRIDGED, in the file ${A.findings_path} — read the blocks for YOUR ids in full (each block opens with "--- <id> ---"); the text is ground truth for what was asked, and that file is the ONLY file under .gbg/ you may open besides the one you write; (2) THE DIFF — run \`git -C "${A.repo}" log --stat ${A.range}\` and \`git -C "${A.repo}" diff ${A.range}\` (scope with \`-- <path>\` when large). The ACT is what you audit, so how the text changed matters as much as what it now says; (3) THE CURRENT CORPUS under ${A.repo} (src/, ext/, docs/). NEVER read anything under .gbg/ or ~/.gbg/, and scope every search with \`--glob '!.gbg/**'\`: earlier passes' verdicts live there and they are an answer key.
 
 FOR EACH FINDING, ask FOUR questions in order and stop at the first failure:
   (1) FIDELITY — did the ask land, and land EVERYWHERE it applies? A synonym is not the fix asked for.
@@ -76,7 +76,7 @@ VERDICTS — HONORED is the ONLY verdict that must be earned by evidence; prefer
 ${ADJ}
 DEFAULT TO THE UNFAVOURABLE VERDICT. Grade EVERY finding you are given, in order, one verdict per id; a shortfall is under-grading and the missing ones are UNVERIFIED, not clean. Do not propose fixes. Do not rank. Do not soften.`
 
-const fmt = (f) => `--- ${f.id} (lane ${f.lane}, #${f.n}) — ${f.title} ---\n${f.text}`
+const fmt = (f) => `  ${f.id} (lane ${f.lane}, #${f.n}) — ${f.title}`
 const outFile = (name) => `${A.pass_dir}/act/${name}.json`
 
 phase('Verify act')
@@ -97,8 +97,8 @@ const results = await parallel(units.map(u => () => u.items.length === 0 ? Promi
 
 YOUR UNIT: ${u.lane} — ${u.items.length} finding(s); return exactly ${u.items.length} verdicts.
 
-THE FINDINGS:
-${u.items.map(fmt).join('\n\n')}
+YOUR FINDING IDS (their full text is in ${A.findings_path}):
+${u.items.map(fmt).join('\n')}
 
 FIRST use the Write tool to save the structured object as JSON to ${outFile(u.name)} with schema_version=${A.schema_version}, lane="${u.lane}", graded_sha256="${A.graded_sha256}", pass_nonce="${A.nonce}" (both copied EXACTLY — they bind your verdicts to this pass and this frozen finding set). THEN return the same object.`,
   { label: `verify-act:${u.lane}`, phase: 'Verify act', schema: SCHEMA, agentType: 'general-purpose',

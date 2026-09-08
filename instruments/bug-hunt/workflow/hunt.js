@@ -4,11 +4,12 @@
 // numbered by the CLI; witnesses written as witnesses/<lane>-<n>.jl inside args.round_dir; the lanes
 // subset only as the CLI passes it (DEAD lanes); ALREADY-COVERED requires evidence (file:line);
 // BLOCKED admitted with a `# blocked:` header reason; the oracle list from args; no `include(` in a
-// witness; no package string in the source.
+// witness; no package string in the source. PAYLOADS ARE FILES (Revision 9): each lane's brief and the
+// invariants text are files preflight wrote; args name their paths.
 //
 // Args (instruments/bug-hunt/schema.json): { schema_version, round, round_dir, repo, package, preamble,
-//   lanes: [{nn, key, kind, brief, files, anchor}], oracles, witness_cmd, witness_env, invariants,
-//   models: {economy}, strength }
+//   lanes: [{nn, key, kind, brief_path, files, anchor}], oracles, witness_cmd, witness_env,
+//   invariants_path?, models: {economy}, strength }
 export const meta = {
   name: 'bug-hunt',
   description: 'Static hunt across the code, every candidate defect confirmed by a failing witness before it is reported',
@@ -79,8 +80,8 @@ YOU ARE PRODUCING HYPOTHESES, NOT VERDICTS. Every candidate you raise will be ha
 THREE KINDS, and the kind decides the evidence: "runtime" — wrong values, wrong types, aliasing, mutation of a caller's data, an edge case that errors or silently misbehaves; witness = a failing @testset. "api-semantics" — a claim about what Base or a dependency does; you are very likely wrong from memory, say what you believe and the reproducer checks the official documentation AND runs it. "architecture" — duplication, divergent copies of one rule, a leaked abstraction, an invariant broken in code; no test can fail on these, so they need a SECOND LOCATION to diff and a stated maintenance consequence.
 
 The ORACLES available in this package, independent of the code: ${(A.oracles || []).join('; ') || '(none recorded — derive from documented contracts)'}.
-${A.invariants ? `\nTHE PACKAGE'S RECORDED INVARIANTS:\n${A.invariants}\n` : ''}
-Report files_read honestly: it is cross-checked against the tree. NEVER read anything under .gbg/ or ~/.gbg/. Cap: your 6 most substantial candidates, ranked by what would actually go wrong; report candidates_found, the number you weighed before the cap.`
+${A.invariants_path ? `\nTHE PACKAGE'S RECORDED INVARIANTS: read them first from ${A.invariants_path}.\n` : ''}
+Report files_read honestly: it is cross-checked against the tree. FILES UNDER .gbg/ YOU MAY OPEN: your brief and the invariants file named in this prompt, and nothing else under .gbg/ or ~/.gbg/. Cap: your 6 most substantial candidates, ranked by what would actually go wrong; report candidates_found, the number you weighed before the cap.`
 
 phase('Hunt')
 const laneModel = (lane) => (STRENGTH === 'economy' && !lane.anchor) ? { model: ECONOMY } : {}
@@ -88,8 +89,8 @@ const laneModel = (lane) => (STRENGTH === 'economy' && !lane.anchor) ? { model: 
 const results = await pipeline(
   A.lanes,
   (lane) => agent(lane.kind === 'free'
-    ? `${FREE_PREAMBLE}\n\nWHERE TO START: ${lane.brief}\n\nReturn the structured object with lane="${lane.key}".`
-    : `${HUNT_PREAMBLE}\n\nYOUR TERRITORY (hunt HERE; you may read anything else in the repository to understand it):\n${lane.brief}\n${(lane.files || []).map(f => `  ${A.repo}/${f}`).join('\n')}\n\nReturn the structured object with lane="${lane.key}".`,
+    ? `${FREE_PREAMBLE}\n\nWHERE TO START: read your brief in full from ${lane.brief_path} (the one file under .gbg/ you may open besides the invariants named above).\n\nReturn the structured object with lane="${lane.key}".`
+    : `${HUNT_PREAMBLE}\n\nYOUR TERRITORY (hunt HERE; you may read anything else in the repository to understand it): read your brief in full from ${lane.brief_path}, then these files:\n${(lane.files || []).map(f => `  ${A.repo}/${f}`).join('\n')}\n\nReturn the structured object with lane="${lane.key}".`,
     { label: `hunt:${lane.key}`, phase: 'Hunt', schema: CANDIDATE_SCHEMA, agentType: 'general-purpose', ...laneModel(lane) }),
 
   async (found, lane) => {

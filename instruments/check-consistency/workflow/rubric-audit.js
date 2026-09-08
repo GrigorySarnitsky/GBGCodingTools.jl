@@ -3,8 +3,8 @@
 // Source: IT check-consistency/rubric_audit.js. Changes: generic `subject`; the defects and substrates
 // arrive as TEXT in args (no .gbg/ reads); no package string in the source.
 //
-// Args: { schema_version, round, subject, hats: [{key, persona}], items: [{id, title, defect, substrate}],
-//         models: {economy}, out }
+// Args: { schema_version, round, subject, hats: [{key, persona_path}], items: [{id, title, defect_path,
+//         substrate_path}], personas_path, models: {economy}, out }  (Revision 9: texts are files)
 export const meta = {
   name: 'rubric-audit',
   description: 'Test, blind, whether each panel hat’s own rubric produces the findings a human read found',
@@ -12,7 +12,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['subject', 'hats', 'items', 'models', 'out']) if (A[k] === undefined) throw new Error(`rubric-audit.js: args.${k} is required`)
+for (const k of ['subject', 'hats', 'items', 'personas_path', 'models', 'out']) if (A[k] === undefined) throw new Error(`rubric-audit.js: args.${k} is required`)
 if (!A.hats.length || !A.items.length) throw new Error('rubric-audit.js: an empty audit is not a clean one')
 const ECONOMY = A.models.economy
 
@@ -45,7 +45,6 @@ const SCORE_SCHEMA = {
 
 // 1. ASSIGN — this agent MAY see the findings; it is not the one under test.
 phase('Assign')
-const personaList = A.hats.map(h => `### ${h.key}\n${h.persona.slice(0, 1100)}`).join('\n\n')
 const CHUNK = 9
 const chunks = []
 for (let i = 0; i < A.items.length; i += CHUNK) chunks.push(A.items.slice(i, i + CHUNK))
@@ -54,11 +53,10 @@ const assigned = (await parallel(chunks.map((chunk, ci) => () => agent(
 
 Judge the persona AS WRITTEN. The question is not "which hat is nearest in topic" but "does this persona's text instruct a reader to look for this class of thing?" If none does, answer with an EMPTY list — that is the finding this audit exists to produce, and a forced assignment destroys it. Quote the clause you relied on.
 
-PERSONAS:
-${personaList}
+PERSONAS: read them all, in full, from ${A.personas_path} (each opens with "### <key>"). That file and the defect files below are the ONLY files under .gbg/ you may open.
 
-FINDINGS IN YOUR CHUNK:
-${chunk.map(f => `--- ${f.id}: ${f.title} ---\n${f.defect}`).join('\n\n')}`,
+FINDINGS IN YOUR CHUNK (read each defect description from its file):
+${chunk.map(f => `  ${f.id}: ${f.title} — ${f.defect_path}`).join('\n')}`,
   { label: `assign:${ci + 1}`, phase: 'Assign', schema: ASSIGN_SCHEMA, agentType: 'general-purpose' })))
 ).filter(Boolean).flatMap(r => r.assignments)
 
@@ -78,14 +76,14 @@ const hatKeys = Object.keys(byHat).filter(k => A.hats.some(h => h.key === k))
 const results = await pipeline(
   hatKeys,
   (key) => {
-    const persona = A.hats.find(h => h.key === key).persona
+    const personaPath = A.hats.find(h => h.key === key).persona_path
     const ids = byHat[key]
-    return agent(`${persona}
+    return agent(`Read your persona in full from ${personaPath}; it is who you are for this review.
 
-YOUR SUBSTRATE is a set of passages from ${A.subject}, given here verbatim:
-${ids.map(i => `\n===== passage ${i} =====\n${itemById[i].substrate}`).join('\n')}
+YOUR SUBSTRATE is a set of passages from ${A.subject}, one file each — read every one in full:
+${ids.map(i => `  passage ${i}: ${itemById[i].substrate_path}`).join('\n')}
 
-Apply your lens and REPORT EVERY DEFECT YOU FIND. Be specific about which passage and what. These are excerpts, so ignore anything that is merely cut off at an edge; judge what is present. Do not open any file.`,
+Apply your lens and REPORT EVERY DEFECT YOU FIND. Be specific about which passage and what. These are excerpts, so ignore anything that is merely cut off at an edge; judge what is present. Open no file other than those named here.`,
       { label: `blind:${key}`, phase: 'Blind run', schema: REPORT_SCHEMA, agentType: 'general-purpose' })
       .then(r => ({ key, ids, reported: (r && r.findings) || [] }))
   },
@@ -95,8 +93,7 @@ Apply your lens and REPORT EVERY DEFECT YOU FIND. Be specific about which passag
     return parallel(run.ids.map(id => () => agent(
 `You are scoring whether a documentation reviewer, working blind, found ONE specific known defect.
 
-THE KNOWN DEFECT (${id} — ${itemById[id].title}):
-${itemById[id].defect}
+THE KNOWN DEFECT (${id} — ${itemById[id].title}): read its description from ${itemById[id].defect_path} (the only file you open).
 
 WHAT THE REVIEWER REPORTED, having seen only the passage and never the defect description:
 ${listing}
