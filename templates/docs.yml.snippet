@@ -1,0 +1,20 @@
+# gbg:fragment auth
+- name: Authenticate the private GBG dependencies
+  # First step after actions/checkout, before any julia-actions/* step: Pkg fetches the pinned tool
+  # over https, and the token rewrite is what lets a private repository resolve on the runner.
+  env:
+    GBG_DEPS_TOKEN: ${{ secrets.GBG_DEPS_TOKEN }}
+  run: git config --global url."https://x-access-token:${GBG_DEPS_TOKEN}@github.com/".insteadOf "https://github.com/"
+# gbg:fragment run
+- name: Build and deploy docs
+  # The build/deploy step with its output tee'd so the last step can prove the wrapper ran.
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  run: |
+    set -o pipefail
+    julia --color=yes --project=docs docs/make.jl 2>&1 | tee gbg-run.log
+# gbg:fragment banner
+- name: The tool's makedocs wrapper ran
+  # The wrapper prints `{{tool.banner}} makedocs` before Documenter runs; a green job whose log lacks
+  # the banner built the site around the wrapper, which WIRE.MAKEDOCS catches locally and this catches here.
+  run: grep -q '{{tool.banner}} makedocs' gbg-run.log

@@ -1,0 +1,35 @@
+<!-- gbg:managed begin … -->
+<!-- The managed block: rendered here by `gbg sync` from templates/claude-md.block. It imports the
+     policy copy under .gbg/policy/, states this package's parameters and deviations, and carries the
+     consent sentence. Nothing in it is written by hand. -->
+<!-- gbg:managed end -->
+
+# CLAUDE.md — {{package.name}}
+
+<!-- One section order for every GBG package (ARCHITECTURE D12). Package content only: the shared
+     rules live in .gbg/policy/ and are imported above; a sentence that repeats one of them here is a
+     LEG.SENTINELS finding. Finished work is not recorded here — git history keeps it. -->
+
+## Modules and wiring
+
+<!-- What each module is for and how they connect; the extensions; what is deliberately absent. -->
+
+## Core invariants
+
+<!-- The package's own contracts: representations, aliasing, normalisation, device rules — the things
+     a change must not break and the instruments' rulebook hats read (`package.rulebook_sections`). -->
+
+## Code generation rules
+
+<!-- This package's own style beyond the shared policy: naming, generated code, GPU idioms, the local
+     exceptions the policy allows a package to record. -->
+
+## Working agreements
+
+<!-- How a session works in this repository beyond the shared git conventions: what to run before a
+     commit, the benchmark and example obligations, what needs the owner. -->
+
+## Current state
+
+<!-- ONE short paragraph: what is complete and stable now, and the sentence "Live plans are in
+     docs/ROADMAP.md." Roadmaps, planned directions and status ledgers live in that file, not here. -->

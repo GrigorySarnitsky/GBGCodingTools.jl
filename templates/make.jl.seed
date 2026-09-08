@@ -1,0 +1,15 @@
+# docs/make.jl — {{package.name}}. The build goes through the tool's wrapper (WIRE.MAKEDOCS): it runs
+# the quick doctor, the hard scans over the source surfaces, the closure gate, Documenter, and the
+# built-HTML scans, and exits non-zero on any of them. Run it as `julia --project=docs docs/make.jl`.
+using Documenter, GBGCodingTools
+using {{package.name}}
+
+GBGCodingTools.makedocs(GBGCodingTools.Config.read();
+    sitename = "{{package.name}}",
+    modules = [{{package.name}}],
+    checkdocs = :exports,
+    doctest = true,
+    pages = [
+        "Home" => "index.md",
+    ],
+)

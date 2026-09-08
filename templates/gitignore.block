@@ -1,0 +1,9 @@
+# gbg:managed begin v{{tool.version}} — rewritten by `gbg sync`; do not edit
+.gbg/scratch/
+{{docs.build_dir}}/
+docs/Manifest.toml
+test/Manifest.toml
+benchmark/Manifest.toml
+.claude/settings.local.json
+*.cov
+# gbg:managed end
