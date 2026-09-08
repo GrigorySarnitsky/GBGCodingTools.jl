@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "required": [
+    "round",
+    "instrument",
+    "schema_version",
+    "tool_version",
+    "tool_rev",
+    "tool_tree_sha",
+    "config_sha",
+    "catalog_sha",
+    "seed_catalog_sha",
+    "head",
+    "roster",
+    "cost",
+    "strength",
+    "hostname",
+    "model_hint",
+    "opened",
+    "dead_lanes",
+    "passes"
+  ],
+  "properties": {
+    "tool_tree_sha": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "findings_sha": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "closed_by": {
+      "additionalProperties": false,
+      "required": [
+        "adjudicated"
+      ],
+      "properties": {
+        "tally_sha": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "adjudicated": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "closed": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}",
+      "type": "string",
+      "description": "ISO 8601, the CLI clock"
+    },
+    "strength": {
+      "type": "string",
+      "enum": [
+        "economy",
+        "full"
+      ]
+    },
+    "round": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}-(check-docs|check-consistency|bug-hunt|audit-changes)-\\d{2}$",
+      "type": "string"
+    },
+    "opened": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}",
+      "type": "string",
+      "description": "ISO 8601, the CLI clock"
+    },
+    "banked": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}",
+      "type": "string",
+      "description": "ISO 8601, the CLI clock"
+    },
+    "tool_version": {
+      "pattern": "^([0-9]+\\.[0-9]+\\.[0-9]+(-rc\\.[0-9]+)?|dev(\\+[0-9a-f]{7,40}(-dirty)?)?)$",
+      "type": "string"
+    },
+    "seed_salt": {
+      "type": "string"
+    },
+    "passes": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "head": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "model_hint": {
+      "type": "string"
+    },
+    "hostname": {
+      "type": "string"
+    },
+    "seed_catalog_sha": {
+      "pattern": "^([0-9a-f]{64}|none)$",
+      "type": "string"
+    },
+    "config_sha": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "roster": {
+      "items": {
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "anchor",
+          "substrate"
+        ],
+        "properties": {
+          "key": {
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "type": "string"
+          },
+          "not_applicable": {
+            "type": "boolean"
+          },
+          "substrate": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "lane_shas": {
+      "additionalProperties": true,
+      "required": [
+      ],
+      "properties": {
+      },
+      "type": "object",
+      "description": "lane → sha256 at first sight"
+    },
+    "base": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "instrument": {
+      "type": "string",
+      "enum": [
+        "check-docs",
+        "check-consistency",
+        "bug-hunt",
+        "audit-changes"
+      ]
+    },
+    "tool_rev": {
+      "type": "string"
+    },
+    "cost": {
+      "type": "string",
+      "enum": [
+        "economy",
+        "full"
+      ]
+    },
+    "reproductions_sha": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "dead_lanes": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "closed_head": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "catalog_sha": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "abandoned": {
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "open_ids"
+      ],
+      "properties": {
+        "open_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 12
+        }
+      },
+      "type": "object"
+    },
+    "schema_version": {
+      "minimum": 1,
+      "type": "integer",
+      "description": "the tool MAJOR this artefact was written under"
+    }
+  },
+  "title": "ROUND.toml — written by the CLI only (ARCHITECTURE §6.1); the field list is complete",
+  "type": "object"
+}

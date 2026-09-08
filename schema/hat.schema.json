@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "required": [
+    "key",
+    "role",
+    "substrate",
+    "persona"
+  ],
+  "properties": {
+    "key": {
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "minLength": 12
+    },
+    "needs": {
+      "items": {
+        "type": "string"
+      },
+      "default": [
+      ],
+      "type": "array"
+    },
+    "domain": {
+      "default": false,
+      "type": "boolean",
+      "description": "true for a consumer's domain hat"
+    },
+    "persona": {
+      "type": "string",
+      "minLength": 80
+    },
+    "substrate": {
+      "type": "string",
+      "enum": [
+        "full",
+        "siteonly",
+        "rawhtml",
+        "docstrings",
+        "rulebook",
+        "none"
+      ]
+    },
+    "anchor": {
+      "default": false,
+      "type": "boolean"
+    }
+  },
+  "title": "a hat — catalog/hats/<key>.toml or a consumer's .gbg/hats/<key>.toml",
+  "type": "object"
+}

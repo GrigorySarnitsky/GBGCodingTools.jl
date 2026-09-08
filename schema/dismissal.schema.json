@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "round",
+    "items",
+    "dead",
+    "reopened",
+    "complete"
+  ],
+  "properties": {
+    "items": {
+      "items": {
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "verdict",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "DISMISSAL-SOUND",
+              "UNSAFE",
+              "DISMISSAL-WRONG"
+            ]
+          },
+          "what_would_bite": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "reopened": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "dead": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "complete": {
+      "type": "boolean"
+    },
+    "schema_version": {
+      "minimum": 1,
+      "type": "integer",
+      "description": "the tool MAJOR this artefact was written under"
+    },
+    "round": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}-(check-docs|check-consistency|bug-hunt|audit-changes)-\\d{2}$",
+      "type": "string"
+    }
+  },
+  "title": "dismissals output — the dismissal audit at close (bug-hunt/workflow/dismissals.js)",
+  "type": "object"
+}

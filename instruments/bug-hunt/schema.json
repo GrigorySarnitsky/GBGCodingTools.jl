@@ -1,0 +1,305 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "required": [
+    "args",
+    "lane_file"
+  ],
+  "properties": {
+    "args": {
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "round",
+        "round_dir",
+        "repo",
+        "package",
+        "preamble",
+        "lanes",
+        "oracles",
+        "witness_cmd",
+        "witness_env",
+        "models",
+        "strength"
+      ],
+      "properties": {
+        "witness_cmd": {
+          "type": "string"
+        },
+        "lanes": {
+          "items": {
+            "additionalProperties": false,
+            "required": [
+              "nn",
+              "key",
+              "brief",
+              "anchor"
+            ],
+            "properties": {
+              "key": {
+                "pattern": "^[a-z0-9][a-z0-9-]*$",
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "brief": {
+                "type": "string"
+              },
+              "files": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "anchor": {
+                "type": "boolean"
+              },
+              "nn": {
+                "pattern": "^\\d{2}$",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "models": {
+          "additionalProperties": false,
+          "required": [
+            "economy"
+          ],
+          "properties": {
+            "economy": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "package": {
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "description",
+            "domain"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "domain": {
+              "type": "string"
+            },
+            "deliberate_absences": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "terms": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "oracles": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "invariants": {
+          "type": "string"
+        },
+        "repo": {
+          "type": "string"
+        },
+        "preamble": {
+          "type": "string"
+        },
+        "witness_env": {
+          "additionalProperties": true,
+          "required": [
+          ],
+          "properties": {
+          },
+          "type": "object"
+        },
+        "round_dir": {
+          "type": "string"
+        },
+        "strength": {
+          "type": "string",
+          "enum": [
+            "economy",
+            "full"
+          ]
+        },
+        "schema_version": {
+          "minimum": 1,
+          "type": "integer",
+          "description": "the tool MAJOR this artefact was written under"
+        },
+        "round": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}-(check-docs|check-consistency|bug-hunt|audit-changes)-\\d{2}$",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "lane_file": {
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "round",
+        "lane",
+        "candidates_found",
+        "checked",
+        "findings"
+      ],
+      "properties": {
+        "checked": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "candidates_found": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "lane": {
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "type": "string"
+        },
+        "schema_version": {
+          "minimum": 1,
+          "type": "integer",
+          "description": "the tool MAJOR this artefact was written under"
+        },
+        "round": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}-(check-docs|check-consistency|bug-hunt|audit-changes)-\\d{2}$",
+          "type": "string"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/finding"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "title": "/bug-hunt — args of workflow/hunt.js, the candidate file and the lane-file wrapper",
+  "$defs": {
+    "finding": {
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "severity",
+        "confidence",
+        "title",
+        "locations",
+        "description"
+      ],
+      "properties": {
+        "domain_type": {
+          "type": "string",
+          "description": "one of config [schema] finding_types_extra"
+        },
+        "after": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "blocker",
+            "major",
+            "minor",
+            "nit"
+          ]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "justified": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "no",
+            "unclear"
+          ]
+        },
+        "before": {
+          "type": "string"
+        },
+        "locations": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "contradicts": {
+          "type": "string"
+        },
+        "previously_worked": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "no",
+            "unknown"
+          ]
+        },
+        "why_it_matters": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 8
+        },
+        "resolution_hint": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "description": "core type; a domain type goes in domain_type",
+          "enum": [
+            "math",
+            "notation",
+            "structure",
+            "citation",
+            "style",
+            "operational",
+            "currency",
+            "self-containment"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 20
+        }
+      },
+      "type": "object"
+    },
+    "candidate_file": {
+      "$ref": "hunt-candidate.schema.json"
+    }
+  },
+  "type": "object"
+}

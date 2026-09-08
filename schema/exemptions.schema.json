@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "required": [
+  ],
+  "properties": {
+    "exemption": {
+      "items": {
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "scope",
+          "target",
+          "reason",
+          "recorded"
+        ],
+        "properties": {
+          "match": {
+            "additionalProperties": false,
+            "required": [
+            ],
+            "properties": {
+              "arg_type": {
+                "type": "string",
+                "description": "evaluable by reflection scans only; a text scan refuses the entry"
+              },
+              "arg_name": {
+                "type": "string"
+              },
+              "symbol": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "type": "object",
+            "description": "scopes scan|lint|policy|harness only; the sub-keys are ANDed"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "policy",
+              "scan",
+              "lint",
+              "check",
+              "finding",
+              "harness"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "minLength": 3,
+            "description": "a RULE.* id, a SCAN.* id, a doctor check id, a finding id or a harness op"
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "description": "* | a symbol | a file | a finding id; * is refused on scope check"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 24,
+            "description": "≥ 40 chars on scope finding — CFG.EXEMPTIONS checks the longer bound"
+          },
+          "expires": {
+            "type": "date",
+            "description": "REQUIRED for every scope but finding; ≤ recorded + 365 d"
+          },
+          "overturn_when": {
+            "type": "string",
+            "minLength": 12,
+            "description": "REQUIRED on scope finding; the condition under which the adjudication would be wrong"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "recorded": {
+            "type": "date"
+          }
+        },
+        "type": "object"
+      },
+      "default": [
+      ],
+      "type": "array"
+    }
+  },
+  "title": ".gbg/exemptions.toml — the one ledger (ARCHITECTURE §7.2)",
+  "type": "object"
+}

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source",
+    "format",
+    "title_to_id",
+    "imported"
+  ],
+  "properties": {
+    "format": {
+      "type": "string",
+      "enum": [
+        "pf-doc-review",
+        "pf-check-docs",
+        "pf-findings-json",
+        "it-closure",
+        "it-audit-latest",
+        "it-rounds-json",
+        "none"
+      ]
+    },
+    "source": {
+      "type": "string"
+    },
+    "title_to_id": {
+      "additionalProperties": true,
+      "required": [
+      ],
+      "properties": {
+      },
+      "type": "object"
+    },
+    "schema_version": {
+      "minimum": 1,
+      "type": "integer",
+      "description": "the tool MAJOR this artefact was written under"
+    },
+    "source_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "imported": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}",
+      "type": "string",
+      "description": "ISO 8601, the CLI clock"
+    },
+    "reason": {
+      "type": "string"
+    }
+  },
+  "title": "import.json — Step-0 scratch imports only, written by `gbg round import`",
+  "type": "object"
+}

@@ -1,6 +1,7 @@
 # Schema.jl — the ONE JSON-Schema-subset validator, over the Dict `TOML.parsefile` (or JSON3) returns.
 # Keywords understood: type, properties, required, additionalProperties, items, enum, const, pattern,
-# minLength, minItems, minimum, maximum, default, $ref (to #/$defs/<name>), $defs, description.
+# minLength, minItems, minimum, maximum, default, allOf, $ref (to #/$defs/<name>), $defs, description;
+# the type names object, array, boolean, integer, number, string, null, date.
 
 """
     SchemaError <: Exception
@@ -53,7 +54,7 @@ end
 
 _typename(v) = v isa AbstractDict ? "object" : v isa AbstractVector ? "array" : v isa Bool ? "boolean" :
     v isa Integer ? "integer" : v isa Real ? "number" : v isa AbstractString ? "string" :
-    v isa Dates.Date ? "date" : v isa Dates.DateTime ? "date-time" : string(typeof(v))
+    v isa Dates.Date ? "date" : v isa Dates.DateTime ? "date-time" : v === nothing ? "null" : string(typeof(v))
 
 function _type_ok(want::AbstractString, v)
     want == "number" && return v isa Real && !(v isa Bool)
@@ -103,6 +104,9 @@ function validate(schema::AbstractDict, value; root = schema, path::String = "\$
             end
         end
     elseif value isa AbstractDict
+        for (i, sub) in enumerate(get(s, "allOf", Any[]))   # every member schema must hold
+            append!(errs, validate(sub, value; root, path))
+        end
         props = get(s, "properties", Dict{String,Any}())
         for r in get(s, "required", String[])
             haskey(value, r) || push!(errs, "$path: missing required key $(repr(r))")

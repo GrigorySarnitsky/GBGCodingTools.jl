@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "round",
+    "pass",
+    "per_id",
+    "totals",
+    "demoted_by_rule",
+    "adjudicated_share",
+    "suspect_hats",
+    "dead_lanes",
+    "rejected_files",
+    "open_ids",
+    "plateau"
+  ],
+  "properties": {
+    "recall": {
+      "additionalProperties": true,
+      "required": [
+      ],
+      "properties": {
+      },
+      "type": "object",
+      "description": "class → {planted, found} or UNDEFINED"
+    },
+    "plateau": {
+      "additionalProperties": false,
+      "required": [
+        "passes_flat"
+      ],
+      "properties": {
+        "passes_flat": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "totals": {
+      "additionalProperties": true,
+      "required": [
+        "findings",
+        "closed",
+        "open"
+      ],
+      "properties": {
+        "seeded": {
+          "type": "integer"
+        },
+        "open": {
+          "type": "integer"
+        },
+        "closed": {
+          "type": "integer"
+        },
+        "findings": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "rejected_files": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "per_id": {
+      "additionalProperties": true,
+      "required": [
+      ],
+      "properties": {
+      },
+      "type": "object",
+      "description": "id → {act, act_demoted, state, closed_by, adjudicated_entry}"
+    },
+    "dead_lanes": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "open_ids": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "suspect_hats": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "pass": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "schema_version": {
+      "minimum": 1,
+      "type": "integer",
+      "description": "the tool MAJOR this artefact was written under"
+    },
+    "round": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}-(check-docs|check-consistency|bug-hunt|audit-changes)-\\d{2}$",
+      "type": "string"
+    },
+    "demoted_by_rule": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "adjudicated_share": {
+      "minimum": 0,
+      "type": "number",
+      "maximum": 1
+    }
+  },
+  "title": "verdicts/pass-<k>/tally.json — written by `gbg round grade`",
+  "$defs": {
+    "entry": {
+      "additionalProperties": false,
+      "required": [
+        "act",
+        "act_demoted",
+        "state",
+        "closed_by"
+      ],
+      "properties": {
+        "act": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "HONORED",
+            "ADJACENT",
+            "INSERTED",
+            "LINE-ONLY",
+            "NEW-DEFECT",
+            "SCOPE-CREEP",
+            "UNDONE",
+            "LAUNDERED",
+            null
+          ]
+        },
+        "closed_by": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "honored",
+            "adjudicated",
+            "seeded",
+            "rescan",
+            null
+          ]
+        },
+        "act_demoted": {
+          "type": "boolean"
+        },
+        "adjudicated_entry": {
+          "type": "string"
+        },
+        "state": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "PRESENT",
+            "PARTIAL",
+            "REGRESSED",
+            "ABSENT",
+            "NOT-A-DEFECT",
+            "UNCLEAR",
+            null
+          ]
+        }
+      },
+      "type": "object"
+    }
+  },
+  "type": "object"
+}
