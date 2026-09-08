@@ -29,6 +29,8 @@ const JULIA_FLOOR = v"1.11"
 
 include("DocLints.jl")
 include("CLI/Main.jl")
+include("CLI/Schema.jl")
+include("CLI/Config.jl")
 include("CLI/Install.jl")
 
 end # module
