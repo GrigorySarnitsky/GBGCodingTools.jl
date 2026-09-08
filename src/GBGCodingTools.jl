@@ -27,10 +27,12 @@ const PKG_UUID = Base.UUID("3aee1de0-bb62-4679-b1c5-a861fbcaaa51")
 const PKG_NAME = "GBGCodingTools"
 const JULIA_FLOOR = v"1.11"
 
+include("TreeHash.jl")
 include("DocLints.jl")
 include("CLI/Main.jl")
 include("CLI/Schema.jl")
 include("CLI/Config.jl")
+include("CLI/Self.jl")
 include("CLI/Install.jl")
 
 end # module
