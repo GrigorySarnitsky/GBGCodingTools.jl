@@ -102,8 +102,9 @@ function derive_config(root::AbstractString)
     proj = TOML.parsefile(joinpath(root, "Project.toml"))
     name = String(proj["name"])
     tool = is_tool_root(root); inside = enclosed_by_tool(root)
-    version = tool || inside ? "dev" : replace(GBGCodingTools.tool_version(), r"^v" => "")
-    occursin(r"^\d+\.\d+\.\d+$", version) || tool || inside || (version = "dev")
+    # the pin: `dev` at the tool root and inside the tool repository (the fixture); elsewhere the version
+    # the running copy IS — its Project.toml — which `gbg release` tags before a consumer adopts it
+    version = tool || inside ? "dev" : String(TOML.parsefile(joinpath(Sync.tool_root(), "Project.toml"))["version"])
     arch = joinpath(root, "docs", "ARCHITECTURE.md")
     rationale = [relpath(joinpath(root, "docs", f), root) for f in ("ARCHITECTURE.md", "FORMALIZATION.md", "TESTING.md", "PERFORMANCE.md") if isfile(joinpath(root, "docs", f))]
     generated = [relpath(joinpath(root, "docs", "src", lowercase(basename(f))), root) for f in rationale if isfile(joinpath(root, "docs", "src", lowercase(basename(f))))]

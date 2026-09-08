@@ -42,6 +42,8 @@ include("CLI/Self.jl")
 include("CLI/Install.jl")
 include("CLI/Sync.jl")
 include("CLI/Init.jl")
+include("CLI/RoundFiles.jl")
+include("CLI/Doctor.jl")
 include("CLI/Consolidate.jl")
 
 end # module
