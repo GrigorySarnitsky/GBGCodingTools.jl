@@ -27,3 +27,15 @@ The files:
 - `git-conventions.md` — `RULE.GIT.*`: commit ⇒ push, the trailer, manual CI, no shims, the branch,
   manifests, cross-package requests.
 - `glossary.md` — the terms the rules use, bound once.
+
+The rules load into a session with this index; the rendered copy under `.gbg/policy/` carries the
+same lines, and `deviations.md` is this package's ledger of declared deviations:
+
+@.gbg/policy/docs-rubric.md
+@.gbg/policy/latex-idiom.md
+@.gbg/policy/citations.md
+@.gbg/policy/testing-protocol.md
+@.gbg/policy/instruments.md
+@.gbg/policy/git-conventions.md
+@.gbg/policy/glossary.md
+@.gbg/policy/deviations.md

@@ -205,7 +205,7 @@ function check_paths(cfg::AbstractDict)
     srcfiles = vcat((glob_files(root, g) for g in s["src"])...)
     for m in cfg["package"]["modules"]
         re = Regex("^\\s*(baremodule|module)\\s+" * m * "\\b", "m")
-        any(f -> occursin(re, read(joinpath(root, f), String)), srcfiles) || push!(errs, "package.modules: no `module $m` block under the src surface")
+        any(f -> occursin(re, Base.read(joinpath(root, f), String)), srcfiles) || push!(errs, "package.modules: no `module $m` block under the src surface")
     end
     for (k, f) in ac["executable_claims"]
         (startswith(f, "test/") && isfile(joinpath(root, f))) || push!(errs, "instruments.audit-changes.executable_claims.$k: $(repr(f)) is not an existing file under test/")

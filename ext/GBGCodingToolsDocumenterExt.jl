@@ -22,13 +22,13 @@ function makedocs(cfg; kwargs...)
     println("GBGCodingTools v", GBGCodingTools.tool_version(), " makedocs")
     root = cfg["root"]
     check("doctor --only QUICK", GBGCodingTools.doctor(cfg, :QUICK))
-    check("scan docs --hard-only", GBGCodingTools.scan_docs(cfg; hard_only = true))
+    check("scan docs --hard-only", last(GBGCodingTools.scan_docs(cfg; hard_only = true)))
     check("gate check-docs check-consistency", GBGCodingTools.gate(cfg, "check-docs", "check-consistency"))
     GBGCodingTools.write_public_surface(cfg)
     result = Documenter.makedocs(; kwargs...)
     build_dir = get(Dict(kwargs), :build, joinpath(root, "docs", "build"))
     isabspath(build_dir) || (build_dir = joinpath(root, "docs", build_dir))
-    check("scan html", GBGCodingTools.scan_html(cfg, build_dir))
+    check("scan html", last(GBGCodingTools.scan_html(cfg, build_dir)))
     check("gate check-docs check-consistency", GBGCodingTools.gate(cfg, "check-docs", "check-consistency"))
     return result
 end

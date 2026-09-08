@@ -40,6 +40,8 @@ include("CLI/Ledger.jl")
 include("Scan.jl")
 include("CLI/Self.jl")
 include("CLI/Install.jl")
+include("CLI/Sync.jl")
+include("CLI/Init.jl")
 include("CLI/Consolidate.jl")
 
 end # module
