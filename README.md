@@ -1,20 +1,31 @@
-# GBGCodingTools.jl — seed directory (not yet a package)
+# GBGCodingTools.jl
 
-This directory is the starting point for the session that IMPLEMENTS `GBGCodingTools`, the one
-shared tooling package for `GBGPeriodicFields`, `GBGIsotropicTurbulence`, `GBGStreamingStatistics`
-and `GBGCloudPhysics`: the four review instruments (`/check-docs`, `/check-consistency`, `/bug-hunt`,
-`/audit-changes`), the docs-build lints, the test harnesses, the shared policy prose, the doctor and
-the migration scaffolding — one version, pinned by every consumer. The tool is its own fifth consumer:
-it carries a Documenter site built through its own wrapper, and its docstrings and rounds pass the same
-checks it applies to the others.
+**A consumer holds data; the tool holds behaviour; the only thing connecting them is a pin.**
 
-Read, in order:
+The one shared tooling package of the four GBG Julia packages (`GBGPeriodicFields`,
+`GBGIsotropicTurbulence`, `GBGStreamingStatistics`, `GBGCloudPhysics`) and of itself: the four review
+instruments (`/check-docs`, `/check-consistency`, `/bug-hunt`, `/audit-changes`), the docs-build wrapper
+and its scans, the test harness, the doctor, the policy prose and the migration scaffolding — one
+version, pinned by every consumer through its sub-environment `Project.toml` files.
 
-1. `IMPLEMENTATION.md` — the ordered, checkable plan (owner questions first, then Phases 0–8 with a
-   definition of done and verification commands each).
-2. `docs/ARCHITECTURE.md` — the design and every decision with its evidence and alternatives.
-3. `docs/design-record/` — provenance (surveys of the four packages, three proposals, three
-   critiques, the decision record, the red-team reviews). Consult, do not re-derive.
+The design is `docs/ARCHITECTURE.md`; the build plan is `IMPLEMENTATION.md`; `docs/design-record/` is
+the provenance.
 
-The first commit of the implementing session turns this directory into the git repository
-(`git init -b master`; remote `GrigorySarnitsky/GBGCodingTools.jl`, private), keeping these files.
+## Bootstrap on a machine
+
+```sh
+# 1. in any consumer: fetch the pinned copy
+julia --project=docs -e 'using Pkg; Pkg.instantiate()'
+# 2. from that consumer: install the shim and register the owner's dev checkout
+julia --startup-file=no --project=docs -e 'using GBGCodingTools; exit(GBGCodingTools.main(ARGS))' -- install --dev-checkout "<dev checkout>"
+# 3. check
+gbg doctor
+```
+
+`install.sh` in the dev checkout runs step 2 against the checkout itself.
+
+## Exit contract
+
+Every verb: **0** clean · **1** substantive finding · **2** cannot evaluate (a missing config, round or
+path; a dead lane; a hash mismatch) · **3** crash (an uncaught exception, never read as a finding).
+Output is never truncated.

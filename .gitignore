@@ -1,2 +1,10 @@
 # seeded by hand at Phase 0; `gbg sync` adds its managed block at Phase 1.10
 .claude/settings.local.json
+Manifest.toml
+docs/build/
+docs/Manifest.toml
+test/Manifest.toml
+fixture/GBG Fixture/docs/build/
+fixture/GBG Fixture/**/Manifest.toml
+.gbg/scratch/
+*.cov

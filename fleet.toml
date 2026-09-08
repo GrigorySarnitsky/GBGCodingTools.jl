@@ -1,0 +1,30 @@
+# fleet.toml — dev-side only (read by `gbg fleet` and `gbg bump` from the dev checkout).
+# Paths are relative to this file. A path that does not exist is exit 2 for `gbg fleet`, never a skipped row.
+
+[sweep]                                  # written by `gbg bump` when a bump leaves the fleet at two versions
+# started = 2026-09-20, from = "1.0.0", to = "1.0.1"
+
+[[consumer]]                             # the tool's own row (D15): pin dev+<sha>[-dirty], OK/RED by its own doctor, never BEHIND
+name = "GBGCodingTools"
+path = "."
+github = "GrigorySarnitsky/GBGCodingTools.jl"
+
+[[consumer]]
+name = "GBGPeriodicFields"
+path = "../../Isotropic Turbulence/GBGPeriodicFields"
+github = "GrigorySarnitsky/GBGPeriodicFields.jl"
+
+[[consumer]]
+name = "GBGIsotropicTurbulence"
+path = "../../Isotropic Turbulence/GBGIsotropicTurbulence"
+github = "GrigorySarnitsky/GBGIsotropicTurbulence.jl"
+
+[[consumer]]
+name = "GBGStreamingStatistics"
+path = "../../Statistics/GBGStreamingStatistics"
+github = "GrigorySarnitsky/GBGStreamingStatistics.jl"
+
+[[consumer]]
+name = "GBGCloudPhysics"
+path = "../../Cloud Physics/GBGCloudPhysics"
+github = "GrigorySarnitsky/GBGCloudPhysics.jl"

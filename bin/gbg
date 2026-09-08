@@ -1,0 +1,29 @@
+#!/bin/sh
+# gbg — the per-machine shim. `gbg install` copies this file to ~/.local/bin/gbg byte for byte (SHIM.HASH
+# compares the two). It holds no Julia code and reads no depot slug: it only decides which --project to
+# exec Julia against. Pkg's resolution of that environment IS the version selection (docs/ARCHITECTURE.md D2).
+set -u
+JL='using GBGCodingTools; exit(GBGCodingTools.main(ARGS))'
+devpath() {
+  [ -f "$HOME/.gbg/dev" ] || { echo "gbg: no dev checkout registered (~/.gbg/dev is absent; run gbg install --dev-checkout <path>)" >&2; exit 2; }
+  head -n 1 "$HOME/.gbg/dev"
+}
+if [ "${1:-}" = "--dev" ]; then                       # (1) explicit dev route
+  shift; P=$(devpath) || exit 2; GBG_DEV=1; export GBG_DEV
+else
+  d=$PWD                                             # (2) walk up to the nearest .gbg/config.toml
+  while [ "$d" != "/" ] && [ ! -f "$d/.gbg/config.toml" ]; do d=$(dirname "$d"); done
+  if [ ! -f "$d/.gbg/config.toml" ]; then P=$(devpath) || exit 2
+  else
+    v=$(awk '/^\[tool\]/{t=1;next} t&&/^version[ \t]*=/{sub(/^[^"]*"/,""); sub(/".*$/,""); print; exit}' "$d/.gbg/config.toml")   # (3)
+    if [ "$v" = "dev" ] && ! grep -q '^name = "GBGCodingTools"' "$d/Project.toml" 2>/dev/null; then   # (4) the fixture: enclosing tool repo
+      r=$d; while [ "$r" != "/" ] && ! grep -q '^name = "GBGCodingTools"' "$r/Project.toml" 2>/dev/null; do r=$(dirname "$r"); done
+      grep -q '^name = "GBGCodingTools"' "$r/Project.toml" 2>/dev/null || { echo "gbg: pin is dev but no enclosing GBGCodingTools repository" >&2; exit 2; }
+      P=$r
+    else                                             # (5) the ordinary route: the consumer's docs environment (the tool root included)
+      P="$d/docs"
+      grep -q 'GBGCodingTools' "$P/Manifest.toml" 2>/dev/null || { echo "gbg: package not instantiated in $P" >&2; echo "run: julia --project=docs -e 'using Pkg; Pkg.instantiate()'" >&2; exit 2; }
+    fi
+  fi
+fi
+exec julia --startup-file=no --project="$P" -e "$JL" -- "$@"
