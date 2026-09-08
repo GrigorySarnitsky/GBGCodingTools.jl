@@ -28,11 +28,16 @@ const PKG_NAME = "GBGCodingTools"
 const JULIA_FLOOR = v"1.11"
 
 include("TreeHash.jl")
+include("HtmlWalker.jl")
 include("DocLints.jl")
 include("CLI/Main.jl")
 include("CLI/Schema.jl")
 include("CLI/Config.jl")
+include("Witnesses.jl")
+include("Reflection.jl")
+include("TestHarness.jl")
 include("CLI/Self.jl")
 include("CLI/Install.jl")
+include("CLI/Consolidate.jl")
 
 end # module
