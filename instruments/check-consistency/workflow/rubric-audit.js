@@ -1,0 +1,123 @@
+// THE RUBRIC AUDIT — for each finding a HUMAN read produced, which hat's rubric should have caught it, tested
+// BLIND: run the hat's verbatim persona on the passage alone and see whether the finding comes out.
+// Source: IT check-consistency/rubric_audit.js. Changes: generic `subject`; the defects and substrates
+// arrive as TEXT in args (no .gbg/ reads); no package string in the source.
+//
+// Args: { schema_version, round, subject, hats: [{key, persona}], items: [{id, title, defect, substrate}],
+//         models: {economy}, out }
+export const meta = {
+  name: 'rubric-audit',
+  description: 'Test, blind, whether each panel hat’s own rubric produces the findings a human read found',
+  phases: [{ title: 'Assign' }, { title: 'Blind run' }, { title: 'Score' }],
+}
+
+const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
+for (const k of ['subject', 'hats', 'items', 'models', 'out']) if (A[k] === undefined) throw new Error(`rubric-audit.js: args.${k} is required`)
+if (!A.hats.length || !A.items.length) throw new Error('rubric-audit.js: an empty audit is not a clean one')
+const ECONOMY = A.models.economy
+
+const ASSIGN_SCHEMA = {
+  type: 'object', additionalProperties: false,
+  properties: { assignments: { type: 'array', items: {
+    type: 'object', additionalProperties: false,
+    properties: {
+      id: { type: 'string' },
+      hats: { type: 'array', items: { type: 'string' }, description: 'the 1-2 hat keys whose OWN STATED RUBRIC covers this defect. [] if none does.' },
+      why: { type: 'string', description: 'quote the clause of the persona that covers it, or say why none does. <= 40 words.' },
+    }, required: ['id', 'hats', 'why'] } } },
+  required: ['assignments'],
+}
+const REPORT_SCHEMA = {
+  type: 'object', additionalProperties: false,
+  properties: { findings: { type: 'array', items: {
+    type: 'object', additionalProperties: false,
+    properties: { where: { type: 'string' }, defect: { type: 'string' } }, required: ['where', 'defect'] } } },
+  required: ['findings'],
+}
+const SCORE_SCHEMA = {
+  type: 'object', additionalProperties: false,
+  properties: {
+    id: { type: 'string' },
+    verdict: { type: 'string', enum: ['CAUGHT', 'MISSED', 'PARTIAL'] },
+    evidence: { type: 'string', description: 'the hat’s own words that match the defect, or "nothing reported on this" — <= 40 words' },
+  }, required: ['id', 'verdict', 'evidence'],
+}
+
+// 1. ASSIGN — this agent MAY see the findings; it is not the one under test.
+phase('Assign')
+const personaList = A.hats.map(h => `### ${h.key}\n${h.persona.slice(0, 1100)}`).join('\n\n')
+const CHUNK = 9
+const chunks = []
+for (let i = 0; i < A.items.length; i += CHUNK) chunks.push(A.items.slice(i, i + CHUNK))
+const assigned = (await parallel(chunks.map((chunk, ci) => () => agent(
+`You are mapping DEFECTS onto the RUBRICS that should have caught them, for a panel of documentation hats reviewing ${A.subject}. Below are the panel's personas, verbatim. For each finding, decide which hat's OWN STATED RUBRIC covers that defect.
+
+Judge the persona AS WRITTEN. The question is not "which hat is nearest in topic" but "does this persona's text instruct a reader to look for this class of thing?" If none does, answer with an EMPTY list — that is the finding this audit exists to produce, and a forced assignment destroys it. Quote the clause you relied on.
+
+PERSONAS:
+${personaList}
+
+FINDINGS IN YOUR CHUNK:
+${chunk.map(f => `--- ${f.id}: ${f.title} ---\n${f.defect}`).join('\n\n')}`,
+  { label: `assign:${ci + 1}`, phase: 'Assign', schema: ASSIGN_SCHEMA, agentType: 'general-purpose' })))
+).filter(Boolean).flatMap(r => r.assignments)
+
+const byHat = {}
+const unassigned = []
+for (const a of assigned) {
+  if (!a.hats || !a.hats.length) { unassigned.push(a); continue }
+  for (const h of a.hats) (byHat[h] ||= []).push(a.id)
+}
+log(`assigned ${assigned.length} findings; ${unassigned.length} covered by NO persona`)
+for (const u of unassigned) log(`   no rubric covers ${u.id}: ${u.why}`)
+
+// 2. BLIND RUN + 3. SCORE, pipelined per hat. The blind hat sees only the substrate text.
+phase('Blind run')
+const itemById = Object.fromEntries(A.items.map(i => [i.id, i]))
+const hatKeys = Object.keys(byHat).filter(k => A.hats.some(h => h.key === k))
+const results = await pipeline(
+  hatKeys,
+  (key) => {
+    const persona = A.hats.find(h => h.key === key).persona
+    const ids = byHat[key]
+    return agent(`${persona}
+
+YOUR SUBSTRATE is a set of passages from ${A.subject}, given here verbatim:
+${ids.map(i => `\n===== passage ${i} =====\n${itemById[i].substrate}`).join('\n')}
+
+Apply your lens and REPORT EVERY DEFECT YOU FIND. Be specific about which passage and what. These are excerpts, so ignore anything that is merely cut off at an edge; judge what is present. Do not open any file.`,
+      { label: `blind:${key}`, phase: 'Blind run', schema: REPORT_SCHEMA, agentType: 'general-purpose' })
+      .then(r => ({ key, ids, reported: (r && r.findings) || [] }))
+  },
+  (run) => {
+    if (!run) return null
+    const listing = run.reported.map((f, i) => `${i + 1}. [${f.where}] ${f.defect}`).join('\n') || '(reported nothing)'
+    return parallel(run.ids.map(id => () => agent(
+`You are scoring whether a documentation reviewer, working blind, found ONE specific known defect.
+
+THE KNOWN DEFECT (${id} — ${itemById[id].title}):
+${itemById[id].defect}
+
+WHAT THE REVIEWER REPORTED, having seen only the passage and never the defect description:
+${listing}
+
+Did the reviewer report THIS defect? CAUGHT — one of its items is this defect: same passage, same thing wrong with it. PARTIAL — it noticed the passage and something adjacent, but not the defect itself. MISSED — nothing in the list is this defect.
+
+DEFAULT TO MISSED. Topical proximity is not catching it: "this sentence is unclear" does not catch "this sentence states a false quantifier".`,
+      { label: `score:${run.key}-${id}`.slice(0, 60), phase: 'Score', schema: SCORE_SCHEMA, model: ECONOMY })
+      .then(v => ({ ...v, id, hat: run.key }))))
+  },
+)
+
+const scores = results.filter(Boolean).flat().filter(Boolean)
+const best = {}
+const rank = { CAUGHT: 2, PARTIAL: 1, MISSED: 0 }
+for (const s of scores) if (!best[s.id] || rank[s.verdict] > rank[best[s.id].verdict]) best[s.id] = s
+const tally = { CAUGHT: 0, PARTIAL: 0, MISSED: 0 }
+for (const id of Object.keys(best)) tally[best[id].verdict]++
+log(`BEST-OF verdicts across assigned hats: ${JSON.stringify(tally)}; ${unassigned.length} findings NO persona claimed`)
+const gaps = Object.values(best).filter(s => s.verdict !== 'CAUGHT')
+for (const g of gaps) log(`   GAP ${g.id} [${g.hat}] ${g.verdict}: ${g.evidence}`)
+await agent(`Use the Write tool to write EXACTLY this JSON to ${A.out} and return the single word done:\n\n${JSON.stringify({ schema_version: A.schema_version, round: A.round, tally, unassigned, gaps, scores, byHat }, null, 2)}`,
+  { label: 'write-rubric-audit', phase: 'Score', model: ECONOMY })
+return { written: Object.keys(best), dead: hatKeys.filter(k => !results[hatKeys.indexOf(k)]), empty: [], truncated: [] }
