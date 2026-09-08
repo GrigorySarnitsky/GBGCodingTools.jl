@@ -387,9 +387,14 @@ docs" in prose hand-rolls the battery (`round2-consumer.md:15-21`, F1).
 
 ### D7 — Workflow scripts: one generic engine per instrument, args-driven, catalogues as data, liveness only
 
-**Choice.** `instruments/<name>/workflow/*.js` live in the tool only and are invoked by absolute
-`scriptPath` from the pinned copy (verified 2026-09-06: the Workflow tool accepts an outside-project
-`scriptPath` and passes `args` through; `04-decision-record.md` "Verified facts"). No package string in
+**Choice.** `instruments/<name>/workflow/*.js` live in the tool only. They are invoked through a
+COPY that `gbg preflight` (and `pass open`) writes into the project, `.gbg/scratch/<round>/workflow/`
+(gitignored), and names as `scriptPath`; the pinned copy under `~/.julia/packages/` is never named
+directly. V1 (2026-09-09, `Aiporetne`, §11) is why: the Workflow tool accepts an outside-project
+`scriptPath` only for a file the session may already read — a session scratchpad, or a file it has
+`Read` — and refuses a fresh absolute path elsewhere ("scriptPath must be a script path this tool
+returned, or a file you can already read"); a `Read` of the pinned copy is exactly the out-of-project
+read D6 forbids. A path inside the working directory needs neither. No package string in
 any script: description, deliberate absences, surfaces, hats, lanes, oracles, claims arrive in
 `args`. Catalogues are data — `catalog/hats/*.toml` (generic hats with `{package.*}` placeholders:
 the eight shared by PF and IT — `consistency-matrix`, `software-architect`, `structure-consistency`,
@@ -413,8 +418,9 @@ A rulebook hat with two homes (catalogue and `.gbg/hats/`) is the twin class aga
 
 **Dominated.** *Per-consumer scripts*: the drift generator. *Hats as JS constants*: a release to add a
 domain hat (R10). *Scripts that tally*: grader tallies itself (`survey-check-consistency.md:281`).
-*Fallback if an outside-project `scriptPath` were refused*: preflight copies the script into
-`.gbg/scratch/` (gitignored) — documented, not expected to be needed.
+*Absolute `scriptPath` into the pinned copy* (the first draft's choice, verified from a scratchpad on
+2026-09-06): refused for a fresh path outside the project on 2026-09-09 (V1); the in-project copy,
+drafted as its fallback, is the rule.
 
 ### D8 — Deterministic helpers: one Julia CLI `gbg <noun> <verb>`; exit 0/1/2/3; one text-scan engine
 
@@ -1024,8 +1030,9 @@ Legend: **C** config (owned, validated) · **G** generated-managed (hash in `.gb
     rounds/.keep                       P   absence ⇒ ROUND.DIR fails
     rounds/<date>-<instrument>-<NN>/   P   §6
     requests/to-<PKG>-<date>-<topic>.md P  OPEN cross-package requests (tracked in the requester; a concluded one is deleted)
-    scratch/                           X   <round>/ manuscripts + seeded copies; public_surface.json; commit-message.txt;
-                                           bump-message.txt; fallback script copies
+    scratch/                           X   <round>/ manuscripts + seeded copies + workflow/ (the round's Workflow scripts, copied
+                                           from the pinned copy by preflight — D7, V1); public_surface.json; commit-message.txt;
+                                           bump-message.txt
   .claude/
     skills/check-docs/SKILL.md         G   ≤ 15-line stub (D6); likewise check-consistency, bug-hunt, audit-changes, gbg-doctor
     hooks/queue-guard.sh               G   every consumer; PF's queue-guard.sh verbatim (D13): guards WORK_QUEUE.md `- [ ]` items,
@@ -1413,7 +1420,8 @@ at the tool root, which must work when the dev checkout IS the consumer.
    every class, so two rounds never plant the same set) and plants them into the manuscripts in place —
    during the panel ONLY the seeded manuscripts exist under `.gbg/scratch/<round>/`; `ground_truth.json`
    is NOT written yet.
-4. **Panel.** `Workflow({scriptPath: "<pinned>/instruments/check-consistency/workflow/panel.js", args})`.
+4. **Panel.** `Workflow({scriptPath: "<root>/.gbg/scratch/<round>/workflow/panel.js", args})` — the
+   copy preflight wrote from the pinned copy's `instruments/check-consistency/workflow/` (D7, V1).
    Hats run in parallel; each is told to `Write` `findings/NN-<key>.json` FIRST, then return the same
    object (schema-forced); each is forbidden to open `.gbg/**` and `~/.gbg/**` (the manuscripts are
    handed to it as text in `args`). The script returns `{written, dead, empty, truncated}` and logs the
@@ -2060,6 +2068,21 @@ to be needed." And: "`Pkg.test()` honours `[sources] url+rev` in `test/Project.t
 The second quoted fact stands and its conclusion was revised on 2026-09-08 (IT amendment 3): the shim
 is no longer Julia-free — it execs `julia --project="<root>/docs"` — and that fact is exactly why it
 targets the `docs/` environment, the one that always carries a manifest (D2).
+
+**Day-1 verifications (the implementation plan's Phase 0 and 1.9; date, host, result):**
+
+- **V1 — 2026-09-09, `Aiporetne`: FAILED as first stated, fallback adopted as the rule.** Three probes
+  of `Workflow({scriptPath, args: {n}})` with the echo script: (i) `/tmp/gbg-probe/echo.js`, a fresh
+  path outside the project — REFUSED before launch: "scriptPath must be a script path this tool
+  returned, or a file you can already read (the working directory or a directory you have added)";
+  (ii) the same script under the session scratchpad — accepted, returned `{"ok":true,"echoed":{"n":1}}`
+  (run `wf_953a8a2f-378`), which is what the 2026-09-06 probe had measured; (iii) the `/tmp` path again
+  after the session had `Read` the file — accepted, returned `{"ok":true,"echoed":{"n":2}}` (run
+  `wf_7bdc504f-e46`). So the tool admits an
+  outside-project script only when the session may already read it, and the pinned copy under
+  `~/.julia/packages/` is neither readable-by-default nor to be `Read` (D6). D7 now names the
+  in-project copy, `.gbg/scratch/<round>/workflow/`, as the mechanism; `preflight` and `pass open`
+  write it. The first quoted fact above is thereby narrowed, not contradicted.
 
 **Residues this design states rather than closes** (each is transcript- or diff-visible, none
 gate-visible):
