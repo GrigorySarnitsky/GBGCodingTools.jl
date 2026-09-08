@@ -1,0 +1,16 @@
+# /bug-hunt lanes. The consumer's `territories` (config) are the class-free territory lanes; these two
+# FREE lanes are constants, always present and ANCHORED (D18): a lane with no list is the one that
+# catches what every list missed, and a missed bug nobody raises is never reproduced. Sources: IT hunt.js
+# FREE_LANES (generalised: the starting point is the package's own entry point, named in args).
+
+[[lane]]
+key = "free-hot-path"
+kind = "free"
+anchor = true
+brief = '''Start at the package's central entry point — {hunt.entry_point} — and read ONE COMPLETE PASS through it end to end, following every call into whatever module it lands in. Read the code, not the docstrings, and where a docstring makes a promise, check the code keeps it.'''
+
+[[lane]]
+key = "free-modules"
+kind = "free"
+anchor = true
+brief = '''Choose the two or three source files you judge most likely to be wrong — by size, by intricacy, by how much state they carry, by how little the suite exercises them — and READ THEM WHOLE, top to bottom. Say at the start which you chose and why.'''

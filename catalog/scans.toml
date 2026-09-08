@@ -1,0 +1,318 @@
+# catalog/scans.toml — every deterministic scan (docs/ARCHITECTURE.md §12.B, verbatim). Columns: id ·
+# rule · tier (hard = must be empty; triage = printed in full, never fails; "argcov_policy" = the ONE
+# configurable tier) · surfaces (config keys; docs = rationale + pages + literate; all = docs + src + ext)
+# · runner (julia = a function under src/Scans/ or Reflection; html = over the built site) · fixture
+# (the defect classes in fixture/GBG Fixture/defects.toml; a must-hit and a clean twin each).
+# `gbg selftest` fails when a scan function is unregistered here or a registered scan has no fixture pair.
+
+[[scan]]
+id = "SCAN.TABLE_INDENTED"
+rule = "RULE.DOC.TABLE_TOP_LEVEL"
+tier = "hard"
+surfaces = ["rationale", "pages"]
+runner = "julia"
+fixture = ["indented-table"]
+
+[[scan]]
+id = "SCAN.REGISTER"
+rule = "RULE.DOC.REGISTER"
+tier = "hard"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["knob"]
+
+[[scan]]
+id = "SCAN.PARTIAL_BARE"
+rule = "RULE.TEX.PARTIAL"
+tier = "hard"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["bare-partial"]
+
+[[scan]]
+id = "SCAN.THIN_SPACE"
+rule = "RULE.TEX.SPACING"
+tier = "hard"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["thin-space"]
+
+[[scan]]
+id = "SCAN.FRAC_UNBRACED"
+rule = "RULE.TEX.FRAC_BRACED"
+tier = "hard"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["frac-unbraced"]
+
+[[scan]]
+id = "SCAN.NEG_THIN_BIGL"
+rule = "RULE.TEX.SPACING"
+tier = "hard"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["neg-thin-bigl"]
+
+[[scan]]
+id = "SCAN.NEG_THIN_DOUBLE"
+rule = "RULE.TEX.SPACING"
+tier = "hard"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["neg-thin-double"]
+
+[[scan]]
+id = "SCAN.MATHBB_DIGIT"
+rule = "RULE.TEX.MATHBB"
+tier = "hard"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["mathbb-digit"]
+
+[[scan]]
+id = "SCAN.MATHBF"
+rule = "RULE.TEX.MATHBF"
+tier = "hard"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["mathbf-banned"]
+
+[[scan]]
+id = "SCAN.BOLDSYMBOL_UNBRACED"
+rule = "RULE.TEX.BOLDSYMBOL_BRACED"
+tier = "hard"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["boldsymbol-unbraced"]
+
+[[scan]]
+id = "SCAN.LEFTRIGHT"
+rule = "RULE.TEX.LEFTRIGHT"
+tier = "hard"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["left-right"]
+
+[[scan]]
+id = "SCAN.REF_ABUT_CODE"
+rule = "RULE.DOC.REF_ABUT"
+tier = "hard"
+surfaces = ["src", "rationale"]
+runner = "julia"
+fixture = ["ref-abut"]
+
+[[scan]]
+id = "SCAN.FIELD_DOCS"
+rule = "RULE.DOC.FIELDS"
+tier = "hard"
+surfaces = ["src", "ext"]
+runner = "julia"
+fixture = ["ghost-field", "undoc-field"]
+
+[[scan]]
+id = "SCAN.LINK_UNIFORMITY"
+rule = "RULE.DOC.LINKS"
+tier = "hard"
+surfaces = ["src"]
+runner = "julia"
+fixture = ["mixed-link-run"]
+
+[[scan]]
+id = "SCAN.ARG_BULLET_BOLD"
+rule = "RULE.DOC.ARG_BULLET"
+tier = "hard"
+surfaces = ["src", "ext"]
+runner = "julia"
+fixture = ["bold-arg-bullet"]
+
+[[scan]]
+id = "SCAN.INLINE_MATH_SPLIT"
+rule = "RULE.TEX.INLINE_ONE_LINE"
+tier = "hard"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["inline-math-split"]
+
+[[scan]]
+id = "SCAN.SWALLOWED_ESCAPE"
+rule = "RULE.TEX.SWALLOWED_ESCAPE"
+tier = "hard"
+surfaces = ["src", "ext"]
+runner = "julia"
+fixture = ["swallowed-escape"]
+
+[[scan]]
+id = "SCAN.RETIRED_CLAIMS"
+rule = "RULE.DOC.CURRENT"
+tier = "hard"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["retired-claim"]
+
+[[scan]]
+id = "SCAN.API_PAGE_STRUCTURE"
+rule = "RULE.DOC.INTERNAL_API"
+tier = "hard"
+surfaces = ["pages"]
+runner = "julia"
+fixture = ["internal-api-not-last", "empty-docs-block"]
+
+[[scan]]
+id = "SCAN.PROSE_SHAPE"
+rule = "RULE.DOC.SHAPE"
+tier = "hard"
+surfaces = ["src", "rationale", "pages"]
+runner = "julia"
+fixture = ["paragraph-over-cap", "fields-not-last"]
+
+[[scan]]
+id = "SCAN.AI_BANNER"
+rule = "RULE.DOC.AI_BANNER"
+tier = "hard"
+surfaces = ["rationale", "literate"]
+runner = "julia"
+fixture = ["banner-drift"]
+
+[[scan]]
+id = "SCAN.DOI_CROSSCHECK"
+rule = "RULE.CIT.FULL_INLINE"
+tier = "hard"
+surfaces = ["src"]
+runner = "julia"
+fixture = ["doi-missing"]
+
+[[scan]]
+id = "SCAN.HTML_RENDERED_MARKUP"
+rule = "RULE.TEX.RENDERED_MARKUP"
+tier = "hard"
+surfaces = ["built_html"]
+runner = "html"
+fixture = ["emphasis-survives"]
+
+[[scan]]
+id = "SCAN.HTML_DOCSTRING_ONCE"
+rule = "RULE.DOC.API_GROUPING"
+tier = "hard"
+surfaces = ["built_html"]
+runner = "html"
+fixture = ["docstring-twice"]
+
+[[scan]]
+id = "SCAN.HTML_PUBLIC_HOME"
+rule = "RULE.DOC.API_GROUPING"
+tier = "hard"
+surfaces = ["built_html"]
+runner = "html"
+fixture = ["unhomed-export"]
+
+[[scan]]
+id = "SCAN.HTML_BASE_LEAK"
+rule = "RULE.DOC.API_GROUPING"
+tier = "hard"
+surfaces = ["built_html"]
+runner = "html"
+fixture = ["base-leak"]
+
+[[scan]]
+id = "SCAN.ARGCOV"
+rule = "RULE.DOC.ARGCOV"
+tier = "argcov_policy"
+surfaces = ["src"]
+runner = "julia"
+fixture = ["undocumented-last-positional"]
+
+[[scan]]
+id = "SCAN.FORMULA_IN_BACKTICKS"
+rule = "RULE.TEX.RENDERED_MATH"
+tier = "triage"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["formula-backticks"]
+
+[[scan]]
+id = "SCAN.STRAY_TEX_DOLLAR"
+rule = "RULE.TEX.RENDERED_MATH"
+tier = "triage"
+surfaces = ["rationale", "pages"]
+runner = "julia"
+fixture = ["stray-dollar"]
+
+[[scan]]
+id = "SCAN.MANUAL_SPACING"
+rule = "RULE.TEX.SPACING"
+tier = "triage"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["manual-spacing"]
+
+[[scan]]
+id = "SCAN.CODE_IN_MATH"
+rule = "RULE.TEX.CODE_IN_MATH"
+tier = "triage"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["code-in-math"]
+
+[[scan]]
+id = "SCAN.CITATION_CRAMMED"
+rule = "RULE.CIT.BLOCK_LIST"
+tier = "triage"
+surfaces = ["src"]
+runner = "julia"
+fixture = ["crammed-citation"]
+
+[[scan]]
+id = "SCAN.DEAD_REF"
+rule = "RULE.DOC.NO_DEAD_REFS"
+tier = "triage"
+surfaces = ["src"]
+runner = "julia"
+fixture = ["dead-section-ref"]
+
+[[scan]]
+id = "SCAN.SENTENCE_OPENER"
+rule = "RULE.DOC.SENTENCE_OPENER"
+tier = "triage"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["lowercase-opener"]
+
+[[scan]]
+id = "SCAN.SIGNATURE_WIDE"
+rule = "RULE.DOC.SIGNATURE_MIRROR"
+tier = "triage"
+surfaces = ["src"]
+runner = "julia"
+fixture = ["wide-signature"]
+
+[[scan]]
+id = "SCAN.ABUTTING_SPANS"
+rule = "RULE.TEX.ONE_SPAN"
+tier = "triage"
+surfaces = ["src", "rationale", "pages"]
+runner = "julia"
+fixture = ["abutting-span"]
+
+[[scan]]
+id = "SCAN.SIGNATURE_FIDELITY"
+rule = "RULE.DOC.SIGNATURE_FIDELITY"
+tier = "triage"
+surfaces = ["src"]
+runner = "julia"
+fixture = ["stale-keyword"]
+
+[[scan]]
+id = "SCAN.XLINK"
+rule = "RULE.DOC.XLINK"
+tier = "triage"
+surfaces = ["src"]
+runner = "julia"
+fixture = ["unlinked-cross-module"]
+
+[[scan]]
+id = "SCAN.DUPREF"
+rule = "RULE.DOC.LINKS"
+tier = "triage"
+surfaces = ["src"]
+runner = "julia"
+fixture = ["double-link"]

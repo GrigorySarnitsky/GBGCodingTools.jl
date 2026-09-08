@@ -1,0 +1,2 @@
+# catalog/models.toml — the ONE place the economy model name appears (D18). A bump here is a PATCH.
+economy = "sonnet"
