@@ -1,7 +1,8 @@
 # Consolidate.jl — the built site → the two reader-text manuscripts. The Julia port of the consumers'
-# shared consolidate.py over HtmlWalker (Gumbo + AbstractTrees). ACCEPTANCE (1.6): byte-equal output to
-# src/CLI/consolidate.py on a real PF build and a real IT build; the Python is deleted in the commit
-# that passes. Every rendering rule below mirrors the Python one for one; a divergence is a port defect.
+# shared consolidate.py over HtmlWalker (Gumbo + AbstractTrees). ACCEPTANCE (1.6) PASSED 2026-09-09:
+# byte-equal output to the Python on a real PF build (18 pages) and a real IT build (22 pages), all four
+# manuscripts; the Python was deleted in that commit. Every rendering rule below mirrors the Python's one
+# for one, including BeautifulSoup's two whitespace behaviours (bs_string) — a divergence is a port defect.
 
 """
     consolidate(build_dir, withheld; out_full, out_siteonly) -> (pages, nfull, nsite)
@@ -59,12 +60,27 @@ const CONTAINERS = Set([:p, :div, :section, :article, :ul, :ol, :blockquote, :he
                         :strong, :em, :b, :i, :sup, :sub, :dl, :dt, :dd])
 const BLOCK_END = Set([:p, :div, :section, :blockquote, :dt, :dd])
 
+# BeautifulSoup's `endData` rule, mirrored: a whitespace-only string outside <pre> becomes one "\n" if
+# it contains a newline, else one " " (its ASCII_SPACES are space, \n, \t, \f, \r). Gumbo keeps such
+# nodes whole (parse_page asks it to), so the collapse is applied here; strings with content are untouched.
+const BS_SPACES = (' ', '\n', '\t', '\f', '\r')
+bs_string(t::AbstractString) = (!isempty(t) && all(c -> c in BS_SPACES, t)) ? (occursin('\n', t) ? "\n" : " ") : String(t)
+
+# bs4's get_text() over a non-<pre> element: every descendant string, each collapsed by the rule above.
+function bs_text(node)
+    io = IOBuffer()
+    for n in AbstractTrees.PreOrderDFS(node)
+        n isa HtmlWalker.HTMLText && write(io, bs_string(n.text))
+    end
+    return String(take!(io))
+end
+
 function render_node!(out::IOBuffer, el, parent_tag::Symbol)
     if el isa HtmlWalker.HTMLText
-        write(out, el.text); return                       # bs4: str(NavigableString). NOTE: bs4 also emits
-    end                                                   # HTML comments here; Gumbo drops them at parse time.
-                                                          # A Documenter article carries none; 1.6's byte
-                                                          # comparison is what confirms it.
+        write(out, bs_string(el.text)); return            # bs4: str(NavigableString) after endData. NOTE: bs4
+    end                                                   # also emits HTML comments here; Gumbo drops them at
+                                                          # parse time. A Documenter article carries none; 1.6's
+                                                          # byte comparison is what confirms it.
     el isa HtmlWalker.HTMLElement || return
     name = HtmlWalker.tagname(el); cls = HtmlWalker.classes(el)
     if name in (:script, :style)
@@ -72,12 +88,12 @@ function render_node!(out::IOBuffer, el, parent_tag::Symbol)
     elseif name == :a && "docs-heading-anchor" in cls
         return
     elseif name in (:h1, :h2, :h3, :h4, :h5, :h6)
-        txt = strip(replace(HtmlWalker.text_of(el), r"\s+" => " "))
+        txt = strip(replace(bs_text(el), r"\s+" => " "))
         write(out, "\n\n", "#"^parse(Int, String(name)[2:2]), " ", txt, "\n"); return
     elseif name == :pre
         write(out, "\n```\n", rstrip(HtmlWalker.text_of(el)), "\n```\n"); return
     elseif name == :code && parent_tag != :pre
-        write(out, "`", HtmlWalker.text_of(el), "`"); return
+        write(out, "`", bs_text(el), "`"); return
     elseif name == :table
         write(out, "\n", render_table(el), "\n"); return
     elseif name == :br
@@ -99,7 +115,7 @@ function render_table(tbl)
     rows = String[]
     for tr in HtmlWalker.elements(tbl, e -> HtmlWalker.tagname(e) == :tr)
         cells = HtmlWalker.elements(tr, e -> HtmlWalker.tagname(e) in (:th, :td))
-        push!(rows, join([strip(replace(HtmlWalker.text_of(c), r"\s+" => " ")) for c in cells], " | "))
+        push!(rows, join([strip(replace(bs_text(c), r"\s+" => " ")) for c in cells], " | "))
     end
     return join(rows, "\n")
 end
@@ -120,18 +136,4 @@ function page_text(path::AbstractString)
         end
     end
     return replace(String(take!(out)), r"\n{3,}" => "\n\n")
-end
-
-"""
-    consolidate_py(build_dir, withheld; out_full, out_siteonly)
-
-TRANSITIONAL: runs the carried `src/CLI/consolidate.py` (the consumers' shared script, verbatim) with
-`python3` — the fallback held in hand until the Julia port above is byte-compared against it on a
-real PF and a real IT build (1.6). The withheld list is the script's own constant, so `withheld` is
-ignored. Returns `nothing`; deleted together with the script in the commit that passes the comparison.
-"""
-function consolidate_py(build_dir::AbstractString, withheld; out_full::AbstractString, out_siteonly::AbstractString)
-    script = joinpath(pkgdir(GBGCodingTools), "src", "CLI", "consolidate.py")
-    Base.run(`python3 $script $build_dir $out_full $out_siteonly`)
-    return nothing
 end

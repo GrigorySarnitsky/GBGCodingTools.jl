@@ -1109,7 +1109,7 @@ branch = "master"                      # enum: master | main
 [surfaces]                             # the ONE copy of every surface list
 rationale  = ["docs/ARCHITECTURE.md", "docs/FORMALIZATION.md", "docs/TESTING.md", "docs/PERFORMANCE.md"]
 pages      = ["docs/src/**/*.md"]
-generated  = {globs = ["docs/src/architecture.md", "docs/src/formalization.md", "docs/src/testing.md", "docs/src/performance.md"], optional = true}
+generated  = {globs = ["docs/src/architecture.md", "docs/src/formalization.md", "docs/src/testing.md", "docs/src/performance.md", "docs/src/examples/*.md"], optional = true}
                                        # build products; `optional = true` exempts them from CFG.SURFACES' existence check on a fresh clone
 src        = ["src/*.jl"]
 ext        = ["ext/*.jl"]

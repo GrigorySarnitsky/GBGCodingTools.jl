@@ -17,9 +17,12 @@ export parse_page, article_of, text_of, elements, tagname, classes, attr
 """
     parse_page(path) -> HTMLDocument
 
-Parses the HTML file at `path` with Gumbo. Returns the document; its root is `doc.root`.
+Parses the HTML file at `path` with Gumbo, keeping whitespace-only text nodes (Gumbo.jl drops them by
+default, and a dropped space between two inline elements changes the reader text — the 1.6 byte
+comparison against the Python consolidator is what caught it). Returns the document; its root is
+`doc.root`.
 """
-parse_page(path::AbstractString) = parsehtml(read(path, String))
+parse_page(path::AbstractString) = parsehtml(read(path, String); preserve_whitespace = true)
 
 """
     tagname(node) -> Symbol

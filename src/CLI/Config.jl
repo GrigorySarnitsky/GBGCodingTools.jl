@@ -231,10 +231,27 @@ function read(root::Union{AbstractString,Nothing} = find_root(); check::Bool = t
     root = abspath(root)
     path = joinpath(root, ".gbg", "config.toml")
     isfile(path) || throw(ConfigError("$path does not exist"))
-    cfg = try
-        TOML.parsefile(path)
+    text = try
+        Base.read(path, String)
     catch err
-        throw(ConfigError("$path does not parse: " * sprint(showerror, err)))
+        throw(ConfigError("$path cannot be read: " * sprint(showerror, err)))
+    end
+    return parse(text; root, check)
+end
+
+"""
+    Config.parse(text; root, check = true) -> Dict
+
+The same validation, materialisation and path check as [`Config.read`](@ref) over the TOML `text` of a
+config instead of the file under `root/.gbg/` — what the self-tests and the Step-0 scratch runs use to
+describe a tree without writing into it. Returns the validated `Dict` with `cfg["root"] = root`.
+"""
+function parse(text::AbstractString; root::AbstractString, check::Bool = true)
+    root = abspath(root)
+    cfg = try
+        TOML.parse(String(text))
+    catch err
+        throw(ConfigError("config does not parse: " * sprint(showerror, err)))
     end
     schema = load_schema("config")
     errs = validate(schema, cfg)
