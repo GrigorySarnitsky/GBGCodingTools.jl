@@ -42,7 +42,7 @@ const EXEMPTABLE = ("LEG.", "GIT.", "AUDIT.")
 const QUICK = ["CFG.VALID", "CFG.SURFACES", "CFG.HATS", "CFG.SEEDS", "CFG.EXEMPTIONS", "PIN.CONFIG", "PIN.SOURCES", "PIN.NOT_DEV",
                "EXEMPT.EXPIRED", "EXEMPT.EXPIRING", "EXEMPT.STALE", "EXEMPT.BROAD", "WIRE.MAKEDOCS", "WIRE.RUNTESTS", "WIRE.CI_AUTH",
                "WIRE.GITIGNORE", "WIRE.CLAUDE_MD", "MANAGED.HASH", "ROUND.DIR", "ROUND.MARKER", "ROUND.OPEN", "ROUND.ABANDONED",
-               "ROUND.DEV", "ROUND.FROZEN", "POL.SENTINEL", "SELF.CONSUMER"]
+               "ROUND.DEV", "ROUND.FROZEN", "POL.SENTINEL", "SELF.CONSUMER", "AUDIT.GAP"]
 const DEEP = ["LOAD.ENVS", "BUILD.DOCS", "SELF.DOCS", "TEST.PKG", "WITNESSES.ESCALATED", "WITNESSES.BLOCKED"]
 const LEGACY_PILES = Dict(
     "GBGPeriodicFields" => [".claude/doc-review", ".claude/doc-review-prev", ".claude/doc-review-checkdocs", ".claude/audit-changes", ".claude/doc-review-adjudicated.md"],
@@ -520,7 +520,8 @@ check!("GIT.TRAILER", ctx -> begin
     log = git(ctx, "log", "-20", "--format=%H%x00%B%x01"); log === nothing && return na("GIT.TRAILER", "not a git repository")
     commits = filter(!isempty, split(log, '\x01'))
     missing_ = count(c -> !occursin("Co-Authored-By: Anthropic Claude <noreply@anthropic.com>", c), commits)
-    missing_ == 0 ? pass("GIT.TRAILER", "last $(length(commits)) commits carry the trailer") : warn("GIT.TRAILER", "$missing_ of the last $(length(commits)) commits lack the versionless trailer")
+    # a FAIL, not a WARN: RULE.GIT.TRAILER is a rule, and a check that cannot fail is not a check
+    missing_ == 0 ? pass("GIT.TRAILER", "last $(length(commits)) commits carry the trailer") : fail("GIT.TRAILER", "$missing_ of the last $(length(commits)) commits lack the versionless trailer")
 end)
 check!("ROUND.DIR", ctx -> begin
     isempty(ctx.cfg["instruments"]["enabled"]) && return pass("ROUND.DIR", "no instrument enabled")
@@ -569,6 +570,9 @@ check!("AUDIT.GAP", ctx -> begin
     for i in 2:length(audits)
         get(audits[i].round, "base", "") == get(audits[i-1].round, "closed_head", audits[i-1].round["head"]) || push!(gaps, "$(audits[i].name) base ≠ $(audits[i-1].name) head")
     end
+    # a gap between two audits is a WARN; NO audit at all is not contiguity, it is a repository whose
+    # changes have never been audited, and the check said `pass` for it (found by the self-application sweep)
+    isempty(audits) && return warn("AUDIT.GAP", "no closed audit-changes round: no change here has ever been audited")
     isempty(gaps) ? pass("AUDIT.GAP", "$(length(audits)) closed audit(s) contiguous") : warn("AUDIT.GAP", join(gaps, "; "))
 end)
 

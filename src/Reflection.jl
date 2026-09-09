@@ -303,17 +303,20 @@ end
 dehat(s::Symbol) = Symbol(replace(Base.Unicode.normalize(String(s), :NFD), r"[̂̄̇]" => ""))
 
 """
-    signature_fidelity(cfg; pkg = load_package(cfg)) -> Vector{String}
+    signature_fidelity(cfg; pkg = load_package(cfg), examined = nothing) -> Vector{String}
 
 Per exported binding, the displayed docstring signatures against the defined method table (positional
 names accent-normalised, keywords by name): a displayed keyword no method defines (a stale
 signature), a defined keyword no signature advertises, a displayed positional matching no argument
-name. The arguments are `cfg`, the validated config, and `pkg`, the loaded package (loaded from the
-config when not given). Returns one message per discrepancy; an extension-homed binding with no
-methods loaded is reported as skipped.
+name. The arguments are `cfg`, the validated config; `pkg`, the loaded package (loaded from the config
+when not given); and `examined`, an optional counter the caller passes to learn how many bindings were
+actually compared, which is the scan's population — a package that exports nothing compares nothing, and
+a scan that measured nothing must say so rather than print clean. Returns one message per discrepancy;
+an extension-homed binding with no methods loaded is reported as skipped.
 """
-function signature_fidelity(cfg::AbstractDict; pkg::Module = load_package(cfg))
+function signature_fidelity(cfg::AbstractDict; pkg::Module = load_package(cfg), examined::Union{Nothing,Base.RefValue{Int}} = nothing)
     displayed = Dict{Symbol,Set{Symbol}}(); displayed_kw = Dict{Symbol,Set{Symbol}}(); elided = Set{Symbol}()
+    shown_in = Dict{Symbol,Set{String}}(); curfile = Ref("")     # which file displayed each name
     note!(dict, name, args) = union!(get!(dict, name, Set{Symbol}()), args)
     function harvest!(ex)
         ex isa Expr && ex.head === :where && return harvest!(ex.args[1])
@@ -336,8 +339,10 @@ function signature_fidelity(cfg::AbstractDict; pkg::Module = load_package(cfg))
             end
         end
         note!(displayed, name, dehat.(pos)); note!(displayed_kw, name, kw)
+        push!(get!(shown_in, name, Set{String}()), curfile[])
     end
     for f in Config.surface_files(cfg, "src")
+        curfile[] = f
         for d in docstrings(cfg["root"], [f])
             header = collect(Iterators.takewhile(l -> startswith(l, "    "), split(d.body, '\n')))
             isempty(header) && continue
@@ -360,8 +365,15 @@ function signature_fidelity(cfg::AbstractDict; pkg::Module = load_package(cfg))
     pkgroot = pkgdir(pkg)
     function defined_sets(name)
         f = nothing
+        # the module that OWNS the binding, not merely the first that can see it: every module can see
+        # `Base.close`, and taking that one made every `close` argument look undefined (2026-09-09)
         for mod in mods
-            isdefined(mod, name) && (f = getfield(mod, name); break)
+            isdefined(mod, name) && Base.which(mod, name) === mod && (f = getfield(mod, name); break)
+        end
+        if f === nothing
+            for mod in mods
+                isdefined(mod, name) && (f = getfield(mod, name); break)
+            end
         end
         (f isa Function || f isa Type) || return nothing
         if f isa Function && isempty(methods(f))
@@ -381,11 +393,19 @@ function signature_fidelity(cfg::AbstractDict; pkg::Module = load_package(cfg))
         return (pos = pos, kw = kw, unnamed = unnamed)
     end
     exported = Set(names(pkg))
+    # A package that exports nothing at top level publishes through its DOCUMENTED surface instead (the
+    # tool is such a package: explicit `@docs` blocks, no `export`). Filtering on `names(pkg)` then leaves
+    # nothing to compare, and the scan printed clean over 74 files having examined zero bindings.
+    by_export = length(exported) > 1
     out = String[]
     for name in sort!(collect(keys(displayed)))
-        name in exported || continue
+        (!by_export || name in exported) || continue
+        # a name displayed in more than one file is two different functions sharing a bare name (`render`
+        # in Sync and in Rounds): the union of their signatures is nobody's, so it is skipped, not compared
+        length(get(shown_in, name, Set{String}())) > 1 && continue
         def = defined_sets(name)
         def === nothing && continue
+        examined === nothing || (examined[] += 1)                 # what was COMPARED: the scan's population
         if def === :extension
             push!(out, "$name: EXTENSION-HOMED (no methods loaded) — skipped"); continue
         end

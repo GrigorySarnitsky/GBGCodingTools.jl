@@ -49,7 +49,7 @@ end
 
 `:abandoned` when the marker carries `abandoned`, `:closed` when it carries `closed`, else `:open`.
 """
-state(r::AbstractDict) = haskey(r, "abandoned") ? :abandoned : haskey(r, "closed") ? :closed : :open
+state(round::AbstractDict) = haskey(round, "abandoned") ? :abandoned : haskey(round, "closed") ? :closed : :open
 
 """
     sha256_file(path) -> String

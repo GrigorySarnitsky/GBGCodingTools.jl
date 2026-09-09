@@ -199,7 +199,7 @@ unit,words,longest_paragraph,admonitions
 "Reflection.jl :: load_package(cfg) -> Module",41,38,0
 "Reflection.jl :: package_modules(pkg, cfg) -> Vector{Module}",35,31,0
 "Reflection.jl :: package_operations(pkg, modules) -> Set{Symbol}",87,83,0
-"Reflection.jl :: signature_fidelity(cfg; pkg = load_package(cfg)) -> Vector{S",81,75,0
+"Reflection.jl :: signature_fidelity(cfg; pkg = load_package(cfg), examined = ",125,116,0
 "Reflection.jl :: signature_parameters(inside) -> (positional, keyword)",58,54,0
 "Reflection.jl :: signature_types(inside) -> Dict{String,String}",21,18,0
 "Reflection.jl :: xlink(cfg; pkg = load_package(cfg), apply = false) -> Vector",81,37,0

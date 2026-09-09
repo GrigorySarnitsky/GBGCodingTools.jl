@@ -19,14 +19,14 @@ replacement with its immediate neighbourhood from the mutated context (a one-let
 as a bare `i` would otherwise match every finding). Whitespace is normalised on both sides. Returns
 the boolean.
 """
-function matches_seed(f::AbstractDict, s::AbstractDict)
-    text = join(vcat([get(f, "title", ""), get(f, "description", ""), get(f, "contradicts", "")], String.(get(f, "locations", String[]))), " ")
+function matches_seed(finding::AbstractDict, seed::AbstractDict)
+    text = join(vcat([get(finding, "title", ""), get(finding, "description", ""), get(finding, "contradicts", "")], String.(get(finding, "locations", String[]))), " ")
     norm(x) = replace(strip(x), r"\s+" => " ")
     text = norm(text)
-    repl = norm(s["replacement"])
+    repl = norm(seed["replacement"])
     isempty(repl) && return false
     length(repl) >= 6 && return occursin(repl, text)
-    ctx = norm(s["mutated_context"])
+    ctx = norm(seed["mutated_context"])
     k = findfirst(repl, ctx); k === nothing && return occursin(repl, text)
     lo = max(firstindex(ctx), prevind(ctx, first(k), min(12, first(k) - 1))); hi = min(lastindex(ctx), nextind(ctx, last(k), min(12, lastindex(ctx) - last(k))))
     probe = ctx[lo:hi]

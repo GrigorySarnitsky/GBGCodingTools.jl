@@ -26,3 +26,22 @@ the block shows in the diff instead of being silent.
 - [x] a reader for each data kind in prose_lines, so the existing engine can walk them
 - [x] scans over the data surface, with fixture pairs
 - [x] this package turns it on; the four science packages leave it empty
+
+## The sweep remainder (2026-09-09)
+
+- [ ] A1 the exit contract: main() and the verb dispatch invoked by a test
+- [ ] A2 Rounds.prepare, scan_finding, consolidate_to and rescan_alive under test
+- [ ] A3 a golden test for Consolidate over the fixture's built site
+- [ ] A4 the doctor's checks asserted, the --deep set first
+- [ ] A5 the reflection scans stop skipping silently: assert the package loaded
+- [ ] A6 every Workflow script parsed by a test
+- [ ] A7 the round lifecycle for the other three instruments
+- [x] B1 SCAN.SIGNATURE_FIDELITY reports the bindings it compared, not the file count
+- [x] B2 AUDIT.GAP is not vacuous and runs in QUICK
+- [ ] B3 the docs build stops hiding missing docstrings behind warnonly
+- [x] B4 GIT.TRAILER fails rather than warns
+- [ ] C1 RULE.DOC.ARGS_FORM gets an enforcer, or is declared a known weakness with a reason
+- [ ] C2 RULE.API.POSITIONAL likewise
+- [ ] D1 the design record's 28 files carry the provenance banner
+- [ ] D2 the false claims the sweep found in off-surface prose
+- [ ] D3 the dead schemas: loaded, or deleted

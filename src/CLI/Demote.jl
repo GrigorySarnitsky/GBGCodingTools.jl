@@ -10,10 +10,10 @@ carrying the same class and whether the diff swept it. An act verdict `HONORED` 
 is empty becomes `LINE-ONLY` (a fix graded honoured without the class enumerated is a line fix by
 construction); every other verdict is returned unchanged. Returns the verdict and whether it moved.
 """
-function demote(v::AbstractDict)
-    if get(v, "verdict", "") == "HONORED" && isempty(get(v, "class_surfaces", Any[]))
-        w = copy(v); w["verdict"] = "LINE-ONLY"; w["demoted_from"] = "HONORED"
-        return (w, true)
+function demote(verdict::AbstractDict)
+    if get(verdict, "verdict", "") == "HONORED" && isempty(get(verdict, "class_surfaces", Any[]))
+        demoted = copy(verdict); demoted["verdict"] = "LINE-ONLY"; demoted["demoted_from"] = "HONORED"
+        return (demoted, true)
     end
-    return (v, false)
+    return (verdict, false)
 end
