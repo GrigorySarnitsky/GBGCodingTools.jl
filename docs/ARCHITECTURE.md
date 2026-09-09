@@ -132,7 +132,8 @@ Julia package (root `Project.toml`, module `GBGCodingTools`) which carries the C
 the instrument corpus (protocols, Workflow `.js`, catalogues, schemas, policy, templates, fixture).
 One `version`, one tag per release, one `CHANGELOG.md`. Every deterministic engine is Julia inside
 that one package; JavaScript exists only for the Workflow scripts, `sh` only for the shim and the
-Stop hook; there is no Python (the one transitional exception is D8's `consolidate.py`).
+Stop hook; there is no Python (the one transitional exception, D8's `consolidate.py`, was deleted on
+2026-09-09 when its Julia port passed the byte comparison).
 
 **Forced by.** R1, R4, R7, R2. The divergences that must be *resolved* rather than parameterised all
 cross a language boundary: `verify-fixes.js` (JS) and `lint_review_closure` (Julia) were declared
@@ -445,14 +446,15 @@ with ids is §12.B) with tier `hard` (must be empty) or `triage` (printed, never
 scanned nothing); tier is not consumer-configurable — a consumer silences a scan only by a ledger
 entry. **ONE text-scan engine** (`gbg scan docs`, `src/Scans/`, one function per scan id — Julia now, with no
 Python twin): the docs-build wrapper carries no regex twins of its own (D9). **The one transitional
-Python file is `consolidate.py`** — the HTML-to-manuscript consolidator the three consumers already
-share byte-identically — kept INSIDE the tool (a versioned script in the one package still satisfies
-"one engine"; a consumer copy would not) until its Julia port (`Gumbo.jl` + `AbstractTrees`; Gumbo's
-C parser is unmaintained and has no CSS-selector traversal, so the walker is hand-rolled tree walking)
-is BYTE-COMPARED against it on a real PF and IT build — that comparison is the acceptance test, and
-the Python is deleted in the same commit that passes it (the implementation plan's Phase 1.6).
-`gbg scan html` (rendered-markup, docstring-once, public-home, base-leak) uses the same ported walker.
-This is the riskiest single port in the plan and is scheduled with the fallback in hand.
+Python file was `consolidate.py`** — the HTML-to-manuscript consolidator the three consumers shared
+byte-identically — kept INSIDE the tool (a versioned script in the one package still satisfied "one
+engine"; a consumer copy would not) until its Julia port (`Gumbo.jl` + `AbstractTrees`; Gumbo's C
+parser is unmaintained and has no CSS-selector traversal, so the walker is hand-rolled tree walking)
+was BYTE-COMPARED against it on a real PF and IT build. That comparison was the acceptance test
+(Phase 1.6); it passed on 2026-09-09 on 18 PF pages and 22 IT pages, all four manuscripts byte-equal,
+and the Python was deleted in that commit. `gbg scan html` (rendered-markup, docstring-once,
+public-home, base-leak) uses the same ported walker. This was the riskiest single port in the plan and
+was scheduled with the fallback in hand.
 
 **Forced by.** R3 (exit 2 is the missing case, exit 3 keeps a crash from reading as a finding —
 `round2-maintainer.md:205-209`); lessons 1–3 (`survey-checkdocs.md:200-202`); `guards.sh` hard-coding
@@ -557,7 +559,8 @@ status quo. *Bash scans*: `guards.sh`'s awk.
   fleet-wide, and loaded Documenter before every shim call, `gbg doctor` included. Its **compat bound
   is kept** under `[compat]` (CP resolves 1.19 against 1.17 elsewhere, `round2-consumer.md:181-184`);
   `WIRE.MAKEDOCS` is unchanged. The tool declares its own `[deps]`/`[compat]`
-  minimally: the stdlibs `TOML`, `SHA` (the tree hashing of D3), `Dates` and `Test`, plus `JSON3` (the
+  minimally: the stdlibs `TOML`, `SHA` (the tree hashing of D3), `Dates`, `Pkg` (the pin checks and
+`self verify` read `Pkg.dependencies()`), `Random` (the pass nonce) and `Test`, plus `JSON3` (the
   round artefacts — there is no JSON stdlib at the 1.11 floor) and `Gumbo` + `AbstractTrees` (the HTML
   walker behind `scan_html` and the consolidator, D8) — both hard dependencies; no JET/Aqua dependency —
   those stay consumer test deps, so the tool does not inherit SS's `LoweredCodeUtils` pin problem
@@ -953,9 +956,6 @@ GBGCodingTools.jl/
       Demote.jl                 THE demotion predicate (emptiness of class_surfaces[])
       Scan.jl                   `gbg scan docs|html` — the tiered engine over catalog/scans.toml
       Seed.jl Recall.jl Consolidate.jl Audit.jl Hunt.jl Selftest.jl
-      consolidate.py            the ONE transitional Python file (the consumers' shared consolidator), run by Consolidate.jl only until
-                                the Gumbo port is byte-compared against it on a real PF and IT build; deleted in the commit that passes
-                                (D8; implementation plan 1.6)
     Scans/<ScanId>.jl           the scan catalogue's implementations, one file per scan id (§12.B)
     TreeHash.jl                 git blob/tree hashing on the SHA stdlib; `gbg self verify`, PIN.SELF, PIN.TREESHA
     HtmlWalker.jl               the Gumbo + AbstractTrees walker shared by Consolidate.jl and the SCAN.HTML_* scans
@@ -2190,7 +2190,7 @@ verbatim — which `LEG.SENTINELS` matches against a consumer's `CLAUDE.md`. "So
 | `RULE.DOC.ARGCOV` | docs-rubric | Every argument in a docstring signature, positional and keyword, is documented in its body; run from the signature. (★ `argcov_policy` chooses triage or gate.) | "Argument coverage (signature-driven)" |
 | `RULE.DOC.REGISTER` | docs-rubric | A tunable is an option, setting or keyword argument — never a "knob" or "tweak". | "Neutral reference register" |
 | `RULE.DOC.RETURNS` | docs-rubric | A type docstring leads with its constructor; a `-> Type` arrow or a `Returns x.` sentence states the result where the identity sentence does not. | IT "Documentation policy" (generic rules join) |
-| `RULE.TEX.RENDERED_MATH` | latex-idiom | All math in docstrings and pages is rendered LaTeX in ``` `` ``` / ```` ```math ````, never Unicode glyphs, backticks or `$…$`; every code object is bound to its symbol on first mention. | "Math in docstrings and doc pages" |
+| `RULE.TEX.RENDERED_MATH` | latex-idiom | All math in docstrings and pages is rendered LaTeX in a double-backtick span or a `math` fence, never Unicode glyphs, single-backtick code or dollar signs; every code object is bound to its symbol on first mention. | "Math in docstrings and doc pages" |
 | `RULE.TEX.CODE_IN_MATH` | latex-idiom | A code identifier never sits inside a math span; inside a formula it is `\texttt{…}`. | micro-rule (a) |
 | `RULE.TEX.ONE_SPAN` | latex-idiom | A formula is one LaTeX span, never split across a math span and an adjacent code span. | micro-rule (b); IT `abutting_spans.py` |
 | `RULE.TEX.INLINE_ONE_LINE` | latex-idiom | An inline math span stays on one source line (a list-leader continuation drops it out of math mode). | micro-rule (c); `lint_inline_math` |
@@ -2266,11 +2266,11 @@ docstrings except by `SCAN.SWALLOWED_ESCAPE`, which is what that scan is for.
 | `SCAN.MATHBF` | `RULE.TEX.MATHBF` | hard | all | julia | IT `\\mathbf` ban, restricted to strings outside `notation.mathbf_allowed` | `mathbf-banned` |
 | `SCAN.BOLDSYMBOL_UNBRACED` | `RULE.TEX.BOLDSYMBOL_BRACED` | hard | all | julia | IT `\\boldsymbol(?!\{)` | `boldsymbol-unbraced` |
 | `SCAN.LEFTRIGHT` | `RULE.TEX.LEFTRIGHT` | hard | all | julia | IT must-be-empty `\\(left\|right)(?![a-zA-Z])`, with `\left\{`/`\right.` (the system idiom) excluded by the pattern | `left-right` |
-| `SCAN.REF_ABUT_CODE` | `RULE.DOC.REF_ABUT` | hard | src, rationale | julia | PF `\]\(@ref[^)]*\)\`` | `ref-abut` |
+| `SCAN.REF_ABUT_CODE` | `RULE.DOC.REF_ABUT` | hard | src, rationale | julia | PF: a `@ref` link immediately followed by a backtick | `ref-abut` |
 | `SCAN.FIELD_DOCS` | `RULE.DOC.FIELDS` | hard | src, ext | julia | PF `field_docs.py` (GHOST / UNDOC / NOLIST / STALE; `NO_FIELD_LIST` becomes ledger `scope = "scan"` entries; zero types matched ⇒ exit 2) | `ghost-field`, `undoc-field` |
 | `SCAN.LINK_UNIFORMITY` | `RULE.DOC.LINKS` | hard | src | julia | PF `link_uniformity.py` (adjacent-run unit; operators and the own binding excluded; no exports parsed ⇒ exit 2) | `mixed-link-run` |
-| `SCAN.ARG_BULLET_BOLD` | `RULE.DOC.ARG_BULLET` | hard | src, ext | julia | PF `^\s*[-*]\s+\*\*\`` (ledger `RULE.DOC.ARG_BULLET` silences it for SS if the owner so decides) | `bold-arg-bullet` |
-| `SCAN.INLINE_MATH_SPLIT` | `RULE.TEX.INLINE_ONE_LINE` | hard | all | julia | PF/IT/SS `lint_inline_math` (fence- and docstring-aware; list-leader continuation inside an open `` `` `` span) | `inline-math-split` |
+| `SCAN.ARG_BULLET_BOLD` | `RULE.DOC.ARG_BULLET` | hard | src, ext | julia | PF: a list bullet opening with a bold backtick span (ledger `RULE.DOC.ARG_BULLET` silences it for SS if the owner so decides) | `bold-arg-bullet` |
+| `SCAN.INLINE_MATH_SPLIT` | `RULE.TEX.INLINE_ONE_LINE` | hard | all | julia | PF/IT/SS `lint_inline_math` (fence- and docstring-aware; list-leader continuation inside an open double-backtick span) | `inline-math-split` |
 | `SCAN.SWALLOWED_ESCAPE` | `RULE.TEX.SWALLOWED_ESCAPE` | hard | src, ext | julia | PF `lint_swallowed_escapes` `(?<!\\)\\[abefnrtv0-7xuU]` inside docstrings | `swallowed-escape` |
 | `SCAN.RETIRED_CLAIMS` | `RULE.DOC.CURRENT` | hard | all | julia | PF `lint_retired_claims`; patterns from `docs.retired_claims` (whitespace-normalised over whole files, so a wrapped phrase is caught) | `retired-claim` (fixture config lists one) |
 | `SCAN.API_PAGE_STRUCTURE` | `RULE.DOC.INTERNAL_API`, `RULE.DOC.API_GROUPING` | hard | pages (`docs/src/api/`) | julia | PF `lint_api_page_structure` (`## Internal API` last; no empty `@docs`) | `internal-api-not-last`, `empty-docs-block` |
@@ -2282,7 +2282,7 @@ docstrings except by `SCAN.SWALLOWED_ESCAPE`, which is what that scan is for.
 | `SCAN.HTML_PUBLIC_HOME` | `RULE.DOC.API_GROUPING` | hard | built_html + `.gbg/scratch/public_surface.json` | html | PF built-HTML question 3 / IT question 2 (every derived public operation on a public page) | `unhomed-export` |
 | `SCAN.HTML_BASE_LEAK` | `RULE.DOC.API_GROUPING` | hard | built_html | html | PF built-HTML questions 1–2 (`Base.` names in an internal section not in `docs.unexported_base_expected`; a name in both a public and an internal section) | `base-leak` |
 | `SCAN.ARGCOV` | `RULE.DOC.ARGCOV` | ★ `argcov_policy` | src | julia | PF `argcov.jl` exemption classes ∪ IT identifier class + `arg = default`; a signature with a keyword in the fixture | `undocumented-last-positional` |
-| `SCAN.FORMULA_IN_BACKTICKS` | `RULE.TEX.RENDERED_MATH` | triage | all | julia | PF/IT `` `[^`]*[≤≥≠∈∉∇Δ⟨⟩‖√×⋅][^`]*` `` (FP: real Julia operators) | `formula-backticks` |
+| `SCAN.FORMULA_IN_BACKTICKS` | `RULE.TEX.RENDERED_MATH` | triage | all | julia | PF/IT: a single-backtick span holding one of the glyphs ≤ ≥ ≠ ∈ ∉ ∇ Δ ⟨ ⟩ ‖ √ × ⋅ (FP: real Julia operators) | `formula-backticks` |
 | `SCAN.STRAY_TEX_DOLLAR` | `RULE.TEX.RENDERED_MATH` | triage | rationale, pages | julia | PF/IT `\$[^$]*[\\_^{}][^$]*\$` | `stray-dollar` |
 | `SCAN.MANUAL_SPACING` | `RULE.TEX.SPACING` | triage | all | julia | PF/IT `\\[;:](?![a-zA-Z])` | `manual-spacing` |
 | `SCAN.CODE_IN_MATH` | `RULE.TEX.CODE_IN_MATH` | triage | all | julia | IT's span-only filter (a bare multi-letter run inside a math span, `\texttt`/`\text`/`\mathrm` arguments removed first) | `code-in-math` |
@@ -2290,7 +2290,7 @@ docstrings except by `SCAN.SWALLOWED_ESCAPE`, which is what that scan is for.
 | `SCAN.DEAD_REF` | `RULE.DOC.NO_DEAD_REFS`, `RULE.CIT.NO_INACCESSIBLE` | triage | src | julia | PF/IT `§[0-9]`, `docs/(src\|ARCHITECTURE\|…)`, `inspiration/` in a docstring | `dead-section-ref` |
 | `SCAN.SENTENCE_OPENER` | `RULE.DOC.SENTENCE_OPENER` | triage | all | julia | PF `sentence_openers.py` (computed sentence starts: after `. `, after a line ending a sentence, after a blank line; the link form; exemptions as the rule's; zero surfaces ⇒ exit 2) | `lowercase-opener` |
 | `SCAN.SIGNATURE_WIDE` | `RULE.DOC.SIGNATURE_MIRROR` | triage | src | julia | PF/IT awk (docstring signature line > 88 columns, per-file `FNR`) | `wide-signature` |
-| `SCAN.ABUTTING_SPANS` | `RULE.TEX.ONE_SPAN` | triage | src, rationale, pages | julia | IT `abutting_spans.py` (bare or linked code span beside a `` `` `` span, either order) | `abutting-span` |
+| `SCAN.ABUTTING_SPANS` | `RULE.TEX.ONE_SPAN` | triage | src, rationale, pages | julia | IT `abutting_spans.py` (bare or linked code span beside a double-backtick span, either order) | `abutting-span` |
 | `SCAN.SIGNATURE_FIDELITY` | `RULE.DOC.SIGNATURE_FIDELITY` | triage | src | julia | IT `signature_fidelity.jl` (displayed vs defined, accent-normalised spectral pairs) | `stale-keyword` |
 | `SCAN.XLINK` | `RULE.DOC.XLINK` | triage | src | julia | IT `xlink.jl`, dry-run default (`apply = true` explicit) | `unlinked-cross-module` |
 | `SCAN.DUPREF` | `RULE.DOC.LINKS` | triage | src | julia | IT `dupref.jl` (a target linked twice in one docstring) | `double-link` |
@@ -2510,3 +2510,16 @@ four `instruments/<name>/schema.json` args objects carry the new keys (`persona_
 directory holds the seeded copies alone until bank writes the ground truth. §11 gains this as the
 second platform residue beside V1; nothing in the vocabularies, the round contract's files or the
 closure channels changes.
+
+### Revision 10 (2026-09-09) — the rc.1 `/check-docs` round
+
+The first round over the tool's own docs (opened at `v1.0.0-rc.1`, 22 banked findings) amended this
+record in place: D1, D8 and the §3 tree now state the consolidator port in the past tense (the Python
+was deleted on 2026-09-09 when the byte comparison passed); D9's dependency list names `Pkg` and
+`Random`; the §12 rule and scan tables no longer nest a backtick inside a double-backtick span (Julia
+Markdown renders such a span as math, and the built page carried the raw source). Nothing in the
+vocabularies, the round contract or the closure channels changes.
+
+The round also found three defects in the code the docstrings described (`TreeHash.tree_hash` never omitted an empty directory; the rescan
+needle was cut in bytes; a witness that both failed and errored was filed `:blocked`) — each fixed with
+its test in the same pass.

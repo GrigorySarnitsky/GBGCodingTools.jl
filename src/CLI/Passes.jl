@@ -157,6 +157,9 @@ function read_verdicts(pd, kind, lane, nonce, sha, schema_name)
     return (:ok, d, "")
 end
 
+# the first 40 characters (never bytes: a hit's text carries Greek and math glyphs) of a hit's quoted line
+hit_needle(text::AbstractString) = first(strip(last(split(text, ": "))), 40)
+
 function rescan_alive(cfg, f)
     m = match(r"^(SCAN\.[A-Z0-9_.]+) — ", f["title"]); m === nothing && return true
     id = m.captures[1]
@@ -164,7 +167,7 @@ function rescan_alive(cfg, f)
     row === nothing && return true
     r = run_scan(cfg, scan_catalog()[row])
     loc = first(f["locations"]); file = first(split(loc, ':'))
-    return any(h -> h.file == file && occursin(strip(last(split(h.text, ": "))[1:min(end, 40)]), loc), r.hits) || any(h -> h.file == file, r.hits) && length(r.hits) > 0
+    return any(h -> h.file == file && occursin(hit_needle(h.text), loc), r.hits) || any(h -> h.file == file, r.hits) && length(r.hits) > 0
 end
 
 function ledger_adjudication(ledger, id, opened::AbstractString)

@@ -4,8 +4,9 @@
     This page is written by AI and is not reviewed regularly by a human.
 
 A **round** is one run of one instrument over one consumer, tracked under `.gbg/rounds/<date>-<instrument>-<NN>/`.
-The CLI writes its marker `ROUND.toml`; the lane agents write their lane files; the CLI banks, the session
-fixes, the verifiers grade, the CLI closes. Nothing is done by hand that a verb does.
+The CLI writes its marker `ROUND.toml`; the lane agents — one agent per surface or territory the
+instrument covers, a **lane** — write their lane files; the CLI banks, the session fixes, the verifiers
+grade, the CLI closes. Nothing is done by hand that a verb does.
 
 ## The lifecycle
 

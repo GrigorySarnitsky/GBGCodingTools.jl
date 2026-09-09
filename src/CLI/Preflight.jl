@@ -164,8 +164,10 @@ The check-consistency roster. The arguments are `cfg`, the validated config; `pr
 or `explicit` (the config's own when `nothing`); and `explicit`, the hat keys an explicit profile
 names.
 
-Each hat carries `key`, `substrate`, `needs`, `anchor` (a `domain_hats` entry may anchor any key), the
-persona with placeholders filled, and `not_applicable` when its substrate cannot exist here (`html`
+Each hat carries `key`; `substrate`, which view of the corpus the hat reads (`full`, the whole
+manuscript; `siteonly`, the public pages; `html`, the built site; `scans`, the scan report); `needs`;
+`anchor`, whether it runs at full strength rather than on the economy model (a `domain_hats` entry may
+anchor any key); the persona with placeholders filled, and `not_applicable` when its substrate cannot exist here (`html`
 needs with no built site, `git` with no repository, `rulebook` with no rulebook sections). Returns the
 list in config order.
 """

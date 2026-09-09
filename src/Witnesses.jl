@@ -10,7 +10,9 @@
 The witness runner of `/bug-hunt`. A witness is a self-contained Julia file asserting the CORRECT
 behaviour of the package, so it FAILS on a defective tree and PASSES once the defect is fixed;
 [`Witnesses.run`](@ref) executes every witness of a directory in a fresh process and holds the set to
-one expectation. An agent's account of a program that fails is not that program; this is.
+one expectation. The directory is usually a round's — a round being one run of one instrument over one
+consumer, recorded as a tracked directory under `.gbg/rounds/`. An agent's account of a program that
+fails is not that program; this is.
 """
 module Witnesses
 
@@ -28,7 +30,7 @@ The fields are:
 - `name` — the file name.
 - `status` — `:pass`, `:fail` (an assertion came out false — the witness working), `:broken` (an
   exception outside an assertion, a load error, or a pass with zero assertions — evidence of nothing),
-  `:blocked` (the file declares `# blocked: <reason>` and errored) or `:refused` (the file loads
+  `:blocked` (the file declares `# blocked: <reason>`, errored and failed nothing) or `:refused` (the file loads
   something it may not, or `include`s a file — never run).
 - `passes`, `fails`, `errors` — the Test counts the run reported (zeros when it did not get that far).
 - `reason` — the blocked reason, the refusal, or the first lines of a broken run's output.
@@ -142,8 +144,9 @@ the file in an outer testset and prints one machine-readable line `GBG_WITNESS p
 
 From that line the result is `:pass` (assertions and none failing), `:fail` (an assertion failed — the
 evidence a hunt wants), `:broken` (an exception outside an assertion, an assertion that threw, or a
-pass with ZERO assertions, which is evidence of nothing), or `:blocked` (it errored, was never seen to
-fail, and carries a `# blocked: <reason>` header). Returns the result with the counts and the reason.
+pass with ZERO assertions, which is evidence of nothing), or `:blocked` (it errored, failed nothing,
+and carries a `# blocked: <reason>` header; one that also failed is `:broken`, its reason naming both
+counts). Returns the result with the counts and the reason.
 """
 function run_one(path::AbstractString; project::AbstractString, package::AbstractString)
     name = basename(path)
@@ -163,8 +166,9 @@ function run_one(path::AbstractString; project::AbstractString, package::Abstrac
     end
     p, f, e = parse.(Int, m.captures)
     if e > 0
-        blocked === nothing || return WitnessResult(name, :blocked, p, f, e, blocked)
-        return WitnessResult(name, :broken, p, f, e, "an assertion threw: " * first(strip(text), 600))
+        # :blocked only when nothing failed: a witness that was seen to fail is evidence, never filed away
+        f == 0 && blocked !== nothing && return WitnessResult(name, :blocked, p, f, e, blocked)
+        return WitnessResult(name, :broken, p, f, e, (f > 0 ? "$f assertion(s) failed AND " : "") * "an assertion threw: " * first(strip(text), 600))
     end
     f > 0 && return WitnessResult(name, :fail, p, f, e, "")
     p == 0 && return WitnessResult(name, :broken, p, f, e, "passed with ZERO assertions — a witness that asserts nothing is evidence of nothing")

@@ -1,9 +1,9 @@
 """
     GBGCodingToolsDocumenterExt
 
-The Documenter extension of `GBGCodingTools`: it defines the body of [`GBGCodingTools.makedocs`](@ref),
+The `Documenter` extension of `GBGCodingTools`: it defines the body of [`GBGCodingTools.makedocs`](@ref),
 the mandatory wrapper a consumer's `docs/make.jl` calls. It loads only where `Documenter` is, which is a
-consumer's docs environment and nowhere else, so no shim call ever loads Documenter.
+consumer's docs environment and nowhere else, so no shim call ever loads `Documenter`.
 """
 module GBGCodingToolsDocumenterExt
 
@@ -13,7 +13,7 @@ import GBGCodingTools: makedocs
 """
     check(verb, code)
 
-Turns a verb's exit code into a build failure: returns `nothing` when `code == 0`, else throws
+Turns the exit code `code` of the verb `verb` into a build failure: returns `nothing` when `code == 0`, else throws
 `ErrorException("gbg <verb> returned <code>")`.
 """
 check(verb::AbstractString, code::Integer) = code == 0 ? nothing : error("gbg $verb returned $code")

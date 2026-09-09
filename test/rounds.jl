@@ -5,6 +5,13 @@ include("helpers.jl")
 # (hand-written verdicts) → grade → close refusals, on a fresh copy of the fixture. The instrument is
 # check-docs with a hand-planted lane file; `prepare` is exercised on its scan half only through the
 # engine (the build is the fixture's own test).
+# the needle grade uses to re-find a hard-scan hit is cut in characters, never bytes (rc.1 round, src#2)
+@testset "hit needle" begin
+    s = "docs/x.md:3: " * "αβγδε ≤ ∇ ⟨u⟩ "^6
+    @test length(G.Passes.hit_needle(s)) == 40
+    @test G.Passes.hit_needle("a: short") == "short"
+end
+
 @testset "round lifecycle" begin
     root = fixture_copy("round")
     cfg = G.Config.read(root)
@@ -30,8 +37,10 @@ include("helpers.jl")
         @test !haskey(args, "policy")                                         # payloads are paths, never text
         # a second preflight of the same instrument is refused
         @test G.Preflight.preflight(cfg, "check-docs"; io = devnull) == 2
-        # the gate refuses a build now, except under GBG_ROUND
-        @test G.gate(cfg, "check-docs"; io = devnull) == 1
+        # the gate refuses a build now, except under GBG_ROUND. The fixture's round can share its id with
+        # a real round of the tool (same date, same instrument), and `gbg round test` exports that id to
+        # this very suite: the refusal is asserted with the variable cleared.
+        withenv("GBG_ROUND" => nothing) do; @test G.gate(cfg, "check-docs"; io = devnull) == 1; end
         withenv("GBG_ROUND" => round) do; @test G.gate(cfg, "check-docs"; io = devnull) == 0; end
         # lane files by hand: every roster lane, one finding in the first, then bank
         lanes = [Dict("nn" => lpad(i, 2, '0'), "key" => r["key"]) for (i, r) in enumerate(rec["roster"])]

@@ -3,20 +3,30 @@
 
 The one shared tooling package of the GBG Julia packages: the review instruments, the docs-build
 wrapper and its scans, the test harness, the doctor and the policy prose, at one version pinned by every
-consumer. A consumer holds data; the tool holds behaviour; the only thing connecting them is a pin.
+consumer.
 
-The module is a map; every part is documented at its home:
+A consumer is a package that uses the tool — one of the four sibling GBG packages, or the tool itself;
+a pin is the `GBGCodingTools = "=X.Y.Z"` compat entry in the consumer's sub-environments, the one
+version it runs. A consumer holds data; the tool holds behaviour; the only thing connecting them is that
+pin.
 
-- [`main`](@ref) — the one entry point of the command line `gbg <noun> <verb>`; the exit contract is
-  0 clean, 1 substantive finding, 2 cannot evaluate, 3 crash.
+The module is a map; every part is documented at its home. The command line and its configuration:
+
+- [`main`](@ref) — the one entry point of `gbg <noun> <verb>`; the exit contract is 0 clean,
+  1 substantive finding, 2 cannot evaluate, 3 crash. The verbs live under `src/CLI/`, one file per
+  noun, each verb a function returning its exit code.
 - `Config` — [`Config.read`](@ref) loads and validates a consumer's `.gbg/config.toml`.
 - [`makedocs`](@ref) — the mandatory wrapper around `Documenter.makedocs` (defined by the Documenter
   extension; declared in `DocLints`).
+
+The engines:
+
 - `TestHarness`, `Reflection`, `Witnesses` — the Julia-side engines a consumer's tests and the
   instruments call.
+- [`scan_docs`](@ref), [`scan_html`](@ref), [`register_scan!`](@ref) — the deterministic text and
+  built-HTML scan engine over `catalog/scans.toml`, one function per scan id under `src/Scans/`.
 - `TreeHash` — git blob and tree hashing on the `SHA` stdlib, behind `gbg self verify`.
 - `HtmlWalker` — the Gumbo walker shared by the consolidator and the built-HTML scans.
-- The CLI files under `src/CLI/`, one per noun, each verb a function returning its exit code.
 """
 module GBGCodingTools
 

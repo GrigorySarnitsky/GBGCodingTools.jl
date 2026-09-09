@@ -1,5 +1,5 @@
 # Init.jl — `gbg init [--migrate] [--dry-run]`, `gbg migrate baselines`, `gbg new <Pkg>`: the consumer's
-# `.gbg/` and S-class files seeded from the package tree (ARCHITECTURE §4, §5; IMPLEMENTATION 1.3).
+# `.gbg/` and the seeded-once files seeded from the package tree (ARCHITECTURE §4, §5; IMPLEMENTATION 1.3).
 
 """
     Init
@@ -8,8 +8,8 @@ Seeds a consumer: [`Init.derive_config`](@ref) reads the package tree into a con
 [`Init.init`](@ref) writes `.gbg/` and the seeded-once files and renders the tool's entries into every
 sub-environment, [`Init.migrate_baselines`](@ref) converts the three Julia test literals to their TOML
 form textually, [`Init.migrate_seeds`](@ref) converts a former `seed_defects.py` catalogue, and
-[`Init.new`](@ref) adds a fifth package. `init` never renders the G files: that is `gbg sync`, which
-validates what `init` wrote.
+[`Init.new`](@ref) adds a fifth package. `init` never renders the generated files (the skill stubs,
+the hook, the CI fragments, the managed blocks): that is `gbg sync`, which validates what `init` wrote.
 """
 module Init
 
@@ -394,8 +394,8 @@ end
 
 `test/pass_audit.jl` → `[[row]] name, arrays = [{label, reads, writes, holder?}]` from every
 `audit(() -> …, "<row>", Traffic("<label>", …, (<reads>, <writes>)), …)` call; the counts are kept as
-the symbolic strings the file writes (`"3P"`, `"2M"`, `"0"`), a holder comment beside a `Traffic` kept
-as `holder`. Returns the document or `nothing`.
+the symbolic strings the file writes (`"3P"`, `"2M"`, `"0"`), a holder comment beside a
+[`TestHarness.Traffic`](@ref) kept as `holder`. Returns the document or `nothing`.
 """
 function convert_pass_audit(text::AbstractString)
     rows = Any[]
@@ -447,7 +447,7 @@ const BASELINES = (
     migrate_baselines(root = pwd(); dry_run = false, io = stdout) -> Int
 
 `gbg migrate baselines`: the textual converter from the consumer's existing test files to the three
-S-class TOMLs `TestHarness` reads. The arguments are `root`, the package root; `dry_run`, print the
+frozen TOML baselines `TestHarness` reads. The arguments are `root`, the package root; `dry_run`, print the
 TOML instead of writing it; and `io`, where the report goes.
 
 The `.jl` files are read, never `include`d or edited. A literal not found is reported and skipped

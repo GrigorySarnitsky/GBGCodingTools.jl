@@ -5,7 +5,8 @@
 """
     Sync
 
-Renders and checks the managed footprint of a consumer: the skill stubs, the Stop hook and its
+Renders and checks the managed footprint of a consumer — a managed file is one the tool renders into
+the consumer and hash-checks thereafter, edited only by `gbg sync`, never by hand: the skill stubs, the Stop hook and its
 `settings.json`, the policy copy under `.gbg/policy/`, the regressions README, the managed blocks of
 `CLAUDE.md` and `.gitignore`, the tool's entries in every sub-environment `Project.toml`, the CI
 fragments, and the sidecar `.gbg/managed.json`. [`Sync.plan`](@ref) computes what every managed file
@@ -186,7 +187,7 @@ end
 """
     plan(cfg; ledger = Ledger.read(cfg)) -> Vector{ManagedFile}
 
-Every generated-managed file (class G) for a consumer: one skill stub per enabled instrument plus
+Every generated-managed file for a consumer: one skill stub per enabled instrument plus
 `gbg-doctor`, `.claude/settings.json`, `.claude/hooks/queue-guard.sh`, the policy copy and
 `test/regressions/README.md`. The arguments are `cfg`, the validated config, and `ledger`, the ledger
 entries. The two managed blocks and the sub-environment entries are planned by

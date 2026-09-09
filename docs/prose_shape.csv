@@ -1,5 +1,5 @@
 unit,words,longest_paragraph,admonitions
-"ARCHITECTURE.md § D1 — Unit of distribution: one repository, one version, two ",236,100,0
+"ARCHITECTURE.md § D1 — Unit of distribution: one repository, one version, two ",247,111,0
 "ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze",484,313,0
 "ARCHITECTURE.md § D11 — Schemas: one JSON Schema per artefact kind in `schema/",93,49,0
 "ARCHITECTURE.md § D12 — Policy prose: single source `policy/*.md` with rule id",338,162,0
@@ -16,9 +16,10 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D5 — Config: one TOML file, one layer, one validator (Julia)",323,205,0
 "ARCHITECTURE.md § D6 — Skills: generated per-consumer stubs, bare names, `!`-b",442,311,0
 "ARCHITECTURE.md § D7 — Workflow scripts: one generic engine per instrument, ar",531,376,0
-"ARCHITECTURE.md § D8 — Deterministic helpers: one Julia CLI `gbg <noun> <verb>",473,299,0
-"ARCHITECTURE.md § D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `",1217,1106,0
+"ARCHITECTURE.md § D8 — Deterministic helpers: one Julia CLI `gbg <noun> <verb>",480,306,0
+"ARCHITECTURE.md § D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `",1230,1119,0
 "ARCHITECTURE.md § GBGCodingTools — architecture",479,347,1
+"ARCHITECTURE.md § Revision 10 (2026-09-09) — the rc.1 `/check-docs` round",140,95,0
 "ARCHITECTURE.md § Revision 2 (2026-09-07)",106,106,0
 "ARCHITECTURE.md § Revision 3 (2026-09-07)",232,232,0
 "ARCHITECTURE.md § Revision 4 (2026-09-08) — IT amendments + Python retirement",361,361,0
@@ -44,8 +45,8 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",772,333,0
 "ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",704,342,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
-"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",2794,2689,0
-"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1243,1068,0
+"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",2796,2691,0
+"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1272,1097,0
 "ARCHITECTURE.md § §12.C Doctor ids",135,134,0
 "ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
 "ARCHITECTURE.md § §3 Repository layout",1,1,0
@@ -85,7 +86,7 @@ unit,words,longest_paragraph,admonitions
 "Consolidate.jl :: consolidate(build_dir, withheld; out_full, out_siteonly) -> ",117,109,0
 "Consolidate.jl :: discover_pages(build_dir) -> Vector{Tuple{String,String,Stri",82,79,0
 "Consolidate.jl :: page_text(path) -> String",36,33,0
-"Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",50,46,0
+"Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",104,100,0
 "DocLints.jl :: makedocs(cfg; kwargs...)",146,65,0
 "Doctor.jl :: Check",37,30,0
 "Doctor.jl :: Doctor",79,78,0
@@ -97,7 +98,7 @@ unit,words,longest_paragraph,admonitions
 "Fleet.jl :: Fleet.diff(a, b; io = stdout) -> Int",82,38,0
 "Fleet.jl :: Fleet.rows(; deep = false) -> (rows, code)",99,92,0
 "Fleet.jl :: latest_tag(root) -> Union{VersionNumber,Nothing}",17,14,0
-"GBGCodingTools.jl :: GBGCodingTools",180,116,0
+"GBGCodingTools.jl :: GBGCodingTools",245,68,0
 "Gate.jl :: cmd_gate(args) -> Int",27,24,0
 "Gate.jl :: gate(cfg, instruments...; io = stderr) -> Int",169,69,0
 "Git.jl :: Git",34,33,0
@@ -119,7 +120,7 @@ unit,words,longest_paragraph,admonitions
 "HtmlWalker.jl :: tagname(node) -> Symbol",32,29,0
 "HtmlWalker.jl :: text_of(node) -> String",23,20,0
 "Hunt.jl :: cmd_witnesses(args) -> Int",23,20,0
-"Init.jl :: Init",68,67,0
+"Init.jl :: Init",79,78,0
 "Init.jl :: balanced_span(text, start) -> UnitRange",33,29,0
 "Init.jl :: convert_method_parity(text) -> Union{Dict,Nothing}",79,76,0
 "Init.jl :: convert_oracle_registry(text) -> Union{Dict,Nothing}",23,20,0
@@ -128,7 +129,7 @@ unit,words,longest_paragraph,admonitions
 "Init.jl :: enclosed_by_tool(root) -> Bool",30,27,0
 "Init.jl :: init(root = pwd(); migrate = false, dry_run = false, io = st",126,56,0
 "Init.jl :: is_tool_root(root) -> Bool",17,14,0
-"Init.jl :: migrate_baselines(root = pwd(); dry_run = false, io = stdout",99,48,0
+"Init.jl :: migrate_baselines(root = pwd(); dry_run = false, io = stdout",100,48,0
 "Init.jl :: migrate_seeds(root, cfg; io = stdout) -> Int",65,58,0
 "Init.jl :: new(pkgname; parent = pwd(), io = stdout) -> Int",72,32,0
 "Init.jl :: write_config(root, cfg) -> String",17,13,0
@@ -165,7 +166,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",131,80,0
 "Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
 "Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",54,51,0
-"Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",86,48,0
+"Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",122,84,0
 "Preflight.jl :: resolve_hunt_lanes(cfg) -> Vector{Dict}",22,19,0
 "Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",28,23,0
 "Preflight.jl :: stamps(cfg) -> Dict",27,24,0
@@ -173,7 +174,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: torn_check(cfg; io = stderr) -> Bool",40,34,0
 "Preflight.jl :: workflow_call(script, a) -> String",14,10,0
 "Preflight.jl :: write_payloads(cfg, instrument, round, roster; base = nothin",115,52,0
-"Recall.jl :: Recall",36,35,0
+"Recall.jl :: Recall",44,43,0
 "Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
 "Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0
 "Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
@@ -184,7 +185,7 @@ unit,words,longest_paragraph,admonitions
 "Reflection.jl :: Reflection",58,57,0
 "Reflection.jl :: WRAPPER_PHRASE",33,32,0
 "Reflection.jl :: all_package_functions(pkg, modules) -> Set{Symbol}",29,25,0
-"Reflection.jl :: argcov(cfg; exempt = (hit -> false)) -> (hits, population, s",129,119,0
+"Reflection.jl :: argcov(cfg; exempt = (hit -> false)) -> (hits, population, s",132,79,0
 "Reflection.jl :: docstrings(root, files) -> Vector{Docstring}",30,26,0
 "Reflection.jl :: dupref(cfg) -> Vector",40,37,0
 "Reflection.jl :: load_package(cfg) -> Module",41,38,0
@@ -195,7 +196,7 @@ unit,words,longest_paragraph,admonitions
 "Reflection.jl :: signature_types(inside) -> Dict{String,String}",21,18,0
 "Reflection.jl :: xlink(cfg; pkg = load_package(cfg), apply = false) -> Vector",81,37,0
 "Release.jl :: release(ver; io = stdout, skip_tests = false) -> Int",138,94,0
-"RoundFiles.jl :: RoundFiles",33,32,0
+"RoundFiles.jl :: RoundFiles",53,52,0
 "RoundFiles.jl :: read_round(dir) -> Union{Dict,Nothing}",25,22,0
 "RoundFiles.jl :: round_dirs(cfg) -> Vector{String}",24,21,0
 "RoundFiles.jl :: rounds(cfg) -> Vector{NamedTuple}",25,22,0
@@ -203,7 +204,7 @@ unit,words,longest_paragraph,admonitions
 "RoundFiles.jl :: state(round) -> Symbol",16,13,0
 "Rounds.jl :: Rounds",59,58,0
 "Rounds.jl :: abandon(cfg, round, reason; io = stdout) -> Int",68,60,0
-"Rounds.jl :: bank(cfg, round; io = stdout) -> Int",114,82,0
+"Rounds.jl :: bank(cfg, round; io = stdout) -> Int",132,100,0
 "Rounds.jl :: build(cfg, round; io = stdout) -> Int",55,48,0
 "Rounds.jl :: classify_lane(dir, inst, lane; first_sha = nothing) -> (stat",95,46,0
 "Rounds.jl :: guard(cfg, round; io = stderr, allow_config_change = false, ",105,46,0
@@ -213,7 +214,7 @@ unit,words,longest_paragraph,admonitions
 "Rounds.jl :: load(cfg, round) -> (dir, record)",16,11,0
 "Rounds.jl :: prepare(cfg, round; io = stdout) -> Int",114,84,0
 "Rounds.jl :: render(cfg, round; io = stdout) -> Int",46,39,0
-"Rounds.jl :: rerun(cfg, round, lanes; io = stdout) -> Int",59,51,0
+"Rounds.jl :: rerun(cfg, round, lanes; io = stdout) -> Int",74,66,0
 "Rounds.jl :: run_under_round(cfg, round, cmdline; log) -> Int",53,47,0
 "Rounds.jl :: test(cfg, round; io = stdout) -> Int",49,42,0
 "Scan.jl :: AI_BANNER",28,27,0
@@ -260,7 +261,7 @@ unit,words,longest_paragraph,admonitions
 "Selftest.jl :: selftest(; pinned = false, io = stdout) -> Int",104,95,0
 "Sync.jl :: Entry",38,28,0
 "Sync.jl :: ManagedFile",43,33,0
-"Sync.jl :: Sync",64,63,0
+"Sync.jl :: Sync",87,86,0
 "Sync.jl :: cmd_sync(args) -> Int",23,20,0
 "Sync.jl :: config_sha(cfg) -> String",27,24,0
 "Sync.jl :: deviations(cfg, ledger) -> Vector{Dict}",31,27,0
@@ -269,7 +270,7 @@ unit,words,longest_paragraph,admonitions
 "Sync.jl :: insert_fragments(yaml, frags; run_marker) -> String",106,61,0
 "Sync.jl :: managed_block(cfg, file, s) -> String",60,55,0
 "Sync.jl :: pin(cfg) -> String",18,15,0
-"Sync.jl :: plan(cfg; ledger = Ledger.read(cfg)) -> Vector{ManagedFile}",58,52,0
+"Sync.jl :: plan(cfg; ledger = Ledger.read(cfg)) -> Vector{ManagedFile}",56,50,0
 "Sync.jl :: read_sidecar(cfg) -> Dict",18,15,0
 "Sync.jl :: render(text, slots) -> String",27,23,0
 "Sync.jl :: render_policy(cfg, s; ledger) -> Vector{ManagedFile}",46,41,0
@@ -290,7 +291,7 @@ unit,words,longest_paragraph,admonitions
 "TestHarness.jl :: TestHarness",71,70,0
 "TestHarness.jl :: Traffic",67,56,0
 "TestHarness.jl :: allocation_completeness(pkg, modules; exempt = Dict{Symbol,S",89,46,0
-"TestHarness.jl :: audit(operation!, name, rows::Traffic...; print = false)",101,58,0
+"TestHarness.jl :: audit(operation!, name, rows::Traffic...; print = false)",109,66,0
 "TestHarness.jl :: count_expression(text, symbols) -> Int",53,49,0
 "TestHarness.jl :: counting(data::Array) -> CountingArray",11,8,0
 "TestHarness.jl :: display_gate(modules; no_display = Dict{Symbol,String}(), mi",108,98,0
@@ -310,18 +311,18 @@ unit,words,longest_paragraph,admonitions
 "TreeHash.jl :: TreeHash",54,53,0
 "TreeHash.jl :: blob_hash(path) -> String",35,32,0
 "TreeHash.jl :: tree_hash(dir; skip = ('.git',)) -> String",87,81,0
-"Witnesses.jl :: WitnessResult",110,100,0
-"Witnesses.jl :: Witnesses",66,65,0
+"Witnesses.jl :: WitnessResult",112,102,0
+"Witnesses.jl :: Witnesses",91,90,0
 "Witnesses.jl :: blocked_reason(path) -> Union{String,Nothing}",26,23,0
 "Witnesses.jl :: refusal(path, package) -> Union{String,Nothing}",54,50,0
 "Witnesses.jl :: run(dir; expect, package, project, names = String[], io = st",184,76,0
-"Witnesses.jl :: run_one(path; project, package) -> WitnessResult",152,67,0
+"Witnesses.jl :: run_one(path; project, package) -> WitnessResult",160,75,0
 "Witnesses.jl :: witness_project(root, witness_env, package) -> String",43,38,0
 "code_in_math.jl :: math_spans(lines) -> Vector{Tuple{Int,String}}",48,45,0
 "config.md § [The config](@id config)",170,62,1
 "html_docstring_once.jl :: page_bindings(page) -> Vector{NamedTuple}",43,40,0
 "index.md § GBGCodingTools",105,67,1
-"index.md § What a consumer has",89,89,0
+"index.md § What a consumer has",101,101,0
 "index.md § Where to start",69,69,0
 "install.md § The dev checkout",48,48,0
 "install.md § The pin",47,27,0
@@ -332,7 +333,7 @@ unit,words,longest_paragraph,admonitions
 "prose_shape.jl :: write_prose_shape_baseline(cfg) -> Int",13,10,0
 "rounds.md § Closure channels",91,80,0
 "rounds.md § The gate",61,61,0
-"rounds.md § [Rounds](@id rounds)",70,48,1
+"rounds.md § [Rounds](@id rounds)",83,61,1
 "rounds.md § item 1",42,42,0
 "rounds.md § item 2",29,29,0
 "rounds.md § item 3",12,12,0

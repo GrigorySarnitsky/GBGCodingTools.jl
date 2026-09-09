@@ -12,6 +12,14 @@ quarantined twice). CLI: `round bank` keeps no first-sight sha for a quarantined
 forgets the lanes it re-runs; `Git.run` keeps the environment (an annotated tag needs an identity); a dev
 checkout on a clean tag stamps its rounds with the tag. Rates comparable: yes.
 
+The rc.1 `/check-docs` round (2026-09-09-check-docs-01, 22 findings) fixed in code: `TreeHash.tree_hash`
+now omits an empty directory as `git write-tree` does; the rescan needle is cut in characters, not
+bytes; a witness that both failed and errored is `:broken`, never `:blocked`. In prose: the module map
+defines consumer and pin and names the scan engine; the verbs page carries `fleet`, `bump`, `release`
+and `selftest`; the design record's consolidator passages are in the past tense; no double-backtick
+span nests a backtick; the terms lane, hat, substrate, anchor, managed file, round and the act/state
+split are defined where first used; the traffic bookkeeping is an audit, not a ledger.
+
 ## 1.0.0-rc.1 — 2026-09-09
 
 The first release candidate: MAJOR (the first). Instruments affected: all four, first issue. Rates

@@ -8,7 +8,7 @@
     TestHarness
 
 The engines behind a consumer's `test/`: the allocation audit ([`@alloc_below`](@ref) and
-[`TestHarness.allocation_completeness`](@ref)), the element-traffic ledger
+[`TestHarness.allocation_completeness`](@ref)), the element-traffic audit
 ([`TestHarness.CountingArray`](@ref), [`TestHarness.Traffic`](@ref), [`TestHarness.audit`](@ref)), the
 method-parity baselines ([`TestHarness.method_parity`](@ref)), the oracle registry
 ([`TestHarness.oracle_registry`](@ref)), the display gate ([`TestHarness.display_gate`](@ref)), the
@@ -105,7 +105,7 @@ function allocation_completeness(pkg::Module, modules::AbstractVector{Module}; e
     return nothing
 end
 
-# ─────────────────────────────────────────────────────────────────────── element-traffic ledger
+# ─────────────────────────────────────────────────────────────────────── element-traffic audit
 
 """
     CountingArray{T,N} <: AbstractArray{T,N}
@@ -180,7 +180,7 @@ const AUDITED_TRAFFIC_OPS = Set{Symbol}()
 """
     audit(operation!, name, rows::Traffic...; print = false)
 
-One row of the traffic ledger. The arguments are `operation!`, a zero-argument closure running the
+One row of the traffic audit (the per-operation table of array reads and writes). The arguments are `operation!`, a zero-argument closure running the
 operation once over the counting arrays; `name`, the row's name (its leading token, up to whitespace,
 `(` or `∘`, is the operation recorded in [`AUDITED_TRAFFIC_OPS`](@ref)); `rows`, one [`Traffic`](@ref)
 per array with its frozen `(reads, writes)`; and `print`, print every measured count for
@@ -208,7 +208,7 @@ end
 """
     traffic_completeness(pkg, modules; exempt = Dict{Symbol,String}())
 
-The derived completeness check of the traffic ledger, the twin of [`allocation_completeness`](@ref)
+The derived completeness check of the traffic audit, the twin of [`allocation_completeness`](@ref)
 over [`AUDITED_TRAFFIC_OPS`](@ref). The arguments are `pkg`, the package module; `modules`, its owned
 modules; and `exempt`, operation name to reason for the operations deliberately not audited. Runs as a
 `@testset`. Returns `nothing`.

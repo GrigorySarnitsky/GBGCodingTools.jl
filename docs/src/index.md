@@ -14,8 +14,8 @@ through its sub-environment `Project.toml` files.
 
 ## What a consumer has
 
-A consumer carries a `.gbg/` directory: one config file, one exemption ledger, its domain hats, its
-seed catalogue, the rendered policy copy, and its review rounds. Everything else — the skill stubs, the
+A consumer carries a `.gbg/` directory: one config file, one exemption ledger, its domain hats (the
+reviewer personas of `/check-consistency`, one per aspect of the package's field), its seed catalogue, the rendered policy copy, and its review rounds. Everything else — the skill stubs, the
 Stop hook, the CI fragments, the managed blocks of `CLAUDE.md` and `.gitignore` — is rendered by
 [`gbg sync`](@ref GBGCodingTools.Sync.sync) from the pinned templates and checked by
 [`gbg doctor`](@ref GBGCodingTools.Doctor.run). The consumer's `docs/make.jl` calls

@@ -63,3 +63,14 @@ GBGCodingTools.Rounds.render
 GBGCodingTools.cmd_witnesses
 GBGCodingTools.audit_bank
 ```
+
+## Fleet and release
+
+```@docs
+GBGCodingTools.Fleet
+GBGCodingTools.Fleet.rows
+GBGCodingTools.Fleet.diff
+GBGCodingTools.bump
+GBGCodingTools.release
+GBGCodingTools.selftest
+```

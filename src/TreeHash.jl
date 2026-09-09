@@ -44,7 +44,7 @@ function tree_hash(dir::AbstractString; skip = (".git",))
         name in skip && continue
         path = joinpath(dir, name)
         if isdir(path) && !islink(path)
-            isempty(_nonempty(path, skip)) && continue
+            _nonempty(path, skip) || continue                # git tracks no empty directory
             push!(entries, (name, true, tree_hash(path; skip)))
         else
             push!(entries, (name, false, blob_hash(path)))
