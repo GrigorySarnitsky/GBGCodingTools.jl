@@ -3,7 +3,7 @@ include("helpers.jl")
 
 @testset "schemas" begin
     names = [replace(f, ".schema.json" => "") for f in readdir(joinpath(TOOL, "schema")) if endswith(f, ".schema.json")]
-    @test length(names) == 18
+    @test length(names) >= 16 && length(names) == length(unique(names))   # derived, never a cited count
     for n in names
         s = G.load_schema(n)
         @test s["type"] == "object"
@@ -61,6 +61,17 @@ include("helpers.jl")
         for i in ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
             s = read(joinpath(TOOL, "instruments", i, "schema.json"), String)
             for m in eachmatch(r"\"\$ref\"\s*:\s*\"([^\"]+)\"", s); @test startswith(m.captures[1], "#/"); end
+        end
+    end
+    @testset "every shipped schema is read by something" begin
+        # five schemas were shipped and loaded by no code path; two were superseded by the instrument
+        # schemas and deleted, three are wired. An unread schema drifts from the artefact it names.
+        src = join([read(f, String) for f in vcat([joinpath(r, x) for (r, _, fs) in walkdir(joinpath(TOOL, "src")) for x in fs if endswith(x, ".jl")],
+                                                  [joinpath(TOOL, "ext", x) for x in readdir(joinpath(TOOL, "ext"))])], "\n")
+        for f in readdir(joinpath(TOOL, "schema"))
+            endswith(f, ".schema.json") || continue
+            name = replace(f, ".schema.json" => "")
+            @test occursin("load_schema(\"" * name * "\")", src) || occursin("\"" * name * "\"", src)
         end
     end
     @testset "the home page's counts are the real ones" begin

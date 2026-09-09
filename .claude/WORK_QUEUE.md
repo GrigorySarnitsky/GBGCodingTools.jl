@@ -44,4 +44,4 @@ the block shows in the diff instead of being silent.
 - [ ] C2 RULE.API.POSITIONAL likewise
 - [ ] D1 the design record's 28 files carry the provenance banner
 - [ ] D2 the false claims the sweep found in off-surface prose
-- [ ] D3 the dead schemas: loaded, or deleted
+- [x] D3 the dead schemas: loaded, or deleted

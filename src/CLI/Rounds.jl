@@ -347,6 +347,8 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         plan, skipped = Seeds.select(cat, read(full, String), rec["seed_salt"])
         gt = Dict{String,Any}("schema_version" => 1, "round" => round, "salt" => rec["seed_salt"], "skipped" => skipped,
                               "seeded" => [Dict("id" => s["id"], "class" => s["class"], "page" => s["page"], "original_context" => s["original_context"], "mutated_context" => s["mutated_context"]) for s in plan])
+        errs = validate(load_schema("ground-truth"), gt)          # the schema existed and nothing read it
+        isempty(errs) || throw(RoundError("ground_truth.json would not validate: " * join(errs, "; ")))
         open(joinpath(dir, "ground_truth.json"), "w") do f; JSON3.pretty(f, JSON3.write(gt)); println(f); end
         marked = Recall.mark!(findings, Dict("seeded" => plan, "skipped" => skipped))
         recall = Recall.per_class(findings, Dict("seeded" => plan, "skipped" => skipped))
@@ -421,6 +423,8 @@ function hunt_bank!(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, f
         verdict == "REPRODUCED" && (rep["witness_sha256"] = bytes2hex(sha256(read(joinpath(wdir, wname)))))
         haskey(f, "docs_url") && !isempty(f["docs_url"]) && (rep["docs_url"] = f["docs_url"])
         verdict in ("REPRODUCED", "EVIDENCED") && (rep["disposition"] = Dict("state" => "open"); push!(confirmed, f))
+        errs = validate(load_schema("reproduction"), rep)         # likewise: written, never validated
+        isempty(errs) || throw(RoundError("the reproduction record of $(f["id"]) would not validate: " * join(errs, "; ")))
         name = replace(f["id"], "/" => "__", "#" => "_")
         open(joinpath(rdir, name * ".json"), "w") do fh; JSON3.pretty(fh, JSON3.write(rep)); println(fh); end
     end

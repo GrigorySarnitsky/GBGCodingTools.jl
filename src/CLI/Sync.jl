@@ -15,7 +15,8 @@ must contain; [`Sync.status`](@ref) compares the tree with it; [`Sync.sync`](@re
 module Sync
 
 using TOML, SHA, JSON3, Dates
-using ..GBGCodingTools: GBGCodingTools, PKG_NAME, PKG_UUID, Config, Ledger, tool_version, running_dev, parse_options, VERBS
+using ..GBGCodingTools: GBGCodingTools, PKG_NAME, PKG_UUID, Config, Ledger, tool_version, running_dev, parse_options, VERBS,
+      load_schema, validate
 
 const TOOL_URL = "https://github.com/GrigorySarnitsky/GBGCodingTools.jl.git"
 const INSTRUMENTS = ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
@@ -469,12 +470,16 @@ end
 """
     read_sidecar(cfg) -> Dict
 
-`.gbg/managed.json` parsed, or an empty record when absent. Returns the dictionary with a `files` map.
+`.gbg/managed.json` parsed and validated against `schema/managed.schema.json`, or an empty record when
+absent. The argument is `cfg`, the validated config. Throws a [`SyncError`](@ref) on a sidecar that does
+not validate, since every managed-file verdict is read from it. Returns the dictionary with a `files` map.
 """
 function read_sidecar(cfg::AbstractDict)
     p = sidecar_path(cfg)
     isfile(p) || return Dict{String,Any}("files" => Dict{String,Any}())
     d = JSON3.read(read(p, String), Dict{String,Any})
+    errs = validate(load_schema("managed"), d)                  # the schema existed and nothing read it
+    isempty(errs) || throw(SyncError("$(relpath(p, cfg["root"])) does not validate: " * join(errs, "; ")))
     haskey(d, "files") || (d["files"] = Dict{String,Any}())
     return d
 end
