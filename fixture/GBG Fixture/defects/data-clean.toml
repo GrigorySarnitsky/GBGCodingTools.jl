@@ -1,0 +1,3 @@
+# data-clean.toml — the clean twin of data-defects.toml: comment prose in the house register, with
+# every option called an option. Nothing here may be a hit of any scan that reads the data surface.
+setting = "value"

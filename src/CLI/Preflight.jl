@@ -375,8 +375,9 @@ covered_paths(cfg) = unique(vcat(["src", "test", "ext", "docs", "Project.toml"],
 """
     audit_kind(cfg, base) -> String
 
-`code` when the diff touches only code paths, `prose` when only `docs/`, `both` otherwise (an empty
-diff is `both`, so every lane runs and reports it empty).
+`prose` when the diff touches only files of the config's rationale, page and Literate surfaces, `code`
+when it touches none of them, `both` otherwise (an empty diff is `both`, so every lane runs and reports
+it empty). The arguments are `cfg`, the validated config, and `base`, the commit the range starts at.
 """
 function audit_kind(cfg::AbstractDict, base::AbstractString)
     changed = Git.changed_paths(cfg["root"], "$base..HEAD", covered_paths(cfg))

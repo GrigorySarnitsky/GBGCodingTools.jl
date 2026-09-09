@@ -5,7 +5,11 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 
 ## Unreleased
 
-MINOR so far. An adversarial sweep asked where the tool fails to apply its own machinery to itself; 46
+MINOR so far. `surfaces.data` is a new OPTIONAL surface, empty in every consumer: the comment prose of
+a package's data and script files, with a reader per kind (`#` comments, `//` comments, and a JSON
+file's `description` strings). Only a full-line comment is prose. It is on in this package, where it
+adds 79 files and 319 prose lines that no scan had ever read; `all` does not include it, so no
+existing scan changed meaning. An adversarial sweep asked where the tool fails to apply its own machinery to itself; 46
 claims, 31 stood, none refuted. Seven were defects that had never fired because three instruments have
 never run here: the dismissal closure gate compared an `items_sha` the script never wrote (so no round
 with an adjudication could close), the architecture verifier wrote a file its schema rejected, a

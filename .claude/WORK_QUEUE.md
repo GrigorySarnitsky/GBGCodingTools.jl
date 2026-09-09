@@ -21,3 +21,8 @@ the block shows in the diff instead of being silent.
 - [x] BUG: package.modules names 9 of the 20 modules
 - [x] populate this package's .gbg with its own hats, territories, oracles, audit claims, custom scans
 - [x] declare the numerical audit engines inapplicable here, as ledger entries with reasons
+
+- [x] a `data` surface kind: TOML, JSON, YAML, JS and template files, optional and off by default
+- [x] a reader for each data kind in prose_lines, so the existing engine can walk them
+- [x] scans over the data surface, with fixture pairs
+- [x] this package turns it on; the four science packages leave it empty

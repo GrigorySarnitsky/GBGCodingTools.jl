@@ -112,6 +112,7 @@ record explicitly.
 | `git.branch` | `master` \| `main` | config | IT on `main` (`survey-buildlints-hooks-policy.md:67`) |
 | `docs_post` | list of commands | config | IT's `git checkout -- docs/Project.toml` (`survey-checkdocs.md:126`) |
 | `schema.finding_types_extra` | list | config (the ONE schema extension point) | per-package `type` enums (`survey-check-consistency.md:202`) |
+| `surfaces.data` | list of globs, EMPTY by default | config | the tool's own catalogues, schemas, templates and scripts (Revision 14); a science package leaves it empty and nothing changes |
 | `[[scans.custom]]` | regex scans, tier FIXED to `triage` | config | PF's "spectral field" reminder, IT's stale variable names |
 | declared deviations from a policy rule | ledger entries with reason (+ expiry, or `overturn_when` for a finding) | ledger | IT's declined steer sentence, SS's keyword smoothing controls |
 
@@ -2591,4 +2592,19 @@ generated rules page. Two changes, not one: the scan exists, and `RULE.INST.FROZ
 deferral is one line in the round's `deferred.md`, which `gbg round close` carries into
 `.claude/WORK_QUEUE.md`, where the Stop hook holds the next session to it. A note is not a mechanism.
 MINOR; the closed vocabularies are unchanged.
+
+### Revision 14 (2026-09-09) — the optional data surface
+
+`surfaces.data`, empty in every consumer and on in the tool. The scan surfaces were derived from four
+numerical packages, where a package's meaning lives in docstrings and rendered mathematics. Most of this
+package is neither: catalogues, schemas, templates, the rulebook and eleven fan-out scripts, whose
+comment prose no scan had ever read. The surface is a list of globs like any other; what is new is the
+reader. `surface_kind` returns `:hashcomment` (TOML, YAML, `sh`, a template), `:slashcomment`
+(JavaScript) or `:jsondoc` (JSON, which has no comment syntax, so its prose is the value of every
+`description` string), and `data_prose_lines` walks them. Only a FULL-LINE comment is prose, so a
+pattern inside a value is never a hit. `SCAN.REGISTER`, `SCAN.RETIRED_CLAIMS` and `SCAN.SENTENCE_OPENER`
+read the surface where a package declares one; the fixture gains the `data-knob` class and its clean
+twin. The compound key `all` deliberately does NOT include `data`: a scan reads it only by naming it, so
+no existing scan changed meaning. Here the surface is 79 files and 319 prose lines that nothing had ever
+examined. MINOR: a new optional key, no vocabulary changed, every consumer unaffected until it opts in.
 

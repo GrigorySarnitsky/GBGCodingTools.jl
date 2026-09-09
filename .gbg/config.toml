@@ -35,6 +35,13 @@ branch = "master"
 
 [surfaces]
 built_html = "docs/build"
+# The optional data surface (empty in every consumer, on here): most of this package is not Julia and not
+# Markdown, and its comment prose was read by nothing. A file's COMMENTS are its prose; a JSON file's
+# `description` strings are. An inline comment after a value is not prose, so a pattern in a value is
+# never a hit.
+data = ["catalog/**/*.toml", "schema/*.json", "instruments/*/schema.json", "instruments/*/workflow/*.js",
+        "templates/*.tmpl", "templates/*.seed", "templates/*.snippet", "templates/*.block", "templates/*.md",
+        "templates/*.skeleton", "templates/queue-guard.sh.tmpl", "bin/gbg", ".claude/hooks/queue-guard.sh"]
 ext = ["ext/*.jl"]
 history_exempt = "docs/ARCHITECTURE.md#Revision history"
 literate = []

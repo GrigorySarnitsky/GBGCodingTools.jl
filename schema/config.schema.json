@@ -1,162 +1,548 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": ".gbg/config.toml — a consumer's one config file (docs/ARCHITECTURE.md §5)",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["tool", "package", "surfaces", "instruments"],
-  "$defs": {
-    "anchor": {"type": "string", "pattern": "^[^#]+#.+$", "description": "file#heading: the ONE heading in file whose text starts with heading"},
-    "anchor_or_absent": {"type": "string", "pattern": "^([^#]+#.+|absent)$"},
-    "strlist": {"type": "array", "items": {"type": "string"}},
-    "lane": {
-      "type": "object", "additionalProperties": false, "required": ["key", "files", "brief"],
-      "properties": {"key": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"}, "files": {"$ref": "#/$defs/strlist"}, "brief": {"type": "string"}}
-    },
-    "instrument": {"type": "string", "enum": ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]}
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": ".gbg/config.toml — a consumer's one config file (docs/ARCHITECTURE.md §5)",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "tool",
+  "package",
+  "surfaces",
+  "instruments"
+ ],
+ "$defs": {
+  "anchor": {
+   "type": "string",
+   "pattern": "^[^#]+#.+$",
+   "description": "file#heading: the ONE heading in file whose text starts with heading"
   },
-  "properties": {
-    "tool": {
-      "type": "object", "additionalProperties": false, "required": ["version"],
-      "properties": {
-        "version": {"type": "string", "pattern": "^([0-9]+\\.[0-9]+\\.[0-9]+|dev)$", "description": "the pin: a released vX.Y.Z without the v, or the literal dev (tool root and fixture only)"},
-        "schema": {"type": "integer", "minimum": 1, "default": 1}
-      }
+  "anchor_or_absent": {
+   "type": "string",
+   "pattern": "^([^#]+#.+|absent)$"
+  },
+  "strlist": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "lane": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "key",
+    "files",
+    "brief"
+   ],
+   "properties": {
+    "key": {
+     "type": "string",
+     "pattern": "^[a-z0-9][a-z0-9-]*$"
     },
-    "package": {
-      "type": "object", "additionalProperties": false,
-      "required": ["name", "description", "modules", "domain", "rulebook_sections", "julia_test", "docs_build"],
-      "properties": {
-        "name": {"type": "string", "pattern": "^[A-Z][A-Za-z0-9]*$"},
-        "description": {"type": "string", "minLength": 20},
-        "modules": {"$ref": "#/$defs/strlist", "minItems": 1},
-        "extensions": {"$ref": "#/$defs/strlist", "default": []},
-        "deliberate_absences": {"$ref": "#/$defs/strlist", "default": []},
-        "terms": {"$ref": "#/$defs/strlist", "default": []},
-        "domain": {"type": "string"},
-        "rulebook_sections": {"type": "array", "items": {"$ref": "#/$defs/anchor"}},
-        "julia_test": {"type": "string", "pattern": "Pkg\\.test\\(\\)"},
-        "docs_build": {"type": "string", "pattern": "docs/make\\.jl"},
-        "docs_post": {"$ref": "#/$defs/strlist", "default": []}
-      }
+    "files": {
+     "$ref": "#/$defs/strlist"
     },
-    "paths": {"type": "object", "additionalProperties": {"type": "string"}, "default": {}},
-    "git": {
-      "type": "object", "additionalProperties": false, "default": {"branch": "master"},
-      "properties": {"branch": {"type": "string", "enum": ["master", "main"], "default": "master"}}
-    },
-    "surfaces": {
-      "type": "object", "additionalProperties": false, "required": ["rationale", "pages", "src", "history_exempt"],
-      "properties": {
-        "rationale": {"$ref": "#/$defs/strlist"},
-        "pages": {"$ref": "#/$defs/strlist"},
-        "generated": {
-          "type": "object", "additionalProperties": false, "default": {"globs": [], "optional": true},
-          "properties": {"globs": {"$ref": "#/$defs/strlist", "default": []}, "optional": {"type": "boolean", "default": true}}
-        },
-        "src": {"$ref": "#/$defs/strlist", "minItems": 1},
-        "ext": {"$ref": "#/$defs/strlist", "default": []},
-        "literate": {"$ref": "#/$defs/strlist", "default": []},
-        "built_html": {"type": "string", "default": "docs/build", "description": "\"\" disables the built-HTML surface"},
-        "history_exempt": {"$ref": "#/$defs/anchor"},
-        "references_heading": {"$ref": "#/$defs/anchor_or_absent", "default": "absent"},
-        "glossary": {"type": "string"}
-      }
-    },
-    "docs": {
-      "type": "object", "additionalProperties": false, "default": {},
-      "properties": {
-        "doctest": {"type": "boolean", "default": true},
-        "admonition_titles": {"type": "string", "enum": ["always", "load-bearing"], "default": "always"},
-        "unexported_base_expected": {"$ref": "#/$defs/strlist", "default": []},
-        "retired_claims": {
-          "type": "array", "default": [],
-          "items": {"type": "object", "additionalProperties": false, "required": ["pattern", "reason"],
-                    "properties": {"pattern": {"type": "string"}, "reason": {"type": "string", "minLength": 10}}}
-        }
-      }
-    },
-    "rubric": {
-      "type": "object", "additionalProperties": false, "default": {},
-      "properties": {"leading_identity": {"type": "string", "enum": ["physical-meaning", "estimand"], "default": "physical-meaning"}}
-    },
-    "notation": {
-      "type": "object", "additionalProperties": false, "default": {},
-      "properties": {
-        "vectors": {"type": "string", "enum": ["component", "boldsymbol", "none"], "default": "component"},
-        "mathbf_allowed": {"$ref": "#/$defs/strlist", "default": ["\\mathbf{1}"]}
-      }
-    },
-    "citations": {
-      "type": "object", "additionalProperties": false, "default": {},
-      "properties": {"require_doi": {"type": "boolean", "default": true}}
-    },
-    "instruments": {
-      "type": "object", "additionalProperties": false, "required": ["enabled"],
-      "properties": {
-        "enabled": {"type": "array", "items": {"$ref": "#/$defs/instrument"}},
-        "check-docs": {
-          "type": "object", "additionalProperties": false, "default": {},
-          "properties": {
-            "argcov_policy": {"type": "string", "enum": ["triage", "gate"], "default": "triage"},
-            "lanes_extra": {"type": "array", "items": {"$ref": "#/$defs/lane"}, "default": []}
-          }
-        },
-        "check-consistency": {
-          "type": "object", "additionalProperties": false, "default": {},
-          "properties": {
-            "profile": {"type": "string", "enum": ["all", "core", "explicit"], "default": "all"},
-            "hats": {"$ref": "#/$defs/strlist", "default": []},
-            "core": {"$ref": "#/$defs/strlist", "default": []},
-            "seed_rounds": {"type": "boolean", "default": true},
-            "seed_catalog": {"type": "string", "default": ".gbg/seeds.toml"},
-            "design_docs_withheld": {"$ref": "#/$defs/strlist", "default": []},
-            "latex_source_globs": {"$ref": "#/$defs/strlist", "default": []},
-            "domain_hats": {
-              "type": "array", "default": [],
-              "items": {"type": "object", "additionalProperties": false, "required": ["key"],
-                        "properties": {"key": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
-                                       "anchor": {"type": "boolean", "default": true},
-                                       "substrate": {"type": "string", "enum": ["full", "siteonly"], "default": "full"}}}
-            }
-          }
-        },
-        "bug-hunt": {
-          "type": "object", "additionalProperties": false, "default": {},
-          "properties": {
-            "territories": {"type": "array", "items": {"$ref": "#/$defs/lane"}, "default": []},
-            "oracles": {"$ref": "#/$defs/strlist", "default": []},
-            "witness_env": {"type": "string", "default": "test"}
-          }
-        },
-        "audit-changes": {
-          "type": "object", "additionalProperties": false, "default": {},
-          "properties": {
-            "executable_claims": {"type": "object", "additionalProperties": {"type": "string"}, "default": {}},
-            "guard_symbols": {"$ref": "#/$defs/strlist", "default": []},
-            "invariants_section": {"$ref": "#/$defs/anchor"}
-          }
-        }
-      }
-    },
-    "cost": {
-      "type": "object", "additionalProperties": false, "default": {},
-      "properties": {"default": {"type": "string", "enum": ["economy", "full"], "default": "economy"}}
+    "brief": {
+     "type": "string"
+    }
+   }
+  },
+  "instrument": {
+   "type": "string",
+   "enum": [
+    "check-docs",
+    "check-consistency",
+    "bug-hunt",
+    "audit-changes"
+   ]
+  }
+ },
+ "properties": {
+  "tool": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "version"
+   ],
+   "properties": {
+    "version": {
+     "type": "string",
+     "pattern": "^([0-9]+\\.[0-9]+\\.[0-9]+|dev)$",
+     "description": "the pin: a released vX.Y.Z without the v, or the literal dev (tool root and fixture only)"
     },
     "schema": {
-      "type": "object", "additionalProperties": false, "default": {},
-      "properties": {"finding_types_extra": {"$ref": "#/$defs/strlist", "default": []}}
-    },
-    "scans": {
-      "type": "object", "additionalProperties": false, "default": {},
-      "properties": {
-        "custom": {
-          "type": "array", "default": [],
-          "items": {"type": "object", "additionalProperties": false, "required": ["id", "pattern", "surfaces", "reason"],
-                    "properties": {"id": {"type": "string", "pattern": "^[A-Z][A-Z0-9_.]*$"}, "pattern": {"type": "string"},
-                                   "surfaces": {"type": "array", "items": {"type": "string", "enum": ["rationale", "pages", "src", "ext", "literate", "docs", "all"]}},
-                                   "reason": {"type": "string", "minLength": 20}}}
-        }
-      }
+     "type": "integer",
+     "minimum": 1,
+     "default": 1
     }
+   }
+  },
+  "package": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "name",
+    "description",
+    "modules",
+    "domain",
+    "rulebook_sections",
+    "julia_test",
+    "docs_build"
+   ],
+   "properties": {
+    "name": {
+     "type": "string",
+     "pattern": "^[A-Z][A-Za-z0-9]*$"
+    },
+    "description": {
+     "type": "string",
+     "minLength": 20
+    },
+    "modules": {
+     "$ref": "#/$defs/strlist",
+     "minItems": 1
+    },
+    "extensions": {
+     "$ref": "#/$defs/strlist",
+     "default": []
+    },
+    "deliberate_absences": {
+     "$ref": "#/$defs/strlist",
+     "default": []
+    },
+    "terms": {
+     "$ref": "#/$defs/strlist",
+     "default": []
+    },
+    "domain": {
+     "type": "string"
+    },
+    "rulebook_sections": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/anchor"
+     }
+    },
+    "julia_test": {
+     "type": "string",
+     "pattern": "Pkg\\.test\\(\\)"
+    },
+    "docs_build": {
+     "type": "string",
+     "pattern": "docs/make\\.jl"
+    },
+    "docs_post": {
+     "$ref": "#/$defs/strlist",
+     "default": []
+    }
+   }
+  },
+  "paths": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string"
+   },
+   "default": {}
+  },
+  "git": {
+   "type": "object",
+   "additionalProperties": false,
+   "default": {
+    "branch": "master"
+   },
+   "properties": {
+    "branch": {
+     "type": "string",
+     "enum": [
+      "master",
+      "main"
+     ],
+     "default": "master"
+    }
+   }
+  },
+  "surfaces": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "rationale",
+    "pages",
+    "src",
+    "history_exempt"
+   ],
+   "properties": {
+    "rationale": {
+     "$ref": "#/$defs/strlist"
+    },
+    "pages": {
+     "$ref": "#/$defs/strlist"
+    },
+    "generated": {
+     "type": "object",
+     "additionalProperties": false,
+     "default": {
+      "globs": [],
+      "optional": true
+     },
+     "properties": {
+      "globs": {
+       "$ref": "#/$defs/strlist",
+       "default": []
+      },
+      "optional": {
+       "type": "boolean",
+       "default": true
+      }
+     }
+    },
+    "src": {
+     "$ref": "#/$defs/strlist",
+     "minItems": 1
+    },
+    "ext": {
+     "$ref": "#/$defs/strlist",
+     "default": []
+    },
+    "literate": {
+     "$ref": "#/$defs/strlist",
+     "default": []
+    },
+    "built_html": {
+     "type": "string",
+     "default": "docs/build",
+     "description": "\"\" disables the built-HTML surface"
+    },
+    "history_exempt": {
+     "$ref": "#/$defs/anchor"
+    },
+    "references_heading": {
+     "$ref": "#/$defs/anchor_or_absent",
+     "default": "absent"
+    },
+    "glossary": {
+     "type": "string"
+    },
+    "data": {
+     "$ref": "#/$defs/strlist",
+     "default": [],
+     "description": "OPTIONAL and empty by default: the package's data and script files (TOML, JSON, YAML, JavaScript, sh, templates) whose COMMENTS and description strings are prose the fleet reads. A package with none leaves it empty and nothing changes."
+    }
+   }
+  },
+  "docs": {
+   "type": "object",
+   "additionalProperties": false,
+   "default": {},
+   "properties": {
+    "doctest": {
+     "type": "boolean",
+     "default": true
+    },
+    "admonition_titles": {
+     "type": "string",
+     "enum": [
+      "always",
+      "load-bearing"
+     ],
+     "default": "always"
+    },
+    "unexported_base_expected": {
+     "$ref": "#/$defs/strlist",
+     "default": []
+    },
+    "retired_claims": {
+     "type": "array",
+     "default": [],
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "pattern",
+       "reason"
+      ],
+      "properties": {
+       "pattern": {
+        "type": "string"
+       },
+       "reason": {
+        "type": "string",
+        "minLength": 10
+       }
+      }
+     }
+    }
+   }
+  },
+  "rubric": {
+   "type": "object",
+   "additionalProperties": false,
+   "default": {},
+   "properties": {
+    "leading_identity": {
+     "type": "string",
+     "enum": [
+      "physical-meaning",
+      "estimand"
+     ],
+     "default": "physical-meaning"
+    }
+   }
+  },
+  "notation": {
+   "type": "object",
+   "additionalProperties": false,
+   "default": {},
+   "properties": {
+    "vectors": {
+     "type": "string",
+     "enum": [
+      "component",
+      "boldsymbol",
+      "none"
+     ],
+     "default": "component"
+    },
+    "mathbf_allowed": {
+     "$ref": "#/$defs/strlist",
+     "default": [
+      "\\mathbf{1}"
+     ]
+    }
+   }
+  },
+  "citations": {
+   "type": "object",
+   "additionalProperties": false,
+   "default": {},
+   "properties": {
+    "require_doi": {
+     "type": "boolean",
+     "default": true
+    }
+   }
+  },
+  "instruments": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "enabled"
+   ],
+   "properties": {
+    "enabled": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/instrument"
+     }
+    },
+    "check-docs": {
+     "type": "object",
+     "additionalProperties": false,
+     "default": {},
+     "properties": {
+      "argcov_policy": {
+       "type": "string",
+       "enum": [
+        "triage",
+        "gate"
+       ],
+       "default": "triage"
+      },
+      "lanes_extra": {
+       "type": "array",
+       "items": {
+        "$ref": "#/$defs/lane"
+       },
+       "default": []
+      }
+     }
+    },
+    "check-consistency": {
+     "type": "object",
+     "additionalProperties": false,
+     "default": {},
+     "properties": {
+      "profile": {
+       "type": "string",
+       "enum": [
+        "all",
+        "core",
+        "explicit"
+       ],
+       "default": "all"
+      },
+      "hats": {
+       "$ref": "#/$defs/strlist",
+       "default": []
+      },
+      "core": {
+       "$ref": "#/$defs/strlist",
+       "default": []
+      },
+      "seed_rounds": {
+       "type": "boolean",
+       "default": true
+      },
+      "seed_catalog": {
+       "type": "string",
+       "default": ".gbg/seeds.toml"
+      },
+      "design_docs_withheld": {
+       "$ref": "#/$defs/strlist",
+       "default": []
+      },
+      "latex_source_globs": {
+       "$ref": "#/$defs/strlist",
+       "default": []
+      },
+      "domain_hats": {
+       "type": "array",
+       "default": [],
+       "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "key"
+        ],
+        "properties": {
+         "key": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+         },
+         "anchor": {
+          "type": "boolean",
+          "default": true
+         },
+         "substrate": {
+          "type": "string",
+          "enum": [
+           "full",
+           "siteonly"
+          ],
+          "default": "full"
+         }
+        }
+       }
+      }
+     }
+    },
+    "bug-hunt": {
+     "type": "object",
+     "additionalProperties": false,
+     "default": {},
+     "properties": {
+      "territories": {
+       "type": "array",
+       "items": {
+        "$ref": "#/$defs/lane"
+       },
+       "default": []
+      },
+      "oracles": {
+       "$ref": "#/$defs/strlist",
+       "default": []
+      },
+      "witness_env": {
+       "type": "string",
+       "default": "test"
+      }
+     }
+    },
+    "audit-changes": {
+     "type": "object",
+     "additionalProperties": false,
+     "default": {},
+     "properties": {
+      "executable_claims": {
+       "type": "object",
+       "additionalProperties": {
+        "type": "string"
+       },
+       "default": {}
+      },
+      "guard_symbols": {
+       "$ref": "#/$defs/strlist",
+       "default": []
+      },
+      "invariants_section": {
+       "$ref": "#/$defs/anchor"
+      }
+     }
+    }
+   }
+  },
+  "cost": {
+   "type": "object",
+   "additionalProperties": false,
+   "default": {},
+   "properties": {
+    "default": {
+     "type": "string",
+     "enum": [
+      "economy",
+      "full"
+     ],
+     "default": "economy"
+    }
+   }
+  },
+  "schema": {
+   "type": "object",
+   "additionalProperties": false,
+   "default": {},
+   "properties": {
+    "finding_types_extra": {
+     "$ref": "#/$defs/strlist",
+     "default": []
+    }
+   }
+  },
+  "scans": {
+   "type": "object",
+   "additionalProperties": false,
+   "default": {},
+   "properties": {
+    "custom": {
+     "type": "array",
+     "default": [],
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "id",
+       "pattern",
+       "surfaces",
+       "reason"
+      ],
+      "properties": {
+       "id": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Z0-9_.]*$"
+       },
+       "pattern": {
+        "type": "string"
+       },
+       "surfaces": {
+        "type": "array",
+        "items": {
+         "type": "string",
+         "enum": [
+          "rationale",
+          "pages",
+          "src",
+          "ext",
+          "literate",
+          "docs",
+          "all"
+         ]
+        }
+       },
+       "reason": {
+        "type": "string",
+        "minLength": 20
+       }
+      }
+     }
+    }
+   }
   }
+ }
 }

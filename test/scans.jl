@@ -56,7 +56,8 @@ include("helpers.jl")
         @test isempty(r.hits) && r.exempted > 0
         led2 = [Dict{String,Any}("id" => "SCAN.REGISTER", "scope" => "scan", "target" => "defects/Defects.jl", "reason" => "x"^40, "recorded" => Dates.today())]
         r2 = G.run_scan(cfg, row; ledger = led2)
-        @test isempty(r2.hits) && r2.exempted == 1
+        # a file-targeted entry exempts THAT file and nothing else: the planted data-surface hit survives
+        @test r2.exempted == 1 && length(r2.hits) == 1 && r2.hits[1].file == "defects/data-defects.toml"
         led3 = [Dict{String,Any}("id" => "SCAN.REGISTER", "scope" => "scan", "target" => "*", "reason" => "x"^40, "recorded" => Dates.today(), "match" => Dict("arg_type" => "Integer"))]
         @test_throws G.Ledger.LedgerError G.run_scan(cfg, row; ledger = led3)   # a text scan refuses arg_type
     end

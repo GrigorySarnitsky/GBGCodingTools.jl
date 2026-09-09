@@ -139,8 +139,9 @@ end
 """
     surface_files(cfg, key) -> Vector{String}
 
-The files of one surface key of `cfg["surfaces"]` — `rationale`, `pages`, `src`, `ext`, `literate`, or
-the compound keys `docs` (rationale + pages + literate) and `all` (docs + src + ext) — relative to the
+The files of one surface key of `cfg["surfaces"]` — `rationale`, `pages`, `src`, `ext`, `literate`,
+`data`, or the compound keys `docs` (rationale + pages + literate) and `all` (docs + src + ext) —
+relative to the
 root, each file once, sorted. Generated pages (`surfaces.generated.globs`) are removed from `pages`,
 since they are build products. Returns the list.
 """
@@ -170,7 +171,7 @@ the seed catalogue exist. Returns the problems found, empty when all hold.
 function check_paths(cfg::AbstractDict)
     root = cfg["root"]; errs = String[]
     s = cfg["surfaces"]
-    for k in ("rationale", "pages", "src", "ext", "literate")
+    for k in ("rationale", "pages", "src", "ext", "literate", "data")
         for g in get(s, k, String[])
             isempty(glob_files(root, g)) && push!(errs, "surfaces.$k: glob $(repr(g)) matches no file")
         end

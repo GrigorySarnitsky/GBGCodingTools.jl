@@ -1,0 +1,4 @@
+# data-defects.toml — a planted data-surface defect: the comment prose of a data file is read by the
+# scans that read any prose. One knob too many is the plant; nothing below it is scanned, because an
+# inline comment after a value is not a prose line.
+key = "value"   # a knob here is NOT prose and must not be a hit

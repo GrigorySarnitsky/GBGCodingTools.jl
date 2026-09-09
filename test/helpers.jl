@@ -44,6 +44,7 @@ function defects_config(root = FIXTURE)
     append!(cfg["surfaces"]["pages"], ["defects/page.md", "defects/api/defects.md"])
     push!(cfg["surfaces"]["rationale"], "defects/RATIONALE.md")
     push!(cfg["surfaces"]["literate"], "defects/literate-no-banner.jl")
+    cfg["surfaces"]["data"] = ["defects/data-*.toml"]      # the optional data surface, on for the corpus
     return cfg
 end
 

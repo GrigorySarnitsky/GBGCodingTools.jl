@@ -20,6 +20,11 @@ scan = "SCAN.REGISTER"
 file = "defects/Defects.jl"
 fragment = "knob"
 [[defect]]
+class = "data-knob"
+scan = "SCAN.REGISTER"
+file = "defects/data-defects.toml"
+fragment = "knob"
+[[defect]]
 class = "bare-partial"
 scan = "SCAN.PARTIAL_BARE"
 file = "defects/Defects.jl"
@@ -232,6 +237,9 @@ file = "docs/src/notation.md"
 [[clean]]
 scan = "SCAN.REGISTER"
 file = "src/FixtureC.jl"
+[[clean]]
+scan = "SCAN.REGISTER"
+file = "defects/data-clean.toml"
 [[clean]]
 scan = "SCAN.SIBLING_LINK"
 file = "docs/src/index.md"

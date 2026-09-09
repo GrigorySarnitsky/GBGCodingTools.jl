@@ -17,9 +17,9 @@ fixture = ["indented-table"]
 id = "SCAN.REGISTER"
 rule = "RULE.DOC.REGISTER"
 tier = "hard"
-surfaces = ["all"]
+surfaces = ["all", "data"]
 runner = "julia"
-fixture = ["knob"]
+fixture = ["knob", "data-knob"]
 
 [[scan]]
 id = "SCAN.PARTIAL_BARE"
@@ -153,7 +153,7 @@ fixture = ["swallowed-escape"]
 id = "SCAN.RETIRED_CLAIMS"
 rule = "RULE.DOC.CURRENT"
 tier = "hard"
-surfaces = ["all"]
+surfaces = ["all", "data"]
 runner = "julia"
 fixture = ["retired-claim"]
 
@@ -289,7 +289,7 @@ fixture = ["dead-section-ref"]
 id = "SCAN.SENTENCE_OPENER"
 rule = "RULE.DOC.SENTENCE_OPENER"
 tier = "triage"
-surfaces = ["all"]
+surfaces = ["all", "data"]
 runner = "julia"
 fixture = ["lowercase-opener"]
 

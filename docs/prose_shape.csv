@@ -23,6 +23,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § Revision 11 (2026-09-09) — the owner's home-page review",136,136,0
 "ARCHITECTURE.md § Revision 12 (2026-09-09) — a documentation round that change",123,123,0
 "ARCHITECTURE.md § Revision 13 (2026-09-09) — the scan the rc.1 round was owed,",138,138,0
+"ARCHITECTURE.md § Revision 14 (2026-09-09) — the optional data surface",191,191,0
 "ARCHITECTURE.md § Revision 2 (2026-09-07)",106,106,0
 "ARCHITECTURE.md § Revision 3 (2026-09-07)",232,232,0
 "ARCHITECTURE.md § Revision 4 (2026-09-08) — IT amendments + Python retirement",361,361,0
@@ -44,7 +45,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § item 8",83,83,0
 "ARCHITECTURE.md § item 9",91,91,0
 "ARCHITECTURE.md § §0 The design sentence and the requirements",440,337,0
-"ARCHITECTURE.md § §1 The platform / product model",770,533,0
+"ARCHITECTURE.md § §1 The platform / product model",802,565,0
 "ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",772,333,0
 "ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1089,541,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
@@ -85,7 +86,7 @@ unit,words,longest_paragraph,admonitions
 "Config.jl :: glob_to_regex(pattern) -> Regex",36,33,0
 "Config.jl :: read(root = find_root(); check = true) -> Dict",71,63,0
 "Config.jl :: resolve_anchor(root, anchor) -> (file, line, count)",69,63,0
-"Config.jl :: surface_files(cfg, key) -> Vector{String}",59,55,0
+"Config.jl :: surface_files(cfg, key) -> Vector{String}",60,56,0
 "Config.md § Config",22,22,1
 "Consolidate.jl :: consolidate(build_dir, withheld; out_full, out_siteonly) -> ",117,109,0
 "Consolidate.jl :: discover_pages(build_dir) -> Vector{Tuple{String,String,Stri",82,79,0
@@ -162,7 +163,7 @@ unit,words,longest_paragraph,admonitions
 "Passes.jl :: grade(cfg, round; io = stdout) -> Int",119,85,0
 "Passes.jl :: pass_open(cfg, round; regrade = false, io = stdout) -> Int",132,59,0
 "Preflight.jl :: Preflight",57,56,0
-"Preflight.jl :: audit_kind(cfg, base) -> String",31,27,0
+"Preflight.jl :: audit_kind(cfg, base) -> String",56,52,0
 "Preflight.jl :: catalog_sha() -> String",14,11,0
 "Preflight.jl :: config_sha(cfg) -> String",13,10,0
 "Preflight.jl :: copy_scripts(cfg, instrument, round) -> String",54,49,0
@@ -233,6 +234,7 @@ unit,words,longest_paragraph,admonitions
 "Scan.jl :: apply_ledger(cfg, ledger, row, hits) -> (kept, exempted, dis",117,61,0
 "Scan.jl :: built_pages(build_dir) -> Vector{String}",37,34,0
 "Scan.jl :: cmd_scan(args) -> Int",37,34,0
+"Scan.jl :: data_prose_lines(kind, lines) -> Vector{ProseLine}",92,88,0
 "Scan.jl :: docstring_blocks(cfg, files) -> Vector",54,50,0
 "Scan.jl :: mask_code_spans(line) -> String",65,62,0
 "Scan.jl :: prose_lines(cfg, file) -> Vector{ProseLine}",64,60,0

@@ -115,11 +115,46 @@ end
 otherwise. Returns the symbol.
 """
 function surface_kind(cfg::AbstractDict, file::AbstractString)
+    for g in get(cfg["surfaces"], "data", String[])                 # the optional data surface, checked first:
+        if occursin(Config.glob_to_regex(g), file)                  # a .jl file may be declared data (a script, not source)
+            endswith(file, ".json") && return :jsondoc
+            any(e -> endswith(file, e), (".js", ".mjs", ".cjs")) && return :slashcomment
+            return :hashcomment
+        end
+    end
     endswith(file, ".jl") || return :markdown
     for g in get(cfg["surfaces"], "literate", String[])
         occursin(Config.glob_to_regex(g), file) && return :literate
     end
     return :julia
+end
+
+"""
+    data_prose_lines(kind, lines) -> Vector{ProseLine}
+
+The prose of a data-surface file: for `:hashcomment` (TOML, YAML, `sh`, a template) every full-line `#`
+comment with the marker stripped; for `:slashcomment` (JavaScript) every full-line `//` comment; for
+`:jsondoc` (JSON, which has no comment syntax) the value of every `"description"` string, since that is
+where a schema keeps its prose. The arguments are `kind`, the file kind [`surface_kind`](@ref) returned,
+and `lines`, the file's lines. Returns the prose lines; an inline comment after code is not one, so a
+pattern in a value is never read as prose.
+"""
+function data_prose_lines(kind::Symbol, lines)
+    out = ProseLine[]
+    for (n, raw) in enumerate(lines)
+        s = strip(raw)
+        if kind === :jsondoc
+            for m in eachmatch(r"\"description\"\s*:\s*\"((?:[^\"\\\\]|\\\\.)*)\"", raw)
+                text = replace(String(m.captures[1]), "\\\"" => "\"", "\\\\" => "\\")
+                isempty(strip(text)) || push!(out, ProseLine(n, raw, text, true, false))
+            end
+        elseif kind === :hashcomment && startswith(s, "#")
+            push!(out, ProseLine(n, raw, strip(lstrip(s, ['#', ' '])), true, false))
+        elseif kind === :slashcomment && startswith(s, "//")
+            push!(out, ProseLine(n, raw, strip(lstrip(s[3:end])), true, false))
+        end
+    end
+    return out
 end
 
 """
@@ -134,6 +169,7 @@ function prose_lines(cfg::AbstractDict, file::AbstractString)
     kind = surface_kind(cfg, file)
     out = ProseLine[]
     lines = readlines(joinpath(cfg["root"], file))
+    kind in (:hashcomment, :slashcomment, :jsondoc) && return data_prose_lines(kind, lines)
     indoc = kind != :julia
     intriple = false                                        # inside ANY triple-quoted string (a docstring or a code literal)
     infence = false
