@@ -306,7 +306,8 @@ The numbered roster of an instrument: hats for check-consistency, lanes otherwis
 order from `01`. The arguments are:
 
 - `cfg` — the validated config.
-- `instrument` — one of the four instruments.
+- `instrument` — one of `check-docs`, `check-consistency`, `bug-hunt`, `audit-changes`, the four
+  review procedures [`GBGCodingTools`](@ref) binds.
 - `kw...` — the resolver's own keywords: `profile` and `explicit` for check-consistency's hats
   (`Preflight.resolve_hats`), `kind` for the audit's lanes.
 """
@@ -544,7 +545,8 @@ end
 The arguments are:
 
 - `cfg` — the validated config.
-- `instrument` — one of the four instruments.
+- `instrument` — one of `check-docs`, `check-consistency`, `bug-hunt`, `audit-changes`, the four
+  review procedures [`GBGCodingTools`](@ref) binds.
 - `profile` — the check-consistency profile (`all`, `core`, `explicit`); the config's when `nothing`.
 - `hats` — the keys an explicit profile names.
 - `strength` — `economy` (the default) or `full`.

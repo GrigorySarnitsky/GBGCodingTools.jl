@@ -13,9 +13,26 @@ register_scan!("SCAN.ARGS_FORM", function (cfg, files)
         startswith(d.binding, "_") && continue                       # an internal helper documents as it likes
         occursin(Reflection.WRAPPER_PHRASE, d.body) && continue      # a thin wrapper documents no arguments
         occursin(r"The\s+fields\s+are:", d.body) && continue          # a type documents fields (RULE.DOC.FIELDS)
-        sig = replace(d.signature, r"\s*->.*$" => "")            # the return annotation is not a parameter list
-        o = findfirst('(', sig); c = findlast(')', sig)
-        (o === nothing || c === nothing || c <= o) && continue        # no argument list to judge
+        # The parameter list is the FIRST parenthesis and the one that closes it. Stripping a `-> …`
+        # return annotation first is unsound: a default that holds an arrow (`exempt = (hit -> false)`)
+        # is cut in half by the leftmost match, and the signature then parses as nothing at all.
+        sig = d.signature
+        o = findfirst('(', sig); c = nothing; depth = 0
+        if o !== nothing
+            i = o
+            while i <= lastindex(sig)
+                sig[i] == '(' && (depth += 1)
+                if sig[i] == ')'
+                    depth -= 1
+                    if depth == 0
+                        c = i
+                        break
+                    end
+                end
+                i = nextind(sig, i)
+            end
+        end
+        (o === nothing || c === nothing) && continue                  # no argument list to judge
         inside = sig[nextind(sig, o):prevind(sig, c)]
         pos, kw = Reflection.signature_parameters(inside)
         # a splat (`args...`, `kwargs...`) is a parameter the rule counts, but it is not an identifier,

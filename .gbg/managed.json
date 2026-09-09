@@ -1,10 +1,10 @@
 {
     "tool_version": "dev",
-    "inputs_sha": "ab447cb97e3aad34dad7022da491b79d64659ec7f7a052f497877a7e9f95ee07",
+    "inputs_sha": "fee6ca9c6d07babf38bed6027e5c19f70573204dc5f3950229288a6429d14aa3",
     "files": {
         "CLAUDE.md#gbg:managed": {
             "template": "claude-md.block",
-            "sha256": "dec92e1c8f62e4a578c29ac10bf260c260d0a003e245825f1bfca40c415030fa",
+            "sha256": "eceabc5e4e04529711b888682f171f5f021c2025909c5afbf3056c483549227c",
             "version": "dev"
         },
         ".claude/skills/check-consistency/SKILL.md": {
@@ -29,7 +29,7 @@
         },
         ".gbg/policy/testing-protocol.md": {
             "template": "policy/testing-protocol.md",
-            "sha256": "d50016e73364d7a353d174d6d232a6bce1c7c13aae9151abe769a350acdb9de4",
+            "sha256": "98b95d8bd63e609f9fae32e23894051c518ab673050b99a12e64aa94c439b6a9",
             "version": "dev"
         },
         ".claude/skills/audit-changes/SKILL.md": {
@@ -94,10 +94,10 @@
         },
         ".gbg/policy/deviations.md": {
             "template": "policy/deviations.md",
-            "sha256": "0a51374ba68e34f753053ccabf7179f9f6aa3f29d10f6e832cd6056888791f9e",
+            "sha256": "a628489b476804fe5e09ac1a0c300b225a9eae4d57bfdf09f31d3eafc4474b29",
             "version": "dev"
         }
     },
     "schema_version": 1,
-    "rendered": "2026-09-09T19:13:50"
+    "rendered": "2026-09-09T19:29:18"
 }

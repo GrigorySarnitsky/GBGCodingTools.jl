@@ -1,6 +1,6 @@
 unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D1 — Unit of distribution: one repository, one version, two ",247,111,0
-"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze",484,313,0
+"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze",486,315,0
 "ARCHITECTURE.md § D11 — Schemas: one JSON Schema per artefact kind in `schema/",112,68,0
 "ARCHITECTURE.md § D12 — Policy prose: single source `policy/*.md` with rule id",338,162,0
 "ARCHITECTURE.md § D13 — Managed files: one sidecar `.gbg/managed.json` as a ca",533,474,0
@@ -50,7 +50,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1089,541,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
 "ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",2936,2810,0
-"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1428,1253,0
+"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1444,1269,0
 "ARCHITECTURE.md § §12.C Doctor ids",135,134,0
 "ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
 "ARCHITECTURE.md § §3 Repository layout",1,1,0
@@ -70,7 +70,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",199,198,0
 "ARCHITECTURE.md § §7.1 Policy migration map (which consumer sections become wh",290,238,0
 "ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",348,348,0
-"ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1788,1651,0
+"ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1793,1656,0
 "ARCHITECTURE.md § §8 Self-test and versioning",1508,446,0
 "ARCHITECTURE.md § §9 Resolution table",1475,1416,0
 "Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",112,55,0
@@ -169,13 +169,13 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: copy_scripts(cfg, instrument, round) -> String",59,33,0
 "Preflight.jl :: covered_paths(cfg) -> Vector{String}",16,13,0
 "Preflight.jl :: next_round_id(cfg, instrument) -> String",21,17,0
-"Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",192,93,0
+"Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",199,100,0
 "Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",131,80,0
 "Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
 "Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",54,51,0
 "Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",185,74,0
 "Preflight.jl :: resolve_hunt_lanes(cfg) -> Vector{Dict}",22,19,0
-"Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",58,33,0
+"Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",65,40,0
 "Preflight.jl :: stamps(cfg; record = nothing) -> Dict",104,66,0
 "Preflight.jl :: substitute(text, cfg; extra = Dict()) -> String",74,26,0
 "Preflight.jl :: tag_tree(dir, ver) -> Union{String,Nothing}",54,50,0
@@ -193,7 +193,7 @@ unit,words,longest_paragraph,admonitions
 "Reflection.jl :: Reflection",58,57,0
 "Reflection.jl :: WRAPPER_PHRASE",33,32,0
 "Reflection.jl :: all_package_functions(pkg, modules) -> Set{Symbol}",29,25,0
-"Reflection.jl :: argcov(cfg; exempt = (hit -> false)) -> (hits, population, s",132,79,0
+"Reflection.jl :: argcov(cfg; exempt = (hit -> false)) -> (hits, population, s",147,43,0
 "Reflection.jl :: docstrings(root, files) -> Vector{Docstring}",30,26,0
 "Reflection.jl :: dupref(cfg) -> Vector",40,37,0
 "Reflection.jl :: load_package(cfg) -> Module",41,38,0

@@ -158,11 +158,17 @@ The argument-coverage sweep over the `src` surface of the config `cfg`, driven F
 every positional and keyword parameter of a docstring's displayed signature must appear in its body as
 a code span, bare (`n`) or carrying its default (`n = 2`).
 
-The rubric's exemptions are applied, and counted rather than silently dropped: an internal `_`-prefixed helper; a thin allocating wrapper (the body
-carries [`WRAPPER_PHRASE`](@ref)); a docstring with fewer than [`ARGS_THRESHOLD`](@ref) arguments and no
-keyword (the prose form, a human read). The keyword `exempt` is the [`GBGCodingTools.Ledger`](@ref)'s `[exemption.match]`
-predicate, called per trigger as `exempt(hit)`; the trigger population is returned so the doctor can dry-run it. Returns the
-hits, the number of parameters examined, and a named tuple of the skipped counts.
+The arguments are:
+
+- `cfg` — the validated config, whose `src` surface names the files swept.
+- `exempt` — the [`GBGCodingTools.Ledger`](@ref)'s `[exemption.match]` predicate, called per trigger as
+  `exempt(hit)`; the trigger population is returned so the doctor can dry-run it.
+
+The rubric's exemptions are applied, and counted rather than silently dropped: an internal `_`-prefixed
+helper; a thin allocating wrapper (the body carries [`WRAPPER_PHRASE`](@ref)); a docstring with fewer
+than [`ARGS_THRESHOLD`](@ref) arguments and no keyword (the prose form, a human read).
+
+Returns the hits, the number of parameters examined, and a named tuple of the skipped counts.
 """
 function argcov(cfg::AbstractDict; exempt = (hit -> false))
     files = Config.surface_files(cfg, "src")

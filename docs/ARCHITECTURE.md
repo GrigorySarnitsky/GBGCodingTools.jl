@@ -592,8 +592,8 @@ and seeded copies live **inside the project**, under
 and never in the tracked round. **Staleness by hash, not mtime**: every verdict file carries
 `graded_sha256` (= the sha of `findings.json`) and the `pass_nonce` from `pass.toml`; mismatch →
 REJECTED; absent → DEAD. Roster and denominator come from `ROUND.toml` and `findings.json`, counted
-by the CLI. A lane file is classified at `bank`: **DEAD** (absent, unparsable, schema-invalid — the
-file quarantined as `NN-<lane>.rejected.json` — or zero findings with an empty `checked[]`), **EMPTY**
+by the CLI. A lane file is classified at `bank`: **DEAD** (absent, or unparsable or schema-invalid, which
+quarantine the file as `NN-<lane>.rejected.json` — or zero findings with an empty `checked[]`), **EMPTY**
 (zero findings, non-empty `checked[]`), **ORPHAN** (a lane file no roster entry expects; reported,
 never counted), **TRUNCATED** (`candidates_found > findings.length`; reported, not fatal),
 **REJECTED** (a live lane whose sha changed after first sight). A DEAD lane is **exit 2** — cannot
@@ -1120,7 +1120,7 @@ domain      = "pseudospectral fields"
 rulebook_sections = ["CLAUDE.md#Core invariants", "CLAUDE.md#Code generation rules", "docs/ARCHITECTURE.md#13. Decision log"]
                                        # what the catalogue's rulebook hats (naming-policy, doc-policy, invariants-and-decisions) read
 julia_test  = "julia --project -e 'using Pkg; Pkg.test()'"   # CFG.SURFACES requires it to contain `Pkg.test()`; it IS the audit's executable gate
-docs_build  = "julia --project=docs docs/make.jl"            # CFG.SURFACES requires it to name docs/make.jl
+docs_build  = "julia --project=docs docs/make.jl"            # CFG.SURFACES requires docs/make.jl to exist
 docs_post   = []                       # IT: ["git checkout -- docs/Project.toml"]
 
 [paths]                                # further directories; every one is a covered path of /audit-changes (adds to the constants, never removes)
@@ -1457,7 +1457,8 @@ at the tool root, which must work when the dev checkout IS the consumer.
    `CFG.TORN` first): refuses a changed `config_sha` (exit 2 → `pass open
    --regrade`); validates each expected lane file against `instruments/check-consistency/schema.json`;
    records the sha of every present lane file at first sight in `ROUND.toml.lane_shas`; classifies
-   (D10) — absent, unparsable or invalid ⇒ DEAD, the file quarantined as `NN-<lane>.rejected.json`;
+   (D10) — absent, unparsable or invalid ⇒ DEAD, the last two quarantining the file as
+   `NN-<lane>.rejected.json` (there is nothing to quarantine when it is absent);
    assigns ids; regenerates the UNSEEDED manuscripts (a fresh consolidation), recomputes ground truth
    deterministically from the seed catalogue, the salt and the unseeded manuscript, and writes
    `ground_truth.json`; marks seeded findings by fragment match; prints recall per class (skipped
@@ -1742,7 +1743,7 @@ implementation plan refers to it and adds no id of its own.
 | `SELF.CONSUMER` | the tool repository — the current root when that root IS the tool, the enclosing repository for the fixture, the registered dev checkout under `--dev` — carries a valid `.gbg/config.toml` with `[tool] version = "dev"` and `[package] name = "GBGCodingTools"` (D15); the literal `dev` is carried by the tool root and the fixture and by nothing else (`PIN.CONFIG` refuses it where the doctor runs; this check is the tool root's own); in an ordinary consumer with no tool repository in reach it is reported not applicable, never as a pass; in `QUICK`, non-exemptable | no config at the tool root, a pin there other than `dev`, a `[package] name` other than `GBGCodingTools`, or a `dev` pin anywhere but the root and the fixture |
 | `CFG.VALID` | config parses, schema-valid, closed keys, required present, every path exists; no open round of a disabled instrument | otherwise |
 | `CFG.TORN` | the torn-file guard (non-exemptable; **not in `QUICK`** — run by `gbg preflight` and by every `gbg round` verb, and by nothing the `makedocs` wrapper or `TestHarness.gate()` runs): `git status --porcelain` shows none of the pinned or managed files modified — `.gbg/config.toml`, `exemptions.toml`, `hats/*.toml`, `seeds.toml`, `managed.json`, every sub-environment `Project.toml` listing the tool, the SKILL stubs, the rendered policy; round files under an open round are exempt, which keeps this distinct from the "uncommitted change under a closed round" refusal (both machines edit Dropbox-synced checkouts, and a half-synced config would grade a round under a config nobody wrote); whether a file parses is `CFG.VALID`, not this check | a modified pinned/managed file (exit 2 from `preflight` and every `round` verb) |
-| `CFG.SURFACES` | every non-optional surface glob matches ≥ 1 file; every `file#heading` anchor resolves to exactly one heading; every module exists; `docs_build` names `docs/make.jl` and that file exists; `julia_test` contains `Pkg.test()`; every `executable_claims` file exists under `test/` | otherwise |
+| `CFG.SURFACES` | every non-optional surface glob matches ≥ 1 file; every `file#heading` anchor resolves to exactly one heading; every module exists; the fixed path `docs/make.jl` a consumer's `docs_build` is expected to run exists; `julia_test` contains `Pkg.test()`; every `executable_claims` file exists under `test/` | otherwise |
 | `CFG.HATS` | every hat key resolves (catalogue or `.gbg/hats/`); anchors ⊆ hats; ≥ 1 anchor; no persona names another fleet package; a hat with empty substrate is marked, not expected; every `rulebook_sections` anchor resolves | otherwise |
 | `CFG.SEEDS` | `seed_rounds = true` ⇒ the file `seed_catalog` names (default `.gbg/seeds.toml`) exists and validates against the `seeds` definition of `instruments/check-consistency/schema.json` | missing or invalid |
 | `CFG.EXEMPTIONS` | every entry: known id by its prefix (`RULE.` in `policy/RULES.toml`, `SCAN.` in the catalogue, a doctor check, a finding id, a harness op), reason ≥ 40, `expires` present and ≤ `recorded + 365 d` (or `overturn_when` on scope `finding`), no non-exemptable id, no `target = "*"` on scope `check`; a `match` table only on scope `scan\|lint\|policy\|harness` and only with the four sub-keys; no `arg_type` sub-key on an entry a text scan would apply — only the reflection scans can evaluate it, and such an entry is refused (exit 2), never ignored | otherwise |
@@ -2316,7 +2317,7 @@ docstrings except by `SCAN.SWALLOWED_ESCAPE`, which is what that scan is for.
 | `SCAN.SWALLOWED_ESCAPE` | `RULE.TEX.SWALLOWED_ESCAPE` | hard | src, ext | julia | PF `lint_swallowed_escapes` `(?<!\\)\\[abefnrtv0-7xuU]` inside docstrings | `swallowed-escape` |
 | `SCAN.RETIRED_CLAIMS` | `RULE.DOC.CURRENT` | hard | all | julia | PF `lint_retired_claims`; patterns from `docs.retired_claims` (whitespace-normalised over whole files, so a wrapped phrase is caught) | `retired-claim` (fixture config lists one) |
 | `SCAN.API_PAGE_STRUCTURE` | `RULE.DOC.INTERNAL_API`, `RULE.DOC.API_GROUPING` | hard | pages (`docs/src/api/`) | julia | PF `lint_api_page_structure` (`## Internal API` last; no empty `@docs`) | `internal-api-not-last`, `empty-docs-block` |
-| `SCAN.PROSE_SHAPE` | `RULE.DOC.SHAPE` | hard | src (docstrings), rationale, pages | julia | PF `lint_prose_shape` + IT `lint_docstring_shape`: caps 120 words / 3 admonitions always; ratchet against `docs/prose_shape.csv` (units: docstring, page, section incl. numbered items and `**(x)**` findings); `# Arguments` before column-0 `!!!`, `# Fields` last; missing CSV = error | `paragraph-over-cap`, `fields-not-last` |
+| `SCAN.PROSE_SHAPE` | `RULE.DOC.SHAPE` | hard | src (docstrings), rationale, pages | julia | PF `lint_prose_shape` + IT `lint_docstring_shape`: caps 120 words / 3 admonitions on every docstring and every NEW page unit, a baselined page unit held by the ratchet alone; ratchet against `docs/prose_shape.csv` (units: docstring, page, section incl. numbered items and `**(x)**` findings); `# Arguments` before column-0 `!!!`, `# Fields` last; missing CSV = error | `paragraph-over-cap`, `fields-not-last` |
 | `SCAN.AI_BANNER` | `RULE.DOC.AI_BANNER` | hard | rationale, literate, pages | julia | PF `lint_ai_banner`: present on every rationale page and Literate file, and verbatim-identical wherever it appears | `banner-drift` |
 | — | — | — | — | — | the same scan also refuses the banner ON `docs/src/index.md` (the owner's ruling 2026-09-09) | `docs/src/index.md` clean twin |
 | `SCAN.DOI_CROSSCHECK` | `RULE.CIT.FULL_INLINE`, `RULE.CIT.DOI` | hard | src vs `references_heading` (or the whole of `docs/ARCHITECTURE.md` when `"absent"`) | julia | PF `doi_crosscheck.py` (both directions; unused-reference info) ∪ IT `doi_crosscheck.py` (decoded DOI, title check, retired `[doi:…]` label refused, the `Phenomenology` leaf exempt by ledger) | `doi-missing` |
