@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-check-docs-02",
+  "lane": "workflow-scripts",
+  "candidates_found": 9,
+  "checked": [
+    "instruments/check-docs/workflow/lanes.js",
+    "instruments/check-consistency/workflow/panel.js",
+    "instruments/check-consistency/workflow/rubric-audit.js",
+    "instruments/check-consistency/workflow/severity-recheck.js",
+    "instruments/check-consistency/workflow/verify-act.js",
+    "instruments/check-consistency/workflow/verify-state.js",
+    "instruments/bug-hunt/workflow/dismissals.js",
+    "instruments/bug-hunt/workflow/hunt.js",
+    "instruments/bug-hunt/workflow/verify-architecture.js",
+    "instruments/audit-changes/workflow/attack-design.js",
+    "instruments/audit-changes/workflow/audit.js",
+    "schema/finding.schema.json",
+    "schema/verdict-act.schema.json",
+    "schema/verdict-state.schema.json",
+    "schema/dismissal.schema.json",
+    "schema/architecture-fix.schema.json",
+    "schema/audit.schema.json",
+    "schema/tally.schema.json",
+    "instruments/bug-hunt/schema.json",
+    "instruments/check-consistency/schema.json",
+    "instruments/audit-changes/PROTOCOL.md",
+    "src/CLI/Passes.jl"
+  ],
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "audit.js's finding schema does not require `previously_worked`, so the field the instrument exists to surface can be silently omitted and defaults to the unsafe value",
+      "locations": [
+        "instruments/audit-changes/workflow/audit.js:46-50 — property `previously_worked` is defined but the `required` array is `['type', 'severity', 'confidence', 'title', 'locations', 'before', 'after', 'why_it_matters', 'justified', 'description', 'evidence']`",
+        "instruments/audit-changes/PROTOCOL.md:70 — \"that field is what the instrument exists to surface, so its severity is not the reporting lane's to downgrade\"",
+        "src/CLI/Passes.jl:286 — `gated = s >= 3 || get(f, \"previously_worked\", \"no\") in (\"yes\", \"unknown\")`"
+      ],
+      "description": "audit.js's PREAMBLE and the behaviour-change lane's own catalog brief tell the agent `previously_worked` is 'REQUIRED on the behaviour-change lane' (line 46's description string repeats this), but the JSON Schema handed to the `agent()` call — the only thing actually enforced against the model's output — does not put `previously_worked` in the item's `required` list. An economy-model lane can therefore return a finding with the key omitted entirely and still validate. Downstream, `Passes.jl:286` reads it with `get(f, \"previously_worked\", \"no\")`, so a missing key resolves to `\"no\"` — the one value PROTOCOL.md says is NOT gated (only `yes`/`unknown` are). The design explicitly wants `unknown` (an honest 'I couldn't tell') gated like `yes`; an omitted field instead lands on the least-safe outcome, silently. This is exactly the missing-case-must-be-the-failing-case rule (RULE.TEST.MISSING_IS_FAILING) inverted: here the missing case is the passing case.",
+      "resolution_hint": "Add `previously_worked` to the `required` array for the behaviour-change lane's item schema (or make the item schema per-lane so only that lane requires it), so an omission fails validation instead of silently defaulting to 'no' in Passes.jl."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "check-consistency's `needs: git` hats are told never to open `.gbg/` but, unlike verify-act.js/verify-state.js, get no `--glob '!.gbg/**'` scoping",
+      "locations": [
+        "instruments/check-consistency/workflow/panel.js:88 — \"you may use Bash with git (log, diff, show, grep) and Read inside ${A.repo}. Never open anything under .gbg/ beyond the files named above, and never ~/.gbg/.\"",
+        "instruments/check-consistency/workflow/verify-act.js:59 — \"...scope every search with `--glob '!.gbg/**'`: earlier passes' verdicts live there and they are an answer key.\"",
+        "instruments/check-consistency/workflow/verify-state.js:51 — \"Scope every search with `--glob '!.gbg/**'`.\""
+      ],
+      "description": "`.gbg/` lives directly under the repo root (`.gbg/rounds/...`), so a `grep`/`find` run against `${A.repo}` with no exclusion traverses it. Two of the three check-consistency scripts (verify-act.js, verify-state.js) hand the agent the concrete `--glob '!.gbg/**'` instruction needed to make the stated 'never open .gbg/' rule actually followable when grepping broadly; panel.js's `needs.includes('git')` branch grants exactly the tool (`grep`) that makes this a live risk, then states only the prohibition with no scoping mechanism. The rulebook's own 'Honest limits' section already accepts this class of residue as transcript-visible rather than gate-visible, so this is not a hard vulnerability, but it is an inconsistent application of the fleet's own cheap mitigation across sibling scripts in the same instrument.",
+      "resolution_hint": "Append the same `--glob '!.gbg/**'` sentence to the `needs.includes('git')` branch of panel.js's `substrateText`, matching verify-act.js and verify-state.js."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "bug-hunt's free lane is told to search broadly (\"you may read anything else in the repository\") with the weakest `.gbg/` boundary language of any lane in the fleet",
+      "locations": [
+        "instruments/bug-hunt/workflow/hunt.js:73 — \"Read the source. Follow the data.\" (FREE_PREAMBLE, no `.gbg/` mention at all)",
+        "instruments/bug-hunt/workflow/hunt.js:92-93 — \"YOUR TERRITORY (hunt HERE; you may read anything else in the repository to understand it)\"",
+        "instruments/bug-hunt/workflow/hunt.js:84 — \"FILES UNDER .gbg/ YOU MAY OPEN: your brief and the invariants file named in this prompt, and nothing else under .gbg/ or ~/.gbg/.\""
+      ],
+      "description": "The free lane is deliberately unconstrained ('deliberately given NO list of defect classes... if you find yourself working through a mental checklist, stop and read the actual code again') and its dispatch line only gestures at the `.gbg/` boundary via a parenthetical on a 'WHERE TO START' sentence: '(the one file under .gbg/ you may open besides the invariants named above)' — never the explicit 'nothing else under .gbg/, never ~/.gbg/' sentence the territory lanes get from HUNT_PREAMBLE, and no `--glob` scoping either. The lane most likely to run broad, exploratory searches across the whole repository (by design) carries the thinnest guardrail against wandering into `.gbg/rounds/` — which, per instruments.md's Honest Limits, can hold the seeded-recall answer key.",
+      "resolution_hint": "Add the same explicit '.gbg/ or ~/.gbg/ — nothing else' sentence (and `--glob '!.gbg/**'` for any grep) to the free-lane dispatch string, not just the territory lanes' HUNT_PREAMBLE."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "dismissals.js's header comment documents an `Args` shape that omits `items_sha`, which the code actually requires and writes",
+      "locations": [
+        "instruments/bug-hunt/workflow/dismissals.js:7 — \"Args: { schema_version, round, repo, package, items: [{id, title}], items_path, out, models: {economy} }\"",
+        "instruments/bug-hunt/workflow/dismissals.js:16 — `for (const k of ['repo', 'items', 'items_path', 'out', 'package', 'models', 'items_sha', 'round']) if (A[k] === undefined) throw ...`",
+        "instruments/bug-hunt/workflow/dismissals.js:63 — `items_sha: A.items_sha` written into the output, matching `schema/dismissal.schema.json`'s required `items_sha`"
+      ],
+      "description": "The file's own top-of-file Args documentation (the comment a maintainer reads first to know what to pass) is stale against the code two lines below it: `items_sha` is required at runtime and is a required field of `dismissal.schema.json`, but the comment's Args list never mentions it. A caller following only the comment would omit a required argument.",
+      "resolution_hint": "Add `items_sha` to the Args comment at the top of dismissals.js."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "rubric-audit.js silently drops a finding assigned to a hat key not present in `A.hats`, with no log line and no path into the tally",
+      "locations": [
+        "instruments/check-consistency/workflow/rubric-audit.js:65-68 — `for (const h of a.hats) (byHat[h] ||= []).push(a.id)` (no check that `h` is a real hat key)",
+        "instruments/check-consistency/workflow/rubric-audit.js:75 — `const hatKeys = Object.keys(byHat).filter(k => A.hats.some(h => h.key === k))`",
+        "instruments/check-consistency/workflow/rubric-audit.js:69-70 — only the `unassigned` case (empty `hats` array) is logged: \"assigned N findings; M covered by NO persona\""
+      ],
+      "description": "The ASSIGN agent freely names hat keys read from the personas file; nothing checks those keys against `A.hats` before bucketing into `byHat`. A key that doesn't match any `A.hats` entry (a typo, a stale persona name) is silently filtered out of `hatKeys` two lines later, so the finding(s) assigned to it never reach the blind run or the score tally — unlike an empty-`hats` assignment, which is explicitly counted and logged as `unassigned`. A mis-keyed assignment is indistinguishable, in the output, from one that was never made.",
+      "resolution_hint": "After building `byHat`, log (and fold into `unassigned` or a new `misassigned` bucket) any key in `byHat` that has no match in `A.hats`, instead of letting the `hatKeys` filter drop it silently."
+    }
+  ]
+}

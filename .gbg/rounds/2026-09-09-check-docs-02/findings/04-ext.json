@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-check-docs-02",
+  "lane": "ext",
+  "candidates_found": 3,
+  "checked": [
+    "ext/GBGCodingToolsDocumenterExt.jl (full file, both docstrings and both functions)",
+    "module docstring claims vs Project.toml [weakdeps]/[extensions] (GBGCodingToolsDocumenterExt = Documenter)",
+    "module docstring claim 'loads only where Documenter is ... nowhere else' vs Project.toml, docs/Project.toml, test/Project.toml, fixture/GBG Fixture/*/Project.toml (no Documenter outside the two docs/ envs)",
+    "'no shim call ever loads Documenter' claim vs grep for 'using Documenter'/'import Documenter' across the tree (only docs/make.jl and fixture/GBG Fixture/docs/make.jl)",
+    "makedocs(cfg; kwargs...) body vs the home docstring in src/DocLints.jl:1-21 (function makedocs end) for step-by-step and behavioral match",
+    "check(verb, code) docstring vs its implementation code == 0 ? nothing : error(...) including the literal ErrorException message template",
+    "GBGCodingTools.doctor(cfg, :QUICK) call vs src/CLI/Doctor.jl:755 doctor(cfg::AbstractDict, set::Symbol=:QUICK; io=stderr) -> Int",
+    "GBGCodingTools.scan_docs(cfg; hard_only=true) call vs src/Scan.jl:421 scan_docs(cfg; hard_only=false, only=nothing, io=stdout) -> (results, code)",
+    "GBGCodingTools.gate(cfg, \"check-docs\", \"check-consistency\") vs src/CLI/Gate.jl:23 gate(cfg, instruments...; io=stderr) -> Int",
+    "GBGCodingTools.write_public_surface(cfg) vs src/Scan.jl:534",
+    "GBGCodingTools.scan_html(cfg, build_dir) vs src/Scan.jl:513 scan_html(cfg, build_dir; only=nothing, io=stdout) -> (results, code)",
+    "build_dir default/relative-path resolution (joinpath(root,\"docs\",\"build\") and the isabspath fallback) vs docs/make.jl's actual makedocs call (no build= kwarg passed) and vs every other joinpath(root,\"docs\",...) use in src/CLI/Init.jl, Config.jl, Doctor.jl, Release.jl confirming docs/ sits directly under cfg[\"root\"]",
+    "tool_version() banner line format vs src/CLI/Main.jl:95",
+    "raw bytes of the ErrorException template line (cat -A) to rule out a real $-interpolation bug in the docstring text",
+    "line lengths / word counts of both docstrings for RULE.DOC.SHAPE and RULE.TEX.NO_HSCROLL",
+    "sentence openers and grammar of both docstrings for RULE.DOC.SENTENCE_OPENER / RULE.DOC.GRAMMAR",
+    "RULE.DOC.SIGNATURE_MIRROR against check(verb, code) docstring header vs typed method check(verb::AbstractString, code::Integer) — found untyped, but same untyped-header convention is used pervasively across src/ (scan_docs, doctor, gate, scan_html, write_public_surface) for common argument types (cfg, io), so treated as an established house convention rather than a defect isolated to this file"
+  ],
+  "findings": []
+}

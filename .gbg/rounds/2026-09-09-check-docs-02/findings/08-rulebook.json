@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-check-docs-02",
+  "lane": "rulebook",
+  "candidates_found": 9,
+  "checked": [
+    "policy/00-index.md",
+    "policy/citations.md",
+    "policy/docs-rubric.md",
+    "policy/git-conventions.md",
+    "policy/glossary.md",
+    "policy/instruments.md",
+    "policy/latex-idiom.md",
+    "policy/testing-protocol.md",
+    "policy/RULES.toml (all 93 [[rule]] entries, cross-checked programmatically against the paragraph text of the six *.md files for sentinel-prefix and heading/row parity)",
+    "grep of every RULE.* id against catalog/scans.toml, src/CLI/Doctor.jl, test/, catalog/hats/*.toml, catalog/lanes/*.toml, instruments/*/PROTOCOL.md, instruments/*/workflow/*.js (dead-rule / instrument-citation check)",
+    "src/Scans/mathbf.jl and src/Scans/prose_shape.jl (verifying what the scans actually enforce against the rule prose)",
+    "src/CLI/Doctor.jl (grep for LEG.SENTINELS, POL.RULE_PARITY)",
+    "the four instrument PROTOCOL.md files (audit-changes, bug-hunt, check-consistency, check-docs) read in full for contradiction against instruments.md"
+  ],
+  "findings": [
+    {
+      "type": "structure",
+      "severity": "major",
+      "confidence": "high",
+      "title": "RULE.DOC.HOME_ORDER and RULE.DOC.ADMONITION_TITLE disagree about where the caveat admonition sits in a docstring",
+      "locations": [
+        "policy/docs-rubric.md:12-16 — \"A function docstring is ordered: identity, when-to-use, arguments, caveats, one formula, citation, links... (4) the caveats... (5) one formula... (6) an inline citation... (7) cross-links.\"",
+        "policy/docs-rubric.md:60-61 — \"A caveat admonition is the last substantive block of a docstring, before the fields list.\"",
+        "src/Scans/prose_shape.jl:114-122 — the only scan touching order checks solely `# Arguments` precedes any `!!!` and nothing follows `# Fields`"
+      ],
+      "description": "RULE.DOC.HOME_ORDER numbers the caveat admonition as step (4) of 7, strictly BEFORE the formula (5), citation (6) and links (7) — i.e. caveats sit in the middle of the docstring. RULE.DOC.ADMONITION_TITLE instead states the caveat admonition 'is the last substantive block of a docstring, before the fields list' — i.e. AFTER the formula, citation and links, immediately preceding `# Fields`. A docstring cannot satisfy both: HOME_ORDER puts three more sections after the caveat, ADMONITION_TITLE puts none. The actual enforcement (SCAN.PROSE_SHAPE) does not resolve this — it only checks that no admonition precedes `# Arguments` and that nothing follows `# Fields`, so neither ordering claim is mechanically checked, and a docstring following HOME_ORDER's own numbered sequence would violate ADMONITION_TITLE's plain-English restatement of the same rule family.",
+      "resolution_hint": "Pick one placement (most consistent with RULE.DOC.SHAPE's actually-enforced 'Arguments precedes any column-0 admonition, Fields last' — i.e. caveats last, matching ADMONITION_TITLE) and rewrite HOME_ORDER's numbered list so caveats is the last numbered item before the fields list, or drop the 'last substantive block' clause from ADMONITION_TITLE and let SHAPE's placement rule stand as the single source of truth."
+    },
+    {
+      "type": "structure",
+      "severity": "major",
+      "confidence": "high",
+      "title": "RULE.CIT.FULL_INLINE's sentinel in RULES.toml is truncated mid-sentence at a source line-wrap hyphen, not the rule's actual first sentence",
+      "locations": [
+        "policy/RULES.toml:366 — sentinel ends \"...Journal Volume (Year)`, verbatim-\" (no closing period, cut at the hyphenated line-wrap)",
+        "policy/citations.md:9-13 — the real first sentence continues past that point and ends \"...title and DOI compared.\""
+      ],
+      "description": "policy/RULES.toml's own header (line 1-5) defines a sentinel as 'the first sentence of the rule's paragraph, verbatim' and states 'LEG.SENTINELS (doctor) fails when a sentinel is absent from its file.' Every other sentinel in the file is a verbatim prefix of its paragraph ending at a genuine sentence boundary (period followed by a space or end-of-paragraph) — verified programmatically for all 93 rules. RULE.CIT.FULL_INLINE is the sole exception: its sentinel stops at 'verbatim-', the hyphen from the source markdown's line-wrap of 'verbatim-\\nidentical', not at the end of the sentence ('...title and DOI compared.'). Because LEG.SENTINELS matches a consumer CLAUDE.md against this exact (corrupted) fragment, a consumer that copy-pasted the RULE.CIT.FULL_INLINE sentence verbatim outside its managed block would not be caught by the check for this one rule — the fragment 'verbatim-' with a trailing hyphen is not a string anyone would actually write.",
+      "resolution_hint": "Regenerate the sentinel for RULE.CIT.FULL_INLINE (and audit the generator for the same line-wrap-hyphen bug on any other paragraph that wraps at a hyphen) so it captures the complete first sentence ending '...title and DOI compared.'"
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "policy/RULES.toml's own header cites a `POL.RULE_PARITY` doctor check that does not exist anywhere in the codebase",
+      "locations": [
+        "policy/RULES.toml:3 — \"POL.RULE_PARITY fails when a heading exists without a row or a row without a heading.\"",
+        "grep -rn \"RULE_PARITY\" (excluding .gbg/) — zero matches outside this one comment line"
+      ],
+      "description": "The file's header describes two doctor safety nets: LEG.SENTINELS (confirmed present at src/CLI/Doctor.jl:461) and POL.RULE_PARITY. No check named POL.RULE_PARITY, or any code implementing heading/row parity between the *.md files and RULES.toml, exists anywhere in src/. By happy coincidence the 93 headings and 93 rows currently do match exactly (verified with a diff), but that is presently guaranteed by nobody — the comment describes a safety net that is not built, so a future hand-edit that adds a `###` heading without a matching `[[rule]]` row (or vice versa) would go undetected.",
+      "resolution_hint": "Either implement POL.RULE_PARITY as a doctor check (comparing the `### RULE.*` headings across policy/*.md against RULES.toml's [[rule]] sections) or drop the claim from the header comment and note it as a `deferred.md` item until built."
+    },
+    {
+      "type": "structure",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "RULE.TEX.MATHBB's mandated `\\mathbf{1}` for the indicator/identity conflicts with RULE.TEX.MATHBF's package-specific admitted-string list, which is empty for this package",
+      "locations": [
+        "policy/latex-idiom.md:49-52 — \"the indicator or identity is `\\mathbf{1}`\" (stated unconditionally, no package parameter)",
+        "policy/latex-idiom.md:54-59 — \"`\\mathbf` is admitted only for an agreed list of strings... For this package the admitted strings are {{notation.mathbf_allowed}}\" (rendered as \"none\" for GBGCodingTools)",
+        "src/Scans/mathbf.jl:1-12 — the scan flags any `\\mathbf{...}` not literally in `cfg[\"notation\"][\"mathbf_allowed\"]`; its own header comment notes only \"PF admits `\\mathbf{1}`\", implying other packages must opt in separately"
+      ],
+      "description": "RULE.TEX.MATHBB states as a flat, unparameterized rule that the indicator or identity is written `\\mathbf{1}` — it names no package variation point. RULE.TEX.MATHBF, by contrast, bans `\\mathbf` outside a per-package admitted list, and for GBGCodingTools that list is declared empty (\"the admitted strings are none... the package has no vector quantities\"). Read together, the rulebook simultaneously requires `\\mathbf{1}` for any indicator/identity notation and forbids it outright for this package, and the SCAN.MATHBF implementation resolves the ambiguity by silently favouring MATHBF (it would flag `\\mathbf{1}` here as a hit) rather than by MATHBB carrying an explicit universal exception. Low real-world impact since this package documents no physical/vector quantities, but the two paragraphs are not reconcilable as written for a package with an empty admitted list.",
+      "resolution_hint": "Add `\\mathbf{1}` as a standing, non-configurable exception in RULE.TEX.MATHBF's text (or fold it permanently into every package's `notation.mathbf_allowed` default) so MATHBB's mandate is never a live contradiction for a zero-admission package."
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "00-index.md's claim that \"the instruments cite these ids\" is not supported by the instruments' own committed files",
+      "locations": [
+        "policy/00-index.md:12-14 — \"Every rule has a stable id... The instruments cite these ids; a scan names the rule it enforces...\"",
+        "instruments/audit-changes/PROTOCOL.md, instruments/bug-hunt/PROTOCOL.md, instruments/check-consistency/PROTOCOL.md — zero `RULE.*` citations each",
+        "instruments/check-docs/PROTOCOL.md:57 — the one and only `RULE.*` citation across all four protocols, and it is `RULE.INST.AUDIT_AFTER_CODE` (an instrument-process rule, not a docs-content rule)",
+        "catalog/hats/*.toml (21 files) and catalog/lanes/*.toml (3 files) — zero `RULE.*` citations across all 24 files",
+        "catalog/scans.toml — 42 `RULE.*` citations, i.e. the actual locus of rule-citing behaviour"
+      ],
+      "description": "The index's sentence lists three consumers of the RULE.* ids in parallel — instruments, scans, and the doctor — as if all three name rules by id. Verified: the doctor does (LEG.SENTINELS) and scans do (catalog/scans.toml, 42 hits, one scan file per hit e.g. `RULE.TEX.MATHBB` in src/Scans/mathbb_digit.jl). The instruments proper (their committed PROTOCOL.md text, their hat and lane catalogues, and their workflow scripts) do not: only a single incidental citation exists in the whole instruments/ and catalog/hats+lanes tree, and it names an INST-family process rule, not a rule from the docs-rubric/latex-idiom/citations families the sentence's context (immediately after describing RULES.toml's docs-rule ids) implies.",
+      "resolution_hint": "Either reword the sentence to say scans (not instruments) cite the ids, or have the check-docs/check-consistency/bug-hunt/audit-changes lane and hat catalogues actually cite the RULE.* ids they exercise so the claim is true of the committed artefacts."
+    },
+    {
+      "type": "structure",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "The rulebook does not apply its own RULE.TEST.RULE_WITH_CHECK to most of its 93 rules",
+      "locations": [
+        "policy/testing-protocol.md:56-62 — \"A rule and its check land in the same commit, and a stated rule without a check is a known weakness... When a rule is written down, name what would catch its next violation.\"",
+        "example unchecked rules with no citation in catalog/scans.toml, src/CLI/Doctor.jl, or test/: RULE.DOC.TWO_TIER, RULE.DOC.ONE_HOME, RULE.DOC.VARIANT_PAIR, RULE.DOC.VERIFIED, RULE.DOC.SELF_CONTAINED, RULE.DOC.TERMS_DEFINED, RULE.DOC.CLASS_SWEEP, RULE.DOC.BATTERY, RULE.DOC.BUILD_VERIFY, RULE.DOC.ONE_NOTATION, RULE.DOC.MODULE_MAP, RULE.DOC.RETURNS, RULE.TEX.NO_HSCROLL, RULE.TEX.IMAGINARY, RULE.TEX.GREEK_AB, RULE.CIT.STYLE",
+        "policy/deviations.md (rendered) — the ONLY rule ever recorded as a RULE_WITH_CHECK-style \"known weakness\" is RULE.API.POSITIONAL"
+      ],
+      "description": "By count, roughly half of the 93 rules — most of docs-rubric.md's judgment-level rules and nearly all of testing-protocol.md — have no citation in catalog/scans.toml, src/CLI/Doctor.jl or test/, and are not cited by any instrument protocol either (per the previous finding). RULE.TEST.RULE_WITH_CHECK frames this exact situation as a 'known weakness' that should be named at the moment the rule is written. Only one of the ~48 candidate rules (RULE.API.POSITIONAL) is actually carried as a declared known-weakness deviation; the rest are silent about their own unenforceability. Some of these (e.g. RULE.DOC.VERIFIED, RULE.DOC.ONE_NOTATION) are inherently judgment calls no scan could fully automate and are legitimately left to the review panel rather than a scan — that is not itself a defect — but the rulebook gives no mechanism (comparable to `deviations.md`) distinguishing 'deliberately judgment-only, no check possible' from 'nobody has built the check yet,' so RULE_WITH_CHECK's own bar is not being applied uniformly to the rulebook that states it.",
+      "resolution_hint": "Either extend the RULES.toml schema with a `check = \"scan:<id>\" | \"doctor:<id>\" | \"panel-judgment\" | \"known-weakness\"` field so every rule declares its own enforcement class, or narrow RULE.TEST.RULE_WITH_CHECK's own text to state explicitly that a panel-judgment rule is exempt from needing a mechanical check."
+    }
+  ]
+}

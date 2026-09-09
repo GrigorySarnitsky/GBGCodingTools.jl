@@ -43,9 +43,14 @@ end
 """
     Ledger.entries(ledger, id; scope = nothing, live = true) -> Vector
 
-The entries naming an id. The arguments are `ledger`, the entries [`Ledger.read`](@ref) returned;
-`id`, the id to select; `scope`, one scope to restrict to (any when `nothing`); and `live`, whether to
-drop an entry past its `expires` date (it no longer exempts anything, and the doctor reports it).
+The entries naming an id. The arguments are:
+
+- `ledger` — the entries [`Ledger.read`](@ref) returned.
+- `id` — the id to select.
+- `scope` — one scope to restrict to (any when `nothing`).
+- `live` — whether to drop an entry past its `expires` date (it no longer exempts anything, and the
+  doctor reports it).
+
 Returns the selection in file order.
 """
 function entries(ledger::AbstractVector, id::AbstractString; scope = nothing, live::Bool = true)

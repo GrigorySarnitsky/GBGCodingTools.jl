@@ -4,9 +4,12 @@
 """
     release(ver; io = stdout, skip_tests = false) -> Int
 
-Tags and pushes `v<ver>` from the dev checkout. The arguments are `ver`, `X.Y.Z` or `X.Y.Z-rc.N`; `io`,
-where the checks are reported; and `skip_tests`, for the self-tests of this verb only (never set by the
-CLI).
+Tags and pushes `v<ver>` from the dev checkout. The arguments are:
+
+- `ver` — the version to tag, `X.Y.Z` or `X.Y.Z-rc.N`.
+- `io` — where the checks are reported.
+- `skip_tests` — skips `Pkg.test()`, the docs build and the deep doctor; for the self-tests of this
+  verb only, never set by the CLI.
 
 Refused (exit 2) unless: the tree is clean and on the configured branch; the tag is absent; `CHANGELOG.md`
 carries `## <ver> — `; `Project.toml`'s version equals the release version (the base version for a

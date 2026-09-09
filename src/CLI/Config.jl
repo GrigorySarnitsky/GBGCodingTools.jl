@@ -164,9 +164,10 @@ end
 
 Every existence check the config implies (the doctor's `CFG.SURFACES`): each non-optional surface glob
 matches at least one file; each `file#heading` anchor resolves to exactly one heading; each module has
-a `module <Name>` block under `src/`; each `[paths]` entry is a directory; each `extensions` file, the
-`docs/make.jl` that `docs_build` names, each `executable_claims` file and, while `seed_rounds` is on,
-the seed catalogue exist. Returns the problems found, empty when all hold.
+a `module <Name>` block under `src/`; each `[paths]` entry is a directory; the `glossary` file exists and
+a non-empty `built_html` has a `docs/` directory beside it; each `extensions` file, the fixed path
+`docs/make.jl` a consumer's `docs_build` command is expected to run, each `executable_claims` file and,
+while `seed_rounds` is on, the seed catalogue exist. Returns the problems found, empty when all hold.
 """
 function check_paths(cfg::AbstractDict)
     root = cfg["root"]; errs = String[]
@@ -224,10 +225,13 @@ end
     read(root = find_root(); check = true) -> Dict
 
 Loads `<root>/.gbg/config.toml`, validates it against `schema/config.schema.json`, materialises every
-default and checks every path. The arguments are `root`, the consumer root (found by walking up from
-the working directory when not given), and `check`, whether to run the path check (false for a config
-read from a tree that is not fully present). Returns the validated `Dict` with `cfg["root"]` set;
-throws a [`ConfigError`](@ref) otherwise.
+default and checks every path. The arguments are:
+
+- `root` — the consumer root, found by walking up from the working directory when not given.
+- `check` — whether to run the path check (false for a config read from a tree that is not fully
+  present).
+
+Returns the validated `Dict` with `cfg["root"]` set; throws a [`ConfigError`](@ref) otherwise.
 """
 function read(root::Union{AbstractString,Nothing} = find_root(); check::Bool = true)
     root === nothing && throw(ConfigError("no .gbg/config.toml found walking up from $(pwd())"))
@@ -247,9 +251,13 @@ end
 
 The same validation, materialisation and path check as [`Config.read`](@ref) over the TOML `text` of a
 config instead of the file under `root/.gbg/` — what the self-tests and the Step-0 scratch runs use to
-describe a tree without writing into it. The arguments are `text`, the config as TOML; `root`, the
-tree it describes; and `check`, whether to run the path check. Returns the validated `Dict` with
-`cfg["root"] = root`.
+describe a tree without writing into it. The arguments are:
+
+- `text` — the config as TOML.
+- `root` — the tree it describes.
+- `check` — whether to run the path check.
+
+Returns the validated `Dict` with `cfg["root"] = root`.
 """
 function parse(text::AbstractString; root::AbstractString, check::Bool = true)
     root = abspath(root)

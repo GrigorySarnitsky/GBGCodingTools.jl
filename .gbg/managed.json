@@ -1,10 +1,10 @@
 {
     "tool_version": "dev",
-    "inputs_sha": "44e04a0e72105d8c6422e672fe28aa678dc2963c356a0c5c64bf3edf1cda8faf",
+    "inputs_sha": "bbd0c305ac6909deeaffacfb534eaaf701eafbdd4e5bdab2f137a3ca7c7fab67",
     "files": {
         "CLAUDE.md#gbg:managed": {
             "template": "claude-md.block",
-            "sha256": "9499c530a66d688fa02a7520bf633ad9595a87c2e0380fb5d1e879fc4ee1a592",
+            "sha256": "dec92e1c8f62e4a578c29ac10bf260c260d0a003e245825f1bfca40c415030fa",
             "version": "dev"
         },
         ".claude/skills/check-consistency/SKILL.md": {
@@ -19,7 +19,7 @@
         },
         ".gbg/policy/latex-idiom.md": {
             "template": "policy/latex-idiom.md",
-            "sha256": "d20de1436d36334373eadeb8d9f29b84a38fcb9b90f65145be7d0e027bb34c9d",
+            "sha256": "fa22e90a9c1fc2740d0f93cb02f8a69d125cc4a635926761f670e64a2aa6d53b",
             "version": "dev"
         },
         ".gbg/policy/glossary.md": {
@@ -29,7 +29,7 @@
         },
         ".gbg/policy/testing-protocol.md": {
             "template": "policy/testing-protocol.md",
-            "sha256": "0cedbdd2f0d73f4e76b6b48f46ef112339a3be67c71a9b193318bb0956683ab0",
+            "sha256": "d50016e73364d7a353d174d6d232a6bce1c7c13aae9151abe769a350acdb9de4",
             "version": "dev"
         },
         ".claude/skills/audit-changes/SKILL.md": {
@@ -39,12 +39,12 @@
         },
         ".gbg/policy/docs-rubric.md": {
             "template": "policy/docs-rubric.md",
-            "sha256": "6bf2f96360fd0798521fcb5268a84e3ecdde668f53131443319788c17c2ab8f2",
+            "sha256": "4d39ece5303eca0788ae952ab2818beb3d60481e1498571e6b7f71d5d83e4a41",
             "version": "dev"
         },
         ".gbg/policy/00-index.md": {
             "template": "policy/00-index.md",
-            "sha256": "067047fb84687b147818f9a0273729b73746f2636fe6ee7a7b7bf56e4ea10f19",
+            "sha256": "e068110970b242e22962ad4798cbaa7b5153634674abcae85b0cc5811c319733",
             "version": "dev"
         },
         ".claude/settings.json": {
@@ -69,7 +69,7 @@
         },
         ".gbg/policy/citations.md": {
             "template": "policy/citations.md",
-            "sha256": "3267daed4c294914049efaa8fd7c8bdb0084278e815d40aadcc2369bac9d4676",
+            "sha256": "be2e753c8d215887aa0a4d113504ebe865cbd8dae441e96d78fa597f8f32924c",
             "version": "dev"
         },
         ".claude/hooks/queue-guard.sh": {
@@ -89,15 +89,15 @@
         },
         "test/regressions/README.md": {
             "template": "regressions-README.md",
-            "sha256": "db62ef680a0686ba776a46b43720be3c9dfaea5becef6c441d0bb3197dd2b1cb",
+            "sha256": "639b8140587fb813d999cf40cdf3af745fee5b33d717de4fee9e9992aa304107",
             "version": "dev"
         },
         ".gbg/policy/deviations.md": {
             "template": "policy/deviations.md",
-            "sha256": "5a499dd29df1e2e5b7ee593699438d8e178b7f45340b79a80fd8fc68175ad561",
+            "sha256": "0a51374ba68e34f753053ccabf7179f9f6aa3f29d10f6e832cd6056888791f9e",
             "version": "dev"
         }
     },
     "schema_version": 1,
-    "rendered": "2026-09-09T17:56:05"
+    "rendered": "2026-09-09T18:48:50"
 }

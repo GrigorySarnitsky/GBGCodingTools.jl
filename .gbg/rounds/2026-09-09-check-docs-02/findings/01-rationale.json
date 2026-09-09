@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-check-docs-02",
+  "lane": "rationale",
+  "candidates_found": 4,
+  "checked": [
+    "docs/ARCHITECTURE.md (full document, all 2610 lines / §0-§12 + revision history) against src/, ext/, catalog/, schema/, Project.toml",
+    "D11 schema count claim vs actual schema/*.schema.json files",
+    "§7.3 QUICK-set definition and the doctor check-id table vs src/CLI/Doctor.jl (grepped every check id literal)",
+    "§12.B scan catalogue table vs catalog/scans.toml (all 42 registered [[scan]] entries)",
+    "§3 repository-layout tree (src/CLI/*.jl module list) vs actual src/CLI/ directory contents",
+    "makedocs wrapper description (D9) vs ext/GBGCodingToolsDocumenterExt.jl and src/DocLints.jl",
+    "TestHarness.gate() description (D9) vs src/TestHarness.jl:535-553",
+    "main(ARGS)::Int / exit-code contract (D8) vs src/CLI/Main.jl:121-141",
+    "Project.toml deps/weakdeps/compat vs D9's dependency list",
+    "catalog/hats/*.toml roster (22 files) vs §3's 8+11+3 hat enumeration",
+    "catalog/models.toml vs D18's 'economy = \"sonnet\"' claim",
+    "config_sha / inputs_sha implementation (src/CLI/Sync.jl:440-465) vs §6.1's description",
+    "Witnesses.run signature (src/Witnesses.jl:200) vs D9's abbreviated signature"
+  ],
+  "findings": [
+    {
+      "type": "currency",
+      "severity": "major",
+      "confidence": "high",
+      "title": "D11 claims 'Eighteen schemas' under schema/, but only 16 files exist and two named items aren't files there",
+      "locations": [
+        "docs/ARCHITECTURE.md:625-628 — \"Eighteen schemas: `schema/{config,exemptions,hat,round,pass,lane-file,finding, verdict-act,verdict-state,tally,hunt-candidate,reproduction,dismissal,architecture-fix,audit, ground-truth,import,managed}.schema.json`\"",
+        "docs/ARCHITECTURE.md:994 — \"schema/*.schema.json          the eighteen of D11\"",
+        "schema/ (directory listing) — 16 files: architecture-fix, audit, config, dismissal, exemptions, finding, ground-truth, hat, import, managed, pass, reproduction, round, tally, verdict-act, verdict-state"
+      ],
+      "description": "D11 enumerates 18 names as files under schema/, but ls schema/*.schema.json returns only 16 files. lane-file and hunt-candidate are not present as schema/lane-file.schema.json or schema/hunt-candidate.schema.json — the actual implementation embeds the lane-file wrapper and the hunt candidate shape inside each instruments/<name>/schema.json (confirmed: instruments/*/schema.json files each say '...and the lane-file wrapper' / bug-hunt's says '...the candidate file and the lane-file wrapper'). So D11's inventory of schema/ is both miscounted (18 vs the true 16) and lists two items that do not exist at the location it names.",
+      "resolution_hint": "Either drop lane-file and hunt-candidate from the schema/{...} set and change 'Eighteen' to 'Sixteen' (with a sentence noting the lane-file wrapper and hunt-candidate shape live inline in each instrument's own schema.json), or, if a standalone schema/lane-file.schema.json / schema/hunt-candidate.schema.json was intended, add the missing files. Update the §3 tree line 994 to match."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "§7.3 states AUDIT.* is 'never in QUICK', but AUDIT.GAP is literally in the code's QUICK array",
+      "locations": [
+        "docs/ARCHITECTURE.md:1713-1718 — \"QUICK = {CFG.* (CFG.TORN excepted), PIN.CONFIG, PIN.SOURCES, PIN.NOT_DEV, EXEMPT.*, WIRE.*, MANAGED.HASH, ROUND.*, POL.SENTINEL, SELF.CONSUMER} ... AUDIT.* ... and every other --deep check are never in QUICK\"",
+        "src/CLI/Doctor.jl:42-45 — const QUICK = [\"CFG.VALID\", ... \"POL.SENTINEL\", \"SELF.CONSUMER\", \"AUDIT.GAP\"]"
+      ],
+      "description": "The rationale document's QUICK-set formula and its following sentence both explicitly place AUDIT.* outside QUICK ('never in QUICK'), and D14/§7.2's 'Exemptable: LEG.*, GIT.*, AUDIT.*' framing gives no hint it is quick-checked either. But the actual const QUICK array in src/CLI/Doctor.jl ends with \"AUDIT.GAP\", so AUDIT.GAP DOES run inside every gbg preflight, inside the makedocs wrapper, and inside TestHarness.gate() — directly contradicting the document's operational claim about what those three call sites execute.",
+      "resolution_hint": "Add AUDIT.GAP to the QUICK formula in §7.3 (e.g. ..., POL.SENTINEL, SELF.CONSUMER, AUDIT.GAP}) and drop it from the 'never in QUICK' list, or, if AUDIT.GAP in QUICK is itself the defect, remove it from src/CLI/Doctor.jl's QUICK constant — either way the two currently disagree."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "§12.B's scan catalogue table omits SCAN.ARGS_FORM, a registered hard/triage scan enforcing RULE.DOC.ARGS_FORM",
+      "locations": [
+        "docs/ARCHITECTURE.md:2278-2333 (§12.B table, all 41 rows + SCAN.CUSTOM placeholder)",
+        "catalog/scans.toml:129-134 — [[scan]] id = \"SCAN.ARGS_FORM\" rule = \"RULE.DOC.ARGS_FORM\" tier = \"triage\" surfaces = [\"src\",\"ext\"] runner = \"julia\" fixture = [\"wrong-args-form\"]",
+        "src/Scans/args_form.jl (the scan's implementation, present in src/Scans/)"
+      ],
+      "description": "catalog/scans.toml registers 42 scans (verified by counting [[scan]]/id = occurrences); §12.B's table, which purports to be the scan catalogue with 'columns: scan id · rule · tier ... surfaces ... runner ... source ... fixture defect class', lists 41 named scans (40 concrete + the SCAN.CUSTOM.<id> placeholder row). SCAN.ARGS_FORM — a real, actively-enforced scan checking RULE.DOC.ARGS_FORM with its own fixture class wrong-args-form — has no row. Per RULE.DOC.CURRENT in the very rulebook this document is subject to, a summary naming only a subset of what the code now provides is stale.",
+      "resolution_hint": "Add a SCAN.ARGS_FORM row to the §12.B table, e.g. | SCAN.ARGS_FORM | RULE.DOC.ARGS_FORM | triage | src, ext | julia | ... | wrong-args-form |."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "§3's src/CLI/ file tree omits five actual CLI modules (Git.jl, Ledger.jl, Passes.jl, RoundFiles.jl, Self.jl)",
+      "locations": [
+        "docs/ARCHITECTURE.md:949-959 (the CLI/ block of the §3 repository-layout tree)",
+        "src/CLI/ (directory listing) — 25 files, including Git.jl, Ledger.jl, Passes.jl, RoundFiles.jl, Self.jl, none named in the tree"
+      ],
+      "description": "§3's tree enumerates the src/CLI/*.jl files as Main.jl, Config.jl Schema.jl, Doctor.jl Sync.jl Init.jl Fleet.jl Bump.jl Release.jl Install.jl, Preflight.jl, Rounds.jl, Gate.jl, Demote.jl, Scan.jl, Seed.jl Recall.jl Consolidate.jl Audit.jl Hunt.jl Selftest.jl — 20 files. The actual src/CLI/ directory holds 25 .jl files; Git.jl (git questions for round verbs/gate/doctor), Ledger.jl (the one reader of .gbg/exemptions.toml), Passes.jl (the verification half of a round: pass open/grade/close, split out of Rounds.jl), RoundFiles.jl (reading .gbg/rounds/), and Self.jl (gbg self verify) exist but are not listed. Self.jl is notable because gbg self verify is discussed extensively throughout the document (D2, D3, D15, §7.3 PIN.SELF) yet the file that implements it is absent from the module inventory.",
+      "resolution_hint": "Add the five missing files to the §3 tree's CLI/ block with brief one-line descriptions, consistent with how the other noun modules are annotated."
+    }
+  ]
+}

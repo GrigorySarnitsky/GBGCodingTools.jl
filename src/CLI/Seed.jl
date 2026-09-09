@@ -38,8 +38,11 @@ end
 """
     select(catalog, full, round) -> (seeded, skipped)
 
-The seed plan for a round. The arguments are `catalog`, the consumer's seed catalogue (the `seeds`
-shape); `full`, the FULL manuscript text; and `round`, the round id that salts the selection.
+The seed plan for a round. The arguments are:
+
+- `catalog` — the consumer's seed catalogue (the `seeds` shape).
+- `full` — the FULL manuscript text.
+- `round` — the round id that salts the selection.
 
 For every `[[class]]`: the occurrences of `anchor` in `full`; the chosen one is `((occurrence - 1 +
 salt_offset) mod count) + 1`; a class whose anchor occurs nowhere is skipped and named. Returns the
@@ -67,12 +70,16 @@ end
 """
     plant(full, siteonly, plan) -> (full′, siteonly′)
 
-The manuscripts with every planned seed applied. The arguments are `full` and `siteonly`, the two
-manuscript texts, and `plan`, the selection [`select`](@ref) returned. In `full` the seeds are applied
-at the recorded positions (from the end, so positions stay valid); in `siteonly` each seed is located
-as the same occurrence of its `original` text within the same page (the site is a subset of the full
-manuscript page by page, so a seed on a withheld page is absent there by design, and a neighbouring
-seed already applied cannot hide it). Returns both.
+The manuscripts with every planned seed applied. The arguments are:
+
+- `full` — the FULL manuscript text.
+- `siteonly` — the site-only manuscript text.
+- `plan` — the selection [`select`](@ref) returned.
+
+In `full` the seeds are applied at the recorded positions (from the end, so positions stay valid); in
+`siteonly` each seed is located as the same occurrence of its `original` text within the same page (the
+site is a subset of the full manuscript page by page, so a seed on a withheld page is absent there by
+design, and a neighbouring seed already applied cannot hide it). Returns both.
 """
 function plant(full::AbstractString, siteonly::AbstractString, plan::AbstractVector)
     f = String(full)

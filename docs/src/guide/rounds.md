@@ -41,6 +41,7 @@ The demotion is mechanical: `HONORED` with an empty `class_surfaces[]` becomes `
 ## The gate
 
 `gbg gate [instrument…]` fails on any open round of the named instruments except the one named in
-`GBG_ROUND`, which the CLI exports only while it runs a build or a test on that round's behalf. The
+`GBG_ROUND`, which the CLI exports only while it runs a build, a test or an audit's executable claim on
+that round's behalf. The
 `makedocs` wrapper runs it for the doc instruments and `TestHarness.gate()` for the code instruments,
 so a fix pass cannot be committed around an open round.

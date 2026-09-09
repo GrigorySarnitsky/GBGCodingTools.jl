@@ -1,0 +1,75 @@
+{
+  "checked": [
+    "templates/README.md",
+    "templates/bump-message.tmpl",
+    "templates/CI.yml.snippet",
+    "templates/claude-md.block",
+    "templates/CLAUDE.md.skeleton",
+    "templates/commit-message.tmpl",
+    "templates/docs.yml.snippet",
+    "templates/gitignore.block",
+    "templates/make.jl.seed",
+    "templates/queue-guard.sh.tmpl",
+    "templates/regressions-README.md",
+    "templates/runtests.jl.seed",
+    "templates/settings.json.tmpl",
+    "templates/SKILL.md.tmpl",
+    "templates/test-Project.toml.seed",
+    "templates/WORK_QUEUE.md.seed",
+    "src/CLI/Sync.jl (render, slots, plan, managed_header, fragments, insert_fragments)",
+    "src/CLI/Init.jl (commit-message / test-Project.toml / make.jl / runtests.jl rendering)",
+    "src/CLI/Bump.jl (bump-message rendering)",
+    "src/CLI/Doctor.jl (WIRE.MAKEDOCS, WIRE.CI_AUTH, WIRE.RUNTESTS, WITNESSES.ESCALATED/BLOCKED)",
+    "src/CLI/Preflight.jl (cmd_preflight, preflight output)",
+    "src/TestHarness.jl (run_regressions, gate)",
+    "ext/GBGCodingToolsDocumenterExt.jl (makedocs wrapper)",
+    "docs/ARCHITECTURE.md §4 (consumer footprint class legend)"
+  ],
+  "candidates_found": 4,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "README.md's Slots column claims commit-message.tmpl and bump-message.tmpl take {{package.name}}, but neither template contains that placeholder",
+      "locations": [
+        "templates/README.md:23 — \"`{{package.name}}`, `{{tool.version}}`, `{{files}}`\"",
+        "templates/README.md:24 — \"`{{package.name}}`, `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}`\"",
+        "templates/commit-message.tmpl:1-9 (only `{{tool.version}}` and `{{files}}` appear)",
+        "templates/bump-message.tmpl:1-9 (only `{{from}}`, `{{to}}`, `{{abandoned}}`, `{{files}}` appear)"
+      ],
+      "description": "templates/README.md's doc-table Slots column is meant to name exactly the `{{key}}` placeholders each template contains. Grepping both templates for `{{[a-z0-9_.-]+}}` (the exact syntax `Sync.render`'s regex accepts) finds no `{{package.name}}` in either file, confirmed against the call sites (Init.jl:312 merges `s` with only `Dict(\"files\"=>...)`; Bump.jl:35 merges `Sync.slots(cfg2)` with `from`/`to`/`files`/`abandoned`). The README overstates what these two templates consume.",
+      "resolution_hint": "Drop `{{package.name}}` from the Slots cell of the commit-message.tmpl and bump-message.tmpl rows in templates/README.md."
+    },
+    {
+      "type": "structure",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "regressions-README.md's baked-in managed header omits the version stamp every sibling embedded-header template carries",
+      "locations": [
+        "templates/regressions-README.md:1 — \"<!-- gbg:managed regressions-README.md — rewritten by `gbg sync`; do not edit -->\"",
+        "templates/SKILL.md.tmpl:6 — \"<!-- gbg:managed SKILL.md.tmpl v{{tool.version}} — rewritten by `gbg sync`; do not edit -->\"",
+        "templates/claude-md.block:1 — \"<!-- gbg:managed begin v{{tool.version}} sha256:{{sha256}} — ... -->\"",
+        "templates/gitignore.block:1 — \"# gbg:managed begin v{{tool.version}} — ... -->\""
+      ],
+      "description": "regressions-README.md and SKILL.md.tmpl are both G-classed Markdown templates rendered identically in Sync.plan (`render(template(name), s)`), and both bake their own `<!-- gbg:managed ... -->` header into the body rather than via `Sync.managed_header`. SKILL.md.tmpl's header includes `v{{tool.version}}`, matching every other managed header format in the tool (policy files via `managed_header(:html,...)` at Sync.jl:151-152, and the CLAUDE.md/.gitignore block markers). regressions-README.md's header has no version token, so a reader of the raw file cannot tell which tool version rendered it — the one thing every other managed header exists to carry (ARCHITECTURE §0 R2 transparency). Nothing documents this as a deliberate exception.",
+      "resolution_hint": "Add `v{{tool.version}}` to templates/regressions-README.md:1's header line, matching SKILL.md.tmpl's form, or document it as a deliberate fleet-invariant exception in README.md's Managed headers section."
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "README.md's blanket \"Managed headers\" rule is contradicted by queue-guard.sh.tmpl, a G, #-comment-format file that carries no gbg:managed header at all",
+      "locations": [
+        "templates/README.md:26-27 — \"A G file carries a first-line header where its format allows a comment: `# gbg:managed <template> v<version> — rewritten by `gbg sync`; do not edit` (`#`-commented formats)\"",
+        "templates/queue-guard.sh.tmpl:1-40 (no `gbg:managed` string anywhere in the file)",
+        "src/CLI/Sync.jl:207 — `template(\"queue-guard.sh.tmpl\")` used raw, no `render()`, no `managed_header` call"
+      ],
+      "description": "queue-guard.sh.tmpl is listed as class G in the same README table (templates/README.md:13) and is a `#`-comment-capable shell script, so the general header rule two paragraphs later should apply per the README's own wording. In fact it is copied byte-for-byte with no header stamped at all — `managed_header`'s `:hash` branch (Sync.jl:151) is never invoked anywhere in the codebase, so no `#`-format managed file actually gets that header via that path. The README's general claim is false for at least one file it itself classifies as G; the file's own row (\"none — PF's Stop hook verbatim\") only explains the missing slots, not the missing header.",
+      "resolution_hint": "Qualify the Managed headers paragraph with the queue-guard.sh.tmpl exception (verbatim files carry no header, to keep the upstream text unmodified), or remove the dead `:hash` branch of `managed_header` and note that no shell/#-format G file currently uses a stamped header."
+    }
+  ],
+  "lane": "templates",
+  "round": "2026-09-09-check-docs-02",
+  "schema_version": 1
+}

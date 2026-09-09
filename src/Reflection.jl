@@ -160,7 +160,7 @@ a code span, bare (`n`) or carrying its default (`n = 2`).
 
 The rubric's exemptions are applied, and counted rather than silently dropped: an internal `_`-prefixed helper; a thin allocating wrapper (the body
 carries [`WRAPPER_PHRASE`](@ref)); a docstring with fewer than [`ARGS_THRESHOLD`](@ref) arguments and no
-keyword (the prose form, a human read). The keyword `exempt` is the ledger's `[exemption.match]`
+keyword (the prose form, a human read). The keyword `exempt` is the [`Ledger`](@ref)'s `[exemption.match]`
 predicate, called per trigger as `exempt(hit)`; the trigger population is returned so the doctor can dry-run it. Returns the
 hits, the number of parameters examined, and a named tuple of the skipped counts.
 """
@@ -308,11 +308,16 @@ dehat(s::Symbol) = Symbol(replace(Base.Unicode.normalize(String(s), :NFD), r"[̂
 Per exported binding, the displayed docstring signatures against the defined method table (positional
 names accent-normalised, keywords by name): a displayed keyword no method defines (a stale
 signature), a defined keyword no signature advertises, a displayed positional matching no argument
-name. The arguments are `cfg`, the validated config; `pkg`, the loaded package (loaded from the config
-when not given); and `examined`, an optional counter the caller passes to learn how many bindings were
-actually compared, which is the scan's population — a package that exports nothing compares nothing, and
-a scan that measured nothing must say so rather than print clean. Returns one message per discrepancy;
-an extension-homed binding with no methods loaded is reported as skipped.
+name. The arguments are:
+
+- `cfg` — the validated config.
+- `pkg` — the loaded package, loaded from the config when not given.
+- `examined` — an optional counter the caller passes to learn how many bindings were actually
+  compared, which is the scan's population: a package that exports nothing compares nothing, and a
+  scan that measured nothing must say so rather than print clean.
+
+Returns one message per discrepancy; an extension-homed binding with no methods loaded is reported as
+skipped.
 """
 function signature_fidelity(cfg::AbstractDict; pkg::Module = load_package(cfg), examined::Union{Nothing,Base.RefValue{Int}} = nothing)
     displayed = Dict{Symbol,Set{Symbol}}(); displayed_kw = Dict{Symbol,Set{Symbol}}(); elided = Set{Symbol}()

@@ -657,9 +657,13 @@ exemptable(id) = any(p -> startswith(id, p), EXEMPTABLE)
 """
     select(only; deep = false) -> Vector{String}
 
-The check ids a run covers: every non-deep check (plus the deep ones with `deep = true`), or the ids
-named in `only` — exact ids, prefixes such as `LOAD` or `WIRE`, or the literal `QUICK`. Returns the ids
-in table order.
+The check ids a run covers. The arguments are:
+
+- `only` — the ids the run is restricted to: exact ids, prefixes such as `LOAD` or `WIRE`, or the
+  literal `QUICK`; every check when `nothing`.
+- `deep` — include the deep checks in the default set (it does not filter the ids `only` names).
+
+Returns the ids in table order.
 """
 function select(only = nothing; deep::Bool = false)
     ids = [id for (id, _) in CHECKS if deep || !(id in DEEP)]
@@ -749,8 +753,13 @@ end # module Doctor
     doctor(cfg, set = :QUICK; io = stderr) -> Int
 
 The in-process doctor the `makedocs` wrapper, `TestHarness.gate()` and `gbg preflight` call. The
-arguments are `cfg`, the validated config; `set`, `:QUICK` for the quick set or `:ALL` for every
-non-deep check; and `io`, where the failing lines are printed. Returns 1 on any FAIL, else 0.
+arguments are:
+
+- `cfg` — the validated config.
+- `set` — `:QUICK` for the quick set, `:ALL` for every non-deep check.
+- `io` — where the failing lines are printed.
+
+Returns 1 on any FAIL, else 0.
 """
 function doctor(cfg::AbstractDict, set::Symbol = :QUICK; io::IO = stderr)
     buf = IOBuffer()

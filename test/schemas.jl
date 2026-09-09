@@ -93,7 +93,10 @@ include("helpers.jl")
         for f in readdir(joinpath(TOOL, "schema"))
             endswith(f, ".schema.json") || continue
             name = replace(f, ".schema.json" => "")
-            @test occursin("load_schema(\"" * name * "\")", src) || occursin("\"" * name * "\"", src)
+            # the name must appear on a line that LOADS a schema, never merely somewhere in the source:
+            # `finding` matched a coincidental substring and the schema was validated against nothing
+            @test any(l -> occursin("\"" * name * "\"", l) && (occursin("load_schema", l) || occursin("read_verdicts", l)),
+                      split(src, "\n"))
         end
     end
     @testset "the home page's counts are the real ones" begin
@@ -124,6 +127,30 @@ include("helpers.jl")
             text = replace(read(joinpath(TOOL, "policy", r["file"]), String), r"\s+" => " ")
             @test occursin(r["sentinel"], text)
             @test occursin("### " * r["id"], read(joinpath(TOOL, "policy", r["file"]), String))
+        end
+    end
+    @testset "every rule declares what catches its next violation (RULE.TEST.RULE_WITH_CHECK)" begin
+        rules = TOML.parsefile(joinpath(TOOL, "policy", "RULES.toml"))["rule"]
+        scans = Set(s["id"] for s in TOML.parsefile(joinpath(TOOL, "catalog", "scans.toml"))["scan"])
+        checks = Set(first.(G.Doctor.CHECKS))
+        srctext = join(read(joinpath(d, f), String) for (d, _, fs) in walkdir(joinpath(TOOL, "src")) for f in fs if endswith(f, ".jl"))
+        for r in rules
+            cs = get(r, "check", String[])
+            @test !isempty(cs)                                  # a rule with no class is the silence the rule forbids
+            for c in cs
+                if startswith(c, "scan:")
+                    @test c[6:end] in scans
+                elseif startswith(c, "doctor:")
+                    @test c[8:end] in checks
+                elseif startswith(c, "test:")
+                    @test isfile(joinpath(TOOL, c[6:end]))
+                elseif startswith(c, "harness:")
+                    @test occursin(last(split(c[9:end], '.')) * "(", srctext)
+                else
+                    @test c in ("panel", "session", "weakness")  # judged, agreed, or owed
+                    @test length(cs) == 1                        # these three never share a rule with a mechanical check
+                end
+            end
         end
     end
 end

@@ -1,0 +1,22 @@
+{
+    "statuses": {
+        "family": "empty",
+        "rationale": "live",
+        "pages": "truncated",
+        "ext": "empty",
+        "workflow-scripts": "truncated",
+        "rulebook": "truncated",
+        "built-html": "live",
+        "templates": "truncated",
+        "operational-claims": "truncated",
+        "cold-reader": "truncated",
+        "scans": "empty",
+        "src": "truncated",
+        "catalogues": "truncated",
+        "schemas": "truncated"
+    },
+    "suspect_hats": [
+    ],
+    "recall": {
+    }
+}

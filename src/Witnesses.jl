@@ -90,9 +90,14 @@ end
 """
     witness_project(root, witness_env, package) -> String
 
-The `--project` a witness runs under. The arguments are `root`, the consumer root; `witness_env`, the
-config's `instruments.bug-hunt.witness_env` (a directory under the root, `test` by default); and
-`package`, the package name the witness may load. Returns the project path.
+The `--project` a witness runs under. The arguments are:
+
+- `root` — the consumer root.
+- `witness_env` — the config's `instruments.bug-hunt.witness_env` (a directory under the root, `test`
+  by default).
+- `package` — the package name the witness may load.
+
+Returns the project path.
 """
 function witness_project(root::AbstractString, witness_env::AbstractString, package::AbstractString)
     env = joinpath(root, witness_env)
@@ -136,8 +141,11 @@ end
 """
     run_one(path; project, package) -> WitnessResult
 
-Runs one witness file in a fresh Julia process and classifies the outcome. The arguments are `path`,
-the witness file; `project`, the `--project` it runs under; and `package`, the package it may load.
+Runs one witness file in a fresh Julia process and classifies the outcome. The arguments are:
+
+- `path` — the witness file.
+- `project` — the `--project` it runs under.
+- `package` — the package it may load.
 
 The file is first read, never included: a witness that `include`s another file, or that loads
 anything outside `package`, `Test` and the standard library, is REFUSED before it runs. The run wraps

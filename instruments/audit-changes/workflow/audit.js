@@ -47,7 +47,7 @@ const SCHEMA = {
         description: { type: 'string' },
         evidence: { type: 'string', description: 'quoted from the diff or the tree — an assertion with no quotation is not a concern' },
       },
-      required: ['type', 'severity', 'confidence', 'title', 'locations', 'before', 'after', 'why_it_matters', 'justified', 'description', 'evidence'],
+      required: ['type', 'severity', 'confidence', 'previously_worked', 'title', 'locations', 'before', 'after', 'why_it_matters', 'justified', 'description', 'evidence'],
     } },
   },
   required: ['schema_version', 'round', 'lane', 'verdict', 'checked', 'candidates_found', 'findings'],

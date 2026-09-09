@@ -11,9 +11,16 @@ Renders every page of the Documenter build under `build_dir` into reader text �
 code as fences, tables as ` | ` rows, admonition titles as `[ADMONITION]`, list items as `- `,
 formulas as their raw TeX (Documenter renders KaTeX client-side, so the TeX is the page's text) —
 delimited by `===== PAGE: <name> =====` banners, discovered from the build so the manuscript stays
-complete when pages are added. Writes two manuscripts: `out_full` with every page, and `out_siteonly`
-without the pages whose relative path contains one of the `withheld` words (the design documents the
-config names under `design_docs_withheld`). Returns the page count and the two character counts.
+complete when pages are added. Writes two manuscripts. The arguments are:
+
+- `build_dir` — the Documenter build whose pages are discovered and rendered.
+- `withheld` — the words that withhold a page (the design documents the config names under
+  `design_docs_withheld`).
+- `out_full` — the manuscript written with every page.
+- `out_siteonly` — the manuscript written without the pages whose relative path contains one of the
+  `withheld` words.
+
+Returns the page count and the two character counts.
 """
 function consolidate(build_dir::AbstractString, withheld::AbstractVector{<:AbstractString};
                      out_full::AbstractString, out_siteonly::AbstractString)

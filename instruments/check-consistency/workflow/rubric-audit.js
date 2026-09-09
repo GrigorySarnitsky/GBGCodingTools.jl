@@ -72,6 +72,8 @@ for (const u of unassigned) log(`   no rubric covers ${u.id}: ${u.why}`)
 // 2. BLIND RUN + 3. SCORE, pipelined per hat. The blind hat sees only the substrate text.
 phase('Blind run')
 const itemById = Object.fromEntries(A.items.map(i => [i.id, i]))
+const misassigned = Object.keys(byHat).filter(k => !A.hats.some(h => h.key === k))
+if (misassigned.length) log(`!! ${misassigned.length} finding-group(s) assigned to no hat of this roster: ${misassigned.join(', ')} — UNCOVERED, not clean`)
 const hatKeys = Object.keys(byHat).filter(k => A.hats.some(h => h.key === k))
 const results = await pipeline(
   hatKeys,

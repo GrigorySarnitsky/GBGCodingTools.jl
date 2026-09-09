@@ -3,19 +3,27 @@
 # bulleted form led by `The arguments are:`; with fewer it binds them in running prose; the two are never
 # mixed in one docstring. Exempt, as the rule states: a thin allocating wrapper (it documents none), an
 # internal `_`-prefixed helper, and a docstring whose signature line could not be parsed.
-const ARGS_BULLET = "The arguments are:"
-const ARGS_PROSE = r"The arguments? (is|are) `"
+# whitespace-tolerant: the marker line-wraps in this package's own prose, and a literal substring missed it
+const ARGS_BULLET = r"The\s+arguments\s+are:"
+const ARGS_PROSE = r"The\s+arguments?\s+(is|are)\s+`"
 
 register_scan!("SCAN.ARGS_FORM", function (cfg, files)
     hits = Hit[]; population = 0
     for d in docstring_blocks(cfg, files)
         startswith(d.binding, "_") && continue                       # an internal helper documents as it likes
         occursin(Reflection.WRAPPER_PHRASE, d.body) && continue      # a thin wrapper documents no arguments
-        occursin("The fields are:", d.body) && continue               # a type documents fields (RULE.DOC.FIELDS)
-        sig = d.signature
+        occursin(r"The\s+fields\s+are:", d.body) && continue          # a type documents fields (RULE.DOC.FIELDS)
+        sig = replace(d.signature, r"\s*->.*$" => "")            # the return annotation is not a parameter list
         o = findfirst('(', sig); c = findlast(')', sig)
         (o === nothing || c === nothing || c <= o) && continue        # no argument list to judge
-        pos, kw = Reflection.signature_parameters(sig[nextind(sig, o):prevind(sig, c)])
+        inside = sig[nextind(sig, o):prevind(sig, c)]
+        pos, kw = Reflection.signature_parameters(inside)
+        # a splat (`args...`, `kwargs...`) is a parameter the rule counts, but it is not an identifier,
+        # so `signature_parameters` drops it: without this, `f(cfg; kwargs...)` reads as prose-form
+        semi = findfirst(';', inside)
+        splats(s) = [String(m.match) for m in eachmatch(r"[A-Za-z_][A-Za-z0-9_]*\.\.\.", s)]
+        append!(pos, splats(semi === nothing ? inside : inside[1:prevind(inside, semi)]))
+        semi === nothing || append!(kw, splats(inside[nextind(inside, semi):end]))
         isempty(pos) && isempty(kw) && continue
         population += 1
         bulleted = occursin(ARGS_BULLET, d.body)

@@ -10,7 +10,7 @@
 The sections: `[tool]` (the pinned version), `[package]` (name, description, modules, the test and build
 commands), `[paths]`, `[git]`, `[surfaces]` (the ONE copy of every surface list: rationale documents,
 pages, generated copies, source, extensions, Literate examples, the built site, the history and
-references anchors), `[docs]` (doctest, admonition titles, the Base allowance, retired claims),
+references anchors, the glossary file, and any data or script surface whose comments are prose), `[docs]` (doctest, admonition titles, the Base allowance, retired claims),
 `[rubric]`, `[notation]`, `[citations]`, `[instruments]` with one table per instrument, `[cost]`,
 `[schema]`, `[[scans.custom]]`.
 

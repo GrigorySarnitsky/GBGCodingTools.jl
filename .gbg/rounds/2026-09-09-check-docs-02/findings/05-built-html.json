@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-check-docs-02",
+  "lane": "built-html",
+  "candidates_found": 4,
+  "checked": [
+    "docs/build/index.html",
+    "docs/build/architecture.html",
+    "docs/build/api/CLI.html",
+    "docs/build/api/Config.html",
+    "docs/build/api/Reflection.html",
+    "docs/build/api/TestHarness.html",
+    "docs/build/api/Witnesses.html",
+    "docs/build/guide/install.html",
+    "docs/build/guide/instruments.html",
+    "docs/build/guide/rounds.html",
+    "docs/build/guide/rules.html",
+    "docs/build/guide/verbs.html",
+    "docs/build/guide/doctor.html",
+    "docs/build/guide/config.html",
+    "docs/build/guide/ledger.html",
+    "quantifier claims on index.html cross-checked against source (VERBS table in src/CLI/*.jl, doctor checks in src/CLI/Doctor.jl, catalog/scans.toml, policy/RULES.toml)",
+    "every docstring body on the five API pages cross-checked verbatim against its src/*.jl definition",
+    "whole-site sweep of docs/build for literal backtick characters and stray <em> tags outside fenced code blocks (markdown-escaping corruption signature)"
+  ],
+  "findings": [
+    {
+      "type": "style",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Asterisk inside a backtick span, nested in italics, corrupts a whole paragraph of rendered prose",
+      "locations": [
+        "docs/build/architecture.html (rendered D6 'Dominated' alternatives list): rendered text reads `<em>Personal-scope symlinked skills `~/.claude/skills/gbg-</em><code>*: deliver the checkout's protocol...</code>gbg-<code>prefix costs every</code>/check-docs<code>reference...`",
+        "docs/src/architecture.md:383 — source: `*Personal-scope symlinked skills \\`~/.claude/skills/gbg-*\\`*: deliver the checkout's`"
+      ],
+      "description": "The source wraps an alternative's name in italics (*...*) and the name itself contains a code span holding a literal glob asterisk: `~/.claude/skills/gbg-*`. The trailing `*` sits immediately before the closing backtick, so the renderer's emphasis pass closes the italic there instead of at the intended `*` after the backtick, and the backtick that should open a code span is swallowed. The mis-parse cascades: on the built page it corrupts not just that phrase but the following ~90 words spanning four more 'Dominated' alternatives (Plugin skills, Rendered protocol text, Model reads `<root>/PROTOCOL.md`), which come out with code/emphasis tags in the wrong places and a stray literal backtick left in the visible text. Exactly the class RULE.TEX.RENDERED_MARKUP exists to catch — visible only in the built HTML, not the source — verified directly against the built page.",
+      "resolution_hint": "Drop the trailing `*` from inside the backticks (state the glob wildcard in prose instead) or move the italics outside the code span boundary; rebuild and confirm the cascade clears."
+    },
+    {
+      "type": "style",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Underscores straddling a code-span boundary break a scans-table cell",
+      "locations": [
+        "docs/build/architecture.html (scans table, SCAN.HTML_PUBLIC_HOME row): rendered as `built<em>html + \\`.gbg/scratch/public</em>surface.json\\``",
+        "docs/src/architecture.md:2317 — source: `| \\`SCAN.HTML_PUBLIC_HOME\\` | \\`RULE.DOC.API_GROUPING\\` | hard | built_html + \\`.gbg/scratch/public_surface.json\\` | html | ... |`"
+      ],
+      "description": "The bare `built_html` (no backticks) and the code-spanned `.gbg/scratch/public_surface.json` each contain an underscore; the renderer pairs the two underscores as one emphasis span across the intervening code-span boundary, so the built page shows 'built' in roman, then italic 'html + `.gbg/scratch/public', then roman 'surface.json`' with a dangling literal backtick — the surface column of this row is unreadable rather than the intended `built_html + .gbg/scratch/public_surface.json`. Same defect class as the D6 finding above.",
+      "resolution_hint": "Wrap `built_html` in backticks too so no bare underscore is left outside a code span to pair across the boundary; rebuild and confirm the cell renders as plain text."
+    },
+    {
+      "type": "style",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "A bare rule id with an underscore renders with a spurious italic mid-word",
+      "locations": [
+        "docs/build/guide/rules.html (Declared deviations, RULE.API.POSITIONAL entry): rendered as `...is a KNOWN WEAKNESS by RULE.TEST.RULE<em>WITH</em>CHECK's own terms...`",
+        "docs/src/guide/rules.md:641 — source: `...is a KNOWN WEAKNESS by RULE.TEST.RULE_WITH_CHECK's own terms, carried by review...` (the only rule id among the five deviation bullets not backticked)"
+      ],
+      "description": "Every other rule id in this deviations list is backticked (RULE.TEST.ALLOC_ZERO, RULE.TEST.PASS_AUDIT, RULE.TEST.EXAMPLES_RUN, RULE.DOC.LEADING_IDENTITY, RULE.API.POSITIONAL); RULE.TEST.RULE_WITH_CHECK is the sole bare mention, and its underscores are read as emphasis markers, italicising 'WITH' in the rendered word — a direct violation of the FORMATTED rule that every code identifier is backticked, never bare, visible only on the built page.",
+      "resolution_hint": "Backtick the id: `RULE.TEST.RULE_WITH_CHECK`, matching the other four ids in the same bullet list."
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "Config.check_paths docstring omits two of the checks its own code runs",
+      "locations": [
+        "docs/build/api/Config.html (Config.check_paths): enumerates surface-glob, anchor, module, [paths], extensions/docs_build/executable_claims/seed_catalog checks only",
+        "src/CLI/Config.jl:199-200 — glossary-file-exists check and built_html-implies-docs/-directory check, neither named in the docstring"
+      ],
+      "description": "check_paths (rendered on the built API page) runs two more existence checks the docstring's enumeration never names: the optional surfaces.glossary file's existence, and that a docs/ directory exists whenever surfaces.built_html is set. Per RULE.DOC.CURRENT a summary naming only a subset of what the code now checks is stale even though every listed item is itself true.",
+      "resolution_hint": "Add the glossary and built_html/docs-directory checks to the docstring's enumeration in src/CLI/Config.jl."
+    }
+  ]
+}

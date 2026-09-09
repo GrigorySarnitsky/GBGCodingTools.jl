@@ -41,8 +41,14 @@ is_repo(root) = run(root, "rev-parse", "--is-inside-work-tree") == "true"
 """
     Git.is_ancestor(root, a, b) -> Bool
 
-Whether commit `a` is an ancestor of (or equal to) commit `b` in the repository at `root`
-(`git merge-base --is-ancestor`). Returns the boolean; false outside a repository.
+Whether one commit is an ancestor of (or equal to) another (`git merge-base --is-ancestor`). The
+arguments are:
+
+- `root` — the repository the two commits are read in.
+- `a` — the commit tested as the ancestor.
+- `b` — the commit tested as the descendant; `a` equal to `b` counts as an ancestor.
+
+Returns the boolean; false outside a repository.
 """
 function is_ancestor(root, a, b)
     try
@@ -55,11 +61,15 @@ end
 """
     Git.porcelain(root; untracked = true) -> Vector{Tuple{String,String}}
 
-`git status --porcelain` seen from a consumer at `root`, as `(status, path)` pairs with paths relative
-to `root`; with `untracked = false` untracked files are left out. Porcelain paths are relative to the
-repository top, so for a consumer nested inside a larger repository (the fixture inside the tool's)
-they are translated and paths outside the consumer are dropped — the tool's own modified files are
-not the fixture's. Empty outside a repository.
+`git status --porcelain` seen from a consumer, as `(status, path)` pairs with paths relative to the
+consumer root. The arguments are:
+
+- `root` — the consumer root the status is read from and the paths are made relative to.
+- `untracked` — with `untracked = false` untracked files are left out.
+
+Porcelain paths are relative to the repository top, so for a consumer nested inside a larger
+repository (the fixture inside the tool's) they are translated and paths outside the consumer are
+dropped — the tool's own modified files are not the fixture's. Empty outside a repository.
 """
 function porcelain(root; untracked::Bool = true)
     out = run(root, "status", "--porcelain", untracked ? "--untracked-files=all" : "--untracked-files=no")
@@ -82,15 +92,25 @@ end
 """
     Git.diff(root, range, paths) -> String
 
-The diff of `range` (`<base>..<head>`) restricted to `paths`, in the repository at `root`. Returns the
-patch text, empty outside a repository.
+The diff of a commit range restricted to a set of paths. The arguments are:
+
+- `root` — the repository the diff is taken in.
+- `range` — the commit range, `<base>..<head>`.
+- `paths` — the paths the diff is restricted to.
+
+Returns the patch text, empty outside a repository.
 """
 diff(root, range, paths) = something(run(root, "diff", range, "--", paths...), "")
 
 """
     Git.diffstat(root, range, paths) -> String
 
-The `--stat` summary of the diff of `range` restricted to `paths`, in the repository at `root`.
+The `--stat` summary of the diff of a commit range restricted to a set of paths. The arguments are:
+
+- `root` — the repository the diff is taken in.
+- `range` — the commit range.
+- `paths` — the paths the diff is restricted to.
+
 Returns the text.
 """
 diffstat(root, range, paths) = something(run(root, "diff", "--stat", range, "--", paths...), "")
@@ -105,7 +125,12 @@ log(root, range) = something(run(root, "log", "--format=%h %s", range), "")
 """
     Git.changed_paths(root, range, paths) -> Vector{String}
 
-The files changed in `range` under `paths`, in the repository at `root` (`git diff --name-only`).
+The files changed in a commit range under a set of paths (`git diff --name-only`). The arguments are:
+
+- `root` — the repository the diff is taken in.
+- `range` — the commit range.
+- `paths` — the paths the listing is restricted to.
+
 Returns the relative paths.
 """
 changed_paths(root, range, paths) = String.(filter(!isempty, split(something(run(root, "diff", "--name-only", range, "--", paths...), ""), '\n')))

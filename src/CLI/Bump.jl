@@ -8,9 +8,15 @@ Moves the pinned version of the consumer at `cfg["root"]` to `ver` (a released `
 round is open unless `abandon` gives the reason every open round is abandoned with; rewrites the
 `[tool] version` line of `.gbg/config.toml`, runs `sync` (which re-renders every managed file and the
 sub-environment entries), writes `.gbg/scratch/bump-message.txt` from the template, and records the
-`[sweep]` window in the dev checkout's `fleet.toml` when the bump leaves the fleet at two versions. The
-arguments are `cfg`, the validated config; `ver`, the target version; `abandon`, the abandon reason or
-`nothing`; and `io`, where the report goes. Returns the exit code.
+`[sweep]` window in the dev checkout's `fleet.toml` when the bump leaves the fleet at two versions.
+The arguments are:
+
+- `cfg` — the validated config.
+- `ver` — the target version.
+- `abandon` — the abandon reason, or `nothing`.
+- `io` — where the report goes.
+
+Returns the exit code.
 """
 function bump(cfg::AbstractDict, ver::AbstractString; abandon = nothing, io::IO = stdout)
     occursin(r"^\d+\.\d+\.\d+$", ver) || (println(io, "bump: $ver is not a released X.Y.Z (a prerelease is never pinned)"); return 2)

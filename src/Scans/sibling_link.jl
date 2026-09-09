@@ -15,19 +15,25 @@ function fleet_sites()
     return out
 end
 
-# `lines` are the (line number, raw text) pairs of ONE unit, in order; the first line naming a sibling
-# decides: the mention there is inside `[`Name`](site…)` or `[Name](site…)`, or it is the hit.
+# `lines` are the (line number, raw text) pairs of ONE unit, in order. Both halves of the rule are
+# checked: the first line naming a sibling must carry the mention inside `[`Name`](site…)` or
+# `[Name](site…)`, and every later line naming it must NOT.
 function sibling_link_hits!(hits, file, lines, sites, own)
     for (name, site) in sites
         name == own && continue
         name_re = Regex("(?<![A-Za-z0-9_])" * name * "(?![A-Za-z0-9_])")
         link_re = Regex("\\[`?" * name * "`?\\]\\(\\Q" * site * "\\E")
+        seen = false
         for (n, raw) in lines
             o = findfirst(name_re, raw); o === nothing && continue
             m = match(link_re, raw)
-            ok = m !== nothing && m.offset <= first(o) <= m.offset + ncodeunits(m.match)
-            ok || push!(hits, Hit(file, n, "first mention of `$name` is not a link to $site: " * strip(raw)))
-            break
+            linked = m !== nothing && m.offset <= first(o) <= m.offset + ncodeunits(m.match)
+            if !seen
+                seen = true
+                linked || push!(hits, Hit(file, n, "first mention of `$name` is not a link to $site: " * strip(raw)))
+            elseif linked
+                push!(hits, Hit(file, n, "later mention of `$name` is a link, not a bare code span: " * strip(raw)))
+            end
         end
     end
 end

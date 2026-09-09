@@ -10,11 +10,12 @@ scope and place in the architecture, and its invariants — then a linked one-li
 and no formulas; every formula lives in the operation's own docstring.
 
 ### RULE.DOC.HOME_ORDER
-A function docstring is ordered: identity, when-to-use, arguments, caveats, one formula, citation, links.
+A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats.
 In full: (1) a plain one-sentence identity in the user's terms; (2) when to use it, versus the
-alternatives; (3) each argument (positional and keyword) and its effect; (4) the caveats a user needs, as
-an admonition where load-bearing; (5) one formula if a clean one exists, never overflowing; (6) an inline
-citation for a named or published method and none for a classical one; (7) cross-links. Excluded:
+alternatives; (3) each argument (positional and keyword) and its effect; (4) one formula if a clean one
+exists, never overflowing; (5) an inline citation for a named or published method and none for a
+classical one; (6) cross-links; (7) the caveats a user needs, as an admonition where load-bearing — the
+last substantive block, before the fields list. Excluded:
 implementation internals (a `#` comment), unexplained specialist jargon, architectural rationale and the
 formal apparatus (the rationale documents).
 

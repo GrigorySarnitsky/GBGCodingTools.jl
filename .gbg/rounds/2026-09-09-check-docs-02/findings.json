@@ -1,0 +1,948 @@
+{
+    "schema_version": 1,
+    "round": "2026-09-09-check-docs-02",
+    "findings": [
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:625-628 — \"Eighteen schemas: `schema/{config,exemptions,hat,round,pass,lane-file,finding, verdict-act,verdict-state,tally,hunt-candidate,reproduction,dismissal,architecture-fix,audit, ground-truth,import,managed}.schema.json`\"",
+                "docs/ARCHITECTURE.md:994 — \"schema/*.schema.json          the eighteen of D11\"",
+                "schema/ (directory listing) — 16 files: architecture-fix, audit, config, dismissal, exemptions, finding, ground-truth, hat, import, managed, pass, reproduction, round, tally, verdict-act, verdict-state"
+            ],
+            "id": "2026-09-09-check-docs-02/rationale#1",
+            "resolution_hint": "Either drop lane-file and hunt-candidate from the schema/{...} set and change 'Eighteen' to 'Sixteen' (with a sentence noting the lane-file wrapper and hunt-candidate shape live inline in each instrument's own schema.json), or, if a standalone schema/lane-file.schema.json / schema/hunt-candidate.schema.json was intended, add the missing files. Update the §3 tree line 994 to match.",
+            "description": "D11 enumerates 18 names as files under schema/, but ls schema/*.schema.json returns only 16 files. lane-file and hunt-candidate are not present as schema/lane-file.schema.json or schema/hunt-candidate.schema.json — the actual implementation embeds the lane-file wrapper and the hunt candidate shape inside each instruments/<name>/schema.json (confirmed: instruments/*/schema.json files each say '...and the lane-file wrapper' / bug-hunt's says '...the candidate file and the lane-file wrapper'). So D11's inventory of schema/ is both miscounted (18 vs the true 16) and lists two items that do not exist at the location it names.",
+            "severity": "major",
+            "lane": "rationale",
+            "title": "D11 claims 'Eighteen schemas' under schema/, but only 16 files exist and two named items aren't files there",
+            "type": "currency",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:1713-1718 — \"QUICK = {CFG.* (CFG.TORN excepted), PIN.CONFIG, PIN.SOURCES, PIN.NOT_DEV, EXEMPT.*, WIRE.*, MANAGED.HASH, ROUND.*, POL.SENTINEL, SELF.CONSUMER} ... AUDIT.* ... and every other --deep check are never in QUICK\"",
+                "src/CLI/Doctor.jl:42-45 — const QUICK = [\"CFG.VALID\", ... \"POL.SENTINEL\", \"SELF.CONSUMER\", \"AUDIT.GAP\"]"
+            ],
+            "id": "2026-09-09-check-docs-02/rationale#2",
+            "resolution_hint": "Add AUDIT.GAP to the QUICK formula in §7.3 (e.g. ..., POL.SENTINEL, SELF.CONSUMER, AUDIT.GAP}) and drop it from the 'never in QUICK' list, or, if AUDIT.GAP in QUICK is itself the defect, remove it from src/CLI/Doctor.jl's QUICK constant — either way the two currently disagree.",
+            "description": "The rationale document's QUICK-set formula and its following sentence both explicitly place AUDIT.* outside QUICK ('never in QUICK'), and D14/§7.2's 'Exemptable: LEG.*, GIT.*, AUDIT.*' framing gives no hint it is quick-checked either. But the actual const QUICK array in src/CLI/Doctor.jl ends with \"AUDIT.GAP\", so AUDIT.GAP DOES run inside every gbg preflight, inside the makedocs wrapper, and inside TestHarness.gate() — directly contradicting the document's operational claim about what those three call sites execute.",
+            "severity": "major",
+            "lane": "rationale",
+            "title": "§7.3 states AUDIT.* is 'never in QUICK', but AUDIT.GAP is literally in the code's QUICK array",
+            "type": "operational",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:2278-2333 (§12.B table, all 41 rows + SCAN.CUSTOM placeholder)",
+                "catalog/scans.toml:129-134 — [[scan]] id = \"SCAN.ARGS_FORM\" rule = \"RULE.DOC.ARGS_FORM\" tier = \"triage\" surfaces = [\"src\",\"ext\"] runner = \"julia\" fixture = [\"wrong-args-form\"]",
+                "src/Scans/args_form.jl (the scan's implementation, present in src/Scans/)"
+            ],
+            "id": "2026-09-09-check-docs-02/rationale#3",
+            "resolution_hint": "Add a SCAN.ARGS_FORM row to the §12.B table, e.g. | SCAN.ARGS_FORM | RULE.DOC.ARGS_FORM | triage | src, ext | julia | ... | wrong-args-form |.",
+            "description": "catalog/scans.toml registers 42 scans (verified by counting [[scan]]/id = occurrences); §12.B's table, which purports to be the scan catalogue with 'columns: scan id · rule · tier ... surfaces ... runner ... source ... fixture defect class', lists 41 named scans (40 concrete + the SCAN.CUSTOM.<id> placeholder row). SCAN.ARGS_FORM — a real, actively-enforced scan checking RULE.DOC.ARGS_FORM with its own fixture class wrong-args-form — has no row. Per RULE.DOC.CURRENT in the very rulebook this document is subject to, a summary naming only a subset of what the code now provides is stale.",
+            "severity": "minor",
+            "lane": "rationale",
+            "title": "§12.B's scan catalogue table omits SCAN.ARGS_FORM, a registered hard/triage scan enforcing RULE.DOC.ARGS_FORM",
+            "type": "currency",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "docs/ARCHITECTURE.md:949-959 (the CLI/ block of the §3 repository-layout tree)",
+                "src/CLI/ (directory listing) — 25 files, including Git.jl, Ledger.jl, Passes.jl, RoundFiles.jl, Self.jl, none named in the tree"
+            ],
+            "id": "2026-09-09-check-docs-02/rationale#4",
+            "resolution_hint": "Add the five missing files to the §3 tree's CLI/ block with brief one-line descriptions, consistent with how the other noun modules are annotated.",
+            "description": "§3's tree enumerates the src/CLI/*.jl files as Main.jl, Config.jl Schema.jl, Doctor.jl Sync.jl Init.jl Fleet.jl Bump.jl Release.jl Install.jl, Preflight.jl, Rounds.jl, Gate.jl, Demote.jl, Scan.jl, Seed.jl Recall.jl Consolidate.jl Audit.jl Hunt.jl Selftest.jl — 20 files. The actual src/CLI/ directory holds 25 .jl files; Git.jl (git questions for round verbs/gate/doctor), Ledger.jl (the one reader of .gbg/exemptions.toml), Passes.jl (the verification half of a round: pass open/grade/close, split out of Rounds.jl), RoundFiles.jl (reading .gbg/rounds/), and Self.jl (gbg self verify) exist but are not listed. Self.jl is notable because gbg self verify is discussed extensively throughout the document (D2, D3, D15, §7.3 PIN.SELF) yet the file that implements it is absent from the module inventory.",
+            "severity": "minor",
+            "lane": "rationale",
+            "title": "§3's src/CLI/ file tree omits five actual CLI modules (Git.jl, Ledger.jl, Passes.jl, RoundFiles.jl, Self.jl)",
+            "type": "currency",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/src/guide/verbs.md:31: \"GBGCodingTools.Init.migrate_seeds\"",
+                "src/CLI/Init.jl:574-575: only `VERBS[\"migrate baselines\"] = cmd_migrate_baselines` and `VERBS[\"new\"] = cmd_new` are registered — no `migrate seeds` key exists"
+            ],
+            "id": "2026-09-09-check-docs-02/pages#1",
+            "resolution_hint": "Move `GBGCodingTools.Init.migrate_seeds` off verbs.md onto CLI.md's \"Engines\" section next to `Init.derive_config` (an internal helper `gbg init --migrate` calls), the way `derive_config` is already placed there rather than on the verbs page.",
+            "description": "verbs.md opens with \"`gbg <noun> <verb>` is the whole command line; the table is closed, and every verb below is rendered from its own docstring so the page cannot drift from the code.\" `Init.migrate_seeds` is placed under \"Consumer setup\" alongside genuine verbs (`Init.init`, `Sync.sync`, `cmd_config`, `cmd_schema`), implying `gbg migrate seeds` is invocable. It is not: `migrate_seeds` is only ever called internally from `init(...; migrate = true)` (src/CLI/Init.jl:309-310); there is no `VERBS[\"migrate seeds\"]` entry, so `gbg migrate seeds` fails with \"unknown verb\". The closed-table claim is therefore false for this entry.",
+            "severity": "major",
+            "lane": "pages",
+            "title": "verbs.md lists Init.migrate_seeds as a verb, but it is not one",
+            "type": "structure",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/src/guide/verbs.md:13-14: \"GBGCodingTools.main\\nGBGCodingTools.parse_options\"",
+                "src/CLI/Main.jl:12-24: `struct Options` carries a full docstring (\"The fields are: positional, flags, values\") that is never referenced by any `@docs` block"
+            ],
+            "id": "2026-09-09-check-docs-02/pages#2",
+            "resolution_hint": "Add `GBGCodingTools.Options` to verbs.md's \"Entry point\" `@docs` block, right after `parse_options`.",
+            "description": "`parse_options(args; valued = String[]) -> Options` is shown on verbs.md with no link to `Options`, and a whole-repo search of docs/src finds zero mentions of `GBGCodingTools.Options` anywhere. The type already carries a complete, correctly bulleted docstring (RULE.DOC.FIELDS-compliant) that simply is never rendered. A reader who wants to know what `.positional`, `.flags` and `.values` mean has no page to consult, contra RULE.DOC.API_GROUPING's \"every derived public operation has a home on a public page.\"",
+            "severity": "minor",
+            "lane": "pages",
+            "title": "Options, the record parse_options returns, has no home on any page",
+            "type": "structure",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/src/guide/verbs.md:39-46: shows `GBGCodingTools.Doctor.run` and `GBGCodingTools.doctor`, not `cmd_doctor`",
+                "src/CLI/Doctor.jl:739-744: `cmd_doctor`'s docstring states `--deep`, `--json`, `--effective`, `--only <id-or-prefix>[,…]|QUICK`, and \"exit 2 when the working directory is not a consumer\""
+            ],
+            "id": "2026-09-09-check-docs-02/pages#3",
+            "resolution_hint": "Add `GBGCodingTools.Doctor.cmd_doctor` to verbs.md's \"Checks and scans\" `@docs` block alongside `Doctor.run`.",
+            "description": "`cmd_doctor` — the function actually invoked by `gbg doctor [--deep] [--json] [--effective] [--only …]` and the only place its flags and its \"not a consumer\" exit-2 behavior are stated — appears in zero `@docs` blocks anywhere under docs/src (confirmed by grepping the whole tree; it only shows up in docs/prose_shape.csv, the baseline file). The docstrings shown instead (`Doctor.run`, `doctor`) use different Julia keyword names (`only`, `deep`, `json`, `effective`) and never spell out the `--` flag syntax. index.md calls `gbg doctor` one of \"the two a person runs most,\" yet its literal command-line grammar has no page.",
+            "severity": "minor",
+            "lane": "pages",
+            "title": "gbg doctor's real CLI flags are undocumented on every page",
+            "type": "currency",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/src/guide/verbs.md:42: shows `GBGCodingTools.scan_docs`, not `cmd_scan`",
+                "src/Scan.jl:549-554: `cmd_scan`'s docstring documents `gbg scan docs [--hard-only] [--only id,…] [--rebaseline prose-shape --reason \"…\"]`, which writes `docs/prose_shape.csv`"
+            ],
+            "id": "2026-09-09-check-docs-02/pages#4",
+            "resolution_hint": "Add `GBGCodingTools.cmd_scan` to verbs.md's \"Checks and scans\" `@docs` block, or fold a `--rebaseline` sentence into `scan_docs`'s own docstring.",
+            "description": "`cmd_scan` is never referenced by any `@docs` block in docs/src (confirmed by a whole-tree grep; only docs/prose_shape.csv's baseline row mentions the name). `scan_docs`'s own docstring (src/Scan.jl:406-419), the one actually shown, says nothing about `--rebaseline` — a distinct, real operating mode (rewriting the RULE.DOC.SHAPE baseline) that is otherwise completely absent from the built documentation.",
+            "severity": "minor",
+            "lane": "pages",
+            "title": "gbg scan docs's --rebaseline mode is undocumented on every page",
+            "type": "currency",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "docs/src/guide/install.md:35: \"reads the pinned version, and executes `julia --project=<root>/docs` on the copy that environment resolved — so `gbg` in a consumer always runs that consumer's pinned version.\"",
+                "bin/gbg:19-22: `if [ \"$v\" = \"dev\" ] && ! grep -q '^name = \"GBGCodingTools\"' \"$d/Project.toml\" ...; then ... P=$r` (comment: \"the fixture: enclosing tool repo\")"
+            ],
+            "id": "2026-09-09-check-docs-02/pages#5",
+            "resolution_hint": "Add a sentence after the `<root>/docs` claim noting the one exception: a `dev`-pinned consumer nested inside the tool's own checkout (the fixture) resolves against the enclosing tool root instead.",
+            "description": "The shim has a third routing branch besides `--dev` and \"the ordinary route\": a consumer pinned at `dev` that is NOT itself the GBGCodingTools checkout (the fixture nested under the tool's own tree) resolves `--project=<enclosing tool repository root>`, not `<root>/docs>` as install.md's prose states unconditionally (\"always runs that consumer's pinned version\" via `<root>/docs`). The code's own comment calls this case out by name (\"the ordinary route\" vs. \"the fixture\"), so the omission is a real gap, not an edge case nobody anticipated.",
+            "severity": "minor",
+            "lane": "pages",
+            "title": "install.md's shim description omits the fixture-routing exception",
+            "type": "currency",
+            "n": 5
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "docs/src/guide/rounds.md:43-44: \"the one named in `GBG_ROUND` …, which the CLI exports only while it runs a build or a test on that round's behalf.\"",
+                "src/CLI/Audit.jl:13-16: `audit_bank` runs `package.julia_test` AND every `executable_claims` command \"with `GBG_ROUND` exported\""
+            ],
+            "id": "2026-09-09-check-docs-02/pages#6",
+            "resolution_hint": "Add \"or an audit's executable claim\" to the \"build or a test\" phrase in rounds.md's gate paragraph.",
+            "description": "`Gate.jl`'s own docstring (src/CLI/Gate.jl:9) is careful to say GBG_ROUND is exported \"while it runs a build, a test or an executable claim,\" but rounds.md compresses this to \"a build or a test,\" dropping the audit's executable-claims case entirely — the one place GBG_ROUND is exported for something other than `docs_build`/`julia_test`.",
+            "severity": "nit",
+            "lane": "pages",
+            "title": "rounds.md's gate description omits the audit's own GBG_ROUND export",
+            "type": "currency",
+            "n": 6
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "docs/src/guide/config.md:11-13: \"[surfaces] (the ONE copy of every surface list: rationale documents, pages, generated copies, source, extensions, Literate examples, the built site, the history and references anchors)\"",
+                "schema/config.schema.json: `surfaces.properties` also carries `glossary` (a string path) and `data` (an optional list of data/script files whose comments are prose)"
+            ],
+            "id": "2026-09-09-check-docs-02/pages#7",
+            "resolution_hint": "Add \"the glossary file, and any data/script surface\" to the surfaces parenthetical.",
+            "description": "config.md bills the `[surfaces]` list as \"the ONE copy of every surface list\" and enumerates it in detail (matching all 4 keys of `[docs]` exactly), but of the 11 actual `surfaces.*` schema keys (rationale, pages, generated, src, ext, literate, built_html, history_exempt, references_heading, glossary, data) only 9 are named — `glossary` and `data` are missing, so the claim to completeness is not met for this one section even though the adjacent `[docs]` enumeration is exhaustive.",
+            "severity": "minor",
+            "lane": "pages",
+            "title": "config.md's [surfaces] enumeration omits two schema keys",
+            "type": "currency",
+            "n": 7
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/TestHarness.jl:85 — \"allocation_completeness(pkg, modules; exempt=...)\": 2 pos + 1 kw, prose not bulleted",
+                "src/Witnesses.jl:93 — \"witness_project(root, witness_env, package)\": 3 pos, prose not bulleted",
+                "src/Reflection.jl:311 — \"signature_fidelity(cfg; pkg=..., examined=...)\": 1 pos + 2 kw, prose not bulleted",
+                "src/Scan.jl:268 — \"regex_scan(cfg, files, re; skip_comments=..., on=..., exclude=..., mask_code=...)\"",
+                "src/CLI/Config.jl:250 — \"Config.parse(text; root, check=true)\": 1 pos + 2 kw, prose not bulleted",
+                "src/CLI/Sync.jl:560 — \"sync(cfg; check=false, io=stdout, ledger=...)\": 1 pos + 3 kw, prose not bulleted",
+                "src/CLI/Rounds.jl:223 — \"classify_lane(dir, inst, lane; first_sha=nothing)\": 3 pos + 1 kw, prose not bulleted",
+                "src/CLI/Preflight.jl:185 — \"resolve_hats(cfg; profile=nothing, explicit=String[])\": 1 pos + 2 kw, prose not bulleted",
+                "src/CLI/Bump.jl:12 — \"bump(cfg, ver; abandon=nothing, io=stdout)\": 2 pos + 2 kw, prose not bulleted",
+                "src/CLI/Release.jl:7 — \"release(ver; io=stdout, skip_tests=false)\": 1 pos + 2 kw, prose not bulleted",
+                "src/CLI/Gate.jl:8 — \"gate(cfg, instruments...; io=stderr)\": 2 pos + 1 kw, prose not bulleted",
+                "src/CLI/Seed.jl:41 — \"select(catalog, full, round)\": 3 pos, 0 kw, prose not bulleted"
+            ],
+            "id": "2026-09-09-check-docs-02/src#1",
+            "resolution_hint": "Rewrite each listed docstring's argument prose into the 'The arguments are:' bulleted list (one '- `name` — description.' bullet per positional and keyword argument), matching the already-compliant style used in e.g. Preflight.write_payloads and Preflight.render_args. Fix the two SCAN.ARGS_FORM bugs below first, then run `gbg scan docs --only SCAN.ARGS_FORM` to find every remaining instance mechanically rather than by hand, per RULE.DOC.CLASS_SWEEP.",
+            "description": "RULE.DOC.ARGS_FORM requires the bulleted form led by 'The arguments are:' whenever a docstring documents three or more arguments OR any keyword argument at all; fewer than three with no keyword may stay in running prose, and the two forms are never mixed. I re-derived the real positional/keyword count from each function's own signature (stripping type annotations and defaults) and checked whether the docstring literally contains the bulleted marker 'The arguments are:' followed by a '- `name` — ...' list. After excluding the rule's own exemptions (an internal `_`-prefixed helper, a thin 'Allocating form of' wrapper, and a type docstring already carrying 'The fields are:') I count 74 docstrings across essentially every file of the src surface (TestHarness.jl, Witnesses.jl, Reflection.jl, Scan.jl, HtmlWalker.jl, TreeHash.jl, and ~19 of the 25 files under src/CLI/) that take 3+ arguments or at least one keyword argument, yet are documented in a single running-prose sentence of the form \"The arguments are `x`, ...; `y`, ...; and `z`, ...\" instead of the required bulleted list. This is precisely the pattern the package's own SCAN.ARGS_FORM (added 2026-09-09, per its header comment, because 'the rule had no enforcer anywhere') is built to catch, and it is the single largest class of findings on this surface — a self-application gap the tool has not yet run/fixed against its own source (consistent with the CLAUDE.md 'Current state' note that Phase 1 self-tests and the first release candidate are still pending).",
+            "severity": "major",
+            "lane": "src",
+            "title": "~74 docstrings violate RULE.DOC.ARGS_FORM's bulleted-form rule",
+            "type": "structure",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/Scans/args_form.jl:6 — \"const ARGS_BULLET = \\\"The arguments are:\\\"\"",
+                "src/Scans/args_form.jl:21 — \"bulleted = occursin(ARGS_BULLET, d.body)\"",
+                "src/Scan.jl:231-232 — prose_text docstring: \"...for the scans that match across lines. The\\narguments are:\"",
+                "src/CLI/Preflight.jl:320-321 — write_payloads docstring: \"...workflow/payload/`. The\\narguments are:\""
+            ],
+            "id": "2026-09-09-check-docs-02/src#2",
+            "resolution_hint": "Match the bulleted marker with a whitespace-tolerant regex (e.g. `r\"The\\s+arguments\\s+are:\"`) instead of a literal substring, or normalise runs of whitespace in `d.body` before the `occursin` check.",
+            "description": "SCAN.ARGS_FORM detects the bulleted form by a plain `occursin(\"The arguments are:\", d.body)` substring test. `d.body` is the raw docstring text with its original line breaks, so this test fails whenever the source happens to wrap the phrase — 'The' ending one line and 'arguments are:' beginning the next, which the hanging-indent line width naturally produces. Two of the tool's OWN docstrings already do this by accident and are otherwise perfectly correctly bulleted: `Scan.prose_text` (src/Scan.jl:229-238) and `Preflight.write_payloads` (src/CLI/Preflight.jl:317-333) both write proper '- `name` — ...' lists, yet the literal marker they open with is split across a line break, so `bulleted` evaluates false for both. Since both functions take 3 (write_payloads: cfg, instrument, round, roster + base kw) or 1+1kw (prose_text: cfg, file + history_cut) arguments, `wants_bullets` is true, so the scan would emit a false-positive FAIL hit against docstrings that already comply with the rule — undermining the very sweep meant to fix finding 1.",
+            "severity": "major",
+            "lane": "src",
+            "title": "SCAN.ARGS_FORM false-positives when its own trigger phrase line-wraps",
+            "type": "operational",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/Scans/args_form.jl:16 — \"o = findfirst('(', sig); c = findlast(')', sig)\"",
+                "src/Reflection.jl:154-166 — argcov(cfg; exempt = (hit -> false)) -> (hits, population, skipped)"
+            ],
+            "id": "2026-09-09-check-docs-02/src#3",
+            "resolution_hint": "Strip the return annotation the same way Reflection.argcov does: `sig = replace(d.signature, r\"\\s*->.*$\" => \"\")` before computing `o`/`c`, or reuse `Reflection.argcov`'s stripped-signature logic directly.",
+            "description": "`Reflection.argcov` itself strips the return-type arrow first (`sig = replace(d.signature, r\"\\s*->.*$\" => \"\")`, src/Reflection.jl:172) before locating the parameter list, precisely because a parenthesised return annotation would otherwise be mistaken for part of the signature. `SCAN.ARGS_FORM` (src/Scans/args_form.jl:16) skips this step and calls `findlast(')', sig)` on the raw signature line, so for any docstring whose return annotation is itself a parenthesised tuple, `c` lands on the closing paren of the RETURN tuple rather than the argument list's. Concretely, for argcov's own displayed signature `argcov(cfg; exempt = (hit -> false)) -> (hits, population, skipped)`, `inside` becomes `\"cfg; exempt = (hit -> false)) -> (hits, population, skipped\"`, and `Reflection.signature_parameters` then reads the return-tuple's element names `population` and `skipped` as two additional spurious keyword arguments (both parse as bare identifiers after the `=`-split). `argcov` genuinely has exactly one keyword (`exempt`); if this docstring is ever flagged (it currently is not being reached since the prose-vs-bulleted mismatch already applies for other reasons, but the message text is computed regardless of the branch taken), the printed hit would read '...takes 1 positional and 3 keyword argument(s)...' instead of the true 1-and-1. The same corruption applies to `Rounds.load(cfg, round) -> (dir, record)`, `Rounds.classify_lane(...) -> (status, data, sha, note)`, `Demote.demote(verdict) -> (verdict′, demoted::Bool)` and every other docstring in this codebase whose return arrow is a tuple (a very common style here).",
+            "severity": "minor",
+            "lane": "src",
+            "title": "SCAN.ARGS_FORM does not strip the `-> ...` return annotation before parsing the parameter list",
+            "type": "operational",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Preflight.jl:182-196 — \"...or `none`; `needs`;\\n`anchor`, whether it runs at full strength...\""
+            ],
+            "id": "2026-09-09-check-docs-02/src#4",
+            "resolution_hint": "Add a clause explaining `needs`, e.g. \"`needs`, the requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from\", in the same spot the field is currently just named.",
+            "description": "The docstring of `resolve_hats` walks through every field the returned `Vector{Dict}` carries — `key`, `substrate` (with its full closed-set explanation), `anchor`, the persona, and `not_applicable` — but `needs` appears only as a bare mention, \"`needs`;\", with no statement of what it is (the code reads `needs = String.(get(h, \"needs\", String[]))` — a list of requirement tags such as `\"html\"`, `\"git\"`, `\"rulebook\"` that `not_applicable` is computed from). Every sibling field in the same enumeration is explained; `needs` alone is not, so a cold read of the docstring cannot tell what the field holds or means.",
+            "severity": "minor",
+            "lane": "src",
+            "title": "Preflight.resolve_hats leaves the `needs` return field unexplained",
+            "type": "self-containment",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/Scans/code_in_math.jl:1-4 — \"remove the control words, the braced arguments of \\\\texttt/\\\\text/... and one-letter subscripts\"",
+                "src/Scans/code_in_math.jl:178 — \"replace(s, r\\\"\\\\[a-zA-Z]+\\\" => \\\" \\\", r\\\"_\\\\{[a-z]+\\\\}\\\" => \\\" \\\", r\\\"\\\\^\\\\{[a-z]+\\\\}\\\" => \\\" \\\")\"",
+                "src/Scans/code_in_math.jl:179 — \"occursin(r\\\"[a-z]{2,}\\\", s) && push!(hits, ...)\""
+            ],
+            "id": "2026-09-09-check-docs-02/src#5",
+            "resolution_hint": "Reword the comment to 'one-or-more-letter braced subscripts/superscripts' (or simply 'braced subscripts and superscripts'), matching the `[a-z]+` in the regex.",
+            "description": "The comment introducing SCAN.CODE_IN_MATH says it removes 'one-letter subscripts', but the regexes it uses, `r\"_\\{[a-z]+\\}\"` and `r\"\\^\\{[a-z]+\\}\"`, strip a braced subscript or superscript of ANY number of lowercase letters (`+`, not a single-character quantifier) — e.g. `_{ijk}` or `^{max}` are stripped just as `_{i}` is. The comment undersells what the code actually does, which could mislead a maintainer into believing a multi-letter braced subscript survives to trip the final `[a-z]{2,}` check when it does not.",
+            "severity": "nit",
+            "lane": "src",
+            "title": "code_in_math.jl's header comment mis-describes its own subscript-stripping regex",
+            "type": "operational",
+            "n": 5
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/build/architecture.html (rendered D6 'Dominated' alternatives list): rendered text reads `<em>Personal-scope symlinked skills `~/.claude/skills/gbg-</em><code>*: deliver the checkout's protocol...</code>gbg-<code>prefix costs every</code>/check-docs<code>reference...`",
+                "docs/src/architecture.md:383 — source: `*Personal-scope symlinked skills \\`~/.claude/skills/gbg-*\\`*: deliver the checkout's`"
+            ],
+            "id": "2026-09-09-check-docs-02/built-html#1",
+            "resolution_hint": "Drop the trailing `*` from inside the backticks (state the glob wildcard in prose instead) or move the italics outside the code span boundary; rebuild and confirm the cascade clears.",
+            "description": "The source wraps an alternative's name in italics (*...*) and the name itself contains a code span holding a literal glob asterisk: `~/.claude/skills/gbg-*`. The trailing `*` sits immediately before the closing backtick, so the renderer's emphasis pass closes the italic there instead of at the intended `*` after the backtick, and the backtick that should open a code span is swallowed. The mis-parse cascades: on the built page it corrupts not just that phrase but the following ~90 words spanning four more 'Dominated' alternatives (Plugin skills, Rendered protocol text, Model reads `<root>/PROTOCOL.md`), which come out with code/emphasis tags in the wrong places and a stray literal backtick left in the visible text. Exactly the class RULE.TEX.RENDERED_MARKUP exists to catch — visible only in the built HTML, not the source — verified directly against the built page.",
+            "severity": "major",
+            "lane": "built-html",
+            "title": "Asterisk inside a backtick span, nested in italics, corrupts a whole paragraph of rendered prose",
+            "type": "style",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/build/architecture.html (scans table, SCAN.HTML_PUBLIC_HOME row): rendered as `built<em>html + \\`.gbg/scratch/public</em>surface.json\\``",
+                "docs/src/architecture.md:2317 — source: `| \\`SCAN.HTML_PUBLIC_HOME\\` | \\`RULE.DOC.API_GROUPING\\` | hard | built_html + \\`.gbg/scratch/public_surface.json\\` | html | ... |`"
+            ],
+            "id": "2026-09-09-check-docs-02/built-html#2",
+            "resolution_hint": "Wrap `built_html` in backticks too so no bare underscore is left outside a code span to pair across the boundary; rebuild and confirm the cell renders as plain text.",
+            "description": "The bare `built_html` (no backticks) and the code-spanned `.gbg/scratch/public_surface.json` each contain an underscore; the renderer pairs the two underscores as one emphasis span across the intervening code-span boundary, so the built page shows 'built' in roman, then italic 'html + `.gbg/scratch/public', then roman 'surface.json`' with a dangling literal backtick — the surface column of this row is unreadable rather than the intended `built_html + .gbg/scratch/public_surface.json`. Same defect class as the D6 finding above.",
+            "severity": "major",
+            "lane": "built-html",
+            "title": "Underscores straddling a code-span boundary break a scans-table cell",
+            "type": "style",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/build/guide/rules.html (Declared deviations, RULE.API.POSITIONAL entry): rendered as `...is a KNOWN WEAKNESS by RULE.TEST.RULE<em>WITH</em>CHECK's own terms...`",
+                "docs/src/guide/rules.md:641 — source: `...is a KNOWN WEAKNESS by RULE.TEST.RULE_WITH_CHECK's own terms, carried by review...` (the only rule id among the five deviation bullets not backticked)"
+            ],
+            "id": "2026-09-09-check-docs-02/built-html#3",
+            "resolution_hint": "Backtick the id: `RULE.TEST.RULE_WITH_CHECK`, matching the other four ids in the same bullet list.",
+            "description": "Every other rule id in this deviations list is backticked (RULE.TEST.ALLOC_ZERO, RULE.TEST.PASS_AUDIT, RULE.TEST.EXAMPLES_RUN, RULE.DOC.LEADING_IDENTITY, RULE.API.POSITIONAL); RULE.TEST.RULE_WITH_CHECK is the sole bare mention, and its underscores are read as emphasis markers, italicising 'WITH' in the rendered word — a direct violation of the FORMATTED rule that every code identifier is backticked, never bare, visible only on the built page.",
+            "severity": "minor",
+            "lane": "built-html",
+            "title": "A bare rule id with an underscore renders with a spurious italic mid-word",
+            "type": "style",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/build/api/Config.html (Config.check_paths): enumerates surface-glob, anchor, module, [paths], extensions/docs_build/executable_claims/seed_catalog checks only",
+                "src/CLI/Config.jl:199-200 — glossary-file-exists check and built_html-implies-docs/-directory check, neither named in the docstring"
+            ],
+            "id": "2026-09-09-check-docs-02/built-html#4",
+            "resolution_hint": "Add the glossary and built_html/docs-directory checks to the docstring's enumeration in src/CLI/Config.jl.",
+            "description": "check_paths (rendered on the built API page) runs two more existence checks the docstring's enumeration never names: the optional surfaces.glossary file's existence, and that a docs/ directory exists whenever surfaces.built_html is set. Per RULE.DOC.CURRENT a summary naming only a subset of what the code now checks is stale even though every listed item is itself true.",
+            "severity": "minor",
+            "lane": "built-html",
+            "title": "Config.check_paths docstring omits two of the checks its own code runs",
+            "type": "self-containment",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "instruments/audit-changes/workflow/audit.js:46-50 — property `previously_worked` is defined but the `required` array is `['type', 'severity', 'confidence', 'title', 'locations', 'before', 'after', 'why_it_matters', 'justified', 'description', 'evidence']`",
+                "instruments/audit-changes/PROTOCOL.md:70 — \"that field is what the instrument exists to surface, so its severity is not the reporting lane's to downgrade\"",
+                "src/CLI/Passes.jl:286 — `gated = s >= 3 || get(f, \"previously_worked\", \"no\") in (\"yes\", \"unknown\")`"
+            ],
+            "id": "2026-09-09-check-docs-02/workflow-scripts#1",
+            "resolution_hint": "Add `previously_worked` to the `required` array for the behaviour-change lane's item schema (or make the item schema per-lane so only that lane requires it), so an omission fails validation instead of silently defaulting to 'no' in Passes.jl.",
+            "description": "audit.js's PREAMBLE and the behaviour-change lane's own catalog brief tell the agent `previously_worked` is 'REQUIRED on the behaviour-change lane' (line 46's description string repeats this), but the JSON Schema handed to the `agent()` call — the only thing actually enforced against the model's output — does not put `previously_worked` in the item's `required` list. An economy-model lane can therefore return a finding with the key omitted entirely and still validate. Downstream, `Passes.jl:286` reads it with `get(f, \"previously_worked\", \"no\")`, so a missing key resolves to `\"no\"` — the one value PROTOCOL.md says is NOT gated (only `yes`/`unknown` are). The design explicitly wants `unknown` (an honest 'I couldn't tell') gated like `yes`; an omitted field instead lands on the least-safe outcome, silently. This is exactly the missing-case-must-be-the-failing-case rule (RULE.TEST.MISSING_IS_FAILING) inverted: here the missing case is the passing case.",
+            "severity": "major",
+            "lane": "workflow-scripts",
+            "title": "audit.js's finding schema does not require `previously_worked`, so the field the instrument exists to surface can be silently omitted and defaults to the unsafe value",
+            "type": "operational",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "instruments/check-consistency/workflow/panel.js:88 — \"you may use Bash with git (log, diff, show, grep) and Read inside ${A.repo}. Never open anything under .gbg/ beyond the files named above, and never ~/.gbg/.\"",
+                "instruments/check-consistency/workflow/verify-act.js:59 — \"...scope every search with `--glob '!.gbg/**'`: earlier passes' verdicts live there and they are an answer key.\"",
+                "instruments/check-consistency/workflow/verify-state.js:51 — \"Scope every search with `--glob '!.gbg/**'`.\""
+            ],
+            "id": "2026-09-09-check-docs-02/workflow-scripts#2",
+            "resolution_hint": "Append the same `--glob '!.gbg/**'` sentence to the `needs.includes('git')` branch of panel.js's `substrateText`, matching verify-act.js and verify-state.js.",
+            "description": "`.gbg/` lives directly under the repo root (`.gbg/rounds/...`), so a `grep`/`find` run against `${A.repo}` with no exclusion traverses it. Two of the three check-consistency scripts (verify-act.js, verify-state.js) hand the agent the concrete `--glob '!.gbg/**'` instruction needed to make the stated 'never open .gbg/' rule actually followable when grepping broadly; panel.js's `needs.includes('git')` branch grants exactly the tool (`grep`) that makes this a live risk, then states only the prohibition with no scoping mechanism. The rulebook's own 'Honest limits' section already accepts this class of residue as transcript-visible rather than gate-visible, so this is not a hard vulnerability, but it is an inconsistent application of the fleet's own cheap mitigation across sibling scripts in the same instrument.",
+            "severity": "minor",
+            "lane": "workflow-scripts",
+            "title": "check-consistency's `needs: git` hats are told never to open `.gbg/` but, unlike verify-act.js/verify-state.js, get no `--glob '!.gbg/**'` scoping",
+            "type": "operational",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "instruments/bug-hunt/workflow/hunt.js:73 — \"Read the source. Follow the data.\" (FREE_PREAMBLE, no `.gbg/` mention at all)",
+                "instruments/bug-hunt/workflow/hunt.js:92-93 — \"YOUR TERRITORY (hunt HERE; you may read anything else in the repository to understand it)\"",
+                "instruments/bug-hunt/workflow/hunt.js:84 — \"FILES UNDER .gbg/ YOU MAY OPEN: your brief and the invariants file named in this prompt, and nothing else under .gbg/ or ~/.gbg/.\""
+            ],
+            "id": "2026-09-09-check-docs-02/workflow-scripts#3",
+            "resolution_hint": "Add the same explicit '.gbg/ or ~/.gbg/ — nothing else' sentence (and `--glob '!.gbg/**'` for any grep) to the free-lane dispatch string, not just the territory lanes' HUNT_PREAMBLE.",
+            "description": "The free lane is deliberately unconstrained ('deliberately given NO list of defect classes... if you find yourself working through a mental checklist, stop and read the actual code again') and its dispatch line only gestures at the `.gbg/` boundary via a parenthetical on a 'WHERE TO START' sentence: '(the one file under .gbg/ you may open besides the invariants named above)' — never the explicit 'nothing else under .gbg/, never ~/.gbg/' sentence the territory lanes get from HUNT_PREAMBLE, and no `--glob` scoping either. The lane most likely to run broad, exploratory searches across the whole repository (by design) carries the thinnest guardrail against wandering into `.gbg/rounds/` — which, per instruments.md's Honest Limits, can hold the seeded-recall answer key.",
+            "severity": "minor",
+            "lane": "workflow-scripts",
+            "title": "bug-hunt's free lane is told to search broadly (\"you may read anything else in the repository\") with the weakest `.gbg/` boundary language of any lane in the fleet",
+            "type": "operational",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "instruments/bug-hunt/workflow/dismissals.js:7 — \"Args: { schema_version, round, repo, package, items: [{id, title}], items_path, out, models: {economy} }\"",
+                "instruments/bug-hunt/workflow/dismissals.js:16 — `for (const k of ['repo', 'items', 'items_path', 'out', 'package', 'models', 'items_sha', 'round']) if (A[k] === undefined) throw ...`",
+                "instruments/bug-hunt/workflow/dismissals.js:63 — `items_sha: A.items_sha` written into the output, matching `schema/dismissal.schema.json`'s required `items_sha`"
+            ],
+            "id": "2026-09-09-check-docs-02/workflow-scripts#4",
+            "resolution_hint": "Add `items_sha` to the Args comment at the top of dismissals.js.",
+            "description": "The file's own top-of-file Args documentation (the comment a maintainer reads first to know what to pass) is stale against the code two lines below it: `items_sha` is required at runtime and is a required field of `dismissal.schema.json`, but the comment's Args list never mentions it. A caller following only the comment would omit a required argument.",
+            "severity": "minor",
+            "lane": "workflow-scripts",
+            "title": "dismissals.js's header comment documents an `Args` shape that omits `items_sha`, which the code actually requires and writes",
+            "type": "operational",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "instruments/check-consistency/workflow/rubric-audit.js:65-68 — `for (const h of a.hats) (byHat[h] ||= []).push(a.id)` (no check that `h` is a real hat key)",
+                "instruments/check-consistency/workflow/rubric-audit.js:75 — `const hatKeys = Object.keys(byHat).filter(k => A.hats.some(h => h.key === k))`",
+                "instruments/check-consistency/workflow/rubric-audit.js:69-70 — only the `unassigned` case (empty `hats` array) is logged: \"assigned N findings; M covered by NO persona\""
+            ],
+            "id": "2026-09-09-check-docs-02/workflow-scripts#5",
+            "resolution_hint": "After building `byHat`, log (and fold into `unassigned` or a new `misassigned` bucket) any key in `byHat` that has no match in `A.hats`, instead of letting the `hatKeys` filter drop it silently.",
+            "description": "The ASSIGN agent freely names hat keys read from the personas file; nothing checks those keys against `A.hats` before bucketing into `byHat`. A key that doesn't match any `A.hats` entry (a typo, a stale persona name) is silently filtered out of `hatKeys` two lines later, so the finding(s) assigned to it never reach the blind run or the score tally — unlike an empty-`hats` assignment, which is explicitly counted and logged as `unassigned`. A mis-keyed assignment is indistinguishable, in the output, from one that was never made.",
+            "severity": "minor",
+            "lane": "workflow-scripts",
+            "title": "rubric-audit.js silently drops a finding assigned to a hat key not present in `A.hats`, with no log line and no path into the tally",
+            "type": "operational",
+            "n": 5
+        },
+        {
+            "locations": [
+                "catalog/hats/latex-typesetter.toml:4 — needs = [\"source\", \"rulebook\"]",
+                "catalog/hats/latex-typesetter.toml:6 — persona never references {package.rulebook_sections}; its only 'rulebook' is 'the rendered policy file `latex-idiom.md`'",
+                "src/CLI/Preflight.jl:210-211 — na = (...) || (\"rulebook\" in needs && isempty(cfg[\"package\"][\"rulebook_sections\"]))",
+                "src/CLI/Preflight.jl:433 — a[\"hats\"] = [... for h in roster if !h[\"not_applicable\"]]"
+            ],
+            "n": 1,
+            "seeded": false,
+            "id": "2026-09-09-check-docs-02/catalogues#1",
+            "severity": "major",
+            "title": "latex-typesetter needs=[\"rulebook\"] but never uses the rulebook grant, so it silently vanishes for a consumer with empty rulebook_sections",
+            "lane": "catalogues",
+            "type": "structure",
+            "confidence": "high",
+            "description": "resolve_hats() marks a hat not_applicable — and therefore excludes it entirely from the roster — when it needs \"rulebook\" and cfg.package.rulebook_sections is empty (Preflight.jl:194-195, 210-211). Three of the four hats sharing needs=[\"rulebook\",\"source\"] genuinely consume {package.rulebook_sections} in their persona (doc-policy, naming-policy, invariants-and-decisions), so that gate matches their content. latex-typesetter is the odd one out: its only use of 'rulebook' names the shared, always-rendered policy file latex-idiom.md (part of rulebook_text()'s unconditional POLICY_FILES loop), and it never substitutes {package.rulebook_sections} anywhere. schema/config.schema.json places no minItems on package.rulebook_sections, so a consumer legitimately declaring rulebook_sections = [] is schema-valid — and for that consumer latex-typesetter is silently dropped from every /check-consistency roster even though its whole job (auditing LaTeX idiom against the ever-present latex-idiom.md) has nothing to do with rulebook_sections."
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "policy/docs-rubric.md:12-16 — \"A function docstring is ordered: identity, when-to-use, arguments, caveats, one formula, citation, links... (4) the caveats... (5) one formula... (6) an inline citation... (7) cross-links.\"",
+                "policy/docs-rubric.md:60-61 — \"A caveat admonition is the last substantive block of a docstring, before the fields list.\"",
+                "src/Scans/prose_shape.jl:114-122 — the only scan touching order checks solely `# Arguments` precedes any `!!!` and nothing follows `# Fields`"
+            ],
+            "id": "2026-09-09-check-docs-02/rulebook#1",
+            "resolution_hint": "Pick one placement (most consistent with RULE.DOC.SHAPE's actually-enforced 'Arguments precedes any column-0 admonition, Fields last' — i.e. caveats last, matching ADMONITION_TITLE) and rewrite HOME_ORDER's numbered list so caveats is the last numbered item before the fields list, or drop the 'last substantive block' clause from ADMONITION_TITLE and let SHAPE's placement rule stand as the single source of truth.",
+            "description": "RULE.DOC.HOME_ORDER numbers the caveat admonition as step (4) of 7, strictly BEFORE the formula (5), citation (6) and links (7) — i.e. caveats sit in the middle of the docstring. RULE.DOC.ADMONITION_TITLE instead states the caveat admonition 'is the last substantive block of a docstring, before the fields list' — i.e. AFTER the formula, citation and links, immediately preceding `# Fields`. A docstring cannot satisfy both: HOME_ORDER puts three more sections after the caveat, ADMONITION_TITLE puts none. The actual enforcement (SCAN.PROSE_SHAPE) does not resolve this — it only checks that no admonition precedes `# Arguments` and that nothing follows `# Fields`, so neither ordering claim is mechanically checked, and a docstring following HOME_ORDER's own numbered sequence would violate ADMONITION_TITLE's plain-English restatement of the same rule family.",
+            "severity": "major",
+            "lane": "rulebook",
+            "title": "RULE.DOC.HOME_ORDER and RULE.DOC.ADMONITION_TITLE disagree about where the caveat admonition sits in a docstring",
+            "type": "structure",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "policy/RULES.toml:366 — sentinel ends \"...Journal Volume (Year)`, verbatim-\" (no closing period, cut at the hyphenated line-wrap)",
+                "policy/citations.md:9-13 — the real first sentence continues past that point and ends \"...title and DOI compared.\""
+            ],
+            "id": "2026-09-09-check-docs-02/rulebook#2",
+            "resolution_hint": "Regenerate the sentinel for RULE.CIT.FULL_INLINE (and audit the generator for the same line-wrap-hyphen bug on any other paragraph that wraps at a hyphen) so it captures the complete first sentence ending '...title and DOI compared.'",
+            "description": "policy/RULES.toml's own header (line 1-5) defines a sentinel as 'the first sentence of the rule's paragraph, verbatim' and states 'LEG.SENTINELS (doctor) fails when a sentinel is absent from its file.' Every other sentinel in the file is a verbatim prefix of its paragraph ending at a genuine sentence boundary (period followed by a space or end-of-paragraph) — verified programmatically for all 93 rules. RULE.CIT.FULL_INLINE is the sole exception: its sentinel stops at 'verbatim-', the hyphen from the source markdown's line-wrap of 'verbatim-\\nidentical', not at the end of the sentence ('...title and DOI compared.'). Because LEG.SENTINELS matches a consumer CLAUDE.md against this exact (corrupted) fragment, a consumer that copy-pasted the RULE.CIT.FULL_INLINE sentence verbatim outside its managed block would not be caught by the check for this one rule — the fragment 'verbatim-' with a trailing hyphen is not a string anyone would actually write.",
+            "severity": "major",
+            "lane": "rulebook",
+            "title": "RULE.CIT.FULL_INLINE's sentinel in RULES.toml is truncated mid-sentence at a source line-wrap hyphen, not the rule's actual first sentence",
+            "type": "structure",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "policy/RULES.toml:3 — \"POL.RULE_PARITY fails when a heading exists without a row or a row without a heading.\"",
+                "grep -rn \"RULE_PARITY\" (excluding .gbg/) — zero matches outside this one comment line"
+            ],
+            "id": "2026-09-09-check-docs-02/rulebook#3",
+            "resolution_hint": "Either implement POL.RULE_PARITY as a doctor check (comparing the `### RULE.*` headings across policy/*.md against RULES.toml's [[rule]] sections) or drop the claim from the header comment and note it as a `deferred.md` item until built.",
+            "description": "The file's header describes two doctor safety nets: LEG.SENTINELS (confirmed present at src/CLI/Doctor.jl:461) and POL.RULE_PARITY. No check named POL.RULE_PARITY, or any code implementing heading/row parity between the *.md files and RULES.toml, exists anywhere in src/. By happy coincidence the 93 headings and 93 rows currently do match exactly (verified with a diff), but that is presently guaranteed by nobody — the comment describes a safety net that is not built, so a future hand-edit that adds a `###` heading without a matching `[[rule]]` row (or vice versa) would go undetected.",
+            "severity": "minor",
+            "lane": "rulebook",
+            "title": "policy/RULES.toml's own header cites a `POL.RULE_PARITY` doctor check that does not exist anywhere in the codebase",
+            "type": "self-containment",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "policy/latex-idiom.md:49-52 — \"the indicator or identity is `\\mathbf{1}`\" (stated unconditionally, no package parameter)",
+                "policy/latex-idiom.md:54-59 — \"`\\mathbf` is admitted only for an agreed list of strings... For this package the admitted strings are {{notation.mathbf_allowed}}\" (rendered as \"none\" for GBGCodingTools)",
+                "src/Scans/mathbf.jl:1-12 — the scan flags any `\\mathbf{...}` not literally in `cfg[\"notation\"][\"mathbf_allowed\"]`; its own header comment notes only \"PF admits `\\mathbf{1}`\", implying other packages must opt in separately"
+            ],
+            "id": "2026-09-09-check-docs-02/rulebook#4",
+            "resolution_hint": "Add `\\mathbf{1}` as a standing, non-configurable exception in RULE.TEX.MATHBF's text (or fold it permanently into every package's `notation.mathbf_allowed` default) so MATHBB's mandate is never a live contradiction for a zero-admission package.",
+            "description": "RULE.TEX.MATHBB states as a flat, unparameterized rule that the indicator or identity is written `\\mathbf{1}` — it names no package variation point. RULE.TEX.MATHBF, by contrast, bans `\\mathbf` outside a per-package admitted list, and for GBGCodingTools that list is declared empty (\"the admitted strings are none... the package has no vector quantities\"). Read together, the rulebook simultaneously requires `\\mathbf{1}` for any indicator/identity notation and forbids it outright for this package, and the SCAN.MATHBF implementation resolves the ambiguity by silently favouring MATHBF (it would flag `\\mathbf{1}` here as a hit) rather than by MATHBB carrying an explicit universal exception. Low real-world impact since this package documents no physical/vector quantities, but the two paragraphs are not reconcilable as written for a package with an empty admitted list.",
+            "severity": "minor",
+            "lane": "rulebook",
+            "title": "RULE.TEX.MATHBB's mandated `\\mathbf{1}` for the indicator/identity conflicts with RULE.TEX.MATHBF's package-specific admitted-string list, which is empty for this package",
+            "type": "structure",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "policy/00-index.md:12-14 — \"Every rule has a stable id... The instruments cite these ids; a scan names the rule it enforces...\"",
+                "instruments/audit-changes/PROTOCOL.md, instruments/bug-hunt/PROTOCOL.md, instruments/check-consistency/PROTOCOL.md — zero `RULE.*` citations each",
+                "instruments/check-docs/PROTOCOL.md:57 — the one and only `RULE.*` citation across all four protocols, and it is `RULE.INST.AUDIT_AFTER_CODE` (an instrument-process rule, not a docs-content rule)",
+                "catalog/hats/*.toml (21 files) and catalog/lanes/*.toml (3 files) — zero `RULE.*` citations across all 24 files",
+                "catalog/scans.toml — 42 `RULE.*` citations, i.e. the actual locus of rule-citing behaviour"
+            ],
+            "id": "2026-09-09-check-docs-02/rulebook#5",
+            "resolution_hint": "Either reword the sentence to say scans (not instruments) cite the ids, or have the check-docs/check-consistency/bug-hunt/audit-changes lane and hat catalogues actually cite the RULE.* ids they exercise so the claim is true of the committed artefacts.",
+            "description": "The index's sentence lists three consumers of the RULE.* ids in parallel — instruments, scans, and the doctor — as if all three name rules by id. Verified: the doctor does (LEG.SENTINELS) and scans do (catalog/scans.toml, 42 hits, one scan file per hit e.g. `RULE.TEX.MATHBB` in src/Scans/mathbb_digit.jl). The instruments proper (their committed PROTOCOL.md text, their hat and lane catalogues, and their workflow scripts) do not: only a single incidental citation exists in the whole instruments/ and catalog/hats+lanes tree, and it names an INST-family process rule, not a rule from the docs-rubric/latex-idiom/citations families the sentence's context (immediately after describing RULES.toml's docs-rule ids) implies.",
+            "severity": "minor",
+            "lane": "rulebook",
+            "title": "00-index.md's claim that \"the instruments cite these ids\" is not supported by the instruments' own committed files",
+            "type": "self-containment",
+            "n": 5
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "policy/testing-protocol.md:56-62 — \"A rule and its check land in the same commit, and a stated rule without a check is a known weakness... When a rule is written down, name what would catch its next violation.\"",
+                "example unchecked rules with no citation in catalog/scans.toml, src/CLI/Doctor.jl, or test/: RULE.DOC.TWO_TIER, RULE.DOC.ONE_HOME, RULE.DOC.VARIANT_PAIR, RULE.DOC.VERIFIED, RULE.DOC.SELF_CONTAINED, RULE.DOC.TERMS_DEFINED, RULE.DOC.CLASS_SWEEP, RULE.DOC.BATTERY, RULE.DOC.BUILD_VERIFY, RULE.DOC.ONE_NOTATION, RULE.DOC.MODULE_MAP, RULE.DOC.RETURNS, RULE.TEX.NO_HSCROLL, RULE.TEX.IMAGINARY, RULE.TEX.GREEK_AB, RULE.CIT.STYLE",
+                "policy/deviations.md (rendered) — the ONLY rule ever recorded as a RULE_WITH_CHECK-style \"known weakness\" is RULE.API.POSITIONAL"
+            ],
+            "id": "2026-09-09-check-docs-02/rulebook#6",
+            "resolution_hint": "Either extend the RULES.toml schema with a `check = \"scan:<id>\" | \"doctor:<id>\" | \"panel-judgment\" | \"known-weakness\"` field so every rule declares its own enforcement class, or narrow RULE.TEST.RULE_WITH_CHECK's own text to state explicitly that a panel-judgment rule is exempt from needing a mechanical check.",
+            "description": "By count, roughly half of the 93 rules — most of docs-rubric.md's judgment-level rules and nearly all of testing-protocol.md — have no citation in catalog/scans.toml, src/CLI/Doctor.jl or test/, and are not cited by any instrument protocol either (per the previous finding). RULE.TEST.RULE_WITH_CHECK frames this exact situation as a 'known weakness' that should be named at the moment the rule is written. Only one of the ~48 candidate rules (RULE.API.POSITIONAL) is actually carried as a declared known-weakness deviation; the rest are silent about their own unenforceability. Some of these (e.g. RULE.DOC.VERIFIED, RULE.DOC.ONE_NOTATION) are inherently judgment calls no scan could fully automate and are legitimately left to the review panel rather than a scan — that is not itself a defect — but the rulebook gives no mechanism (comparable to `deviations.md`) distinguishing 'deliberately judgment-only, no check possible' from 'nobody has built the check yet,' so RULE_WITH_CHECK's own bar is not being applied uniformly to the rulebook that states it.",
+            "severity": "minor",
+            "lane": "rulebook",
+            "title": "The rulebook does not apply its own RULE.TEST.RULE_WITH_CHECK to most of its 93 rules",
+            "type": "structure",
+            "n": 6
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "templates/README.md:23 — \"`{{package.name}}`, `{{tool.version}}`, `{{files}}`\"",
+                "templates/README.md:24 — \"`{{package.name}}`, `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}`\"",
+                "templates/commit-message.tmpl:1-9 (only `{{tool.version}}` and `{{files}}` appear)",
+                "templates/bump-message.tmpl:1-9 (only `{{from}}`, `{{to}}`, `{{abandoned}}`, `{{files}}` appear)"
+            ],
+            "id": "2026-09-09-check-docs-02/templates#1",
+            "resolution_hint": "Drop `{{package.name}}` from the Slots cell of the commit-message.tmpl and bump-message.tmpl rows in templates/README.md.",
+            "description": "templates/README.md's doc-table Slots column is meant to name exactly the `{{key}}` placeholders each template contains. Grepping both templates for `{{[a-z0-9_.-]+}}` (the exact syntax `Sync.render`'s regex accepts) finds no `{{package.name}}` in either file, confirmed against the call sites (Init.jl:312 merges `s` with only `Dict(\"files\"=>...)`; Bump.jl:35 merges `Sync.slots(cfg2)` with `from`/`to`/`files`/`abandoned`). The README overstates what these two templates consume.",
+            "severity": "minor",
+            "lane": "templates",
+            "title": "README.md's Slots column claims commit-message.tmpl and bump-message.tmpl take {{package.name}}, but neither template contains that placeholder",
+            "type": "operational",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "templates/regressions-README.md:1 — \"<!-- gbg:managed regressions-README.md — rewritten by `gbg sync`; do not edit -->\"",
+                "templates/SKILL.md.tmpl:6 — \"<!-- gbg:managed SKILL.md.tmpl v{{tool.version}} — rewritten by `gbg sync`; do not edit -->\"",
+                "templates/claude-md.block:1 — \"<!-- gbg:managed begin v{{tool.version}} sha256:{{sha256}} — ... -->\"",
+                "templates/gitignore.block:1 — \"# gbg:managed begin v{{tool.version}} — ... -->\""
+            ],
+            "id": "2026-09-09-check-docs-02/templates#2",
+            "resolution_hint": "Add `v{{tool.version}}` to templates/regressions-README.md:1's header line, matching SKILL.md.tmpl's form, or document it as a deliberate fleet-invariant exception in README.md's Managed headers section.",
+            "description": "regressions-README.md and SKILL.md.tmpl are both G-classed Markdown templates rendered identically in Sync.plan (`render(template(name), s)`), and both bake their own `<!-- gbg:managed ... -->` header into the body rather than via `Sync.managed_header`. SKILL.md.tmpl's header includes `v{{tool.version}}`, matching every other managed header format in the tool (policy files via `managed_header(:html,...)` at Sync.jl:151-152, and the CLAUDE.md/.gitignore block markers). regressions-README.md's header has no version token, so a reader of the raw file cannot tell which tool version rendered it — the one thing every other managed header exists to carry (ARCHITECTURE §0 R2 transparency). Nothing documents this as a deliberate exception.",
+            "severity": "minor",
+            "lane": "templates",
+            "title": "regressions-README.md's baked-in managed header omits the version stamp every sibling embedded-header template carries",
+            "type": "structure",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "templates/README.md:26-27 — \"A G file carries a first-line header where its format allows a comment: `# gbg:managed <template> v<version> — rewritten by `gbg sync`; do not edit` (`#`-commented formats)\"",
+                "templates/queue-guard.sh.tmpl:1-40 (no `gbg:managed` string anywhere in the file)",
+                "src/CLI/Sync.jl:207 — `template(\"queue-guard.sh.tmpl\")` used raw, no `render()`, no `managed_header` call"
+            ],
+            "id": "2026-09-09-check-docs-02/templates#3",
+            "resolution_hint": "Qualify the Managed headers paragraph with the queue-guard.sh.tmpl exception (verbatim files carry no header, to keep the upstream text unmodified), or remove the dead `:hash` branch of `managed_header` and note that no shell/#-format G file currently uses a stamped header.",
+            "description": "queue-guard.sh.tmpl is listed as class G in the same README table (templates/README.md:13) and is a `#`-comment-capable shell script, so the general header rule two paragraphs later should apply per the README's own wording. In fact it is copied byte-for-byte with no header stamped at all — `managed_header`'s `:hash` branch (Sync.jl:151) is never invoked anywhere in the codebase, so no `#`-format managed file actually gets that header via that path. The README's general claim is false for at least one file it itself classifies as G; the file's own row (\"none — PF's Stop hook verbatim\") only explains the missing slots, not the missing header.",
+            "severity": "minor",
+            "lane": "templates",
+            "title": "README.md's blanket \"Managed headers\" rule is contradicted by queue-guard.sh.tmpl, a G, #-comment-format file that carries no gbg:managed header at all",
+            "type": "self-containment",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "schema/finding.schema.json (whole file)",
+                "src/CLI/Rounds.jl:338-340 (findings.json entries built and frozen with no validate() call)",
+                "test/schemas.jl:88-98 (\"every shipped schema is read by something\")",
+                "src/CLI/Doctor.jl:306 `e[\"scope\"] == \"finding\"`"
+            ],
+            "id": "2026-09-09-check-docs-02/schemas#1",
+            "resolution_hint": "Either call validate(load_schema(\"finding\"), f) at the point findings.json is frozen in Rounds.jl bank(), or delete schema/finding.schema.json as redundant. Separately, tighten test/schemas.jl's liveness test to require load_schema(\"<name>\") literally rather than a bare substring match.",
+            "description": "`load_schema(\"finding\")` and `validate(load_schema(\"finding\"), ...)` occur nowhere in src/ or ext/ (checked by exhaustive grep of every `load_schema(` call site: config, round, audit, exemptions, managed, ground-truth, reproduction, pass, tally, dismissal, hat — never finding). Every sibling round artefact (ROUND.toml, tally.json, pass.toml, audit.json, dismissal output, ground_truth.json, reproductions/*.json) is schema-validated at the point it is written (Rounds.jl:41/350/426, Preflight.jl:574, Passes.jl:86/155/315/473, Audit.jl:44), but the id-bearing findings.json entries assembled at Rounds.jl:338-340 and frozen at line 366-368 are written with no such call, even though schema/finding.schema.json's own title says it is 'the ONE shape of the fleet' and documents exactly those fields (id, seeded, seed_class added to the base finding). The gap is invisible because test/schemas.jl's own liveness check is satisfied for name=\"finding\" by the unrelated literal `e[\"scope\"] == \"finding\"` in Doctor.jl:306, Preflight.jl:398, Passes.jl:178/391/510 (ledger scope comparisons, nothing to do with the finding schema), so the test reports the schema as 'read' when it is not.",
+            "severity": "major",
+            "lane": "schemas",
+            "title": "schema/finding.schema.json is never validated against, and the self-test built to catch that passes on a coincidental substring match",
+            "type": "structure",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "instruments/bug-hunt/schema.json:353-450 ($defs.finding)",
+                "instruments/bug-hunt/schema.json:451-600 ($defs.hunt_finding)",
+                "instruments/bug-hunt/schema.json:188-340 (the live, actually-validated lane_file.properties.findings.items)",
+                "src/CLI/Rounds.jl:241-242 (classify_lane validates against schema[\"properties\"][\"lane_file\"], never $defs)"
+            ],
+            "id": "2026-09-09-check-docs-02/schemas#2",
+            "resolution_hint": "Make the inline lane_file.properties.findings.items an allOf/$ref to #/$defs/hunt_finding (the complete shape) and delete the now-redundant $defs.finding, mirroring how check-docs/check-consistency/audit-changes correctly $ref their own $defs.finding.",
+            "description": "grep -c '$ref' instruments/bug-hunt/schema.json returns 0 — the file contains no $ref anywhere, so its two $defs entries are unreachable dead code; the schema instead spells the same shape out a third time inline under lane_file.properties.findings.items (the one classify_lane actually validates against, via instrument_schema(inst)). The dead $defs.finding has already drifted from the live copy: it lacks kind/verdict/observed/file/line/mechanism entirely and its own required list omits them.",
+            "severity": "major",
+            "lane": "schemas",
+            "title": "instruments/bug-hunt/schema.json carries two dead $defs blocks (finding, hunt_finding) that duplicate — and have already drifted from — the live inline schema",
+            "type": "structure",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "schema/managed.schema.json:15-21 vs :39-61 ($defs.entry: template/version/sha256)",
+                "schema/tally.schema.json:70-78 vs :121-184 ($defs.entry: act/act_demoted/state/closed_by)",
+                "src/CLI/Schema.jl:136-142 (additionalProperties as a schema Dict IS supported by validate())"
+            ],
+            "id": "2026-09-09-check-docs-02/schemas#3",
+            "resolution_hint": "Change 'files' in managed.schema.json and 'per_id' in tally.schema.json from additionalProperties: true to additionalProperties: {\"$ref\": \"#/$defs/entry\"}.",
+            "description": "grep -rn '#/$defs/entry' schema/*.schema.json instruments/*/schema.json returns nothing: neither file's $defs.entry is ever $ref'd. Both 'files' (managed.schema.json) and 'per_id' (tally.schema.json) are declared with additionalProperties: true, required: [], properties: {} — so a malformed entry (missing sha256, invalid act/closed_by enum value) passes validation silently. The validator already supports a schema as additionalProperties (config.schema.json's 'paths', audit-changes' 'executable_claims'), so additionalProperties: {\"$ref\": \"#/$defs/entry\"} would actually enforce it.",
+            "severity": "minor",
+            "lane": "schemas",
+            "title": "managed.schema.json and tally.schema.json define a $defs.entry documenting per-key shape but never wire it in, so the dynamic maps they describe go unchecked",
+            "type": "structure",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "schema/exemptions.schema.json:61-65 (reason minLength: 24, description claims '≥ 40 chars on scope finding')",
+                "src/CLI/Doctor.jl:305 `length(e[\"reason\"]) >= 40 || push!(errs, ...)`"
+            ],
+            "id": "2026-09-09-check-docs-02/schemas#4",
+            "resolution_hint": "Raise reason's minLength to 40 in exemptions.schema.json and correct the description to drop 'on scope finding'.",
+            "description": "The schema sets reason to minLength: 24 and its description claims the 40-character floor applies only 'on scope finding'. But Doctor.jl:305 runs length(e[\"reason\"]) >= 40 unconditionally, inside the for e in ctx.ledger loop, before the if e[\"scope\"] == \"finding\" branch at line 306 — every ledger entry of every scope is held to 40 characters. A reason of 24-39 characters therefore validates against the schema but is unconditionally rejected by gbg doctor's CFG.EXEMPTIONS check, and the schema's own comment misdescribes which entries the bound applies to.",
+            "severity": "minor",
+            "lane": "schemas",
+            "title": "exemptions.schema.json's reason minLength (24) is looser than what CFG.EXEMPTIONS actually enforces (40, for every entry)",
+            "type": "operational",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Config.jl:113-119 (`resolve_anchor(root, anchor) -> (file, line, count)` — \"Resolves a `file#heading` anchor\")",
+                "src/CLI/Preflight.jl:193 (`anchor`, whether it runs at full strength rather than on the economy model (a `domain_hats` entry may anchor any key))"
+            ],
+            "id": "2026-09-09-check-docs-02/cold-reader#1",
+            "resolution_hint": "Rename one of the two concepts (e.g. call the full-strength flag `anchored`/`full_strength` instead of reusing `anchor`), or add an explicit disambiguating clause at the second use's first docstring (`Preflight.resolve_hats`): \"`anchor` here is unrelated to `Config.resolve_anchor`'s heading anchors; it means...\".",
+            "description": "A cold reader meets `anchor` for the first time in `Config.resolve_anchor`'s docstring (module #6 in the dependency-order read), where it unambiguously means a `file#heading` Markdown-heading reference used throughout the doctor and scan engine (`Scan.jl:245-246`, `Doctor.jl:239-241,283`). Many files later, `Preflight.resolve_hats` reuses the identical bare word `anchor` for a completely unrelated concept — a hat or lane that runs at full strength instead of the economy model. Neither docstring flags that these are two unrelated ideas sharing one name; a reader who has already bound `anchor` to \"heading reference\" will silently misread every later `anchor` field (`h[\"anchor\"]`, `l[\"anchor\"]`, `roster_record`'s `anchor` key, `Doctor.jl:274,278,281` \"no anchored hat\") as some kind of heading pointer rather than a full-strength flag. This is exactly the ordinary-English-word-with-a-second-package-meaning failure mode: it never trips an undefined-symbol check because the word IS defined — just for a different referent.",
+            "severity": "major",
+            "lane": "cold-reader",
+            "title": "\"anchor\" is a homonym: a Markdown-heading anchor and a full-strength-hat/lane anchor share the bare word with no signal they differ",
+            "type": "self-containment",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/GBGCodingTools.jl:4 (module docstring: \"the review instruments, the docs-build wrapper...\" — first use, no definition)",
+                "src/DocLints.jl:11 (`makedocs` docstring: \"the instruments whose open rounds gate the build (a round is one run of an instrument over the consumer...)\" — defines ROUND using the undefined word INSTRUMENT)",
+                "src/CLI/Preflight.jl:516 (`- \\`instrument\\` — one of the four instruments.` — the closest thing to a definition anywhere in the corpus, and it is circular: it never names what the four are or what an instrument fundamentally is)"
+            ],
+            "id": "2026-09-09-check-docs-02/cold-reader#2",
+            "resolution_hint": "State once, in the `GBGCodingTools` module docstring (its very first mention, alongside `consumer`) or in a dedicated docstring that others `@ref`-link: \"An instrument is one of the four review procedures — `check-docs`, `check-consistency`, `bug-hunt`, `audit-changes` — each run as a round.\" Then `@ref`-link the first mention of `instrument` in every other file back to it (RULE.DOC.XLINK).",
+            "description": "`instrument` is one of the ten terms of art this package's own catalogue names, yet a search across every docstring in `src/` and `ext/` for a defining clause (\"one of the four\", \"four instruments\", \"review procedure\") turns up only the module docstring's bare mention and Preflight.jl's self-referential \"one of the four instruments\" — which itself never says what the four ARE. A cold reader who has read every module and function docstring in the package still cannot answer \"what is an instrument?\" from the docstrings alone; they can only infer it is used to classify rounds (`rec[\"instrument\"]`, round ids `<date>-<instrument>-<NN>`) and gates their closure. This is the single most pervasive undefined term in the corpus — it recurs in `DocLints.jl`, `TestHarness.jl`, `Witnesses.jl`, `Scan.jl`, `Sync.jl`, `Ledger.jl`(comment), `Hunt.jl`, `Audit.jl`, `RoundFiles.jl`, `Gate.jl`, `Config.jl`, `Rounds.jl`, `Passes.jl`, `Fleet.jl`, `Release.jl` — with never a defining sentence.",
+            "severity": "major",
+            "lane": "cold-reader",
+            "title": "\"instrument\" — a declared term of art — is used in nearly every docstring but never defined or enumerated anywhere in the source",
+            "type": "self-containment",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/DocLints.jl:11,17-18 (`makedocs` docstring, file #3 read: \"the instruments whose open rounds gate the build\" then \"the closure gate of the two docs instruments... the gate again\" — first noun-sense use, no definition, no @ref)",
+                "src/TestHarness.jl:536-545 (`TestHarness.gate` docstring: \"The closure gate a consumer's runtests.jl ends with... Never the bare four-instrument gate\" — names a second, different gate function without linking to it)",
+                "src/CLI/Gate.jl:6-20 (`gate(cfg, instruments...; io = stderr) -> Int` — the actual home of the generic closure gate, reached at file #20 of 32 in dependency order, 17 files after its concept was first invoked)"
+            ],
+            "id": "2026-09-09-check-docs-02/cold-reader#3",
+            "resolution_hint": "Add an `@ref` from `TestHarness.gate`'s docstring to [`GBGCodingTools.gate`](@ref) at its first mention of \"the closure gate of the two code instruments\", and from `DocLints.makedocs`'s first mention of \"the closure gate\" as well; consider naming the two functions distinctly since both being called `gate` and both being called \"the closure gate\" in prose is the root cause.",
+            "description": "The bare word \"the gate\" / \"the closure gate\" is used as an already-understood concept starting in the very first substantive docstring a cold reader meets (`DocLints.makedocs`, module #3), long before its home docstring (`CLI/Gate.jl`'s `gate` function, module #20) exists in the read order. Worse, TWO different functions are both named `gate` and both called \"the closure gate\" in prose: `TestHarness.gate()` (what a consumer's `runtests.jl` calls) and `GBGCodingTools.gate(cfg, instruments...)` (the generic one `TestHarness.gate` calls internally, and that `CLI/Gate.jl` defines and the CLI verb `gbg gate` wraps). `TestHarness.gate`'s own docstring says \"Never the bare four-instrument gate\" — presupposing the reader already knows there is a separate, more general gate — but never `@ref`-links `GBGCodingTools.gate` to let the reader find it.",
+            "severity": "major",
+            "lane": "cold-reader",
+            "title": "\"gate\" denotes at least three distinct package objects plus the plain-English verb, none disambiguated or cross-linked at first use",
+            "type": "self-containment",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Schema.jl:40-41 (`instrument_schema` docstring, module #5: \"the instrument's Workflow `args` object, its lane-file wrapper...\" — first use, undefined)",
+                "src/Scan.jl:39 (`ScanResult` docstring, module #11: \"`note` — ...an error, a dead-lane reason, empty otherwise\" — still undefined)",
+                "src/CLI/Preflight.jl:223-227,516 (`resolve_checkdocs_lanes` docstring, module #24 — the first place a lane's shape is described at all, and only by listing its constituent keys, never a defining sentence)"
+            ],
+            "id": "2026-09-09-check-docs-02/cold-reader#4",
+            "resolution_hint": "Add a one-clause definition at the first true use (`Schema.jl:instrument_schema`, or better, promote it to the `Scan` or a shared docstring @ref-linked from there): \"a lane is one agent's assigned surface or territory within an instrument's round.\"",
+            "description": "`lane` first appears in `Schema.jl`'s `instrument_schema` docstring (module #5 of 32 in dependency order) as \"its lane-file wrapper\", with zero explanation of what a lane is. It recurs undefined through `Scan.jl` (#11), `Sync.jl`/`Init.jl` data strings, `RoundFiles.jl`, `Doctor.jl`, `Gate.jl` before the first descriptive text appears in `Preflight.jl` (#24) — 19 modules later — and even there `resolve_checkdocs_lanes`'s docstring only enumerates what fields a lane record carries (`key`, `kind`, `anchor`, `files`, `brief`), never stating the underlying concept (one agent auditing one surface or territory of an instrument, per the package's own glossary). A reader who stops at any docstring before `Preflight.jl` — which is most of the corpus — has no way to resolve what a \"lane\" is from the docstrings alone.",
+            "severity": "major",
+            "lane": "cold-reader",
+            "title": "\"lane\" is used as settled jargon for 19 modules before any docstring even partially explains it, and no docstring ever states plainly what a lane is",
+            "type": "self-containment",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Init.jl:233 (`init` docstring, module #16: \"a placeholder persona for every domain hat without one\" — first true docstring use, undefined)",
+                "src/CLI/Preflight.jl:181-192 (`resolve_hats` docstring, module #24: \"Each hat carries `key`; `substrate`... `anchor`...\" — describes fields, never states what a hat conceptually is)"
+            ],
+            "id": "2026-09-09-check-docs-02/cold-reader#5",
+            "resolution_hint": "State the concept once at first use (`Init.jl`'s `init` docstring, or promote a one-line definition into `Preflight.resolve_hats` before the field list): \"a hat is one persona of the check-consistency panel, reading the rendered site from one point of view.\"",
+            "description": "`hat` (and the compound `domain hat`) first appears in a real docstring in `CLI/Init.jl`'s `init` (module #16), used as settled jargon — \"a placeholder persona for every domain hat without one\" — alongside the equally unglossed `persona`. No definition or link is given. The next and only elaboration is `Preflight.resolve_hats`'s docstring 8 modules later (#24), which lists the fields a hat record carries (`key`, `substrate`, `needs`, `anchor`, `persona`, `role`) but never states the underlying concept a cold reader needs — that a hat is one persona in the check-consistency panel, auditing the rendered site from one point of view. A reader stopping anywhere in the first 23 modules has no way to know what a hat is.",
+            "severity": "major",
+            "lane": "cold-reader",
+            "title": "\"hat\" and \"domain hat\" are used for 8 modules before any explanation, and the eventual docstring only lists attributes rather than defining the concept",
+            "type": "self-containment",
+            "n": 5
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/Reflection.jl:163 (`argcov` docstring, module #8: \"The keyword `exempt` is the ledger's `[exemption.match]` predicate\" — bare, unlinked, no definition)",
+                "src/CLI/Ledger.jl:7-11 (`Ledger` module docstring, module #10: \"The reader of a consumer's exemption ledger `.gbg/exemptions.toml`...\" — the actual home, reached two modules later)"
+            ],
+            "id": "2026-09-09-check-docs-02/cold-reader#6",
+            "resolution_hint": "Link the mention: \"...is the [`Ledger`](@ref)'s `[exemption.match]` predicate...\", per RULE.DOC.XLINK (a cross-module name is `@ref`-linked, qualified, at its first mention).",
+            "description": "`Reflection.argcov`'s docstring (dependency-order module #8) refers to \"the ledger's `[exemption.match]` predicate\" as already-known, plain prose with no backtick and no `@ref` link, even though `Ledger` (module #10) — the module that actually explains what a ledger is — has not been read yet by a cold reader proceeding in dependency order. This is a smaller gap than the other findings (two modules, and `Ledger` itself is reasonably self-contained once reached) but is a clean instance of RULE.DOC.XLINK: a cross-module name used before its home, with no qualifying link to let the reader jump there.",
+            "severity": "minor",
+            "lane": "cold-reader",
+            "title": "\"the ledger\" is used bare and unlinked in Reflection.jl two modules before Ledger.jl defines it",
+            "type": "self-containment",
+            "n": 6
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/CLI/Schema.jl:40 (`instrument_schema` docstring, module #5: \"the instrument's Workflow `args` object\")",
+                "src/CLI/Preflight.jl:9 (`Preflight` module docstring, module #24: \"the one renderer of Workflow args\")",
+                "src/CLI/Rounds.jl:442 (`gbg round rerun` docstring: \"prints the instrument's Workflow call\")"
+            ],
+            "id": "2026-09-09-check-docs-02/cold-reader#7",
+            "resolution_hint": "Add a one-clause gloss at the first use (`Schema.instrument_schema`, or the `Preflight` module docstring): \"a Workflow is the instrument's `workflow/*.js` script, launched by the session that runs the round.\"",
+            "description": "\"Workflow\" (capitalized, treated as a proper package noun rather than the ordinary English word) recurs across `Schema.jl`, `Preflight.jl`, `Rounds.jl` and elsewhere as though its referent is self-evident — a JS script under `instruments/<name>/workflow/*.js` that a session launches to run the instrument. No docstring in `src/` or `ext/` ever states this. A cold reader can infer from context that it is some kind of callable script object, but the capitalization signals a defined term that is never actually supplied, which is precisely the class of ordinary-word-with-package-meaning that an undefined-symbol check cannot catch (capitalization reads as emphasis, not as an unbound reference).",
+            "severity": "minor",
+            "lane": "cold-reader",
+            "title": "Capitalized \"Workflow\" is used as a proper-noun package concept throughout but never defined in any docstring",
+            "type": "self-containment",
+            "n": 7
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/Scan.jl:438: \"Prints the scan report — the MUST BE EMPTY block, then TRIAGE — with every hit on its own line.\"",
+                "src/Scan.jl:447-449: `if r.population == 0 && r.exempted == 0 ... println(io, \"  DEAD  \", ...) ...` (hits loop is skipped entirely; the same guard repeats for the triage branch at line 461)",
+                "src/Scans/field_docs.jl:39,51,54,60: `checked` (the returned population) is incremented only for a struct that already HAS a `The fields are` list (line 54); a NOLIST hit (line 51, pushed when a struct has no list at all) does not increment it, and `return (hits, checked)` (line 60) can return population 0 together with a non-empty `hits`"
+            ],
+            "id": "2026-09-09-check-docs-02/operational-claims#1",
+            "resolution_hint": "Either check `!isempty(r.hits)` before the population==0 DEAD branch in `report()`, or make SCAN.FIELD_DOCS's `checked` count every struct-with-docstring pair examined (including NOLIST ones) so population reflects what was actually measured.",
+            "description": "`report`'s docstring promises every hit on its own line, but its DEAD branch is checked before the hits branch: whenever `population == 0 && exempted == 0` it prints only \"measured nothing\" and returns, without ever touching `r.hits`. SCAN.FIELD_DOCS (a hard-tier scan) demonstrates the case: if every struct-with-docstring pair it finds lacks a `The fields are` list, `checked` (its population) never leaves 0 even though it pushed real NOLIST hits — so a genuine, non-empty finding is reported as \"DEAD ... measured nothing\" and never printed, though the exit code is still 2 either way. This also collides with the package's own RULE.INST.NO_TRUNCATION (\"a scan's output is never truncated\") and RULE.TEST.MISSING_IS_FAILING's zero-count philosophy, since the zero-population path here masks real hits rather than reporting nothing found.",
+            "severity": "major",
+            "lane": "operational-claims",
+            "title": "report() silently drops a scan's hits when population is 0, contradicting its own docstring",
+            "type": "operational",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/TestHarness.jl:285: \"`externals`, the external modules whose generics the package extends (searched last).\"",
+                "src/TestHarness.jl:287-293: `for mod in Iterators.flatten(((pkg,), externals, modules)) ... isdefined(mod, name) ...`"
+            ],
+            "id": "2026-09-09-check-docs-02/operational-claims#2",
+            "resolution_hint": "Either fix the docstring to say \"searched second, after `pkg` and before `modules`\", or reorder the flatten to `((pkg,), modules, externals)` to match the documented priority.",
+            "description": "The docstring says `externals` (default `(Base,)`) is searched last, i.e. lowest priority. The body iterates `((pkg,), externals, modules)` in that literal order — `pkg` first, `externals` SECOND, and `modules` (the package's own submodules) LAST. So a name resolvable in both `externals` and `modules` (e.g. a package module defining its own generic that happens to share a name with something in `Base`, rather than extending it) resolves to the external one, not the package's own — the reverse of what the docstring claims and of what `module_method_count`/`method_parity` (both built on this function) need for a correct per-module method count.",
+            "severity": "major",
+            "lane": "operational-claims",
+            "title": "resolve_function's \"externals searched last\" is the opposite of the actual search order",
+            "type": "operational",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/Reflection.jl:312: \"`examined`, an optional counter the caller passes to learn how many bindings were actually compared\"",
+                "src/Reflection.jl:410-412: `examined === nothing || (examined[] += 1)  # what was COMPARED: the scan's population` — runs before the `if def === :extension` branch that immediately `continue`s with no keyword/positional comparison at all",
+                "src/Scans/signature_fidelity.jl:2-3: \"the population is the number of bindings COMPARED, never the file count\""
+            ],
+            "id": "2026-09-09-check-docs-02/operational-claims#3",
+            "resolution_hint": "Move the `examined[] += 1` increment to after the `def === :extension` check, or reword the docstring to \"bindings examined, extension-homed skips included\".",
+            "description": "For a binding whose defining module resolves to `:extension` (no methods loaded — the very case the code labels \"skipped\" in its own output message `\"$name: EXTENSION-HOMED (no methods loaded) — skipped\"`), `examined` is still incremented at line 410, one line before that skip. The docstring and the scan's own header comment both call `examined` the count of bindings \"actually compared\"/\"COMPARED\", but an extension-homed binding is never compared to anything — its keyword/positional sets are never touched.",
+            "severity": "minor",
+            "lane": "operational-claims",
+            "title": "signature_fidelity's `examined` counts EXTENSION-HOMED bindings as \"compared\" though they are explicitly skipped",
+            "type": "operational",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Config.jl:168: full sentence at :166-169: \"the `docs/make.jl` that `docs_build` names\"",
+                "src/CLI/Config.jl:207: `isfile(joinpath(root, \"docs\", \"make.jl\")) || push!(errs, \"package.docs_build: docs/make.jl does not exist\")`"
+            ],
+            "id": "2026-09-09-check-docs-02/operational-claims#4",
+            "resolution_hint": "Either parse the actual script path out of `docs_build`, or reword the docstring to \"the fixed path docs/make.jl a consumer's docs_build command is expected to run\".",
+            "description": "`package.docs_build` is not a filename — it is a shell command string (`\"julia --project=docs docs/make.jl\"` per the Init.jl template and schema default, run verbatim elsewhere via `shell(cfg[\"package\"][\"docs_build\"])` in Doctor.jl/Rounds.jl). `check_paths`'s docstring reads as if the checked path is derived from that config value (\"the docs/make.jl that docs_build names\"), but the code never reads `cfg[\"package\"][\"docs_build\"]` here at all — it hardcodes the literal path `\"docs\", \"make.jl\"`. A consumer whose `docs_build` command invokes a differently-named script would have this check enforce the existence of a file it doesn't actually use, while never checking the file the command truly runs.",
+            "severity": "minor",
+            "lane": "operational-claims",
+            "title": "check_paths claims docs/make.jl's path comes from `docs_build`, but the path is hardcoded and the actual `docs_build` command is never read",
+            "type": "operational",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/CLI/Main.jl:33-34: \"An option named in `valued` consumes the next argument as its value (or the text after `=`); every other `--name` is a flag.\"",
+                "src/CLI/Main.jl:45-53: `if (k = findfirst('=', body)) !== nothing; vals[body[1:k-1]] = body[k+1:end] elseif body in valued ... else push!(flags, body) end`"
+            ],
+            "id": "2026-09-09-check-docs-02/operational-claims#5",
+            "resolution_hint": "Reword to: \"any `--name=value` is a value regardless of `valued`; an option in `valued` also consumes the following bare argument as its value; every other bare `--name` (no `=`) is a flag.\"",
+            "description": "The `=`-branch is checked before, and independent of, membership in `valued`: any `--name=value` on the command line becomes a value entry regardless of whether `name` was declared in `valued`. So the docstring's implied rule — that the `=`-form is available only for `valued` options, and \"every other `--name` is a flag\" — is false for `--somename=x` where `somename` is not in `valued`: it becomes a value, not a flag, and the `valued` list only actually gates the space-separated form.",
+            "severity": "minor",
+            "lane": "operational-claims",
+            "title": "parse_options's \"=value\" form is not gated by `valued`, contradicting \"every other --name is a flag\"",
+            "type": "operational",
+            "n": 5
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/TestHarness.jl:190: \"a frozen count above its ideal must carry a named holder\"",
+                "src/TestHarness.jl:162: `holder — the named holder REQUIRED whenever frozen ≠ ideal` (the Traffic struct's own docstring)",
+                "src/TestHarness.jl:202: `r.frozen != r.ideal && @test !isempty(r.holder)`"
+            ],
+            "id": "2026-09-09-check-docs-02/operational-claims#6",
+            "resolution_hint": "Change \"above\" to \"different from\" (or \"≠\") in `audit`'s docstring to match `Traffic`'s own wording and the actual `!=` check.",
+            "description": "`audit`'s own docstring paraphrases the check as \"above\" (implying `>`), but the code — and the `Traffic` struct's own docstring two definitions above it in the same file — states and implements the actual test as `≠`/`!=`, not `>`. A frozen pair that came out BELOW its ideal (which would itself be a separate bug worth a holder) would trip the `holder` requirement too, which \"above\" does not capture.",
+            "severity": "nit",
+            "lane": "operational-claims",
+            "title": "audit()'s \"a frozen count above its ideal\" describes an inequality test, not a strictly-greater-than one",
+            "type": "operational",
+            "n": 6
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/Scans/sibling_link.jl:1-4: \"the first mention of a sibling GBG package in a unit ... is a link ...; later mentions in the unit are bare code spans\"",
+                "src/Scans/sibling_link.jl:17-30 (`sibling_link_hits!`): `for (n, raw) in lines; o = findfirst(name_re, raw); o === nothing && continue; m = match(link_re, raw); ok = ...; ok || push!(hits, ...); break end`"
+            ],
+            "id": "2026-09-09-check-docs-02/operational-claims#7",
+            "resolution_hint": "After the first-mention check, keep scanning the remaining lines for the same name and flag any of them that ARE links, or state plainly in the header comment that only the first-mention half is enforced.",
+            "description": "The scan's comment states the rule it enforces has two halves — the first mention must be linked, and every later mention must be a bare code span. The implementation only checks the first half: it finds the first line mentioning a sibling package name and `break`s immediately after processing it, whether or not it was a link. It never inspects any subsequent line for that name, so a docstring where the SECOND mention of a sibling package is ALSO wrapped in a link (violating \"later mentions are bare code spans\") produces no hit at all — the absence this half of the rule is supposed to catch is never searched for.",
+            "severity": "minor",
+            "lane": "operational-claims",
+            "title": "SCAN.SIBLING_LINK's own header claims it enforces \"later mentions are bare\", but the scan never checks anything past the first mention",
+            "type": "operational",
+            "n": 7
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/Scans/prose_shape.jl:3-4: \"Caps bind ALWAYS (longest paragraph ≤ 120 words, ≤ 3 admonitions; IT's lesson: a cap that applies only to new units is escaped by re-baselining or renaming).\"",
+                "src/Scans/prose_shape.jl:104-106: \"The caps bind ALWAYS on a docstring (the rule's unit) and on a NEW page unit (PF's newcomer cap); a baselined page section is held by the ratchet alone.\" then `if occursin(\" :: \", k) || b === nothing`"
+            ],
+            "id": "2026-09-09-check-docs-02/operational-claims#8",
+            "resolution_hint": "Either drop \"ALWAYS\" from the header (it applies to docstrings and to NEW page units only, as the later comment already says), or make the cap check run unconditionally for page sections too.",
+            "description": "The file's opening comment states as a blanket fact that the caps (120-word paragraph, 3-admonition) bind ALWAYS, and even cites \"IT's lesson\" that a cap escapable by re-baselining is a known anti-pattern to avoid. But the code's own later comment, immediately above the cap check, states the opposite for page sections: \"a baselined page section is held by the ratchet alone\" — and the code enforces exactly that (`if occursin(\" :: \", k) || b === nothing` skips the cap check for any page-section unit that already has a baseline entry). So a page section whose longest paragraph already exceeds 120 words, once it is in the CSV baseline, is never flagged by the cap again — only growth beyond its own (already-over-cap) baseline is caught. This is precisely the escape-by-re-baselining pattern the header's own parenthetical calls out as the mistake to avoid, now built into the design for page sections.",
+            "severity": "minor",
+            "lane": "operational-claims",
+            "title": "SCAN.PROSE_SHAPE's header \"Caps bind ALWAYS\" is contradicted by its own later comment and code, which exempt a baselined page section",
+            "type": "operational",
+            "n": 8
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Rounds.jl:227: \"The status is `:dead` (absent, unparsable, or invalid — quarantined as `.rejected.json`)...\"",
+                "src/CLI/Rounds.jl:234: `isfile(p) || return (:dead, nothing, nothing, \"absent\")` (no file exists — nothing is moved)",
+                "src/CLI/Rounds.jl:239: `mv(p, p * \".rejected.json\"; force = true)` (unparsable → `<name>.json.rejected.json`)",
+                "src/CLI/Rounds.jl:244,247: `mv(p, replace(p, \".json\" => \".rejected.json\"); force = true)` (invalid, or lane-field mismatch → `<name>.rejected.json`)"
+            ],
+            "id": "2026-09-09-check-docs-02/operational-claims#9",
+            "resolution_hint": "Scope the parenthetical to the two file-rewriting cases only, and unify the two `mv` calls on one rename rule (both should probably use `replace(p, \".json\" => \".rejected.json\")`).",
+            "description": "The docstring groups all three DEAD reasons under one parenthetical, \"quarantined as `.rejected.json`\", but the absent-file branch (line 234) returns immediately with no `mv` at all — there is no file to quarantine, so \"absent\" is never actually quarantined. Separately, the two branches that do quarantine a file use two different renaming rules that produce different filenames for the same original name: the unparsable branch appends `.rejected.json` after the existing `.json` (e.g. `00-scans.json` → `00-scans.json.rejected.json`), while the invalid/mismatched-lane branches replace `.json` with `.rejected.json` (`00-scans.json` → `00-scans.rejected.json`). The docstring's singular \"`.rejected.json`\" implies one uniform outcome across all three DEAD causes; there are in fact three different outcomes.",
+            "severity": "minor",
+            "lane": "operational-claims",
+            "title": "classify_lane's \"quarantined as .rejected.json\" is not true of the absent case, and the two file-quarantining cases use different rename patterns",
+            "type": "operational",
+            "n": 9
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Recall.jl:75: \"Every hat with two or more seeds on its substrate and zero seeded findings of its own.\"",
+                "src/CLI/Recall.jl:9 (module docstring): \"the hats with two or more seeds on their substrate (the view of the corpus a hat reads) and zero matches\"",
+                "src/CLI/Recall.jl:84: `seeds = [s for s in get(ground_truth, \"seeded\", Any[]) if h[\"substrate\"] != \"siteonly\" || s[\"page\"] in site_pages]`"
+            ],
+            "id": "2026-09-09-check-docs-02/operational-claims#10",
+            "resolution_hint": "Extend the seed-visibility filter to every substrate that restricts the corpus (e.g. skip a seed outside a hat's actual pages for `rawhtml`/`docstrings`/`rulebook`, and skip all seeds for `substrate == \"none\"`), not only `siteonly`.",
+            "description": "`resolve_hats` (Preflight.jl:189-192) documents a closed set of substrates: `full` (whole manuscript), `siteonly` (public pages), `rawhtml` (built site), `docstrings` (docstring surface), `rulebook` (rulebook sections) and `none`. `suspect_hats`'s filter only narrows the seed set for `substrate == \"siteonly\"`; every other value (`rawhtml`, `docstrings`, `rulebook`, `none` included) falls into the `!= \"siteonly\"` branch and is treated as seeing every planted seed anywhere in the manuscript, as if its substrate were `full`. A hat whose substrate is `docstrings`, `rulebook`, or even `none` — which by definition cannot see most or any of the planted prose — can be flagged SUSPECT (\"zero matches\" on ≥2 seeds it never had a chance to see), the exact false-corroboration-gap failure `suspect_hats` exists to avoid.",
+            "severity": "major",
+            "lane": "operational-claims",
+            "title": "suspect_hats claims seeds are filtered \"on its substrate\" but only the siteonly substrate is actually filtered",
+            "type": "operational",
+            "n": 10
+        }
+    ]
+}

@@ -12,6 +12,7 @@ clean, `1` a substantive finding, `2` cannot evaluate (refused, missing input, t
 ```@docs
 GBGCodingTools.main
 GBGCodingTools.parse_options
+GBGCodingTools.Options
 ```
 
 ## Machine and self
@@ -27,7 +28,6 @@ GBGCodingTools.cmd_probe
 ```@docs
 GBGCodingTools.Init.init
 GBGCodingTools.Init.migrate_baselines
-GBGCodingTools.Init.migrate_seeds
 GBGCodingTools.Init.new
 GBGCodingTools.Sync.sync
 GBGCodingTools.cmd_config
@@ -38,7 +38,9 @@ GBGCodingTools.cmd_schema
 
 ```@docs
 GBGCodingTools.Doctor.run
+GBGCodingTools.Doctor.cmd_doctor
 GBGCodingTools.doctor
+GBGCodingTools.cmd_scan
 GBGCodingTools.scan_docs
 GBGCodingTools.scan_html
 GBGCodingTools.write_public_surface

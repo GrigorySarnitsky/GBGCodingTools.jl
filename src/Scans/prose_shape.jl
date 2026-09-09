@@ -1,8 +1,9 @@
 # SCAN.PROSE_SHAPE — RULE.DOC.SHAPE. Source: PF lint_prose_shape + IT lint_docstring_shape. Units: every
 # docstring (src), every page and every section of a rationale page — a heading, a top-level numbered
-# item `NN. ` or a `**(x) ` finding opens a new unit, so an append-only log grows by NEW units. Caps bind
-# ALWAYS (longest paragraph ≤ 120 words, ≤ 3 admonitions; IT's lesson: a cap that applies only to new
-# units is escaped by re-baselining or renaming). The ratchet compares every unit with
+# item `NN. ` or a `**(x) ` finding opens a new unit, so an append-only log grows by NEW units. Caps
+# (longest paragraph ≤ 120 words, ≤ 3 admonitions) bind on every docstring and every NEW page unit; a
+# page unit already in the baseline is held by the ratchet alone, the one place IT's lesson — a cap that
+# applies only to new units is escaped by re-baselining or renaming — is traded for an append-only log. The ratchet compares every unit with
 # docs/prose_shape.csv (`unit,words,longest_paragraph,admonitions`), written only by `gbg init` and
 # `gbg scan docs --rebaseline prose-shape`; a missing CSV is DEAD (exit 2), never a silent pass. In a
 # docstring, `# Arguments` precedes any column-0 `!!!` and `# Fields` is the last heading.

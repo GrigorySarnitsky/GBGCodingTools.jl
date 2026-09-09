@@ -44,7 +44,14 @@ classes(el) = el isa HTMLElement ? String.(split(get(el.attributes, "class", "")
 """
     attr(el, name, default = "") -> String
 
-The attribute `name` of `el`, or `default`. Returns the string.
+The named attribute of a node, or a fallback. The arguments are:
+
+- `el` — the node; anything that is not an `HTMLElement` (a text node) carries no attributes and
+  always takes `default`.
+- `name` — the attribute name.
+- `default` — the value taken when `el` has no such attribute; `""` unless given.
+
+Returns the string.
 """
 attr(el, name::AbstractString, default = "") = el isa HTMLElement ? get(el.attributes, name, default) : default
 

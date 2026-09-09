@@ -4,7 +4,7 @@
 // bug-hunt/dismissals.js (`complete = dead == 0 && reopened == []`, the third shape). Changes: the
 // package-specific postmortem examples removed; items arrive as text; the result is Written to `out`.
 //
-// Args: { schema_version, round, repo, package, items: [{id, title}], items_path, out, models: {economy} }
+// Args: { schema_version, round, repo, package, items: [{id, title}], items_sha, items_path, out, models: {economy} }
 //   (the per-id blocks — location, claim, verdict, reasoning — are in items_path, Revision 9)
 export const meta = {
   name: 'dismissals',

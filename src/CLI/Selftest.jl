@@ -9,8 +9,12 @@ arms of §8 run over the fixture wherever the tool is installed. With `pinned`, 
 fixture to `\${TMPDIR}/gbg-pinned-fixture/`, pins it at the newest released tag (its sub-environment
 sources rewritten to the https url and rev), instantiates its `docs/` environment and runs the QUICK
 doctor there — the pinned-copy behaviours (`PIN.SELF`, `PIN.TREESHA`, `PIN.SOURCES`) — leaving the copy
-in place for the install phase. The arguments are `pinned` and `io`, where the report goes. Returns
-the exit code.
+in place for the install phase. The arguments are:
+
+- `pinned` — also runs the pinned-copy arm described above; `false` stops after the `Pkg.test()` run.
+- `io` — where the report and the child processes' output go.
+
+Returns the exit code.
 """
 function selftest(; pinned::Bool = false, io::IO = stdout)
     root = pkgdir(GBGCodingTools)

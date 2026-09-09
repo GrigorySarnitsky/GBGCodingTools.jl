@@ -230,7 +230,7 @@ const LEDGER_HEADER = """
 - `io` — where the report goes.
 
 It writes `.gbg/config.toml` from the tree, an empty ledger, `.gbg/rounds/.keep`, a placeholder persona
-for every domain hat without one, the seeded-once files that are absent (`test/Project.toml`,
+for every domain hat without one ([`Preflight.resolve_hats`](@ref) binds the term), the seeded-once files that are absent (`test/Project.toml`,
 `docs/make.jl`, `test/runtests.jl`, `test/regressions/`, `docs/ROADMAP.md`, `docs/prose_shape.csv`),
 and the tool's entries into `docs/`, `test/` and every sub-environment that lists the tool. It refuses
 an existing `.gbg/config.toml` (exit 2). Returns the exit code.
@@ -447,8 +447,11 @@ const BASELINES = (
     migrate_baselines(root = pwd(); dry_run = false, io = stdout) -> Int
 
 `gbg migrate baselines`: the textual converter from the consumer's existing test files to the three
-frozen TOML baselines `TestHarness` reads. The arguments are `root`, the package root; `dry_run`, print the
-TOML instead of writing it; and `io`, where the report goes.
+frozen TOML baselines `TestHarness` reads. The arguments are:
+
+- `root` — the package root.
+- `dry_run` — print the TOML instead of writing it.
+- `io` — where the report goes.
 
 The `.jl` files are read, never `include`d or edited. A literal not found is reported and skipped
 (exit 0); a literal that does not parse to its closing paren is exit 2 naming the line; an existing
@@ -488,9 +491,13 @@ end
 
 Converts a former `.claude/commands/check-consistency/seed_defects.py` `CATALOG` (tuples of class,
 description, anchor regex, replacement, occurrence) into `.gbg/seeds.toml` as the `seeds` definition
-states. The arguments are `root`, the package root; `cfg`, the derived config (for the package name);
-and `io`, where the report goes. An absent source writes nothing, exit 0; an existing `seeds.toml` is
-left alone. Returns the exit code.
+states. The arguments are:
+
+- `root` — the package root.
+- `cfg` — the derived config (for the package name).
+- `io` — where the report goes.
+
+An absent source writes nothing, exit 0; an existing `seeds.toml` is left alone. Returns the exit code.
 """
 function migrate_seeds(root::AbstractString, cfg::AbstractDict; io::IO = stdout)
     src = joinpath(root, ".claude", "commands", "check-consistency", "seed_defects.py")
@@ -526,8 +533,11 @@ end
 """
     new(pkgname; parent = pwd(), io = stdout) -> Int
 
-`gbg new <Pkg>`: `init` for a fifth package. The arguments are `pkgname`, the package name; `parent`,
-the directory holding the package (or the package root itself); and `io`, where the report goes.
+`gbg new <Pkg>`: `init` for a fifth package. The arguments are:
+
+- `pkgname` — the package name.
+- `parent` — the directory holding the package (or the package root itself).
+- `io` — where the report goes.
 
 The package tree must already exist with a `Project.toml`. Besides `init`, it seeds `CLAUDE.md` from the
 skeleton and adds a `[[consumer]]` row to the dev checkout's `fleet.toml`. Returns the exit code.

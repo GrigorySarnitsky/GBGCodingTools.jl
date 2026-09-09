@@ -100,9 +100,12 @@ deviations(cfg::AbstractDict, ledger) = filter(e -> e["scope"] in ("policy", "sc
 """
     slots(cfg; ledger = Ledger.read(cfg)) -> Dict{String,String}
 
-Every slot value the templates and the policy files use. The arguments are `cfg`, the validated
-config, and `ledger`, the ledger entries (the declared deviations come from them). Returns the
-dictionary, keyed by slot name.
+Every slot value the templates and the policy files use. The arguments are:
+
+- `cfg` — the validated config.
+- `ledger` — the ledger entries (the declared deviations come from them).
+
+Returns the dictionary, keyed by slot name.
 """
 function slots(cfg::AbstractDict; ledger = Ledger.read(cfg))
     root = cfg["root"]; v = pin(cfg)
@@ -155,8 +158,13 @@ managed_header(fmt::Symbol, name, v) = fmt == :hash ? "# gbg:managed $name v$v �
     render_policy(cfg, s; ledger) -> Vector{ManagedFile}
 
 The policy copy: every `policy/*.md` with its slots substituted under a managed header, plus
-`deviations.md` rendered from the ledger. The arguments are `cfg`, the validated config; `s`, the
-slot values; and `ledger`, the ledger entries. Returns the files, paths under `.gbg/policy/`.
+`deviations.md` rendered from the ledger. The arguments are:
+
+- `cfg` — the validated config.
+- `s` — the slot values.
+- `ledger` — the ledger entries.
+
+Returns the files, paths under `.gbg/policy/`.
 """
 function render_policy(cfg::AbstractDict, s::AbstractDict; ledger)
     v = pin(cfg); out = ManagedFile[]
@@ -190,9 +198,13 @@ end
 
 Every generated-managed file for a consumer: one skill stub per enabled instrument plus
 `gbg-doctor`, `.claude/settings.json`, `.claude/hooks/queue-guard.sh`, the policy copy and
-`test/regressions/README.md`. The arguments are `cfg`, the validated config, and `ledger`, the ledger
-entries. The two managed blocks and the sub-environment entries are planned by
-[`managed_block`](@ref) and [`subenv_entries`](@ref). Returns the list.
+`test/regressions/README.md`. The arguments are:
+
+- `cfg` — the validated config.
+- `ledger` — the ledger entries.
+
+The two managed blocks and the sub-environment entries are planned by [`managed_block`](@ref) and
+[`subenv_entries`](@ref). Returns the list.
 """
 function plan(cfg::AbstractDict; ledger = Ledger.read(cfg))
     s = slots(cfg; ledger); v = pin(cfg)
@@ -220,10 +232,14 @@ const BLOCKS = Dict(
 """
     managed_block(cfg, file, s) -> String
 
-The rendered managed block for one file. The arguments are `cfg`, the validated config; `file`,
-`"CLAUDE.md"` or `".gitignore"`; and `s`, the slot values. The `CLAUDE.md` header's `sha256` is the
-sha256 of the block's body lines (between the markers), so an edited body no longer matches its
-header. Returns the block text ending in a newline.
+The rendered managed block for one file. The arguments are:
+
+- `cfg` — the validated config.
+- `file` — `"CLAUDE.md"` or `".gitignore"`.
+- `s` — the slot values.
+
+The `CLAUDE.md` header's `sha256` is the sha256 of the block's body lines (between the markers), so an
+edited body no longer matches its header. Returns the block text ending in a newline.
 """
 function managed_block(cfg::AbstractDict, file::AbstractString, s::AbstractDict)
     b = BLOCKS[file]
@@ -262,8 +278,12 @@ end
     with_block(text, file, block) -> String
 
 `text` with its managed block replaced by `block`, or the block inserted at the top when the file has
-none (a blank line separates it from what follows). The arguments are `text`, the file's current text;
-`file`, which block markers apply (`"CLAUDE.md"` or `".gitignore"`); and `block`, the rendered block.
+none (a blank line separates it from what follows). The arguments are:
+
+- `text` — the file's current text.
+- `file` — which block markers apply (`"CLAUDE.md"` or `".gitignore"`).
+- `block` — the rendered block.
+
 Returns the new text.
 """
 function with_block(text::AbstractString, file::AbstractString, block::AbstractString)
@@ -363,9 +383,11 @@ step_name(block) = (m = match(r"^\s*-\s+name:\s*(.+?)\s*$"m, block); m === nothi
 """
     insert_fragments(yaml, frags; run_marker) -> String
 
-The workflow text with the three fragments placed at the fixed insertion points. The arguments are
-`yaml`, the workflow file's text; `frags`, the fragments keyed `auth`, `run`, `banner`; and
-`run_marker`, the regex that finds the job's build or test step.
+The workflow text with the three fragments placed at the fixed insertion points. The arguments are:
+
+- `yaml` — the workflow file's text.
+- `frags` — the fragments keyed `auth`, `run`, `banner`.
+- `run_marker` — the regex that finds the job's build or test step.
 
 `auth` goes first after the `actions/checkout` step, `run` in place of the build or test step (the
 first step matching `run_marker`, or the one a previous sync placed), `banner` last; a fragment already
@@ -528,9 +550,13 @@ end
     status(cfg; ledger = Ledger.read(cfg)) -> Vector{Entry}
 
 Compares the tree with a fresh render of every managed file and block, and lists sidecar entries whose
-file is no longer planned (`ORPHAN`). The arguments are `cfg`, the validated config, and `ledger`, the
-ledger entries. Returns the entries; `MANAGED.HASH` fails on any `MODIFIED` or `UNMANAGED`,
-`MANAGED.STALE` on any `STALE`, `MISSING` or `ORPHAN`.
+file is no longer planned (`ORPHAN`). The arguments are:
+
+- `cfg` — the validated config.
+- `ledger` — the ledger entries.
+
+Returns the entries; `MANAGED.HASH` fails on any `MODIFIED` or `UNMANAGED`, `MANAGED.STALE` on any
+`STALE`, `MISSING` or `ORPHAN`.
 """
 function status(cfg::AbstractDict; ledger = Ledger.read(cfg))
     root = cfg["root"]; sidecar = read_sidecar(cfg); s = slots(cfg; ledger)
@@ -557,8 +583,12 @@ end
 """
     sync(cfg; check = false, io = stdout, ledger = Ledger.read(cfg)) -> Int
 
-`gbg sync [--check]`. The arguments are `cfg`, the validated config; `check`, compare only, write
-nothing; `io`, where the status lines go; and `ledger`, the ledger entries.
+`gbg sync [--check]`. The arguments are:
+
+- `cfg` — the validated config.
+- `check` — compare only, write nothing.
+- `io` — where the status lines go.
+- `ledger` — the ledger entries.
 
 It renders every managed file and block, seeds `.claude/WORK_QUEUE.md` when absent, writes the tool's
 entries into every sub-environment `Project.toml` that lists it, inserts the CI fragments, and

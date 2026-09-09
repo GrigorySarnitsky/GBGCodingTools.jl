@@ -38,7 +38,9 @@ end
     instrument_schema(name) -> Dict
 
 `instruments/<name>/schema.json` of the running copy: the instrument's Workflow `args` object, its
-lane-file wrapper and (for check-consistency) the `seeds` definition. Returns the parsed document.
+lane-file wrapper and (for check-consistency) the `seeds` definition. A Workflow is the instrument's
+`workflow/*.js` script and a lane is one agent's share of the round it runs, both bound in
+[`GBGCodingTools`](@ref). Returns the parsed document.
 """
 function instrument_schema(name::AbstractString)
     path = joinpath(pkgdir(GBGCodingTools), "instruments", name, "schema.json")
@@ -149,8 +151,13 @@ end
     materialize!(schema, value; root = schema) -> value
 
 Writes every `default` the schema declares into `value` where the key is absent, recursively through
-objects and array items. The arguments are `schema`, the node to apply; `value`, the document to fill
-in place; and `root`, the document the `\$ref`s resolve against. Returns `value`.
+objects and array items. The arguments are:
+
+- `schema` — the node to apply.
+- `value` — the document to fill in place.
+- `root` — the document the `\$ref`s resolve against.
+
+Returns `value`.
 """
 function materialize!(schema::AbstractDict, value; root = schema)
     s = _resolve(root, schema)
@@ -174,8 +181,11 @@ end
     assert_valid(schema, value; what = "document")
 
 Throws a [`SchemaError`](@ref) naming `what` when `value` does not validate against `schema`; returns
-`nothing` otherwise. The arguments are `schema`, the schema; `value`, the document; and `what`, the
-noun the error message uses for it.
+`nothing` otherwise. The arguments are:
+
+- `schema` — the schema.
+- `value` — the document.
+- `what` — the noun the error message uses for it.
 """
 function assert_valid(schema::AbstractDict, value; what::AbstractString = "document")
     errs = validate(schema, value)

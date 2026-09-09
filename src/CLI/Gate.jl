@@ -5,9 +5,11 @@
 """
     gate(cfg, instruments...; io = stderr) -> Int
 
-The closure gate (§6.2 step 10). The arguments are `cfg`, the validated config; `instruments`, the
-instruments whose open rounds block (all four when none is named); and `io`, where the refusal is
-explained.
+The closure gate (§6.2 step 10). The arguments are:
+
+- `cfg` — the validated config.
+- `instruments...` — the instruments whose open rounds block (all four when none is named).
+- `io` — where the refusal is explained.
 
 It scans EVERY round directory under `.gbg/rounds/`. An open round of a named instrument is exit 1,
 naming it — except the rounds named in `GBG_ROUND` (comma separated), which the CLI exports only while

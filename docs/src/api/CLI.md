@@ -23,6 +23,7 @@ GBGCodingTools.Sync.managed_block
 GBGCodingTools.Sync.subenv_entries
 GBGCodingTools.Init
 GBGCodingTools.Init.derive_config
+GBGCodingTools.Init.migrate_seeds
 GBGCodingTools.Ledger
 GBGCodingTools.Doctor
 GBGCodingTools.Doctor.select

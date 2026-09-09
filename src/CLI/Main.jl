@@ -30,9 +30,14 @@ end
 """
     parse_options(args; valued = String[]) -> Options
 
-Parses `args` into an `Options` record. An option named in `valued` consumes the next argument as its
-value (or the text after `=`); every other `--name` is a flag; a lone `--` ends option parsing. Returns the
-parsed options; an option that is in `valued` but has no value is an `ArgumentError`.
+Parses `args` into an `Options` record. Any `--name=value` is a value whatever `valued` says; an option
+named in `valued` also consumes the following bare argument as its value; every other bare `--name` is a
+flag; a lone `--` ends option parsing. The arguments are:
+
+- `args` — the command-line arguments to parse, in order.
+- `valued` — the names, without the dashes, of the options that take a value.
+
+Returns the parsed options; an option that is in `valued` but has no value is an `ArgumentError`.
 """
 function parse_options(args::AbstractVector{<:AbstractString}; valued = String[])
     pos = String[]; flags = Set{String}(); vals = Dict{String,String}()

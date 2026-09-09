@@ -38,10 +38,14 @@ end
     Fleet.rows(; deep = false) -> (rows, code)
 
 One row per `[[consumer]]`: `(name, pin, status, detail)`. A consumer without `.gbg/config.toml` is
-`NOT-INITIALISED`; one whose QUICK doctor (the full non-deep set with `deep`) fails is `RED` with the
-failing ids; one whose pinned version is older than the fleet's newest is `BEHIND` with both versions
-and the window state; else `OK`. The tool's own row (`path = "."`) shows `dev+<sha>[-dirty]` with `clean
-at vX.Y.Z` or `off tag`, is `OK`/`RED` by its own doctor and never `BEHIND`. A missing path is exit 2.
+`NOT-INITIALISED`; one whose QUICK doctor fails is `RED` with the failing ids; one whose pinned version
+is older than the fleet's newest is `BEHIND` with both versions and the window state; else `OK`. The
+tool's own row (`path = "."`) shows `dev+<sha>[-dirty]` with `clean at vX.Y.Z` or `off tag`, is
+`OK`/`RED` by its own doctor and never `BEHIND`. A missing path is exit 2. The arguments are:
+
+- `deep` — run every check, the `--deep` ones included, as each consumer's doctor pass instead of the
+  `QUICK` set.
+
 Returns the rows and the exit code.
 """
 function rows(; deep::Bool = false)
@@ -99,8 +103,11 @@ end
     Fleet.diff(a, b; io = stdout) -> Int
 
 `gbg fleet --diff <consumer>:<round> <consumer>:<round>`: two closed rounds' tallies side by side. The
-arguments are `a` and `b`, each `<consumer>:<round>` naming a consumer of `fleet.toml` and a closed
-round of it, and `io`, where the table is printed.
+arguments are:
+
+- `a`, `b` — the two rounds, each `<consumer>:<round>` naming a consumer of `fleet.toml` and a closed
+  round of it; `a` is the left column.
+- `io` — where the table is printed.
 
 The table holds the totals, the closure channels, the demotions, the adjudicated share and the recall.
 Rounds whose tool versions differ in `MAJOR.MINOR` are refused (exit 2), since their rates are not

@@ -435,16 +435,21 @@ end
 """
     report(results; io = stdout) -> Int
 
-Prints the scan report — the MUST BE EMPTY block, then TRIAGE — with every hit on its own line. The
-arguments are `results`, the scan results in catalogue order, and `io`, where the report goes. Returns
-the exit code (2 dead, 1 hard hits, 0 clean).
+Prints the scan report — the MUST BE EMPTY block, then TRIAGE — with every hit on its own line.
+The arguments are:
+
+- `results` — the scan results in catalogue order.
+- `io` — where the report goes.
+
+Returns the exit code (2 dead, 1 hard hits, 0 clean).
 """
 function report(results::AbstractVector{ScanResult}; io::IO = stdout)
     code = 0
     hard = filter(r -> r.tier == "hard", results); triage = filter(r -> r.tier != "hard", results)
     isempty(hard) || println(io, "=== MUST BE EMPTY ===")
     for r in hard
-        if r.population == 0 && r.exempted == 0
+        # a scan that HIT measured something: its hits are never dropped by the dead branch
+        if r.population == 0 && r.exempted == 0 && isempty(r.hits)
             println(io, "  DEAD  ", rpad(r.id, 30), " measured nothing", isempty(r.note) ? "" : " — " * r.note)
             code = 2
         elseif !isempty(r.hits)
@@ -458,7 +463,7 @@ function report(results::AbstractVector{ScanResult}; io::IO = stdout)
     end
     isempty(triage) || println(io, "\n=== TRIAGE (heuristics — read every line; a count is not a verdict) ===")
     for r in triage
-        if r.population == 0 && r.exempted == 0
+        if r.population == 0 && r.exempted == 0 && isempty(r.hits)
             println(io, "  DEAD  ", rpad(r.id, 30), " measured nothing", isempty(r.note) ? "" : " — " * r.note)
             code = 2
             continue
@@ -527,9 +532,12 @@ end
 
 Writes `.gbg/scratch/public_surface.json`: the package's exported names and the public operations
 `Reflection.package_operations` derives (every function with a method in a package module), so the
-built-HTML scan `SCAN.HTML_PUBLIC_HOME` can ask whether each has a public home. The arguments are
-`cfg`, the validated config, and `pkg`, the loaded package module (loaded from the config when not
-given). Returns the path.
+built-HTML scan `SCAN.HTML_PUBLIC_HOME` can ask whether each has a public home. The arguments are:
+
+- `cfg` — the validated config.
+- `pkg` — the loaded package module (loaded from the config when not given).
+
+Returns the path.
 """
 function write_public_surface(cfg::AbstractDict; pkg::Module = Reflection.load_package(cfg))
     mods = Reflection.package_modules(pkg, cfg)

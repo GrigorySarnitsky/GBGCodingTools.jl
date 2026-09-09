@@ -183,8 +183,11 @@ end
 """
     grade(cfg, round; io = stdout) -> Int
 
-`gbg round grade <round>`: grades the latest pass. The arguments are `cfg`, the validated config;
-`round`, the round id; and `io`, where the tally lines are printed.
+`gbg round grade <round>`: grades the latest pass. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id.
+- `io` — where the tally lines are printed.
 
 It validates the pass's verdict files (a wrong nonce or sha is REJECTED, an absent file with a
 non-zero expectation is DEAD ⇒ exit 2), applies the demotion, then the closure channels per id —
@@ -355,9 +358,12 @@ end
 """
     carry_deferrals(cfg, dir, round; io = stdout) -> Int
 
-Carries a round's deferrals into the session work queue (`RULE.INST.FROZEN_MIDROUND`). The arguments are
-`cfg`, the validated config; `dir`, the round directory; `round`, the round id; and `io`, where the
-carried lines are printed.
+Carries a round's deferrals into the session work queue (`RULE.INST.FROZEN_MIDROUND`). The arguments are:
+
+- `cfg` — the validated config.
+- `dir` — the round directory.
+- `round` — the round id.
+- `io` — where the carried lines are printed.
 
 A fix pass that cannot make a change inside the round — an instrument change, which is its own commit and
 release — writes one line per deferral in `<round>/deferred.md`; `#` lines and blank lines are ignored.
@@ -422,8 +428,11 @@ end
     close(cfg, round; io = stdout) -> Int
 
 `gbg round close <round>`: checks every closing condition in the instrument's order and stamps the
-round closed. The arguments are `cfg`, the validated config; `round`, the round id; and `io`, where
-the refusals are listed.
+round closed. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id.
+- `io` — where the refusals are listed.
 
 The conditions (§6.2 step 9; §6.7 for the hunt; §6.8 for the audit): the latest pass fully closed, no
 dead lane, the round's files committed, the stamps unchanged (tool version and config, else regrade;

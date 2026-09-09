@@ -82,9 +82,11 @@ field_threshold(field_bytes::Integer; fraction::Integer = 16, per_thread::Intege
 """
     allocation_completeness(pkg, modules; exempt = Dict{Symbol,String}())
 
-The derived completeness check of the allocation audit. The arguments are `pkg`, the package module;
-`modules`, its owned modules (the public surface is derived from them); and `exempt`, operation name
-to reason for the operations deliberately not audited.
+The derived completeness check of the allocation audit. The arguments are:
+
+- `pkg` — the package module.
+- `modules` — its owned modules (the public surface is derived from them).
+- `exempt` — operation name to reason, for the operations deliberately not audited.
 
 Every exported in-place operation (a name ending in `!` on the ownership-derived public surface) was
 exercised by [`@alloc_below`](@ref), or is named in `exempt` with a reason; no exemption names a
@@ -180,14 +182,16 @@ const AUDITED_TRAFFIC_OPS = Set{Symbol}()
 """
     audit(operation!, name, rows::Traffic...; print = false)
 
-One row of the traffic audit (the per-operation table of array reads and writes). The arguments are `operation!`, a zero-argument closure running the
-operation once over the counting arrays; `name`, the row's name (its leading token, up to whitespace,
-`(` or `∘`, is the operation recorded in [`AUDITED_TRAFFIC_OPS`](@ref)); `rows`, one [`Traffic`](@ref)
-per array with its frozen `(reads, writes)`; and `print`, print every measured count for
-re-baselining.
+One row of the traffic audit (the per-operation table of array reads and writes). The arguments are:
+
+- `operation!` — a zero-argument closure running the operation once over the counting arrays.
+- `name` — the row's name; its leading token, up to whitespace, `(` or `∘`, is the operation recorded
+  in [`AUDITED_TRAFFIC_OPS`](@ref).
+- `rows` — one [`Traffic`](@ref) per array with its frozen `(reads, writes)`.
+- `print` — print every measured count for re-baselining.
 
 It zeroes the counters of every row, runs the operation, and asserts for every row that the measured
-pair equals the frozen pair exactly; a frozen count above its ideal must carry a named holder. Returns
+pair equals the frozen pair exactly; a frozen count differing from its ideal must carry a named holder. Returns
 `nothing`.
 """
 function audit(operation!, name::AbstractString, rows::Traffic...; print::Bool = false)
@@ -209,9 +213,13 @@ end
     traffic_completeness(pkg, modules; exempt = Dict{Symbol,String}())
 
 The derived completeness check of the traffic audit, the twin of [`allocation_completeness`](@ref)
-over [`AUDITED_TRAFFIC_OPS`](@ref). The arguments are `pkg`, the package module; `modules`, its owned
-modules; and `exempt`, operation name to reason for the operations deliberately not audited. Runs as a
-`@testset`. Returns `nothing`.
+over [`AUDITED_TRAFFIC_OPS`](@ref). The arguments are:
+
+- `pkg` — the package module.
+- `modules` — its owned modules.
+- `exempt` — operation name to reason, for the operations deliberately not audited.
+
+Runs as a `@testset`. Returns `nothing`.
 """
 function traffic_completeness(pkg::Module, modules::AbstractVector{Module}; exempt::AbstractDict = Dict{Symbol,String}())
     @testset "every exported in-place operation has a traffic row" begin
@@ -254,9 +262,11 @@ end
 """
     traffic_rows(baseline, name, symbols) -> Vector
 
-One row of a frozen traffic table, evaluated. The arguments are `baseline`, the parsed
-`test/pass_audit_baseline.toml`; `name`, the `[[row]]` entry's name; and `symbols`, the values of the
-count symbols (`P`, `M`) for the fixture at hand.
+One row of a frozen traffic table, evaluated. The arguments are:
+
+- `baseline` — the parsed `test/pass_audit_baseline.toml`.
+- `name` — the `[[row]]` entry's name.
+- `symbols` — the values of the count symbols (`P`, `M`) for the fixture at hand.
 
 The row's `arrays = [{label, reads, writes, ideal_reads?, ideal_writes?, holder?}]` counts are
 evaluated over `symbols`. Returns named tuples `(label, frozen, ideal, holder)`; a missing row is an
@@ -280,9 +290,14 @@ end
 """
     resolve_function(name, pkg, modules; externals = (Base,)) -> Union{Function,Nothing}
 
-The function object a surface name denotes. The arguments are `name`, the symbol; `pkg`, the umbrella
-module; `modules`, the package modules; and `externals`, the external modules whose generics the
-package extends (searched last). Returns the function, or `nothing`.
+The function object a surface name denotes. The arguments are:
+
+- `name` — the symbol.
+- `pkg` — the umbrella module.
+- `modules` — the package modules.
+- `externals` — the external modules whose generics the package extends (searched last).
+
+Returns the function, or `nothing`.
 """
 function resolve_function(name::Symbol, pkg::Module, modules::AbstractVector{Module}; externals = (Base,))
     for mod in Iterators.flatten(((pkg,), externals, modules))
@@ -297,9 +312,14 @@ end
     module_method_count(mod, pkg, modules; externals = (Base,)) -> Int
 
 Every method module `mod` OWNS, summed over the package's whole function surface (internals included,
-not `names(mod)` — a method defined under a qualified name creates no binding). The arguments are
-`mod`, the module counted; `pkg`, the umbrella; `modules`, the package modules; and `externals`, the
-external modules whose generics are included. Returns the count.
+not `names(mod)` — a method defined under a qualified name creates no binding). The arguments are:
+
+- `mod` — the module counted.
+- `pkg` — the umbrella.
+- `modules` — the package modules.
+- `externals` — the external modules whose generics are included.
+
+Returns the count.
 """
 function module_method_count(mod::Module, pkg::Module, modules::AbstractVector{Module}; externals = (Base,))
     total = 0
@@ -314,9 +334,12 @@ end
 """
     method_parity(pkg, modules, baseline; externals = (Base,))
 
-The method-parity engine. The arguments are `pkg`, the umbrella module; `modules`, the package
-modules; `baseline`, the parsed `test/method_parity_baseline.toml`; and `externals`, the external
-modules whose generics the package extends.
+The method-parity engine. The arguments are:
+
+- `pkg` — the umbrella module.
+- `modules` — the package modules.
+- `baseline` — the parsed `test/method_parity_baseline.toml`.
+- `externals` — the external modules whose generics the package extends.
 
 Every `[[generic]]` entry `{set, name, count, module}` asserts the number of methods the named module
 defines for that generic, each set's total is asserted where the baseline states `[set_total]`, the
@@ -356,9 +379,12 @@ const ORACLE_CLASSES = ("analytic", "independent", "property", "relational", "st
 """
     oracle_registry(pkg, modules, registry, testdir)
 
-The oracle-provenance engine. The arguments are `pkg`, the umbrella module; `modules`, the package
-modules; `registry`, the parsed `test/oracle_registry.toml` (`[[operation]] name, class, evidence`);
-and `testdir`, the directory the cited test files live in.
+The oracle-provenance engine. The arguments are:
+
+- `pkg` — the umbrella module.
+- `modules` — the package modules.
+- `registry` — the parsed `test/oracle_registry.toml` (`[[operation]] name, class, evidence`).
+- `testdir` — the directory the cited test files live in.
 
 Every public value-returning operation (the derived surface minus the `!` names) is classified; no
 classification names a vanished operation; every class is one of `analytic | independent | property |
@@ -436,12 +462,19 @@ has_display(type, modules::AbstractVector{Module}) = any(m -> m.module in module
 """
     display_gate(modules; no_display = Dict{Symbol,String}(), min_types = 1, falsify = true)
 
-The display gate, DERIVED rather than listed: every concrete struct type of `modules` has a
-package-owned `show` or an exemption in `no_display` with a reason; an exemption whose type has a
-`show` after all is stale (a widened blind spot); an exemption naming a type no longer defined is
-stale; the enumeration must find at least `min_types` types, so a parser that stops matching fails
-rather than reporting a clean sweep. With `falsify = true` an empty parametric struct is planted in the
-first module and must be enumerated without a display. Runs as a `@testset`. Returns `nothing`.
+The display gate, DERIVED rather than listed: every concrete struct type has a package-owned `show`
+or an exemption with a reason. The arguments are:
+
+- `modules` — the modules whose concrete struct types are enumerated.
+- `no_display` — type name to reason, for the types deliberately without a display; an exemption whose
+  type has a `show` after all is stale (a widened blind spot), and one naming a type no longer defined
+  is stale.
+- `min_types` — the least number of types the enumeration must find, so a parser that stops matching
+  fails rather than reporting a clean sweep.
+- `falsify` — with `true`, an empty parametric struct is planted in the first module and must be
+  enumerated without a display.
+
+Runs as a `@testset`. Returns `nothing`.
 """
 function display_gate(modules::AbstractVector{Module}; no_display::AbstractDict = Dict{Symbol,String}(), min_types::Integer = 1, falsify::Bool = true)
     @testset "every package struct type displays, or is exempt with a reason" begin
@@ -491,9 +524,13 @@ eval(Meta.parse(DIGEST_SOURCE))
 
 Runs a probe in a fresh Julia process with a given thread count and returns its output — the
 cross-thread-count half of a bitwise-invariance check the in-process toggle cannot make. The
-arguments are `probe_source`, Julia source that prints digests with `fnv_digest` (which is
-prepended); `threads`, the `-t` value; and `project`, the `--project` it runs under. Returns the
-trimmed stdout.
+arguments are:
+
+- `probe_source` — Julia source that prints digests with `fnv_digest` (which is prepended).
+- `threads` — the `-t` value.
+- `project` — the `--project` it runs under.
+
+Returns the trimmed stdout.
 """
 function thread_digest(probe_source::AbstractString; threads::Integer, project::AbstractString = Base.active_project())
     src = DIGEST_SOURCE * "\n" * probe_source
@@ -512,9 +549,11 @@ other_thread_count() = Threads.nthreads() == 1 ? 4 : 1
 """
     run_regressions(dir; parent = Main) -> Vector{String}
 
-The one include loop of the promoted witnesses. The arguments are `dir`, the consumer's test directory
-(`@__DIR__` of `runtests.jl`; its `regressions/` subdirectory is read, or `dir` itself when it is that
-directory), and `parent`, the module the wrapper modules are evaluated in.
+The one include loop of the promoted witnesses. The arguments are:
+
+- `dir` — the consumer's test directory (`@__DIR__` of `runtests.jl`); its `regressions/`
+  subdirectory is read, or `dir` itself when it is that directory.
+- `parent` — the module the wrapper modules are evaluated in.
 
 Every `*.jl` directly under the regressions directory (sorted) is included into its own wrapper
 module `Regression_<name>`, so top-level helpers cannot collide across files. An empty directory is an
@@ -536,13 +575,15 @@ end
 """
     gate(; root = GBGCodingTools.Config.find_root())
 
-The closure gate a consumer's `runtests.jl` ends with. The argument `root` is the consumer root, found
-by walking up from the working directory when not given.
+The closure gate a consumer's `runtests.jl` ends with. The arguments are:
 
-It runs the quick doctor set and the closure gate of the two code instruments (`bug-hunt`,
-`audit-changes`) in-process, `error()`ing on a non-zero return so a test run cannot pass over an open
+- `root` — the consumer root, found by walking up from the working directory when not given.
+
+It runs the quick doctor set and [`GBGCodingTools.gate`](@ref), the generic closure gate, over the two
+code instruments (`bug-hunt`, `audit-changes`) in-process, `error()`ing on a non-zero return so a test run cannot pass over an open
 hunt or audit round, and prints one banner line `GBGCodingTools v<ver> gate` (the `TEST.PKG`
-witness). Never the bare four-instrument gate: a test run must not fail on an open docs round.
+witness). Never that generic gate over all four instruments: a test run must not fail on an open docs
+round.
 Returns `nothing`.
 """
 function gate(; root = GBGCodingTools.Config.find_root())

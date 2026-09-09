@@ -1,7 +1,8 @@
 # SCAN.CODE_IN_MATH — RULE.TEX.CODE_IN_MATH (triage). Source: IT's span-only filter: inside each ``…``
 # math span, remove the control words, the braced arguments of \texttt/\text/\mathrm/\operatorname/
-# \mathit and one-letter subscripts; a bare run of two or more lowercase letters that remains renders
-# as a letter product and is usually a code identifier that should be `\texttt{…}`. Span parity is
+# \mathit and braced subscripts and superscripts of any length; a bare run of two or more lowercase
+# letters that remains renders as a letter product and is usually a code identifier that should be
+# `\texttt{…}`. Span parity is
 # carried across lines, so a math span wrapped over a line break pairs correctly.
 
 """

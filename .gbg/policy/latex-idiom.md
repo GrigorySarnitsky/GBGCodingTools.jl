@@ -57,7 +57,8 @@ the font silently dropped.
 vector notation. For this package the admitted strings are none and the vector
 notation is not used (the package has no vector quantities): component notation with index letters, or bold italic `\boldsymbol{u}`
 with a braced argument, or no vector notation at all. Never the other, and never an upright `\mathbf`
-outside the admitted list.
+outside the admitted list. `\mathbf{1}`, the indicator and identity of `RULE.TEX.MATHBB`, is admitted in
+every package whatever that list holds; it is not a package's to withhold.
 
 ### RULE.TEX.LEFTRIGHT
 `\left` and `\right` are banned; every delimiter is sized by hand with `\bigl`/`\Bigl` … `\bigr`/`\Bigr`.

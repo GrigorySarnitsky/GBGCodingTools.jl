@@ -43,10 +43,15 @@ Recomputes the git tree hash of the copy this process runs from (`pkgdir(GBGCodi
 [`TreeHash.tree_hash`](@ref)) and compares it with what `Pkg.dependencies()` reports for the tool in the
 active environment and with the `git-tree-sha1` every sub-environment manifest under `root` records;
 asserts the dependency entry is `is_tracking_repo && !is_tracking_path` (a `Pkg.develop`'d copy lives
-inside the depot, so only the flags tell it apart). Prints one line per comparison to `io`. Returns 0 when
-every comparison agrees, 0 with a WARN when the running copy is a working tree (pinned at `dev`) or no
-manifest exists to compare against, and 2 for a disagreement or a developed copy — an edited pinned
-tree is never allowed to grade a round.
+inside the depot, so only the flags tell it apart). The arguments are:
+
+- `root` — the consumer root whose sub-environment manifests are compared; `nothing` (no root found)
+  leaves only the active environment's entry to compare against.
+- `io` — where the one line per comparison is printed.
+
+Returns 0 when every comparison agrees, 0 with a WARN when the running copy is a working tree (pinned
+at `dev`) or no manifest exists to compare against, and 2 for a disagreement or a developed copy — an
+edited pinned tree is never allowed to grade a round.
 """
 function self_verify(root = Config.find_root(); io::IO = stdout)
     dir = pkgdir(GBGCodingTools)

@@ -93,9 +93,12 @@ tag_tree(dir::AbstractString, ver::AbstractString) = Git.run(dir, "rev-parse", "
 
 The tool and config stamps every `ROUND.toml` and `pass.toml` of the consumer `cfg` records:
 `tool_version` (the pinned version, or `dev+<sha>[-dirty]` from the working tree), `tool_rev`, `tool_tree_sha`,
-`config_sha`, `catalog_sha`, `seed_catalog_sha`. The keyword `record` is the `ROUND.toml` of a round already open: a dev checkout
-whose round was stamped with a tag keeps reading its tool stamps from that tag while the tag exists
-(D16), so the fix commits that move `HEAD` past the tag are not a moved tool; a moved TAG is.
+`config_sha`, `catalog_sha`, `seed_catalog_sha`. The arguments are:
+
+- `cfg` — the validated config of the consumer whose rounds record the stamps.
+- `record` — the `ROUND.toml` of a round already open: a dev checkout whose round was stamped with a
+  tag keeps reading its tool stamps from that tag while the tag exists (D16), so the fix commits that
+  move `HEAD` past the tag are not a moved tool; a moved TAG is.
 """
 function stamps(cfg::AbstractDict; record = nothing)
     dir = pkgdir(GBGCodingTools)
@@ -144,9 +147,14 @@ end
 Fills the catalogue placeholders in `text` from `cfg`: `{package.name}`, `{package.description}`,
 `{package.domain}`, `{package.terms}`, `{package.deliberate_absences}`, `{package.rulebook_sections}`,
 `{policy.<file>}`, `{audit.guard_symbols}`, `{audit.invariants}`, `{hunt.entry_point}`, and any key of
-`extra`. The arguments are `text`, the persona or brief; `cfg`, the validated config; and `extra`,
-further slot values. A placeholder with no value is left as written (a brace pair inside prose is
-never an error). Returns the filled text.
+`extra`. The arguments are:
+
+- `text` — the persona or brief.
+- `cfg` — the validated config.
+- `extra` — further slot values.
+
+A placeholder with no value is left as written (a brace pair inside prose is never an error). Returns
+the filled text.
 """
 function substitute(text::AbstractString, cfg::AbstractDict; extra = Dict{String,String}())
     pk = cfg["package"]; root = cfg["root"]
@@ -182,18 +190,27 @@ end
 """
     resolve_hats(cfg; profile = nothing, explicit = String[]) -> Vector{Dict}
 
-The check-consistency roster. The arguments are `cfg`, the validated config; `profile`, `all`, `core`
-or `explicit` (the config's own when `nothing`); and `explicit`, the hat keys an explicit profile
-names.
+The check-consistency roster. The arguments are:
 
-Each hat carries `key`; `substrate`, which view of the corpus the hat reads — the closed set of
-`schema/hat.schema.json`: `full` (the whole manuscript), `siteonly` (the public pages' manuscript),
-`rawhtml` (the built site), `docstrings` (the docstring surface), `rulebook` (the rulebook sections)
-or `none`; `needs`;
-`anchor`, whether it runs at full strength rather than on the economy model (a `domain_hats` entry may
-anchor any key); the persona with placeholders filled, and `not_applicable` when its substrate cannot exist here (`html`
-needs with no built site, `git` with no repository, `rulebook` with no rulebook sections). Returns the
-list in config order.
+- `cfg` — the validated config.
+- `profile` — `all`, `core` or `explicit`; the config's own when `nothing`.
+- `explicit` — the hat keys an explicit profile names.
+
+A hat is one persona of the `check-consistency` panel, reading the corpus from a single standpoint.
+Each hat carries `key`; the persona with its placeholders filled; and the four fields below.
+
+`substrate` is which view of the corpus the hat reads — the closed set of `schema/hat.schema.json`:
+`full` (the whole manuscript), `siteonly` (the public pages' manuscript), `rawhtml` (the built site),
+`docstrings` (the docstring surface), `rulebook` (the rulebook sections) or `none`. `needs` holds the
+requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from, and `not_applicable`
+says the substrate cannot exist here (`html` needs with no built site, `git` with no repository,
+`rulebook` with no rulebook sections).
+
+`anchor` is whether the hat runs at full strength rather than on the economy model; a `domain_hats`
+entry may anchor any key. It is unrelated to the `file#heading` anchors of
+[`Config.resolve_anchor`](@ref).
+
+Returns the list in config order.
 """
 function resolve_hats(cfg::AbstractDict; profile = nothing, explicit = String[])
     cc = cfg["instruments"]["check-consistency"]
@@ -286,7 +303,12 @@ number!(roster) = (for (i, r) in enumerate(roster); r["nn"] = lpad(i, 2, '0'); e
     resolve_roster(cfg, instrument; kw...) -> Vector{Dict}
 
 The numbered roster of an instrument: hats for check-consistency, lanes otherwise; `nn` assigned in
-order from `01`. Keywords: `profile`, `explicit` (hats); `kind` (audit).
+order from `01`. The arguments are:
+
+- `cfg` — the validated config.
+- `instrument` — one of the four instruments.
+- `kw...` — the resolver's own keywords: `profile` and `explicit` for check-consistency's hats
+  ([`resolve_hats`](@ref)), `kind` for the audit's lanes.
 """
 function resolve_roster(cfg::AbstractDict, instrument::AbstractString; profile = nothing, explicit = String[], kind = "both")
     roster = instrument == "check-consistency" ? resolve_hats(cfg; profile, explicit) :
@@ -458,8 +480,13 @@ end
 
 Copies `instruments/<instrument>/workflow/*.js` of the running copy (and the verifiers and auditors a
 round of that instrument may need) into `.gbg/scratch/<round>/workflow/` — V1: a Workflow `scriptPath`
-must lie inside the project. The arguments are `cfg`, the validated config; `instrument`, the
-instrument name; and `round`, the round id. Returns the directory.
+must lie inside the project. The arguments are:
+
+- `cfg` — the validated config.
+- `instrument` — the instrument name.
+- `round` — the round id.
+
+Returns the directory.
 """
 function copy_scripts(cfg::AbstractDict, instrument::AbstractString, round::AbstractString)
     src = joinpath(instrument_dir(instrument), "workflow"); dst = workflow_dir(cfg, round); mkpath(dst)
@@ -496,8 +523,12 @@ main_script(instrument) = Dict("check-consistency" => "panel.js", "check-docs" =
 """
     torn_check(cfg; io = stderr) -> Bool
 
-`CFG.TORN` as preflight and every round verb run it. The arguments are `cfg`, the validated config,
-and `io`, where a torn file is named. Returns true when no pinned or managed file is modified.
+`CFG.TORN` as preflight and every round verb run it. The arguments are:
+
+- `cfg` — the validated config.
+- `io` — where a torn file is named.
+
+Returns true when no pinned or managed file is modified.
 """
 function torn_check(cfg::AbstractDict; io::IO = stderr)
     checks, code = Doctor.run(cfg; only = ["CFG.TORN"], io = devnull)

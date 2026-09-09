@@ -11,6 +11,17 @@ released `X.Y.Z`, or `dev` for a checkout), which `gbg sync` renders into the co
 sub-environment compat entries. A consumer holds data; the tool holds behaviour; the only thing
 connecting them is that pinned version.
 
+The terms the rest of the package uses as settled words, bound once here:
+
+- An **instrument** is one of four review procedures: `check-docs`, `check-consistency`, `bug-hunt`,
+  `audit-changes`.
+- A **round** is one run of one instrument over one consumer, recorded under `.gbg/rounds/`.
+- A **lane** is one agent's share of a round — one surface, one territory, or one kind of change.
+- A **hat** is one persona of the `check-consistency` panel, reading the corpus from a single standpoint.
+- A **Workflow** is the instrument's `workflow/*.js` script, launched by the session running the round.
+- The **gate**, [`gate`](@ref), is the refusal that stops a build, a test or a commit from stepping
+  around an open round.
+
 The module is a map; every part is documented at its home. The command line and its configuration:
 
 - [`main`](@ref) — the one entry point of `gbg <noun> <verb>`; the exit contract is 0 clean,

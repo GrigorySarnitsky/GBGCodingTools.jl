@@ -9,8 +9,8 @@ unless the work is actually cited.
 
 ### RULE.CIT.FULL_INLINE
 A docstring cites author–year in its prose and carries the full reference in a `# References` section at
-its end: one bullet per work, `Authors, [*Title*](https://doi.org/…), Journal Volume (Year)`, verbatim-
-identical to the canonical entry under the package's references heading, title and DOI compared. Never
+its end: one bullet per work, `Authors, [*Title*](https://doi.org/…), Journal Volume (Year)`,
+verbatim-identical to the canonical entry under the package's references heading, title and DOI compared. Never
 the full reference in the running prose, which the sentence has to carry and the reader has to step over.
 Doc pages cite short and the canonical full reference lives in the rationale document; a REPL reader sees
 the whole reference without opening another file, and drift between the copies is the chosen

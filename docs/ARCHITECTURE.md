@@ -380,7 +380,7 @@ over the tool's own docs and code, with the same stubs, protocol injection and c
 **Forced by.** R6, R2 (the stub header carries the version, so `git log` of the stub answers which
 protocol a session would load), R3, and the plugin limits (`facts-claude-code-platform.md:114,121,62`).
 
-**Dominated.** *Personal-scope symlinked skills `~/.claude/skills/gbg-*`*: deliver the checkout's
+**Dominated.** *Personal-scope symlinked skills, one per instrument under `~/.claude/skills/`*: deliver the checkout's
 protocol, not the consumer's pin (R4); apply to every project on the machine; the `gbg-` prefix costs
 every `/check-docs` reference in four corpora for a shadowing benefit that does not exist
 (`round2-consumer.md:27-31`, F3). *Plugin skills `/gbg:…`*: untested local marketplace, out-of-tree
@@ -622,10 +622,12 @@ the unseeded manuscript beside the seeded one is a one-line `diff` (attack 3.4).
 
 ### D11 — Schemas: one JSON Schema per artefact kind in `schema/`; closed union vocabularies; `schema_version` on every artefact
 
-**Choice.** Eighteen schemas: `schema/{config,exemptions,hat,round,pass,lane-file,finding,
-verdict-act,verdict-state,tally,hunt-candidate,reproduction,dismissal,architecture-fix,audit,
-ground-truth,import,managed}.schema.json`. An instrument's `instruments/<name>/schema.json` is its
-`args` object plus its lane-file wrapper and `$ref`s `finding.schema.json` for the findings array.
+**Choice.** Sixteen schemas: `schema/{config,exemptions,hat,round,pass,finding,verdict-act,
+verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import,
+managed}.schema.json`. An instrument's `instruments/<name>/schema.json` is its `args` object plus its
+lane-file wrapper and `$ref`s `finding.schema.json` for the findings array; the lane-file wrapper and
+`bug-hunt`'s candidate-file shape live inline in each instrument's own `schema.json`, not as files
+under `schema/`.
 Vocabularies (constants, §6.3). `finding.type` = core enum + `domain_type` from
 `[schema] finding_types_extra`. Every artefact carries `schema_version` (= the tool's MAJOR). Changing
 any vocabulary is MAJOR.
@@ -951,8 +953,13 @@ GBGCodingTools.jl/
       Config.jl Schema.jl       loader + the ONE JSON-Schema-subset validator (types, required, enum, pattern, additionalProperties)
                                 over the TOML.parsefile Dict; no JSONSchema.jl
       Doctor.jl Sync.jl Init.jl Fleet.jl Bump.jl Release.jl Install.jl
+      Git.jl                    THE git questions the round verbs, the gate and the doctor ask (no other module shells out to git)
+      Ledger.jl                 THE reader of `.gbg/exemptions.toml` (scope, target, expiry, the `EXEMPT.*` checks' source)
       Preflight.jl              doctor-quick + self verify + round open + THE Workflow-args renderer (also used by `pass open`)
       Rounds.jl                 open/prepare/build/test/bank/rerun/pass/grade/close/abandon/list/render/import (+ --empty)/compare (--recorded)
+      Passes.jl                 the verification half of a round — `pass open`/`grade`/`close`, the dismissal gate, deferral carry
+      RoundFiles.jl             reading and hashing what lives under `.gbg/rounds/` (the round record, the lane files, shas)
+      Self.jl                   `gbg self verify` — the tool's own tree hash against the tag it claims (D2, D3, D15)
       Gate.jl                   THE closure gate for every instrument (honours GBG_ROUND); called in-process by makedocs and TestHarness.gate()
       Demote.jl                 THE demotion predicate (emptiness of class_surfaces[])
       Scan.jl                   `gbg scan docs|html` — the tiered engine over catalog/scans.toml
@@ -989,9 +996,9 @@ GBGCodingTools.jl/
                                 .gbg/seeds.toml (§6.4)
   policy/                       the single-source rubric, rule-numbered
     00-index.md docs-rubric.md latex-idiom.md citations.md testing-protocol.md instruments.md git-conventions.md glossary.md
-    RULES.toml                  every `RULE.*` id → file, section, one-line statement, sentinel sentence (§12.A; the ledger
+    RULES.toml                  every `RULE.*` id → file, section, statement, sentinel, enforcement class (§12.A; the ledger
                                 validates against it; `LEG.SENTINELS` reads the sentinels)
-  schema/*.schema.json          the eighteen of D11
+  schema/*.schema.json          the sixteen of D11
   templates/                    SKILL.md.tmpl settings.json.tmpl queue-guard.sh.tmpl WORK_QUEUE.md.seed CLAUDE.md.skeleton make.jl.seed
                                 runtests.jl.seed test-Project.toml.seed
                                 CI.yml.snippet docs.yml.snippet (three fragments each, inserted by `sync` at fixed points:
@@ -1711,11 +1718,11 @@ naming one is itself `CFG.EXEMPTIONS` FAIL. **Exemptable**: `LEG.*`, `GIT.*`, `A
 ### §7.3 The doctor check table (stable ids; exit 1 on any FAIL, 2 if the repo is not a consumer)
 
 **Sets.** `QUICK` = `{CFG.* (CFG.TORN excepted), PIN.CONFIG, PIN.SOURCES, PIN.NOT_DEV, EXEMPT.*, WIRE.*,
-MANAGED.HASH, ROUND.*, POL.SENTINEL, SELF.CONSUMER}` — the checks that hold on a runner with no shim and a detached
+MANAGED.HASH, ROUND.*, POL.SENTINEL, SELF.CONSUMER, AUDIT.GAP}` — the checks that hold on a runner with no shim and a detached
 HEAD; it is what `gbg preflight`, the `makedocs` wrapper and `TestHarness.gate()` run, and what
 `--only QUICK` names. `CFG.TORN`, `ENV.*`, `SHIM.*`, `GIT.*`, `LEG.*`,
-`PIN.TREESHA`, `PIN.SELF`, `MANAGED.STALE`, `POL.IMPORT`, `POL.COLLAPSED`, `AUDIT.*`, `SELF.DOCS` and
-every other `--deep` check are never in `QUICK` — `CFG.TORN` runs in `gbg preflight` and in every `gbg round` verb only, so
+`PIN.TREESHA`, `PIN.SELF`, `MANAGED.STALE`, `POL.IMPORT`, `POL.COLLAPSED`, `AUDIT.*` other than
+`AUDIT.GAP`, `SELF.DOCS` and every other `--deep` check are never in `QUICK` — `CFG.TORN` runs in `gbg preflight` and in every `gbg round` verb only, so
 the `makedocs` wrapper and `TestHarness.gate()` never refuse a build or a test over an uncommitted
 managed file. `--only <id-or-prefix>[,…]` selects by exact id or by prefix
 (`--only LOAD`, `--only WITNESSES`, `--only LEG.SENTINELS`). This table is the final list; the
@@ -2175,14 +2182,16 @@ Each id names one rule and lives in the `RULE.` namespace — `RULE.<FAMILY>.<NA
 being the policy file's prefix — so a rule id can never collide with a doctor check id (the bare
 prefixes of §7.3) or a scan id (`SCAN.`); the ledger's `scope = "policy"` entries and the scans'
 `rule` column cite these. `policy/RULES.toml` records per id the file, the section, the one-line
-statement below and a `sentinel` — the first sentence of the rule's paragraph in `policy/*.md`,
-verbatim — which `LEG.SENTINELS` matches against a consumer's `CLAUDE.md`. "Source" is the
+statement below, a `sentinel` — the first sentence of the rule's paragraph in `policy/*.md`,
+verbatim — which `LEG.SENTINELS` matches against a consumer's `CLAUDE.md`, and a `check`: what catches
+the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`), one or more of `scan:<id>`, `doctor:<id>`,
+`test:<path>`, `harness:<binding>`, `panel`, `session` or `weakness`. "Source" is the
 `CLAUDE.md` heading or bold lead the text comes from (PF unless marked).
 
 | Id | File | Statement | Source |
 |---|---|---|---|
 | `RULE.DOC.TWO_TIER` | docs-rubric | A module docstring is a map (linked one-liners, no formulas); a function docstring is a home. | "Two-tier structure." |
-| `RULE.DOC.HOME_ORDER` | docs-rubric | A function docstring is ordered: identity, when-to-use, arguments, caveats, one formula, citation, links; internals, jargon and rationale are excluded. | "Function docstring = home" |
+| `RULE.DOC.HOME_ORDER` | docs-rubric | A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats; internals, jargon and rationale are excluded. | "Function docstring = home" |
 | `RULE.DOC.LEADING_IDENTITY` | docs-rubric | Item (1) is a plain one-sentence identity — physical-meaning first, or estimand first (★ `rubric.leading_identity`). | "Physical-space meaning first"; SS "estimand first" |
 | `RULE.DOC.ONE_HOME` | docs-rubric | One concept, one home: one docstring per operation on the bare binding; the `!` form owns the formula and is listed first; every other variant is a thin wrapper that `@ref`-links the home and carries no second formula. | "One concept, one home." |
 | `RULE.DOC.VARIANT_PAIR` | docs-rubric | Across an `f`/`f!` or getter/setter pair the defining math appears once; the wrapper carries no display formula (the review unit is the variant set). | "The review unit is the operation's whole variant set" |
@@ -2311,12 +2320,13 @@ docstrings except by `SCAN.SWALLOWED_ESCAPE`, which is what that scan is for.
 | `SCAN.AI_BANNER` | `RULE.DOC.AI_BANNER` | hard | rationale, literate, pages | julia | PF `lint_ai_banner`: present on every rationale page and Literate file, and verbatim-identical wherever it appears | `banner-drift` |
 | — | — | — | — | — | the same scan also refuses the banner ON `docs/src/index.md` (the owner's ruling 2026-09-09) | `docs/src/index.md` clean twin |
 | `SCAN.DOI_CROSSCHECK` | `RULE.CIT.FULL_INLINE`, `RULE.CIT.DOI` | hard | src vs `references_heading` (or the whole of `docs/ARCHITECTURE.md` when `"absent"`) | julia | PF `doi_crosscheck.py` (both directions; unused-reference info) ∪ IT `doi_crosscheck.py` (decoded DOI, title check, retired `[doi:…]` label refused, the `Phenomenology` leaf exempt by ledger) | `doi-missing` |
-| `SCAN.HTML_RENDERED_MARKUP` | `RULE.TEX.RENDERED_MARKUP` | hard | built_html | html | PF `lint_rendered_markup` (article text with code/pre/math stripped; `*`/`__` survivors) | `emphasis-survives` |
-| `SCAN.HTML_STRAY_MATH` | `RULE.TEX.RENDERED_MATH` | hard | built_html | html | new 2026-09-09: a rendered math span holding a backtick, a Markdown link or an admonition marker is prose Julia Markdown read as math (a double-backtick span IS math) | `stray-math` |
-| `SCAN.HTML_DOCSTRING_ONCE` | `RULE.DOC.API_GROUPING` | hard | built_html | html | IT built-HTML question 1 (a docstring rendered on two pages) | `docstring-twice` |
-| `SCAN.HTML_PUBLIC_HOME` | `RULE.DOC.API_GROUPING` | hard | built_html + `.gbg/scratch/public_surface.json` | html | PF built-HTML question 3 / IT question 2 (every derived public operation on a public page) | `unhomed-export` |
-| `SCAN.HTML_BASE_LEAK` | `RULE.DOC.API_GROUPING` | hard | built_html | html | PF built-HTML questions 1–2 (`Base.` names in an internal section not in `docs.unexported_base_expected`; a name in both a public and an internal section) | `base-leak` |
+| `SCAN.HTML_RENDERED_MARKUP` | `RULE.TEX.RENDERED_MARKUP` | hard | `built_html` | html | PF `lint_rendered_markup` (article text with code/pre/math stripped; `*`/`__` survivors) | `emphasis-survives` |
+| `SCAN.HTML_STRAY_MATH` | `RULE.TEX.RENDERED_MATH` | hard | `built_html` | html | new 2026-09-09: a rendered math span holding a backtick, a Markdown link or an admonition marker is prose Julia Markdown read as math (a double-backtick span IS math) | `stray-math` |
+| `SCAN.HTML_DOCSTRING_ONCE` | `RULE.DOC.API_GROUPING` | hard | `built_html` | html | IT built-HTML question 1 (a docstring rendered on two pages) | `docstring-twice` |
+| `SCAN.HTML_PUBLIC_HOME` | `RULE.DOC.API_GROUPING` | hard | `built_html` + `.gbg/scratch/public_surface.json` | html | PF built-HTML question 3 / IT question 2 (every derived public operation on a public page) | `unhomed-export` |
+| `SCAN.HTML_BASE_LEAK` | `RULE.DOC.API_GROUPING` | hard | `built_html` | html | PF built-HTML questions 1–2 (`Base.` names in an internal section not in `docs.unexported_base_expected`; a name in both a public and an internal section) | `base-leak` |
 | `SCAN.ARGCOV` | `RULE.DOC.ARGCOV` | ★ `argcov_policy` | src | julia | PF `argcov.jl` exemption classes ∪ IT identifier class + `arg = default`; a signature with a keyword in the fixture | `undocumented-last-positional` |
+| `SCAN.ARGS_FORM` | `RULE.DOC.ARGS_FORM` | triage | src, ext | julia | new 2026-09-09: three or more arguments, or any keyword argument, must be bulleted under `The arguments are:`; fewer are bound in running prose and the two forms are never mixed | `wrong-args-form` |
 | `SCAN.FORMULA_IN_BACKTICKS` | `RULE.TEX.RENDERED_MATH` | triage | all | julia | PF/IT: a single-backtick span holding one of the glyphs ≤ ≥ ≠ ∈ ∉ ∇ Δ ⟨ ⟩ ‖ √ × ⋅ (FP: real Julia operators) | `formula-backticks` |
 | `SCAN.STRAY_TEX_DOLLAR` | `RULE.TEX.RENDERED_MATH` | triage | rationale, pages | julia | PF/IT `\$[^$]*[\\_^{}][^$]*\$` | `stray-dollar` |
 | `SCAN.MANUAL_SPACING` | `RULE.TEX.SPACING` | triage | all | julia | PF/IT `\\[;:](?![a-zA-Z])` | `manual-spacing` |

@@ -1,0 +1,200 @@
+{
+  "checked": [
+    "src/GBGCodingTools.jl",
+    "src/TreeHash.jl",
+    "src/DocLints.jl",
+    "ext/GBGCodingToolsDocumenterExt.jl",
+    "src/Scan.jl",
+    "src/Reflection.jl",
+    "src/TestHarness.jl",
+    "src/Witnesses.jl",
+    "src/HtmlWalker.jl",
+    "src/CLI/Config.jl",
+    "src/CLI/Schema.jl",
+    "src/CLI/Ledger.jl",
+    "src/CLI/Gate.jl",
+    "src/CLI/Self.jl",
+    "src/CLI/Main.jl",
+    "src/CLI/Sync.jl",
+    "src/CLI/Git.jl",
+    "src/CLI/RoundFiles.jl",
+    "src/CLI/Doctor.jl",
+    "src/CLI/Preflight.jl",
+    "src/CLI/Rounds.jl",
+    "src/CLI/Seed.jl",
+    "src/CLI/Recall.jl",
+    "src/CLI/Consolidate.jl",
+    "src/CLI/Passes.jl (partial: pass_open only)",
+    "src/Scans/dead_ref.jl",
+    "src/Scans/dupref.jl",
+    "src/Scans/swallowed_escape.jl",
+    "src/Scans/xlink.jl",
+    "src/Scans/argcov.jl",
+    "src/Scans/abutting_spans.jl",
+    "src/Scans/signature_fidelity.jl",
+    "src/Scans/register.jl",
+    "src/Scans/mathbf.jl",
+    "src/Scans/citation_crammed.jl",
+    "src/Scans/signature_wide.jl",
+    "src/Scans/formula_in_backticks.jl",
+    "src/Scans/table_indented.jl",
+    "src/Scans/thin_space.jl",
+    "src/Scans/neg_thin_bigl.jl",
+    "src/Scans/neg_thin_double.jl",
+    "src/Scans/partial_bare.jl",
+    "src/Scans/ref_abut_code.jl",
+    "src/Scans/manual_spacing.jl",
+    "src/Scans/mathbb_digit.jl",
+    "src/Scans/boldsymbol_unbraced.jl",
+    "src/Scans/frac_unbraced.jl",
+    "src/Scans/leftright.jl",
+    "src/Scans/html_rendered_markup.jl",
+    "src/Scans/stray_tex_dollar.jl",
+    "src/Scans/code_in_math.jl",
+    "src/Scans/link_uniformity.jl",
+    "src/Scans/html_stray_math.jl",
+    "src/Scans/html_docstring_once.jl",
+    "src/Scans/sentence_opener.jl",
+    "src/Scans/sibling_link.jl",
+    "src/Scans/field_docs.jl",
+    "src/Scans/doi_crosscheck.jl",
+    "src/Scans/prose_shape.jl",
+    "src/Scans/api_page_structure.jl",
+    "src/Scans/html_base_leak.jl",
+    "src/Scans/html_public_home.jl",
+    "src/Scans/ai_banner.jl",
+    "src/Scans/args_form.jl"
+  ],
+  "candidates_found": 16,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "report() silently drops a scan's hits when population is 0, contradicting its own docstring",
+      "locations": [
+        "src/Scan.jl:438: \"Prints the scan report — the MUST BE EMPTY block, then TRIAGE — with every hit on its own line.\"",
+        "src/Scan.jl:447-449: `if r.population == 0 && r.exempted == 0 ... println(io, \"  DEAD  \", ...) ...` (hits loop is skipped entirely; the same guard repeats for the triage branch at line 461)",
+        "src/Scans/field_docs.jl:39,51,54,60: `checked` (the returned population) is incremented only for a struct that already HAS a `The fields are` list (line 54); a NOLIST hit (line 51, pushed when a struct has no list at all) does not increment it, and `return (hits, checked)` (line 60) can return population 0 together with a non-empty `hits`"
+      ],
+      "description": "`report`'s docstring promises every hit on its own line, but its DEAD branch is checked before the hits branch: whenever `population == 0 && exempted == 0` it prints only \"measured nothing\" and returns, without ever touching `r.hits`. SCAN.FIELD_DOCS (a hard-tier scan) demonstrates the case: if every struct-with-docstring pair it finds lacks a `The fields are` list, `checked` (its population) never leaves 0 even though it pushed real NOLIST hits — so a genuine, non-empty finding is reported as \"DEAD ... measured nothing\" and never printed, though the exit code is still 2 either way. This also collides with the package's own RULE.INST.NO_TRUNCATION (\"a scan's output is never truncated\") and RULE.TEST.MISSING_IS_FAILING's zero-count philosophy, since the zero-population path here masks real hits rather than reporting nothing found.",
+      "resolution_hint": "Either check `!isempty(r.hits)` before the population==0 DEAD branch in `report()`, or make SCAN.FIELD_DOCS's `checked` count every struct-with-docstring pair examined (including NOLIST ones) so population reflects what was actually measured."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "resolve_function's \"externals searched last\" is the opposite of the actual search order",
+      "locations": [
+        "src/TestHarness.jl:285: \"`externals`, the external modules whose generics the package extends (searched last).\"",
+        "src/TestHarness.jl:287-293: `for mod in Iterators.flatten(((pkg,), externals, modules)) ... isdefined(mod, name) ...`"
+      ],
+      "description": "The docstring says `externals` (default `(Base,)`) is searched last, i.e. lowest priority. The body iterates `((pkg,), externals, modules)` in that literal order — `pkg` first, `externals` SECOND, and `modules` (the package's own submodules) LAST. So a name resolvable in both `externals` and `modules` (e.g. a package module defining its own generic that happens to share a name with something in `Base`, rather than extending it) resolves to the external one, not the package's own — the reverse of what the docstring claims and of what `module_method_count`/`method_parity` (both built on this function) need for a correct per-module method count.",
+      "resolution_hint": "Either fix the docstring to say \"searched second, after `pkg` and before `modules`\", or reorder the flatten to `((pkg,), modules, externals)` to match the documented priority."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "signature_fidelity's `examined` counts EXTENSION-HOMED bindings as \"compared\" though they are explicitly skipped",
+      "locations": [
+        "src/Reflection.jl:312: \"`examined`, an optional counter the caller passes to learn how many bindings were actually compared\"",
+        "src/Reflection.jl:410-412: `examined === nothing || (examined[] += 1)  # what was COMPARED: the scan's population` — runs before the `if def === :extension` branch that immediately `continue`s with no keyword/positional comparison at all",
+        "src/Scans/signature_fidelity.jl:2-3: \"the population is the number of bindings COMPARED, never the file count\""
+      ],
+      "description": "For a binding whose defining module resolves to `:extension` (no methods loaded — the very case the code labels \"skipped\" in its own output message `\"$name: EXTENSION-HOMED (no methods loaded) — skipped\"`), `examined` is still incremented at line 410, one line before that skip. The docstring and the scan's own header comment both call `examined` the count of bindings \"actually compared\"/\"COMPARED\", but an extension-homed binding is never compared to anything — its keyword/positional sets are never touched.",
+      "resolution_hint": "Move the `examined[] += 1` increment to after the `def === :extension` check, or reword the docstring to \"bindings examined, extension-homed skips included\"."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "check_paths claims docs/make.jl's path comes from `docs_build`, but the path is hardcoded and the actual `docs_build` command is never read",
+      "locations": [
+        "src/CLI/Config.jl:168: full sentence at :166-169: \"the `docs/make.jl` that `docs_build` names\"",
+        "src/CLI/Config.jl:207: `isfile(joinpath(root, \"docs\", \"make.jl\")) || push!(errs, \"package.docs_build: docs/make.jl does not exist\")`"
+      ],
+      "description": "`package.docs_build` is not a filename — it is a shell command string (`\"julia --project=docs docs/make.jl\"` per the Init.jl template and schema default, run verbatim elsewhere via `shell(cfg[\"package\"][\"docs_build\"])` in Doctor.jl/Rounds.jl). `check_paths`'s docstring reads as if the checked path is derived from that config value (\"the docs/make.jl that docs_build names\"), but the code never reads `cfg[\"package\"][\"docs_build\"]` here at all — it hardcodes the literal path `\"docs\", \"make.jl\"`. A consumer whose `docs_build` command invokes a differently-named script would have this check enforce the existence of a file it doesn't actually use, while never checking the file the command truly runs.",
+      "resolution_hint": "Either parse the actual script path out of `docs_build`, or reword the docstring to \"the fixed path docs/make.jl a consumer's docs_build command is expected to run\"."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "parse_options's \"=value\" form is not gated by `valued`, contradicting \"every other --name is a flag\"",
+      "locations": [
+        "src/CLI/Main.jl:33-34: \"An option named in `valued` consumes the next argument as its value (or the text after `=`); every other `--name` is a flag.\"",
+        "src/CLI/Main.jl:45-53: `if (k = findfirst('=', body)) !== nothing; vals[body[1:k-1]] = body[k+1:end] elseif body in valued ... else push!(flags, body) end`"
+      ],
+      "description": "The `=`-branch is checked before, and independent of, membership in `valued`: any `--name=value` on the command line becomes a value entry regardless of whether `name` was declared in `valued`. So the docstring's implied rule — that the `=`-form is available only for `valued` options, and \"every other `--name` is a flag\" — is false for `--somename=x` where `somename` is not in `valued`: it becomes a value, not a flag, and the `valued` list only actually gates the space-separated form.",
+      "resolution_hint": "Reword to: \"any `--name=value` is a value regardless of `valued`; an option in `valued` also consumes the following bare argument as its value; every other bare `--name` (no `=`) is a flag.\""
+    },
+    {
+      "type": "operational",
+      "severity": "nit",
+      "confidence": "medium",
+      "title": "audit()'s \"a frozen count above its ideal\" describes an inequality test, not a strictly-greater-than one",
+      "locations": [
+        "src/TestHarness.jl:190: \"a frozen count above its ideal must carry a named holder\"",
+        "src/TestHarness.jl:162: `holder — the named holder REQUIRED whenever frozen ≠ ideal` (the Traffic struct's own docstring)",
+        "src/TestHarness.jl:202: `r.frozen != r.ideal && @test !isempty(r.holder)`"
+      ],
+      "description": "`audit`'s own docstring paraphrases the check as \"above\" (implying `>`), but the code — and the `Traffic` struct's own docstring two definitions above it in the same file — states and implements the actual test as `≠`/`!=`, not `>`. A frozen pair that came out BELOW its ideal (which would itself be a separate bug worth a holder) would trip the `holder` requirement too, which \"above\" does not capture.",
+      "resolution_hint": "Change \"above\" to \"different from\" (or \"≠\") in `audit`'s docstring to match `Traffic`'s own wording and the actual `!=` check."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "SCAN.SIBLING_LINK's own header claims it enforces \"later mentions are bare\", but the scan never checks anything past the first mention",
+      "locations": [
+        "src/Scans/sibling_link.jl:1-4: \"the first mention of a sibling GBG package in a unit ... is a link ...; later mentions in the unit are bare code spans\"",
+        "src/Scans/sibling_link.jl:17-30 (`sibling_link_hits!`): `for (n, raw) in lines; o = findfirst(name_re, raw); o === nothing && continue; m = match(link_re, raw); ok = ...; ok || push!(hits, ...); break end`"
+      ],
+      "description": "The scan's comment states the rule it enforces has two halves — the first mention must be linked, and every later mention must be a bare code span. The implementation only checks the first half: it finds the first line mentioning a sibling package name and `break`s immediately after processing it, whether or not it was a link. It never inspects any subsequent line for that name, so a docstring where the SECOND mention of a sibling package is ALSO wrapped in a link (violating \"later mentions are bare code spans\") produces no hit at all — the absence this half of the rule is supposed to catch is never searched for.",
+      "resolution_hint": "After the first-mention check, keep scanning the remaining lines for the same name and flag any of them that ARE links, or state plainly in the header comment that only the first-mention half is enforced."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "SCAN.PROSE_SHAPE's header \"Caps bind ALWAYS\" is contradicted by its own later comment and code, which exempt a baselined page section",
+      "locations": [
+        "src/Scans/prose_shape.jl:3-4: \"Caps bind ALWAYS (longest paragraph ≤ 120 words, ≤ 3 admonitions; IT's lesson: a cap that applies only to new units is escaped by re-baselining or renaming).\"",
+        "src/Scans/prose_shape.jl:104-106: \"The caps bind ALWAYS on a docstring (the rule's unit) and on a NEW page unit (PF's newcomer cap); a baselined page section is held by the ratchet alone.\" then `if occursin(\" :: \", k) || b === nothing`"
+      ],
+      "description": "The file's opening comment states as a blanket fact that the caps (120-word paragraph, 3-admonition) bind ALWAYS, and even cites \"IT's lesson\" that a cap escapable by re-baselining is a known anti-pattern to avoid. But the code's own later comment, immediately above the cap check, states the opposite for page sections: \"a baselined page section is held by the ratchet alone\" — and the code enforces exactly that (`if occursin(\" :: \", k) || b === nothing` skips the cap check for any page-section unit that already has a baseline entry). So a page section whose longest paragraph already exceeds 120 words, once it is in the CSV baseline, is never flagged by the cap again — only growth beyond its own (already-over-cap) baseline is caught. This is precisely the escape-by-re-baselining pattern the header's own parenthetical calls out as the mistake to avoid, now built into the design for page sections.",
+      "resolution_hint": "Either drop \"ALWAYS\" from the header (it applies to docstrings and to NEW page units only, as the later comment already says), or make the cap check run unconditionally for page sections too."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "classify_lane's \"quarantined as .rejected.json\" is not true of the absent case, and the two file-quarantining cases use different rename patterns",
+      "locations": [
+        "src/CLI/Rounds.jl:227: \"The status is `:dead` (absent, unparsable, or invalid — quarantined as `.rejected.json`)...\"",
+        "src/CLI/Rounds.jl:234: `isfile(p) || return (:dead, nothing, nothing, \"absent\")` (no file exists — nothing is moved)",
+        "src/CLI/Rounds.jl:239: `mv(p, p * \".rejected.json\"; force = true)` (unparsable → `<name>.json.rejected.json`)",
+        "src/CLI/Rounds.jl:244,247: `mv(p, replace(p, \".json\" => \".rejected.json\"); force = true)` (invalid, or lane-field mismatch → `<name>.rejected.json`)"
+      ],
+      "description": "The docstring groups all three DEAD reasons under one parenthetical, \"quarantined as `.rejected.json`\", but the absent-file branch (line 234) returns immediately with no `mv` at all — there is no file to quarantine, so \"absent\" is never actually quarantined. Separately, the two branches that do quarantine a file use two different renaming rules that produce different filenames for the same original name: the unparsable branch appends `.rejected.json` after the existing `.json` (e.g. `00-scans.json` → `00-scans.json.rejected.json`), while the invalid/mismatched-lane branches replace `.json` with `.rejected.json` (`00-scans.json` → `00-scans.rejected.json`). The docstring's singular \"`.rejected.json`\" implies one uniform outcome across all three DEAD causes; there are in fact three different outcomes.",
+      "resolution_hint": "Scope the parenthetical to the two file-rewriting cases only, and unify the two `mv` calls on one rename rule (both should probably use `replace(p, \".json\" => \".rejected.json\")`)."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "suspect_hats claims seeds are filtered \"on its substrate\" but only the siteonly substrate is actually filtered",
+      "locations": [
+        "src/CLI/Recall.jl:75: \"Every hat with two or more seeds on its substrate and zero seeded findings of its own.\"",
+        "src/CLI/Recall.jl:9 (module docstring): \"the hats with two or more seeds on their substrate (the view of the corpus a hat reads) and zero matches\"",
+        "src/CLI/Recall.jl:84: `seeds = [s for s in get(ground_truth, \"seeded\", Any[]) if h[\"substrate\"] != \"siteonly\" || s[\"page\"] in site_pages]`"
+      ],
+      "description": "`resolve_hats` (Preflight.jl:189-192) documents a closed set of substrates: `full` (whole manuscript), `siteonly` (public pages), `rawhtml` (built site), `docstrings` (docstring surface), `rulebook` (rulebook sections) and `none`. `suspect_hats`'s filter only narrows the seed set for `substrate == \"siteonly\"`; every other value (`rawhtml`, `docstrings`, `rulebook`, `none` included) falls into the `!= \"siteonly\"` branch and is treated as seeing every planted seed anywhere in the manuscript, as if its substrate were `full`. A hat whose substrate is `docstrings`, `rulebook`, or even `none` — which by definition cannot see most or any of the planted prose — can be flagged SUSPECT (\"zero matches\" on ≥2 seeds it never had a chance to see), the exact false-corroboration-gap failure `suspect_hats` exists to avoid.",
+      "resolution_hint": "Extend the seed-visibility filter to every substrate that restricts the corpus (e.g. skip a seed outside a hat's actual pages for `rawhtml`/`docstrings`/`rulebook`, and skip all seeds for `substrate == \"none\"`), not only `siteonly`."
+    }
+  ],
+  "lane": "operational-claims",
+  "round": "2026-09-09-check-docs-02",
+  "schema_version": 1
+}

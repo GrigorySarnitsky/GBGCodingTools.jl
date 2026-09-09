@@ -19,14 +19,16 @@ by the consumer thereafter (wiring-checked, never rewritten).
 | `runtests.jl.seed` | `test/runtests.jl` | S | `{{package.name}}` |
 | `test-Project.toml.seed` | `test/Project.toml` | S + G entries | `{{package.name}}`, `{{package.uuid}}`, `{{tool.uuid}}`, `{{tool.url}}`, `{{tool.version}}` |
 | `CI.yml.snippet`, `docs.yml.snippet` | three fragments each, inserted into `.github/workflows/{CI,docs}.yml` | S (the fragments are checked by `WIRE.CI_AUTH`) | `{{tool.banner}}` |
-| `regressions-README.md` | `test/regressions/README.md` | G | none |
-| `commit-message.tmpl` | `.gbg/scratch/commit-message.txt` (by `gbg init --migrate`) | — | `{{package.name}}`, `{{tool.version}}`, `{{files}}` |
-| `bump-message.tmpl` | `.gbg/scratch/bump-message.txt` (by `gbg bump`) | — | `{{package.name}}`, `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}` |
+| `regressions-README.md` | `test/regressions/README.md` | G | `{{tool.version}}` |
+| `commit-message.tmpl` | `.gbg/scratch/commit-message.txt` (by `gbg init --migrate`) | — | `{{tool.version}}`, `{{files}}` |
+| `bump-message.tmpl` | `.gbg/scratch/bump-message.txt` (by `gbg bump`) | — | `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}` |
 
 **Managed headers.** A G file carries a first-line header where its format allows a comment:
 `# gbg:managed <template> v<version> — rewritten by \`gbg sync\`; do not edit` (`#`-commented
 formats), `<!-- gbg:managed … -->` (Markdown), none for JSON (the sidecar is the record). The header
-is part of the rendered bytes the sidecar hashes.
+is part of the rendered bytes the sidecar hashes. One exception: `queue-guard.sh.tmpl` is copied
+byte-for-byte from PF's Stop hook and carries no header, so the upstream text stays comparable; the
+sidecar hash is what marks it managed.
 
 **Snippet fragments.** A `.snippet` holds three fragments, each opened by a line
 `# gbg:fragment <auth|run|banner>` and closed by the next opener or the end of the file. `sync`

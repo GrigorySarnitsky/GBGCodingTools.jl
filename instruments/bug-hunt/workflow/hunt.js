@@ -71,7 +71,7 @@ YOUR BRIEF IS TO FIND WHAT IS WRONG WITH THIS CODE. That is the whole brief.
 
 You are deliberately given NO list of defect classes to look for. Other lanes in this panel work from territories, and any list is somebody's guess about where bugs live — so a defect that falls outside every one of them is invisible to every one of them, and the run still reports success. You are the lane that catches what the guess missed. If you find yourself working through a mental checklist, stop and read the actual code again.
 
-Read the source. Follow the data. Ask, of each thing you read, what would have to be true for it to be correct, and then check whether it is.`
+Read the source. Follow the data. Nothing under `.gbg/` or `~/.gbg/` is yours to open but the files this prompt names; scope every grep with `--glob '!.gbg/**'`. Ask, of each thing you read, what would have to be true for it to be correct, and then check whether it is.`
 
 const HUNT_PREAMBLE = `${A.preamble}
 

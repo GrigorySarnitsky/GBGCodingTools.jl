@@ -32,11 +32,15 @@ _sortkey(name, isdir) = isdir ? name * "/" : name
 """
     tree_hash(dir; skip = (".git",)) -> String
 
-The git tree id of the directory `dir`, computed as `git write-tree` would over every file below it:
-entries sorted by git's rule (a directory name compares with a trailing `/`), modes `100644`, `100755`,
-`120000` and `40000`, empty directories omitted. Entries named in `skip` at any level are ignored, `.git`
-by default, so a working tree hashes the same as the tree its `HEAD` names when it is clean. Returns the
-hex id; an empty tree returns git's well-known empty-tree id.
+The git tree id of a directory, computed as `git write-tree` would over every file below it: entries
+sorted by git's rule (a directory name compares with a trailing `/`), modes `100644`, `100755`,
+`120000` and `40000`, empty directories omitted. The arguments are:
+
+- `dir` — the directory to hash.
+- `skip` — entry names ignored at any level, `.git` by default, so a working tree hashes the same as
+  the tree its `HEAD` names when it is clean.
+
+Returns the hex id; an empty tree returns git's well-known empty-tree id.
 """
 function tree_hash(dir::AbstractString; skip = (".git",))
     entries = Tuple{String,Bool,String}[]              # (name, isdir, hexid)

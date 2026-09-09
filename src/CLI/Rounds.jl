@@ -49,9 +49,14 @@ end
 """
     guard(cfg, round; io = stderr, allow_config_change = false, need_open = true) -> (dir, record)
 
-What every `round` verb does first. The arguments are `cfg`, the validated config; `round`, the round
-id; `io`, where a torn file is named; `allow_config_change`, accept a `config_sha` that moved since the
-round opened (regrade, abandon, close); and `need_open`, require the round to be open.
+What every `round` verb does first. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id.
+- `io` — where a torn file is named.
+- `allow_config_change` — accept a `config_sha` that moved since the round opened (regrade, abandon,
+  close).
+- `need_open` — require the round to be open.
 
 It runs `gbg self verify` (exit 2 on mismatch) and `CFG.TORN`, loads the round, and checks its
 `config_sha` (else exit 2 with the `pass open --regrade` hint). Throws a `RoundError` carrying the
@@ -75,8 +80,14 @@ timestamp() = Dates.format(now(), dateformat"yyyy-mm-ddTHH:MM:SS")
     run_under_round(cfg, round, cmdline; log) -> Int
 
 Runs a shell command line from the consumer root with `GBG_ROUND=<round>` exported, its output tee'd
-into a log. The arguments are `cfg`, the validated config; `round`, the round the gate must ignore;
-`cmdline`, the command line (`sh -c`); and `log`, the log file. Returns the exit code.
+into a log. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round the gate must ignore.
+- `cmdline` — the command line (`sh -c`).
+- `log` — the log file.
+
+Returns the exit code.
 """
 function run_under_round(cfg::AbstractDict, round::AbstractString, cmdline::AbstractString; log::AbstractString)
     mkpath(dirname(log))
@@ -114,8 +125,11 @@ end
 """
     prepare(cfg, round; io = stdout) -> Int
 
-`gbg round prepare <round>`, by instrument. The arguments are `cfg`, the validated config; `round`,
-the round id; and `io`, where the report goes.
+`gbg round prepare <round>`, by instrument. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id.
+- `io` — where the report goes.
 
 check-consistency: the docs build under `GBG_ROUND` (exit 0 required; the log path is printed
 otherwise), the two manuscripts consolidated into the payload directory, and — when the round is
@@ -191,9 +205,13 @@ end
     build(cfg, round; io = stdout) -> Int
 
 `gbg round build <round>`: the consumer's `docs_build` under `GBG_ROUND`, the log under the round's
-scratch. The arguments are `cfg`, the validated config; `round`, the round id; and `io`, where the
-exit and the log path are printed. Returns the command's exit code; [`test`](@ref) is its twin for
-`julia_test`.
+scratch. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id.
+- `io` — where the exit and the log path are printed.
+
+Returns the command's exit code; [`test`](@ref) is its twin for `julia_test`.
 """
 function build(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     guard(cfg, round; io)
@@ -205,8 +223,13 @@ end
     test(cfg, round; io = stdout) -> Int
 
 `gbg round test <round>`: the consumer's `julia_test` under `GBG_ROUND`, the log under the round's
-scratch. The arguments are `cfg`, the validated config; `round`, the round id; and `io`, where the
-exit and the log path are printed. Returns the command's exit code.
+scratch. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id.
+- `io` — where the exit and the log path are printed.
+
+Returns the command's exit code.
 """
 function test(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     guard(cfg, round; io)
@@ -220,11 +243,15 @@ end
 """
     classify_lane(dir, inst, lane; first_sha = nothing) -> (status, data, sha, note)
 
-Classifies one lane file. The arguments are `dir`, the round directory; `inst`, the instrument (its
-lane-file schema); `lane`, the roster entry (`nn`, `key`); and `first_sha`, the file's sha at first
-sight, when the bank has seen it before.
+Classifies one lane file. The arguments are:
 
-The status is `:dead` (absent, unparsable, or invalid — quarantined as `.rejected.json`), `:rejected`
+- `dir` — the round directory.
+- `inst` — the instrument (its lane-file schema).
+- `lane` — the roster entry (`nn`, `key`).
+- `first_sha` — the file's sha at first sight, when the bank has seen it before.
+
+The status is `:dead` (absent, or — renamed to `<name>.rejected.json` beside itself — unparsable or
+invalid), `:rejected`
 (present but its sha changed since first sight), `:empty` (zero findings, non-empty checked),
 `:truncated` (candidates_found > findings), or `:live`. Returns the status, the parsed object (or
 nothing), the file's sha and a note.
@@ -236,7 +263,7 @@ function classify_lane(dir::AbstractString, inst::AbstractString, lane::Abstract
     first_sha !== nothing && first_sha != sha && return (:rejected, nothing, sha, "changed since first sight")
     data = try JSON3.read(read(p, String), Dict{String,Any}) catch err; nothing end
     if data === nothing
-        mv(p, p * ".rejected.json"; force = true); return (:dead, nothing, sha, "unparsable (quarantined)")
+        mv(p, replace(p, ".json" => ".rejected.json"); force = true); return (:dead, nothing, sha, "unparsable (quarantined)")
     end
     schema = instrument_schema(inst)
     errs = validate(schema["properties"]["lane_file"], data; root = schema)
@@ -299,8 +326,11 @@ end
 """
     bank(cfg, round; io = stdout) -> Int
 
-`gbg round bank <round>`. The arguments are `cfg`, the validated config; `round`, the round id; and
-`io`, where the classification and the recall are printed.
+`gbg round bank <round>`. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id.
+- `io` — where the classification and the recall are printed.
 
 It validates every expected lane file, records each classified file's sha at first sight (`lane_shas`;
 a DEAD lane's file is not recorded, and [`Rounds.rerun`](@ref) forgets the sha of a lane it re-runs),
@@ -363,6 +393,10 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         code = hunt_bank!(cfg, dir, rec, findings; io)
         code == 0 || return code
     end
+    for f in findings                                            # the schema existed and nothing validated against it
+        errs = validate(load_schema("finding"), f)
+        isempty(errs) || throw(RoundError("banked finding $(get(f, "id", "?")) does not validate: " * first(errs)))
+    end
     open(joinpath(dir, "findings.json"), "w") do f
         JSON3.pretty(f, JSON3.write(Dict("schema_version" => 1, "round" => round, "findings" => findings))); println(f)
     end
@@ -380,9 +414,13 @@ end
 """
     hunt_bank!(cfg, dir, rec, findings; io = stdout) -> Int
 
-The hunt's bank. The arguments are `cfg`, the validated config; `dir`, the round directory; `rec`, the
-round record (it gains `reproductions_sha`); `findings`, the candidates, reduced in place to the
-confirmed set; and `io`, where the runner reports.
+The hunt's bank. The arguments are:
+
+- `cfg` — the validated config.
+- `dir` — the round directory.
+- `rec` — the round record (it gains `reproductions_sha`).
+- `findings` — the candidates, reduced in place to the confirmed set.
+- `io` — where the runner reports.
 
 It runs `Witnesses.run(witnesses/; expect = :fail)`; a REPRODUCED finding whose witness does not fail
 mechanically is REJECTED (recorded as WITNESS-WRONG); the sha of each failing witness body is recorded;
@@ -440,9 +478,15 @@ end
     rerun(cfg, round, lanes; io = stdout) -> Int
 
 `gbg round rerun <round> --lanes a,b`: prints the instrument's Workflow call restricted to the lanes
-the last bank classified DEAD. The arguments are `cfg`, the validated config; `round`, the round id;
-`lanes`, the lane keys; and `io`, where the call is printed. A live lane is refused; the first-sight
-sha of each named lane is forgotten, since the re-run replaces its file. Returns the exit code.
+the last bank classified DEAD. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id.
+- `lanes` — the lane keys.
+- `io` — where the call is printed.
+
+A live lane is refused; the first-sight sha of each named lane is forgotten, since the re-run replaces
+its file. Returns the exit code.
 """
 function rerun(cfg::AbstractDict, round::AbstractString, lanes::AbstractVector{<:AbstractString}; io::IO = stdout)
     dir, rec = guard(cfg, round; io)
@@ -468,11 +512,16 @@ end
 
 `gbg round import --empty <round> --reason "…"`: writes a round holding only an abandoned `ROUND.toml`
 and an `import.json` with `source = "none"` — the Step-0 scratch form for a legacy pile that yields
-nothing. The arguments are `cfg`, the validated config; `round`, the round id to create (refused when
-it exists); `reason`, the abandon reason; and `io`, where the outcome is printed. The six legacy pile
-readers (`pf-doc-review`, `pf-check-docs`, `pf-findings-json`, `it-closure`, `it-audit-latest`,
-`it-rounds-json`) are Phase 2's scratch tools and are written when those imports run; until then
-`gbg round import <pile>` refuses, naming this. Returns the exit code.
+nothing. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id to create (refused when it exists).
+- `reason` — the abandon reason.
+- `io` — where the outcome is printed.
+
+The six legacy pile readers (`pf-doc-review`, `pf-check-docs`, `pf-findings-json`, `it-closure`,
+`it-audit-latest`, `it-rounds-json`) are Phase 2's scratch tools and are written when those imports
+run; until then `gbg round import <pile>` refuses, naming this. Returns the exit code.
 """
 function import_empty(cfg::AbstractDict, round::AbstractString, reason::AbstractString; io::IO = stdout)
     occursin(r"^\d{4}-\d{2}-\d{2}-(check-docs|check-consistency|bug-hunt|audit-changes)-\d{2}$", round) || (println(io, "import: $round is not a round id <date>-<instrument>-<NN>"); return 2)
@@ -486,8 +535,12 @@ function import_empty(cfg::AbstractDict, round::AbstractString, reason::Abstract
         "roster" => Any[], "cost" => "economy", "strength" => "economy", "hostname" => gethostname(), "model_hint" => Preflight.economy_model(),
         "opened" => timestamp(), "dead_lanes" => String[], "passes" => 0, "abandoned" => Dict("reason" => reason, "open_ids" => String[])))
     save(dir, rec)
+    imp = Dict{String,Any}("schema_version" => 1, "source" => "none", "format" => "none", "title_to_id" => Dict{String,Any}(),
+                           "imported" => timestamp(), "reason" => reason)
+    errs = validate(load_schema("import"), imp)                  # the schema existed and nothing validated against it
+    isempty(errs) || throw(RoundError("import.json would not validate: " * first(errs)))
     open(joinpath(dir, "import.json"), "w") do f
-        JSON3.pretty(f, JSON3.write(Dict("schema_version" => 1, "source" => "none", "format" => "none", "title_to_id" => Dict{String,Any}(), "imported" => timestamp(), "reason" => reason))); println(f)
+        JSON3.pretty(f, JSON3.write(imp)); println(f)
     end
     println(io, "import --empty: $round written (abandoned, source none) — a Step-0 scratch round; never commit it (ARCHITECTURE Revision 8)")
     return 0
@@ -497,7 +550,12 @@ end
     list(cfg; io = stdout) -> Int
 
 `gbg round list`: one line per round — state, instrument, opened, passes, open ids of the latest
-tally. The arguments are `cfg`, the validated config, and `io`, where the lines go. Returns 0.
+tally. The arguments are:
+
+- `cfg` — the validated config.
+- `io` — where the lines go.
+
+Returns 0.
 """
 function list(cfg::AbstractDict; io::IO = stdout)
     rs = RoundFiles.rounds(cfg)
@@ -518,9 +576,14 @@ end
 """
     render(cfg, round; io = stdout) -> Int
 
-`gbg round render <round>`: regenerates `findings.md` and `SUMMARY.md` from the frozen files. The
-arguments are `cfg`, the validated config; `round`, the round id; and `io`, where the outcome is
-printed. Returns 0, or 2 for a round not banked.
+`gbg round render <round>`: regenerates `findings.md` and `SUMMARY.md` from the frozen files.
+The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id.
+- `io` — where the outcome is printed.
+
+Returns 0, or 2 for a round not banked.
 """
 function render(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = load(cfg, round)
@@ -536,10 +599,15 @@ end
 """
     abandon(cfg, round, reason; io = stdout) -> Int
 
-`gbg round abandon <round> --reason "…"`: the only wholesale exit. The arguments are `cfg`, the
-validated config; `round`, the round id; `reason`, at least 12 characters (a plateau is the usual
-one); and `io`, where the outcome is printed. It writes `abandoned = {reason, open_ids}` with every id
-still open (all banked ids when no pass was graded). Returns 0.
+`gbg round abandon <round> --reason "…"`: the only wholesale exit. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id.
+- `reason` — at least 12 characters (a plateau is the usual one).
+- `io` — where the outcome is printed.
+
+It writes `abandoned = {reason, open_ids}` with every id still open (all banked ids when no pass was
+graded). Returns 0.
 """
 function abandon(cfg::AbstractDict, round::AbstractString, reason::AbstractString; io::IO = stdout)
     length(strip(reason)) >= 12 || (println(io, "abandon: --reason needs at least 12 characters; a plateau is the usual reason"); return 2)

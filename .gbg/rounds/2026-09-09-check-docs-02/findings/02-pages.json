@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-check-docs-02",
+  "lane": "pages",
+  "candidates_found": 22,
+  "checked": [
+    "docs/src/api/CLI.md",
+    "docs/src/api/Config.md",
+    "docs/src/api/Reflection.md",
+    "docs/src/api/TestHarness.md",
+    "docs/src/api/Witnesses.md",
+    "docs/src/guide/config.md",
+    "docs/src/guide/install.md",
+    "docs/src/guide/ledger.md",
+    "docs/src/guide/rounds.md",
+    "docs/src/guide/verbs.md",
+    "docs/src/index.md"
+  ],
+  "findings": [
+    {
+      "type": "structure",
+      "severity": "major",
+      "confidence": "high",
+      "title": "verbs.md lists Init.migrate_seeds as a verb, but it is not one",
+      "locations": [
+        "docs/src/guide/verbs.md:31: \"GBGCodingTools.Init.migrate_seeds\"",
+        "src/CLI/Init.jl:574-575: only `VERBS[\"migrate baselines\"] = cmd_migrate_baselines` and `VERBS[\"new\"] = cmd_new` are registered — no `migrate seeds` key exists"
+      ],
+      "description": "verbs.md opens with \"`gbg <noun> <verb>` is the whole command line; the table is closed, and every verb below is rendered from its own docstring so the page cannot drift from the code.\" `Init.migrate_seeds` is placed under \"Consumer setup\" alongside genuine verbs (`Init.init`, `Sync.sync`, `cmd_config`, `cmd_schema`), implying `gbg migrate seeds` is invocable. It is not: `migrate_seeds` is only ever called internally from `init(...; migrate = true)` (src/CLI/Init.jl:309-310); there is no `VERBS[\"migrate seeds\"]` entry, so `gbg migrate seeds` fails with \"unknown verb\". The closed-table claim is therefore false for this entry.",
+      "resolution_hint": "Move `GBGCodingTools.Init.migrate_seeds` off verbs.md onto CLI.md's \"Engines\" section next to `Init.derive_config` (an internal helper `gbg init --migrate` calls), the way `derive_config` is already placed there rather than on the verbs page."
+    },
+    {
+      "type": "structure",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "Options, the record parse_options returns, has no home on any page",
+      "locations": [
+        "docs/src/guide/verbs.md:13-14: \"GBGCodingTools.main\\nGBGCodingTools.parse_options\"",
+        "src/CLI/Main.jl:12-24: `struct Options` carries a full docstring (\"The fields are: positional, flags, values\") that is never referenced by any `@docs` block"
+      ],
+      "description": "`parse_options(args; valued = String[]) -> Options` is shown on verbs.md with no link to `Options`, and a whole-repo search of docs/src finds zero mentions of `GBGCodingTools.Options` anywhere. The type already carries a complete, correctly bulleted docstring (RULE.DOC.FIELDS-compliant) that simply is never rendered. A reader who wants to know what `.positional`, `.flags` and `.values` mean has no page to consult, contra RULE.DOC.API_GROUPING's \"every derived public operation has a home on a public page.\"",
+      "resolution_hint": "Add `GBGCodingTools.Options` to verbs.md's \"Entry point\" `@docs` block, right after `parse_options`."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "gbg doctor's real CLI flags are undocumented on every page",
+      "locations": [
+        "docs/src/guide/verbs.md:39-46: shows `GBGCodingTools.Doctor.run` and `GBGCodingTools.doctor`, not `cmd_doctor`",
+        "src/CLI/Doctor.jl:739-744: `cmd_doctor`'s docstring states `--deep`, `--json`, `--effective`, `--only <id-or-prefix>[,…]|QUICK`, and \"exit 2 when the working directory is not a consumer\""
+      ],
+      "description": "`cmd_doctor` — the function actually invoked by `gbg doctor [--deep] [--json] [--effective] [--only …]` and the only place its flags and its \"not a consumer\" exit-2 behavior are stated — appears in zero `@docs` blocks anywhere under docs/src (confirmed by grepping the whole tree; it only shows up in docs/prose_shape.csv, the baseline file). The docstrings shown instead (`Doctor.run`, `doctor`) use different Julia keyword names (`only`, `deep`, `json`, `effective`) and never spell out the `--` flag syntax. index.md calls `gbg doctor` one of \"the two a person runs most,\" yet its literal command-line grammar has no page.",
+      "resolution_hint": "Add `GBGCodingTools.Doctor.cmd_doctor` to verbs.md's \"Checks and scans\" `@docs` block alongside `Doctor.run`."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "gbg scan docs's --rebaseline mode is undocumented on every page",
+      "locations": [
+        "docs/src/guide/verbs.md:42: shows `GBGCodingTools.scan_docs`, not `cmd_scan`",
+        "src/Scan.jl:549-554: `cmd_scan`'s docstring documents `gbg scan docs [--hard-only] [--only id,…] [--rebaseline prose-shape --reason \"…\"]`, which writes `docs/prose_shape.csv`"
+      ],
+      "description": "`cmd_scan` is never referenced by any `@docs` block in docs/src (confirmed by a whole-tree grep; only docs/prose_shape.csv's baseline row mentions the name). `scan_docs`'s own docstring (src/Scan.jl:406-419), the one actually shown, says nothing about `--rebaseline` — a distinct, real operating mode (rewriting the RULE.DOC.SHAPE baseline) that is otherwise completely absent from the built documentation.",
+      "resolution_hint": "Add `GBGCodingTools.cmd_scan` to verbs.md's \"Checks and scans\" `@docs` block, or fold a `--rebaseline` sentence into `scan_docs`'s own docstring."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "install.md's shim description omits the fixture-routing exception",
+      "locations": [
+        "docs/src/guide/install.md:35: \"reads the pinned version, and executes `julia --project=<root>/docs` on the copy that environment resolved — so `gbg` in a consumer always runs that consumer's pinned version.\"",
+        "bin/gbg:19-22: `if [ \"$v\" = \"dev\" ] && ! grep -q '^name = \"GBGCodingTools\"' \"$d/Project.toml\" ...; then ... P=$r` (comment: \"the fixture: enclosing tool repo\")"
+      ],
+      "description": "The shim has a third routing branch besides `--dev` and \"the ordinary route\": a consumer pinned at `dev` that is NOT itself the GBGCodingTools checkout (the fixture nested under the tool's own tree) resolves `--project=<enclosing tool repository root>`, not `<root>/docs>` as install.md's prose states unconditionally (\"always runs that consumer's pinned version\" via `<root>/docs`). The code's own comment calls this case out by name (\"the ordinary route\" vs. \"the fixture\"), so the omission is a real gap, not an edge case nobody anticipated.",
+      "resolution_hint": "Add a sentence after the `<root>/docs` claim noting the one exception: a `dev`-pinned consumer nested inside the tool's own checkout (the fixture) resolves against the enclosing tool root instead."
+    },
+    {
+      "type": "currency",
+      "severity": "nit",
+      "confidence": "medium",
+      "title": "rounds.md's gate description omits the audit's own GBG_ROUND export",
+      "locations": [
+        "docs/src/guide/rounds.md:43-44: \"the one named in `GBG_ROUND` …, which the CLI exports only while it runs a build or a test on that round's behalf.\"",
+        "src/CLI/Audit.jl:13-16: `audit_bank` runs `package.julia_test` AND every `executable_claims` command \"with `GBG_ROUND` exported\""
+      ],
+      "description": "`Gate.jl`'s own docstring (src/CLI/Gate.jl:9) is careful to say GBG_ROUND is exported \"while it runs a build, a test or an executable claim,\" but rounds.md compresses this to \"a build or a test,\" dropping the audit's executable-claims case entirely — the one place GBG_ROUND is exported for something other than `docs_build`/`julia_test`.",
+      "resolution_hint": "Add \"or an audit's executable claim\" to the \"build or a test\" phrase in rounds.md's gate paragraph."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "config.md's [surfaces] enumeration omits two schema keys",
+      "locations": [
+        "docs/src/guide/config.md:11-13: \"[surfaces] (the ONE copy of every surface list: rationale documents, pages, generated copies, source, extensions, Literate examples, the built site, the history and references anchors)\"",
+        "schema/config.schema.json: `surfaces.properties` also carries `glossary` (a string path) and `data` (an optional list of data/script files whose comments are prose)"
+      ],
+      "description": "config.md bills the `[surfaces]` list as \"the ONE copy of every surface list\" and enumerates it in detail (matching all 4 keys of `[docs]` exactly), but of the 11 actual `surfaces.*` schema keys (rationale, pages, generated, src, ext, literate, built_html, history_exempt, references_heading, glossary, data) only 9 are named — `glossary` and `data` are missing, so the claim to completeness is not met for this one section even though the adjacent `[docs]` enumeration is exhaustive.",
+      "resolution_hint": "Add \"the glossary file, and any data/script surface\" to the surfaces parenthetical."
+    }
+  ]
+}
