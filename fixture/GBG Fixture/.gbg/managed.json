@@ -1,6 +1,6 @@
 {
     "tool_version": "dev",
-    "inputs_sha": "607d5679ad85277012e86743145cd53e442e6b42a5b770a9e2aba24d63e2e8ce",
+    "inputs_sha": "c94ea5be7330b5fdf1f6ae641855c26d6bfc5f333f7f6d51d75cb4e9f5629901",
     "files": {
         "CLAUDE.md#gbg:managed": {
             "template": "claude-md.block",
@@ -14,7 +14,7 @@
         },
         ".claude/skills/gbg-doctor/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "c87471d749f6fdab700236a5f0a0094b6c8511fd73892cc7999fa803b0c9af30",
+            "sha256": "e71909930548d7b94a6b84fe28a58b0618b54d85c8371b88ff98acdcc1c14ed0",
             "version": "dev"
         },
         ".gbg/policy/latex-idiom.md": {
@@ -24,7 +24,7 @@
         },
         ".gbg/policy/glossary.md": {
             "template": "policy/glossary.md",
-            "sha256": "3b962aaaf48808809de956021a4e73143e1ad6cda0f3ae2e2c9271ae30a7316f",
+            "sha256": "062af067a24b488e7ae6f74f10830ec294337c5e410902ae96d958d621aea472",
             "version": "dev"
         },
         ".gbg/policy/testing-protocol.md": {
@@ -99,5 +99,5 @@
         }
     },
     "schema_version": 1,
-    "rendered": "2026-09-09T11:46:38"
+    "rendered": "2026-09-09T11:58:06"
 }

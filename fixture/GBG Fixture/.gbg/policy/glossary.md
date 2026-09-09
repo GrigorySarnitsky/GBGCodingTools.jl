@@ -9,7 +9,8 @@
   territory in the other three.
 - **Anchor** — a hat or lane that runs at full strength instead of the economy model.
 - **Gate** — a program whose non-zero exit blocks a build, a test run or a round's closure.
-- **Pin** — the tool version a consumer names in `.gbg/config.toml`.
+- **Pinned version** — the exact tool version a consumer names in `.gbg/config.toml`; the doctor's `PIN.*`
+  checks compare it with what the sub-environments and the running copy resolve.
 - **Managed file** — a file the tool renders into a consumer and hash-checks thereafter; edited only by
   `gbg sync`.
 - **Ledger** — the consumer's one file of declared exceptions, `.gbg/exemptions.toml`. The bug-hunt's

@@ -44,7 +44,7 @@ Recomputes the git tree hash of the copy this process runs from (`pkgdir(GBGCodi
 active environment and with the `git-tree-sha1` every sub-environment manifest under `root` records;
 asserts the dependency entry is `is_tracking_repo && !is_tracking_path` (a `Pkg.develop`'d copy lives
 inside the depot, so only the flags tell it apart). Prints one line per comparison to `io`. Returns 0 when
-every comparison agrees, 0 with a WARN when the running copy is a working tree (a `dev` pin) or no
+every comparison agrees, 0 with a WARN when the running copy is a working tree (pinned at `dev`) or no
 manifest exists to compare against, and 2 for a disagreement or a developed copy — an edited pinned
 tree is never allowed to grade a round.
 """

@@ -2562,4 +2562,6 @@ before it states the principle that uses them, and its AI banner is gone: the ow
 regularly, and `RULE.DOC.AI_BANNER` binds rationale pages and Literate examples, not a page a human
 keeps. And sibling packages are always links: `RULE.DOC.SIBLING_LINK` with the hard `SCAN.SIBLING_LINK`
 (§12), one uniform target per package derived from the shipped `fleet.toml`, enforced in every consumer
-and in the tool. A MINOR change; the fixture gains the `bare-sibling` class.
+and in the tool. A MINOR change; the fixture gains the `bare-sibling` class. The owner also ruled the
+noun "pin" out of reader-facing text: every page, docstring, message and template says "pinned
+version" (or "pinned at `dev`"); the `PIN.*` check ids and this record's vocabulary keep the word.

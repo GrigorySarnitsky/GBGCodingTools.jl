@@ -1,10 +1,10 @@
-# Bump.jl — `gbg bump <ver> [--abandon-open-rounds "…"]`: moves a consumer's pin, syncs, writes the
+# Bump.jl — `gbg bump <ver> [--abandon-open-rounds "…"]`: moves a consumer's pinned version, syncs, writes the
 # bump commit message, records the fleet sweep window (ARCHITECTURE D4, D16).
 
 """
     bump(cfg, ver; abandon = nothing, io = stdout) -> Int
 
-Moves the pin of the consumer at `cfg["root"]` to `ver` (a released `X.Y.Z`), refusing (exit 2) while a
+Moves the pinned version of the consumer at `cfg["root"]` to `ver` (a released `X.Y.Z`), refusing (exit 2) while a
 round is open unless `abandon` gives the reason every open round is abandoned with; rewrites the
 `[tool] version` line of `.gbg/config.toml`, runs `sync` (which re-renders every managed file and the
 sub-environment entries), writes `.gbg/scratch/bump-message.txt` from the template, and records the
@@ -13,7 +13,7 @@ arguments are `cfg`, the validated config; `ver`, the target version; `abandon`,
 `nothing`; and `io`, where the report goes. Returns the exit code.
 """
 function bump(cfg::AbstractDict, ver::AbstractString; abandon = nothing, io::IO = stdout)
-    occursin(r"^\d+\.\d+\.\d+$", ver) || (println(io, "bump: $ver is not a released X.Y.Z (a prerelease is never a pin)"); return 2)
+    occursin(r"^\d+\.\d+\.\d+$", ver) || (println(io, "bump: $ver is not a released X.Y.Z (a prerelease is never pinned)"); return 2)
     root = cfg["root"]; from = String(cfg["tool"]["version"])
     open_rounds = [r for r in RoundFiles.rounds(cfg) if r.state == :open]
     if !isempty(open_rounds)

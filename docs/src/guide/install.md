@@ -6,10 +6,10 @@
 The tool reaches a machine in two ways, both per machine and never synced: the **pinned copy** Pkg
 fetches into the consumer's `docs/` environment, and the **shim** `~/.local/bin/gbg` that executes it.
 
-## The pin
+## The pinned version
 
 Every sub-environment of a consumer that lists the tool (`docs/`, `test/`, `benchmark/`) carries the
-same three entries, rendered by [`gbg sync`](@ref GBGCodingTools.Sync.sync) from the pin in
+same three entries, rendered by [`gbg sync`](@ref GBGCodingTools.Sync.sync) from the pinned version in
 `.gbg/config.toml`:
 
 ```toml
@@ -32,7 +32,7 @@ julia --startup-file=no --project=docs -e 'using GBGCodingTools; exit(GBGCodingT
 
 [`gbg install`](@ref GBGCodingTools.cmd_install) copies `bin/gbg` to `~/.local/bin/gbg` and, with the
 option, writes `~/.gbg/dev`. The shim is POSIX `sh`: it walks up to the nearest `.gbg/config.toml`,
-reads the pin, and executes `julia --project=<root>/docs` on the copy that environment resolved — so
+reads the pinned version, and executes `julia --project=<root>/docs` on the copy that environment resolved — so
 `gbg` in a consumer always runs that consumer's pinned version. `gbg --dev …` runs the registered dev
 checkout instead; `GBG_DEV=1` marks it.
 

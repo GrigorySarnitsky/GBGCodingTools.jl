@@ -3,11 +3,12 @@
 `GBGCodingTools` is the **tool**: the one shared tooling package of the four GBG Julia packages,
 [`GBGPeriodicFields`](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/), [`GBGIsotropicTurbulence`](https://grigorysarnitsky.github.io/GBGIsotropicTurbulence.jl/),
 [`GBGStreamingStatistics`](https://grigorysarnitsky.github.io/GBGStreamingStatistics.jl/), [`GBGCloudPhysics`](https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/). A package that uses it is a
-**consumer**: each of the four, and the tool itself. A consumer's **pin** is the tool version it names
-in its `.gbg/config.toml`, which `gbg sync` writes into the consumer's sub-environment `Project.toml`
-files as an exact compat entry; the pin is the only thing that connects a consumer to the tool.
+**consumer**: each of the four, and the tool itself. Each consumer **pins** the tool to one exact
+version, named in its `.gbg/config.toml`, which `gbg sync` writes into the consumer's sub-environment
+`Project.toml` files as an exact compat entry; that pinned version is the only thing that connects a
+consumer to the tool.
 
-**A consumer holds data; the tool holds behaviour; the only thing connecting them is a pin.** Everything
+**A consumer holds data; the tool holds behaviour; the only thing connecting them is the pinned version.** Everything
 that varies by package (its config, hats, ledger, rounds and frozen baselines) lives in the consumer as
 data; every check, scan, instrument and verb lives in the tool as code; a consumer selects a version and
 nothing else.
@@ -30,7 +31,7 @@ around `Documenter.makedocs`; its `test/runtests.jl` calls
 
 ## Where to start
 
-- [Install](@ref install): the shim, the pin, the dev checkout.
+- [Install](@ref install): the shim, the pinned version, the dev checkout.
 - [The verbs](@ref verbs): the closed table of `gbg <noun> <verb>`.
 - [Rounds](@ref rounds): what an instrument round is, its files, its closure channels and exit codes.
 - [The doctor](@ref "The doctor's checks"): every check id.

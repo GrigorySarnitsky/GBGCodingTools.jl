@@ -71,7 +71,7 @@ Every hat is forbidden `.gbg/` and `~/.gbg/`. The panel is COLLECT-ONLY: it neve
    `overturn_when` condition. The CLI refuses a seeded id. Every such entry is audited by the dismissal
    auditor at close.
 9. **Close.** `gbg round close <round>` when the latest pass has no open id, no lane is dead, the round's
-   files are committed and the stamps are unchanged (a changed config or a moved pin means
+   files are committed and the stamps are unchanged (a changed config or a moved pinned version means
    `gbg round pass open --regrade` first). Commit ⇒ push the round; cite the closure per lat and id in
    the commit message. `gbg round abandon <round> --reason "…"` is the only wholesale exit and lists
    every open id — a plateau is the usual reason.

@@ -1,6 +1,6 @@
 # GBGCodingTools.jl
 
-**A consumer holds data; the tool holds behaviour; the only thing connecting them is a pin.**
+**A consumer holds data; the tool holds behaviour; the only thing connecting them is the pinned version.**
 
 The one shared tooling package of the four GBG Julia packages (`GBGPeriodicFields`,
 `GBGIsotropicTurbulence`, `GBGStreamingStatistics`, `GBGCloudPhysics`) and of itself: the four review

@@ -39,8 +39,8 @@ end
 
 One row per `[[consumer]]`: `(name, pin, status, detail)`. A consumer without `.gbg/config.toml` is
 `NOT-INITIALISED`; one whose QUICK doctor (the full non-deep set with `deep`) fails is `RED` with the
-failing ids; one whose pin is older than the newest pin in the fleet is `BEHIND` with both pins and
-the window state; else `OK`. The tool's own row (`path = "."`) shows `dev+<sha>[-dirty]` with `clean
+failing ids; one whose pinned version is older than the fleet's newest is `BEHIND` with both versions
+and the window state; else `OK`. The tool's own row (`path = "."`) shows `dev+<sha>[-dirty]` with `clean
 at vX.Y.Z` or `off tag`, is `OK`/`RED` by its own doctor and never `BEHIND`. A missing path is exit 2.
 Returns the rows and the exit code.
 """
@@ -86,7 +86,7 @@ function rows(; deep::Bool = false)
         if !isempty(fails)
             push!(out, (name = c["name"], pin = pin, status = "RED", detail = join(fails, ", "))); code = max(code, 1)
         elseif newest !== nothing && haskey(pins, c["name"]) && pins[c["name"]] < newest
-            push!(out, (name = c["name"], pin = pin, status = "BEHIND", detail = "pin $pin, newest $newest — $window"))
+            push!(out, (name = c["name"], pin = pin, status = "BEHIND", detail = "pinned at $pin, newest $newest — $window"))
             window == "within window" || (code = max(code, 1))
         else
             push!(out, (name = c["name"], pin = pin, status = "OK", detail = "doctor green"))

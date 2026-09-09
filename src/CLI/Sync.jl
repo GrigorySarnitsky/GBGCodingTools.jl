@@ -24,7 +24,7 @@ const SKILL_DESCRIPTION = Dict(
     "check-consistency" => "Fresh-eyed multi-hat panel over the rendered documentation site — consolidate, run the hats, bank, fix, verify and close the round",
     "bug-hunt" => "Static hunt, dynamic confirmation — hunters hypothesise, reproducers write failing witnesses; bank, fix, promote and close the round",
     "audit-changes" => "Were these edits justified, and did they silently change behaviour? Lanes over a diff range, the executable claims run by the CLI",
-    "gbg-doctor" => "The read-only health check of this package's tooling — config, pin, managed files, wiring, ledger, rounds",
+    "gbg-doctor" => "The read-only health check of this package's tooling — config, pinned version, managed files, wiring, ledger, rounds",
 )
 const POLICY_FILES = ("00-index.md", "docs-rubric.md", "latex-idiom.md", "citations.md", "testing-protocol.md",
                       "instruments.md", "git-conventions.md", "glossary.md")
@@ -57,7 +57,7 @@ end
 """
     pin(cfg) -> String
 
-The pin as the config states it: `"1.0.0"` or the literal `"dev"`. Returns the string.
+The pinned version as the config states it: `"1.0.0"` or the literal `"dev"`. Returns the string.
 """
 pin(cfg::AbstractDict) = String(cfg["tool"]["version"])
 
@@ -277,8 +277,8 @@ end
     subenv_entries(cfg, envdir) -> Dict
 
 The `[deps]`, `[sources]` and `[compat]` entries for the tool in the sub-environment at `envdir`
-(relative to the root): under a released pin the https url and `rev = "v<pin>"` with `[compat] =
-"=<pin>"`; under a `dev` pin a `path` source resolving to the tool repository and no compat. Returns
+(relative to the root): pinned at a release, the https url and `rev = "v<version>"` with `[compat] =
+"=<version>"`; pinned at `dev`, a `path` source resolving to the tool repository and no compat. Returns
 `Dict("deps" => uuid, "sources" => Dict, "compat" => String or nothing)`.
 """
 function subenv_entries(cfg::AbstractDict, envdir::AbstractString)
@@ -452,7 +452,7 @@ end
 """
     inputs_sha(cfg) -> String
 
-The hash of everything a render depends on: the pin, [`config_sha`](@ref) (config, hats, ledger), and
+The hash of everything a render depends on: the pinned version, [`config_sha`](@ref) (config, hats, ledger), and
 the templates and policy files of the running copy. Recorded in the sidecar at render time: while it
 is unchanged a fresh render equals the recorded one, so ANY divergence of a managed file is a hand
 edit — MODIFIED whatever its sidecar entry says (a file and its entry edited together, attack 8.4);

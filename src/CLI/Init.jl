@@ -40,8 +40,8 @@ end
 """
     enclosed_by_tool(root) -> Bool
 
-Whether `root` lies inside the tool repository (the fixture does), which is where the literal `dev`
-pin is legal besides the tool root itself. Returns the boolean.
+Whether `root` lies inside the tool repository (the fixture does), which is where pinning at the
+literal `dev` is legal besides the tool root itself. Returns the boolean.
 """
 enclosed_by_tool(root::AbstractString) = startswith(abspath(root), abspath(Sync.tool_root()) * "/")
 
@@ -102,7 +102,7 @@ function derive_config(root::AbstractString)
     proj = TOML.parsefile(joinpath(root, "Project.toml"))
     name = String(proj["name"])
     tool = is_tool_root(root); inside = enclosed_by_tool(root)
-    # the pin: `dev` at the tool root and inside the tool repository (the fixture); elsewhere the version
+    # the pinned version: `dev` at the tool root and inside the tool repository (the fixture); elsewhere the version
     # the running copy IS — its Project.toml — which `gbg release` tags before a consumer adopts it
     version = tool || inside ? "dev" : String(TOML.parsefile(joinpath(Sync.tool_root(), "Project.toml"))["version"])
     arch = joinpath(root, "docs", "ARCHITECTURE.md")
@@ -313,7 +313,7 @@ function init(root::AbstractString = pwd(); migrate::Bool = false, dry_run::Bool
         write(joinpath(root, ".gbg", "scratch", "commit-message.txt"), msg)
     end
     for w in writes; println(io, "  wrote ", w); end
-    println(io, "init: .gbg/ seeded for $(cfg["package"]["name"]) at pin $(cfg["tool"]["version"]). Next: `julia --project=docs -e 'using Pkg; Pkg.instantiate()'` (and test/), then `gbg sync`.")
+    println(io, "init: .gbg/ seeded for $(cfg["package"]["name"]), pinned at $(cfg["tool"]["version"]). Next: `julia --project=docs -e 'using Pkg; Pkg.instantiate()'` (and test/), then `gbg sync`.")
     return 0
 end
 

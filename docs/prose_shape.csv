@@ -20,7 +20,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `",1230,1119,0
 "ARCHITECTURE.md § GBGCodingTools — architecture",479,347,1
 "ARCHITECTURE.md § Revision 10 (2026-09-09) — the rc.1 `/check-docs` round",140,95,0
-"ARCHITECTURE.md § Revision 11 (2026-09-09) — the owner's home-page review",92,92,0
+"ARCHITECTURE.md § Revision 11 (2026-09-09) — the owner's home-page review",127,127,0
 "ARCHITECTURE.md § Revision 2 (2026-09-07)",106,106,0
 "ARCHITECTURE.md § Revision 3 (2026-09-07)",232,232,0
 "ARCHITECTURE.md § Revision 4 (2026-09-08) — IT amendments + Python retirement",361,361,0
@@ -71,7 +71,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §8 Self-test and versioning",1508,446,0
 "ARCHITECTURE.md § §9 Resolution table",1475,1416,0
 "Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",101,55,0
-"Bump.jl :: bump(cfg, ver; abandon = nothing, io = stdout) -> Int",111,101,0
+"Bump.jl :: bump(cfg, ver; abandon = nothing, io = stdout) -> Int",112,102,0
 "CLI.md § CLI internals",9,9,0
 "Config.jl :: Config",64,63,0
 "Config.jl :: Config.parse(text; root, check = true) -> Dict",76,69,0
@@ -97,9 +97,9 @@ unit,words,longest_paragraph,admonitions
 "Doctor.jl :: select(only; deep = false) -> Vector{String}",48,42,0
 "Fleet.jl :: Fleet",62,61,0
 "Fleet.jl :: Fleet.diff(a, b; io = stdout) -> Int",82,38,0
-"Fleet.jl :: Fleet.rows(; deep = false) -> (rows, code)",99,92,0
+"Fleet.jl :: Fleet.rows(; deep = false) -> (rows, code)",97,90,0
 "Fleet.jl :: latest_tag(root) -> Union{VersionNumber,Nothing}",17,14,0
-"GBGCodingTools.jl :: GBGCodingTools",257,68,0
+"GBGCodingTools.jl :: GBGCodingTools",260,70,0
 "Gate.jl :: cmd_gate(args) -> Int",27,24,0
 "Gate.jl :: gate(cfg, instruments...; io = stderr) -> Int",169,69,0
 "Git.jl :: Git",34,33,0
@@ -127,7 +127,7 @@ unit,words,longest_paragraph,admonitions
 "Init.jl :: convert_oracle_registry(text) -> Union{Dict,Nothing}",23,20,0
 "Init.jl :: convert_pass_audit(text) -> Union{Dict,Nothing}",53,50,0
 "Init.jl :: derive_config(root) -> Dict",101,98,0
-"Init.jl :: enclosed_by_tool(root) -> Bool",30,27,0
+"Init.jl :: enclosed_by_tool(root) -> Bool",31,28,0
 "Init.jl :: init(root = pwd(); migrate = false, dry_run = false, io = st",126,56,0
 "Init.jl :: is_tool_root(root) -> Bool",17,14,0
 "Init.jl :: migrate_baselines(root = pwd(); dry_run = false, io = stdout",100,48,0
@@ -170,7 +170,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",135,97,0
 "Preflight.jl :: resolve_hunt_lanes(cfg) -> Vector{Dict}",22,19,0
 "Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",28,23,0
-"Preflight.jl :: stamps(cfg; record = nothing) -> Dict",87,81,0
+"Preflight.jl :: stamps(cfg; record = nothing) -> Dict",88,82,0
 "Preflight.jl :: substitute(text, cfg; extra = Dict()) -> String",69,62,0
 "Preflight.jl :: tag_tree(dir, ver) -> Union{String,Nothing}",54,50,0
 "Preflight.jl :: torn_check(cfg; io = stderr) -> Bool",40,34,0
@@ -268,10 +268,10 @@ unit,words,longest_paragraph,admonitions
 "Sync.jl :: config_sha(cfg) -> String",27,24,0
 "Sync.jl :: deviations(cfg, ledger) -> Vector{Dict}",31,27,0
 "Sync.jl :: fragments(snippet) -> Dict{String,String}",29,26,0
-"Sync.jl :: inputs_sha(cfg) -> String",88,85,0
+"Sync.jl :: inputs_sha(cfg) -> String",89,86,0
 "Sync.jl :: insert_fragments(yaml, frags; run_marker) -> String",106,61,0
 "Sync.jl :: managed_block(cfg, file, s) -> String",60,55,0
-"Sync.jl :: pin(cfg) -> String",18,15,0
+"Sync.jl :: pin(cfg) -> String",19,16,0
 "Sync.jl :: plan(cfg; ledger = Ledger.read(cfg)) -> Vector{ManagedFile}",56,50,0
 "Sync.jl :: read_sidecar(cfg) -> Dict",18,15,0
 "Sync.jl :: render(text, slots) -> String",27,23,0
@@ -281,7 +281,7 @@ unit,words,longest_paragraph,admonitions
 "Sync.jl :: slots(cfg; ledger = Ledger.read(cfg)) -> Dict{String,String}",41,35,0
 "Sync.jl :: split_block(text, file) -> (before, block, after)",37,31,0
 "Sync.jl :: status(cfg; ledger = Ledger.read(cfg)) -> Vector{Entry}",59,53,0
-"Sync.jl :: subenv_entries(cfg, envdir) -> Dict",64,60,0
+"Sync.jl :: subenv_entries(cfg, envdir) -> Dict",63,59,0
 "Sync.jl :: sync(cfg; check = false, io = stdout, ledger = Ledger.read(c",100,62,0
 "Sync.jl :: tool_root() -> String",15,12,0
 "Sync.jl :: with_block(text, file, block) -> String",58,53,0
@@ -321,14 +321,14 @@ unit,words,longest_paragraph,admonitions
 "Witnesses.jl :: run_one(path; project, package) -> WitnessResult",180,95,0
 "Witnesses.jl :: witness_project(root, witness_env, package) -> String",43,38,0
 "code_in_math.jl :: math_spans(lines) -> Vector{Tuple{Int,String}}",48,45,0
-"config.md § [The config](@id config)",170,62,1
+"config.md § [The config](@id config)",171,63,1
 "html_docstring_once.jl :: page_bindings(page) -> Vector{NamedTuple}",43,40,0
-"index.md § GBGCodingTools",165,75,0
+"index.md § GBGCodingTools",168,77,0
 "index.md § What a consumer has",101,101,0
-"index.md § Where to start",69,69,0
+"index.md § Where to start",70,70,0
 "install.md § The dev checkout",48,48,0
-"install.md § The pin",47,27,0
-"install.md § The shim",62,62,0
+"install.md § The pinned version",48,28,0
+"install.md § The shim",63,63,0
 "install.md § [Install](@id install)",53,31,1
 "ledger.md § [The ledger](@id ledger)",164,73,1
 "prose_shape.jl :: prose_units(cfg) -> Dict{String,NamedTuple}",31,28,0

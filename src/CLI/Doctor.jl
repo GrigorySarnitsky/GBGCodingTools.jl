@@ -129,10 +129,10 @@ isdevlegal(ctx) = ctx.tool_root !== nothing && (abspath(ctx.root) == ctx.tool_ro
 check!("PIN.CONFIG", ctx -> begin
     v = String(ctx.cfg["tool"]["version"])
     if v == "dev"
-        isdevlegal(ctx) || return fail("PIN.CONFIG", "pin `dev` outside the tool repository — a consumer pins a released tag")
+        isdevlegal(ctx) || return fail("PIN.CONFIG", "pinned at `dev` outside the tool repository — a consumer pins a released tag")
         return pass("PIN.CONFIG", "dev (the tool root or its fixture)")
     end
-    occursin(r"^\d+\.\d+\.\d+$", v) || return fail("PIN.CONFIG", "pin $v is not a released vX.Y.Z (a prerelease is never a pin)")
+    occursin(r"^\d+\.\d+\.\d+$", v) || return fail("PIN.CONFIG", "$v is not a released X.Y.Z (a prerelease is never pinned)")
     pass("PIN.CONFIG", "v$v")
 end)
 check!("PIN.SOURCES", ctx -> begin
@@ -146,17 +146,17 @@ check!("PIN.SOURCES", ctx -> begin
         src === nothing && (push!(problems, "$e: no [sources] entry"); continue)
         if v == "dev"
             have = get(src, "path", nothing)
-            have === nothing && (push!(problems, "$e: a dev pin needs a path source"); continue)
+            have === nothing && (push!(problems, "$e: pinned at dev, a path source is needed"); continue)
             realpath(joinpath(ctx.root, e, have)) == realpath(joinpath(ctx.root, e, want["sources"]["path"])) || push!(problems, "$e: path $have does not resolve to the tool repository")
         else
             get(src, "url", "") == want["sources"]["url"] || push!(problems, "$e: url $(get(src, "url", "∅")) ≠ $(want["sources"]["url"])")
             rev = get(src, "rev", "")
-            occursin("-rc.", rev) && abspath(ctx.root) != something(ctx.tool_root, "") && push!(problems, "$e: rev $rev is a prerelease — never a consumer pin")
+            occursin("-rc.", rev) && abspath(ctx.root) != something(ctx.tool_root, "") && push!(problems, "$e: rev $rev is a prerelease — never pinned by a consumer")
             rev == want["sources"]["rev"] || push!(problems, "$e: rev $rev ≠ $(want["sources"]["rev"])")
             get(get(p, "compat", Dict()), PKG_NAME, "") == want["compat"] || push!(problems, "$e: [compat] $(get(get(p, "compat", Dict()), PKG_NAME, "∅")) ≠ $(want["compat"])")
         end
     end
-    isempty(problems) ? pass("PIN.SOURCES", "$(length(envs)) sub-environment(s) agree with the pin") : fail("PIN.SOURCES", join(problems, "; "))
+    isempty(problems) ? pass("PIN.SOURCES", "$(length(envs)) sub-environment(s) agree with the pinned version") : fail("PIN.SOURCES", join(problems, "; "))
 end)
 function tool_dep()
     try
@@ -168,7 +168,7 @@ function tool_dep()
     return nothing
 end
 check!("PIN.TREESHA", ctx -> begin
-    String(ctx.cfg["tool"]["version"]) == "dev" && return warn("PIN.TREESHA", "dev pin — no tree hash to compare")
+    String(ctx.cfg["tool"]["version"]) == "dev" && return warn("PIN.TREESHA", "pinned at dev — no tree hash to compare")
     shas = Dict{String,Union{String,Nothing}}(e => manifest_tree_sha(joinpath(ctx.root, e, "Manifest.toml")) for e in tool_sub_envs(ctx.root))
     missing_ = [e for (e, s) in shas if s === nothing]
     present = unique(filter(!isnothing, collect(values(shas))))
@@ -187,7 +187,7 @@ check!("PIN.SELF", ctx -> begin
     occursin("WARN", out) ? warn("PIN.SELF", replace(out, "\n" => " | ")) : pass("PIN.SELF", "the running copy matches the manifests")
 end)
 check!("PIN.NOT_DEV", ctx -> begin
-    String(ctx.cfg["tool"]["version"]) == "dev" && return warn("PIN.NOT_DEV", "dev pin")
+    String(ctx.cfg["tool"]["version"]) == "dev" && return warn("PIN.NOT_DEV", "pinned at dev")
     for e in tool_sub_envs(ctx.root)
         m = joinpath(ctx.root, e, "Manifest.toml"); isfile(m) || continue
         man = TOML.parsefile(m); deps = get(man, "deps", man)
@@ -202,10 +202,10 @@ check!("SELF.CONSUMER", ctx -> begin
     p = joinpath(ctx.tool_root, ".gbg", "config.toml")
     isfile(p) || return fail("SELF.CONSUMER", "the tool root $(ctx.tool_root) carries no .gbg/config.toml (gbg --dev init)")
     c = try TOML.parsefile(p) catch; return fail("SELF.CONSUMER", "$p does not parse") end
-    get(get(c, "tool", Dict()), "version", "") == "dev" || return fail("SELF.CONSUMER", "the tool root's pin is $(get(get(c, "tool", Dict()), "version", "∅")), not dev")
+    get(get(c, "tool", Dict()), "version", "") == "dev" || return fail("SELF.CONSUMER", "the tool root is pinned at $(get(get(c, "tool", Dict()), "version", "∅")), not dev")
     get(get(c, "package", Dict()), "name", "") == PKG_NAME || return fail("SELF.CONSUMER", "the tool root's [package] name is not $PKG_NAME")
     if String(ctx.cfg["tool"]["version"]) == "dev" && !isdevlegal(ctx)
-        return fail("SELF.CONSUMER", "a dev pin in a consumer outside the tool repository")
+        return fail("SELF.CONSUMER", "pinned at dev in a consumer outside the tool repository")
     end
     pass("SELF.CONSUMER", ctx.tool_root)
 end)
