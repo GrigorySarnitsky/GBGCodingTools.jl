@@ -73,11 +73,22 @@ AUDIT ONLY. Do not edit, create or delete any file. Quote the before and after f
 
 const CLAIMS = A.claims_path ? `\n\nTHE CLAIMS (the commit messages of the audited range) are in ${A.claims_path} — your lens reads them, after the code.` : ''
 
+
+// The scribe. A lane's own Write happens BEFORE its object is validated against SCHEMA, so the file can
+// carry a value outside a closed set while the returned object cannot (the rc.1 round's built-html lane
+// wrote `type: "formatted"` and was quarantined twice). The validated object is therefore written again,
+// verbatim, by a cheap agent; the lane's own Write stays as the durable fallback when a return is lost.
+const DONE = { type: 'object', properties: { done: { type: 'boolean' } }, required: ['done'] }
+const scribe = (r, path, label, phase) => !r ? null :
+  agent(`Use the Write tool to write EXACTLY this JSON to ${path} and return {done: true}. No other text.\n\n${JSON.stringify(r, null, 2)}`,
+        { label, phase, schema: DONE, model: ECONOMY }).then(w => { if (!(w && w.done)) log(`${label}: the scribe did not confirm; the lane's own file stands`); return r })
+
 phase('Audit')
 const results = await parallel(A.lanes.map(lane => () => agent(
   `${PREAMBLE(lane)}\n\nYOUR LENS: ${lane.key} — read your brief in full from ${lane.brief_path}; it is your procedure.${lane.key === 'claim-versus-edit' ? CLAIMS : ''}\n\nWhen done, FIRST use the Write tool to save the structured object as JSON to ${A.round_dir}/findings/${lane.nn}-${lane.key}.json with schema_version=${A.schema_version}, round="${A.round}", lane="${lane.key}". THEN return the same object.`,
   { label: `audit:${lane.key}`, phase: 'Audit', schema: SCHEMA, agentType: 'general-purpose',
-    ...((STRENGTH === 'economy' && !lane.anchor) ? { model: ECONOMY } : {}) })))
+    ...((STRENGTH === 'economy' && !lane.anchor) ? { model: ECONOMY } : {}) })
+  .then(r => scribe(r, `${A.round_dir}/findings/${lane.nn}-${lane.key}.json`, `scribe:${lane.key}`, 'Audit'))))
 
 const written = [], dead = [], empty = [], truncated = []
 results.forEach((r, i) => {

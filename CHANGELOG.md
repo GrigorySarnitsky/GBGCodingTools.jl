@@ -5,7 +5,12 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 
 ## Unreleased
 
-(nothing yet)
+PATCH so far. Instruments affected: check-docs, check-consistency, audit-changes (the lane, panel, act
+and state scripts gain a scribe: the validated object is written over the lane's own Write-first file, so
+a value outside a closed set never reaches the bank — found by the rc.1 round, whose built-html lane was
+quarantined twice). CLI: `round bank` keeps no first-sight sha for a quarantined lane and `round rerun`
+forgets the lanes it re-runs; `Git.run` keeps the environment (an annotated tag needs an identity); a dev
+checkout on a clean tag stamps its rounds with the tag. Rates comparable: yes.
 
 ## 1.0.0-rc.1 — 2026-09-09
 
