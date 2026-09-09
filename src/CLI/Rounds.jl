@@ -165,8 +165,9 @@ function prepare(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
             results, _ = scan_docs(cfg; io = rio)
             for r in results
                 r.tier == "hard" || continue
-                # a scan with hits is not dead however it counted its population — the same guard `report` uses
-                (r.population == 0 && r.exempted == 0 && isempty(r.hits)) && println(io, "prepare: DEAD scan $(r.id) — $(r.note)")
+                # measured nothing ⇒ DEAD, hits or no hits; the hits are still banked below, and a scan
+                # that hit while counting zero is a scan whose own counter is wrong — the same in `report`
+                (r.population == 0 && r.exempted == 0) && println(io, "prepare: DEAD scan $(r.id) — $(r.note)")
                 for h in r.hits; push!(banked, scan_finding(r, h)); end
             end
             println(rio, "\n=== REFLECTION CHECKS ===")
@@ -402,7 +403,10 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     core = load_schema("finding"); coreprops = keys(core["properties"])
     for f in findings
         errs = validate(core, Dict{String,Any}(k => v for (k, v) in f if k in coreprops))
-        isempty(errs) || throw(RoundError("banked finding $(get(f, "id", "?")) does not validate: " * first(errs)))
+        # exit 2, never a throw: every other refusal in bank names its reason and leaves a next step,
+        # and this one fires after the whole panel and every witness have already been paid for
+        isempty(errs) || (println(io, "bank: banked finding $(get(f, "id", "?")) does not validate: ", first(errs),
+                                  " — fix the lane file and gbg round rerun $round --lanes $(get(f, "lane", "?"))"); return 2)
     end
     open(joinpath(dir, "findings.json"), "w") do f
         JSON3.pretty(f, JSON3.write(Dict("schema_version" => 1, "round" => round, "findings" => findings))); println(f)

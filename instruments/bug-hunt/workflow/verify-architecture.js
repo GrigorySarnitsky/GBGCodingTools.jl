@@ -36,7 +36,7 @@ const out = await parallel(A.findings.map(f => () => agent(
   its record:   the block "--- ${f.id} ---" in ${A.findings_path} (location, second location, mechanism, claimed fix) — read it first; that file is the ONLY file under .gbg/ you may open
   the fix pass: \`git -C "${A.repo}" diff ${A.range}\`
 
-READ THE CURRENT TREE (nothing else under .gbg/, never ~/.gbg/), not only the diff. Then decide between:
+READ THE CURRENT TREE (nothing else under .gbg/, never ~/.gbg/), not only the diff. Scope every search with \`--glob '!.gbg/**'\`: a bare recursive grep sweeps in a prior round's verdicts, which are an answer key to this one. Then decide between:
 
   FIXED        — the defect is gone. For a duplication that means ONE definition remains and every former site reaches it; quote the single definition and at least one call site.
   RELOCATED    — the shape changed but the defect survives: the duplicate moved to a new file, the literal became a differently-spelled literal, the two copies became two wrappers around two bodies. THIS IS THE VERDICT THE INSTRUMENT EXISTS TO CATCH, because a relocation reads exactly like a fix in a diff and exactly like a defect in the tree.

@@ -160,7 +160,7 @@ unit,words,longest_paragraph,admonitions
 "Passes.jl :: audit_after_code(cfg, rec) -> Vector{String}",60,56,0
 "Passes.jl :: carry_deferrals(cfg, dir, round; io = stdout) -> Int",140,92,0
 "Passes.jl :: close(cfg, round; io = stdout) -> Int",159,112,0
-"Passes.jl :: finding_files(root, finding) -> Vector{String}",62,27,0
+"Passes.jl :: finding_files(root, finding) -> Vector{String}",65,34,0
 "Passes.jl :: grade(cfg, round; io = stdout) -> Int",149,110,0
 "Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, io ",208,77,0
 "Passes.jl :: pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects,",131,73,0
@@ -176,7 +176,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",131,80,0
 "Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
 "Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",76,73,0
-"Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",218,107,0
+"Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",213,107,0
 "Preflight.jl :: resolve_hunt_lanes(cfg) -> Vector{Dict}",22,19,0
 "Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",65,40,0
 "Preflight.jl :: stamps(cfg; record = nothing) -> Dict",104,66,0
@@ -244,7 +244,7 @@ unit,words,longest_paragraph,admonitions
 "Scan.jl :: prose_text(cfg, file; history_cut = true) -> String",81,44,0
 "Scan.jl :: regex_scan(cfg, files, re; skip_comments = true, on = :text,",153,101,0
 "Scan.jl :: register_scan!(id, f)",45,43,0
-"Scan.jl :: report(results; io = stdout) -> Int",56,23,0
+"Scan.jl :: report(results; io = stdout) -> Int",108,52,0
 "Scan.jl :: run_scan(cfg, row; ledger = Ledger.read(cfg), files = nothin",99,49,0
 "Scan.jl :: scan_catalog() -> Vector{Dict}",18,15,0
 "Scan.jl :: scan_docs(cfg; hard_only = false, only = nothing, io = stdou",121,39,0
@@ -315,7 +315,7 @@ unit,words,longest_paragraph,admonitions
 "TestHarness.jl :: module_method_count(mod, pkg, modules; externals = (Base,)) ",68,30,0
 "TestHarness.jl :: oracle_registry(pkg, modules, registry, testdir)",104,61,0
 "TestHarness.jl :: other_thread_count() -> Int",22,19,0
-"TestHarness.jl :: resolve_function(name, pkg, modules; externals = (Base,)) ->",57,34,0
+"TestHarness.jl :: resolve_function(name, pkg, modules; externals = (Base,)) ->",84,61,0
 "TestHarness.jl :: run_regressions(dir; parent = Main) -> Vector{String}",90,39,0
 "TestHarness.jl :: struct_types(modules) -> Dict{Symbol,Any}",65,62,0
 "TestHarness.jl :: thread_digest(probe_source; threads, project = Base.active_p",71,33,0

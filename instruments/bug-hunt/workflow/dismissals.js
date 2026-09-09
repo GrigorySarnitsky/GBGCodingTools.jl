@@ -35,7 +35,7 @@ const out = await parallel(A.items.map(d => () => agent(
   claim:      ${d.title}
   its record: the block "--- ${d.id} ---" in ${A.items_path} (location, mechanism, the verdict and its reasoning) — read it first; that file is the ONLY file under .gbg/ you may open
 
-Read the CURRENT tree at ${A.repo} (nothing else under .gbg/, never ~/.gbg/) and decide:
+Read the CURRENT tree at ${A.repo} (nothing else under .gbg/, never ~/.gbg/) and decide: Scope every search with \`--glob '!.gbg/**'\`: a bare recursive grep sweeps in a prior round's verdicts, which are an answer key to this one.
 
   DISMISSAL-SOUND — the claim is genuinely not a defect and you can SHOW why from the code or the text. Quote the lines that settle it.
   UNSAFE          — you cannot establish that it is not a defect. THIS IS YOUR DEFAULT.

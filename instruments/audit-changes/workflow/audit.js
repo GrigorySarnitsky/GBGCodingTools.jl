@@ -68,7 +68,8 @@ const schemaFor = (lane) => {
 const permitted = (lane) => [A.diff_path, A.diffstat_path, lane.brief_path, ...(lane.key === 'claim-versus-edit' && A.claims_path ? [A.claims_path] : [])].filter(Boolean)
 const PREAMBLE = (lane) => `You are auditing a CHANGE SET in ${A.package.name} — ${A.package.description}
 
-FILES UNDER .gbg/ YOU MAY OPEN — exactly these, with Read, and nothing else under .gbg/ or ~/.gbg/:
+FILES UNDER .gbg/ YOU MAY OPEN — exactly these, with Read, and nothing else under .gbg/ or ~/.gbg/. Scope every search with \`--glob '!.gbg/**'\`: a bare recursive grep sweeps in a prior round's verdicts, which are an answer key to this one.
+The files:
 ${permitted(lane).map(p => `    ${p}`).join('\n')}
 THE DIFF: base ${A.base} → head ${A.head}, over ${(A.covered || []).join(', ')} — read it IN FULL and FIRST from ${A.diff_path} (the diffstat is ${A.diffstat_path || 'not written'}); \`git -C "${A.repo}" diff ${A.base}..${A.head} -- <path>\` scopes it when you need one file.
 THE CODE: ${A.repo} — read the current files, not only the diff.

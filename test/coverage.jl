@@ -35,6 +35,10 @@ end
     end
 end
 
+# A Markdown code span in prompt prose: a bare backtick pair holding a short run, PRECEDED by prose —
+# a word and a space — where an ordinary template literal follows `=`, `(` or `,`.
+const SPAN_IN_PROSE = r"(?<=[a-z,.;:] )(?<!\\)`[^`\n\$,)}]{1,60}(?<!\\)`"
+
 @testset "every Workflow script is well formed" begin
     scripts = [joinpath(r, f) for i in ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
                for (r, _, fs) in walkdir(joinpath(TOOL, "instruments", i, "workflow")) for f in fs if endswith(f, ".js")]
@@ -52,18 +56,26 @@ end
         @test iseven(count(==('`'), code))
         # An even count is not enough, and a round proved it: a Markdown code span written into prompt
         # prose with BARE backticks (`--glob …`) pairs, yet closes the template literal it sits in and
-        # reopens it, so the file stops parsing. A code span in prompt text is `\``-escaped. The shape
-        # here is a bare pair on one line holding a short run with no interpolation and no JS
-        # punctuation — what a span looks like and what stitched-together delimiters do not.
-        @test !occursin(r"(?<!\\)`[^`\n\$,)}]{1,60}(?<!\\)`", code)
+        # reopens it, so the file stops parsing. A code span in prompt text is `\``-escaped. What marks
+        # it apart from an ordinary short template literal is what PRECEDES it: prose, a word and a
+        # space, where a literal follows `=`, `(` or `,`. Without that the rule would read "no short
+        # template literal without an interpolation", which is not the rule and not anyone's to impose.
+        @test !occursin(SPAN_IN_PROSE, code)
     end
 end
 
 @testset "a bare code span in a Workflow prompt is caught" begin
-    # RULE.TEST.BOTH_DIRECTIONS: the check above must fail on the defect it was written for.
+    # RULE.TEST.BOTH_DIRECTIONS, and in both: the check must fail on the defect it was written for and
+    # must pass ordinary JavaScript, since it polices every future edit to eleven frozen scripts.
     broken = replace(read(joinpath(TOOL, "instruments", "bug-hunt", "workflow", "hunt.js"), String), "\\`" => "`")
     code = replace(broken, r"//[^\n]*" => "", r"/\*.*?\*/"s => "")
-    @test occursin(r"(?<!\\)`[^`\n\$,)}]{1,60}(?<!\\)`", code)
+    @test occursin(SPAN_IN_PROSE, code)
+    for prose in ("scope every search with `--glob '!.gbg/**'`.", "Nothing under `.gbg/` is yours to open")
+        @test occursin(SPAN_IN_PROSE, prose)
+    end
+    for js in ("const banner = `ready`", "log(`ok`)", "x = `a b c`", "const q = `\${x}/y`", "x = `Audit`;")
+        @test !occursin(SPAN_IN_PROSE, js)                       # valid JavaScript is not a finding
+    end
 end
 
 @testset "the consolidator against a golden manuscript" begin

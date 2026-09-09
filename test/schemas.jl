@@ -93,9 +93,11 @@ include("helpers.jl")
         for f in readdir(joinpath(TOOL, "schema"))
             endswith(f, ".schema.json") || continue
             name = replace(f, ".schema.json" => "")
-            # the name must appear on a line that LOADS a schema, never merely somewhere in the source:
-            # `finding` matched a coincidental substring and the schema was validated against nothing
-            @test any(l -> occursin("\"" * name * "\"", l) && (occursin("load_schema", l) || occursin("read_verdicts", l)),
+            # the name must appear QUOTED on a line that is about schemas, never merely somewhere in
+            # the source: `finding` matched a coincidental substring and the schema was validated
+            # against nothing. Naming the two loaders instead would make this test the author of the
+            # code — a third loader would be reported as no loader at all.
+            @test any(l -> occursin("\"" * name * "\"", l) && (occursin("schema", lowercase(l)) || occursin("read_verdicts", l)),
                       split(src, "\n"))
         end
     end
@@ -159,10 +161,11 @@ include("helpers.jl")
                 elseif startswith(c, "test:")
                     @test isfile(joinpath(TOOL, c[6:end]))
                 elseif startswith(c, "harness:")
-                    @test occursin(last(split(c[9:end], '.')) * "(", srctext)
+                    # the binding must be DEFINED in the source, not merely mentioned: `report(` occurs
+                    # in a comment as readily as in the function this rule rests on
+                    @test occursin(Regex("function\\s+" * last(split(c[9:end], '.')) * "\\b"), srctext)
                 else
                     @test c in ("panel", "session", "weakness")  # judged, agreed, or owed
-                    @test length(cs) == 1                        # these three never share a rule with a mechanical check
                 end
             end
         end

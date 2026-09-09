@@ -140,7 +140,7 @@ consumers' setup exactly; nothing needed from the owner unless the API refuses.
 ## Phase 1 — The repository skeleton
 
 **Status (2026-09-09, `Aiporetne`).** Built and committed on `master` through 1.10 item 6: every verb of
-the 1.3 table, the engines and the catalogued scans, the templates and policy layer, the eighteen schemas, the
+the 1.3 table, the engines and the catalogued scans, the templates and policy layer, the sixteen schemas, the
 four instruments' protocols and scripts, the tool as its own consumer with its site built through its
 own wrapper, the fixture with its defects corpus, and the self-test suite (green on 1.12 and 1.11 —
 the 1.11 lane keeps its own `Manifest-v1.11.toml`, gitignored). Three things the build changed in the
@@ -427,9 +427,10 @@ check-consistency scripts use underscores).
   `catalog/seeds/fixture.toml` (eight classes anchored to the fixture text — the ONE seed catalogue in
   the tool; a consumer's is its own `.gbg/seeds.toml`, class C, written by `gbg init` at Phases 4 and 5
   from PF `check-consistency/seed_defects.py:39-56` and IT `check-consistency/seed_defects.py:31-48`).
-- `schema/*.schema.json`: the eighteen of §2 D11 — `config, exemptions, hat, round, pass, lane-file,
-  finding, verdict-act, verdict-state, tally, hunt-candidate, reproduction, dismissal,
-  architecture-fix, audit, ground-truth, import, managed` — closed enums of §6.3; each instrument's
+- `schema/*.schema.json`: the sixteen of §2 D11 — `config, exemptions, hat, round, pass,
+  finding, verdict-act, verdict-state, tally, reproduction, dismissal,
+  architecture-fix, audit, ground-truth, import, managed` — closed enums of §6.3; the lane-file wrapper
+  and bug-hunt's candidate shape live inline in each instrument's own `schema.json`, not here; each instrument's
   `schema.json` = args + lane-file wrapper `$ref`-ing `finding.schema.json`; `exemptions.schema.json`
   admits the optional `[exemption.match]` table on the scopes `scan|lint|policy|harness` only, with
   the ANDed sub-keys `arg_name` (a regex over the argument name), `arg_type` (the declared type of the
@@ -439,7 +440,7 @@ check-consistency scripts use underscores).
   (a glob) and `symbol` (a regex over the owning binding's name); every engine with a trigger
   population, `Reflection.argcov` included, applies the predicate itself and reports the population,
   which is what `EXEMPT.BROAD` dry-runs over; the `seeds` definition a consumer's `.gbg/seeds.toml`
-  validates against lives in `instruments/check-consistency/schema.json`, not among the eighteen.
+  validates against lives in `instruments/check-consistency/schema.json`, not among the sixteen.
 - `templates/`: `SKILL.md.tmpl` (frontmatter `name`, `description` with version, `allowed-tools: Bash(gbg *)`;
   body = the managed header + one `!` block `gbg preflight <instrument> $ARGUMENTS`; for `gbg-doctor`
   the block is `gbg doctor` — it is not an instrument; ≤ 15 lines), `settings.json.tmpl` (hook command

@@ -442,16 +442,22 @@ The arguments are:
 - `results` — the scan results in catalogue order.
 - `io` — where the report goes.
 
+A scan whose population is zero measured nothing and is DEAD whatever else it did — that refusal is
+the point of the counter. Its hits are still printed: a scan that measured nothing yet hit something is
+a scan whose own counter is wrong, and dropping the evidence hides which one.
+
 Returns the exit code (2 dead, 1 hard hits, 0 clean).
 """
 function report(results::AbstractVector{ScanResult}; io::IO = stdout)
     code = 0
+    dead(r) = r.population == 0 && r.exempted == 0
     hard = filter(r -> r.tier == "hard", results); triage = filter(r -> r.tier != "hard", results)
     isempty(hard) || println(io, "=== MUST BE EMPTY ===")
     for r in hard
-        # a scan that HIT measured something: its hits are never dropped by the dead branch
-        if r.population == 0 && r.exempted == 0 && isempty(r.hits)
-            println(io, "  DEAD  ", rpad(r.id, 30), " measured nothing", isempty(r.note) ? "" : " — " * r.note)
+        if dead(r)
+            println(io, "  DEAD  ", rpad(r.id, 30), " measured nothing", isempty(r.note) ? "" : " — " * r.note,
+                    isempty(r.hits) ? "" : " — yet $(length(r.hits)) hit(s), so its own population counter is wrong:")
+            for h in r.hits; println(io, "          ", format_hit(h)); end
             code = 2
         elseif !isempty(r.hits)
             println(io, "  FAIL  ", rpad(r.id, 30), " ", length(r.hits), " hit(s)", r.exempted > 0 ? " ($(r.exempted) exempted)" : "")
@@ -464,8 +470,10 @@ function report(results::AbstractVector{ScanResult}; io::IO = stdout)
     end
     isempty(triage) || println(io, "\n=== TRIAGE (heuristics — read every line; a count is not a verdict) ===")
     for r in triage
-        if r.population == 0 && r.exempted == 0 && isempty(r.hits)
-            println(io, "  DEAD  ", rpad(r.id, 30), " measured nothing", isempty(r.note) ? "" : " — " * r.note)
+        if dead(r)
+            println(io, "  DEAD  ", rpad(r.id, 30), " measured nothing", isempty(r.note) ? "" : " — " * r.note,
+                    isempty(r.hits) ? "" : " — yet $(length(r.hits)) hit(s), so its own population counter is wrong:")
+            for h in r.hits; println(io, "          ", format_hit(h)); end
             code = 2
             continue
         end

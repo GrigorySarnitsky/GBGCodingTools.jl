@@ -295,13 +295,14 @@ The function object a surface name denotes. The arguments are:
 - `name` — the symbol.
 - `pkg` — the umbrella module.
 - `modules` — the package modules.
-- `externals` — the external modules whose generics the package extends (searched after `pkg` and
-  before `modules`).
+- `externals` — the external modules whose generics the package extends, searched LAST so a package
+  function always wins its own name (`Config.read`, `Git.run` and `Scan.report` all share one with a
+  `Base` export, and Base ahead of them handed the caller the wrong generic).
 
 Returns the function, or `nothing`.
 """
 function resolve_function(name::Symbol, pkg::Module, modules::AbstractVector{Module}; externals = (Base,))
-    for mod in Iterators.flatten(((pkg,), externals, modules))
+    for mod in Iterators.flatten(((pkg,), modules, externals))
         isdefined(mod, name) || continue
         c = getfield(mod, name)
         c isa Function && return c

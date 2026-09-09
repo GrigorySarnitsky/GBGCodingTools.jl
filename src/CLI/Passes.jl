@@ -49,10 +49,8 @@ end
 """
     finding_files(root, finding) -> Vector{String}
 
-Every repository file a finding names in its `locations`. The arguments are:
-
-- `root` — the consumer root, against which a candidate path is tested.
-- `finding` — one banked finding.
+Every repository file a finding names in its `locations`. The argument `root` is the consumer root, a
+candidate path being kept only when it is a file there, and `finding` is one banked finding.
 
 A location is free text (`path:line — quoted`), so each path-shaped token is kept only when it is a
 file in the tree. Returns the paths, deduplicated.

@@ -197,8 +197,8 @@ The check-consistency roster. The arguments are:
 - `profile` — `all`, `core` or `explicit`; the config's own when `nothing`.
 - `explicit` — the hat keys an explicit profile names.
 
-A hat is one persona of the `check-consistency` panel, reading the corpus from a single standpoint.
-Each hat carries `key`; the persona with its placeholders filled; and the four fields below.
+A hat — one persona of the `check-consistency` panel, bound in [`GBGCodingTools`](@ref) — carries
+`key`; the persona with its placeholders filled; and the four fields below.
 
 `substrate` names the view of the corpus the hat is asked to work in — the closed set of
 `schema/hat.schema.json`: `full` (the whole manuscript), `siteonly` (the public pages' manuscript),

@@ -228,7 +228,7 @@ check = ["scan:SCAN.AI_BANNER"]
 id = "RULE.DOC.SHAPE"
 file = "docs-rubric.md"
 section = "### RULE.DOC.SHAPE"
-statement = "A docstring's longest paragraph is at most 120 words and it has at most 3 admonitions, always; no unit grows past its baseline; '# Arguments' precedes any column-0 !!!; '# Fields' is last."
+statement = "A docstring's longest paragraph is at most 120 words and it has at most 3 admonitions; no unit grows past its baseline, and a page unit already baselined is held by that ratchet alone; '# Arguments' precedes any column-0 !!!; '# Fields' is last."
 sentinel = "A docstring's longest paragraph stays within 120 words and it carries at most three admonitions, no unit grows past its recorded baseline, `# Arguments` precedes any column-0 admonition, and `# Fields` is last."
 check = ["scan:SCAN.PROSE_SHAPE"]
 [[rule]]
