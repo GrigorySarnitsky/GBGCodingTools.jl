@@ -52,7 +52,10 @@ economy by default; the fix pass is never economised.
    always returns new findings, so it has no termination condition.
 7. **Adjudicate and close.** Ledger entries with `scope = "finding"` and `overturn_when` for what is not
    a defect; `gbg round close <round>` when no id is open, no lane is dead, the files are committed and the
-   stamps are unchanged. Commit ⇒ push the round with the per-lane closure counts in the message.
+   stamps are unchanged. If the fix pass touched `src/` or `ext/` — an operational finding fixed in the
+   code, not in the prose — closing refuses until `/audit-changes --base <this round's opening head>` is
+   itself closed (`RULE.INST.AUDIT_AFTER_CODE`): the verifiers graded each finding, and nothing yet asked
+   whether the edits were proportionate or whether behaviour moved for input that worked before. Commit ⇒ push the round with the per-lane closure counts in the message.
 
 ## The rules that carry the weight
 

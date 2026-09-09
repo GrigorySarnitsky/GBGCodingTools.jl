@@ -2259,6 +2259,7 @@ verbatim — which `LEG.SENTINELS` matches against a consumer's `CLAUDE.md`. "So
 | `RULE.INST.FOUR_OBJECTS` | instruments | The four instruments audit different objects: changes, source prose, rendered prose, code. | "Four instruments" |
 | `RULE.INST.WITNESS` | instruments | A static claim about code is a hypothesis; the only evidence is a program that fails; a fixed witness is promoted unchanged. | "`/bug-hunt` … one rule" |
 | `RULE.INST.SELF_REPORT` | instruments | Self-reported closure is not closure; the act verifier sees the diff, the state verifier is blind; the demotion is mechanical. | "Self-reported closure is not closure." |
+| `RULE.INST.AUDIT_AFTER_CODE` | instruments | A fix pass that changed code is audited before its round closes: always for a hunt, and for a check-docs round whose pass touched `src` or `ext`. | the owner's ruling 2026-09-09, on the rc.1 round, whose documentation pass changed three code behaviours unaudited |
 | `RULE.INST.CLOSURE_LOOP` | instruments | The closure loop runs over the banked findings by id, never by re-running the battery; abandon is the only wholesale exit and names every open id. | "The closure loop is BUILD-ENFORCED" |
 | `RULE.INST.FIX_FROM_LANES` | instruments | A fix pass is driven from the per-lane findings by id, never from the consolidated summary. | "a fix pass is driven from the banked per-hat reports" |
 | `RULE.INST.SEEDS` | instruments | A seeded finding is never fixed in the corpus and never enters the ledger. | "The seeded calibration and the closure gate" |
@@ -2566,3 +2567,15 @@ keeps. And sibling packages are always links: `RULE.DOC.SIBLING_LINK` with the h
 and in the tool. A MINOR change; the fixture gains the `bare-sibling` class. The owner also ruled the
 noun "pin" out of reader-facing text: every page, docstring, message and template says "pinned
 version" (or "pinned at `dev`"); the `PIN.*` check ids and this record's vocabulary keep the word.
+
+### Revision 12 (2026-09-09) — a documentation round that changed code is audited
+
+`RULE.INST.AUDIT_AFTER_CODE`, with its refusal in `Passes.close`. The hunt's close has always required a
+closed `/audit-changes` round based at its opening head; a `/check-docs` round now does too, whenever its
+fix pass touched the `src` or `ext` surfaces. The rc.1 round is the evidence: a documentation round
+changed three code behaviours (`TreeHash.tree_hash`, the rescan needle, the witness classification) and
+nothing asked whether those edits were proportionate or whether behaviour moved for input that worked
+before. The two verifiers answer a different question, per finding and from the finding's own text; the
+audit reads the diff whole and runs what the diff claims. A prose-only pass stays ungated, the audit's
+prose lenses run on judgment. MINOR; the closed vocabularies and the closure channels are unchanged.
+

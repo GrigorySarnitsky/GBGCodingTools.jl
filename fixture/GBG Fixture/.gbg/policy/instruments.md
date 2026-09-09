@@ -33,6 +33,14 @@ only wholesale exit and names every open id. Closing a banked round terminates b
 fixed; re-running the lanes over a just-edited corpus is a new search with no fixed point. Stop on a
 plateau — three passes flat within noise, with no dead lane — never on a good round.
 
+### RULE.INST.AUDIT_AFTER_CODE
+A fix pass that changed code is audited before its round closes. `/bug-hunt` always qualifies, and so does
+a `/check-docs` round whose pass touched the `src` or `ext` surfaces: closing refuses until a `/audit-changes`
+round based at the closing round's opening head is itself closed. The two verifiers grade each finding as
+asked; neither reads the diff whole, runs anything, or asks whether input that worked before still does.
+A prose-only pass is not gated: run the audit's prose lenses on judgment when the pass rewrote docstrings
+that state a contract.
+
 ### RULE.INST.FIX_FROM_LANES
 A fix pass is driven from the per-lane findings by id, never from the consolidated summary. Consolidation
 is lossy by design, which is what makes it readable; a severity in the summary never overrides the lane's

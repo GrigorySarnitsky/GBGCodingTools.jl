@@ -485,6 +485,12 @@ section = "### RULE.INST.CLOSURE_LOOP"
 statement = "The closure loop runs over the banked findings by id, never by re-running the battery; abandon is the only wholesale exit and names every open id."
 sentinel = "The closure loop runs over the banked findings by id, never by re-running the battery, and abandon is the only wholesale exit and names every open id."
 [[rule]]
+id = "RULE.INST.AUDIT_AFTER_CODE"
+file = "instruments.md"
+section = "### RULE.INST.AUDIT_AFTER_CODE"
+statement = "A fix pass that changed code is audited before its round closes: always for a hunt, and for a check-docs round whose pass touched src or ext."
+sentinel = "A fix pass that changed code is audited before its round closes."
+[[rule]]
 id = "RULE.INST.FIX_FROM_LANES"
 file = "instruments.md"
 section = "### RULE.INST.FIX_FROM_LANES"

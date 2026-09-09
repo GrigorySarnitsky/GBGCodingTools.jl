@@ -12,6 +12,24 @@ include("helpers.jl")
     @test G.Passes.hit_needle("a: short") == "short"
 end
 
+# RULE.INST.AUDIT_AFTER_CODE: a check-docs round whose fix pass touched src/ or ext/ refuses to close
+# until an audit-changes round based at its opening head is closed; a prose-only pass is not gated. The
+# copy is made its own repository, since it lives inside the tool's and must not commit into it.
+@testset "a documentation round that changed code needs its audit" begin
+    root = fixture_copy("audit-gate")
+    cfg = G.Config.read(root)
+    git(args...) = run(pipeline(`git -C $root -c user.email=t@t -c user.name=t $args`; stdout = devnull, stderr = devnull))
+    git("init", "-q", "-b", "master"); git("add", "-A"); git("commit", "-q", "-m", "base")
+    @test isempty(G.Passes.audit_after_code(cfg, Dict{String,Any}("head" => "HEAD")))       # nothing changed
+    src = joinpath(root, "src", "FixtureA.jl"); write(src, read(src, String) * "\n")
+    git("add", "-A"); git("commit", "-q", "-m", "a code edit")
+    fails = G.Passes.audit_after_code(cfg, Dict{String,Any}("head" => "HEAD~1"))
+    @test length(fails) == 1 && occursin("src/FixtureA.jl", fails[1]) && occursin("audit-changes", fails[1])
+    note = joinpath(root, "docs", "src", "notation.md"); write(note, read(note, String) * "\n")
+    git("add", "-A"); git("commit", "-q", "-m", "a prose edit")
+    @test isempty(G.Passes.audit_after_code(cfg, Dict{String,Any}("head" => "HEAD~1")))     # prose only: not gated
+end
+
 @testset "round lifecycle" begin
     root = fixture_copy("round")
     cfg = G.Config.read(root)

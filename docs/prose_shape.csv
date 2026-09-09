@@ -21,6 +21,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § GBGCodingTools — architecture",479,347,1
 "ARCHITECTURE.md § Revision 10 (2026-09-09) — the rc.1 `/check-docs` round",140,95,0
 "ARCHITECTURE.md § Revision 11 (2026-09-09) — the owner's home-page review",136,136,0
+"ARCHITECTURE.md § Revision 12 (2026-09-09) — a documentation round that change",123,123,0
 "ARCHITECTURE.md § Revision 2 (2026-09-07)",106,106,0
 "ARCHITECTURE.md § Revision 3 (2026-09-07)",232,232,0
 "ARCHITECTURE.md § Revision 4 (2026-09-08) — IT amendments + Python retirement",361,361,0
@@ -46,7 +47,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",772,333,0
 "ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1089,541,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
-"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",2856,2751,0
+"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",2906,2801,0
 "ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1341,1166,0
 "ARCHITECTURE.md § §12.C Doctor ids",135,134,0
 "ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
@@ -154,7 +155,8 @@ unit,words,longest_paragraph,admonitions
 "Main.jl :: tool_version() -> String",38,35,0
 "Main.jl :: usage(io = stderr)",16,13,0
 "Passes.jl :: Passes",49,48,0
-"Passes.jl :: close(cfg, round; io = stdout) -> Int",143,101,0
+"Passes.jl :: audit_after_code(cfg, rec) -> Vector{String}",60,56,0
+"Passes.jl :: close(cfg, round; io = stdout) -> Int",154,112,0
 "Passes.jl :: grade(cfg, round; io = stdout) -> Int",119,85,0
 "Passes.jl :: pass_open(cfg, round; regrade = false, io = stdout) -> Int",132,59,0
 "Preflight.jl :: Preflight",57,56,0

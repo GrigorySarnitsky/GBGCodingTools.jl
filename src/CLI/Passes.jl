@@ -329,6 +329,29 @@ end
 
 # ---- close -------------------------------------------------------------------------------------------------
 
+"""
+    audit_after_code(cfg, rec) -> Vector{String}
+
+`RULE.INST.AUDIT_AFTER_CODE` for a documentation round: the refusals when the fix pass of the round
+`rec` changed code and no `/audit-changes` round based at its opening head is closed. The arguments are
+`cfg`, the validated config, and `rec`, the round record. A pass that touched only prose is not gated.
+Returns the refusals, empty when none applies.
+"""
+function audit_after_code(cfg::AbstractDict, rec::AbstractDict)
+    root = cfg["root"]
+    # the leading directory of each `src`/`ext` surface glob (`src/**/*.jl` → `src`), as a git pathspec
+    globs = vcat(get(cfg["surfaces"], "src", String[]), get(cfg["surfaces"], "ext", String[]))
+    dirs = unique(filter(!isempty, [rstrip(String(first(split(String(g), r"[*?\[]"; limit = 2))), '/') for g in globs]))
+    isempty(dirs) && return String[]
+    touched = Git.changed_paths(root, "$(rec["head"])..HEAD", dirs)
+    isempty(touched) && return String[]
+    base = first(rec["head"], 8)
+    any(r -> r.state == :closed && r.round["instrument"] == "audit-changes" && get(r.round, "base", "") == rec["head"],
+        RoundFiles.rounds(cfg)) && return String[]
+    return ["the fix pass changed code (" * join(first(touched, 3), ", ") * (length(touched) > 3 ? ", …" : "") *
+            ") and no closed audit-changes round has base = $base — run /audit-changes --base $base and close it"]
+end
+
 function dismissal_items(cfg, dir, rec, findings, ledger)
     items = Dict{String,Any}[]
     od = Date(first(rec["opened"], 10))
@@ -374,7 +397,8 @@ The conditions (§6.2 step 9; §6.7 for the hunt; §6.8 for the audit): the late
 dead lane, the round's files committed, the stamps unchanged (tool version and config, else regrade;
 tool tree sha, else abandon-only), the opening head an ancestor of HEAD, the dismissal auditor run over
 every adjudication and refusal with `reopened == []` (its Workflow call is printed when it has not
-run), the hunt's witness, promotion, test and audit conditions. Then `closed`, `closed_head` and the
+run), the hunt's witness, promotion, test and audit conditions, and for a check-docs round whose fix
+pass changed code, [`Passes.audit_after_code`](@ref). Then `closed`, `closed_head` and the
 tally sha are stamped. Returns 0 when closed, 1 when a condition is unmet, 2 on a stamp mismatch.
 """
 function close(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
@@ -423,6 +447,8 @@ function close(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     end
     if inst == "bug-hunt"
         append!(fails, hunt_close_conditions(cfg, dir, rec, findings; io))
+    elseif inst == "check-docs"
+        append!(fails, audit_after_code(cfg, rec))
     elseif inst == "audit-changes"
         aj = joinpath(dir, "audit.json")
         if isfile(aj)

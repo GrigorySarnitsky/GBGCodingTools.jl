@@ -5,7 +5,10 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 
 ## Unreleased
 
-MINOR so far: the owner's home-page review adds `RULE.DOC.SIBLING_LINK` and the hard `SCAN.SIBLING_LINK`
+MINOR so far: `RULE.INST.AUDIT_AFTER_CODE` gates a `/check-docs` round's close on a closed
+`/audit-changes` round whenever its fix pass touched the `src` or `ext` surfaces, as a hunt's close has
+always been gated (the rc.1 round changed three code behaviours unaudited); a prose-only pass is not
+gated. The owner's home-page review adds `RULE.DOC.SIBLING_LINK` and the hard `SCAN.SIBLING_LINK`
 (the first mention of a sibling GBG package in a page or docstring links to its documentation site; names
 and sites from the shipped `fleet.toml`; fixture class `bare-sibling`), and the home page drops its AI
 banner: `RULE.DOC.AI_BANNER` now states fleet-wide that the home page never carries it, the owner
