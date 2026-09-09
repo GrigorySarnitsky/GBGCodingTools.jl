@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-check-docs-02",
+  "items_sha": "651457a7b58224bcb468b329a07707b12800e6ecc0713f635eab1a8b6c759a5e",
+  "tally": {
+    "DISMISSAL-SOUND": 1
+  },
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#10",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "Preflight.jl:206 \"Only `siteonly` narrows the manuscript the panel actually hands over; every other value is the hat's brief over the full manuscript\". panel.js:60/:82 and verify-state.js:67 all branch `h.substrate === 'siteonly' ? manuscripts.siteonly : manuscripts.full` — the only two places a hat is handed a corpus. Recall.jl:78 `substrate == \"siteonly\" ? seed[\"page\"] in site_pages : true`, page names from the same `===== PAGE: =====` regex (Seed.page_of, Rounds.jl:386).",
+      "what_would_bite": "n/a — no misbehaving path found. Adjacent, out of scope: PROTOCOL.md:48 and docs/src/guide/instruments.md:129 say corroboration is \"k of the n hats whose substrate could see it\", while render_summary_md (Rounds.jl:307,317,322) uses n_hats = every applicable roster entry, unfiltered by substrate; and the siteonly branch of sees_seed is unasserted (test/seeds.jl:24 gives both roster hats substrate \"full\")."
+    }
+  ],
+  "reopened": [],
+  "dead": [],
+  "complete": true
+}
