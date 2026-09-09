@@ -40,9 +40,9 @@ jobs:
           set -o pipefail
           julia --color=yes --project -e 'using Pkg; Pkg.test()' 2>&1 | tee gbg-run.log
       - name: The tool's gate ran
-        # The gate prints `GBGCodingTools v gate` once it has been consulted; a green job whose log lacks the
+        # The gate prints `GBGCodingTools v<version> gate` once it has been consulted; a green job whose log lacks the
         # banner ran the tests without the gate, which is the failure this step exists to catch.
-        run: grep -q 'GBGCodingTools v gate' gbg-run.log
+        run: grep -Eq 'GBGCodingTools v[^ ]+ gate' gbg-run.log
   docs-build:
     name: The tool's own site builds (no deploy)
     runs-on: ubuntu-latest

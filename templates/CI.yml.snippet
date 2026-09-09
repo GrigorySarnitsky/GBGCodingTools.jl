@@ -15,6 +15,6 @@
     julia --color=yes --project -e 'using Pkg; Pkg.test()' 2>&1 | tee gbg-run.log
 # gbg:fragment banner
 - name: The tool's gate ran
-  # The gate prints `{{tool.banner}} gate` once it has been consulted; a green job whose log lacks the
+  # The gate prints `{{tool.banner}}<version> gate` once it has been consulted; a green job whose log lacks the
   # banner ran the tests without the gate, which is the failure this step exists to catch.
-  run: grep -q '{{tool.banner}} gate' gbg-run.log
+  run: grep -Eq '{{tool.banner}}[^ ]+ gate' gbg-run.log

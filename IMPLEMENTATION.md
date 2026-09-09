@@ -150,7 +150,14 @@ the TeX scans masking single-backtick code spans (a mention is not a use). Defer
 `gbg round import <pile>`'s six legacy readers and `round compare` are Phase 2's scratch tools and
 are written when the scratch imports run (`--empty` exists); Phase 1.9's V2–V5 need the owner's PAT
 and secrets (V4) and a session in a consumer (V2), V6 is done on `Aiporetne` (`Enteropia` still needs
-`juliaup add 1.11`). Items 7–8 (the rc tag and the first `/check-docs` round) follow in the log below.
+`juliaup add 1.11`). Items 7–8 done the same day: `v1.0.0-rc.1` tagged and pushed at `533579c`; the
+round `2026-09-09-check-docs-01` opened at it, banked 22 findings (three of them code defects:
+`TreeHash.tree_hash` kept empty directories, the rescan needle was cut in bytes, a failing witness could
+be filed `:blocked`), and closed after seven passes with every id `honored`, none adjudicated, none
+abandoned. The round found five tool defects on the way, each its own commit: `Git.run` dropped the
+environment; a quarantined lane's sha blocked its re-run; a lane's Write-first file escaped the schema
+(the scripts gained a scribe); a tag-stamped round read its stamps from `HEAD` (D16 fix); the CI banner
+grep could never match. Phase 1's definition of done is run after the round.
 
 
 ### 1.1 Create the repo

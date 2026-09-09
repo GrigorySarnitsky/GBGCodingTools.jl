@@ -15,6 +15,6 @@
     julia --color=yes --project=docs docs/make.jl 2>&1 | tee gbg-run.log
 # gbg:fragment banner
 - name: The tool's makedocs wrapper ran
-  # The wrapper prints `{{tool.banner}} makedocs` before Documenter runs; a green job whose log lacks
+  # The wrapper prints `{{tool.banner}}<version> makedocs` before Documenter runs; a green job whose log lacks
   # the banner built the site around the wrapper, which WIRE.MAKEDOCS catches locally and this catches here.
-  run: grep -q '{{tool.banner}} makedocs' gbg-run.log
+  run: grep -Eq '{{tool.banner}}[^ ]+ makedocs' gbg-run.log
