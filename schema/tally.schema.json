@@ -21,7 +21,7 @@
    "required": [],
    "properties": {},
    "type": "object",
-   "description": "class → {planted, found} or UNDEFINED"
+   "description": "class \u2192 {planted, found} or UNDEFINED"
   },
   "plateau": {
    "additionalProperties": false,
@@ -72,7 +72,7 @@
    "required": [],
    "properties": {},
    "type": "object",
-   "description": "id → {act, act_demoted, state, closed_by, adjudicated_entry}"
+   "description": "id \u2192 {act, act_demoted, state, closed_by, adjudicated_entry}"
   },
   "dead_lanes": {
    "items": {
@@ -115,7 +115,7 @@
    "maximum": 1
   }
  },
- "title": "verdicts/pass-<k>/tally.json — written by `gbg round grade`",
+ "title": "verdicts/pass-<k>/tally.json \u2014 written by `gbg round grade`",
  "$defs": {
   "entry": {
    "additionalProperties": false,
@@ -174,8 +174,13 @@
       "ABSENT",
       "NOT-A-DEFECT",
       "UNCLEAR",
+      "PASS",
+      "FAIL",
+      "BROKEN",
+      "BLOCKED",
       null
-     ]
+     ],
+     "description": "a state verifier's verdict, or \u2014 on a bug-hunt finding whose witness was re-run \u2014 that witness's status"
     }
    },
    "type": "object"

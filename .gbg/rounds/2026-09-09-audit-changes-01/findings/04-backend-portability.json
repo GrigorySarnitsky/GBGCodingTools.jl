@@ -1,0 +1,17 @@
+{
+  "candidates_found": 0,
+  "checked": [
+    "Confirmed GBGCodingTools.jl has no numerical/array compute path of its own: grepped the whole tree for CuArray, ROCArray, AbstractArray, GPU, CUDA, AMDGPU, KernelAbstractions, scalar-indexing outside src/TestHarness.jl's CountingArray and design-record prose describing the *consumer* packages (which are not part of this diff).",
+    "src/TestHarness.jl CountingArray{T,N} <: AbstractArray{T,N} struct, its getindex/setindex!/size/IndexStyle/parent methods, and the counting() constructor: byte-for-byte unchanged in this diff (git diff base..head -- src/TestHarness.jl shows only docstring bullet-reformatting hunks around lines 82-91, 180-197, 213-227, 262-277, 290-304, 313-327, 335-348, 380-393, 463-479, 525-535, 550-560, 576-590; no hunk touches the struct definition or its methods at lines ~113-146).",
+    "TestHarness.jl docstring for CountingArray itself: text preserved verbatim ('A consumer using KernelAbstractions defines KernelAbstractions.get_backend(a::CountingArray) = get_backend(a.data) itself (the tool does not depend on it)') — the device-portability contract for this type is unchanged.",
+    "src/Scans/args_form.jl: the only src/ hunk with non-docstring logic changes near a findfirst/array-adjacent name — read in full; findfirst('(', sig) / findfirst(';', inside) operate on AbstractString (docstring signature text), not on numeric or device arrays; no scalar-indexing-of-a-device-array concern applies.",
+    "Grepped every '+' line in the diff for getindex/setindex/CountingArray/Array{/CuArray/ROCArray/findfirst(/sort(/rand(/Float64/Threads.atomic/scalar — the only hits are the two args_form.jl findfirst calls on strings, already checked as harmless.",
+    "Diffstat's other touched src/CLI/*.jl, src/Scan.jl, src/Reflection.jl, src/HtmlWalker.jl, src/DocLints.jl, src/TreeHash.jl, src/Witnesses.jl, src/GBGCodingTools.jl: these are text-scan, config, CLI-dispatch and git-hashing modules with no array-of-numbers storage; none of their hunks introduce any array, RNG, sort, or kernel-launch code.",
+    "test/coverage.jl and test/schemas.jl changes: coverage counting and JSON-schema validation tests, not device-array tests; no fixture GPU/backend logic touched."
+  ],
+  "findings": [],
+  "lane": "backend-portability",
+  "round": "2026-09-09-audit-changes-01",
+  "schema_version": 1,
+  "verdict": "CLEAN"
+}

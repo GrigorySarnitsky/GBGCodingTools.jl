@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-audit-changes-01",
+  "lane": "claim-versus-edit",
+  "verdict": "CONCERNS",
+  "checked": [
+    "Reconstructed the 14 individual commits (209cb21..0d5a18c) with git log/git show --stat scoped to non-.gbg paths, and matched every commit message's specific sub-claims against that commit's own diff (not the squashed range).",
+    "175fe95 (the 56-finding fix pass, by far the largest commit): every named item in its message — ARGS_FORM's splat/-> handling, check_paths/parse_options/audit/classify_lane/SCAN.PROSE_SHAPE/SCAN.SIBLING_LINK docstring corrections, mathbf.jl's \\mathbf{1} admission, sibling_link.jl's second-half enforcement, the module-docstring term glossary, RULES.toml's new check field and its accompanying test — against the actual hunks in src/, test/, instruments/, policy/, docs/.",
+    "src/CLI/Rounds.jl's bank() function diff in 175fe95 against every sentence of that commit's message, to see whether the new finding-schema-validation loop it added was named anywhere.",
+    "The three-commit lifecycle of that same validation loop: introduced in 175fe95, diagnosed and narrowed in 235d292 (a bank that would have thrown on the first real hunt finding), with the regression test added in the same pass (test/schemas.jl).",
+    "schema/exemptions.schema.json, schema/managed.schema.json, schema/tally.schema.json: diffed base vs head with a structural JSON comparison (not text diff) to separate real semantic changes from key reordering, then searched all 14 commit messages for any mention of them.",
+    "Where schema/exemptions.schema.json's reason.minLength value is actually enforced: src/CLI/Ledger.jl's Ledger.read, and how src/CLI/Doctor.jl's context() does (and does not) shield callers from a LedgerError it can now throw.",
+    "policy/RULES.toml's full diff filtered to statement=/sentinel=/id= lines only, to confirm no rule's substance moved beyond the two changes the commits actually name (RULE.DOC.HOME_ORDER's caveat reorder, RULE.CIT.FULL_INLINE's sentinel hyphen fix).",
+    "fc7eca3, 8aa484c, e7fccc8, 8354965, 235d292, b09f076, ef9b15c, fdbe092, db46e6d, 7ecfd13, 984ed2f, b941c9f, 0d5a18c: each commit's full non-.gbg diff read in full against its message (Git.jl tree-line correction, args_form.jl's parenthesis-depth rewrite, Reflection.jl's examined counter reorder, Recall.jl's sees_seed substrate model, Scan.jl/field_docs.jl's DEAD-scan-predicate and checked counter fixes, Preflight.jl's anchor/resolve_hats prose, the ledger-edit revert, Seed.jl's third anchor sense, the operational-claims#10 adjudication key fix)."
+  ],
+  "candidates_found": 2,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "175fe95 silently added a new hard-fail validation to bank() that no claim in its own message names, and it was broken on arrival",
+      "locations": [
+        "src/CLI/Rounds.jl:393-398 (as introduced by commit 175fe95f90b3cd8dab7f48fea024f77be9dd0142)",
+        "src/CLI/Rounds.jl (as corrected by commit 235d292f7be008f5c6b6a0763ec6728ee3b02bea)",
+        "test/schemas.jl (regression test added by 235d292)"
+      ],
+      "before": "At base (209cb21), bank(cfg, round; io) collected findings from every lane/scan/hunt source and wrote findings.json with no schema check on the assembled finding objects at all.",
+      "after": "175fe95 inserted, unannounced: 'for f in findings # the schema existed and nothing validated against it; errs = validate(load_schema(\"finding\"), f); isempty(errs) || throw(RoundError(\"banked finding $(get(f, \\\"id\\\", \\\"?\\\")) does not validate: \" * first(errs)))end'. Because schema/finding.schema.json closes its property set (additionalProperties: false) and a bug-hunt finding carries extra keys (kind, verdict, observed, file, line, mechanism) that bank itself adds four more of (id, lane, n, seeded), this threw on every real hunt finding. Two commits later, 235d292's own message states it plainly: \"Every real hunt bank would have thrown on its first finding, and no test went near it,\" and rewrites the loop to project each finding onto only the core schema's keys before validating.",
+      "why_it_matters": "175fe95's message is long and itemizes its scope precisely — down to which regex a scan used and which paragraph rendered wrong on a built page — but every item is a documentation-surface correction (docstrings, rationale prose, the rulebook, RULES.toml). Nothing in it says bank() gained a new hard-fail runtime check. That check was live at HEAD of 175fe95 and would have broken every future /bug-hunt bank operation until 235d292 fixed it two commits later; a user who ran gbg round bank on a real hunt round between those two commits (this is a working checkout on Dropbox across two machines, per the project's own CLAUDE.md) would have hit a RoundError crash instead of a clean bank. This is exactly the wider-than-claimed, silently-behavior-changing edit the audit is watching for: an addition dressed as part of a docs fix pass, undocumented, and caught only because the same self-auditing process it was bundled into happened to run again.",
+      "justified": "no",
+      "description": "The commit that claims to be \"the fix pass, by id\" for 56 named documentation findings also introduced new, unrelated runtime enforcement in Rounds.bank, without naming it as a change, and that enforcement was defective from the moment it landed.",
+      "evidence": "175fe95 diff: '+    for f in findings   # the schema existed and nothing validated against it\\n+        errs = validate(load_schema(\"finding\"), f)\\n+        isempty(errs) || throw(RoundError(\"banked finding $(get(f, \\\"id\\\", \\\"?\\\")) does not validate: \" * first(errs)))\\n+    end' — absent from 175fe95's commit message. 235d292's message: \"Validating every banked finding against schema/finding.schema.json was right in intent and wrong in reach... Every real hunt bank would have thrown on its first finding, and no test went near it.\"",
+      "previously_worked": "yes"
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "Three JSON schemas were tightened inside 175fe95 (a doc-fix commit) with no claim naming them, one of them changing a live crash-vs-report boundary",
+      "locations": [
+        "schema/exemptions.schema.json (properties.exemption.items.properties.reason.minLength)",
+        "schema/managed.schema.json (properties.files.additionalProperties)",
+        "schema/tally.schema.json (properties.per_id.additionalProperties)",
+        "src/CLI/Ledger.jl:38-39 (Ledger.read, which enforces the exemptions schema on every read)"
+      ],
+      "before": "schema/exemptions.schema.json set reason.minLength = 24; schema/managed.schema.json's properties.files.additionalProperties was true (any value, dictionary-shaped or not); schema/tally.schema.json's properties.per_id.additionalProperties was likewise true.",
+      "after": "175fe95 changed reason.minLength to 40 and both additionalProperties: true sites to {\"$ref\": \"#/$defs/entry\"}, none of it mentioned in the commit's own message (which lists D11's schema count going from eighteen to sixteen — a file-count claim about deleted files, not a content claim about the ones that remain).",
+      "why_it_matters": "Ledger.read (src/CLI/Ledger.jl:38) validates every .gbg/exemptions.toml against this exact schema on every read and throws a LedgerError — a hard failure, not a doctor FAIL row — when it does not validate. Before this change, an exemption entry with a reason of, say, 30 characters passed Ledger.read cleanly and only failed later, as an orderly CFG.EXEMPTIONS doctor FAIL (src/CLI/Doctor.jl:308, unchanged, always required >=40). After this change the identical file throws inside Ledger.read itself. Doctor.context() happens to catch that exception, but other direct callers of Ledger.read (the scan engine, Sync, the harness) may not, changing a previously-orderly FAIL into a raw exception for input that used to be legal at the schema layer even though it was always going to fail the doctor's own semantic check eventually.",
+      "justified": "unclear",
+      "description": "Three schema-file tightenings ride inside the huge documentation fix-pass commit with no line in its message naming schema/ at all; the exemptions one moves a validation boundary from a graceful doctor report to a thrown exception for input that used to parse.",
+      "evidence": "Structural diff of schema/exemptions.schema.json base to head: reason.minLength: 24 -> 40. Structural diff of schema/managed.schema.json and schema/tally.schema.json: additionalProperties: true -> {\"$ref\": \"#/$defs/entry\"}. src/CLI/Ledger.jl:38-39: errs = validate(load_schema(\"exemptions\"), doc); isempty(errs) || throw(LedgerError(...)).",
+      "previously_worked": "unknown"
+    }
+  ]
+}

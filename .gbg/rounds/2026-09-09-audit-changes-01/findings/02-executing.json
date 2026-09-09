@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-audit-changes-01",
+  "lane": "executing",
+  "verdict": "CONCERNS",
+  "candidates_found": 12,
+  "checked": [
+    "RAN `scan_docs` over the whole tree at BASE (git archive of 209cb21, julia --project) and at HEAD, and diffed every scan's population/hits: ARGS_FORM 80->0 hits, SIGNATURE_FIDELITY population 189->188, DEAD_REF 19->20, SENTENCE_OPENER 16->19, everything else unchanged; both exit 0.",
+    "RAN the BASE and HEAD SCAN.ARGS_FORM logic over BOTH corpora (2x2) as standalone Julia over `docstring_blocks`: base-logic/head-tree = 11 hits, head-logic/head-tree = 0; base-logic/base-tree = 80, head-logic/base-tree = 77. Set-differenced the two hit lists: every difference is a corrected mis-parse (`resolve_anchor` counted the return tuple `(file, line, count)` as 3 parameters; `plant`, `split_block` likewise) or a splat the base dropped (`makedocs(cfg; kwargs...)`, `resolve_roster(...; kw...)`), and head-logic finds one true positive base missed (`Seed.jl:67 plant`). The balanced-paren rewrite and the `\\s+` markers do not blind the scan.",
+    "RAN SCAN.MATHBF at base and head over the SAME planted text under this package's own `notation.mathbf_allowed = []`: base 2 hits (`\\mathbf{1}`, `\\mathbf{x}`), head 1 (`\\mathbf{x}` only). See finding.",
+    "RAN SCAN.FIELD_DOCS + `Scan.report` at base and head over a planted NOLIST struct: base population 0, 1 hit SUPPRESSED, printed `DEAD ... measured nothing`, exit 2; head population 1, hit printed, exit 1. The `checked += 1` move and the `isempty(r.hits)` guard in `report`/`prepare` are a correct pair and unmask a real hit.",
+    "RAN SCAN.SIGNATURE_FIDELITY population at base/head: 189 -> 188. The `examined[] += 1` move past the `:extension` branch removes extension-homed bindings from the scan's population; a package whose every binding is extension-homed would now report population 0 (DEAD, exit 2) instead of clean. Justified by the comment (`what was COMPARED`).",
+    "RAN SCAN.SIBLING_LINK at base and head over a planted page with two linked mentions of `GBGPeriodicFields`: base 0 hits, head 1 hard hit. See finding.",
+    "RAN the new `test/coverage.jl` backtick assertion over all 11 `instruments/*/workflow/*.js` at base and head: 0 matches in both, so the defect it guards was introduced and fixed inside this window. RAN its both-directions twin (unescaping hunt.js): 13 matches, the test passes; also confirmed the pre-existing `iseven(count('`'))` check passes on the broken file, which is why the new assertion was needed.",
+    "VERIFIED the `Sixteen schemas` count claim: `ls schema/*.schema.json` = 16 and the sixteen names listed in D11 match the directory exactly (base said `Eighteen` and listed `lane-file` and `hunt-candidate`, which are not files).",
+    "RAN `TreeHash.tree_hash` on a clean `git archive` of HEAD: 6786702c00e69c6d752879f0db1234abad55cca7 = `git rev-parse 0d5a18c^{tree}`, and the empty tree = 4b825dc642cb6eb9a060e54bf8d69288fbee4904. The docstring's two claims hold.",
+    "RAN the documented calls of the rewritten docstrings: `HtmlWalker.attr(text_node, \"class\", \"D\") == \"D\"`; `parse_options([\"--foo=bar\"]; valued = String[])` yields `values = Dict(\"foo\"=>\"bar\")` (the head docstring is right, the base one was wrong); `Doctor.select(nothing; deep=false)` = 43 ids, `deep=true` = 49, `select([\"SELF.DOCS\"]; deep=false)` = [\"SELF.DOCS\"]; `self_verify(nothing)` runs and exits 0.",
+    "VERIFIED two docstring claims against the code: `resolve_function` searches `Iterators.flatten(((pkg,), externals, modules))` so head's `searched after pkg and before modules` is right and base's `searched last` was wrong; `TestHarness.audit` line 206 is `r.frozen != r.ideal && @test !isempty(r.holder)` so head's `differing from its ideal` is right and base's `above its ideal` was wrong.",
+    "EVALUATED both sides of the `Recall.suspect_hats` refactor over all 6 substrates x 2 pages: base expression and head `sees_seed` agree 12/12 — a behaviour-preserving extraction.",
+    "RAN the new `test/schemas.jl` RULE_WITH_CHECK assertions standalone over `policy/RULES.toml`: 93 rules, 0 without a `check`, 0 failing assertions; classes scan 42, panel 19, harness 14, weakness 13, session 6, test 4, doctor 3. The `harness:` assertion only proves the binding name exists in src, not that it enforces the rule.",
+    "CHECKED the new `bank` core-schema assertion by comparing every instrument's `$defs` finding with `schema/finding.schema.json`: all four close their property set to the core keys (bug-hunt's ten extras are dropped by the projection) and carry the same minLength/enum constraints, so the assertion cannot reject a lane finding that `classify_lane` accepted. `RoundError` is caught at Rounds.jl:668 -> exit 2.",
+    "DIFFED the three reformatted schemas as parsed JSON (not text): `exemptions`, `managed`, `tally` are reindentations EXCEPT three semantic edits — `reason.minLength 24 -> 40`, `managed.files.additionalProperties true -> {$ref: entry}`, `tally.per_id.additionalProperties true -> {$ref: entry}`. Validated the `managed` tightening against what `Sync.sync` writes: consistent, no break.",
+    "DIFFED `src/CLI/Config.jl` `check_paths` and `src/Scans/prose_shape.jl` base vs head: both byte-identical; only their prose changed. Confirmed `AUDIT.GAP` was already in `Doctor.QUICK` at base, so that ARCHITECTURE edit is a currency correction."
+  ],
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "blocker",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "The tally schema now validates per_id entries, and the state Passes.grade writes for a witness-verified bug-hunt finding is outside its enum — every such grade throws",
+      "locations": [
+        "schema/tally.schema.json:68 (per_id)",
+        "schema/tally.schema.json $defs.entry.state",
+        "src/CLI/Passes.jl:274",
+        "src/CLI/Passes.jl:318"
+      ],
+      "before": "\"per_id\": {\n      \"additionalProperties\": true,\n      \"required\": [\n      ],\n      \"properties\": {\n      },\n      \"type\": \"object\",",
+      "after": "\"per_id\": {\n   \"additionalProperties\": {\n    \"$ref\": \"#/$defs/entry\"\n   },",
+      "why_it_matters": "`Passes.grade` line 274 writes `entry[\"state\"] = r === nothing ? nothing : uppercase(String(r.status))` from a re-run witness, and `Witnesses.WitnessResult.status` is `:pass`, `:fail`, `:broken` or `:blocked` — so `state` becomes \"PASS\"/\"FAIL\"/\"BROKEN\"/\"BLOCKED\". The tightened `$defs.entry.state` enum is `PRESENT | PARTIAL | REGRESSED | ABSENT | NOT-A-DEFECT | UNCLEAR | null`. At base `per_id` was unvalidated (`additionalProperties: true`, no items), so any entry passed; at head line 318's `validate(load_schema(\"tally\"), tally)` fails and `grade` throws `RoundError`, caught at Rounds.jl:668 as exit 2. This is the NORMAL success path of a bug-hunt round: a finding whose reproduction disposition is `fixed` and whose witness now passes. Ran it: with per_id entry {act: null, act_demoted: false, state: \"PASS\", closed_by: \"honored\"} and every other tally key as grade builds it, the BASE schema VALIDATES and the HEAD schema REFUSES with `$.per_id.<id>.state: \"PASS\" is not one of \"PRESENT\", \"PARTIAL\", \"REGRESSED\", \"ABSENT\", \"NOT-A-DEFECT\", \"UNCLEAR\", nothing`. No bug-hunt round can be graded past its first fixed finding.",
+      "justified": "no",
+      "description": "The schema reformat carried one real tightening: per_id entries are now checked against $defs.entry. Nothing checked that the code writing per_id obeys that entry shape, and it does not — the bug-hunt branch reuses `state` to carry a witness status, whose spelling was never in the state vocabulary. The tool's own test suite exercises no bug-hunt grade, so the gate is green while the verb is broken. Either the enum must admit the witness statuses (they are a different axis and probably want their own key) or line 274 must map them onto the state vocabulary; the tightening itself is right and should stay.",
+      "evidence": "src/CLI/Passes.jl:274 `entry[\"state\"] = r === nothing ? nothing : uppercase(String(r.status))`; src/Witnesses.jl:31 `- `status` — `:pass`, `:fail` (an assertion came out false — the witness working), `:broken` (an`; measured: HEAD -> REFUSED with `$.per_id.2026-09-09-bug-hunt-01/free#1.state: \"PASS\" is not one of ...`, BASE -> VALIDATES."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "Dropping `rulebook` from the latex-typesetter hat's needs forbids it the very file its persona is told to treat as authoritative",
+      "locations": [
+        "catalog/hats/latex-typesetter.toml:4",
+        "instruments/check-consistency/workflow/panel.js:61",
+        "instruments/check-consistency/workflow/panel.js:87",
+        "src/CLI/Preflight.jl:369"
+      ],
+      "before": "needs = [\"source\", \"rulebook\"]",
+      "after": "needs = [\"source\"]              # the persona reads the rendered policy file, never a `rulebook_sections` grant",
+      "why_it_matters": "`panel.js:61` is `if ((h.needs || []).includes('rulebook') && A.rulebook_path) p.push(A.rulebook_path)`, and `permitted(h)` is rendered under `FILES UNDER .gbg/ YOU MAY OPEN — exactly these, with the Read tool, and NOTHING else under .gbg/ or ~/.gbg/`. `panel.js:87` is the only place the path is disclosed. With `needs = [\"source\"]` the hat is neither told where the rulebook is nor permitted to open it — while its persona (unchanged in this diff) opens `FIRST read the house rulebook named in your substrate (the rendered policy file `latex-idiom.md`...) and treat it as AUTHORITATIVE` and then leans on it six more times. The comment's premise is false: `Preflight.rulebook_text` builds `rulebook.md` from `.gbg/policy/*.md` FIRST and appends `rulebook_sections` after, so the `rulebook` need IS how the rendered policy file is delivered. Ran `Preflight.resolve_hats(cfg)`: latex-typesetter now comes back `needs = [\"source\"]`, while `doc-policy.toml` keeps `needs = [\"rulebook\", \"source\"]` for an identically worded persona — the change is applied to one of the two rulebook hats.",
+      "justified": "no",
+      "description": "The edit reads as a tidy-up of a redundant grant but is the opposite: it strips the hat's authoritative substrate. A check-consistency round run after this change gives the LaTeX hat a persona that commands it to read a file it is explicitly forbidden to open, so the hat must fall back on generic taste — which its own first sentence rules out (`Your rubric is NOT generic taste`). It also changes `not_applicable`: at base a package with no `rulebook_sections` skipped this hat, at head it runs blind.",
+      "evidence": "catalog/hats/latex-typesetter.toml persona: `FIRST read the house rulebook named in your substrate (the rendered policy file `latex-idiom.md`, with the package's notation parameters substituted into it) and treat it as AUTHORITATIVE`; panel.js:61 `if ((h.needs || []).includes('rulebook') && A.rulebook_path) p.push(A.rulebook_path)`; Preflight.jl:369 `write(joinpath(pd, \"rulebook.md\"), rulebook_text(cfg)); paths[\"rulebook_path\"] = joinpath(pd, \"rulebook.md\")` with `rulebook_text` looping `Sync.POLICY_FILES` before the sections."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "SCAN.MATHBF now hard-codes `\\mathbf{1}` over the consumer's configured mathbf_allowed, and only one of the four places that state the contract was amended",
+      "locations": [
+        "src/Scans/mathbf.jl:6",
+        "policy/latex-idiom.md:59",
+        "policy/RULES.toml:357",
+        "docs/ARCHITECTURE.md:2242, 2308, §5.5"
+      ],
+      "before": "allowed = Set(String.(cfg[\"notation\"][\"mathbf_allowed\"]))",
+      "after": "allowed = Set(String.(cfg[\"notation\"][\"mathbf_allowed\"])); push!(allowed, \"\\\\mathbf{1}\")",
+      "why_it_matters": "`notation.mathbf_allowed` is one of the four values ARCHITECTURE and policy/00-index name as varying per package, and this package's own config sets it to `[]` deliberately (vectors: none). Measured on the same planted text under `mathbf_allowed = []`: base SCAN.MATHBF returns 2 hits (`\\mathbf{1}` and `\\mathbf{x}`), head returns 1 — the configured value no longer decides. Only `policy/latex-idiom.md` was amended to say so. `policy/RULES.toml:357` still records `statement = \"\\\\mathbf is admitted only for the strings in notation.mathbf_allowed; vectors follow notation.vectors.\"`, ARCHITECTURE §12.A carries the same statement and §12.B still describes the scan as `restricted to strings outside notation.mathbf_allowed`. §5.5 (`Deliberately NOT configurable (changing any is MAJOR)`) was not amended, so a config key just became partly non-configurable without the MAJOR bookkeeping the design requires.",
+      "justified": "unclear",
+      "description": "The substantive call — that RULE.TEX.MATHBB's indicator should not be bannable — may well be right, but it is a fleet-wide narrowing of a documented variation point made in a scan file, with the register, the rule statement and the scan catalogue left stating the old contract and the non-configurable set left unamended. A consumer reading RULES.toml (the rendered rulebook the hats and the ledger cite) is told something the code no longer does.",
+      "evidence": "src/Scans/mathbf.jl:6 `allowed = Set(String.(cfg[\"notation\"][\"mathbf_allowed\"])); push!(allowed, \"\\\\mathbf{1}\")`; policy/RULES.toml:357 statement unchanged in this diff; measured base=2 hits / head=1 hit on identical text with `config mathbf_allowed = Any[]`."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "Raising the ledger reason bound from 24 to 40 in the schema turns a reported CFG.EXEMPTIONS failure into a crash of sync, scan and the docs build",
+      "locations": [
+        "schema/exemptions.schema.json:61",
+        "src/CLI/Ledger.jl:38",
+        "src/CLI/Main.jl (main's catch-all -> 3)"
+      ],
+      "before": "\"reason\": {\n            \"type\": \"string\",\n            \"minLength\": 24,\n            \"description\": \"≥ 40 chars on scope finding — CFG.EXEMPTIONS checks the longer bound\"\n          },",
+      "after": "\"reason\": {\n      \"description\": \"at least 40 characters, as CFG.EXEMPTIONS enforces for every entry: what is declined and why\",\n      \"minLength\": 40,\n      \"type\": \"string\"\n     },",
+      "why_it_matters": "The base description records the loose bound as deliberate: the schema stayed at 24 so that CFG.EXEMPTIONS could REPORT the 40-character rule as a doctor FAIL (exit 1, a finding) instead of the loader refusing to load. `Ledger.read` (Ledger.jl:38) throws `LedgerError` on any schema error, and it is the default keyword of `Sync.sync`, `Sync.plan`, `Sync.status`, `Sync.slots` and `Scan.run_scan`, none of which catch it; `main` catches everything and returns 3 (`crashed`). Only `Doctor.context` catches it. Ran it on an otherwise valid entry with a 30-character reason: BASE VALIDATES, HEAD refuses with `$.exemption[1].reason: shorter than 40 characters`. So a consumer whose ledger the doctor merely marked red now cannot run `gbg sync`, `gbg scan docs`, or a docs build (the makedocs wrapper runs the hard scans, which read the ledger).",
+      "justified": "unclear",
+      "description": "Aligning the schema with CFG.EXEMPTIONS is defensible, but it changes the failure MODE of previously-loadable input from a graded finding to an unhandled exception, and it does so for the four consumers' existing ledgers, none of which were migrated in this commit and none of which the diff inspects. If the alignment is wanted, either the callers must catch LedgerError and degrade to an empty ledger the way Doctor.context does, or the migration must come first.",
+      "evidence": "src/CLI/Ledger.jl:38 `errs = validate(load_schema(\"exemptions\"), doc)` / `isempty(errs) || throw(LedgerError(...))`; measured on a 30-character reason: `HEAD -> REFUSED -> Ledger.read throws: $.exemption[1].reason: shorter than 40 characters`, `BASE -> VALIDATES (Ledger.read returns)`."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "no",
+      "title": "The CFG.SURFACES contract row was rewritten to drop the `docs_build names docs/make.jl` clause while check_paths is byte-identical, and the parallel julia_test clause was left in place",
+      "locations": [
+        "docs/ARCHITECTURE.md §7.3 CFG.SURFACES row",
+        "docs/ARCHITECTURE.md:1120",
+        "src/CLI/Config.jl:164 (check_paths docstring)",
+        "src/CLI/Config.jl check_paths body"
+      ],
+      "before": "| `CFG.SURFACES` | … every module exists; `docs_build` names `docs/make.jl` and that file exists; `julia_test` contains `Pkg.test()`; …",
+      "after": "| `CFG.SURFACES` | … every module exists; every `[paths]` entry is a directory; the `glossary` file exists and a non-empty `built_html` has a `docs/` directory beside it; the fixed path `docs/make.jl` a consumer's `docs_build` is expected to run exists; `julia_test` contains `Pkg.test()`; …",
+      "why_it_matters": "`Config.check_paths` is byte-identical between 209cb21 and 0d5a18c (diffed the extracted function bodies) — its only relevant line is `isfile(joinpath(root, \"docs\", \"make.jl\")) || push!(errs, \"package.docs_build: docs/make.jl does not exist\")`, and the CFG.SURFACES check body adds only anchors, executable_claims and a TODO probe. So the row was moved onto the behaviour rather than the check onto the row. The guarantee is not actually lost — `schema/config.schema.json` puts `\"pattern\": \"docs/make\\\\.jl\"` on `docs_build`, enforced by CFG.VALID — but that is the point: `julia_test` carries the identical `\"pattern\": \"Pkg\\\\.test\\\\(\\\\)\"` and its clause was LEFT in the CFG.SURFACES row. The one row now attributes two identically-enforced constraints to two different checks, and a reader of §7.3 (`This table is the final list`) is told a consumer may point `docs_build` anywhere so long as `docs/make.jl` exists, which the config schema in fact forbids.",
+      "justified": "unclear",
+      "description": "Three of the added clauses ([paths] entries are directories, glossary, built_html/docs) are genuine currency corrections that the code does perform. The removal is the problem: a documented check disappeared from the check table in the same window in which the code was not touched, and the sibling clause that would have made the inconsistency visible was left standing. Either both clauses belong on the CFG.VALID row, or both belong here.",
+      "evidence": "`diff -q` of `check_paths` extracted from 209cb21 and from HEAD reports IDENTICAL; schema/config.schema.json `docs_build {\"type\": \"string\", \"pattern\": \"docs/make\\\\.jl\"}` and `julia_test {\"type\": \"string\", \"pattern\": \"Pkg\\\\.test\\\\(\\\\)\"}`; ARCHITECTURE:1120 changed from `# CFG.SURFACES requires it to name docs/make.jl` to `# CFG.SURFACES requires docs/make.jl to exist`."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "no",
+      "title": "The prose-shape cap contract was rewritten from `Caps bind ALWAYS` to `docstrings and NEW page units only` with the scan code untouched, and the rule it implements still says always",
+      "locations": [
+        "src/Scans/prose_shape.jl:1-9 (header comment)",
+        "docs/ARCHITECTURE.md §12.B SCAN.PROSE_SHAPE row",
+        "policy/RULES.toml:231 (RULE.DOC.SHAPE statement)",
+        "policy/docs-rubric.md RULE.DOC.SHAPE",
+        "docs/prose_shape.csv"
+      ],
+      "before": "# item `NN. ` or a `**(x) ` finding opens a new unit, so an append-only log grows by NEW units. Caps bind\n# ALWAYS (longest paragraph ≤ 120 words, ≤ 3 admonitions; IT's lesson: a cap that applies only to new\n# units is escaped by re-baselining or renaming). The ratchet compares every unit with",
+      "after": "# item `NN. ` or a `**(x) ` finding opens a new unit, so an append-only log grows by NEW units. Caps\n# (longest paragraph ≤ 120 words, ≤ 3 admonitions) bind on every docstring and every NEW page unit; a\n# page unit already in the baseline is held by the ratchet alone, the one place IT's lesson … is traded for an append-only log.",
+      "why_it_matters": "`src/Scans/prose_shape.jl` is byte-identical below the header between base and head — the guard `if occursin(\" :: \", k) || b === nothing` was already there. So the description moved onto the behaviour, not the behaviour onto the description, and the lesson the base comment was written to record (`a cap that applies only to new units is escaped by re-baselining or renaming`) is now recorded as a deliberate trade. Meanwhile the rule itself was NOT amended: `policy/RULES.toml:231` still reads `A docstring's longest paragraph is at most 120 words and it has at most 3 admonitions, always; no unit grows past its baseline` and the docs-rubric paragraph behind it is unchanged in this diff. Measured over `docs/prose_shape.csv` at head: 54 baselined page units carry a longest paragraph above the 120-word cap (largest 2810) while SCAN.PROSE_SHAPE reports 0 hits over 361 units. Measured over the CSV delta in this commit: 101 units were re-baselined past their frozen values (+1490 words), 9 of them page units where the caps do not bind at all.",
+      "justified": "unclear",
+      "description": "The prose is now honest about what the scan does, which is an improvement over the base comment. What makes it an audit concern is that the correction was applied to the two places a maintainer reads (the scan header, the scan catalogue row) and not to the rule the fleet is governed by, so RULES.toml — the register the ledger validates against and LEG.SENTINELS reads — and the ARCHITECTURE §12.B row now disagree about the same rule, with the weaker reading in the place a reader checks when a page grows.",
+      "evidence": "`git diff … -- src/Scans/prose_shape.jl` shows only the header hunk; head code still reads `if occursin(\" :: \", k) || b === nothing` with the comment `a baselined page section is held by the ratchet alone`; policy/RULES.toml:231 statement unchanged; measured 54 baselined page units over the cap, 101 units re-baselined (+1490 words) in this commit."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "no",
+      "title": "The new coverage assertion is wider than the defect: it rejects any interpolation-free template literal in a Workflow script, valid JS included",
+      "locations": [
+        "test/coverage.jl:53-55",
+        "test/coverage.jl:59-64"
+      ],
+      "before": "code = replace(text, r\"//[^\\n]*\" => \"\", r\"/\\*.*?\\*/\"s => \"\")\n        @test iseven(count(==('`'), code))",
+      "after": "@test !occursin(r\"(?<!\\\\)`[^`\\n\\$,)}]{1,60}(?<!\\\\)`\", code)",
+      "why_it_matters": "Ran the pattern on minimal, entirely valid JavaScript: `const banner = `ready`` -> flagged, `log(`ok`)` -> flagged, `const p = `dir/sub`` -> flagged, `x = `a b c`` -> flagged; only an interpolating literal such as `${x}/y` escapes. The rule the test enforces is therefore `no template literal under 61 characters without a ${} in it`, in every `instruments/*/workflow/*.js`, for every future edit — where the defect it was written for is `a Markdown code span in PROMPT PROSE must be backtick-escaped`. Nothing in the assertion distinguishes prose from code, so the next author who writes a short template literal gets a red test with the message `a bare code span in a Workflow prompt`.",
+      "justified": "unclear",
+      "description": "The regression itself is real and the both-directions twin is correct (I ran it: unescaping hunt.js yields 13 matches, and the pre-existing even-backtick check passes on that broken file, so a second check was genuinely needed). The concern is scope: the assertion bans a legal construct rather than detecting the one that breaks the template literal. A narrower shape — a bare pair inside a template literal, or a pair whose contents look like a path or flag — would catch the defect without conscripting all future JS.",
+      "evidence": "measured: `\"const banner = `ready`\\n\" -> flagged=true`, `\"log(`ok`)\\n\" -> flagged=true`, `\"x = `a b c`\\n\" -> flagged=true`, `\"const q = `${x}/y`\\n\" -> flagged=false`; test/coverage.jl comment `The shape here is a bare pair on one line holding a short run with no interpolation and no JS punctuation`."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "SCAN.SIBLING_LINK gained a second, hard-tier hit class, so a page that links a sibling package twice now fails the docs build where it passed",
+      "locations": [
+        "src/Scans/sibling_link.jl:18-30",
+        "catalog/scans.toml SCAN.SIBLING_LINK (tier hard)"
+      ],
+      "before": "            ok = m !== nothing && m.offset <= first(o) <= m.offset + ncodeunits(m.match)\n            ok || push!(hits, Hit(file, n, \"first mention of `$name` is not a link to $site: \" * strip(raw)))\n            break",
+      "after": "            if !seen\n                seen = true\n                linked || push!(hits, Hit(file, n, \"first mention of `$name` is not a link to $site: \" * strip(raw)))\n            elseif linked\n                push!(hits, Hit(file, n, \"later mention of `$name` is a link, not a bare code span: \" * strip(raw)))\n            end",
+      "why_it_matters": "Ran both versions over the same planted page whose first AND second mention of `GBGPeriodicFields` are correct links: base 0 hits, head 1 hit — `later mention of `GBGPeriodicFields` is a link, not a bare code span`. SCAN.SIBLING_LINK is tier `hard`, so this is exit 1 from `gbg scan docs` and an `error()` out of the `makedocs` wrapper. The tool's own corpus is clean (0 hits at both base and head, population 271), but the four consumers' corpora were written against a scan that stopped at the first mention, and this lands in the pin they adopt with `gbg bump`. Nothing in the diff announces the new class — no CHANGELOG entry, and the scan catalogue row is unchanged.",
+      "justified": "yes",
+      "description": "The second half of RULE.DOC.SIBLING_LINK (`later mentions are bare`) was always in the rule and in RULES.toml's statement; the scan simply never enforced it, and closing that gap is right. The audit concern is only that a hard-tier scan gained a hit class that will fire on previously-green consumer corpora, in a change set that reads as documentation work, with no note of the migration cost.",
+      "evidence": "measured on a planted page with two identical correct links: BASE `SIBLING_LINK: pop=1 hits=0`, HEAD `SIBLING_LINK: pop=1 hits=1 … later mention of `GBGPeriodicFields` is a link, not a bare code span`."
+    }
+  ]
+}

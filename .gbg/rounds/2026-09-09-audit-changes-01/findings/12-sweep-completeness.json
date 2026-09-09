@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-audit-changes-01",
+  "lane": "sweep-completeness",
+  "verdict": "CONCERNS",
+  "checked": [
+    "RULE.DOC.HOME_ORDER reorder (caveats moved from item 4 to item 7/last) — grepped 'caveats' across the whole non-.gbg tree: policy/docs-rubric.md, policy/RULES.toml, catalog/hats/doc-policy.toml, catalog/hats/structure-consistency.toml, docs/ARCHITECTURE.md all agree at HEAD — sweep complete in tracked source",
+    "docs/ARCHITECTURE.md D11 'Eighteen schemas' -> 'Sixteen schemas' (with lane-file/hunt-candidate dropped from the list) against IMPLEMENTATION.md's own two schema-count statements, and against the actual schema/*.schema.json file count (16)",
+    "RULE.TEX.MATHBF policy addition ('\\mathbf{1} ... admitted in every package whatever that list holds') against src/Scans/mathbf.jl's comment and code (push!(allowed, \"\\\\mathbf{1}\"))",
+    "src/GBGCodingTools.jl's new glossary block (instrument, round, lane, hat, Workflow, gate) against every other site in src/ that explains one of these same terms inline, via grep for the defining phrases ('one of the four review procedures', 'one run of one instrument', 'one persona of the', \"one agent's share of a round\", 'workflow/*.js script') — Witnesses.jl, RoundFiles.jl, Rounds.jl, Schema.jl, DocLints.jl, Gate.jl, Preflight.jl (resolve_hunt/resolve_hats callers)",
+    "TestHarness.jl audit() 'a frozen count above its ideal' -> 'differing from its ideal' against other occurrences of 'frozen count'/'above its ideal' in the tree — no other site states it",
+    "Rounds.jl prepare()'s DEAD-scan guard change (added `&& isempty(r.hits)`) against Scan.jl's report() guard (the comment claims 'the same guard `report` uses') — grepped 'population == 0' across the tree: Scan.jl (x2) and Rounds.jl now agree",
+    "policy/RULES.toml: every one of the 93 [[rule]] entries now carries a 'check' field (scripted check via python re) — no rule left without one",
+    "schema/exemptions.schema.json reason minLength 24->40 against schema/reproduction.schema.json's unrelated disposition.reason (still 24, but a different field/concept, not a sweep target)",
+    "catalog/hats/latex-typesetter.toml's needs=[\"source\",\"rulebook\"]->[\"source\"] against the other three hats (doc-policy, invariants-and-decisions, naming-policy) that keep needs=[...,\"rulebook\"] — each of those three actually uses the {package.rulebook_sections} placeholder in its persona text, so the removal was correctly scoped to the one hat that never did",
+    "instruments/*/workflow/*.js: the new '--glob \\'!.gbg/**\\'' grep-scoping caution added to hunt.js and panel.js in this diff, grepped against every other workflow/*.js file that grants the agent broad Bash/Read access to the repo tree next to .gbg/ round data (dismissals.js, audit.js, attack-design.js, verify-architecture.js, verify-act.js, verify-state.js, lanes.js, rubric-audit.js, severity-recheck.js)",
+    "docs/src/guide/install.md's new fixture-routing paragraph against docs/ARCHITECTURE.md's SELF.CONSUMER / D15 fixture description — consistent, not a duplicate needing a sweep"
+  ],
+  "candidates_found": 3,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "New .gbg/-containment grep-scoping guard swept into 2 of ~9 workflow scripts that need it",
+      "locations": [
+        "instruments/bug-hunt/workflow/hunt.js:74 (fixed)",
+        "instruments/check-consistency/workflow/panel.js:88 (fixed)",
+        "instruments/bug-hunt/workflow/dismissals.js:38 (left behind, edited in this same diff)",
+        "instruments/audit-changes/workflow/audit.js:71 (left behind, edited in this same diff)",
+        "instruments/audit-changes/workflow/attack-design.js:47 (left behind)",
+        "instruments/bug-hunt/workflow/verify-architecture.js:39 (left behind)"
+      ],
+      "before": "hunt.js (base): \"Read the source. Follow the data. Ask, of each thing you read, what would have to be true for it to be correct, and then check whether it is.\" — no grep-scoping guidance anywhere in the sibling scripts either.",
+      "after": "hunt.js (head): \"Nothing under `.gbg/` or `~/.gbg/` is yours to open but the files this prompt names; scope every grep with `--glob '!.gbg/**'`.\"; panel.js (head) adds the identical \"scope every search with `--glob '!.gbg/**'`\" to its git/grep grant. Every other workflow script that grants the same broad Bash/Read access over the repo tree — including two others touched in this very diff (dismissals.js, audit.js) — still reads only the older, weaker prohibition: dismissals.js:38 \"Read the CURRENT tree at ${A.repo} (nothing else under .gbg/, never ~/.gbg/)\"; audit.js:71 \"FILES UNDER .gbg/ YOU MAY OPEN — exactly these, with Read, and nothing else under .gbg/ or ~/.gbg/\" (a bare list + prohibition, no grep-scoping technique).",
+      "why_it_matters": "These scripts hand an agent with live Grep/Bash access instructions to read \"the current tree\"/\"the source\" broadly right next to a `.gbg/rounds/` tree that holds prior rounds' verdicts and findings — an answer key for the very task being re-run. The fix in hunt.js/panel.js exists because a bare textual prohibition is not enough for an agent wielding an unscoped `grep -r`: a single broad search silently sweeps in `.gbg/` content. This is not hypothetical — running this exact audit, a broad `grep -rn \"caveats\" .` (no `--glob` exclusion) surfaced verbatim excerpts from `.gbg/rounds/2026-09-09-check-docs-02/verdicts/*.json`, i.e. a prior round's answer key for the identical HOME_ORDER question this diff touches. audit.js and dismissals.js grant an agent the same unscoped power and were edited in this same diff without picking up the mitigation their sibling files received.",
+      "justified": "no",
+      "description": "This diff adds a concrete, actionable `--glob '!.gbg/**'` grep-scoping instruction to two workflow scripts (RULE.DOC.CLASS_SWEEP: \"a flagged instance is a sample of a class; fix the class, not the line\") but the class — every workflow script that grants broad tree-read access adjacent to `.gbg/` round data — has at least four other members, two of which (dismissals.js, audit.js) were touched in this identical diff for unrelated reasons and left with the older, weaker wording.",
+      "evidence": "hunt.js:74 \"scope every grep with `--glob '!.gbg/**'`\"; panel.js:88 \"scope every search with `--glob '!.gbg/**'`\"; dismissals.js:38 \"Read the CURRENT tree at ${A.repo} (nothing else under .gbg/, never ~/.gbg/) and decide:\"; audit.js:71 \"FILES UNDER .gbg/ YOU MAY OPEN — exactly these, with Read, and nothing else under .gbg/ or ~/.gbg/:\""
+    },
+    {
+      "type": "structure",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "New module-level glossary duplicates its own 'hat' definition verbatim, unlinked, in the one sibling site the same diff didn't sweep",
+      "locations": [
+        "src/GBGCodingTools.jl:20 (new canonical definition)",
+        "src/CLI/Preflight.jl:200 (new, unlinked duplicate, same diff)",
+        "src/Witnesses.jl:13, src/CLI/RoundFiles.jl:7, src/CLI/Rounds.jl:9,128, src/CLI/Schema.jl:41-42, src/DocLints.jl:11-12, src/CLI/Gate.jl:15-16 (sibling terms correctly linked back)"
+      ],
+      "before": "Preflight.jl's resolve_hats docstring (base) had no standalone sentence defining \"hat\" at all — it went straight from the arguments to \"Each hat carries `key`; `substrate`, which view of the corpus...\".",
+      "after": "This diff adds, verbatim, to Preflight.jl:200: \"A hat is one persona of the `check-consistency` panel, reading the corpus from a single standpoint.\" — the identical sentence (module-glossary capitalisation aside) added as the canonical, \"bound once here\" definition of **hat** in src/GBGCodingTools.jl:20. Every other term the same new glossary defines (instrument, round, lane, Workflow) was, in this same diff, wired at its pre-existing explanation site to read \"...(one of the four review procedures [`GBGCodingTools`](@ref) binds)\" or \"...bound in [`GBGCodingTools`](@ref)\" instead of restating the definition — e.g. Witnesses.jl:13, RoundFiles.jl:7, Rounds.jl:9, Schema.jl:41-42, DocLints.jl:11-12, Gate.jl:15-16. \"hat\" is the one term in the new glossary whose only other explanation site got the same duplicate sentence with no backlink.",
+      "why_it_matters": "The package's own rule for this exact situation (RULE.DOC.TERMS_DEFINED: \"a term of art is defined in a clause or @ref-linked on first use\") and its self-application discipline (this diff's own pattern, applied to every sibling term) is broken for the one instance it missed: a reader hitting Preflight.jl first sees a second, silently-duplicated 'canonical' definition with no pointer to the actual home, so the two copies can drift the next time either is edited — the exact failure RULE.DOC.CLASS_SWEEP exists to prevent, in the very diff that added a rule about rules needing checks.",
+      "justified": "no",
+      "description": "The diff establishes one canonical home for \"hat\" (and five sibling terms) in the module docstring and sweeps every other explanation site to @ref back to it — except the one other site (Preflight.jl:200) that states the identical sentence, which it added fresh in this same diff without the backlink the sibling terms all received.",
+      "evidence": "src/GBGCodingTools.jl:20 \"A **hat** is one persona of the `check-consistency` panel, reading the corpus from a single standpoint.\"; src/CLI/Preflight.jl:200 \"A hat is one persona of the `check-consistency` panel, reading the corpus from a single standpoint.\" (no @ref, no mention of GBGCodingTools); contrast src/CLI/Schema.jl:41-42 \"A Workflow is the instrument's `workflow/*.js` script and a lane is one agent's share of the round it runs, both bound in [`GBGCodingTools`](@ref).\""
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "IMPLEMENTATION.md still claims 'eighteen schemas' and names two files this diff's own D11 rewrite says don't exist",
+      "locations": [
+        "IMPLEMENTATION.md:143",
+        "IMPLEMENTATION.md:430-431",
+        "docs/ARCHITECTURE.md:625 (fixed in this diff)"
+      ],
+      "before": "docs/ARCHITECTURE.md (base) D11: \"**Choice.** Eighteen schemas: `schema/{config,exemptions,hat,round,pass,lane-file,finding,verdict-act,verdict-state,tally,hunt-candidate,reproduction,dismissal,architecture-fix,audit,ground-truth,import,managed}.schema.json`.\"",
+      "after": "docs/ARCHITECTURE.md (head) D11: \"**Choice.** Sixteen schemas: `schema/{config,exemptions,hat,round,pass,finding,verdict-act,verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import,managed}.schema.json`. ... the lane-file wrapper and `bug-hunt`'s candidate-file shape live inline in each instrument's own `schema.json`, not as files under `schema/`.\" IMPLEMENTATION.md, untouched by this diff, still reads (line 143) \"...the eighteen schemas, the four instruments' protocols...\" and (lines 430-431) \"`schema/*.schema.json`: the eighteen of §2 D11 — `config, exemptions, hat, round, pass, lane-file, finding, verdict-act, verdict-state, tally, hunt-candidate, reproduction, dismissal, architecture-fix, audit, ground-truth, import, managed`\" — naming `lane-file` and `hunt-candidate` as separate schema files that (per this diff's own explanation) never correspond to files under `schema/` as such.",
+      "why_it_matters": "IMPLEMENTATION.md is the tracked build plan a session is told to follow (CLAUDE.md: \"the build plan is `IMPLEMENTATION.md`\"), not frozen provenance like `docs/design-record/`. A maintainer or a future session reading it to check what schemas exist is pointed at two filenames (`schema/lane-file.schema.json`, `schema/hunt-candidate.schema.json`) that are not in the tree and a count (18) the sibling rationale document was just corrected away from in this same diff.",
+      "justified": "no",
+      "description": "The diff corrects the stale 'eighteen schemas / lane-file / hunt-candidate' claim in docs/ARCHITECTURE.md but leaves the identical claim, word for word in substance, standing in IMPLEMENTATION.md — a live document, not a frozen design-record entry.",
+      "evidence": "IMPLEMENTATION.md:142 \"...the engines and the catalogued scans, the templates and policy layer, the eighteen schemas, the\"; IMPLEMENTATION.md:430-431 \"`schema/*.schema.json`: the eighteen of §2 D11 — `config, exemptions, hat, round, pass, lane-file, finding, verdict-act, verdict-state, tally, hunt-candidate, reproduction, dismissal, architecture-fix, audit, ground-truth, import, managed` — closed enums of §6.3\"; `ls schema/*.schema.json | wc -l` = 16, and neither `lane-file.schema.json` nor `hunt-candidate.schema.json` exists in the tree."
+    }
+  ]
+}

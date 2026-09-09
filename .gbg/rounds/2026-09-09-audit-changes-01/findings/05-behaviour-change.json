@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-audit-changes-01",
+  "lane": "behaviour-change",
+  "verdict": "CONCERNS",
+  "candidates_found": 14,
+  "checked": [
+    "Read diff.patch (4538 lines) in full, then re-read every code hunk against the working tree; extracted the complete set of NON-docstring changed lines with `git diff -U0 -- src ext test` filtered to indented code, to be sure no computation edit was hidden among the ~900 lines of docstring reflow.",
+    "src/Scans/args_form.jl — the parameter-list extraction (findlast(')') -> depth-matched close paren), the splat append into pos/kw, ARGS_BULLET String -> Regex, ARGS_PROSE Regex whitespace class, `The fields are:` String -> Regex; traced `wants_bullets` for Config.resolve_anchor, DocLints.makedocs, TestHarness.audit, Reflection.argcov at BASE and HEAD; checked Reflection.IDENT (anchored ^...$) to confirm signature_parameters really drops splats and the append! does not double-count an ordinary parameter.",
+    "src/Scans/sibling_link.jl — the loop rewrite: `break` after the first mentioning line replaced by a full pass with `seen`; confirmed SCAN.SIBLING_LINK tier = \"hard\", surfaces = [\"all\"] in catalog/scans.toml (catalog/scans.toml is UNCHANGED in this window), and read RULE.DOC.SIBLING_LINK at base and head (identical text).",
+    "src/Scans/mathbf.jl — `push!(allowed, \"\\\\mathbf{1}\")`; cross-read policy/latex-idiom.md RULE.TEX.MATHBF at base and head, RULE.TEX.MATHBB, schema/config.schema.json notation.mathbf_allowed default, and fixture/GBG Fixture/.gbg/config.toml.",
+    "src/Scan.jl report() both DEAD guards and src/CLI/Rounds.jl:169 prepare()'s mirror — traced the exit-code path (hard branch assigns code = 2 outright, FAIL branch does max(code,1)) and which scan can reach population==0 with hits.",
+    "src/Scans/field_docs.jl — `checked += 1` moved above the `documented === nothing` continue; paired it with the report() guard change to establish the before/after exit code for a corpus whose structs carry no fields list.",
+    "src/Reflection.jl signature_fidelity — `examined[] += 1` moved below the `:extension` early-continue; read the base docstring (\"how many bindings were actually compared, which is the scan's population\") to fix the norm at base.",
+    "src/CLI/Rounds.jl bank() — the new core-finding validation loop; compared schema/finding.schema.json's property set and minLengths against $defs/finding and $defs/hunt_finding in all four instruments/*/schema.json to work out what the projection can actually reject; checked RoundError is caught (Rounds.jl:668, Audit.jl:73) so the throw is exit 2, not exit 3.",
+    "src/CLI/Rounds.jl classify_lane — `p * \".rejected.json\"` -> `replace(p, \".json\" => \".rejected.json\")`; checked against the ARCHITECTURE D10 name `NN-<lane>.rejected.json` and looked for any readdir over the findings/ directory that the new name could newly match (none).",
+    "src/CLI/Rounds.jl import_empty — the new load_schema(\"import\") validation before writing import.json.",
+    "src/CLI/Recall.jl suspect_hats — proved `h[\"substrate\"] != \"siteonly\" || s[\"page\"] in site_pages` and `substrate == \"siteonly\" ? seed[\"page\"] in site_pages : true` are the same predicate: pure refactor, seed sets unchanged.",
+    "schema/exemptions.schema.json, schema/managed.schema.json, schema/tally.schema.json — normalised both revisions to JSON and diffed them structurally (the three files' 645 patch lines are almost entirely key reordering); the only semantic deltas are reason.minLength 24->40 and files/per_id additionalProperties true -> $ref entry. Traced each to its loader: Ledger.read (throws LedgerError), Sync.read_sidecar (throws SyncError), Passes.jl:318 (throws RoundError).",
+    "src/Scans/prose_shape.jl and src/Scans/code_in_math.jl — byte-compared the code below the header comment at base and head: IDENTICAL. Both hunks are comment-only, and the in-function comment `The caps bind ALWAYS on a docstring ... a baselined page section is held by the ratchet alone` was already there at base, so the ARCHITECTURE §12.B and header rewrites are currency, not a silent loosening.",
+    "src/CLI/Fleet.jl rows() and src/CLI/Doctor.jl select() — the docstrings changed the stated meaning of `deep`; read the code (`Doctor.run(cfg; only = deep ? nothing : [\"QUICK\"], deep)` and `select`) to confirm HEAD's wording is the correction and BASE's was wrong. No behaviour change.",
+    "src/CLI/Config.jl check_paths — read the function in full against the base and head docstrings and the base/head ARCHITECTURE CFG.SURFACES row.",
+    "src/CLI/Main.jl parse_options — docstring now says `--name=value` is a value whatever `valued` says; no code hunk exists for parse_options, so this is a doc correction, not a parsing change.",
+    "policy/docs-rubric.md RULE.DOC.HOME_ORDER, policy/RULES.toml statement+sentinel, catalog/hats/doc-policy.toml and catalog/hats/structure-consistency.toml personas — all four moved caveats from position (4) to position (7) in the same commit.",
+    "instruments/audit-changes/workflow/audit.js schemaFor(lane), instruments/check-consistency/workflow/rubric-audit.js orphaned/tally.MISSED++, instruments/bug-hunt/workflow/hunt.js and check-consistency/workflow/panel.js prompt additions, instruments/bug-hunt/schema.json ($defs.finding deleted, findings items -> $ref hunt_finding).",
+    "test/coverage.jl (the new bare-backtick assertion and its both-directions twin) and test/schemas.jl (the schema-is-loaded test tightened, the new core-schema testset, the new RULE_WITH_CHECK testset) — read as claims, not as the standard.",
+    "docs/prose_shape.csv — inspected the re-baselined rows (page units and docstring units both grew, e.g. ARCHITECTURE §12.A 2915->2936, GBGCodingTools.jl module docstring 260->376) and confirmed against the scan code that a baselined page unit is cap-exempt, so the raised rows are a ratchet re-baseline, not a cap escape.",
+    "catalog/scans.toml, instruments/audit-changes/schema.json, CHANGELOG.md — confirmed NOT in the change set."
+  ],
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "SCAN.ARGS_FORM now parses a different parameter list and counts splats, inverting its verdict on docstrings that were clean",
+      "locations": [
+        "src/Scans/args_form.jl:20-43 (the depth-matched close paren and the splat append)",
+        "src/Scans/args_form.jl:7 (ARGS_BULLET String -> Regex)"
+      ],
+      "before": "o = findfirst('(', sig); c = findlast(')', sig)\n(o === nothing || c === nothing || c <= o) && continue        # no argument list to judge\npos, kw = Reflection.signature_parameters(sig[nextind(sig, o):prevind(sig, c)])",
+      "after": "o = findfirst('(', sig); c = nothing; depth = 0 … [depth-matched scan to the closing paren] …\ninside = sig[nextind(sig, o):prevind(sig, c)]\npos, kw = Reflection.signature_parameters(inside)\nsemi = findfirst(';', inside)\nsplats(s) = [String(m.match) for m in eachmatch(r\"[A-Za-z_][A-Za-z0-9_]*\\.\\.\\.\", s)]\nappend!(pos, splats(semi === nothing ? inside : inside[1:prevind(inside, semi)]))\nsemi === nothing || append!(kw, splats(inside[nextind(inside, semi):end]))",
+      "why_it_matters": "SCAN.ARGS_FORM is a fleet scan over `src` and `ext`. Its verdict flips in BOTH directions for docstrings that were valid before, and the tool's own corpus was rewritten to the new answer in the same commit, so the change certifies itself. Concrete cases in this very tree: (a) `Config.resolve_anchor(root, anchor) -> (file, line, count)` — at base `findlast(')')` swallowed the return tuple, so `inside` was \"root, anchor) -> (file, line, count\" and `signature_parameters` returned FOUR positionals, so `wants_bullets` was true and the prose docstring was a HIT; at head `inside` is \"root, anchor\", two positionals, `wants_bullets` false, and the SAME prose docstring is clean — while a 2-argument function that HAD been converted to bullets to satisfy the old reading is now a HIT for \"bind them in running prose, not bullets\". (b) `GBGCodingTools.makedocs(cfg; kwargs...)` — at base the splat was dropped by `Reflection.IDENT` (anchored `^…$`), so pos=1, kw=0, `wants_bullets` false and its bulleted docstring was a HIT; at head kw=[\"kwargs...\"] makes `wants_bullets` true and it is clean. A consumer that bumps across this version gets a different SCAN.ARGS_FORM hit list over an unchanged corpus, with no note anywhere that the reading changed. The splat regex is also wider than the defect: `TestHarness.audit(operation!, name, rows::Traffic...; print = false)` yields pos=[\"operation!\",\"name\",\"rows\"] from `signature_parameters` and then ALSO appends \"Traffic...\" from the type annotation, so a three-parameter signature is reported as four, and an `f(a, b::T...)` pair crosses the threshold 3 that decides the verdict.",
+      "justified": "unclear",
+      "description": "Two independent widenings landed in one edit. The close-paren fix is warranted (the base `findlast(')')` genuinely mis-parsed any signature with a parenthesised return or a parenthesised default) and its comment names the defect. The splat append is a separate rule reading — that `args...`/`kwargs...` counts toward the threshold and, as a keyword splat, forces the bulleted form on its own — that RULE.DOC.ARGS_FORM does not state (the rule says \"three or more arguments, or any keyword argument\"; whether a keyword SPLAT is \"a keyword argument\" is the judgement being silently made here). Neither the rule text nor the fixture case `wrong-args-form` was touched, so nothing outside the scan records the new reading, and the splat regex matches the type of a typed splat as well as the splat itself.",
+      "evidence": "diff: `-        o = findfirst('(', sig); c = findlast(')', sig)` / `+        semi = findfirst(';', inside)` / `+        splats(s) = [String(m.match) for m in eachmatch(r\"[A-Za-z_][A-Za-z0-9_]*\\.\\.\\.\", s)]`. Reflection.jl:98 `const IDENT = r\"^[A-Za-zα-ωΑ-Ω_][A-Za-z0-9_!α-ωΑ-Ω̂]*$\"` (anchored, so a splat never survived signature_parameters). catalog/scans.toml is unchanged: `id = \"SCAN.ARGS_FORM\" / rule = \"RULE.DOC.ARGS_FORM\" / tier = \"triage\"`."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "SCAN.SIBLING_LINK, a hard scan, now also fails a LATER linked mention — prose that passed before now blocks the docs build",
+      "locations": [
+        "src/Scans/sibling_link.jl:26-37"
+      ],
+      "before": "for (n, raw) in lines\n    o = findfirst(name_re, raw); o === nothing && continue\n    m = match(link_re, raw)\n    ok = m !== nothing && m.offset <= first(o) <= m.offset + ncodeunits(m.match)\n    ok || push!(hits, Hit(file, n, \"first mention of `$name` is not a link to $site: \" * strip(raw)))\n    break\nend",
+      "after": "seen = false\nfor (n, raw) in lines\n    …\n    if !seen\n        seen = true\n        linked || push!(hits, Hit(file, n, \"first mention of `$name` is not a link to $site: \" * strip(raw)))\n    elseif linked\n        push!(hits, Hit(file, n, \"later mention of `$name` is a link, not a bare code span: \" * strip(raw)))\n    end\nend",
+      "why_it_matters": "SCAN.SIBLING_LINK is tier `hard` over surfaces `all` (catalog/scans.toml, unchanged), so its hits are the MUST BE EMPTY block: exit 1 from `gbg scan docs`, and `makedocs` runs the hard scans in-process and `error()`s on a non-zero return. Any page, rationale document or docstring in ANY of the five consumers that links a sibling package twice in one unit — a fleet table, a page that links in the lead and again in a later section, a docstring that repeats a `[`GBGPeriodicFields`](https://…)` link — passed every previous version of this scan (the `break` guaranteed at most one hit per name per unit, and only for the FIRST mention) and now fails a hard scan and takes the docs build down with it. The corpus that has to absorb this is frozen: the four consumers are not migrated until Phase 4-7, so the first thing they meet on `gbg bump` is a red build over prose nobody changed.",
+      "justified": "yes",
+      "description": "The second half of RULE.DOC.SIBLING_LINK (\"Later mentions in the same unit are bare code spans\") was genuinely unenforced, and the rule text is IDENTICAL at base and head — this is a real gap being closed, not a rule invented to justify an edit. The concern is not the fix but its shape: it turns a previously unreachable half of a HARD scan on, fleet-wide, in a window whose diffstat is otherwise docstring reflow, with no CHANGELOG entry in the change set (CHANGELOG.md is not in the diff) stating the widened scan, and with the scan's fixture still carrying only the one direction (`fixture = [\"bare-sibling\"]`), so the new branch has no positive case proving it fires only where it should.",
+      "evidence": "diff: `-            ok || push!(hits, Hit(file, n, \"first mention of ...\"))` / `-            break` replaced by `+        seen = false` … `+            elseif linked` / `+                push!(hits, Hit(file, n, \"later mention of `$name` is a link, not a bare code span: \" * strip(raw)))`. `git show <base>:policy/docs-rubric.md` and the head file both read \"Later mentions in the same unit are bare code spans, and a package never links its own name.\" catalog/scans.toml: `id = \"SCAN.SIBLING_LINK\" / tier = \"hard\" / surfaces = [\"all\"] / fixture = [\"bare-sibling\"]`."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "exemptions.schema.json reason minLength 24 -> 40 turns a doctor FAIL into a thrown LedgerError in every verb that reads the ledger",
+      "locations": [
+        "schema/exemptions.schema.json:61 (reason.minLength)",
+        "src/CLI/Ledger.jl:37-38 (the throwing loader)"
+      ],
+      "before": "\"reason\": { \"minLength\": 24, \"description\": \"≥ 40 chars on scope finding — CFG.EXEMPTIONS checks the longer bound\" }",
+      "after": "\"reason\": { \"minLength\": 40, \"description\": \"at least 40 characters, as CFG.EXEMPTIONS enforces for every entry: what is declined and why\" }",
+      "why_it_matters": "A consumer's `.gbg/exemptions.toml` carrying an entry whose reason is 24-39 characters LOADED before: `Ledger.read` returned the entries, `Sync.slots`/`plan`/`render_policy` and `Scan.apply_ledger` worked, and the single consequence was one named doctor line — `CFG.EXEMPTIONS FAIL: <id>@<target>: reason shorter than 40 characters` (Doctor.jl, unchanged: `length(e[\"reason\"]) >= 40 || push!(errs, …)`). After this edit the same file makes `Ledger.read` throw `LedgerError`, and `Ledger.read(cfg)` is the DEFAULT keyword of `Sync.sync`, `Sync.plan`, `Sync.status`, `Sync.slots` and `Scan.run_scan`. So the failure moves from a reportable check to an exception in `gbg sync`, `gbg scan docs` and everything downstream, and the diagnosis changes from one line naming the entry to a schema error. The artefact's `schema_version` is untouched and no migration note accompanies the tightened bound.",
+      "justified": "unclear",
+      "description": "Aligning the schema with the check CFG.EXEMPTIONS already enforced is defensible, and the old description explicitly recorded the split (\"CFG.EXEMPTIONS checks the longer bound\"), so the 24 was deliberate, not an oversight: the schema was the permissive gate and the doctor the strict one, on purpose, so that a too-short reason was REPORTED rather than fatal. Collapsing the two removes the reporting path. If the tightening is wanted, the ledger loader is the place that should keep degrading gracefully — or the change belongs in a release note, since it rejects a consumer file that was valid under every previous pin.",
+      "evidence": "Structural JSON diff of the two revisions: `/properties/exemption/items/properties/reason/minLength 24 -> 40`. src/CLI/Ledger.jl:37-38 `errs = validate(load_schema(\"exemptions\"), doc)` / `isempty(errs) || throw(LedgerError(\"$path is invalid:\\n  \" * join(errs, \"\\n  \")))`. Base Doctor.jl CFG.EXEMPTIONS: `length(e[\"reason\"]) >= 40 || push!(errs, \"$tag: reason shorter than 40 characters\")` — unchanged in this window."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "SCAN.MATHBF now admits \\mathbf{1} unconditionally, so notation.mathbf_allowed no longer controls the scan it names",
+      "locations": [
+        "src/Scans/mathbf.jl:6",
+        "policy/latex-idiom.md:59-60 (the rule amended in the same commit)"
+      ],
+      "before": "allowed = Set(String.(cfg[\"notation\"][\"mathbf_allowed\"]))",
+      "after": "allowed = Set(String.(cfg[\"notation\"][\"mathbf_allowed\"])); push!(allowed, \"\\\\mathbf{1}\")",
+      "why_it_matters": "A consumer that set `notation.mathbf_allowed` to a list NOT containing `\\mathbf{1}` — the package with `notation.vectors = \"none\"` and no indicator in its math is the obvious one, and the config key exists precisely so a package can name its own list — got a hard SCAN.MATHBF hit on every `\\mathbf{1}` before this edit and gets none after. The same edit changes what the config key means: `notation.mathbf_allowed` is documented as \"an agreed list of strings\" and is now an ADDITIVE list with one member the consumer cannot remove. That is a change to a config surface's semantics, made in code, with the rule text amended alongside it in the same commit rather than in its own release — and the config schema is untouched, so nothing tells a consumer reading `schema/config.schema.json` that one entry is now non-withholdable.",
+      "justified": "yes",
+      "description": "The substantive claim is sound: RULE.TEX.MATHBB does name `\\mathbf{1}` as the indicator and identity, so a package banning it contradicts a sibling rule, and the config schema's own default already lists it. The concern is scope and channel — a config key's meaning narrowed in the scan body while the rule paragraph is edited in the same commit that ships the scan, which is the shape the package's own invariant forbids (\"Instruments are frozen mid-round: a change to a scan … is its own commit and its own release\"). A reader of the ledger cannot exempt their way back either: the hit no longer exists to exempt.",
+      "evidence": "diff: `-    allowed = Set(String.(cfg[\"notation\"][\"mathbf_allowed\"]))` / `+    allowed = Set(String.(cfg[\"notation\"][\"mathbf_allowed\"])); push!(allowed, \"\\\\mathbf{1}\")`. policy/latex-idiom.md gains, in the same commit: `+outside the admitted list. \\`\\\\mathbf{1}\\`, the indicator and identity of \\`RULE.TEX.MATHBB\\`, is admitted in` / `+every package whatever that list holds; it is not a package's to withhold.` schema/config.schema.json notation.mathbf_allowed default is `[\"\\\\mathbf{1}\"]` — unchanged."
+    },
+    {
+      "type": "structure",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "RULE.DOC.HOME_ORDER reorders the docstring skeleton fleet-wide: a docstring that obeyed the rule now violates it",
+      "locations": [
+        "policy/docs-rubric.md:11-18 (RULE.DOC.HOME_ORDER)",
+        "policy/RULES.toml:18-24 (statement + sentinel)",
+        "catalog/hats/doc-policy.toml:9",
+        "catalog/hats/structure-consistency.toml:5"
+      ],
+      "before": "A function docstring is ordered: identity, when-to-use, arguments, caveats, one formula, citation, links.\n… (4) the caveats a user needs, as an admonition where load-bearing; (5) one formula …; (6) an inline citation …; (7) cross-links.",
+      "after": "A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats.\n… (4) one formula …; (5) an inline citation …; (6) cross-links; (7) the caveats a user needs, as an admonition where load-bearing — the last substantive block, before the fields list.",
+      "why_it_matters": "This is the fleet's binding docstring order, rendered into every consumer's `.gbg/policy/docs-rubric.md` at the version it pins, cited by `/check-docs` and `/check-consistency` and used as law by the `doc-policy` hat. Every docstring in the four science packages that today places its caveat admonition immediately after the arguments — which the rule at BASE required, position (4) — becomes an outlier the moment its package bumps: the `doc-policy` persona was rewritten in the same commit to \"the caveats as admonitions LAST\", and the `structure-consistency` persona's inferred template with it, so both hats will now report the previously-correct arrangement as the divergence. The rule's own `check` is `[\"weakness\"]` — nothing mechanical catches it either way — so the whole cost lands on review rounds whose findings against the two orders are not comparable.",
+      "justified": "unclear",
+      "description": "Nothing in the change set says WHY the order moved; the reorder arrives with no defect it repairs and no note in the diff (CHANGELOG.md is not in the change set). It is a MINOR-or-worse policy change by the package's own reckoning — the rendered policy is a managed file in every consumer and `LEG.SENTINELS` matches the sentinel verbatim, and the sentinel changed too, so a consumer `CLAUDE.md` that restated the old sentence is affected. Reordering the rule and both hat personas in the same commit means no round can ever be graded against the old order again to see which reading the corpus was written to.",
+      "evidence": "diff policy/docs-rubric.md: `-A function docstring is ordered: identity, when-to-use, arguments, caveats, one formula, citation, links.` / `+A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats.` diff policy/RULES.toml: `-sentinel = \"A function docstring is ordered: identity, when-to-use, arguments, caveats, one formula, citation, links.\"` / `+sentinel = \"A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats.\"` / `+check = [\"weakness\"]`. diff catalog/hats/doc-policy.toml: `-… EVERY argument enumerated FROM THE SIGNATURE, caveats as admonitions, then the formula, then the citation)` / `+… EVERY argument enumerated FROM THE SIGNATURE, then the formula, the citation, the cross-links, and the caveats as admonitions LAST, before any fields list)`."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "previously_worked": "yes",
+      "title": "managed.schema.json and tally.schema.json close their open maps, so a sidecar or tally that validated now throws",
+      "locations": [
+        "schema/managed.schema.json (properties.files.additionalProperties)",
+        "schema/tally.schema.json (properties.per_id.additionalProperties)",
+        "src/CLI/Sync.jl:503, src/CLI/Passes.jl:318"
+      ],
+      "before": "\"files\":   { \"type\": \"object\", \"additionalProperties\": true, … }\n\"per_id\":  { \"type\": \"object\", \"additionalProperties\": true, … }",
+      "after": "\"files\":   { \"type\": \"object\", \"additionalProperties\": { \"$ref\": \"#/$defs/entry\" }, … }\n\"per_id\":  { \"type\": \"object\", \"additionalProperties\": { \"$ref\": \"#/$defs/entry\" }, … }",
+      "why_it_matters": "`Sync.read_sidecar` already threw a `SyncError` on a sidecar that did not validate — but until now NOTHING under `files` was validated, so any `.gbg/managed.json` a previous tool version wrote passed. `$defs/entry` is `additionalProperties: false` with `template`, `version`, `sha256` all REQUIRED and `version` constrained to `X.Y.Z[-rc.N]|dev[+sha[-dirty]]`, so a sidecar carrying an extra recorded field, or one entry written before a field existed, now makes `gbg sync`, `gbg doctor` (MANAGED.HASH reads the sidecar) and every verb that plans managed files throw instead of reporting. The tally change is the same shape through `Passes.grade` (`throw(RoundError(\"tally.json would not validate\"))`), which reaches an ALREADY BANKED round: a round graded under an older tool and re-graded now can fail on its own recorded tally.",
+      "justified": "yes",
+      "description": "Wiring an already-written `$defs/entry` that nothing referenced is a real dead-schema fix and is consistent with the other \"the schema existed and nothing validated against it\" edits in this commit. What makes it a behaviour change rather than a no-op is that these two artefacts are PERSISTED consumer state written by earlier versions, not freshly built objects: unlike `import.json` and the banked-findings projection (both constructed in the same function that validates them), `managed.json` and `tally.json` come off disk. No migration, no `schema_version` bump and no fallback accompanies the tightening.",
+      "evidence": "Structural JSON diff: `/properties/files/additionalProperties True -> {\"$ref\": \"#/$defs/entry\"}` and `/properties/per_id/additionalProperties True -> {\"$ref\": \"#/$defs/entry\"}`. src/CLI/Sync.jl:503-504 `errs = validate(load_schema(\"managed\"), d)` / `isempty(errs) || throw(SyncError(...))` (present at BASE — only the schema moved). src/CLI/Passes.jl:318 `errs = validate(load_schema(\"tally\"), tally); isempty(errs) || throw(RoundError(\"tally.json would not validate: \" * join(errs, \"; \")))`."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "The DEAD guard now yields to hits: a scan that measured nothing but hit returns exit 1 instead of exit 2",
+      "locations": [
+        "src/Scan.jl:453 and src/Scan.jl:467 (report)",
+        "src/CLI/Rounds.jl:169 (prepare's mirror)",
+        "src/Scans/field_docs.jl:50 (the population that made it reachable)"
+      ],
+      "before": "if r.population == 0 && r.exempted == 0\n    println(io, \"  DEAD  \", …, \" measured nothing\", …)\n    code = 2\nelseif !isempty(r.hits)\n…\n-            if documented === nothing\n                 …\n-            checked += 1",
+      "after": "if r.population == 0 && r.exempted == 0 && isempty(r.hits)\n    println(io, \"  DEAD  \", …)\n    code = 2\nelseif !isempty(r.hits)\n…\n+            checked += 1                                          # every struct opened was checked\n+            if documented === nothing",
+      "why_it_matters": "The exit code IS the contract here (\"0 clean, 1 finding, 2 cannot evaluate; a log is never grepped for a verdict\"). A corpus in which no struct carries a `The fields are` list previously produced SCAN.FIELD_DOCS with population 0 and NOLIST hits: the report printed `DEAD … measured nothing`, SWALLOWED every hit, and returned 2 — `gbg scan docs` said \"cannot evaluate\". The same corpus now prints `FAIL SCAN.FIELD_DOCS n hit(s)` with every NOLIST line and returns 1. Any caller that branches on 2-versus-1 (the docs-build wrapper distinguishes them, and a session reading `gbg scan docs` follows the exit contract) takes a different branch on an unchanged corpus, and `gbg round prepare` stops printing its `prepare: DEAD scan …` line for that scan.",
+      "justified": "yes",
+      "description": "The fix is right and the two halves belong together — a scan that produced hits demonstrably measured something, and counting a struct as examined the moment it is opened is the honest population. It is reported here because it silently changes an exit code for input that was valid before, in a package whose stated invariant is that exit codes are the contract, and because the loud symptom it repairs (hits swallowed by the DEAD branch) is the same thing that hid the defect until now: nobody can tell from the outside which consumers were affected, since the swallowed hits were never printed.",
+      "evidence": "diff src/Scan.jl (twice): `-        if r.population == 0 && r.exempted == 0` / `+        # a scan that HIT measured something: its hits are never dropped by the dead branch` / `+        if r.population == 0 && r.exempted == 0 && isempty(r.hits)`. diff src/Scans/field_docs.jl: `+            checked += 1                                          # every struct opened was checked: a` / `+            if documented === nothing                                 # NOLIST hit with population 0 reads as a DEAD scan` / `-            checked += 1`. diff src/CLI/Rounds.jl:169 mirrors it."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "previously_worked": "yes",
+      "title": "signature_fidelity stops counting extension-homed bindings, so its population can now fall to zero and mark the scan DEAD",
+      "locations": [
+        "src/Reflection.jl:418-424"
+      ],
+      "before": "def === nothing && continue\nexamined === nothing || (examined[] += 1)                 # what was COMPARED: the scan's population\nif def === :extension\n    push!(out, \"$name: EXTENSION-HOMED (no methods loaded) — skipped\"); continue\nend",
+      "after": "def === nothing && continue\nif def === :extension\n    push!(out, \"$name: EXTENSION-HOMED (no methods loaded) — skipped\"); continue\nend\nexamined === nothing || (examined[] += 1)                 # what was COMPARED: the scan's population",
+      "why_it_matters": "`examined` is the scan's population, and population 0 is the DEAD verdict (exit 2). A package whose exported bindings are ALL extension-homed with no methods loaded — the shape a consumer hits when its Documenter/extension environment is not loaded during a scan — previously reported a non-zero population and a clean run; it now reports population 0 and the scan is DEAD, exit 2, refusing to evaluate. That is the opposite verdict on an unchanged tree. The direction is defensible (a skipped binding was not compared), but the flip is invisible: nothing in the change set records that a formerly-clean run can now be a cannot-evaluate.",
+      "justified": "yes",
+      "description": "The base docstring already said `examined` is \"how many bindings were actually compared, which is the scan's population\", so the code was wrong against its own base contract and the move is the correct repair — the norm pinned at base supports the edit rather than undermining it. It is reported here only because it changes a scan verdict, in the DEAD direction, for input that previously passed, and because the same commit deliberately relaxed the DEAD branch elsewhere (Scan.report) while tightening this population, so the two edits push a consumer's exit code in opposite directions with no note tying them together.",
+      "evidence": "diff src/Reflection.jl: `-        examined === nothing || (examined[] += 1)                 # what was COMPARED: the scan's population` before `if def === :extension`, `+        examined === nothing || (examined[] += 1)                 # what was COMPARED: the scan's population` after it. Base docstring, `git show <base>:src/Reflection.jl`: \"`examined`, an optional counter the caller passes to learn how many bindings were actually compared, which is the scan's population\"."
+    }
+  ]
+}

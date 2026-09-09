@@ -1,4 +1,5 @@
 [deps]
+GBGCodingTools = "3aee1de0-bb62-4679-b1c5-a861fbcaaa51"
 GBGFixture = "7f0c3a5e-1b2d-4c3e-9f4a-5b6c7d8e9f01"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
@@ -7,5 +8,8 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 # the toy consumer the reflection scans load: without it `load_package` fails and the four
 # reflection scans skip themselves silently, which is how they had never run under `Pkg.test()`
+# and the package itself, so an `executable_claims` file runs on its own under `--project=test`: the
+# audit runs each claim that way, and without this every one of them failed to load the package
 [sources]
+GBGCodingTools = {path = ".."}
 GBGFixture = {path = "../fixture/GBG Fixture"}

@@ -58,12 +58,12 @@
      },
      "reason": {
       "type": "string",
-      "minLength": 40,
-      "description": "at least 40 characters, as CFG.EXEMPTIONS enforces for every entry: what is declined and why"
+      "minLength": 24,
+      "description": "a loose floor here on purpose: the schema refuses only a reason that is no reason at all, and CFG.EXEMPTIONS checks the real bound of 40 characters per entry. Raising this one crashes Ledger.read, and with it sync, every scan and the docs build, where the doctor would have named the entry and carried on"
      },
      "expires": {
       "type": "date",
-      "description": "REQUIRED for every scope but finding; ≤ recorded + 365 d"
+      "description": "REQUIRED for every scope but finding; \u2264 recorded + 365 d"
      },
      "overturn_when": {
       "type": "string",
@@ -83,6 +83,6 @@
    "type": "array"
   }
  },
- "title": ".gbg/exemptions.toml — the one ledger (ARCHITECTURE §7.2)",
+ "title": ".gbg/exemptions.toml \u2014 the one ledger (ARCHITECTURE \u00a77.2)",
  "type": "object"
 }

@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-audit-changes-01",
+  "lane": "over-rejection",
+  "verdict": "CONCERNS",
+  "candidates_found": 9,
+  "checked": [
+    "Read the whole 4539-line diff.patch and the diffstat; then re-read every touched file at HEAD and the corresponding file at base 209cb212 with `git show`.",
+    "Enumerated every validation the diff ADDS: (1) Rounds.bank core finding-schema validation with throw(RoundError); (2) Rounds.import_empty import.json validation with throw; (3) schema/exemptions.schema.json reason minLength 24 -> 40; (4) instruments/audit-changes/workflow/audit.js schemaFor() requiring previously_worked on the behaviour-change lane; (5) src/Scans/sibling_link.jl 'later mention is a link' arm; (6) src/Scans/args_form.jl splat counting; (7) test/coverage.jl bare-backtick-span regex; (8) test/schemas.jl schema-loaded tightening; (9) test/schemas.jl RULE_WITH_CHECK check-class test incl. `length(cs) == 1`.",
+    "Enumerated the relaxations too, to be sure they were not miscounted as rejections: Scan.report and Rounds.prepare DEAD guards gaining `&& isempty(r.hits)`; Scans/field_docs.jl moving `checked += 1` before the NOLIST branch; Scans/mathbf.jl pushing `\\mathbf{1}` into `allowed`; catalog/hats/latex-typesetter.toml dropping the `rulebook` need (which also drops its `not_applicable` arm).",
+    "src/Scans/args_form.jl at base vs HEAD: ran Reflection.signature_parameters plus the new `splats()` append over `operation!, name, rows::Traffic...; print = false`, `a, b::T...`, `dest, src::AbstractArray...`, `root, args...`, `cfg; kw...` in Julia — a TYPED splat is counted twice (once as the cleaned identifier, once as the type token).",
+    "src/Scans/sibling_link.jl at base vs HEAD, plus catalog/scans.toml (tier `hard`, surfaces `all`, fixture [\"bare-sibling\"]) and ARCHITECTURE.md:2314 at base and HEAD — the catalogue row is byte-identical across the diff.",
+    "schema/exemptions.schema.json base vs HEAD; src/CLI/Ledger.jl `read` (throws LedgerError on schema failure); src/CLI/Doctor.jl CFG.EXEMPTIONS (`length(e[\"reason\"]) >= 40`); src/CLI/Main.jl `main` (an uncaught throw is exit 3 with a backtrace).",
+    "test/coverage.jl `@test !occursin(r\"(?<!\\\\)`[^`\\n$,)}]{1,60}(?<!\\\\)`\", code)`: ran it in Julia over all 11 instruments/*/workflow/*.js (none trip today) and over four legitimate short template literals (all four match, i.e. all four would fail the suite).",
+    "src/Reflection.jl signature_fidelity `examined[] += 1` placement at base vs HEAD, read together with src/Scans/signature_fidelity.jl (which filters EXTENSION-HOMED rows out of `hits`) and the new `isempty(r.hits)` clause in Scan.report.",
+    "src/CLI/Rounds.jl bank(): read the ordering (ids/lane/n/seeded assigned, then hunt_bank!, then the new core-schema loop), schema/finding.schema.json, and the four instruments/*/schema.json finding definitions; also schema/config.schema.json `$defs/lane` and `domain_hats.key` (both already pinned to ^[a-z0-9][a-z0-9-]*$), so the new `lane`/`id` patterns cannot newly reject.",
+    "instruments/bug-hunt/schema.json: confirmed the deleted `$defs/finding` was referenced by nothing at base and that `$defs/hunt_finding` is property-for-property at least as wide as the inline items block it replaced — no rejection added there.",
+    "src/CLI/Config.jl check_paths: the CODE is unchanged in this diff; only its docstring and the ARCHITECTURE CFG.SURFACES row moved, so the `docs_build`/glossary/built_html wording is a currency fix, not a new refusal. Same for AUDIT.GAP in QUICK (already in Doctor.jl at base)."
+  ],
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "SCAN.SIBLING_LINK gains a second, hard-tier refusal the frozen catalogue row does not declare and no fixture falsifies",
+      "locations": [
+        "src/Scans/sibling_link.jl:20-38 (the `seen`/`elseif linked` hunk)",
+        "catalog/scans.toml:121-126 (unchanged: tier = \"hard\", fixture = [\"bare-sibling\"])",
+        "docs/ARCHITECTURE.md:2314 (§12.B row, byte-identical at base and HEAD)"
+      ],
+      "before": "ok = m !== nothing && m.offset <= first(o) <= m.offset + ncodeunits(m.match)\n            ok || push!(hits, Hit(file, n, \"first mention of `$name` is not a link to $site: \" * strip(raw)))\n            break",
+      "after": "linked = m !== nothing && m.offset <= first(o) <= m.offset + ncodeunits(m.match)\n            if !seen\n                seen = true\n                linked || push!(hits, Hit(file, n, \"first mention of `$name` is not a link to $site: \" * strip(raw)))\n            elseif linked\n                push!(hits, Hit(file, n, \"later mention of `$name` is a link, not a bare code span: \" * strip(raw)))\n            end",
+      "why_it_matters": "The unit for a Markdown page is the WHOLE FILE, and `link_re` is a PREFIX match on the site (`\\Q<site>\\E`), so any later `[`GBGPeriodicFields`](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/stable/api/fields/)` — a deep link into the exact page of the sibling that answers the reader's question — is now a hit on a HARD scan. Hard hits are the MUST BE EMPTY block: `gbg scan docs` exits 1 and the `makedocs` wrapper `error()`s, so a consumer's docs build fails on prose that built clean at base. The catalogue row that is the scan's frozen public description still says only \"the first mention of each sibling must sit inside `[`Name`](site)`\", and `fixture = [\"bare-sibling\"]` still names only the first-mention arm, so the new arm has no falsifying fixture (RULE.TEST.BOTH_DIRECTIONS) and the four consumers adopt an undeclared widening on their next `gbg bump`.",
+      "justified": "no",
+      "description": "The base scan judged the first line naming a sibling and `break`ed. HEAD keeps going and turns every later linked mention into a hit. The rule text does say \"later mentions are bare\", so enforcing the second half is defensible in principle — but the widening is wider than the rule's target in one concrete way and undeclared in two: (a) the site match is a prefix, so a deep link INTO the sibling's docs, which the rule was never about, is refused as if it were a duplicated bare-name link; (b) ARCHITECTURE §12.B's SCAN.SIBLING_LINK row, which is the scan's frozen description, was not updated in this diff; (c) the fixture list still carries only `bare-sibling`, so nothing proves the new arm fires or that it does not over-fire. A hard-tier scan that gained an arm mid-diff without its catalogue row or its fixture is exactly the shape RULE.INST.FROZEN_MIDROUND and RULE.TEST.RULE_WITH_CHECK guard against.",
+      "evidence": "diff.patch:4088-4111 replaces `ok || push!(...); break` with the `seen`/`elseif linked` block. `git show 209cb212:docs/ARCHITECTURE.md | grep SIBLING_LINK` and the same grep at HEAD both return the identical row `| `SCAN.SIBLING_LINK` | ... | the first mention of each sibling must sit inside `[`Name`](site)` | `bare-sibling` |`. catalog/scans.toml:123 `tier = \"hard\"`."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "A ledger reason of 24-39 characters turns from one doctor FAIL into an exit-3 crash of every ledger-reading verb",
+      "locations": [
+        "schema/exemptions.schema.json:36-38 (reason minLength)",
+        "src/CLI/Ledger.jl:30-40 (Ledger.read throws LedgerError on a schema failure)",
+        "src/CLI/Doctor.jl:308 (CFG.EXEMPTIONS already enforced >= 40)",
+        "src/CLI/Main.jl:143-149 (an uncaught throw is exit 3)"
+      ],
+      "before": "\"reason\": {\n            \"type\": \"string\",\n            \"minLength\": 24,\n            \"description\": \"≥ 40 chars on scope finding — CFG.EXEMPTIONS checks the longer bound\"\n          },",
+      "after": "\"reason\": {\n      \"type\": \"string\",\n      \"minLength\": 40,\n      \"description\": \"at least 40 characters, as CFG.EXEMPTIONS enforces for every entry: what is declined and why\"\n     },",
+      "why_it_matters": "The base design put the loose bound in the schema on purpose (its own description said so: \"CFG.EXEMPTIONS checks the longer bound\"). With 24, a consumer carrying a 30-character reason still ran everything — `gbg sync`, `gbg scan docs`, `makedocs`, `TestHarness.gate()` — while `gbg doctor` reported one precise, actionable FAIL naming the entry (`$tag: reason shorter than 40 characters`, exit 1). With 40, `Ledger.read` throws a `LedgerError` first, and `Ledger.read` is the default keyword of `Sync.plan`, `Sync.slots`, `Sync.status`, `Sync.sync` and `Scan.run_scan`, so every one of those verbs now dies through `main`'s catch-all as \"crashed\" with a backtrace and exit 3 (\"cannot evaluate\") instead of doing its work. A consumer in that state cannot even run `gbg sync` to repair itself, and inside the doctor the failure is swallowed into `ctx.ledger_error`, leaving `ctx.ledger` empty so every EXEMPT.* check silently sees no entries.",
+      "justified": "unclear",
+      "description": "Making the schema agree with CFG.EXEMPTIONS is defensible as a statement of intent, but the two layers were deliberately different: the schema is the parse gate for every engine, the doctor is the reporting gate. Moving the bound up collapses a reportable exit-1 finding into an unreportable exit-3 crash across the whole CLI, and does so for input the whole tool previously accepted and worked with. If the tightening is wanted, `Ledger.read` should degrade to a named refusal (exit 2) rather than an uncaught throw, or the bound should stay in the doctor where it already lived.",
+      "evidence": "diff.patch:1959-1962 `\"minLength\": 40` replacing `\"minLength\": 24` with the description that named the split (`\"≥ 40 chars on scope finding — CFG.EXEMPTIONS checks the longer bound\"`). src/CLI/Ledger.jl:38 `isempty(errs) || throw(LedgerError(...))`. src/CLI/Doctor.jl:308 `length(e[\"reason\"]) >= 40 || push!(errs, \"$tag: reason shorter than 40 characters\")` — unchanged in this diff. src/CLI/Main.jl:146 `println(stderr, \"gbg \", key, \": crashed — \", ...); return 3`."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "The new Workflow-script backtick test rejects any short plain template literal, not just a bare code span inside a prompt",
+      "locations": [
+        "test/coverage.jl:57-58 (the new assertion)",
+        "test/coverage.jl:61-66 (its both-directions twin)"
+      ],
+      "before": "code = replace(text, r\"//[^\\n]*\" => \"\", r\"/\\*.*?\\*/\"s => \"\")\n        @test iseven(count(==('`'), code))",
+      "after": "@test !occursin(r\"(?<!\\\\)`[^`\\n$,)}]{1,60}(?<!\\\\)`\", code)",
+      "why_it_matters": "The regex fires on ANY backtick pair on one line holding 1-60 characters free of ` \\n $ , ) }. That is the shape of an ordinary short JavaScript template literal as much as of a Markdown code span. I ran it: `const E = `haiku-model``, `log(`done`)`, `x = `Audit`;` and `const m = `full`` all match, so each one would fail `Pkg.test()` for the whole tool. Instruments are frozen data edited only in their own commit and release, so the practical effect is that a future Workflow author may no longer write a plain short template literal anywhere in `instruments/*/workflow/*.js` — a construct that was legal at base and that the eleven scripts use quoted only by convention, not by rule. The defect the test was written for is a bare backtick INSIDE a template literal; the assertion cannot tell inside from outside and bans the outside case too.",
+      "justified": "no",
+      "description": "The change is wider than the defect it fixes. The failure it names — `hunt.js` gaining ``--glob '!.gbg/**'`` in prompt prose, which closes and reopens the template literal — is a bare span nested in an open template. The check written for it is context-free: it condemns any short bare backtick pair, including a top-level ``literal`` that is perfectly well-formed JS. The both-directions twin at test/coverage.jl:61-66 only demonstrates that the regex fires on the defect; nothing demonstrates that it does not fire on legitimate code, and empirically it does. A narrower predicate (a bare pair on a line already inside an unterminated template, or simply requiring every backtick inside a template-literal prompt to be escaped) would catch the same defect without foreclosing the construct.",
+      "evidence": "diff.patch:4450-4464 adds the assertion and its twin. Ran under Julia over all 11 workflow scripts (0 matches today) and over the four literals above (4/4 match => 4/4 would fail)."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "SCAN.ARGS_FORM double-counts a TYPED splat, so a two-argument prose docstring is now told to use bullets",
+      "locations": [
+        "src/Scans/args_form.jl:36-40 (the splats append)",
+        "src/Reflection.jl:112-113 (clean() strips `::T...` back to the identifier, which already passes IDENT)"
+      ],
+      "before": "pos, kw = Reflection.signature_parameters(sig[nextind(sig, o):prevind(sig, c)])\n        isempty(pos) && isempty(kw) && continue",
+      "after": "pos, kw = Reflection.signature_parameters(inside)\n        semi = findfirst(';', inside)\n        splats(s) = [String(m.match) for m in eachmatch(r\"[A-Za-z_][A-Za-z0-9_]*\\.\\.\\.\", s)]\n        append!(pos, splats(semi === nothing ? inside : inside[1:prevind(inside, semi)]))\n        semi === nothing || append!(kw, splats(inside[nextind(inside, semi):end]))",
+      "why_it_matters": "`signature_parameters` cleans `src::AbstractArray...` by splitting on `::` first, so it already returns `src`, which matches the anchored IDENT. The new `splats()` pass then scans the RAW text and matches `AbstractArray...` as well, appending a second entry for the same parameter. I confirmed it in Julia: `dest, src::AbstractArray...` yields [\"dest\",\"src\"] at base and [\"dest\",\"src\",\"AbstractArray...\"] at HEAD. Three crosses ARGS_THRESHOLD = 3, so `wants_bullets` flips from false to true and a two-argument function documented in running prose — exactly what RULE.DOC.ARGS_FORM prescribes for fewer than three arguments — is now a hit reading \"takes 3 positional and 0 keyword argument(s): the bulleted `The arguments are:` form, not prose\". `f(dest, src::AbstractArray...)` is the idiom of the four numerical consumers, so the false positives land there rather than here.",
+      "justified": "no",
+      "description": "Counting a splat as a parameter is the right correction (it fixed `f(cfg; kwargs...)` reading as prose-form). Applying the regex to the raw signature text rather than to the parameters `signature_parameters` dropped is the over-reach: an UNTYPED splat (`args...`) fails the anchored IDENT and is genuinely missing, but a TYPED splat (`rows::Traffic...`) is already present as its identifier and gets a second, spurious entry named after its TYPE. The hit message inherits the wrong count as well. Only the untyped case needs the append. In this package it is currently latent (`audit(operation!, name, rows::Traffic...; print = false)` counts 4 positional instead of 3 but is over the threshold either way); it becomes a real refusal in a consumer at exactly two real arguments. The scan is `triage`, so it does not gate a build, but it does bank into a check-docs round as a finding a fix pass must dispose of.",
+      "evidence": "diff.patch:3995-4000 adds the `splats` append over `inside`, not over the dropped parameters. Measured: `dest, src::AbstractArray...` => base ([\"dest\",\"src\"], []), head ([\"dest\",\"src\",\"AbstractArray...\"], []); `a, b::T...` => base 2 positional, head 3. src/Reflection.jl:98 `const IDENT = r\"^[A-Za-zα-ωΑ-Ω_][A-Za-z0-9_!α-ωΑ-Ω̂]*$\"` (anchored), :112 `clean(raw) = String(strip(split(split(raw, \"::\")[1], \"=\")[1]))`."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "previously_worked": "yes",
+      "title": "Moving the signature_fidelity population counter past the EXTENSION-HOMED branch turns a clean all-extension package into exit 2, and the paired `isempty(hits)` relaxation cannot rescue it",
+      "locations": [
+        "src/Reflection.jl:418-421 (the moved `examined[] += 1`)",
+        "src/Scans/signature_fidelity.jl:9 (EXTENSION-HOMED rows are filtered OUT of hits)",
+        "src/Scan.jl:466-468 (the triage DEAD branch, code = 2)"
+      ],
+      "before": "        examined === nothing || (examined[] += 1)                 # what was COMPARED: the scan's population\n        if def === :extension\n            push!(out, \"$name: EXTENSION-HOMED (no methods loaded) — skipped\"); continue\n        end",
+      "after": "        if def === :extension\n            push!(out, \"$name: EXTENSION-HOMED (no methods loaded) — skipped\"); continue\n        end\n        examined === nothing || (examined[] += 1)                 # what was COMPARED: the scan's population",
+      "why_it_matters": "A package whose exported bindings are all extension-homed used to report a non-zero population with no hits — a clean triage line. It now reports population 0. The diff softened the DEAD branch in `Scan.report` in the same commit (`&& isempty(r.hits)`), which rescues the analogous case elsewhere — but not this one, because `src/Scans/signature_fidelity.jl` explicitly filters EXTENSION-HOMED rows out of `hits` (`if !occursin(\"EXTENSION-HOMED\", r)`). So the scan reports population 0 AND zero hits, hits the triage DEAD branch, and sets `code = 2`. Exit 2 is \"cannot evaluate\", which stops `gbg scan docs` and, through the wrapper, the docs build — for a package shape that is legitimate and was clean at base.",
+      "justified": "unclear",
+      "description": "The move itself is principled: an extension-homed binding is skipped, not compared, and RULE.TEST.MISSING_IS_FAILING says a scan that measured nothing must not print clean. But the same commit that made this stricter also wrote the compensating relaxation in `Scan.report` and did not check that the compensation reaches this scan. The result is that the one scan the move affects is the one the relaxation cannot help. Either the EXTENSION-HOMED rows should count toward the population as skips reported separately, or the scan should surface them as a note so the DEAD branch is not the outcome for a package that has nothing comparable.",
+      "evidence": "diff.patch:3876-3880 moves `examined === nothing || (examined[] += 1)` from before the `def === :extension` branch to after it. src/Scans/signature_fidelity.jl:9 `hits = [Hit(\"\", 0, r; symbol = ...) for r in rows if !occursin(\"EXTENSION-HOMED\", r)]`. diff.patch:3928-3931 adds `&& isempty(r.hits)` to the triage DEAD branch, which is the branch that still fires here."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "previously_worked": "no",
+      "title": "The new RULES.toml test forbids a rule from declaring a mechanical check alongside `panel`, `session` or `weakness`",
+      "locations": [
+        "test/schemas.jl:531-535 (`@test length(cs) == 1`)",
+        "policy/testing-protocol.md:57-64 (the rule text the test claims to enforce)"
+      ],
+      "before": "(no `check` field existed at base; RULES.toml carried file, section, statement and sentinel only, and no test constrained how a rule may be enforced)",
+      "after": "else\n                    @test c in (\"panel\", \"session\", \"weakness\")  # judged, agreed, or owed\n                    @test length(cs) == 1                        # these three never share a rule with a mechanical check\n                end",
+      "why_it_matters": "The commonest honest answer for a rule with partial mechanical coverage is \"a scan catches part of it, a reading panel decides the rest\" — RULE.DOC.LINKS, whose two scans cover uniformity and duplicate refs but not \"promote to @ref only where a reader would genuinely jump\", is exactly that shape and is now forced to claim full scan coverage. The test converts a mixed, truthful declaration into a test failure, so the register can only ever say either \"a program decides this\" or \"a person decides this\", never both. That pushes future authors toward overstating mechanical coverage, which is the failure mode RULE.TEST.RULE_WITH_CHECK exists to prevent.",
+      "justified": "unclear",
+      "description": "The prose the test enforces (policy/testing-protocol.md, rewritten in this same diff) says `panel` and `session` are answers and `weakness` is a debt; it does not say a rule may carry only one kind of answer. The exclusivity is invented at the test, not stated at the rule, and the rule text is itself part of this change set — a contract written to match the check rather than a check written to match the contract. Since the field is new, nothing that previously validated now fails; the cost is entirely forward-looking, which is why this is minor rather than major.",
+      "evidence": "diff.patch:4533-4534 adds both `@test c in (\"panel\", \"session\", \"weakness\")` and `@test length(cs) == 1`. diff.patch:1798-1804 is the policy paragraph written in the same commit; it enumerates the classes but states no exclusivity. RULES.toml at HEAD gives `RULE.DOC.LINKS` `check = [\"scan:SCAN.LINK_UNIFORMITY\", \"scan:SCAN.DUPREF\"]` with no `panel`, though its sentinel (\"promote to `@ref` only where a reader would genuinely jump\") is not decidable by either scan."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "previously_worked": "yes",
+      "title": "The schema-coverage test now accepts only two spellings of \"a schema is loaded\", so a legitimate loader fails it",
+      "locations": [
+        "test/schemas.jl:93-99"
+      ],
+      "before": "@test occursin(\"load_schema(\\\"\" * name * \"\\\")\", src) || occursin(\"\\\"\" * name * \"\\\"\", src)",
+      "after": "@test any(l -> occursin(\"\\\"\" * name * \"\\\"\", l) && (occursin(\"load_schema\", l) || occursin(\"read_verdicts\", l)),\n                      split(src, \"\\n\"))",
+      "why_it_matters": "The predicate now requires the schema's name as a string literal on the SAME line as one of two hard-coded function names. A schema loaded through `Schema.instrument_schema(name)`, through a variable (`for s in SCHEMAS; load_schema(s)`), or through any third helper added later is reported as unloaded even though it is loaded — and the only way to pass is to add a literal that satisfies the grep, not to load the schema. Two of the validations this diff adds (`Rounds.bank`'s core-finding loop and `import_empty`'s import.json check, each carrying the comment \"the schema existed and nothing validated against it\") were written to satisfy this test, so it is already shaping code.",
+      "justified": "unclear",
+      "description": "The tightening is warranted in direction — the base disjunct `occursin(\"\\\"\" * name * \"\\\"\", src)` matched any coincidental occurrence of `\"finding\"` anywhere in the source, which is exactly the hole the comment names. But the replacement swings past the target: instead of asking \"is this schema loaded\", it asks \"does the literal sit on a line mentioning one of two names I know about\". The whitelist `load_schema`/`read_verdicts` is not derived from anything; it is the current call sites, frozen. A loader-shaped predicate (collect the arguments actually passed to `load_schema` and its wrappers) would answer the real question without banning other spellings.",
+      "evidence": "diff.patch:4487-4491. The two new validations it drove are diff.patch:3346-3355 (`# The schema existed and nothing validated against it`) and diff.patch:3424-3427 (`# the schema existed and nothing validated against it`)."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "previously_worked": "no",
+      "title": "bank's new core-finding validation throws instead of returning 2, and fires after the panel and the witness runner have already been paid for",
+      "locations": [
+        "src/CLI/Rounds.jl:399-405 (the new loop)",
+        "src/CLI/Main.jl:143-149 (an uncaught RoundError is exit 3, not the round verbs' exit 2)"
+      ],
+      "before": "    open(joinpath(dir, \"findings.json\"), \"w\") do f\n        JSON3.pretty(f, JSON3.write(Dict(\"schema_version\" => 1, \"round\" => round, \"findings\" => findings))); println(f)\n    end",
+      "after": "    core = load_schema(\"finding\"); coreprops = keys(core[\"properties\"])\n    for f in findings\n        errs = validate(core, Dict{String,Any}(k => v for (k, v) in f if k in coreprops))\n        isempty(errs) || throw(RoundError(\"banked finding $(get(f, \"id\", \"?\")) does not validate: \" * first(errs)))\n    end",
+      "why_it_matters": "Every other refusal in `bank` prints a named reason and returns 2, which is the round verbs' contract (\"cannot evaluate\") and leaves the operator a next step. This one throws, so `main` reports \"crashed\" with a backtrace and returns 3 — and it throws at the very end of `bank`, after `hunt_bank!` has already run every witness in a fresh process and after a check-consistency round has already regenerated the unseeded manuscripts and recomputed ground truth. A round that dies here has spent the whole panel and leaves no `findings.json`.",
+      "justified": "unclear",
+      "description": "I checked whether the loop can actually reject anything a lane file did not already have to pass, and it very nearly cannot: the four `instruments/*/schema.json` finding definitions carry the same core required list, the same enums and the same minLengths that `schema/finding.schema.json` carries, `classify_lane` already validated against them, and the four keys `bank` adds (`id`, `lane`, `n`, `seeded`) cannot fail because `schema/config.schema.json` already pins every lane and hat key to `^[a-z0-9][a-z0-9-]*$`. So the loop is close to a check that cannot fail — which is the shape RULE.TEST.BOTH_DIRECTIONS names — while the one path on which it can fail is the most expensive moment in the round and exits 3 rather than 2. Reporting the offending id and returning 2 would cost nothing and keep the exit contract.",
+      "evidence": "diff.patch:3346-3355. src/CLI/Rounds.jl:363-366 shows the neighbouring refusal returning 2 with a message (`println(io, \"bank: $(length(dead)) DEAD/REJECTED lane(s) — nothing frozen...\"); return 2`). Checked schema/finding.schema.json required/enums against all four instruments/*/schema.json finding defs (identical core), and schema/config.schema.json `$defs/lane.key` / `domain_hats.key` pattern `^[a-z0-9][a-z0-9-]*$`."
+    }
+  ]
+}
