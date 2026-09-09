@@ -393,8 +393,14 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         code = hunt_bank!(cfg, dir, rec, findings; io)
         code == 0 || return code
     end
-    for f in findings                                            # the schema existed and nothing validated against it
-        errs = validate(load_schema("finding"), f)
+    # The schema existed and nothing validated against it. It is the CORE finding shape: an instrument's
+    # own schema `$ref`s it and adds its own fields (bug-hunt's `kind`, `verdict`, `file`, `line`,
+    # `mechanism`, …), and `bank` adds `id`, `lane`, `n`, `seeded`. Since the core schema closes its
+    # property set, every finding is projected onto the keys the core names before it is checked; the
+    # instrument's own fields were already validated against its own schema at `classify_lane`.
+    core = load_schema("finding"); coreprops = keys(core["properties"])
+    for f in findings
+        errs = validate(core, Dict{String,Any}(k => v for (k, v) in f if k in coreprops))
         isempty(errs) || throw(RoundError("banked finding $(get(f, "id", "?")) does not validate: " * first(errs)))
     end
     open(joinpath(dir, "findings.json"), "w") do f

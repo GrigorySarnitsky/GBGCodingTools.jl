@@ -99,6 +99,20 @@ include("helpers.jl")
                       split(src, "\n"))
         end
     end
+    @testset "a bug-hunt finding banks against the core schema" begin
+        # The regression this pins: `bank` validated every finding against schema/finding.schema.json,
+        # which closes its property set, while a bug-hunt finding carries its own `kind`, `verdict`,
+        # `file`, `line`, `mechanism` — so every real hunt bank threw on its first finding.
+        hunt = Dict{String,Any}("type" => "operational", "severity" => "major", "confidence" => "high",
+                                "title" => "a title long enough", "locations" => ["src/X.jl:1"],
+                                "description" => "a description long enough to pass",
+                                "kind" => "runtime", "verdict" => "REPRODUCED", "observed" => "what happened",
+                                "file" => "src/X.jl", "line" => 1, "mechanism" => "why it happens",
+                                "id" => "2026-09-09-bug-hunt-01/free#1", "lane" => "free", "n" => 1, "seeded" => false)
+        core = G.load_schema("finding")
+        @test !isempty(G.validate(core, hunt))                             # the defect, both directions
+        @test isempty(G.validate(core, Dict{String,Any}(k => v for (k, v) in hunt if k in keys(core["properties"]))))
+    end
     @testset "the home page's counts are the real ones" begin
         # every number the home page cites is re-measured here; a cited count nothing asserts drifts
         page = read(joinpath(TOOL, "docs", "src", "index.md"), String)

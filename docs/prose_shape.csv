@@ -70,7 +70,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",199,198,0
 "ARCHITECTURE.md § §7.1 Policy migration map (which consumer sections become wh",290,238,0
 "ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",348,348,0
-"ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1793,1656,0
+"ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1813,1676,0
 "ARCHITECTURE.md § §8 Self-test and versioning",1508,446,0
 "ARCHITECTURE.md § §9 Resolution table",1475,1416,0
 "Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",112,55,0
@@ -186,7 +186,7 @@ unit,words,longest_paragraph,admonitions
 "Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
 "Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0
 "Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
-"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",126,61,0
+"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",136,73,0
 "Reflection.jl :: ARGS_THRESHOLD",33,32,0
 "Reflection.jl :: ArgcovHit",58,48,0
 "Reflection.jl :: Docstring",70,59,0

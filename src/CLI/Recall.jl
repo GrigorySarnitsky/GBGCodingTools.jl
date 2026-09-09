@@ -69,17 +69,18 @@ function per_class(findings::AbstractVector, ground_truth::AbstractDict)
     return out
 end
 
-# Which planted seeds a hat's own substrate could ever have shown it. Seeds are planted into the text
-# manuscripts only: a `rawhtml` hat is handed the pristine built site, so it can never see one, exactly
-# like `docstrings`, `rulebook` and `none`.
+# Which planted seeds a hat was actually shown. This follows the DELIVERY, not the substrate's name:
+# `panel.js` splits the corpus exactly once, `siteonly` against everything else, and hands every other
+# hat — `rawhtml`, `docstrings`, `rulebook` and `none` included — the same seed-laden full manuscript a
+# `full` hat gets. A narrower name does not narrow the text, so it must not narrow the seed set either:
+# marking those four blind would hide the real failure, a hat handed the seeds that reports none.
 sees_seed(substrate, seed, site_pages) =
-    substrate == "full" ? true :
-    substrate == "siteonly" ? seed["page"] in site_pages : false
+    substrate == "siteonly" ? seed["page"] in site_pages : true
 
 """
     suspect_hats(findings, ground_truth, roster, site_pages) -> Vector{String}
 
-Every hat with two or more seeds on its substrate and zero seeded findings of its own.
+Every hat handed two or more seeds and reporting no seeded finding of its own.
 The arguments are:
 
 - `findings` — the banked findings after [`mark!`](@ref).
@@ -88,10 +89,11 @@ The arguments are:
 - `site_pages` — the page banners the site-only manuscript keeps; a `siteonly` hat sees only seeds on
   those pages.
 
-A hat is judged only on the seeds its own substrate could show it. Seeds are planted into the text
-manuscripts alone, so `full` sees every one and `siteonly` only those on a kept page; `rawhtml` reads
-the pristine built site and `docstrings`, `rulebook` and `none` never see planted prose, so none of
-those four is ever suspect. Returns the keys.
+A hat is judged only on the seeds it was actually handed, which follows the delivery and not the
+substrate's name. The panel splits the corpus once, `siteonly` against everything else: a `siteonly`
+hat sees only the seeds on a kept page, and every other substrate — `rawhtml`, `docstrings`, `rulebook`
+and `none` as much as `full` — is handed the whole seeded manuscript and is judged on all of them.
+Returns the keys.
 """
 function suspect_hats(findings::AbstractVector, ground_truth::AbstractDict, roster::AbstractVector, site_pages::AbstractSet)
     out = String[]
