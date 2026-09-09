@@ -74,3 +74,56 @@ end
     _, _, n2 = G.consolidate(site, ["api"]; out_full = full, out_siteonly = site_only)
     @test n2 < nfull                                                    # a withheld word removes a page
 end
+
+@testset "prepare builds each instrument's substrate" begin
+    # `Rounds.prepare` — the scan battery, the reflection checks, the build under GBG_ROUND, the built-HTML
+    # scans, and for the panel the consolidated and seeded manuscripts — had no test at all, and with it the
+    # whole scan → finding → rescan closure path was unexercised (self-application sweep, 2026-09-09).
+    root = fixture_copy("prepare")
+    # the copy's docs environment carries the original's stale manifest: resolve it once, with the stdlib
+    # back on the load path (under `Pkg.test()` the inherited one names the sandbox and no stdlib)
+    let proj = joinpath(root, "docs"), sep = Sys.iswindows() ? ";" : ":"
+        rm(joinpath(proj, "Manifest.toml"); force = true)
+        run(addenv(`$(Base.julia_cmd()) --startup-file=no --project=$proj -e "using Pkg; Pkg.instantiate()"`,
+                   "JULIA_LOAD_PATH" => "@" * sep * "@stdlib"))
+    end
+    cfg = G.Config.read(root)
+    cd(root) do
+        @test G.Preflight.preflight(cfg, "check-docs"; io = devnull) == 0
+        round = only(filter(r -> r.state == :open, G.RoundFiles.rounds(cfg))).name
+        @test G.Rounds.prepare(cfg, round; io = devnull) == 0
+        scratch = G.Preflight.scratch_dir(cfg, round)
+        report = read(joinpath(scratch, "scans.txt"), String)
+        @test occursin("=== REFLECTION CHECKS ===", report)           # the reflection half ran
+        @test occursin("SCAN.REGISTER", report)                        # and the scan half
+        @test isfile(joinpath(scratch, "build.log"))                   # the docs build ran under GBG_ROUND
+        lane = joinpath(root, ".gbg", "rounds", round, "findings", "00-scans.json")
+        @test isfile(lane)                                             # every hard hit banked as lane 00-scans
+        banked = JSON3.read(read(lane, String), Dict{String,Any})
+        @test banked["lane"] == "scans" && banked["candidates_found"] == length(banked["findings"])
+        # a hard scan finding closes by RESCAN, never by a verdict: the channel exists and is reachable
+        for f in banked["findings"]; @test occursin(r"^SCAN\.[A-Z0-9_.]+ — ", f["title"]); end
+        @test G.Rounds.abandon(cfg, round, "the prepare test's round, never graded"; io = devnull) == 0
+    end
+end
+
+@testset "a round of every instrument reaches its substrate" begin
+    # The lifecycle was tested for check-docs only, so the preflight and prepare branches of the other
+    # three instruments ran nowhere (self-application sweep, 2026-09-09).
+    for inst in ("check-consistency", "bug-hunt", "audit-changes")
+        root = fixture_copy("inst-" * inst)
+        cfg = G.Config.read(root)
+        cd(root) do
+            base = inst == "audit-changes" ? "HEAD" : nothing
+            code = G.Preflight.preflight(cfg, inst; io = devnull, base)
+            @test code == 0
+            round = only(filter(r -> r.state == :open, G.RoundFiles.rounds(cfg))).name
+            rec = G.RoundFiles.read_round(joinpath(root, ".gbg", "rounds", round))
+            @test rec["instrument"] == inst && !isempty(rec["roster"])
+            args = JSON3.read(read(joinpath(G.Preflight.workflow_dir(cfg, round), "main.args.json"), String), Dict{String,Any})
+            @test haskey(args, "round") && args["round"] == round
+            @test all(!haskey(args, k) for k in ("policy", "persona", "brief"))   # payloads are paths, never text
+            @test G.Rounds.abandon(cfg, round, "the per-instrument preflight test's round"; io = devnull) == 0
+        end
+    end
+end

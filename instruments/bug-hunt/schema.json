@@ -122,10 +122,8 @@
           "type": "string"
         },
         "witness_env": {
-          "additionalProperties": true,
-          "required": [],
-          "properties": {},
-          "type": "object"
+          "type": "string",
+          "description": "the sub-environment a witness runs under, as `instruments.bug-hunt.witness_env` names it (resolved to the repository root when that environment does not list the package)"
         },
         "round_dir": {
           "type": "string"
