@@ -323,8 +323,7 @@ unit,words,longest_paragraph,admonitions
 "code_in_math.jl :: math_spans(lines) -> Vector{Tuple{Int,String}}",48,45,0
 "config.md § [The config](@id config)",171,63,1
 "html_docstring_once.jl :: page_bindings(page) -> Vector{NamedTuple}",43,40,0
-"index.md § GBGCodingTools",168,77,0
-"index.md § What a consumer has",101,101,0
+"index.md § GBGCodingTools",533,179,0
 "index.md § Where to start",70,70,0
 "install.md § The dev checkout",48,48,0
 "install.md § The pinned version",48,28,0
