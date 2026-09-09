@@ -43,5 +43,5 @@ the block shows in the diff instead of being silent.
 - [ ] C1 RULE.DOC.ARGS_FORM gets an enforcer, or is declared a known weakness with a reason
 - [ ] C2 RULE.API.POSITIONAL likewise
 - [x] D1 the design record's 28 files carry the provenance banner
-- [ ] D2 the false claims the sweep found in off-surface prose
+- [x] D2 the false claims the sweep found in off-surface prose
 - [x] D3 the dead schemas: loaded, or deleted

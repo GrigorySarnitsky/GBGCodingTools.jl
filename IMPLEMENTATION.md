@@ -140,7 +140,7 @@ consumers' setup exactly; nothing needed from the owner unless the API refuses.
 ## Phase 1 — The repository skeleton
 
 **Status (2026-09-09, `Aiporetne`).** Built and committed on `master` through 1.10 item 6: every verb of
-the 1.3 table, the engines and the 39 scans, the templates and policy layer, the eighteen schemas, the
+the 1.3 table, the engines and the catalogued scans, the templates and policy layer, the eighteen schemas, the
 four instruments' protocols and scripts, the tool as its own consumer with its site built through its
 own wrapper, the fixture with its defects corpus, and the self-test suite (green on 1.12 and 1.11 —
 the 1.11 lane keeps its own `Manifest-v1.11.toml`, gitignored). Three things the build changed in the
@@ -291,7 +291,7 @@ through the `gbgdev` function defined at the top of this plan.
 | `gbg round compare --recorded <recorded.toml> <round>` | §8: compares an imported round's re-graded tally with the four counts of a hand-transcribed `recorded.toml`; one meaning only (the cross-version round comparison is `gbg fleet --diff`) | `Rounds.jl` |
 | `gbg gate [instrument…]` | the closure gate; honours `GBG_ROUND`; scans every round directory; the CLI face of `gate(instruments...)`, which `makedocs` and `TestHarness.gate()` call in-process | `Gate.jl` |
 | `gbg scan docs [--hard-only] [--rebaseline prose-shape --reason …]`, `gbg scan html <build_dir>` | the tiered scan engine (§12.B); `scan_docs`/`scan_html` are what `makedocs` calls in-process | `Scan.jl` + `src/Scans/` |
-| `gbg seed <round>` / `gbg recall <round>` | called by `prepare`/`bank`; also standalone; the catalogue is the consumer's `.gbg/seeds.toml` | `Seed.jl`, `Recall.jl` |
+| — | seeding and recall are NOT verbs: `Seeds.select`/`plant` run inside `prepare` and `Recall.mark!`/`per_class` inside `bank`, and neither is in the `VERBS` table (checked 2026-09-09) |
 | `gbg witnesses fail\|pass <round> [names…]` | wraps `Witnesses.run` | `Hunt.jl` |
 | `gbg audit-changes bank <round>` / `gbg bug-hunt bank <round>` | instrument-specific bank steps (the audit bank runs the executable claims under `GBG_ROUND`) | `Audit.jl`, `Hunt.jl` |
 | `gbg bump <ver> [--abandon-open-rounds "…"]` | moves the pin, runs `sync`, writes `.gbg/scratch/bump-message.txt`, records the fleet `[sweep]` window | `Bump.jl` |

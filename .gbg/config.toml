@@ -109,7 +109,7 @@ enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
         files = ["src/CLI/Sync.jl", "src/CLI/Init.jl", "src/CLI/Doctor.jl", "src/CLI/Fleet.jl", "src/CLI/Bump.jl", "src/CLI/Release.jl", "src/CLI/Git.jl", "src/CLI/Install.jl", "src/CLI/Self.jl", "src/CLI/Selftest.jl", "src/CLI/Gate.jl", "src/CLI/Hunt.jl", "src/CLI/Audit.jl"]
         key = "renderers"
         [[instruments.bug-hunt.territories]]
-        brief = "the scan engine and the 41 scans"
+        brief = "the scan engine and its scans"
         files = ["src/Scan.jl", "src/Scans/*.jl"]
         key = "scans"
         [[instruments.bug-hunt.territories]]

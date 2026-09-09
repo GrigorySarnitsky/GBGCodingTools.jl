@@ -63,6 +63,28 @@ include("helpers.jl")
             for m in eachmatch(r"\"\$ref\"\s*:\s*\"([^\"]+)\"", s); @test startswith(m.captures[1], "#/"); end
         end
     end
+    @testset "no prose cites a count of scans, verbs or checks" begin
+        # the config, Init's defaults and the plan all carried "the 39 scans" while the catalogue held 41,
+        # and the plan documented `gbg seed` and `gbg recall`, which are not verbs (2026-09-09). A count in
+        # prose that a program can measure belongs in the program, not the sentence.
+        files = [joinpath(TOOL, f) for f in ("IMPLEMENTATION.md", ".gbg/config.toml")]
+        append!(files, [joinpath(r, f) for (r, _, fs) in walkdir(joinpath(TOOL, "src")) for f in fs if endswith(f, ".jl")])
+        for f in files
+            text = read(f, String)
+            @test !occursin(r"\b\d+ scans\b", text)
+            @test !occursin(r"\b\d+ (verbs|read-only checks)\b", text)
+        end
+        # the first word after `gbg` must open a registered verb (a flag or a sub-verb may follow): the plan
+        # documented `gbg seed` and `gbg recall`, which are functions called inside prepare and bank, never verbs
+        heads = Set(first(split(k)) for k in keys(G.VERBS))
+        plan = read(joinpath(TOOL, "IMPLEMENTATION.md"), String)
+        for m in eachmatch(r"`gbg (?:--\w+ )?([a-z][a-z-]*)", plan)
+            after = replace(SubString(plan, m.offset, min(lastindex(plan), m.offset + 80)), r"\s+" => " ")
+            occursin("does not exist", after) && continue          # a deliberate mention of a non-verb
+            occursin("hook queue-guard", after) && continue         # named twice, both times to deny it
+            @test m.captures[1] in heads
+        end
+    end
     @testset "every shipped schema is read by something" begin
         # five schemas were shipped and loaded by no code path; two were superseded by the instrument
         # schemas and deleted, three are wired. An unread schema drifts from the artefact it names.

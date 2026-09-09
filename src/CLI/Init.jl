@@ -164,7 +164,7 @@ function derive_config(root::AbstractString)
                 "domain_hats" => tool ? [Dict("key" => "tooling-maintainer", "anchor" => true, "substrate" => "full")] : Any[]),
             "bug-hunt" => Dict{String,Any}(
                 "territories" => tool ? [Dict("key" => "cli", "files" => ["src/CLI/*.jl"], "brief" => "the verbs, config, schema, sync, init, ledger"),
-                                         Dict("key" => "scans", "files" => ["src/Scan.jl", "src/Scans/*.jl"], "brief" => "the scan engine and the 39 scans"),
+                                         Dict("key" => "scans", "files" => ["src/Scan.jl", "src/Scans/*.jl"], "brief" => "the scan engine and its scans"),
                                          Dict("key" => "harness", "files" => ["src/TestHarness.jl", "src/Reflection.jl", "src/Witnesses.jl"], "brief" => "the Julia-side engines"),
                                          Dict("key" => "core", "files" => ["src/TreeHash.jl", "src/HtmlWalker.jl", "src/DocLints.jl", "ext/GBGCodingToolsDocumenterExt.jl"], "brief" => "hashing, the HTML walker, the wrapper")] :
                                         [Dict("key" => lowercase(splitext(basename(f))[1]), "files" => [f], "brief" => "TODO: what this file owns") for f in srcfiles if basename(f) != name * ".jl"],
