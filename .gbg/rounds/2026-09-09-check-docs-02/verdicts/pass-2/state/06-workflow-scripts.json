@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "3bc41c7d22d311037ed5c88848988a05",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "instruments/audit-changes/workflow/audit.js:50 required array now includes `previously_worked`; schemaFor() (lines 56-64) filters it out only for lanes != 'behaviour-change', so it stays required on that lane per PROTOCOL.md."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#2",
+      "verdict": "ABSENT",
+      "evidence": "instruments/check-consistency/workflow/panel.js:88 needs.includes('git') branch now reads: '...scope every search with `--glob '!.gbg/**'`. Never open anything under .gbg/...' matching verify-act.js/verify-state.js."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#3",
+      "verdict": "ABSENT",
+      "evidence": "instruments/bug-hunt/workflow/hunt.js:74 FREE_PREAMBLE now reads 'Nothing under `.gbg/` or `~/.gbg/` is yours to open but the files this prompt names; scope every grep with `--glob '!.gbg/**'`.' — matches HUNT_PREAMBLE's boundary strength."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#4",
+      "verdict": "ABSENT",
+      "evidence": "instruments/bug-hunt/workflow/dismissals.js:7 Args comment now reads '{ schema_version, round, repo, package, items: [{id, title}], items_sha, items_path, out, models: {economy} }', including items_sha, matching the required-key check at line 16 and the write at line 63."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#5",
+      "verdict": "ABSENT",
+      "evidence": "rubric-audit.js:68-69 computes `misassigned` and logs it; lines 117-119 fold orphaned ids into tally.MISSED and into `gaps`; final Write at line 125 includes misassigned/orphaned/gaps — no longer silently dropped."
+    }
+  ]
+}

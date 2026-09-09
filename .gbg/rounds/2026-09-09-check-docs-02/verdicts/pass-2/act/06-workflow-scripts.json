@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "3bc41c7d22d311037ed5c88848988a05",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/audit-changes/workflow/audit.js:56-64 adds schemaFor(lane): base SCHEMA now requires previously_worked (line 50), and schemaFor deep-clones it and filters previously_worked out of `required` for every lane except lane.key === 'behaviour-change' (line 61-63); line 101 passes `schema: schemaFor(lane)` to agent(). Passes.jl:289 get(f,\"previously_worked\",\"no\") is unchanged but now only matters for the one lane where the field is schema-enforced present. This exact defect was itself a mid-round regression: commit 175fe95 first made previously_worked required of ALL 13 lanes; fc7eca35's message names that as a bug it then fixed; the final tree is correct.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:50-64",
+          "swept": true,
+          "evidence": "required array is now built per-lane via schemaFor(lane), previously_worked required only when lane.key === 'behaviour-change'"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/check-consistency/workflow/panel.js:88 now reads '...Read inside ${A.repo}; scope every search with \\`--glob \\'!.gbg/**\\'\\`. Never open...' — the same instruction verify-act.js:59 and verify-state.js:51 already carry. The first attempt (commit 175fe95) used bare unescaped backticks inside the outer template literal, breaking the parse; fc7eca35 fixed that by escaping them. verify-act.js and verify-state.js are untouched over the whole range (empty --stat) and still correct.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js:88",
+          "swept": true,
+          "evidence": "needs.includes('git') branch now appends the --glob '!.gbg/**' sentence, correctly escaped"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:59",
+          "swept": true,
+          "evidence": "already carried the scoping sentence; unchanged"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-state.js:51",
+          "swept": true,
+          "evidence": "already carried the scoping sentence; unchanged"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/bug-hunt/workflow/hunt.js:73 (FREE_PREAMBLE, used only by lane.kind === 'free' at line 92) now ends '...Nothing under `.gbg/` or `~/.gbg/` is yours to open but the files this prompt names; scope every grep with `--glob \\'!.gbg/**\\'`.' — matching (and exceeding) the territory lanes' HUNT_PREAMBLE boundary language. Backticks correctly escaped (same class of break fc7eca35 fixed in panel.js); node unavailable in sandbox, verified by manual backtick-pair balance instead of `node --check`.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:73 (FREE_PREAMBLE)",
+          "swept": true,
+          "evidence": "explicit .gbg/ ~/.gbg/ boundary + --glob sentence added to the free lane's assembled prompt"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:79-86 (HUNT_PREAMBLE, territory lanes)",
+          "swept": true,
+          "evidence": "already carried an explicit boundary sentence; not the weakest lane, needed no fix"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/bug-hunt/workflow/dismissals.js:7 now reads 'Args: { schema_version, round, repo, package, items: [{id, title}], items_sha, items_path, out, models: {economy} }' — items_sha added, matching the required-args check at line 16 and the write at line 63. No other change in the file (single-line comment edit in commit 175fe95).",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/dismissals.js:7",
+          "swept": true,
+          "evidence": "Args comment now lists items_sha alongside the other required keys"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/check-consistency/workflow/rubric-audit.js:75-76 computes misassigned as {hat,ids} groups (byHat keys absent from A.hats) and logs a count; lines 116-121 compute orphaned = ids assigned only to misassigned hats and never scored by a real hat (!best[id]), increment tally.MISSED per orphaned id, log the count, and append a synthetic '(off-roster)' MISSED gap entry per id; line 122 writes misassigned, orphaned, gaps and byHat into A.out. Two-step fix: commit 175fe95 added only the log line (still no tally/artifact path — flagged by the state verifier as still-present); fc7eca35 completed it with the tally and artifact path.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:75-76,116-122",
+          "swept": true,
+          "evidence": "misassigned keys are logged, distinguished from genuinely-unassigned findings, folded into tally.MISSED, listed in gaps, and written into the output JSON"
+        }
+      ]
+    }
+  ]
+}

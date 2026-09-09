@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "3bc41c7d22d311037ed5c88848988a05",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/built-html#1",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/architecture.md:383 no longer contains the italic-wrapped code span with trailing glob asterisk; text now reads 'Personal-scope symlinked skills, one per instrument under `~/.claude/skills/`'. Built docs/build/architecture.html line 7 renders the whole Dominated paragraph cleanly, correctly nested <em>/<code> tags, no stray backticks or mis-italicised text."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#2",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/architecture.md:2326 now has `built_html` backticked in the SCAN.HTML_PUBLIC_HOME row. Built docs/build/architecture.html line 319 renders '<code>built_html</code> + <code>.gbg/scratch/public_surface.json</code>' with no <em> tags -- cell reads as plain text."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#3",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/rules.md:646 now backticks the id: 'KNOWN WEAKNESS by `RULE.TEST.RULE_WITH_CHECK`'s own terms'. Built docs/build/guide/rules.html line 2 renders '<code>RULE.TEST.RULE_WITH_CHECK</code>' with no <em> tag. Searched other bare RULE.* mentions with underscores across docs/src and src: remaining hits are all @id anchor targets (not rendered prose) or inside fenced TOML code blocks -- no live instance of the class remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#4",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Config.jl:163-170 docstring now enumerates 'the `glossary` file exists and a non-empty `built_html` has a `docs/` directory beside it', matching the code at lines 199-200. Built docs/build/api/Config.html line 2 renders this same text -- enumeration is now complete and current."
+    }
+  ]
+}

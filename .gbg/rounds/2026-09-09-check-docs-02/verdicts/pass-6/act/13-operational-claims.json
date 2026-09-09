@@ -1,0 +1,168 @@
+{
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "lane": "operational-claims",
+  "pass_nonce": "00afdb50d463330866ebc84ce1e8a7df",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scan.jl:452 and :466 both gained `&& isempty(r.hits)` before the DEAD branch, so a scan with population 0 but non-empty hits (SCAN.FIELD_DOCS's NOLIST case) now falls into the FAIL/count branch and prints every hit, matching the docstring's promise.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scan.jl:452",
+          "swept": true,
+          "evidence": "hard-tier loop: `if r.population == 0 && r.exempted == 0 && isempty(r.hits)` — hits no longer masked."
+        },
+        {
+          "surface": "src/Scan.jl:466",
+          "swept": true,
+          "evidence": "triage loop carries the identical guard, per the finding's own note that the same guard repeats there."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TestHarness.jl:298-299 now reads 'searched after `pkg` and before `modules`', matching the actual `Iterators.flatten(((pkg,), externals, modules))` order at line 304.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:298",
+          "swept": true,
+          "evidence": "only docstring stating the search order for `externals`; no other order claim found elsewhere."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Reflection.jl: the `examined[] += 1` increment was moved to AFTER the `def === :extension ... continue` block, so an extension-homed binding no longer increments the 'actually compared' counter before being skipped.",
+      "class_surfaces": [
+        {
+          "surface": "src/Reflection.jl:424",
+          "swept": true,
+          "evidence": "the only site incrementing `examined[]` in the whole codebase."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Config.jl:168-169 docstring now reads 'the fixed path `docs/make.jl` a consumer's `docs_build` command is expected to run' — the finding's hint wording verbatim — while the code still hardcodes the path unchanged.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Config.jl:168",
+          "swept": true,
+          "evidence": "check_paths docstring reworded from 'the docs/make.jl that docs_build names' to 'the fixed path ... expected to run'."
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1746 (CFG.SURFACES row)",
+          "swept": true,
+          "evidence": "same corrected phrase now appears in the rationale table."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Main.jl:31-32 docstring now states the `=`-form is a value 'whatever `valued` says', matching the finding's hint and the unchanged code at lines 45-53.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Main.jl:31",
+          "swept": true,
+          "evidence": "sole docstring describing parse_options's gating rule."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TestHarness.jl:190 now reads 'a frozen count differing from its ideal must carry a named holder', replacing 'above its ideal', matching Traffic's '≠' wording and the actual `!=` check.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:190",
+          "swept": true,
+          "evidence": "no remaining 'above its ideal' phrasing anywhere in src/ or docs/."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#7",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/sibling_link.jl:21-39 rewritten: the `break` after the first mention is gone; a `seen` flag lets the loop keep scanning later lines and push a hit whenever a later mention IS a link, implementing the second half of the rule the header claims.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/sibling_link.jl:21",
+          "swept": true,
+          "evidence": "sibling_link_hits! now flags a later linked mention; the only implementation of this rule."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#8",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/prose_shape.jl:3-6 header rewritten: 'Caps bind ALWAYS' dropped in favour of wording matching the later in-code comment and the actual baseline-exemption gate — the finding's first hinted alternative.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/prose_shape.jl:3",
+          "swept": true,
+          "evidence": "header comment no longer claims universal ALWAYS; now consistent with lines 104-106."
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:135-136 (SCAN.PROSE_SHAPE row)",
+          "swept": true,
+          "evidence": "'caps ... always' changed to 'on every docstring and every NEW page unit, a baselined page unit held by the ratchet alone'."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#9",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Rounds.jl:253-254 docstring now scopes the quarantine parenthetical to the two rename cases only, and the unparsable branch's `mv` was changed to `replace(p, \".json\" => \".rejected.json\")`, unifying it with the invalid/lane-mismatch branches — both fixes the hint proposed.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Rounds.jl:234 (absent)",
+          "swept": true,
+          "evidence": "no `mv` call; docstring now excludes 'absent' from the quarantine-filename claim."
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:266 (unparsable)",
+          "swept": true,
+          "evidence": "now uses `replace(p, \".json\" => \".rejected.json\")`, same pattern as the other branches."
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:271,274 (invalid / lane mismatch)",
+          "swept": true,
+          "evidence": "already used `replace(...)`, now uniform with the unparsable branch."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#10",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "The finding names TWO locations: Recall.jl:75 (suspect_hats docstring) and Recall.jl:9 (module docstring, 'seeds on their substrate (the view of the corpus a hat reads)'). Only the function docstring/code was corrected (verified true against panel.js:60 and Preflight.jl's corrected resolve_hats docstring). Recall.jl:9 still reads the identical over-claim verbatim, untouched by the diff.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Recall.jl:83-96 (suspect_hats docstring) and :102 (sees_seed code)",
+          "swept": true,
+          "evidence": "rewritten to state every non-siteonly substrate is handed the whole seeded manuscript, verified against panel.js:60 (`h.substrate === 'siteonly' ? A.manuscripts.siteonly : A.manuscripts.full`)."
+        },
+        {
+          "surface": "src/CLI/Recall.jl:9 (module docstring)",
+          "swept": false,
+          "evidence": "still reads 'hats with two or more seeds on their substrate (the view of the corpus a hat reads) and zero matches' — unchanged, repeating the same false per-substrate-narrowing claim the finding cited as its second location."
+        }
+      ]
+    }
+  ]
+}

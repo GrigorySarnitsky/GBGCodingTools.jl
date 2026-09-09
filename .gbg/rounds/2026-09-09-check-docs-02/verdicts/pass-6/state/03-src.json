@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "00afdb50d463330866ebc84ce1e8a7df",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/src#1",
+      "verdict": "ABSENT",
+      "evidence": "All 12 cited sites (TestHarness.jl:85+, Witnesses.jl:93, Reflection.jl:311, Scan.jl:268, Config.jl:250, Sync.jl:560, Rounds.jl:223, Preflight.jl:185, Bump.jl:12, Release.jl:7, Gate.jl:8, Seed.jl:41) now carry 'The arguments are:' bulleted lists. Running `gbg scan docs --only SCAN.ARGS_FORM` on the live tree returns 0 hits. Remaining prose-form docstrings (Scan.jl:138, Reflection.jl:261, Sync.jl:496, Preflight.jl:405) have 2 positional args, 0 kw — correctly under ARGS_THRESHOLD=3."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#2",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/args_form.jl:7 now defines `const ARGS_BULLET = r\"The\\s+arguments\\s+are:\"` (whitespace-tolerant regex, not a literal substring), with a comment noting the marker line-wraps in this package's own prose. `bulleted = occursin(ARGS_BULLET, d.body)` at line 46 uses it."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#3",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/args_form.jl:19-34 no longer uses `findlast(')', sig)`; it walks from the FIRST '(' with a paren-depth counter to find its true matching close, so a nested `(hit -> false)` and any trailing `-> (tuple)` return annotation no longer confuse parsing. Comment at lines 16-18 explains why stripping `->` first would be unsound instead."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#4",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Preflight.jl:205-207: 'every other value is the hat's brief over the full manuscript, with `needs` granting whatever else it must open. `needs` holds the requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from...' — needs is now explained, not a bare mention."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#5",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/code_in_math.jl:2-3 header now reads '...braced arguments of \\texttt/\\text/... and braced subscripts and superscripts of any length', matching the unchanged `r\"_\\{[a-z]+\\}\"` / `r\"\\^\\{[a-z]+\\}\"` regexes (line 41, `+` quantifier, not `{1}`)."
+    }
+  ]
+}

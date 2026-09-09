@@ -1,0 +1,57 @@
+{
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "lane": "templates",
+  "pass_nonce": "00afdb50d463330866ebc84ce1e8a7df",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/templates#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/README.md:23-24 dropped `{{package.name}}` from both rows, now reading `{{tool.version}}`, `{{files}}` (commit-message.tmpl) and `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}` (bump-message.tmpl) — verified against templates/commit-message.tmpl and templates/bump-message.tmpl, which contain exactly and only those placeholders.",
+      "class_surfaces": [
+        {
+          "surface": "templates/README.md:23",
+          "swept": true,
+          "evidence": "commit-message.tmpl row now lists `{{tool.version}}`, `{{files}}` — matches the template file exactly, no `{{package.name}}`."
+        },
+        {
+          "surface": "templates/README.md:24",
+          "swept": true,
+          "evidence": "bump-message.tmpl row now lists `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}` — matches the template file exactly, no `{{package.name}}`."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/regressions-README.md:1 now reads `<!-- gbg:managed regressions-README.md v{{tool.version}} — rewritten by `gbg sync`; do not edit -->`, matching SKILL.md.tmpl's form exactly. src/CLI/Sync.jl:221 renders this file with `render(template(...), s)` where `s = slots(cfg; ledger)` supplies `\"tool.version\" => v` (Sync.jl:116), so the slot actually resolves at render time.",
+      "class_surfaces": [
+        {
+          "surface": "templates/regressions-README.md:1",
+          "swept": true,
+          "evidence": "the only surface the finding names; now carries `v{{tool.version}}` like its named sibling SKILL.md.tmpl:6."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/README.md's Managed headers paragraph now adds: \"One exception: `queue-guard.sh.tmpl` is copied byte-for-byte from PF's Stop hook and carries no header, so the upstream text stays comparable; the sidecar hash is what marks it managed.\" Verified true against src/CLI/Sync.jl:219 (`template(\"queue-guard.sh.tmpl\")` used raw, no `render()`, no header call) and confirmed it still gets a ManagedFile/sidecar entry (Sync.jl:211-224).",
+      "class_surfaces": [
+        {
+          "surface": "templates/queue-guard.sh.tmpl:1",
+          "swept": true,
+          "evidence": "the only G, #-comment-format file with no header — now called out as the documented exception rather than silently contradicting the blanket rule."
+        },
+        {
+          "surface": "templates/settings.json.tmpl:1",
+          "swept": true,
+          "evidence": "also a headerless G file, but JSON — already covered by the pre-existing \"none for JSON (the sidecar is the record)\" clause, so it was never part of the contradiction and needed no change."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "14120325f0599a8c9085dd694615df3f",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/pages#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/verbs.md:31 — migrate_seeds removed from 'Consumer setup' @docs block; docs/src/api/CLI.md:26 — added right after Init.derive_config, exactly the hinted placement. No VERBS['migrate seeds'] entry exists, consistent with it not being a verb.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/verbs.md:31",
+          "swept": true,
+          "evidence": "line removed; grep for migrate_seeds now finds only its new home in CLI.md and the baseline artifact"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/verbs.md:15 adds GBGCodingTools.Options right after parse_options in the 'Entry point' @docs block, exactly as hinted; src/CLI/Main.jl:12-24 confirms the field-bulleted docstring is now rendered.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/verbs.md:13-14",
+          "swept": true,
+          "evidence": "Options line added immediately below parse_options"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/verbs.md:40 adds Doctor.cmd_doctor alongside Doctor.run, exactly as hinted; src/CLI/Doctor.jl:734-738 confirms cmd_doctor's docstring states --deep, --json, --effective, --only and the exit-2-not-a-consumer behavior, now reachable from a page.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/verbs.md:39-46",
+          "swept": true,
+          "evidence": "Doctor.cmd_doctor inserted right after Doctor.run"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/verbs.md:42 adds cmd_scan alongside scan_docs, one of the hint's two offered options; src/Scan.jl:555-559 confirms cmd_scan's docstring already documents --rebaseline prose-shape --reason and that it writes docs/prose_shape.csv.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/verbs.md:42",
+          "swept": true,
+          "evidence": "cmd_scan line inserted right after Doctor.doctor and before scan_docs"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/install.md:35-38 now states the fixture exception: a dev-pinned consumer that is not itself the tool's checkout resolves against the enclosing tool root, matching bin/gbg:19-22 branch (4) vs branch (5) exactly.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/install.md:35",
+          "swept": true,
+          "evidence": "the unconditional 'always runs that consumer's pinned version' claim is now followed by the one-exception sentence naming the fixture case"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/rounds.md:43-45 now reads 'a build, a test or an audit's executable claim,' matching src/CLI/Gate.jl:16-17's own wording and src/CLI/Audit.jl:2,16 confirming GBG_ROUND is exported around the audit's executable-claim commands.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/rounds.md:43-44",
+          "swept": true,
+          "evidence": "the sole 'build or a test' phrase on the page is now three-way"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#7",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/config.md:11-13 now appends 'the glossary file, and any data or script surface whose comments are prose'; schema/config.schema.json surfaces.properties confirms exactly these 11 keys, all now named on the page.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/config.md:11-13",
+          "swept": true,
+          "evidence": "both missing keys (glossary, data) added in the same clause"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "3bc41c7d22d311037ed5c88848988a05",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#1",
+      "verdict": "ABSENT",
+      "evidence": "policy/docs-rubric.md HOME_ORDER now lists caveats as item (7), last, 'as an admonition where load-bearing — the last substantive block, before the fields list'; ADMONITION_TITLE says the same: 'the last substantive block of a docstring, before the fields list.' Both agree; no contradiction remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#2",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:428 sentinel for RULE.CIT.FULL_INLINE now reads the full first sentence, ending '...under the package's references heading, title and DOI compared.' matching citations.md's actual sentence boundary; no truncation at 'verbatim-'."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#3",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml header no longer names POL.RULE_PARITY; it now says 'the tool's own test suite (test/schemas.jl) fails when a heading exists without a row...and when a sentinel is not a verbatim run.' test/schemas.jl's 'RULES.toml matches the policy files' testset implements exactly that. grep -rn RULE_PARITY over src/ext/docs/policy/catalog/instruments/schema/templates: zero hits."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#4",
+      "verdict": "ABSENT",
+      "evidence": "policy/latex-idiom.md:59-60 RULE.TEX.MATHBF now states '\\mathbf{1}, the indicator and identity of RULE.TEX.MATHBB, is admitted in every package whatever that list holds; it is not a package's to withhold.' src/Scans/mathbf.jl hardcodes push!(allowed, \"\\\\mathbf{1}\"), matching the text."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#5",
+      "verdict": "ABSENT",
+      "evidence": "policy/00-index.md:12-14 no longer claims 'the instruments cite these ids'; it now reads 'The scan catalogue names the rule each scan enforces, and a ledger entry of scope policy names the rule it exempts... Each rule's check field says what catches its next violation.' No unsupported instrument-citation claim remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#6",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml header now documents a check field ('scan:', 'doctor:', 'test:', 'harness:', 'panel', 'session', 'weakness'); sampled rules (TWO_TIER, ONE_HOME, VARIANT_PAIR, VERIFIED, MODULE_MAP, RETURNS, NO_HSCROLL, IMAGINARY, GREEK_AB, CIT.STYLE, API.POSITIONAL) each carry a check value. test/schemas.jl's RULE_WITH_CHECK testset requires every rule to declare one, distinguishing panel/session/weakness from mechanical checks — exactly the mechanism the finding's hint asked for."
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "14120325f0599a8c9085dd694615df3f",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/pages#1",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/verbs.md no longer lists Init.migrate_seeds (grep for it in verbs.md: no match). It moved to docs/src/api/CLI.md:26 under 'Engines' next to Init.derive_config, exactly as hinted; src/CLI/Init.jl:583-585 confirms migrate_seeds still has no VERBS entry."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#2",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:15 now lists GBGCodingTools.Options right after parse_options in the Entry point @docs block. src/CLI/Main.jl:12-24 shows Options' docstring ('The fields are: positional, flags, values') is now rendered."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#3",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:41 adds GBGCodingTools.Doctor.cmd_doctor. src/CLI/Doctor.jl:733-738 docstring states '`gbg doctor [--deep] [--json] [--effective] [--only <id-or-prefix>[,...]|QUICK]`: exit 2 when the working directory is not a consumer', matching the actual flags."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#4",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:43 adds GBGCodingTools.cmd_scan. src/Scan.jl:555-559 docstring documents '`gbg scan docs [--hard-only] [--only id,...] [--rebaseline prose-shape --reason \"...\"]`...a rebaseline writes `docs/prose_shape.csv`'."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#5",
+      "verdict": "ABSENT",
+      "evidence": "install.md:34-38 now adds: 'One consumer is routed differently: a consumer pinned at `dev` that is not itself the tool's checkout — the fixture, which sits inside that checkout — resolves against the enclosing tool repository's root rather than its own `docs/`.' Matches bin/gbg:19-22 exactly."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#6",
+      "verdict": "ABSENT",
+      "evidence": "rounds.md:43-44 now reads '...which the CLI exports only while it runs a build, a test or an audit's executable claim on that round's behalf', matching Gate.jl's docstring wording ('a build, a test or an executable claim') and Audit.jl's export."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#7",
+      "verdict": "ABSENT",
+      "evidence": "config.md:11-12 [surfaces] parenthetical now ends '...the history and references anchors, the glossary file, and any data or script surface whose comments are prose' — all 11 schema/config.schema.json surfaces.properties keys (rationale, pages, generated, src, ext, literate, built_html, history_exempt, references_heading, glossary, data) are now named."
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "00afdb50d463330866ebc84ce1e8a7df",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/schemas#1",
+      "verdict": "ABSENT",
+      "evidence": "Rounds.jl:401-403 now does `core = load_schema(\"finding\")` then `validate(core, ...)` for every finding before writing findings.json. test/schemas.jl's liveness test now requires the quoted name AND load_schema/read_verdicts on the same line, so Doctor.jl:306's `e[\"scope\"]==\"finding\"` no longer satisfies it."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#2",
+      "verdict": "ABSENT",
+      "evidence": "instruments/bug-hunt/schema.json now has one $defs block (hunt_finding, with kind/verdict/observed/file/line/mechanism and required list) and lane_file.properties.findings.items is `{\"$ref\":\"#/$defs/hunt_finding\"}` (line 191); no dead $defs.finding remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#3",
+      "verdict": "ABSENT",
+      "evidence": "managed.schema.json:16-17 `files.additionalProperties: {\"$ref\":\"#/$defs/entry\"}` and tally.schema.json:69-70 `per_id.additionalProperties: {\"$ref\":\"#/$defs/entry\"}`; Schema.jl:136-138 dereferences $ref and validates additionalProperties-as-schema against each value."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#4",
+      "verdict": "ABSENT",
+      "evidence": "schema/exemptions.schema.json:61 reason minLength is now 40, matching Doctor.jl:305's unconditional `length(e[\"reason\"]) >= 40`; description at line 62 now reads 'as CFG.EXEMPTIONS enforces for every entry', no longer scoped to 'finding'."
+    }
+  ]
+}

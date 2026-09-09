@@ -1,0 +1,236 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "14120325f0599a8c9085dd694615df3f",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/docs-rubric.md:11-17 HOME_ORDER renumbered to '...links, caveats' (7)=last, matching ADMONITION_TITLE's unchanged 'last substantive block...before the fields list' (line 61). policy/RULES.toml statement+sentinel regenerated to match. catalog/hats/doc-policy.toml and structure-consistency.toml (pass 5, commit b09f076) rewritten from '...caveats...formula' to '...formula, citation, cross-links, caveats...LAST'. docs/ARCHITECTURE.md:2195 table row updated identically.",
+      "class_surfaces": [
+        {
+          "surface": "policy/docs-rubric.md:11-17",
+          "swept": true,
+          "evidence": "HOME_ORDER now reads 'identity, when-to-use, arguments, one formula, citation, links, caveats' with caveats as item (7), last."
+        },
+        {
+          "surface": "policy/docs-rubric.md:57-61",
+          "swept": true,
+          "evidence": "ADMONITION_TITLE's 'last substantive block...before the fields list' clause is untouched and now agrees with the reordered HOME_ORDER instead of conflicting."
+        },
+        {
+          "surface": "src/Scans/prose_shape.jl:114-122",
+          "swept": true,
+          "evidence": "Comment/enforcement unchanged: '# Arguments precedes any column-0 !!! and # Fields is last' is consistent with caveats-last; the scan was never the site of the contradiction so nothing there needed to change."
+        },
+        {
+          "surface": "catalog/hats/doc-policy.toml:8",
+          "swept": true,
+          "evidence": "persona rewritten (pass 5, b09f076) to 'then the formula, the citation, the cross-links, and the caveats as admonitions LAST, before any fields list' — the reviewing hat now teaches the corrected order."
+        },
+        {
+          "surface": "catalog/hats/structure-consistency.toml:6",
+          "swept": true,
+          "evidence": "persona rewritten (pass 5) to '...one formula -> citation -> cross-links -> caveats (as admonitions where load-bearing), last' — matches."
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.DOC.HOME_ORDER statement/sentinel)",
+          "swept": true,
+          "evidence": "Both regenerated to the new 7-item order ending in caveats, verified against test/schemas.jl's verbatim-substring check."
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2195",
+          "swept": true,
+          "evidence": "Table row for RULE.DOC.HOME_ORDER updated to '...links, caveats' matching the rule."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/RULES.toml:437-438: sentinel regenerated from the truncated 'verbatim-' fragment to the complete first sentence '...verbatim-identical to the canonical entry under the package's references heading, title and DOI compared.' — verified character-for-character (whitespace-normalized) against policy/citations.md:9-13's actual first sentence, which is the exact string test/schemas.jl's 'occursin(r[\"sentinel\"], text)' check enforces.",
+      "class_surfaces": [
+        {
+          "surface": "policy/RULES.toml:437 (RULE.CIT.FULL_INLINE sentinel)",
+          "swept": true,
+          "evidence": "New sentinel ends '...title and DOI compared.' at the true sentence boundary, no trailing hyphen."
+        },
+        {
+          "surface": "policy/RULES.toml (all other 92 sentinels)",
+          "swept": true,
+          "evidence": "grep '^sentinel' policy/RULES.toml for any entry ending in a bare hyphen returns zero matches — the audited generator bug was not repeated elsewhere."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/RULES.toml:1-8 header rewritten: the fabricated 'POL.RULE_PARITY (doctor)' claim is removed and replaced with an accurate description — 'the tool's own test suite (test/schemas.jl) fails when a heading exists without a row or a row without a heading, and when a sentinel is not a verbatim run of its paragraph.' test/schemas.jl:128-142 'RULES.toml matches the policy files' testset actually implements exactly this heading/row parity and sentinel-substring check, and is wired into test/runtests.jl (module SchemaTests). grep for 'RULE_PARITY' across the non-.gbg corpus returns zero hits.",
+      "class_surfaces": [
+        {
+          "surface": "policy/RULES.toml:1-8 (header comment)",
+          "swept": true,
+          "evidence": "No longer cites a nonexistent doctor check; names the real enforcing test file instead."
+        },
+        {
+          "surface": "grep -rn \"RULE_PARITY\" (whole corpus, non-.gbg)",
+          "swept": true,
+          "evidence": "Zero matches remain anywhere in src/, docs/, policy/, catalog/, instruments/."
+        },
+        {
+          "surface": "test/schemas.jl:128-142",
+          "swept": true,
+          "evidence": "Implements the parity check the header now describes, run under Pkg.test() via test/runtests.jl:12."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/latex-idiom.md:56-59 (RULE.TEX.MATHBF) gains the sentence: '`\\mathbf{1}`, the indicator and identity of `RULE.TEX.MATHBB`, is admitted in every package whatever that list holds; it is not a package's to withhold.' — resolving the textual contradiction exactly as the hint proposed. src/Scans/mathbf.jl was also fixed at the implementation level: `allowed = Set(...); push!(allowed, \"\\\\mathbf{1}\")` now always exempts it regardless of `notation.mathbf_allowed`, so the scan (previously flagging \\mathbf{1} for a zero-admission package per the finding) no longer contradicts the text.",
+      "class_surfaces": [
+        {
+          "surface": "policy/latex-idiom.md:54-59 (RULE.TEX.MATHBF)",
+          "swept": true,
+          "evidence": "Standing non-configurable exception for \\mathbf{1} added to the rule text."
+        },
+        {
+          "surface": "policy/latex-idiom.md:49-52 (RULE.TEX.MATHBB)",
+          "swept": true,
+          "evidence": "Left as the flat mandate (the hint offered either MATHBB or MATHBF as the fix site; MATHBF was chosen and now cross-references MATHBB by id, so the two paragraphs read as one exception rather than a contradiction)."
+        },
+        {
+          "surface": "src/Scans/mathbf.jl:1-9 (SCAN.MATHBF)",
+          "swept": true,
+          "evidence": "allowed set unconditionally includes \\mathbf{1} via push!, so the actual enforcement mechanism now matches the corrected text rather than silently favouring the old MATHBF ban as the finding described."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/00-index.md:12-14 (and its rendered mirror .gbg/policy/00-index.md) rewrote the false 'The instruments cite these ids' clause to 'The scan catalogue names the rule each scan enforces, and a ledger entry of scope `policy` names the rule it exempts; ... Each rule's `check` field says what catches its next violation.' Every noun in the new sentence is verified true of the committed corpus: catalog/scans.toml's 42 RULE.* citations, .gbg/exemptions.toml's scope=\"policy\" entries each naming a RULE.* id, and policy/RULES.toml's new check field (see #6) tested in test/schemas.jl. The commit log (fc7eca3) shows this sentence was iterated on a second time specifically because the first rewording made a new false claim ('findings cite rule ids'), and the final wording claims only what the files support.",
+      "class_surfaces": [
+        {
+          "surface": "policy/00-index.md:12-14",
+          "swept": true,
+          "evidence": "'instruments cite these ids' claim removed; replaced with scans+ledger+check-field, each independently verifiable."
+        },
+        {
+          "surface": "instruments/*/PROTOCOL.md (audit-changes, bug-hunt, check-consistency, check-docs)",
+          "swept": true,
+          "evidence": "Still carry zero (or one incidental INST-family) RULE.* citations, unchanged — but the corrected sentence no longer claims otherwise, so the mismatch this finding flagged is resolved by making the claim accurate rather than by editing the protocols."
+        },
+        {
+          "surface": "catalog/hats/*.toml and catalog/lanes/*.toml (24 files)",
+          "swept": true,
+          "evidence": "Still zero RULE.* citations, unchanged — again no longer implied by the corrected sentence."
+        },
+        {
+          "surface": "catalog/scans.toml",
+          "swept": true,
+          "evidence": "Remains the true locus (42 RULE.* citations), now the thing the sentence actually names."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/RULES.toml now carries a `check` field on all 93 rules (grep -c '^\\[\\[rule\\]\\]' = 93, grep -c '^check = ' = 93): 19 `panel`, 13 `weakness`, 6 `session`, and 55 tied to real scan:/doctor:/harness:/test: ids. policy/testing-protocol.md's RULE.TEST.RULE_WITH_CHECK paragraph now names this exact vocabulary and states 'panel and session are answers; weakness is a debt.' test/schemas.jl's new testset 'every rule declares what catches its next violation (RULE.TEST.RULE_WITH_CHECK)' fails if a rule's check is empty, or if a scan:/doctor:/harness:/test: reference does not resolve to a real scan id, doctor check, source occurrence, or file — this is exactly the mechanism finding #6's hint proposed as its first option, built rather than merely described.",
+      "class_surfaces": [
+        {
+          "surface": "policy/RULES.toml (RULE.DOC.TWO_TIER)",
+          "swept": true,
+          "evidence": "check = [\"panel\"]"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.DOC.ONE_HOME)",
+          "swept": true,
+          "evidence": "check = [\"weakness\"]"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.DOC.VARIANT_PAIR)",
+          "swept": true,
+          "evidence": "check = [\"weakness\"]"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.DOC.VERIFIED)",
+          "swept": true,
+          "evidence": "check = [\"panel\"] (line ~184)"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.DOC.SELF_CONTAINED)",
+          "swept": true,
+          "evidence": "check = [\"panel\"] (line ~191)"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.DOC.TERMS_DEFINED)",
+          "swept": true,
+          "evidence": "check = [\"panel\"] (line ~198)"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.DOC.CLASS_SWEEP)",
+          "swept": true,
+          "evidence": "check = [\"panel\"] (line ~212)"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.DOC.BATTERY)",
+          "swept": true,
+          "evidence": "check = [\"harness:Preflight.resolve_checkdocs_lanes\"] (line ~219), a real, verified-to-exist binding."
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.DOC.BUILD_VERIFY)",
+          "swept": true,
+          "evidence": "check = [\"harness:makedocs\"] (line ~233)"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.DOC.ONE_NOTATION)",
+          "swept": true,
+          "evidence": "check = [\"panel\"] (line ~247)"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.DOC.MODULE_MAP)",
+          "swept": true,
+          "evidence": "check = [\"weakness\"] (line ~296)"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.DOC.RETURNS)",
+          "swept": true,
+          "evidence": "check = [\"weakness\"] (line 289)"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.TEX.NO_HSCROLL)",
+          "swept": true,
+          "evidence": "check = [\"weakness\"] (line 330)"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.TEX.IMAGINARY)",
+          "swept": true,
+          "evidence": "check = [\"weakness\"] (line 379)"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.TEX.GREEK_AB)",
+          "swept": true,
+          "evidence": "check = [\"weakness\"] (line 414)"
+        },
+        {
+          "surface": "policy/RULES.toml (RULE.CIT.STYLE)",
+          "swept": true,
+          "evidence": "check = [\"panel\"] (line 421)"
+        },
+        {
+          "surface": ".gbg/policy/deviations.md (RULE.API.POSITIONAL entry)",
+          "swept": true,
+          "evidence": "Ledger entry text left verbatim as the owner wrote it (commit e7fccc8 reverted an edit to it); reconciliation happened in the rule vocabulary instead — RULE.API.POSITIONAL's check = [\"panel\"] in RULES.toml, matching the rule text's new definition that an undecidable-by-program rule is 'panel', not 'weakness'."
+        }
+      ]
+    }
+  ]
+}

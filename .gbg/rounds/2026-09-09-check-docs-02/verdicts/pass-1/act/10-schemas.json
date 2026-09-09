@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "b457e3ee09da878b58a35cc7f9bb2f89",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/schemas#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "Rounds.jl bank(): new loop `for f in findings ... errs = validate(load_schema(\"finding\"), f); isempty(errs) || throw(RoundError(...))` inserted right before findings.json is written. test/schemas.jl:96-98 liveness check tightened to require the schema name and a schema-loading call (load_schema/read_verdicts) on the SAME line, which no longer matches the coincidental `e[\"scope\"]==\"finding\"` lines and does match the new call.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Rounds.jl:366-368 (findings.json build/freeze site)",
+          "swept": true,
+          "evidence": "validate(load_schema(\"finding\"), f) now runs per finding before the file is written"
+        },
+        {
+          "surface": "test/schemas.jl:88-98 (schema-liveness self-test)",
+          "swept": true,
+          "evidence": "now requires name + a schema-loading token on the same line, defeating the old false positive"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:306 / Preflight.jl:398 / Passes.jl:178,391,510 (`e[\"scope\"]==\"finding\"` false-positive matches)",
+          "swept": true,
+          "evidence": "unchanged code, but no longer satisfies the tightened liveness test"
+        },
+        {
+          "surface": "schema/finding.schema.json (whole file)",
+          "swept": true,
+          "evidence": "file unchanged but now actually dereferenced via load_schema(\"finding\") at the new validate call"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/bug-hunt/schema.json: the inline lane_file.properties.findings.items object is replaced with `{\"$ref\": \"#/$defs/hunt_finding\"}`; dead, drifted `$defs.finding` deleted; `$defs.hunt_finding` (complete shape) kept as the sole referenced $defs entry. grep -c '$ref' now returns 1 (was 0), matching check-docs/check-consistency/audit-changes' pattern exactly.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/schema.json:188-340 (live inline findings.items schema)",
+          "swept": true,
+          "evidence": "replaced with $ref to #/$defs/hunt_finding"
+        },
+        {
+          "surface": "instruments/bug-hunt/schema.json $defs.finding (dead, drifted duplicate)",
+          "swept": true,
+          "evidence": "block deleted; JSON load confirms $defs now holds only 'hunt_finding'"
+        },
+        {
+          "surface": "instruments/bug-hunt/schema.json $defs.hunt_finding (complete shape)",
+          "swept": true,
+          "evidence": "retained unmodified, now the one shape actually referenced"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:241-242 classify_lane (validates lane_file, root=schema)",
+          "swept": true,
+          "evidence": "unchanged call site now resolves through the new $ref to the complete shape instead of the drifted inline copy"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "managed.schema.json 'files' and tally.schema.json 'per_id' both change additionalProperties from true to {\"$ref\": \"#/$defs/entry\"} (isolated via git diff --ignore-all-space amid an incidental whole-file re-indent). src/CLI/Schema.jl:136-142 already validates a schema-valued additionalProperties, and both artefacts are validated at their write sites (Sync.jl:503, Passes.jl:318), so this is live enforcement, not cosmetic.",
+      "class_surfaces": [
+        {
+          "surface": "schema/managed.schema.json:13-19 ('files' additionalProperties)",
+          "swept": true,
+          "evidence": "now {\"$ref\": \"#/$defs/entry\"}, not true"
+        },
+        {
+          "surface": "schema/tally.schema.json:66-73 ('per_id' additionalProperties)",
+          "swept": true,
+          "evidence": "now {\"$ref\": \"#/$defs/entry\"}, not true"
+        },
+        {
+          "surface": "src/CLI/Schema.jl:136-142 (additionalProperties-as-schema support)",
+          "swept": true,
+          "evidence": "pre-existing support confirmed to correctly dereference the new $ref"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/exemptions.schema.json 'reason': minLength raised 24->40, description changed to drop the false 'on scope finding' qualifier and state the 40-char floor applies to every entry, exactly matching src/CLI/Doctor.jl:305's unconditional `length(e[\"reason\"]) >= 40` check (unchanged, now consistent with the schema).",
+      "class_surfaces": [
+        {
+          "surface": "schema/exemptions.schema.json:61-65 (reason minLength + description)",
+          "swept": true,
+          "evidence": "minLength 24->40; description corrected"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:305 (unconditional 40-char enforcement)",
+          "swept": true,
+          "evidence": "unchanged code now correctly matches the tightened schema bound"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "lane": "operational-claims",
+  "pass_nonce": "3bc41c7d22d311037ed5c88848988a05",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scan.jl:452 and :466: both DEAD-branch conditions changed from `r.population == 0 && r.exempted == 0` to `... && isempty(r.hits)`, so a non-empty `r.hits` now falls through to the FAIL/print branch instead of being swallowed as 'measured nothing'; applied identically to both the hard and triage loops named in the finding.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scan.jl:452 (hard-tier DEAD branch)",
+          "swept": true,
+          "evidence": "`if r.population == 0 && r.exempted == 0 && isempty(r.hits)` — hits no longer silently dropped; falls to `elseif !isempty(r.hits)` FAIL branch"
+        },
+        {
+          "surface": "src/Scan.jl:466 (triage DEAD branch, 'the same guard repeats')",
+          "swept": true,
+          "evidence": "identical `&& isempty(r.hits)` guard added to the triage loop's DEAD check"
+        },
+        {
+          "surface": "src/Scans/field_docs.jl:39,51,54,60 (checked/population undercount for NOLIST hits)",
+          "swept": false,
+          "evidence": "untouched by the diff — the fixer took the hint's other option (fix report() generically) instead of making `checked` count NOLIST structs; report()'s fix already makes the field_docs symptom (population 0 with real hits) print correctly, so this root cause did not need separate sweeping"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TestHarness.jl:287-288: docstring now reads '`externals` — the external modules whose generics the package extends (searched after `pkg` and before `modules`)', matching the unchanged actual iteration order `Iterators.flatten(((pkg,), externals, modules))` at line 291.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:285-293 (resolve_function docstring vs. loop order)",
+          "swept": true,
+          "evidence": "docstring corrected to 'searched after pkg and before modules', code order unchanged and now correctly described"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Reflection.jl: the `examined[] += 1` increment (previously at old line 410, before the `def === :extension` check) was moved to AFTER the `if def === :extension ... continue end` block, so an extension-homed binding — reported as 'skipped' — no longer increments the 'actually compared' counter.",
+      "class_surfaces": [
+        {
+          "surface": "src/Reflection.jl (signature_fidelity, examined increment vs. extension-homed skip)",
+          "swept": true,
+          "evidence": "increment relocated to after the extension-homed `continue`, matching the docstring's 'actually compared' and the scan header's 'population is bindings COMPARED'"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Config.jl:168-169: docstring changed from 'the `docs/make.jl` that `docs_build` names' to 'the fixed path `docs/make.jl` a consumer's `docs_build` command is expected to run', matching the unchanged hardcoded check at line 208 (`isfile(joinpath(root, \"docs\", \"make.jl\"))`) which never reads `cfg[\"package\"][\"docs_build\"]`.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Config.jl:168-169 (check_paths docstring)",
+          "swept": true,
+          "evidence": "reworded to state the path is fixed and merely expected of docs_build, not derived from it"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Main.jl:32-34: docstring rewritten to 'Any `--name=value` is a value whatever `valued` says; an option named in `valued` also consumes the following bare argument as its value; every other bare `--name` is a flag', matching the code's `=`-branch which fires before and independent of `valued` membership.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Main.jl:32-34 (parse_options docstring)",
+          "swept": true,
+          "evidence": "wording now matches the actual precedence: `=`-form unconditional, `valued` only gates the bare-argument form"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TestHarness.jl:190 (now ~197): 'a frozen count above its ideal must carry a named holder' changed to 'a frozen count differing from its ideal must carry a named holder', matching the code's `r.frozen != r.ideal` test and the Traffic struct's own '≠' wording.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl (audit() docstring, 'above' vs '!=')",
+          "swept": true,
+          "evidence": "'above' replaced with 'differing from', aligned with the Traffic docstring's pre-existing '≠' wording which needed no change"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#7",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/sibling_link.jl:17-38: the loop no longer `break`s after the first mention; it tracks a `seen` flag, still checks the first mention must be a link, and now also flags any LATER mention (`elseif linked`) that is itself a link, with a distinct hit message 'later mention of `$name` is a link, not a bare code span'.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/sibling_link.jl:17-38 (sibling_link_hits!)",
+          "swept": true,
+          "evidence": "second half of the rule (later mentions must be bare) is now actually checked, not merely claimed in the header comment"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#8",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/prose_shape.jl:3-4: header rewritten to 'Caps ... bind on every docstring and every NEW page unit; a page unit already in the baseline is held by the ratchet alone, the one place IT's lesson ... is traded for an append-only log' — no longer asserts 'ALWAYS' unconditionally, and now agrees with the later in-function comment and code (`if occursin(\" :: \", k) || b === nothing`) that already exempted baselined page sections.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/prose_shape.jl:3-4 (file header comment)",
+          "swept": true,
+          "evidence": "'Caps bind ALWAYS' claim removed and scoped to docstrings + NEW page units, matching the unchanged, already-correct code and its inline comment at (now) lines 104-106"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#9",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Rounds.jl:253 docstring now reads ':dead (absent, or — renamed to `<name>.rejected.json` beside itself — unparsable or invalid)', scoping the rename claim away from the absent case; and the unparsable branch's `mv(p, p * \".rejected.json\")` (old line 239) was changed to `mv(p, replace(p, \".json\" => \".rejected.json\"))`, unifying it with the invalid/lane-mismatch branches' pre-existing pattern.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Rounds.jl:253 (classify_lane docstring, absent case)",
+          "swept": true,
+          "evidence": "docstring no longer implies the absent-file case is quarantined; `isfile(p) || return (:dead, nothing, nothing, \"absent\")` still does no mv, now correctly described"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:266,271,274 (the three mv/rename call sites)",
+          "swept": true,
+          "evidence": "all three now use `replace(p, \".json\" => \".rejected.json\")`; the unparsable branch's divergent `p * \".rejected.json\"` pattern is gone"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#10",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Recall.jl: new helper `sees_seed(substrate, seed, site_pages) = substrate in (\"full\",\"rawhtml\") ? true : substrate==\"siteonly\" ? seed[\"page\"] in site_pages : false` replaces the old `h[\"substrate\"] != \"siteonly\" || ...` filter, so `docstrings`/`rulebook`/`none` now see zero seeds (never flagged suspect) instead of being treated as `full`; docstring at :83-85 states this explicitly, matching the finding's own claim that these substrates 'by definition cannot see ... the planted prose'.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Recall.jl:75 (suspect_hats docstring, 'on its substrate')",
+          "swept": true,
+          "evidence": "docstring extended to explain per-substrate visibility (full/rawhtml unrestricted, siteonly page-filtered, docstrings/rulebook/none see nothing)"
+        },
+        {
+          "surface": "src/CLI/Recall.jl:84 (the seed-visibility filter, formerly only gating siteonly)",
+          "swept": true,
+          "evidence": "filter now routed through `sees_seed`, covering all six substrates named in Preflight.resolve_hats's closed set rather than only siteonly vs. everything-else-is-full"
+        }
+      ]
+    }
+  ]
+}

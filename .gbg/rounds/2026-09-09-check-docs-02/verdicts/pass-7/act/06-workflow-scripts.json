@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "14120325f0599a8c9085dd694615df3f",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/audit-changes/workflow/audit.js:57-64 adds `schemaFor(lane)` which puts `previously_worked` back into `required` for every lane except when `lane.key !== 'behaviour-change'` — i.e. it IS required exactly on the behaviour-change lane, matching PROTOCOL.md:60/70's design. The call site now passes `schema: schemaFor(lane)` instead of the flat `SCHEMA`. A missing `previously_worked` on that lane now fails validation instead of silently defaulting to the unsafe `\"no\"` in Passes.jl:286.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:46-50,57-64",
+          "swept": true,
+          "evidence": "the single item schema now branches per-lane; `required` includes `previously_worked` for behaviour-change and omits it for the other twelve lanes where the field is not asked of the model at all"
+        },
+        {
+          "surface": "instruments/audit-changes/PROTOCOL.md:70",
+          "swept": true,
+          "evidence": "unchanged — this line already stated the correct design (required only on behaviour-change); it was evidence for the finding, not itself a defect site"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:286",
+          "swept": true,
+          "evidence": "unchanged `get(f, \"previously_worked\", \"no\")` is now safe: for behaviour-change findings the schema guarantees the key is present, and for the other twelve lanes the field is outside the design's contract so the default there is correct, not a loophole"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/check-consistency/workflow/panel.js:88 now reads `...and Read inside ${A.repo}; scope every search with \\`--glob '!.gbg/**'\\`. Never open anything under .gbg/...` — the exact phrase used by verify-act.js:59 and verify-state.js:51, added to the `needs.includes('git')` branch that grants grep access.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js:88",
+          "swept": true,
+          "evidence": "diff adds `; scope every search with \\`--glob '!.gbg/**'\\`` to the git-hats substrateText branch"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:59",
+          "swept": true,
+          "evidence": "already carried the scoping sentence before this pass; used here only as the reference phrasing panel.js now matches verbatim"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-state.js:51",
+          "swept": true,
+          "evidence": "already carried the scoping sentence before this pass; same reference role"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/bug-hunt/workflow/hunt.js:74 (FREE_PREAMBLE) now reads: \"Nothing under `.gbg/` or `~/.gbg/` is yours to open but the files this prompt names; scope every grep with `--glob '!.gbg/**'`.\" — this preamble is prepended to every free-lane agent call, so the boundary now matches HUNT_PREAMBLE's territory-lane strength (\"nothing else under .gbg/ or ~/.gbg/\", line 84) plus adds `--glob` scoping HUNT_PREAMBLE itself lacks.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:73-74 (FREE_PREAMBLE)",
+          "swept": true,
+          "evidence": "explicit .gbg/~/.gbg/ boundary plus --glob '!.gbg/**' scoping added, previously entirely absent from this preamble"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:84 (HUNT_PREAMBLE)",
+          "swept": true,
+          "evidence": "unchanged — already the stronger reference language (\"nothing else under .gbg/ or ~/.gbg/\") the finding held up as the standard; the fix brings FREE_PREAMBLE up to it"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:92-93 (territory dispatch line)",
+          "swept": true,
+          "evidence": "unchanged — this line is for territory (non-free) lanes only, which already inherit HUNT_PREAMBLE's boundary; the finding's complaint was specific to the free lane's weaker language, not this line"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/bug-hunt/workflow/dismissals.js:7 now reads `Args: { schema_version, round, repo, package, items: [{id, title}], items_sha, items_path, out, models: {economy} }`, adding `items_sha` between `items` and `items_path` — matching the runtime's required-keys check at line 16 and the write at line 63 that the finding cited.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/dismissals.js:7",
+          "swept": true,
+          "evidence": "the Args comment now lists items_sha, closing the only stale-doc site the finding named"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "rubric-audit.js:75-76 now computes `misassigned` (byHat keys absent from A.hats) and logs a `!!` line naming the count and off-roster keys; lines 118-124 add `orphaned` (ids exclusively assigned to off-roster hats), fold them into `tally.MISSED`, add them to `gaps` with an explicit (off-roster)/MISSED entry, and the final Written JSON now carries `misassigned` and `orphaned` alongside `unassigned` — a mis-keyed assignment now reaches the tally, the gap log, and the artifact instead of vanishing at the hatKeys filter.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:65-68 (byHat construction)",
+          "swept": true,
+          "evidence": "unchanged construction is now paired with the new misassigned/orphaned computation directly below it that inspects the same byHat object for off-roster keys"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:75 (hatKeys filter)",
+          "swept": true,
+          "evidence": "still filters byHat to real hats for the pipeline run, but the dropped keys are now captured in misassigned one line above rather than disappearing silently"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:69-70 / new log lines",
+          "swept": true,
+          "evidence": "the original log only reported unassigned; a new !! line reports misassigned counts/keys, and the BEST-OF summary log line now also reports orphaned.length"
+        }
+      ]
+    }
+  ]
+}

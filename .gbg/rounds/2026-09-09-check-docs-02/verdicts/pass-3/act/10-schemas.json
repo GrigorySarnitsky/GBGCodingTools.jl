@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/schemas#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Rounds.jl bank(): `for f in findings ... errs = validate(load_schema(\"finding\"), f); isempty(errs) || throw(RoundError(...))` added right before findings.json is written (matches the hint exactly). test/schemas.jl:96-99 tightened the liveness test to require load_schema/read_verdicts on the same line as the quoted schema name, closing the coincidental-substring hole. Ran `include(\"test/schemas.jl\")` live: 780/780 pass; also test/rounds.jl (round lifecycle incl. bank()) live: 36/36 pass.",
+      "class_surfaces": [
+        {
+          "surface": "schema/finding.schema.json (whole file)",
+          "swept": true,
+          "evidence": "now validated at src/CLI/Rounds.jl:397 in bank()"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:338-340 (findings.json entries built and frozen with no validate() call)",
+          "swept": true,
+          "evidence": "validate loop inserted immediately before findings.json is opened for write"
+        },
+        {
+          "surface": "test/schemas.jl:88-98 (\"every shipped schema is read by something\")",
+          "swept": true,
+          "evidence": "test rewritten to require load_schema/read_verdicts on the same line as the quoted schema name"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:306 `e[\"scope\"] == \"finding\"` (the coincidental match source)",
+          "swept": true,
+          "evidence": "line itself is untouched legitimate ledger code, but no longer satisfies the tightened liveness test; Preflight.jl:398 and Passes.jl:178/391/510 are the same harmless comparison and likewise don't match the new test"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/bug-hunt/schema.json: lane_file.properties.findings.items is now {\"$ref\": \"#/$defs/hunt_finding\"} (confirmed by reading current file); the old inline duplicate at :188-340 and the dead $defs.finding block were deleted. grep -c '$ref' = 1 (was 0). hunt_finding retains kind/verdict/observed/file/line/mechanism in both properties and required, matching the finding's description of 'the complete shape', mirroring check-docs/check-consistency's pattern as the hint asked.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/schema.json:353-450 ($defs.finding, dead)",
+          "swept": true,
+          "evidence": "deleted entirely in the diff"
+        },
+        {
+          "surface": "instruments/bug-hunt/schema.json:451-600 ($defs.hunt_finding)",
+          "swept": true,
+          "evidence": "retained as sole source of truth, now $ref'd rather than duplicated"
+        },
+        {
+          "surface": "instruments/bug-hunt/schema.json:188-340 (live inline lane_file.properties.findings.items)",
+          "swept": true,
+          "evidence": "replaced with {\"$ref\": \"#/$defs/hunt_finding\"}"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:241-242 (classify_lane validates via schema[\"properties\"][\"lane_file\"])",
+          "swept": true,
+          "evidence": "unchanged call path now resolves through the single $ref'd def since validate()'s _resolve follows $ref at each recursion (src/CLI/Schema.jl:94-96)"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/managed.schema.json 'files' now {\"additionalProperties\": {\"$ref\": \"#/$defs/entry\"}} (was true); schema/tally.schema.json 'per_id' likewise (was true), confirmed by reading both files post-fix. src/CLI/Schema.jl:136-142 validate()'s additionalProperties branch resolves the $ref via _resolve. Verified real writers: Passes.jl per_id entries carry exactly act/act_demoted/state/closed_by(+optional adjudicated_entry), matching $defs.entry. Ran test/sync_doctor.jl live: 15/15 pass; test/rounds.jl live: 36/36 pass. Only the two named surfaces were touched; unrelated 'recall'/'totals' in tally.schema.json remain additionalProperties:true, correctly out of scope.",
+      "class_surfaces": [
+        {
+          "surface": "schema/managed.schema.json:15-21 vs :39-61 ($defs.entry unwired)",
+          "swept": true,
+          "evidence": "'files'.additionalProperties now {\"$ref\":\"#/$defs/entry\"}"
+        },
+        {
+          "surface": "schema/tally.schema.json:70-78 vs :121-184 ($defs.entry unwired)",
+          "swept": true,
+          "evidence": "'per_id'.additionalProperties now {\"$ref\":\"#/$defs/entry\"}"
+        },
+        {
+          "surface": "src/CLI/Schema.jl:136-142 (additionalProperties as schema Dict support)",
+          "swept": true,
+          "evidence": "pre-existing correct support confirmed by reading validate(); appropriately left unchanged"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/exemptions.schema.json reason.minLength raised from 24 to 40 (confirmed: {\"type\": \"string\", \"minLength\": 40, \"description\": \"at least 40 characters, as CFG.EXEMPTIONS enforces for every entry: what is declined and why\"}), and the misleading 'on scope finding' clause is gone. src/CLI/Doctor.jl:305 `length(e[\"reason\"]) >= 40` unchanged (still unconditional), so schema and code now agree exactly, matching the hint precisely.",
+      "class_surfaces": [
+        {
+          "surface": "schema/exemptions.schema.json:61-65 (reason minLength 24, wrong description)",
+          "swept": true,
+          "evidence": "minLength now 40; description corrected"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:305 (unconditional >=40 check)",
+          "swept": true,
+          "evidence": "unchanged — was already correct, now matched by the schema rather than being altered"
+        }
+      ]
+    }
+  ]
+}

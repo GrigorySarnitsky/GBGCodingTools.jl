@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/src#1",
+      "verdict": "ABSENT",
+      "evidence": "All 12 cited locations (TestHarness.jl:85, Witnesses.jl:93, Reflection.jl:311, Scan.jl:268, Config.jl:250, Sync.jl:560, Rounds.jl:223, Preflight.jl:185, Bump.jl:12, Release.jl:7, Gate.jl:8, Seed.jl:41) now use the bulleted 'The arguments are:' list. A depth-aware paren-matching sweep of every non-`_` docstring in src for 3+ args or any kw found 0 remaining prose-form violations."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#2",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/args_form.jl:7 now defines `const ARGS_BULLET = r\"The\\s+arguments\\s+are:\"` (whitespace/newline tolerant) with a comment noting the marker line-wraps; Scan.jl:231-232 and Preflight.jl:320-321 still wrap 'The\\narguments are:' but \\s+ spans the newline, so both are correctly detected as bulleted."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#3",
+      "verdict": "ABSENT",
+      "evidence": "args_form.jl:19-34 now finds the FIRST '(' and walks paren depth to its matching close, rather than `findlast(')')`. Traced on argcov's exact signature 'argcov(cfg; exempt = (hit -> false)) -> (hits, population, skipped)': inside resolves to 'cfg; exempt = (hit -> false)' — 1 pos, 1 kw, return tuple excluded."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#4",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Preflight.jl:203-205: \"`needs` holds the requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from, and `not_applicable` says the substrate cannot exist here...\" — needs is now explained alongside the other fields."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#5",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/code_in_math.jl:1-3 header comment now reads \"braced subscripts and superscripts of any length\", matching the `[a-z]+` (one-or-more) quantifier in the regexes at line ~178. The old 'one-letter subscripts' wording is gone; grep for 'one-letter' in the file returns nothing."
+    }
+  ]
+}

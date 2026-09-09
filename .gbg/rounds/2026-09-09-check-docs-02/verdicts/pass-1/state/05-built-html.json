@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "b457e3ee09da878b58a35cc7f9bb2f89",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/built-html#1",
+      "verdict": "ABSENT",
+      "evidence": "architecture.md:383 now reads '*Personal-scope symlinked skills, one per instrument under `~/.claude/skills/`*: deliver...' — no trailing asterisk inside the backtick span. Rendered with a CommonMark parser: clean <em>...<code>~/.claude/skills/</code></em>, no cascade into following sentences."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#2",
+      "verdict": "ABSENT",
+      "evidence": "architecture.md:2326 now reads '`built_html` + `.gbg/scratch/public_surface.json`' — both underscores are inside their own code spans; no bare underscore left to pair across the boundary. CommonMark test render confirms two clean <code> spans, no emphasis span forming."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#3",
+      "verdict": "ABSENT",
+      "evidence": "guide/rules.md:646 now reads '...KNOWN WEAKNESS by `RULE.TEST.RULE_WITH_CHECK`'s own terms...' — backticked like the other four ids in the bullet list. Grep of docs/src for bare RULE_WITH_CHECK or other bare RULE.*_* ids in visible prose finds none (remaining underscore hits are inside `@id ...` heading anchors, which render invisibly)."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#4",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Config.jl:163-171 docstring now states 'the `glossary` file exists and a non-empty `built_html` has a `docs/` directory beside it', matching the code at lines 199-200 exactly (haskey(s,\"glossary\")... and !isempty(s[\"built_html\"]) && !isdir(...docs...)). Every other check in the docstring matches the function body line-for-line."
+    }
+  ]
+}

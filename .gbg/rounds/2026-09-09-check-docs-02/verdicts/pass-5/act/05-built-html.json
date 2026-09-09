@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "78cbf7c70814ae838def1f1641366da5",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/built-html#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:383 changed '*Personal-scope symlinked skills `~/.claude/skills/gbg-*`*' to '*Personal-scope symlinked skills, one per instrument under `~/.claude/skills/`*', dropping the trailing glob asterisk from inside the backticks exactly as the hint asked. Rebuilt docs/build/architecture.html now shows the whole passage correctly nested with no cascade corruption.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:383",
+          "swept": true,
+          "evidence": "the flagged alternative fixed; backtick span no longer holds a bare '*'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:384 (Plugin skills alternative)",
+          "swept": true,
+          "evidence": "renders '<em>Plugin skills <code>/gbg:…</code></em>: untested local marketplace...' cleanly"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:385 (Rendered protocol text alternative)",
+          "swept": true,
+          "evidence": "renders '<em>Rendered protocol text in the stub</em>' cleanly"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:386 (Model reads <root>/PROTOCOL.md alternative)",
+          "swept": true,
+          "evidence": "renders '<em>Model reads <code>&lt;root&gt;/PROTOCOL.md</code></em>' cleanly, no stray backtick"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md SCAN.HTML_PUBLIC_HOME row changed 'built_html + `.gbg/scratch/public_surface.json`' to '`built_html` + `.gbg/scratch/public_surface.json`'. docs/build/architecture.html now renders the cell as '<code>built_html</code> + <code>.gbg/scratch/public_surface.json</code>' with no <em> tag and no dangling backtick.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:2324 SCAN.HTML_RENDERED_MARKUP row",
+          "swept": true,
+          "evidence": "diff shows 'built_html' -> '`built_html`' in this sibling row of the same table"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2325 SCAN.HTML_STRAY_MATH row",
+          "swept": true,
+          "evidence": "diff shows 'built_html' -> '`built_html`' in this sibling row"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2326 SCAN.HTML_DOCSTRING_ONCE row",
+          "swept": true,
+          "evidence": "diff shows 'built_html' -> '`built_html`' in this sibling row"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2327 SCAN.HTML_PUBLIC_HOME row (flagged)",
+          "swept": true,
+          "evidence": "diff shows '`built_html` + `...`'; rendered cell verified clean"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2328 SCAN.HTML_BASE_LEAK row",
+          "swept": true,
+          "evidence": "diff shows 'built_html' -> '`built_html`' in this sibling row"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": ".gbg/exemptions.toml RULE.API.POSITIONAL reason (source of the deviations ledger and CLAUDE.md's managed bullet) changed '...RULE.TEST.RULE_WITH_CHECK's own terms' to '...`RULE.TEST.RULE_WITH_CHECK`'s own terms'. docs/src/guide/rules.md:648 and rebuilt docs/build/guide/rules.html both show '<code>RULE.TEST.RULE_WITH_CHECK</code>' with no <em> around 'WITH'.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/rules.md:648 (RULE.TEST.ALLOC_ZERO)",
+          "swept": true,
+          "evidence": "already backticked, unaffected sibling id in same bullet list"
+        },
+        {
+          "surface": "docs/src/guide/rules.md:648 (RULE.TEST.PASS_AUDIT)",
+          "swept": true,
+          "evidence": "already backticked, unaffected sibling id"
+        },
+        {
+          "surface": "docs/src/guide/rules.md:648 (RULE.TEST.EXAMPLES_RUN)",
+          "swept": true,
+          "evidence": "already backticked, unaffected sibling id"
+        },
+        {
+          "surface": "docs/src/guide/rules.md:648 (RULE.DOC.LEADING_IDENTITY)",
+          "swept": true,
+          "evidence": "already backticked, unaffected sibling id"
+        },
+        {
+          "surface": "docs/src/guide/rules.md:648 (RULE.API.POSITIONAL)",
+          "swept": true,
+          "evidence": "already backticked, unaffected sibling id"
+        },
+        {
+          "surface": "docs/src/guide/rules.md:648 (RULE.TEST.RULE_WITH_CHECK — the flagged bare id)",
+          "swept": true,
+          "evidence": "now backticked in exemptions.toml/deviations.md/CLAUDE.md/rules.md; rendered HTML clean"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Config.jl check_paths docstring diff adds exactly the two missing clauses: 'the `glossary` file exists and a non-empty `built_html` has a `docs/` directory beside it', matching lines 199-200's glossary and built_html/docs-dir checks exactly. Rebuilt docs/build/api/Config.html now enumerates all 11 checks the function runs.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Config.jl:199 (glossary-file-exists check)",
+          "swept": true,
+          "evidence": "docstring now names 'the `glossary` file exists'"
+        },
+        {
+          "surface": "src/CLI/Config.jl:200 (built_html-implies-docs/-directory check)",
+          "swept": true,
+          "evidence": "docstring now names 'a non-empty `built_html` has a `docs/` directory beside it'"
+        }
+      ]
+    }
+  ]
+}

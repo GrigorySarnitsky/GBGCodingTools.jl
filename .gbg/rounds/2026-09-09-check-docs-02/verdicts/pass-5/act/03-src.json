@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "78cbf7c70814ae838def1f1641366da5",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/src#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "All 12 named locations converted to the bulleted 'The arguments are:' form with '- `name` — ...' bullets, e.g. src/TestHarness.jl:85 allocation_completeness, src/CLI/Preflight.jl:193 resolve_hats, all others verified likewise. Residual grep hits for the prose marker across src/ are only functions with <3 positional args and no keyword (exempt), e.g. Scan.jl:138, Reflection.jl:261, CLI/Sync.jl:496, CLI/Preflight.jl:403.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:85",
+          "swept": true,
+          "evidence": "allocation_completeness now bulleted"
+        },
+        {
+          "surface": "src/Witnesses.jl:93",
+          "swept": true,
+          "evidence": "witness_project now bulleted"
+        },
+        {
+          "surface": "src/Reflection.jl:311",
+          "swept": true,
+          "evidence": "signature_fidelity now bulleted"
+        },
+        {
+          "surface": "src/Scan.jl:268",
+          "swept": true,
+          "evidence": "regex_scan now bulleted"
+        },
+        {
+          "surface": "src/CLI/Config.jl:250",
+          "swept": true,
+          "evidence": "Config.parse now bulleted"
+        },
+        {
+          "surface": "src/CLI/Sync.jl:560",
+          "swept": true,
+          "evidence": "sync now bulleted"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:223",
+          "swept": true,
+          "evidence": "classify_lane now bulleted"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:185",
+          "swept": true,
+          "evidence": "resolve_hats now bulleted (needs field also filled in, see src#4)"
+        },
+        {
+          "surface": "src/CLI/Bump.jl:12",
+          "swept": true,
+          "evidence": "bump now bulleted"
+        },
+        {
+          "surface": "src/CLI/Release.jl:7",
+          "swept": true,
+          "evidence": "release now bulleted"
+        },
+        {
+          "surface": "src/CLI/Gate.jl:8",
+          "swept": true,
+          "evidence": "gate now bulleted"
+        },
+        {
+          "surface": "src/CLI/Seed.jl:41",
+          "swept": true,
+          "evidence": "select now bulleted"
+        },
+        {
+          "surface": "src/HtmlWalker.jl:47",
+          "swept": true,
+          "evidence": "sampled sibling file, also converted"
+        },
+        {
+          "surface": "src/TreeHash.jl:37",
+          "swept": true,
+          "evidence": "sampled sibling file, also converted"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/args_form.jl:6-7 now defines ARGS_BULLET/ARGS_PROSE as whitespace-tolerant regexes (r\"The\\s+arguments\\s+are:\"). Verified live in Julia: occursin(ARGS_BULLET, \"...match across lines. The\\narguments are:\") returns true, resolving the false-positive on both Scan.jl:231-232 (prose_text) and Preflight.jl:320-321 (write_payloads), whose text is still line-wrapped in source but now correctly recognised as bulleted. The hit message no longer interpolates the Regex object.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/args_form.jl:6",
+          "swept": true,
+          "evidence": "ARGS_BULLET is now a regex, not a literal substring"
+        },
+        {
+          "surface": "src/Scans/args_form.jl:21",
+          "swept": true,
+          "evidence": "occursin(ARGS_BULLET, d.body) now regex-based"
+        },
+        {
+          "surface": "src/Scan.jl:231-232",
+          "swept": true,
+          "evidence": "prose_text's line-wrapped marker verified to match under the new regex"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:320-321",
+          "swept": true,
+          "evidence": "write_payloads' line-wrapped marker verified to match under the new regex"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/args_form.jl:16-30 no longer uses findlast(')', sig); it walks from the first '(' counting paren depth to the matching close, so a `-> (tuple)` return annotation is never entered (verified live: argcov's, classify_lane's and demote's signatures all parse to the true parameter list, excluding the return tuple). This differs from the hint's suggested arrow-strip but is a stronger structural fix — pass 2's commit message records the naive strip breaking on argcov's own arrow-bearing default.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/args_form.jl:16",
+          "swept": true,
+          "evidence": "paren-depth matching replaces findlast(')')"
+        },
+        {
+          "surface": "src/Reflection.jl:154-166 (argcov)",
+          "swept": true,
+          "evidence": "argcov's own signature now parses to 1 positional + 1 keyword"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl (classify_lane, load)",
+          "swept": true,
+          "evidence": "tuple-return signatures verified to parse correctly via the shared routine"
+        },
+        {
+          "surface": "src/CLI/Demote.jl (demote)",
+          "swept": true,
+          "evidence": "tuple-return signature verified to parse correctly via the shared routine"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Preflight.jl:190 now reads '`needs` holds the requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from', replacing the bare '`needs`;' mention. Verified against resolve_hats' body (lines 224-227): the three tags named in the docstring exactly match the three checked (`\"html\" in needs`, `\"git\" in needs`, `\"rulebook\" in needs`).",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Preflight.jl:189-190 (resolve_hats docstring)",
+          "swept": true,
+          "evidence": "needs field now explained inline, matching the code's three requirement tags"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/code_in_math.jl:3 changed 'one-letter subscripts' to 'braced subscripts and superscripts of any length'. Verified against the unchanged regexes at line 41: r\"_\\{[a-z]+\\}\" and r\"\\^\\{[a-z]+\\}\" (one-or-more, not exactly-one), so the comment now accurately describes the code.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/code_in_math.jl:1-4",
+          "swept": true,
+          "evidence": "header comment corrected to match the [a-z]+ regex quantifier"
+        }
+      ]
+    }
+  ]
+}

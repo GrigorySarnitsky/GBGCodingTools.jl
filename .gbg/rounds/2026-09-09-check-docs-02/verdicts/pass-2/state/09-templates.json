@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "lane": "templates",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "3bc41c7d22d311037ed5c88848988a05",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/templates#1",
+      "verdict": "ABSENT",
+      "evidence": "templates/README.md:24-25 now list commit-message.tmpl slots as `{{tool.version}}`, `{{files}}` and bump-message.tmpl as `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}` — no {{package.name}}. Grepped both .tmpl files: neither contains {{package.name}}; README matches exactly."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#2",
+      "verdict": "ABSENT",
+      "evidence": "templates/regressions-README.md:1 now reads '<!-- gbg:managed regressions-README.md v{{tool.version}} — rewritten by `gbg sync`; do not edit -->', matching SKILL.md.tmpl's v{{tool.version}} form. README.md's table also lists its Slots as {{tool.version}}."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#3",
+      "verdict": "ABSENT",
+      "evidence": "templates/README.md's Managed headers paragraph now states: 'One exception: queue-guard.sh.tmpl is copied byte-for-byte from PF's Stop hook and carries no header... the sidecar hash is what marks it managed.' File itself still has no gbg:managed line — but that's now documented, not contradicted."
+    }
+  ]
+}

@@ -1,0 +1,239 @@
+{
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "lane": "cold-reader",
+  "pass_nonce": "78cbf7c70814ae838def1f1641366da5",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Preflight.jl resolve_hats now: 'anchor is whether the hat runs at full strength... It is unrelated to the file#heading anchors of [`Config.resolve_anchor`](@ref).' Doctor.jl gains a comment just above CFG.HATS: 'Two unrelated senses of anchor meet in this one check... Neither is the other.'",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Config.jl:113-119",
+          "swept": true,
+          "evidence": "resolve_anchor's own docstring only ever meant the file#heading sense; unambiguous on its own, no edit needed."
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:193 (now ~205-211, resolve_hats)",
+          "swept": true,
+          "evidence": "new clause: 'anchor is whether the hat runs at full strength...It is unrelated to the file#heading anchors of [`Config.resolve_anchor`](@ref).'"
+        },
+        {
+          "surface": "src/Scan.jl:245-246",
+          "swept": true,
+          "evidence": "unchanged heading-sense usage (`Config.resolve_anchor(cfg[\"root\"], anchor)`); no ambiguity here once the two senses are told apart at the hat side."
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:239-241 (CFG.SURFACES)",
+          "swept": true,
+          "evidence": "unchanged heading-sense usage; unaffected and unambiguous."
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:274,278,281 (CFG.HATS, now ~267-288)",
+          "swept": true,
+          "evidence": "new 3-line comment immediately above the check: 'A hat's anchor is whether it runs at full strength...; Config.resolve_anchor resolves a file#heading Markdown reference.'"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/GBGCodingTools.jl module docstring (module #1, read before every other file) now states: 'An instrument is one of four review procedures: check-docs, check-consistency, bug-hunt, audit-changes.' Every file the finding names either links `[`GBGCodingTools`](@ref) at its first mention or has no bare docstring-prose use of the word to begin with.",
+      "class_surfaces": [
+        {
+          "surface": "src/GBGCodingTools.jl:4",
+          "swept": true,
+          "evidence": "module docstring now names the four instruments explicitly, non-circularly."
+        },
+        {
+          "surface": "src/DocLints.jl:11",
+          "swept": true,
+          "evidence": "'an instrument is one of the four review procedures and a round is one run of one over the consumer...; [`GBGCodingTools`](@ref) binds both terms.'"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:516 (now ~549)",
+          "swept": true,
+          "evidence": "'one of check-docs, check-consistency, bug-hunt, audit-changes, the four review procedures [`GBGCodingTools`](@ref) binds' replaces the circular 'one of the four instruments.'"
+        },
+        {
+          "surface": "src/TestHarness.jl:536-545 (now ~576-587)",
+          "swept": true,
+          "evidence": "'the two code instruments (bug-hunt, audit-changes — [`GBGCodingTools`](@ref) binds the term)'."
+        },
+        {
+          "surface": "src/Witnesses.jl:13",
+          "swept": true,
+          "evidence": "'a round being one run of one instrument ([`GBGCodingTools`](@ref) binds the term) over one...'."
+        },
+        {
+          "surface": "src/Scan.jl",
+          "swept": true,
+          "evidence": "grep finds only code-level `cfg[\"instruments\"][...]` access, no bare docstring-prose use to sweep."
+        },
+        {
+          "surface": "src/CLI/Sync.jl:199",
+          "swept": true,
+          "evidence": "'one skill stub per enabled instrument ([`GBGCodingTools`](@ref) binds the term) plus...'."
+        },
+        {
+          "surface": "src/CLI/Ledger.jl (comment)",
+          "swept": true,
+          "evidence": "grep of the file (base and current) finds zero occurrences of 'instrument'; nothing to sweep."
+        },
+        {
+          "surface": "src/CLI/Hunt.jl",
+          "swept": true,
+          "evidence": "only code-level `cfg[\"instruments\"][\"bug-hunt\"]` access, no prose use."
+        },
+        {
+          "surface": "src/CLI/Audit.jl:11",
+          "swept": true,
+          "evidence": "'the round id (<date>-<instrument>-<NN>), the instrument being one of the four review [procedures]...'."
+        },
+        {
+          "surface": "src/CLI/RoundFiles.jl:7",
+          "swept": true,
+          "evidence": "'a round is one run of one instrument ([`GBGCodingTools`](@ref) binds the term) over one consumer'."
+        },
+        {
+          "surface": "src/CLI/Gate.jl:11",
+          "swept": true,
+          "evidence": "'an instrument being one of the four review procedures [`GBGCodingTools`](@ref) binds'."
+        },
+        {
+          "surface": "src/CLI/Config.jl",
+          "swept": true,
+          "evidence": "only code-level config-key strings, no bare docstring-prose 'instrument' to sweep."
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:9,128",
+          "swept": true,
+          "evidence": "module docstring: 'diffs as the instrument needs (one of the four review procedures [`GBGCodingTools`](@ref) binds)'; prepare(): 'by instrument ([`GBGCodingTools`](@ref) binds the term)' — the site Pass 3 fixed after the state verifier caught it still bare."
+        },
+        {
+          "surface": "src/CLI/Passes.jl:10",
+          "swept": true,
+          "evidence": "'closing condition of the instrument ([`GBGCodingTools`](@ref) binds the term) in order'."
+        },
+        {
+          "surface": "src/CLI/Fleet.jl",
+          "swept": true,
+          "evidence": "only code-level `r[2][\"instrument\"]` access, no prose use."
+        },
+        {
+          "surface": "src/CLI/Release.jl",
+          "swept": true,
+          "evidence": "only code-level `r.round[\"instrument\"]` access, no prose use."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/DocLints.jl now reads '[`GBGCodingTools.gate`](@ref), the closure gate, over the two docs instruments; after Documenter it runs the built-HTML scans and that gate again.' src/TestHarness.jl gate() docstring now reads '[`GBGCodingTools.gate`](@ref), the generic closure gate... Never that generic gate over all four instruments.' Both are qualified refs and the docs build was verified to resolve them (commit 984ed2f).",
+      "class_surfaces": [
+        {
+          "surface": "src/DocLints.jl:11,17-18",
+          "swept": true,
+          "evidence": "'runs...[`GBGCodingTools.gate`](@ref), the closure gate, over the two docs instruments; after Documenter it runs the built-HTML scans and that gate again.'"
+        },
+        {
+          "surface": "src/TestHarness.jl:536-545 (now ~576-587)",
+          "swept": true,
+          "evidence": "'runs the quick doctor set and [`GBGCodingTools.gate`](@ref), the generic closure gate, over the two code instruments...Never that generic gate over all four instruments.'"
+        },
+        {
+          "surface": "src/CLI/Gate.jl:6-20",
+          "swept": true,
+          "evidence": "the home docstring itself, now bulleted and receiving the inbound `[`GBGCodingTools.gate`](@ref)` links from both other sites; also newly linked to the `instrument` definition."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/GBGCodingTools.jl module docstring (module #1) now states: 'A lane is one agent's share of a round — one surface, one territory, or one kind of change,' verified against actual `kind` values (`surface`/`territory` in Preflight.jl, `code`/`prose` in catalog/lanes/audit-changes.toml). Schema.jl's first true use is additionally given a local gloss plus a link.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Schema.jl:40-41 (instrument_schema)",
+          "swept": true,
+          "evidence": "'A Workflow is the instrument's `workflow/*.js` script and a lane is one agent's share of the round it runs, both bound in [`GBGCodingTools`](@ref).'"
+        },
+        {
+          "surface": "src/Scan.jl:39 (ScanResult.note)",
+          "swept": true,
+          "evidence": "local text unchanged ('a dead-lane reason'), but lane is now defined in module #1 (GBGCodingTools.jl), read before Scan.jl (module #11) in the cold reader's own dependency order — the term is no longer settled jargon at this point."
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:223-227 (resolve_checkdocs_lanes)",
+          "swept": true,
+          "evidence": "local field-list docstring unchanged, but again preceded by the module-#1 definition; the underlying complaint (no docstring anywhere states the concept) is resolved centrally."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/GBGCodingTools.jl module docstring (module #1) now states 'A hat is one persona of the `check-consistency` panel, reading the corpus from a single standpoint.' src/CLI/Preflight.jl's resolve_hats docstring gains the identical defining sentence before its field list, directly answering 'the eventual docstring only lists attributes rather than defining the concept.'",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Init.jl:233 (init)",
+          "swept": true,
+          "evidence": "'a placeholder persona for every domain hat without one (`Preflight.resolve_hats` binds the term)' — a code span rather than an `@ref` because resolve_hats has no page (per commit 984ed2f); still preceded by the module-#1 definition."
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:181-192 (resolve_hats)",
+          "swept": true,
+          "evidence": "new sentence inserted before the field list: 'A hat is one persona of the `check-consistency` panel, reading the corpus from a single standpoint.'"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Reflection.jl:163 (argcov) now reads '`exempt` — the [`GBGCodingTools.Ledger`](@ref)'s `[exemption.match]` predicate' — exactly the hint's requested link, fully qualified so it resolves from Reflection's own page; commit 984ed2f confirms the docs build resolves it and the fresh site's HTML scans are clean.",
+      "class_surfaces": [
+        {
+          "surface": "src/Reflection.jl:163 (argcov)",
+          "swept": true,
+          "evidence": "'the [`GBGCodingTools.Ledger`](@ref)'s `[exemption.match]` predicate' replaces the bare, unlinked 'the ledger's...'."
+        },
+        {
+          "surface": "src/CLI/Ledger.jl:7-11 (Ledger module, the home)",
+          "swept": true,
+          "evidence": "unchanged and already self-contained per the finding's own text; nothing to fix there."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#7",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/GBGCodingTools.jl module docstring (module #1) now states 'A Workflow is the instrument's `workflow/*.js` script, launched by the session running the round' — matching the hint almost verbatim. src/CLI/Schema.jl's first true use additionally restates the gloss inline and links to the binding.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Schema.jl:40 (instrument_schema)",
+          "swept": true,
+          "evidence": "'A Workflow is the instrument's `workflow/*.js` script...both bound in [`GBGCodingTools`](@ref).'"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:9 (Preflight module)",
+          "swept": true,
+          "evidence": "local text 'the one renderer of Workflow args' unchanged, but now preceded in read order (module #1 vs module #24) by the central definition."
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:442 (now ~486, rerun)",
+          "swept": true,
+          "evidence": "local text 'prints the instrument's Workflow call' unchanged, but likewise preceded by the module-#1 definition."
+        }
+      ]
+    }
+  ]
+}

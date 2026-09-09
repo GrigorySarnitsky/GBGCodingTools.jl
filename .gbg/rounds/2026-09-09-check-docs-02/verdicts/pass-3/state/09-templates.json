@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "lane": "templates",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/templates#1",
+      "verdict": "ABSENT",
+      "evidence": "grep '{{[a-z0-9_.-]*}}' templates/commit-message.tmpl and bump-message.tmpl: only {{tool.version}}/{{files}} and {{from}}/{{to}}/{{files}}/{{abandoned}}. README.md:23-24 Slots cells now list exactly those, no {{package.name}} in either row."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#2",
+      "verdict": "ABSENT",
+      "evidence": "templates/regressions-README.md:1 now reads '<!-- gbg:managed regressions-README.md v{{tool.version}} — rewritten by `gbg sync`; do not edit -->', matching SKILL.md.tmpl:6's v{{tool.version}} form. Version stamp present."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#3",
+      "verdict": "ABSENT",
+      "evidence": "README.md:29-31 now adds: 'One exception: queue-guard.sh.tmpl is copied byte-for-byte from PF's Stop hook and carries no header... the sidecar hash is what marks it managed.' The blanket rule is now qualified; no contradiction remains."
+    }
+  ]
+}

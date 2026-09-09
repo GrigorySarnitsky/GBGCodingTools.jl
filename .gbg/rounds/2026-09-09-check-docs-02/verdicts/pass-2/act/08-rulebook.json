@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "3bc41c7d22d311037ed5c88848988a05",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/docs-rubric.md:12 HOME_ORDER now reads 'identity, when-to-use, arguments, one formula, citation, links, caveats' (caveats last, item 7); ADMONITION_TITLE at :61 already said 'the last substantive block of a docstring, before the fields list' and was left as-is. RULES.toml:21-22 and docs/ARCHITECTURE.md:2194 were regenerated to the same wording.",
+      "class_surfaces": [
+        {
+          "surface": "policy/docs-rubric.md:12-16",
+          "swept": true,
+          "evidence": "'...arguments, one formula, citation, links, caveats.' — caveats moved from item 4 to item 7"
+        },
+        {
+          "surface": "policy/docs-rubric.md:60-62",
+          "swept": true,
+          "evidence": "unchanged text, already agreed: 'the last substantive block of a docstring, before the fields list'"
+        },
+        {
+          "surface": "policy/RULES.toml:20-22",
+          "swept": true,
+          "evidence": "statement and sentinel regenerated to the new item order"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2194",
+          "swept": true,
+          "evidence": "rules table row regenerated: '...links, caveats; internals, jargon and rationale are excluded.'"
+        },
+        {
+          "surface": "src/Scans/prose_shape.jl:114-122",
+          "swept": true,
+          "evidence": "scan still checks only Arguments-before-admonition and Fields-last, unchanged — the finding never asked for new mechanical enforcement of caveat position, only that the two prose rules stop contradicting each other"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/RULES.toml:437-438 sentinel now reads '...verbatim-identical to the canonical entry under the package's references heading, title and DOI compared.' ending at the real sentence boundary, matching policy/citations.md:9-13's actual first sentence exactly.",
+      "class_surfaces": [
+        {
+          "surface": "policy/RULES.toml:437-438",
+          "swept": true,
+          "evidence": "sentinel field regenerated to the full sentence, no longer cut at 'verbatim-'"
+        },
+        {
+          "surface": "policy/RULES.toml (other 92 rules)",
+          "swept": true,
+          "evidence": "programmatic check: no other sentinel field fails to end on sentence-final punctuation or ends on a trailing hyphen — the bug was isolated to this one rule"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/RULES.toml:1-9 header no longer names POL.RULE_PARITY; it now says the tool's own test suite (test/schemas.jl) fails when a heading exists without a row or vice versa. test/schemas.jl's 'RULES.toml matches the policy files' testset does exactly that via Set(ids) == headings.",
+      "class_surfaces": [
+        {
+          "surface": "policy/RULES.toml:1-9",
+          "swept": true,
+          "evidence": "POL.RULE_PARITY claim removed and replaced by an accurate description of test/schemas.jl's real enforcement"
+        },
+        {
+          "surface": "test/schemas.jl (RULES.toml matches the policy files testset)",
+          "swept": true,
+          "evidence": "`@test Set(r[\"id\"] for r in rules) == headings` — a genuine parity check now exists where none did before"
+        },
+        {
+          "surface": "grep -rn RULE_PARITY (outside .gbg/)",
+          "swept": true,
+          "evidence": "zero remaining matches anywhere in the corpus"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/latex-idiom.md:56-59 adds a standing exception: '`\\mathbf{1}`... is admitted in every package whatever that list holds; it is not a package's to withhold.' src/Scans/mathbf.jl's SCAN.MATHBF was updated to match: `push!(allowed, \"\\\\mathbf{1}\")` unconditionally, so the scan never flags it regardless of a package's admitted list.",
+      "class_surfaces": [
+        {
+          "surface": "policy/latex-idiom.md:54-59",
+          "swept": true,
+          "evidence": "standing non-configurable exception sentence added for `\\mathbf{1}`"
+        },
+        {
+          "surface": "src/Scans/mathbf.jl:1-12",
+          "swept": true,
+          "evidence": "`push!(allowed, \"\\\\mathbf{1}\")` added before the hit loop; header comment updated"
+        },
+        {
+          "surface": "policy/RULES.toml (MATHBB/MATHBF statement+sentinel)",
+          "swept": true,
+          "evidence": "unaffected — the addition is a second sentence in the paragraph, so the sentinel (first sentence only) is unchanged"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/00-index.md:12-15 no longer claims 'the instruments cite these ids'; it now says the scan catalogue names the rule each scan enforces and a ledger entry of scope `policy` names the rule it exempts. Both claims verified true: catalog/scans.toml carries 42 RULE.* citations, and exemptions.schema.json's scope enum includes `policy` with `id` described as a RULE.* id among others.",
+      "class_surfaces": [
+        {
+          "surface": "policy/00-index.md:12-15",
+          "swept": true,
+          "evidence": "instruments-cite-ids claim removed, replaced by scan-catalogue + ledger + check-field claims, each verified true"
+        },
+        {
+          "surface": "catalog/scans.toml",
+          "swept": true,
+          "evidence": "42 RULE.* citations, already true before and after — now correctly attributed"
+        },
+        {
+          "surface": "instruments/*/PROTOCOL.md (audit-changes, bug-hunt, check-consistency)",
+          "swept": true,
+          "evidence": "the finding's own evidence these carry zero RULE.* citations; fix eliminates the false claim about instruments rather than adding citations"
+        },
+        {
+          "surface": "docs/src/guide/rules.md:8",
+          "swept": true,
+          "evidence": "this build-time-generated guide page already said 'the scans and the doctor cite it' both before and after — consistent, nothing to fix"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#6",
+      "verdict": "NEW-DEFECT",
+      "question": "implementation",
+      "evidence": "policy/RULES.toml now gives all 93 rules a `check` field, and test/schemas.jl validates each referent — the schema-extension remedy the finding's hint proposed. But RULE.API.POSITIONAL — the finding's own central exhibit, 'the ONLY rule ever recorded as a RULE_WITH_CHECK-style known weakness' — is classified `check=[\"panel\"]`, not `[\"weakness\"]`. CLAUDE.md was edited in this same commit (sha256 changed) yet still calls the same rule 'a KNOWN WEAKNESS ... carried by review', while testing-protocol.md's own rewritten text (added in this pass) states 'panel and session are answers, weakness is a debt' — making 'panel' and 'known weakness' contradictory descriptions of the exact rule the finding cited as proof.",
+      "class_surfaces": [
+        {
+          "surface": "policy/testing-protocol.md:56-62",
+          "swept": true,
+          "evidence": "RULE_WITH_CHECK's paragraph rewritten to define the check field and its panel/session/weakness categories"
+        },
+        {
+          "surface": "policy/RULES.toml (all 93 rules)",
+          "swept": true,
+          "evidence": "every rule now carries a non-empty `check` array (verified by script: 0/93 missing)"
+        },
+        {
+          "surface": "test/schemas.jl ('every rule declares what catches its next violation')",
+          "swept": true,
+          "evidence": "new testset validates each check entry against scans.toml / Doctor.CHECKS / test files / harness bindings / the panel|session|weakness enum"
+        },
+        {
+          "surface": "CLAUDE.md declared-deviations ledger entry for RULE.API.POSITIONAL",
+          "swept": false,
+          "evidence": "still reads 'is a KNOWN WEAKNESS by `RULE.TEST.RULE_WITH_CHECK`'s own terms, carried by review' while RULES.toml classifies the same rule `[\"panel\"]`, a category the same commit's rewritten text defines as 'an answer', not a debt"
+        },
+        {
+          "surface": "13 rules newly classified check=[\"weakness\"] (RULE.DOC.HOME_ORDER, ONE_HOME, VARIANT_PAIR, ADMONITION_TITLE, STEER, LITERATE, MODULE_MAP, RETURNS, RULE.TEX.NO_HSCROLL, CODE_SPAN_JULIA, IMAGINARY, GREEK_AB, RULE.CIT.DOI)",
+          "swept": false,
+          "evidence": "none of these 13 newly-declared known-weaknesses appear in CLAUDE.md's declared-deviations ledger, so the 'weakness = debt' mechanism the fix built is not reflected in the one place the package already uses to record exactly this kind of debt"
+        }
+      ]
+    }
+  ]
+}

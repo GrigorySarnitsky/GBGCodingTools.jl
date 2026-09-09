@@ -1,0 +1,28 @@
+{
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "lane": "schemas",
+  "pass_nonce": "b457e3ee09da878b58a35cc7f9bb2f89",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/schemas#1",
+      "verdict": "ABSENT",
+      "evidence": "grep for load_schema/validate: Rounds.jl:397 now has `validate(load_schema(\"finding\"), f)` before findings.json is written, with a RoundError thrown on mismatch. test/schemas.jl's liveness check now requires the literal `\"name\"` to appear on a line containing `load_schema`/`read_verdicts`, no longer a bare substring match, and comments this exact history."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#2",
+      "verdict": "ABSENT",
+      "evidence": "instruments/bug-hunt/schema.json now has one $defs entry (`hunt_finding`) not two; `grep -c '$ref'` returns 1; lane_file.properties.findings.items is `{\"$ref\": \"#/$defs/hunt_finding\"}`, matching how check-docs et al. $ref their $defs.finding. No dead $defs.finding block remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#3",
+      "verdict": "ABSENT",
+      "evidence": "schema/managed.schema.json: \"files\": {\"additionalProperties\": {\"$ref\": \"#/$defs/entry\"}, ...}; schema/tally.schema.json: \"per_id\": {\"additionalProperties\": {\"$ref\": \"#/$defs/entry\"}, ...}. Both dynamic maps now enforce the documented per-key shape instead of additionalProperties: true."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#4",
+      "verdict": "ABSENT",
+      "evidence": "schema/exemptions.schema.json: \"minLength\": 40 with description 'at least 40 characters, as CFG.EXEMPTIONS enforces for every entry'; matches Doctor.jl:305 `length(e[\"reason\"]) >= 40`. The 'on scope finding' misdescription is gone."
+    }
+  ]
+}

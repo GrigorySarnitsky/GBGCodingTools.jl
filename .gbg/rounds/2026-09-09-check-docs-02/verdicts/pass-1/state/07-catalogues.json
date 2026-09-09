@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "b457e3ee09da878b58a35cc7f9bb2f89",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/catalogues#1",
+      "verdict": "ABSENT",
+      "evidence": "catalog/hats/latex-typesetter.toml:4 now reads needs = [\"source\"] (rulebook removed), with comment 'the persona reads the rendered policy file, never a rulebook_sections grant'. Preflight.jl:227-228 na-gate only fires on \"rulebook\" in needs, now false here, so the hat can't be dropped for empty rulebook_sections."
+    }
+  ]
+}

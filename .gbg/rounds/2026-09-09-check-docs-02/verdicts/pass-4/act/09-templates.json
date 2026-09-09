@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "lane": "templates",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "53a17d8c57f8e5a19b49c110a2deebdc",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/templates#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/README.md:23-24 now read `{{tool.version}}`, `{{files}}` and `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}` — `{{package.name}}` dropped from both cells; grep of both templates confirms neither contains that key, matching the new cells exactly.",
+      "class_surfaces": [
+        {
+          "surface": "templates/README.md:23 (commit-message.tmpl Slots cell)",
+          "swept": true,
+          "evidence": "cell now `{{tool.version}}`, `{{files}}`; template greps to exactly that set"
+        },
+        {
+          "surface": "templates/README.md:24 (bump-message.tmpl Slots cell)",
+          "swept": true,
+          "evidence": "cell now `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}`; template greps to exactly that set"
+        },
+        {
+          "surface": "every other Slots cell in templates/README.md (SKILL.md.tmpl, claude-md.block, gitignore.block, test-Project.toml.seed, regressions-README.md, etc.)",
+          "swept": true,
+          "evidence": "cross-checked each row's cell against a placeholder grep of its template file — all match exactly, no other row overstates a slot"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/regressions-README.md:1 changed from `<!-- gbg:managed regressions-README.md — ... -->` to `<!-- gbg:managed regressions-README.md v{{tool.version}} — ... -->`, matching SKILL.md.tmpl's `v{{tool.version}}` form; Sync.jl:221 renders this file with `s` (from slots(), Sync.jl:116 sets \"tool.version\" => v), so the placeholder resolves at render time.",
+      "class_surfaces": [
+        {
+          "surface": "templates/regressions-README.md:1",
+          "swept": true,
+          "evidence": "header now carries v{{tool.version}}, rendered via slots() which defines tool.version"
+        },
+        {
+          "surface": "templates/SKILL.md.tmpl:6 (sibling embedded header, cited as the model)",
+          "swept": true,
+          "evidence": "unchanged, already carried v{{tool.version}} — the finding's own reference point"
+        },
+        {
+          "surface": "templates/claude-md.block:1 / templates/gitignore.block:1 (block-marker headers, cited as siblings)",
+          "swept": true,
+          "evidence": "unchanged, already carry v{{tool.version}}"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/README.md's Managed-headers paragraph now adds: 'One exception: queue-guard.sh.tmpl is copied byte-for-byte from PF's Stop hook and carries no header ... the sidecar hash is what marks it managed.' Verified against src/CLI/Sync.jl: queue-guard.sh.tmpl enters plan()'s ManagedFile list unrendered (~line 207), every plan() entry's path+sha256 is recorded into managed.json (~lines 628-630), and classify() (524-531) derives MODIFIED/STALE/OK purely from that sidecar record — so the added claim is literally true.",
+      "class_surfaces": [
+        {
+          "surface": "templates/README.md:26-31 (the blanket Managed-headers rule)",
+          "swept": true,
+          "evidence": "rule now carries the queue-guard.sh.tmpl exception clause, matching hint option 1"
+        },
+        {
+          "surface": "templates/queue-guard.sh.tmpl (the only G, #-comment-format file)",
+          "swept": true,
+          "evidence": "file still has no gbg:managed string, but the rule no longer claims it should"
+        },
+        {
+          "surface": "managed_header(:hash, ...) dead branch, src/CLI/Sync.jl:154",
+          "swept": false,
+          "evidence": "still never called anywhere (grep confirms) — the hint's alternative remedy was not taken, but the finding's actual ask was met via the other offered option"
+        }
+      ]
+    }
+  ]
+}

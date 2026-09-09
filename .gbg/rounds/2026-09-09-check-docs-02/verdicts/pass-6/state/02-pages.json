@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "00afdb50d463330866ebc84ce1e8a7df",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/pages#1",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:30 now lists `GBGCodingTools.Init.migrate_baselines`, not migrate_seeds; grep -n migrate docs/src/guide/verbs.md shows no mention of migrate_seeds anywhere. Init.jl:584 registers VERBS[\"migrate baselines\"]=cmd_migrate_baselines, a real verb — the page matches the code."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#2",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:15 now lists `GBGCodingTools.Options` right after parse_options in the Entry point @docs block; Main.jl:12-23 carries the Options docstring with 'The fields are:' bullets for positional/flags/values."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#3",
+      "verdict": "ABSENT",
+      "evidence": "grep 'cmd_doctor' docs/src shows verbs.md:41 references GBGCodingTools.Doctor.cmd_doctor; Doctor.jl:733-738 docstring states `--deep`, `--json`, `--effective`, `--only <id-or-prefix>[,…]` and the exit-2 'not a consumer' behavior verbatim."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#4",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:43 now references GBGCodingTools.cmd_scan; Scan.jl's cmd_scan docstring (lines ~549-562) documents `--rebaseline`, the `--reason` requirement (>=12 chars) and that it writes docs/prose_shape.csv."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#5",
+      "verdict": "ABSENT",
+      "evidence": "install.md now reads: 'One consumer is routed differently: a consumer pinned at `dev` that is not itself the tool's checkout — the fixture, which sits inside that checkout — resolves against the enclosing tool repository's root rather than its own `docs/`.' Matches bin/gbg's branch (4)."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#6",
+      "verdict": "ABSENT",
+      "evidence": "rounds.md:44 now reads '...which the CLI exports only while it runs a build, a test or an audit's executable claim on that round's behalf', matching Gate.jl's docstring wording and Audit.jl's executable-claims GBG_ROUND export."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#7",
+      "verdict": "ABSENT",
+      "evidence": "config.md:11-13 now enumerates '...the history and references anchors, the glossary file, and any data or script surface whose comments are prose' — covering both missing schema keys (glossary, data) alongside the original 9."
+    }
+  ]
+}

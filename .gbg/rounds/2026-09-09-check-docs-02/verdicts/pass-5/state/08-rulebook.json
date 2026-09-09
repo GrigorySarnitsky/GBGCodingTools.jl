@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "78cbf7c70814ae838def1f1641366da5",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#1",
+      "verdict": "ABSENT",
+      "evidence": "docs-rubric.md:11-16 HOME_ORDER now lists caveats as item (7), last, 'before the fields list'; ADMONITION_TITLE (line 60) says the same: 'the last substantive block of a docstring, before the fields list'. RULES.toml:22 sentinel matches. Orderings now agree."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#2",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:428 sentinel now reads the full sentence ending '...verbatim-identical to the canonical entry under the package's references heading, title and DOI compared.' — matches citations.md:10-12 verbatim, no hyphen truncation."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#3",
+      "verdict": "ABSENT",
+      "evidence": "grep -rn 'RULE_PARITY' . --exclude-dir=.gbg: zero hits anywhere. RULES.toml header (lines 1-8) no longer names POL.RULE_PARITY; it now cites 'test/schemas.jl' for heading/row parity and sentinel-verbatim checks, and test/schemas.jl:134-142 actually implements exactly that."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#4",
+      "verdict": "ABSENT",
+      "evidence": "latex-idiom.md:59-60 MATHBF now states '`\\mathbf{1}`, the indicator and identity of RULE.TEX.MATHBB, is admitted in every package whatever that list holds; it is not a package's to withhold.' src/Scans/mathbf.jl hard-codes `\\mathbf{1}` as always-allowed, matching the prose."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#5",
+      "verdict": "ABSENT",
+      "evidence": "policy/00-index.md:12-14 no longer says instruments cite the ids; it now reads 'The scan catalogue names the rule each scan enforces, and a ledger entry of scope policy names the rule it exempts.' grep -i 'instrument' in 00-index.md shows only the files list, no re-introduced claim."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#6",
+      "verdict": "ABSENT",
+      "evidence": "Every one of the 93 RULES.toml entries now carries a `check` field (scan:42, panel:19, harness:14, weakness:13, session:6, test:4, doctor:3 — verified by script); testing-protocol.md:56-66 RULE_WITH_CHECK defines the enum incl. 'panel'/'session'/'weakness'; test/schemas.jl validates it against real checks/CHECKS."
+    }
+  ]
+}

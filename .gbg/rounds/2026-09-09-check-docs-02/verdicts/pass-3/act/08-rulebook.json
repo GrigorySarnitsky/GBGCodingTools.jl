@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/docs-rubric.md diff renumbers HOME_ORDER's list so caveats moves from item (4) to item (7), now reading 'identity, when-to-use, arguments, one formula, citation, links, caveats' and item (7) itself now says caveats is 'the last substantive block, before the fields list' -- copying ADMONITION_TITLE's own phrase (docs-rubric.md:61-62) verbatim. RULES.toml:21-22's statement/sentinel for RULE.DOC.HOME_ORDER were regenerated to match. Full test suite (test/schemas.jl, 780/780) passes, including the sentinel-verbatim check.",
+      "class_surfaces": [
+        {
+          "surface": "policy/docs-rubric.md:12-16 (RULE.DOC.HOME_ORDER)",
+          "swept": true,
+          "evidence": "list renumbered to 7 items with caveats last, matching the last-item wording ADMONITION_TITLE already used"
+        },
+        {
+          "surface": "policy/docs-rubric.md:60-61 (RULE.DOC.ADMONITION_TITLE)",
+          "swept": true,
+          "evidence": "text unchanged (it was already the correct placement) and is now consistent with the rewritten HOME_ORDER"
+        },
+        {
+          "surface": "src/Scans/prose_shape.jl:114-122 (SCAN.PROSE_SHAPE)",
+          "swept": false,
+          "evidence": "scan code unchanged: it still only checks 'no admonition precedes # Arguments' and 'nothing follows # Fields', so the full 7-step order (formula/citation/links before caveats) is not mechanically enforced -- the finding's own hint treated textual reconciliation as sufficient and did not ask for a stronger scan"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/RULES.toml sentinel for RULE.CIT.FULL_INLINE now reads '...verbatim-identical to the canonical entry under the package's references heading, title and DOI compared.' -- the complete first sentence of citations.md:9-13, ending at the real period, not the line-wrap hyphen. `grep '^sentinel = ' policy/RULES.toml | grep -v '\\.\"$'` returns zero rows: every one of the 93 sentinels now ends at a period, so the line-wrap-hyphen bug is not present anywhere else either.",
+      "class_surfaces": [
+        {
+          "surface": "policy/RULES.toml:437-438 (RULE.CIT.FULL_INLINE sentinel)",
+          "swept": true,
+          "evidence": "sentinel extended to the true sentence boundary, verified to occur verbatim in citations.md via the passing 'RULES.toml matches the policy files' test"
+        },
+        {
+          "surface": "policy/RULES.toml (all other 92 sentinels, for the same hyphen-truncation bug)",
+          "swept": true,
+          "evidence": "grep confirms every sentinel line ends in a period; none stop at a bare trailing hyphen"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/RULES.toml:5-8 header no longer names POL.RULE_PARITY; it now says 'the tool's own test suite (test/schemas.jl) fails when a heading exists without a row or a row without a heading, and when a sentinel is not a verbatim run of its paragraph.' test/schemas.jl's pre-existing 'RULES.toml matches the policy files' testset (unchanged in this diff) does exactly that: `Set(r[\"id\"] for r in rules) == headings` and `occursin(r[\"sentinel\"], text)`, and it passes (780/780 total). `grep -rn RULE_PARITY` outside .gbg now returns nothing.",
+      "class_surfaces": [
+        {
+          "surface": "policy/RULES.toml:3 (header claim)",
+          "swept": true,
+          "evidence": "false 'POL.RULE_PARITY (doctor)' citation replaced by an accurate pointer to the real, verified test/schemas.jl mechanism"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/latex-idiom.md:56-60 (RULE.TEX.MATHBF) now adds: '`\\mathbf{1}`, the indicator and identity of `RULE.TEX.MATHBB`, is admitted in every package whatever that list holds; it is not a package's to withhold.' src/Scans/mathbf.jl was also changed at the code level: `allowed = Set(...); push!(allowed, \"\\\\mathbf{1}\")` -- so the scan itself, not just prose, now treats `\\mathbf{1}` as a standing exception regardless of the empty `notation.mathbf_allowed` list, resolving the WRONG-SURFACE risk the finding raised. RULES.toml's MATHBF sentinel is unaffected (first sentence unchanged) and remains verbatim-correct.",
+      "class_surfaces": [
+        {
+          "surface": "policy/latex-idiom.md:49-52 (RULE.TEX.MATHBB mandate)",
+          "swept": true,
+          "evidence": "unchanged text is now backed by an explicit universal exception on the MATHBF side rather than left to silently contradict it"
+        },
+        {
+          "surface": "policy/latex-idiom.md:54-60 (RULE.TEX.MATHBF admitted-list)",
+          "swept": true,
+          "evidence": "new sentence carves out \\mathbf{1} as non-configurable, independent of the package's admitted list"
+        },
+        {
+          "surface": "src/Scans/mathbf.jl:1-12 (SCAN.MATHBF)",
+          "swept": true,
+          "evidence": "allowed-set is unconditionally seeded with \\mathbf{1} before matching, so the scan no longer flags it even when notation.mathbf_allowed is empty"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/00-index.md:12-14's 'the instruments cite these ids' clause is removed and replaced with 'the scan catalogue names the rule each scan enforces, and a ledger entry of scope `policy` names the rule it exempts ... Each rule's `check` field says what catches its next violation.' Both replacement claims verify true: catalog/scans.toml carries 42 RULE.* citations (one per scan), and schema/exemptions.schema.json's scope=policy entries require an `id` that is 'a RULE.* id' -- matching the project's own rendered CLAUDE.md deviations list. The false 'instruments cite ids' claim is gone from the corpus; no other file was found asserting it.",
+      "class_surfaces": [
+        {
+          "surface": "policy/00-index.md:12-14",
+          "swept": true,
+          "evidence": "false claim reworded to name only the two consumers (scans, ledger) that actually do cite RULE ids"
+        },
+        {
+          "surface": "instruments/audit-changes/PROTOCOL.md, instruments/bug-hunt/PROTOCOL.md, instruments/check-consistency/PROTOCOL.md",
+          "swept": false,
+          "evidence": "still zero RULE.* citations each -- unchanged, but no longer misdescribed since the claim about instruments was removed rather than the files being made to conform"
+        },
+        {
+          "surface": "instruments/check-docs/PROTOCOL.md",
+          "swept": false,
+          "evidence": "still only the one RULE.INST.AUDIT_AFTER_CODE citation -- unchanged, same reasoning as above"
+        },
+        {
+          "surface": "catalog/hats/*.toml (21 files), catalog/lanes/*.toml (3 files)",
+          "swept": false,
+          "evidence": "unchanged, zero RULE.* citations -- the chosen fix (reword the claim) did not touch these, per the hint's first alternative"
+        },
+        {
+          "surface": "catalog/scans.toml",
+          "swept": true,
+          "evidence": "already the true locus of rule-citing behaviour (42 hits); now correctly what the reworded sentence points to"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "Every one of the 93 [[rule]] entries in policy/RULES.toml now carries a non-empty `check` field (verified by script: zero missing). policy/testing-protocol.md's RULE.TEST.RULE_WITH_CHECK paragraph now spells out the vocabulary (scan:/doctor:/test:/harness:/panel/session/weakness) and explicitly reclassifies a rule 'no program could ever decide' as `panel`, not `weakness`. test/schemas.jl gained a new testset asserting every rule's check value resolves to a real scan id, doctor check, test file, or harness binding, or is one of panel/session/weakness alone; full suite passes 780/780. The 16 example rules the finding named each now carry a check value (panel, weakness, or a real harness: binding I confirmed exists in src/). One residual wrinkle: the rendered policy/deviations.md ledger entry for RULE.API.POSITIONAL (a location the finding itself names) still literally reads 'is a KNOWN WEAKNESS' even though its RULES.toml check is now `panel` -- commit e7fccc8c explicitly reverted an edit to that owner-authored ledger text because editing it moves the round's frozen config stamp, and left the terminology mismatch standing rather than touch owner data. This is a disclosed, architecturally-forced limitation on a non-rule artifact, not a gap in the rule-to-check mapping the finding asked for.",
+      "class_surfaces": [
+        {
+          "surface": "policy/RULES.toml (93 rules, all)",
+          "swept": true,
+          "evidence": "script confirms every rule has a non-empty check field; test/schemas.jl testset cross-validates each check value against real scans/doctor checks/tests/harness bindings"
+        },
+        {
+          "surface": "RULE.DOC.TWO_TIER / ONE_HOME / VARIANT_PAIR / VERIFIED / SELF_CONTAINED / TERMS_DEFINED / CLASS_SWEEP / BATTERY / BUILD_VERIFY / ONE_NOTATION / MODULE_MAP / RETURNS",
+          "swept": true,
+          "evidence": "each carries check=panel, weakness, or a verified harness: binding (Preflight.resolve_checkdocs_lanes, makedocs)"
+        },
+        {
+          "surface": "RULE.TEX.NO_HSCROLL / IMAGINARY / GREEK_AB, RULE.CIT.STYLE",
+          "swept": true,
+          "evidence": "each now carries check=weakness or check=panel"
+        },
+        {
+          "surface": "policy/deviations.md (rendered, RULE.API.POSITIONAL entry)",
+          "swept": false,
+          "evidence": "commit e7fccc8c reverted a reword of this owner-authored ledger reason ('moved the round's config stamp'); text still says 'KNOWN WEAKNESS' though the rule's own check is now panel -- a disclosed terminology lag on ledger prose, not on the rule-to-check mapping itself"
+        }
+      ]
+    }
+  ]
+}

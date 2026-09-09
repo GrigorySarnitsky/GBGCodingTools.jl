@@ -1,0 +1,43 @@
+{
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "lane": "pages",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/pages#1",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:30 now lists Init.migrate_baselines (a real registered verb). migrate_seeds no longer appears in verbs.md; it moved to docs/src/api/CLI.md:26, in the Engines section next to Init.derive_config, as hinted."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#2",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/verbs.md:14-15 now shows GBGCodingTools.parse_options immediately followed by GBGCodingTools.Options in the same @docs block, exactly the fix hinted."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#3",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:40-42 now lists Doctor.run, Doctor.cmd_doctor, doctor in sequence. cmd_doctor's docstring (src/CLI/Doctor.jl:730-735) spells --deep, --json, --effective, --only <id-or-prefix>[,...], and the exit-2-not-a-consumer behavior verbatim."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#4",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:43-44 now lists GBGCodingTools.cmd_scan then scan_docs. cmd_scan's docstring (src/Scan.jl:555-559) documents gbg scan docs [--hard-only] [--only id,...] [--rebaseline prose-shape --reason \"...\"] verbatim."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#5",
+      "verdict": "ABSENT",
+      "evidence": "install.md:36-39 now adds: 'One consumer is routed differently: a consumer pinned at dev that is not itself the tool's checkout — the fixture, which sits inside that checkout — resolves against the enclosing tool repository's root rather than its own docs/.' States exactly the omitted exception."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#6",
+      "verdict": "ABSENT",
+      "evidence": "rounds.md:43-44 now reads '...exports only while it runs a build, a test or an audit's executable claim on that round's behalf,' matching Gate.jl's docstring (src/CLI/Gate.jl:9) exactly; the audit's-claim case is no longer dropped."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#7",
+      "verdict": "ABSENT",
+      "evidence": "config.md:11-13 now enumerates all 11 schema/config.schema.json surfaces.* keys, adding '...the glossary file, and any data or script surface whose comments are prose' alongside the original 9 — verified via schema: rationale, pages, generated, src, ext, literate, built_html, history_exempt, references_heading, glossary, data — all named."
+    }
+  ]
+}

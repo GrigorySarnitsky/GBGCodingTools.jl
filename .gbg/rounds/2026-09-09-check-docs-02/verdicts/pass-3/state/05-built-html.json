@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/built-html#1",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/architecture.md:382-390 now reads `*Personal-scope symlinked skills, one per instrument under `~/.claude/skills/`*:` — no glob asterisk trapped inside backticks. Built architecture.html renders clean <em>/<code> tags for the whole Dominated list, no cascade, no stray backtick."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#2",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/architecture.md:2327 now backticks `built_html` too. Built architecture.html renders `<code>built_html</code> + <code>.gbg/scratch/public_surface.json</code>` — no <em> split, cell reads as plain text."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#3",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/rules.md:648 now backticks the id: `RULE.TEST.RULE_WITH_CHECK`. Built guide/rules.html renders `<code>RULE.TEST.RULE_WITH_CHECK</code>` with no <em> mid-word split."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#4",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Config.jl:163-169 docstring now adds 'the `glossary` file exists and a non-empty `built_html` has a `docs/` directory beside it', matching the code's two extra checks at lines 199-200. Confirmed identical text rendered in docs/build/api/Config.html."
+    }
+  ]
+}

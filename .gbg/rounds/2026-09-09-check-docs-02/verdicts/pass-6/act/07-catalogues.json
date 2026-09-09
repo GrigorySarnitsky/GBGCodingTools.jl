@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "00afdb50d463330866ebc84ce1e8a7df",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/catalogues#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "catalog/hats/latex-typesetter.toml:4 changed `needs = [\"source\", \"rulebook\"]` to `needs = [\"source\"]              # the persona reads the rendered policy file, never a `rulebook_sections` grant`. src/CLI/Preflight.jl:229-230's `na = (...) || (\"rulebook\" in needs && isempty(cfg[\"package\"][\"rulebook_sections\"]))` no longer applies to this hat, so it can never be silently excluded for a consumer with empty rulebook_sections. The persona text is unchanged and still correctly names only the always-rendered `latex-idiom.md`, never `{package.rulebook_sections}`.",
+      "class_surfaces": [
+        {
+          "surface": "catalog/hats/latex-typesetter.toml:4",
+          "swept": true,
+          "evidence": "needs= reduced to [\"source\"]; the flagged hat no longer carries the unused rulebook grant"
+        },
+        {
+          "surface": "catalog/hats/naming-policy.toml:4,6",
+          "swept": true,
+          "evidence": "needs=[\"rulebook\",\"source\"] retained correctly — persona genuinely substitutes {package.rulebook_sections}"
+        },
+        {
+          "surface": "catalog/hats/doc-policy.toml:4,6",
+          "swept": true,
+          "evidence": "needs=[\"rulebook\",\"source\"] retained correctly — persona genuinely substitutes {package.rulebook_sections}"
+        },
+        {
+          "surface": "catalog/hats/invariants-and-decisions.toml:4,6",
+          "swept": true,
+          "evidence": "needs=[\"rulebook\",\"source\"] retained correctly — persona genuinely substitutes {package.rulebook_sections}"
+        }
+      ]
+    }
+  ]
+}

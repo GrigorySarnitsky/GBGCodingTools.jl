@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "3bc41c7d22d311037ed5c88848988a05",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "Preflight.jl:209-211 now reads: \"`anchor` is whether the hat runs at full strength... It is unrelated to the `file#heading` anchors of [`Config.resolve_anchor`](@ref).\" Grepped all `anchor` uses in src/docs; no other unglossed collision found."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "GBGCodingTools.jl:16 (module docstring, read first): \"An **instrument** is one of four review procedures: `check-docs`, `check-consistency`, `bug-hunt`, `audit-changes`.\" DocLints.jl/TestHarness.jl cross-link back to it."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#3",
+      "verdict": "ABSENT",
+      "evidence": "TestHarness.jl:583 now: \"[`GBGCodingTools.gate`](@ref), the generic closure gate... Never that generic gate over all four instruments.\" DocLints.jl:18 also links `[`GBGCodingTools.gate`](@ref)`. Both gates now cross-referenced and distinguished."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#4",
+      "verdict": "ABSENT",
+      "evidence": "GBGCodingTools.jl:18: \"A **lane** is one agent's share of a round — one surface, one territory, or one kind of change.\" Schema.jl:42 links back: \"a lane is one agent's share of the round it runs... bound in [`GBGCodingTools`](@ref).\""
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#5",
+      "verdict": "ABSENT",
+      "evidence": "GBGCodingTools.jl:19: \"A **hat** is one persona of the `check-consistency` panel, reading the corpus from a single standpoint.\" Preflight.jl:199 repeats it verbatim before the field list; Init.jl:232 links \"(`Preflight.resolve_hats` binds the term)\"."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#6",
+      "verdict": "ABSENT",
+      "evidence": "Reflection.jl:163: \"The keyword `exempt` is the [`GBGCodingTools.Ledger`](@ref)'s `[exemption.match]` predicate\" — now @ref-linked exactly per the finding's hint; no bare unlinked \"the ledger\" remains in Reflection.jl."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#7",
+      "verdict": "ABSENT",
+      "evidence": "GBGCodingTools.jl:20: \"A **Workflow** is the instrument's `workflow/*.js` script, launched by the session running the round.\" Schema.jl:41-42 repeats it and links `[`GBGCodingTools`](@ref)`."
+    }
+  ]
+}

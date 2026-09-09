@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "14120325f0599a8c9085dd694615df3f",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rationale#1",
+      "verdict": "ABSENT",
+      "evidence": "ARCHITECTURE.md:625 now reads 'Sixteen schemas' with 16 names listed (lane-file, hunt-candidate removed, replaced by a sentence that they live inline in each instrument's schema.json). `ls schema/*.schema.json` returns exactly those 16 files. Line 1001 reads 'the sixteen of D11'."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#2",
+      "verdict": "ABSENT",
+      "evidence": "ARCHITECTURE.md:1721 QUICK formula now ends '..., POL.SENTINEL, SELF.CONSUMER, AUDIT.GAP}'; line 1726 reads 'AUDIT.* other than AUDIT.GAP ... are never in QUICK'. src/CLI/Doctor.jl:42-45 QUICK array ends with \"AUDIT.GAP\". Docs and code agree."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#3",
+      "verdict": "ABSENT",
+      "evidence": "ARCHITECTURE.md:2330 has a row: `SCAN.ARGS_FORM | RULE.DOC.ARGS_FORM | triage | src, ext | julia | ... | wrong-args-form` — present in the §12.B table."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#4",
+      "verdict": "ABSENT",
+      "evidence": "ARCHITECTURE.md:949-966 CLI/ tree now lists Git.jl, Ledger.jl, Passes.jl, RoundFiles.jl and Self.jl each with a description, alongside the other 20 files; matches all 25 actual files in src/CLI/."
+    }
+  ]
+}

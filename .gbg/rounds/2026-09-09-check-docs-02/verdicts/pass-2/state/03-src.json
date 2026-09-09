@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "3bc41c7d22d311037ed5c88848988a05",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/src#1",
+      "verdict": "PARTIAL",
+      "evidence": "All 12 originally-cited sites (TestHarness.jl:85, Witnesses.jl:93, Reflection.jl:311, Scan.jl:268, Config.jl:250, Sync.jl:560, Rounds.jl:223, Preflight.jl:185, Bump.jl:12, Release.jl:7, Gate.jl:8, Seed.jl:41) now carry 'The arguments are:' bulleted lists. Swept every 3+/kwarg signature in src/ and ext/.",
+      "surviving_class": "src/Reflection.jl:154-166 — argcov(cfg; exempt = (hit -> false)): has a keyword arg (exempt), so bulleted form is required by the rule, but the docstring is still flowing prose with no 'The arguments are:' marker at all."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#2",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/args_form.jl:7 now defines `const ARGS_BULLET = r\"The\\s+arguments\\s+are:\"` (whitespace-tolerant regex, not a literal substring), used at line 29 `occursin(ARGS_BULLET, d.body)`. Header comment line 6 explains why. Scan.jl and Preflight.jl's line-wrapped instances would now match."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#3",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/args_form.jl:16 now runs `sig = replace(d.signature, r\"\\s*->.*$\" => \"\")` before `findfirst('(', sig)`/`findlast(')', sig)`, mirroring Reflection.argcov's own stripping. No return-tuple element names can leak into the parameter list anymore."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#4",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Preflight.jl:201-203: '`needs` holds the requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from' — needs is now explained exactly like every sibling field, matching the finding's own hint text."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#5",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/code_in_math.jl:3 now reads 'braced subscripts and superscripts of any length', matching the code's r\"_\\{[a-z]+\\}\"/r\"\\^\\{[a-z]+\\}\" (line 41) which strips one-or-more letters. 'one-letter' wording is gone."
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "00afdb50d463330866ebc84ce1e8a7df",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/src#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "All 12 named locations converted to 'The arguments are:' bulleted lists (e.g. src/TestHarness.jl:85 allocation_completeness, src/CLI/Preflight.jl:191 resolve_hats). Re-implemented the (fixed) SCAN.ARGS_FORM logic independently over every src/*.jl file (204-docstring population) and it reports 0 violations.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:85",
+          "swept": true,
+          "evidence": "allocation_completeness now bulleted"
+        },
+        {
+          "surface": "src/Witnesses.jl:93",
+          "swept": true,
+          "evidence": "witness_project now bulleted (3 bullets)"
+        },
+        {
+          "surface": "src/Reflection.jl:311",
+          "swept": true,
+          "evidence": "signature_fidelity now bulleted"
+        },
+        {
+          "surface": "src/Scan.jl:268",
+          "swept": true,
+          "evidence": "regex_scan now bulleted (7 bullets)"
+        },
+        {
+          "surface": "src/CLI/Config.jl:250",
+          "swept": true,
+          "evidence": "Config.parse now bulleted"
+        },
+        {
+          "surface": "src/CLI/Sync.jl:560",
+          "swept": true,
+          "evidence": "sync now bulleted"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:223",
+          "swept": true,
+          "evidence": "classify_lane header now bulleted"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:185",
+          "swept": true,
+          "evidence": "resolve_hats now bulleted, needs also explained"
+        },
+        {
+          "surface": "src/CLI/Bump.jl:12",
+          "swept": true,
+          "evidence": "bump now bulleted"
+        },
+        {
+          "surface": "src/CLI/Release.jl:7",
+          "swept": true,
+          "evidence": "release now bulleted"
+        },
+        {
+          "surface": "src/CLI/Gate.jl:8",
+          "swept": true,
+          "evidence": "gate now bulleted"
+        },
+        {
+          "surface": "src/CLI/Seed.jl:41",
+          "swept": true,
+          "evidence": "select now bulleted"
+        },
+        {
+          "surface": "src/HtmlWalker.jl",
+          "swept": true,
+          "evidence": "line 47 'The arguments are:' bulleted"
+        },
+        {
+          "surface": "src/TreeHash.jl",
+          "swept": true,
+          "evidence": "line 37 'The arguments are:' bulleted"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "ARGS_BULLET/ARGS_PROSE/'The fields are:' checks switched to whitespace-tolerant regexes. The two named docstrings (Scan.jl prose_text, Preflight.jl write_payloads) still line-wrap the marker verbatim in source; my re-run of the fixed logic confirms both are no longer false positives.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/args_form.jl:6",
+          "swept": true,
+          "evidence": "const ARGS_BULLET = r\"The\\s+arguments\\s+are:\""
+        },
+        {
+          "surface": "src/Scans/args_form.jl:21",
+          "swept": true,
+          "evidence": "occursin(ARGS_BULLET, d.body) now regex-based"
+        },
+        {
+          "surface": "src/Scan.jl:231-232",
+          "swept": true,
+          "evidence": "wrap verified present verbatim, no longer flagged"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:320-321",
+          "swept": true,
+          "evidence": "wrap verified present verbatim, no longer flagged"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "args_form.jl replaced findfirst/findlast with depth-tracked balanced-paren matching, so a `-> (tuple)` return annotation is never absorbed into the parameter list; hand-traced against argcov's signature and confirmed by independent re-implementation (0 spurious kw/pos counts across src).",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/args_form.jl:16",
+          "swept": true,
+          "evidence": "balanced-depth loop finds the matching close paren of the arg list's own open paren"
+        },
+        {
+          "surface": "src/Reflection.jl:154-166 (argcov)",
+          "swept": true,
+          "evidence": "inside now resolves to 'cfg; exempt = (hit -> false)' — 1 pos + 1 kw, not 1+3"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:29 (load -> (dir, record))",
+          "swept": true,
+          "evidence": "return tuple no longer absorbed"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:244 (classify_lane -> (status, data, sha, note))",
+          "swept": true,
+          "evidence": "same fix applies, re-run confirms no spurious kwargs"
+        },
+        {
+          "surface": "src/CLI/Demote.jl:4 (demote -> (verdict′, demoted::Bool))",
+          "swept": true,
+          "evidence": "same fix applies, re-run confirms no spurious kwargs"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "resolve_hats docstring now reads \"`needs` holds the requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from\", matching the code exactly (needs = String.(get(h,\"needs\",String[])); not_applicable checks html/git/rulebook membership in needs, Preflight.jl:226-230).",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Preflight.jl:182-196 (resolve_hats docstring)",
+          "swept": true,
+          "evidence": "sole surface named; needs is now explained alongside every sibling field"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "code_in_math.jl header comment reworded from 'one-letter subscripts' to 'braced subscripts and superscripts of any length', matching the unchanged `[a-z]+` regexes exactly.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/code_in_math.jl:1-4",
+          "swept": true,
+          "evidence": "comment reworded to 'braced subscripts and superscripts of any length'"
+        }
+      ]
+    }
+  ]
+}

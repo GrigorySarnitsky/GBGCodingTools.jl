@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "b457e3ee09da878b58a35cc7f9bb2f89",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/pages#1",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/verbs.md no longer lists Init.migrate_seeds (grep '-i migrate' finds only migrate_baselines, line 30). It moved to docs/src/api/CLI.md:26 next to Init.derive_config, exactly as the hint suggested."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#2",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/verbs.md:13-15 Entry point block now reads main, parse_options, Options (added). Options struct docstring at src/CLI/Main.jl:24 is now referenced by an @docs block."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#3",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/verbs.md 'Checks and scans' block now lists Doctor.run, Doctor.cmd_doctor, doctor — cmd_doctor's own docstring (src/CLI/Doctor.jl:730-736) spelling --deep/--json/--effective/--only and exit-2 is now reachable."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#4",
+      "verdict": "ABSENT",
+      "evidence": "Same verbs.md block now lists GBGCodingTools.cmd_scan alongside scan_docs. cmd_scan's docstring (src/Scan.jl:556-562) documents --rebaseline prose-shape --reason and is now referenced by an @docs block."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#5",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/install.md:36-39: 'One consumer is routed differently: a consumer pinned at dev that is not itself the tool's checkout — the fixture ... — resolves against the enclosing tool repository's root rather than its own docs/.' Exception now stated."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#6",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/rounds.md:43-44: 'GBG_ROUND, which the CLI exports only while it runs a build, a test or an audit's executable claim on that round's behalf.' Matches Gate.jl's docstring; audit case now included."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#7",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/config.md:11-13 surfaces parenthetical now ends '...references anchors, the glossary file, and any data or script surface whose comments are prose'. Matches all 11 schema/config.schema.json surfaces.properties keys (checked via python json load)."
+    }
+  ]
+}

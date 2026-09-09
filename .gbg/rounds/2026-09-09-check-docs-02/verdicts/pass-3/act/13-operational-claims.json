@@ -1,0 +1,178 @@
+{
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "lane": "operational-claims",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scan.jl: both DEAD guards now read `r.population == 0 && r.exempted == 0 && isempty(r.hits)` (hard-tier and triage branches); a non-empty `r.hits` falls through to the FAIL/count branch that prints every hit, fixing report() for every scan.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scan.jl:452 (hard-tier DEAD guard)",
+          "swept": true,
+          "evidence": "guard now includes `&& isempty(r.hits)`"
+        },
+        {
+          "surface": "src/Scan.jl:466 (triage DEAD guard)",
+          "swept": true,
+          "evidence": "identical added guard on the triage loop"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TestHarness.jl docstring changed to 'searched after `pkg` and before `modules`', matching the unchanged actual iteration order.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:298 (resolve_function docstring)",
+          "swept": true,
+          "evidence": "'searched last' replaced with accurate ordering text"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Reflection.jl: the `examined[] += 1` increment was moved to after the `def === :extension` continue, so extension-homed bindings no longer count as compared.",
+      "class_surfaces": [
+        {
+          "surface": "src/Reflection.jl:~412-415 (examined increment site)",
+          "swept": true,
+          "evidence": "increment now sits after the extension skip"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Config.jl:169 docstring reworded to 'the fixed path docs/make.jl a consumer's docs_build command is expected to run', matching the unchanged hardcoded check.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Config.jl:169 (check_paths docstring)",
+          "swept": true,
+          "evidence": "no longer claims the path derives from docs_build"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Main.jl:33-34 docstring rewritten to state the `=`-form is unconditional and `valued` only gates the bare-argument form, matching the code exactly.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Main.jl:33-34 (parse_options docstring)",
+          "swept": true,
+          "evidence": "now matches actual `=`-branch precedence"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "audit()'s docstring 'above its ideal' changed to 'differing from its ideal', matching the `!=` check and Traffic's own docstring.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl (audit docstring)",
+          "swept": true,
+          "evidence": "'above' replaced with 'differing from'"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#7",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "sibling_link_hits! no longer breaks after the first mention; a `seen` flag lets it keep scanning and flag any later mention that IS a link, implementing the second half of the header's claim.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/sibling_link.jl:17-33",
+          "swept": true,
+          "evidence": "loop continues past first mention; elseif linked branch flags later links"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#8",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "prose_shape.jl header rewritten to drop 'Caps bind ALWAYS' and state the docstring/NEW-page-unit vs baselined-page-section distinction matching the code's exemption.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/prose_shape.jl:1-4",
+          "swept": true,
+          "evidence": "header now matches the code's baseline exemption"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#9",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "classify_lane docstring now excludes the absent case from the .rejected.json claim; the unparsable branch's rename was unified with the invalid/mismatch pattern (replace .json with .rejected.json).",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Rounds.jl:266 (absent branch)",
+          "swept": true,
+          "evidence": "docstring now excludes absent from the rename claim"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:270 (unparsable rename)",
+          "swept": true,
+          "evidence": "changed to replace(p, \".json\"=>\".rejected.json\")"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:274-278 (invalid/mismatch renames)",
+          "swept": true,
+          "evidence": "already used the now-uniform pattern"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#10",
+      "verdict": "LINE-ONLY",
+      "question": "implementation",
+      "evidence": "src/CLI/Recall.jl adds sees_seed() fixing docstrings/rulebook/none to false, but bundles rawhtml with full as seeing every seed. Rounds.jl prepare() only plants seeds into the text manuscripts (Seeds.plant writes full/site payload files); Preflight.jl:453 hands a rawhtml hat the pristine, unseeded built_html directory. A rawhtml hat can never see a planted seed yet is still required to find >=2 or be flagged SUSPECT.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Recall.jl:74 (full case)",
+          "swept": true,
+          "evidence": "full genuinely sees every seed"
+        },
+        {
+          "surface": "src/CLI/Recall.jl:74 (rawhtml case)",
+          "swept": false,
+          "evidence": "returns true unconditionally though rawhtml's actual corpus is never seeded"
+        },
+        {
+          "surface": "src/CLI/Recall.jl:74 (siteonly case)",
+          "swept": true,
+          "evidence": "unchanged correct page filter"
+        },
+        {
+          "surface": "src/CLI/Recall.jl:75 (docstrings case)",
+          "swept": true,
+          "evidence": "now false via final branch"
+        },
+        {
+          "surface": "src/CLI/Recall.jl:75 (rulebook case)",
+          "swept": true,
+          "evidence": "now false via final branch"
+        },
+        {
+          "surface": "src/CLI/Recall.jl:75 (none case)",
+          "swept": true,
+          "evidence": "now false via final branch, matching finding's example"
+        }
+      ]
+    }
+  ]
+}

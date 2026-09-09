@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "00afdb50d463330866ebc84ce1e8a7df",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/schemas#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Rounds.jl:401-406 (bank): `core = load_schema(\"finding\"); coreprops = keys(core[\"properties\"])` then `errs = validate(core, Dict(k=>v for (k,v) in f if k in coreprops)); isempty(errs) || throw(RoundError(...))` before findings.json is frozen at line ~407. test/schemas.jl:96-99 tightens the liveness check to `any(l -> occursin(\"\\\"finding\\\"\", l) && (occursin(\"load_schema\",l)||occursin(\"read_verdicts\",l)), split(src,\"\\n\"))`, so Doctor.jl's `e[\"scope\"]==\"finding\"` no longer coincidentally satisfies it. A new testset feeds a real hunt-shaped finding through both directions (unprojected fails, projected passes), pinning the exact regression named.",
+      "class_surfaces": [
+        {"surface": "src/CLI/Rounds.jl:401 (bank, findings.json freeze)", "swept": true, "evidence": "validate(core, projected-f) added immediately before findings.json is written, throwing RoundError on failure"},
+        {"surface": "test/schemas.jl:88-99 (schema-liveness self-test)", "swept": true, "evidence": "substring-only check replaced with a per-line check requiring load_schema or read_verdicts alongside the quoted name"},
+        {"surface": "src/CLI/Doctor.jl:309 (`e[\"scope\"] == \"finding\"`, the coincidental match)", "swept": true, "evidence": "this line has no load_schema/read_verdicts token so it no longer satisfies the tightened liveness test"},
+        {"surface": "sibling artefacts already validated (round, ground-truth, reproduction, pass, tally, dismissal, hat, audit, exemptions, managed, import)", "swept": true, "evidence": "unaffected/pre-existing validate() calls confirmed still present (Rounds.jl:41,350,426; Passes.jl:86,318; Audit.jl:45; Ledger.jl:38; Sync.jl:503) plus a new one for import.json (Rounds.jl:546) — finding.json is the only sibling this fix needed to add"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/bug-hunt/schema.json: the 154-line inline `lane_file.properties.findings.items` object is replaced by `{\"$ref\": \"#/$defs/hunt_finding\"}` (confirmed by parsing the live file: `properties.lane_file...items == {'$ref': '#/$defs/hunt_finding'}`), and the dead `$defs.finding` block is deleted outright — `$defs` now holds only `hunt_finding` (grep -c '$ref' = 1). `$defs.hunt_finding` carries the full field set (kind/verdict/observed/file/line/mechanism included) and required list, matching classify_lane's validation target (`schema[\"properties\"][\"lane_file\"]`, root=schema, so the $ref resolves).",
+      "class_surfaces": [
+        {"surface": "instruments/bug-hunt/schema.json $defs.finding (dead, drifted)", "swept": true, "evidence": "block removed entirely; `$defs` keys are now `['hunt_finding']` only"},
+        {"surface": "instruments/bug-hunt/schema.json lane_file.properties.findings.items (the third inline copy)", "swept": true, "evidence": "replaced with $ref to $defs/hunt_finding, eliminating the triplication"},
+        {"surface": "sibling instrument schemas named in the hint (check-docs, check-consistency, audit-changes) that already correctly $ref their $defs.finding", "swept": true, "evidence": "grep -c '$ref' == 1 and $defs == ['finding'] (or ['finding','seeds'] for check-consistency) for all three, confirming no drift was introduced there and the pattern now matches across all four instruments"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/managed.schema.json: `files.additionalProperties` changed from `true` to `{\"$ref\": \"#/$defs/entry\"}`. schema/tally.schema.json: `per_id.additionalProperties` changed from `true` to `{\"$ref\": \"#/$defs/entry\"}`. Both $defs.entry blocks are otherwise untouched (managed: template/version/sha256 required; tally: act/act_demoted/state/closed_by required) and match what the writers actually emit (Sync.jl:632/640 build `{template,version,sha256}` dicts for `files`).",
+      "class_surfaces": [
+        {"surface": "schema/managed.schema.json properties.files (the dynamic map named in the finding)", "swept": true, "evidence": "additionalProperties now {\"$ref\": \"#/$defs/entry\"}, verified by parsing the live file"},
+        {"surface": "schema/tally.schema.json properties.per_id (the dynamic map named in the finding)", "swept": true, "evidence": "additionalProperties now {\"$ref\": \"#/$defs/entry\"}, verified by parsing the live file"},
+        {"surface": "schema/tally.schema.json properties.recall and properties.totals (other additionalProperties:true maps in the same file, not named by this finding since they document no $defs.entry)", "swept": false, "evidence": "left as additionalProperties:true — outside this finding's class, since the finding's text is specifically about a $defs.entry that exists but is never wired; recall/totals have no such unused $defs to wire"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/exemptions.schema.json reason: minLength raised 24→40, description changed to \"at least 40 characters, as CFG.EXEMPTIONS enforces for every entry: what is declined and why\" (drops the false \"on scope finding\" scoping). src/CLI/Doctor.jl:305 `length(e[\"reason\"]) >= 40 || push!(errs, ...)` is confirmed unconditional (runs before the `if e[\"scope\"]==\"finding\"` branch), so the corrected schema now matches actual enforcement exactly.",
+      "class_surfaces": [
+        {"surface": "schema/exemptions.schema.json properties.exemption.items.properties.reason (the sole location named)", "swept": true, "evidence": "minLength 40 and corrected, unscoped description confirmed in the live file"}
+      ]
+    }
+  ]
+}

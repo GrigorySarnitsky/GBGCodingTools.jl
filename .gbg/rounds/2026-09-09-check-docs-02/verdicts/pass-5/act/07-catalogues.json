@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "78cbf7c70814ae838def1f1641366da5",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/catalogues#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "catalog/hats/latex-typesetter.toml:4 changed `needs = [\"source\", \"rulebook\"]` to `needs = [\"source\"]  # the persona reads the rendered policy file, never a `rulebook_sections` grant`. Preflight.jl's not_applicable gate (`\"rulebook\" in needs && isempty(rulebook_sections)`) no longer fires for this hat, so it survives an empty rulebook_sections consumer.",
+      "class_surfaces": [
+        {
+          "surface": "catalog/hats/latex-typesetter.toml:4",
+          "swept": true,
+          "evidence": "needs changed from [\"source\",\"rulebook\"] to [\"source\"] with an explanatory comment; persona never referenced {package.rulebook_sections}, confirmed absent by grep."
+        },
+        {
+          "surface": "catalog/hats/doc-policy.toml:4,6",
+          "swept": true,
+          "evidence": "needs = [\"rulebook\", \"source\"] left unchanged; persona genuinely interpolates {package.rulebook_sections} at line 6 — correctly not touched."
+        },
+        {
+          "surface": "catalog/hats/naming-policy.toml:4,6",
+          "swept": true,
+          "evidence": "needs = [\"rulebook\", \"source\"] left unchanged; persona genuinely interpolates {package.rulebook_sections} at line 6 — correctly not touched."
+        },
+        {
+          "surface": "catalog/hats/invariants-and-decisions.toml:4,6",
+          "swept": true,
+          "evidence": "needs = [\"rulebook\", \"source\"] left unchanged; persona genuinely interpolates {package.rulebook_sections} at line 6 — correctly not touched."
+        }
+      ]
+    }
+  ]
+}

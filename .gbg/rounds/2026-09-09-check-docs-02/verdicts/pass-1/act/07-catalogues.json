@@ -1,0 +1,41 @@
+{
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "lane": "catalogues",
+  "pass_nonce": "b457e3ee09da878b58a35cc7f9bb2f89",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/catalogues#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "catalog/hats/latex-typesetter.toml:4 now reads `needs = [\"source\"]` (dropped \"rulebook\"), with a comment noting the persona reads the rendered policy file, not the rulebook_sections grant. src/CLI/Preflight.jl:227-228 still computes `na = ... || (\"rulebook\" in needs && isempty(cfg[\"package\"][\"rulebook_sections\"]))`, and \"rulebook\" appears nowhere else in Preflight.jl, so for a consumer with rulebook_sections=[] this hat no longer fails the na test and is no longer dropped from the roster at line 455 (`if !h[\"not_applicable\"]`). Its persona is unchanged and never references {package.rulebook_sections} (verified: the only 'rulebook_sections' occurrence in the file is the new inline comment).",
+      "class_surfaces": [
+        {
+          "surface": "catalog/hats/latex-typesetter.toml:4",
+          "swept": true,
+          "evidence": "the flagged hat: needs=[\"source\",\"rulebook\"] -> needs=[\"source\"], removing the mismatched grant"
+        },
+        {
+          "surface": "catalog/hats/doc-policy.toml:4",
+          "swept": true,
+          "evidence": "needs=[\"rulebook\",\"source\"] retained; persona line 6 genuinely substitutes {package.rulebook_sections} - correctly untouched"
+        },
+        {
+          "surface": "catalog/hats/naming-policy.toml:4",
+          "swept": true,
+          "evidence": "needs=[\"rulebook\",\"source\"] retained; persona line 6 genuinely substitutes {package.rulebook_sections} - correctly untouched"
+        },
+        {
+          "surface": "catalog/hats/invariants-and-decisions.toml:4",
+          "swept": true,
+          "evidence": "needs=[\"rulebook\",\"source\"] retained; persona line 6 genuinely substitutes {package.rulebook_sections} twice - correctly untouched"
+        },
+        {
+          "surface": "catalog/hats/*.toml (all other hats)",
+          "swept": true,
+          "evidence": "grep over catalog/hats/*.toml shows no other hat declares needs containing \"rulebook\" without also substituting {package.rulebook_sections} in its persona; the class (needs=[\"rulebook\"] with no rulebook_sections use) is empty after this fix"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "audit.js:46 now has `previously_worked` in SCHEMA's item `required` array; a `schemaFor(lane)` (line 59-65) strips it only for non-'behaviour-change' lanes, and the agent() call at line 101 uses `schema: schemaFor(lane)`, so on the behaviour-change lane omission now fails validation."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#2",
+      "verdict": "ABSENT",
+      "evidence": "panel.js:88 now reads: \"you may use Bash with git (log, diff, show, grep) and Read inside ${A.repo}; scope every search with `--glob '!.gbg/**'`. Never open anything under .gbg/...\" — matches verify-act.js/verify-state.js scoping."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#3",
+      "verdict": "ABSENT",
+      "evidence": "hunt.js's FREE_PREAMBLE (line ~73) now ends: \"Nothing under `.gbg/` or `~/.gbg/` is yours to open but the files this prompt names; scope every grep with `--glob '!.gbg/**'`.\" — explicit boundary and glob now present in the free lane, matching territory lanes."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#4",
+      "verdict": "ABSENT",
+      "evidence": "dismissals.js:7 Args comment now reads: \"Args: { schema_version, round, repo, package, items: [{id, title}], items_sha, items_path, out, models: {economy} }\" — items_sha is present, matching the required-args check at line 15 and the schema."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#5",
+      "verdict": "ABSENT",
+      "evidence": "rubric-audit.js:73-75 computes `misassigned` (keys in byHat not in A.hats), logs it (`!! N finding-group(s)...UNCOVERED, not clean`), and after scoring folds unscored ids into `orphaned`, counts them in `tally.MISSED`, lists them in `gaps`, and writes misassigned/orphaned/gaps into the output JSON."
+    }
+  ]
+}

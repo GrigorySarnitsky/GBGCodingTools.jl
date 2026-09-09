@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#1",
+      "verdict": "ABSENT",
+      "evidence": "policy/docs-rubric.md:12 HOME_ORDER now lists caveats as item (7), last, 'the last substantive block, before the fields list' — identical placement to ADMONITION_TITLE:60-61's 'last substantive block ... before the fields list'. Grepped both files; no other ordering claim conflicts."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#2",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:428 sentinel now reads the full first sentence ending '...title and DOI compared.' — matches citations.md:9-11 verbatim up to the period, no hyphen truncation. No trailing 'verbatim-' fragment remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#3",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:1-8 header no longer names POL.RULE_PARITY; it now cites 'test/schemas.jl' for heading/row parity and sentinel-verbatim checks. Confirmed test/schemas.jl:116-128 implements exactly that. grep -rn RULE_PARITY --glob '!.gbg/**' . returns zero hits."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#4",
+      "verdict": "ABSENT",
+      "evidence": "policy/latex-idiom.md:58-59 RULE.TEX.MATHBF now states '\\mathbf{1}, the indicator and identity of RULE.TEX.MATHBB, is admitted in every package whatever that list holds; it is not a package's to withhold.' src/Scans/mathbf.jl:6 hardcodes it into `allowed` so it is never flagged even with an empty admitted list."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#5",
+      "verdict": "ABSENT",
+      "evidence": "policy/00-index.md:12-15 no longer says 'the instruments cite these ids'; it now reads 'The scan catalogue names the rule each scan enforces, and a ledger entry of scope policy names the rule it exempts.' grep -rn 'instruments cite' --glob '!.gbg/**' --glob '!fixture/**' . returns zero hits."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#6",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml now gives every one of 93 rules an explicit `check` field (panel/session/weakness/scan:/doctor:/test:/harness:), e.g. RULE.DOC.ONE_HOME/VARIANT_PAIR/MODULE_MAP/RETURNS/TEX.NO_HSCROLL='weakness', RULE.DOC.VERIFIED/TWO_TIER/CIT.STYLE='panel'. testing-protocol.md:56-65 RULE_WITH_CHECK now explains this exact field and distinguishes panel/session/weakness."
+    }
+  ]
+}

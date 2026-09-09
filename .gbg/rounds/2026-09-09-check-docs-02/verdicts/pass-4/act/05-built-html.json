@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "53a17d8c57f8e5a19b49c110a2deebdc",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/built-html#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:383 (copied to docs/src/architecture.md by docs/make.jl:11) now reads '*Personal-scope symlinked skills, one per instrument under `~/.claude/skills/`*' — no trailing asterisk-before-backtick. Rebuilt docs/build/architecture.html shows the whole D6 'Dominated' paragraph (all five alternatives) with correctly paired <em>/<code> tags and no stray backtick.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:383 (the flagged D6 paragraph)",
+          "swept": true,
+          "evidence": "trailing `*` removed; rebuilt HTML renders correctly"
+        },
+        {
+          "surface": "docs/, src/, ext/, CLAUDE.md: any other asterisk-immediately-before-closing-backtick pattern",
+          "swept": true,
+          "evidence": "grep -rnP '\\*`[^`]*\\*`' over the corpus (excluding .gbg/) returns no matches"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:2327 SCAN.HTML_PUBLIC_HOME row now reads '`built_html` + `.gbg/scratch/public_surface.json`'. Rebuilt docs/build/architecture.html shows two separate <code> spans, no <em>, no dangling backtick.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:2327 (the flagged row)",
+          "swept": true,
+          "evidence": "built_html now backticked; rendered HTML cell confirmed clean"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md scans table rows 2324-2328 also mentioning built_html",
+          "swept": true,
+          "evidence": "SCAN.HTML_RENDERED_MARKUP, SCAN.HTML_STRAY_MATH, SCAN.HTML_DOCSTRING_ONCE, SCAN.HTML_BASE_LEAK already show built_html backticked"
+        },
+        {
+          "surface": "corpus-wide bare built_html outside a code fence",
+          "swept": true,
+          "evidence": "grep -rn 'built_html' docs/ src/ CLAUDE.md (excl .gbg/) shows all remaining bare occurrences sit inside ```toml fences or already inside a single backtick-quoted assignment"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": ".gbg/exemptions.toml RULE.API.POSITIONAL reason field changed to backtick RULE.TEST.RULE_WITH_CHECK (git diff confirmed) — this ledger entry generates both CLAUDE.md's deviations bullet (now backticked) and docs/src/guide/rules.md:648 (now backticked), which docs/build/guide/rules.html renders.",
+      "class_surfaces": [
+        {
+          "surface": ".gbg/exemptions.toml RULE.API.POSITIONAL / CLAUDE.md / docs/src/guide/rules.md deviations rendering (the flagged instance)",
+          "swept": true,
+          "evidence": "backticked at source; both renderings confirmed"
+        },
+        {
+          "surface": "corpus-wide bare mention of RULE.TEST.RULE_WITH_CHECK",
+          "swept": true,
+          "evidence": "grep -rn 'RULE_WITH_CHECK' . (excl .gbg/) filtered for lines lacking the backtick-wrapped form returns zero results"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#4",
+      "verdict": "LINE-ONLY",
+      "question": "scope",
+      "evidence": "src/CLI/Config.jl:166-168 docstring now names the glossary and built_html/docs-directory checks, matching code at lines 199-200. But docs/ARCHITECTURE.md:1746's CFG.SURFACES doctor-table row — the same enumeration by the docstring's own cross-reference ('the doctor's CFG.SURFACES') — was edited in this diff (docs_build wording) yet still omits glossary, built_html, and [paths] entirely: 'every non-optional surface glob...; every module exists; the fixed path docs/make.jl...; julia_test contains Pkg.test(); every executable_claims file...'.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Config.jl:166-168 check_paths docstring (the flagged instance)",
+          "swept": true,
+          "evidence": "glossary and built_html checks added, matching code"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1746 §7.3 CFG.SURFACES doctor-check-table row (same check set)",
+          "swept": false,
+          "evidence": "row touched in this diff for unrelated wording but still omits glossary, built_html-implies-docs/, and [paths] checks"
+        }
+      ]
+    }
+  ]
+}

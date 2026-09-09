@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "3bc41c7d22d311037ed5c88848988a05",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/schemas#1",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Rounds.jl:396-398 now runs `for f in findings; errs = validate(load_schema(\"finding\"), f); isempty(errs) || throw(...); end` before writing findings.json. test/schemas.jl:88-98's liveness test now requires `occursin(\"\\\"\"*name*\\\"\", l) && (occursin(\"load_schema\",l)||occursin(\"read_verdicts\",l))` on the same line — Doctor.jl:306's `e[\"scope\"]==\"finding\"` no longer satisfies it; only the genuine load_schema(\"finding\") call does."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#2",
+      "verdict": "ABSENT",
+      "evidence": "instruments/bug-hunt/schema.json: `grep -c '$ref'` = 1 (line 191, `#/$defs/hunt_finding`, used by lane_file.properties.findings.items); `$defs` (line 205) contains only one key, `hunt_finding` (confirmed via python json.load), with kind/verdict/observed/file/line/mechanism all present and required. Dead `$defs.finding` is gone."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#3",
+      "verdict": "ABSENT",
+      "evidence": "schema/managed.schema.json: `files` is now `\"additionalProperties\": {\"$ref\": \"#/$defs/entry\"}` (was `true`). schema/tally.schema.json: `per_id` likewise now `{\"$ref\": \"#/$defs/entry\"}`. Schema.jl:54-62,138 confirms validate() dereferences $ref and applies it as additionalProperties' schema, so malformed entries are now caught."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#4",
+      "verdict": "ABSENT",
+      "evidence": "schema/exemptions.schema.json:61-62 now sets `\"minLength\": 40` with description \"at least 40 characters, as CFG.EXEMPTIONS enforces for every entry\", matching Doctor.jl:305's unconditional `length(e[\"reason\"]) >= 40` check for every ledger entry regardless of scope."
+    }
+  ]
+}

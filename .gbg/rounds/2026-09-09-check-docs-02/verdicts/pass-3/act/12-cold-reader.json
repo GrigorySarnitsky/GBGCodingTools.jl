@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#1",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "Preflight.jl's resolve_hats docstring now disambiguates \"anchor\" from Config.resolve_anchor as hinted. But src/CLI/Doctor.jl (untouched by the diff) still runs, in the SAME check function, Config.resolve_anchor (heading sense, lines 240,283) beside get(h,\"anchor\",false)/d[\"anchor\"]/\"no anchored hat\" (full-strength sense, lines 274,278,281) — exactly the locations the finding itself cites as evidence, at module #19, five modules before Preflight.jl's #24 fix.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Preflight.jl:210-220 (resolve_hats docstring)",
+          "swept": true,
+          "evidence": "\"anchor is unrelated to the file#heading anchors of [Config.resolve_anchor](@ref)\" added."
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:239-241,247,283 (Markdown-anchor sense)",
+          "swept": false,
+          "evidence": "unchanged, no disambiguation."
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:264,274,278,281 (full-strength-hat sense, same function)",
+          "swept": false,
+          "evidence": "unchanged, sits beside the heading sense with no cross-reference."
+        },
+        {
+          "surface": "src/CLI/Config.jl:113-119 (resolve_anchor, the defining site)",
+          "swept": true,
+          "evidence": "unambiguous already."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#2",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "Commit fc7eca3 claims instrument was cross-linked \"in the eleven modules that still used it bare,\" and DocLints.jl, TestHarness.jl, Witnesses.jl, Sync.jl, Audit.jl, RoundFiles.jl, Gate.jl, Passes.jl were each fixed at their first mention. But src/CLI/Rounds.jl:9 — a file the finding's own text names — still reads \"diffs as the instrument needs\" bare in its module docstring, unlike the near-identical fixed clause in its sibling RoundFiles.jl.",
+      "class_surfaces": [
+        {
+          "surface": "src/GBGCodingTools.jl:16 (module docstring)",
+          "swept": true,
+          "evidence": "\"An **instrument** is one of four review procedures...\" added as the corpus's first read."
+        },
+        {
+          "surface": "src/DocLints.jl:11",
+          "swept": true,
+          "evidence": "instrument+round both linked to [GBGCodingTools](@ref)."
+        },
+        {
+          "surface": "src/CLI/RoundFiles.jl:7 (module docstring)",
+          "swept": true,
+          "evidence": "\"a round is one run of one instrument ([GBGCodingTools](@ref) binds the term)\"."
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:9 (module docstring)",
+          "swept": false,
+          "evidence": "\"diffs as the instrument needs\" — bare, unlinked, unchanged by any of the three fix commits."
+        },
+        {
+          "surface": "src/CLI/Passes.jl:10, Witnesses.jl:13, Sync.jl:199, Gate.jl:11, Audit.jl:11, TestHarness.jl:584",
+          "swept": true,
+          "evidence": "each now carries the GBGCodingTools link at first mention."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "DocLints.jl:11,18 links \"the closure gate\" to [GBGCodingTools.gate](@ref) at first mention. TestHarness.jl's gate() docstring links to [GBGCodingTools.gate](@ref) and says \"Never that generic gate over all four instruments.\" CLI/Gate.jl's gate is the unchanged, unambiguous target. GBGCodingTools.jl:22 defines \"the gate\" at module #1, before either. Commit 984ed2f confirms the docs build resolves these refs.",
+      "class_surfaces": [
+        {
+          "surface": "src/DocLints.jl:11,17-18 (makedocs docstring)",
+          "swept": true,
+          "evidence": "links to [GBGCodingTools.gate](@ref)."
+        },
+        {
+          "surface": "src/TestHarness.jl:579-588 (gate docstring)",
+          "swept": true,
+          "evidence": "links to [GBGCodingTools.gate](@ref) and distinguishes itself explicitly."
+        },
+        {
+          "surface": "src/CLI/Gate.jl:6-20 (gate(cfg, instruments...))",
+          "swept": true,
+          "evidence": "unchanged, disambiguated target."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "GBGCodingTools.jl:19 adds \"A lane is one agent's share of a round...\" at module #1, before all 19 modules the finding names. Schema.jl:40-41 (the finding's cited first location) adds the exact hinted gloss + link, done at the hinted alternative site (\"promote to a shared docstring @ref-linked from there\").",
+      "class_surfaces": [
+        {
+          "surface": "src/GBGCodingTools.jl:19 (module docstring)",
+          "swept": true,
+          "evidence": "defining sentence added."
+        },
+        {
+          "surface": "src/CLI/Schema.jl:40-41 (instrument_schema docstring)",
+          "swept": true,
+          "evidence": "lane gloss + [GBGCodingTools](@ref) link added."
+        },
+        {
+          "surface": "src/Scan.jl:39 (ScanResult, \"dead-lane reason\")",
+          "swept": true,
+          "evidence": "bare, but reached only after the module-#1 definition."
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:238-243 (resolve_checkdocs_lanes)",
+          "swept": true,
+          "evidence": "docstring itself unchanged, but concept already bound earlier in read order."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "GBGCodingTools.jl:20 adds \"A hat is one persona of the check-consistency panel...\" at module #1, before Init.jl(#16) and Preflight.jl(#24). Preflight.resolve_hats' docstring restates this exact defining sentence before its field list, directly fixing the finding's \"lists attributes rather than defining\" complaint. Init.jl:233 adds a pointer alongside \"domain hat\".",
+      "class_surfaces": [
+        {
+          "surface": "src/GBGCodingTools.jl:20 (module docstring)",
+          "swept": true,
+          "evidence": "defining sentence added, read before both cited locations."
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:200-203 (resolve_hats docstring)",
+          "swept": true,
+          "evidence": "\"A hat is one persona of the check-consistency panel...\" inserted before the field list."
+        },
+        {
+          "surface": "src/CLI/Init.jl:233 (init docstring)",
+          "swept": true,
+          "evidence": "\"(Preflight.resolve_hats binds the term)\" parenthetical added."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "Reflection.jl argcov docstring's exempt argument now reads \"the [GBGCodingTools.Ledger](@ref)'s [exemption.match] predicate\" — the exact hinted fix, and commit 984ed2f confirms the ref was verified to resolve.",
+      "class_surfaces": [
+        {
+          "surface": "src/Reflection.jl:163 (argcov docstring)",
+          "swept": true,
+          "evidence": "link added exactly where the finding cited."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#7",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "GBGCodingTools.jl:21 adds \"A Workflow is the instrument's workflow/*.js script...\" at module #1, before Schema.jl(#5), Preflight.jl(#24) and Rounds.jl(#25), the finding's three cited locations. Schema.jl:40-42 (the first-cited location) adds the literal hinted gloss + link.",
+      "class_surfaces": [
+        {
+          "surface": "src/GBGCodingTools.jl:21 (module docstring)",
+          "swept": true,
+          "evidence": "defining sentence added, matching the finding's own suggested wording."
+        },
+        {
+          "surface": "src/CLI/Schema.jl:40-42 (instrument_schema docstring)",
+          "swept": true,
+          "evidence": "gloss + link added directly after the bare first use."
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:9 (module docstring)",
+          "swept": false,
+          "evidence": "left bare, unchanged — but reached only after module #1's definition."
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:480 (round rerun docstring)",
+          "swept": false,
+          "evidence": "left bare, unchanged — likewise reached only after module #1's definition."
+        }
+      ]
+    }
+  ]
+}

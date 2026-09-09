@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "b457e3ee09da878b58a35cc7f9bb2f89",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "instruments/audit-changes/workflow/audit.js:50 now reads `required: ['type', 'severity', 'confidence', 'previously_worked', 'title', 'locations', 'before', 'after', 'why_it_matters', 'justified', 'description', 'evidence']`. Grep for `get(f, \"...\", default)` unsafe-default patterns in src/CLI/Passes.jl shows no other field with this shape."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#2",
+      "verdict": "ABSENT",
+      "evidence": "panel.js:88 now reads \"...Bash with git (log, diff, show, grep) and Read inside ${A.repo}; scope every search with `--glob '!.gbg/**'`. Never open anything under .gbg/...\" — matches verify-act.js/verify-state.js. Grep for other git-usage branches in check-consistency finds none unscoped."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#3",
+      "verdict": "ABSENT",
+      "evidence": "hunt.js FREE_PREAMBLE (line 74) now reads \"Nothing under `.gbg/` or `~/.gbg/` is yours to open but the files this prompt names; scope every grep with `--glob '!.gbg/**'`.\" — matches HUNT_PREAMBLE's territory-lane boundary language and glob scoping."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#4",
+      "verdict": "ABSENT",
+      "evidence": "dismissals.js:6 Args comment now reads \"{ schema_version, round, repo, package, items: [{id, title}], items_sha, items_path, out, models: {economy} }\" — items_sha is present, matching the required-args check at line 16 and the write at line 63."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#5",
+      "verdict": "PRESENT",
+      "evidence": "rubric-audit.js:71-73 now logs misassigned hat keys (`!! N finding-group(s) assigned to no hat...`), but the JSON written to A.out (lines 116-117: `{schema_version, round, tally, unassigned, gaps, scores, byHat}`) still has no `misassigned` field and never folds those ids into `unassigned` or the CAUGHT/PARTIAL/MISSED tally — they reach a console log only, never the persisted artifact or the score."
+    }
+  ]
+}

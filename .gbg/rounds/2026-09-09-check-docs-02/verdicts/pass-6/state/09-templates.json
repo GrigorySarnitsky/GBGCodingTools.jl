@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "lane": "templates",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "00afdb50d463330866ebc84ce1e8a7df",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/templates#1",
+      "verdict": "ABSENT",
+      "evidence": "templates/README.md rows now read: commit-message.tmpl Slots = `{{tool.version}}`, `{{files}}`; bump-message.tmpl Slots = `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}`. Grepped both .tmpl files for `{{...}}`: no {{package.name}} in either. Claim and templates now agree."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#2",
+      "verdict": "ABSENT",
+      "evidence": "templates/regressions-README.md:1 now reads `<!-- gbg:managed regressions-README.md v{{tool.version}} — rewritten by `gbg sync`; do not edit -->`, matching SKILL.md.tmpl's `v{{tool.version}}` form. Version stamp present."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#3",
+      "verdict": "ABSENT",
+      "evidence": "templates/README.md's Managed headers paragraph now adds: 'One exception: `queue-guard.sh.tmpl` is copied byte-for-byte from PF's Stop hook and carries no header... the sidecar hash is what marks it managed.' Checked other G #-files (gitignore.block has header); no unexplained gap remains."
+    }
+  ]
+}

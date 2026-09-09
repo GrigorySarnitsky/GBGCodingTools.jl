@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "53a17d8c57f8e5a19b49c110a2deebdc",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/src#1",
+      "verdict": "ABSENT",
+      "evidence": "All 12 cited locations now open with 'The arguments are:' followed by a '- `name` — ...' bulleted list (e.g. TestHarness.jl:82 allocation_completeness, Sync.jl:560 status, Preflight.jl:190 resolve_hats, Seed.jl:41 select). Broader search: grepped every kwarg-bearing docstring signature (~76 across src+CLI, all 25 CLI files) and every 3+-positional-arg signature (Git.jl diff/diffstat/changed_paths, Scan.jl apply_ledger, Sync.jl managed_block/with_block, TestHarness.jl traffic_rows/oracle_registry, HtmlWalker.jl attr, Recall.jl suspect_hats, etc.) — all bulleted. The only remaining running-prose 'The argument(s) is/are `x`' hits (Scan.jl:138, Sync.jl:496, Reflection.jl:261, Preflight.jl:403) each have <3 args and no keyword, so prose is rule-compliant there."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#2",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/args_form.jl:7 now defines `const ARGS_BULLET = r\"The\\s+arguments\\s+are:\"` (was a literal substring) and the header comment at line 6 states 'whitespace-tolerant: the marker line-wraps in this package's own prose'. `\\s` matches newlines in Julia regex, so the wrapped instances in Scan.jl and Preflight.jl now match."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#3",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/args_form.jl:18-30 now finds the matching close-paren by depth-tracking from the first '(' instead of `findlast(')', sig)`, with a comment explaining stripping `-> ...` first is unsound for `exempt = (hit -> false)`-style defaults. This correctly stops at the arg-list's own close paren and never reads into a `-> (a, b, c)` return-tuple annotation."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#4",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Preflight.jl:204-207: '`needs` holds the requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from, and `not_applicable` says the substrate cannot exist here (...)'. Matches the code at line 224 (`needs = String.(get(h, \"needs\", String[]))`) and its three uses in the `na` computation."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#5",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/code_in_math.jl:1-3 header comment now reads 'braced arguments of \\texttt/\\text/\\mathrm/\\operatorname/\\mathit and braced subscripts and superscripts of any length' — matches the `[a-z]+` (one-or-more) regexes at line 178; the old 'one-letter subscripts' wording is gone."
+    }
+  ]
+}

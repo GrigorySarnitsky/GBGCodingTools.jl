@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "53a17d8c57f8e5a19b49c110a2deebdc",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Preflight.jl:209-211 resolve_hats now reads '`anchor` is whether the hat runs at full strength ... It is unrelated to the file#heading anchors of [`Config.resolve_anchor`](@ref).' — the exact disambiguating clause the hint asked for. src/CLI/Doctor.jl:260-261 adds a comment at CFG.HATS, the one check where both senses literally sit five lines apart, naming which is which.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Config.jl:113-119",
+          "swept": true,
+          "evidence": "resolve_anchor's own docstring unchanged, unambiguous home of sense 1"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:193/209-211",
+          "swept": true,
+          "evidence": "resolve_hats docstring now explicitly disambiguates from Config.resolve_anchor"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:260-288 (CFG.HATS, CFG.SURFACES)",
+          "swept": true,
+          "evidence": "new comment names both senses at the exact collision point in code"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/GBGCodingTools.jl:14-15 (new) states plainly: 'An instrument is one of four review procedures: check-docs, check-consistency, bug-hunt, audit-changes.' — module #1, read before all else. src/DocLints.jl:11 replaces the circular clause with a real definition plus @ref. src/CLI/Preflight.jl:309,548 name the four plus link.",
+      "class_surfaces": [
+        {
+          "surface": "src/GBGCodingTools.jl:14-15",
+          "swept": true,
+          "evidence": "new defining bullet naming all four instruments"
+        },
+        {
+          "surface": "src/DocLints.jl:11",
+          "swept": true,
+          "evidence": "flagged circular clause replaced with real definition plus @ref"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:309,548",
+          "swept": true,
+          "evidence": "'one of check-docs, check-consistency, bug-hunt, audit-changes, the four review procedures [`GBGCodingTools`](@ref) binds'"
+        },
+        {
+          "surface": "src/TestHarness.jl:584, src/Witnesses.jl:13, src/CLI/Sync.jl:199, src/CLI/RoundFiles.jl:7, src/CLI/Gate.jl:11, src/CLI/Rounds.jl:9,128, src/CLI/Passes.jl:10, src/CLI/Audit.jl:11",
+          "swept": true,
+          "evidence": "each carries an explicit '[`GBGCodingTools`](@ref) binds the term' at its first prose mention of 'instrument'"
+        },
+        {
+          "surface": "src/Scan.jl, src/CLI/Hunt.jl, src/CLI/Config.jl, src/CLI/Fleet.jl, src/CLI/Release.jl",
+          "swept": true,
+          "evidence": "remaining 'instrument' occurrences are cfg-key/field accesses, not defining prose, so no xlink is owed"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/GBGCodingTools.jl:20-21 (new) binds 'The gate, [`gate`](@ref), is the refusal that stops a build...'. src/TestHarness.jl:583 now reads '...and [`GBGCodingTools.gate`](@ref), the generic closure gate...' — the exact @ref the finding's hint demanded. src/DocLints.jl:18 likewise links '[`GBGCodingTools.gate`](@ref), the closure gate' at makedocs's first mention.",
+      "class_surfaces": [
+        {
+          "surface": "src/DocLints.jl:18 (makedocs, first prose use)",
+          "swept": true,
+          "evidence": "'[`GBGCodingTools.gate`](@ref), the closure gate, over the two docs instruments'"
+        },
+        {
+          "surface": "src/TestHarness.jl:536-590 (TestHarness.gate)",
+          "swept": true,
+          "evidence": "'[`GBGCodingTools.gate`](@ref), the generic closure gate' replaces the old unlinked presupposition"
+        },
+        {
+          "surface": "src/CLI/Gate.jl:6-23 (GBGCodingTools.gate, the definitional home)",
+          "swept": true,
+          "evidence": "unchanged as the home; both callers now point to it"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/GBGCodingTools.jl:16 (new): 'A lane is one agent's share of a round — one surface, one territory, or one kind of change.' — bound at module #1, before Schema.jl (#5) where the finding located the first bare use. src/CLI/Schema.jl:40-42 (the flagged location) now links back to this definition.",
+      "class_surfaces": [
+        {
+          "surface": "src/GBGCodingTools.jl:16",
+          "swept": true,
+          "evidence": "new defining bullet, read before all other modules"
+        },
+        {
+          "surface": "src/CLI/Schema.jl:40-42 (instrument_schema, flagged first bare use)",
+          "swept": true,
+          "evidence": "now links back to GBGCodingTools's definition instead of bare 'lane-file wrapper'"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:223-227 (resolve_checkdocs_lanes, the finding's third location)",
+          "swept": false,
+          "evidence": "still only lists the lane record's fields without restating the concept — acceptable since the concept is now bound centrally at module #1, the hint's preferred 'or better' option"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/GBGCodingTools.jl:17 (new): 'A hat is one persona of the check-consistency panel, reading the corpus from a single standpoint.' — the hint's proposed sentence, bound at module #1. src/CLI/Preflight.jl:198 (resolve_hats, the finding's second location) now opens with this sentence before the field list. src/CLI/Init.jl:233 now points to Preflight.resolve_hats by name.",
+      "class_surfaces": [
+        {
+          "surface": "src/GBGCodingTools.jl:17",
+          "swept": true,
+          "evidence": "new defining bullet"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:198 (resolve_hats, flagged as listing fields only)",
+          "swept": true,
+          "evidence": "concept sentence now precedes the field list"
+        },
+        {
+          "surface": "src/CLI/Init.jl:232-233 (init, first true docstring use)",
+          "swept": true,
+          "evidence": "now points readers to Preflight.resolve_hats by name"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Reflection.jl:163 now reads 'the [`GBGCodingTools.Ledger`](@ref)'s [exemption.match] predicate' — the bare, unlinked mention the finding quoted is now a qualified @ref link at its first mention, per RULE.DOC.XLINK and the finding's hint.",
+      "class_surfaces": [
+        {
+          "surface": "src/Reflection.jl:163 (argcov, flagged location)",
+          "swept": true,
+          "evidence": "'the ledger's' replaced with '[`GBGCodingTools.Ledger`](@ref)'s'"
+        },
+        {
+          "surface": "src/CLI/Ledger.jl:7-11 (the home)",
+          "swept": true,
+          "evidence": "unchanged as the definitional home, correctly the target of the new link"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#7",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/GBGCodingTools.jl:18 (new): 'A Workflow is the instrument's workflow/*.js script, launched by the session running the round.' — the hint's proposed gloss, bound at module #1 (before Schema.jl #5, Preflight.jl #24, Rounds.jl). src/CLI/Schema.jl:40-42 (the finding's first location) restates and cross-references this.",
+      "class_surfaces": [
+        {
+          "surface": "src/GBGCodingTools.jl:18",
+          "swept": true,
+          "evidence": "new defining bullet"
+        },
+        {
+          "surface": "src/CLI/Schema.jl:40-42 (flagged first use)",
+          "swept": true,
+          "evidence": "restates the gloss inline plus @ref to the binding module"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:9 (module docstring, flagged location)",
+          "swept": false,
+          "evidence": "'the one renderer of Workflow args' still carries no local @ref back to GBGCodingTools.jl's definition at this specific site"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:442/479 (round rerun, flagged location)",
+          "swept": false,
+          "evidence": "'prints the instrument's Workflow call' likewise carries no local @ref at this site, relying on read-order rather than an explicit link"
+        }
+      ]
+    }
+  ]
+}

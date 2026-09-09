@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "lane": "templates",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "3bc41c7d22d311037ed5c88848988a05",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/templates#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/README.md diff drops `{{package.name}}` from the commit-message.tmpl and bump-message.tmpl Slots cells, leaving `{{tool.version}}, {{files}}` and `{{from}}, {{to}}, {{files}}, {{abandoned}}` respectively; grep of both .tmpl files confirms neither placeholder set contains `{{package.name}}`, matching the corrected cells exactly.",
+      "class_surfaces": [
+        {
+          "surface": "templates/README.md:22 (commit-message.tmpl row)",
+          "swept": true,
+          "evidence": "cell now `{{tool.version}}`, `{{files}}` — matches grep of templates/commit-message.tmpl"
+        },
+        {
+          "surface": "templates/README.md:23 (bump-message.tmpl row)",
+          "swept": true,
+          "evidence": "cell now `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}` — matches grep of templates/bump-message.tmpl"
+        },
+        {
+          "surface": "templates/README.md:19 (SKILL.md.tmpl row)",
+          "swept": true,
+          "evidence": "cell `{{skill.name}}, {{skill.description}}, {{skill.command}}, {{tool.version}}, {{package.name}}` matches grep of templates/SKILL.md.tmpl exactly"
+        },
+        {
+          "surface": "templates/README.md:25 (claude-md.block row)",
+          "swept": true,
+          "evidence": "cell `{{tool.version}}, {{sha256}}, {{package.name}}, {{rubric.leading_identity}}, {{notation.vectors}}, {{deviations}}` matches grep of templates/claude-md.block"
+        },
+        {
+          "surface": "templates/README.md:26 (gitignore.block row)",
+          "swept": true,
+          "evidence": "cell `{{tool.version}}, {{docs.build_dir}}` matches grep of templates/gitignore.block"
+        },
+        {
+          "surface": "templates/README.md:29 (test-Project.toml.seed row)",
+          "swept": true,
+          "evidence": "cell matches grep of templates/test-Project.toml.seed ({{package.name}}, {{package.uuid}}, {{tool.uuid}}, {{tool.url}}, {{tool.version}})"
+        },
+        {
+          "surface": "templates/README.md:24 (regressions-README.md row)",
+          "swept": true,
+          "evidence": "cell now `{{tool.version}}`, matching the header slot added by finding #2's fix and confirmed by grep of templates/regressions-README.md"
+        },
+        {
+          "surface": "templates/README.md:20/21/27/28 (settings.json.tmpl, queue-guard.sh.tmpl, make.jl.seed, runtests.jl.seed rows)",
+          "swept": true,
+          "evidence": "each cell (none / none / {{package.name}} / {{package.name}}) matches a grep of the corresponding template with no placeholder mismatch found"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/regressions-README.md:1 diff changes the header to `<!-- gbg:managed regressions-README.md v{{tool.version}} — rewritten by `gbg sync`; do not edit -->`, matching SKILL.md.tmpl's `v{{tool.version}}` form; Sync.jl:221 renders this template with `s = slots(cfg; ledger)`, and slots() at Sync.jl:116 sets `\"tool.version\" => v`, so the slot resolves at render time (not left dangling).",
+      "class_surfaces": [
+        {
+          "surface": "templates/SKILL.md.tmpl:6",
+          "swept": true,
+          "evidence": "already carried `v{{tool.version}}` before and after; used as the reference form the fix matched"
+        },
+        {
+          "surface": "templates/claude-md.block:1",
+          "swept": true,
+          "evidence": "already carried `v{{tool.version}} sha256:{{sha256}}`, unaffected and consistent"
+        },
+        {
+          "surface": "templates/gitignore.block:1",
+          "swept": true,
+          "evidence": "already carried `v{{tool.version}}`, unaffected and consistent"
+        },
+        {
+          "surface": "templates/regressions-README.md:1",
+          "swept": true,
+          "evidence": "the flagged instance — header now carries `v{{tool.version}}`"
+        },
+        {
+          "surface": "templates/CLAUDE.md.skeleton:1",
+          "swept": true,
+          "evidence": "header text is elided (`<!-- gbg:managed begin … -->`), an illustrative skeleton rather than a rendered instance carrying its own version slot — not a live sibling of the same defect class"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/README.md's Managed headers paragraph gains: \"One exception: `queue-guard.sh.tmpl` is copied byte-for-byte from PF's Stop hook and carries no header, so the upstream text stays comparable; the sidecar hash is what marks it managed.\" This is the finding's own first hint option, and is factually correct: Sync.jl:219 pushes queue-guard.sh.tmpl via `template(...)` with no `render`/header call, and Sync.jl:632 records `template`, `version`, `sha256` in `.gbg/managed.json` for every planned file including it, so the sidecar-hash claim holds.",
+      "class_surfaces": [
+        {
+          "surface": "templates/queue-guard.sh.tmpl:1",
+          "swept": true,
+          "evidence": "the flagged file — still headerless, but now documented as the sole exception rather than silently contradicting the blanket rule"
+        },
+        {
+          "surface": "templates/SKILL.md.tmpl:6, templates/claude-md.block:1, templates/gitignore.block:1, templates/regressions-README.md:1",
+          "swept": true,
+          "evidence": "all other G-classed, comment-capable/Markdown templates checked and confirmed to carry a `gbg:managed` header per the general rule"
+        },
+        {
+          "surface": "templates/settings.json.tmpl (whole file)",
+          "swept": true,
+          "evidence": "G-classed JSON file with no header, but the README's own rule text already carves out JSON (\"none for JSON (the sidecar is the record)\") — not a second unstated exception"
+        },
+        {
+          "surface": "src/CLI/Sync.jl:154 (managed_header's `:hash` branch)",
+          "swept": false,
+          "evidence": "the `:hash` branch of managed_header remains dead code (never called), which the finding's hint flagged only as an alternative repair path to documenting the exception; the fix took the documentation path instead, which the hint itself sanctioned as sufficient"
+        }
+      ]
+    }
+  ]
+}

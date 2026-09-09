@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "14120325f0599a8c9085dd694615df3f",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/src#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "Every named location converted to the bulleted 'The arguments are:' form (e.g. src/Reflection.jl:314-326 signature_fidelity, src/CLI/Preflight.jl:192-197 resolve_hats, src/CLI/Rounds.jl:245-251 classify_lane, src/CLI/Gate.jl:6-10 gate, src/CLI/Seed.jl:39-44 select). An independent re-derivation script (parsing every docstring's displayed signature and checking for the bulleted marker, excluding the rule's own exemptions) over all 178 docstrings-with-signature in src/+ext/ after the fix found ZERO remaining violations of the 3-positional-or-any-keyword rule; the only prose-form survivors (Reflection.jl:261 package_operations, Scan.jl:139 data_prose_lines, CLI/Sync.jl:496 read_sidecar, CLI/Preflight.jl:407 audit_kind) are all 1-2 positional args with no keyword, legitimately exempt.",
+      "class_surfaces": [
+        {"surface": "src/TestHarness.jl:83", "swept": true, "evidence": "allocation_completeness(pkg, modules; exempt=...) now bulleted at TestHarness.jl:85-88"},
+        {"surface": "src/Witnesses.jl:91", "swept": true, "evidence": "witness_project(root, witness_env, package) now bulleted at Witnesses.jl:93-98"},
+        {"surface": "src/Reflection.jl:312", "swept": true, "evidence": "signature_fidelity(cfg; pkg=..., examined=...) now bulleted at Reflection.jl:317-322"},
+        {"surface": "src/Scan.jl:266", "swept": true, "evidence": "regex_scan(cfg, files, re; ...) was already bulleted at the pre-fix commit 209cb21 (Scan.jl:269-278); not touched because it was not actually a violation, but the class it belongs to is confirmed clean"},
+        {"surface": "src/CLI/Config.jl:250", "swept": true, "evidence": "Config.parse(text; root, check=true) now bulleted at Config.jl:254-258"},
+        {"surface": "src/CLI/Sync.jl:584", "swept": true, "evidence": "sync(cfg; check=false, io=stdout, ledger=...) now bulleted at Sync.jl:588-592"},
+        {"surface": "src/CLI/Rounds.jl:245", "swept": true, "evidence": "classify_lane(dir, inst, lane; first_sha=nothing) now bulleted at Rounds.jl:249-253"},
+        {"surface": "src/CLI/Preflight.jl:192", "swept": true, "evidence": "resolve_hats(cfg; profile=nothing, explicit=String[]) now bulleted at Preflight.jl:194-197"},
+        {"surface": "src/CLI/Bump.jl:5", "swept": true, "evidence": "bump(cfg, ver; abandon=nothing, io=stdout) now bulleted at Bump.jl:13-19"},
+        {"surface": "src/CLI/Release.jl:5", "swept": true, "evidence": "release(ver; io=stdout, skip_tests=false) now bulleted at Release.jl:8-12"},
+        {"surface": "src/CLI/Gate.jl:6", "swept": true, "evidence": "gate(cfg, instruments...; io=stderr) now bulleted at Gate.jl:8-11"},
+        {"surface": "src/CLI/Seed.jl:39", "swept": true, "evidence": "select(catalog, full, round) now bulleted at Seed.jl:41-44"},
+        {"surface": "src/HtmlWalker.jl:45", "swept": true, "evidence": "attr(el, name, default) — 3 positional, prose-only 'Returns the string' before — now bulleted at HtmlWalker.jl:47-53, named in the finding's file-class list"},
+        {"surface": "src/TreeHash.jl:33", "swept": true, "evidence": "tree_hash(dir; skip=(...)) — has a keyword — now bulleted at TreeHash.jl:36-40, named in the finding's file-class list"},
+        {"surface": "src/CLI (~19 of 25 files)", "swept": true, "evidence": "diff --stat over the fix range touches essentially every file under src/CLI/ (Audit, Bump, Config, Consolidate, Doctor, Fleet, Gate, Git, Init, Ledger, Main, Passes, Preflight, Recall, Release, Rounds, Schema, Seed, Self, Selftest, Sync — 21 of 25); independent script found 0 remaining violations across the whole tree"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/args_form.jl:7-8 changed ARGS_BULLET/ARGS_PROSE from literal-substring/tight regex to whitespace-tolerant regexes (`r\"The\\s+arguments\\s+are:\"`, `r\"The\\s+arguments?\\s+(is|are)\\s+`\"`), exactly the hint's suggested fix. Verified with `occursin(r\"The\\s+arguments\\s+are:\", \"...lines. The\\narguments are:\\n\\n- ...\")` → true in a live Julia check, and the two cited docstrings (Scan.jl prose_text, Preflight.jl write_payloads) still genuinely line-wrap the marker post-fix yet are now correctly recognized as bulleted.",
+      "class_surfaces": [
+        {"surface": "src/Scans/args_form.jl:7 (ARGS_BULLET constant)", "swept": true, "evidence": "line 7: `const ARGS_BULLET = r\"The\\s+arguments\\s+are:\"` — the sole occurrence of the marker-matching logic in the scan"},
+        {"surface": "src/Scan.jl:232-233 (prose_text)", "swept": true, "evidence": "docstring body still wraps 'The' / 'arguments are:' across a line break; regex now matches it (verified)"},
+        {"surface": "src/CLI/Preflight.jl:347-348 (write_payloads)", "swept": true, "evidence": "docstring body still wraps 'The' / 'arguments are:' across a line break; regex now matches it (same construction as prose_text)"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/args_form.jl:16-30 replaced the naive `findlast(')', sig)` with a depth-counted scan from the FIRST '(' to its matching ')', never touching any `->` at all. Simulated against argcov's own signature `argcov(cfg; exempt = (hit -> false)) -> (hits, population, skipped)`: the new logic yields inside=\"cfg; exempt = (hit -> false)\" (correct: 1 pos + 1 kw), versus the old bug's corrupted \"cfg; exempt = (hit -> false)) -> (hits, population, skipped\" (spurious 2 extra kw). Also verified against Rounds.classify_lane's return-tuple signature with the same correct result. This is a fix to the shared parsing routine itself, not a special case for argcov, so it resolves the class for every docstring with a parenthesised return annotation.",
+      "class_surfaces": [
+        {"surface": "src/Scans/args_form.jl:16-30 (paren-matching logic)", "swept": true, "evidence": "the single shared routine every docstring's signature line passes through; fixed generically, not per-function"},
+        {"surface": "src/Reflection.jl:172 argcov's own stripped-signature logic", "swept": true, "evidence": "unaffected/unrelated — argcov already stripped the arrow correctly before this fix; the finding's comparison point, not itself a defect"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Preflight.jl:203-205 now reads: \"`needs` holds the requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from\" — matches the hint's suggested wording near-verbatim, and matches the code at Preflight.jl:225-227 (`needs = String.(get(h, \"needs\", String[]))`; `na = (\"html\" in needs && ...) || (\"git\" in needs && ...) || (\"rulebook\" in needs && ...)`).",
+      "class_surfaces": [
+        {"surface": "src/CLI/Preflight.jl:203-205 (resolve_hats docstring, needs clause)", "swept": true, "evidence": "the only place `needs` is documented in the corpus; now explained"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/code_in_math.jl:1-5 header comment changed 'one-letter subscripts' to 'braced subscripts and superscripts of any length', matching the hint's alternative wording exactly. The regex it describes, `r\"_\\{[a-z]+\\}\"` / `r\"\\^\\{[a-z]+\\}\"` at line 41, is unchanged (`+`, not a fixed one-character quantifier), so the comment now correctly describes the code.",
+      "class_surfaces": [
+        {"surface": "src/Scans/code_in_math.jl:1-5 (header comment)", "swept": true, "evidence": "the sole mis-description named by the finding; corrected, no other file describes this regex"}
+      ]
+    }
+  ]
+}

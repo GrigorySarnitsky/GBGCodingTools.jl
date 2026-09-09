@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "53a17d8c57f8e5a19b49c110a2deebdc",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#1",
+      "verdict": "ABSENT",
+      "evidence": "policy/docs-rubric.md HOME_ORDER now reads '...one formula, citation, links, caveats' with caveats as (7) 'the last substantive block, before the fields list' — identical placement to ADMONITION_TITLE's 'last substantive block of a docstring, before the fields list'. No disagreement remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#2",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:428 sentinel for RULE.CIT.FULL_INLINE now reads in full through '...verbatim-identical to the canonical entry under the package's references heading, title and DOI compared.' — a complete sentence, no hyphen truncation, matches citations.md's first sentence exactly."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#3",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml header no longer names POL.RULE_PARITY; it now says 'the tool's own test suite (test/schemas.jl) fails when a heading exists without a row or a row without a heading'. grep -rn RULE_PARITY (excluding .gbg) returns zero hits, and test/schemas.jl:120-125 implements exactly that heading/row parity check."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#4",
+      "verdict": "ABSENT",
+      "evidence": "policy/latex-idiom.md:59-60 RULE.TEX.MATHBF now states '`\\mathbf{1}`... is admitted in every package whatever that list holds; it is not a package's to withhold.' src/Scans/mathbf.jl:6 hard-codes `push!(allowed, \"\\\\mathbf{1}\")` so the scan itself never flags it regardless of the per-package list."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#5",
+      "verdict": "ABSENT",
+      "evidence": "policy/00-index.md:11-15 no longer claims instruments cite ids; it now says 'The scan catalogue names the rule each scan enforces, and a ledger entry of scope `policy` names the rule it exempts'. grep for 'instrument' near 'cite'/'RULE.' in policy/ finds no such claim anywhere."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#6",
+      "verdict": "ABSENT",
+      "evidence": "policy/testing-protocol.md:60-62 RULE.TEST.RULE_WITH_CHECK now names a `check` field taxonomy (scan/doctor/test/harness/panel/session/weakness). All 93 RULES.toml entries carry `check =` (verified by count); every previously-uncited rule (e.g. DOC.TWO_TIER, DOC.VERIFIED, TEX.NO_HSCROLL, CIT.STYLE) now declares panel/weakness/harness, and test/schemas.jl validates the field."
+    }
+  ]
+}

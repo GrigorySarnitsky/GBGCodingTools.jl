@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "3bc41c7d22d311037ed5c88848988a05",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#1",
+      "verdict": "ABSENT",
+      "evidence": "src/Scan.jl:447 and :461 now guard the DEAD branch with `&& isempty(r.hits)` in both the hard and triage loops; hits print via the FAIL/count branch regardless of population==0. Grepped docs for 'measured nothing'/'MUST BE EMPTY': no stale claim found."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#2",
+      "verdict": "ABSENT",
+      "evidence": "src/TestHarness.jl:295-296 docstring now reads 'externals ... searched after pkg and before modules', matching the actual `Iterators.flatten(((pkg,), externals, modules))` order at line 303. Grepped docs/src/architecture.md for 'searched last'/'resolve_function': no stale claim."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#3",
+      "verdict": "ABSENT",
+      "evidence": "src/Reflection.jl:414-416: the `def === :extension` skip (with `continue`) now runs BEFORE `examined === nothing || (examined[] += 1)` at line 417, so extension-homed bindings are no longer counted as compared."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#4",
+      "verdict": "PARTIAL",
+      "evidence": "src/CLI/Config.jl:168 fixed to 'the fixed path docs/make.jl a consumer's docs_build command is expected to run'. But docs/ARCHITECTURE.md:1123,1745 and docs/src/architecture.md:1123,1745 still say 'CFG.SURFACES requires it to name docs/make.jl' / 'docs_build names docs/make.jl' — same overclaim.",
+      "surviving_class": "docs/ARCHITECTURE.md:1123, docs/ARCHITECTURE.md:1745, docs/src/architecture.md:1123, docs/src/architecture.md:1745"
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#5",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Main.jl:31-33 docstring now reads 'Any --name=value is a value whatever valued says; an option named in valued also consumes the following bare argument as its value; every other bare --name is a flag' — matches the `=`-branch being checked independent of `valued` at lines 45-53."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#6",
+      "verdict": "ABSENT",
+      "evidence": "src/TestHarness.jl:193 docstring now reads 'a frozen count differing from its ideal must carry a named holder', matching the `r.frozen != r.ideal` check at line 202 and Traffic's own 'REQUIRED whenever frozen ≠ ideal' wording. Grepped docs/src/architecture.md for 'above its ideal': no stale claim."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#7",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/sibling_link.jl:17-33: the loop no longer `break`s after the first mention; it now sets `seen` and continues scanning subsequent lines, pushing a hit when a later mention `linked` is true. Comment at line 16 states 'Both halves of the rule are checked.'"
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#8",
+      "verdict": "PARTIAL",
+      "evidence": "src/Scans/prose_shape.jl:3-5 header no longer says 'ALWAYS'; it now correctly scopes caps to docstrings and NEW page units, matching the code. But docs/ARCHITECTURE.md:2319 and docs/src/architecture.md:2319 (SCAN.PROSE_SHAPE catalog row) still say 'caps 120 words / 3 admonitions always'.",
+      "surviving_class": "docs/ARCHITECTURE.md:2319, docs/src/architecture.md:2319"
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#9",
+      "verdict": "PARTIAL",
+      "evidence": "src/CLI/Rounds.jl:227,253-255,271-274 fixed: docstring now scopes quarantining to unparsable/invalid only ('absent, or — renamed ... beside itself — unparsable or invalid'), and all three quarantine sites use one unified `replace(p, \".json\"=>\".rejected.json\")`. But docs/ARCHITECTURE.md:596,1460 and docs/src/architecture.md:596,1460 still group absent with the quarantined cases ('absent, unparsable, schema-invalid — the file quarantined as NN-<lane>.rejected.json').",
+      "surviving_class": "docs/ARCHITECTURE.md:596, docs/ARCHITECTURE.md:1460, docs/src/architecture.md:596, docs/src/architecture.md:1460"
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#10",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Recall.jl:70-71 adds `sees_seed(substrate, seed, site_pages)`: full/rawhtml see every seed (both are literally the same build_dir page set per src/CLI/Consolidate.jl:26-40), siteonly filters by site_pages, docstrings/rulebook/none see none — so `length(seeds)>=2` never trips for those, matching the docstring at lines 88-91."
+    }
+  ]
+}

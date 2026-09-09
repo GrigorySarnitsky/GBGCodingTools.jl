@@ -1,0 +1,36 @@
+{
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "lane": "catalogues",
+  "pass_nonce": "14120325f0599a8c9085dd694615df3f",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/catalogues#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "catalog/hats/latex-typesetter.toml:4 changed `needs = [\"source\", \"rulebook\"]` to `needs = [\"source\"]` with an explanatory trailing comment (git diff 209cb21..ef9b15c). Preflight.jl:210-211 only sets not_applicable=true for the rulebook reason when \"rulebook\" in needs && rulebook_sections is empty, so this hat can no longer be silently dropped. Preflight.jl:330-339 rulebook_text() writes latex-idiom.md (via Sync.POLICY_FILES, unconditional) into rulebook.md for every hat in the check-consistency roster regardless of any individual hat's needs, so latex-typesetter still receives the policy text its persona actually reads; nothing was lost by dropping the tag.",
+      "class_surfaces": [
+        {
+          "surface": "catalog/hats/latex-typesetter.toml:4",
+          "swept": true,
+          "evidence": "needs changed from [\"source\",\"rulebook\"] to [\"source\"]; git diff 209cb21..ef9b15c -- catalog/hats/latex-typesetter.toml"
+        },
+        {
+          "surface": "catalog/hats/doc-policy.toml:4",
+          "swept": true,
+          "evidence": "needs=[\"rulebook\",\"source\"], persona references rulebook_sections (grep confirms 1 hit) — genuinely uses the grant, correctly left unchanged"
+        },
+        {
+          "surface": "catalog/hats/naming-policy.toml:4",
+          "swept": true,
+          "evidence": "needs=[\"rulebook\",\"source\"], persona references rulebook_sections (grep confirms 1 hit) — genuinely uses the grant, correctly left unchanged"
+        },
+        {
+          "surface": "catalog/hats/invariants-and-decisions.toml:4",
+          "swept": true,
+          "evidence": "needs=[\"rulebook\",\"source\"], persona references rulebook_sections (grep confirms 1 hit) — genuinely uses the grant, correctly left unchanged"
+        }
+      ]
+    }
+  ]
+}

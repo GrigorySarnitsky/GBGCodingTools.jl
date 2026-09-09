@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "b457e3ee09da878b58a35cc7f9bb2f89",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#1",
+      "verdict": "NEW-DEFECT",
+      "question": "strategy",
+      "evidence": "audit.js:50 adds `previously_worked` to the ONE item schema shared by ALL 13 lanes (audit.js:89 `A.lanes.map(lane => agent(..., schema: SCHEMA))`), not just behaviour-change. Its own description (audit.js:44) still says 'REQUIRED on the behaviour-change lane', matching PROTOCOL.md:70 and catalog/lanes/audit-changes.toml's behaviour-change brief ('REQUIRED on every concern of this lane') — the schema now contradicts the design it enforces.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:46-50",
+          "swept": true,
+          "evidence": "required[] now includes previously_worked, but applied schema-wide (all 13 lanes), not lane-scoped as the hint's per-lane alternative asked"
+        },
+        {
+          "surface": "instruments/audit-changes/PROTOCOL.md:70",
+          "swept": false,
+          "evidence": "still reads 'on the behaviour-change lane previously_worked' — unedited, now false against the enforced schema"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:286",
+          "swept": false,
+          "evidence": "`get(f, \"previously_worked\", \"no\")` default unchanged; unaffected by the schema change either way"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#2",
+      "verdict": "NEW-DEFECT",
+      "question": "implementation",
+      "evidence": "panel.js:88 inserts `` `--glob '!.gbg/**'` `` with UNescaped backticks inside the outer backtick-delimited template literal (confirmed byte-for-byte with od — no `\\` before any of the new backticks). The outer literal closes early right before `--glob`, leaving `` `...`--glob `` — postfix `--` applied to a TemplateLiteral is not a valid left-hand-side expression, a SyntaxError that breaks the whole file's parse (every hat, not only `needs:git` ones) — far worse than the flagged gap.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js:88",
+          "swept": false,
+          "evidence": "the only site the finding names as unfixed; the attempted fix is syntactically broken (unescaped backticks nested in a backtick literal)"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:59",
+          "swept": true,
+          "evidence": "already correct: escapes as \\`--glob '!.gbg/**'\\` inside its template literal, untouched by this diff"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-state.js:51",
+          "swept": true,
+          "evidence": "already correct: same escaped form, untouched by this diff"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#3",
+      "verdict": "NEW-DEFECT",
+      "question": "implementation",
+      "evidence": "hunt.js:74 inserts the .gbg/ boundary sentence into FREE_PREAMBLE with THREE unescaped backtick pairs (`.gbg/`, `~/.gbg/`, `--glob '!.gbg/**'`) nested inside the outer backtick template literal that begins at hunt.js:68 (confirmed no `\\` escapes via od). This truncates/corrupts FREE_PREAMBLE's string value and very likely throws a parse error in the statements that follow, so the intended boundary text is not reliably delivered to the free lane at all.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:74 (FREE_PREAMBLE)",
+          "swept": false,
+          "evidence": "the flagged surface; the insertion is syntactically broken"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:84-85 (HUNT_PREAMBLE, territory lanes)",
+          "swept": true,
+          "evidence": "already carries 'nothing else under .gbg/ or ~/.gbg/' correctly; untouched by this diff, not itself broken"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:92-93 (territory dispatch string)",
+          "swept": true,
+          "evidence": "territory lanes reach the boundary sentence via HUNT_PREAMBLE (unchanged, correct); not itself a gap the finding named for repair"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "dismissals.js:7 now reads 'Args: { schema_version, round, repo, package, items: [...], items_sha, items_path, out, models: {economy} }', matching the runtime required-args check at line 16 and the written `items_sha: A.items_sha` at line 63/schema/dismissal.schema.json. Minimal, correct, no other text touched.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/dismissals.js:7",
+          "swept": true,
+          "evidence": "items_sha added to the Args comment, now matching the code two lines below and the schema"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#5",
+      "verdict": "ADJACENT",
+      "question": "fidelity",
+      "evidence": "rubric-audit.js:74-75 adds a `misassigned` log line (the first half the finding named), but the ask's second half — 'fold into unassigned or a new misassigned bucket' — is not done: line 76's `hatKeys` filter still silently excludes those keys from the pipeline, and the final Write at ~line 118 persists only `{tally, unassigned, gaps, scores, byHat}` — no `misassigned` field — so a misassigned finding still never reaches `scores`/`best`/`tally`, and the persisted round artifact carries no record of it beyond an ephemeral console line.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:65-68 (byHat build)",
+          "swept": false,
+          "evidence": "no validation of hat keys added here; misassignment is only caught two lines later"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:75-76 (hatKeys filter / log)",
+          "swept": true,
+          "evidence": "logs count and keys of misassigned groups — the 'no log line' half of the complaint is fixed"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js (Write to A.out, ~line 118)",
+          "swept": false,
+          "evidence": "written object still omits any misassigned bucket/field; 'no path into the tally' half of the complaint stands"
+        }
+      ]
+    }
+  ]
+}

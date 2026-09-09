@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Preflight.jl:209-211 now reads: '`anchor` is whether the hat runs at full strength rather than on the economy model...It is unrelated to the `file#heading` anchors of [`Config.resolve_anchor`](@ref).' Grepped all `anchor` uses in Config.jl and Preflight.jl; no other unlinked homonym site found."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "src/GBGCodingTools.jl:16 (module docstring, first file included): 'An **instrument** is one of four review procedures: `check-docs`, `check-consistency`, `bug-hunt`, `audit-changes`.' Read before every other module; DocLints.jl:11-13 and TestHarness.jl now @ref back to it."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#3",
+      "verdict": "ABSENT",
+      "evidence": "src/DocLints.jl:18 and src/TestHarness.jl:583 both now write '[`GBGCodingTools.gate`](@ref), the {closure|generic closure} gate' at their first mention, and GBGCodingTools.jl:21 glosses 'The gate, [`gate`](@ref)...'. Both prior bare/unlinked sites are now linked to the same target."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#4",
+      "verdict": "ABSENT",
+      "evidence": "src/GBGCodingTools.jl:18: 'A **lane** is one agent's share of a round — one surface, one territory, or one kind of change.' Also src/CLI/Schema.jl:41-42 first-use gloss: 'a lane is one agent's share of the round it runs, both bound in [`GBGCodingTools`](@ref).' Plain defining sentence now exists at the very first read module."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#5",
+      "verdict": "ABSENT",
+      "evidence": "src/GBGCodingTools.jl:19: 'A **hat** is one persona of the `check-consistency` panel, reading the corpus from a single standpoint.' Also src/CLI/Preflight.jl:199 repeats the same defining sentence before the field list. Concept now stated plainly, not just fields."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#6",
+      "verdict": "ABSENT",
+      "evidence": "src/Reflection.jl:164 now reads '`exempt` — the [`GBGCodingTools.Ledger`](@ref)'s `[exemption.match]` predicate' — bare mention replaced with an @ref link to Ledger, satisfying RULE.DOC.XLINK."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#7",
+      "verdict": "ABSENT",
+      "evidence": "src/GBGCodingTools.jl:20: 'A **Workflow** is the instrument's `workflow/*.js` script, launched by the session running the round.' src/CLI/Schema.jl:41-42 repeats it at first true use. Later bare uses (Preflight.jl, Rounds.jl) now follow this definition."
+    }
+  ]
+}

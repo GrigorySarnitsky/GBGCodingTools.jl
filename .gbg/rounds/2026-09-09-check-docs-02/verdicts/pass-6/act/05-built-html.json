@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "00afdb50d463330866ebc84ce1e8a7df",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/built-html#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:383 source changed from '*Personal-scope symlinked skills `~/.claude/skills/gbg-*`*' to '*Personal-scope symlinked skills, one per instrument under `~/.claude/skills/`*', moving the trailing '*' out of the code span. Rebuilt docs/build/architecture.html now shows the whole 'Dominated' list (Personal-scope, Plugin skills, Rendered protocol text, Model reads <root>/PROTOCOL.md, disable-model-invocation) with correct <em>/<code> nesting and no stray literal backtick; build (20:23) is newer than source (20:03), confirming a rebuild after the fix.",
+      "class_surfaces": [
+        {
+          "surface": "docs/build/architecture.html (Personal-scope symlinked skills phrase)",
+          "swept": true,
+          "evidence": "renders as <em>Personal-scope symlinked skills, one per instrument under <code>~/.claude/skills/</code></em> with clean boundaries"
+        },
+        {
+          "surface": "docs/build/architecture.html (Plugin skills /gbg:… phrase, part of the same cascade)",
+          "swept": true,
+          "evidence": "renders as <em>Plugin skills <code>/gbg:…</code></em>: untested local marketplace..."
+        },
+        {
+          "surface": "docs/build/architecture.html (Rendered protocol text in the stub phrase, part of the same cascade)",
+          "swept": true,
+          "evidence": "renders as <em>Rendered protocol text in the stub</em>: the \"readable source of truth\" copy..."
+        },
+        {
+          "surface": "docs/build/architecture.html (Model reads <root>/PROTOCOL.md phrase, part of the same cascade)",
+          "swept": true,
+          "evidence": "renders as <em>Model reads <code>&lt;root&gt;/PROTOCOL.md</code></em>: a path outside the project..."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md scans table: 'built_html + `.gbg/scratch/public_surface.json`' changed to '`built_html` + `.gbg/scratch/public_surface.json`' for SCAN.HTML_PUBLIC_HOME, and the same backtick-wrap was applied to the bare 'built_html' in the four sibling rows (HTML_RENDERED_MARKUP, HTML_STRAY_MATH, HTML_DOCSTRING_ONCE, HTML_BASE_LEAK). Rebuilt docs/build/architecture.html shows the SCAN.HTML_PUBLIC_HOME cell as plain '<code>built_html</code> + <code>.gbg/scratch/public_surface.json</code>' with no emphasis tag or dangling backtick.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/architecture.md:2317 SCAN.HTML_PUBLIC_HOME row (the flagged instance)",
+          "swept": true,
+          "evidence": "rendered cell now reads <code>built_html</code> + <code>.gbg/scratch/public_surface.json</code>"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md SCAN.HTML_RENDERED_MARKUP/HTML_STRAY_MATH/HTML_DOCSTRING_ONCE/HTML_BASE_LEAK rows (same bare built_html pattern)",
+          "swept": true,
+          "evidence": "diff shows built_html backticked in all five built_html scan rows, not just the flagged one"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": ".gbg/policy/deviations.md changed by exactly one line (git diff --stat: 1 insertion, 1 deletion) to backtick RULE.TEST.RULE_WITH_CHECK inside the RULE.API.POSITIONAL deviation bullet. The generated docs/src/guide/rules.md (current corpus) now shows '...is a KNOWN WEAKNESS by `RULE.TEST.RULE_WITH_CHECK`'s own terms...' and the rebuilt docs/build/guide/rules.html renders '<code>RULE.TEST.RULE_WITH_CHECK</code>' at that spot with no <em> tag splitting the word.",
+      "class_surfaces": [
+        {
+          "surface": ".gbg/policy/deviations.md RULE.API.POSITIONAL bullet, the sole bare mention the finding names",
+          "swept": true,
+          "evidence": "rendered guide/rules.html shows <code>RULE.TEST.RULE_WITH_CHECK</code> at offset ~78734, properly backticked"
+        },
+        {
+          "surface": "other rule ids in the same bullet list (RULE.TEST.ALLOC_ZERO, RULE.TEST.PASS_AUDIT, RULE.TEST.EXAMPLES_RUN, RULE.DOC.LEADING_IDENTITY, RULE.API.POSITIONAL)",
+          "swept": true,
+          "evidence": "finding itself states these were already backticked; unchanged and still correctly backticked in current docs/src/guide/rules.md"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Config.jl:166-167 docstring now adds 'the `glossary` file exists and a non-empty `built_html` has a `docs/` directory beside it', matching the code at lines 197-198 (`haskey(s,\"glossary\") && !isfile(...)`; `!isempty(s[\"built_html\"]) && !isdir(joinpath(root,\"docs\"))`). Rebuilt docs/build/api/Config.html shows the added clause verbatim in the rendered check_paths docstring.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Config.jl check_paths docstring (the flagged instance)",
+          "swept": true,
+          "evidence": "docs/build/api/Config.html now enumerates the glossary and built_html/docs checks alongside the previously-listed ones"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md §7.3 CFG.SURFACES doctor-table row (same enumeration, second home of the same check list)",
+          "swept": true,
+          "evidence": "diff shows the CFG.SURFACES row gained '; every `[paths]` entry is a directory; the `glossary` file exists and a non-empty `built_html` has a `docs/` directory beside it;' matching the docstring's new wording"
+        }
+      ]
+    }
+  ]
+}

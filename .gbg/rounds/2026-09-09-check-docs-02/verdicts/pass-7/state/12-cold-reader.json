@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "14120325f0599a8c9085dd694615df3f",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "Preflight.jl:212-214 now reads: \"`anchor` is whether the hat runs at full strength rather than on the economy model...It is unrelated to the `file#heading` anchors of [`Config.resolve_anchor`](@ref).\" Explicit disambiguating clause added exactly as hinted."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "GBGCodingTools.jl:14-21 module docstring now states: \"An **instrument** is one of four review procedures: check-docs, check-consistency, bug-hunt, audit-changes.\" Other files (Sync.jl:199, RoundFiles.jl:7, Witnesses.jl:13, DocLints.jl:11) cross-link `[GBGCodingTools](@ref)` at first mention."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#3",
+      "verdict": "ABSENT",
+      "evidence": "Module docstring defines \"the gate\" and links [`gate`](@ref). DocLints.jl:17 now links `[GBGCodingTools.gate](@ref)`; TestHarness.jl:583 links `[GBGCodingTools.gate](@ref)`, calling it \"the generic closure gate\" vs. its own \"closure gate a consumer's runtests.jl ends with\" — disambiguated and cross-linked both ways."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#4",
+      "verdict": "ABSENT",
+      "evidence": "Schema.jl:42 (instrument_schema, the finding's own cited first-use site) now reads \"a lane is one agent's share of the round it runs\"; module docstring GBGCodingTools.jl:18 also defines it; Preflight.jl:243 and Scan.jl:39 repeat the same definition."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#5",
+      "verdict": "ABSENT",
+      "evidence": "Preflight.jl:199 now states plainly: \"A hat is one persona of the `check-consistency` panel, reading the corpus from a single standpoint.\" Module docstring repeats it; Init.jl:233 points readers to `Preflight.resolve_hats` for the term."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#6",
+      "verdict": "ABSENT",
+      "evidence": "Reflection.jl:164 now reads \"the [`GBGCodingTools.Ledger`](@ref)'s `[exemption.match]` predicate\" — an explicit @ref link at the exact site quoted, per RULE.DOC.XLINK and the finding's own hint."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#7",
+      "verdict": "ABSENT",
+      "evidence": "Schema.jl:41-42 (the finding's cited first-use site) now reads \"A Workflow is the instrument's `workflow/*.js` script...\"; module docstring GBGCodingTools.jl:19 defines it identically."
+    }
+  ]
+}

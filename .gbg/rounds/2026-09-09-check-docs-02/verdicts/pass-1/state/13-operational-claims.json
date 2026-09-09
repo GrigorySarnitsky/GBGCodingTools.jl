@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "b457e3ee09da878b58a35cc7f9bb2f89",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#1",
+      "verdict": "ABSENT",
+      "evidence": "Scan.jl:452 and :466 now guard the DEAD branch with `&& isempty(r.hits)` in both the hard and triage loops; a non-empty r.hits falls to the FAIL/count branch and prints. Checked Rounds.jl:168 (only other population==0 site) — hits are still pushed to `banked` regardless of the DEAD print, no masking there."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#2",
+      "verdict": "PRESENT",
+      "evidence": "TestHarness.jl:285 docstring still says externals is 'searched last'; body at :303 still does `Iterators.flatten(((pkg,), externals, modules))` — externals is searched second, before modules, the reverse of the claim."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#3",
+      "verdict": "PRESENT",
+      "evidence": "Reflection.jl:410 `examined === nothing || (examined[] += 1)` still runs one line before the `def === :extension` skip at 411-412; docstring (:312) and signature_fidelity.jl:5 still call `examined`/population the count 'COMPARED'."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#4",
+      "verdict": "ABSENT",
+      "evidence": "Config.jl:168-169 docstring now reads \"the fixed path `docs/make.jl` a consumer's `docs_build` command is expected to run\", matching the hardcoded check at :208; no longer implies the path is parsed out of `docs_build`."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#5",
+      "verdict": "ABSENT",
+      "evidence": "Main.jl:33 docstring now reads \"Any `--name=value` is a value whatever `valued` says; an option named in `valued` also consumes the following bare argument...; every other bare `--name` is a flag\" — matches the `=`-branch-first code at :45-53."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#6",
+      "verdict": "ABSENT",
+      "evidence": "TestHarness.jl:190 now reads \"a frozen count differing from its ideal must carry a named holder\", matching the `!=` check at :202 and Traffic's own '≠' wording at :162."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#7",
+      "verdict": "ABSENT",
+      "evidence": "sibling_link.jl:23-33 no longer `break`s after the first mention; a `seen` flag lets the loop keep scanning and push a hit for any later `linked` occurrence, enforcing the header's 'later mentions are bare' half."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#8",
+      "verdict": "ABSENT",
+      "evidence": "prose_shape.jl:3-6 header now states caps bind on every docstring and NEW page unit, baselined page sections held by the ratchet alone — matching the code comment at :104-106 and the `occursin(\" :: \", k) || b === nothing` gate. architecture.md's 'always' phrasing (527, 2224) is scoped to docstrings, consistent."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#9",
+      "verdict": "ABSENT",
+      "evidence": "Rounds.jl:253 docstring now scopes the quarantine parenthetical to unparsable/invalid only, excluding absent (:262 returns with no mv); all three mv calls (:265,:270,:273) now use the same `replace(p, \".json\"=>\".rejected.json\")` pattern — no divergent rename."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#10",
+      "verdict": "PRESENT",
+      "evidence": "Recall.jl:84 unchanged: `h[\"substrate\"] != \"siteonly\" || s[\"page\"] in site_pages` filters only the siteonly case; docstring at :75 still says 'on its substrate' unqualified. Preflight.jl:202-206 confirms rawhtml/docstrings/rulebook/none remain unfiltered."
+    }
+  ]
+}

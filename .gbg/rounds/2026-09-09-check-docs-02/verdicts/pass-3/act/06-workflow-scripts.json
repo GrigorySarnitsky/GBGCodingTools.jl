@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/audit-changes/workflow/audit.js:56-64 adds `schemaFor(lane)`, deep-cloning SCHEMA and filtering `previously_worked` out of `items.required` for every lane except `behaviour-change`; base SCHEMA (line 50) now lists `previously_worked` in `required`. The agent() call at line 101 now passes `schema: schemaFor(lane)`. PROTOCOL.md:55-61 confirms only the behaviour-change lane is asked for the field.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:46-50",
+          "swept": true,
+          "evidence": "`required` now includes `previously_worked`, filtered per-lane by schemaFor"
+        },
+        {
+          "surface": "instruments/audit-changes/PROTOCOL.md:70",
+          "swept": true,
+          "evidence": "unchanged design text; now actually enforced by the per-lane schema"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:286 (now :289)",
+          "swept": true,
+          "evidence": "unchanged `get(f, \"previously_worked\", \"no\")`; safe now that the schema guarantees the key is present whenever the lane requires it"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/check-consistency/workflow/panel.js:88: the `needs.includes('git')` branch now reads \"...and Read inside ${A.repo}; scope every search with `--glob '!.gbg/**'`. Never open anything under .gbg/...\", matching verify-act.js:59 and verify-state.js:51 (both already compliant, unchanged).",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js:88",
+          "swept": true,
+          "evidence": "glob-scoping sentence added to the git-needs branch"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:59",
+          "swept": true,
+          "evidence": "already carried `--glob '!.gbg/**'`; unaffected, still correct"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-state.js:51",
+          "swept": true,
+          "evidence": "already carried `--glob '!.gbg/**'`; unaffected, still correct"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/bug-hunt/workflow/hunt.js:74 (FREE_PREAMBLE, used verbatim in the free-lane dispatch string) now reads \"Nothing under `.gbg/` or `~/.gbg/` is yours to open but the files this prompt names; scope every grep with `--glob '!.gbg/**'`.\" — landing in the actual prompt sent to the free lane, matching the boundary strength the territory lanes already had via HUNT_PREAMBLE:84.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:73-74 (FREE_PREAMBLE)",
+          "swept": true,
+          "evidence": "explicit .gbg/~/.gbg boundary + glob scoping added"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:92-93 (dispatch string composing FREE_PREAMBLE)",
+          "swept": true,
+          "evidence": "free-lane prompt now includes the added sentence via FREE_PREAMBLE interpolation"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:84 (HUNT_PREAMBLE, territory lanes)",
+          "swept": true,
+          "evidence": "already carried the explicit boundary sentence; unchanged and unaffected"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/bug-hunt/workflow/dismissals.js:7 diff adds `items_sha` into the Args comment: \"Args: { schema_version, round, repo, package, items: [{id, title}], items_sha, items_path, out, models: {economy} }\", now matching the runtime required-args list at line 16 and schema/dismissal.schema.json's requirement cited in the finding.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/dismissals.js:7",
+          "swept": true,
+          "evidence": "`items_sha` added to the documented Args shape"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/check-consistency/workflow/rubric-audit.js:75-76 now computes `misassigned` (byHat keys absent from A.hats) and logs a count/list; lines 121-127 compute `orphaned` ids not otherwise scored, fold them into `tally.MISSED`, add them to `gaps` with verdict MISSED, and write `misassigned`/`orphaned` into the artifact JSON at line 128 — giving the finding both a log line and a path into the tally/artifact, as its hint asked.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:65-68 (byHat construction)",
+          "swept": true,
+          "evidence": "unchanged construction; now paired with a misassigned check immediately after"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:75 (hatKeys filter)",
+          "swept": true,
+          "evidence": "same filter kept, but its dropped keys are now captured as `misassigned` one line above"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:69-70 (unassigned logging)",
+          "swept": true,
+          "evidence": "misassigned now gets parallel log + tally + artifact treatment, matching how unassigned was already handled"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "3bc41c7d22d311037ed5c88848988a05",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/catalogues#1",
+      "verdict": "ABSENT",
+      "evidence": "catalog/hats/latex-typesetter.toml:4 now reads needs = [\"source\"] (no \"rulebook\"), with comment 'the persona reads the rendered policy file, never a rulebook_sections grant'. Preflight.jl:227-228 gate ('rulebook' in needs && isempty(rulebook_sections)) can't match it. grep for needs= across catalog/hats/*.toml shows only doc-policy, naming-policy, invariants-and-decisions carry \"rulebook\", and all three genuinely substitute {package.rulebook_sections} in their persona text — no other hat repeats the mismatch."
+    }
+  ]
+}

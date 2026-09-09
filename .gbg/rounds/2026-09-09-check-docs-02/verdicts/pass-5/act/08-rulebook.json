@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "78cbf7c70814ae838def1f1641366da5",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#1",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "policy/docs-rubric.md:12 HOME_ORDER now reads '...one formula, citation, links, caveats' and item (7) is 'the caveats...the last substantive block, before the fields list' (docs-rubric.md:16-17), matching ADMONITION_TITLE (docs-rubric.md:61). The two named rules now agree. But catalog/hats/doc-policy.toml:8 still instructs an auditor to enforce '...caveats as admonitions, then the formula, then the citation' and catalog/hats/structure-consistency.toml:6 still states the template '...each argument -> caveats -> one formula -> citation -> cross-links' — both unchanged, both asserting the OLD, now-superseded order. The order-contradiction class survives in the corpus that runs the review.",
+      "class_surfaces": [
+        {
+          "surface": "policy/docs-rubric.md:12-17",
+          "swept": true,
+          "evidence": "RULE.DOC.HOME_ORDER rewritten: caveats moved to item (7), last, before the fields list — agrees with ADMONITION_TITLE"
+        },
+        {
+          "surface": "policy/docs-rubric.md:57-61",
+          "swept": true,
+          "evidence": "RULE.DOC.ADMONITION_TITLE text unchanged (already said caveats last); no longer contradicted"
+        },
+        {
+          "surface": "src/Scans/prose_shape.jl:118-125",
+          "swept": true,
+          "evidence": "unchanged; still only checks Arguments-before-admonition and Fields-last, compatible with the now-agreed order"
+        },
+        {
+          "surface": "catalog/hats/doc-policy.toml:8",
+          "swept": false,
+          "evidence": "unchanged in diff; still says 'caveats as admonitions, then the formula, then the citation' — the retired order"
+        },
+        {
+          "surface": "catalog/hats/structure-consistency.toml:6",
+          "swept": false,
+          "evidence": "unchanged in diff; persona template still lists caveats before formula/citation — the retired order"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/citations.md:9-13 reflowed so 'verbatim-identical' no longer splits at a line-wrap hyphen; policy/RULES.toml:428 sentinel now reads the full sentence ending '...title and DOI compared.', a verbatim match of citations.md's real first sentence. Checked all 93 sentinels programmatically: none ends mid-word on a hyphen and all end in terminal punctuation.",
+      "class_surfaces": [
+        {
+          "surface": "policy/RULES.toml:428",
+          "swept": true,
+          "evidence": "sentinel now ends '...title and DOI compared.' verbatim, matching citations.md:10-13"
+        },
+        {
+          "surface": "policy/citations.md:9-13",
+          "swept": true,
+          "evidence": "source markdown reflowed, 'verbatim-identical' no longer wraps across a hyphen"
+        },
+        {
+          "surface": "policy/RULES.toml (all 93 sentinels)",
+          "swept": true,
+          "evidence": "programmatic check: zero sentinels end on a bare hyphen or otherwise fail to end in '.', '!' or '?'"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/RULES.toml:1-9 header no longer names POL.RULE_PARITY; it now reads '...the tool's own test suite (test/schemas.jl) fails when a heading exists without a row or a row without a heading, and when a sentinel is not a verbatim run of its paragraph.' Verified real: test/schemas.jl's 'RULES.toml matches the policy files' testset does `Set(ids)==headings` and `occursin(sentinel,text)` for every rule. Ran `julia --project=. test/schemas.jl`: 782/782 pass. grep for RULE_PARITY outside .gbg/ returns zero hits.",
+      "class_surfaces": [
+        {
+          "surface": "policy/RULES.toml:1-9",
+          "swept": true,
+          "evidence": "false POL.RULE_PARITY citation replaced with an accurate, verified description of test/schemas.jl's real enforcement"
+        },
+        {
+          "surface": "codebase-wide (outside .gbg/)",
+          "swept": true,
+          "evidence": "grep for RULE_PARITY returns no hits anywhere in src/, policy/, catalog/, instruments/, test/, docs/"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/latex-idiom.md:58-59 adds to RULE.TEX.MATHBF exactly the standing exception asked for: '`\\mathbf{1}`...is admitted in every package whatever that list holds; it is not a package's to withhold.' The implementation was fixed too: src/Scans/mathbf.jl now hardcodes `push!(allowed, \"\\\\mathbf{1}\")`, so SCAN.MATHBF no longer flags `\\mathbf{1}` even with an empty admitted-string list, closing the gap between rule text and scan behaviour.",
+      "class_surfaces": [
+        {
+          "surface": "policy/latex-idiom.md:49-52",
+          "swept": true,
+          "evidence": "RULE.TEX.MATHBB text unchanged (still mandates \\mathbf{1}); no longer contradicted now that MATHBF carries the exception"
+        },
+        {
+          "surface": "policy/latex-idiom.md:54-59",
+          "swept": true,
+          "evidence": "RULE.TEX.MATHBF now states the \\mathbf{1} exception is universal, independent of the package's admitted-string list"
+        },
+        {
+          "surface": "src/Scans/mathbf.jl:1-13",
+          "swept": true,
+          "evidence": "scan code updated to add \\mathbf{1} to the allowed set unconditionally, matching the rule text"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/00-index.md:12-15 drops 'The instruments cite these ids' and replaces it with 'the scan catalogue names the rule each scan enforces, and a ledger entry of scope `policy` names the rule it exempts... Each rule's `check` field says what catches its next violation.' Verified each clause: catalog/scans.toml has 42 scan blocks and 42 rule citations (1:1); policy/RULES.toml has 93 ids and 93 check fields (1:1, confirmed by passing tests); CLAUDE.md's Deviations line cites RULE ids per exemption, consistent with the ledger claim.",
+      "class_surfaces": [
+        {
+          "surface": "policy/00-index.md:12-15",
+          "swept": true,
+          "evidence": "false claim removed, replaced by three claims each independently verified true against the corpus"
+        },
+        {
+          "surface": "catalog/scans.toml (42 scan blocks)",
+          "swept": true,
+          "evidence": "42/42 scan blocks carry a rule = \"RULE.*\" field, confirming the new claim"
+        },
+        {
+          "surface": "instruments/*/PROTOCOL.md and catalog/hats+lanes",
+          "swept": true,
+          "evidence": "still carry no RULE.* citations (unchanged), but the rewritten sentence no longer claims they do, so it is no longer a false statement"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "policy/RULES.toml gained a `check` field on all 93 rules (scan:/doctor:/test:/harness:/panel/session/weakness) — the schema extension the finding's hint proposed. policy/testing-protocol.md:57-64 rewrote RULE.TEST.RULE_WITH_CHECK to define this taxonomy: panel/session are answers, weakness is reserved debt. A new test/schemas.jl testset validates every check value resolves to something real. All 16 rules the finding names as uncovered now carry an explicit check (e.g. RULE.DOC.BATTERY -> harness:Preflight.resolve_checkdocs_lanes, verified the function exists). Ran `julia --project=. test/schemas.jl`: 782/782 pass.",
+      "class_surfaces": [
+        {
+          "surface": "policy/RULES.toml (all 93 rules)",
+          "swept": true,
+          "evidence": "every rule carries a non-empty check array; verified 93 ids / 93 check fields and passing 'every rule declares what catches its next violation' testset"
+        },
+        {
+          "surface": "policy/testing-protocol.md:57-64 (RULE.TEST.RULE_WITH_CHECK)",
+          "swept": true,
+          "evidence": "text now distinguishes panel/session (answers) from weakness (debt), giving the deviations.md-comparable mechanism asked for"
+        },
+        {
+          "surface": "example rules named in finding (DOC.TWO_TIER, ONE_HOME, VARIANT_PAIR, VERIFIED, SELF_CONTAINED, TERMS_DEFINED, CLASS_SWEEP, BATTERY, BUILD_VERIFY, ONE_NOTATION, MODULE_MAP, RETURNS, TEX.NO_HSCROLL, TEX.IMAGINARY, TEX.GREEK_AB, CIT.STYLE)",
+          "swept": true,
+          "evidence": "checked each individually: all 16 now carry an explicit check value (panel/weakness/harness), none silent"
+        }
+      ]
+    }
+  ]
+}

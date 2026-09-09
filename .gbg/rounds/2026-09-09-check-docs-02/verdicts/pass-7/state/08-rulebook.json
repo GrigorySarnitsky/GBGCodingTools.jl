@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "14120325f0599a8c9085dd694615df3f",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#1",
+      "verdict": "ABSENT",
+      "evidence": "policy/docs-rubric.md:12-18 HOME_ORDER now lists caveats as item (7), 'the last substantive block, before the fields list' — identical placement to ADMONITION_TITLE:60-61. prose_shape.jl:118-125 checks Arguments-before-admonition, Fields-last; no contradiction remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#2",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:428 sentinel now reads '...verbatim-identical to the canonical entry under the package's references heading, title and DOI compared.' — the complete first sentence, matching citations.md:9-13 verbatim; no truncated hyphen remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#3",
+      "verdict": "ABSENT",
+      "evidence": "grep -rn RULE_PARITY --glob '!.gbg/**' . returns zero hits; RULES.toml:1-8 header now cites 'the tool's own test suite (test/schemas.jl)' instead, and test/schemas.jl:134-142 actually implements the heading/row-parity and sentinel-verbatim checks described."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#4",
+      "verdict": "ABSENT",
+      "evidence": "policy/latex-idiom.md:59-60 now states '`\\mathbf{1}`... is admitted in every package whatever that list holds; it is not a package's to withhold.' src/Scans/mathbf.jl:6 implements it: push!(allowed, \"\\\\mathbf{1}\"). No remaining contradiction."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#5",
+      "verdict": "ABSENT",
+      "evidence": "policy/00-index.md:12-15 no longer claims instruments cite ids; it now reads 'The scan catalogue names the rule each scan enforces, and a ledger entry of scope policy names the rule it exempts' — both verified true. grep for 'instruments cite' outside .gbg: zero hits."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#6",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml now gives every one of its 93 rules a `check` field (panel/weakness/session/scan:/doctor:/test:/harness:); testing-protocol.md:56-65 rewrites RULE.TEST.RULE_WITH_CHECK to define this taxonomy and explicitly distinguish panel from weakness — exactly the schema fix the finding's hint proposed."
+    }
+  ]
+}

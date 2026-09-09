@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "14120325f0599a8c9085dd694615df3f",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/schemas#1",
+      "verdict": "ABSENT",
+      "evidence": "Rounds.jl:402-406 now `core = load_schema(\"finding\")` then `validate(core, ...)` per finding before freezing findings.json, throwing on failure. test/schemas.jl:98 liveness check now requires \"name\" on a line with load_schema/read_verdicts, excluding Doctor.jl's `e[\"scope\"]==\"finding\"`; a dedicated regression test at line 102-115 pins the direction."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#2",
+      "verdict": "ABSENT",
+      "evidence": "`grep -c '$ref' instruments/bug-hunt/schema.json` = 1; the file's single $defs block is `hunt_finding` (line 206), $ref'd at line 191 in lane_file.properties.findings.items. No dead `$defs.finding` block remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#3",
+      "verdict": "ABSENT",
+      "evidence": "managed.schema.json:16-17 `\"files\": {\"additionalProperties\": {\"$ref\": \"#/$defs/entry\"}}`; tally.schema.json:69-70 `\"per_id\": {\"additionalProperties\": {\"$ref\": \"#/$defs/entry\"}}`. Both dynamic maps now wire $defs.entry in."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#4",
+      "verdict": "ABSENT",
+      "evidence": "exemptions.schema.json:60-63 `reason` minLength is now 40, description reads \"at least 40 characters, as CFG.EXEMPTIONS enforces for every entry\", matching Doctor.jl:305's unconditional `length(e[\"reason\"]) >= 40` check exactly."
+    }
+  ]
+}

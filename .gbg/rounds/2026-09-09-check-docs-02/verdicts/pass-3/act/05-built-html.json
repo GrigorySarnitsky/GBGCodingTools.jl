@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/built-html#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md line 383 diff: `*Personal-scope symlinked skills \\`~/.claude/skills/gbg-*\\`*` -> `*Personal-scope symlinked skills, one per instrument under \\`~/.claude/skills/\\`*` — the glob asterisk inside backticks is gone, italics close on the trailing `*` outside the code span. Rebuilt docs/build/architecture.html (mtime after source edit) now renders `<em>Personal-scope symlinked skills, one per instrument under <code>~/.claude/skills/</code></em>: deliver...` followed by correctly-tagged `<em>Plugin skills <code>/gbg:…</code></em>`, `<em>Rendered protocol text in the stub</em>`, `<em>Model reads <code>&lt;root&gt;/PROTOCOL.md</code></em>` — the ~90-word cascade is gone, no stray literal backtick.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:383 (D6 Dominated paragraph, rendered as docs/build/architecture.html)",
+          "swept": true,
+          "evidence": "built HTML paragraph from 'Dominated' through the four alternatives (Plugin skills, Rendered protocol text, Model reads PROTOCOL.md, disable-model-invocation) all carry correctly-paired <em>/<code> tags with no stray backtick; verified by reading docs/build/architecture.html directly."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md SCAN.HTML_PUBLIC_HOME row diff: bare `built_html` -> `` `built_html` `` (backticked), matching the finding's hint exactly. Rebuilt docs/build/architecture.html now shows `<code>built_html</code> + <code>.gbg/scratch/public_surface.json</code>` in the surface column — plain text, no <em> tags, no dangling backtick.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md scans table, SCAN.HTML_PUBLIC_HOME surface column (rendered in docs/build/architecture.html)",
+          "swept": true,
+          "evidence": "verified rendered cell reads '<code>built_html</code> + <code>.gbg/scratch/public_surface.json</code>' with no interleaving emphasis tags or stray backtick."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": ".gbg/policy/deviations.md diff: `...KNOWN WEAKNESS by RULE.TEST.RULE_WITH_CHECK's own terms...` -> `...KNOWN WEAKNESS by \\`RULE.TEST.RULE_WITH_CHECK\\`'s own terms...`, propagated by sync into CLAUDE.md's managed block (sha changed) and into the built docs/build/guide/rules.html, which now reads '...KNOWN WEAKNESS by <code>RULE.TEST.RULE_WITH_CHECK</code>'s own terms, carried by review ra...' with no <em> tag splitting the word.",
+      "class_surfaces": [
+        {
+          "surface": ".gbg/policy/deviations.md deviations bullet list (5 rule ids, rendered in docs/build/guide/rules.html)",
+          "swept": true,
+          "evidence": "current file shows all five ids backticked: RULE.TEST.ALLOC_ZERO, RULE.TEST.PASS_AUDIT, RULE.TEST.EXAMPLES_RUN, RULE.DOC.LEADING_IDENTITY, RULE.API.POSITIONAL, and now the sixth mention RULE.TEST.RULE_WITH_CHECK inside the RULE.API.POSITIONAL bullet is also backticked — sole prior bare mention confirmed fixed, siblings confirmed already-backticked."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/built-html#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Config.jl check_paths docstring diff adds 'the `glossary` file exists and a non-empty `built_html` has a `docs/` directory beside it' to the enumeration. Verified against src/CLI/Config.jl:199-200: `haskey(s, \"glossary\") && !isfile(...)` and `!isempty(s[\"built_html\"]) && !isdir(joinpath(root, \"docs\"))` — both now named accurately, matching the code's actual conditions (glossary optional-existence, built_html-implies-docs-dir).",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Config.jl:166-170 (check_paths docstring enumeration)",
+          "swept": true,
+          "evidence": "docstring now lists surface globs, anchors, modules, [paths], glossary, built_html/docs-dir, extensions, docs/make.jl, executable_claims, seed_catalog — matching every check present in the function body lines 172-217, including the two previously-omitted glossary and built_html checks."
+        }
+      ]
+    }
+  ]
+}

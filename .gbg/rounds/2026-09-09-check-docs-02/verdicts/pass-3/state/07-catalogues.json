@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "6114c300132fdcbf435699389e69184a",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/catalogues#1",
+      "verdict": "ABSENT",
+      "evidence": "catalog/hats/latex-typesetter.toml:4 now reads needs = [\"source\"] with comment '# the persona reads the rendered policy file, never a `rulebook_sections` grant' — 'rulebook' removed from needs, so Preflight.jl:210-211's na-gate ('rulebook' in needs && isempty(rulebook_sections)) no longer applies. Checked the other three needs=[\"rulebook\",...] hats (naming-policy, doc-policy, invariants-and-decisions): each genuinely references {package.rulebook_sections} in its persona, so the class does not recur elsewhere in catalog/hats/."
+    }
+  ]
+}

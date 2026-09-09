@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "14120325f0599a8c9085dd694615df3f",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scan.jl:451 and :465 both add `&& isempty(r.hits)` to the DEAD guard (hard and triage loops), so a scan with real hits is never reported DEAD; src/Scans/field_docs.jl:50 moves `checked += 1` above the NOLIST branch so a struct with no fields list still counts toward population.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scan.jl:451",
+          "swept": true,
+          "evidence": "hard-tier DEAD branch: `if r.population == 0 && r.exempted == 0 && isempty(r.hits)`"
+        },
+        {
+          "surface": "src/Scan.jl:465",
+          "swept": true,
+          "evidence": "triage-tier DEAD branch, the guard the finding says 'repeats' at line 461 pre-fix — now carries the same `isempty(r.hits)` fix"
+        },
+        {
+          "surface": "src/Scans/field_docs.jl:50",
+          "swept": true,
+          "evidence": "`checked += 1` now runs before `if documented === nothing`, so a NOLIST struct is counted"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TestHarness.jl:298-299 now reads 'externals — the external modules whose generics the package extends (searched after `pkg` and before `modules`)', matching the unchanged code order `Iterators.flatten(((pkg,), externals, modules))` at line 303 exactly — the hint's first alternative.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:285(now 298)",
+          "swept": true,
+          "evidence": "the only docstring in the corpus stating this function's search order; corrected to match the flatten() order"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Reflection.jl: `examined === nothing || (examined[] += 1)` was moved to after `if def === :extension ... continue end`, so an EXTENSION-HOMED binding (which immediately continues, skipped) no longer increments `examined`. Confirmed in current source at Reflection.jl:410-415 where the increment now sits below the extension check.",
+      "class_surfaces": [
+        {
+          "surface": "src/Reflection.jl:410-412",
+          "swept": true,
+          "evidence": "increment relocated to after the `def === :extension` skip, per the diff and the current file"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Config.jl:168 docstring reworded to 'the fixed path `docs/make.jl` a consumer's `docs_build` command is expected to run' — the hint's second alternative, exactly. Code at Config.jl:207 is unchanged (still `isfile(joinpath(root, \"docs\", \"make.jl\"))`), which is consistent with the corrected, more modest claim rather than a false derivation claim.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Config.jl:166-169",
+          "swept": true,
+          "evidence": "check_paths docstring no longer claims the path is derived from `docs_build`"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Main.jl:33-35 docstring now reads 'Any `--name=value` is a value whatever `valued` says; an option named in `valued` also consumes the following bare argument as its value; every other bare `--name` is a flag' — matches the code's unconditional `=`-branch, `valued`-gated space-separated branch, and flag fallback verbatim (Main.jl:45-53), and matches the hint's suggested wording almost word for word.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Main.jl:33-34",
+          "swept": true,
+          "evidence": "the only docstring describing parse_options's gating rule; now accurate"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TestHarness.jl: audit()'s docstring now reads 'a frozen count differing from its ideal must carry a named holder', replacing 'above'; matches the code's `r.frozen != r.ideal && @test !isempty(r.holder)` and the Traffic struct's own docstring wording ('REQUIRED whenever frozen ≠ ideal').",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:190",
+          "swept": true,
+          "evidence": "'above' replaced with 'differing from'"
+        },
+        {
+          "surface": "src/TestHarness.jl:162",
+          "swept": true,
+          "evidence": "Traffic struct's own docstring already said '≠' before this pass; cited by the finding as the correct wording, unchanged and still correct"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#7",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/sibling_link.jl:17-34: the loop now tracks a `seen` flag; after the first mention is judged, every later line naming the same sibling is checked and a hit is pushed when `linked` is true ('later mention of `$name` is a link, not a bare code span'). The header comment (lines 16-18) now states both halves are checked. This implements the hint's first alternative exactly.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/sibling_link.jl:17-30",
+          "swept": true,
+          "evidence": "the only loop implementing this scan; now checks post-first-mention lines too"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#8",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/prose_shape.jl:1-6 header rewritten to 'Caps ... bind on every docstring and every NEW page unit; a page unit already in the baseline is held by the ratchet alone' — dropping the 'ALWAYS' claim and now agreeing with the later in-code comment (lines 104-105) and the `occursin(\" :: \", k) || b === nothing` gate that already implemented exactly this restriction.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/prose_shape.jl:3-4",
+          "swept": true,
+          "evidence": "header comment corrected to match the code and the later comment"
+        },
+        {
+          "surface": "src/Scans/prose_shape.jl:104-106",
+          "swept": true,
+          "evidence": "already stated the true rule before this pass; now consistent with the header instead of contradicting it"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#9",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Rounds.jl:252-256 docstring now reads 'absent, or — renamed to `<name>.rejected.json` beside itself — unparsable or invalid', separating the no-rename absent case from the two rename cases. Code: the unparsable branch (line 267) now uses `mv(p, replace(p, \".json\" => \".rejected.json\"))`, the same pattern already used by the invalid/mismatch branches (lines 272, 275) — unifying the two prior rename rules as the hint asked.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Rounds.jl:227",
+          "swept": true,
+          "evidence": "docstring now scopes '.rejected.json' renaming to the two file-rewriting cases"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:234",
+          "swept": true,
+          "evidence": "absent branch (`isfile(p) || return (:dead, ...)`) correctly excluded from the rename claim, unchanged, no mv call"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:239(now 267)",
+          "swept": true,
+          "evidence": "unparsable branch's `mv` pattern changed from `p * \".rejected.json\"` to `replace(p, \".json\" => \".rejected.json\")`"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:244,247(now 272,275)",
+          "swept": true,
+          "evidence": "invalid/lane-mismatch branches already used `replace(...)`; now the sole pattern across both file-rewriting cases"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#10",
+      "verdict": "LAUNDERED",
+      "question": "strategy",
+      "evidence": "Recall.jl's `sees_seed(substrate, seed, site_pages) = substrate == \"siteonly\" ? seed[\"page\"] in site_pages : true` (line 78-79) is logically IDENTICAL to the pre-fix inline condition `h[\"substrate\"] != \"siteonly\" || s[\"page\"] in site_pages` (baseline Recall.jl:84) — no filtering behavior changed for `rawhtml`/`docstrings`/`rulebook`/`none` at all. Instead, `resolve_hats`'s docstring (Preflight.jl:201-203, cited by the finding) and `suspect_hats`'s docstring/comments were rewritten to assert 'Only `siteonly` narrows the manuscript the panel actually hands over; every other value is the hat's brief over the full manuscript' — a claim about `panel.js`'s ACTUAL behavior (verified: `instruments/check-consistency/workflow/panel.js:60,82` only branches on `siteonly` vs everything else) used to declare the finding's concern moot, per the fix-pass's own commit message ('Calling those four blind would have hidden the failure worth catching... The filter and the docstring now say what the panel does.'). This is a self-authored 'by design' dismissal — no code was changed to actually narrow the corpus for `rawhtml`/`docstrings`/`rulebook`/`none` as the hint asked, and no owner ledger entry sanctions treating the schema's four narrower substrates as no-ops.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Preflight.jl:201-203 (resolve_hats docstring)",
+          "swept": false,
+          "evidence": "rewritten to declare 'every other value is the hat's brief over the full manuscript' instead of implementing or requiring the narrowing its own closed-set list (rawhtml/docstrings/rulebook/none) implies"
+        },
+        {
+          "surface": "src/CLI/Recall.jl:75 (suspect_hats docstring)",
+          "swept": false,
+          "evidence": "reworded to match the declared status quo, not to filter by the four narrower substrates"
+        },
+        {
+          "surface": "src/CLI/Recall.jl:78-84 (sees_seed / suspect_hats filter)",
+          "swept": false,
+          "evidence": "functionally unchanged from the pre-fix inline condition; `rawhtml`, `docstrings`, `rulebook`, `none` are still all treated as seeing every seed, exactly as the finding described"
+        }
+      ]
+    }
+  ]
+}

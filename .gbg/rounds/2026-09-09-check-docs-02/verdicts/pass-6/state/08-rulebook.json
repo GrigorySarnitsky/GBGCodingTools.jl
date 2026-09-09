@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "00afdb50d463330866ebc84ce1e8a7df",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#1",
+      "verdict": "ABSENT",
+      "evidence": "policy/docs-rubric.md:12-17 now numbers caveats as item (7), last, 'as an admonition where load-bearing — the last substantive block, before the fields list', matching ADMONITION_TITLE (line 61) verbatim. No remaining place states caveats mid-sequence; grep for 'HOME_ORDER'/'caveat' found no conflicting order text."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#2",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:428 sentinel now reads the full sentence ending '...title and DOI compared.', identical to citations.md:9-13's actual first sentence. No sentinel in RULES.toml ends on a bare hyphen (grep for trailing '-\"' found zero matches)."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#3",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:5-6 header now cites 'the tool's own test suite (test/schemas.jl) fails when a heading exists without a row or a row without a heading...' instead of POL.RULE_PARITY; test/schemas.jl:134-142 actually implements that heading/row parity and sentinel check. grep -rn RULE_PARITY (excl .gbg) returns nothing."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#4",
+      "verdict": "ABSENT",
+      "evidence": "policy/latex-idiom.md:59-60 now states '`\\mathbf{1}`... is admitted in every package whatever that list holds; it is not a package's to withhold', and src/Scans/mathbf.jl:6 hard-codes `push!(allowed, \"\\\\mathbf{1}\")` regardless of cfg. Rule text and scan agree; no contradiction remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#5",
+      "verdict": "ABSENT",
+      "evidence": "policy/00-index.md:12-15 no longer says 'the instruments cite these ids'; it now reads 'The scan catalogue names the rule each scan enforces, and a ledger entry of scope policy names the rule it exempts.' Instruments/PROTOCOL.md and catalog/hats+lanes still carry near-zero RULE.* citations, but the claim describing them was removed."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#6",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml now gives every one of its 93 [[rule]] entries a `check` field (verified by count: 93 rules, 93 check fields), classed scan/doctor/test/harness/panel/session/weakness — e.g. RULE.DOC.ONE_HOME/MODULE_MAP/RETURNS = weakness, RULE.DOC.VERIFIED/TWO_TIER = panel. testing-protocol.md:56-65 documents exactly this mechanism, resolving the finding's requested panel-vs-weakness distinction."
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "b457e3ee09da878b58a35cc7f9bb2f89",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#1",
+      "verdict": "ABSENT",
+      "evidence": "policy/docs-rubric.md:12-16 now lists caveats as item (7), last, 'the last substantive block, before the fields list' — matching ADMONITION_TITLE (line 61) verbatim. Both statements agree; no ordering conflict remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#2",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:428 sentinel now reads '...verbatim-identical to the canonical entry under the package's references heading, title and DOI compared.' — full sentence, matching citations.md:9-12 exactly, ending in a period, not truncated at 'verbatim-'."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#3",
+      "verdict": "ABSENT",
+      "evidence": "grep -rn RULE_PARITY (excluding .gbg) = zero hits; policy/RULES.toml header now says 'the tool's own test suite (test/schemas.jl) fails when a heading exists without a row...', and test/schemas.jl:120-128 actually implements that heading/row and sentinel parity check."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#4",
+      "verdict": "ABSENT",
+      "evidence": "policy/latex-idiom.md:59-60 now states '`\\mathbf{1}`... is admitted in every package whatever that list holds; it is not a package's to withhold.' src/Scans/mathbf.jl:6 hardcodes push!(allowed, \"\\\\mathbf{1}\") unconditionally, matching the reconciled text."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#5",
+      "verdict": "ABSENT",
+      "evidence": "policy/00-index.md:13 no longer says 'the instruments cite these ids'; it now reads 'The scan catalogue names the rule each scan enforces and an instrument's findings cite the ids they rest on' — a narrower claim borne out by this very findings.md, which cites RULE.* ids 37 times."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#6",
+      "verdict": "ABSENT",
+      "evidence": "Every one of the 93 [[rule]] entries in policy/RULES.toml now carries a `check` field (scan/doctor/test/harness/panel/session/weakness — 13 honestly marked 'weakness'); RULE.TEST.RULE_WITH_CHECK's text (testing-protocol.md:60-64) now describes exactly this mechanism, matching the finding's hint verbatim."
+    }
+  ]
+}

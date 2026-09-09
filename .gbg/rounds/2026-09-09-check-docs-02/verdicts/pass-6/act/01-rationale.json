@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "00afdb50d463330866ebc84ce1e8a7df",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rationale#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:625-627 now reads 'Sixteen schemas: schema/{config,exemptions,hat,round,pass,finding,verdict-act,verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import,managed}.schema.json' — exactly the 16 real files (ls schema/*.schema.json = 16, same 16 names) — plus a new sentence that the lane-file wrapper and bug-hunt's candidate shape live inline in each instrument's schema.json. Line 994 now says 'the sixteen of D11'.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:625-628",
+          "swept": true,
+          "evidence": "'Eighteen schemas...lane-file...hunt-candidate...' replaced with correct 16-name enumeration plus explanatory sentence"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:994",
+          "swept": true,
+          "evidence": "'the eighteen of D11' -> 'the sixteen of D11'"
+        },
+        {
+          "surface": "docs/src/architecture.md (generated copy)",
+          "swept": true,
+          "evidence": "grep for 'Eighteen'/'eighteen' across docs/, src/, policy/, catalog/, schema/, instruments/, templates/ finds zero live hits (only historical docs/design-record/ files, outside scope)"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md §7.3 QUICK formula now ends '...POL.SENTINEL, SELF.CONSUMER, AUDIT.GAP}', and the following sentence reads 'AUDIT.* other than AUDIT.GAP, SELF.DOCS and every other --deep check are never in QUICK', matching src/CLI/Doctor.jl:42-45's const QUICK array which does end in \"AUDIT.GAP\". The §7.3 table's AUDIT.GAP row is placed among the QUICK checks, consistent.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md §7.3 QUICK formula",
+          "swept": true,
+          "evidence": "AUDIT.GAP added to the {…} set, matching Doctor.jl:42-45"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md §7.3 'never in QUICK' sentence",
+          "swept": true,
+          "evidence": "carved out as 'AUDIT.* other than AUDIT.GAP'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md §7.2/D14 Exemptable framing",
+          "swept": true,
+          "evidence": "unchanged pre-existing text ('AUDIT.* joined it with AUDIT.GAP, which post-dates ruling 13's list') predates this round and addresses the exemptable-set axis, not QUICK membership, so needed no edit"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "A new row was inserted in-place into §12.B's table immediately after SCAN.ARGCOV: '| `SCAN.ARGS_FORM` | `RULE.DOC.ARGS_FORM` | triage | src, ext | julia | ... | `wrong-args-form` |', matching catalog/scans.toml:129-134 exactly. The table now lists exactly the same 42 scan ids present in catalog/scans.toml (verified diff of sorted id sets is empty).",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md §12.B table",
+          "swept": true,
+          "evidence": "table now has 42 unique SCAN.* rows == 42 [[scan]] entries in catalog/scans.toml"
+        },
+        {
+          "surface": "docs/src/architecture.md (generated copy)",
+          "swept": true,
+          "evidence": "SCAN.ARGS_FORM row present in the generated site copy too"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md's §3 CLI/ tree block gained five lines for Git.jl, Ledger.jl, Passes.jl, RoundFiles.jl, Self.jl, each with a one-line description matching the module's own header/docstring (verified against src/CLI/Git.jl, Ledger.jl, Passes.jl, RoundFiles.jl, Self.jl). The tree now names 25 CLI files, matching ls src/CLI/*.jl = 25 exactly.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md §3 CLI/ tree block",
+          "swept": true,
+          "evidence": "all 5 named files added with accurate descriptions; tree's CLI-file count now matches the real 25-file directory"
+        },
+        {
+          "surface": "docs/src/architecture.md (generated copy)",
+          "swept": true,
+          "evidence": "'RoundFiles.jl' (and the other four) present in the generated site copy"
+        }
+      ]
+    }
+  ]
+}
