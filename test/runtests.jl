@@ -18,6 +18,7 @@ module WitnessTests;     include("witnesses.jl");    end
 module SyncDoctorTests;  include("sync_doctor.jl");  end
 module GateTests;        include("gate.jl");         end
 module TreeHashTests;    include("treehash.jl");     end
+module CoverageTests;    include("coverage.jl");     end
 module RoundTests;       include("rounds.jl");       end
 
 rm(TMP; recursive = true, force = true)

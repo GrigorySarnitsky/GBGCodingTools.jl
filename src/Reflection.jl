@@ -363,6 +363,7 @@ function signature_fidelity(cfg::AbstractDict; pkg::Module = load_package(cfg), 
     end
     mods = package_modules(pkg, cfg)
     pkgroot = pkgdir(pkg)
+    owners_of(name) = [mod for mod in mods if isdefined(mod, name) && Base.which(mod, name) === mod]
     function defined_sets(name)
         f = nothing
         # the module that OWNS the binding, not merely the first that can see it: every module can see
@@ -400,9 +401,10 @@ function signature_fidelity(cfg::AbstractDict; pkg::Module = load_package(cfg), 
     out = String[]
     for name in sort!(collect(keys(displayed)))
         (!by_export || name in exported) || continue
-        # a name displayed in more than one file is two different functions sharing a bare name (`render`
-        # in Sync and in Rounds): the union of their signatures is nobody's, so it is skipped, not compared
-        length(get(shown_in, name, Set{String}())) > 1 && continue
+        # a name OWNED by two modules is two different functions sharing a bare name (`render` in Sync and
+        # in Rounds): the union of their displayed signatures is nobody's, so it is skipped, not compared.
+        # One owner documented in two files is one function documented twice, which is what this compares.
+        length(owners_of(name)) > 1 && continue
         def = defined_sets(name)
         def === nothing && continue
         examined === nothing || (examined[] += 1)                 # what was COMPARED: the scan's population

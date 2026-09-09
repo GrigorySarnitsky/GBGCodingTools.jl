@@ -1,0 +1,76 @@
+using Test, GBGCodingTools, TOML, JSON3
+include("helpers.jl")
+
+# The machinery the suite reached through nothing: the entry point and its exit contract, every doctor
+# check as a callable, the fan-out scripts as text, and the consolidator against a golden manuscript.
+# Each of these was found unexercised by the self-application sweep of 2026-09-09.
+
+@testset "the exit contract of main()" begin
+    root = fixture_copy("main-exit")
+    cd(root) do
+        @test G.main(["probe"]) == 0                                   # 0 clean
+        @test G.main(["probe", "--fail"]) == 2                         # 2 cannot evaluate
+        @test G.main(["no-such-verb"]) == 2                            # an unknown verb is not a crash
+        @test G.main(String[]) == 2                                    # no verb at all
+        @test G.main(["round", "list"]) == 0
+        @test G.main(["scan"]) == 2                                    # a verb missing its noun
+        @test G.main(["doctor", "--only", "CFG.VALID"]) == 0
+        @test G.main(["gate"]) == 0                                    # no open round
+    end
+    @test Set(keys(G.VERBS)) == Set(k for k in keys(G.VERBS))          # the table is a table, not a closure
+    @test length(G.VERBS) >= 20
+end
+
+@testset "every doctor check runs without crashing" begin
+    root = fixture_copy("doctor-all")
+    cfg = G.Config.read(root)
+    ids = [id for (id, _) in G.Doctor.CHECKS]
+    @test length(ids) == length(unique(ids))                           # no id registered twice
+    for id in ids
+        id in G.Doctor.DEEP && continue                                # the deep set builds and tests; not here
+        checks, _ = G.Doctor.run(cfg; only = [id], io = devnull)
+        @test length(checks) == 1
+        @test checks[1].status in (:PASS, :FAIL, :WARN, :NA)           # a status, never an exception
+        @test checks[1].id == id
+    end
+end
+
+@testset "every Workflow script is well formed" begin
+    scripts = [joinpath(r, f) for i in ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
+               for (r, _, fs) in walkdir(joinpath(TOOL, "instruments", i, "workflow")) for f in fs if endswith(f, ".js")]
+    @test length(scripts) == 11
+    for s in scripts
+        text = read(s, String)
+        # the meta block the runner requires, as a pure literal at the top
+        @test occursin(r"^export const meta = \{"m, text)
+        @test occursin(r"\bname:\s*'", text) && occursin(r"\bdescription:\s*'", text)
+        # No JS runtime exists in this environment, so this is not a parse. It is the check that catches
+        # the failure actually seen: a template literal left open, which makes every following line part
+        # of a string. Backticks outside `//` and `/* */` comments must pair, and no block comment is left
+        # open. A brace count is not attempted: a regex literal and a nested template defeat one without a parser.
+        code = replace(text, r"//[^\n]*" => "", r"/\*.*?\*/"s => "")
+        @test iseven(count(==('`'), code))
+    end
+end
+
+@testset "the consolidator against a golden manuscript" begin
+    # The Julia port's only evidence was a byte comparison run by hand once (Consolidate.jl's header).
+    # This pins its output on a tracked corpus, so a rendering rule cannot drift unnoticed.
+    dir = joinpath(TMP, "consolidate"); mkpath(dir)
+    site = joinpath(FIXTURE, "defects", "html", "clean")
+    full = joinpath(dir, "full.txt"); site_only = joinpath(dir, "site.txt")
+    pages, nfull, nsite = G.consolidate(site, String[]; out_full = full, out_siteonly = site_only)
+    text = read(full, String)
+    @test pages == 2 && nfull == length(text) && nsite == nfull        # nothing withheld: the two agree
+    @test occursin("===== PAGE: api =====", text) && occursin("===== PAGE: page =====", text)
+    @test occursin("# ", text)                                          # a heading rendered as Markdown
+    golden = joinpath(TOOL, "test", "golden", "clean-manuscript.txt")
+    if isfile(golden)
+        @test read(golden, String) == text                              # byte-for-byte, or the port drifted
+    else
+        mkpath(dirname(golden)); write(golden, text)
+        @test_broken false                                              # first run writes it; commit it
+    end
+    _, _, n2 = G.consolidate(site, ["api"]; out_full = full, out_siteonly = site_only)
+    @test n2 < nfull                                                    # a withheld word removes a page
+end

@@ -15,7 +15,8 @@ include("helpers.jl")
         end
     end
     cfg = defects_config()
-    loaded = try G.Reflection.load_package(cfg); true catch; false end
+    loaded = try G.Reflection.load_package(cfg); true catch err; @warn "the fixture package did not load" err; false end
+    @test loaded                                                        # a silent skip of the four reflection scans is not a pass
     @testset "must-hit: $(d["class"])" for d in DEFECTS["defect"]
         id = d["scan"]
         (!loaded && id in REFLECTION) && (@test_skip false; continue)

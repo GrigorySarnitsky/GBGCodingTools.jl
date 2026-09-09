@@ -1,0 +1,19 @@
+
+
+===== PAGE: api =====
+
+
+# API
+
+## Public
+`GBGFixture.FixtureA.twice` — FunctionThe double of a number.
+
+`GBGFixture.FixtureB.mean_value` — FunctionThe mean.
+
+
+
+===== PAGE: page =====
+
+
+# Page
+A sentence with emphasis rendered properly, and a `*star*` inside code.
