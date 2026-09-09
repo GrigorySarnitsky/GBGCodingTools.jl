@@ -263,7 +263,7 @@ unit,words,longest_paragraph,admonitions
 "Seed.jl :: plant(full, siteonly, plan) -> (full′, siteonly′)",107,70,0
 "Seed.jl :: read_catalog(path) -> Dict",16,13,0
 "Seed.jl :: salt_offset(round, class) -> Int",34,30,0
-"Seed.jl :: select(catalog, full, round) -> (seeded, skipped)",94,52,0
+"Seed.jl :: select(catalog, full, round) -> (seeded, skipped)",132,52,0
 "Self.jl :: cmd_self_verify(args) -> Int",37,34,0
 "Self.jl :: manifest_tree_sha(manifest_path) -> Union{String,Nothing}",33,30,0
 "Self.jl :: self_verify(root = Config.find_root(); io = stdout) -> Int",156,64,0

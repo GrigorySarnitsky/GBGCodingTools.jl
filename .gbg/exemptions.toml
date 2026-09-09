@@ -65,8 +65,8 @@ evidence = "the self-application sweep of 2026-09-09 found no scan, doctor check
 [[exemption]]
 id            = "2026-09-09-check-docs-02/operational-claims#10"
 scope         = "finding"
-target        = "src/CLI/Recall.jl"
+target        = "2026-09-09-check-docs-02/operational-claims#10"
 reason        = "the finding is right that `substrate` promises a narrowed corpus and the seed filter honours only `siteonly`. The delivery honours only `siteonly` too: panel.js splits the manuscript once and hands `rawhtml`, `docstrings`, `rulebook` and `none` the same full text a `full` hat gets. Narrowing the seed set by a name that narrows nothing would mark a hat blind to seeds it was handed, hiding the failure suspect_hats exists to catch, so the filter follows the delivery and says so"
 recorded      = 2026-09-09
 overturn_when = "panel.js delivers a corpus narrowed per substrate, or the substrate vocabulary drops the four values that narrow nothing — either makes the seed filter's siteonly-only rule wrong"
-evidence      = "instruments/check-consistency/workflow/panel.js:60,82 branch on `siteonly` alone; Preflight.render_args hands every hat the same {full, siteonly} manuscripts"
+evidence      = "src/CLI/Recall.jl; instruments/check-consistency/workflow/panel.js:60,82 branch on `siteonly` alone, and Preflight.render_args hands every hat the same {full, siteonly} manuscripts"

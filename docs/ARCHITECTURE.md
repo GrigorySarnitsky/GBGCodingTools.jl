@@ -959,7 +959,7 @@ GBGCodingTools.jl/
       Rounds.jl                 open/prepare/build/test/bank/rerun/pass/grade/close/abandon/list/render/import (+ --empty)/compare (--recorded)
       Passes.jl                 the verification half of a round — `pass open`/`grade`/`close`, the dismissal gate, deferral carry
       RoundFiles.jl             reading and hashing what lives under `.gbg/rounds/` (the round record, the lane files, shas)
-      Self.jl                   `gbg self verify` — the tool's own tree hash against the tag it claims (D2, D3, D15)
+      Self.jl                   `gbg self verify` — the running copy's tree hash against what `Pkg.dependencies()` and every sub-environment manifest record (D2, D3, D15)
       Gate.jl                   THE closure gate for every instrument (honours GBG_ROUND); called in-process by makedocs and TestHarness.gate()
       Demote.jl                 THE demotion predicate (emptiness of class_surfaces[])
       Scan.jl                   `gbg scan docs|html` — the tiered engine over catalog/scans.toml

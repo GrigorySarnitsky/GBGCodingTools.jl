@@ -44,6 +44,10 @@ The seed plan for a round. The arguments are:
 - `full` — the FULL manuscript text.
 - `round` — the round id that salts the selection.
 
+A class's `anchor` here is a third sense of the word: the regular expression whose match in the
+manuscript marks where the seed is planted. It is neither a `file#heading` reference
+([`Config.resolve_anchor`](@ref)) nor a hat's full-strength flag ([`Preflight.resolve_hats`](@ref)).
+
 For every `[[class]]`: the occurrences of `anchor` in `full`; the chosen one is `((occurrence - 1 +
 salt_offset) mod count) + 1`; a class whose anchor occurs nowhere is skipped and named. Returns the
 plan `[{id, class, page, start, stop, original, replacement, original_context, mutated_context}]` (byte
