@@ -22,6 +22,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § Revision 10 (2026-09-09) — the rc.1 `/check-docs` round",140,95,0
 "ARCHITECTURE.md § Revision 11 (2026-09-09) — the owner's home-page review",136,136,0
 "ARCHITECTURE.md § Revision 12 (2026-09-09) — a documentation round that change",123,123,0
+"ARCHITECTURE.md § Revision 13 (2026-09-09) — the scan the rc.1 round was owed,",138,138,0
 "ARCHITECTURE.md § Revision 2 (2026-09-07)",106,106,0
 "ARCHITECTURE.md § Revision 3 (2026-09-07)",232,232,0
 "ARCHITECTURE.md § Revision 4 (2026-09-08) — IT amendments + Python retirement",361,361,0
@@ -48,7 +49,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1089,541,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
 "ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",2906,2801,0
-"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1341,1166,0
+"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1383,1208,0
 "ARCHITECTURE.md § §12.C Doctor ids",135,134,0
 "ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
 "ARCHITECTURE.md § §3 Repository layout",1,1,0
@@ -156,6 +157,7 @@ unit,words,longest_paragraph,admonitions
 "Main.jl :: usage(io = stderr)",16,13,0
 "Passes.jl :: Passes",49,48,0
 "Passes.jl :: audit_after_code(cfg, rec) -> Vector{String}",60,56,0
+"Passes.jl :: carry_deferrals(cfg, dir, round; io = stdout) -> Int",133,92,0
 "Passes.jl :: close(cfg, round; io = stdout) -> Int",154,112,0
 "Passes.jl :: grade(cfg, round; io = stdout) -> Int",119,85,0
 "Passes.jl :: pass_open(cfg, round; regrade = false, io = stdout) -> Int",132,59,0
@@ -329,6 +331,7 @@ unit,words,longest_paragraph,admonitions
 "code_in_math.jl :: math_spans(lines) -> Vector{Tuple{Int,String}}",48,45,0
 "config.md § [The config](@id config)",171,63,1
 "html_docstring_once.jl :: page_bindings(page) -> Vector{NamedTuple}",43,40,0
+"html_stray_math.jl :: math_sources(page) -> Vector{String}",37,34,0
 "index.md § How a package adopts it",71,71,0
 "index.md § The command-line program `gbg`",165,94,0
 "index.md § The four review procedures",216,127,0

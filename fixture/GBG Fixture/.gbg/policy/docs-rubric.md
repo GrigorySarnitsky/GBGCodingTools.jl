@@ -81,7 +81,8 @@ uses a single unlabelled block and no `###` at all.
 
 ### RULE.DOC.REF_ABUT
 A `@ref` never abuts a second code span, because two adjacent monospace chips render with a visible seam.
-Write the whole call as the link text with an explicit target, as in ``[`lpnorm(f, Inf)`](@ref lpnorm)``.
+Write the whole call as the link text with an explicit target: a Markdown link whose text is the
+backticked call and whose destination is `@ref` followed by the bare name.
 
 ### RULE.DOC.API_GROUPING
 API pages are math-grouped under hand-written headers via explicit `@docs` blocks, each object once, an
@@ -213,8 +214,8 @@ A module docstring lists one linked one-liner per operation family and carries n
 identity, then the contents list, then an optional trailing remark.
 
 ### RULE.DOC.ARG_BULLET
-An argument or field bullet names its argument in a plain code span, never a bold one. The form is
-``- `name` — what it is``, one bullet per argument.
+An argument or field bullet names its argument in a plain code span, never a bold one. The form is a
+list item holding the backticked name, an em dash and what it is, one bullet per argument.
 
 ### RULE.DOC.SIGNATURE_MIRROR
 A docstring signature mirrors the code's types, and only the docstring wraps, to at most 88 columns with a

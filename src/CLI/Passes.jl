@@ -352,6 +352,38 @@ function audit_after_code(cfg::AbstractDict, rec::AbstractDict)
             ") and no closed audit-changes round has base = $base — run /audit-changes --base $base and close it"]
 end
 
+"""
+    carry_deferrals(cfg, dir, round; io = stdout) -> Int
+
+Carries a round's deferrals into the session work queue (`RULE.INST.FROZEN_MIDROUND`). The arguments are
+`cfg`, the validated config; `dir`, the round directory; `round`, the round id; and `io`, where the
+carried lines are printed.
+
+A fix pass that cannot make a change inside the round — an instrument change, which is its own commit and
+release — writes one line per deferral in `<round>/deferred.md`; `#` lines and blank lines are ignored.
+Each line becomes an open item of `.claude/WORK_QUEUE.md`, whose Stop hook then refuses to let a session
+end while it stands, so a deferral outlives the context that made it. A line already in the queue is not
+added twice. Returns the number of items added, zero when the file or the queue is absent.
+"""
+function carry_deferrals(cfg::AbstractDict, dir::AbstractString, round::AbstractString; io::IO = stdout)
+    src = joinpath(dir, "deferred.md")
+    queue = joinpath(cfg["root"], ".claude", "WORK_QUEUE.md")
+    (isfile(src) && isfile(queue)) || return 0
+    lines = [strip(l) for l in readlines(src)]
+    items = [l for l in lines if !isempty(l) && !startswith(l, "#")]
+    isempty(items) && return 0
+    text = read(queue, String); added = 0
+    open(queue, "a") do f
+        for it in items
+            body = "$it (deferred by $round)"
+            occursin(body, text) && continue
+            println(f, "- [ ] ", body); added += 1
+        end
+    end
+    added > 0 && println(io, "close: carried $added deferral(s) into .claude/WORK_QUEUE.md — the Stop hook now holds the session to them")
+    return added
+end
+
 function dismissal_items(cfg, dir, rec, findings, ledger)
     items = Dict{String,Any}[]
     od = Date(first(rec["opened"], 10))
@@ -465,6 +497,7 @@ function close(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     if !isempty(fails)
         println(io, "close: refused —"); foreach(f -> println(io, "  - ", f), fails); return 1
     end
+    carry_deferrals(cfg, dir, round; io)
     rec["closed"] = Rounds.timestamp(); rec["closed_head"] = head
     used = [e["target"] for e in ledger if e["scope"] == "finding" && startswith(e["target"], round * "/")]
     rec["closed_by"] = Dict{String,Any}("adjudicated" => used, "tally_sha" => RoundFiles.sha256_file(tj))

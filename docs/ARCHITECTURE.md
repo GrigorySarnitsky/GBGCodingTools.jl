@@ -2311,6 +2311,7 @@ docstrings except by `SCAN.SWALLOWED_ESCAPE`, which is what that scan is for.
 | — | — | — | — | — | the same scan also refuses the banner ON `docs/src/index.md` (the owner's ruling 2026-09-09) | `docs/src/index.md` clean twin |
 | `SCAN.DOI_CROSSCHECK` | `RULE.CIT.FULL_INLINE`, `RULE.CIT.DOI` | hard | src vs `references_heading` (or the whole of `docs/ARCHITECTURE.md` when `"absent"`) | julia | PF `doi_crosscheck.py` (both directions; unused-reference info) ∪ IT `doi_crosscheck.py` (decoded DOI, title check, retired `[doi:…]` label refused, the `Phenomenology` leaf exempt by ledger) | `doi-missing` |
 | `SCAN.HTML_RENDERED_MARKUP` | `RULE.TEX.RENDERED_MARKUP` | hard | built_html | html | PF `lint_rendered_markup` (article text with code/pre/math stripped; `*`/`__` survivors) | `emphasis-survives` |
+| `SCAN.HTML_STRAY_MATH` | `RULE.TEX.RENDERED_MATH` | hard | built_html | html | new 2026-09-09: a rendered math span holding a backtick, a Markdown link or an admonition marker is prose Julia Markdown read as math (a double-backtick span IS math) | `stray-math` |
 | `SCAN.HTML_DOCSTRING_ONCE` | `RULE.DOC.API_GROUPING` | hard | built_html | html | IT built-HTML question 1 (a docstring rendered on two pages) | `docstring-twice` |
 | `SCAN.HTML_PUBLIC_HOME` | `RULE.DOC.API_GROUPING` | hard | built_html + `.gbg/scratch/public_surface.json` | html | PF built-HTML question 3 / IT question 2 (every derived public operation on a public page) | `unhomed-export` |
 | `SCAN.HTML_BASE_LEAK` | `RULE.DOC.API_GROUPING` | hard | built_html | html | PF built-HTML questions 1–2 (`Base.` names in an internal section not in `docs.unexported_base_expected`; a name in both a public and an internal section) | `base-leak` |
@@ -2578,4 +2579,16 @@ nothing asked whether those edits were proportionate or whether behaviour moved 
 before. The two verifiers answer a different question, per finding and from the finding's own text; the
 audit reads the diff whole and runs what the diff claims. A prose-only pass stays ungated, the audit's
 prose lenses run on judgment. MINOR; the closed vocabularies and the closure channels are unchanged.
+
+### Revision 13 (2026-09-09) — the scan the rc.1 round was owed, and where a deferral goes
+
+`SCAN.HTML_STRAY_MATH`: a rendered math span holding a backtick, a Markdown link or an admonition marker
+is a hard finding. A double-backtick span is math in Julia Markdown, so prose that quotes backticked
+syntax inside one is handed to KaTeX, which cannot parse a backtick and leaves the raw source on the
+page. The rc.1 round found the class by reading the build, could not add a scan mid-round, and the
+deferral was written to `docs/ROADMAP.md`, which nothing reads; the class then shipped three times on the
+generated rules page. Two changes, not one: the scan exists, and `RULE.INST.FROZEN_MIDROUND` now says a
+deferral is one line in the round's `deferred.md`, which `gbg round close` carries into
+`.claude/WORK_QUEUE.md`, where the Stop hook holds the next session to it. A note is not a mechanism.
+MINOR; the closed vocabularies are unchanged.
 

@@ -205,6 +205,11 @@ scan = "SCAN.HTML_RENDERED_MARKUP"
 file = "defects/html/emphasis-survives"
 fragment = "*marker"
 [[defect]]
+class = "stray-math"
+scan = "SCAN.HTML_STRAY_MATH"
+file = "defects/html/stray-math"
+fragment = "lpnorm"
+[[defect]]
 class = "docstring-twice"
 scan = "SCAN.HTML_DOCSTRING_ONCE"
 file = "defects/html/docstring-twice"
@@ -277,6 +282,9 @@ scan = "SCAN.ABUTTING_SPANS"
 file = "docs/src/notation.md"
 [[clean]]
 scan = "SCAN.HTML_RENDERED_MARKUP"
+file = "defects/html/clean"
+[[clean]]
+scan = "SCAN.HTML_STRAY_MATH"
 file = "defects/html/clean"
 [[clean]]
 scan = "SCAN.HTML_DOCSTRING_ONCE"

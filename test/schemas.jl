@@ -28,6 +28,15 @@ include("helpers.jl")
             endswith(f, ".toml") && @test isempty(G.validate(hat, TOML.parsefile(f)))
         end
     end
+    @testset "the home page's counts are the real ones" begin
+        # every number the home page cites is re-measured here; a cited count nothing asserts drifts
+        page = read(joinpath(TOOL, "docs", "src", "index.md"), String)
+        n(re) = (m = match(re, page); m === nothing ? -1 : parse(Int, m.captures[1]))
+        @test n(r"There are (\d+)\s*\n?\s*verbs") == length(G.VERBS)
+        @test n(r"(\d+) scans over docstrings") == length(G.scan_catalog())
+        @test n(r"(\d+) read-only checks") == length(G.Doctor.CHECKS)
+        @test n(r"The policy is (\d+) rules") == length(TOML.parsefile(joinpath(TOOL, "policy", "RULES.toml"))["rule"])
+    end
     @testset "the transitional Python is gone (1.6)" begin
         @test !isfile(joinpath(TOOL, "src", "CLI", "consolidate.py"))
         @test isempty(filter(f -> endswith(f, ".py"), vcat([joinpath(d, f) for (d, _, fs) in walkdir(joinpath(TOOL, "src")) for f in fs],
@@ -35,7 +44,14 @@ include("helpers.jl")
     end
     @testset "RULES.toml matches the policy files" begin
         rules = TOML.parsefile(joinpath(TOOL, "policy", "RULES.toml"))["rule"]
-        @test length(rules) == 91
+        # the two sets, each derived — a hard-coded count drifts silently (RULE.TEST.COUNTS_REMEASURED),
+        # which it did: two rules were added and this test still asserted the old number
+        headings = Set{String}()
+        for f in readdir(joinpath(TOOL, "policy"); join = true)
+            endswith(f, ".md") || continue
+            for m in eachmatch(r"^### (RULE\.[A-Z]+\.[A-Z_]+)\s*$"m, read(f, String)); push!(headings, m.captures[1]); end
+        end
+        @test Set(r["id"] for r in rules) == headings
         for r in rules
             text = replace(read(joinpath(TOOL, "policy", r["file"]), String), r"\s+" => " ")
             @test occursin(r["sentinel"], text)

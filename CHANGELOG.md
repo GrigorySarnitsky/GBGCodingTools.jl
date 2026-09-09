@@ -5,7 +5,11 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 
 ## Unreleased
 
-MINOR so far: `RULE.INST.AUDIT_AFTER_CODE` gates a `/check-docs` round's close on a closed
+MINOR so far: `SCAN.HTML_STRAY_MATH` (hard) catches prose that Julia Markdown read as math — a
+double-backtick span quoting backticked syntax, which KaTeX leaves raw on the page; three shipped on the
+generated rules page and are fixed. With it, `RULE.INST.FROZEN_MIDROUND` says where a deferral goes: one
+line in the round's `deferred.md`, carried by `gbg round close` into `.claude/WORK_QUEUE.md`, whose Stop
+hook holds the next session to it. `RULE.INST.AUDIT_AFTER_CODE` gates a `/check-docs` round's close on a closed
 `/audit-changes` round whenever its fix pass touched the `src` or `ext` surfaces, as a hunt's close has
 always been gated (the rc.1 round changed three code behaviours unaudited); a prose-only pass is not
 gated. The owner's home-page review adds `RULE.DOC.SIBLING_LINK` and the hard `SCAN.SIBLING_LINK`

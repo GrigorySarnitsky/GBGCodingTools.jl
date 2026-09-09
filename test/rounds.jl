@@ -30,6 +30,20 @@ end
     @test isempty(G.Passes.audit_after_code(cfg, Dict{String,Any}("head" => "HEAD~1")))     # prose only: not gated
 end
 
+# RULE.INST.FROZEN_MIDROUND: a deferral written in the round's deferred.md is carried into the work
+# queue at close, where the Stop hook holds the next session to it; a note nothing reads is not a mechanism.
+@testset "a round's deferrals reach the work queue" begin
+    root = fixture_copy("deferrals")
+    cfg = G.Config.read(root)
+    dir = joinpath(root, ".gbg", "rounds", "2026-01-01-check-docs-01"); mkpath(dir)
+    queue = joinpath(root, ".claude", "WORK_QUEUE.md")
+    @test G.Passes.carry_deferrals(cfg, dir, "r"; io = devnull) == 0            # no deferred.md: nothing
+    write(joinpath(dir, "deferred.md"), "# a comment is not an item\n\nSCAN.X: the class this round could not fix\n")
+    @test G.Passes.carry_deferrals(cfg, dir, "2026-01-01-check-docs-01"; io = devnull) == 1
+    @test occursin("- [ ] SCAN.X: the class this round could not fix (deferred by 2026-01-01-check-docs-01)", read(queue, String))
+    @test G.Passes.carry_deferrals(cfg, dir, "2026-01-01-check-docs-01"; io = devnull) == 0   # never twice
+end
+
 @testset "round lifecycle" begin
     root = fixture_copy("round")
     cfg = G.Config.read(root)

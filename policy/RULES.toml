@@ -512,7 +512,7 @@ sentinel = "A scan's output is never truncated by `head`, `tail` or a limit: cou
 id = "RULE.INST.FROZEN_MIDROUND"
 file = "instruments.md"
 section = "### RULE.INST.FROZEN_MIDROUND"
-statement = "An instrument is never changed mid-round; a change is its own commit and release."
+statement = "An instrument is never changed mid-round; a change is its own commit and release; a deferral is written in the round's deferred.md and carried into the work queue at close."
 sentinel = "An instrument is never changed mid-round; a change is its own commit and release, and reaches a consumer by a bump."
 [[rule]]
 id = "RULE.INST.ECONOMY"

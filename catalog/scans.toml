@@ -198,6 +198,14 @@ runner = "html"
 fixture = ["emphasis-survives"]
 
 [[scan]]
+id = "SCAN.HTML_STRAY_MATH"
+rule = "RULE.TEX.RENDERED_MATH"
+tier = "hard"
+surfaces = ["built_html"]
+runner = "html"
+fixture = ["stray-math"]
+
+[[scan]]
 id = "SCAN.HTML_DOCSTRING_ONCE"
 rule = "RULE.DOC.API_GROUPING"
 tier = "hard"

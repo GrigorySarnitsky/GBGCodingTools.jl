@@ -9,7 +9,7 @@ page's text.
 ### RULE.TEX.RENDERED_MATH
 All mathematics in docstrings and doc pages is rendered LaTeX, never a Unicode-glyph approximation, and
 every code object is bound to its math symbol on first mention. Inline math is a double-backtick span,
-display math a ```` ```math ```` block; inside a `"""` docstring every LaTeX backslash is doubled. Plain `#`
+display math a fenced block whose language is `math`; inside a `"""` docstring every LaTeX backslash is doubled. Plain `#`
 comments stay Unicode, being unrendered. Write the binding explicitly — `laplacian` ``\equiv \Delta`` —
 so the reader always knows which symbol is which function, and write it as one span inside a rendered
 docstring.

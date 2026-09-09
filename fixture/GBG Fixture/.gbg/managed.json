@@ -1,6 +1,6 @@
 {
     "tool_version": "dev",
-    "inputs_sha": "75e6b245910ce294cec024daf524228de938705dc0dadca81277be412ff1132f",
+    "inputs_sha": "4d8373dc008c90e5016e9525624967bea04c0c70993160122aef01432cba393a",
     "files": {
         "CLAUDE.md#gbg:managed": {
             "template": "claude-md.block",
@@ -19,7 +19,7 @@
         },
         ".gbg/policy/latex-idiom.md": {
             "template": "policy/latex-idiom.md",
-            "sha256": "bca2e28361510cff1ee6f4467d9a44742443d94d6c0a5e439ee8765598c63cf4",
+            "sha256": "22a782d2f244b406f85178c6d1f34557dae90eb53a4f97002c22ee5ac7b5b65a",
             "version": "dev"
         },
         ".gbg/policy/glossary.md": {
@@ -39,7 +39,7 @@
         },
         ".gbg/policy/docs-rubric.md": {
             "template": "policy/docs-rubric.md",
-            "sha256": "a8e81ad592f826254f933c57b699592ccc0a64247ed8870c2a156faa0fbdea5e",
+            "sha256": "4fa79894fa01bad9b9ba534e18a6665a0b681941ed3300665f9c77f46b3295c5",
             "version": "dev"
         },
         ".gbg/policy/00-index.md": {
@@ -59,7 +59,7 @@
         },
         ".gbg/policy/instruments.md": {
             "template": "policy/instruments.md",
-            "sha256": "7338ac052aa75bb8da4aeccc9ff2e0ea43a7e3d4f431e76d74698915877031aa",
+            "sha256": "9b714ad8773dc627fb0b6e62408e4f21e3eea0790fafecc12bb512fc72eb0f7f",
             "version": "dev"
         },
         ".claude/skills/bug-hunt/SKILL.md": {
@@ -99,5 +99,5 @@
         }
     },
     "schema_version": 1,
-    "rendered": "2026-09-09T14:49:53"
+    "rendered": "2026-09-09T15:15:58"
 }
