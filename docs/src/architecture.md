@@ -683,7 +683,13 @@ as the copy target*: dialog-free too, but the explicit block makes version and b
 generated file — a JSON file cannot carry a comment header (`round2-maintainer.md:246-248`) — with a
 header added where the format allows. The sidecar is a **cache**: `MANAGED.HASH` compares each file
 against a FRESH render of the pinned template under the current config, so editing a file and its
-sidecar entry together is still MODIFIED. The denominator is the pinned version's template list, so a
+sidecar entry together is still MODIFIED. The sidecar also records `inputs_sha`, the hash of the
+render inputs (the pin, the config with its hats and ledger, the templates and policy files of the
+pinned copy): while it is unchanged a fresh render equals the recorded one, so ANY divergence of a
+managed file is a hand edit — MODIFIED whatever its entry says; when the inputs changed (a config edit,
+a bump), a file that still equals its recorded sha is STALE and re-rendered, and one that does not is
+MODIFIED. Without the inputs hash the two cases are indistinguishable by content hashes alone
+(found at implementation, 2026-09-09). The denominator is the pinned version's template list, so a
 deleted file and its entry read STALE. Classes: **config** (owned, validated);
 **generated-managed** (hash; MODIFIED is refused, never merged); **seeded-once-then-owned**
 (created if absent, never touched again, wiring-checked **structurally** — comments and string

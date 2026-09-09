@@ -98,9 +98,13 @@ end
 """
     Fleet.diff(a, b; io = stdout) -> Int
 
-`gbg fleet --diff <consumer>:<round> <consumer>:<round>`: the two closed rounds' tallies side by side
-(totals, closure channels, demotions, adjudicated share, recall); refuses (exit 2) rounds whose tool
-versions differ in `MAJOR.MINOR`, since their rates are not comparable. Returns the exit code.
+`gbg fleet --diff <consumer>:<round> <consumer>:<round>`: two closed rounds' tallies side by side. The
+arguments are `a` and `b`, each `<consumer>:<round>` naming a consumer of `fleet.toml` and a closed
+round of it, and `io`, where the table is printed.
+
+The table holds the totals, the closure channels, the demotions, the adjudicated share and the recall.
+Rounds whose tool versions differ in `MAJOR.MINOR` are refused (exit 2), since their rates are not
+comparable. Returns the exit code.
 """
 function diff(a::AbstractString, b::AbstractString; io::IO = stdout)
     fleet = read_fleet(); base = dirname(fleet_path())

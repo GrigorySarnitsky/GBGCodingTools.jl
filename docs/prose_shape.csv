@@ -3,7 +3,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze",484,313,0
 "ARCHITECTURE.md § D11 — Schemas: one JSON Schema per artefact kind in `schema/",93,49,0
 "ARCHITECTURE.md § D12 — Policy prose: single source `policy/*.md` with rule id",338,162,0
-"ARCHITECTURE.md § D13 — Managed files: one sidecar `.gbg/managed.json` as a ca",431,372,0
+"ARCHITECTURE.md § D13 — Managed files: one sidecar `.gbg/managed.json` as a ca",533,474,0
 "ARCHITECTURE.md § D14 — Doctor: read-only, stable check ids, one exemptions le",473,366,0
 "ARCHITECTURE.md § D15 — Self-test: a fixture consumer at a path with a space, ",782,363,0
 "ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",633,565,0
@@ -69,6 +69,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §8 Self-test and versioning",1508,446,0
 "ARCHITECTURE.md § §9 Resolution table",1475,1416,0
 "Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",101,55,0
+"Bump.jl :: bump(cfg, ver; abandon = nothing, io = stdout) -> Int",111,101,0
 "CLI.md § CLI internals",9,9,0
 "Config.jl :: Config",64,63,0
 "Config.jl :: Config.parse(text; root, check = true) -> Dict",76,69,0
@@ -92,6 +93,10 @@ unit,words,longest_paragraph,admonitions
 "Doctor.jl :: doctor(cfg, set = :QUICK; io = stderr) -> Int",54,45,0
 "Doctor.jl :: run(cfg; only = nothing, deep = false, io = stdout, json = f",136,68,0
 "Doctor.jl :: select(only; deep = false) -> Vector{String}",48,42,0
+"Fleet.jl :: Fleet",62,61,0
+"Fleet.jl :: Fleet.diff(a, b; io = stdout) -> Int",82,38,0
+"Fleet.jl :: Fleet.rows(; deep = false) -> (rows, code)",99,92,0
+"Fleet.jl :: latest_tag(root) -> Union{VersionNumber,Nothing}",17,14,0
 "GBGCodingTools.jl :: GBGCodingTools",180,116,0
 "Gate.jl :: cmd_gate(args) -> Int",27,24,0
 "Gate.jl :: gate(cfg, instruments...; io = stderr) -> Int",169,69,0
@@ -103,7 +108,7 @@ unit,words,longest_paragraph,admonitions
 "Git.jl :: Git.is_ancestor(root, a, b) -> Bool",32,27,0
 "Git.jl :: Git.is_repo(root) -> Bool",3,3,0
 "Git.jl :: Git.log(root, range) -> String",9,5,0
-"Git.jl :: Git.porcelain(root; untracked = true) -> Vector{Tuple{String",37,31,0
+"Git.jl :: Git.porcelain(root; untracked = true) -> Vector{Tuple{String",79,73,0
 "Git.jl :: Git.run(root, args...) -> Union{String,Nothing}",25,21,0
 "HtmlWalker.jl :: HtmlWalker",53,52,0
 "HtmlWalker.jl :: article_of(doc) -> Union{HTMLElement,Nothing}",27,24,0
@@ -152,7 +157,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: Preflight",57,56,0
 "Preflight.jl :: audit_kind(cfg, base) -> String",31,27,0
 "Preflight.jl :: catalog_sha() -> String",14,11,0
-"Preflight.jl :: config_sha(cfg) -> String",14,11,0
+"Preflight.jl :: config_sha(cfg) -> String",13,10,0
 "Preflight.jl :: copy_scripts(cfg, instrument, round) -> String",54,49,0
 "Preflight.jl :: covered_paths(cfg) -> Vector{String}",16,13,0
 "Preflight.jl :: next_round_id(cfg, instrument) -> String",21,17,0
@@ -170,7 +175,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: write_payloads(cfg, instrument, round, roster; base = nothin",115,52,0
 "Recall.jl :: Recall",36,35,0
 "Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
-"Recall.jl :: matches_seed(finding, seed) -> Bool",41,37,0
+"Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0
 "Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
 "Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",61,55,0
 "Reflection.jl :: ARGS_THRESHOLD",33,32,0
@@ -189,6 +194,7 @@ unit,words,longest_paragraph,admonitions
 "Reflection.jl :: signature_parameters(inside) -> (positional, keyword)",58,54,0
 "Reflection.jl :: signature_types(inside) -> Dict{String,String}",21,18,0
 "Reflection.jl :: xlink(cfg; pkg = load_package(cfg), apply = false) -> Vector",81,37,0
+"Release.jl :: release(ver; io = stdout, skip_tests = false) -> Int",138,94,0
 "RoundFiles.jl :: RoundFiles",33,32,0
 "RoundFiles.jl :: read_round(dir) -> Union{Dict,Nothing}",25,22,0
 "RoundFiles.jl :: round_dirs(cfg) -> Vector{String}",24,21,0
@@ -202,6 +208,7 @@ unit,words,longest_paragraph,admonitions
 "Rounds.jl :: classify_lane(dir, inst, lane; first_sha = nothing) -> (stat",95,46,0
 "Rounds.jl :: guard(cfg, round; io = stderr, allow_config_change = false, ",105,46,0
 "Rounds.jl :: hunt_bank!(cfg, dir, rec, findings; io = stdout) -> Int",106,60,0
+"Rounds.jl :: import_empty(cfg, round, reason; io = stdout) -> Int",106,98,0
 "Rounds.jl :: list(cfg; io = stdout) -> Int",39,33,0
 "Rounds.jl :: load(cfg, round) -> (dir, record)",16,11,0
 "Rounds.jl :: prepare(cfg, round; io = stdout) -> Int",114,84,0
@@ -241,7 +248,8 @@ unit,words,longest_paragraph,admonitions
 "Schema.jl :: validate(schema, value; root = schema, path = '\$') -> Vecto",86,48,0
 "Seed.jl :: Seeds",42,41,0
 "Seed.jl :: page_of(text, pos) -> String",17,13,0
-"Seed.jl :: plant(full, siteonly, plan) -> (full′, siteonly′)",76,70,0
+"Seed.jl :: page_spans(text) -> Vector{NamedTuple}",34,31,0
+"Seed.jl :: plant(full, siteonly, plan) -> (full′, siteonly′)",99,93,0
 "Seed.jl :: read_catalog(path) -> Dict",16,13,0
 "Seed.jl :: salt_offset(round, class) -> Int",34,30,0
 "Seed.jl :: select(catalog, full, round) -> (seeded, skipped)",89,52,0
@@ -249,12 +257,15 @@ unit,words,longest_paragraph,admonitions
 "Self.jl :: manifest_tree_sha(manifest_path) -> Union{String,Nothing}",33,30,0
 "Self.jl :: self_verify(root = Config.find_root(); io = stdout) -> Int",125,117,0
 "Self.jl :: tool_sub_envs(root) -> Vector{String}",48,45,0
+"Selftest.jl :: selftest(; pinned = false, io = stdout) -> Int",104,95,0
 "Sync.jl :: Entry",38,28,0
 "Sync.jl :: ManagedFile",43,33,0
 "Sync.jl :: Sync",64,63,0
 "Sync.jl :: cmd_sync(args) -> Int",23,20,0
+"Sync.jl :: config_sha(cfg) -> String",27,24,0
 "Sync.jl :: deviations(cfg, ledger) -> Vector{Dict}",31,27,0
 "Sync.jl :: fragments(snippet) -> Dict{String,String}",29,26,0
+"Sync.jl :: inputs_sha(cfg) -> String",88,85,0
 "Sync.jl :: insert_fragments(yaml, frags; run_marker) -> String",106,61,0
 "Sync.jl :: managed_block(cfg, file, s) -> String",60,55,0
 "Sync.jl :: pin(cfg) -> String",18,15,0
@@ -291,7 +302,7 @@ unit,words,longest_paragraph,admonitions
 "TestHarness.jl :: oracle_registry(pkg, modules, registry, testdir)",97,61,0
 "TestHarness.jl :: other_thread_count() -> Int",22,19,0
 "TestHarness.jl :: resolve_function(name, pkg, modules; externals = (Base,)) ->",46,38,0
-"TestHarness.jl :: run_regressions(dir; parent = Main)",52,48,0
+"TestHarness.jl :: run_regressions(dir; parent = Main) -> Vector{String}",87,42,0
 "TestHarness.jl :: struct_types(modules) -> Dict{Symbol,Any}",65,62,0
 "TestHarness.jl :: thread_digest(probe_source; threads, project = Base.active_p",66,59,0
 "TestHarness.jl :: traffic_completeness(pkg, modules; exempt = Dict{Symbol,Stri",48,43,0
