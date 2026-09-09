@@ -2210,7 +2210,7 @@ verbatim — which `LEG.SENTINELS` matches against a consumer's `CLAUDE.md`. "So
 | `RULE.DOC.LINKS` | docs-rubric | Cross-referencing is discriminating-minimalist: a target linked at most once per docstring; never the own binding, arguments or `Base`; a family is one destination unless members must be chosen between; sibling names in one list are all linked or all plain. | "Cross-referencing — discriminating-minimalist"; `link_uniformity.py` |
 | `RULE.DOC.SIBLING_LINK` | docs-rubric | The first mention of a sibling GBG package in a page, rationale document, Literate example or docstring links to that package's documentation site; later mentions are bare; a package never links its own name. | the owner's home-page review, 2026-09-09 |
 | `RULE.DOC.NO_DEAD_REFS` | docs-rubric | A docstring or error message cites no `§` number, repo path or inaccessible source; it reads complete at the REPL. | "No dead references on the user-facing surface" |
-| `RULE.DOC.AI_BANNER` | docs-rubric | Every AI-written page carries the one provenance banner verbatim (as `# ` comments in a Literate file). | `lint_ai_banner` |
+| `RULE.DOC.AI_BANNER` | docs-rubric | Every AI-written page carries the one provenance banner verbatim (as `# ` comments in a Literate file); the home page never carries it. | `lint_ai_banner`; the home-page clause is the owner's ruling 2026-09-09 |
 | `RULE.DOC.SHAPE` | docs-rubric | A docstring's longest paragraph ≤ 120 words and admonitions ≤ 3 always; no unit grows past its baseline; `# Arguments` precedes any column-0 `!!!`; `# Fields` is last. | `lint_prose_shape`; IT `lint_docstring_shape` |
 | `RULE.DOC.MODULE_MAP` | docs-rubric | A module docstring lists one linked one-liner per operation family and no formula. | "Module docstring = map"; IT deviation |
 | `RULE.DOC.ARG_BULLET` | docs-rubric | An argument or field bullet names its argument in a plain code span, never a bold one. | `guards.sh` "argument bullet is not bolded"; SS deviation candidate |
@@ -2306,7 +2306,8 @@ docstrings except by `SCAN.SWALLOWED_ESCAPE`, which is what that scan is for.
 | `SCAN.RETIRED_CLAIMS` | `RULE.DOC.CURRENT` | hard | all | julia | PF `lint_retired_claims`; patterns from `docs.retired_claims` (whitespace-normalised over whole files, so a wrapped phrase is caught) | `retired-claim` (fixture config lists one) |
 | `SCAN.API_PAGE_STRUCTURE` | `RULE.DOC.INTERNAL_API`, `RULE.DOC.API_GROUPING` | hard | pages (`docs/src/api/`) | julia | PF `lint_api_page_structure` (`## Internal API` last; no empty `@docs`) | `internal-api-not-last`, `empty-docs-block` |
 | `SCAN.PROSE_SHAPE` | `RULE.DOC.SHAPE` | hard | src (docstrings), rationale, pages | julia | PF `lint_prose_shape` + IT `lint_docstring_shape`: caps 120 words / 3 admonitions always; ratchet against `docs/prose_shape.csv` (units: docstring, page, section incl. numbered items and `**(x)**` findings); `# Arguments` before column-0 `!!!`, `# Fields` last; missing CSV = error | `paragraph-over-cap`, `fields-not-last` |
-| `SCAN.AI_BANNER` | `RULE.DOC.AI_BANNER` | hard | rationale, literate (+ any page carrying it) | julia | PF `lint_ai_banner`: present on every rationale page and Literate file, and verbatim-identical wherever it appears | `banner-drift` |
+| `SCAN.AI_BANNER` | `RULE.DOC.AI_BANNER` | hard | rationale, literate, pages | julia | PF `lint_ai_banner`: present on every rationale page and Literate file, and verbatim-identical wherever it appears | `banner-drift` |
+| — | — | — | — | — | the same scan also refuses the banner ON `docs/src/index.md` (the owner's ruling 2026-09-09) | `docs/src/index.md` clean twin |
 | `SCAN.DOI_CROSSCHECK` | `RULE.CIT.FULL_INLINE`, `RULE.CIT.DOI` | hard | src vs `references_heading` (or the whole of `docs/ARCHITECTURE.md` when `"absent"`) | julia | PF `doi_crosscheck.py` (both directions; unused-reference info) ∪ IT `doi_crosscheck.py` (decoded DOI, title check, retired `[doi:…]` label refused, the `Phenomenology` leaf exempt by ledger) | `doi-missing` |
 | `SCAN.HTML_RENDERED_MARKUP` | `RULE.TEX.RENDERED_MARKUP` | hard | built_html | html | PF `lint_rendered_markup` (article text with code/pre/math stripped; `*`/`__` survivors) | `emphasis-survives` |
 | `SCAN.HTML_DOCSTRING_ONCE` | `RULE.DOC.API_GROUPING` | hard | built_html | html | IT built-HTML question 1 (a docstring rendered on two pages) | `docstring-twice` |
@@ -2559,7 +2560,7 @@ its test in the same pass.
 
 Two rulings from the owner's first read of the built site. The home page defines tool, consumer and pin
 before it states the principle that uses them, and its AI banner is gone: the owner reviews that page
-regularly, and `RULE.DOC.AI_BANNER` binds rationale pages and Literate examples, not a page a human
+regularly in EVERY package, which the rule now states fleet-wide; `RULE.DOC.AI_BANNER` otherwise binds rationale pages and Literate examples, not a page a human
 keeps. And sibling packages are always links: `RULE.DOC.SIBLING_LINK` with the hard `SCAN.SIBLING_LINK`
 (§12), one uniform target per package derived from the shipped `fleet.toml`, enforced in every consumer
 and in the tool. A MINOR change; the fixture gains the `bare-sibling` class. The owner also ruled the

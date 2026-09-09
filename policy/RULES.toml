@@ -188,7 +188,7 @@ sentinel = "A rendered docstring or a thrown error message cites no section numb
 id = "RULE.DOC.AI_BANNER"
 file = "docs-rubric.md"
 section = "### RULE.DOC.AI_BANNER"
-statement = "Every AI-written page carries the one provenance banner verbatim (as # comments in a Literate file)."
+statement = "Every AI-written page carries the one provenance banner verbatim (as # comments in a Literate file); the home page never carries it, the owner reviewing that page in every package."
 sentinel = "Every AI-written rationale page and Literate example carries the one provenance banner verbatim, and the banner is identical wherever it appears."
 [[rule]]
 id = "RULE.DOC.SHAPE"

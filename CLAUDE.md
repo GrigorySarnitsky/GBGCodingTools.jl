@@ -54,9 +54,9 @@ tool's own.
   maps. `checkdocs = :exports` in the tool's own build verifies them.
 - STRICTER THAN THE FLEET RULE, and this package's alone: `RULE.DOC.AI_BANNER` requires the provenance
   banner on rationale pages and Literate examples; here EVERY page of the site carries it, the API and
-  generated guide pages included. The owner reviews the four science packages' API prose but not this
-  one's — AI is this package's main reader — so only the home page, which the owner reads regularly,
-  is without a banner.
+  generated guide pages included, because the owner reviews the four science packages' API prose but
+  not this one's — AI is this package's main reader. The home page is not an exception of this
+  package's: the rule itself exempts it fleet-wide, the owner reviewing that page in every package.
 - A verb never `git add`s; the session commits. `sync` refuses a hand-edited managed file and never
   merges. A doctor check is read-only.
 - Paths carry spaces (every consumer path has two): quote them in every rendered command.

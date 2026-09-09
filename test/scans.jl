@@ -43,7 +43,8 @@ include("helpers.jl")
         @test all(r -> r.population > 0 || r.exempted > 0, results)
     end
     @testset "a dead scan is exit 2" begin
-        c2 = fixture_config(); c2["surfaces"]["rationale"] = String[]; c2["surfaces"]["literate"] = String[]
+        c2 = fixture_config()                                            # every surface the scan reads, emptied
+        c2["surfaces"]["rationale"] = String[]; c2["surfaces"]["literate"] = String[]; c2["surfaces"]["pages"] = String[]
         r = G.run_scan(c2, CATALOG["SCAN.AI_BANNER"]; ledger = Dict{String,Any}[])
         @test r.population == 0
         @test G.report([r]; io = devnull) == 2
@@ -58,6 +59,16 @@ include("helpers.jl")
         @test isempty(r2.hits) && r2.exempted == 1
         led3 = [Dict{String,Any}("id" => "SCAN.REGISTER", "scope" => "scan", "target" => "*", "reason" => "x"^40, "recorded" => Dates.today(), "match" => Dict("arg_type" => "Integer"))]
         @test_throws G.Ledger.LedgerError G.run_scan(cfg, row; ledger = led3)   # a text scan refuses arg_type
+    end
+    @testset "the home page never carries the AI banner" begin
+        root = fixture_copy("home-banner")
+        c = G.Config.read(root)
+        idx = joinpath(root, "docs", "src", "index.md")
+        row = CATALOG["SCAN.AI_BANNER"]
+        @test isempty(G.run_scan(c, row; ledger = Dict{String,Any}[]).hits)          # the clean twin
+        write(idx, join(G.AI_BANNER, "\n") * "\n\n" * read(idx, String))
+        hits = G.run_scan(c, row; ledger = Dict{String,Any}[]).hits
+        @test length(hits) == 1 && hits[1].file == "docs/src/index.md" && occursin("never carries", hits[1].text)
     end
     @testset "prose extraction" begin
         pl = G.prose_lines(cfg, "src/FixtureA.jl")

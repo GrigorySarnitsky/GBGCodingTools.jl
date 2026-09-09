@@ -1,8 +1,5 @@
 # GBGFixture
 
-!!! info "Written by AI, not regularly reviewed"
-    This page is written by AI and is not reviewed regularly by a human.
-
 `GBGFixture` is the toy consumer of [`GBGCodingTools`](https://grigorysarnitsky.github.io/GBGCodingTools.jl/): a grid, a value field over it, two reductions and
 an options record. Its documentation is written to the shared rubric so the tool can be tested against
 a clean corpus. The grid is a [`Grid`](@ref); values are scaled with [`scale!`](@ref) and reduced with

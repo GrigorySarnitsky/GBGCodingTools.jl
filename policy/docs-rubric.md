@@ -196,7 +196,10 @@ Every AI-written rationale page and Literate example carries the one provenance 
 banner is identical wherever it appears. The banner is the two lines
 `!!! info "Written by AI, not regularly reviewed"` and
 `    This page is written by AI and is not reviewed regularly by a human.`; a Literate file carries
-them as `# ` comment lines, and a drifted copy is a finding.
+them as `# ` comment lines, and a drifted copy is a finding. The site's home page (`docs/src/index.md`)
+never carries the banner in any package: the owner reviews that one page in every package, and a banner
+there would be false. A package that wants the banner on more of its pages says so in its own
+`CLAUDE.md`.
 
 ### RULE.DOC.SHAPE
 A docstring's longest paragraph stays within 120 words and it carries at most three admonitions, no unit

@@ -231,6 +231,9 @@ file = "src/FixtureC.jl"
 scan = "SCAN.SIBLING_LINK"
 file = "docs/src/index.md"
 [[clean]]
+scan = "SCAN.AI_BANNER"
+file = "docs/src/index.md"
+[[clean]]
 scan = "SCAN.FRAC_UNBRACED"
 file = "src/FixtureB.jl"
 [[clean]]

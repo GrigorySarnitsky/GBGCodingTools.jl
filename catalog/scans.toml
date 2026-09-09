@@ -177,7 +177,7 @@ fixture = ["paragraph-over-cap", "fields-not-last"]
 id = "SCAN.AI_BANNER"
 rule = "RULE.DOC.AI_BANNER"
 tier = "hard"
-surfaces = ["rationale", "literate"]
+surfaces = ["rationale", "literate", "pages"]
 runner = "julia"
 fixture = ["banner-drift"]
 

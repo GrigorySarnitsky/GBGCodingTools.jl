@@ -8,7 +8,10 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 MINOR so far: the owner's home-page review adds `RULE.DOC.SIBLING_LINK` and the hard `SCAN.SIBLING_LINK`
 (the first mention of a sibling GBG package in a page or docstring links to its documentation site; names
 and sites from the shipped `fleet.toml`; fixture class `bare-sibling`), and the home page drops its AI
-banner (the owner reviews it); the noun "pin" gives way to "pinned version" in every page, docstring,
+banner: `RULE.DOC.AI_BANNER` now states fleet-wide that the home page never carries it, the owner
+reviewing that one page in every package, and `SCAN.AI_BANNER` enforces it — the scan reads the
+hand-written pages now, which the design record already claimed and the catalogue did not give it, so
+the drift check covers them too. The noun "pin" gives way to "pinned version" in every page, docstring,
 message and template (the `PIN.*` check ids keep the word). Instruments affected: check-docs, check-consistency, audit-changes (the lane, panel, act
 and state scripts gain a scribe: the validated object is written over the lane's own Write-first file, so
 a value outside a closed set never reaches the bank — found by the rc.1 round, whose built-html lane was

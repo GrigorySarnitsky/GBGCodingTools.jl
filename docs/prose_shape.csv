@@ -20,7 +20,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `",1230,1119,0
 "ARCHITECTURE.md § GBGCodingTools — architecture",479,347,1
 "ARCHITECTURE.md § Revision 10 (2026-09-09) — the rc.1 `/check-docs` round",140,95,0
-"ARCHITECTURE.md § Revision 11 (2026-09-09) — the owner's home-page review",127,127,0
+"ARCHITECTURE.md § Revision 11 (2026-09-09) — the owner's home-page review",136,136,0
 "ARCHITECTURE.md § Revision 2 (2026-09-07)",106,106,0
 "ARCHITECTURE.md § Revision 3 (2026-09-07)",232,232,0
 "ARCHITECTURE.md § Revision 4 (2026-09-08) — IT amendments + Python retirement",361,361,0
@@ -46,8 +46,8 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",772,333,0
 "ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1089,541,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
-"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",2842,2737,0
-"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1316,1141,0
+"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",2856,2751,0
+"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1341,1166,0
 "ARCHITECTURE.md § §12.C Doctor ids",135,134,0
 "ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
 "ARCHITECTURE.md § §3 Repository layout",1,1,0
