@@ -308,7 +308,7 @@ order from `01`. The arguments are:
 - `cfg` — the validated config.
 - `instrument` — one of the four instruments.
 - `kw...` — the resolver's own keywords: `profile` and `explicit` for check-consistency's hats
-  ([`resolve_hats`](@ref)), `kind` for the audit's lanes.
+  (`Preflight.resolve_hats`), `kind` for the audit's lanes.
 """
 function resolve_roster(cfg::AbstractDict, instrument::AbstractString; profile = nothing, explicit = String[], kind = "both")
     roster = instrument == "check-consistency" ? resolve_hats(cfg; profile, explicit) :

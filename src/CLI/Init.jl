@@ -230,7 +230,7 @@ const LEDGER_HEADER = """
 - `io` — where the report goes.
 
 It writes `.gbg/config.toml` from the tree, an empty ledger, `.gbg/rounds/.keep`, a placeholder persona
-for every domain hat without one ([`Preflight.resolve_hats`](@ref) binds the term), the seeded-once files that are absent (`test/Project.toml`,
+for every domain hat without one (`Preflight.resolve_hats` binds the term), the seeded-once files that are absent (`test/Project.toml`,
 `docs/make.jl`, `test/runtests.jl`, `test/regressions/`, `docs/ROADMAP.md`, `docs/prose_shape.csv`),
 and the tool's entries into `docs/`, `test/` and every sub-environment that lists the tool. It refuses
 an existing `.gbg/config.toml` (exit 2). Returns the exit code.
