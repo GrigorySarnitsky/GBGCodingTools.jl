@@ -12,7 +12,10 @@ quarantined twice). CLI: `round bank` keeps no first-sight sha for a quarantined
 forgets the lanes it re-runs; `Git.run` keeps the environment (an annotated tag needs an identity); a dev
 checkout on a clean tag stamps its rounds with the tag, and a round so stamped keeps reading its tool
 stamps from the tag while it exists (D16: the fix commits past the tag are not a moved tool; `pass open
---regrade` re-stamps whatever moved, the tool stamps included). Rates comparable: yes.
+--regrade` re-stamps whatever moved, the tool stamps included). Skill stubs: the preflight line is the
+documented bang-backtick form; the bare `!command` line the first rc rendered is not expanded by the
+client at all (Phase 1.9 V2). Tests: the suite resolves the fixture's `test/` environment once, so a
+fresh clone's witnesses load `GBGFixture` (the first CI dispatch failed there). Rates comparable: yes.
 
 The rc.1 `/check-docs` round (2026-09-09-check-docs-01, 22 findings) fixed in code: `TreeHash.tree_hash`
 now omits an empty directory as `git write-tree` does; the rescan needle is cut in characters, not

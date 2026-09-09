@@ -43,7 +43,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §0 The design sentence and the requirements",440,337,0
 "ARCHITECTURE.md § §1 The platform / product model",770,533,0
 "ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",772,333,0
-"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",704,342,0
+"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1089,541,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
 "ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",2796,2691,0
 "ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1272,1097,0

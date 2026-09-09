@@ -2102,6 +2102,35 @@ targets the `docs/` environment, the one that always carries a manifest (D2).
   `~/.julia/packages/` is neither readable-by-default nor to be `Read` (D6). D7 now names the
   in-project copy, `.gbg/scratch/<round>/workflow/`, as the mechanism; `preflight` and `pass open`
   write it. The first quoted fact above is thereby narrowed, not contradicted.
+- **V2 — 2026-09-09, `Aiporetne`, in PF: PASSED, with a syntax correction.** A bare `!gbg probe` line
+  is not expanded by the client at all: it reached the session as literal text. The documented form,
+  an exclamation mark followed by the command in backticks, injected `PROBE OK` with no permission
+  prompt (`allowed-tools: Bash(gbg *)`, zero permission denials), and `--fail` (exit 2) aborted the
+  skill before its body: zero turns, empty result, the sentinel sentence never reached the model.
+  `SKILL.md.tmpl` renders the backtick form since commit 2f7e009. Measured in print mode; the
+  interactive client shares the preprocessor.
+- **V3 — 2026-09-09, `Aiporetne`: PASSED on what it measures.** A copy of the fixture outside the tool
+  repository, `[sources] GBGCodingTools = {url, rev = "v1.0.0-rc.1"}` and `[compat] "=1.0.0"` in
+  `test/` and `docs/`: both environments instantiated and loaded the tool from one read-only depot tree
+  (`~/.julia/packages/GBGCodingTools/TcNy0`), and `Pkg.test()` resolved the tool from the tag before
+  running the fixture's suite. That suite then stopped in `TestHarness.gate()`, whose quick doctor
+  refuses a prerelease pin outside the tool root (`PIN.CONFIG`, `PIN.SOURCES`) — the refusal D16
+  specifies, not a Pkg failure; a released `vX.Y.Z` tag is what a consumer pins. The plan's throwaway
+  `v0.0.1` tag was not created: the tool's `Project.toml` says `1.0.0` at every commit, so a `=0.0.1`
+  compat could never resolve.
+- **V4 — 2026-09-09, `Aiporetne`, PF and CP: PASSED.** One fine-grained PAT (`GBG fleet CI`, Contents
+  read-only, all five repositories) in the secret `GBG_DEPS_TOKEN` of all four consumers; probe branches
+  `probe/gbg-v4` in fresh clones of PF and CP with the tool pinned in `docs/Project.toml` and the
+  snippet's `auth` and `run` steps; manual `workflow_dispatch` of both `docs.yml`s green, each log
+  showing `Cloning git-repo …GBGCodingTools.jl.git` and `+ GBGCodingTools v1.0.0 …#v1.0.0-rc.1`
+  (Documenter's `Deploying: ✘` is its refusal to deploy from a non-default branch). Branches deleted.
+- **V5 — 2026-09-09, `Aiporetne`: PASSED.** Zero `python3` mentions in both V4 logs and in the tool's
+  own `CI.yml` dispatch; zero python steps in `CI.yml`, `CI.yml.snippet` and `docs.yml.snippet`. That
+  first CI dispatch failed on its test matrix for an unrelated reason recorded in the CHANGELOG: a fresh
+  clone carries no manifest in the fixture's `test/` environment, so every witness errored on
+  `using GBGFixture`; the suite resolves that environment once now.
+- **V6 — 2026-09-09, `Aiporetne`: PASSED** (`Pkg.test()` green on 1.11 and 1.12); `Enteropia` still
+  needs `juliaup add 1.11`.
 
 **Residues this design states rather than closes** (each is transcript- or diff-visible, none
 gate-visible):
