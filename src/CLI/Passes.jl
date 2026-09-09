@@ -51,7 +51,8 @@ end
 
 - `cfg` — the validated config.
 - `round` — the round id.
-- `regrade` — accept a changed `config_sha` and re-stamp it (the round is re-graded from here).
+- `regrade` — accept a changed stamp (`config_sha`, or the tool stamps) and re-stamp it; the round is
+  re-graded from here, and the pass records `regrade = true`.
 - `io` — where the calls and messages are printed.
 
 It refuses a changed `config_sha` unless `regrade`; creates `verdicts/pass-<k>/pass.toml` with the
@@ -65,10 +66,11 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
     haskey(rec, "banked") || (println(io, "pass open: $round is not banked yet"); return 2)
     root = cfg["root"]; inst = rec["instrument"]
     k = rec["passes"] + 1; pd = pass_dir(dir, k); mkpath(joinpath(pd, "act")); mkpath(joinpath(pd, "state"))
-    st = Preflight.stamps(cfg)
+    st = Preflight.stamps(cfg; record = rec)
     if regrade
-        rec["config_sha"] = st["config_sha"]
-        println(io, "pass open --regrade: config_sha re-stamped")
+        moved = [x for x in ("config_sha", "tool_version", "tool_rev", "tool_tree_sha") if st[x] != get(rec, x, nothing)]
+        for x in moved; rec[x] = st[x]; end
+        println(io, "pass open --regrade: re-stamped ", isempty(moved) ? "nothing (the stamps had not moved)" : join(moved, ", "))
     end
     head = something(Git.head(root), "0"^40)
     findings = findings_of(dir)
@@ -392,7 +394,7 @@ function close(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     rel = relpath(dir, root)
     dirty = [p for (_, p) in Git.porcelain(root) if startswith(p, rel * "/") || p == rel]
     isempty(dirty) || push!(fails, "the round's files are not committed: " * join(first(dirty, 5), ", ") * (length(dirty) > 5 ? " …" : ""))
-    st = Preflight.stamps(cfg)
+    st = Preflight.stamps(cfg; record = rec)
     latest_regrade = k >= 1 && isfile(joinpath(pass_dir(dir, k), "pass.toml")) && get(TOML.parsefile(joinpath(pass_dir(dir, k), "pass.toml")), "regrade", false)
     (st["config_sha"] == rec["config_sha"] || latest_regrade) || push!(fails, "config changed since open — gbg round pass open $round --regrade")
     (st["tool_version"] == rec["tool_version"] || latest_regrade) || push!(fails, "tool version moved ($(rec["tool_version"]) → $(st["tool_version"])) — regrade")

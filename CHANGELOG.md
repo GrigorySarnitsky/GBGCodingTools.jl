@@ -10,7 +10,9 @@ and state scripts gain a scribe: the validated object is written over the lane's
 a value outside a closed set never reaches the bank — found by the rc.1 round, whose built-html lane was
 quarantined twice). CLI: `round bank` keeps no first-sight sha for a quarantined lane and `round rerun`
 forgets the lanes it re-runs; `Git.run` keeps the environment (an annotated tag needs an identity); a dev
-checkout on a clean tag stamps its rounds with the tag. Rates comparable: yes.
+checkout on a clean tag stamps its rounds with the tag, and a round so stamped keeps reading its tool
+stamps from the tag while it exists (D16: the fix commits past the tag are not a moved tool; `pass open
+--regrade` re-stamps whatever moved, the tool stamps included). Rates comparable: yes.
 
 The rc.1 `/check-docs` round (2026-09-09-check-docs-01, 22 findings) fixed in code: `TreeHash.tree_hash`
 now omits an empty directory as `git write-tree` does; the rescan needle is cut in characters, not

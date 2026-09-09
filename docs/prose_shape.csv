@@ -154,7 +154,7 @@ unit,words,longest_paragraph,admonitions
 "Passes.jl :: Passes",49,48,0
 "Passes.jl :: close(cfg, round; io = stdout) -> Int",143,101,0
 "Passes.jl :: grade(cfg, round; io = stdout) -> Int",119,85,0
-"Passes.jl :: pass_open(cfg, round; regrade = false, io = stdout) -> Int",120,59,0
+"Passes.jl :: pass_open(cfg, round; regrade = false, io = stdout) -> Int",132,59,0
 "Preflight.jl :: Preflight",57,56,0
 "Preflight.jl :: audit_kind(cfg, base) -> String",31,27,0
 "Preflight.jl :: catalog_sha() -> String",14,11,0
@@ -169,8 +169,9 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",122,84,0
 "Preflight.jl :: resolve_hunt_lanes(cfg) -> Vector{Dict}",22,19,0
 "Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",28,23,0
-"Preflight.jl :: stamps(cfg) -> Dict",27,24,0
+"Preflight.jl :: stamps(cfg; record = nothing) -> Dict",83,77,0
 "Preflight.jl :: substitute(text, cfg; extra = Dict()) -> String",69,62,0
+"Preflight.jl :: tag_tree(dir, ver) -> Union{String,Nothing}",54,50,0
 "Preflight.jl :: torn_check(cfg; io = stderr) -> Bool",40,34,0
 "Preflight.jl :: workflow_call(script, a) -> String",14,10,0
 "Preflight.jl :: write_payloads(cfg, instrument, round, roster; base = nothin",115,52,0

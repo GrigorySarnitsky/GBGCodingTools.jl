@@ -77,24 +77,46 @@ function seed_catalog_sha(cfg::AbstractDict)
     return isfile(p) ? RoundFiles.sha256_file(p) : "none"
 end
 
+const TAG_VERSION = r"^\d+\.\d+\.\d+(-rc\.\d+)?$"
+
 """
-    stamps(cfg) -> Dict
+    tag_tree(dir, ver) -> Union{String,Nothing}
+
+The git tree id the tag `v<ver>` of the repository `dir` points at, or `nothing` when there is no such
+tag. The tree a tag names is what a round stamped with that version was measured against (D16); the
+`TreeHash` of a clean checkout of the tag equals this id.
+"""
+tag_tree(dir::AbstractString, ver::AbstractString) = Git.run(dir, "rev-parse", "-q", "--verify", "refs/tags/v$ver^{tree}")
+
+"""
+    stamps(cfg; record = nothing) -> Dict
 
 The tool and config stamps every `ROUND.toml` and `pass.toml` record: `tool_version` (the pin, or
 `dev+<sha>[-dirty]` from the working tree), `tool_rev`, `tool_tree_sha`, `config_sha`, `catalog_sha`,
-`seed_catalog_sha`.
+`seed_catalog_sha`. The keyword `record` is the `ROUND.toml` of a round already open: a dev checkout
+whose round was stamped with a tag keeps reading its tool stamps from that tag while the tag exists
+(D16), so the fix commits that move `HEAD` past the tag are not a moved tool; a moved TAG is.
 """
-function stamps(cfg::AbstractDict)
+function stamps(cfg::AbstractDict; record = nothing)
     dir = pkgdir(GBGCodingTools)
     dev = running_dev()
     # a dev checkout sitting cleanly on a released or prerelease tag is stamped with that tag (D16): the
     # tool's own rounds open at `vX.Y.Z-rc.N` and close normally; off a tag it is `dev+<sha>[-dirty]`
-    tag = dev ? Git.run(dir, "describe", "--exact-match", "--tags", "--dirty") : nothing
-    at_tag = tag !== nothing && occursin(r"^v\d+\.\d+\.\d+(-rc\.\d+)?$", tag)
+    ver = nothing
+    if dev
+        rv = record === nothing ? "" : String(get(record, "tool_version", ""))
+        if occursin(TAG_VERSION, rv) && tag_tree(dir, rv) !== nothing
+            ver = rv
+        else
+            tag = Git.run(dir, "describe", "--exact-match", "--tags", "--dirty")
+            tag !== nothing && occursin(r"^v\d+\.\d+\.\d+(-rc\.\d+)?$", tag) && (ver = tag[2:end])
+        end
+    end
     Dict{String,Any}(
-        "tool_version" => dev ? (at_tag ? tag[2:end] : git_stamp(dir)) : String(cfg["tool"]["version"]),
-        "tool_rev" => dev ? something(Git.head(dir), "unknown") : "v" * String(cfg["tool"]["version"]),
-        "tool_tree_sha" => TreeHash.tree_hash(dir),
+        "tool_version" => dev ? (ver === nothing ? git_stamp(dir) : ver) : String(cfg["tool"]["version"]),
+        "tool_rev" => dev ? (ver === nothing ? something(Git.head(dir), "unknown") : something(Git.run(dir, "rev-parse", "-q", "--verify", "refs/tags/v$ver^{commit}"), "unknown")) :
+                            "v" * String(cfg["tool"]["version"]),
+        "tool_tree_sha" => (dev && ver !== nothing) ? tag_tree(dir, ver) : TreeHash.tree_hash(dir),   # the tag's tree, not the working tree's
         "config_sha" => config_sha(cfg),
         "catalog_sha" => catalog_sha(),
         "seed_catalog_sha" => seed_catalog_sha(cfg))
