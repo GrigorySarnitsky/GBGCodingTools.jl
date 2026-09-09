@@ -66,7 +66,10 @@ GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
                              size_threshold = 1_500_000, size_threshold_warn = 600_000),   # the architecture record is one long page by design
     pages = [
         "Home" => "index.md",
-        "Guide" => ["guide/install.md", "guide/verbs.md", "guide/instruments.md", "guide/rounds.md", "guide/doctor.md", "guide/rules.md", "guide/ledger.md", "guide/config.md"],
+        # The guide reads as a sequence first (set up, run a review, see what it produces, read what it judges
+        # against), then the four reference tables, most consulted first (2026-09-09, the owner's ruling).
+        "Guide" => ["guide/install.md", "guide/instruments.md", "guide/rounds.md", "guide/rules.md",
+                    "guide/verbs.md", "guide/doctor.md", "guide/config.md", "guide/ledger.md"],
         "API" => ["api/TestHarness.md", "api/Reflection.md", "api/Witnesses.md", "api/Config.md", "api/CLI.md"],
         "Architecture" => "architecture.md",
     ],
