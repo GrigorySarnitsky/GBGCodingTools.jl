@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "b35dac7075583b939d7c23623cc6a420",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/src#1",
+      "verdict": "ABSENT",
+      "evidence": "src/TreeHash.jl:47 now reads `_nonempty(path, skip) || continue` (correctly skips empty dirs), exactly the hint's fix; the finding's exact literal `isempty(_nonempty(...))` is gone. Grepped src/ext for `isempty(` on any function-call result: every other instance wraps a collection (strip, setdiff, readdir, methods, fieldnames), none a raw Bool."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/src#2",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Passes.jl:161 now defines `hit_needle(text) = first(strip(last(split(text, \": \"))), 40)` (Unicode-safe `first`), used at line 170 in rescan_alive; the old byte-index `[1:min(end,40)]` is gone. Grepped src/ext for `[1:min(end` and other `[1:N]` slices: remaining ones (Git.jl, Rounds.jl, Doctor.jl, Seed.jl) all slice ASCII hex/git-status strings, not scan text."
+    }
+  ]
+}

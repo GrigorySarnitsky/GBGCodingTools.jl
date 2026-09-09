@@ -1,0 +1,160 @@
+{
+    "recall": {
+    },
+    "plateau": {
+        "passes_flat": 0
+    },
+    "totals": {
+        "seeded": 0,
+        "open": 0,
+        "closed": 22,
+        "findings": 22
+    },
+    "rejected_files": [
+    ],
+    "per_id": {
+        "2026-09-09-check-docs-01/cold-reader#4": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/built-html#1": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/cold-reader#2": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/built-html#2": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/src#2": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/ext#2": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/cold-reader#1": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/src#1": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/cold-reader#7": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/cold-reader#6": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/pages#2": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/cold-reader#8": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/rationale#1": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/cold-reader#3": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/pages#1": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/cold-reader#5": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/rationale#2": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/ext#1": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/operational-claims#2": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/pages#3": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/operational-claims#1": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        },
+        "2026-09-09-check-docs-01/built-html#3": {
+            "act": "HONORED",
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": "ABSENT"
+        }
+    },
+    "dead_lanes": [
+    ],
+    "open_ids": [
+    ],
+    "suspect_hats": [
+    ],
+    "pass": 4,
+    "schema_version": 1,
+    "round": "2026-09-09-check-docs-01",
+    "demoted_by_rule": 0,
+    "adjudicated_share": 0
+}

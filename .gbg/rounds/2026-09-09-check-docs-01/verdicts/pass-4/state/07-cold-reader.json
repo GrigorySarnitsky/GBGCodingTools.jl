@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "b35dac7075583b939d7c23623cc6a420",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "src/GBGCodingTools.jl:8-10 now defines both terms at first use: 'A consumer is a package that uses the tool — one of the four sibling GBG packages, or the tool itself; a pin is the tool version the consumer names in `.gbg/config.toml`...'"
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "grep -rn 'ledger' src ext docs/src (excluding .gbg) returns only exemption-ledger hits. TestHarness.jl now says 'element-traffic audit' throughout (lines 11-12, 108 header, 183 docstring: 'One row of the traffic audit'), no collision with Ledger.jl's term remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#3",
+      "verdict": "ABSENT",
+      "evidence": "grep -rE 'class G|S-class|G-class|class S' src ext returns nothing. Init.jl:9 now reads 'converts the three Julia test literals to their TOML form'; migrate_baselines docstring says 'the three frozen TOML baselines'; Sync.jl:189 says 'Every generated-managed file' — all letter codes removed."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#4",
+      "verdict": "ABSENT",
+      "evidence": "Recall.jl:9 now glosses inline at first docstring use: 'their substrate (the view of the corpus a hat reads)'. Preflight.jl:167-168 gives the full definition with enumerated values (full/siteonly/html/scans)."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#5",
+      "verdict": "ABSENT",
+      "evidence": "Witnesses.jl module docstring (lines 13-14), which precedes RoundFiles/Rounds in include order, now states: 'the round's — a round being one run of one instrument over one consumer, recorded as a tracked directory under `.gbg/rounds/`' — an explicit definition at first use."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#6",
+      "verdict": "ABSENT",
+      "evidence": "Preflight.jl:169 resolve_hats docstring now states plainly: '`anchor`, whether it runs at full strength rather than on the economy model (a `domain_hats` entry may anchor any key)' — defined in a docstring, not just Doctor.jl's runtime error string."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#7",
+      "verdict": "ABSENT",
+      "evidence": "Sync.jl module docstring now states the concept directly: 'a managed file is one the tool renders into the consumer and hash-checks thereafter, edited only by `gbg sync`, never by hand' before listing the mechanics."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#8",
+      "verdict": "ABSENT",
+      "evidence": "Demote.jl:6-10 docstring now explains both channels ('the act verifier's grade of what the fix pass DID... the state verifier grades, blind to the diff, whether the defect is still there') and defines class_surfaces ('the list the verifier fills from the finding's own text: every surface carrying the same class and whether the diff swept it')."
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "eda1fb831765918d71d699e03f187c5e",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/src#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TreeHash.jl:47 changed `isempty(_nonempty(path, skip)) && continue` to `_nonempty(path, skip) || continue                # git tracks no empty directory`, exactly the hinted inversion. `_nonempty` (src/TreeHash.jl:66-71) returns true iff the subdirectory holds >=1 file, so `|| continue` now skips precisely the empty case. Runtime-verified: `TreeHash.tree_hash` over a dir containing one empty subdir now returns `4b825dc642cb6eb9a060e54bf8d69288fbee4904`, matching `git write-tree` on the identical tree exactly (previously it diverged, per the finding).",
+      "class_surfaces": [
+        {"surface": "src/TreeHash.jl:47", "swept": true, "evidence": "`_nonempty(path, skip) || continue` — the only call to `_nonempty` in the source (grep confirms), fixed and runtime-verified against git's own empty-tree id."}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/src#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Passes.jl:167 now calls a new helper `hit_needle(text) = first(strip(last(split(text, \": \"))), 40)` (line 160-161) in place of the byte-indexed `[1:min(end, 40)]` slice, matching the hinted Unicode-safe `first(s, n)` idiom. Runtime-verified: constructed a string where byte offset 40 lands mid multi-byte character — the old expression throws `StringIndexError`, the new `hit_needle` (equivalently `first(s, 40)`) returns a valid substring with no crash.",
+      "class_surfaces": [
+        {"surface": "src/CLI/Passes.jl:167", "swept": true, "evidence": "sole flagged occurrence; replaced with `hit_needle(h.text)`, verified crash-free at runtime."},
+        {"surface": "src/Reflection.jl (first(h.signature, 70))", "swept": true, "evidence": "cited by the finding itself as already using the safe idiom, not the defect; re-grepped `[1:min(end` and `[1:[0-9]` across src/ and ext/ (excluding .gbg/) — only remaining byte-slices are Doctor.jl/Rounds.jl/Seed.jl/Git.jl indexing fixed-ASCII hex digests, outside this class."},
+        {"surface": "src/Witnesses.jl (first(strip(text), 600))", "swept": true, "evidence": "cited by the finding as already-correct idiom; confirmed unchanged and not part of the byte-index-truncation defect class."},
+        {"surface": "src/Scan.jl (first(sig, 70))", "swept": true, "evidence": "cited by the finding as already-correct idiom; confirmed unchanged and not part of the byte-index-truncation defect class."}
+      ]
+    }
+  ]
+}

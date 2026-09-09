@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "1a4ff7cf180770ace7a155f1f7c8a1fe",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "src/GBGCodingTools.jl:7-9 now reads: 'A consumer is a package that uses the tool — one of the four sibling GBG packages, or the tool itself; a pin is the tool version the consumer names in `.gbg/config.toml` ...'. Both terms defined at first use in the module docstring."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "grep -n -i ledger src/TestHarness.jl returns nothing; module docstring/section header/docstring now all say 'element-traffic audit'/'traffic audit' (lines 9-11, 133, 183). 'Ledger' stays bound only to Ledger.jl/.gbg/exemptions.toml."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#3",
+      "verdict": "ABSENT",
+      "evidence": "grep -rniE '[A-Z]-class|class [A-Z]' src ext returns nothing. Init.jl:11 now says 'the generated files (the skill stubs, the hook, the CI fragments, the managed blocks)'; migrate_baselines docstring (Init.jl:448) says 'the three frozen TOML baselines TestHarness reads', no bare letters."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#4",
+      "verdict": "ABSENT",
+      "evidence": "Recall.jl:8 module docstring glosses inline: 'seeds on their substrate (the view of the corpus a hat reads)'. Preflight.jl:189-194 spells out the full closed vocabulary: 'substrate, which view of the corpus the hat reads — the closed set of ...: full ... siteonly ... rawhtml ... docstrings ... rulebook ... or none'."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#5",
+      "verdict": "ABSENT",
+      "evidence": "Witnesses.jl module docstring (lines 13-14), the first use, now reads: 'a round being one run of one instrument over one consumer, recorded as a tracked directory under `.gbg/rounds/`' — matches the glossary definition verbatim, stated before the later mechanical use at line 186."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#6",
+      "verdict": "ABSENT",
+      "evidence": "Preflight.jl:193, resolve_hats docstring (the field's first introduction), now states: 'anchor, whether it runs at full strength rather than on the economy model (a `domain_hats` entry may anchor any key)' — exactly the hinted fix, in the hinted location."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#7",
+      "verdict": "ABSENT",
+      "evidence": "Sync.jl module docstring (line 7) now opens: 'a managed file is one the tool renders into the consumer and hash-checks thereafter, edited only by `gbg sync`, never by hand' — a defining clause ahead of the mechanics, matching the hint."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#8",
+      "verdict": "ABSENT",
+      "evidence": "Demote.jl's demote docstring (lines 6-10), the field's only occurrence (grep confirms no other site), now explains: act verifier grades the diff, state verifier is blind and grades whether the defect is still there, and class_surfaces is 'the list the verifier fills from the finding's own text: every surface carrying the same class and whether the diff swept it'."
+    }
+  ]
+}

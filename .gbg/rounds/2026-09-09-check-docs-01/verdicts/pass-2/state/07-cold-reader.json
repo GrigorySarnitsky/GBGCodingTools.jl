@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "eda1fb831765918d71d699e03f187c5e",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "src/GBGCodingTools.jl:7-9 now reads 'A consumer is a package that uses the tool — one of the four sibling GBG packages, or the tool itself; a pin is the tool version the consumer names in .gbg/config.toml...'. Both terms defined at first use."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "grep -i ledger src/TestHarness.jl returns zero hits; the module docstring and section header now say 'element-traffic audit' throughout. Every other 'ledger' hit in src/ refers consistently to Ledger.jl's exemptions concept."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#3",
+      "verdict": "ABSENT",
+      "evidence": "Init.jl:11 now says 'init never renders the generated files'; Sync.jl:189 says 'Every generated-managed file'; Init.jl:449-450 says 'the three frozen TOML baselines'. grep -rE '[A-Z]-class|class [A-Z]' over src/ext/docs finds nothing."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#4",
+      "verdict": "ABSENT",
+      "evidence": "Recall.jl:9 glosses inline: 'substrate (the view of the corpus a hat reads)'. Preflight.jl:167-171 resolve_hats now lists all four values with meanings: full/siteonly/html/scans."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#5",
+      "verdict": "ABSENT",
+      "evidence": "Witnesses.jl (6th include, before Self.jl and RoundFiles.jl) now defines: 'a round being one run of one instrument over one consumer, recorded as a tracked directory under .gbg/rounds/' at its first bare use, line 13-14."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#6",
+      "verdict": "ABSENT",
+      "evidence": "Preflight.jl:169 resolve_hats docstring: \"'anchor', whether it runs at full strength rather than on the economy model\" — stated in a docstring, at the field's introduction."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#7",
+      "verdict": "ABSENT",
+      "evidence": "Sync.jl module docstring line 8: 'a managed file is one the tool renders into the consumer and hash-checks thereafter, edited only by gbg sync, never by hand' — stated before the mechanics list."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#8",
+      "verdict": "ABSENT",
+      "evidence": "Demote.jl's demote docstring now explains both: act verdict = 'what the fix pass DID... from the diff' vs state verifier = 'blind to the diff, whether the defect is still there'; and class_surfaces = 'every surface carrying the same class and whether the diff swept it'."
+    }
+  ]
+}

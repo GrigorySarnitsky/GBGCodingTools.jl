@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "ext",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "1a4ff7cf180770ace7a155f1f7c8a1fe",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/ext#1",
+      "verdict": "ABSENT",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:4 now reads 'The `Documenter` extension of `GBGCodingTools`' and line 6 reads '...loads `Documenter`.'. grep Documenter on the file shows only these two prose lines plus code identifiers (line 10 using, line 28 Documenter.makedocs) — no bare prose occurrence remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/ext#2",
+      "verdict": "ABSENT",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:14 docstring now reads 'Turns the exit code `code` of the verb `verb` into a build failure', binding `verb` as its own code span alongside `code`; both signature args are now spans."
+    }
+  ]
+}

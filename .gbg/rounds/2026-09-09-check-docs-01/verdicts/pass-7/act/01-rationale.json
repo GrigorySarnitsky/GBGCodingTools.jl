@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "1a4ff7cf180770ace7a155f1f7c8a1fe",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/rationale#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:135 now reads 'the one transitional exception, D8's `consolidate.py`, was deleted on 2026-09-09 when its Julia port passed the byte comparison'; :449-457 rewrites D8 to past tense with 'was BYTE-COMPARED... it passed on 2026-09-09 on 18 PF pages and 22 IT pages, all four manuscripts byte-equal, and the Python was deleted in that commit' (matches src/CLI/Consolidate.jl:2-4's ACCEPTANCE comment verbatim in substance); the §3 tree's three-line consolidate.py row (orig 956-958) is deleted outright with no replacement (diff hunk '- consolidate.py ... (D8; implementation plan 1.6)', nothing added). No .py file exists anywhere outside .gbg/ (find confirms), consistent with the new text.",
+      "class_surfaces": [
+        {"surface": "docs/ARCHITECTURE.md:135", "swept": true, "evidence": "D1 sentence rewritten past-tense with deletion date, as the finding's hint asked."},
+        {"surface": "docs/ARCHITECTURE.md:449-457", "swept": true, "evidence": "D8 paragraph rewritten past-tense, adds the 18/22-page acceptance detail matching Consolidate.jl's own comment."},
+        {"surface": "docs/ARCHITECTURE.md:956-958 (orig)", "swept": true, "evidence": "the §3 repository-layout consolidate.py row is removed entirely, per the hint; confirmed absent between the Consolidate.jl and Scans/<ScanId>.jl lines in the current file."}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/rationale#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:562-563 now reads '...`Dates`, `Pkg` (the pin checks and `self verify` read `Pkg.dependencies()`), `Random` (the pass nonce) and `Test`, plus `JSON3`...' — both omitted deps are added with the exact rationale the finding gave (Pkg for self-verify/pin checks, Random for the pass nonce), matching src/CLI/Self.jl:59's Pkg.dependencies() call and src/CLI/Passes.jl:80's RandomDevice() call cited as evidence.",
+      "class_surfaces": [
+        {"surface": "docs/ARCHITECTURE.md:559-563", "swept": true, "evidence": "the D9 'minimally' dependency-enumeration paragraph, the only prose surface the finding's own text names, now lists Pkg and Random alongside the other six."}
+      ]
+    }
+  ]
+}

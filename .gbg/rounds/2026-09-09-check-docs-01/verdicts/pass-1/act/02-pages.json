@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "becfb84818dfb9357f2086c6b0d4f876",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/pages#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Reflection.jl:157 now reads 'over the `src` surface of the config `cfg`,' giving a bare `cfg` span, and Reflection.jl:163 reads 'The keyword `exempt` is the ledger's `[exemption.match]` predicate,' giving a bare `exempt` span (the old call-form `exempt(hit)` at line 164 is kept alongside it, not in place of it). Simulating the scan's own regex (`occursin(Regex(\"`\"*q*\"`\"), d.body)`) against the current docstring body confirms both `` `cfg` `` and `` `exempt` `` are present as literal substrings, so argcov would no longer flag its own docstring.",
+      "class_surfaces": [
+        {
+          "surface": "src/Reflection.jl:154-166",
+          "swept": true,
+          "evidence": "The finding is scoped to argcov's own docstring specifically (the self-referential case: the scan engine failing its own rule); no other docstring is named as sharing the defect, so this is the only surface the finding's text implies."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/pages#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/index.md:17 now reads 'its domain hats (the reviewer personas of `/check-consistency`, one per aspect of the package's field), its seed catalogue...' — a defining clause inserted at the term's only use, consistent with the glossary ('Lane / hat — ... a hat is a persona in the panel') and ARCHITECTURE.md's domain-hat sections (e.g. line 1195 'a domain hat, not a catalogue hat').",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/index.md:17",
+          "swept": true,
+          "evidence": "grep for '\\bhats\\b' across docs/src/*.md (excluding the generated architecture.md) turns up only this one occurrence, matching the finding's own claim that it is used 'exactly once across the whole audited surface'; it is now defined inline."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/pages#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/rounds.md:7-8 now reads 'the lane agents — one agent per surface or territory the instrument covers, a **lane** — write their lane files', a defining clause at the term's first use, closely matching the finding's own suggested hint and the glossary's phrasing ('a lane a surface or territory a scan/harness covers').",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/rounds.md:7,16,17,18,19,36",
+          "swept": true,
+          "evidence": "All six cited occurrences remain purely operational ('lane files', 'lane `00-scans`', 'a DEAD lane', 'Lanes' heading), but they now follow the defining clause introduced at line 7-8, which is the remedy the finding's own hint asked for ('Add one clause at first use')."
+        }
+      ]
+    }
+  ]
+}

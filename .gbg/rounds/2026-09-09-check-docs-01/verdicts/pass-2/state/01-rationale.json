@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "eda1fb831765918d71d699e03f187c5e",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/rationale#1",
+      "verdict": "ABSENT",
+      "evidence": "grep -n consolidate docs/ARCHITECTURE.md: D1 (l.135) now reads 'was deleted on 2026-09-09 when its Julia port passed the byte comparison'; D8 (l.448-455) is past tense ('was BYTE-COMPARED...passed...the Python was deleted in that commit'); §3 tree (l.958) lists only 'Consolidate.jl', no .py entry. find -name '*.py' outside .gbg returns nothing."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/rationale#2",
+      "verdict": "ABSENT",
+      "evidence": "docs/ARCHITECTURE.md:561-563 now reads '...Dates, Pkg (the pin checks and self verify read Pkg.dependencies()), Random (the pass nonce) and Test, plus JSON3...and Gumbo + AbstractTrees...'. Matches Project.toml [deps] (TOML, SHA, Dates, Pkg, Random, Test, JSON3, Gumbo, AbstractTrees) exactly, no omission."
+    }
+  ]
+}

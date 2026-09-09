@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "becfb84818dfb9357f2086c6b0d4f876",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/pages#1",
+      "verdict": "ABSENT",
+      "evidence": "src/Reflection.jl:157 now has bare `cfg` span (\"of the config `cfg`, driven\") and line 163 has bare `exempt` span (\"The keyword `exempt` is the ledger's\") in addition to `exempt(hit)`. Both satisfy the regex `` `p` `` bare-name form; scan no longer trips on its own docstring."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/pages#2",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/index.md:17 now reads \"its domain hats (the reviewer personas of `/check-consistency`, one per aspect of the package's field)\" — an inline defining clause at first use, as the hint suggested. grep for other undefined \"hat\"/\"hats\" in docs/src found none outside this fixed line and architecture.md's own glossary entry."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/pages#3",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/rounds.md:7-8 now reads \"the lane agents — one agent per surface or territory the instrument covers, a **lane** — write their lane files\" — a defining clause at first use before the later operational mentions (lines 17-19, 36)."
+    }
+  ]
+}

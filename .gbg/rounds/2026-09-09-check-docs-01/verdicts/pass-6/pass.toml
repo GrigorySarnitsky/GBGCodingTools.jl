@@ -1,0 +1,20 @@
+tool_tree_sha = "b35635f8a2055b12ba3ed6ef7e0bfedebd4c0c3b"
+range = "533579cce5ec2f4e872ea5199d7d7935fa248012..21d8fd0a469deccdbfaeec6ef89e35e02a253a5e"
+superseded_by = 7
+pass = 6
+opened = "2026-09-09T05:14:13"
+tool_version = "1.0.0-rc.1"
+head = "21d8fd0a469deccdbfaeec6ef89e35e02a253a5e"
+config_sha = "8912430725c0b69e255dc2c56393cd0b57084b0e53bdea518a8d70fe4037b782"
+tool_rev = "533579cce5ec2f4e872ea5199d7d7935fa248012"
+regrade = false
+nonce = "38f9b30e4f25fcbbffa548953f4acfd2"
+
+[expected]
+rationale = 2
+pages = 3
+ext = 2
+src = 2
+built-html = 3
+operational-claims = 2
+cold-reader = 8

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-check-docs-01",
+  "lane": "ext",
+  "candidates_found": 4,
+  "checked": [
+    "ext/GBGCodingToolsDocumenterExt.jl (full file, every line)",
+    "src/DocLints.jl — the `makedocs` stub docstring (the operation's home per RULE.DOC.ONE_HOME) cross-checked against the ext file's implementation",
+    "Project.toml [weakdeps]/[extensions] — confirms the module docstring's claim that this is a Documenter package extension",
+    "docs/Project.toml and docs/make.jl — confirms Documenter is only loaded in the docs environment",
+    "fixture/GBG Fixture/docs/make.jl — the only other place `using Documenter` appears, confirming 'nowhere else'",
+    "src/CLI/Doctor.jl — doctor(cfg, set) and cmd_doctor return-code contract",
+    "src/Scan.jl — scan_docs, scan_html, report(), write_public_surface signatures and return-code contracts",
+    "src/CLI/Gate.jl — gate(cfg, instruments...) signature and return-code contract",
+    "src/CLI/Main.jl — tool_version()",
+    "grep of VERBS[...] registrations across src/CLI/*.jl and src/Scan.jl — verified `gbg doctor --only QUICK`, `gbg scan docs --hard-only`, `gbg scan html`, `gbg gate check-docs check-consistency` are all real CLI invocations matching the verb strings passed to check()"
+  ],
+  "findings": [
+    {
+      "type": "style",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "`Documenter` appears bare (unbacktick­ed) twice in the module docstring, backticked once",
+      "locations": [
+        "ext/GBGCodingToolsDocumenterExt.jl:4 — \"The Documenter extension of `GBGCodingTools`: it defines the body of\"",
+        "ext/GBGCodingToolsDocumenterExt.jl:6 — \"so no shim call ever loads Documenter.\""
+      ],
+      "description": "RULE.DOC.FORMATTED requires every code identifier backticked, never bare. `Documenter` is the name of the extension's trigger package (used as a real identifier at line 10, `using GBGCodingTools, Documenter`), and the docstring itself gets it right in the middle of the same paragraph — line 5, \"It loads only where `Documenter` is\" — but leaves it bare at the start of the paragraph (line 4, \"The Documenter extension\") and at the end (line 6, \"loads Documenter.\"). The inconsistency within one three-line docstring makes it an easy, low-risk fix rather than a stylistic judgment call.",
+      "resolution_hint": "Backtick both bare occurrences: \"The `Documenter` extension of `GBGCodingTools`\" and \"so no shim call ever loads `Documenter`.\""
+    },
+    {
+      "type": "self-containment",
+      "severity": "nit",
+      "confidence": "medium",
+      "title": "`check`'s `verb` argument is never bound as its own code span (ARGCOV run from the signature)",
+      "locations": [
+        "ext/GBGCodingToolsDocumenterExt.jl:14-19 — `check(verb::AbstractString, code::Integer)` / \"Turns a verb's exit code into a build failure: returns `nothing` when `code == 0`, else throws `ErrorException(\\\"gbg <verb> returned <code>\\\")`.\""
+      ],
+      "description": "RULE.DOC.ARGCOV requires every signature argument, enumerated from the signature, to be documented in the body as a plain span or a span carrying its default. `code` is bound this way (the literal `code == 0` span). `verb` is not: it is referenced only as the common noun \"a verb\" in prose and inside the `<verb>` placeholder of the error-message template, never as a `` `verb` `` span naming the actual parameter — a mechanical sweep run from the signature would not find `verb` bound.",
+      "resolution_hint": "Add a `` `verb` `` span, e.g. \"turns `verb`'s exit code into a build failure\", so the sweep finds both parameters bound by name."
+    }
+  ]
+}

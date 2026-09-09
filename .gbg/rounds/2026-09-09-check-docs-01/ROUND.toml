@@ -1,0 +1,64 @@
+# ROUND.toml — written by the gbg round verbs; never edited by hand (ARCHITECTURE §6.1)
+tool_tree_sha = "b35635f8a2055b12ba3ed6ef7e0bfedebd4c0c3b"
+findings_sha = "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6"
+strength = "economy"
+round = "2026-09-09-check-docs-01"
+opened = "2026-09-09T03:34:06"
+banked = "2026-09-09T04:17:10"
+tool_version = "1.0.0-rc.1"
+passes = 7
+head = "533579cce5ec2f4e872ea5199d7d7935fa248012"
+model_hint = "sonnet"
+hostname = "Aiporetne"
+seed_catalog_sha = "none"
+config_sha = "8912430725c0b69e255dc2c56393cd0b57084b0e53bdea518a8d70fe4037b782"
+dead_lanes = []
+cost = "economy"
+tool_rev = "533579cce5ec2f4e872ea5199d7d7935fa248012"
+instrument = "check-docs"
+catalog_sha = "967bf44cc9a549cbf897ccf51e3342ddcd7ba91641c0269674072a07041cd3e7"
+schema_version = 1
+
+[[roster]]
+key = "rationale"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "pages"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "src"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "ext"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "built-html"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "family"
+substrate = "cross"
+anchor = false
+[[roster]]
+key = "cold-reader"
+substrate = "cross"
+anchor = false
+[[roster]]
+key = "operational-claims"
+substrate = "cross"
+anchor = false
+
+[lane_shas]
+family = "047a26cee76a5a6ef50de6ddd8d74612e5bbb12ab7033ce73af8bcb8dad772b0"
+rationale = "0692c5263213529ea0add1c81cf9028826c694ff2e49e555620e1966facd7d33"
+pages = "c6add712e40646af36f11580ecdf28e48ff1bc65d902477051e46aeb0cb9fe33"
+scans = "25795bc53db191e9c8efcda2b7cb10a5a8086ca674517986997467857a8b7799"
+src = "9185f72806823615e1c1cdee0de234f4b02e17b4675a34718d0e491db6ad2829"
+ext = "65353e1927dc4d539faf15dfcd446d04f65f7d4ea113fab2786bd837a9c1b2a0"
+built-html = "daf5f8ec6173af04f3ac8b768268b68fc9292aecb1df86ebe77b1eeaeecc548e"
+operational-claims = "f9b9a4ce5b22e06c5c4cd2d2d044955c11410c2db93df74809ccd9a8504152a8"
+cold-reader = "1fad07e60549c816435356ae63f77d697868a5fd9b16ef0dd779e6b6a44475d5"

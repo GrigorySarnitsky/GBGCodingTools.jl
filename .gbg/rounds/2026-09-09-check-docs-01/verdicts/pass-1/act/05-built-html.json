@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "becfb84818dfb9357f2086c6b0d4f876",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/built-html#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Reflection.jl:159 now reads 'bare (`n`) or carrying its default (`n = 2`)' (single backticks, no nested delimiter). docs/ARCHITECTURE.md's rule/scan tables (diff hunk @2190-2293) reword every double-backtick-nesting-a-backtick instance into prose ('a double-backtick span', 'a `@ref` link immediately followed by a backtick', 'a single-backtick span holding one of the glyphs ≤ ≥ ≠ …'). Rebuilt docs/build/architecture.html, docs/build/api/Reflection.html confirmed clean: grepped every <code>class=\"katex\"</code> span site-wide (python scan over docs/build/**/*.html) for an embedded backtick — zero hits.",
+      "class_surfaces": [
+        {"surface": "src/Reflection.jl:159", "swept": true, "evidence": "docstring now uses single backticks `n`/`n = 2`; docs/build/api/Reflection.html shows no stray $ or backtick text"},
+        {"surface": "docs/ARCHITECTURE.md:~2193 (RULE.TEX.RENDERED_MATH row)", "swept": true, "evidence": "table cell rewritten to 'a double-backtick span or a `math` fence, never Unicode glyphs, single-backtick code or dollar signs'; docs/build/architecture.html renders it as plain <code> text, no katex"},
+        {"surface": "docs/ARCHITECTURE.md:~2269 (SCAN.REF_ABUT_CODE row)", "swept": true, "evidence": "cell now reads 'a @ref link immediately followed by a backtick'; confirmed in docs/build/architecture.html with no stray backtick/$ artifact"},
+        {"surface": "docs/ARCHITECTURE.md:~2272 (SCAN.ARG_BULLET_BOLD row)", "swept": true, "evidence": "cell now reads 'a list bullet opening with a bold backtick span'; confirmed clean in built HTML"},
+        {"surface": "docs/ARCHITECTURE.md:~2273 (SCAN.INLINE_MATH_SPLIT row)", "swept": true, "evidence": "cell now reads 'an open double-backtick span'; confirmed clean in built HTML"},
+        {"surface": "docs/ARCHITECTURE.md:~2285 (SCAN.FORMULA_IN_BACKTICKS row)", "swept": true, "evidence": "cell now reads 'a single-backtick span holding one of the glyphs ≤ ≥ ≠ ∈ ∉ ∇ Δ ⟨ ⟩ ‖ √ × ⋅'; confirmed clean in built HTML"},
+        {"surface": "docs/ARCHITECTURE.md:~2293 (SCAN.ABUTTING_SPANS row)", "swept": true, "evidence": "cell now reads 'beside a double-backtick span, either order'; confirmed clean in built HTML"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/built-html#2",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "docs/src/guide/verbs.md gained a 'Fleet and release' @docs block with GBGCodingTools.Fleet, Fleet.rows, Fleet.diff, GBGCodingTools.bump, GBGCodingTools.release, GBGCodingTools.selftest; docs/build/guide/verbs.html confirms all six render with real, matching docstring content and resolving anchors (id=\"GBGCodingTools.bump\" etc.). But Fleet.jl's own fourth docstring, `latest_tag` at src/CLI/Fleet.jl:22-26 — explicitly one of the 'docstrings at src/CLI/Fleet.jl:4,11,22,26,37,46,98,108' the finding cited as evidence — was not added to any @docs block: `grep -rn 'latest_tag' docs/build --include=*.html` returns nothing across the whole built site.",
+      "class_surfaces": [
+        {"surface": "src/CLI/Bump.jl:4 (bump)", "swept": true, "evidence": "GBGCodingTools.bump added to verbs.md; renders at docs/build/guide/verbs.html#GBGCodingTools.bump"},
+        {"surface": "src/CLI/Fleet.jl:4,11 (module Fleet)", "swept": true, "evidence": "GBGCodingTools.Fleet added; renders at docs/build/guide/verbs.html#GBGCodingTools.Fleet"},
+        {"surface": "src/CLI/Fleet.jl:22,26 (latest_tag)", "swept": false, "evidence": "not added to any @docs block; absent from every page under docs/build (grep for 'latest_tag' across docs/build/**/*.html returns zero matches) even though it is used elsewhere (Selftest.jl:22) and carries its own complete docstring"},
+        {"surface": "src/CLI/Fleet.jl:37,46 (rows)", "swept": true, "evidence": "GBGCodingTools.Fleet.rows added; renders at docs/build/guide/verbs.html#GBGCodingTools.Fleet.rows with matching content"},
+        {"surface": "src/CLI/Fleet.jl:98,108 (diff)", "swept": true, "evidence": "GBGCodingTools.Fleet.diff added; renders at docs/build/guide/verbs.html#GBGCodingTools.Fleet.diff with matching content"},
+        {"surface": "src/CLI/Release.jl:4 (release)", "swept": true, "evidence": "GBGCodingTools.release added; renders at docs/build/guide/verbs.html#GBGCodingTools.release"},
+        {"surface": "src/CLI/Selftest.jl:4 (selftest)", "swept": true, "evidence": "GBGCodingTools.selftest added; renders at docs/build/guide/verbs.html#GBGCodingTools.selftest"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/built-html#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/GBGCodingTools.jl module docstring diff adds, under a new 'The engines:' heading, the bullet '[`scan_docs`](@ref), [`scan_html`](@ref), [`register_scan!`](@ref) — the deterministic text and built-HTML scan engine over `catalog/scans.toml`, one function per scan id under `src/Scans/`.' Rebuilt docs/build/index.html confirms all three @ref links resolve to real anchors: guide/verbs.html#GBGCodingTools.scan_docs, guide/verbs.html#GBGCodingTools.scan_html, api/CLI.html#GBGCodingTools.register_scan! (each anchor id verified present on its target page), matching the abbreviated one-liner-per-family style already used by the map's other bullets (e.g. the TestHarness/Reflection/Witnesses bullet, which likewise names only representative bindings, not every symbol).",
+      "class_surfaces": [
+        {"surface": "docs/build/index.html module map (src/GBGCodingTools.jl module docstring)", "swept": true, "evidence": "new bullet naming the scan engine family added, with working @ref links into guide/verbs.html and api/CLI.html; write_public_surface (Scan.jl:498) already had its own separate map-external home at verbs.md line 44 (`GBGCodingTools.write_public_surface`, pre-existing, unaffected by this finding), and Hit/ScanResult/prose_lines remain documented under CLI.html's 'Engines' heading as the finding itself already noted, consistent with how other family bullets in this same map (e.g. TestHarness/Reflection/Witnesses) list representative bindings rather than every symbol"}
+      ]
+    }
+  ]
+}

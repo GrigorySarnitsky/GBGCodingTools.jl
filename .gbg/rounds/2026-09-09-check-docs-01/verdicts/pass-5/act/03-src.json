@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "0357bb3c268e1e1eef1a0402e66f5277",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/src#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TreeHash.jl:47 now reads `_nonempty(path, skip) || continue                # git tracks no empty directory` (was `isempty(_nonempty(path, skip)) && continue`) — the exact hinted invert. test/treehash.jl adds a testset comparing `G.TreeHash.tree_hash(dir)` against real `git write-tree` on a tree with nested empty subdirs (`sub/deeper-empty`, and a directory holding only an empty subdir), asserting the latter equals git's canonical empty-tree id `4b825dc642cb6eb9a060e54bf8d69288fbee4904` — the same verification method the finding itself used.",
+      "class_surfaces": [
+        {"surface": "src/TreeHash.jl:47", "swept": true, "evidence": "the sole flagged `isempty(_nonempty(...))` guard, now `_nonempty(path, skip) || continue`"},
+        {"surface": "src/TreeHash.jl:35-39 docstring", "swept": true, "evidence": "docstring text \"empty directories omitted\" unchanged and now matches actual behavior per the new test"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/src#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Passes.jl:167 now calls `hit_needle(h.text)` where `hit_needle(text) = first(strip(last(split(text, \": \"))), 40)` (Passes.jl:162-163) — exactly the hinted `first(s, 40)` Unicode-safe idiom replacing the byte-slicing `[1:min(end,40)]`. test/rounds.jl adds a \"hit needle\" testset building a string of repeated Greek letters and math glyphs (α β γ δ ε ≤ ∇ ⟨u⟩) — the finding's own example characters — and asserts `length(hit_needle(s)) == 40` without a StringIndexError, plus a short-string case.",
+      "class_surfaces": [
+        {"surface": "src/CLI/Passes.jl:167 (rescan_alive)", "swept": true, "evidence": "the flagged call site now uses hit_needle, byte-index slicing removed"},
+        {"surface": "codebase-wide raw `[1:min(end,N)]`/byte-index truncation pattern", "swept": true, "evidence": "grep of src/ and ext/ for `[1:min(end` and other `[1:` truncation idioms turns up only prevind/nextind-safe or non-length-truncating uses (e.g. Reflection.jl, Sync.jl, Init.jl, Doctor.jl's `[1:8]` hex-hash prefixes which are ASCII-only hex digests, not scan-hit text) — no second byte-unsafe truncation of arbitrary scan/doc text remains"}
+      ]
+    }
+  ]
+}

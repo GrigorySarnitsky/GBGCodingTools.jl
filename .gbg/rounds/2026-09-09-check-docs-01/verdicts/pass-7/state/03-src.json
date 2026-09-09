@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "1a4ff7cf180770ace7a155f1f7c8a1fe",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/src#1",
+      "verdict": "ABSENT",
+      "evidence": "src/TreeHash.jl:47 now reads `_nonempty(path, skip) || continue`, correctly skipping empty dirs. Searched `grep isempty( src ext` (~150 hits): every other call wraps a collection/string (e.g. `isempty(files)` line 68), none wraps a Bool-returning helper."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/src#2",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Passes.jl:167 now calls `hit_needle(h.text)`, defined at line 162 as `first(strip(last(split(text, \": \"))), 40)` — Unicode-safe. Searched `grep '\\[1:min(end' and '\\[1:[0-9]'` in src/ext: no other raw byte-index truncation of free text remains (remaining `[1:N]` hits are ASCII sha/status codes)."
+    }
+  ]
+}

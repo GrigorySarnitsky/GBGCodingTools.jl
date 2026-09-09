@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "1a4ff7cf180770ace7a155f1f7c8a1fe",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/GBGCodingTools.jl:5-8 module docstring now reads 'A consumer is a package that uses the tool — one of the four sibling GBG packages, or the tool itself; a pin is the tool version the consumer names in `.gbg/config.toml` (`tool.version`...), which `gbg sync` renders into the consumer's sub-environment compat entries.' Verified against src/CLI/Sync.jl:62 `pin(cfg) = cfg[\"tool\"][\"version\"]` and schema/config.schema.json:21 pattern `^([0-9]+\\.[0-9]+\\.[0-9]+|dev)$` — matches.",
+      "class_surfaces": [
+        {"surface": "src/GBGCodingTools.jl:5 (module docstring, the true first-loaded surface for `?GBGCodingTools`)", "swept": true, "evidence": "definition added in the paragraph immediately following first use"},
+        {"surface": "src/DocLints.jl (makedocs docstring, uses 'consumer')", "swept": true, "evidence": "downstream of the module docstring in every read path; relies on the now-present definition, unchanged text, no fix needed"},
+        {"surface": "src/CLI/Config.jl, src/CLI/Git.jl, src/CLI/Ledger.jl, src/CLI/Sync.jl, src/CLI/Doctor.jl, src/CLI/Init.jl (named by the finding as bare 'consumer' users)", "swept": true, "evidence": "all load after GBGCodingTools.jl's own module docstring, which now carries the definition at the true first-touch point; unchanged text is not a defect once the root definition exists"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "All three cited lines renamed: src/TestHarness.jl:11 'the element-traffic audit', :108 header '# ─── element-traffic audit', :183 'One row of the traffic audit (the per-operation table of array reads and writes).' A fourth non-cited but same-class site (traffic_completeness docstring, ~line 210) was also renamed to 'traffic audit'. grep -in ledger src/TestHarness.jl now returns nothing.",
+      "class_surfaces": [
+        {"surface": "src/TestHarness.jl:11 (module docstring)", "swept": true, "evidence": "'ledger' -> 'audit'"},
+        {"surface": "src/TestHarness.jl:108 (section header comment)", "swept": true, "evidence": "'element-traffic ledger' -> 'element-traffic audit'"},
+        {"surface": "src/TestHarness.jl:183 (audit docstring)", "swept": true, "evidence": "'traffic ledger' -> 'traffic audit (the per-operation table...)'"},
+        {"surface": "src/TestHarness.jl ~210 (traffic_completeness docstring, same class not individually cited)", "swept": true, "evidence": "'derived completeness check of the traffic ledger' -> 'traffic audit'"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Init.jl:1 'S-class files' -> 'the seeded-once files'; :16 '`init` never renders the G files' -> 'the generated files (the skill stubs, the hook, the CI fragments, the managed blocks)'; :450 'S-class TOMLs' -> 'frozen TOML baselines'. src/CLI/Sync.jl:189 'generated-managed file (class G)' -> 'generated-managed file' (bare letter dropped, plain wording used instead, matching the hint's first alternative).",
+      "class_surfaces": [
+        {"surface": "src/CLI/Init.jl:11 module docstring ('never renders the G files')", "swept": true, "evidence": "letter dropped, replaced with a plain enumeration"},
+        {"surface": "src/CLI/Sync.jl:189 plan docstring ('class G')", "swept": true, "evidence": "parenthetical letter removed"},
+        {"surface": "src/CLI/Init.jl:450 migrate_baselines docstring ('S-class TOMLs')", "swept": true, "evidence": "'S-class' replaced with 'frozen TOML baselines'"},
+        {"surface": "docstring surface generally (grep for 'class [A-Z]'/'[A-Z]-class' across src/, ext/)", "swept": true, "evidence": "grep -rnE '\\bclass [A-Z]\\b|\\b[A-Z]-class\\b' src ext returns nothing; remaining hits are only in docs/ARCHITECTURE.md and docs/design-record/, which the finding treats as the (withheld, acceptable) home of the taxonomy, not the docstring surface"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Recall.jl:9 (the true first docstring use, include-order-earlier than Preflight.jl) now reads '...on their substrate (the view of the corpus a hat reads) and zero matches.' src/CLI/Preflight.jl resolve_hats docstring states the full closed set: 'substrate, which view of the corpus the hat reads — the closed set of `schema/hat.schema.json`: full..., siteonly..., rawhtml..., docstrings..., rulebook... or none'. Verified against schema/hat.schema.json's substrate enum [full, siteonly, rawhtml, docstrings, rulebook, none] — exact match (pass 6 in the commit history fixed an earlier wrong gloss that included 'html'/'scans').",
+      "class_surfaces": [
+        {"surface": "src/CLI/Recall.jl:9 (first docstring use, cited by the finding)", "swept": true, "evidence": "parenthetical gloss added"},
+        {"surface": "src/CLI/Preflight.jl:167-169 resolve_hats (cited by the finding)", "swept": true, "evidence": "full definition with the closed enum added, matches schema/hat.schema.json exactly"},
+        {"surface": "src/CLI/Rounds.jl:357, src/CLI/Passes.jl:113-118 (named by the finding as scattered value-usage sites)", "swept": true, "evidence": "these are runtime print strings / Dict code, not docstrings — not part of the `?name` docstring surface this finding scopes to, unchanged and not required to change"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/DocLints.jl (module #3 in include order, confirmed the true earliest docstring use of 'round' — TreeHash.jl and HtmlWalker.jl, includes #1-2, mention no 'round') now glosses at makedocs's cfg argument: '(a round is one run of an instrument over the consumer, tracked under `.gbg/rounds/`)'. src/Witnesses.jl:10-12 module docstring and src/CLI/RoundFiles.jl:6-7 module docstring both also carry the full glossary definition ('one run of one instrument over one consumer, recorded as a tracked directory').",
+      "class_surfaces": [
+        {"surface": "src/DocLints.jl makedocs docstring (true earliest docstring use, not itself cited by the finding but the correct target)", "swept": true, "evidence": "definitional parenthetical added at the earliest use, per the fix commit's own log message 'round glossed at its earliest use (makedocs)'"},
+        {"surface": "src/Witnesses.jl:179 run's docstring / module docstring (cited by the finding)", "swept": true, "evidence": "module docstring now states 'a round being one run of one instrument over one consumer, recorded as a tracked directory under .gbg/rounds/'"},
+        {"surface": "src/CLI/RoundFiles.jl module docstring (the module the finding says never states the one-line glossary definition)", "swept": true, "evidence": "now reads 'a round is one run of one instrument over one consumer, recorded as a tracked directory there'"},
+        {"surface": "src/CLI/Self.jl:49 self_verify docstring (cited by the finding, bare 'round')", "swept": true, "evidence": "unchanged, but loads after DocLints.jl/Witnesses.jl/RoundFiles.jl in include order so relies correctly on the now-present upstream definition"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Preflight.jl resolve_hats docstring now reads '`anchor`, whether it runs at full strength rather than on the economy model (a `domain_hats` entry may anchor any key)' — matches the policy gloss 'a hat or lane that runs at full strength instead of the economy model' quoted in the finding.",
+      "class_surfaces": [
+        {"surface": "src/CLI/Preflight.jl:167 resolve_hats (cited by the finding, the field's first introduction to a reader)", "swept": true, "evidence": "definitional clause added"},
+        {"surface": "src/CLI/Preflight.jl:229 resolve_hunt_lanes ('anchored', cited by the finding)", "swept": true, "evidence": "unchanged bare use, but resolve_hats (same file, earlier) now defines the term first, so this downstream mention is covered"},
+        {"surface": "src/CLI/Doctor.jl:281 runtime error string (cited by the finding as the one place the concept is spelled out, but explicitly noted as code not docstring)", "swept": true, "evidence": "the finding does not ask this string be turned into a docstring; the docstring-surface gap it identifies is closed at resolve_hats instead, per the hint's own suggestion"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#7",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Sync.jl module docstring (the true first docstring use of 'managed' — confirmed no file included earlier than Sync.jl uses the word) now reads 'a managed file is one the tool renders into the consumer and hash-checks thereafter, edited only by `gbg sync`, never by hand', closely mirroring the finding's own quoted glossary definition and the hint's suggested clause verbatim.",
+      "class_surfaces": [
+        {"surface": "src/CLI/Sync.jl:8-12 module docstring (cited by the finding, first and richest use)", "swept": true, "evidence": "defining clause inserted ahead of the mechanics list"},
+        {"surface": "plan, status, sync, ManagedFile, Entry docstrings under Sync.jl (named by the finding as using 'managed' dozens of times without a definition)", "swept": true, "evidence": "all load after the now-defined module docstring within the same file; no separate gloss needed per the hint's own proposed fix shape"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/cold-reader#8",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Demote.jl demote docstring (the field's only appearance anywhere in source, per the finding) now reads: 'over an act verdict — the act verifier's grade of what the fix pass DID to one finding, from the diff (the state verifier grades, blind to the diff, whether the defect is still there). `class_surfaces` is the list the verifier fills from the finding's own text: every surface carrying the same class and whether the diff swept it.' Verified against instruments/check-consistency/workflow/verify-act.js:43 and verify-state.js:1 — wording matches the actual act/state split and the {surface, swept, evidence} shape.",
+      "class_surfaces": [
+        {"surface": "src/CLI/Demote.jl:6-7 demote docstring (cited by the finding, class_surfaces' only source-tree occurrence)", "swept": true, "evidence": "expanded with act-vs-state contrast and a definition of class_surfaces"},
+        {"surface": "src/CLI/Passes.jl:121-123 pass_open docstring / printed message (cited by the finding as the only other, non-contrasting mention of act/state)", "swept": true, "evidence": "unchanged text ('the act verifier sees the diff; the state verifier is blind') now loads after Demote.jl's fuller definition in include order (Demote.jl is include #21, Passes.jl is later), so the earlier gap the finding identifies is closed upstream"}
+      ]
+    }
+  ]
+}

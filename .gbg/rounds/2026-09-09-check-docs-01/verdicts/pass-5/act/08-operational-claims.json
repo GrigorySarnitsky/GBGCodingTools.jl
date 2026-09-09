@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "0357bb3c268e1e1eef1a0402e66f5277",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/operational-claims#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TreeHash.jl:47 changed `isempty(_nonempty(path, skip)) && continue` to `_nonempty(path, skip) || continue` — exactly the hint's fix. Ran the code directly: tree_hash over a dir holding only an empty subdirectory now returns 4b825dc642cb6eb9a060e54bf8d69288fbee4904, matching real `git write-tree` on the identical tree (previously it did not). New test/treehash.jl (19 lines) compares tree_hash against a live `git write-tree` subprocess over a tree with a nested empty dir, and separately asserts the pure-empty case equals git's canonical empty-tree id; `julia --project=. test/treehash.jl` passes all 4 assertions.",
+      "class_surfaces": [
+        {"surface": "src/TreeHash.jl:47", "swept": true, "evidence": "the flagged condition itself, corrected and verified against live git write-tree"},
+        {"surface": "src/CLI/Preflight.jl:119", "swept": true, "evidence": "`tool_tree_sha`/`tag_tree` call the same shared `TreeHash.tree_hash`, no separate implementation; test/treehash.jl asserts `Preflight.tag_tree(dir, \"0.0.1\") == TreeHash.tree_hash(dir)` post-fix"},
+        {"surface": "src/CLI/Self.jl:57", "swept": true, "evidence": "`gbg self verify`'s `computed = TreeHash.tree_hash(dir)` calls the same fixed function — no independent empty-dir logic to sweep separately"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/operational-claims#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Witnesses.jl:173 changed `blocked === nothing || return WitnessResult(name, :blocked, p, f, e, blocked)` to `f == 0 && blocked !== nothing && return WitnessResult(...)` — exactly the hint. A witness with both a failing @test and an erroring @test under a `# blocked:` header now returns :broken (reason names both counts), not :blocked. Docstrings (WitnessResult:33, run_one:148) updated to match. New test/witnesses.jl case `blocked_but_failed.jl` (fails AND errors under a blocked header) asserts `:broken` and that the reason contains \"1 assertion(s) failed\"; full witnesses.jl test module passes 13/13.",
+      "class_surfaces": [
+        {"surface": "src/Witnesses.jl:173 (e>0 branch)", "swept": true, "evidence": "now requires f == 0 before returning :blocked"},
+        {"surface": "src/Witnesses.jl:163-169 (m===nothing branch, no GBG_WITNESS line reported)", "swept": true, "evidence": "pass-3 review had left this branch returning :blocked on the header alone (LINE-ONLY); a later commit in this same range removed that entirely — it now always returns :broken regardless of header, since whether it failed is unknown"},
+        {"surface": "src/Witnesses.jl — only :blocked construction site in the module", "swept": true, "evidence": "grep for ':blocked' shows exactly one WitnessResult(...,:blocked,...) call site (line 173); no other branch manufactures :blocked"}
+      ]
+    }
+  ]
+}

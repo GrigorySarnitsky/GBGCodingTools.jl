@@ -1,0 +1,20 @@
+tool_tree_sha = "a9b70ee5ffcb28a516f45d5136b8a55f9211dfb2"
+range = "533579cce5ec2f4e872ea5199d7d7935fa248012..d6099c94967d74a540205f56842b9e67a4681cd6"
+superseded_by = 3
+pass = 2
+opened = "2026-09-09T04:37:55"
+tool_version = "dev+d6099c9-dirty"
+head = "d6099c94967d74a540205f56842b9e67a4681cd6"
+config_sha = "8912430725c0b69e255dc2c56393cd0b57084b0e53bdea518a8d70fe4037b782"
+tool_rev = "d6099c94967d74a540205f56842b9e67a4681cd6"
+regrade = false
+nonce = "eda1fb831765918d71d699e03f187c5e"
+
+[expected]
+rationale = 2
+pages = 3
+ext = 2
+src = 2
+built-html = 3
+operational-claims = 2
+cold-reader = 8

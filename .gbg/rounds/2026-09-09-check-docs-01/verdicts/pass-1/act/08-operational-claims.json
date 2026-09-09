@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "becfb84818dfb9357f2086c6b0d4f876",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/operational-claims#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TreeHash.jl:47 now reads `_nonempty(path, skip) || continue` (was `isempty(_nonempty(path, skip)) && continue`, always-false), so a directory that is not nonempty is skipped, matching the docstring's 'empty directories omitted' at src/TreeHash.jl:38-39 (unchanged, now true). test/treehash.jl adds a real `git write-tree` comparison over a tree with nested empty subdirectories and a pure-empty-tree case asserting git's canonical empty-tree id 4b825dc642cb6eb9a060e54bf8d69288fbee4904.",
+      "class_surfaces": [
+        {"surface": "src/TreeHash.jl:47", "swept": true, "evidence": "the sole buggy guard `isempty(_nonempty(...))` rewritten to `_nonempty(...) || continue`"},
+        {"surface": "src/TreeHash.jl:38-39", "swept": true, "evidence": "docstring claim 'empty directories omitted' unchanged but now accurate given the code fix; no other isempty(::Bool)-style guard found elsewhere in src/ (grepped)"},
+        {"surface": "src/CLI/Preflight.jl:97 (TreeHash.tree_hash(dir) in stamps)", "swept": true, "evidence": "plain call-through to the fixed function, no separate logic to sweep"},
+        {"surface": "src/CLI/Self.jl:57 (gbg self verify / PIN.SELF, PIN.TREESHA)", "swept": true, "evidence": "plain call-through to the fixed function, no separate logic to sweep"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/operational-claims#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Witnesses.jl:168-170 now guards `f == 0 && blocked !== nothing && return WitnessResult(...,:blocked,...)`, else falls to `:broken` with a reason naming both counts, so a witness that also failed (f>0) is never classified :blocked. Both docstrings (lines ~32-33 WitnessResult, ~145-149 run_one) were reworded from 'was never seen to fail'/'errored' to 'failed nothing' and now state the also-failed case is :broken. test/witnesses.jl adds blocked_but_failed.jl (fails + errors under a # blocked header) asserting status == :broken and the reason names the failed assertion count.",
+      "class_surfaces": [
+        {"surface": "src/Witnesses.jl:32-33 (WitnessResult docstring)", "swept": true, "evidence": "'`:blocked` (the file declares `# blocked: <reason>` and errored)' -> '...`, errored and failed nothing)'"},
+        {"surface": "src/Witnesses.jl:145-148 (run_one docstring)", "swept": true, "evidence": "'it errored, was never seen to fail, and carries...' -> 'it errored, failed nothing, and carries...; one that also failed is `:broken`, its reason naming both counts'"},
+        {"surface": "src/Witnesses.jl:165-170 (run_one code, the e>0 branch)", "swept": true, "evidence": "added `f == 0 &&` before the :blocked return; :broken branch's reason now prepends '$f assertion(s) failed AND ' when f>0"}
+      ]
+    }
+  ]
+}

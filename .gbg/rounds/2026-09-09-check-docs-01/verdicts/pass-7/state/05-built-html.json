@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "1a4ff7cf180770ace7a155f1f7c8a1fe",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/built-html#1",
+      "verdict": "ABSENT",
+      "evidence": "src/Reflection.jl:159 now single-backtick `n`/`n = 2`. ARCHITECTURE.md lines 2193/2269/2272/2273/2285/2293 describe the concept in prose (\"double-backtick span\") with no literal nested backticks. grep for `$`, `$`n`$`, `$```math$`, stray `$$` in docs/build/architecture.html and docs/build/api/Reflection.html (both rebuilt after these edits) returns none; only legitimate <code>$VAR</code> shell spans remain."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/built-html#2",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/verbs.md now has a \"## Fleet and release\" section with @docs entries GBGCodingTools.Fleet(+.latest_tag/.rows/.diff), GBGCodingTools.bump, .release, .selftest; docs/build/guide/verbs.html carries anchors id=\"GBGCodingTools.bump\", \"GBGCodingTools.release\", \"GBGCodingTools.selftest\", \"GBGCodingTools.Fleet\" etc."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/built-html#3",
+      "verdict": "ABSENT",
+      "evidence": "src/GBGCodingTools.jl module docstring (lines 26-27) now lists \"[`scan_docs`](@ref), [`scan_html`](@ref), [`register_scan!`](@ref) — the deterministic text and built-HTML scan engine over `catalog/scans.toml`\"; docs/build/index.html contains scan_docs, scan_html, register_scan."
+    }
+  ]
+}

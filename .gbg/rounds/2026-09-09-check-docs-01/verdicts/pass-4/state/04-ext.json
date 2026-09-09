@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "ext",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "b35dac7075583b939d7c23623cc6a420",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/ext#1",
+      "verdict": "ABSENT",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:4-6 now reads '`Documenter` extension of `GBGCodingTools`' and 'loads Documenter' -> '`Documenter`'; all three prose occurrences backticked. Ran `grep -rn Documenter --glob '!.gbg/**' src ext docs/src | grep -v '`Documenter`'` -> no output, no bare instances anywhere."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/ext#2",
+      "verdict": "ABSENT",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:16 now reads 'Turns the exit code `code` of the verb `verb` into a build failure', binding `verb` as its own code span distinct from the `<verb>` placeholder at line 17."
+    }
+  ]
+}

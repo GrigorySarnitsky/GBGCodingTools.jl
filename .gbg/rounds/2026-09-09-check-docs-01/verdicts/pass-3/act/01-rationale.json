@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "e444be6ab10844ea17db90797abe745d",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/rationale#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:134-136 (D1) now reads 'the one transitional exception, D8's `consolidate.py`, was deleted on 2026-09-09 when its Julia port passed the byte comparison'; :446-457 (D8) rewritten past-tense end-to-end, ending 'it passed on 2026-09-09 on 18 PF pages and 22 IT pages, all four manuscripts byte-equal, and the Python was deleted in that commit' — matches src/CLI/Consolidate.jl:2-4 verbatim (PASSED 2026-09-09, 18/22 pages); the §3 tree's `consolidate.py` row (former :956-958) is deleted outright, leaving `Seed.jl Recall.jl Consolidate.jl Audit.jl Hunt.jl Selftest.jl` with no .py entry.",
+      "class_surfaces": [
+        {"surface": "docs/ARCHITECTURE.md:135", "swept": true, "evidence": "D1 rewritten to past tense with the deletion date, per diff hunk @@ -132,7 +132,8 @@"},
+        {"surface": "docs/ARCHITECTURE.md:448-455", "swept": true, "evidence": "D8 rewritten to past tense throughout, per diff hunk @@ -445,14 +446,15 @@, matching Consolidate.jl's own PASSED comment"},
+        {"surface": "docs/ARCHITECTURE.md:956-958", "swept": true, "evidence": "the `consolidate.py` row under src/CLI/ removed entirely, per diff hunk @@ -953,9 +956,6 @@"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/rationale#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:562-563 D9 now reads 'the stdlibs `TOML`, `SHA` (the tree hashing of D3), `Dates`, `Pkg` (the pin checks and self verify read `Pkg.dependencies()`), `Random` (the pass nonce) and `Test`, plus `JSON3` ... and `Gumbo` + `AbstractTrees`' — all 9 [deps] entries in Project.toml (AbstractTrees, Dates, Gumbo, JSON3, Pkg, Random, SHA, TOML, Test) are now named. Pkg claim checked against src/CLI/Self.jl:59 (`Pkg.dependencies()`); Random claim checked against src/CLI/Passes.jl:80 (`rand(RandomDevice(), UInt8, 16)`, with `using ... Random` at Passes.jl:14) — both accurate.",
+      "class_surfaces": [
+        {"surface": "docs/ARCHITECTURE.md:559-563", "swept": true, "evidence": "the D9 dependency enumeration now names Pkg and Random alongside the six originally listed, completing the set against Project.toml's [deps]"}
+      ]
+    }
+  ]
+}

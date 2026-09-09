@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "ext",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "e444be6ab10844ea17db90797abe745d",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/ext#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:4 now reads 'The `Documenter` extension of `GBGCodingTools`' and line 6 now reads 'so no shim call ever loads `Documenter`.' — diff hunk shows both bare occurrences backticked, matching the hint exactly; the already-correct middle occurrence (line 5, `Documenter` is) is untouched.",
+      "class_surfaces": [
+        {"surface": "ext/GBGCodingToolsDocumenterExt.jl:4", "swept": true, "evidence": "\"The `Documenter` extension of `GBGCodingTools`\" — bare 'Documenter' at paragraph start now backticked"},
+        {"surface": "ext/GBGCodingToolsDocumenterExt.jl:6", "swept": true, "evidence": "\"so no shim call ever loads `Documenter`.\" — bare 'Documenter' at paragraph end now backticked"}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/ext#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:16 changed from \"Turns a verb's exit code into a build failure\" to \"Turns the exit code `code` of the verb `verb` into a build failure\", binding `verb` as its own code span alongside the already-bound `code`; the description stays accurate to check(verb::AbstractString, code::Integer)'s actual behavior.",
+      "class_surfaces": [
+        {"surface": "ext/GBGCodingToolsDocumenterExt.jl:16", "swept": true, "evidence": "`verb` now appears as a backticked span naming the parameter, not just inside the `<verb>` error-template placeholder"},
+        {"surface": "ext/GBGCodingToolsDocumenterExt.jl:16", "swept": true, "evidence": "`code` was already bound via the literal `code == 0` span, both before and after the fix"}
+      ]
+    }
+  ]
+}

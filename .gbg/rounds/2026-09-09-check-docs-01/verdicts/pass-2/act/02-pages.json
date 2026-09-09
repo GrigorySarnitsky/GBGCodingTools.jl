@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "eda1fb831765918d71d699e03f187c5e",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/pages#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Reflection.jl:157 now reads 'the config `cfg`,' and src/Reflection.jl:163 reads 'The keyword `exempt` is the ledger's', both exact bare backtick spans. Ran the identical regex from Reflection.jl:189-190 (Regex(\"`\\\\Q\"*p*\"\\\\E`\") or with '= ...') against the full new docstring body verbatim: cfg => true, exempt => true. Both parameters the finding named are now documented in the form the scan's own regex accepts.",
+      "class_surfaces": [
+        {
+          "surface": "src/Reflection.jl:154-166",
+          "swept": true,
+          "evidence": "The finding's own text scopes the defect to 'argcov's own docstring' exclusively (\"Its own docstring (Reflection.jl:154-165 ...) never mentions cfg ... exempt only as exempt(hit)\"); it names no other docstring as carrying the same defect. The diff hunk on this exact span adds bare `cfg` (line 157) and bare `exempt` (line 163), verified against the live ARGCOV regex."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/pages#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/index.md:17 now reads 'its domain hats (the reviewer personas of /check-consistency, one per aspect of the package's field), its seed catalogue' — a defining clause added inline at the sole use the finding names, matching ARCHITECTURE.md:22-23's 'a hat is a persona in the [check-consistency] panel' and its domain-hat framing (docs/ARCHITECTURE.md:31-32). No link needed since the hint offered clause-or-link as alternatives.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/index.md:17",
+          "swept": true,
+          "evidence": "The finding states 'hats' is used exactly once across the whole audited surface, at index.md:17, and names no other location. That single site now carries the defining clause."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/pages#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/rounds.md:7-8 now reads 'the lane agents — one agent per surface or territory the instrument covers, a **lane** — write their lane files', added at the very first use of 'lane' in the page (confirmed by reading rounds.md:1-9, no earlier occurrence exists) and matching almost verbatim the finding's own hint text and ARCHITECTURE.md:24's definition ('a lane is a surface or territory in the other three [instruments]').",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/rounds.md:7,16,17,18,19,36",
+          "swept": true,
+          "evidence": "The finding names exactly these six occurrences within rounds.md and no other page; a single defining clause at the first (line 7) establishes the term before every later plain use (16-19, 36), which is the same first-use convention the commit applied to 'hat' and other terms."
+        }
+      ]
+    }
+  ]
+}

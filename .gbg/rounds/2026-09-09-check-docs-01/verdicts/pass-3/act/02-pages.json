@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "e444be6ab10844ea17db90797abe745d",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/pages#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Reflection.jl:157,163 now read '...surface of the config `cfg`, driven...' and 'The keyword `exempt` is the ledger's `[exemption.match]` predicate, called per trigger as `exempt(hit)`'. Ran argcov's own regex (Regex(\"`cfg`\") / Regex(\"`exempt`\")) against the literal new docstring body in Julia: both return true, so argcov's own self-check now passes where it previously failed. Diff hunk: docs/src/... n/a — src/Reflection.jl @@ -154,13 +154,14 @@.",
+      "class_surfaces": [
+        {"surface": "src/Reflection.jl:154-167 (argcov's own docstring)", "swept": true, "evidence": "the finding's own text names only argcov's docstring as the trigger ('this docstring is a real trigger'); no other function is named as sharing the defect. Both `cfg` and `exempt` now appear as bare backtick spans in the body and pass the exact regex from Reflection.jl:190, verified by direct simulation."}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/pages#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/index.md:16-17 changed from '...one exemption ledger, its domain hats, its seed catalogue...' to '...its domain hats (the reviewer personas of `/check-consistency`, one per aspect of the package's field), its seed catalogue...'. This matches ARCHITECTURE.md:26's canonical gloss ('a hat is a persona in the panel') and the domain-hat examples (gpu-kernel-practitioner, tooling-maintainer) as package-specific personas, added exactly at the single flagged first use, per the hint ('Add a short clause ... on first use').",
+      "class_surfaces": [
+        {"surface": "docs/src/index.md:17", "swept": true, "evidence": "the finding's own text states 'hats' is 'used exactly once across the whole audited surface' at index.md:17 — no other pages-lane surface is named as carrying the same undefined-term class; grep of docs/src/*.md confirms no other 'hat'/'hats' use outside index.md and the generated architecture.md (which the finding excludes from 'the whole audited surface')."}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/pages#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/rounds.md:6-8 changed 'the lane agents write their lane files' to 'the lane agents — one agent per surface or territory the instrument covers, a **lane** — write their lane files', inserted at line 7, the page's first use of 'lane', which precedes every other flagged occurrence (lines 16-19, 36). Wording matches ARCHITECTURE.md:26's own glossary definition of lane ('a surface or territory in the other three [instruments]').",
+      "class_surfaces": [
+        {"surface": "docs/src/guide/rounds.md:7 (first use)", "swept": true, "evidence": "definitional clause now present at first use, matching the hint's exact remedy ('Add one clause at first use')."},
+        {"surface": "docs/src/guide/rounds.md:16,17,18,19,36 (later operational uses: 'lane 00-scans', 'each lane writes', 'a DEAD lane', 'a hard-scan hit of lane 00-scans')", "swept": true, "evidence": "all fall after line 7 in reading order, so each is now covered by the definition established at first use; no separate gloss needed per the finding's own hint and RULE.DOC.TERMS_DEFINED (define at first use, not every use)."}
+      ]
+    }
+  ]
+}

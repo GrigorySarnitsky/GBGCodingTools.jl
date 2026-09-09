@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "b35dac7075583b939d7c23623cc6a420",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/rationale#1",
+      "verdict": "ABSENT",
+      "evidence": "ARCHITECTURE.md:135 now reads 'there is no Python (the one transitional exception, D8's consolidate.py, was deleted on 2026-09-09...)'; :448-458 says 'was BYTE-COMPARED...passed...the Python was deleted in that commit' (past tense); :956-965 file tree lists only Consolidate.jl, no consolidate.py row. grep -rn 'consolidate\\.py' outside .gbg/: no hits."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/rationale#2",
+      "verdict": "ABSENT",
+      "evidence": "ARCHITECTURE.md:559-563 now reads 'the stdlibs TOML, SHA..., Dates, Pkg (the pin checks and self verify read Pkg.dependencies()), Random (the pass nonce) and Test, plus JSON3...and Gumbo + AbstractTrees' — Pkg and Random are both present with their rationale."
+    }
+  ]
+}

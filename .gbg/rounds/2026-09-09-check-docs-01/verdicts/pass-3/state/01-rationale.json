@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "e444be6ab10844ea17db90797abe745d",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/rationale#1",
+      "verdict": "ABSENT",
+      "evidence": "grep -rn consolidate.py docs/ ARCHITECTURE.md: line 135 now reads 'the one transitional exception, D8's consolidate.py, was deleted on 2026-09-09 when its Julia port passed the byte comparison'; D8 (449-455) says 'was scheduled with the fallback in hand' and 'the Python was deleted in that commit' (past tense); the file-tree entry (958) lists only Consolidate.jl, no .py row. No consolidate.py file exists outside .gbg/."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/rationale#2",
+      "verdict": "ABSENT",
+      "evidence": "docs/ARCHITECTURE.md:559-563 now reads '...Dates, Pkg (the pin checks and self verify read Pkg.dependencies()), Random (the pass nonce) and Test, plus JSON3 ... and Gumbo + AbstractTrees ... both hard dependencies' — matches Project.toml's full [deps] list (AbstractTrees, Dates, Gumbo, JSON3, Pkg, Random, SHA, TOML, Test) exactly."
+    }
+  ]
+}

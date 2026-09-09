@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "lane": "ext",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "1a4ff7cf180770ace7a155f1f7c8a1fe",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/ext#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:4 now reads 'The `Documenter` extension of `GBGCodingTools`' (diff: '-The Documenter extension' / '+The `Documenter` extension') and line 6 now reads 'so no shim call ever loads `Documenter`.' (diff: '-loads Documenter.' / '+loads `Documenter`.'), matching the hint verbatim.",
+      "class_surfaces": [
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:4",
+          "swept": true,
+          "evidence": "'The `Documenter` extension of `GBGCodingTools`' — bare occurrence now backticked."
+        },
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:6",
+          "swept": true,
+          "evidence": "'so no shim call ever loads `Documenter`.' — bare occurrence now backticked."
+        },
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:10 and :28",
+          "swept": true,
+          "evidence": "`using GBGCodingTools, Documenter` and `Documenter.makedocs(...)` are real code, not prose, so they are correctly left unbackticked; grep confirms no remaining bare prose mention of Documenter in the file."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/ext#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:16 now reads 'Turns the exit code `code` of the verb `verb` into a build failure' (diff: '-Turns a verb's exit code into a build failure' / '+Turns the exit code `code` of the verb `verb` into a build failure'), binding `verb` as its own code span exactly matching the signature parameter name, alongside the already-bound `code`.",
+      "class_surfaces": [
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:16",
+          "swept": true,
+          "evidence": "'the verb `verb`' — verb now bound as a plain code span naming the actual parameter, satisfying a mechanical ARGCOV sweep from the `check(verb::AbstractString, code::Integer)` signature."
+        }
+      ]
+    }
+  ]
+}

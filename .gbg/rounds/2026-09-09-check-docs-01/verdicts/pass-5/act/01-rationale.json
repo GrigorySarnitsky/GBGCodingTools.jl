@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "0357bb3c268e1e1eef1a0402e66f5277",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/rationale#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:135 now reads 'there is no Python (the one transitional exception, D8's `consolidate.py`, was deleted on 2026-09-09 when its Julia port passed the byte comparison)'; :448-455 (D8) rewritten past-tense with the real numbers ('it passed on 2026-09-09 on 18 PF pages and 22 IT pages, all four manuscripts byte-equal, and the Python was deleted in that commit'), matching Consolidate.jl:2-4's own comment; the §3 tree's consolidate.py row (old 956-958) is deleted outright. grep -rn 'consolidate\\.py' docs/ (outside the historical Revision-4 log at :2368/:2381, which correctly narrates 2026-09-08 history) shows no remaining present/future-tense claim, and no .py file exists anywhere outside .gbg/.",
+      "class_surfaces": [
+        {"surface": "docs/ARCHITECTURE.md:135", "swept": true, "evidence": "'there is no Python (the one transitional exception, D8's `consolidate.py`, was deleted on 2026-09-09 when its Julia port passed the byte comparison).' — past tense, matches Consolidate.jl."},
+        {"surface": "docs/ARCHITECTURE.md:448-455", "swept": true, "evidence": "'Python file was `consolidate.py`… was BYTE-COMPARED… it passed on 2026-09-09 on 18 PF pages and 22 IT pages, all four manuscripts byte-equal, and the Python was deleted in that commit… This was the riskiest single port… and was scheduled with the fallback in hand.' Fully past tense, numbers match source comment."},
+        {"surface": "docs/ARCHITECTURE.md:956-958 (§3 tree)", "swept": true, "evidence": "the `consolidate.py` row under src/CLI/ is removed entirely from the tree block (diff shows a pure deletion, no replacement row needed since the file no longer exists)."},
+        {"surface": "src/CLI/Consolidate.jl:2-4", "swept": true, "evidence": "unchanged by the diff because it was already correct: 'ACCEPTANCE (1.6) PASSED 2026-09-09: … the Python was deleted in that commit.' — the source of truth the prose now matches."}
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/rationale#2",
+      "verdict": "LINE-ONLY",
+      "question": "strategy",
+      "evidence": "D9's paragraph (ARCHITECTURE.md:562-563) was correctly repaired to list all nine Project.toml deps (TOML, SHA, Dates, Pkg, Random, Test, JSON3, Gumbo, AbstractTrees), matching Project.toml:6-15 exactly and correctly attributing Pkg to 'the pin checks and self verify' (Self.jl:59) and Random to 'the pass nonce' (Passes.jl:80). But §3's repository-layout tree, ARCHITECTURE.md:935-936, carries an independent 'minimal deps' enumeration for the identical Project.toml — 'deps: TOML, SHA, Dates, Test (stdlib), JSON3, Gumbo, AbstractTrees' — and it is untouched by this diff (git diff shows no change near line 930-940), still omitting Pkg and Random from what reads as an exhaustive list.",
+      "class_surfaces": [
+        {"surface": "docs/ARCHITECTURE.md:559-563 (D9)", "swept": true, "evidence": "now enumerates all nine deps including `Pkg` and `Random` with correct rationale clauses, verified against Project.toml's actual [deps] block."},
+        {"surface": "docs/ARCHITECTURE.md:935-936 (§3 repository-layout tree, Project.toml row)", "swept": false, "evidence": "'Project.toml name, uuid, version, julia = \"1.11\"; deps: TOML, SHA, Dates, Test (stdlib), JSON3, Gumbo, AbstractTrees; weakdeps: Documenter…' — same nine-vs-seven omission of `Pkg` and `Random`, unchanged by this commit's diff."},
+        {"surface": "Project.toml:6-15", "swept": true, "evidence": "source of truth, unchanged (correctly lists AbstractTrees, Dates, Gumbo, JSON3, Pkg, Random, SHA, TOML, Test) — the standard the prose is now checked against."},
+        {"surface": "src/CLI/Self.jl:59", "swept": true, "evidence": "unchanged evidence citation ('entry = get(Pkg.dependencies(), PKG_UUID, nothing)'), correctly reflected in the D9 fix."},
+        {"surface": "src/CLI/Passes.jl:80", "swept": true, "evidence": "unchanged evidence citation ('nonce = bytes2hex(rand(RandomDevice(), UInt8, 16))'), correctly reflected in the D9 fix."}
+      ]
+    }
+  ]
+}

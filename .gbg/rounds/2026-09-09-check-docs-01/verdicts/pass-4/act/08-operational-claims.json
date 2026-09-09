@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "b35dac7075583b939d7c23623cc6a420",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/operational-claims#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TreeHash.jl:47 now reads `_nonempty(path, skip) || continue  # git tracks no empty directory`, exactly the hint's suggested fix, replacing the always-false `isempty(_nonempty(path, skip)) && continue`. Verified with a standalone Julia run that `_nonempty` returns a Bool and `false || continue` now skips. A new test/treehash.jl compares `TreeHash.tree_hash` against real `git write-tree` on a tree containing a recursively-empty subdirectory (matching git's SHA exactly) and against a directory containing only an empty subdirectory (matching git's canonical empty-tree id `4b825dc6...`). `julia --project=. -e 'using Pkg; Pkg.test()'` shows \"tree hash vs git write-tree | 2 2\" passing.",
+      "class_surfaces": [
+        {
+          "surface": "src/TreeHash.jl:47",
+          "swept": true,
+          "evidence": "`isempty(_nonempty(path, skip)) && continue` (always false) changed to `_nonempty(path, skip) || continue` — the only site the finding names as carrying the bug."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-01/operational-claims#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Witnesses.jl:167 now reads `f == 0 && blocked !== nothing && return WitnessResult(name, :blocked, p, f, e, blocked)` in the `e > 0` branch (was `blocked === nothing || return ...`), so a witness with `f>0` and `e>0` together now falls through to `:broken` with a reason naming both counts (\"$f assertion(s) failed AND ... an assertion threw\"). Both docstrings (WitnessResult ~32-33, run_one ~145-148) were reworded to state `:blocked` requires zero failures. test/witnesses.jl adds `blocked_but_failed.jl` reproducing the finding's exact repro (a failing @test plus an erroring @test under a `# blocked:` header) and asserts `st[\"blocked_but_failed.jl\"] == :broken` and that the reason names the failed assertion count; `Pkg.test()` shows \"witness runner | 13 13\" passing.",
+      "class_surfaces": [
+        {
+          "surface": "src/Witnesses.jl:32-33",
+          "swept": true,
+          "evidence": "WitnessResult docstring now: \":blocked` (the file declares `# blocked: <reason>`, reported its counts, errored and failed nothing; a run that reported no counts is `:broken`)\" — drops the false \"was never seen to fail\" implication and requires f==0."
+        },
+        {
+          "surface": "src/Witnesses.jl:145",
+          "swept": true,
+          "evidence": "run_one docstring now: \"or `:blocked` (it errored, failed nothing, and carries a `# blocked: <reason>` header; one that also failed is `:broken`, its reason naming both counts, and so is one that reported no counts at all — an exit or a crash — header or not)\"."
+        },
+        {
+          "surface": "src/Witnesses.jl:165-168",
+          "swept": true,
+          "evidence": "the `e > 0` branch now gates `:blocked` on `f == 0`; a witness that also failed returns `:broken` with a reason naming both counts, per the hint."
+        }
+      ]
+    }
+  ]
+}

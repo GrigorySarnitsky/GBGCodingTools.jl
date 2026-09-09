@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "50be23464e9d7fd6938d2fd0251b7925db18a1e3663b5f3de9d41c673f54b0f6",
+  "pass_nonce": "e444be6ab10844ea17db90797abe745d",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-01/built-html#1",
+      "verdict": "ABSENT",
+      "evidence": "src/Reflection.jl:159 now single backticks (`n`)/(`n = 2`); built Reflection.html shows plain <code>n</code>. All 6 ARCHITECTURE.md rows now describe delimiters in prose (\"a double-backtick span\", \"a single-backtick span holding...\") instead of nesting backticks. Grepped every docs/build/**/*.html katex annotation for a literal backtick and for '$`' text: zero matches site-wide."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/built-html#2",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/verbs.md now has a \"Fleet and release\" @docs block listing GBGCodingTools.Fleet, .bump, .release, .selftest; docs/build/guide/verbs.html contains id=\"GBGCodingTools.Fleet\"/.bump/.release/.selftest, no missing-docstring warnings. All four verbs now render."
+    },
+    {
+      "id": "2026-09-09-check-docs-01/built-html#3",
+      "verdict": "ABSENT",
+      "evidence": "src/GBGCodingTools.jl module docstring now has bullet: \"[`scan_docs`](@ref), [`scan_html`](@ref), [`register_scan!`](@ref) — the deterministic text and built-HTML scan engine over `catalog/scans.toml`\". docs/build/index.html contains this exact text with linked scan_docs/scan_html/register_scan."
+    }
+  ]
+}
