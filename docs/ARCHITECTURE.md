@@ -2311,13 +2311,13 @@ docstrings except by `SCAN.SWALLOWED_ESCAPE`, which is what that scan is for.
 | `SCAN.NEG_THIN_BIGL` | `RULE.TEX.SPACING` | hard | all | julia | PF `\!` before `\bigl`/`\Bigr` | `neg-thin-bigl` |
 | `SCAN.NEG_THIN_DOUBLE` | `RULE.TEX.SPACING` | hard | all | julia | PF/IT `\!\!` | `neg-thin-double` |
 | `SCAN.MATHBB_DIGIT` | `RULE.TEX.MATHBB` | hard | all | julia | PF/IT `\mathbb` on a digit | `mathbb-digit` |
-| `SCAN.MATHBF` | `RULE.TEX.MATHBF` | hard | all | julia | IT `\\mathbf` ban, restricted to strings outside `notation.mathbf_allowed` | `mathbf-banned` |
+| `SCAN.MATHBF` (admits `\mathbf{1}` in every package, RULE.TEX.MATHBF's standing exception, whatever `notation.mathbf_allowed` holds) | `RULE.TEX.MATHBF` | hard | all | julia | IT `\\mathbf` ban, restricted to strings outside `notation.mathbf_allowed` | `mathbf-banned` |
 | `SCAN.BOLDSYMBOL_UNBRACED` | `RULE.TEX.BOLDSYMBOL_BRACED` | hard | all | julia | IT `\\boldsymbol(?!\{)` | `boldsymbol-unbraced` |
 | `SCAN.LEFTRIGHT` | `RULE.TEX.LEFTRIGHT` | hard | all | julia | IT must-be-empty `\\(left\|right)(?![a-zA-Z])`, with `\left\{`/`\right.` (the system idiom) excluded by the pattern | `left-right` |
 | `SCAN.REF_ABUT_CODE` | `RULE.DOC.REF_ABUT` | hard | src, rationale | julia | PF: a `@ref` link immediately followed by a backtick | `ref-abut` |
 | `SCAN.FIELD_DOCS` | `RULE.DOC.FIELDS` | hard | src, ext | julia | PF `field_docs.py` (GHOST / UNDOC / NOLIST / STALE; `NO_FIELD_LIST` becomes ledger `scope = "scan"` entries; zero types matched ⇒ exit 2) | `ghost-field`, `undoc-field` |
 | `SCAN.LINK_UNIFORMITY` | `RULE.DOC.LINKS` | hard | src | julia | PF `link_uniformity.py` (adjacent-run unit; operators and the own binding excluded; no exports parsed ⇒ exit 2) | `mixed-link-run` |
-| `SCAN.SIBLING_LINK` | `RULE.DOC.SIBLING_LINK` | hard | all | julia | new (owner's home-page review 2026-09-09): per page, rationale document, Literate file or docstring, the first mention of each sibling must sit inside `[`Name`](site)`; names and sites from the shipped `fleet.toml` | `bare-sibling` |
+| `SCAN.SIBLING_LINK` | `RULE.DOC.SIBLING_LINK` | hard | all | julia | new (owner's home-page review 2026-09-09): per page, rationale document, Literate file or docstring, the FIRST mention of each sibling must sit inside `[`Name`](site)` and every LATER mention must not; names and sites from the shipped `fleet.toml` | `bare-sibling`, `linked-later-mention` |
 | `SCAN.ARG_BULLET_BOLD` | `RULE.DOC.ARG_BULLET` | hard | src, ext | julia | PF: a list bullet opening with a bold backtick span (ledger `RULE.DOC.ARG_BULLET` silences it for SS if the owner so decides) | `bold-arg-bullet` |
 | `SCAN.INLINE_MATH_SPLIT` | `RULE.TEX.INLINE_ONE_LINE` | hard | all | julia | PF/IT/SS `lint_inline_math` (fence- and docstring-aware; list-leader continuation inside an open double-backtick span) | `inline-math-split` |
 | `SCAN.SWALLOWED_ESCAPE` | `RULE.TEX.SWALLOWED_ESCAPE` | hard | src, ext | julia | PF `lint_swallowed_escapes` `(?<!\\)\\[abefnrtv0-7xuU]` inside docstrings | `swallowed-escape` |

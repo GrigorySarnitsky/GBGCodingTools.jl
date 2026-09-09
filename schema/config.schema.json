@@ -1,6 +1,6 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
- "title": ".gbg/config.toml — a consumer's one config file (docs/ARCHITECTURE.md §5)",
+ "title": ".gbg/config.toml \u2014 a consumer's one config file (docs/ARCHITECTURE.md \u00a75)",
  "type": "object",
  "additionalProperties": false,
  "required": [
@@ -305,7 +305,8 @@
      "$ref": "#/$defs/strlist",
      "default": [
       "\\mathbf{1}"
-     ]
+     ],
+     "description": "the `\\mathbf` strings this package admits. `\\mathbf{1}` is RULE.TEX.MATHBF's standing exception and SCAN.MATHBF admits it whatever this list holds, so emptying the list does not forbid it"
     }
    }
   },

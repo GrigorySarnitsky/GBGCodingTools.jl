@@ -123,7 +123,7 @@ rule = "RULE.DOC.SIBLING_LINK"
 tier = "hard"
 surfaces = ["all"]
 runner = "julia"
-fixture = ["bare-sibling"]
+fixture = ["bare-sibling", "linked-later-mention"]
 
 [[scan]]
 id = "SCAN.ARGS_FORM"

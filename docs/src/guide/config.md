@@ -15,7 +15,8 @@ references anchors, the glossary file, and any data or script surface whose comm
 `[schema]`, `[[scans.custom]]`.
 
 Four values vary by package and are substituted into the rendered policy: `rubric.leading_identity`,
-`notation.vectors`, `docs.admonition_titles`, `notation.mathbf_allowed`; the fifth variation point,
+`notation.vectors`, `docs.admonition_titles`, `notation.mathbf_allowed` (which never forbids
+`\mathbf{1}`, the indicator and identity every package is granted); the fifth variation point,
 `instruments.check-docs.argcov_policy`, is a tier. Everything else about the instruments is a constant
 of the tool, and changing one is a MAJOR release.
 

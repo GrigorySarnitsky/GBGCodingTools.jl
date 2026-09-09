@@ -7,6 +7,9 @@ A page of planted page-level defects; the fixture's self-tests scan it with a de
 
 A bare sibling: this page mentions `GBGPeriodicFields` without a link to its documentation site.
 
+A twice-linked sibling: [`GBGIsotropicTurbulence`](https://grigorysarnitsky.github.io/GBGIsotropicTurbulence.jl/) is linked here, correctly, and
+then linked a second time — [`GBGIsotropicTurbulence`](https://grigorysarnitsky.github.io/GBGIsotropicTurbulence.jl/) — where a bare code span belongs.
+
 - An item holding a table:
   | a | b |
   |---|---|

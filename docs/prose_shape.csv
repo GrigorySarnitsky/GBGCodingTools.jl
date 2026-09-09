@@ -50,7 +50,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1089,541,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
 "ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",2936,2810,0
-"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1444,1269,0
+"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1462,1287,0
 "ARCHITECTURE.md § §12.C Doctor ids",135,134,0
 "ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
 "ARCHITECTURE.md § §3 Repository layout",1,1,0
@@ -334,7 +334,7 @@ unit,words,longest_paragraph,admonitions
 "Witnesses.jl :: witness_project(root, witness_env, package) -> String",48,30,0
 "Witnesses.md § Witnesses",22,22,1
 "code_in_math.jl :: math_spans(lines) -> Vector{Tuple{Int,String}}",48,45,0
-"config.md § [The config](@id config)",184,76,1
+"config.md § [The config](@id config)",196,76,1
 "html_docstring_once.jl :: page_bindings(page) -> Vector{NamedTuple}",43,40,0
 "html_stray_math.jl :: math_sources(page) -> Vector{String}",37,34,0
 "index.md § How a package adopts it",71,71,0
