@@ -87,7 +87,7 @@ unit,words,longest_paragraph,admonitions
 "Consolidate.jl :: discover_pages(build_dir) -> Vector{Tuple{String,String,Stri",82,79,0
 "Consolidate.jl :: page_text(path) -> String",36,33,0
 "Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",104,100,0
-"DocLints.jl :: makedocs(cfg; kwargs...)",146,65,0
+"DocLints.jl :: makedocs(cfg; kwargs...)",161,65,0
 "Doctor.jl :: Check",37,30,0
 "Doctor.jl :: Doctor",79,78,0
 "Doctor.jl :: cmd_doctor(args) -> Int",29,26,0

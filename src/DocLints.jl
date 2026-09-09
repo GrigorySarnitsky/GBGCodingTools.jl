@@ -8,7 +8,8 @@ loads once `Documenter` is in the environment — a consumer's `make.jl` already
 The arguments are:
 
 - `cfg` — the validated config object [`Config.read`](@ref) returns; it names the surfaces the scans
-  read and the instruments whose rounds gate the build.
+  read and the instruments whose open rounds gate the build (a round is one run of an instrument over
+  the consumer, tracked under `.gbg/rounds/`).
 - `kwargs...` — passed through to `Documenter.makedocs` unchanged (`sitename`, `pages`, `modules`,
   `checkdocs`, `doctest`, `format`, …).
 
