@@ -12,3 +12,11 @@ commit and its own release rather than inside a round that scores it. Carried in
 - The four consumer packages' docstrings were written to the docstring order this release changes, and
   they are frozen until their migration phase. Each migrates at its bump.
   `2026-09-09-audit-changes-01/behaviour-change#5`, `contract-drift#5`.
+- The sweep check added this round (`pass open` refuses while an open finding names an untouched file)
+  requires EVERY named location to move. That is right for a check-docs finding, whose `locations` are
+  the sites of the defect, and wrong for an audit finding, whose locations also carry the blast radius
+  it cites as evidence: this round's own fix pass tripped it nineteen times, every one of them a file
+  the finding named as evidence rather than as a place needing a change. Either the check counts one
+  named location as enough, or `locations` gains a way to say which entries are defect sites. It is a
+  change to the closure engine, which scores every round, so it waits for its own release.
+  Found by running the check, not by reading it.
