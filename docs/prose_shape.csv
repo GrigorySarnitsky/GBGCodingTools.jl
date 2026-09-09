@@ -166,7 +166,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",131,80,0
 "Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
 "Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",54,51,0
-"Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",122,84,0
+"Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",135,97,0
 "Preflight.jl :: resolve_hunt_lanes(cfg) -> Vector{Dict}",22,19,0
 "Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",28,23,0
 "Preflight.jl :: stamps(cfg; record = nothing) -> Dict",83,77,0

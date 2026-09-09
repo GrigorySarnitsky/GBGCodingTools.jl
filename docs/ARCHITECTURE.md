@@ -932,7 +932,7 @@ that "tools" is a cover word was withdrawn (2026-09-08).
 
 ```
 GBGCodingTools.jl/
-  Project.toml                  name, uuid, version, julia = "1.11"; deps: TOML, SHA, Dates, Test (stdlib), JSON3, Gumbo,
+  Project.toml                  name, uuid, version, julia = "1.11"; deps: TOML, SHA, Dates, Pkg, Random, Test (stdlib), JSON3, Gumbo,
                                 AbstractTrees; weakdeps: Documenter (compat-bounded) → extension GBGCodingToolsDocumenterExt
   CHANGELOG.md                  per tag: MAJOR/MINOR/PATCH, instruments affected, "rates comparable: yes|no"
   README.md                     what it is, the three bootstrap commands, the design sentence
