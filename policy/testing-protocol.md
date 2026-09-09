@@ -60,9 +60,10 @@ handled — which is precisely when nobody builds the check; afterwards the rule
 compliance. When a rule is written down, name what would catch its next violation in its `RULES.toml` `check`
 field: a `scan:`, `doctor:` or `test:` id, a `harness:` binding the tool enforces it by, `panel` for a
 rule only a reading panel can decide, `session` for a working agreement no artefact records, or
-`weakness` — a check is possible and none is built. `panel` and `session` are answers, and a rule no
-program could decide takes `panel`, not `weakness`; `weakness` is a debt, and "someone remembering this
-rule" is not enforcement. A sweep reporting zero is the one to distrust:
+`weakness` — a check is possible and none is built. `panel` and `session` are answers; `weakness` is a
+debt. A rule this rulebook has long called a known weakness because no program could ever decide it
+is `panel`, not `weakness`: `weakness` is reserved for the check that could exist and does not.
+"Someone remembering this rule" is not enforcement. A sweep reporting zero is the one to distrust:
 falsify it against a fixture carrying a known positive before believing it.
 
 ### RULE.TEST.EXAMPLES_RUN
