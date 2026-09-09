@@ -14,7 +14,7 @@ families are the tool's own enforcement.
 module Doctor
 
 using TOML, Dates, JSON3, Pkg
-using ..GBGCodingTools: GBGCodingTools, PKG_NAME, PKG_UUID, JULIA_FLOOR, Config, Ledger, Sync, RoundFiles, Witnesses, Reflection,
+using ..GBGCodingTools: GBGCodingTools, PKG_NAME, PKG_UUID, JULIA_FLOOR, Config, Ledger, Sync, RoundFiles, Git, Witnesses, Reflection,
       load_schema, instrument_schema, validate, parse_options, VERBS, tool_version, running_dev, tool_sub_envs, manifest_tree_sha, self_verify,
       scan_catalog, run_scan, SCANS, prose_lines, surface_kind
 
@@ -226,9 +226,8 @@ function pinned_and_managed(ctx)
     return unique(files)
 end
 check!("CFG.TORN", ctx -> begin
-    st = git(ctx, "status", "--porcelain", "--untracked-files=no")
-    st === nothing && return na("CFG.TORN", "not a git repository")
-    modified = Set(String(strip(l[4:end])) for l in split(st, '\n') if !isempty(l))
+    Git.is_repo(ctx.root) || return na("CFG.TORN", "not a git repository")
+    modified = Set(p for (_, p) in Git.porcelain(ctx.root; untracked = false))
     watched = Set(pinned_and_managed(ctx))
     open_rounds = [r.name for r in RoundFiles.rounds(ctx.cfg) if r.state == :open]
     torn = [f for f in modified if f in watched && !any(o -> startswith(f, ".gbg/rounds/$o/"), open_rounds)]

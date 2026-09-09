@@ -1,0 +1,22 @@
+unit,words,longest_paragraph,admonitions
+"ARCHITECTURE.md § 1. Purpose",49,49,0
+"ARCHITECTURE.md § 2. Invariants",40,40,0
+"ARCHITECTURE.md § GBGFixture — architecture",22,22,1
+"ARCHITECTURE.md § References",22,22,0
+"ARCHITECTURE.md § item 1",21,21,0
+"ARCHITECTURE.md § item 2",17,17,0
+"FixtureA.jl :: FixtureA",45,30,0
+"FixtureA.jl :: Grid(n, spacing)",40,15,0
+"FixtureA.jl :: scale!(destination, source, α) -> destination",67,26,0
+"FixtureA.jl :: scale(source, α) -> Vector",30,26,0
+"FixtureA.jl :: twice(x) -> typeof(x)",18,15,0
+"FixtureB.jl :: FixtureB",33,18,0
+"FixtureB.jl :: mean_value(u) -> Number",53,28,0
+"FixtureB.jl :: total_energy(u, grid) -> Number",54,50,0
+"FixtureC.jl :: FixtureC",30,18,0
+"FixtureC.jl :: Options(; tolerance = 1e-8, iterations = 100)",38,12,0
+"FixtureC.jl :: describe(options) -> String",21,18,0
+"FixtureC.md § Internal API",14,14,0
+"GBGFixture.jl :: GBGFixture",72,41,0
+"index.md § GBGFixture",83,61,1
+"notation.md § Notation",94,72,1

@@ -1,0 +1,36 @@
+<!-- gbg:managed begin vdev sha256:a574af179a6b19f85fecd01c044d397b0598ed6406b717147689dade18a967ca — rewritten by `gbg sync`; do not edit -->
+@.gbg/policy/00-index.md
+## GBGCodingTools — this package's parameters and declared deviations
+- Package `GBGFixture`; leading identity: physical meaning; vectors: component notation.
+- Deviations: (none)
+- "Check the docs" means run `/check-docs`. Instruments run only on the user's request, in words or by
+  slash — never unasked; unasked, run only `Pkg.test()`.
+<!-- gbg:managed end -->
+
+# CLAUDE.md — GBGFixture
+
+The toy consumer of `GBGCodingTools`. It exists to be scanned, built and gated by the tool's tests;
+its content is deliberately small and written to the shared rubric.
+
+## Modules and wiring
+
+- `FixtureA` (grid, scaling), `FixtureB` (reductions), `FixtureC` (options, display); the umbrella
+  re-exports all three.
+
+## Core invariants
+
+- An in-place operation writes its destination and nothing else; the destination may alias the source.
+- A reduction never allocates a field-sized temporary.
+- The energy convention is one half; no other factor appears anywhere.
+
+## Code generation rules
+
+- Every formula is LaTeX; every code object is bound to its symbol on the notation page.
+
+## Working agreements
+
+- The fixture changes only together with the tool test that reads it.
+
+## Current state
+
+Complete for its purpose. Live plans are in `docs/ROADMAP.md`.

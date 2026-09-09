@@ -310,7 +310,7 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     errs = validate(load_schema("tally"), tally); isempty(errs) || throw(RoundError("tally.json would not validate: " * join(errs, "; ")))
     write_json(joinpath(pd, "tally.json"), tally)
     md = IOBuffer()
-    println(md, "# Tally — $round pass $k\n\n$(closed)/$(length(findings)) closed, $(length(open_ids)) open; demoted by rule: $demoted; adjudicated share: $(round(tally["adjudicated_share"]; digits = 2)); plateau: $flat pass(es) flat.\n")
+    println(md, "# Tally — $round pass $k\n\n$(closed)/$(length(findings)) closed, $(length(open_ids)) open; demoted by rule: $demoted; adjudicated share: $(Base.round(tally["adjudicated_share"]; digits = 2)); plateau: $flat pass(es) flat.\n")
     for id in sort!(collect(keys(per_id)))
         e = per_id[id]
         println(md, "- `$id` act=$(something(e["act"], "—"))$(e["act_demoted"] ? " (demoted)" : "") state=$(something(e["state"], "—")) → $(something(e["closed_by"], "OPEN"))", haskey(e, "adjudicated_entry") ? " [$(e["adjudicated_entry"])]" : "")

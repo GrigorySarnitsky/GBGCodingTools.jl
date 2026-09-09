@@ -5,6 +5,29 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 
 ## Unreleased
 
+(nothing yet)
+
+## 1.0.0-rc.1 — 2026-09-09
+
+The first release candidate: MAJOR (the first). Instruments affected: all four, first issue. Rates
+comparable: no (no earlier version).
+
+- The package as `IMPLEMENTATION.md` Phase 1 states it: the CLI (`gbg <noun> <verb>`, every verb of the
+  closed table), the config and its schema with the eighteen artefact schemas, the policy layer with
+  `RULES.toml`, the templates and `sync`, `init` with the baseline and seed migration, the doctor's
+  full check table, the text-scan engine with the 39 catalogued scans, the Documenter wrapper and the
+  built-HTML scans, the test harness, the witness runner, the four instruments' protocols, catalogues
+  and Workflow scripts, and the round machinery (preflight, prepare, bank, pass open, grade, close,
+  abandon) with the seeds, recall and demotion engines.
+- The tool is its own fifth consumer: its `.gbg/`, its managed files, its site through its own wrapper,
+  its tests ending in `TestHarness.gate()`.
+- The fixture `fixture/GBG Fixture/` with its defects corpus (42 planted classes, 20 clean twins), and
+  the self-test suite over it.
+- Revision 9 of the architecture: Workflow payloads are files, args carry paths.
+- Nothing pins this tag; it exists so the tool's first `/check-docs` round over its own docs opens at
+  a clean tag.
+
+
 - Phase 1 in progress: the skeleton, the CLI, the ports (see `IMPLEMENTATION.md`).
 - 1.6 consolidator acceptance (2026-09-09): `Consolidate.jl` over Gumbo produced byte-equal
   `manuscript-{full,siteonly}.md` pairs against the consumers' `consolidate.py` on PF's build (18 pages,

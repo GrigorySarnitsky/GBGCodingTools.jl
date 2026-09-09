@@ -171,11 +171,11 @@ function prepare(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
             results, _ = scan_html(cfg, joinpath(root, cfg["surfaces"]["built_html"]); io = rio)
             for r in results, h in r.hits; push!(banked, scan_finding(r, h)); end
         end
-        lane = Dict{String,Any}("schema_version" => 1, "round" => round, "lane" => "00-scans", "candidates_found" => length(banked),
+        lane = Dict{String,Any}("schema_version" => 1, "round" => round, "lane" => "scans", "candidates_found" => length(banked),
                                 "checked" => ["scan docs", "scan html", "reflection checks"], "findings" => banked)
         mkpath(joinpath(dir, "findings"))
         open(joinpath(dir, "findings", "00-scans.json"), "w") do f; JSON3.pretty(f, JSON3.write(lane)); println(f); end
-        println(io, "prepare: $(length(banked)) hard scan hit(s) banked as lane 00-scans; the full report (every triage line) is $report — read ALL of it")
+        println(io, "prepare: $(length(banked)) hard scan hit(s) banked as lane 00-scans (key `scans`); the full report (every triage line) is $report — read ALL of it")
         return 0
     elseif inst == "audit-changes"
         roster = [Dict{String,Any}(r) for r in rec["roster"]]
@@ -456,6 +456,36 @@ function rerun(cfg::AbstractDict, round::AbstractString, lanes::AbstractVector{<
 end
 
 """
+    import_empty(cfg, round, reason; io = stdout) -> Int
+
+`gbg round import --empty <round> --reason "…"`: writes a round holding only an abandoned `ROUND.toml`
+and an `import.json` with `source = "none"` — the Step-0 scratch form for a legacy pile that yields
+nothing. The arguments are `cfg`, the validated config; `round`, the round id to create (refused when
+it exists); `reason`, the abandon reason; and `io`, where the outcome is printed. The six legacy pile
+readers (`pf-doc-review`, `pf-check-docs`, `pf-findings-json`, `it-closure`, `it-audit-latest`,
+`it-rounds-json`) are Phase 2's scratch tools and are written when those imports run; until then
+`gbg round import <pile>` refuses, naming this. Returns the exit code.
+"""
+function import_empty(cfg::AbstractDict, round::AbstractString, reason::AbstractString; io::IO = stdout)
+    occursin(r"^\d{4}-\d{2}-\d{2}-(check-docs|check-consistency|bug-hunt|audit-changes)-\d{2}$", round) || (println(io, "import: $round is not a round id <date>-<instrument>-<NN>"); return 2)
+    length(strip(reason)) >= 12 || (println(io, "import --empty needs --reason (≥ 12 characters)"); return 2)
+    dir = Preflight.round_dir(cfg, round)
+    isdir(dir) && (println(io, "import: $round exists; an existing round is never overwritten"); return 2)
+    mkpath(dir)
+    inst = match(r"-(check-docs|check-consistency|bug-hunt|audit-changes)-", round).captures[1]
+    st = Preflight.stamps(cfg)
+    rec = merge(st, Dict{String,Any}("round" => round, "instrument" => inst, "schema_version" => 1, "head" => something(Git.head(cfg["root"]), "0"^40),
+        "roster" => Any[], "cost" => "economy", "strength" => "economy", "hostname" => gethostname(), "model_hint" => Preflight.economy_model(),
+        "opened" => timestamp(), "dead_lanes" => String[], "passes" => 0, "abandoned" => Dict("reason" => reason, "open_ids" => String[])))
+    save(dir, rec)
+    open(joinpath(dir, "import.json"), "w") do f
+        JSON3.pretty(f, JSON3.write(Dict("schema_version" => 1, "source" => "none", "format" => "none", "title_to_id" => Dict{String,Any}(), "imported" => timestamp(), "reason" => reason))); println(f)
+    end
+    println(io, "import --empty: $round written (abandoned, source none) — a Step-0 scratch round; never commit it (ARCHITECTURE Revision 8)")
+    return 0
+end
+
+"""
     list(cfg; io = stdout) -> Int
 
 `gbg round list`: one line per round — state, instrument, opened, passes, open ids of the latest
@@ -534,6 +564,7 @@ function cmd_round(args)
         end
         length(o.positional) >= 2 || (println(stderr, "round $verb needs <round>"); return 2)
         round = o.positional[2]
+        verb == "import" && "empty" in o.flags && (round = o.positional[2])
         verb == "prepare" && return prepare(cfg, round)
         verb == "build" && return build(cfg, round)
         verb == "test" && return test(cfg, round)
@@ -543,6 +574,11 @@ function cmd_round(args)
         verb == "abandon" && return abandon(cfg, round, get(o.values, "reason", ""))
         verb == "grade" && return GBGCodingTools.Passes.grade(cfg, round)
         verb == "close" && return GBGCodingTools.Passes.close(cfg, round)
+        if verb == "import"
+            "empty" in o.flags && return import_empty(cfg, round, get(o.values, "reason", ""))
+            println(stderr, "round import <pile>: the legacy pile readers are Phase 2's scratch tools (IMPLEMENTATION Phase 2 step 1); only `--empty` exists yet"); return 2
+        end
+        verb == "compare" && (println(stderr, "round compare --recorded: written with Phase 2's scratch imports"); return 2)
         println(stderr, "round: unknown verb $verb"); return 2
     catch err
         err isa RoundError || rethrow()

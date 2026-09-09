@@ -510,14 +510,20 @@ other_thread_count() = Threads.nthreads() == 1 ? 4 : 1
 # ─────────────────────────────────────────────────────────────────────── regressions and the gate
 
 """
-    run_regressions(dir; parent = Main)
+    run_regressions(dir; parent = Main) -> Vector{String}
 
-The one include loop of the promoted witnesses: every `*.jl` directly under `dir` (sorted) is
-included into its own wrapper module `Regression_<name>` evaluated in `parent`, so top-level helpers
-cannot collide across files. An empty directory is an honest state and runs nothing. Returns the list
-of files run.
+The one include loop of the promoted witnesses. The arguments are `dir`, the consumer's test directory
+(`@__DIR__` of `runtests.jl`; its `regressions/` subdirectory is read, or `dir` itself when it is that
+directory), and `parent`, the module the wrapper modules are evaluated in.
+
+Every `*.jl` directly under the regressions directory (sorted) is included into its own wrapper
+module `Regression_<name>`, so top-level helpers cannot collide across files. An empty directory is an
+honest state and runs nothing. Returns the list of files run.
 """
 function run_regressions(dir::AbstractString; parent::Module = Main)
+    # the wiring passes the TEST directory (`@__DIR__` of runtests.jl); the witnesses live in its
+    # `regressions/` subdirectory — passing that directory itself is accepted too
+    basename(dir) == "regressions" || (dir = joinpath(dir, "regressions"))
     files = isdir(dir) ? sort!(filter(f -> endswith(f, ".jl"), readdir(dir))) : String[]
     for f in files
         modname = Symbol("Regression_", replace(f[1:end-3], '-' => '_', '.' => '_'))

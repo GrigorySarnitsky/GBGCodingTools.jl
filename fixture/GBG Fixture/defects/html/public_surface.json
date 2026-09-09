@@ -1,0 +1,1 @@
+{"schema_version": 1, "package": "GBGFixture", "operations": ["twice", "mean_value"], "exports": ["twice", "mean_value"]}

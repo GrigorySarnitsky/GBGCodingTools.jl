@@ -53,16 +53,26 @@ end
 """
     Git.porcelain(root; untracked = true) -> Vector{Tuple{String,String}}
 
-`git status --porcelain` in the repository at `root`, as `(status, path)` pairs; with `untracked =
-false` untracked files are left out. Returns the pairs, relative to `root`; empty outside a repository.
+`git status --porcelain` seen from a consumer at `root`, as `(status, path)` pairs with paths relative
+to `root`; with `untracked = false` untracked files are left out. Porcelain paths are relative to the
+repository top, so for a consumer nested inside a larger repository (the fixture inside the tool's)
+they are translated and paths outside the consumer are dropped — the tool's own modified files are
+not the fixture's. Empty outside a repository.
 """
 function porcelain(root; untracked::Bool = true)
     out = run(root, "status", "--porcelain", untracked ? "--untracked-files=all" : "--untracked-files=no")
     out === nothing && return Tuple{String,String}[]
+    top = run(root, "rev-parse", "--show-toplevel")
+    prefix = (top === nothing || realpath(top) == realpath(root)) ? "" : relpath(realpath(root), realpath(top)) * "/"
     pairs = Tuple{String,String}[]
     for l in split(out, '\n')
         isempty(l) && continue
-        push!(pairs, (String(l[1:2]), String(strip(l[4:end]))))
+        path = String(strip(l[4:end]))
+        if !isempty(prefix)
+            startswith(path, prefix) || continue
+            path = path[length(prefix)+1:end]
+        end
+        push!(pairs, (String(l[1:2]), path))
     end
     return pairs
 end

@@ -1,0 +1,7 @@
+name = "GBGFixture"
+uuid = "7f0c3a5e-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+authors = ["GBGCodingTools"]
+version = "0.1.0"
+
+[compat]
+julia = "1.11"

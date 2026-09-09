@@ -434,6 +434,37 @@ end
 
 sidecar_path(cfg) = joinpath(cfg["root"], ".gbg", "managed.json")
 
+sha_files(paths) = sha256hex(join((isfile(p) ? read(p, String) : "" for p in paths), "\n\0"))
+
+"""
+    config_sha(cfg) -> String
+
+sha256 over `config.toml`, `hats/*.toml` (sorted) and `exemptions.toml`, in that order (ARCHITECTURE
+§6.1); the stamp every round records and the render input the sidecar records.
+"""
+function config_sha(cfg::AbstractDict)
+    g = joinpath(cfg["root"], ".gbg")
+    hats = isdir(joinpath(g, "hats")) ? sort!([joinpath(g, "hats", f) for f in readdir(joinpath(g, "hats")) if endswith(f, ".toml")]) : String[]
+    return sha_files(vcat([joinpath(g, "config.toml")], hats, [joinpath(g, "exemptions.toml")]))
+end
+
+"""
+    inputs_sha(cfg) -> String
+
+The hash of everything a render depends on: the pin, [`config_sha`](@ref) (config, hats, ledger), and
+the templates and policy files of the running copy. Recorded in the sidecar at render time: while it
+is unchanged a fresh render equals the recorded one, so ANY divergence of a managed file is a hand
+edit — MODIFIED whatever its sidecar entry says (a file and its entry edited together, attack 8.4);
+when it changed, a file equal to its recorded sha is merely STALE and is re-rendered.
+"""
+function inputs_sha(cfg::AbstractDict)
+    files = String[]
+    for d in (templates_dir(), policy_dir()), f in readdir(d)
+        push!(files, joinpath(d, f))
+    end
+    return sha256hex(pin(cfg) * "\n" * config_sha(cfg) * "\n" * sha_files(sort!(files)))
+end
+
 """
     read_sidecar(cfg) -> Dict
 
@@ -462,18 +493,19 @@ struct Entry
     detail::String
 end
 
-function classify(root, sidecar, path, fresh)
+function classify(root, sidecar, path, fresh, inputs_same::Bool)
     full = joinpath(root, path)
     rec = get(sidecar["files"], path, nothing)
     isfile(full) || return Entry(path, :MISSING, "not rendered yet")
     cur = read(full, String)
     cur == fresh && return Entry(path, rec === nothing ? :STALE : :OK, rec === nothing ? "up to date but unrecorded in managed.json" : "")
     rec === nothing && return Entry(path, :UNMANAGED, "an unmanaged file sits at a managed path; remove it before sync renders here")
+    inputs_same && return Entry(path, :MODIFIED, "edited by hand since it was rendered (the render inputs are unchanged); sync refuses to overwrite it")
     sha256hex(cur) == rec["sha256"] && return Entry(path, :STALE, "an older render (v$(rec["version"])); re-rendered")
     return Entry(path, :MODIFIED, "edited by hand since it was rendered; sync refuses to overwrite it")
 end
 
-function classify_block(root, sidecar, file, fresh)
+function classify_block(root, sidecar, file, fresh, inputs_same::Bool)
     full = joinpath(root, file); key = file * "#gbg:managed"
     rec = get(sidecar["files"], key, nothing)
     isfile(full) || return Entry(key, :MISSING, "$file absent; the block is seeded with the file")
@@ -481,6 +513,7 @@ function classify_block(root, sidecar, file, fresh)
     old === nothing && return Entry(key, :MISSING, "no managed block in $file yet")
     old == fresh && return Entry(key, rec === nothing ? :STALE : :OK, "")
     rec === nothing && return Entry(key, :UNMANAGED, "a block sits in $file that managed.json does not record")
+    inputs_same && return Entry(key, :MODIFIED, "the managed block in $file was edited (the render inputs are unchanged); sync refuses to overwrite it")
     sha256hex(old) == rec["sha256"] && return Entry(key, :STALE, "an older render; re-rendered")
     return Entry(key, :MODIFIED, "the managed block in $file was edited; sync refuses to overwrite it")
 end
@@ -495,13 +528,14 @@ ledger entries. Returns the entries; `MANAGED.HASH` fails on any `MODIFIED` or `
 """
 function status(cfg::AbstractDict; ledger = Ledger.read(cfg))
     root = cfg["root"]; sidecar = read_sidecar(cfg); s = slots(cfg; ledger)
+    inputs_same = get(sidecar, "inputs_sha", "") == inputs_sha(cfg)
     out = Entry[]
     planned = Set{String}()
     for f in plan(cfg; ledger)
-        push!(planned, f.path); push!(out, classify(root, sidecar, f.path, f.content))
+        push!(planned, f.path); push!(out, classify(root, sidecar, f.path, f.content, inputs_same))
     end
     for file in ("CLAUDE.md", ".gitignore")
-        push!(planned, file * "#gbg:managed"); push!(out, classify_block(root, sidecar, file, managed_block(cfg, file, s)))
+        push!(planned, file * "#gbg:managed"); push!(out, classify_block(root, sidecar, file, managed_block(cfg, file, s), inputs_same))
     end
     for k in sort!(collect(keys(sidecar["files"])))
         k in planned || push!(out, Entry(k, :ORPHAN, "recorded in managed.json but no longer planned by v$(pin(cfg))"))
@@ -578,7 +612,7 @@ function sync(cfg::AbstractDict; check::Bool = false, io::IO = stdout, ledger = 
     seed_queue && (mkpath(dirname(queue)); write(queue, template("WORK_QUEUE.md.seed")))
     mkpath(joinpath(root, ".gbg"))
     open(sidecar_path(cfg), "w") do sio
-        JSON3.pretty(sio, JSON3.write(Dict("schema_version" => 1, "tool_version" => v,
+        JSON3.pretty(sio, JSON3.write(Dict("schema_version" => 1, "tool_version" => v, "inputs_sha" => inputs_sha(cfg),
                                             "rendered" => Dates.format(now(), dateformat"yyyy-mm-ddTHH:MM:SS"), "files" => files)))
         println(sio)
     end

@@ -18,3 +18,7 @@ fixture/GBG Fixture/docs/build/
 fixture/GBG Fixture/**/Manifest.toml
 .gbg/scratch/
 *.cov
+fixture/.tmp/
+Manifest-v*.toml
+docs/src/architecture.md
+docs/src/guide/doctor.md

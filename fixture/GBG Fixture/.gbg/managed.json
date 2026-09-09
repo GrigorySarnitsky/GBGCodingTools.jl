@@ -1,0 +1,102 @@
+{
+    "tool_version": "dev",
+    "files": {
+        "CLAUDE.md#gbg:managed": {
+            "template": "claude-md.block",
+            "sha256": "3852a84ed3a63e0023c68fa816702d8addf40ff14c0385405e5c4b52fe20d495",
+            "version": "dev"
+        },
+        ".claude/skills/check-consistency/SKILL.md": {
+            "template": "SKILL.md.tmpl",
+            "sha256": "5f916f5b269e446292e22b07058aee1ed860615df7cc2c5357fd0bcbe26bc155",
+            "version": "dev"
+        },
+        ".claude/skills/gbg-doctor/SKILL.md": {
+            "template": "SKILL.md.tmpl",
+            "sha256": "8925a4a0710e9772d004131866fd1e2d35e8ff64a848b94c66616e9070748add",
+            "version": "dev"
+        },
+        ".gbg/policy/latex-idiom.md": {
+            "template": "policy/latex-idiom.md",
+            "sha256": "bca2e28361510cff1ee6f4467d9a44742443d94d6c0a5e439ee8765598c63cf4",
+            "version": "dev"
+        },
+        ".gbg/policy/glossary.md": {
+            "template": "policy/glossary.md",
+            "sha256": "3b962aaaf48808809de956021a4e73143e1ad6cda0f3ae2e2c9271ae30a7316f",
+            "version": "dev"
+        },
+        ".gbg/policy/testing-protocol.md": {
+            "template": "policy/testing-protocol.md",
+            "sha256": "0cedbdd2f0d73f4e76b6b48f46ef112339a3be67c71a9b193318bb0956683ab0",
+            "version": "dev"
+        },
+        ".claude/skills/audit-changes/SKILL.md": {
+            "template": "SKILL.md.tmpl",
+            "sha256": "0b58283bac48294808100770be37dddb02e79cda38c96402d87df07df7fe7939",
+            "version": "dev"
+        },
+        ".gbg/policy/docs-rubric.md": {
+            "template": "policy/docs-rubric.md",
+            "sha256": "4a41d0455c7f6fde2191a99bd381496f43324c2e64a1ebbe01a9610f4a1f5fd5",
+            "version": "dev"
+        },
+        ".gbg/policy/00-index.md": {
+            "template": "policy/00-index.md",
+            "sha256": "067047fb84687b147818f9a0273729b73746f2636fe6ee7a7b7bf56e4ea10f19",
+            "version": "dev"
+        },
+        ".claude/settings.json": {
+            "template": "settings.json.tmpl",
+            "sha256": "2a70c4b2119a142aa2cd32e4312c18bf92960b94b4dc69b9802b9abfd30a8348",
+            "version": "dev"
+        },
+        ".claude/skills/check-docs/SKILL.md": {
+            "template": "SKILL.md.tmpl",
+            "sha256": "0bc4b08c800af845cdda4514ff6d3242774250339405d58520f7fa7d23c5557f",
+            "version": "dev"
+        },
+        ".gbg/policy/instruments.md": {
+            "template": "policy/instruments.md",
+            "sha256": "52e6170bd21459f907c6299c420a515ba05e3e7a82e1816a54c3eb58e3a4bca5",
+            "version": "dev"
+        },
+        ".claude/skills/bug-hunt/SKILL.md": {
+            "template": "SKILL.md.tmpl",
+            "sha256": "22f4ed6fe7a871e02db5bbf4222e80f2b6aa8b9a2005a4c01cf8c70c7f08168a",
+            "version": "dev"
+        },
+        ".gbg/policy/citations.md": {
+            "template": "policy/citations.md",
+            "sha256": "7112188d84d6350037d54bf719bee9d78d6fb9f84581dda8b3fae779831f2d99",
+            "version": "dev"
+        },
+        ".claude/hooks/queue-guard.sh": {
+            "template": "queue-guard.sh.tmpl",
+            "sha256": "f5ab1a66f0b1b3ff8fbee4e3ecd0490fbfdd039b6236bd95ecbf3ad50c063fdc",
+            "version": "dev"
+        },
+        ".gitignore#gbg:managed": {
+            "template": "gitignore.block",
+            "sha256": "8152d6fa1b40375ae0414d1a8b0c2a6d07bd553f5eb3dd49de0150c056284a8f",
+            "version": "dev"
+        },
+        ".gbg/policy/git-conventions.md": {
+            "template": "policy/git-conventions.md",
+            "sha256": "21cd037a36f97652e3ad1b413a2f6dc47d4b8a1181bbe51e56f262f46bf5bb5e",
+            "version": "dev"
+        },
+        "test/regressions/README.md": {
+            "template": "regressions-README.md",
+            "sha256": "db62ef680a0686ba776a46b43720be3c9dfaea5becef6c441d0bb3197dd2b1cb",
+            "version": "dev"
+        },
+        ".gbg/policy/deviations.md": {
+            "template": "policy/deviations.md",
+            "sha256": "4a35bcae6fa9db2e6c4bd4e38435adfaf29dcb5d76e0b878202c5bcadb4960c3",
+            "version": "dev"
+        }
+    },
+    "schema_version": 1,
+    "rendered": "2026-09-09T02:41:58"
+}

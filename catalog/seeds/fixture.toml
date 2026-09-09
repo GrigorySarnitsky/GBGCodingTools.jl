@@ -1,0 +1,60 @@
+# catalog/seeds/fixture.toml — the ONE seed catalogue in the tool (ARCHITECTURE §6.4): eight classes
+# anchored to the fixture's rendered text. A consumer's catalogue is its own .gbg/seeds.toml. `anchor` is
+# a regex over the FULL manuscript, `replacement` the mutated text, `occurrence` the base 1-based
+# occurrence the per-round salt offsets.
+
+[[class]]
+name = "normalization"
+description = "the energy one-half corrupted to one-third at a single site"
+anchor = '\\tfrac\{1\}\{2\}'
+replacement = '\tfrac{1}{3}'
+occurrence = 1
+
+[[class]]
+name = "citation-drift"
+description = "the Cooley–Tukey year shifted at one site"
+anchor = 'Tukey \(1965\)'
+replacement = 'Tukey (1967)'
+occurrence = 1
+
+[[class]]
+name = "quantifier"
+description = "a universal weakened to a false near-universal"
+anchor = 'exact at every node'
+replacement = 'exact at almost every node'
+occurrence = 1
+
+[[class]]
+name = "notation"
+description = "the upright imaginary unit replaced by the banned bare italic"
+anchor = '\\mathrm\{i\}'
+replacement = 'i'
+occurrence = 1
+
+[[class]]
+name = "stale-name"
+description = "a live binding replaced by a name that does not exist"
+anchor = '`mean_value`'
+replacement = '`average_value`'
+occurrence = 1
+
+[[class]]
+name = "cross-page"
+description = "the spacing symbol swapped at ONE site only"
+anchor = 'spacing'
+replacement = 'stride'
+occurrence = 2
+
+[[class]]
+name = "weakened-guarantee"
+description = "an exactness claim downgraded to a tolerance at one site"
+anchor = 'writes its destination and nothing else'
+replacement = 'writes its destination and, rarely, one neighbour'
+occurrence = 1
+
+[[class]]
+name = "false-property"
+description = "an aliasing permission negated at one site"
+anchor = 'may alias the source'
+replacement = 'must not alias the source'
+occurrence = 1

@@ -14,10 +14,8 @@
     },
     "files": {
       "additionalProperties": true,
-      "required": [
-      ],
-      "properties": {
-      },
+      "required": [],
+      "properties": {},
       "type": "object",
       "description": "path → {template, version, sha256}"
     },
@@ -30,6 +28,11 @@
       "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}",
       "type": "string",
       "description": "ISO 8601, the CLI clock"
+    },
+    "inputs_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "sha256 of the render inputs (pin, config/hats/ledger, templates, policy) at render time; while unchanged, any divergent managed file is MODIFIED"
     }
   },
   "title": ".gbg/managed.json — the sidecar cache of every generated-managed file",

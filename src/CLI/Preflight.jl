@@ -50,18 +50,14 @@ end
 # ---- stamps -----------------------------------------------------------------------------------------------
 
 sha_hex(s::AbstractString) = bytes2hex(sha256(codeunits(s)))
-sha_files(paths) = sha_hex(join((isfile(p) ? read(p, String) : "" for p in paths), "\n\0"))
+sha_files(paths) = Sync.sha_files(paths)
 
 """
     config_sha(cfg) -> String
 
-sha256 over `config.toml`, `hats/*.toml` (sorted) and `exemptions.toml`, in that order (§6.1).
+The config stamp of §6.1 — [`Sync.config_sha`](@ref), the one definition.
 """
-function config_sha(cfg::AbstractDict)
-    g = joinpath(cfg["root"], ".gbg")
-    hats = isdir(joinpath(g, "hats")) ? sort!([joinpath(g, "hats", f) for f in readdir(joinpath(g, "hats")) if endswith(f, ".toml")]) : String[]
-    return sha_files(vcat([joinpath(g, "config.toml")], hats, [joinpath(g, "exemptions.toml")]))
-end
+config_sha(cfg::AbstractDict) = Sync.config_sha(cfg)
 
 """
     catalog_sha() -> String

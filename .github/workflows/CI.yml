@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  # Manual plus release tags (RULE.GIT.CI_MANUAL): the matrix runs locally before every commit; a tagged
+  # release is the one from-scratch clean-environment resolve a local run cannot give.
+  workflow_dispatch:
+  push:
+    tags: '*'
+
+jobs:
+  test:
+    name: Julia ${{ matrix.version }} — ${{ matrix.threads }} thread(s)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: '1.11'   # the floor
+            threads: '1'
+          - version: '1.12'
+            threads: '4'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Authenticate the private GBG dependencies
+        # First step after actions/checkout, before any julia-actions/* step: Pkg fetches the pinned tool
+        # over https, and the token rewrite is what lets a private repository resolve on the runner.
+        env:
+          GBG_DEPS_TOKEN: ${{ secrets.GBG_DEPS_TOKEN }}
+        run: git config --global url."https://x-access-token:${GBG_DEPS_TOKEN}@github.com/".insteadOf "https://github.com/"
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v3
+      - uses: julia-actions/julia-buildpkg@v1
+      - name: Test
+        # Replaces julia-actions/julia-runtest: the output is tee'd so the last step can prove the gate ran.
+        env:
+          JULIA_NUM_THREADS: ${{ matrix.threads }}
+        run: |
+          set -o pipefail
+          julia --color=yes --project -e 'using Pkg; Pkg.test()' 2>&1 | tee gbg-run.log
+      - name: The tool's gate ran
+        # The gate prints `GBGCodingTools v gate` once it has been consulted; a green job whose log lacks the
+        # banner ran the tests without the gate, which is the failure this step exists to catch.
+        run: grep -q 'GBGCodingTools v gate' gbg-run.log
+  docs-build:
+    name: The tool's own site builds (no deploy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.12'
+      - uses: julia-actions/cache@v3
+      - name: Instantiate the docs environment
+        run: julia --color=yes --project=docs -e 'using Pkg; Pkg.instantiate()'
+      - name: Build the site through the wrapper
+        run: julia --color=yes --project=docs docs/make.jl

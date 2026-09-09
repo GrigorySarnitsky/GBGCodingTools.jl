@@ -1,0 +1,8 @@
+[deps]
+GBGCodingTools = "3aee1de0-bb62-4679-b1c5-a861fbcaaa51"
+GBGFixture = "7f0c3a5e-1b2d-4c3e-9f4a-5b6c7d8e9f01"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+GBGCodingTools = {path = "../../.."}
+GBGFixture = {path = ".."}

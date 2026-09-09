@@ -1,0 +1,13 @@
+# gbg:managed begin vdev — rewritten by `gbg sync`; do not edit
+.gbg/scratch/
+docs/build/
+docs/Manifest.toml
+test/Manifest.toml
+benchmark/Manifest.toml
+.claude/settings.local.json
+*.cov
+# gbg:managed end
+
+docs/build/
+docs/src/architecture.md
+Manifest.toml

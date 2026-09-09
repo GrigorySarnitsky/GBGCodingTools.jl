@@ -1,14 +1,26 @@
-# test/runtests.jl — GBGCodingTools. `Pkg.test()` is the gate (RULE.TEST.GATE_VS_SURVEY): every file
-# below is included into its own module so helpers do not collide, and each file also runs on its own
-# with `julia --project=. test/<file>.jl`. Aqua and JET are the consumer's to add.
+# test/runtests.jl — GBGCodingTools. `Pkg.test()` IS `gbg selftest`: every arm of ARCHITECTURE §8 the
+# tool can run without an agent, over `fixture/GBG Fixture/` and its defects corpus, then the tool's own
+# regressions loop and closure gate (D15). Every file is included into its own module.
 using Test, GBGCodingTools
-using GBGCodingTools
 
-# The package's own test files, one module each:
-# module SomethingTests; include("something.jl"); end
+const TOOL = normpath(joinpath(@__DIR__, ".."))
+const FIXTURE = joinpath(TOOL, "fixture", "GBG Fixture")
+const TMP = joinpath(TOOL, "fixture", ".tmp", string(getpid()))   # gitignored; per process, so two suites (1.11 and 1.12) never share a copy; inside the repository so a `dev` pin stays legal
+isdir(TMP) && rm(TMP; recursive = true, force = true)
+mkpath(TMP)
 
-# Promoted witnesses (test/regressions/README.md): each began as a /bug-hunt witness observed to fail
-# on the tree that had the defect and is included unchanged. Then the tool's closure gate, which fails
-# while a finding of an open round is unresolved.
+module SchemaTests;      include("schemas.jl");      end
+module ConfigTests;      include("config.jl");       end
+module ScanTests;        include("scans.jl");        end
+module LedgerTests;      include("ledger.jl");       end
+module SeedTests;        include("seeds.jl");        end
+module WitnessTests;     include("witnesses.jl");    end
+module SyncDoctorTests;  include("sync_doctor.jl");  end
+module GateTests;        include("gate.jl");         end
+module RoundTests;       include("rounds.jl");       end
+
+rm(TMP; recursive = true, force = true)
+
+# Promoted witnesses of the tool's own hunts, then the closure gate on the tool itself (D15).
 GBGCodingTools.TestHarness.run_regressions(@__DIR__)
-GBGCodingTools.TestHarness.gate()
+GBGCodingTools.TestHarness.gate(; root = TOOL)

@@ -55,5 +55,9 @@ include("CLI/Rounds.jl")
 include("CLI/Passes.jl")
 include("CLI/Hunt.jl")
 include("CLI/Audit.jl")
+include("CLI/Fleet.jl")
+include("CLI/Bump.jl")
+include("CLI/Release.jl")
+include("CLI/Selftest.jl")
 
 end # module

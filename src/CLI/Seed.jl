@@ -69,22 +69,54 @@ end
 
 The manuscripts with every planned seed applied. The arguments are `full` and `siteonly`, the two
 manuscript texts, and `plan`, the selection [`select`](@ref) returned. In `full` the seeds are applied
-at the recorded positions (from the end, so positions stay valid); in `siteonly` by locating the same
-`original_context` (the site is a subset of the full manuscript, so a seed on a withheld page is
-absent there by design). Returns both.
+at the recorded positions (from the end, so positions stay valid); in `siteonly` each seed is located
+as the same occurrence of its `original` text within the same page (the site is a subset of the full
+manuscript page by page, so a seed on a withheld page is absent there by design, and a neighbouring
+seed already applied cannot hide it). Returns both.
 """
 function plant(full::AbstractString, siteonly::AbstractString, plan::AbstractVector)
     f = String(full)
     for s in sort(plan; by = x -> x["start"], rev = true)
         f = f[1:prevind(f, s["start"])] * s["replacement"] * f[nextind(f, s["stop"]):end]
     end
-    site = String(siteonly)
+    # the site: per seed, the page and the index of `original` within that page, read from the untouched
+    # full manuscript; then the same index within the same page of the site, applied from the end
+    fpages = page_spans(full); spages = page_spans(siteonly)
+    edits = Tuple{Int,Int,String}[]
     for s in plan
-        k = findfirst(s["original_context"], site)
-        k === nothing && continue
-        site = site[1:prevind(site, first(k))] * s["mutated_context"] * site[nextind(site, last(k)):end]
+        fp = findfirst(p -> p.start <= s["start"] <= p.stop, fpages); fp === nothing && continue
+        page = fpages[fp]
+        idx = count(m -> m.offset < s["start"], eachmatch(Regex("\\Q" * s["original"] * "\\E"), SubString(full, page.start, page.stop))) + 1
+        sp = findfirst(p -> p.name == page.name, spages); sp === nothing && continue
+        site_page = spages[sp]
+        hits = collect(eachmatch(Regex("\\Q" * s["original"] * "\\E"), SubString(siteonly, site_page.start, site_page.stop)))
+        idx <= length(hits) || continue
+        m = hits[idx]; a = site_page.start + m.offset - 1
+        push!(edits, (a, a + ncodeunits(m.match) - 1, s["replacement"]))
+    end
+    site = String(siteonly)
+    for (a, b, r) in sort(edits; by = first, rev = true)
+        site = site[1:prevind(site, a)] * r * site[nextind(site, b):end]
     end
     return (f, site)
+end
+
+"""
+    page_spans(text) -> Vector{NamedTuple}
+
+The pages of a manuscript as `(name, start, stop)` byte spans, from the `===== PAGE: <name> =====`
+banners; text before the first banner is page `"?"`. Returns the spans in order.
+"""
+function page_spans(text::AbstractString)
+    banners = collect(eachmatch(r"===== PAGE: (.+?) =====", text))
+    out = NamedTuple[]
+    isempty(banners) && return [(name = "?", start = 1, stop = lastindex(text))]
+    banners[1].offset > 1 && push!(out, (name = "?", start = 1, stop = prevind(text, banners[1].offset)))
+    for (i, b) in enumerate(banners)
+        stop = i < length(banners) ? prevind(text, banners[i+1].offset) : lastindex(text)
+        push!(out, (name = String(b.captures[1]), start = b.offset, stop = stop))
+    end
+    return out
 end
 
 """

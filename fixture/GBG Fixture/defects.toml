@@ -1,0 +1,278 @@
+# defects.toml — the planted defect classes of the fixture (ARCHITECTURE §8): one [[defect]] per scan of
+# catalog/scans.toml, naming the class, the scan that must hit, the surface file under defects/ (scanned
+# by the self-tests through a derived config) and a fragment the hit's text must contain; and one
+# [[clean]] per class naming a twin in the clean corpus the scan must NOT hit. The HTML classes name a
+# directory under defects/html/ standing in for a built site.
+
+[[defect]]
+class = "indented-table"
+scan = "SCAN.TABLE_INDENTED"
+file = "defects/page.md"
+fragment = "|---|---|"
+[[defect]]
+class = "knob"
+scan = "SCAN.REGISTER"
+file = "defects/Defects.jl"
+fragment = "knob"
+[[defect]]
+class = "bare-partial"
+scan = "SCAN.PARTIAL_BARE"
+file = "defects/Defects.jl"
+fragment = "partial_i"
+[[defect]]
+class = "thin-space"
+scan = "SCAN.THIN_SPACE"
+file = "defects/Defects.jl"
+fragment = 'a\,b'
+[[defect]]
+class = "frac-unbraced"
+scan = "SCAN.FRAC_UNBRACED"
+file = "defects/Defects.jl"
+fragment = "tfrac12"
+[[defect]]
+class = "neg-thin-bigl"
+scan = "SCAN.NEG_THIN_BIGL"
+file = "defects/Defects.jl"
+fragment = "bigl"
+[[defect]]
+class = "neg-thin-double"
+scan = "SCAN.NEG_THIN_DOUBLE"
+file = "defects/Defects.jl"
+fragment = "sum_i"
+[[defect]]
+class = "mathbb-digit"
+scan = "SCAN.MATHBB_DIGIT"
+file = "defects/Defects.jl"
+fragment = "mathbb{1}"
+[[defect]]
+class = "mathbf-banned"
+scan = "SCAN.MATHBF"
+file = "defects/Defects.jl"
+fragment = "mathbf{u}"
+[[defect]]
+class = "boldsymbol-unbraced"
+scan = "SCAN.BOLDSYMBOL_UNBRACED"
+file = "defects/Defects.jl"
+fragment = "boldsymbol u"
+[[defect]]
+class = "left-right"
+scan = "SCAN.LEFTRIGHT"
+file = "defects/Defects.jl"
+fragment = "left(u"
+[[defect]]
+class = "ref-abut"
+scan = "SCAN.REF_ABUT_CODE"
+file = "defects/Defects.jl"
+fragment = "(@ref)`(u)`"
+[[defect]]
+class = "ghost-field"
+scan = "SCAN.FIELD_DOCS"
+file = "defects/Defects.jl"
+fragment = "GHOST GhostField"
+[[defect]]
+class = "undoc-field"
+scan = "SCAN.FIELD_DOCS"
+file = "defects/Defects.jl"
+fragment = "UNDOC UndocField"
+[[defect]]
+class = "mixed-link-run"
+scan = "SCAN.LINK_UNIFORMITY"
+file = "defects/Defects.jl"
+fragment = "mixed_link_run"
+[[defect]]
+class = "bold-arg-bullet"
+scan = "SCAN.ARG_BULLET_BOLD"
+file = "defects/Defects.jl"
+fragment = "**`u`**"
+[[defect]]
+class = "inline-math-split"
+scan = "SCAN.INLINE_MATH_SPLIT"
+file = "defects/Defects.jl"
+fragment = "sum_i u_i"
+[[defect]]
+class = "swallowed-escape"
+scan = "SCAN.SWALLOWED_ESCAPE"
+file = "defects/Defects.jl"
+fragment = "nabla"
+[[defect]]
+class = "retired-claim"
+scan = "SCAN.RETIRED_CLAIMS"
+file = "defects/Defects.jl"
+fragment = "factor one third is used"
+[[defect]]
+class = "internal-api-not-last"
+scan = "SCAN.API_PAGE_STRUCTURE"
+file = "defects/api/defects.md"
+fragment = "Internal API"
+[[defect]]
+class = "empty-docs-block"
+scan = "SCAN.API_PAGE_STRUCTURE"
+file = "defects/api/defects.md"
+fragment = "empty `@docs`"
+[[defect]]
+class = "paragraph-over-cap"
+scan = "SCAN.PROSE_SHAPE"
+file = "defects/Defects.jl"
+fragment = "paragraph_over_cap"
+[[defect]]
+class = "fields-not-last"
+scan = "SCAN.PROSE_SHAPE"
+file = "defects/Defects.jl"
+fragment = "# Fields"
+[[defect]]
+class = "banner-drift"
+scan = "SCAN.AI_BANNER"
+file = "defects/RATIONALE.md"
+fragment = "differs from the fleet text"
+[[defect]]
+class = "doi-missing"
+scan = "SCAN.DOI_CROSSCHECK"
+file = "defects/Defects.jl"
+fragment = "10.9999/never-listed"
+[[defect]]
+class = "undocumented-last-positional"
+scan = "SCAN.ARGCOV"
+file = "defects/Defects.jl"
+fragment = "`factor`"
+[[defect]]
+class = "formula-backticks"
+scan = "SCAN.FORMULA_IN_BACKTICKS"
+file = "defects/Defects.jl"
+fragment = "u ≤ 1"
+[[defect]]
+class = "stray-dollar"
+scan = "SCAN.STRAY_TEX_DOLLAR"
+file = "defects/page.md"
+fragment = "x_1 + x_2"
+[[defect]]
+class = "manual-spacing"
+scan = "SCAN.MANUAL_SPACING"
+file = "defects/Defects.jl"
+fragment = '\;'
+[[defect]]
+class = "code-in-math"
+scan = "SCAN.CODE_IN_MATH"
+file = "defects/Defects.jl"
+fragment = "spacing < 1"
+[[defect]]
+class = "crammed-citation"
+scan = "SCAN.CITATION_CRAMMED"
+file = "defects/Defects.jl"
+fragment = "References:"
+[[defect]]
+class = "dead-section-ref"
+scan = "SCAN.DEAD_REF"
+file = "defects/Defects.jl"
+fragment = "§4"
+[[defect]]
+class = "lowercase-opener"
+scan = "SCAN.SENTENCE_OPENER"
+file = "defects/Defects.jl"
+fragment = "`twice` doubles"
+[[defect]]
+class = "wide-signature"
+scan = "SCAN.SIGNATURE_WIDE"
+file = "defects/Defects.jl"
+fragment = "wide_signature"
+[[defect]]
+class = "abutting-span"
+scan = "SCAN.ABUTTING_SPANS"
+file = "defects/Defects.jl"
+fragment = '`coefficient` ``= -D'
+[[defect]]
+class = "stale-keyword"
+scan = "SCAN.SIGNATURE_FIDELITY"
+file = "defects/Defects.jl"
+fragment = "stale"
+[[defect]]
+class = "unlinked-cross-module"
+scan = "SCAN.XLINK"
+file = "defects/Defects.jl"
+fragment = "mean_value"
+[[defect]]
+class = "double-link"
+scan = "SCAN.DUPREF"
+file = "defects/Defects.jl"
+fragment = "twice"
+[[defect]]
+class = "emphasis-survives"
+scan = "SCAN.HTML_RENDERED_MARKUP"
+file = "defects/html/emphasis-survives"
+fragment = "*marker"
+[[defect]]
+class = "docstring-twice"
+scan = "SCAN.HTML_DOCSTRING_ONCE"
+file = "defects/html/docstring-twice"
+fragment = "2 pages"
+[[defect]]
+class = "unhomed-export"
+scan = "SCAN.HTML_PUBLIC_HOME"
+file = "defects/html/unhomed-export"
+fragment = "mean_value"
+[[defect]]
+class = "base-leak"
+scan = "SCAN.HTML_BASE_LEAK"
+file = "defects/html/base-leak"
+fragment = "Base.copy"
+
+# Clean twins: the scan must report nothing on these (the clean corpus, or the clean HTML site).
+[[clean]]
+scan = "SCAN.TABLE_INDENTED"
+file = "docs/src/notation.md"
+[[clean]]
+scan = "SCAN.REGISTER"
+file = "src/FixtureC.jl"
+[[clean]]
+scan = "SCAN.FRAC_UNBRACED"
+file = "src/FixtureB.jl"
+[[clean]]
+scan = "SCAN.MATHBF"
+file = "docs/ARCHITECTURE.md"
+[[clean]]
+scan = "SCAN.REF_ABUT_CODE"
+file = "src/FixtureA.jl"
+[[clean]]
+scan = "SCAN.FIELD_DOCS"
+file = "src/FixtureA.jl"
+[[clean]]
+scan = "SCAN.LINK_UNIFORMITY"
+file = "src/FixtureA.jl"
+[[clean]]
+scan = "SCAN.ARG_BULLET_BOLD"
+file = "src/FixtureA.jl"
+[[clean]]
+scan = "SCAN.INLINE_MATH_SPLIT"
+file = "src/FixtureB.jl"
+[[clean]]
+scan = "SCAN.SWALLOWED_ESCAPE"
+file = "src/FixtureA.jl"
+[[clean]]
+scan = "SCAN.RETIRED_CLAIMS"
+file = "docs/ARCHITECTURE.md"
+[[clean]]
+scan = "SCAN.API_PAGE_STRUCTURE"
+file = "docs/src/api/FixtureC.md"
+[[clean]]
+scan = "SCAN.AI_BANNER"
+file = "docs/ARCHITECTURE.md"
+[[clean]]
+scan = "SCAN.DOI_CROSSCHECK"
+file = "src/FixtureB.jl"
+[[clean]]
+scan = "SCAN.SENTENCE_OPENER"
+file = "src/FixtureA.jl"
+[[clean]]
+scan = "SCAN.ABUTTING_SPANS"
+file = "docs/src/notation.md"
+[[clean]]
+scan = "SCAN.HTML_RENDERED_MARKUP"
+file = "defects/html/clean"
+[[clean]]
+scan = "SCAN.HTML_DOCSTRING_ONCE"
+file = "defects/html/clean"
+[[clean]]
+scan = "SCAN.HTML_PUBLIC_HOME"
+file = "defects/html/clean"
+[[clean]]
+scan = "SCAN.HTML_BASE_LEAK"
+file = "defects/html/clean"

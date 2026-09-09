@@ -1,0 +1,115 @@
+# .gbg/config.toml — GBGFixture.  Schema: schema/config.schema.json in the pinned tool (closed keys: an
+# unknown key, a missing required key, an unknown enum member or a path that does not exist is exit 2).
+# Written by `gbg init` on 2026-09-09 from the package tree; every default is materialised, nothing is
+# layered on top of this file. A `TODO` value is a fact the tree could not supply — `gbg doctor`
+# (CFG.SURFACES, CFG.HATS) reports it until it is written.
+
+[tool]
+schema = 1
+version = "dev"
+
+[package]
+deliberate_absences = ["no higher dimensions", "no time stepping"]
+description = "The toy consumer of GBGCodingTools: a grid, a value field, two reductions and an options record, documented to the shared rubric."
+docs_build = "julia --project=docs docs/make.jl"
+docs_post = []
+domain = "toy numerics"
+extensions = []
+julia_test = "julia --project -e 'using Pkg; Pkg.test()'"
+modules = ["FixtureA", "FixtureB", "FixtureC"]
+name = "GBGFixture"
+rulebook_sections = ["CLAUDE.md#Core invariants", "docs/ARCHITECTURE.md#3. Decision log"]
+terms = ["grid", "node", "field", "spacing"]
+
+[paths]
+examples = "examples"
+
+[git]
+branch = "master"
+
+[surfaces]
+built_html = "docs/build"
+ext = []
+glossary = "docs/src/notation.md"
+history_exempt = "docs/ARCHITECTURE.md#3. Decision log"
+literate = ["examples/scaling.jl"]
+pages = ["docs/src/**/*.md"]
+rationale = ["docs/ARCHITECTURE.md"]
+references_heading = "docs/ARCHITECTURE.md#References"
+src = ["src/*.jl"]
+
+    [surfaces.generated]
+    globs = []
+    optional = true
+
+[docs]
+admonition_titles = "always"
+doctest = true
+unexported_base_expected = []
+
+    [[docs.retired_claims]]
+    pattern = "factor\\s+one\\s+third\\s+is\\s+used"
+    reason = "decision 1 — the energy convention is one half"
+
+[rubric]
+leading_identity = "physical-meaning"
+
+[notation]
+mathbf_allowed = ["\\mathbf{1}"]
+vectors = "component"
+
+[citations]
+require_doi = true
+
+[instruments]
+enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
+
+    [instruments.audit-changes]
+    guard_symbols = []
+    invariants_section = "CLAUDE.md#Core invariants"
+
+        [instruments.audit-changes.executable_claims]
+
+    [instruments.bug-hunt]
+    oracles = ["the energy convention", "the documented definition over raw arrays"]
+    witness_env = "test"
+
+        [[instruments.bug-hunt.territories]]
+        brief = "the grid and the scaling loop; aliasing"
+        files = ["src/FixtureA.jl"]
+        key = "grid"
+        [[instruments.bug-hunt.territories]]
+        brief = "the reductions and the options record"
+        files = ["src/FixtureB.jl", "src/FixtureC.jl"]
+        key = "reductions"
+
+    [instruments.check-consistency]
+    core = ["consistency-matrix", "cold-reader", "fixture-physicist"]
+    design_docs_withheld = ["architecture"]
+    hats = ["consistency-matrix", "software-architect", "structure-consistency", "latex-typesetter", "api-user", "citations-integrity", "style-editor", "cold-reader", "fixture-physicist", "fixture-numerics"]
+    latex_source_globs = []
+    profile = "all"
+    seed_catalog = "../../catalog/seeds/fixture.toml"
+    seed_rounds = true
+
+        [[instruments.check-consistency.domain_hats]]
+        anchor = true
+        key = "fixture-physicist"
+        substrate = "full"
+        [[instruments.check-consistency.domain_hats]]
+        anchor = false
+        key = "fixture-numerics"
+        substrate = "siteonly"
+
+    [instruments.check-docs]
+    argcov_policy = "triage"
+    lanes_extra = []
+
+[cost]
+default = "economy"
+
+[schema]
+finding_types_extra = []
+
+[scans]
+custom = []

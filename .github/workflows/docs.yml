@@ -1,0 +1,46 @@
+name: Docs
+
+on:
+  push:
+    branches:
+      - master
+    tags: '*'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: read
+      statuses: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Authenticate the private GBG dependencies
+        # First step after actions/checkout, before any julia-actions/* step: Pkg fetches the pinned tool
+        # over https, and the token rewrite is what lets a private repository resolve on the runner.
+        env:
+          GBG_DEPS_TOKEN: ${{ secrets.GBG_DEPS_TOKEN }}
+        run: git config --global url."https://x-access-token:${GBG_DEPS_TOKEN}@github.com/".insteadOf "https://github.com/"
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.12'
+      - uses: julia-actions/cache@v3
+      - name: Instantiate the docs environment
+        run: julia --color=yes --project=docs -e 'using Pkg; Pkg.instantiate()'
+      - name: Build and deploy docs
+        # The build/deploy step with its output tee'd so the last step can prove the wrapper ran.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -o pipefail
+          julia --color=yes --project=docs docs/make.jl 2>&1 | tee gbg-run.log
+      - name: The tool's makedocs wrapper ran
+        # The wrapper prints `GBGCodingTools v makedocs` before Documenter runs; a green job whose log lacks
+        # the banner built the site around the wrapper, which WIRE.MAKEDOCS catches locally and this catches here.
+        run: grep -q 'GBGCodingTools v makedocs' gbg-run.log
