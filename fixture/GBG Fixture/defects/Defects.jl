@@ -186,6 +186,14 @@ struct FieldsNotLastRecord
 end
 
 """
+    wrong_args_form(a, b, c)
+
+Three arguments bound in running prose where the rule asks for the bulleted form. The arguments are `a`,
+the first; `b`, the second; and `c`, the third. Returns nothing.
+"""
+wrong_args_form(a, b, c) = nothing
+
+"""
     prose_reference(u)
 
 The argument `u` is the field. The method of Cooley and Tukey, [*An algorithm for the machine calculation of complex Fourier series*](https://doi.org/10.1090/S0025-5718-1965-0178586-1), Mathematics of Computation 19 (1965), is applied to it: the whole reference sits in the sentence, where the rule says author–year belongs.

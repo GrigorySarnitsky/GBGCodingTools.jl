@@ -126,6 +126,14 @@ runner = "julia"
 fixture = ["bare-sibling"]
 
 [[scan]]
+id = "SCAN.ARGS_FORM"
+rule = "RULE.DOC.ARGS_FORM"
+tier = "triage"
+surfaces = ["src", "ext"]
+runner = "julia"
+fixture = ["wrong-args-form"]
+
+[[scan]]
 id = "SCAN.ARG_BULLET_BOLD"
 rule = "RULE.DOC.ARG_BULLET"
 tier = "hard"
