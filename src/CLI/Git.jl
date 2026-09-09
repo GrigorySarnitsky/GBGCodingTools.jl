@@ -18,7 +18,9 @@ when git is absent.
 function run(root::AbstractString, args...)
     argv = String[string(a) for a in args]
     try
-        return String(strip(read(pipeline(setenv(`git -C $root $argv`, "LC_ALL" => "C"); stderr = devnull), String)))
+        # addenv, never setenv: setenv would drop HOME and the user's identity, and an annotated tag
+        # needs both (found when `gbg release` could not tag)
+        return String(strip(read(pipeline(addenv(`git -C $root $argv`, "LC_ALL" => "C"); stderr = devnull), String)))
     catch
         return nothing
     end

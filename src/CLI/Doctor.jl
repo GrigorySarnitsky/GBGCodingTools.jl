@@ -82,7 +82,7 @@ end
 function git(ctx::Ctx, args...)
     argv = String[a for a in args]
     try
-        return String(strip(read(pipeline(setenv(`git -C $(ctx.root) $argv`, "LC_ALL" => "C"); stderr = devnull), String)))
+        return String(strip(read(pipeline(addenv(`git -C $(ctx.root) $argv`, "LC_ALL" => "C"); stderr = devnull), String)))
     catch
         return nothing
     end

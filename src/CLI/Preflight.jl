@@ -87,8 +87,12 @@ The tool and config stamps every `ROUND.toml` and `pass.toml` record: `tool_vers
 function stamps(cfg::AbstractDict)
     dir = pkgdir(GBGCodingTools)
     dev = running_dev()
+    # a dev checkout sitting cleanly on a released or prerelease tag is stamped with that tag (D16): the
+    # tool's own rounds open at `vX.Y.Z-rc.N` and close normally; off a tag it is `dev+<sha>[-dirty]`
+    tag = dev ? Git.run(dir, "describe", "--exact-match", "--tags", "--dirty") : nothing
+    at_tag = tag !== nothing && occursin(r"^v\d+\.\d+\.\d+(-rc\.\d+)?$", tag)
     Dict{String,Any}(
-        "tool_version" => dev ? git_stamp(dir) : String(cfg["tool"]["version"]),
+        "tool_version" => dev ? (at_tag ? tag[2:end] : git_stamp(dir)) : String(cfg["tool"]["version"]),
         "tool_rev" => dev ? something(Git.head(dir), "unknown") : "v" * String(cfg["tool"]["version"]),
         "tool_tree_sha" => TreeHash.tree_hash(dir),
         "config_sha" => config_sha(cfg),
