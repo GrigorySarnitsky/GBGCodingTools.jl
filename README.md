@@ -8,6 +8,10 @@ instruments (`/check-docs`, `/check-consistency`, `/bug-hunt`, `/audit-changes`)
 and its scans, the test harness, the doctor, the policy prose and the migration scaffolding — one
 version, pinned by every consumer through its sub-environment `Project.toml` files.
 
+**Documentation:** <https://grigorysarnitsky.github.io/GBGCodingTools.jl/> — the guide (install, the
+verbs, rounds, the doctor, the ledger, the config), the API pages and the architecture record, built
+from `master` by the Docs workflow.
+
 The design is `docs/ARCHITECTURE.md`; the build plan is `IMPLEMENTATION.md`; `docs/design-record/` is
 the provenance.
 
