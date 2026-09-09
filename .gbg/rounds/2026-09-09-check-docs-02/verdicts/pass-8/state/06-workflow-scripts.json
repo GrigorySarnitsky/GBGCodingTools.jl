@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "9d99391b7f985c834c5e6cfc4e76855b",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "audit.js:50 now lists previously_worked in the base required array; schemaFor(lane) (lines 56-66) removes it from required only when lane.key !== 'behaviour-change'. Grepped for other unsafe-default sites: only Passes.jl:289's get(...,\"no\") consumes it, unchanged and correct."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#2",
+      "verdict": "ABSENT",
+      "evidence": "panel.js:88 now reads \"...and Read inside ${A.repo}; scope every search with `--glob '!.gbg/**'`. Never open anything under .gbg/...\" — matching verify-act.js:59 and verify-state.js:51's identical scoping sentence."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#3",
+      "verdict": "ABSENT",
+      "evidence": "hunt.js:74 FREE_PREAMBLE now reads \"Nothing under `.gbg/` or `~/.gbg/` is yours to open but the files this prompt names; scope every grep with `--glob '!.gbg/**'`.\" — the explicit sentence and glob scoping the finding said was missing. grep found no other free-lane pattern in the repo."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#4",
+      "verdict": "ABSENT",
+      "evidence": "dismissals.js:7 header comment now reads \"Args: { schema_version, round, repo, package, items: [{id, title}], items_sha, items_path, out, models: {economy} }\" — items_sha is present, matching the required array at line 16 and the write at line 63."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#5",
+      "verdict": "ABSENT",
+      "evidence": "rubric-audit.js:75-76 computes `misassigned` (keys in byHat absent from A.hats), logs it, and lines 119-123 fold it into `orphaned`/`gaps`/tally.MISSED; the output JSON at line 125 includes misassigned/orphaned/gaps — no longer silently dropped."
+    }
+  ]
+}

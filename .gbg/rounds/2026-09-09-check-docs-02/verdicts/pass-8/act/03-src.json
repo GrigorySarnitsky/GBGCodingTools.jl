@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "9d99391b7f985c834c5e6cfc4e76855b",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/src#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "All 12 quoted locations now carry the bulleted 'The arguments are:' list. Ran the current (post-fix) SCAN.ARGS_FORM live against src/+ext/ via julia: population=205, hits=0 — mechanical confirmation the whole class is swept.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:85",
+          "swept": true,
+          "evidence": "allocation_completeness bulleted"
+        },
+        {
+          "surface": "src/Witnesses.jl:93",
+          "swept": true,
+          "evidence": "witness_project bulleted"
+        },
+        {
+          "surface": "src/Reflection.jl:311",
+          "swept": true,
+          "evidence": "signature_fidelity bulleted"
+        },
+        {
+          "surface": "src/Scan.jl:268",
+          "swept": true,
+          "evidence": "regex_scan bulleted (marker line-wraps but scan hits=0)"
+        },
+        {
+          "surface": "src/CLI/Config.jl:250",
+          "swept": true,
+          "evidence": "Config.parse bulleted"
+        },
+        {
+          "surface": "src/CLI/Sync.jl:560",
+          "swept": true,
+          "evidence": "sync bulleted"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:223",
+          "swept": true,
+          "evidence": "classify_lane bulleted"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:185",
+          "swept": true,
+          "evidence": "resolve_hats bulleted plus needs/anchor explained"
+        },
+        {
+          "surface": "src/CLI/Bump.jl:12",
+          "swept": true,
+          "evidence": "bump bulleted"
+        },
+        {
+          "surface": "src/CLI/Release.jl:7",
+          "swept": true,
+          "evidence": "release bulleted"
+        },
+        {
+          "surface": "src/CLI/Gate.jl:8",
+          "swept": true,
+          "evidence": "gate bulleted"
+        },
+        {
+          "surface": "src/CLI/Seed.jl:41",
+          "swept": true,
+          "evidence": "select bulleted"
+        },
+        {
+          "surface": "src/HtmlWalker.jl:47",
+          "swept": true,
+          "evidence": "converted to bulleted form"
+        },
+        {
+          "surface": "src/TreeHash.jl:37",
+          "swept": true,
+          "evidence": "converted to bulleted form"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/args_form.jl:7-8 now defines ARGS_BULLET/ARGS_PROSE as whitespace-tolerant regexes replacing the literal substring test. Both named false-positive sites still wrap the phrase across a line break in source, yet the live scan run reports hits=0, confirming the fix works on both real cases.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/args_form.jl:7-8",
+          "swept": true,
+          "evidence": "literal string -> whitespace-tolerant regex"
+        },
+        {
+          "surface": "src/Scan.jl:232-233 (prose_text)",
+          "swept": true,
+          "evidence": "still wraps in source; scan confirms not flagged"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:347-348 (write_payloads)",
+          "swept": true,
+          "evidence": "still wraps in source; scan confirms not flagged"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/args_form.jl:16-30 replaced findlast(')', sig) with a depth-counted balanced-paren walk from the first '(' to its matching ')', so a `-> (tuple)` return annotation is never mistaken for the argument list, without the unsound arrow-stripping the finding's own hint would have introduced. Live scan run (population=205, hits=0) confirms argcov, Rounds.load, classify_lane, Demote.demote all parse correctly now.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/args_form.jl:16-30",
+          "swept": true,
+          "evidence": "balanced-paren depth walk replaces findlast"
+        },
+        {
+          "surface": "src/Reflection.jl:154-166 (argcov)",
+          "swept": true,
+          "evidence": "parses correctly per live scan"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl (load, classify_lane)",
+          "swept": true,
+          "evidence": "return-tuple signatures parse correctly per live scan"
+        },
+        {
+          "surface": "src/CLI/Demote.jl (demote)",
+          "swept": true,
+          "evidence": "return-tuple signature parses correctly per live scan"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Preflight.jl:206-209: 'needs' is no longer a bare mention — now reads \"`needs` holds the requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from\", in the same spot the field was previously just named.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Preflight.jl:182-215 (resolve_hats docstring)",
+          "swept": true,
+          "evidence": "sole site named; needs now explained inline"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/code_in_math.jl:3 changed 'one-letter subscripts' to 'braced subscripts and superscripts of any length', matching the `[a-z]+` quantifier in the actual regexes; the regex itself was correctly left untouched since only the comment was wrong.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/code_in_math.jl:1-4",
+          "swept": true,
+          "evidence": "sole header comment naming this behaviour; corrected"
+        }
+      ]
+    }
+  ]
+}

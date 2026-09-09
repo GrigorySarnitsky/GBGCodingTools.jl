@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "a077d88211883f1c622e65e04d77c955",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/schemas#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Rounds.jl bank(): `core = load_schema(\"finding\"); coreprops = keys(core[\"properties\"]); for f in findings; errs = validate(core, Dict(k=>v for (k,v) in f if k in coreprops)); isempty(errs) || throw(RoundError(...))`. Projects onto core keys before validating since finding.schema.json has additionalProperties:false and instrument-specific fields (kind/verdict/file/line/mechanism) would otherwise fail — a correct, deliberate strategy. test/schemas.jl:96-99 tightened the liveness check to require the schema name on a line containing load_schema(\"...\") or read_verdicts(...), closing the coincidental `e[\"scope\"]==\"finding\"` substring match. New regression test proves both directions. Ran the schemas test module directly: 782/782 pass.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Rounds.jl:398 (bank, findings.json freeze)",
+          "swept": true,
+          "evidence": "validate(core, ...) now runs on every banked finding before findings.json is written"
+        },
+        {
+          "surface": "test/schemas.jl:88-99 (schema-liveness self-test)",
+          "swept": true,
+          "evidence": "any(l -> occursin(name,l) && (occursin(\"load_schema\",l) || occursin(\"read_verdicts\",l)), split(src,\"\\n\")) replaces the bare substring match that let Doctor.jl's `e[\"scope\"]==\"finding\"` count as proof of liveness"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/bug-hunt/schema.json: the inline lane_file.properties.findings.items object is now `{\"$ref\": \"#/$defs/hunt_finding\"}` (line 191); the dead, drifted `$defs.finding` block is deleted entirely; `$defs.hunt_finding` retains the full property set including kind/verdict/observed/file/line/mechanism and the complete required list. Confirmed Schema.jl's validate() resolves $ref via _resolve()/root before any keyword check, so classify_lane's validate call correctly dereferences it. Matches the hint exactly and mirrors check-docs/check-consistency/audit-changes's own $ref pattern (verified all four instrument schemas $ref #/$defs/(hunt_)finding).",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/schema.json $defs.finding",
+          "swept": true,
+          "evidence": "block deleted"
+        },
+        {
+          "surface": "instruments/bug-hunt/schema.json lane_file.properties.findings.items (inline duplicate)",
+          "swept": true,
+          "evidence": "replaced with $ref to #/$defs/hunt_finding"
+        },
+        {
+          "surface": "instruments/bug-hunt/schema.json $defs.hunt_finding (previously unreachable dead code)",
+          "swept": true,
+          "evidence": "now the sole $ref target, reachable from the live validation path"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/managed.schema.json: \"files\" changed from additionalProperties:true to additionalProperties:{\"$ref\":\"#/$defs/entry\"}. schema/tally.schema.json: \"per_id\" likewise wired to {\"$ref\":\"#/$defs/entry\"}. Both are exercised by real validate() calls already present (src/CLI/Sync.jl:503 validate(load_schema(\"managed\"), d); src/CLI/Passes.jl:318 validate(load_schema(\"tally\"), tally)), so the newly-wired per-key shape is actually checked on real data. Schema.jl's additionalProperties branch (`ap isa AbstractDict` -> validate(ap, v; ...)) supports this exactly as the finding's own location note asserted.",
+      "class_surfaces": [
+        {
+          "surface": "schema/managed.schema.json .files (dynamic map)",
+          "swept": true,
+          "evidence": "additionalProperties now {\"$ref\":\"#/$defs/entry\"}, enforcing template/version/sha256 per path key"
+        },
+        {
+          "surface": "schema/tally.schema.json .per_id (dynamic map)",
+          "swept": true,
+          "evidence": "additionalProperties now {\"$ref\":\"#/$defs/entry\"}, enforcing act/act_demoted/state/closed_by per id key"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/exemptions.schema.json reason.minLength raised from 24 to 40; description changed to \"at least 40 characters, as CFG.EXEMPTIONS enforces for every entry: what is declined and why\" — drops the false 'on scope finding' qualifier exactly as the hint asked. Confirmed src/CLI/Doctor.jl:305 `length(e[\"reason\"]) >= 40 || push!(errs, ...)` runs unconditionally for every ledger entry, before the scope=='finding' branch at line 306 — the schema now matches the code it was misdescribing.",
+      "class_surfaces": [
+        {
+          "surface": "schema/exemptions.schema.json properties.reason",
+          "swept": true,
+          "evidence": "minLength: 24 -> 40, description corrected to remove the false scope qualifier"
+        }
+      ]
+    }
+  ]
+}

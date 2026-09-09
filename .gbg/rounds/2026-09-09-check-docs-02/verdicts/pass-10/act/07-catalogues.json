@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "a077d88211883f1c622e65e04d77c955",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/catalogues#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "catalog/hats/latex-typesetter.toml:4 — needs = [\"source\"]  # the persona reads the rendered policy file, never a `rulebook_sections` grant (was [\"source\",\"rulebook\"]). Preflight.jl:210-211 na gate still checks \"rulebook\" in needs && isempty(rulebook_sections), so removing the tag makes the gate never fire for this hat; nothing else in the persona changed.",
+      "class_surfaces": [
+        {
+          "surface": "catalog/hats/latex-typesetter.toml:4",
+          "swept": true,
+          "evidence": "needs changed from [\"source\", \"rulebook\"] to [\"source\"] with a trailing comment explaining the persona never substitutes {package.rulebook_sections}"
+        },
+        {
+          "surface": "catalog/hats/doc-policy.toml:4",
+          "swept": true,
+          "evidence": "needs = [\"rulebook\", \"source\"] retained unchanged; grep confirms its persona does reference rulebook_sections once, so this hat is correctly outside the defect class and required no change"
+        },
+        {
+          "surface": "catalog/hats/naming-policy.toml:4",
+          "swept": true,
+          "evidence": "needs = [\"rulebook\", \"source\"] retained unchanged; persona references rulebook_sections once, correctly outside the defect class"
+        },
+        {
+          "surface": "catalog/hats/invariants-and-decisions.toml:4",
+          "swept": true,
+          "evidence": "needs = [\"rulebook\", \"source\"] retained unchanged; persona references rulebook_sections once, correctly outside the defect class"
+        },
+        {
+          "surface": "catalog/lanes/*.toml",
+          "swept": true,
+          "evidence": "grep for 'rulebook' outside catalog/hats/ finds only prose mentions in audit-changes.toml and check-docs.toml briefs, never a `needs` array — lane catalogues carry no needs/not_applicable mechanism, so this class cannot recur there"
+        }
+      ]
+    }
+  ]
+}

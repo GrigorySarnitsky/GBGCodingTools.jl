@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "lane": "templates",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "a077d88211883f1c622e65e04d77c955",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/templates#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/README.md:23-24 rows now read `{{tool.version}}`, `{{files}}` (commit-message.tmpl) and `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}` (bump-message.tmpl) — `{{package.name}}` dropped from both cells, matching a placeholder grep over both templates exactly. Diff: `-{{package.name}}, {{tool.version}}, {{files}}` / `+{{tool.version}}, {{files}}`.",
+      "class_surfaces": [
+        {
+          "surface": "templates/README.md:23",
+          "swept": true,
+          "evidence": "commit-message.tmpl row's Slots cell now lists only `{{tool.version}}`, `{{files}}`, matching the template's actual placeholders."
+        },
+        {
+          "surface": "templates/README.md:24",
+          "swept": true,
+          "evidence": "bump-message.tmpl row's Slots cell now lists `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}`, matching the template's actual placeholders (Bump.jl:41 supplies exactly these)."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/regressions-README.md:1 changed to `<!-- gbg:managed regressions-README.md v{{tool.version}} — rewritten by `gbg sync`; do not edit -->`, matching SKILL.md.tmpl:6's form exactly. Sync.jl:221 renders this file with `s` (from `slots(cfg)`, Sync.jl:110-133) which carries `\"tool.version\" => v`, so the placeholder substitutes correctly; README.md's Slots cell for this row was updated from `none` to `{{tool.version}}` to match.",
+      "class_surfaces": [
+        {
+          "surface": "templates/regressions-README.md:1",
+          "swept": true,
+          "evidence": "version stamp added, form matches every sibling."
+        },
+        {
+          "surface": "templates/SKILL.md.tmpl:6",
+          "swept": true,
+          "evidence": "already carried `v{{tool.version}}`; unchanged, still compliant."
+        },
+        {
+          "surface": "templates/claude-md.block:1",
+          "swept": true,
+          "evidence": "already carried `v{{tool.version}} sha256:{{sha256}}`; unchanged, still compliant."
+        },
+        {
+          "surface": "templates/gitignore.block:1",
+          "swept": true,
+          "evidence": "already carried `v{{tool.version}}`; unchanged, still compliant."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/README.md's Managed headers paragraph now adds: 'One exception: `queue-guard.sh.tmpl` is copied byte-for-byte from PF's Stop hook and carries no header, so the upstream text stays comparable; the sidecar hash is what marks it managed.' Confirmed against src/CLI/Sync.jl:219 (`template(\"queue-guard.sh.tmpl\")` used raw, no render/header) and Sync.jl:627-629 (every planned ManagedFile, queue-guard.sh included, still gets a sidecar sha256 entry) — factually accurate, took the hint's first alternative, inserted directly into the flagged paragraph.",
+      "class_surfaces": [
+        {
+          "surface": "templates/README.md:26-27",
+          "swept": true,
+          "evidence": "the blanket 'A G file carries a first-line header...' rule is now qualified in the same paragraph with the queue-guard.sh.tmpl exception."
+        },
+        {
+          "surface": "templates/queue-guard.sh.tmpl:1-40",
+          "swept": true,
+          "evidence": "still carries no gbg:managed header, but the doc now says so explicitly instead of contradicting it."
+        },
+        {
+          "surface": "src/CLI/Sync.jl:154",
+          "swept": false,
+          "evidence": "the dead `:hash` branch of `managed_header` remains unused by any call site (only `:html` calls exist at Sync.jl:173,176) — the hint's second alternative (remove the dead branch) was not taken, but the first alternative (document the exception) fully answers the finding on its own terms."
+        }
+      ]
+    }
+  ]
+}

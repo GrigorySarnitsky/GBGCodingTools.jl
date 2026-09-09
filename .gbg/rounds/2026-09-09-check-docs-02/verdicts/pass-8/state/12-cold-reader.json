@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "9d99391b7f985c834c5e6cfc4e76855b",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#1",
+      "verdict": "PARTIAL",
+      "evidence": "Preflight.jl:212-214 and Doctor.jl:260-262 now disambiguate heading-anchor vs full-strength-hat-anchor exactly as hinted. But Seed.jl:47-55 ('the occurrences of `anchor` in `full`', `c[\"anchor\"]` regex) introduces a third, wholly undisambiguated 'anchor' sense read before Preflight's fix.",
+      "surviving_class": "src/CLI/Seed.jl:47-55 (anchor = regex locator for a seed class, module #22); src/CLI/Init.jl:493,518-519,525 (seed catalogue 'anchor' field, same undisambiguated sense)"
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "src/GBGCodingTools.jl:16 now defines 'An instrument is one of four review procedures: check-docs, check-consistency, bug-hunt, audit-changes' in the module docstring (module #1, before every use). DocLints.jl:11, Gate.jl:11, Audit.jl:11, Rounds.jl:9, Preflight.jl:313 all gloss/link it. Grepped every file the finding cited; none left undefined."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#3",
+      "verdict": "ABSENT",
+      "evidence": "GBGCodingTools.jl:22 defines 'the gate' with a [`gate`](@ref) link; DocLints.jl:18 links [`GBGCodingTools.gate`](@ref); TestHarness.jl:536-545 names GBGCodingTools.gate 'the generic closure gate' with @ref and states 'Never that generic gate over all four instruments'. Both cited sites now disambiguated and cross-linked as the hint asked."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#4",
+      "verdict": "ABSENT",
+      "evidence": "GBGCodingTools.jl:18 defines 'A lane is one agent's share of a round — one surface, one territory, or one kind of change' in the module docstring (module #1, before all 19+ uses). Schema.jl:41, Scan.jl:38 link back via [`GBGCodingTools`](@ref); Preflight.jl:243 restates it. Searched Schema.jl, Scan.jl, Preflight.jl — all now covered."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#5",
+      "verdict": "ABSENT",
+      "evidence": "GBGCodingTools.jl:19 defines 'A hat is one persona of the check-consistency panel, reading the corpus from a single standpoint' in the module docstring (module #1). Preflight.jl:200 (resolve_hats) restates the identical sentence before its field list; Init.jl:232 references resolve_hats. Both cited sites now carry the concept, not just fields."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#6",
+      "verdict": "ABSENT",
+      "evidence": "Reflection.jl:164 now reads '...the [`GBGCodingTools.Ledger`](@ref)'s `[exemption.match]` predicate...' — the exact @ref RULE.DOC.XLINK fix requested. Checked include order (Reflection=#8, Ledger=#10): Reflection is the only pre-Ledger bare mention, and it is now linked."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#7",
+      "verdict": "ABSENT",
+      "evidence": "GBGCodingTools.jl:20 defines 'A Workflow is the instrument's `workflow/*.js` script, launched by the session running the round' in the module docstring (module #1). Schema.jl:41-42 glosses inline with a link; Preflight.jl:8 and Rounds.jl:487 also gloss it at their own first use."
+    }
+  ]
+}

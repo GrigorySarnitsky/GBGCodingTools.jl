@@ -1,0 +1,100 @@
+{
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "lane": "rationale",
+  "pass_nonce": "9d99391b7f985c834c5e6cfc4e76855b",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rationale#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:625 now reads 'Sixteen schemas: schema/{config,exemptions,hat,round,pass,finding,verdict-act,verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import,managed}.schema.json' (16 names, lane-file and hunt-candidate dropped) plus a sentence that the lane-file wrapper and bug-hunt's candidate shape live inline in each instrument's own schema.json. line 1001 now reads 'schema/*.schema.json the sixteen of D11'. `ls schema/*.schema.json` returns exactly these 16 files, no more, no less.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:625-629",
+          "swept": true,
+          "evidence": "'Sixteen schemas' + the corrected 16-name list + the inline-location sentence"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1001",
+          "swept": true,
+          "evidence": "'the sixteen of D11' (was 'the eighteen of D11')"
+        },
+        {
+          "surface": "schema/ (directory, ground truth)",
+          "swept": true,
+          "evidence": "16 *.schema.json files present, matching the corrected list exactly; no schema/lane-file.schema.json or schema/hunt-candidate.schema.json exist"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:1722 QUICK formula now ends '...POL.SENTINEL, SELF.CONSUMER, AUDIT.GAP}'. Lines 1725-1726 now read '...AUDIT.* other than AUDIT.GAP, SELF.DOCS and every other --deep check are never in QUICK', removing the blanket 'AUDIT.*' from the exclusion list. src/CLI/Doctor.jl:45 const QUICK still ends with \"AUDIT.GAP\", confirming the doc now matches code.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:1713-1722 (QUICK formula)",
+          "swept": true,
+          "evidence": "AUDIT.GAP appended to the QUICK set literal"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1725-1726 ('never in QUICK' list)",
+          "swept": true,
+          "evidence": "carved out as 'AUDIT.* other than AUDIT.GAP' instead of blanket AUDIT.*"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:42-45 const QUICK (ground truth)",
+          "swept": true,
+          "evidence": "array literal still contains \"AUDIT.GAP\" as its last entry, unchanged and now correctly documented"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md's §12.B table now carries a row '| `SCAN.ARGS_FORM` | `RULE.DOC.ARGS_FORM` | triage | src, ext | julia | new 2026-09-09: three or more arguments, or any keyword argument, must be bulleted... | `wrong-args-form` |', placed directly after the SCAN.ARGCOV row. Every field matches catalog/scans.toml:129-134 (rule, tier=triage, surfaces=[src,ext], fixture=[wrong-args-form]) and the behaviour description matches src/Scans/args_form.jl's wants_bullets logic (>=ARGS_THRESHOLD positional+keyword, or any keyword) and its mixed-form check.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md §12.B table (SCAN.ARGS_FORM row)",
+          "swept": true,
+          "evidence": "row added between SCAN.ARGCOV and SCAN.FORMULA_IN_BACKTICKS, fields verified against catalog/scans.toml and src/Scans/args_form.jl"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#4",
+      "verdict": "NEW-DEFECT",
+      "question": "implementation",
+      "evidence": "All five files (Git.jl, Ledger.jl, Passes.jl, RoundFiles.jl, Self.jl) were added to the §3 CLI/ tree with one-line descriptions, but the Self.jl line is false: docs/ARCHITECTURE.md now reads 'Self.jl `gbg self verify` — the tool's own tree hash against the tag it claims (D2, D3, D15)'. Self.jl's own self_verify (src/CLI/Self.jl) compares the running copy's tree hash against `Pkg.dependencies()[uuid].tree_hash` and each sub-env manifest's `git-tree-sha1` — never a git tag; `grep -i tag src/CLI/Self.jl` returns nothing. The SAME document's own §7.3 PIN.SELF row (docs/ARCHITECTURE.md:1741) states this correctly: 'the running copy's recomputed git tree hash ... equals Pkg.dependencies()[uuid].tree_hash and the manifests' git-tree-sha1' — no tag either. The newly-added tree line contradicts both the source and the document's own correct description 800 lines later.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md CLI/ tree — Git.jl line",
+          "swept": true,
+          "evidence": "'the git questions the round verbs and the gate ask (Main.jl's stamp and Doctor.jl's GIT.* checks run their own)' — verified accurate: Doctor.jl:82 defines its own local git() helper for GIT.BRANCH/GIT.TRAILER, separate from the Git module"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md CLI/ tree — Ledger.jl line",
+          "swept": true,
+          "evidence": "matches src/CLI/Ledger.jl's own header comment"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md CLI/ tree — Passes.jl line",
+          "swept": true,
+          "evidence": "matches src/CLI/Passes.jl's own header comment"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md CLI/ tree — RoundFiles.jl line",
+          "swept": true,
+          "evidence": "matches src/CLI/RoundFiles.jl's own header comment"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md CLI/ tree — Self.jl line",
+          "swept": false,
+          "evidence": "claims comparison 'against the tag it claims'; actual mechanism (src/CLI/Self.jl self_verify, and the document's own PIN.SELF row at line 1741) compares against Pkg.dependencies()/manifest git-tree-sha1, never a tag — freshly introduced false claim"
+        }
+      ]
+    }
+  ]
+}

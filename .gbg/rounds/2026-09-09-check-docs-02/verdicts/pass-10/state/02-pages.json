@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "a077d88211883f1c622e65e04d77c955",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/pages#1",
+      "verdict": "ABSENT",
+      "evidence": "grep -n migrate docs/src/guide/verbs.md: only Init.migrate_baselines (a real VERBS entry) remains. Init.migrate_seeds moved to docs/src/api/CLI.md:26 under Engines, next to Init.derive_config — exactly the hint's fix. No verbs.md mention of migrate_seeds anywhere."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#2",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:15 now has 'GBGCodingTools.Options' in the Entry point @docs block, right after parse_options (line 14), per the hint. Options struct docstring at src/CLI/Main.jl:13-24 is rendered."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#3",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:40 lists GBGCodingTools.Doctor.cmd_doctor. Its docstring (src/CLI/Doctor.jl:732-738) states '--deep', '--json', '--effective', '--only <id-or-prefix>[,...]|QUICK' and the exit-2-not-a-consumer behavior, now rendered."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#4",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:43 lists GBGCodingTools.cmd_scan. Its docstring (src/Scan.jl:557-563) documents '--rebaseline prose-shape --reason \"...\"' writing docs/prose_shape.csv, now rendered on the page."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#5",
+      "verdict": "ABSENT",
+      "evidence": "install.md:36-39: 'One consumer is routed differently: a consumer pinned at dev that is not itself the tool's checkout — the fixture ... — resolves against the enclosing tool repository's root rather than its own docs/.' Matches bin/gbg's fixture branch."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#6",
+      "verdict": "ABSENT",
+      "evidence": "rounds.md:44: 'GBG_ROUND, which the CLI exports only while it runs a build, a test or an audit's executable claim on that round's behalf' — now matches Gate.jl's docstring wording exactly, including the audit case."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#7",
+      "verdict": "ABSENT",
+      "evidence": "config.md:11-13 enumeration now reads '...references anchors, the glossary file, and any data or script surface whose comments are prose'. All 11 schema.surfaces.properties keys (incl. glossary, data) now represented."
+    }
+  ]
+}

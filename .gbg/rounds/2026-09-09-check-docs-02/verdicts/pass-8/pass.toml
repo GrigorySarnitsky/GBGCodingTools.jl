@@ -1,0 +1,24 @@
+tool_tree_sha = "175b91d3c80b40ab61eb5679f671ff3292b404f8"
+range = "209cb212e97f7565482dd7a01c75370cad28b79b..fdbe0928e4b0ccbd07443fd57f153106aa0510e0"
+superseded_by = 9
+pass = 8
+opened = "2026-09-09T20:53:34"
+tool_version = "dev+fdbe092"
+head = "fdbe0928e4b0ccbd07443fd57f153106aa0510e0"
+config_sha = "4f6637cc7288df1d74aac5f5fb20db08dbf78f3356c63895030d434905da5983"
+tool_rev = "fdbe0928e4b0ccbd07443fd57f153106aa0510e0"
+regrade = true
+nonce = "9d99391b7f985c834c5e6cfc4e76855b"
+
+[expected]
+rationale = 4
+pages = 7
+workflow-scripts = 5
+cold-reader = 7
+src = 5
+rulebook = 6
+built-html = 4
+templates = 3
+operational-claims = 10
+catalogues = 1
+schemas = 4

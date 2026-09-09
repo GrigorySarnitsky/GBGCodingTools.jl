@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "a077d88211883f1c622e65e04d77c955",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/src#1",
+      "verdict": "ABSENT",
+      "evidence": "All 12 cited sites (TestHarness.jl:85, Witnesses.jl:93, Reflection.jl:311, Scan.jl:268, Config.jl:250, Sync.jl:560, Rounds.jl:223, Preflight.jl:185, Bump.jl:12, Release.jl:7, Gate.jl:8, Seed.jl:41) now carry bulleted 'The arguments are:' lists. Grep for remaining prose-form 'The arguments are `x`,' across src found only 4 hits, each a legitimate 2-positional/0-keyword function exempt from bulleting."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#2",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/args_form.jl:7: ARGS_BULLET is now `r\"The\\s+arguments\\s+are:\"`, not a literal substring; comment at line 6 says 'whitespace-tolerant... a literal substring missed it'. Verified against Scan.jl:229 (prose_text) and Preflight.jl:345 (write_payloads), both still wrapping 'The\\narguments are:' across a line break; \\s+ matches the newline."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#3",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/args_form.jl:17-30 now walks depth-tracked parens to find the matching close (`depth==0` break) instead of `findlast(')', sig)`. For argcov's `argcov(cfg; exempt = (hit -> false)) -> (hits, population, skipped)` this correctly closes at the arg list's own `)`, never reaching the return tuple. Comment explains stripping `->` first is unsound."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#4",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Preflight.jl (resolve_hats docstring): '`needs` holds the requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from' — added right after the substrate explanation, matching the finding's suggested wording."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#5",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/code_in_math.jl:1-3 header now reads 'braced subscripts and superscripts of any length', matching the `[a-z]+` (not one-letter) regex at line 41. No 'one-letter' claim remains."
+    }
+  ]
+}

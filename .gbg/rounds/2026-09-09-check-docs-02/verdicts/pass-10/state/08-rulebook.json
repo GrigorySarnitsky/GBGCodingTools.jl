@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "a077d88211883f1c622e65e04d77c955",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#1",
+      "verdict": "ABSENT",
+      "evidence": "policy/docs-rubric.md:12 HOME_ORDER now reads '...one formula, citation, links, caveats' with item (7) 'the caveats a user needs ... the last substantive block, before the fields list' — matches ADMONITION_TITLE:60-61 verbatim. RULES.toml:21-22 and docs/ARCHITECTURE.md:2195 agree. No remaining contradiction."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#2",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:428 sentinel now reads the full sentence ending '...title and DOI compared.' matching citations.md:9-12's actual first sentence; no hyphen truncation ('verbatim-') remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#3",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:1-5 header no longer names POL.RULE_PARITY; it now says 'the tool's own test suite (test/schemas.jl) fails when a heading exists without a row or a row without a heading'. Confirmed test/schemas.jl:134-142 implements exactly that heading/row/sentinel check."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#4",
+      "verdict": "ABSENT",
+      "evidence": "policy/latex-idiom.md:59-60 MATHBF now states '\\mathbf{1}, the indicator and identity of RULE.TEX.MATHBB, is admitted in every package whatever that list holds; it is not a package's to withhold.' src/Scans/mathbf.jl:2-6 implements the same standing exception. No contradiction remains."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#5",
+      "verdict": "ABSENT",
+      "evidence": "policy/00-index.md:12-14 no longer claims instruments cite ids; now reads 'The scan catalogue names the rule each scan enforces, and a ledger entry of scope policy names the rule it exempts.' grep for 'instruments cite'/'cite these ids' across src, docs/src, docs/ARCHITECTURE.md, policy, templates, catalog, schema returns nothing."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#6",
+      "verdict": "ABSENT",
+      "evidence": "policy/testing-protocol.md:60-65 RULE_WITH_CHECK now names the RULES.toml 'check' field (scan:/doctor:/test:/harness:/panel/session/weakness). Verified all 93 rules in RULES.toml carry a check= entry (scripted scan, 0 missing); listed unchecked rules (e.g. ONE_HOME, MODULE_MAP, RETURNS, NO_HSCROLL) now read 'weakness', judgment rules read 'panel'."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "lane": "templates",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "9d99391b7f985c834c5e6cfc4e76855b",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/templates#1",
+      "verdict": "ABSENT",
+      "evidence": "README.md:23-24 now list commit-message.tmpl Slots as `{{tool.version}}`, `{{files}}` and bump-message.tmpl as `{{from}}`, `{{to}}`, `{{files}}`, `{{abandoned}}` — no `{{package.name}}`, matching grep of both .tmpl files exactly. Checked all other template rows against actual `{{...}}` placeholders in every templates/*.{tmpl,block,seed,skeleton,snippet} file: all match README's Slots column, no surviving mismatch."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#2",
+      "verdict": "ABSENT",
+      "evidence": "templates/regressions-README.md:1 now reads '<!-- gbg:managed regressions-README.md v{{tool.version}} — rewritten by `gbg sync`; do not edit -->', carrying the version stamp matching SKILL.md.tmpl:6's `v{{tool.version}}` form."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/templates#3",
+      "verdict": "ABSENT",
+      "evidence": "README.md:26-31 now reads 'One exception: `queue-guard.sh.tmpl` is copied byte-for-byte from PF's Stop hook and carries no header... the sidecar hash is what marks it managed.' Matches Sync.jl:219 (raw template(), no header) and the ManagedFile/sidecar-hash mechanism."
+    }
+  ]
+}

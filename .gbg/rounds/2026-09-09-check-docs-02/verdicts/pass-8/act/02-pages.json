@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "9d99391b7f985c834c5e6cfc4e76855b",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/pages#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/verbs.md:31 (old) removed 'GBGCodingTools.Init.migrate_seeds' from the Consumer-setup @docs block; docs/src/api/CLI.md:26 now lists it right after 'GBGCodingTools.Init.derive_config' in the Engines block, exactly as the hint asked. Full docs build (checkdocs=:exports) completed and all built-HTML scans reported ok, confirming the cross-reference resolves.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/verbs.md:31",
+          "swept": true,
+          "evidence": "line deleted from the verb table's Consumer-setup @docs block"
+        },
+        {
+          "surface": "docs/src/api/CLI.md:26",
+          "swept": true,
+          "evidence": "GBGCodingTools.Init.migrate_seeds added directly after Init.derive_config, the only other place the name now appears in docs/src"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/verbs.md:15 adds 'GBGCodingTools.Options' immediately after 'GBGCodingTools.parse_options' in the Entry point @docs block, exactly where the hint asked. src/CLI/Main.jl:16-24 already carries the full bulleted Options docstring; the docs build's checkdocs pass and all scans (including SCAN.SIBLING_LINK, SCAN.API_PAGE_STRUCTURE) completed with 'ok', confirming the reference resolves and the page renders.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/verbs.md:15",
+          "swept": true,
+          "evidence": "GBGCodingTools.Options added to the Entry point @docs block"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/verbs.md:40 adds 'GBGCodingTools.Doctor.cmd_doctor' to the Checks-and-scans @docs block alongside Doctor.run, exactly as hinted. src/CLI/Doctor.jl:733-736's cmd_doctor docstring already states the literal '--deep', '--json', '--effective', '--only <id-or-prefix>[,...]|QUICK' flags and the exit-2-when-not-a-consumer behavior the finding said was undocumented. Docs build completed with all scans ok.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/verbs.md:40",
+          "swept": true,
+          "evidence": "GBGCodingTools.Doctor.cmd_doctor added to the Checks and scans @docs block"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/verbs.md:42 adds 'GBGCodingTools.cmd_scan' to the Checks-and-scans @docs block, next to scan_docs. src/Scan.jl:555 (cmd_scan docstring) documents '--rebaseline prose-shape --reason \"...\"' verbatim, the mode the finding said was absent from the built docs. Docs build completed with all scans ok.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/verbs.md:42",
+          "swept": true,
+          "evidence": "GBGCodingTools.cmd_scan added to the Checks and scans @docs block"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/install.md:35-38 now reads: 'One consumer is routed differently: a consumer pinned at `dev` that is not itself the tool's checkout — the fixture, which sits inside that checkout — resolves against the enclosing tool repository's root rather than its own `docs/`.' This matches bin/gbg:19-22 exactly (P=r, the enclosing GBGCodingTools Project.toml's directory, used bare as --project, not <r>/docs). install.md has no other unconditional restatement of the shim's routing left uncorrected.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/install.md:35",
+          "swept": true,
+          "evidence": "the only sentence in docs/src stating the shim's routing claim unconditionally; now carries the fixture exception"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/rounds.md:43-44 now reads 'exports only while it runs a build, a test or an audit's executable claim on that round's behalf', matching src/CLI/Gate.jl:9's own docstring ('a build, a test or an executable claim') and consistent with src/CLI/Audit.jl:13-16 (audit_bank runs executable_claims commands with GBG_ROUND exported). No other page compresses the phrase incorrectly; docs/src/guide/instruments.md already states the audit's GBG_ROUND use separately and correctly.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/rounds.md:43-44",
+          "swept": true,
+          "evidence": "the only page-level restatement of Gate.jl's GBG_ROUND clause; now includes the audit's executable claim"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#7",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/config.md:13 now enumerates 'references anchors, the glossary file, and any data or script surface whose comments are prose' in the [surfaces] parenthetical. schema/config.schema.json's surfaces.properties has exactly 11 keys (rationale, pages, generated, src, ext, literate, built_html, history_exempt, references_heading, glossary, data); all 11 are now named on the page (glossary -> 'the glossary file', data -> 'any data or script surface whose comments are prose', matching the schema's own description of the data key almost verbatim).",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/config.md:13",
+          "swept": true,
+          "evidence": "both missing schema keys (glossary, data) added; all 11 surfaces.* keys now enumerated"
+        }
+      ]
+    }
+  ]
+}

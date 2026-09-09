@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "a077d88211883f1c622e65e04d77c955",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rationale#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:625 now reads 'Sixteen schemas: schema/{config,exemptions,hat,round,pass,finding,verdict-act,verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import,managed}.schema.json' with lane-file and hunt-candidate dropped and a sentence added that both live inline in each instrument's schema.json; ls schema/*.schema.json returns exactly these 16 names. docs/ARCHITECTURE.md:998 'the eighteen of D11' -> 'the sixteen of D11', keeping both flagged locations in sync.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:625-628 (D11 enumeration)",
+          "swept": true,
+          "evidence": "count and list corrected to the true 16 files"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:998 (§3 tree line)",
+          "swept": true,
+          "evidence": "'the eighteen of D11' changed to 'the sixteen of D11'"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:1722 QUICK formula now ends '..., POL.SENTINEL, SELF.CONSUMER, AUDIT.GAP}', matching src/CLI/Doctor.jl:42-45's actual const QUICK array which ends '..., \"POL.SENTINEL\", \"SELF.CONSUMER\", \"AUDIT.GAP\"]'. The following sentence was reworded from 'AUDIT.*, ... are never in QUICK' to 'AUDIT.* other than AUDIT.GAP, ... are never in QUICK', removing the false universal claim while keeping the rest of the exclusion list intact.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:1722 (QUICK set formula)",
+          "swept": true,
+          "evidence": "AUDIT.GAP added to the {} set"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1725-1726 ('never in QUICK' sentence)",
+          "swept": true,
+          "evidence": "carve-out 'AUDIT.* other than AUDIT.GAP' added"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:2330 adds the row '| SCAN.ARGS_FORM | RULE.DOC.ARGS_FORM | triage | src, ext | julia | ... | wrong-args-form |', matching catalog/scans.toml:128-134's registration (tier triage, surfaces [src,ext], runner julia, fixture wrong-args-form) exactly. Table row count moved from 42 to 43 (42 concrete scans + the SCAN.CUSTOM placeholder), matching catalog/scans.toml's 42 [[scan]] entries.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md §12.B table",
+          "swept": true,
+          "evidence": "SCAN.ARGS_FORM row added with correct tier/surfaces/runner/fixture, count now reconciles with catalog/scans.toml's 42 registered scans"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:955-963 §3 tree now lists Git.jl, Ledger.jl, Passes.jl, RoundFiles.jl and Self.jl under CLI/ with one-line descriptions each verified accurate against the modules' own header/docstring text (e.g. Self.jl: 'the running copy's tree hash against what Pkg.dependencies() and every sub-environment manifest record' matches src/CLI/Self.jl's tool_sub_envs/PIN.SELF machinery). src/CLI/ holds exactly 25 .jl files; all 5 previously-missing ones are now named.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md §3 CLI/ tree block",
+          "swept": true,
+          "evidence": "all 5 named files (Git.jl, Ledger.jl, Passes.jl, RoundFiles.jl, Self.jl) added with accurate descriptions"
+        }
+      ]
+    }
+  ]
+}

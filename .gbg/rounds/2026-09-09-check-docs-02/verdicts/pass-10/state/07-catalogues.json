@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "a077d88211883f1c622e65e04d77c955",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/catalogues#1",
+      "verdict": "ABSENT",
+      "evidence": "catalog/hats/latex-typesetter.toml:4 now reads needs = [\"source\"] with inline comment 'the persona reads the rendered policy file, never a rulebook_sections grant'; grep for 'needs = [' across catalog/hats/ confirms no 'rulebook' entry remains for this hat, so Preflight.jl's not_applicable gate ('rulebook' in needs && isempty(rulebook_sections), now line 231) cannot fire for it."
+    }
+  ]
+}

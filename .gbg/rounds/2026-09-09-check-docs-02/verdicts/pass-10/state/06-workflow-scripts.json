@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "a077d88211883f1c622e65e04d77c955",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "instruments/audit-changes/workflow/audit.js:47 now lists `previously_worked` in the base SCHEMA's required array; schemaFor(lane) (lines 59-65) only REMOVES it for non-behaviour-change lanes, keeping it required for behaviour-change; agent() at line 101 calls schemaFor(lane), not the raw SCHEMA."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#2",
+      "verdict": "ABSENT",
+      "evidence": "instruments/check-consistency/workflow/panel.js:88 now reads: \"you may use Bash with git (log, diff, show, grep) and Read inside ${A.repo}; scope every search with `--glob '!.gbg/**'`. Never open anything under .gbg/...\" — matches verify-act.js/verify-state.js."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#3",
+      "verdict": "ABSENT",
+      "evidence": "instruments/bug-hunt/workflow/hunt.js:74, FREE_PREAMBLE now states explicitly: \"Nothing under `.gbg/` or `~/.gbg/` is yours to open but the files this prompt names; scope every grep with `--glob '!.gbg/**'`.\" — the free lane (line 92) uses FREE_PREAMBLE, so this boundary now applies there."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#4",
+      "verdict": "ABSENT",
+      "evidence": "instruments/bug-hunt/workflow/dismissals.js:7 header comment now reads \"Args: { schema_version, round, repo, package, items: [{id, title}], items_sha, items_path, out, models: {economy} }\" — items_sha is present, matching the runtime check at line 16 and the schema write at line 63."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#5",
+      "verdict": "ABSENT",
+      "evidence": "rubric-audit.js:82-83 now computes `misassigned` (keys of byHat not in A.hats) and logs a `!!` warning naming them; lines 118-120 fold their ids into `orphaned`, count them into tally.MISSED, list them in `gaps` with hat '(off-roster)', and write misassigned/orphaned/gaps into A.out — no longer silently dropped."
+    }
+  ]
+}

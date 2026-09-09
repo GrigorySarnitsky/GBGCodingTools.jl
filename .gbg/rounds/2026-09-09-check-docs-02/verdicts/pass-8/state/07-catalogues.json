@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "9d99391b7f985c834c5e6cfc4e76855b",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/catalogues#1",
+      "verdict": "ABSENT",
+      "evidence": "catalog/hats/latex-typesetter.toml now has needs=[\"source\"] only (no \"rulebook\"), with an inline comment: 'the persona reads the rendered policy file, never a rulebook_sections grant'. Preflight.jl:231 only marks a hat not_applicable for the rulebook tag when needs includes it, so this hat can no longer vanish when rulebook_sections is empty. docs/make.jl:48 confirms latex-idiom.md is baked into the full manuscript the hat already reads via substrate. The other needs=[\"rulebook\",...] hats (naming-policy, doc-policy, invariants-and-decisions) genuinely reference {package.rulebook_sections} in their personas, so the declared-but-unused-grant class is not alive elsewhere in catalog/hats/*.toml."
+    }
+  ]
+}

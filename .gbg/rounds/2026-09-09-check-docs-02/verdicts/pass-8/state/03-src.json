@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "9d99391b7f985c834c5e6cfc4e76855b",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/src#1",
+      "verdict": "ABSENT",
+      "evidence": "All 12 quoted sites now carry 'The arguments are:' bulleted lists. A script parsing every docstring signature in src/ext for 3+/kw args found zero unbulleted violators; the 3 remaining prose-form docstrings each take exactly 2 positional args, correctly under threshold."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#2",
+      "verdict": "ABSENT",
+      "evidence": "args_form.jl:7 now defines ARGS_BULLET as a whitespace-tolerant regex r\"The\\s+arguments\\s+are:\" (was a literal substring), with a comment citing this exact line-wrap reason. Scan.jl and Preflight.jl still wrap the phrase across a line break; \\s matches newlines so it now matches both."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#3",
+      "verdict": "ABSENT",
+      "evidence": "args_form.jl:16-31 replaced findfirst/findlast with a paren-depth walk that finds the argument list's true matching close-paren, so a `-> (a,b,c)` return tuple can no longer pollute the parsed parameter list. Comment explains this replaces arrow-stripping, which was unsound for arrow-valued defaults."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#4",
+      "verdict": "ABSENT",
+      "evidence": "Preflight.jl:203-205: 'needs holds the requirement tags (html, git, rulebook) not_applicable is computed from' — needs is now explained inline like every sibling field."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#5",
+      "verdict": "ABSENT",
+      "evidence": "code_in_math.jl:3 now reads 'braced subscripts and superscripts of any length', matching the actual _\\{[a-z]+\\} regex (unbounded +), no longer claiming 'one-letter subscripts'."
+    }
+  ]
+}
