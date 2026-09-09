@@ -5,7 +5,18 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 
 ## Unreleased
 
-MINOR so far. `RULE.CIT.FULL_INLINE` is rewritten to the form the fleet actually uses and PF has used
+MINOR so far. The self-application sweep's remainder is closed. New: `SCAN.ARGS_FORM` (triage) for the
+argument-form rule, which had no enforcer; `test/coverage.jl` driving `main()` and its exit contract,
+every doctor check as a callable, every Workflow script's shape, the consolidator against a golden
+manuscript, `Rounds.prepare` end to end, and a round of each of the four instruments. Repairs: the
+trailer check fails rather than warns; `AUDIT.GAP` no longer reports absence as contiguity and runs in
+the quick set; `SCAN.SIGNATURE_FIDELITY` compares 190 bindings where it compared none, resolving names to
+the module that owns them; the four reflection scans run at all, the fixture being a test dependency now
+and `loaded` asserted; the docs build stops waiving unresolved cross references; the managed sidecar, the
+seed ground truth and each reproduction record are validated against the schemas that name them, two
+superseded schemas are deleted, and `witness_env` is a string in the bug-hunt schema, without which that
+instrument could not open a round. `RULE.API.POSITIONAL` is declared unenforceable in the ledger.
+`RULE.CIT.FULL_INLINE` is rewritten to the form the fleet actually uses and PF has used
 all along: a docstring cites author-year in its prose and carries the full reference in a `# References`
 section at its end, one bullet per work with the title clickable to the DOI. The rule had said the full
 reference goes inline in the prose, which no package does and which reads badly. `SCAN.DOI_CROSSCHECK`
