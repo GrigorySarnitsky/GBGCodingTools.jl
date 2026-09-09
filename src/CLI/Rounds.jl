@@ -6,7 +6,7 @@
     Rounds
 
 The round store's writers before verification. [`Rounds.prepare`](@ref) builds, consolidates, scans or
-diffs as the instrument needs; [`Rounds.bank`](@ref) validates the lane files, classifies dead lanes,
+diffs as the instrument needs (one of the four review procedures [`GBGCodingTools`](@ref) binds); [`Rounds.bank`](@ref) validates the lane files, classifies dead lanes,
 assigns ids, marks seeds and freezes `findings.json`; [`Rounds.rerun`](@ref) re-launches dead lanes;
 [`Rounds.abandon`](@ref) is the only wholesale exit. `build` and `test` run the consumer's commands
 under `GBG_ROUND` so the gate inside them ignores this round.

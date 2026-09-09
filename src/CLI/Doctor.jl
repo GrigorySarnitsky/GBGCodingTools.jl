@@ -257,6 +257,9 @@ function fleet_names()
     isfile(p) || return String[]
     return [c["name"] for c in get(TOML.parsefile(p), "consumer", Any[])]
 end
+# Two unrelated senses of `anchor` meet in this one check. A hat's `anchor` is whether it runs at full
+# strength rather than on the economy model; `Config.resolve_anchor` resolves a `file#heading` Markdown
+# reference. Neither is the other, and nothing but the surrounding line says so.
 check!("CFG.HATS", ctx -> begin
     cc = ctx.cfg["instruments"]["check-consistency"]; errs = String[]
     hats = String.(cc["hats"]); schema = load_schema("hat")

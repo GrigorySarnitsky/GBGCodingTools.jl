@@ -186,7 +186,7 @@ unit,words,longest_paragraph,admonitions
 "Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
 "Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0
 "Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
-"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",114,49,0
+"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",126,61,0
 "Reflection.jl :: ARGS_THRESHOLD",33,32,0
 "Reflection.jl :: ArgcovHit",58,48,0
 "Reflection.jl :: Docstring",70,59,0
@@ -211,7 +211,7 @@ unit,words,longest_paragraph,admonitions
 "RoundFiles.jl :: rounds(cfg) -> Vector{NamedTuple}",25,22,0
 "RoundFiles.jl :: sha256_file(path) -> String",17,14,0
 "RoundFiles.jl :: state(round) -> Symbol",16,13,0
-"Rounds.jl :: Rounds",59,58,0
+"Rounds.jl :: Rounds",67,66,0
 "Rounds.jl :: abandon(cfg, round, reason; io = stdout) -> Int",75,33,0
 "Rounds.jl :: bank(cfg, round; io = stdout) -> Int",137,100,0
 "Rounds.jl :: build(cfg, round; io = stdout) -> Int",60,24,0

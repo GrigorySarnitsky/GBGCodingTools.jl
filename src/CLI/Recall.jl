@@ -69,9 +69,11 @@ function per_class(findings::AbstractVector, ground_truth::AbstractDict)
     return out
 end
 
-# Which planted seeds a hat's own substrate could ever have shown it.
+# Which planted seeds a hat's own substrate could ever have shown it. Seeds are planted into the text
+# manuscripts only: a `rawhtml` hat is handed the pristine built site, so it can never see one, exactly
+# like `docstrings`, `rulebook` and `none`.
 sees_seed(substrate, seed, site_pages) =
-    substrate in ("full", "rawhtml") ? true :
+    substrate == "full" ? true :
     substrate == "siteonly" ? seed["page"] in site_pages : false
 
 """
@@ -86,9 +88,10 @@ The arguments are:
 - `site_pages` — the page banners the site-only manuscript keeps; a `siteonly` hat sees only seeds on
   those pages.
 
-A hat is judged only on the seeds its own substrate could show it: `full` and `rawhtml` see every
-planted seed, `siteonly` only those on a kept page, and `docstrings`, `rulebook` and `none` see none of
-the planted prose at all, so they are never suspect. Returns the keys.
+A hat is judged only on the seeds its own substrate could show it. Seeds are planted into the text
+manuscripts alone, so `full` sees every one and `siteonly` only those on a kept page; `rawhtml` reads
+the pristine built site and `docstrings`, `rulebook` and `none` never see planted prose, so none of
+those four is ever suspect. Returns the keys.
 """
 function suspect_hats(findings::AbstractVector, ground_truth::AbstractDict, roster::AbstractVector, site_pages::AbstractSet)
     out = String[]
