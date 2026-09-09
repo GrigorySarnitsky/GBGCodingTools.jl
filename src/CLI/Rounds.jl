@@ -302,7 +302,8 @@ end
 `gbg round bank <round>`. The arguments are `cfg`, the validated config; `round`, the round id; and
 `io`, where the classification and the recall are printed.
 
-It validates every expected lane file, records each file's sha at first sight (`lane_shas`),
+It validates every expected lane file, records each classified file's sha at first sight (`lane_shas`;
+a DEAD lane's file is not recorded, and [`Rounds.rerun`](@ref) forgets the sha of a lane it re-runs),
 classifies (DEAD, REJECTED, EMPTY, TRUNCATED), assigns ids `<round>/<lane>#<n>`; for a seeded round
 regenerates the unseeded manuscripts, recomputes the ground truth, marks seeded findings, prints recall
 per class and SUSPECT hats; for a hunt runs the witness runner over `witnesses/` expecting failure and
@@ -318,7 +319,8 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     statuses = Dict{String,Symbol}(); datas = Dict{String,Any}(); notes = String[]
     for l in lanes
         st, data, sha, note = classify_lane(dir, inst, l; first_sha = get(shas, l["key"], nothing))
-        st == :rejected || sha === nothing || haskey(shas, l["key"]) || (shas[l["key"]] = sha)
+        # first sight is recorded for a file that classified (a quarantined one is gone; its re-run replaces it)
+        st in (:rejected, :dead) || sha === nothing || haskey(shas, l["key"]) || (shas[l["key"]] = sha)
         statuses[l["key"]] = st; datas[l["key"]] = data
         println(io, "  ", rpad(uppercase(String(st)), 10), l["nn"], "-", l["key"], isempty(note) ? "" : "  — " * note)
     end
@@ -435,8 +437,8 @@ end
 
 `gbg round rerun <round> --lanes a,b`: prints the instrument's Workflow call restricted to the lanes
 the last bank classified DEAD. The arguments are `cfg`, the validated config; `round`, the round id;
-`lanes`, the lane keys; and `io`, where the call is printed. A live lane is refused. Returns the exit
-code.
+`lanes`, the lane keys; and `io`, where the call is printed. A live lane is refused; the first-sight
+sha of each named lane is forgotten, since the re-run replaces its file. Returns the exit code.
 """
 function rerun(cfg::AbstractDict, round::AbstractString, lanes::AbstractVector{<:AbstractString}; io::IO = stdout)
     dir, rec = guard(cfg, round; io)
@@ -450,6 +452,8 @@ function rerun(cfg::AbstractDict, round::AbstractString, lanes::AbstractVector{<
     a[key] = [x for x in a[key] if x["key"] in lanes]
     isempty(a[key]) && (println(io, "rerun: none of the named lanes is in the round's roster"); return 2)
     Preflight.save_args(cfg, round, "rerun", a)
+    # the re-run replaces the lane file: its first-sight sha (if any was kept) no longer guards anything
+    shas = get(rec, "lane_shas", Dict{String,Any}()); for l in lanes; delete!(shas, l); end; rec["lane_shas"] = shas; save(dir, rec)
     println(io, "Launch exactly this, then gbg round bank $round again:\n")
     println(io, Preflight.workflow_call(joinpath(Preflight.workflow_dir(cfg, round), Preflight.main_script(rec["instrument"])), a))
     return 0

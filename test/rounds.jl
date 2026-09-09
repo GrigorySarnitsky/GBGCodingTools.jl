@@ -50,6 +50,16 @@ include("helpers.jl")
         victim = joinpath(dir, "findings", "$(lanes[end]["nn"])-$(lanes[end]["key"]).json"); vtext = read(victim, String); rm(victim)
         @test G.Rounds.bank(cfg, round; io = devnull) == 2
         @test !isfile(joinpath(dir, "findings.json"))
+        # an INVALID lane file next (a type outside the closed set): quarantined, no first-sight sha kept,
+        # rerun forgets the lane, and the replacement the re-run writes banks (the rc.1 round hit this)
+        bad = JSON3.read(vtext, Dict{String,Any}); bad["candidates_found"] = 1
+        bad["findings"] = [Dict("type" => "formatted", "severity" => "minor", "confidence" => "high", "title" => "a type outside the closed set",
+                                "locations" => ["src/FixtureA.jl:1: x"], "description" => "the closed vocabulary refuses this type")]
+        open(victim, "w") do fh; JSON3.write(fh, bad); end
+        @test G.Rounds.bank(cfg, round; io = devnull) == 2
+        @test isfile(victim * ".rejected.json") || isfile(replace(victim, ".json" => ".rejected.json"))
+        @test !haskey(get(G.RoundFiles.read_round(dir), "lane_shas", Dict()), lanes[end]["key"])
+        @test G.Rounds.rerun(cfg, round, [lanes[end]["key"]]; io = devnull) == 0
         write(victim, vtext)
         @test G.Rounds.bank(cfg, round; io = devnull) == 0
         @test isfile(joinpath(dir, "findings.json")) && isfile(joinpath(dir, "findings.md"))
