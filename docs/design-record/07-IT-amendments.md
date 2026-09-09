@@ -1,5 +1,9 @@
 # Amendments from the GBGIsotropicTurbulence session (received 2026-09-08; owner-ordered to be applied, plus "retire Python")
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Section pointers are to my D-numbers and §-numbers. "rounds/" pointers are into ~/Dropbox/Research and Teach/AI Helpers/GBGInstruments-design/rounds/.
 
 (1) NAME — keep yours. D19 stands: `GBGCodingTools`. Add one line recording that `GBGInstruments` was proposed and declined because "instrument" is the reserved house term for the four review procedures (one word, one meaning). IT's "tools is a cover word" objection is withdrawn.

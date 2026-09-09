@@ -1,5 +1,9 @@
 # Attack review of ARCHITECTURE.md + IMPLEMENTATION.md (attack-design lens, round 3)
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Method as in `round2-measurement.md`: per requested area, a concrete action sequence by a lazy or mistaken session
 (EVADE) or a legitimate workflow (BLOCK), tested against the documents AS WRITTEN. Attacks already answered in
 `04-decision-record.md` / `round2-measurement.md` (A1, A3, A5-residue, A9, A10, A12, A14, S1, S2, W1, W4, W5, `test`

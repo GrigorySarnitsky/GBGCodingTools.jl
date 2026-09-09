@@ -57,6 +57,7 @@ GBGCodingTools.Rounds.rerun
 GBGCodingTools.Passes.pass_open
 GBGCodingTools.Passes.grade
 GBGCodingTools.Passes.close
+GBGCodingTools.Passes.audit_after_code
 GBGCodingTools.Rounds.abandon
 GBGCodingTools.Rounds.list
 GBGCodingTools.Rounds.render

@@ -1,3 +1,7 @@
+
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
 I have read every file in the survey. Here is the report.
 
 ---

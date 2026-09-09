@@ -1,5 +1,9 @@
 # REVIEW-final — Revision 7 (the prerelease tag) and the consistency re-run (2026-09-08)
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 A = `ARCHITECTURE.md` (2371 lines), I = `IMPLEMENTATION.md` (959), F = `FIXLOG.md` (333). Pre-edit copies
 `*.rev6.bak`; edit script `rev7.py` (20 spans, each matched exactly once); checkers `check.py`, `check_b.py`, `check_c.py`.
 

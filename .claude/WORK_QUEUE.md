@@ -38,10 +38,10 @@ the block shows in the diff instead of being silent.
 - [x] A7 the round lifecycle for the other three instruments
 - [x] B1 SCAN.SIGNATURE_FIDELITY reports the bindings it compared, not the file count
 - [x] B2 AUDIT.GAP is not vacuous and runs in QUICK
-- [ ] B3 the docs build stops hiding missing docstrings behind warnonly
+- [x] B3 the docs build stops hiding missing docstrings behind warnonly
 - [x] B4 GIT.TRAILER fails rather than warns
 - [ ] C1 RULE.DOC.ARGS_FORM gets an enforcer, or is declared a known weakness with a reason
 - [ ] C2 RULE.API.POSITIONAL likewise
-- [ ] D1 the design record's 28 files carry the provenance banner
+- [x] D1 the design record's 28 files carry the provenance banner
 - [ ] D2 the false claims the sweep found in off-surface prose
 - [x] D3 the dead schemas: loaded, or deleted

@@ -1,5 +1,9 @@
 # Design record — how `docs/ARCHITECTURE.md` and `IMPLEMENTATION.md` were produced (2026-09-06/07)
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Provenance, kept so no decision has to be re-derived. Read order for a reviewer: `00-requirements-draft.md`
 → `01-decision-points.md` (the D1–D19 frame) → the five `survey-*.md` (facts about the four packages'
 existing instruments, with file:line evidence) → `facts-claude-code-platform.md` and `theory-patterns.md`

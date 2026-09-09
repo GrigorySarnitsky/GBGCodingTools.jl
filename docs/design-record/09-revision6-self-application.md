@@ -1,5 +1,9 @@
 # Revision 6 — the tool documents itself with Documenter and is subject to its own checks (owner-ordered 2026-09-09)
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Rulings (apply to both documents; keep everything else):
 
 1. The tool is its own FIFTH consumer. The tool repo carries `.gbg/config.toml` with `[tool] version = "dev"` (the dev pin already legal inside the tool repo for the fixture; extend the rule: `version = "dev"` is legal in the fixture AND at the tool's own root), `[package] name = "GBGCodingTools"`, its modules, surfaces (`src/**/*.jl`, `ext/*.jl`, `docs/src/**/*.md`, `docs/ARCHITECTURE.md`), `instruments.enabled` = all four, `seed_rounds = false` until a seed catalogue exists, ONE domain hat (`tooling-maintainer`: reads the docs as the person who must maintain the tool). Its `.gbg/exemptions.toml`, `.gbg/hats/`, `.gbg/policy/` (rendered copy of its own `policy/`), `.gbg/rounds/` (tracked, as for any consumer) exist. The doctor and fleet treat the tool root as a consumer whose pin is `dev`; `gbg fleet` lists it as a fifth row (`fleet.toml` gets `[[consumer]] name = "GBGCodingTools", path = "."`). Dev rounds are unclosable except by abandon — UNLESS opened at a clean tag: a round opened with `tool_version` equal to a released tag AND a clean tree (`git describe --exact-match --dirty`) is a normal closable round; this is the tool's own way to run its instruments on a release. State this as an extension of D16 (the dev-round rule).

@@ -1,5 +1,9 @@
 # Brief for a round-1 architect
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 You are designing ONE shared instrument/tooling package for four private sibling Julia packages
 (GBGPeriodicFields "PF", GBGIsotropicTurbulence "IT", GBGStreamingStatistics "SS",
 GBGCloudPhysics "CP"), each developed in Claude Code sessions on a two-machine fleet (home

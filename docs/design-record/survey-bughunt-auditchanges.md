@@ -1,5 +1,9 @@
 # Survey: `/bug-hunt` and `/audit-changes` in PF and IT
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 All paths are under `/home/grigory/Dropbox/Research and Teach/Isotropic Turbulence/`. `PF` = `GBGPeriodicFields`, `IT` = `GBGIsotropicTurbulence`. Line numbers are from `cat -n` of the files as they stand today (2026-09-06). Every file named in the brief was read in full.
 
 **Siblings:** `GBGStreamingStatistics` has `.claude/commands/{check-consistency.md, check-docs.md, check-consistency/{consolidate.py, panel.js}}` and a `.claude/doc-review/` pile — **no bug-hunt, no audit-changes, no `test/regressions/`**. `GBGCloudPhysics` has only `.claude/settings.local.json` — no instruments, no `test/regressions/`. Neither CLAUDE.md mentions witness/bug-hunt/audit-changes. So the survey is a two-package one.

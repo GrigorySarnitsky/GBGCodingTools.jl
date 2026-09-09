@@ -1,5 +1,9 @@
 # Dry-run review of ARCHITECTURE.md + IMPLEMENTATION.md (2026-09-07, Aiporetne)
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Method: both documents read cold; every IMPLEMENTATION phase walked step by step; 60+ citations
 spot-checked against the four repos and the design-time surveys (PF/IT/SS/CP file lists, line ranges,
 headings, counts); both documents diffed against `04-decision-record.md`. Severity: BLOCKER = would stop

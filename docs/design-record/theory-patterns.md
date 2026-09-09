@@ -1,5 +1,9 @@
 # Shared dev-instrument package for four sibling Julia repos — patterns, sources, and what each dictates
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Framing used throughout: the *toolbox* (slash-command `.md` protocols, Workflow JS scripts, Python/Julia/shell verifiers and gates, hat personas, `make.jl` lints, hooks, policy prose) is a **platform**; each of the four repos is a **product** that instantiates it with a small amount of package-specific configuration. Every pattern below is read against that split.
 
 ---

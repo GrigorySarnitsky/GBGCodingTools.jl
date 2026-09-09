@@ -281,7 +281,7 @@ unit,words,longest_paragraph,admonitions
 "Sync.jl :: managed_block(cfg, file, s) -> String",60,55,0
 "Sync.jl :: pin(cfg) -> String",19,16,0
 "Sync.jl :: plan(cfg; ledger = Ledger.read(cfg)) -> Vector{ManagedFile}",56,50,0
-"Sync.jl :: read_sidecar(cfg) -> Dict",18,15,0
+"Sync.jl :: read_sidecar(cfg) -> Dict",47,44,0
 "Sync.jl :: render(text, slots) -> String",27,23,0
 "Sync.jl :: render_policy(cfg, s; ledger) -> Vector{ManagedFile}",46,41,0
 "Sync.jl :: render_project(cfg, envdir) -> (text, changed)",37,32,0

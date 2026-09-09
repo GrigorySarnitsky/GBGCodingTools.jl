@@ -1,5 +1,9 @@
 # Python retirement — owner-ordered (2026-09-08); mapping to apply together with IT's amendments
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Principle: every deterministic engine is Julia inside the one package; JS only for Workflow scripts; sh only for the shim and the Stop hook (pure bash, no Julia at Stop time — IT's ruling). No Python anywhere, not even transitional, unless IT's list keeps consolidate.py (then it ships INSIDE the package as the one documented exception until the Gumbo/AbstractTrees port is byte-compared).
 
 CLI: `gbg` stays the verb surface. The shim `~/.local/bin/gbg` (POSIX sh) resolves the pinned copy exactly as before, then execs

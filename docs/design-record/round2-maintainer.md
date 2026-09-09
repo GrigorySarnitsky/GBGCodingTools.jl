@@ -1,5 +1,9 @@
 # Round-2 critique — the maintainer's red team
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Lens: long-run maintainability, mechanism count, hidden complexity, delivery/pinning failure modes.
 Proposals: **P** = `round1-platform.md`, **M** = `round1-measurement.md`, **C** = `round1-consumer.md`.
 Citations are `P:123` etc. (line numbers in those files), surveys as `BL:` (`survey-buildlints-hooks-policy.md`),

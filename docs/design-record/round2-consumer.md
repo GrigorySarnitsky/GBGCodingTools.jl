@@ -1,5 +1,9 @@
 # Round-2 critique — the consumer's advocate
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Lens: a Claude Code session opening `GBGCloudPhysics` (CP: 104-line `CLAUDE.md`, `.claude/` holds
 only `settings.local.json`, **no `test/Project.toml`** — test deps via root `[extras]`/`[targets]`,
 Documenter **1.19** resolved) or `GBGStreamingStatistics` (SS: `julia = "1.11"`, a 2026-07-18 fork,

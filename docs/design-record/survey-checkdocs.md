@@ -1,3 +1,7 @@
+
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
 I have read every file in scope (PF: the 400-line command plus six scripts and both manifests; IT: the 296-line command plus seven scripts, both manifests and `INVENTORY.md`; SS: the 200-line command; CP: `CLAUDE.md`, `docs/make.jl`, the docs tree), the lint bodies of all four `docs/make.jl`, PF's `check-consistency/verify-fixes.js` and `coverage.py` headers, PF's two banked check-docs piles, and the four `CLAUDE.md` rubric sections. Paths below are relative to each package root; `PF:`, `IT:`, `SS:`, `CP:` prefix the package.
 
 # `/check-docs` across four packages — survey

@@ -1,5 +1,9 @@
 # Round-2 critique — measurement-integrity lens (attack-design style)
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Method: for every gate a proposal claims, construct (i) an EVADE — a lazy or mistaken session's
 action sequence under which the gate reports closure or cleanliness falsely — and (ii) a BLOCK — a
 legitimate round the gate refuses. Every "fail-closed" claim is tested against *the missing case

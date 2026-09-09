@@ -1,5 +1,9 @@
 # Round-1 proposal — the platform/product lens
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Lens: software product lines, configuration-over-code, the pre-commit / toolchain-manager
 distribution model, Julia `Pkg` mechanics, Claude Code plugin/skill/import mechanics. Optimised for
 **uniformity by construction**, **one place for every behaviour**, and a **pinning story that

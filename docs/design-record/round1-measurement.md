@@ -1,5 +1,9 @@
 # Round-1 proposal — the measurement-integrity lens
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Author lens: instrument contracts. Everything below is organised around one claim: **a review
 instrument is a measuring device, so the package's first job is to make every number it emits
 traceable to (a) a frozen instrument version, (b) a frozen input, (c) a grader that is not the

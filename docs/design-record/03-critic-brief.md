@@ -1,5 +1,9 @@
 # Brief for a round-2 critic
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Three independent architects proposed a shared instrument package for the four GBG Julia packages.
 Their proposals are round1-platform.md, round1-measurement.md, round1-consumer.md in this
 directory. The evidence base is the same directory: 00-requirements-draft.md,

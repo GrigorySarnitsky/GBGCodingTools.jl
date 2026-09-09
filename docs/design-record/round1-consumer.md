@@ -1,5 +1,9 @@
 # Round-1 proposal — the consumer lens
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Architect lens: what a session inside a consumer does on day one, how an instrument is invoked and
 finds its configuration, the smallest honest footprint, how the shared policy reaches each
 `CLAUDE.md`, which recorded deviations survive, the per-consumer migration checklist with a doctor

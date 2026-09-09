@@ -61,7 +61,7 @@ GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
     modules = [GBGCodingTools, TestHarness, Reflection, Witnesses, Config],
     checkdocs = :exports,
     doctest = true,
-    warnonly = [:missing_docs, :cross_references],
+    warnonly = [:missing_docs],       # explicit @docs blocks, no `export`: :exports checkdocs has nothing to say
     format = Documenter.HTML(; prettyurls = get(ENV, "CI", "") == "true", edit_link = "master",
                              size_threshold = 1_500_000, size_threshold_warn = 600_000),   # the architecture record is one long page by design
     pages = [

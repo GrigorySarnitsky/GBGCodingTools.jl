@@ -1,5 +1,9 @@
 # Requirements draft (pre-survey) — to be refined
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 R1 Uniformity: four consumers (PF, IT, SS, CP) run the SAME instrument code at the SAME version; a difference between consumers is either declared config or a finding (doctor). Existing differences default to historic artefacts.
 R2 Transparency: at any moment one can answer "which instrument version measured this round?", "what does this package deviate in and why?", "what changed in the instrument between two rounds?" from committed artefacts, not transcripts.
 R3 Fail-closed: the missing case is the failing case (no config → fail; absent pile → fail; dead lane → fail; zero count → dead agent).

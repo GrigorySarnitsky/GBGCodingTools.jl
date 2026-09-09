@@ -1,5 +1,9 @@
 # FIXLOG — Revisions 2 and 3 (2026-09-07)
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Every item of `REVIEW-dryrun.md` (1–57), every scenario of `REVIEW-attack.md` and every ruling of
 `05-fix-rulings.md`, mapped to what changed. `A` = `out/ARCHITECTURE.md`, `I` = `out/IMPLEMENTATION.md`.
 "Applied (ruling N)" means the ruling's version of the fix was used where it differs from the review's.

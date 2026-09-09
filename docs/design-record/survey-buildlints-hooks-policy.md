@@ -1,5 +1,9 @@
 # Shared-instrument surface survey — PF / IT / SS / CP
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Base `$B` = `/home/grigory/Dropbox/Research and Teach/`. PF = `$B/Isotropic Turbulence/GBGPeriodicFields`, IT = `$B/Isotropic Turbulence/GBGIsotropicTurbulence`, SS = `$B/Statistics/GBGStreamingStatistics`, CP = `$B/Cloud Physics/GBGCloudPhysics`. Sections 1, 4, 5, 6 were gathered by four parallel investigations (each read the files in full and diffed same-named bodies); 2, 3, 7 I read directly. Facts only; no architecture proposed. "Artefact" below means a difference that looks like a fork-and-drift; "necessary" means a difference tied to the package's domain or repo topology.
 
 ---

@@ -1,5 +1,9 @@
 # Verification of Revision 2 (2026-09-07) — ARCHITECTURE.md (A) + IMPLEMENTATION.md (I)
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Method: every ruling and every listed review item opened at the location FIXLOG names and confirmed
 against the revised text (line numbers as of this revision); then a mechanical cross-check of every
 doctor id, rule id, scan id, CLI verb, config key, exit code and file path that appears in more than

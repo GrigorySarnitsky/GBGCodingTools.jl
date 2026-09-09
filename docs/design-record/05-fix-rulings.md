@@ -1,5 +1,9 @@
 # Rulings for the fix pass (binding; apply together with every item in out/REVIEW-dryrun.md and out/REVIEW-attack.md)
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 General: apply EVERY fix both reviews propose unless a ruling below overrides it. Where a review proposes two options, the ruling picks. Keep 04-decision-record.md authoritative; the "deviations from the record" list in REVIEW-dryrun.md is to be resolved in favour of the record except where noted.
 
 1. Gate vs its own round (dryrun BLOCKER 1, attack 2.1/6.5/7.7): the CLI exports `GBG_ROUND=<round-id[,…]>` whenever it invokes `make.jl`, `Pkg.test()` or executable claims on behalf of an open round; `gbg gate` ignores exactly those open rounds and no others; CI never sets it; a manually set `GBG_ROUND` outside a CLI invocation is a stated residue (transcript-visible).

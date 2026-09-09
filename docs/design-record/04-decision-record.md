@@ -1,5 +1,9 @@
 # Decision record — the synthesis (authoritative; supersedes the three proposals where they differ)
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 Sources: round1-{platform,measurement,consumer}.md (P, M, C), round2-{maintainer,consumer,measurement}.md.
 Rule for the writer: where this record is silent, take P's text; where P is silent, M's; then C's.
 Every item below names the decision and, in brackets, who won and why in one clause.

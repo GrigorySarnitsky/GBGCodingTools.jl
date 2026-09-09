@@ -1,3 +1,7 @@
+
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
 Based on the fetched documentation and the embedded reference in your system context, here are the precise, current facts about Claude Code's sharing mechanisms:
 
 ---

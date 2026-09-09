@@ -1,5 +1,9 @@
 # Decision points every architecture proposal must answer (so proposals are comparable)
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+
 D1  Unit of distribution: one repo or several; Julia package + Claude plugin + CLI in one repo or split.
 D2  Delivery to a machine: git clone in Dropbox (fleet-synced by construction) vs per-machine clone vs Claude plugin marketplace install vs Julia registry.
 D3  Binding from a consumer package to the tool: absolute path via ~ symlink / env var / plugin root / [sources] URL+rev / submodule / vendored copy.
