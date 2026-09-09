@@ -11,3 +11,13 @@ the block shows in the diff instead of being silent.
 - [x] SCAN.HTML_STRAY_MATH: a rendered math span holding a backtick or a bracket is a hard finding
 - [x] the three quoted-syntax spans in the policy rewritten so they do not render as math
 - [x] `gbg round close` writes a deferred instrument change into this queue, not the roadmap
+
+- [x] BUG: the dismissal closure gate compares an items_sha that dismissals.js never writes
+- [x] BUG: verify-architecture.js writes a file architecture-fix.schema.json rejects
+- [x] BUG: instruments/bug-hunt/schema.json carries a $ref the tool's validator refuses
+- [x] BUG: the /bug-hunt witness command cannot load GBGCodingTools in this package
+- [x] BUG: /audit-changes lane routing misclassifies this package's covered paths
+- [x] BUG: docs/src/guide/verbs.md is declared generated but is hand-written and tracked
+- [x] BUG: package.modules names 9 of the 20 modules
+- [ ] populate this package's .gbg with its own hats, territories, oracles, audit claims, custom scans
+- [ ] declare the numerical audit engines inapplicable here, as ledger entries with reasons

@@ -15,7 +15,7 @@ The opener of a round and the one renderer of Workflow args. [`Preflight.preflig
 module Preflight
 
 using TOML, JSON3, Dates, SHA
-using ..GBGCodingTools: GBGCodingTools, PKG_NAME, Config, Ledger, Sync, RoundFiles, Git, Doctor, TreeHash,
+using ..GBGCodingTools: GBGCodingTools, PKG_NAME, Config, Ledger, Sync, RoundFiles, Git, Doctor, TreeHash, Witnesses,
       parse_options, VERBS, tool_version, running_dev, git_stamp, self_verify, load_schema, validate, doctor
 
 struct PreflightError <: Exception
@@ -381,7 +381,11 @@ diff is `both`, so every lane runs and reports it empty).
 function audit_kind(cfg::AbstractDict, base::AbstractString)
     changed = Git.changed_paths(cfg["root"], "$base..HEAD", covered_paths(cfg))
     isempty(changed) && return "both"
-    prose = all(p -> startswith(p, "docs/"), changed); code = all(p -> !startswith(p, "docs/"), changed)
+    # prose is what the config CALLS prose — its rationale, page and Literate surfaces — never a `docs/`
+    # prefix: `docs/make.jl` is code, and a consumer's prose need not live under `docs/` at all. A path the
+    # surfaces do not claim (a deleted file, a catalogue, a template) counts as code, the safe direction.
+    prose_files = Set(vcat((Config.surface_files(cfg, k) for k in ("rationale", "pages", "literate"))...))
+    prose = all(p -> p in prose_files, changed); code = all(p -> !(p in prose_files), changed)
     return prose ? "prose" : code ? "code" : "both"
 end
 
@@ -435,7 +439,7 @@ function render_args(cfg::AbstractDict, instrument::AbstractString, round::Abstr
         a["preamble"] = substitute(PREAMBLES[instrument], cfg)
         a["lanes"] = [Dict("nn" => l["nn"], "key" => l["key"], "kind" => l["kind"], "brief_path" => l["brief_path"], "files" => l["files"], "anchor" => l["anchor"]) for l in roster]
         a["oracles"] = bh["oracles"]; a["witness_env"] = bh["witness_env"]
-        a["witness_cmd"] = "julia --project=\"$(joinpath(root, bh["witness_env"]))\" --startup-file=no"
+        a["witness_cmd"] = "julia --project=\"$(Witnesses.witness_project(root, bh["witness_env"], cfg["package"]["name"]))\" --startup-file=no"
         a["invariants_path"] = paths["invariants_path"]
     else
         a["base"] = base; a["head"] = head; a["kind"] = kind; a["covered"] = covered_paths(cfg)

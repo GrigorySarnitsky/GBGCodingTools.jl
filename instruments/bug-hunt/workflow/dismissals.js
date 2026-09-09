@@ -13,7 +13,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['repo', 'items', 'items_path', 'out', 'package', 'models']) if (A[k] === undefined) throw new Error(`dismissals.js: args.${k} is required`)
+for (const k of ['repo', 'items', 'items_path', 'out', 'package', 'models', 'items_sha', 'round']) if (A[k] === undefined) throw new Error(`dismissals.js: args.${k} is required`)
 if (!A.items.length) throw new Error('dismissals.js: an EMPTY audit is not a clean one — the CLI does not invoke this over nothing')
 
 const SCHEMA = {
@@ -60,6 +60,6 @@ log(`TALLY: ${JSON.stringify(tally)}`)
 if (dead.length) log(`!! ${dead.length} auditor(s) DIED — those dismissals are UNAUDITED, not upheld`)
 const reopened = verdicts.filter(v => v.verdict !== 'DISMISSAL-SOUND').map(v => v.id)
 if (reopened.length) log(`!! ${reopened.length} dismissal(s) DO NOT HOLD — close will refuse: ${reopened.join(', ')}`)
-await agent(`Use the Write tool to write EXACTLY this JSON to ${A.out} and return the single word done:\n\n${JSON.stringify({ schema_version: A.schema_version, round: A.round, tally, verdicts, reopened, dead, complete: dead.length === 0 && reopened.length === 0 }, null, 2)}`,
+await agent(`Use the Write tool to write EXACTLY this JSON to ${A.out} and return the single word done:\n\n${JSON.stringify({ schema_version: A.schema_version, round: A.round, items_sha: A.items_sha, tally, verdicts, reopened, dead, complete: dead.length === 0 && reopened.length === 0 }, null, 2)}`,
   { label: 'write-dismissals', phase: 'Audit dismissals', model: A.models.economy })
 return { written: verdicts.map(v => v.id), dead, empty: [], truncated: [] }

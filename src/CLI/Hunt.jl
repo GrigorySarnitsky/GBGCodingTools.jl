@@ -12,7 +12,7 @@ function cmd_witnesses(args)
     expect = o.positional[1] == "fail" ? :fail : o.positional[1] == "pass" ? :pass : (println(stderr, "witnesses: fail or pass"); return 2)
     cfg = Config.read()
     dir = joinpath(RoundFiles.rounds_dir(cfg), o.positional[2], "witnesses")
-    code, _ = Witnesses.run(dir; expect, package = cfg["package"]["name"], project = joinpath(cfg["root"], cfg["instruments"]["bug-hunt"]["witness_env"]),
+    code, _ = Witnesses.run(dir; expect, package = cfg["package"]["name"], project = Witnesses.witness_project(cfg["root"], cfg["instruments"]["bug-hunt"]["witness_env"], cfg["package"]["name"]),
                             names = String.(o.positional[3:end]))
     return code
 end

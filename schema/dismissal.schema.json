@@ -1,69 +1,82 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "round",
-    "items",
-    "dead",
-    "reopened",
-    "complete"
-  ],
-  "properties": {
-    "items": {
-      "items": {
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "verdict",
-          "evidence"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "verdict": {
-            "type": "string",
-            "enum": [
-              "DISMISSAL-SOUND",
-              "UNSAFE",
-              "DISMISSAL-WRONG"
-            ]
-          },
-          "what_would_bite": {
-            "type": "string"
-          },
-          "evidence": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "type": "array"
-    },
-    "reopened": {
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
-    },
-    "dead": {
-      "minimum": 0,
-      "type": "integer"
-    },
-    "complete": {
-      "type": "boolean"
-    },
-    "schema_version": {
-      "minimum": 1,
-      "type": "integer",
-      "description": "the tool MAJOR this artefact was written under"
-    },
-    "round": {
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}-(check-docs|check-consistency|bug-hunt|audit-changes)-\\d{2}$",
-      "type": "string"
-    }
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "additionalProperties": false,
+ "required": [
+  "schema_version",
+  "round",
+  "items_sha",
+  "verdicts",
+  "dead",
+  "reopened",
+  "complete"
+ ],
+ "properties": {
+  "schema_version": {
+   "minimum": 1,
+   "type": "integer",
+   "description": "the tool MAJOR this artefact was written under"
   },
-  "title": "dismissals output — the dismissal audit at close (bug-hunt/workflow/dismissals.js)",
-  "type": "object"
+  "round": {
+   "pattern": "^\\d{4}-\\d{2}-\\d{2}-(check-docs|check-consistency|bug-hunt|audit-changes)-\\d{2}$",
+   "type": "string"
+  },
+  "items_sha": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$",
+   "description": "sha256 of the item set the gate assembled, copied from args — binds this audit to that exact set"
+  },
+  "verdicts": {
+   "items": {
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "verdict",
+     "evidence"
+    ],
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "verdict": {
+      "type": "string",
+      "enum": [
+       "DISMISSAL-SOUND",
+       "UNSAFE",
+       "DISMISSAL-WRONG"
+      ]
+     },
+     "what_would_bite": {
+      "type": "string"
+     },
+     "evidence": {
+      "type": "string"
+     }
+    },
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "tally": {
+   "type": "object",
+   "description": "verdict counts, for the reader"
+  },
+  "dead": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "description": "ids whose auditor died: UNAUDITED, never upheld"
+  },
+  "reopened": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "complete": {
+   "type": "boolean"
+  }
+ },
+ "title": "dismissals output — the dismissal audit at close (bug-hunt/workflow/dismissals.js)",
+ "type": "object"
 }

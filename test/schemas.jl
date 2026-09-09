@@ -28,6 +28,41 @@ include("helpers.jl")
             endswith(f, ".toml") && @test isempty(G.validate(hat, TOML.parsefile(f)))
         end
     end
+    @testset "every instrument script writes what its schema requires" begin
+        # the dismissal file's three shapes (the script, the schema and the close gate) disagreed for as
+        # long as no round had an adjudication to close (2026-09-09). These bind the two artefacts that
+        # nothing else compares: the object a script stringifies, and the schema the CLI validates it with.
+        function written_keys(js, marker)          # the top-level keys of the object literal after `marker`
+            i = findfirst(marker, js); i === nothing && return String[]
+            s = js[last(i):end]; o = findfirst('{', s); depth = 0; keys_ = String[]; cur = IOBuffer(); at_key = true
+            for c in s[o:end]
+                if c == '{' || c == '[' || c == '('; depth += 1; depth > 1 && (at_key = false)
+                elseif c == '}' || c == ']' || c == ')'
+                    depth -= 1; depth == 1 && (at_key = true)
+                    depth == 0 && (k = strip(String(take!(cur))); isempty(k) || push!(keys_, k); break)
+                elseif depth == 1 && (c == ',' || c == ':')
+                    k = strip(String(take!(cur))); isempty(k) || (at_key && push!(keys_, k)); at_key = (c == ',')
+                elseif depth == 1 && at_key; write(cur, c)
+                end
+            end
+            return [String(strip(k)) for k in keys_ if occursin(r"^[A-Za-z_][A-Za-z0-9_]*$", strip(k))]
+        end
+        for (inst, script, marker, schema) in (("bug-hunt", "dismissals.js", "JSON.stringify({", "dismissal"),
+                                               ("bug-hunt", "verify-architecture.js", "const file = {", "architecture-fix"))
+            js = read(joinpath(TOOL, "instruments", inst, "workflow", script), String)
+            keys_ = written_keys(js, marker)
+            @test !isempty(keys_)
+            req = JSON3.read(read(joinpath(TOOL, "schema", schema * ".schema.json"), String), Dict{String,Any})["required"]
+            for k in req; @test String(k) in keys_; end                       # the script writes every required key
+            props = keys(JSON3.read(read(joinpath(TOOL, "schema", schema * ".schema.json"), String), Dict{String,Any})["properties"])
+            for k in keys_; @test k in props; end                     # and writes nothing the schema forbids
+        end
+        # no instrument schema carries a cross-file reference, which the validator refuses by design
+        for i in ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
+            s = read(joinpath(TOOL, "instruments", i, "schema.json"), String)
+            for m in eachmatch(r"\"\$ref\"\s*:\s*\"([^\"]+)\"", s); @test startswith(m.captures[1], "#/"); end
+        end
+    end
     @testset "the home page's counts are the real ones" begin
         # every number the home page cites is re-measured here; a cited count nothing asserts drifts
         page = read(joinpath(TOOL, "docs", "src", "index.md"), String)

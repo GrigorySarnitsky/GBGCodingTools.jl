@@ -390,7 +390,7 @@ when the runner refuses.
 """
 function hunt_bank!(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, findings::Vector{Dict{String,Any}}; io::IO = stdout)
     wdir = joinpath(dir, "witnesses"); mkpath(wdir)
-    project = joinpath(cfg["root"], cfg["instruments"]["bug-hunt"]["witness_env"])
+    project = Witnesses.witness_project(cfg["root"], cfg["instruments"]["bug-hunt"]["witness_env"], cfg["package"]["name"])
     results = Witnesses.WitnessResult[]
     if any(f -> endswith(f, ".jl"), readdir(wdir))
         code, results = Witnesses.run(wdir; expect = :fail, package = cfg["package"]["name"], project, io)

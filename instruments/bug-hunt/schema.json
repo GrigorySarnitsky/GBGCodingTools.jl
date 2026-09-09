@@ -450,9 +450,6 @@
       },
       "type": "object"
     },
-    "candidate_file": {
-      "$ref": "hunt-candidate.schema.json"
-    },
     "hunt_finding": {
       "type": "object",
       "additionalProperties": false,

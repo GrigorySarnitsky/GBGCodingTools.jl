@@ -246,7 +246,7 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
             per_id[id] = entry
         end
     elseif inst == "bug-hunt"
-        project = joinpath(cfg["root"], cfg["instruments"]["bug-hunt"]["witness_env"])
+        project = Witnesses.witness_project(cfg["root"], cfg["instruments"]["bug-hunt"]["witness_env"], cfg["package"]["name"])
         st, arch, note = (any(f -> get(f, "kind", "") == "architecture", findings) ? read_verdicts(pd, "act", "architecture", pass["nonce"], rec["findings_sha"], "architecture-fix") : (:ok, Dict("verdicts" => []), ""))
         st == :ok || (st == :rejected ? push!(rejected, "act/architecture: $note") : push!(dead, "act/architecture: $note"))
         archv = st == :ok ? Dict(v["id"] => v for v in arch["verdicts"]) : Dict{String,Any}()
@@ -465,7 +465,15 @@ function close(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dj = joinpath(dir, "dismissals.json")
     if !isempty(items)
         want_sha = bytes2hex(sha256(JSON3.write(items)))
-        ok = isfile(dj) && (d = read_json(dj); get(d, "items_sha", "") == want_sha && d["complete"] && isempty(d["reopened"]))
+        # validated, not just read: the script, this gate and dismissal.schema.json disagreed on the file's
+        # shape for as long as no round had an adjudication to close (found 2026-09-09)
+        ok = false
+        if isfile(dj)
+            d = try read_json(dj) catch; nothing end
+            errs = d === nothing ? ["unparsable"] : validate(load_schema("dismissal"), d)
+            isempty(errs) || push!(fails, "dismissals.json is invalid: " * first(errs))
+            ok = d !== nothing && isempty(errs) && get(d, "items_sha", "") == want_sha && d["complete"] && isempty(d["reopened"])
+        end
         if !ok
             payload = joinpath(Preflight.payload_dir(cfg, round), "dismissals"); ip = items_file(joinpath(payload, "items.md"), items)
             a = Dict{String,Any}("schema_version" => 1, "round" => round, "repo" => root, "package" => Preflight.package_block(cfg),
@@ -510,7 +518,7 @@ strip_provenance(text) = join(Iterators.dropwhile(l -> startswith(strip(l), "#")
 
 function hunt_close_conditions(cfg, dir, rec, findings; io)
     fails = String[]; root = cfg["root"]
-    project = joinpath(root, cfg["instruments"]["bug-hunt"]["witness_env"])
+    project = Witnesses.witness_project(root, cfg["instruments"]["bug-hunt"]["witness_env"], cfg["package"]["name"])
     rdir = joinpath(dir, "reproductions")
     reps = isdir(rdir) ? [read_json(joinpath(rdir, f)) for f in readdir(rdir)] : Dict{String,Any}[]
     confirmed = [r for r in reps if r["verdict"] in ("REPRODUCED", "EVIDENCED")]

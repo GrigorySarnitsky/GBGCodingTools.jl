@@ -1,67 +1,67 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "round",
-    "graded_sha256",
-    "pass_nonce",
-    "verdicts"
-  ],
-  "properties": {
-    "graded_sha256": {
-      "pattern": "^[0-9a-f]{64}$",
-      "type": "string"
-    },
-    "verdicts": {
-      "items": {
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "verdict",
-          "evidence"
-        ],
-        "properties": {
-          "residue": {
-            "type": "string"
-          },
-          "id": {
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}-[a-z-]+-\\d{2}/[a-z0-9-]+#\\d+$",
-            "type": "string",
-            "description": "<round>/<lane>#<n>"
-          },
-          "verdict": {
-            "type": "string",
-            "enum": [
-              "FIXED",
-              "RELOCATED",
-              "PARTIAL",
-              "ABSENT",
-              "NOT-A-DEFECT"
-            ]
-          },
-          "evidence": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "type": "array"
-    },
-    "pass_nonce": {
-      "pattern": "^[0-9a-f]{32}$",
-      "type": "string"
-    },
-    "schema_version": {
-      "minimum": 1,
-      "type": "integer",
-      "description": "the tool MAJOR this artefact was written under"
-    },
-    "round": {
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}-(check-docs|check-consistency|bug-hunt|audit-changes)-\\d{2}$",
-      "type": "string"
-    }
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "additionalProperties": false,
+ "required": [
+  "schema_version",
+  "lane",
+  "graded_sha256",
+  "pass_nonce",
+  "verdicts"
+ ],
+ "properties": {
+  "graded_sha256": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
   },
-  "title": "verify-architecture output — the ARCHITECTURE-class fix verifier",
-  "type": "object"
+  "verdicts": {
+   "items": {
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "verdict",
+     "evidence"
+    ],
+    "properties": {
+     "residue": {
+      "type": "string"
+     },
+     "id": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}-[a-z-]+-\\d{2}/[a-z0-9-]+#\\d+$",
+      "type": "string",
+      "description": "<round>/<lane>#<n>"
+     },
+     "verdict": {
+      "type": "string",
+      "enum": [
+       "FIXED",
+       "RELOCATED",
+       "PARTIAL",
+       "ABSENT",
+       "NOT-A-DEFECT"
+      ]
+     },
+     "evidence": {
+      "type": "string"
+     }
+    },
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "pass_nonce": {
+   "pattern": "^[0-9a-f]{32}$",
+   "type": "string"
+  },
+  "schema_version": {
+   "minimum": 1,
+   "type": "integer",
+   "description": "the tool MAJOR this artefact was written under"
+  },
+  "lane": {
+   "type": "string",
+   "const": "architecture"
+  }
+ },
+ "title": "verify-architecture output — the ARCHITECTURE-class fix verifier",
+ "type": "object"
 }

@@ -16,7 +16,8 @@ docs_post = []
 domain = "review tooling"
 extensions = ["ext/GBGCodingToolsDocumenterExt.jl"]
 julia_test = "julia --project -e 'using Pkg; Pkg.test()'"
-modules = ["Config", "TestHarness", "Reflection", "Witnesses", "Sync", "Init", "Ledger", "HtmlWalker", "TreeHash"]
+modules = ["Config", "Doctor", "Fleet", "Git", "HtmlWalker", "Init", "Ledger", "Passes", "Preflight", "Recall",
+           "Reflection", "RoundFiles", "Rounds", "Seeds", "Sync", "TestHarness", "TreeHash", "Witnesses"]
 name = "GBGCodingTools"
 rulebook_sections = ["docs/ARCHITECTURE.md#§0", "docs/ARCHITECTURE.md#§5.5", "CLAUDE.md#Release checklist"]
 terms = ["consumer", "instrument", "round", "lane", "hat", "anchor", "gate", "pin", "managed file", "ledger"]
@@ -43,7 +44,7 @@ references_heading = "absent"
 src = ["src/**/*.jl"]
 
     [surfaces.generated]
-    globs = ["docs/src/architecture.md", "docs/src/guide/verbs.md", "docs/src/guide/doctor.md", "docs/src/guide/instruments.md", "docs/src/guide/rules.md"]
+    globs = ["docs/src/architecture.md", "docs/src/guide/doctor.md", "docs/src/guide/instruments.md", "docs/src/guide/rules.md"]
     optional = true
 
 [docs]
