@@ -139,6 +139,20 @@ consumers' setup exactly; nothing needed from the owner unless the API refuses.
 
 ## Phase 1 — The repository skeleton
 
+**Status (2026-09-09, `Aiporetne`).** Built and committed on `master` through 1.10 item 6: every verb of
+the 1.3 table, the engines and the 39 scans, the templates and policy layer, the eighteen schemas, the
+four instruments' protocols and scripts, the tool as its own consumer with its site built through its
+own wrapper, the fixture with its defects corpus, and the self-test suite (green on 1.12 and 1.11 —
+the 1.11 lane keeps its own `Manifest-v1.11.toml`, gitignored). Three things the build changed in the
+design are recorded in `ARCHITECTURE.md`: Revision 9 (Workflow payloads are files; args carry paths),
+D13's `inputs_sha` in the managed sidecar (a file edited together with its entry is MODIFIED), and
+the TeX scans masking single-backtick code spans (a mention is not a use). Deferred with a reason:
+`gbg round import <pile>`'s six legacy readers and `round compare` are Phase 2's scratch tools and
+are written when the scratch imports run (`--empty` exists); Phase 1.9's V2–V5 need the owner's PAT
+and secrets (V4) and a session in a consumer (V2), V6 is done on `Aiporetne` (`Enteropia` still needs
+`juliaup add 1.11`). Items 7–8 (the rc tag and the first `/check-docs` round) follow in the log below.
+
+
 ### 1.1 Create the repo
 
 ```bash
