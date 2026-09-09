@@ -10,8 +10,11 @@ const TMP = joinpath(TOOL, "fixture", ".tmp", string(getpid()))
 # The witness runner starts a fresh process on the fixture's TEST environment. A clone carries no
 # Manifest there (the tool's first CI run failed on `using GBGFixture` in every witness), so it is
 # resolved once per suite here; the manifest is gitignored and every dependency is local or already in the depot.
-let proj = joinpath(FIXTURE, "test")
-    isfile(joinpath(proj, "Manifest.toml")) || run(`$(Base.julia_cmd()) --startup-file=no --project=$proj -e "using Pkg; Pkg.instantiate()"`)
+# Under `Pkg.test()` the inherited JULIA_LOAD_PATH names the sandbox and no stdlib, so the child gets the
+# stdlib back explicitly (or `using Pkg` fails, as the second CI dispatch showed).
+let proj = joinpath(FIXTURE, "test"), sep = Sys.iswindows() ? ";" : ":"
+    isfile(joinpath(proj, "Manifest.toml")) ||
+        run(addenv(`$(Base.julia_cmd()) --startup-file=no --project=$proj -e "using Pkg; Pkg.instantiate()"`, "JULIA_LOAD_PATH" => "@" * sep * "@stdlib"))
 end
 
 """A fresh copy of the fixture at fixture/.tmp/<name>/ (build products excluded). Returns its root."""
