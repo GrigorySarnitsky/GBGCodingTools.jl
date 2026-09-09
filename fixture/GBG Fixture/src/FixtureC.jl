@@ -39,6 +39,18 @@ Cooley & Tukey (1965). The argument `options` is the record. Returns the string.
 describe(options::Options) = "tolerance $(options.tolerance), at most $(options.iterations) iterations"
 
 """
+    span(options) -> (lo, hi)
+
+The iteration bounds of an [`Options`](@ref) record; internal, so it needs no page home. The argument
+`options` is the record. Returns the pair.
+
+Two arguments and a returned tuple: RULE.DOC.ARGS_FORM binds fewer than three in running prose, and
+SCAN.ARGS_FORM must read the parameter list as the parenthesis that closes the first one — a parser
+that stopped at the last `)` counted the return tuple as three more parameters and demanded bullets.
+"""
+span(options::Options) = (1, options.iterations)
+
+"""
     _clamp_iterations(n) -> Int
 
 The iteration ceiling clamped to at least one. The argument `n` is the requested ceiling. Returns the
