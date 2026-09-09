@@ -54,7 +54,9 @@ Every hat is forbidden `.gbg/` and `~/.gbg/`. The panel is COLLECT-ONLY: it neve
    `julia --project=docs docs/make.jl` under an open round is refused by the gate, by design. Never fix
    the corpus from a seeded finding (bank marks them); never close a finding by declaring it "by design"
    or "for symmetry" — fix it, or put it to the owner as an adjudication with the trade-off.
-6. **Verify.** `gbg round pass open <round>` records the fix range and a nonce, regenerates the
+6. **Verify.** `gbg round pass open <round>` refuses while an open finding names a file the fix pass
+   left untouched (`--sweep-ok` overrides), verifies only the ids still open plus any closed one the
+   fix pass has touched again, records the fix range and a nonce, regenerates the
    manuscripts after a fresh build, and prints two `Workflow` calls: the act verifier (sees the diff;
    grades `HONORED` / `ADJACENT` / `INSERTED` / `LINE-ONLY` / `NEW-DEFECT` / `SCOPE-CREEP` / `UNDONE` /
    `LAUNDERED`, `HONORED` earned by an enumerated `class_surfaces[]` list read from the finding's own

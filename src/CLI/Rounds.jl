@@ -637,14 +637,14 @@ end
 
 function cmd_round(args)
     o = parse_options(args; valued = ["lanes", "reason"])
-    isempty(o.positional) && (println(stderr, "usage: gbg round prepare|build|test|bank|rerun|grade|close|abandon|list|render <round> | gbg round pass open <round> [--regrade]"); return 2)
+    isempty(o.positional) && (println(stderr, "usage: gbg round prepare|build|test|bank|rerun|grade|close|abandon|list|render <round> | gbg round pass open <round> [--regrade] [--sweep-ok]"); return 2)
     verb = o.positional[1]
     cfg = Config.read()
     try
         verb == "list" && return list(cfg)
         if verb == "pass"
-            (length(o.positional) >= 3 && o.positional[2] == "open") || (println(stderr, "usage: gbg round pass open <round> [--regrade]"); return 2)
-            return GBGCodingTools.Passes.pass_open(cfg, o.positional[3]; regrade = "regrade" in o.flags)
+            (length(o.positional) >= 3 && o.positional[2] == "open") || (println(stderr, "usage: gbg round pass open <round> [--regrade] [--sweep-ok]"); return 2)
+            return GBGCodingTools.Passes.pass_open(cfg, o.positional[3]; regrade = "regrade" in o.flags, sweep_ok = "sweep-ok" in o.flags)
         end
         length(o.positional) >= 2 || (println(stderr, "round $verb needs <round>"); return 2)
         round = o.positional[2]

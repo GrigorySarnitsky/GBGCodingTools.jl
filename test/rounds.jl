@@ -44,6 +44,38 @@ end
     @test G.Passes.carry_deferrals(cfg, dir, "2026-01-01-check-docs-01"; io = devnull) == 0   # never twice
 end
 
+# A pass verifies what is still open, plus a closed id the fix pass has touched again; and it refuses to
+# open while an open finding names a file the fix pass left alone. Both directions: the sweep check must
+# fire on the fix that stopped at one location, and stay silent when every named location moved.
+@testset "a pass verifies what is open, and refuses an unswept fix" begin
+    root = fixture_copy("scope")
+    cfg = G.Config.read(root)
+    git(args...) = run(pipeline(`git -C $root -c user.email=t@t -c user.name=t $args`; stdout = devnull, stderr = devnull))
+    git("init", "-q", "-b", "master"); git("add", "-A"); git("commit", "-q", "-m", "base")
+    dir = joinpath(root, ".gbg", "rounds", "2026-01-01-check-docs-01"); mkpath(dir)
+    a = joinpath(root, "src", "FixtureA.jl"); b = joinpath(root, "docs", "src", "notation.md")
+    two = Dict{String,Any}("id" => "r/x#1", "lane" => "src", "n" => 1, "title" => "t",
+                           "locations" => ["src/FixtureA.jl:1 — quoted", "docs/src/notation.md:2 — quoted", "no/such/file.jl:9"])
+    write(joinpath(dir, "findings.json"), JSON3.write(Dict("schema_version" => 1, "round" => "r", "findings" => [two])))
+
+    @test G.Passes.finding_files(root, two) == ["src/FixtureA.jl", "docs/src/notation.md"]   # only real files
+    base = chomp(read(`git -C $root rev-parse HEAD`, String))
+    write(a, read(a, String) * "\n"); git("add", "-A"); git("commit", "-q", "-m", "one of the two")
+    missed = G.Passes.unswept(cfg, dir, ["r/x#1"], "$base..HEAD")
+    @test length(missed) == 1 && missed[1][2] == ["docs/src/notation.md"]                    # fires on the half-fix
+    write(b, read(b, String) * "\n"); git("add", "-A"); git("commit", "-q", "-m", "the other")
+    @test isempty(G.Passes.unswept(cfg, dir, ["r/x#1"], "$base..HEAD"))                      # silent when swept
+    @test isempty(G.Passes.unswept(cfg, dir, String[], "$base..HEAD"))                       # nothing open, nothing to sweep
+
+    rec = Dict{String,Any}("head" => base, "passes" => 0)
+    @test G.Passes.pass_scope(cfg, dir, rec, 1)[1] === nothing                               # pass 1 verifies every id
+    pd = joinpath(dir, "verdicts", "pass-1"); mkpath(pd)
+    open(joinpath(pd, "pass.toml"), "w") do f; TOML.print(f, Dict("head" => base)); end
+    write(joinpath(pd, "tally.json"), JSON3.write(Dict("open_ids" => String[], "per_id" => Dict("r/x#1" => Dict("closed_by" => "honored")))))
+    scope, prev, susp, _ = G.Passes.pass_scope(cfg, dir, rec, 2)
+    @test isempty(prev) && susp == ["r/x#1"] && scope == ["r/x#1"]         # closed, but the fix pass went near it again
+end
+
 @testset "round lifecycle" begin
     root = fixture_copy("round")
     cfg = G.Config.read(root)
@@ -114,7 +146,10 @@ end
         @test_throws G.Rounds.RoundError G.Rounds.guard(G.Config.read(root), round; io = devnull)
         write(cpath, ctext)
         # pass open, then verdicts by hand, then grade
-        @test G.Passes.pass_open(cfg, round; io) == 0
+        # the sweep check refuses a pass whose fix touched none of what the open findings name; this
+        # lifecycle plants verdicts instead of fixing, so it says so rather than pretending otherwise
+        @test G.Passes.pass_open(cfg, round; io = devnull) == 2
+        @test G.Passes.pass_open(cfg, round; sweep_ok = true, io) == 0
         out = String(take!(io)); @test occursin("verify-act.js", out) && occursin("verify-state.js", out)
         pd = joinpath(dir, "verdicts", "pass-1"); pass = TOML.parsefile(joinpath(pd, "pass.toml"))
         id = findings[1]["id"]; lane = lanes[1]

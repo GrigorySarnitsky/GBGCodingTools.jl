@@ -73,7 +73,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1813,1676,0
 "ARCHITECTURE.md § §8 Self-test and versioning",1508,446,0
 "ARCHITECTURE.md § §9 Resolution table",1475,1416,0
-"Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",112,55,0
+"Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",152,95,0
 "Bump.jl :: bump(cfg, ver; abandon = nothing, io = stdout) -> Int",119,78,0
 "CLI.md § CLI internals",31,22,1
 "Config.jl :: Config",64,63,0
@@ -160,8 +160,11 @@ unit,words,longest_paragraph,admonitions
 "Passes.jl :: audit_after_code(cfg, rec) -> Vector{String}",60,56,0
 "Passes.jl :: carry_deferrals(cfg, dir, round; io = stdout) -> Int",140,92,0
 "Passes.jl :: close(cfg, round; io = stdout) -> Int",159,112,0
-"Passes.jl :: grade(cfg, round; io = stdout) -> Int",124,85,0
-"Passes.jl :: pass_open(cfg, round; regrade = false, io = stdout) -> Int",132,59,0
+"Passes.jl :: finding_files(root, finding) -> Vector{String}",62,27,0
+"Passes.jl :: grade(cfg, round; io = stdout) -> Int",149,110,0
+"Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, io ",208,77,0
+"Passes.jl :: pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects,",131,73,0
+"Passes.jl :: unswept(cfg, dir, ids, range) -> Vector{Pair{String,Vector{S",131,55,0
 "Preflight.jl :: Preflight",72,71,0
 "Preflight.jl :: audit_kind(cfg, base) -> String",56,52,0
 "Preflight.jl :: catalog_sha() -> String",14,11,0

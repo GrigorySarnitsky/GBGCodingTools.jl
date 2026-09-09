@@ -44,24 +44,121 @@ function findings_text_file(path, findings)
     return path
 end
 
-"""
-    pass_open(cfg, round; regrade = false, io = stdout) -> Int
+# ---- what a pass verifies -------------------------------------------------------------------------
 
-`gbg round pass open <round> [--regrade]`: opens a verification pass. The arguments are:
+"""
+    finding_files(root, finding) -> Vector{String}
+
+Every repository file a finding names in its `locations`. The arguments are:
+
+- `root` — the consumer root, against which a candidate path is tested.
+- `finding` — one banked finding.
+
+A location is free text (`path:line — quoted`), so each path-shaped token is kept only when it is a
+file in the tree. Returns the paths, deduplicated.
+"""
+function finding_files(root::AbstractString, finding::AbstractDict)
+    out = String[]
+    for l in get(finding, "locations", String[])
+        for m in eachmatch(r"[A-Za-z0-9_][A-Za-z0-9_./\-]*\.[A-Za-z0-9]+", String(l))
+            f = String(m.match)
+            isfile(joinpath(root, f)) && !(f in out) && push!(out, f)
+        end
+    end
+    return out
+end
+
+"""
+    pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects, range)
+
+Which finding ids the next pass must verify, and the range of the fix pass it grades. The arguments are:
+
+- `cfg` — the validated config.
+- `dir` — the round directory.
+- `rec` — the round record.
+- `k` — the number of the pass about to open.
+
+Pass 1 verifies every id. Later passes verify the ids left open by the previous pass, plus any id that
+pass closed whose named locations the fix pass has touched again — a closed finding can only regress
+where its own evidence lives, and the diff says whether anything went near it. Returns the scope, the
+previously open ids, the suspects and the fix pass's commit range; `scope === nothing` means every id.
+"""
+function pass_scope(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, k::Int)
+    root = cfg["root"]; head = something(Git.head(root), "0"^40)
+    k > 1 || return (nothing, String[], String[], "$(rec["head"])..$head")
+    prevtally = joinpath(pass_dir(dir, k - 1), "tally.json")
+    prevpass = joinpath(pass_dir(dir, k - 1), "pass.toml")
+    isfile(prevtally) || return (nothing, String[], String[], "$(rec["head"])..$head")
+    tally = read_json(prevtally)
+    from = isfile(prevpass) ? get(TOML.parsefile(prevpass), "head", rec["head"]) : rec["head"]
+    range = "$from..$head"
+    prev_open = String.(tally["open_ids"])
+    touched = Set(Git.changed_paths(root, range, Preflight.covered_paths(cfg)))
+    suspects = String[]
+    for f in findings_of(dir)
+        id = f["id"]
+        (id in prev_open || f["lane"] == "scans") && continue
+        any(x -> x in touched, finding_files(root, f)) && push!(suspects, id)
+    end
+    return (sort!(unique(vcat(prev_open, suspects))), prev_open, suspects, range)
+end
+
+"""
+    unswept(cfg, dir, ids, range) -> Vector{Pair{String,Vector{String}}}
+
+Every open finding whose own named locations the fix pass did not touch. The arguments are:
+
+- `cfg` — the validated config.
+- `dir` — the round directory.
+- `ids` — the ids the fix pass was meant to address; a seeded id and a `scans` id are skipped, the one
+  never being fixed in the corpus and the other closing by rescan.
+- `range` — the fix pass's commit range.
+
+A finding names where its class lives; a fix that changes one of those files and none of the others has
+fixed a line, and the verifiers have to spend a whole pass discovering it. Returns each id with the
+files it names that the range left alone, empty when every id was swept.
+"""
+function unswept(cfg::AbstractDict, dir::AbstractString, ids::AbstractVector, range::AbstractString)
+    root = cfg["root"]
+    touched = Set(Git.changed_paths(root, range, Preflight.covered_paths(cfg)))
+    out = Pair{String,Vector{String}}[]
+    want = Set(String.(ids))
+    for f in findings_of(dir)
+        f["id"] in want || continue
+        (get(f, "seeded", false) || f["lane"] == "scans") && continue   # never fixed in the corpus; closed by rescan
+        named = finding_files(root, f)
+        isempty(named) && continue
+        missed = [x for x in named if !(x in touched)]
+        isempty(missed) || push!(out, f["id"] => missed)
+    end
+    return out
+end
+
+"""
+    pass_open(cfg, round; regrade = false, sweep_ok = false, io = stdout) -> Int
+
+`gbg round pass open <round> [--regrade] [--sweep-ok]`: opens a verification pass. The arguments are:
 
 - `cfg` — the validated config.
 - `round` — the round id.
 - `regrade` — accept a changed stamp (`config_sha`, or the tool stamps) and re-stamp it; the round is
   re-graded from here, and the pass records `regrade = true`.
+- `sweep_ok` — open even though an open finding names a file the fix pass did not touch
+  ([`unswept`](@ref)), for the fix that rightly lives somewhere else.
 - `io` — where the calls and messages are printed.
 
+A pass after the first verifies only what [`pass_scope`](@ref) returns, and refuses to open at all
+while an open finding's own named locations are untouched, since a pass spent discovering that a fix
+stopped at the line it quoted is a pass wasted.
+
 It refuses a changed `config_sha` unless `regrade`; creates `verdicts/pass-<k>/pass.toml` with the
-nonce, `head`, `range = <opening head>..HEAD`, the expected verdict count per lane and the stamps; for
+nonce, `head`, `range = <opening head>..HEAD`, the scope, the expected verdict count per lane and the
+stamps; for
 the doc instruments rebuilds under `GBG_ROUND` and regenerates the manuscripts; writes the findings'
 unabridged text as a payload file; prints the verifiers' Workflow calls rendered by Preflight's
 renderer. Returns the exit code.
 """
-function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = false, io::IO = stdout)
+function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = false, sweep_ok::Bool = false, io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io, allow_config_change = regrade)
     haskey(rec, "banked") || (println(io, "pass open: $round is not banked yet"); return 2)
     root = cfg["root"]; inst = rec["instrument"]
@@ -73,7 +170,22 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
         println(io, "pass open --regrade: re-stamped ", isempty(moved) ? "nothing (the stamps had not moved)" : join(moved, ", "))
     end
     head = something(Git.head(root), "0"^40)
-    findings = findings_of(dir)
+    all_findings = findings_of(dir)
+    scope, prev_open, suspects, fixrange = pass_scope(cfg, dir, rec, k)
+    if !sweep_ok
+        missed = unswept(cfg, dir, isempty(prev_open) && scope === nothing ? [f["id"] for f in all_findings] : prev_open, fixrange)
+        if !isempty(missed)
+            println(io, "pass open: refused — the fix pass over $fixrange left a named location of an open finding untouched:")
+            for (id, fs) in missed; println(io, "  $id — ", join(fs, ", ")); end
+            println(io, "Fix the CLASS at every location the finding names, or re-open with --sweep-ok when the fix rightly lives elsewhere.")
+            return 2
+        end
+    end
+    findings = scope === nothing ? all_findings : [f for f in all_findings if f["id"] in scope || f["lane"] == "scans"]
+    if scope !== nothing
+        println(io, "pass $k scope: $(length(prev_open)) still open", isempty(suspects) ? "" : ", $(length(suspects)) closed id(s) re-checked because the fix pass touched what they name",
+                " — $(length(all_findings) - length(findings)) finding(s) carried forward closed")
+    end
     expected_act = Dict{String,Int}(); expected_state = Dict{String,Int}()
     for f in findings
         expected_state[f["lane"]] = get(expected_state, f["lane"], 0) + 1
@@ -82,6 +194,7 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
     nonce = bytes2hex(rand(RandomDevice(), UInt8, 16))
     pass = merge(Dict{String,Any}("pass" => k, "nonce" => nonce, "opened" => Rounds.timestamp(), "head" => head, "range" => "$(rec["head"])..$head",
                                   "expected" => expected_state, "regrade" => regrade),
+                 (scope === nothing ? Dict{String,Any}() : Dict{String,Any}("scope" => scope)),
                  Dict(x => st[x] for x in ("tool_version", "tool_rev", "tool_tree_sha", "config_sha")))
     errs = validate(load_schema("pass"), pass); isempty(errs) || throw(RoundError("pass.toml would not validate: " * join(errs, "; ")))
     open(joinpath(pd, "pass.toml"), "w") do f; TOML.print(f, pass); end
@@ -110,7 +223,8 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
             consolidate(build, String.(cfg["instruments"]["check-consistency"]["design_docs_withheld"]); out_full = full, out_siteonly = site)
             manuscripts = Dict("full" => full, "siteonly" => site)
         end
-        lanes = [Dict("nn" => lpad(i, 2, '0'), "key" => r["key"], "substrate" => get(r, "substrate", "")) for (i, r) in enumerate(rec["roster"]) if !get(r, "not_applicable", false)]
+        lanes = [Dict("nn" => lpad(i, 2, '0'), "key" => r["key"], "substrate" => get(r, "substrate", "")) for (i, r) in enumerate(rec["roster"])
+                 if !get(r, "not_applicable", false) && (get(expected_state, r["key"], 0) > 0 || r["key"] == "scans")]
         inst == "check-docs" && pushfirst!(lanes, Dict("nn" => "00", "key" => "scans", "substrate" => "scans"))
         act = merge(base, Dict("range" => pass["range"], "mode" => "lanes",
                     "lanes" => [Dict("nn" => l["nn"], "key" => l["key"], "expected" => get(expected_act, l["key"], 0)) for l in lanes if l["key"] != "scans"],
@@ -190,7 +304,9 @@ end
 - `io` — where the tally lines are printed.
 
 It validates the pass's verdict files (a wrong nonce or sha is REJECTED, an absent file with a
-non-zero expectation is DEAD ⇒ exit 2), applies the demotion, then the closure channels per id —
+non-zero expectation is DEAD ⇒ exit 2), carries forward the entry of every id outside the pass's
+`scope` (they were closed and nothing since went near what they name), applies the demotion to the
+rest, then the closure channels per id —
 `honored`, `adjudicated`, `seeded`, `rescan`; for a hunt the disposition records and the witness
 re-run; for an audit the disposition gate after the severity re-check — and writes `tally.json` and
 `tally.md` with the pass series and the plateau signal. Exit 1 while `open_ids` is non-empty, 0 when
@@ -203,8 +319,18 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     if !get(pass, "regrade", false) && Preflight.config_sha(cfg) != rec["config_sha"]
         println(io, "grade: the config changed since the round opened — gbg round pass open $round --regrade"); return 2
     end
-    inst = rec["instrument"]; findings = findings_of(dir); ledger = Ledger.read(cfg)
-    per_id = Dict{String,Any}(); dead = String[]; rejected = String[]; demoted = 0; adjudicated = 0
+    inst = rec["instrument"]; all_findings = findings_of(dir); ledger = Ledger.read(cfg)
+    # A scoped pass verifies the open ids and the closed ones the fix pass touched again; every other
+    # id keeps the entry the pass that closed it wrote, so a closed finding does not reopen for want of
+    # a verdict nobody was asked for.
+    scope = get(pass, "scope", nothing)
+    carried = Dict{String,Any}()
+    if scope !== nothing
+        prevtally = joinpath(pass_dir(dir, k - 1), "tally.json")
+        isfile(prevtally) && (carried = Dict{String,Any}(String(i) => e for (i, e) in read_json(prevtally)["per_id"] if !(String(i) in scope)))
+    end
+    findings = scope === nothing ? all_findings : [f for f in all_findings if f["id"] in scope || f["lane"] == "scans"]
+    per_id = copy(carried); dead = String[]; rejected = String[]; demoted = 0; adjudicated = 0
     opened = rec["opened"]
     if inst in ("check-consistency", "check-docs")
         lanes = unique(f["lane"] for f in findings if f["lane"] != "scans")
@@ -311,14 +437,14 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     bank = isfile(joinpath(dir, "bank.json")) ? read_json(joinpath(dir, "bank.json")) : Dict{String,Any}()
     closed = count(e -> e["closed_by"] !== nothing, values(per_id))
     tally = Dict{String,Any}("schema_version" => 1, "round" => round, "pass" => k, "per_id" => per_id,
-        "totals" => Dict("findings" => length(findings), "seeded" => count(f -> get(f, "seeded", false), findings), "closed" => closed, "open" => length(open_ids)),
-        "demoted_by_rule" => demoted, "adjudicated_share" => isempty(findings) ? 0.0 : adjudicated / length(findings),
+        "totals" => Dict("findings" => length(all_findings), "seeded" => count(f -> get(f, "seeded", false), all_findings), "closed" => closed, "open" => length(open_ids)),
+        "demoted_by_rule" => demoted, "adjudicated_share" => isempty(all_findings) ? 0.0 : adjudicated / length(all_findings),
         "suspect_hats" => get(bank, "suspect_hats", String[]), "dead_lanes" => dead, "rejected_files" => rejected, "open_ids" => open_ids,
         "plateau" => Dict("passes_flat" => flat), "recall" => get(bank, "recall", Dict()))
     errs = validate(load_schema("tally"), tally); isempty(errs) || throw(RoundError("tally.json would not validate: " * join(errs, "; ")))
     write_json(joinpath(pd, "tally.json"), tally)
     md = IOBuffer()
-    println(md, "# Tally — $round pass $k\n\n$(closed)/$(length(findings)) closed, $(length(open_ids)) open; demoted by rule: $demoted; adjudicated share: $(Base.round(tally["adjudicated_share"]; digits = 2)); plateau: $flat pass(es) flat.\n")
+    println(md, "# Tally — $round pass $k\n\n$(closed)/$(length(all_findings)) closed, $(length(open_ids)) open; demoted by rule: $demoted; adjudicated share: $(Base.round(tally["adjudicated_share"]; digits = 2)); plateau: $flat pass(es) flat.\n")
     for id in sort!(collect(keys(per_id)))
         e = per_id[id]
         println(md, "- `$id` act=$(something(e["act"], "—"))$(e["act_demoted"] ? " (demoted)" : "") state=$(something(e["state"], "—")) → $(something(e["closed_by"], "OPEN"))", haskey(e, "adjudicated_entry") ? " [$(e["adjudicated_entry"])]" : "")

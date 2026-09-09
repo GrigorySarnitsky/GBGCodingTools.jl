@@ -43,7 +43,11 @@ economy by default; the fix pass is never economised.
    link resolution: a clean exit refutes a "dead link" finding. Builds and tests during the pass go
    through `gbg round build|test <round>`.
 5. **Verify.** `gbg round pass open <round>` prints the act verifier (sees the diff) and the state
-   verifier (blind) with this instrument's lanes as the roster; launch both as printed. A dismissal is a
+   verifier (blind) with this instrument's lanes as the roster; launch both as printed. It refuses to
+   open while an open finding names a file the fix pass did not touch — fix the class at every location
+   the finding names, or re-open with `--sweep-ok` when the fix rightly lives elsewhere. A pass after
+   the first verifies only the ids still open plus any closed one the fix pass has touched again;
+   everything else keeps the entry that closed it. A dismissal is a
    verdict the verifier grades like any other: it must name the rule or recorded decision that licenses
    it, and a dismissal the verifier cannot confirm is `UNDONE`, not closed.
 6. **Grade.** `gbg round grade <round>`: demotion, closure channels, plateau signal; a `hard` scan

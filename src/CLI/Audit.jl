@@ -13,7 +13,9 @@ bank. The arguments are:
 - `io` — where the report goes.
 
 It runs `package.julia_test` (the gate claim) and every file named under `executable_claims` with
-`GBG_ROUND` exported, records `{command, file, exit, log}` in `audit.json` together with `base`,
+`GBG_ROUND` exported, each claim as `julia --project=test <file>` — which is why `test/Project.toml`
+names the package itself as a path source, and without that every claim fails to load it and the
+audit's account of what runs is built on nothing — records `{command, file, exit, log}` in `audit.json` together with `base`,
 `head`, `kind` and the covered paths, then runs [`Rounds.bank`](@ref); afterwards it prints the
 severity re-check Workflow call (an anchor, before "serious" is counted at grade). Returns the bank's
 exit code.

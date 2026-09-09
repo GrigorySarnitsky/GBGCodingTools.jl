@@ -1472,15 +1472,21 @@ at the tool root, which must work when the dev checkout IS the consumer.
    never from `SUMMARY.md`. A build or test run during the pass is `gbg round build <round>` /
    `gbg round test <round>`, which export `GBG_ROUND` around `docs_build` / `julia_test`; a bare
    `julia --project=docs docs/make.jl` under an open round is refused by the gate, by design.
-7. **Verify.** `gbg round pass open <round>` refuses a changed `config_sha` unless `--regrade`;
-   creates `verdicts/pass-<k>/`, records `head`, `range` (`<opened head>..HEAD`), the nonce,
-   `expected`, the stamps; regenerates the manuscripts after a fresh build under `GBG_ROUND`; prints
+7. **Verify.** `gbg round pass open <round>` refuses a changed `config_sha` unless `--regrade`, and
+   refuses outright — `--sweep-ok` overrides — while an open finding names a file the fix pass did not
+   touch, since a pass spent learning that a fix stopped at the line it quoted is a pass wasted (the
+   rc.1 round spent five of ten that way). It creates `verdicts/pass-<k>/`, records `head`, `range`
+   (`<opened head>..HEAD`), the nonce, `expected`, the `scope`, the stamps; regenerates the manuscripts after a fresh build under `GBG_ROUND`; prints
    two Workflow lines rendered by **`Preflight.jl`'s renderer** (the one renderer; `pass open` renders
    no args of its own): `verify-act.js` (sees the diff; args add `range`, `pass_dir`, `nonce`,
    `expected`) and `verify-state.js` (blind; no range; same nonce). Both forbid their agents to open
    `.gbg/**` and `~/.gbg/**`; both require `graded_sha256` and `pass_nonce`; both receive every
    finding's text **unabridged**, so a real defect co-quoted with a seed is graded on its own claim.
-   Seeded findings are graded by the state verifier only.
+   Seeded findings are graded by the state verifier only. **A pass after the first verifies only its
+   `scope`**: the ids the previous pass left open, plus any it closed whose named locations the fix
+   pass has since touched, a closed finding being able to regress only where its own evidence lives.
+   Every other id keeps the entry that closed it. The rc.1 round verified 56 findings ten times over
+   where 90 verifications were owed, and the panel is the round's whole cost.
 8. **Grade.** `gbg round grade <round>`: refuses a changed `config_sha` (exit 2); validates both
    verdict sets; a file whose `graded_sha256` or `pass_nonce` mismatches is REJECTED, an absent one
    DEAD (exit 2); applies `Demote.jl` (HONORED → LINE-ONLY iff `class_surfaces == []`, counted apart as
