@@ -1,0 +1,14 @@
+# test/runtests.jl — GBGCodingTools. `Pkg.test()` is the gate (RULE.TEST.GATE_VS_SURVEY): every file
+# below is included into its own module so helpers do not collide, and each file also runs on its own
+# with `julia --project=. test/<file>.jl`. Aqua and JET are the consumer's to add.
+using Test, GBGCodingTools
+using GBGCodingTools
+
+# The package's own test files, one module each:
+# module SomethingTests; include("something.jl"); end
+
+# Promoted witnesses (test/regressions/README.md): each began as a /bug-hunt witness observed to fail
+# on the tree that had the defect and is included unchanged. Then the tool's closure gate, which fails
+# while a finding of an open round is unresolved.
+GBGCodingTools.TestHarness.run_regressions(@__DIR__)
+GBGCodingTools.TestHarness.gate()

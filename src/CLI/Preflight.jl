@@ -119,10 +119,12 @@ end
 """
     substitute(text, cfg; extra = Dict()) -> String
 
-Fills the catalogue placeholders `{package.name}`, `{package.description}`, `{package.domain}`,
-`{package.terms}`, `{package.deliberate_absences}`, `{package.rulebook_sections}`, `{policy.<file>}`,
-`{audit.guard_symbols}`, `{audit.invariants}`, `{hunt.entry_point}` and any `extra` key. A placeholder
-with no value is left as written (a brace pair inside prose is never an error).
+Fills the catalogue placeholders in `text` from `cfg`: `{package.name}`, `{package.description}`,
+`{package.domain}`, `{package.terms}`, `{package.deliberate_absences}`, `{package.rulebook_sections}`,
+`{policy.<file>}`, `{audit.guard_symbols}`, `{audit.invariants}`, `{hunt.entry_point}`, and any key of
+`extra`. The arguments are `text`, the persona or brief; `cfg`, the validated config; and `extra`,
+further slot values. A placeholder with no value is left as written (a brace pair inside prose is
+never an error). Returns the filled text.
 """
 function substitute(text::AbstractString, cfg::AbstractDict; extra = Dict{String,String}())
     pk = cfg["package"]; root = cfg["root"]
@@ -156,13 +158,16 @@ function hat_file(cfg, key)
 end
 
 """
-    resolve_hats(cfg; profile = config, explicit = String[]) -> Vector{Dict}
+    resolve_hats(cfg; profile = nothing, explicit = String[]) -> Vector{Dict}
 
-The check-consistency roster: the config's `hats` (profile `all`), its `core` list (`core`), or the
-`explicit` keys; each with `key`, `substrate`, `needs`, `anchor` (a `domain_hats` entry may anchor any
-key), the persona with placeholders filled, and `not_applicable` when its substrate cannot exist here
-(`html` needs with no built site, `git` with no repository, `rulebook` with no rulebook sections).
-Returns the list in config order.
+The check-consistency roster. The arguments are `cfg`, the validated config; `profile`, `all`, `core`
+or `explicit` (the config's own when `nothing`); and `explicit`, the hat keys an explicit profile
+names.
+
+Each hat carries `key`, `substrate`, `needs`, `anchor` (a `domain_hats` entry may anchor any key), the
+persona with placeholders filled, and `not_applicable` when its substrate cannot exist here (`html`
+needs with no built site, `git` with no repository, `rulebook` with no rulebook sections). Returns the
+list in config order.
 """
 function resolve_hats(cfg::AbstractDict; profile = nothing, explicit = String[])
     cc = cfg["instruments"]["check-consistency"]
@@ -286,11 +291,19 @@ end
 """
     write_payloads(cfg, instrument, round, roster; base = nothing) -> Dict{String,Any}
 
-Writes every large payload of the instrument under `.gbg/scratch/<round>/workflow/payload/` and
-returns the paths: personas (`hats/<key>.md`), the rulebook (`rulebook.md`), the policy
-(`policy.md`), briefs (`lanes/<key>.md`), the invariants (`invariants.md`), and for the audit the diff,
-diffstat and claims of `base..HEAD` over the covered paths. The manuscripts are written by
-`gbg round prepare`; their paths are returned here so the args can name them.
+Writes every large payload of the instrument under `.gbg/scratch/<round>/workflow/payload/`. The
+arguments are:
+
+- `cfg` — the validated config.
+- `instrument` — the instrument name.
+- `round` — the round id.
+- `roster` — the resolved hats or lanes; each gains its `persona_path` or `brief_path`.
+- `base` — the audit's base commit (required for `audit-changes`).
+
+The files: personas (`hats/<key>.md`), the rulebook (`rulebook.md`), the policy (`policy.md`), briefs
+(`lanes/<key>.md`), the invariants (`invariants.md`), and for the audit the diff, diffstat and claims
+of `base..HEAD` over the covered paths. The manuscripts are written by `gbg round prepare`; their paths
+are returned here so the args can name them. Returns the paths.
 """
 function write_payloads(cfg::AbstractDict, instrument::AbstractString, round::AbstractString, roster; base = nothing)
     pd = payload_dir(cfg, round); mkpath(pd)
@@ -360,10 +373,22 @@ const PREAMBLES = Dict(
 )
 
 """
-    render_args(cfg, instrument, round, roster, paths; strength, cost, opened, base = nothing, head = nothing, kind = nothing) -> Dict
+    render_args(cfg, instrument, round, roster, paths; strength, cost, opened, base, head, kind, ledger) -> Dict
 
 The Workflow args of the instrument's main script (its `schema.json` `args`): small scalars and the
-payload paths, never a payload. Validated against the schema before it is returned.
+payload paths, never a payload. The arguments are:
+
+- `cfg` — the validated config.
+- `instrument` — the instrument name.
+- `round` — the round id.
+- `roster` — the resolved hats or lanes with their payload paths.
+- `paths` — the payload paths [`write_payloads`](@ref) returned.
+- `strength` — `economy` or `full`; `cost` — the config's cost default; `opened` — the round's
+  opening timestamp.
+- `base`, `head`, `kind` — the audit's commits and kind (`nothing` elsewhere).
+- `ledger` — the ledger entries (the adjudicated titles come from them).
+
+The result is validated against the schema before it is returned. Returns the args.
 """
 function render_args(cfg::AbstractDict, instrument::AbstractString, round::AbstractString, roster, paths;
                      strength = "economy", cost = "economy", opened = "", base = nothing, head = nothing, kind = nothing, ledger = Ledger.read(cfg))
@@ -400,9 +425,10 @@ end
 """
     copy_scripts(cfg, instrument, round) -> String
 
-Copies `instruments/<instrument>/workflow/*.js` of the running copy into
-`.gbg/scratch/<round>/workflow/` (V1: a Workflow `scriptPath` must lie inside the project). Returns
-the directory.
+Copies `instruments/<instrument>/workflow/*.js` of the running copy (and the verifiers and auditors a
+round of that instrument may need) into `.gbg/scratch/<round>/workflow/` — V1: a Workflow `scriptPath`
+must lie inside the project. The arguments are `cfg`, the validated config; `instrument`, the
+instrument name; and `round`, the round id. Returns the directory.
 """
 function copy_scripts(cfg::AbstractDict, instrument::AbstractString, round::AbstractString)
     src = joinpath(instrument_dir(instrument), "workflow"); dst = workflow_dir(cfg, round); mkpath(dst)
@@ -437,9 +463,10 @@ main_script(instrument) = Dict("check-consistency" => "panel.js", "check-docs" =
 # ---- the verb ----------------------------------------------------------------------------------------------
 
 """
-    torn_check(cfg; io) -> Bool
+    torn_check(cfg; io = stderr) -> Bool
 
-`CFG.TORN` as preflight and every round verb run it: true when clean.
+`CFG.TORN` as preflight and every round verb run it. The arguments are `cfg`, the validated config,
+and `io`, where a torn file is named. Returns true when no pinned or managed file is modified.
 """
 function torn_check(cfg::AbstractDict; io::IO = stderr)
     checks, code = Doctor.run(cfg; only = ["CFG.TORN"], io = devnull)
@@ -451,12 +478,23 @@ end
 """
     preflight(cfg, instrument; profile = nothing, hats = String[], strength = "economy", no_seed = false, dry = false, base = nothing, io = stdout) -> Int
 
-`gbg preflight <instrument> [--profile all|core|explicit] [--hats a,b] [--strength full] [--no-seed] [--dry] [--base <commit>]`:
-the quick doctor, `CFG.TORN`, `gbg self verify`; refuses (exit 2) an open round of this instrument or an
-uncommitted change under a closed or abandoned round; opens the round (writes `ROUND.toml`, never
-`git add`); copies the scripts and writes the payloads; prints the protocol, the Workflow call and the
-next step. `dry` opens and writes nothing and prints the round id and paths it would use. Returns the
-exit code.
+`gbg preflight <instrument> [--profile all|core|explicit] [--hats a,b] [--strength full] [--no-seed] [--dry] [--base <commit>]`.
+The arguments are:
+
+- `cfg` — the validated config.
+- `instrument` — one of the four instruments.
+- `profile` — the check-consistency profile (`all`, `core`, `explicit`); the config's when `nothing`.
+- `hats` — the keys an explicit profile names.
+- `strength` — `economy` (the default) or `full`.
+- `no_seed` — open an unseeded check-consistency round.
+- `dry` — open and write nothing; print the round id and paths that would be used.
+- `base` — the audit's base commit (required for `audit-changes`).
+- `io` — where the protocol, the call and the next step are printed.
+
+It runs the quick doctor, `CFG.TORN` and `gbg self verify`; refuses (exit 2) an open round of this
+instrument or an uncommitted change under a closed or abandoned round; opens the round (writes
+`ROUND.toml`, never `git add`); copies the scripts and writes the payloads; prints the protocol, the
+Workflow call and the next step. Returns the exit code.
 """
 function preflight(cfg::AbstractDict, instrument::AbstractString; profile = nothing, hats = String[], strength = "economy",
                    no_seed::Bool = false, dry::Bool = false, base = nothing, io::IO = stdout)

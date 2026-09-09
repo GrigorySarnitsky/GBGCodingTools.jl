@@ -65,10 +65,16 @@ end
 """
     field_threshold(field_bytes; fraction = 16, per_thread = 4096, components = 1) -> Int
 
-The allocation bound for a field-destination operation: a small fraction of one field (any field-sized
-temporary fails) plus the size-independent per-task bookkeeping a threaded path pays,
-`per_thread` bytes per Julia thread per `components` (FFTW's worker callback allocates task state per
-plan execution, one execution per contiguous component). Returns the bound in bytes.
+The allocation bound for a field-destination operation. The arguments are:
+
+- `field_bytes` — the size of one field in bytes.
+- `fraction` — the bound admits `field_bytes ÷ fraction` bytes of small temporaries (any field-sized
+  temporary fails).
+- `per_thread` — the size-independent per-task bookkeeping a threaded path pays, per Julia thread.
+- `components` — the number of contiguous components an operation transforms (FFTW's worker callback
+  allocates task state per plan execution, one execution per component).
+
+Returns the bound in bytes.
 """
 field_threshold(field_bytes::Integer; fraction::Integer = 16, per_thread::Integer = 4096, components::Integer = 1) =
     field_bytes ÷ fraction + per_thread * Threads.nthreads() * components
@@ -76,10 +82,14 @@ field_threshold(field_bytes::Integer; fraction::Integer = 16, per_thread::Intege
 """
     allocation_completeness(pkg, modules; exempt = Dict{Symbol,String}())
 
-The derived completeness check of the allocation audit: every exported in-place operation (a name
-ending in `!` on the ownership-derived public surface) was exercised by [`@alloc_below`](@ref), or is
-named in `exempt` with a reason; no exemption names a vanished operation; every recorded callee is a
-real package function. Runs as a `@testset`. Returns `nothing`.
+The derived completeness check of the allocation audit. The arguments are `pkg`, the package module;
+`modules`, its owned modules (the public surface is derived from them); and `exempt`, operation name
+to reason for the operations deliberately not audited.
+
+Every exported in-place operation (a name ending in `!` on the ownership-derived public surface) was
+exercised by [`@alloc_below`](@ref), or is named in `exempt` with a reason; no exemption names a
+vanished operation; every recorded callee is a real package function. Runs as a `@testset`. Returns
+`nothing`.
 """
 function allocation_completeness(pkg::Module, modules::AbstractVector{Module}; exempt::AbstractDict = Dict{Symbol,String}())
     @testset "every exported in-place operation has an allocation row" begin
@@ -170,11 +180,15 @@ const AUDITED_TRAFFIC_OPS = Set{Symbol}()
 """
     audit(operation!, name, rows::Traffic...; print = false)
 
-Zeroes the counters of every row, runs `operation!()` once, and asserts for every row that the measured
-`(reads, writes)` equals the frozen pair exactly; a frozen count above its ideal must carry a named
-holder. The operation named by the leading token of `name` (up to whitespace, `(` or `∘`) is recorded
-in [`AUDITED_TRAFFIC_OPS`](@ref). With `print = true` every measured count is printed for re-baselining.
-Returns `nothing`.
+One row of the traffic ledger. The arguments are `operation!`, a zero-argument closure running the
+operation once over the counting arrays; `name`, the row's name (its leading token, up to whitespace,
+`(` or `∘`, is the operation recorded in [`AUDITED_TRAFFIC_OPS`](@ref)); `rows`, one [`Traffic`](@ref)
+per array with its frozen `(reads, writes)`; and `print`, print every measured count for
+re-baselining.
+
+It zeroes the counters of every row, runs the operation, and asserts for every row that the measured
+pair equals the frozen pair exactly; a frozen count above its ideal must carry a named holder. Returns
+`nothing`.
 """
 function audit(operation!, name::AbstractString, rows::Traffic...; print::Bool = false)
     push!(AUDITED_TRAFFIC_OPS, Symbol(match(r"^[^\s(∘]+", name).match))
@@ -194,9 +208,10 @@ end
 """
     traffic_completeness(pkg, modules; exempt = Dict{Symbol,String}())
 
-The derived completeness check of the traffic ledger, the twin of
-[`allocation_completeness`](@ref) over [`AUDITED_TRAFFIC_OPS`](@ref). Runs as a `@testset`. Returns
-`nothing`.
+The derived completeness check of the traffic ledger, the twin of [`allocation_completeness`](@ref)
+over [`AUDITED_TRAFFIC_OPS`](@ref). The arguments are `pkg`, the package module; `modules`, its owned
+modules; and `exempt`, operation name to reason for the operations deliberately not audited. Runs as a
+`@testset`. Returns `nothing`.
 """
 function traffic_completeness(pkg::Module, modules::AbstractVector{Module}; exempt::AbstractDict = Dict{Symbol,String}())
     @testset "every exported in-place operation has a traffic row" begin
@@ -239,9 +254,13 @@ end
 """
     traffic_rows(baseline, name, symbols) -> Vector
 
-The `[[row]]` entry named `name` of a `test/pass_audit_baseline.toml` (parsed `Dict`), with its
-`arrays = [{label, reads, writes, ideal_reads?, ideal_writes?, holder?}]` counts evaluated over
-`symbols`. Returns named tuples `(label, frozen, ideal, holder)`; a missing row is an error naming it.
+One row of a frozen traffic table, evaluated. The arguments are `baseline`, the parsed
+`test/pass_audit_baseline.toml`; `name`, the `[[row]]` entry's name; and `symbols`, the values of the
+count symbols (`P`, `M`) for the fixture at hand.
+
+The row's `arrays = [{label, reads, writes, ideal_reads?, ideal_writes?, holder?}]` counts are
+evaluated over `symbols`. Returns named tuples `(label, frozen, ideal, holder)`; a missing row is an
+error naming it.
 """
 function traffic_rows(baseline::AbstractDict, name::AbstractString, symbols::AbstractDict{String,Int})
     rows = get(baseline, "row", Any[])
@@ -261,8 +280,9 @@ end
 """
     resolve_function(name, pkg, modules; externals = (Base,)) -> Union{Function,Nothing}
 
-The function object a surface name denotes, looked up in the umbrella, the package modules and the
-external modules whose generics the package extends. Returns it, or `nothing`.
+The function object a surface name denotes. The arguments are `name`, the symbol; `pkg`, the umbrella
+module; `modules`, the package modules; and `externals`, the external modules whose generics the
+package extends (searched last). Returns the function, or `nothing`.
 """
 function resolve_function(name::Symbol, pkg::Module, modules::AbstractVector{Module}; externals = (Base,))
     for mod in Iterators.flatten(((pkg,), externals, modules))
@@ -277,7 +297,9 @@ end
     module_method_count(mod, pkg, modules; externals = (Base,)) -> Int
 
 Every method module `mod` OWNS, summed over the package's whole function surface (internals included,
-not `names(mod)` — a method defined under a qualified name creates no binding). Returns the count.
+not `names(mod)` — a method defined under a qualified name creates no binding). The arguments are
+`mod`, the module counted; `pkg`, the umbrella; `modules`, the package modules; and `externals`, the
+external modules whose generics are included. Returns the count.
 """
 function module_method_count(mod::Module, pkg::Module, modules::AbstractVector{Module}; externals = (Base,))
     total = 0
@@ -292,12 +314,15 @@ end
 """
     method_parity(pkg, modules, baseline; externals = (Base,))
 
-The method-parity engine over a `test/method_parity_baseline.toml` (parsed `Dict`): every
-`[[generic]]` entry `{set, name, count, module}` asserts the number of methods the named module
+The method-parity engine. The arguments are `pkg`, the umbrella module; `modules`, the package
+modules; `baseline`, the parsed `test/method_parity_baseline.toml`; and `externals`, the external
+modules whose generics the package extends.
+
+Every `[[generic]]` entry `{set, name, count, module}` asserts the number of methods the named module
 defines for that generic, each set's total is asserted where the baseline states `[set_total]`, the
 `[module]` table asserts the derived per-module counts, and `detect_ambiguities` over `pkg` must be
-empty. A moved number is reported with the instruction to refreeze deliberately, with the reason. Runs
-as a `@testset`. Returns `nothing`.
+empty. A moved number is reported with the instruction to refreeze deliberately, with the reason.
+Runs as a `@testset`. Returns `nothing`.
 """
 function method_parity(pkg::Module, modules::AbstractVector{Module}, baseline::AbstractDict; externals = (Base,))
     byname = Dict(String(nameof(m)) => m for m in modules); byname[String(nameof(pkg))] = pkg
@@ -331,12 +356,15 @@ const ORACLE_CLASSES = ("analytic", "independent", "property", "relational", "st
 """
     oracle_registry(pkg, modules, registry, testdir)
 
-The oracle-provenance engine over a `test/oracle_registry.toml` (parsed `Dict` with
-`[[operation]] name, class, evidence`): every public value-returning operation (the derived surface
-minus the `!` names) is classified; no classification names a vanished operation; every class is one
-of `analytic | independent | property | relational | structural`; no operation rests on `relational`
-alone; and every non-structural citation names a test file under `testdir` that exists and mentions
-the operation. Runs as a `@testset`. Returns `nothing`.
+The oracle-provenance engine. The arguments are `pkg`, the umbrella module; `modules`, the package
+modules; `registry`, the parsed `test/oracle_registry.toml` (`[[operation]] name, class, evidence`);
+and `testdir`, the directory the cited test files live in.
+
+Every public value-returning operation (the derived surface minus the `!` names) is classified; no
+classification names a vanished operation; every class is one of `analytic | independent | property |
+relational | structural`; no operation rests on `relational` alone; and every non-structural citation
+names a test file under `testdir` that exists and mentions the operation. Runs as a `@testset`.
+Returns `nothing`.
 """
 function oracle_registry(pkg::Module, modules::AbstractVector{Module}, registry::AbstractDict, testdir::AbstractString)
     entries = Dict(Symbol(e["name"]) => (String(e["class"]), String(e["evidence"])) for e in get(registry, "operation", Any[]))
@@ -461,9 +489,11 @@ eval(Meta.parse(DIGEST_SOURCE))
 """
     thread_digest(probe_source; threads, project = Base.active_project()) -> String
 
-Runs `probe_source` (Julia source that prints digests with `fnv_digest`, which is prepended) in a
-fresh `julia -t <threads>` process under `project` and returns its trimmed stdout — the cross-thread-
-count half of a bitwise-invariance check the in-process toggle cannot make. Returns the output.
+Runs a probe in a fresh Julia process with a given thread count and returns its output — the
+cross-thread-count half of a bitwise-invariance check the in-process toggle cannot make. The
+arguments are `probe_source`, Julia source that prints digests with `fnv_digest` (which is
+prepended); `threads`, the `-t` value; and `project`, the `--project` it runs under. Returns the
+trimmed stdout.
 """
 function thread_digest(probe_source::AbstractString; threads::Integer, project::AbstractString = Base.active_project())
     src = DIGEST_SOURCE * "\n" * probe_source
@@ -500,11 +530,14 @@ end
 """
     gate(; root = GBGCodingTools.Config.find_root())
 
-The closure gate a consumer's `runtests.jl` ends with: the quick doctor set and the closure gate of the
-two code instruments (`bug-hunt`, `audit-changes`), in-process, `error()`ing on a non-zero return so a
-test run cannot pass over an open hunt or audit round; prints one banner line
-`GBGCodingTools v<ver> gate` (the `TEST.PKG` witness). Never the bare four-instrument gate: a test run
-must not fail on an open docs round. Returns `nothing`.
+The closure gate a consumer's `runtests.jl` ends with. The argument `root` is the consumer root, found
+by walking up from the working directory when not given.
+
+It runs the quick doctor set and the closure gate of the two code instruments (`bug-hunt`,
+`audit-changes`) in-process, `error()`ing on a non-zero return so a test run cannot pass over an open
+hunt or audit round, and prints one banner line `GBGCodingTools v<ver> gate` (the `TEST.PKG`
+witness). Never the bare four-instrument gate: a test run must not fail on an open docs round.
+Returns `nothing`.
 """
 function gate(; root = GBGCodingTools.Config.find_root())
     println("GBGCodingTools v", GBGCodingTools.tool_version(), " gate")

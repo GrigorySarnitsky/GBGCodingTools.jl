@@ -38,10 +38,13 @@ end
 """
     select(catalog, full, round) -> (seeded, skipped)
 
-For every `[[class]]` of the catalogue (the `seeds` shape): the occurrences of `anchor` in the FULL
-manuscript; the chosen one is `((occurrence - 1 + salt_offset) mod count) + 1`; a class whose anchor
-occurs nowhere is skipped and named. Returns the plan `[{id, class, page, start, stop, original,
-replacement, original_context, mutated_context}]` (byte positions into `full`) and the skipped classes.
+The seed plan for a round. The arguments are `catalog`, the consumer's seed catalogue (the `seeds`
+shape); `full`, the FULL manuscript text; and `round`, the round id that salts the selection.
+
+For every `[[class]]`: the occurrences of `anchor` in `full`; the chosen one is `((occurrence - 1 +
+salt_offset) mod count) + 1`; a class whose anchor occurs nowhere is skipped and named. Returns the
+plan `[{id, class, page, start, stop, original, replacement, original_context, mutated_context}]` (byte
+positions into `full`) and the skipped classes.
 """
 function select(catalog::AbstractDict, full::AbstractString, round::AbstractString)
     seeded = Dict{String,Any}[]; skipped = String[]
@@ -64,9 +67,11 @@ end
 """
     plant(full, siteonly, plan) -> (full′, siteonly′)
 
-The manuscripts with every planned seed applied: in `full` at the recorded positions (applied from the
-end so positions stay valid); in `siteonly` by locating the same `original_context` (the site is a
-subset of the full manuscript, so a seed on a withheld page is absent there by design). Returns both.
+The manuscripts with every planned seed applied. The arguments are `full` and `siteonly`, the two
+manuscript texts, and `plan`, the selection [`select`](@ref) returned. In `full` the seeds are applied
+at the recorded positions (from the end, so positions stay valid); in `siteonly` by locating the same
+`original_context` (the site is a subset of the full manuscript, so a seed on a withheld page is
+absent there by design). Returns both.
 """
 function plant(full::AbstractString, siteonly::AbstractString, plan::AbstractVector)
     f = String(full)

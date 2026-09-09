@@ -5,14 +5,20 @@
 """
     gate(cfg, instruments...; io = stderr) -> Int
 
-Scans EVERY round directory under `.gbg/rounds/`: an open round of one of the named instruments (all
-four when none is named) is exit 1, naming it — except the rounds named in `GBG_ROUND` (comma
-separated), which the CLI exports only while it runs a build, a test or an executable claim on behalf
-of that round; an open round of a disabled instrument is exit 1 (`CFG.VALID`); in a working tree
-(no `CI` variable) an open round whose directory is untracked or modified while `HEAD ≠ ROUND.head`
-is exit 1 (the fixes were committed without the round); a round directory without `ROUND.toml` is
-exit 2; `.gbg/rounds/` absent while instruments are enabled is exit 2 (`ROUND.DIR`). `gbg self verify`
-runs first and its exit 2 is the gate's. Closed rounds are never re-graded here. Returns the code.
+The closure gate (§6.2 step 10). The arguments are `cfg`, the validated config; `instruments`, the
+instruments whose open rounds block (all four when none is named); and `io`, where the refusal is
+explained.
+
+It scans EVERY round directory under `.gbg/rounds/`. An open round of a named instrument is exit 1,
+naming it — except the rounds named in `GBG_ROUND` (comma separated), which the CLI exports only while
+it runs a build, a test or an executable claim on behalf of that round. An open round of a disabled
+instrument is exit 1 (`CFG.VALID`).
+
+In a working tree (no `CI` variable) an open round whose directory is untracked or modified while
+`HEAD ≠ ROUND.head` is exit 1: the fixes were committed without the round. A round directory without
+`ROUND.toml` is exit 2; `.gbg/rounds/` absent while instruments are enabled is exit 2 (`ROUND.DIR`).
+`gbg self verify` runs first and its exit 2 is the gate's. Closed rounds are never re-graded here.
+Returns the code.
 """
 function gate(cfg::AbstractDict, instruments::AbstractString...; io::IO = stderr)
     root = cfg["root"]

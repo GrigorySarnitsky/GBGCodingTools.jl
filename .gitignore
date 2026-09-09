@@ -1,3 +1,13 @@
+# gbg:managed begin vdev — rewritten by `gbg sync`; do not edit
+.gbg/scratch/
+docs/build/
+docs/Manifest.toml
+test/Manifest.toml
+benchmark/Manifest.toml
+.claude/settings.local.json
+*.cov
+# gbg:managed end
+
 # seeded by hand at Phase 0; `gbg sync` adds its managed block at Phase 1.10
 .claude/settings.local.json
 Manifest.toml

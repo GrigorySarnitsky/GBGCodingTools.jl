@@ -6,8 +6,9 @@
 """
     SchemaError <: Exception
 
-An exception carrying every validation message of one document, as `messages::Vector{String}`;
-`showerror` prints them one per line.
+A document that does not validate. The fields are:
+
+- `messages` — one message per violation, each naming the JSON path.
 """
 struct SchemaError <: Exception
     messages::Vector{String}
@@ -79,9 +80,14 @@ end
 """
     validate(schema, value; root = schema, path = "\$") -> Vector{String}
 
-Validates `value` against `schema` (a `Dict` in the JSON-Schema subset above) and returns every
-violation as a message naming the JSON path (`\$.surfaces.pages[2]`). An empty vector means valid.
-`root` is the document the `\$ref`s resolve against; callers pass `schema` itself.
+Validates `value` against `schema` (a `Dict` in the JSON-Schema subset above). The arguments are:
+
+- `schema` — the schema node to apply.
+- `value` — the parsed document (`TOML.parsefile` or `JSON3.read` into a `Dict`).
+- `root` — the document the `\$ref`s resolve against; callers pass `schema` itself.
+- `path` — the JSON path of `value` in the messages (`\$` at the top).
+
+Returns every violation as a message naming its path; an empty vector means valid.
 """
 function validate(schema::AbstractDict, value; root = schema, path::String = "\$")
     errs = String[]
@@ -142,9 +148,9 @@ end
 """
     materialize!(schema, value; root = schema) -> value
 
-Fills every `default` the schema states into `value` where the key is absent — recursively through
-object properties and array items — so the object a verb receives carries every key the schema knows.
-A default that is itself an object is deep-copied. Returns `value` (mutated when it is a `Dict`).
+Writes every `default` the schema declares into `value` where the key is absent, recursively through
+objects and array items. The arguments are `schema`, the node to apply; `value`, the document to fill
+in place; and `root`, the document the `\$ref`s resolve against. Returns `value`.
 """
 function materialize!(schema::AbstractDict, value; root = schema)
     s = _resolve(root, schema)
@@ -167,8 +173,9 @@ end
 """
     assert_valid(schema, value; what = "document")
 
-Validates and throws a [`SchemaError`](@ref) listing every violation when `value` does not conform;
-returns `nothing` when it does. `what` names the document in the messages.
+Throws a [`SchemaError`](@ref) naming `what` when `value` does not validate against `schema`; returns
+`nothing` otherwise. The arguments are `schema`, the schema; `value`, the document; and `what`, the
+noun the error message uses for it.
 """
 function assert_valid(schema::AbstractDict, value; what::AbstractString = "document")
     errs = validate(schema, value)

@@ -47,15 +47,16 @@ The fields are:
 - `line` — the 1-based line of the opening `\"\"\"`.
 - `body` — the text between the quotes.
 - `signature` — the first line of the body, stripped (the displayed signature when there is one).
+- `offset` — the byte offset of the body's first character in the file.
 """
 struct Docstring
     file::String
     line::Int
     body::String
     signature::String
+    offset::Int
 end
 
-const DOC_RE = r"\"\"\"\n(.*?)\n\"\"\""s
 
 """
     docstrings(root, files) -> Vector{Docstring}
@@ -67,10 +68,28 @@ function docstrings(root::AbstractString, files::AbstractVector{<:AbstractString
     out = Docstring[]
     for f in files
         text = read(joinpath(root, f), String)
-        for m in eachmatch(DOC_RE, text)
-            body = m.captures[1]
-            line = count(==('\n'), SubString(text, 1, prevind(text, m.offset))) + 1
-            push!(out, Docstring(String(f), line, String(body), String(strip(first(split(body, '\n'))))))
+        lines = split(text, '\n')
+        offset = 1; i = 1; n = length(lines)
+        # the engine's rule: a docstring opens at a line holding the three quotes alone; a triple-quoted
+        # code literal opens mid-line and is skipped to its close, so a closer at line start pairs with nothing
+        while i <= n
+            l = lines[i]; c = count("\"\"\"", l)
+            if strip(l) == "\"\"\""
+                j = i + 1
+                while j <= n && count("\"\"\"", lines[j]) == 0; j += 1; end
+                if j <= n
+                    body = join(lines[i+1:j-1], "\n")
+                    push!(out, Docstring(String(f), i, body, String(strip(first(split(body, '\n')))), offset + ncodeunits(l) + 1))
+                    for k in i:j; offset += ncodeunits(lines[k]) + 1; end
+                    i = j + 1; continue
+                end
+            elseif isodd(c)
+                j = i + 1
+                while j <= n && count("\"\"\"", lines[j]) == 0; j += 1; end
+                for k in i:min(j, n); offset += ncodeunits(lines[k]) + 1; end
+                i = j + 1; continue
+            end
+            offset += ncodeunits(l) + 1; i += 1
         end
     end
     return out
@@ -114,8 +133,14 @@ end
 """
     ArgcovHit
 
-One undocumented argument: `file`, `line`, `signature`, `binding` (the function's name), `parameter`,
-and `declared_type` (the annotation text, or `""`).
+One undocumented argument found by [`argcov`](@ref). The fields are:
+
+- `file` — the source file, relative to the root.
+- `line` — the docstring's opening line.
+- `signature` — the docstring's signature line.
+- `binding` — the documented binding's name.
+- `parameter` — the undocumented parameter.
+- `declared_type` — its declared type in the signature, or empty.
 """
 struct ArgcovHit
     file::String
@@ -143,7 +168,7 @@ function argcov(cfg::AbstractDict; exempt = (hit -> false))
     hits = ArgcovHit[]; population = 0
     internal = wrappers = prose = 0
     for d in docstrings(cfg["root"], files)
-        sig = d.signature
+        sig = replace(d.signature, r"\s*->.*$" => "")          # the return annotation is not a parameter list
         (occursin('(', sig) && occursin(')', sig)) || continue
         o = findfirst('(', sig); c = findlast(')', sig)
         inside = sig[nextind(sig, o):prevind(sig, c)]
@@ -222,17 +247,30 @@ end
 """
     package_operations(pkg, modules) -> Set{Symbol}
 
-The package's true public surface, derived from OWNERSHIP: every function a module in `modules` owns
-at least one method of — a generic the package declares and an extension of an external generic
-(`Base.map!`, `Statistics.mean`) alike — plus the umbrella's exported functions. `names()` cannot see
-an extension the package does not re-export, and three consumer guards built on it were each blind to
-nine public operations. Returns the set of names.
+The derived public surface: every exported function of the umbrella `pkg` and of its owned `modules`,
+plus every external generic a package module extends (found by walking the loaded modules and asking
+each function whether a package module owns one of its methods — a method defined under a qualified
+name creates no binding, so a namespace scan cannot see it). Internal helpers and closures never
+enter it. The arguments are `pkg`, the umbrella module, and `modules`, the owned modules. Returns the
+names.
 """
 function package_operations(pkg::Module, modules::AbstractVector{Module})
-    owned = Set(modules)
-    found = Set{Symbol}(n for n in names(pkg) if isdefined(pkg, n) && getfield(pkg, n) isa Function)
+    owned = Set(vcat(modules, [pkg]))
+    found = Set{Symbol}()
+    # the package's own public surface: the exported (public) names of the umbrella and of every owned
+    # module that are functions — internals and closures never enter it
+    for mod in owned, n in names(mod)
+        isdefined(mod, n) || continue
+        f = try getfield(mod, n) catch; continue end
+        f isa Function && !startswith(String(n), "#") && push!(found, n)
+    end
+    # plus every EXTERNAL generic the package extends: a method defined under a qualified name
+    # (`Base.show(io, ::T) = …`) creates no binding in the package, so the loaded modules are walked and
+    # each function asked whether a package module owns one of its methods
     for mod in Base.loaded_modules_array()
+        mod in owned && continue
         for name in names(mod; all = true, imported = true)
+            startswith(String(name), "#") && continue
             isdefined(mod, name) || continue
             f = try getfield(mod, name) catch; continue end
             f isa Function || continue
@@ -266,13 +304,12 @@ dehat(s::Symbol) = Symbol(replace(Base.Unicode.normalize(String(s), :NFD), r"[̂
 """
     signature_fidelity(cfg; pkg = load_package(cfg)) -> Vector{String}
 
-The displayed signature set of every exported binding against its defined method table: a displayed
-keyword no method has (a stale signature), a defined keyword no displayed signature shows
-(unadvertised), a displayed positional matching no argument name. The spectral-pair forms
-(`f(u)` / `f(û)`) are accent-normalised; a `kwargs...` display suppresses the hidden-keyword direction;
-an unnamed dispatch slot suppresses the positional one; a generic whose methods live in an unloaded
-extension is reported once as extension-homed. A triage scan: count first, read all. Returns the
-messages.
+Per exported binding, the displayed docstring signatures against the defined method table (positional
+names accent-normalised, keywords by name): a displayed keyword no method defines (a stale
+signature), a defined keyword no signature advertises, a displayed positional matching no argument
+name. The arguments are `cfg`, the validated config, and `pkg`, the loaded package (loaded from the
+config when not given). Returns one message per discrepancy; an extension-homed binding with no
+methods loaded is reported as skipped.
 """
 function signature_fidelity(cfg::AbstractDict; pkg::Module = load_package(cfg))
     displayed = Dict{Symbol,Set{Symbol}}(); displayed_kw = Dict{Symbol,Set{Symbol}}(); elided = Set{Symbol}()
@@ -300,9 +337,10 @@ function signature_fidelity(cfg::AbstractDict; pkg::Module = load_package(cfg))
         note!(displayed, name, dehat.(pos)); note!(displayed_kw, name, kw)
     end
     for f in Config.surface_files(cfg, "src")
-        src = read(joinpath(cfg["root"], f), String)
-        for m in eachmatch(r"\"\"\"\n((?:    [^\n]*\n)+)"s, src)
-            lines = split(m.captures[1], '\n'; keepempty = false)
+        for d in docstrings(cfg["root"], [f])
+            header = collect(Iterators.takewhile(l -> startswith(l, "    "), split(d.body, '\n')))
+            isempty(header) && continue
+            lines = header
             joined, cur = String[], ""
             for ln in lines
                 cur *= strip(ln) * " "
@@ -366,13 +404,14 @@ end
 """
     xlink(cfg; pkg = load_package(cfg), apply = false) -> Vector
 
-Every docstring's FIRST mention of a name whose DEFINING module differs from the docstring's own,
-cited in plain backticks and never `@ref`-linked anywhere in that docstring — the class that is
-invisible because an unqualified cross-module `@ref` does not resolve and the author downgrades it to a
-bare span. The docstring's own binding names and its own signature arguments are off limits (this
-sweep once re-linked two arguments a manual fix had just unlinked). Dry run by default; with
-`apply = true` it rewrites each site as `` [`name`](@ref Pkg.Owner.name) ``, back to front. Returns
-the sites as `(file, line, name, owner)`.
+Every bare mention of a public name owned by ANOTHER package module inside a docstring (the first
+mention, outside the signature and the arguments), as `(file, line, name, owner)`. The arguments are:
+
+- `cfg` — the validated config.
+- `pkg` — the loaded package (loaded from the config when not given).
+- `apply` — rewrite each site to a qualified `@ref` link in place; default false, a dry run.
+
+Returns the sites.
 """
 function xlink(cfg::AbstractDict; pkg::Module = load_package(cfg), apply::Bool = false)
     mods = package_modules(pkg, cfg)
@@ -395,8 +434,8 @@ function xlink(cfg::AbstractDict; pkg::Module = load_package(cfg), apply::Bool =
         mm === nothing && continue
         me = Symbol(mm.captures[1])
         edits = Tuple{Int,Int,String,Symbol}[]
-        for dm in eachmatch(DOC_RE, src)
-            body = dm.captures[1]; base = dm.offsets[1]
+        for d in docstrings(cfg["root"], [f])
+            body = d.body; base = d.offset
             lines = split(body, "\n")
             se = something(findfirst(l -> !startswith(l, "    ") && !isempty(strip(l)), lines), 1)
             sighead = join(lines[1:se-1], "\n")

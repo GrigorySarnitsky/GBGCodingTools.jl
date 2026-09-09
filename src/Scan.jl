@@ -6,9 +6,15 @@
 """
     Hit(file, line, text; symbol = "")
 
-One scan hit: the surface file (relative to the consumer root), the 1-based line (0 when the hit is
-about a whole file) and the excerpt or message a reader needs; `symbol` names the owning binding when
-the scan knows it, which is what a ledger entry's `symbol` predicate is matched against.
+One scan hit. The fields are:
+
+- `file` — the surface file, relative to the consumer root.
+- `line` — the 1-based line, or 0 when the hit is about the whole file.
+- `text` — the excerpt or message a reader needs.
+- `symbol` — the owning binding when the scan knows it (what a ledger entry's `symbol` predicate is
+  matched against); empty otherwise.
+
+The arguments of the constructor are the fields, `symbol` as a keyword.
 """
 struct Hit
     file::String
@@ -21,10 +27,16 @@ Hit(file, line, text; symbol = "") = Hit(String(file), Int(line), String(text), 
 """
     ScanResult
 
-The outcome of one scan: `id`, `rule`, the resolved `tier` (`hard` or `triage`; the `argcov_policy`
-tier resolved from config), the surviving `hits`, the `population` the scan measured (files, docstrings,
-exports, arguments or pages — zero means the scan measured nothing and is DEAD), the number of hits
-the ledger `exempted`, and `note` for a scan-level message (an error, a dead-lane reason).
+The outcome of one scan. The fields are:
+
+- `id` — the scan id.
+- `rule` — the rule it enforces.
+- `tier` — `hard` or `triage`, the `argcov_policy` tier resolved from config.
+- `hits` — the surviving hits.
+- `population` — what the scan measured (files, docstrings, exports, arguments or pages); zero means
+  the scan measured nothing and is DEAD.
+- `exempted` — the number of hits the ledger removed.
+- `note` — a scan-level message: an error, a dead-lane reason, empty otherwise.
 """
 struct ScanResult
     id::String
@@ -78,12 +90,15 @@ const AI_BANNER = ["!!! info \"Written by AI, not regularly reviewed\"",
 """
     ProseLine
 
-One line of rendered prose from a surface: `n` its 1-based line number, `raw` the line as written,
-`text` the line as a reader of the rendered page would see its markup (a Literate `# ` prefix stripped;
-in a Julia docstring the doubled backslashes collapsed, so `\\\\alpha` in source reads `\\alpha`),
-`indocstring` whether it came from a `\"\"\"` docstring, `comment` whether it is a `#`-leading line
-inside prose (a Markdown heading in a docstring, or a stray comment — the house exemption skips
-these in `.jl` surfaces).
+One line of rendered prose from a surface. The fields are:
+
+- `n` — the 1-based line number.
+- `raw` — the line as written.
+- `text` — the line as a reader of the rendered page sees its markup: a Literate `# ` prefix
+  stripped, and in a Julia docstring the doubled backslashes collapsed.
+- `indocstring` — whether it came from a docstring.
+- `comment` — whether it is a `#`-leading line inside prose (a Markdown heading in a docstring, or a
+  stray comment), which the house exemption skips in `.jl` surfaces.
 """
 struct ProseLine
     n::Int
@@ -120,6 +135,7 @@ function prose_lines(cfg::AbstractDict, file::AbstractString)
     out = ProseLine[]
     lines = readlines(joinpath(cfg["root"], file))
     indoc = kind != :julia
+    intriple = false                                        # inside ANY triple-quoted string (a docstring or a code literal)
     infence = false
     for (n, raw) in enumerate(lines)
         line = raw
@@ -134,23 +150,25 @@ function prose_lines(cfg::AbstractDict, file::AbstractString)
         elseif kind == :julia
             s = strip(raw)
             c = count("\"\"\"", raw)
-            if !indoc
+            if !intriple
                 if c >= 2 && startswith(s, "\"\"\"")            # one-line docstring
                     inner = strip(s[4:end-3])
                     push!(out, ProseLine(n, raw, unescape_docstring(inner), true, startswith(inner, "#")))
                     continue
-                elseif isodd(c) && startswith(s, "\"\"\"")       # opener (the design writes it alone on its line)
-                    indoc = true
-                    rest = strip(s[4:end])
+                elseif isodd(c)                                 # a triple-quoted string opens here
+                    intriple = true
+                    indoc = startswith(s, "\"\"\"")             # a docstring opens at line start; a code literal does not
+                    rest = indoc ? strip(s[4:end]) : ""
                     isempty(rest) || push!(out, ProseLine(n, raw, unescape_docstring(rest), true, startswith(rest, "#")))
                     continue
                 else
                     continue
                 end
-            elseif isodd(c)                                     # closer
-                indoc = false; infence = false
+            elseif isodd(c)                                     # the string closes
+                intriple = false; indoc = false; infence = false
                 continue
             end
+            indoc || continue                                   # inside a code literal: not prose
         end
         if startswith(strip(line), "```")
             infence = !infence
@@ -175,9 +193,15 @@ unescape_docstring(line::AbstractString) = replace(String(line), "\\\\" => "\\",
 """
     prose_text(cfg, file; history_cut = true) -> String
 
-The whole prose of `file` as one string (the `text` of every prose line joined by newlines); with
-`history_cut`, a file named by `surfaces.history_exempt` is cut at that heading, so the append-only
-history is not scanned for currency. Returns the string.
+The whole prose of one surface file as one string, for the scans that match across lines. The
+arguments are:
+
+- `cfg` — the validated config (it names the history anchor).
+- `file` — the surface file, relative to the root.
+- `history_cut` — cut a file named by `surfaces.history_exempt` at that heading, so the append-only
+  history is not scanned for currency; default true.
+
+Returns the `text` of every prose line joined by newlines.
 """
 function prose_text(cfg::AbstractDict, file::AbstractString; history_cut::Bool = true)
     pl = prose_lines(cfg, file)
@@ -192,19 +216,39 @@ function prose_text(cfg::AbstractDict, file::AbstractString; history_cut::Bool =
 end
 
 """
-    regex_scan(cfg, files, re; skip_comments = true, on = :text, exclude = nothing) -> (hits, population)
+    mask_code_spans(line) -> String
 
-The engine's plain-pattern scan: every prose line of every file matching `re` is a hit (the line as its
-excerpt), `#`-leading lines in Julia surfaces skipped unless `skip_comments = false`, the match run
-over the rendered `text` or the `raw` line per `on`, and a line for which `exclude(line)` is true
-dropped. Returns the hits and the file count.
+`line` with every single-backtick code span replaced by spaces of the same length (double-backtick
+math spans untouched). A backtick span holds Julia by rule (`RULE.TEX.CODE_SPAN_JULIA`), so a TeX
+command inside one is a MENTION of the idiom, not a use — the design record's rule tables and a
+notation page's command column name `\\left` and `\\,` without typesetting them. Returns the string.
 """
-function regex_scan(cfg::AbstractDict, files, re::Regex; skip_comments::Bool = true, on::Symbol = :text, exclude = nothing)
+mask_code_spans(line::AbstractString) = replace(String(line), r"(?<!`)`[^`\n]+`(?!`)" => m -> " "^length(m))
+
+"""
+    regex_scan(cfg, files, re; skip_comments = true, on = :text, exclude = nothing, mask_code = false) -> (hits, population)
+
+The engine's plain-pattern scan over the prose lines of `files` (the surface files, relative to the
+consumer root) for the pattern `re`. The arguments are:
+
+- `cfg` — the validated config, which locates the files and classifies each as Julia, Literate or
+  Markdown.
+- `files` — the surface files to read.
+- `re` — the regex; every prose line matching it is a hit, the line its excerpt.
+- `skip_comments` — skip `#`-leading lines inside Julia docstrings (the house exemption); default true.
+- `on` — `:text` matches the rendered line (docstring escapes collapsed), `:raw` the line as written.
+- `exclude` — a predicate over the line; a line it accepts is dropped.
+- `mask_code` — blank single-backtick code spans first ([`mask_code_spans`](@ref)); the TeX scans use it.
+
+Returns the hits and the file count (the population).
+"""
+function regex_scan(cfg::AbstractDict, files, re::Regex; skip_comments::Bool = true, on::Symbol = :text, exclude = nothing, mask_code::Bool = false)
     hits = Hit[]
     for f in files
         for p in prose_lines(cfg, f)
             skip_comments && p.indocstring && p.comment && continue
             s = on == :raw ? p.raw : p.text
+            mask_code && (s = mask_code_spans(s))
             occursin(re, s) || continue
             exclude !== nothing && exclude(s) && continue
             push!(hits, Hit(f, p.n, strip(s)))
@@ -251,10 +295,17 @@ end
 """
     apply_ledger(cfg, ledger, row, hits) -> (kept, exempted, disabled)
 
-Applies the ledger to one scan's hits: an entry `scope = "scan"` on the scan id, or `scope =
-"policy"` on its rule with target `*`, disables the scan (every hit exempted, `disabled = true`); any
-other live `scan`-scope entry on the id drops the hits it [`Ledger.matches`](@ref). A text scan meets
-an `arg_type` predicate as an error. Returns the kept hits, the exempted count and the flag.
+Applies the ledger to one scan's hits. The arguments are:
+
+- `cfg` — the validated config (its root is where file targets resolve).
+- `ledger` — the entries `Ledger.read` returned.
+- `row` — the scan's catalogue row (`id`, `rule`).
+- `hits` — the scan's hits before the ledger.
+
+An entry `scope = "scan"` on the scan id, or `scope = "policy"` on its rule, with target `*` disables
+the scan (every hit exempted, `disabled = true`); any other live `scan`-scope entry on the id drops the
+hits it [`Ledger.matches`](@ref). A text scan meets an `arg_type` predicate as an error. Returns the
+kept hits, the exempted count and the flag.
 """
 function apply_ledger(cfg::AbstractDict, ledger, row, hits::Vector{Hit})
     id = row["id"]; rule = row["rule"]
@@ -278,11 +329,17 @@ function apply_ledger(cfg::AbstractDict, ledger, row, hits::Vector{Hit})
 end
 
 """
-    run_scan(cfg, row; ledger, files = nothing) -> ScanResult
+    run_scan(cfg, row; ledger = Ledger.read(cfg), files = nothing) -> ScanResult
 
-Runs the catalogued scan `row` over its resolved surfaces (or `files`), applies the ledger and returns
-the result. A scan function that throws yields a result with an empty population and the error as
-`note`, so a broken scan reads DEAD rather than clean.
+Runs one catalogued scan and applies the ledger. The arguments are:
+
+- `cfg` — the validated config.
+- `row` — the catalogue row (`id`, `rule`, `tier`, `surfaces`).
+- `ledger` — the ledger entries; read from the consumer when not given.
+- `files` — the files to scan instead of the row's resolved surfaces (the built pages for an HTML scan).
+
+A scan function that throws yields a result with an empty population and the error as `note`, so a
+broken scan reads DEAD rather than clean. Returns the result.
 """
 function run_scan(cfg::AbstractDict, row::AbstractDict; ledger = Ledger.read(cfg), files = nothing)
     id = row["id"]; tier = resolve_tier(cfg, row["tier"])
@@ -315,10 +372,15 @@ end
     scan_docs(cfg; hard_only = false, only = nothing, io = stdout) -> (results, code)
 
 Runs every catalogued text scan (and the consumer's `[[scans.custom]]` rows) over the source surfaces
-and prints the full report: every hard hit and every triage hit, never truncated. The exit `code`
-follows the contract: 2 when any scan is DEAD (measured nothing, or raised), else 1 when any hard scan
-has a hit, else 0; triage hits never change it. `hard_only` runs the hard tier alone (what `makedocs`
-calls); `only` restricts to the ids (or id prefixes) given. Returns the results and the code.
+and prints the full report: every hard hit and every triage hit, never truncated. The arguments are:
+
+- `cfg` — the validated config.
+- `hard_only` — run the hard tier alone (what `makedocs` calls).
+- `only` — a list of ids or id prefixes to restrict the run to.
+- `io` — where the report goes.
+
+The exit `code` follows the contract: 2 when any scan is DEAD (measured nothing, or raised), else 1
+when any hard scan has a hit, else 0; triage hits never change it. Returns the results and the code.
 """
 function scan_docs(cfg::AbstractDict; hard_only::Bool = false, only = nothing, io::IO = stdout)
     ledger = Ledger.read(cfg)
@@ -337,8 +399,9 @@ end
 """
     report(results; io = stdout) -> Int
 
-Prints the scan report — the MUST BE EMPTY block, then TRIAGE — with every hit on its own line, and
-returns the exit code (2 dead, 1 hard hits, 0 clean).
+Prints the scan report — the MUST BE EMPTY block, then TRIAGE — with every hit on its own line. The
+arguments are `results`, the scan results in catalogue order, and `io`, where the report goes. Returns
+the exit code (2 dead, 1 hard hits, 0 clean).
 """
 function report(results::AbstractVector{ScanResult}; io::IO = stdout)
     code = 0
@@ -377,15 +440,21 @@ format_hit(h::Hit) = h.line > 0 ? "$(h.file):$(h.line): $(h.text)" : "$(h.file):
 """
     built_pages(build_dir) -> Vector{String}
 
-Every `index.html` under `build_dir` outside `search/` and `assets/`, sorted. Returns the paths.
+Every rendered page under `build_dir`: each `.html` file outside the `search/` and `assets/` trees and
+not the search page itself — `index.html` per directory under `prettyurls`, `<page>.html` without it —
+sorted. Returns the paths.
 """
 function built_pages(build_dir::AbstractString)
     pages = String[]
     for (dir, _, files) in walkdir(build_dir)
-        "index.html" in files || continue
         rel = relpath(dir, build_dir)
-        first(splitpath(rel)) in ("search", "assets") && continue
-        push!(pages, joinpath(dir, "index.html"))
+        top = first(splitpath(rel))
+        top in ("search", "assets") && continue
+        for f in files
+            endswith(f, ".html") || continue
+            f == "search.html" && continue
+            push!(pages, joinpath(dir, f))
+        end
     end
     return sort!(pages)
 end
@@ -393,10 +462,17 @@ end
 """
     scan_html(cfg, build_dir; only = nothing, io = stdout) -> (results, code)
 
-Runs the built-HTML scans (`runner = "html"`) over the pages under `build_dir` through the Gumbo
-walker, applies the ledger, prints the report and returns the results and the exit code, as
-[`scan_docs`](@ref) does. A missing or empty build is DEAD, exit 2. `SCAN.HTML_PUBLIC_HOME` reads
+Runs the built-HTML scans (`runner = "html"`) over the pages under `build_dir` through the Gumbo walker,
+applies the ledger and prints the report. The arguments are:
+
+- `cfg` — the validated config.
+- `build_dir` — the Documenter build directory.
+- `only` — a list of ids or id prefixes to restrict the run to.
+- `io` — where the report goes.
+
+A missing or empty build is DEAD, exit 2. `SCAN.HTML_PUBLIC_HOME` reads
 `.gbg/scratch/public_surface.json`, which [`write_public_surface`](@ref) writes before the build.
+Returns the results and the exit `code` as [`scan_docs`](@ref) does.
 """
 function scan_html(cfg::AbstractDict, build_dir::AbstractString; only = nothing, io::IO = stdout)
     ledger = Ledger.read(cfg)
@@ -415,7 +491,9 @@ end
 
 Writes `.gbg/scratch/public_surface.json`: the package's exported names and the public operations
 `Reflection.package_operations` derives (every function with a method in a package module), so the
-built-HTML scan `SCAN.HTML_PUBLIC_HOME` can ask whether each has a public home. Returns the path.
+built-HTML scan `SCAN.HTML_PUBLIC_HOME` can ask whether each has a public home. The arguments are
+`cfg`, the validated config, and `pkg`, the loaded package module (loaded from the config when not
+given). Returns the path.
 """
 function write_public_surface(cfg::AbstractDict; pkg::Module = Reflection.load_package(cfg))
     mods = Reflection.package_modules(pkg, cfg)

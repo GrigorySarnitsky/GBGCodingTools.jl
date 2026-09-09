@@ -1,5 +1,8 @@
 # GBGCodingTools — architecture
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
 This document is the design record of `GBGCodingTools.jl`: the one shared tooling package that four
 private sibling Julia packages consume — `GBGPeriodicFields` (**PF**), `GBGIsotropicTurbulence`
 (**IT**), `GBGStreamingStatistics` (**SS**), `GBGCloudPhysics` (**CP**) — and which consumes itself:
@@ -1337,7 +1340,9 @@ optional = true}`, `src = ["src/**/*.jl"]`, `ext = ["ext/*.jl"]`, `literate = []
 "docs/build"`, `history_exempt = "docs/ARCHITECTURE.md#Revision history"` (the one heading under
 which the implementation plan's Phase 1.10 gathers this document's revision notes — the anchor needs
 exactly one match), `references_heading = "absent"`, `glossary` omitted. `[docs]`: `doctest = true`,
-`admonition_titles = "always"`, `unexported_base_expected = []`, `retired_claims = []`.
+`admonition_titles = "always"`, `unexported_base_expected = ["showerror", "getindex", "setindex!", "size", "parent"]` (the
+error types' `showerror` and `CountingArray`'s `AbstractArray` interface are internal by design; the same
+allowance excuses a Base extension from `SCAN.HTML_PUBLIC_HOME`), `retired_claims = []`.
 `rubric.leading_identity = "physical-meaning"` (the enum has no third member; for a tool it reads as
 the plain identity sentence the rubric's item (1) asks for); `notation.vectors = "none"`,
 `mathbf_allowed = []`; `citations.require_doi = true`. `instruments.enabled` = all four
@@ -2304,7 +2309,12 @@ resolves an id by that prefix and nowhere else — `GIT.BRANCH` is only ever the
 
 ---
 
-## Revision 2 (2026-09-07)
+## Revision history
+
+The per-revision notes of this document, appended in order; the append-only history the
+`history_exempt` anchor of §5.6 names, exempt from the currency scans.
+
+### Revision 2 (2026-09-07)
 
 Applied from `out/REVIEW-dryrun.md`: items 1–57 (1–5 BLOCKER, 6–23 MAJOR, 24–47 MINOR, 48–57
 deviations), each as ruled by `05-fix-rulings.md` where a ruling overrides the review's own fix
@@ -2315,7 +2325,7 @@ deviations), each as ruled by `05-fix-rulings.md` where a ruling overrides the r
 "not configurable" contradictions plus the anchor ambiguity. Rulings 1–22 applied in full; the
 per-item mapping is `out/FIXLOG.md`.
 
-## Revision 3 (2026-09-07)
+### Revision 3 (2026-09-07)
 
 Applied from `out/REVIEW-verify.md`, every item: the PARTIAL ruling (R20 — `round` added to §10's
 `ROUND.toml` extension list, so §6.1 and §10 agree); the nine consistency mismatches (4.1 — every
@@ -2334,7 +2344,7 @@ under `--dev` at the tag; the CP delta as §5.4, the former §5.4 now §5.5; Q13
 the CI-snippet insertion points in §3 and `WIRE.CI_AUTH`). The per-item mapping is `out/FIXLOG.md`
 "Revision 3".
 
-## Revision 4 (2026-09-08) — IT amendments + Python retirement
+### Revision 4 (2026-09-08) — IT amendments + Python retirement
 
 Applied from `07-IT-amendments.md`, every amendment by number, with `06-python-retirement.md`'s mapping
 where the two agree and the amendment where they differ: **(1)** D19 records `GBGInstruments` proposed
@@ -2365,7 +2375,7 @@ rulings; **(17)** the `git add -u` line is in the implementation plan §B. Delib
 Python grep: the `consolidate.py` transitional mentions and the historical citations of the old
 scripts as the sources of a port. The per-item mapping is `out/FIXLOG.md` "Revision 4".
 
-## Revision 5 (2026-09-08) — IT corrections A–D
+### Revision 5 (2026-09-08) — IT corrections A–D
 
 Applied from `08-IT-corrections.md`, exactly the four corrections and nothing else; (A) and (B) retract
 parts of Revision 4's (4b) and (10). **(A)** D13, §4, §5.1, §6.2 step 10, §9, the Revision 4 note: the
@@ -2397,7 +2407,7 @@ predicate itself and reports the population, or `EXEMPT.BROAD` has nothing to dr
 match keys and is untouched. The Revision 4 note keeps its wording with the two retractions marked
 inline. The per-item mapping is `out/FIXLOG.md` "Revision 5".
 
-## Revision 6 (2026-09-09) — the tool as its own consumer
+### Revision 6 (2026-09-09) — the tool as its own consumer
 
 Applied from `09-revision6-self-application.md`, exactly the eight rulings and nothing else. **(1)** D15
 (retitled) makes the tool its own FIFTH consumer — `.gbg/config.toml` at the tool root with
@@ -2430,7 +2440,7 @@ consumer's; §10 and §11 record the extension of the record and the residue it 
 grades a moving instrument). D19 and §0 are untouched. The per-item mapping is `out/FIXLOG.md`
 "Revision 6".
 
-## Revision 7 (2026-09-09) — the prerelease tag
+### Revision 7 (2026-09-09) — the prerelease tag
 
 One ruling, replacing the collision resolution Revision 6 wrote (the tool's first `/check-docs` round
 "recorded by `abandon` listing no open id"): the tool's own instrument rounds before a release are opened
@@ -2445,7 +2455,7 @@ rc tag). D15 and §8 say the first round is opened at `v1.0.0-rc.1` and closed; 
 the rc-tag round that closes; §11's residue names the prerelease tag as the reason. No "abandon listing
 none" sentence survives in this document. The per-item mapping is `out/FIXLOG.md` "Revision 7".
 
-## Revision 8 (2026-09-08) — the owner's rulings
+### Revision 8 (2026-09-08) — the owner's rulings
 
 Applied by the implementing session from the owner's answers to the implementation plan's §A, given
 one by one before Phase 0 (that document's Revision 8 note lists the plan side). The standing principle
@@ -2474,7 +2484,7 @@ order (`templates/CLAUDE.md.skeleton`) and the tracked `docs/ROADMAP.md` for liv
 §9 gains the two rows and reclassifies the hook and `settings.json` rows as collapses; §10 gains
 residuals 13–15.
 
-## Revision 9 (2026-09-09) — payloads are files, args carry paths
+### Revision 9 (2026-09-09) — payloads are files, args carry paths
 
 Found at implementation of the preflight (Phase 1): the `workflow-authoring` reference states that a
 Workflow script has no filesystem or Node API and that `args` is the value the session passes in the

@@ -1,0 +1,14 @@
+---
+name: audit-changes
+description: Were these edits justified, and did they silently change behaviour? Lanes over a diff range, the executable claims run by the CLI (GBGCodingTools vdev, GBGCodingTools)
+allowed-tools: Bash(gbg *)
+---
+<!-- gbg:managed SKILL.md.tmpl vdev — rewritten by `gbg sync`; do not edit -->
+The preflight below validates the config, runs the quick doctor and `gbg self verify`, opens the
+round, and prints this instrument's protocol, the exact `Workflow` call and the next step. A non-zero
+exit aborts the skill here; nothing below it is a fallback. (`/gbg-doctor` runs `gbg doctor` and opens
+no round: the doctor is not an instrument.)
+
+!gbg preflight audit-changes $ARGUMENTS
+
+Follow the protocol printed above, exactly and to its end.

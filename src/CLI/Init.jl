@@ -145,7 +145,8 @@ function derive_config(root::AbstractString)
             "built_html" => "docs/build",
             "history_exempt" => tool ? "docs/ARCHITECTURE.md#Revision history" : "docs/ARCHITECTURE.md#" * something(hist, "TODO: the append-only history heading"),
             "references_heading" => refs === nothing ? "absent" : "docs/ARCHITECTURE.md#" * refs),
-        "docs" => Dict{String,Any}("doctest" => true, "admonition_titles" => "always", "unexported_base_expected" => String[], "retired_claims" => Any[]),
+        "docs" => Dict{String,Any}("doctest" => true, "admonition_titles" => "always",
+                                   "unexported_base_expected" => tool ? ["showerror", "getindex", "setindex!", "size", "parent"] : String[], "retired_claims" => Any[]),
         "rubric" => Dict("leading_identity" => "physical-meaning"),
         "notation" => Dict("vectors" => tool ? "none" : "component", "mathbf_allowed" => tool ? String[] : ["\\mathbf{1}"]),
         "citations" => Dict("require_doi" => true),
@@ -220,12 +221,19 @@ const LEDGER_HEADER = """
 """
     init(root = pwd(); migrate = false, dry_run = false, io = stdout) -> Int
 
-`gbg init`: writes `.gbg/config.toml` from the tree, an empty ledger, `.gbg/rounds/.keep`, a placeholder
-persona for every domain hat without one, the S-class files that are absent (`test/Project.toml`,
-`test/regressions/`, `docs/ROADMAP.md`, `docs/prose_shape.csv`), and the tool's entries into `docs/`,
-`test/` and every sub-environment that lists the tool; with `migrate`, also the three baseline TOMLs,
-`.gbg/seeds.toml` from a former `seed_defects.py`, and `.gbg/scratch/commit-message.txt`. Refuses an
-existing `.gbg/config.toml` (exit 2). `dry_run` prints what it would write. Returns the exit code.
+`gbg init [--migrate] [--dry-run]`: seeds a consumer. The arguments are:
+
+- `root` — the package root (the directory holding `Project.toml`).
+- `migrate` — also convert the test baselines and a former `seed_defects.py`, and write
+  `.gbg/scratch/commit-message.txt` for the migration commit.
+- `dry_run` — print what would be written, write nothing.
+- `io` — where the report goes.
+
+It writes `.gbg/config.toml` from the tree, an empty ledger, `.gbg/rounds/.keep`, a placeholder persona
+for every domain hat without one, the seeded-once files that are absent (`test/Project.toml`,
+`docs/make.jl`, `test/runtests.jl`, `test/regressions/`, `docs/ROADMAP.md`, `docs/prose_shape.csv`),
+and the tool's entries into `docs/`, `test/` and every sub-environment that lists the tool. It refuses
+an existing `.gbg/config.toml` (exit 2). Returns the exit code.
 """
 function init(root::AbstractString = pwd(); migrate::Bool = false, dry_run::Bool = false, io::IO = stdout)
     root = abspath(root)
@@ -277,7 +285,14 @@ function init(root::AbstractString = pwd(); migrate::Bool = false, dry_run::Bool
     end
     s = Sync.slots(cfg)
     tp = joinpath(root, "test", "Project.toml")
-    isfile(tp) || (mkpath(dirname(tp)); write(tp, Sync.render(Sync.template("test-Project.toml.seed"), s)))
+    if !isfile(tp)
+        mkpath(dirname(tp))
+        # the tool as its own consumer: the package under test IS the tool, so its test environment lists
+        # neither a tool entry nor a pin — Pkg.test provides the package itself
+        text = cfg["package"]["name"] == PKG_NAME ? "[deps]\nTest = \"8dfed614-e22c-5e08-85e1-65c5234f0b40\"\n" :
+               Sync.render(Sync.template("test-Project.toml.seed"), s)
+        write(tp, text)
+    end
     mkpath(joinpath(root, "test", "regressions"))
     for (path, tmpl) in ((joinpath("docs", "make.jl"), "make.jl.seed"), (joinpath("test", "runtests.jl"), "runtests.jl.seed"))
         p = joinpath(root, path)
@@ -432,10 +447,12 @@ const BASELINES = (
     migrate_baselines(root = pwd(); dry_run = false, io = stdout) -> Int
 
 `gbg migrate baselines`: the textual converter from the consumer's existing test files to the three
-S-class TOMLs `TestHarness` reads; the `.jl` files are read, never `include`d or edited. A literal not
-found is reported and skipped (exit 0); a literal that does not parse to its closing paren is exit 2
-naming the line; an existing TOML is refused (exit 2) unless `dry_run`, which prints instead. Returns
-the exit code.
+S-class TOMLs `TestHarness` reads. The arguments are `root`, the package root; `dry_run`, print the
+TOML instead of writing it; and `io`, where the report goes.
+
+The `.jl` files are read, never `include`d or edited. A literal not found is reported and skipped
+(exit 0); a literal that does not parse to its closing paren is exit 2 naming the line; an existing
+TOML is refused (exit 2) unless `dry_run`. Returns the exit code.
 """
 function migrate_baselines(root::AbstractString = pwd(); dry_run::Bool = false, io::IO = stdout)
     root = abspath(root)
@@ -471,8 +488,9 @@ end
 
 Converts a former `.claude/commands/check-consistency/seed_defects.py` `CATALOG` (tuples of class,
 description, anchor regex, replacement, occurrence) into `.gbg/seeds.toml` as the `seeds` definition
-states; absent source ⇒ nothing written, exit 0; an existing `seeds.toml` is left alone. Returns the
-exit code.
+states. The arguments are `root`, the package root; `cfg`, the derived config (for the package name);
+and `io`, where the report goes. An absent source writes nothing, exit 0; an existing `seeds.toml` is
+left alone. Returns the exit code.
 """
 function migrate_seeds(root::AbstractString, cfg::AbstractDict; io::IO = stdout)
     src = joinpath(root, ".claude", "commands", "check-consistency", "seed_defects.py")
@@ -508,9 +526,11 @@ end
 """
     new(pkgname; parent = pwd(), io = stdout) -> Int
 
-`gbg new <Pkg>`: `init` for a fifth package at `<parent>/<Pkg>` (an existing package tree with a
-`Project.toml`), plus `CLAUDE.md` from the skeleton, `docs/make.jl` and `test/runtests.jl` from their
-seeds where absent, and a `[[consumer]]` row in the dev checkout's `fleet.toml`. Returns the exit code.
+`gbg new <Pkg>`: `init` for a fifth package. The arguments are `pkgname`, the package name; `parent`,
+the directory holding the package (or the package root itself); and `io`, where the report goes.
+
+The package tree must already exist with a `Project.toml`. Besides `init`, it seeds `CLAUDE.md` from the
+skeleton and adds a `[[consumer]]` row to the dev checkout's `fleet.toml`. Returns the exit code.
 """
 function new(pkgname::AbstractString; parent::AbstractString = pwd(), io::IO = stdout)
     root = isfile(joinpath(parent, "Project.toml")) && get(TOML.parsefile(joinpath(parent, "Project.toml")), "name", "") == pkgname ? abspath(parent) : joinpath(abspath(parent), pkgname)

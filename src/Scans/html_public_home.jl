@@ -6,7 +6,9 @@ register_scan!("SCAN.HTML_PUBLIC_HOME", function (cfg, pages)
     path = joinpath(cfg["root"], ".gbg", "scratch", "public_surface.json")
     isfile(path) || return (Hit[], 0)
     surface = JSON3.read(read(path, String), Dict{String,Any})
-    ops = Set(String.(surface["operations"]))
+    # a Base extension the config declares internal by design (`docs.unexported_base_expected`, the
+    # same allowance SCAN.HTML_BASE_LEAK honours) needs no public home
+    ops = setdiff(Set(String.(surface["operations"])), Set(String.(cfg["docs"]["unexported_base_expected"])))
     homed = Set{String}(); anywhere = Set{String}()
     for page in pages, b in page_bindings(page)
         name = last(split(b.name, '.'))

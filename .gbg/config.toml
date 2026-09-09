@@ -1,0 +1,120 @@
+# .gbg/config.toml — GBGCodingTools.  Schema: schema/config.schema.json in the pinned tool (closed keys: an
+# unknown key, a missing required key, an unknown enum member or a path that does not exist is exit 2).
+# Written by `gbg init` on 2026-09-09 from the package tree; every default is materialised, nothing is
+# layered on top of this file. A `TODO` value is a fact the tree could not supply — `gbg doctor`
+# (CFG.SURFACES, CFG.HATS) reports it until it is written.
+
+[tool]
+schema = 1
+version = "dev"
+
+[package]
+deliberate_absences = ["no layering in config", "no consumer copies in the tool", "no Python"]
+description = "The one shared tooling package of the GBG Julia packages: review instruments, docs-build wrapper and scans, test harness, doctor and policy prose, at one version pinned by every consumer."
+docs_build = "julia --project=docs docs/make.jl"
+docs_post = []
+domain = "review tooling"
+extensions = ["ext/GBGCodingToolsDocumenterExt.jl"]
+julia_test = "julia --project -e 'using Pkg; Pkg.test()'"
+modules = ["Config", "TestHarness", "Reflection", "Witnesses", "Sync", "Init", "Ledger", "HtmlWalker", "TreeHash"]
+name = "GBGCodingTools"
+rulebook_sections = ["docs/ARCHITECTURE.md#§0", "docs/ARCHITECTURE.md#§5.5", "CLAUDE.md#Release checklist"]
+terms = ["consumer", "instrument", "round", "lane", "hat", "anchor", "gate", "pin", "managed file", "ledger"]
+
+[paths]
+instruments = "instruments"
+schema = "schema"
+catalog = "catalog"
+fixture = "fixture"
+policy = "policy"
+templates = "templates"
+
+[git]
+branch = "master"
+
+[surfaces]
+built_html = "docs/build"
+ext = ["ext/*.jl"]
+history_exempt = "docs/ARCHITECTURE.md#Revision history"
+literate = []
+pages = ["docs/src/**/*.md"]
+rationale = ["docs/ARCHITECTURE.md"]
+references_heading = "absent"
+src = ["src/**/*.jl"]
+
+    [surfaces.generated]
+    globs = ["docs/src/architecture.md", "docs/src/guide/verbs.md", "docs/src/guide/doctor.md"]
+    optional = true
+
+[docs]
+admonition_titles = "always"
+doctest = true
+retired_claims = []
+unexported_base_expected = ["showerror", "getindex", "setindex!", "size", "parent"]   # the error types' showerror and CountingArray's AbstractArray interface: internal by design
+
+[rubric]
+leading_identity = "physical-meaning"
+
+[notation]
+mathbf_allowed = []
+vectors = "none"
+
+[citations]
+require_doi = true
+
+[instruments]
+enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
+
+    [instruments.audit-changes]
+    guard_symbols = []
+    invariants_section = "docs/ARCHITECTURE.md#§5.5"
+
+        [instruments.audit-changes.executable_claims]
+
+    [instruments.bug-hunt]
+    oracles = ["the fixture's defects.toml", "the exit contract", "git's own tree hash", "the documented definition over raw files"]
+    witness_env = "test"
+
+        [[instruments.bug-hunt.territories]]
+        brief = "the verbs, config, schema, sync, init, ledger"
+        files = ["src/CLI/*.jl"]
+        key = "cli"
+        [[instruments.bug-hunt.territories]]
+        brief = "the scan engine and the 39 scans"
+        files = ["src/Scan.jl", "src/Scans/*.jl"]
+        key = "scans"
+        [[instruments.bug-hunt.territories]]
+        brief = "the Julia-side engines"
+        files = ["src/TestHarness.jl", "src/Reflection.jl", "src/Witnesses.jl"]
+        key = "harness"
+        [[instruments.bug-hunt.territories]]
+        brief = "hashing, the HTML walker, the wrapper"
+        files = ["src/TreeHash.jl", "src/HtmlWalker.jl", "src/DocLints.jl", "ext/GBGCodingToolsDocumenterExt.jl"]
+        key = "core"
+
+    [instruments.check-consistency]
+    core = ["consistency-matrix", "cold-reader", "tooling-maintainer"]
+    design_docs_withheld = ["architecture"]
+    hats = ["consistency-matrix", "software-architect", "structure-consistency", "latex-typesetter", "api-user", "citations-integrity", "style-editor", "cold-reader", "tooling-maintainer"]
+    latex_source_globs = []
+    profile = "all"
+    seed_catalog = ".gbg/seeds.toml"
+    seed_rounds = false
+
+        [[instruments.check-consistency.domain_hats]]
+        anchor = true
+        key = "tooling-maintainer"
+        substrate = "full"
+
+    [instruments.check-docs]
+    argcov_policy = "gate"
+    lanes_extra = []
+
+[cost]
+default = "economy"
+
+[schema]
+finding_types_extra = []
+
+[scans]
+custom = []

@@ -6,7 +6,7 @@ register_scan!("SCAN.MATHBF", function (cfg, files)
     hits = Hit[]
     for f in files, p in prose_lines(cfg, f)
         p.indocstring && p.comment && continue
-        for m in eachmatch(r"\\mathbf(\{[^}]*\})?", p.text)
+        for m in eachmatch(r"\\mathbf(\{[^}]*\})?", mask_code_spans(p.text))
             m.match in allowed || push!(hits, Hit(f, p.n, m.match * "  in: " * strip(p.text)))
         end
     end

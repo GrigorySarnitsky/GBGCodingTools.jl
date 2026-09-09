@@ -87,9 +87,9 @@ end
 """
     witness_project(root, witness_env, package) -> String
 
-The `--project` a witness runs under: `<root>/<witness_env>` when that environment's `Project.toml`
-lists `package` in its `[deps]`, else `root` itself (the package's own project, where `using <package>`
-resolves). Returns the directory.
+The `--project` a witness runs under. The arguments are `root`, the consumer root; `witness_env`, the
+config's `instruments.bug-hunt.witness_env` (a directory under the root, `test` by default); and
+`package`, the package name the witness may load. Returns the project path.
 """
 function witness_project(root::AbstractString, witness_env::AbstractString, package::AbstractString)
     env = joinpath(root, witness_env)
@@ -133,8 +133,17 @@ end
 """
     run_one(path; project, package) -> WitnessResult
 
-Runs one witness in a fresh `julia --startup-file=no --project=<project>` process (the tool's own
-`Base.julia_cmd()`), after the refusal check. Returns its [`WitnessResult`](@ref).
+Runs one witness file in a fresh Julia process and classifies the outcome. The arguments are `path`,
+the witness file; `project`, the `--project` it runs under; and `package`, the package it may load.
+
+The file is first read, never included: a witness that `include`s another file, or that loads
+anything outside `package`, `Test` and the standard library, is REFUSED before it runs. The run wraps
+the file in an outer testset and prints one machine-readable line `GBG_WITNESS pass= fail= error=`.
+
+From that line the result is `:pass` (assertions and none failing), `:fail` (an assertion failed — the
+evidence a hunt wants), `:broken` (an exception outside an assertion, an assertion that threw, or a
+pass with ZERO assertions, which is evidence of nothing), or `:blocked` (it errored, was never seen to
+fail, and carries a `# blocked: <reason>` header). Returns the result with the counts and the reason.
 """
 function run_one(path::AbstractString; project::AbstractString, package::AbstractString)
     name = basename(path)
@@ -165,15 +174,21 @@ end
 """
     run(dir; expect, package, project, names = String[], io = stdout) -> (code, results)
 
-Runs every `*.jl` witness directly under `dir` (subdirectories such as `escalated/` and `blocked/`
-are not entered), each in a fresh process, and holds the set to `expect`: `:fail` (hunt time — every
-witness must fail; a passing one is a phantom bug) or `:pass` (after the fixes — every witness must
-pass; a failing one is an unfixed defect). `names` filters by substring; an empty selection is exit 2,
-never a clean run. A BROKEN witness is evidence of nothing in either direction and makes the code
-non-zero; a BLOCKED witness (a `# blocked: <reason>` header, and it errored) is reported apart and does
-not affect the code; a REFUSED witness is exit 2. Prints one line per witness and a tally to `io`.
-Returns `(code, results)`: 0 when every run witness met the expectation, 1 when any did not or was
-broken, 2 for an empty selection or a refusal.
+Runs every witness under `dir` and holds the set to an expectation. The arguments are:
+
+- `dir` — the directory of `.jl` witnesses (the round's `witnesses/`, or `test/regressions/escalated/`).
+- `expect` — `:fail` (a hunt's bank: every witness must fail on this tree) or `:pass` (after the fix).
+- `package` — the package a witness may load.
+- `project` — the `--project` the witnesses run under.
+- `names` — restrict the run to the files whose names contain one of these.
+- `io` — where the per-witness lines and the summary go.
+
+An empty directory is a refusal (nothing was verified), exit 2, as is any REFUSED witness. A witness
+that PASSES when failure was expected is a PHANTOM (the defect does not exist) and one that FAILS when
+a pass was expected is UNFIXED; either is exit 1. A BROKEN witness is exit 1 too — evidence of nothing
+in either direction. BLOCKED witnesses are reported apart and do not fail the run.
+
+Returns the exit code and the per-witness results.
 """
 function run(dir::AbstractString; expect::Symbol, package::AbstractString, project::AbstractString,
              names::AbstractVector{<:AbstractString} = String[], io::IO = stdout)

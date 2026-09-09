@@ -47,11 +47,15 @@ function save(dir::AbstractString, rec::AbstractDict)
 end
 
 """
-    guard(cfg, round; io, allow_config_change = false) -> (dir, record)
+    guard(cfg, round; io = stderr, allow_config_change = false, need_open = true) -> (dir, record)
 
-What every `round` verb does first: `gbg self verify` (exit 2 on mismatch), `CFG.TORN`, the round
-loaded and open, and its `config_sha` unchanged (else exit 2 with the `pass open --regrade` hint).
-Throws a `RoundError` carrying the message; the CLI prints it and returns 2.
+What every `round` verb does first. The arguments are `cfg`, the validated config; `round`, the round
+id; `io`, where a torn file is named; `allow_config_change`, accept a `config_sha` that moved since the
+round opened (regrade, abandon, close); and `need_open`, require the round to be open.
+
+It runs `gbg self verify` (exit 2 on mismatch) and `CFG.TORN`, loads the round, and checks its
+`config_sha` (else exit 2 with the `pass open --regrade` hint). Throws a `RoundError` carrying the
+message; the CLI prints it and returns 2. Returns the directory and the record.
 """
 function guard(cfg::AbstractDict, round::AbstractString; io::IO = stderr, allow_config_change::Bool = false, need_open::Bool = true)
     sv = self_verify(cfg["root"]; io = devnull)
@@ -71,7 +75,8 @@ timestamp() = Dates.format(now(), dateformat"yyyy-mm-ddTHH:MM:SS")
     run_under_round(cfg, round, cmdline; log) -> Int
 
 Runs a shell command line from the consumer root with `GBG_ROUND=<round>` exported, its output tee'd
-into `log`. Returns the exit code.
+into a log. The arguments are `cfg`, the validated config; `round`, the round the gate must ignore;
+`cmdline`, the command line (`sh -c`); and `log`, the log file. Returns the exit code.
 """
 function run_under_round(cfg::AbstractDict, round::AbstractString, cmdline::AbstractString; log::AbstractString)
     mkpath(dirname(log))
@@ -109,12 +114,15 @@ end
 """
     prepare(cfg, round; io = stdout) -> Int
 
-`gbg round prepare <round>`, by instrument. check-consistency: the docs build under `GBG_ROUND` (exit 0
-required; the log path is printed otherwise), the two manuscripts consolidated into the payload
-directory, and — when the round is seeded — the seeds planted in place (ground truth NOT written).
-check-docs: `scan docs` with every hard hit banked as lane `00-scans`, the reflection checks, the build
-under `GBG_ROUND`, `scan html` (its hard hits banked too), the full report saved. audit-changes: the
-diff, diffstat and claims regenerated. bug-hunt: nothing to prepare. Returns the exit code.
+`gbg round prepare <round>`, by instrument. The arguments are `cfg`, the validated config; `round`,
+the round id; and `io`, where the report goes.
+
+check-consistency: the docs build under `GBG_ROUND` (exit 0 required; the log path is printed
+otherwise), the two manuscripts consolidated into the payload directory, and — when the round is
+seeded — the seeds planted in place (ground truth NOT written). check-docs: `scan docs` with every
+hard hit banked as lane `00-scans`, the reflection checks, the build under `GBG_ROUND`, `scan html`
+(its hard hits banked too), the full report saved. audit-changes: the diff, diffstat and claims
+regenerated. bug-hunt: nothing to prepare. Returns the exit code.
 """
 function prepare(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = guard(cfg, round; io)
@@ -180,10 +188,12 @@ function prepare(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
 end
 
 """
-    build(cfg, round; io) -> Int / test(cfg, round; io) -> Int
+    build(cfg, round; io = stdout) -> Int
 
-`gbg round build|test <round>`: the consumer's `docs_build` / `julia_test` under `GBG_ROUND`, the log
-under the round's scratch. Returns the command's exit code.
+`gbg round build <round>`: the consumer's `docs_build` under `GBG_ROUND`, the log under the round's
+scratch. The arguments are `cfg`, the validated config; `round`, the round id; and `io`, where the
+exit and the log path are printed. Returns the command's exit code; [`test`](@ref) is its twin for
+`julia_test`.
 """
 function build(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     guard(cfg, round; io)
@@ -191,6 +201,13 @@ function build(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     code = run_under_round(cfg, round, cfg["package"]["docs_build"]; log)
     println(io, "build: exit $code — $log"); return code
 end
+"""
+    test(cfg, round; io = stdout) -> Int
+
+`gbg round test <round>`: the consumer's `julia_test` under `GBG_ROUND`, the log under the round's
+scratch. The arguments are `cfg`, the validated config; `round`, the round id; and `io`, where the
+exit and the log path are printed. Returns the command's exit code.
+"""
 function test(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     guard(cfg, round; io)
     log = joinpath(Preflight.scratch_dir(cfg, round), "test.log")
@@ -201,12 +218,16 @@ end
 # ---- bank --------------------------------------------------------------------------------------------------
 
 """
-    classify_lane(dir, inst, lane; first_sha) -> (status, data, sha)
+    classify_lane(dir, inst, lane; first_sha = nothing) -> (status, data, sha, note)
 
-One lane file: `:dead` (absent, unparsable, or invalid — quarantined as `.rejected.json`),
-`:rejected` (present but its sha changed since first sight), `:empty` (zero findings, non-empty
-checked), `:truncated` (candidates_found > findings), `:live`. Returns the status, the parsed object
-(or nothing) and the file's sha.
+Classifies one lane file. The arguments are `dir`, the round directory; `inst`, the instrument (its
+lane-file schema); `lane`, the roster entry (`nn`, `key`); and `first_sha`, the file's sha at first
+sight, when the bank has seen it before.
+
+The status is `:dead` (absent, unparsable, or invalid — quarantined as `.rejected.json`), `:rejected`
+(present but its sha changed since first sight), `:empty` (zero findings, non-empty checked),
+`:truncated` (candidates_found > findings), or `:live`. Returns the status, the parsed object (or
+nothing), the file's sha and a note.
 """
 function classify_lane(dir::AbstractString, inst::AbstractString, lane::AbstractDict; first_sha = nothing)
     p = joinpath(dir, "findings", "$(lane["nn"])-$(lane["key"]).json")
@@ -278,13 +299,15 @@ end
 """
     bank(cfg, round; io = stdout) -> Int
 
-`gbg round bank <round>`: validates every expected lane file, records each file's sha at first sight
-(`lane_shas`), classifies (DEAD, REJECTED, EMPTY, TRUNCATED), assigns ids `<round>/<lane>#<n>`; for a
-seeded round regenerates the unseeded manuscripts, recomputes the ground truth, marks seeded findings,
-prints recall per class and SUSPECT hats; for a hunt runs the witness runner over `witnesses/`
-expecting failure and freezes the disposition records; writes `findings.json` and `findings_sha`,
-`findings.md` and `SUMMARY.md`. Any DEAD lane ⇒ exit 2 and nothing frozen (`lane_shas` stays).
-Returns the exit code.
+`gbg round bank <round>`. The arguments are `cfg`, the validated config; `round`, the round id; and
+`io`, where the classification and the recall are printed.
+
+It validates every expected lane file, records each file's sha at first sight (`lane_shas`),
+classifies (DEAD, REJECTED, EMPTY, TRUNCATED), assigns ids `<round>/<lane>#<n>`; for a seeded round
+regenerates the unseeded manuscripts, recomputes the ground truth, marks seeded findings, prints recall
+per class and SUSPECT hats; for a hunt runs the witness runner over `witnesses/` expecting failure and
+freezes the disposition records; writes `findings.json` and `findings_sha`, `findings.md` and
+`SUMMARY.md`. Any DEAD lane ⇒ exit 2 and nothing frozen (`lane_shas` stays). Returns the exit code.
 """
 function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = guard(cfg, round; io)
@@ -351,14 +374,17 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
 end
 
 """
-    hunt_bank!(cfg, dir, rec, findings; io) -> Int
+    hunt_bank!(cfg, dir, rec, findings; io = stdout) -> Int
 
-The hunt's bank: `Witnesses.run(witnesses/; expect = :fail)`; a REPRODUCED finding whose witness does
-not fail mechanically is REJECTED (dropped from the confirmed set, recorded as WITNESS-WRONG); the sha
-of each failing witness body is recorded; a witness that ERRORED and carries a `# blocked:` header
-becomes BLOCKED and moves to `witnesses/blocked/`; every candidate gets a `reproductions/<id>.json`
-record, frozen (`reproductions_sha`). `findings` is reduced to the confirmed set. Returns 0, or 2 when
-the runner refuses.
+The hunt's bank. The arguments are `cfg`, the validated config; `dir`, the round directory; `rec`, the
+round record (it gains `reproductions_sha`); `findings`, the candidates, reduced in place to the
+confirmed set; and `io`, where the runner reports.
+
+It runs `Witnesses.run(witnesses/; expect = :fail)`; a REPRODUCED finding whose witness does not fail
+mechanically is REJECTED (recorded as WITNESS-WRONG); the sha of each failing witness body is recorded;
+a witness that ERRORED and carries a `# blocked:` header becomes BLOCKED and moves to
+`witnesses/blocked/`; every candidate gets a `reproductions/<id>.json` record, frozen. Returns 0, or 2
+when the runner refuses.
 """
 function hunt_bank!(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, findings::Vector{Dict{String,Any}}; io::IO = stdout)
     wdir = joinpath(dir, "witnesses"); mkpath(wdir)
@@ -405,10 +431,12 @@ end
 # ---- rerun, list, render, abandon ----------------------------------------------------------------------------
 
 """
-    rerun(cfg, round, lanes; io) -> Int
+    rerun(cfg, round, lanes; io = stdout) -> Int
 
-`gbg round rerun <round> --lanes a,b`: prints the instrument's Workflow call restricted to the lanes the
-last bank classified DEAD; a live lane is refused. Returns the exit code.
+`gbg round rerun <round> --lanes a,b`: prints the instrument's Workflow call restricted to the lanes
+the last bank classified DEAD. The arguments are `cfg`, the validated config; `round`, the round id;
+`lanes`, the lane keys; and `io`, where the call is printed. A live lane is refused. Returns the exit
+code.
 """
 function rerun(cfg::AbstractDict, round::AbstractString, lanes::AbstractVector{<:AbstractString}; io::IO = stdout)
     dir, rec = guard(cfg, round; io)
@@ -428,9 +456,10 @@ function rerun(cfg::AbstractDict, round::AbstractString, lanes::AbstractVector{<
 end
 
 """
-    list(cfg; io) -> Int
+    list(cfg; io = stdout) -> Int
 
-`gbg round list`: one line per round — state, instrument, opened, passes, open ids of the latest tally.
+`gbg round list`: one line per round — state, instrument, opened, passes, open ids of the latest
+tally. The arguments are `cfg`, the validated config, and `io`, where the lines go. Returns 0.
 """
 function list(cfg::AbstractDict; io::IO = stdout)
     rs = RoundFiles.rounds(cfg)
@@ -449,10 +478,11 @@ function list(cfg::AbstractDict; io::IO = stdout)
 end
 
 """
-    render(cfg, round; io) -> Int
+    render(cfg, round; io = stdout) -> Int
 
-`gbg round render <round>`: regenerates `findings.md`, `SUMMARY.md` (and `tally.md` when a tally exists)
-from the frozen files. Returns 0.
+`gbg round render <round>`: regenerates `findings.md` and `SUMMARY.md` from the frozen files. The
+arguments are `cfg`, the validated config; `round`, the round id; and `io`, where the outcome is
+printed. Returns 0, or 2 for a round not banked.
 """
 function render(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = load(cfg, round)
@@ -466,10 +496,12 @@ function render(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
 end
 
 """
-    abandon(cfg, round, reason; io) -> Int
+    abandon(cfg, round, reason; io = stdout) -> Int
 
-`gbg round abandon <round> --reason "…"`: the only wholesale exit; writes `abandoned = {reason,
-open_ids}` with every id still open (all banked ids when no pass was graded). Returns 0.
+`gbg round abandon <round> --reason "…"`: the only wholesale exit. The arguments are `cfg`, the
+validated config; `round`, the round id; `reason`, at least 12 characters (a plateau is the usual
+one); and `io`, where the outcome is printed. It writes `abandoned = {reason, open_ids}` with every id
+still open (all banked ids when no pass was graded). Returns 0.
 """
 function abandon(cfg::AbstractDict, round::AbstractString, reason::AbstractString; io::IO = stdout)
     length(strip(reason)) >= 12 || (println(io, "abandon: --reason needs at least 12 characters; a plateau is the usual reason"); return 2)

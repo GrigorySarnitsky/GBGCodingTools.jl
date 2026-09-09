@@ -1,0 +1,6 @@
+# .gbg/exemptions.toml — the one ledger (ARCHITECTURE §7.2). One [[exemption]] per waiver or adjudication:
+# id (a RULE.* rule, a SCAN.* scan, a doctor check, a finding id <round>/<lane>#<n>, or a harness op),
+# scope (policy | scan | lint | check | finding | harness), target, reason (≥ 40 characters), recorded,
+# and expires (≤ recorded + 365 d) — or overturn_when instead of expires on scope finding. An optional
+# [exemption.match] table (arg_name, arg_type, path, symbol) REFINES a scan|lint|policy|harness entry.
+# Empty until a rule needs a reason here; `gbg doctor` validates every entry (CFG.EXEMPTIONS).

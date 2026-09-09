@@ -1,0 +1,6 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+GBGCodingTools = "3aee1de0-bb62-4679-b1c5-a861fbcaaa51"
+
+[sources]
+GBGCodingTools = {path = ".."}

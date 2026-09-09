@@ -22,8 +22,10 @@ export ConfigError
 """
     ConfigError <: Exception
 
-The config cannot be used: it does not parse, does not validate, or names a path that does not exist.
-The message lists every problem found. A verb that meets it returns 2.
+A config that cannot be used: absent, unparsable, invalid against the schema, or naming a path that
+does not resolve. The fields are:
+
+- `msg` — the message, with every violation listed.
 """
 struct ConfigError <: Exception
     msg::String
@@ -220,11 +222,11 @@ end
 """
     read(root = find_root(); check = true) -> Dict
 
-Loads `<root>/.gbg/config.toml`, validates it against `schema/config.schema.json` (closed keys, required
-keys, enums, patterns), materialises every default, adds `cfg["root"]` (the absolute consumer root) and,
-with `check = true`, runs [`check_paths`](@ref). Returns the config `Dict` — the object every verb
-receives and `gbg config` prints. Throws [`ConfigError`](@ref) when no config is found, when it does
-not parse or validate, or when a path check fails; the message lists every problem.
+Loads `<root>/.gbg/config.toml`, validates it against `schema/config.schema.json`, materialises every
+default and checks every path. The arguments are `root`, the consumer root (found by walking up from
+the working directory when not given), and `check`, whether to run the path check (false for a config
+read from a tree that is not fully present). Returns the validated `Dict` with `cfg["root"]` set;
+throws a [`ConfigError`](@ref) otherwise.
 """
 function read(root::Union{AbstractString,Nothing} = find_root(); check::Bool = true)
     root === nothing && throw(ConfigError("no .gbg/config.toml found walking up from $(pwd())"))
@@ -244,7 +246,9 @@ end
 
 The same validation, materialisation and path check as [`Config.read`](@ref) over the TOML `text` of a
 config instead of the file under `root/.gbg/` — what the self-tests and the Step-0 scratch runs use to
-describe a tree without writing into it. Returns the validated `Dict` with `cfg["root"] = root`.
+describe a tree without writing into it. The arguments are `text`, the config as TOML; `root`, the
+tree it describes; and `check`, whether to run the path check. Returns the validated `Dict` with
+`cfg["root"] = root`.
 """
 function parse(text::AbstractString; root::AbstractString, check::Bool = true)
     root = abspath(root)

@@ -36,21 +36,28 @@ end
 """
     discover_pages(build_dir) -> Vector{Tuple{String,String,String}}
 
-Every `index.html` under `build_dir` except the `search/` and `assets/` trees, as `(title, path,
-relative path)`, sorted by depth then name; the top page is titled `Home`, every other by its directory
-with `/` rendered as ` / `. Returns the list.
+Every rendered page under `build_dir` except the `search/` and `assets/` trees and the search page, as
+`(title, path, relative path)`, sorted by depth then name; under `prettyurls` a page is its directory's
+`index.html` and is titled by the directory with `/` rendered as ` / ` (the top page `Home`); without
+`prettyurls` a page is `<name>.html` and is titled by its path without the extension. The `index.html`
+form is byte-identical to the consumers' Python consolidator (1.6). Returns the list.
 """
 function discover_pages(build_dir::AbstractString)
     pages = Tuple{String,String,String}[]
     for (dir, _, files) in walkdir(build_dir)
-        "index.html" in files || continue
-        path = joinpath(dir, "index.html")
-        rel = relpath(path, build_dir)
-        top = first(splitpath(rel))
+        rel_dir = relpath(dir, build_dir)
+        top = first(splitpath(rel_dir))
         top in ("search", "assets") && continue
-        d = dirname(rel)
-        title = d in ("", ".") ? "Home" : replace(d, "/" => " / ")
-        push!(pages, (title, path, rel))
+        for f in files
+            endswith(f, ".html") || continue
+            f == "search.html" && continue
+            path = joinpath(dir, f)
+            rel = relpath(path, build_dir)
+            d = dirname(rel)
+            title = f == "index.html" ? (d in ("", ".") ? "Home" : replace(d, "/" => " / ")) :
+                    replace(rel[1:end-5], "/" => " / ")
+            push!(pages, (title, path, rel))
+        end
     end
     sort!(pages; by = p -> (count(==('/'), p[3]), p[3]))
     return pages

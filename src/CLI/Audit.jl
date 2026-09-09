@@ -4,10 +4,18 @@
 """
     audit_bank(cfg, round; io = stdout) -> Int
 
-Runs `package.julia_test` (the gate claim) and every file named under `executable_claims` with
+`gbg audit-changes bank <round>`: the audit's bank runs the executable claims itself, then the generic
+bank. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id (`<date>-<instrument>-<NN>`).
+- `io` — where the report goes.
+
+It runs `package.julia_test` (the gate claim) and every file named under `executable_claims` with
 `GBG_ROUND` exported, records `{command, file, exit, log}` in `audit.json` together with `base`,
-`head`, `kind` and the covered paths, then runs the generic bank; afterwards prints the severity
-re-check Workflow call (an anchor, before "serious" is counted at grade). Returns the bank's code.
+`head`, `kind` and the covered paths, then runs [`Rounds.bank`](@ref); afterwards it prints the
+severity re-check Workflow call (an anchor, before "serious" is counted at grade). Returns the bank's
+exit code.
 """
 function audit_bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io)

@@ -43,9 +43,10 @@ end
 """
     Ledger.entries(ledger, id; scope = nothing, live = true) -> Vector
 
-The entries whose `id` equals `id`, optionally restricted to one `scope`; with `live = true` an entry
-past its `expires` date is dropped (it no longer exempts anything, and the doctor reports it). Returns
-the selection in file order.
+The entries naming an id. The arguments are `ledger`, the entries [`Ledger.read`](@ref) returned;
+`id`, the id to select; `scope`, one scope to restrict to (any when `nothing`); and `live`, whether to
+drop an entry past its `expires` date (it no longer exempts anything, and the doctor reports it).
+Returns the selection in file order.
 """
 function entries(ledger::AbstractVector, id::AbstractString; scope = nothing, live::Bool = true)
     out = Dict{String,Any}[]
@@ -61,12 +62,21 @@ end
 """
     Ledger.matches(entry, root; file = "", symbol = "", arg_name = nothing, arg_type = nothing) -> Bool
 
-Whether `entry` covers a trigger: its `target` is `*`, equals `file`, equals `symbol`, or is a glob
-matching `file`; and, when the entry carries a `match` table, every present sub-key holds (`path` a glob
-over `file`, `symbol` a regex over `symbol`, `arg_name` a regex over the argument name, `arg_type` a
-type name tested by `<:` against the argument's declared type). A text scan must pass `arg_type =
-nothing` and refuse an entry carrying that key before calling; this function throws on it. Returns
-the boolean.
+Whether `entry` covers a trigger. The arguments are:
+
+- `entry` — the ledger entry.
+- `root` — the consumer root; globs in `target` and `match.path` resolve against the file's relative
+  path, so `root` only names the tree.
+- `file` — the trigger's file, relative to the root.
+- `symbol` — the trigger's owning binding.
+- `arg_name` — the argument name, for a reflection scan's trigger.
+- `arg_type` — the argument's declared type, for a reflection scan's trigger; a text scan passes
+  `nothing` and refuses an entry carrying `match.arg_type` before calling — this function throws on it.
+
+The entry covers the trigger when its `target` is `*`, equals `file` or `symbol`, or is a glob matching
+`file`; and, when it carries a `match` table, every present sub-key holds (`path` a glob over `file`,
+`symbol` a regex over `symbol`, `arg_name` a regex, `arg_type` a type name tested by `<:`). Returns the
+boolean.
 """
 function matches(entry::AbstractDict, root::AbstractString; file::AbstractString = "", symbol::AbstractString = "",
                  arg_name = nothing, arg_type = nothing)

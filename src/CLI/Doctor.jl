@@ -21,7 +21,11 @@ using ..GBGCodingTools: GBGCodingTools, PKG_NAME, PKG_UUID, JULIA_FLOOR, Config,
 """
     Check
 
-One doctor result: `id`, `status` (`:PASS`, `:WARN`, `:FAIL`, `:NA`) and a one-line `detail`.
+One doctor result. The fields are:
+
+- `id` — the stable check id.
+- `status` — `:PASS`, `:WARN`, `:FAIL` or `:NA`.
+- `detail` — one line: what was measured, or what failed and what fixes it.
 """
 struct Check
     id::String
@@ -671,9 +675,18 @@ end
 """
     run(cfg; only = nothing, deep = false, io = stdout, json = false, effective = false) -> (checks, code)
 
-Runs the selected checks over `cfg`, prints the table (or JSON), and returns the results and the exit
-code: 1 on any FAIL, else 0. A FAIL on an exemptable id that a live `scope = "check"` ledger entry
-names becomes a WARN carrying the entry's reason. Returns the pair.
+Runs the selected checks over a consumer and prints the table. The arguments are:
+
+- `cfg` — the validated config.
+- `only` — ids, id prefixes or the literal `QUICK` to restrict the run to; every non-deep check when
+  `nothing`.
+- `deep` — include the `--deep` checks (they run builds, tests and witnesses).
+- `io` — where the report goes.
+- `json` — print the results as JSON instead of the table.
+- `effective` — print the effective config after the table.
+
+A FAIL on an exemptable id that a live `scope = "check"` ledger entry names becomes a WARN carrying the
+entry's reason. Returns the results and the exit code: 1 on any FAIL, else 0.
 """
 function run(cfg::AbstractDict; only = nothing, deep::Bool = false, io::IO = stdout, json::Bool = false, effective::Bool = false)
     ctx = context(cfg; deep)
@@ -730,10 +743,11 @@ VERBS["doctor"] = cmd_doctor
 end # module Doctor
 
 """
-    doctor(cfg, set = :QUICK; io = devnull) -> Int
+    doctor(cfg, set = :QUICK; io = stderr) -> Int
 
-The in-process doctor the `makedocs` wrapper, `TestHarness.gate()` and `gbg preflight` call: runs the
-named set (`:QUICK`, or `:ALL`) and returns 1 on any FAIL, else 0; prints the failing lines to `io`.
+The in-process doctor the `makedocs` wrapper, `TestHarness.gate()` and `gbg preflight` call. The
+arguments are `cfg`, the validated config; `set`, `:QUICK` for the quick set or `:ALL` for every
+non-deep check; and `io`, where the failing lines are printed. Returns 1 on any FAIL, else 0.
 """
 function doctor(cfg::AbstractDict, set::Symbol = :QUICK; io::IO = stderr)
     buf = IOBuffer()

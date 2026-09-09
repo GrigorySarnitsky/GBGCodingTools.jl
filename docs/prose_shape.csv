@@ -1,0 +1,332 @@
+unit,words,longest_paragraph,admonitions
+"ARCHITECTURE.md § D1 — Unit of distribution: one repository, one version, two ",236,100,0
+"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze",484,313,0
+"ARCHITECTURE.md § D11 — Schemas: one JSON Schema per artefact kind in `schema/",93,49,0
+"ARCHITECTURE.md § D12 — Policy prose: single source `policy/*.md` with rule id",338,162,0
+"ARCHITECTURE.md § D13 — Managed files: one sidecar `.gbg/managed.json` as a ca",431,372,0
+"ARCHITECTURE.md § D14 — Doctor: read-only, stable check ids, one exemptions le",473,366,0
+"ARCHITECTURE.md § D15 — Self-test: a fixture consumer at a path with a space, ",782,363,0
+"ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",633,565,0
+"ARCHITECTURE.md § D17 — Migration: PF → IT → SS → CP, doctor-verified steps, n",324,239,0
+"ARCHITECTURE.md § D18 — Cost policy: economy default, anchors in the catalogue",167,100,0
+"ARCHITECTURE.md § D19 — Name: `GBGCodingTools`",128,127,0
+"ARCHITECTURE.md § D2 — Delivery: Pkg fetches the pinned copy; a per-machine `s",5,5,0
+"ARCHITECTURE.md § D3 — Binding: `[sources] url + rev` (https) rendered from on",405,199,0
+"ARCHITECTURE.md § D4 — Pinning: fleet-wide one version is the rule; the per-co",593,305,0
+"ARCHITECTURE.md § D5 — Config: one TOML file, one layer, one validator (Julia)",323,205,0
+"ARCHITECTURE.md § D6 — Skills: generated per-consumer stubs, bare names, `!`-b",442,311,0
+"ARCHITECTURE.md § D7 — Workflow scripts: one generic engine per instrument, ar",531,376,0
+"ARCHITECTURE.md § D8 — Deterministic helpers: one Julia CLI `gbg <noun> <verb>",473,299,0
+"ARCHITECTURE.md § D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `",1217,1106,0
+"ARCHITECTURE.md § GBGCodingTools — architecture",479,347,1
+"ARCHITECTURE.md § Revision 2 (2026-09-07)",106,106,0
+"ARCHITECTURE.md § Revision 3 (2026-09-07)",232,232,0
+"ARCHITECTURE.md § Revision 4 (2026-09-08) — IT amendments + Python retirement",361,361,0
+"ARCHITECTURE.md § Revision 5 (2026-09-08) — IT corrections A–D",426,426,0
+"ARCHITECTURE.md § Revision 6 (2026-09-09) — the tool as its own consumer",452,452,0
+"ARCHITECTURE.md § Revision 7 (2026-09-09) — the prerelease tag",198,198,0
+"ARCHITECTURE.md § Revision 8 (2026-09-08) — the owner's rulings",358,243,0
+"ARCHITECTURE.md § Revision 9 (2026-09-09) — payloads are files, args carry pat",243,243,0
+"ARCHITECTURE.md § Revision history",23,23,0
+"ARCHITECTURE.md § item 1",27,27,0
+"ARCHITECTURE.md § item 10",264,264,0
+"ARCHITECTURE.md § item 14",102,72,0
+"ARCHITECTURE.md § item 2",156,156,0
+"ARCHITECTURE.md § item 3",101,101,0
+"ARCHITECTURE.md § item 4",81,81,0
+"ARCHITECTURE.md § item 5",13,13,0
+"ARCHITECTURE.md § item 6",61,61,0
+"ARCHITECTURE.md § item 7",27,27,0
+"ARCHITECTURE.md § item 8",83,83,0
+"ARCHITECTURE.md § item 9",91,91,0
+"ARCHITECTURE.md § §0 The design sentence and the requirements",440,337,0
+"ARCHITECTURE.md § §1 The platform / product model",770,533,0
+"ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",772,333,0
+"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",704,342,0
+"ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
+"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",2794,2689,0
+"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1243,1068,0
+"ARCHITECTURE.md § §12.C Doctor ids",135,134,0
+"ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
+"ARCHITECTURE.md § §3 Repository layout",1,1,0
+"ARCHITECTURE.md § §4 Consumer footprint",89,67,0
+"ARCHITECTURE.md § §5 Config schema",51,51,0
+"ARCHITECTURE.md § §5.2 SS delta",123,123,0
+"ARCHITECTURE.md § §5.3 IT delta",200,200,0
+"ARCHITECTURE.md § §5.4 CP delta",398,398,0
+"ARCHITECTURE.md § §5.5 Deliberately NOT configurable (changing any is MAJOR)",202,202,0
+"ARCHITECTURE.md § §5.6 The tool's own delta (the fifth consumer, D15)",485,484,0
+"ARCHITECTURE.md § §6.1 File formats (all instruments)",315,315,0
+"ARCHITECTURE.md § §6.3 Vocabularies (constants)",375,330,0
+"ARCHITECTURE.md § §6.4 Seeds",279,279,0
+"ARCHITECTURE.md § §6.5 Closure channels (per finding id; PARTIAL never closes)",156,156,0
+"ARCHITECTURE.md § §6.6 Deltas — `/check-docs`",173,173,0
+"ARCHITECTURE.md § §6.7 Deltas — `/bug-hunt`",366,366,0
+"ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",199,198,0
+"ARCHITECTURE.md § §7.1 Policy migration map (which consumer sections become wh",290,238,0
+"ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",348,348,0
+"ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1784,1651,0
+"ARCHITECTURE.md § §8 Self-test and versioning",1508,446,0
+"ARCHITECTURE.md § §9 Resolution table",1475,1416,0
+"Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",101,55,0
+"CLI.md § CLI internals",9,9,0
+"Config.jl :: Config",64,63,0
+"Config.jl :: Config.parse(text; root, check = true) -> Dict",76,69,0
+"Config.jl :: ConfigError <: Exception",35,23,0
+"Config.jl :: check_paths(cfg) -> Vector{String}",72,69,0
+"Config.jl :: cmd_config(args) -> Int",68,65,0
+"Config.jl :: find_root(start = pwd()) -> Union{String,Nothing}",34,29,0
+"Config.jl :: glob_files(root, pattern) -> Vector{String}",44,40,0
+"Config.jl :: glob_to_regex(pattern) -> Regex",36,33,0
+"Config.jl :: read(root = find_root(); check = true) -> Dict",71,63,0
+"Config.jl :: resolve_anchor(root, anchor) -> (file, line, count)",69,63,0
+"Config.jl :: surface_files(cfg, key) -> Vector{String}",59,55,0
+"Consolidate.jl :: consolidate(build_dir, withheld; out_full, out_siteonly) -> ",117,109,0
+"Consolidate.jl :: discover_pages(build_dir) -> Vector{Tuple{String,String,Stri",82,79,0
+"Consolidate.jl :: page_text(path) -> String",36,33,0
+"Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",50,46,0
+"DocLints.jl :: makedocs(cfg; kwargs...)",146,65,0
+"Doctor.jl :: Check",37,30,0
+"Doctor.jl :: Doctor",79,78,0
+"Doctor.jl :: cmd_doctor(args) -> Int",29,26,0
+"Doctor.jl :: doctor(cfg, set = :QUICK; io = stderr) -> Int",54,45,0
+"Doctor.jl :: run(cfg; only = nothing, deep = false, io = stdout, json = f",136,68,0
+"Doctor.jl :: select(only; deep = false) -> Vector{String}",48,42,0
+"GBGCodingTools.jl :: GBGCodingTools",180,116,0
+"Gate.jl :: cmd_gate(args) -> Int",27,24,0
+"Gate.jl :: gate(cfg, instruments...; io = stderr) -> Int",169,69,0
+"Git.jl :: Git",34,33,0
+"Git.jl :: Git.changed_paths(root, range, paths) -> Vector{String}",24,19,0
+"Git.jl :: Git.diff(root, range, paths) -> String",26,21,0
+"Git.jl :: Git.diffstat(root, range, paths) -> String",24,19,0
+"Git.jl :: Git.head(root) -> Union{String,Nothing}",13,10,0
+"Git.jl :: Git.is_ancestor(root, a, b) -> Bool",32,27,0
+"Git.jl :: Git.is_repo(root) -> Bool",3,3,0
+"Git.jl :: Git.log(root, range) -> String",9,5,0
+"Git.jl :: Git.porcelain(root; untracked = true) -> Vector{Tuple{String",37,31,0
+"Git.jl :: Git.run(root, args...) -> Union{String,Nothing}",25,21,0
+"HtmlWalker.jl :: HtmlWalker",53,52,0
+"HtmlWalker.jl :: article_of(doc) -> Union{HTMLElement,Nothing}",27,24,0
+"HtmlWalker.jl :: attr(el, name, default = '') -> String",17,10,0
+"HtmlWalker.jl :: classes(el) -> Vector{String}",20,17,0
+"HtmlWalker.jl :: elements(root, pred) -> Vector",24,20,0
+"HtmlWalker.jl :: parse_page(path) -> HTMLDocument",52,49,0
+"HtmlWalker.jl :: tagname(node) -> Symbol",32,29,0
+"HtmlWalker.jl :: text_of(node) -> String",23,20,0
+"Hunt.jl :: cmd_witnesses(args) -> Int",23,20,0
+"Init.jl :: Init",68,67,0
+"Init.jl :: balanced_span(text, start) -> UnitRange",33,29,0
+"Init.jl :: convert_method_parity(text) -> Union{Dict,Nothing}",79,76,0
+"Init.jl :: convert_oracle_registry(text) -> Union{Dict,Nothing}",23,20,0
+"Init.jl :: convert_pass_audit(text) -> Union{Dict,Nothing}",53,50,0
+"Init.jl :: derive_config(root) -> Dict",101,98,0
+"Init.jl :: enclosed_by_tool(root) -> Bool",30,27,0
+"Init.jl :: init(root = pwd(); migrate = false, dry_run = false, io = st",126,56,0
+"Init.jl :: is_tool_root(root) -> Bool",17,14,0
+"Init.jl :: migrate_baselines(root = pwd(); dry_run = false, io = stdout",99,48,0
+"Init.jl :: migrate_seeds(root, cfg; io = stdout) -> Int",65,58,0
+"Init.jl :: new(pkgname; parent = pwd(), io = stdout) -> Int",72,32,0
+"Init.jl :: write_config(root, cfg) -> String",17,13,0
+"Install.jl :: cmd_install(args) -> Int",86,83,0
+"Install.jl :: dev_pointer() -> String",29,26,0
+"Install.jl :: julia_floor_ok() -> Bool",20,17,0
+"Install.jl :: shim_source() -> String",26,23,0
+"Install.jl :: shim_target() -> String",14,11,0
+"Ledger.jl :: Ledger",55,54,0
+"Ledger.jl :: Ledger.entries(ledger, id; scope = nothing, live = true) -> ",64,54,0
+"Ledger.jl :: Ledger.matches(entry, root; file = '', symbol = '', arg_name",166,88,0
+"Ledger.jl :: Ledger.read(cfg) -> Vector{Dict{String,Any}}",46,43,0
+"Main.jl :: Options",69,48,0
+"Main.jl :: VERBS",64,63,0
+"Main.jl :: cmd_probe(args) -> Int",36,33,0
+"Main.jl :: git_stamp(dir) -> String",32,29,0
+"Main.jl :: main(args) -> Int",108,105,0
+"Main.jl :: parse_options(args; valued = String[]) -> Options",57,51,0
+"Main.jl :: running_dev() -> Bool",72,69,0
+"Main.jl :: tool_version() -> String",38,35,0
+"Main.jl :: usage(io = stderr)",16,13,0
+"Passes.jl :: Passes",49,48,0
+"Passes.jl :: close(cfg, round; io = stdout) -> Int",143,101,0
+"Passes.jl :: grade(cfg, round; io = stdout) -> Int",119,85,0
+"Passes.jl :: pass_open(cfg, round; regrade = false, io = stdout) -> Int",120,59,0
+"Preflight.jl :: Preflight",57,56,0
+"Preflight.jl :: audit_kind(cfg, base) -> String",31,27,0
+"Preflight.jl :: catalog_sha() -> String",14,11,0
+"Preflight.jl :: config_sha(cfg) -> String",14,11,0
+"Preflight.jl :: copy_scripts(cfg, instrument, round) -> String",54,49,0
+"Preflight.jl :: covered_paths(cfg) -> Vector{String}",16,13,0
+"Preflight.jl :: next_round_id(cfg, instrument) -> String",21,17,0
+"Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",192,93,0
+"Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",131,80,0
+"Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
+"Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",54,51,0
+"Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",86,48,0
+"Preflight.jl :: resolve_hunt_lanes(cfg) -> Vector{Dict}",22,19,0
+"Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",28,23,0
+"Preflight.jl :: stamps(cfg) -> Dict",27,24,0
+"Preflight.jl :: substitute(text, cfg; extra = Dict()) -> String",69,62,0
+"Preflight.jl :: torn_check(cfg; io = stderr) -> Bool",40,34,0
+"Preflight.jl :: workflow_call(script, a) -> String",14,10,0
+"Preflight.jl :: write_payloads(cfg, instrument, round, roster; base = nothin",115,52,0
+"Recall.jl :: Recall",36,35,0
+"Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
+"Recall.jl :: matches_seed(finding, seed) -> Bool",41,37,0
+"Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
+"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",61,55,0
+"Reflection.jl :: ARGS_THRESHOLD",33,32,0
+"Reflection.jl :: ArgcovHit",58,48,0
+"Reflection.jl :: Docstring",70,59,0
+"Reflection.jl :: Reflection",58,57,0
+"Reflection.jl :: WRAPPER_PHRASE",33,32,0
+"Reflection.jl :: all_package_functions(pkg, modules) -> Set{Symbol}",29,25,0
+"Reflection.jl :: argcov(cfg; exempt = (hit -> false)) -> (hits, population, s",129,119,0
+"Reflection.jl :: docstrings(root, files) -> Vector{Docstring}",30,26,0
+"Reflection.jl :: dupref(cfg) -> Vector",40,37,0
+"Reflection.jl :: load_package(cfg) -> Module",41,38,0
+"Reflection.jl :: package_modules(pkg, cfg) -> Vector{Module}",35,31,0
+"Reflection.jl :: package_operations(pkg, modules) -> Set{Symbol}",87,83,0
+"Reflection.jl :: signature_fidelity(cfg; pkg = load_package(cfg)) -> Vector{S",81,75,0
+"Reflection.jl :: signature_parameters(inside) -> (positional, keyword)",58,54,0
+"Reflection.jl :: signature_types(inside) -> Dict{String,String}",21,18,0
+"Reflection.jl :: xlink(cfg; pkg = load_package(cfg), apply = false) -> Vector",81,37,0
+"RoundFiles.jl :: RoundFiles",33,32,0
+"RoundFiles.jl :: read_round(dir) -> Union{Dict,Nothing}",25,22,0
+"RoundFiles.jl :: round_dirs(cfg) -> Vector{String}",24,21,0
+"RoundFiles.jl :: rounds(cfg) -> Vector{NamedTuple}",25,22,0
+"RoundFiles.jl :: sha256_file(path) -> String",17,14,0
+"RoundFiles.jl :: state(round) -> Symbol",16,13,0
+"Rounds.jl :: Rounds",59,58,0
+"Rounds.jl :: abandon(cfg, round, reason; io = stdout) -> Int",68,60,0
+"Rounds.jl :: bank(cfg, round; io = stdout) -> Int",114,82,0
+"Rounds.jl :: build(cfg, round; io = stdout) -> Int",55,48,0
+"Rounds.jl :: classify_lane(dir, inst, lane; first_sha = nothing) -> (stat",95,46,0
+"Rounds.jl :: guard(cfg, round; io = stderr, allow_config_change = false, ",105,46,0
+"Rounds.jl :: hunt_bank!(cfg, dir, rec, findings; io = stdout) -> Int",106,60,0
+"Rounds.jl :: list(cfg; io = stdout) -> Int",39,33,0
+"Rounds.jl :: load(cfg, round) -> (dir, record)",16,11,0
+"Rounds.jl :: prepare(cfg, round; io = stdout) -> Int",114,84,0
+"Rounds.jl :: render(cfg, round; io = stdout) -> Int",46,39,0
+"Rounds.jl :: rerun(cfg, round, lanes; io = stdout) -> Int",59,51,0
+"Rounds.jl :: run_under_round(cfg, round, cmdline; log) -> Int",53,47,0
+"Rounds.jl :: test(cfg, round; io = stdout) -> Int",49,42,0
+"Scan.jl :: AI_BANNER",28,27,0
+"Scan.jl :: Hit(file, line, text; symbol = '')",83,59,0
+"Scan.jl :: ProseLine",94,82,0
+"Scan.jl :: SCANS",35,34,0
+"Scan.jl :: ScanResult",85,76,0
+"Scan.jl :: apply_ledger(cfg, ledger, row, hits) -> (kept, exempted, dis",117,61,0
+"Scan.jl :: built_pages(build_dir) -> Vector{String}",37,34,0
+"Scan.jl :: cmd_scan(args) -> Int",37,34,0
+"Scan.jl :: docstring_blocks(cfg, files) -> Vector",54,50,0
+"Scan.jl :: mask_code_spans(line) -> String",65,62,0
+"Scan.jl :: prose_lines(cfg, file) -> Vector{ProseLine}",64,60,0
+"Scan.jl :: prose_text(cfg, file; history_cut = true) -> String",81,44,0
+"Scan.jl :: regex_scan(cfg, files, re; skip_comments = true, on = :text,",153,101,0
+"Scan.jl :: register_scan!(id, f)",45,43,0
+"Scan.jl :: report(results; io = stdout) -> Int",53,47,0
+"Scan.jl :: run_scan(cfg, row; ledger = Ledger.read(cfg), files = nothin",99,49,0
+"Scan.jl :: scan_catalog() -> Vector{Dict}",18,15,0
+"Scan.jl :: scan_docs(cfg; hard_only = false, only = nothing, io = stdou",121,39,0
+"Scan.jl :: scan_html(cfg, build_dir; only = nothing, io = stdout) -> (r",100,35,0
+"Scan.jl :: surface_kind(cfg, file) -> Symbol",22,18,0
+"Scan.jl :: unescape_docstring(line) -> String",36,33,0
+"Scan.jl :: write_public_surface(cfg; pkg = Reflection.load_package(cfg)",63,57,0
+"Schema.jl :: SchemaError <: Exception",24,12,0
+"Schema.jl :: assert_valid(schema, value; what = 'document')",39,34,0
+"Schema.jl :: cmd_schema(args) -> Int",31,28,0
+"Schema.jl :: instrument_schema(name) -> Dict",26,23,0
+"Schema.jl :: load_schema(name) -> Dict",26,23,0
+"Schema.jl :: materialize!(schema, value; root = schema) -> value",51,44,0
+"Schema.jl :: schema_dir() -> String",17,14,0
+"Schema.jl :: validate(schema, value; root = schema, path = '\$') -> Vecto",86,48,0
+"Seed.jl :: Seeds",42,41,0
+"Seed.jl :: page_of(text, pos) -> String",17,13,0
+"Seed.jl :: plant(full, siteonly, plan) -> (full′, siteonly′)",76,70,0
+"Seed.jl :: read_catalog(path) -> Dict",16,13,0
+"Seed.jl :: salt_offset(round, class) -> Int",34,30,0
+"Seed.jl :: select(catalog, full, round) -> (seeded, skipped)",89,52,0
+"Self.jl :: cmd_self_verify(args) -> Int",37,34,0
+"Self.jl :: manifest_tree_sha(manifest_path) -> Union{String,Nothing}",33,30,0
+"Self.jl :: self_verify(root = Config.find_root(); io = stdout) -> Int",125,117,0
+"Self.jl :: tool_sub_envs(root) -> Vector{String}",48,45,0
+"Sync.jl :: Entry",38,28,0
+"Sync.jl :: ManagedFile",43,33,0
+"Sync.jl :: Sync",64,63,0
+"Sync.jl :: cmd_sync(args) -> Int",23,20,0
+"Sync.jl :: deviations(cfg, ledger) -> Vector{Dict}",31,27,0
+"Sync.jl :: fragments(snippet) -> Dict{String,String}",29,26,0
+"Sync.jl :: insert_fragments(yaml, frags; run_marker) -> String",106,61,0
+"Sync.jl :: managed_block(cfg, file, s) -> String",60,55,0
+"Sync.jl :: pin(cfg) -> String",18,15,0
+"Sync.jl :: plan(cfg; ledger = Ledger.read(cfg)) -> Vector{ManagedFile}",58,52,0
+"Sync.jl :: read_sidecar(cfg) -> Dict",18,15,0
+"Sync.jl :: render(text, slots) -> String",27,23,0
+"Sync.jl :: render_policy(cfg, s; ledger) -> Vector{ManagedFile}",46,41,0
+"Sync.jl :: render_project(cfg, envdir) -> (text, changed)",37,32,0
+"Sync.jl :: render_workflows(cfg) -> Vector{Tuple{String,String,Bool}}",29,26,0
+"Sync.jl :: slots(cfg; ledger = Ledger.read(cfg)) -> Dict{String,String}",41,35,0
+"Sync.jl :: split_block(text, file) -> (before, block, after)",37,31,0
+"Sync.jl :: status(cfg; ledger = Ledger.read(cfg)) -> Vector{Entry}",59,53,0
+"Sync.jl :: subenv_entries(cfg, envdir) -> Dict",64,60,0
+"Sync.jl :: sync(cfg; check = false, io = stdout, ledger = Ledger.read(c",100,62,0
+"Sync.jl :: tool_root() -> String",15,12,0
+"Sync.jl :: with_block(text, file, block) -> String",58,53,0
+"TestHarness.jl :: @alloc_below bound expr",87,84,0
+"TestHarness.jl :: AUDITED_ALLOCATION_OPS",31,30,0
+"TestHarness.jl :: AUDITED_TRAFFIC_OPS",15,14,0
+"TestHarness.jl :: CountingArray{T,N} <: AbstractArray{T,N}",66,40,0
+"TestHarness.jl :: DIGEST_SOURCE",16,15,0
+"TestHarness.jl :: TestHarness",71,70,0
+"TestHarness.jl :: Traffic",67,56,0
+"TestHarness.jl :: allocation_completeness(pkg, modules; exempt = Dict{Symbol,S",89,46,0
+"TestHarness.jl :: audit(operation!, name, rows::Traffic...; print = false)",101,58,0
+"TestHarness.jl :: count_expression(text, symbols) -> Int",53,49,0
+"TestHarness.jl :: counting(data::Array) -> CountingArray",11,8,0
+"TestHarness.jl :: display_gate(modules; no_display = Dict{Symbol,String}(), mi",108,98,0
+"TestHarness.jl :: field_threshold(field_bytes; fraction = 16, per_thread = 409",92,65,0
+"TestHarness.jl :: gate(; root = GBGCodingTools.Config.find_root())",95,65,0
+"TestHarness.jl :: has_display(type, modules) -> Bool",17,13,0
+"TestHarness.jl :: method_parity(pkg, modules, baseline; externals = (Base,))",98,64,0
+"TestHarness.jl :: module_method_count(mod, pkg, modules; externals = (Base,)) ",61,53,0
+"TestHarness.jl :: oracle_registry(pkg, modules, registry, testdir)",97,61,0
+"TestHarness.jl :: other_thread_count() -> Int",22,19,0
+"TestHarness.jl :: resolve_function(name, pkg, modules; externals = (Base,)) ->",46,38,0
+"TestHarness.jl :: run_regressions(dir; parent = Main)",52,48,0
+"TestHarness.jl :: struct_types(modules) -> Dict{Symbol,Any}",65,62,0
+"TestHarness.jl :: thread_digest(probe_source; threads, project = Base.active_p",66,59,0
+"TestHarness.jl :: traffic_completeness(pkg, modules; exempt = Dict{Symbol,Stri",48,43,0
+"TestHarness.jl :: traffic_rows(baseline, name, symbols) -> Vector",70,35,0
+"TreeHash.jl :: TreeHash",54,53,0
+"TreeHash.jl :: blob_hash(path) -> String",35,32,0
+"TreeHash.jl :: tree_hash(dir; skip = ('.git',)) -> String",87,81,0
+"Witnesses.jl :: WitnessResult",110,100,0
+"Witnesses.jl :: Witnesses",66,65,0
+"Witnesses.jl :: blocked_reason(path) -> Union{String,Nothing}",26,23,0
+"Witnesses.jl :: refusal(path, package) -> Union{String,Nothing}",54,50,0
+"Witnesses.jl :: run(dir; expect, package, project, names = String[], io = st",184,76,0
+"Witnesses.jl :: run_one(path; project, package) -> WitnessResult",152,67,0
+"Witnesses.jl :: witness_project(root, witness_env, package) -> String",43,38,0
+"code_in_math.jl :: math_spans(lines) -> Vector{Tuple{Int,String}}",48,45,0
+"config.md § [The config](@id config)",170,62,1
+"html_docstring_once.jl :: page_bindings(page) -> Vector{NamedTuple}",43,40,0
+"index.md § GBGCodingTools",105,67,1
+"index.md § What a consumer has",89,89,0
+"index.md § Where to start",69,69,0
+"install.md § The dev checkout",48,48,0
+"install.md § The pin",47,27,0
+"install.md § The shim",62,62,0
+"install.md § [Install](@id install)",53,31,1
+"ledger.md § [The ledger](@id ledger)",164,73,1
+"prose_shape.jl :: prose_units(cfg) -> Dict{String,NamedTuple}",31,28,0
+"prose_shape.jl :: write_prose_shape_baseline(cfg) -> Int",13,10,0
+"rounds.md § Closure channels",91,80,0
+"rounds.md § The gate",61,61,0
+"rounds.md § [Rounds](@id rounds)",70,48,1
+"rounds.md § item 1",42,42,0
+"rounds.md § item 2",29,29,0
+"rounds.md § item 3",12,12,0
+"rounds.md § item 4",29,29,0
+"rounds.md § item 5",19,19,0
+"rounds.md § item 6",29,29,0
+"rounds.md § item 7",27,27,0
+"rounds.md § item 8",24,24,0

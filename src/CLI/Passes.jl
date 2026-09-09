@@ -47,11 +47,18 @@ end
 """
     pass_open(cfg, round; regrade = false, io = stdout) -> Int
 
-`gbg round pass open <round> [--regrade]`: refuses a changed `config_sha` unless `regrade` (which
-re-stamps it); creates `verdicts/pass-<k>/pass.toml` with the nonce, `head`, `range =
-<opening head>..HEAD`, the expected verdict count per lane and the stamps; for the doc instruments
-rebuilds under `GBG_ROUND` and regenerates the manuscripts; writes the findings' unabridged text as a
-payload file; prints the verifiers' Workflow calls rendered by Preflight's renderer. Returns the code.
+`gbg round pass open <round> [--regrade]`: opens a verification pass. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id.
+- `regrade` — accept a changed `config_sha` and re-stamp it (the round is re-graded from here).
+- `io` — where the calls and messages are printed.
+
+It refuses a changed `config_sha` unless `regrade`; creates `verdicts/pass-<k>/pass.toml` with the
+nonce, `head`, `range = <opening head>..HEAD`, the expected verdict count per lane and the stamps; for
+the doc instruments rebuilds under `GBG_ROUND` and regenerates the manuscripts; writes the findings'
+unabridged text as a payload file; prints the verifiers' Workflow calls rendered by Preflight's
+renderer. Returns the exit code.
 """
 function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = false, io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io, allow_config_change = regrade)
@@ -171,11 +178,15 @@ end
 """
     grade(cfg, round; io = stdout) -> Int
 
-`gbg round grade <round>`: validates the latest pass's verdict files (a wrong nonce or sha is REJECTED,
-an absent file with a non-zero expectation is DEAD ⇒ exit 2), applies the demotion, then the closure
-channels per id — `honored`, `adjudicated`, `seeded`, `rescan`; for a hunt the disposition records and
-the witness re-run; for an audit the disposition gate — writes `tally.json` and `tally.md`, prints the
-pass series and the plateau signal. Exit 1 while `open_ids` is non-empty, 0 when every id is closed.
+`gbg round grade <round>`: grades the latest pass. The arguments are `cfg`, the validated config;
+`round`, the round id; and `io`, where the tally lines are printed.
+
+It validates the pass's verdict files (a wrong nonce or sha is REJECTED, an absent file with a
+non-zero expectation is DEAD ⇒ exit 2), applies the demotion, then the closure channels per id —
+`honored`, `adjudicated`, `seeded`, `rescan`; for a hunt the disposition records and the witness
+re-run; for an audit the disposition gate after the severity re-check — and writes `tally.json` and
+`tally.md` with the pass series and the plateau signal. Exit 1 while `open_ids` is non-empty, 0 when
+every id is closed.
 """
 function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io, allow_config_change = true)
@@ -350,13 +361,16 @@ end
 """
     close(cfg, round; io = stdout) -> Int
 
-`gbg round close <round>`: every closing condition in the instrument's order (§6.2 step 9; §6.7 for
-the hunt; §6.8 for the audit) — the latest pass fully closed, no dead lane, the round's files
-committed, the stamps unchanged (tool version and config, else regrade; tool tree sha, else
-abandon-only), the opening head an ancestor of HEAD, the dismissal auditor run over every adjudication
-and refusal with `reopened == []` (its Workflow call is printed when it has not run), the hunt's
-witness/promotion/test/audit conditions — then stamps `closed`, `closed_head` and the tally sha.
-Returns 0 when closed, 1 when a condition is unmet, 2 on a stamp mismatch.
+`gbg round close <round>`: checks every closing condition in the instrument's order and stamps the
+round closed. The arguments are `cfg`, the validated config; `round`, the round id; and `io`, where
+the refusals are listed.
+
+The conditions (§6.2 step 9; §6.7 for the hunt; §6.8 for the audit): the latest pass fully closed, no
+dead lane, the round's files committed, the stamps unchanged (tool version and config, else regrade;
+tool tree sha, else abandon-only), the opening head an ancestor of HEAD, the dismissal auditor run over
+every adjudication and refusal with `reopened == []` (its Workflow call is printed when it has not
+run), the hunt's witness, promotion, test and audit conditions. Then `closed`, `closed_head` and the
+tally sha are stamped. Returns 0 when closed, 1 when a condition is unmet, 2 on a stamp mismatch.
 """
 function close(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io, allow_config_change = true)

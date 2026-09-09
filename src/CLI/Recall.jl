@@ -65,8 +65,10 @@ end
 """
     suspect_hats(findings, ground_truth, roster, site_pages) -> Vector{String}
 
-Every hat with ≥ 2 seeds on its substrate (a `siteonly` hat sees only seeds on pages the site keeps)
-and zero seeded findings of its own. Returns the keys.
+Every hat with two or more seeds on its substrate and zero seeded findings of its own. The arguments
+are `findings`, the banked findings after [`mark!`](@ref); `ground_truth`, the seed plan; `roster`, the
+round's roster; and `site_pages`, the page banners the site-only manuscript keeps (a `siteonly` hat
+sees only seeds on those pages). Returns the keys.
 """
 function suspect_hats(findings::AbstractVector, ground_truth::AbstractDict, roster::AbstractVector, site_pages::AbstractSet)
     out = String[]
