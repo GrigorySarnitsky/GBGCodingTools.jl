@@ -1,0 +1,22 @@
+tool_version = "dev+9bd0f00"
+head = "9bd0f00ba6b4e890f92a3155053372fb8d4d12fe"
+tool_tree_sha = "4abc97b9ba45f00b3b5a7c5516cd36d90f77ad26"
+config_sha = "7d2f48192726816a226615dfd7e9b3690e207b1ce32f5152ba2b5cb51b7b77bf"
+tool_rev = "9bd0f00ba6b4e890f92a3155053372fb8d4d12fe"
+range = "0d5a18c13a8c3fb4b00d994f3acb2044087abb30..9bd0f00ba6b4e890f92a3155053372fb8d4d12fe"
+regrade = false
+pass = 1
+nonce = "603cc12f14f264570916a5448491ee8f"
+opened = "2026-09-10T01:24:33"
+
+[expected]
+contract-drift = 8
+behaviour-change = 8
+executing = 8
+numerics = 2
+reader-consequence = 1
+public-contract = 1
+claim-versus-edit = 2
+under-rejection = 8
+over-rejection = 8
+sweep-completeness = 3

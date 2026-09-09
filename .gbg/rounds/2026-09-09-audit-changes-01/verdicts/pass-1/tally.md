@@ -1,0 +1,53 @@
+# Tally — 2026-09-09-audit-changes-01 pass 1
+
+49/49 closed, 0 open; demoted by rule: 0; adjudicated share: 0.08; plateau: 0 pass(es) flat.
+
+- `2026-09-09-audit-changes-01/behaviour-change#1` act=— state=— → honored
+- `2026-09-09-audit-changes-01/behaviour-change#2` act=— state=— → honored
+- `2026-09-09-audit-changes-01/behaviour-change#3` act=— state=— → honored
+- `2026-09-09-audit-changes-01/behaviour-change#4` act=— state=— → honored
+- `2026-09-09-audit-changes-01/behaviour-change#5` act=— state=— → adjudicated [audit.json: escalated]
+- `2026-09-09-audit-changes-01/behaviour-change#6` act=— state=— → honored
+- `2026-09-09-audit-changes-01/behaviour-change#7` act=— state=— → honored
+- `2026-09-09-audit-changes-01/behaviour-change#8` act=— state=— → honored
+- `2026-09-09-audit-changes-01/claim-versus-edit#1` act=— state=— → honored
+- `2026-09-09-audit-changes-01/claim-versus-edit#2` act=— state=— → honored
+- `2026-09-09-audit-changes-01/contract-drift#1` act=— state=— → honored
+- `2026-09-09-audit-changes-01/contract-drift#2` act=— state=— → honored
+- `2026-09-09-audit-changes-01/contract-drift#3` act=— state=— → honored
+- `2026-09-09-audit-changes-01/contract-drift#4` act=— state=— → adjudicated [audit.json: escalated]
+- `2026-09-09-audit-changes-01/contract-drift#5` act=— state=— → adjudicated [audit.json: escalated]
+- `2026-09-09-audit-changes-01/contract-drift#6` act=— state=— → honored
+- `2026-09-09-audit-changes-01/contract-drift#7` act=— state=— → honored
+- `2026-09-09-audit-changes-01/contract-drift#8` act=— state=— → honored
+- `2026-09-09-audit-changes-01/executing#1` act=— state=— → honored
+- `2026-09-09-audit-changes-01/executing#2` act=— state=— → honored
+- `2026-09-09-audit-changes-01/executing#3` act=— state=— → honored
+- `2026-09-09-audit-changes-01/executing#4` act=— state=— → honored
+- `2026-09-09-audit-changes-01/executing#5` act=— state=— → honored
+- `2026-09-09-audit-changes-01/executing#6` act=— state=— → adjudicated [audit.json: escalated]
+- `2026-09-09-audit-changes-01/executing#7` act=— state=— → honored
+- `2026-09-09-audit-changes-01/executing#8` act=— state=— → honored
+- `2026-09-09-audit-changes-01/numerics#1` act=— state=— → honored
+- `2026-09-09-audit-changes-01/numerics#2` act=— state=— → honored
+- `2026-09-09-audit-changes-01/over-rejection#1` act=— state=— → honored
+- `2026-09-09-audit-changes-01/over-rejection#2` act=— state=— → honored
+- `2026-09-09-audit-changes-01/over-rejection#3` act=— state=— → honored
+- `2026-09-09-audit-changes-01/over-rejection#4` act=— state=— → honored
+- `2026-09-09-audit-changes-01/over-rejection#5` act=— state=— → honored
+- `2026-09-09-audit-changes-01/over-rejection#6` act=— state=— → honored
+- `2026-09-09-audit-changes-01/over-rejection#7` act=— state=— → honored
+- `2026-09-09-audit-changes-01/over-rejection#8` act=— state=— → honored
+- `2026-09-09-audit-changes-01/public-contract#1` act=— state=— → honored
+- `2026-09-09-audit-changes-01/reader-consequence#1` act=— state=— → honored
+- `2026-09-09-audit-changes-01/sweep-completeness#1` act=— state=— → honored
+- `2026-09-09-audit-changes-01/sweep-completeness#2` act=— state=— → honored
+- `2026-09-09-audit-changes-01/sweep-completeness#3` act=— state=— → honored
+- `2026-09-09-audit-changes-01/under-rejection#1` act=— state=— → honored
+- `2026-09-09-audit-changes-01/under-rejection#2` act=— state=— → honored
+- `2026-09-09-audit-changes-01/under-rejection#3` act=— state=— → honored
+- `2026-09-09-audit-changes-01/under-rejection#4` act=— state=— → honored
+- `2026-09-09-audit-changes-01/under-rejection#5` act=— state=— → honored
+- `2026-09-09-audit-changes-01/under-rejection#6` act=— state=— → honored
+- `2026-09-09-audit-changes-01/under-rejection#7` act=— state=— → honored
+- `2026-09-09-audit-changes-01/under-rejection#8` act=— state=— → honored
