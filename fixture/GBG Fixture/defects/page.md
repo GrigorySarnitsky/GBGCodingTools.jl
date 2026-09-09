@@ -5,6 +5,8 @@
 
 A page of planted page-level defects; the fixture's self-tests scan it with a derived config.
 
+A bare sibling: this page mentions `GBGPeriodicFields` without a link to its documentation site.
+
 - An item holding a table:
   | a | b |
   |---|---|

@@ -118,6 +118,14 @@ runner = "julia"
 fixture = ["mixed-link-run"]
 
 [[scan]]
+id = "SCAN.SIBLING_LINK"
+rule = "RULE.DOC.SIBLING_LINK"
+tier = "hard"
+surfaces = ["all"]
+runner = "julia"
+fixture = ["bare-sibling"]
+
+[[scan]]
 id = "SCAN.ARG_BULLET_BOLD"
 rule = "RULE.DOC.ARG_BULLET"
 tier = "hard"

@@ -541,6 +541,9 @@ function cmd_scan(args)
 end
 VERBS["scan"] = cmd_scan
 
+# the directory is a compile dependency: a scan file ADDED to it must invalidate the precompile cache, which
+# tracks included files only (the first new scan was silently absent from a stale image)
+Base.include_dependency(joinpath(@__DIR__, "Scans"))
 for f in sort!(filter!(x -> endswith(x, ".jl"), readdir(joinpath(@__DIR__, "Scans"))))
     include(joinpath(@__DIR__, "Scans", f))
 end

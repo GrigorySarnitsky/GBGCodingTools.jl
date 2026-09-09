@@ -10,6 +10,11 @@ scan = "SCAN.TABLE_INDENTED"
 file = "defects/page.md"
 fragment = "|---|---|"
 [[defect]]
+class = "bare-sibling"
+scan = "SCAN.SIBLING_LINK"
+file = "defects/page.md"
+fragment = "GBGPeriodicFields"
+[[defect]]
 class = "knob"
 scan = "SCAN.REGISTER"
 file = "defects/Defects.jl"
@@ -222,6 +227,9 @@ file = "docs/src/notation.md"
 [[clean]]
 scan = "SCAN.REGISTER"
 file = "src/FixtureC.jl"
+[[clean]]
+scan = "SCAN.SIBLING_LINK"
+file = "docs/src/index.md"
 [[clean]]
 scan = "SCAN.FRAC_UNBRACED"
 file = "src/FixtureB.jl"

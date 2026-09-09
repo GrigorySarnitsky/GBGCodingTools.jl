@@ -178,6 +178,13 @@ must choose between; sibling names in one list are all linked or all plain, neve
 test: if a sentence would sit equally well in the target's own docstring, cut it and link, the
 function's own defining formula and validity clauses always staying.
 
+### RULE.DOC.SIBLING_LINK
+The first mention of a sibling GBG package in a page, a rationale document, a Literate example or a
+docstring is a link to that package's documentation site, written `[`Package`](https://<owner>.github.io/Package.jl/)`.
+Later mentions in the same unit are bare code spans, and a package never links its own name. The names
+and sites come from the fleet registry the tool ships (`fleet.toml`), so the target is one string in every
+package.
+
 ### RULE.DOC.NO_DEAD_REFS
 A rendered docstring or a thrown error message cites no section number, repo path or inaccessible
 source, and reads complete at the REPL where links are dead. A cross-reference adds depth one hop away;

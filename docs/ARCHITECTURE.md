@@ -4,8 +4,8 @@
     This page is written by AI and is not reviewed regularly by a human.
 
 This document is the design record of `GBGCodingTools.jl`: the one shared tooling package that four
-private sibling Julia packages consume — `GBGPeriodicFields` (**PF**), `GBGIsotropicTurbulence`
-(**IT**), `GBGStreamingStatistics` (**SS**), `GBGCloudPhysics` (**CP**) — and which consumes itself:
+private sibling Julia packages consume — [`GBGPeriodicFields`](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) (**PF**), [`GBGIsotropicTurbulence`](https://grigorysarnitsky.github.io/GBGIsotropicTurbulence.jl/)
+(**IT**), [`GBGStreamingStatistics`](https://grigorysarnitsky.github.io/GBGStreamingStatistics.jl/) (**SS**), [`GBGCloudPhysics`](https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/) (**CP**) — and which consumes itself:
 the tool repository is its own fifth consumer (D15). It is self-contained: every
 term is bound where it first appears, and no external file is needed to understand it. Evidence
 citations point into the design-time surveys (`survey-*.md`, `round1-*.md`, `round2-*.md`,
@@ -2208,6 +2208,7 @@ verbatim — which `LEG.SENTINELS` matches against a consumer's `CLAUDE.md`. "So
 | `RULE.DOC.ONE_NOTATION` | docs-rubric | One notation per concept and one concept per notation; a local use yields to a package-wide glyph. | "One notation per concept" |
 | `RULE.DOC.COORD_FREE` | docs-rubric | Maps and pairings are stated intrinsically; matrix/flattening machinery is confined to the formalization doc. | "Prefer coordinate-free notation" |
 | `RULE.DOC.LINKS` | docs-rubric | Cross-referencing is discriminating-minimalist: a target linked at most once per docstring; never the own binding, arguments or `Base`; a family is one destination unless members must be chosen between; sibling names in one list are all linked or all plain. | "Cross-referencing — discriminating-minimalist"; `link_uniformity.py` |
+| `RULE.DOC.SIBLING_LINK` | docs-rubric | The first mention of a sibling GBG package in a page, rationale document, Literate example or docstring links to that package's documentation site; later mentions are bare; a package never links its own name. | the owner's home-page review, 2026-09-09 |
 | `RULE.DOC.NO_DEAD_REFS` | docs-rubric | A docstring or error message cites no `§` number, repo path or inaccessible source; it reads complete at the REPL. | "No dead references on the user-facing surface" |
 | `RULE.DOC.AI_BANNER` | docs-rubric | Every AI-written page carries the one provenance banner verbatim (as `# ` comments in a Literate file). | `lint_ai_banner` |
 | `RULE.DOC.SHAPE` | docs-rubric | A docstring's longest paragraph ≤ 120 words and admonitions ≤ 3 always; no unit grows past its baseline; `# Arguments` precedes any column-0 `!!!`; `# Fields` is last. | `lint_prose_shape`; IT `lint_docstring_shape` |
@@ -2298,6 +2299,7 @@ docstrings except by `SCAN.SWALLOWED_ESCAPE`, which is what that scan is for.
 | `SCAN.REF_ABUT_CODE` | `RULE.DOC.REF_ABUT` | hard | src, rationale | julia | PF: a `@ref` link immediately followed by a backtick | `ref-abut` |
 | `SCAN.FIELD_DOCS` | `RULE.DOC.FIELDS` | hard | src, ext | julia | PF `field_docs.py` (GHOST / UNDOC / NOLIST / STALE; `NO_FIELD_LIST` becomes ledger `scope = "scan"` entries; zero types matched ⇒ exit 2) | `ghost-field`, `undoc-field` |
 | `SCAN.LINK_UNIFORMITY` | `RULE.DOC.LINKS` | hard | src | julia | PF `link_uniformity.py` (adjacent-run unit; operators and the own binding excluded; no exports parsed ⇒ exit 2) | `mixed-link-run` |
+| `SCAN.SIBLING_LINK` | `RULE.DOC.SIBLING_LINK` | hard | all | julia | new (owner's home-page review 2026-09-09): per page, rationale document, Literate file or docstring, the first mention of each sibling must sit inside `[`Name`](site)`; names and sites from the shipped `fleet.toml` | `bare-sibling` |
 | `SCAN.ARG_BULLET_BOLD` | `RULE.DOC.ARG_BULLET` | hard | src, ext | julia | PF: a list bullet opening with a bold backtick span (ledger `RULE.DOC.ARG_BULLET` silences it for SS if the owner so decides) | `bold-arg-bullet` |
 | `SCAN.INLINE_MATH_SPLIT` | `RULE.TEX.INLINE_ONE_LINE` | hard | all | julia | PF/IT/SS `lint_inline_math` (fence- and docstring-aware; list-leader continuation inside an open double-backtick span) | `inline-math-split` |
 | `SCAN.SWALLOWED_ESCAPE` | `RULE.TEX.SWALLOWED_ESCAPE` | hard | src, ext | julia | PF `lint_swallowed_escapes` `(?<!\\)\\[abefnrtv0-7xuU]` inside docstrings | `swallowed-escape` |
@@ -2552,3 +2554,12 @@ vocabularies, the round contract or the closure channels changes.
 The round also found three defects in the code the docstrings described (`TreeHash.tree_hash` never omitted an empty directory; the rescan
 needle was cut in bytes; a witness that both failed and errored was filed `:blocked`) — each fixed with
 its test in the same pass.
+
+### Revision 11 (2026-09-09) — the owner's home-page review
+
+Two rulings from the owner's first read of the built site. The home page defines tool, consumer and pin
+before it states the principle that uses them, and its AI banner is gone: the owner reviews that page
+regularly, and `RULE.DOC.AI_BANNER` binds rationale pages and Literate examples, not a page a human
+keeps. And sibling packages are always links: `RULE.DOC.SIBLING_LINK` with the hard `SCAN.SIBLING_LINK`
+(§12), one uniform target per package derived from the shipped `fleet.toml`, enforced in every consumer
+and in the tool. A MINOR change; the fixture gains the `bare-sibling` class.

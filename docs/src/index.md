@@ -1,16 +1,20 @@
 # GBGCodingTools
 
-!!! info "Written by AI, not regularly reviewed"
-    This page is written by AI and is not reviewed regularly by a human.
+`GBGCodingTools` is the **tool**: the one shared tooling package of the four GBG Julia packages,
+[`GBGPeriodicFields`](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/), [`GBGIsotropicTurbulence`](https://grigorysarnitsky.github.io/GBGIsotropicTurbulence.jl/),
+[`GBGStreamingStatistics`](https://grigorysarnitsky.github.io/GBGStreamingStatistics.jl/), [`GBGCloudPhysics`](https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/). A package that uses it is a
+**consumer**: each of the four, and the tool itself. A consumer's **pin** is the tool version it names
+in its `.gbg/config.toml`, which `gbg sync` writes into the consumer's sub-environment `Project.toml`
+files as an exact compat entry; the pin is the only thing that connects a consumer to the tool.
 
-**A consumer holds data; the tool holds behaviour; the only thing connecting them is a pin.**
+**A consumer holds data; the tool holds behaviour; the only thing connecting them is a pin.** Everything
+that varies by package (its config, hats, ledger, rounds and frozen baselines) lives in the consumer as
+data; every check, scan, instrument and verb lives in the tool as code; a consumer selects a version and
+nothing else.
 
-`GBGCodingTools` is the one shared tooling package of the GBG Julia packages — `GBGPeriodicFields`,
-`GBGIsotropicTurbulence`, `GBGStreamingStatistics`, `GBGCloudPhysics` — and of itself. It holds the four
-review instruments (`/check-docs`, `/check-consistency`, `/bug-hunt`, `/audit-changes`), the
-docs-build wrapper and its deterministic scans, the test harness the consumers' suites call, the
-read-only doctor, and the policy prose every consumer imports, at one version pinned by every consumer
-through its sub-environment `Project.toml` files.
+The tool holds the four review instruments (`/check-docs`, `/check-consistency`, `/bug-hunt`,
+`/audit-changes`), the docs-build wrapper and its deterministic scans, the test harness the consumers'
+suites call, the read-only doctor, and the policy prose every consumer imports.
 
 ## What a consumer has
 
