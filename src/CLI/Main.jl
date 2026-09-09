@@ -30,7 +30,7 @@ end
 """
     parse_options(args; valued = String[]) -> Options
 
-Parses `args` into an [`Options`](@ref). An option named in `valued` consumes the next argument as its
+Parses `args` into an `Options` record. An option named in `valued` consumes the next argument as its
 value (or the text after `=`); every other `--name` is a flag; a lone `--` ends option parsing. Returns the
 parsed options; an option that is in `valued` but has no value is an `ArgumentError`.
 """

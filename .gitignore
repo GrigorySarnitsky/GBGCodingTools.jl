@@ -22,3 +22,5 @@ fixture/.tmp/
 Manifest-v*.toml
 docs/src/architecture.md
 docs/src/guide/doctor.md
+docs/src/guide/instruments.md
+docs/src/guide/rules.md

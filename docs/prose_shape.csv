@@ -148,7 +148,7 @@ unit,words,longest_paragraph,admonitions
 "Main.jl :: cmd_probe(args) -> Int",36,33,0
 "Main.jl :: git_stamp(dir) -> String",32,29,0
 "Main.jl :: main(args) -> Int",108,105,0
-"Main.jl :: parse_options(args; valued = String[]) -> Options",57,51,0
+"Main.jl :: parse_options(args; valued = String[]) -> Options",58,52,0
 "Main.jl :: running_dev() -> Bool",72,69,0
 "Main.jl :: tool_version() -> String",38,35,0
 "Main.jl :: usage(io = stderr)",16,13,0
@@ -323,12 +323,12 @@ unit,words,longest_paragraph,admonitions
 "code_in_math.jl :: math_spans(lines) -> Vector{Tuple{Int,String}}",48,45,0
 "config.md § [The config](@id config)",171,63,1
 "html_docstring_once.jl :: page_bindings(page) -> Vector{NamedTuple}",43,40,0
-"index.md § How a package adopts it",68,68,0
-"index.md § The command-line program `gbg`",155,89,0
-"index.md § The four review procedures",203,123,0
-"index.md § The written rules",69,69,0
-"index.md § What a package's docs build and tests call",88,88,0
-"index.md § What it is",142,76,0
+"index.md § How a package adopts it",71,71,0
+"index.md § The command-line program `gbg`",165,94,0
+"index.md § The four review procedures",216,127,0
+"index.md § The written rules",75,75,0
+"index.md § What a package's docs build and tests call",90,90,0
+"index.md § What it is",143,76,0
 "index.md § Where to start",70,70,0
 "install.md § The dev checkout",48,48,0
 "install.md § The pinned version",48,28,0

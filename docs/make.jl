@@ -22,6 +22,37 @@ open(joinpath(@__DIR__, "src", "guide", "doctor.md"), "w") do io
     end
 end
 
+# The four instruments' protocols and the rendered rulebook, as pages: the protocol files under
+# instruments/<name>/ and the tool's own rendered policy copy under .gbg/policy/, headings demoted one level,
+# each instrument and each rule given an @id the home page links to. Both are generated globs, gitignored.
+demote(line) = startswith(line, "#") ? "#" * line : line
+open(joinpath(@__DIR__, "src", "guide", "instruments.md"), "w") do io
+    println(io, "# [The instruments](@id instruments)\n")
+    println(io, "Generated at build time from `instruments/<name>/PROTOCOL.md`: the text `gbg preflight <name>` injects into the")
+    println(io, "session that runs the instrument, verbatim. Each protocol assumes the round its preflight opened.\n")
+    for name in ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
+        lines = readlines(joinpath(ROOT, "instruments", name, "PROTOCOL.md"))
+        println(io, "## [`/", name, "`](@id ", name, ")\n")
+        for l in lines[2:end]; println(io, startswith(l, "#") ? demote(l) : l); end
+        println(io)
+    end
+end
+open(joinpath(@__DIR__, "src", "guide", "rules.md"), "w") do io
+    println(io, "# [The rules](@id rules)\n")
+    println(io, "Generated at build time from this package's rendered policy copy under `.gbg/policy/`: the shared rulebook")
+    println(io, "every consumer imports, with this package's parameters substituted. A rule's id is stable; the scans and the")
+    println(io, "doctor cite it.\n")
+    for f in ("docs-rubric.md", "latex-idiom.md", "citations.md", "testing-protocol.md", "instruments.md", "git-conventions.md", "glossary.md", "deviations.md")
+        for l in readlines(joinpath(ROOT, ".gbg", "policy", f))
+            startswith(l, "<!-- gbg:managed") && continue
+            m = match(r"^### (RULE\.[A-Z]+\.[A-Z_]+)\s*$", l)
+            l = replace(l, "[`f`](@ref)" => "\\[`f`\\](@ref)")          # the rubric QUOTES the link syntax; escaped, Documenter leaves it
+            println(io, m !== nothing ? "#### [`$(m.captures[1])`](@id $(m.captures[1]))" : demote(l))
+        end
+        println(io)
+    end
+end
+
 GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
     sitename = "GBGCodingTools",
     modules = [GBGCodingTools, TestHarness, Reflection, Witnesses, Config],
@@ -32,7 +63,7 @@ GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
                              size_threshold = 1_500_000, size_threshold_warn = 600_000),   # the architecture record is one long page by design
     pages = [
         "Home" => "index.md",
-        "Guide" => ["guide/install.md", "guide/verbs.md", "guide/rounds.md", "guide/doctor.md", "guide/ledger.md", "guide/config.md"],
+        "Guide" => ["guide/install.md", "guide/verbs.md", "guide/instruments.md", "guide/rounds.md", "guide/doctor.md", "guide/rules.md", "guide/ledger.md", "guide/config.md"],
         "API" => ["api/TestHarness.md", "api/Reflection.md", "api/Witnesses.md", "api/Config.md", "api/CLI.md"],
         "Architecture" => "architecture.md",
     ],

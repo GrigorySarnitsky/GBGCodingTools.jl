@@ -43,7 +43,7 @@ references_heading = "absent"
 src = ["src/**/*.jl"]
 
     [surfaces.generated]
-    globs = ["docs/src/architecture.md", "docs/src/guide/verbs.md", "docs/src/guide/doctor.md"]
+    globs = ["docs/src/architecture.md", "docs/src/guide/verbs.md", "docs/src/guide/doctor.md", "docs/src/guide/instruments.md", "docs/src/guide/rules.md"]
     optional = true
 
 [docs]
