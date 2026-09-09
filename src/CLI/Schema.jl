@@ -33,6 +33,18 @@ function load_schema(name::AbstractString)
     return JSON3.read(read(path, String), Dict{String,Any})
 end
 
+"""
+    instrument_schema(name) -> Dict
+
+`instruments/<name>/schema.json` of the running copy: the instrument's Workflow `args` object, its
+lane-file wrapper and (for check-consistency) the `seeds` definition. Returns the parsed document.
+"""
+function instrument_schema(name::AbstractString)
+    path = joinpath(pkgdir(GBGCodingTools), "instruments", name, "schema.json")
+    isfile(path) || throw(ArgumentError("no instrument schema $path"))
+    return JSON3.read(read(path, String), Dict{String,Any})
+end
+
 # A `$ref` with sibling keys (`default`, `minItems`, `description`) means the referenced node with those
 # siblings applied on top — the way the config schema writes `{"$ref": "#/$defs/strlist", "default": []}`.
 function _resolve(root, s)

@@ -15,7 +15,7 @@ module Doctor
 
 using TOML, Dates, JSON3, Pkg
 using ..GBGCodingTools: GBGCodingTools, PKG_NAME, PKG_UUID, JULIA_FLOOR, Config, Ledger, Sync, RoundFiles, Witnesses, Reflection,
-      load_schema, validate, parse_options, VERBS, tool_version, running_dev, tool_sub_envs, manifest_tree_sha, self_verify,
+      load_schema, instrument_schema, validate, parse_options, VERBS, tool_version, running_dev, tool_sub_envs, manifest_tree_sha, self_verify,
       scan_catalog, run_scan, SCANS, prose_lines, surface_kind
 
 """
@@ -286,7 +286,7 @@ check!("CFG.SEEDS", ctx -> begin
     cc["seed_rounds"] || return pass("CFG.SEEDS", "seed_rounds = false")
     p = joinpath(ctx.root, cc["seed_catalog"])
     isfile(p) || return fail("CFG.SEEDS", "seed_rounds = true but $(cc["seed_catalog"]) is absent")
-    inst = JSON3.read(read(joinpath(pkgdir(GBGCodingTools), "instruments", "check-consistency", "schema.json"), String), Dict{String,Any})
+    inst = instrument_schema("check-consistency")
     errs = validate(inst["\$defs"]["seeds"], TOML.parsefile(p); root = inst)
     isempty(errs) ? pass("CFG.SEEDS", "$(length(TOML.parsefile(p)["class"])) classes") : fail("CFG.SEEDS", join(errs, "; "))
 end)

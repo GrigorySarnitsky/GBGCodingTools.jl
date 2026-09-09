@@ -1,0 +1,550 @@
+# Preflight.jl — `gbg preflight <instrument>` (ARCHITECTURE D6, D7, §6.2 step 2; Revision 9): validates,
+# checks, OPENS the round, copies the instrument's Workflow scripts into the project, writes the payload
+# files, and prints the protocol, the exact Workflow call and the next step. It owns THE Workflow-args
+# renderer; `pass open` and `round rerun` call it for their calls.
+
+"""
+    Preflight
+
+The opener of a round and the one renderer of Workflow args. [`Preflight.preflight`](@ref) is the verb;
+[`Preflight.resolve_roster`](@ref) turns config and catalogue into the numbered hats or lanes;
+[`Preflight.write_payloads`](@ref) writes every large payload as a file under the round's scratch;
+[`Preflight.render_args`](@ref) builds the small args object naming those paths;
+[`Preflight.workflow_call`](@ref) prints the call the session launches verbatim.
+"""
+module Preflight
+
+using TOML, JSON3, Dates, SHA
+using ..GBGCodingTools: GBGCodingTools, PKG_NAME, Config, Ledger, Sync, RoundFiles, Git, Doctor, TreeHash,
+      parse_options, VERBS, tool_version, running_dev, git_stamp, self_verify, load_schema, validate, doctor
+
+struct PreflightError <: Exception
+    msg::String
+end
+Base.showerror(io::IO, e::PreflightError) = print(io, "preflight: ", e.msg)
+
+const SCHEMA_VERSION = 1
+
+# ---- paths ------------------------------------------------------------------------------------------------
+
+scratch_dir(cfg, round) = joinpath(cfg["root"], ".gbg", "scratch", round)
+workflow_dir(cfg, round) = joinpath(scratch_dir(cfg, round), "workflow")
+payload_dir(cfg, round) = joinpath(workflow_dir(cfg, round), "payload")
+round_dir(cfg, round) = joinpath(RoundFiles.rounds_dir(cfg), round)
+instrument_dir(instrument) = joinpath(pkgdir(GBGCodingTools), "instruments", instrument)
+
+"""
+    next_round_id(cfg, instrument) -> String
+
+`<yyyy-mm-dd>-<instrument>-<NN>`, NN the first number not yet used by a round of that instrument on
+that date.
+"""
+function next_round_id(cfg::AbstractDict, instrument::AbstractString)
+    d = Dates.format(today(), dateformat"yyyy-mm-dd")
+    existing = Set(r.name for r in RoundFiles.rounds(cfg))
+    n = 1
+    while "$d-$instrument-$(lpad(n, 2, '0'))" in existing; n += 1; end
+    return "$d-$instrument-$(lpad(n, 2, '0'))"
+end
+
+# ---- stamps -----------------------------------------------------------------------------------------------
+
+sha_hex(s::AbstractString) = bytes2hex(sha256(codeunits(s)))
+sha_files(paths) = sha_hex(join((isfile(p) ? read(p, String) : "" for p in paths), "\n\0"))
+
+"""
+    config_sha(cfg) -> String
+
+sha256 over `config.toml`, `hats/*.toml` (sorted) and `exemptions.toml`, in that order (§6.1).
+"""
+function config_sha(cfg::AbstractDict)
+    g = joinpath(cfg["root"], ".gbg")
+    hats = isdir(joinpath(g, "hats")) ? sort!([joinpath(g, "hats", f) for f in readdir(joinpath(g, "hats")) if endswith(f, ".toml")]) : String[]
+    return sha_files(vcat([joinpath(g, "config.toml")], hats, [joinpath(g, "exemptions.toml")]))
+end
+
+"""
+    catalog_sha() -> String
+
+sha256 over every `catalog/**/*.toml` of the running copy, sorted by path.
+"""
+function catalog_sha()
+    files = String[]
+    for (d, _, fs) in walkdir(joinpath(pkgdir(GBGCodingTools), "catalog")), f in fs
+        endswith(f, ".toml") && push!(files, joinpath(d, f))
+    end
+    return sha_files(sort!(files))
+end
+
+function seed_catalog_sha(cfg::AbstractDict)
+    p = joinpath(cfg["root"], cfg["instruments"]["check-consistency"]["seed_catalog"])
+    return isfile(p) ? RoundFiles.sha256_file(p) : "none"
+end
+
+"""
+    stamps(cfg) -> Dict
+
+The tool and config stamps every `ROUND.toml` and `pass.toml` record: `tool_version` (the pin, or
+`dev+<sha>[-dirty]` from the working tree), `tool_rev`, `tool_tree_sha`, `config_sha`, `catalog_sha`,
+`seed_catalog_sha`.
+"""
+function stamps(cfg::AbstractDict)
+    dir = pkgdir(GBGCodingTools)
+    dev = running_dev()
+    Dict{String,Any}(
+        "tool_version" => dev ? git_stamp(dir) : String(cfg["tool"]["version"]),
+        "tool_rev" => dev ? something(Git.head(dir), "unknown") : "v" * String(cfg["tool"]["version"]),
+        "tool_tree_sha" => TreeHash.tree_hash(dir),
+        "config_sha" => config_sha(cfg),
+        "catalog_sha" => catalog_sha(),
+        "seed_catalog_sha" => seed_catalog_sha(cfg))
+end
+
+# ---- substitution -----------------------------------------------------------------------------------------
+
+function section_text(root::AbstractString, anchor::AbstractString)
+    file, line, n = Config.resolve_anchor(root, anchor)
+    line == 0 && return ""
+    lines = readlines(joinpath(root, file))
+    m = match(r"^(#{1,6})", lines[line]); level = m === nothing ? 6 : length(m.captures[1])
+    out = [lines[line]]
+    for l in lines[line+1:end]
+        mm = match(r"^(#{1,6})\s", l)
+        mm !== nothing && length(mm.captures[1]) <= level && break
+        push!(out, l)
+    end
+    return join(out, "\n")
+end
+
+"""
+    substitute(text, cfg; extra = Dict()) -> String
+
+Fills the catalogue placeholders `{package.name}`, `{package.description}`, `{package.domain}`,
+`{package.terms}`, `{package.deliberate_absences}`, `{package.rulebook_sections}`, `{policy.<file>}`,
+`{audit.guard_symbols}`, `{audit.invariants}`, `{hunt.entry_point}` and any `extra` key. A placeholder
+with no value is left as written (a brace pair inside prose is never an error).
+"""
+function substitute(text::AbstractString, cfg::AbstractDict; extra = Dict{String,String}())
+    pk = cfg["package"]; root = cfg["root"]
+    list(v) = isempty(v) ? "(none recorded)" : join(String.(v), "; ")
+    vals = Dict{String,String}(
+        "package.name" => pk["name"], "package.description" => pk["description"], "package.domain" => pk["domain"],
+        "package.terms" => list(pk["terms"]), "package.deliberate_absences" => list(pk["deliberate_absences"]),
+        "package.rulebook_sections" => list(pk["rulebook_sections"]),
+        "audit.guard_symbols" => list(cfg["instruments"]["audit-changes"]["guard_symbols"]),
+        "audit.invariants" => haskey(cfg["instruments"]["audit-changes"], "invariants_section") ? section_text(root, cfg["instruments"]["audit-changes"]["invariants_section"]) : "(no invariants section recorded)",
+        "hunt.entry_point" => "src/$(pk["name"]).jl")
+    merge!(vals, extra)
+    return String(replace(text, r"\{(package\.[a-z_]+|policy\.[a-z0-9-]+|audit\.[a-z_]+|hunt\.[a-z_]+)\}" => function (m)
+        key = m[2:end-1]
+        haskey(vals, key) && return vals[key]
+        if startswith(key, "policy.")
+            f = joinpath(root, ".gbg", "policy", key[8:end] * ".md")
+            isfile(f) && return read(f, String)
+        end
+        return m
+    end))
+end
+
+# ---- rosters ----------------------------------------------------------------------------------------------
+
+function hat_file(cfg, key)
+    for p in (joinpath(cfg["root"], ".gbg", "hats", key * ".toml"), joinpath(pkgdir(GBGCodingTools), "catalog", "hats", key * ".toml"))
+        isfile(p) && return p
+    end
+    throw(PreflightError("hat $key has no persona file (catalogue or .gbg/hats/)"))
+end
+
+"""
+    resolve_hats(cfg; profile = config, explicit = String[]) -> Vector{Dict}
+
+The check-consistency roster: the config's `hats` (profile `all`), its `core` list (`core`), or the
+`explicit` keys; each with `key`, `substrate`, `needs`, `anchor` (a `domain_hats` entry may anchor any
+key), the persona with placeholders filled, and `not_applicable` when its substrate cannot exist here
+(`html` needs with no built site, `git` with no repository, `rulebook` with no rulebook sections).
+Returns the list in config order.
+"""
+function resolve_hats(cfg::AbstractDict; profile = nothing, explicit = String[])
+    cc = cfg["instruments"]["check-consistency"]
+    prof = something(profile, cc["profile"])
+    keys_ = prof == "core" ? cc["core"] : prof == "explicit" ? explicit : cc["hats"]
+    isempty(keys_) && throw(PreflightError("profile $prof names no hats"))
+    anchors = Dict(d["key"] => d for d in cc["domain_hats"])
+    out = Dict{String,Any}[]
+    for key in keys_
+        h = TOML.parsefile(hat_file(cfg, key))
+        needs = String.(get(h, "needs", String[]))
+        anchor = get(h, "anchor", false) || (haskey(anchors, key) && anchors[key]["anchor"])
+        substrate = haskey(anchors, key) ? anchors[key]["substrate"] : get(h, "substrate", "full")
+        na = ("html" in needs && isempty(cfg["surfaces"]["built_html"])) || ("git" in needs && !Git.is_repo(cfg["root"])) ||
+             ("rulebook" in needs && isempty(cfg["package"]["rulebook_sections"]))
+        push!(out, Dict("key" => key, "substrate" => substrate, "needs" => needs, "anchor" => anchor, "not_applicable" => na,
+                        "persona" => substitute(h["persona"], cfg), "role" => get(h, "role", "")))
+    end
+    return out
+end
+
+lane_catalog(instrument) = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "catalog", "lanes", instrument * ".toml"))
+
+"""
+    resolve_checkdocs_lanes(cfg) -> Vector{Dict}
+
+The check-docs lanes: one surface lane per non-empty surface key (`rationale`, `pages`, `src`, `ext`,
+`literate`, `built-html`) carrying the catalogue's surface brief and its files, refined by
+`lanes_extra` (a file named there leaves the engine's lane and joins the extra lane), then the
+catalogue's cross lanes (`family`, `cold-reader`, `operational-claims`). Returns the list.
+"""
+function resolve_checkdocs_lanes(cfg::AbstractDict)
+    cat = lane_catalog("check-docs"); sb = cat["surface"]
+    extra = cfg["instruments"]["check-docs"]["lanes_extra"]
+    taken = Set(f for e in extra for f in e["files"])
+    out = Dict{String,Any}[]
+    for key in ("rationale", "pages", "src", "ext", "literate")
+        files = filter(f -> !(f in taken), Config.surface_files(cfg, key))
+        isempty(files) && continue
+        push!(out, Dict("key" => key, "kind" => "surface", "anchor" => sb["anchor"], "files" => files,
+                        "brief" => substitute(sb["brief"], cfg) * "\n\nYOUR SURFACE IS THE `$key` SURFACE: the files listed in your prompt, every one read fully."))
+    end
+    isempty(cfg["surfaces"]["built_html"]) || push!(out, Dict("key" => "built-html", "kind" => "surface", "anchor" => sb["anchor"], "files" => [cfg["surfaces"]["built_html"]],
+        "brief" => substitute(sb["brief"], cfg) * "\n\nYOUR SURFACE IS THE BUILT HTML under `$(cfg["surfaces"]["built_html"])`: what each `@docs`/`@autodocs` block actually collected is visible only here — read every API page's rendered content, and check each page blurb against what its block holds."))
+    for e in extra
+        push!(out, Dict("key" => e["key"], "kind" => "surface", "anchor" => sb["anchor"], "files" => String.(e["files"]),
+                        "brief" => substitute(sb["brief"], cfg) * "\n\nYOUR SURFACE (a refinement of the engine's lanes): " * e["brief"] * "."))
+    end
+    for l in cat["lane"]
+        push!(out, Dict("key" => l["key"], "kind" => l["kind"], "anchor" => l["anchor"], "files" => String[], "brief" => substitute(l["brief"], cfg)))
+    end
+    return out
+end
+
+"""
+    resolve_hunt_lanes(cfg) -> Vector{Dict}
+
+The bug-hunt lanes: the config's `territories` (kind `territory`) followed by the catalogue's two free
+lanes (anchored). Returns the list.
+"""
+function resolve_hunt_lanes(cfg::AbstractDict)
+    out = Dict{String,Any}[]
+    for t in cfg["instruments"]["bug-hunt"]["territories"]
+        push!(out, Dict("key" => t["key"], "kind" => "territory", "anchor" => false, "files" => String.(t["files"]), "brief" => substitute(t["brief"], cfg)))
+    end
+    for l in lane_catalog("bug-hunt")["lane"]
+        push!(out, Dict("key" => l["key"], "kind" => l["kind"], "anchor" => l["anchor"], "files" => String[], "brief" => substitute(l["brief"], cfg)))
+    end
+    return out
+end
+
+"""
+    resolve_audit_lanes(cfg, kind) -> Vector{Dict}
+
+The audit-changes lanes of the catalogue whose `kind` the round's kind selects (`code`, `prose`, or
+both for `both`). Returns the list.
+"""
+function resolve_audit_lanes(cfg::AbstractDict, kind::AbstractString)
+    out = Dict{String,Any}[]
+    for l in lane_catalog("audit-changes")["lane"]
+        (kind == "both" || l["kind"] == kind) || continue
+        push!(out, Dict("key" => l["key"], "kind" => l["kind"], "anchor" => l["anchor"], "files" => String[], "brief" => substitute(l["brief"], cfg)))
+    end
+    return out
+end
+
+number!(roster) = (for (i, r) in enumerate(roster); r["nn"] = lpad(i, 2, '0'); end; roster)
+
+"""
+    resolve_roster(cfg, instrument; kw...) -> Vector{Dict}
+
+The numbered roster of an instrument: hats for check-consistency, lanes otherwise; `nn` assigned in
+order from `01`. Keywords: `profile`, `explicit` (hats); `kind` (audit).
+"""
+function resolve_roster(cfg::AbstractDict, instrument::AbstractString; profile = nothing, explicit = String[], kind = "both")
+    roster = instrument == "check-consistency" ? resolve_hats(cfg; profile, explicit) :
+             instrument == "check-docs" ? resolve_checkdocs_lanes(cfg) :
+             instrument == "bug-hunt" ? resolve_hunt_lanes(cfg) : resolve_audit_lanes(cfg, kind)
+    return number!(roster)
+end
+
+roster_record(roster) = [Dict{String,Any}("key" => r["key"], "anchor" => r["anchor"], "substrate" => get(r, "substrate", get(r, "kind", "")),
+                                          (get(r, "not_applicable", false) ? ["not_applicable" => true] : [])...) for r in roster]
+
+# ---- payloads and args ------------------------------------------------------------------------------------
+
+function rulebook_text(cfg::AbstractDict)
+    io = IOBuffer()
+    pdir = joinpath(cfg["root"], ".gbg", "policy")
+    for f in Sync.POLICY_FILES
+        p = joinpath(pdir, f); isfile(p) || continue
+        println(io, "--- rendered policy file $f ---\n", read(p, String), "\n")
+    end
+    p = joinpath(pdir, "deviations.md"); isfile(p) && println(io, "--- rendered policy file deviations.md ---\n", read(p, String), "\n")
+    for a in cfg["package"]["rulebook_sections"]
+        println(io, "--- rulebook section $a ---\n", section_text(cfg["root"], a), "\n")
+    end
+    return String(take!(io))
+end
+
+"""
+    write_payloads(cfg, instrument, round, roster; base = nothing) -> Dict{String,Any}
+
+Writes every large payload of the instrument under `.gbg/scratch/<round>/workflow/payload/` and
+returns the paths: personas (`hats/<key>.md`), the rulebook (`rulebook.md`), the policy
+(`policy.md`), briefs (`lanes/<key>.md`), the invariants (`invariants.md`), and for the audit the diff,
+diffstat and claims of `base..HEAD` over the covered paths. The manuscripts are written by
+`gbg round prepare`; their paths are returned here so the args can name them.
+"""
+function write_payloads(cfg::AbstractDict, instrument::AbstractString, round::AbstractString, roster; base = nothing)
+    pd = payload_dir(cfg, round); mkpath(pd)
+    paths = Dict{String,Any}()
+    if instrument == "check-consistency"
+        mkpath(joinpath(pd, "hats"))
+        for h in roster
+            p = joinpath(pd, "hats", h["key"] * ".md"); write(p, "### " * h["key"] * "\n\n" * h["persona"] * "\n"); h["persona_path"] = p
+        end
+        write(joinpath(pd, "rulebook.md"), rulebook_text(cfg)); paths["rulebook_path"] = joinpath(pd, "rulebook.md")
+        paths["manuscripts"] = Dict("full" => joinpath(pd, "manuscript-full.md"), "siteonly" => joinpath(pd, "manuscript-siteonly.md"))
+    else
+        mkpath(joinpath(pd, "lanes"))
+        for l in roster
+            p = joinpath(pd, "lanes", l["key"] * ".md"); write(p, "### lane " * l["key"] * " (" * l["kind"] * ")\n\n" * l["brief"] * "\n"); l["brief_path"] = p
+        end
+    end
+    if instrument == "check-docs"
+        write(joinpath(pd, "policy.md"), rulebook_text(cfg)); paths["policy_path"] = joinpath(pd, "policy.md")
+    end
+    if instrument in ("bug-hunt", "audit-changes")
+        inv = substitute("{audit.invariants}", cfg)
+        write(joinpath(pd, "invariants.md"), inv); paths["invariants_path"] = joinpath(pd, "invariants.md")
+    end
+    if instrument == "audit-changes"
+        base === nothing && throw(PreflightError("audit-changes needs --base <commit>"))
+        covered = covered_paths(cfg)
+        range = "$base..HEAD"
+        write(joinpath(pd, "diff.patch"), Git.diff(cfg["root"], range, covered)); paths["diff_path"] = joinpath(pd, "diff.patch")
+        write(joinpath(pd, "diffstat.txt"), Git.diffstat(cfg["root"], range, covered)); paths["diffstat_path"] = joinpath(pd, "diffstat.txt")
+        write(joinpath(pd, "claims.txt"), Git.log(cfg["root"], range)); paths["claims_path"] = joinpath(pd, "claims.txt")
+    end
+    return paths
+end
+
+"""
+    covered_paths(cfg) -> Vector{String}
+
+The audit's covered paths: `src`, `test`, `ext`, `docs`, `Project.toml` plus every `[paths]` entry.
+"""
+covered_paths(cfg) = unique(vcat(["src", "test", "ext", "docs", "Project.toml"], String.(values(cfg["paths"]))))
+
+"""
+    audit_kind(cfg, base) -> String
+
+`code` when the diff touches only code paths, `prose` when only `docs/`, `both` otherwise (an empty
+diff is `both`, so every lane runs and reports it empty).
+"""
+function audit_kind(cfg::AbstractDict, base::AbstractString)
+    changed = Git.changed_paths(cfg["root"], "$base..HEAD", covered_paths(cfg))
+    isempty(changed) && return "both"
+    prose = all(p -> startswith(p, "docs/"), changed); code = all(p -> !startswith(p, "docs/"), changed)
+    return prose ? "prose" : code ? "code" : "both"
+end
+
+package_block(cfg) = Dict("name" => cfg["package"]["name"], "description" => cfg["package"]["description"], "domain" => cfg["package"]["domain"],
+                          "terms" => cfg["package"]["terms"], "deliberate_absences" => cfg["package"]["deliberate_absences"])
+economy_model() = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "catalog", "models.toml"))["economy"]
+finding_types(cfg) = vcat(["math", "notation", "structure", "citation", "style", "operational", "currency", "self-containment"], String.(cfg["schema"]["finding_types_extra"]))
+
+adjudicated_titles(cfg, ledger) = String[e["reason"] for e in ledger if e["scope"] == "finding"]
+
+const PREAMBLES = Dict(
+    "check-consistency" => "You are one hat of a fresh-eyed expert panel auditing the RENDERED documentation of the Julia package {package.name} — {package.description}. The package's field is {package.domain}; its terms of art are {package.terms}.",
+    "check-docs" => "You are one lane of the complete documentation-quality battery over the SOURCE of the Julia package {package.name} — {package.description}. The package's field is {package.domain}; its terms of art are {package.terms}.",
+    "bug-hunt" => "You are one lane of a bug hunt over the Julia package {package.name} — {package.description} (field: {package.domain}). A static claim about code is a hypothesis; the only admissible evidence is a program that fails.",
+)
+
+"""
+    render_args(cfg, instrument, round, roster, paths; strength, cost, opened, base = nothing, head = nothing, kind = nothing) -> Dict
+
+The Workflow args of the instrument's main script (its `schema.json` `args`): small scalars and the
+payload paths, never a payload. Validated against the schema before it is returned.
+"""
+function render_args(cfg::AbstractDict, instrument::AbstractString, round::AbstractString, roster, paths;
+                     strength = "economy", cost = "economy", opened = "", base = nothing, head = nothing, kind = nothing, ledger = Ledger.read(cfg))
+    root = cfg["root"]; rd = round_dir(cfg, round)
+    a = Dict{String,Any}("schema_version" => SCHEMA_VERSION, "round" => round, "round_dir" => rd, "repo" => root,
+                         "models" => Dict("economy" => economy_model()), "strength" => strength, "package" => package_block(cfg))
+    if instrument == "check-consistency"
+        a["rawhtml"] = joinpath(root, cfg["surfaces"]["built_html"])
+        a["preamble"] = substitute(PREAMBLES[instrument], cfg)
+        a["manuscripts"] = paths["manuscripts"]; a["rulebook_path"] = paths["rulebook_path"]
+        a["hats"] = [Dict("nn" => h["nn"], "key" => h["key"], "persona_path" => h["persona_path"], "substrate" => h["substrate"], "needs" => h["needs"], "anchor" => h["anchor"]) for h in roster if !h["not_applicable"]]
+        a["adjudicated_titles"] = adjudicated_titles(cfg, ledger); a["finding_types"] = finding_types(cfg); a["cost"] = cost; a["opened"] = opened
+    elseif instrument == "check-docs"
+        a["preamble"] = substitute(PREAMBLES[instrument], cfg); a["policy_path"] = paths["policy_path"]; a["finding_types"] = finding_types(cfg)
+        a["lanes"] = [Dict("nn" => l["nn"], "key" => l["key"], "kind" => l["kind"], "brief_path" => l["brief_path"], "files" => l["files"], "anchor" => l["anchor"]) for l in roster]
+    elseif instrument == "bug-hunt"
+        bh = cfg["instruments"]["bug-hunt"]
+        a["preamble"] = substitute(PREAMBLES[instrument], cfg)
+        a["lanes"] = [Dict("nn" => l["nn"], "key" => l["key"], "kind" => l["kind"], "brief_path" => l["brief_path"], "files" => l["files"], "anchor" => l["anchor"]) for l in roster]
+        a["oracles"] = bh["oracles"]; a["witness_env"] = bh["witness_env"]
+        a["witness_cmd"] = "julia --project=\"$(joinpath(root, bh["witness_env"]))\" --startup-file=no"
+        a["invariants_path"] = paths["invariants_path"]
+    else
+        a["base"] = base; a["head"] = head; a["kind"] = kind; a["covered"] = covered_paths(cfg)
+        a["diff_path"] = paths["diff_path"]; a["diffstat_path"] = paths["diffstat_path"]; a["claims_path"] = paths["claims_path"]
+        a["lanes"] = [Dict("nn" => l["nn"], "key" => l["key"], "kind" => l["kind"], "brief_path" => l["brief_path"], "anchor" => l["anchor"]) for l in roster]
+    end
+    schema = GBGCodingTools.instrument_schema(instrument)
+    errs = validate(schema["properties"]["args"], a; root = schema)
+    isempty(errs) || throw(PreflightError("rendered args do not validate (a tool defect):\n  " * join(errs, "\n  ")))
+    return a
+end
+
+"""
+    copy_scripts(cfg, instrument, round) -> String
+
+Copies `instruments/<instrument>/workflow/*.js` of the running copy into
+`.gbg/scratch/<round>/workflow/` (V1: a Workflow `scriptPath` must lie inside the project). Returns
+the directory.
+"""
+function copy_scripts(cfg::AbstractDict, instrument::AbstractString, round::AbstractString)
+    src = joinpath(instrument_dir(instrument), "workflow"); dst = workflow_dir(cfg, round); mkpath(dst)
+    for f in readdir(src)
+        endswith(f, ".js") && cp(joinpath(src, f), joinpath(dst, f); force = true)
+    end
+    # the verifiers and auditors of other instruments a round may need (dismissals, severity, verifiers)
+    for other in ("check-consistency", "bug-hunt")
+        other == instrument && continue
+        for f in ("verify-act.js", "verify-state.js", "severity-recheck.js", "dismissals.js")
+            p = joinpath(instrument_dir(other), "workflow", f); isfile(p) && cp(p, joinpath(dst, f); force = true)
+        end
+    end
+    return dst
+end
+
+"""
+    workflow_call(script, a) -> String
+
+The exact text the session launches: `Workflow({scriptPath: "<script>", args: <json>})`.
+"""
+workflow_call(script::AbstractString, a::AbstractDict) = "Workflow({scriptPath: " * JSON3.write(script) * ", args: " * JSON3.write(a) * "})"
+
+function save_args(cfg, round, name, a)
+    p = joinpath(workflow_dir(cfg, round), name * ".args.json"); mkpath(dirname(p))
+    open(p, "w") do io; JSON3.pretty(io, JSON3.write(a)); println(io); end
+    return p
+end
+
+main_script(instrument) = Dict("check-consistency" => "panel.js", "check-docs" => "lanes.js", "bug-hunt" => "hunt.js", "audit-changes" => "audit.js")[instrument]
+
+# ---- the verb ----------------------------------------------------------------------------------------------
+
+"""
+    torn_check(cfg; io) -> Bool
+
+`CFG.TORN` as preflight and every round verb run it: true when clean.
+"""
+function torn_check(cfg::AbstractDict; io::IO = stderr)
+    checks, code = Doctor.run(cfg; only = ["CFG.TORN"], io = devnull)
+    c = first(checks)
+    c.status == :FAIL && println(io, "CFG.TORN: ", c.detail)
+    return c.status != :FAIL
+end
+
+"""
+    preflight(cfg, instrument; profile = nothing, hats = String[], strength = "economy", no_seed = false, dry = false, base = nothing, io = stdout) -> Int
+
+`gbg preflight <instrument> [--profile all|core|explicit] [--hats a,b] [--strength full] [--no-seed] [--dry] [--base <commit>]`:
+the quick doctor, `CFG.TORN`, `gbg self verify`; refuses (exit 2) an open round of this instrument or an
+uncommitted change under a closed or abandoned round; opens the round (writes `ROUND.toml`, never
+`git add`); copies the scripts and writes the payloads; prints the protocol, the Workflow call and the
+next step. `dry` opens and writes nothing and prints the round id and paths it would use. Returns the
+exit code.
+"""
+function preflight(cfg::AbstractDict, instrument::AbstractString; profile = nothing, hats = String[], strength = "economy",
+                   no_seed::Bool = false, dry::Bool = false, base = nothing, io::IO = stdout)
+    instrument in Sync.INSTRUMENTS || (println(io, "preflight: unknown instrument $instrument"); return 2)
+    instrument in cfg["instruments"]["enabled"] || (println(io, "preflight: $instrument is not enabled in .gbg/config.toml"); return 2)
+    root = cfg["root"]
+    code = doctor(cfg, :QUICK; io)
+    code == 0 || (println(io, "preflight: the quick doctor failed — fix the FAIL lines above (or exempt an exemptable one)"); return 2)
+    torn_check(cfg; io) || (println(io, "preflight: refused — a pinned or managed file is modified in the working tree (CFG.TORN)"); return 2)
+    sv = self_verify(root; io = devnull)
+    sv == 0 || (println(io, "preflight: gbg self verify exit $sv — the running copy is not the pinned one"); return 2)
+    rounds = RoundFiles.rounds(cfg)
+    for r in rounds
+        r.state == :open && r.round["instrument"] == instrument && (println(io, "preflight: refused — $(r.name) is an open $instrument round; close or abandon it first"); return 2)
+    end
+    dirty = [p for (_, p) in Git.porcelain(root)]
+    for r in rounds
+        r.state in (:closed, :abandoned) || continue
+        rel = relpath(r.dir, root)
+        any(p -> startswith(p, rel * "/"), dirty) && (println(io, "preflight: refused — uncommitted change under the $(String(r.state)) round $(r.name); commit or restore it"); return 2)
+    end
+    if instrument == "audit-changes"
+        base === nothing && (println(io, "preflight: audit-changes needs --base <commit> — the commit the norm is pinned at"); return 2)
+        Git.run(root, "cat-file", "-e", base * "^{commit}") === nothing && (println(io, "preflight: --base $base is not a commit of this repository"); return 2)
+    end
+    round = next_round_id(cfg, instrument)
+    kind = instrument == "audit-changes" ? audit_kind(cfg, base) : "both"
+    roster = resolve_roster(cfg, instrument; profile, explicit = hats, kind)
+    if dry
+        println(io, "preflight --dry: would open $round with $(length(roster)) $(instrument == "check-consistency" ? "hats" : "lanes") (", join((r["key"] for r in roster), ", "), ")")
+        println(io, "  scripts → ", workflow_dir(cfg, round)); println(io, "  payloads → ", payload_dir(cfg, round)); println(io, "  round → ", round_dir(cfg, round))
+        return 0
+    end
+    cc = cfg["instruments"]["check-consistency"]
+    seeding = instrument == "check-consistency" && cc["seed_rounds"] && !no_seed
+    seeding && !isfile(joinpath(root, cc["seed_catalog"])) && (println(io, "preflight: seed_rounds = true but $(cc["seed_catalog"]) is absent (CFG.SEEDS); --no-seed to run unseeded"); return 2)
+    st = stamps(cfg)
+    opened = Dates.format(now(), dateformat"yyyy-mm-ddTHH:MM:SS")
+    head = something(Git.head(root), "0"^40)
+    rd = round_dir(cfg, round); mkpath(joinpath(rd, "findings"))
+    rec = merge(st, Dict{String,Any}("round" => round, "instrument" => instrument, "schema_version" => SCHEMA_VERSION, "head" => head,
+        "roster" => roster_record(roster), "cost" => cfg["cost"]["default"], "strength" => strength, "hostname" => gethostname(),
+        "model_hint" => economy_model(), "opened" => opened, "dead_lanes" => String[], "passes" => 0))
+    instrument == "audit-changes" && (rec["base"] = something(Git.run(root, "rev-parse", base), base); rec["kind"] = kind)
+    seeding && (rec["seed_salt"] = round)
+    rec_errs = validate(load_schema("round"), rec)
+    if !isempty(rec_errs)
+        # `kind` is not a ROUND.toml field; keep it out of the marker and in args
+        delete!(rec, "kind"); rec_errs = validate(load_schema("round"), rec)
+        isempty(rec_errs) || (println(io, "preflight: ROUND.toml would not validate — a tool defect:\n  ", join(rec_errs, "\n  ")); return 3)
+    end
+    open(joinpath(rd, "ROUND.toml"), "w") do f
+        println(f, "# ROUND.toml — written by gbg preflight; the CLI's marker, never edited by hand (ARCHITECTURE §6.1)")
+        TOML.print(f, rec)
+    end
+    scripts = copy_scripts(cfg, instrument, round)
+    paths = write_payloads(cfg, instrument, round, roster; base)
+    a = render_args(cfg, instrument, round, roster, paths; strength, cost = cfg["cost"]["default"], opened,
+                    base = get(rec, "base", nothing), head, kind)
+    save_args(cfg, round, "main", a)
+    println(io, read(joinpath(instrument_dir(instrument), "PROTOCOL.md"), String))
+    println(io, "\n════════ ROUND OPENED: $round ════════")
+    println(io, "round directory: $rd\nscripts and payloads: $scripts")
+    if instrument == "check-consistency"
+        println(io, "\nNEXT: gbg round prepare $round      (builds the docs under GBG_ROUND, consolidates the manuscripts", seeding ? ", plants the seeds)" : ")")
+        println(io, "THEN launch the panel exactly as printed here:\n")
+    elseif instrument == "check-docs"
+        println(io, "\nNEXT: gbg round prepare $round      (scans, reflection checks, the build, the built-HTML scans; banks lane 00-scans)")
+        println(io, "THEN launch the lanes exactly as printed here:\n")
+    elseif instrument == "bug-hunt"
+        println(io, "\nNEXT: launch the hunt exactly as printed here (no prepare step; the witnesses go to $rd/witnesses/):\n")
+    else
+        println(io, "\nkind = $kind, base = $(rec["base"]), head = $head; the diff, diffstat and claims are under $(payload_dir(cfg, round))")
+        println(io, "NEXT: launch the audit exactly as printed here:\n")
+    end
+    println(io, workflow_call(joinpath(scripts, main_script(instrument)), a))
+    println(io, "\nAFTER the Workflow returns: gbg round bank $round" * (instrument == "audit-changes" ? "   (gbg audit-changes bank $round runs the executable claims first)" : ""))
+    return 0
+end
+
+function cmd_preflight(args)
+    o = parse_options(args; valued = ["profile", "hats", "strength", "base"])
+    isempty(o.positional) && (println(stderr, "usage: gbg preflight <instrument> [--profile all|core|explicit] [--hats a,b] [--strength full] [--no-seed] [--dry] [--base <commit>]"); return 2)
+    cfg = Config.read()
+    hats = haskey(o.values, "hats") ? String.(split(o.values["hats"], ',')) : String[]
+    return preflight(cfg, o.positional[1]; profile = get(o.values, "profile", nothing), hats, strength = get(o.values, "strength", "economy"),
+                     no_seed = "no-seed" in o.flags, dry = "dry" in o.flags, base = get(o.values, "base", nothing))
+end
+VERBS["preflight"] = cmd_preflight
+
+end # module Preflight
