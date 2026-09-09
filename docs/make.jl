@@ -11,6 +11,7 @@ const ROOT = normpath(joinpath(@__DIR__, ".."))
 cp(joinpath(ROOT, "docs", "ARCHITECTURE.md"), joinpath(@__DIR__, "src", "architecture.md"); force = true)
 open(joinpath(@__DIR__, "src", "guide", "doctor.md"), "w") do io
     println(io, "# The doctor's checks\n")
+    println(io, "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human.\n")
     println(io, "Generated at build time from the doctor's own table (`Doctor.CHECKS`): every stable id, its family, whether")
     println(io, "the `QUICK` set runs it, whether it needs `--deep`, and whether a `scope = \"check\"` ledger entry may")
     println(io, "exempt it. The check's own detail line says what failed and what fixes it; ARCHITECTURE §7.3 is the")
@@ -28,6 +29,7 @@ end
 demote(line) = startswith(line, "#") ? "#" * line : line
 open(joinpath(@__DIR__, "src", "guide", "instruments.md"), "w") do io
     println(io, "# [The instruments](@id instruments)\n")
+    println(io, "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human.\n")
     println(io, "Generated at build time from `instruments/<name>/PROTOCOL.md`: the text `gbg preflight <name>` injects into the")
     println(io, "session that runs the instrument, verbatim. Each protocol assumes the round its preflight opened.\n")
     for name in ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
@@ -39,6 +41,7 @@ open(joinpath(@__DIR__, "src", "guide", "instruments.md"), "w") do io
 end
 open(joinpath(@__DIR__, "src", "guide", "rules.md"), "w") do io
     println(io, "# [The rules](@id rules)\n")
+    println(io, "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human.\n")
     println(io, "Generated at build time from this package's rendered policy copy under `.gbg/policy/`: the shared rulebook")
     println(io, "every consumer imports, with this package's parameters substituted. A rule's id is stable; the scans and the")
     println(io, "doctor cite it.\n")
