@@ -38,6 +38,15 @@ include("helpers.jl")
         r = G.run_scan(cfg, CATALOG[id]; ledger = Dict{String,Any}[], files)
         @test isempty([h for h in r.hits if html || h.file == c["file"]])
     end
+    # signature_fidelity's `examined` is the scan's population, and population 0 is the DEAD refusal. It
+    # counts what was COMPARED: an extension-homed binding with no methods loaded is skipped, so it must
+    # not be counted, and a package of nothing but those is DEAD rather than clean.
+    @testset "signature_fidelity counts what it compared" begin
+        n = Ref(0)
+        rows = G.Reflection.signature_fidelity(G.Config.read(FIXTURE); examined = n)
+        @test n[] > 0                                                    # population 0 would be DEAD
+        @test n[] >= count(r -> !occursin("EXTENSION-HOMED", r), rows)   # a skipped binding is not one compared
+    end
     @testset "the clean fixture passes every hard scan" begin
         results, code = G.scan_docs(G.Config.read(FIXTURE); hard_only = true, io = devnull)
         @test code == 0

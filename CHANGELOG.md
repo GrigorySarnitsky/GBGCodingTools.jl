@@ -5,6 +5,19 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 
 ## Unreleased
 
+**A docstring's order changed fleet-wide, and every consumer's prose is affected.**
+`RULE.DOC.HOME_ORDER` put the caveat admonition at position (4), before the formula, the citation and
+the cross-links; it now puts it last, before the fields list, which is where `RULE.DOC.ADMONITION_TITLE`
+and the enforced shape rule always had it. The two rules contradicted each other and one of them had to
+move. A docstring written to the old order becomes an outlier at the consumer's next round, so the four
+science packages migrate their docstrings when they bump, not before: the rulebook they obey is the one
+they pin. The two judging personas were rewritten in the same commit as the rule.
+
+**Three JSON schemas were tightened** in a commit whose message did not name them: `managed` and `tally`
+closed their per-entry maps, and `exemptions` raised its `reason` floor. The last was reverted, because
+`Ledger.read` throws where the doctor would have named the entry and carried on; the other two stand,
+and a sidecar an older copy wrote now names itself in the refusal.
+
 MINOR so far. The self-application sweep's remainder is closed. New: `SCAN.ARGS_FORM` (triage) for the
 argument-form rule, which had no enforcer; `test/coverage.jl` driving `main()` and its exit contract,
 every doctor check as a callable, every Workflow script's shape, the consolidator against a golden

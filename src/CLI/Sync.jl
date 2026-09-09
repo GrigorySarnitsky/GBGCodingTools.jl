@@ -494,14 +494,17 @@ end
 
 `.gbg/managed.json` parsed and validated against `schema/managed.schema.json`, or an empty record when
 absent. The argument is `cfg`, the validated config. Throws a [`SyncError`](@ref) on a sidecar that does
-not validate, since every managed-file verdict is read from it. Returns the dictionary with a `files` map.
+not validate, since every managed-file verdict is read from it, and the message names the entry: the
+schema closed its `files` map after a release that never validated it, so a sidecar an older copy wrote
+can fail here and the reader must be told which line to look at. Returns the dictionary with a `files` map.
 """
 function read_sidecar(cfg::AbstractDict)
     p = sidecar_path(cfg)
     isfile(p) || return Dict{String,Any}("files" => Dict{String,Any}())
     d = JSON3.read(read(p, String), Dict{String,Any})
     errs = validate(load_schema("managed"), d)                  # the schema existed and nothing read it
-    isempty(errs) || throw(SyncError("$(relpath(p, cfg["root"])) does not validate: " * join(errs, "; ")))
+    isempty(errs) || throw(SyncError("$(relpath(p, cfg["root"])) does not validate: " * join(errs, "; ") *
+                                     " — a sidecar written before its schema was closed; delete it and re-run gbg sync"))
     haskey(d, "files") || (d["files"] = Dict{String,Any}())
     return d
 end

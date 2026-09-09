@@ -165,9 +165,9 @@ end
 Every existence check the config implies (the doctor's `CFG.SURFACES`): each non-optional surface glob
 matches at least one file; each `file#heading` anchor resolves to exactly one heading; each module has
 a `module <Name>` block under `src/`; each `[paths]` entry is a directory; the `glossary` file exists and
-a non-empty `built_html` has a `docs/` directory beside it; each `extensions` file, the fixed path
-`docs/make.jl` a consumer's `docs_build` command is expected to run, each `executable_claims` file and,
-while `seed_rounds` is on, the seed catalogue exist. Returns the problems found, empty when all hold.
+a non-empty `built_html` has a `docs/` directory beside it; each `extensions` file, every `.jl` script
+the `docs_build` command names, each `executable_claims` file and, while `seed_rounds` is on, the seed
+catalogue exist. Returns the problems found, empty when all hold.
 """
 function check_paths(cfg::AbstractDict)
     root = cfg["root"]; errs = String[]
@@ -205,7 +205,13 @@ function check_paths(cfg::AbstractDict)
     for e in cfg["package"]["extensions"]
         isfile(joinpath(root, e)) || push!(errs, "package.extensions: $(repr(e)) does not exist")
     end
-    isfile(joinpath(root, "docs", "make.jl")) || push!(errs, "package.docs_build: docs/make.jl does not exist")
+    # the script `docs_build` actually runs, not a fixed path: a consumer whose command names another
+    # file was having a file it never runs checked, while the one it runs went unchecked
+    scripts = [String(m.match) for m in eachmatch(r"[^\s\"']+\.jl", cfg["package"]["docs_build"])]
+    isempty(scripts) && push!(errs, "package.docs_build: names no .jl script to run")
+    for s in scripts
+        isfile(joinpath(root, s)) || push!(errs, "package.docs_build: $(repr(s)) does not exist")
+    end
     srcfiles = vcat((glob_files(root, g) for g in s["src"])...)
     for m in cfg["package"]["modules"]
         re = Regex("^\\s*(baremodule|module)\\s+" * m * "\\b", "m")
