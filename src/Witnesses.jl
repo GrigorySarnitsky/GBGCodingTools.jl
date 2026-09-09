@@ -30,7 +30,8 @@ The fields are:
 - `name` — the file name.
 - `status` — `:pass`, `:fail` (an assertion came out false — the witness working), `:broken` (an
   exception outside an assertion, a load error, or a pass with zero assertions — evidence of nothing),
-  `:blocked` (the file declares `# blocked: <reason>`, errored and failed nothing) or `:refused` (the file loads
+  `:blocked` (the file declares `# blocked: <reason>`, reported its counts, errored and failed nothing;
+  a run that reported no counts is `:broken`) or `:refused` (the file loads
   something it may not, or `include`s a file — never run).
 - `passes`, `fails`, `errors` — the Test counts the run reported (zeros when it did not get that far).
 - `reason` — the blocked reason, the refusal, or the first lines of a broken run's output.
@@ -146,7 +147,8 @@ From that line the result is `:pass` (assertions and none failing), `:fail` (an 
 evidence a hunt wants), `:broken` (an exception outside an assertion, an assertion that threw, or a
 pass with ZERO assertions, which is evidence of nothing), or `:blocked` (it errored, failed nothing,
 and carries a `# blocked: <reason>` header; one that also failed is `:broken`, its reason naming both
-counts). Returns the result with the counts and the reason.
+counts, and so is one that reported no counts at all — an exit or a crash — header or not). Returns
+the result with the counts and the reason.
 """
 function run_one(path::AbstractString; project::AbstractString, package::AbstractString)
     name = basename(path)
@@ -161,8 +163,9 @@ function run_one(path::AbstractString; project::AbstractString, package::Abstrac
     if m === nothing
         exc = match(r"GBG_WITNESS_EXCEPTION (.*)", text)
         reason = exc === nothing ? first(strip(text), 600) : String(exc.captures[1])
-        blocked === nothing || return WitnessResult(name, :blocked, 0, 0, 0, blocked)
-        return WitnessResult(name, :broken, 0, 0, 0, "exception outside an assertion: " * reason)
+        # no counts were reported (the process exited or crashed before the wrapper's line): whether it
+        # failed is unknown, so it is never :blocked — that state needs a report of zero failures
+        return WitnessResult(name, :broken, 0, 0, 0, "no counts reported (the process exited or crashed): " * reason * (blocked === nothing ? "" : "; header: " * blocked))
     end
     p, f, e = parse.(Int, m.captures)
     if e > 0

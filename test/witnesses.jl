@@ -11,6 +11,8 @@ include("helpers.jl")
     write(joinpath(dir, "refused.jl"), "using Test, GBGFixture\ninclude(\"helper.jl\")\n@testset \"x\" begin\n  @test true\nend\n")
     write(joinpath(dir, "blocked.jl"), "# blocked: needs a GPU this host lacks\nusing Test, GBGFixture\n@testset \"gpu\" begin\n  error(\"no device\")\nend\n")
     # a blocked header does not file away a witness that was SEEN TO FAIL (rc.1 round, operational-claims#2)
+    # a run that reports no counts (exit before the wrapper's line) is never :blocked either
+    write(joinpath(dir, "blocked_but_exited.jl"), "# blocked: needs a GPU this host lacks\nusing Test, GBGFixture\n@test twice(2) == 5\nexit(7)\n")
     write(joinpath(dir, "blocked_but_failed.jl"), "# blocked: needs a GPU this host lacks\nusing Test, GBGFixture\n@testset \"gpu\" begin\n  @test twice(2) == 5\n  @test error(\"no device\")\nend\n")
     code, results = G.Witnesses.run(dir; expect = :fail, package = "GBGFixture", project, io = devnull)
     st = Dict(r.name => r.status for r in results)
@@ -21,6 +23,7 @@ include("helpers.jl")
     @test st["refused.jl"] == :refused
     @test st["blocked.jl"] == :blocked
     @test st["blocked_but_failed.jl"] == :broken
+    @test st["blocked_but_exited.jl"] == :broken
     @test occursin("1 assertion(s) failed", only(r for r in results if r.name == "blocked_but_failed.jl").reason)
     @test code == 2                                             # a refused witness makes the run exit 2
     rm(joinpath(dir, "refused.jl"))

@@ -311,12 +311,12 @@ unit,words,longest_paragraph,admonitions
 "TreeHash.jl :: TreeHash",54,53,0
 "TreeHash.jl :: blob_hash(path) -> String",35,32,0
 "TreeHash.jl :: tree_hash(dir; skip = ('.git',)) -> String",87,81,0
-"Witnesses.jl :: WitnessResult",112,102,0
+"Witnesses.jl :: WitnessResult",123,113,0
 "Witnesses.jl :: Witnesses",91,90,0
 "Witnesses.jl :: blocked_reason(path) -> Union{String,Nothing}",26,23,0
 "Witnesses.jl :: refusal(path, package) -> Union{String,Nothing}",54,50,0
 "Witnesses.jl :: run(dir; expect, package, project, names = String[], io = st",184,76,0
-"Witnesses.jl :: run_one(path; project, package) -> WitnessResult",160,75,0
+"Witnesses.jl :: run_one(path; project, package) -> WitnessResult",180,95,0
 "Witnesses.jl :: witness_project(root, witness_env, package) -> String",43,38,0
 "code_in_math.jl :: math_spans(lines) -> Vector{Tuple{Int,String}}",48,45,0
 "config.md § [The config](@id config)",170,62,1
