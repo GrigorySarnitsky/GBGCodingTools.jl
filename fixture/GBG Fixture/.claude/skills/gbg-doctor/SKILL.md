@@ -9,6 +9,6 @@ round, and prints this instrument's protocol, the exact `Workflow` call and the 
 exit aborts the skill here; nothing below it is a fallback. (`/gbg-doctor` runs `gbg doctor` and opens
 no round: the doctor is not an instrument.)
 
-!gbg doctor
+!`gbg doctor`
 
 Follow the protocol printed above, exactly and to its end.
