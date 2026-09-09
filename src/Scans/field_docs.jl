@@ -47,11 +47,11 @@ register_scan!("SCAN.FIELD_DOCS", function (cfg, files)
             line = count(==('\n'), src[1:prevind(src, m.offset)]) + 1
             real = real_fields(body)
             documented = documented_fields(doc)
-            if documented === nothing
+            checked += 1                                          # every struct opened was checked: a
+            if documented === nothing                                 # NOLIST hit with population 0 reads as a DEAD scan
                 isempty(real) || push!(hits, Hit(f, line, "NOLIST $name stores $(real) but has no `The fields are` list — add one, or record why not in the ledger"; symbol = name))
                 continue
             end
-            checked += 1
             ghost = setdiff(documented, real); missed = setdiff(real, documented)
             isempty(ghost) || push!(hits, Hit(f, line, "GHOST $name documents $(ghost), which the struct does not have; its fields are $(real)"; symbol = name))
             isempty(missed) || push!(hits, Hit(f, line, "UNDOC $name: field(s) $(missed) have no bullet"; symbol = name))

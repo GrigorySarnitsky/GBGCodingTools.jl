@@ -165,7 +165,8 @@ function prepare(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
             results, _ = scan_docs(cfg; io = rio)
             for r in results
                 r.tier == "hard" || continue
-                r.population == 0 && r.exempted == 0 && println(io, "prepare: DEAD scan $(r.id) — $(r.note)")
+                # a scan with hits is not dead however it counted its population — the same guard `report` uses
+                (r.population == 0 && r.exempted == 0 && isempty(r.hits)) && println(io, "prepare: DEAD scan $(r.id) — $(r.note)")
                 for h in r.hits; push!(banked, scan_finding(r, h)); end
             end
             println(rio, "\n=== REFLECTION CHECKS ===")
@@ -483,7 +484,8 @@ end
 """
     rerun(cfg, round, lanes; io = stdout) -> Int
 
-`gbg round rerun <round> --lanes a,b`: prints the instrument's Workflow call restricted to the lanes
+`gbg round rerun <round> --lanes a,b`: prints the call to the instrument's Workflow (its `workflow/*.js`
+script) restricted to the lanes
 the last bank classified DEAD. The arguments are:
 
 - `cfg` — the validated config.

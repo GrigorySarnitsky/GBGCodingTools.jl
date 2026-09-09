@@ -162,7 +162,7 @@ unit,words,longest_paragraph,admonitions
 "Passes.jl :: close(cfg, round; io = stdout) -> Int",159,112,0
 "Passes.jl :: grade(cfg, round; io = stdout) -> Int",124,85,0
 "Passes.jl :: pass_open(cfg, round; regrade = false, io = stdout) -> Int",132,59,0
-"Preflight.jl :: Preflight",57,56,0
+"Preflight.jl :: Preflight",72,71,0
 "Preflight.jl :: audit_kind(cfg, base) -> String",56,52,0
 "Preflight.jl :: catalog_sha() -> String",14,11,0
 "Preflight.jl :: config_sha(cfg) -> String",13,10,0
@@ -172,7 +172,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",199,100,0
 "Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",131,80,0
 "Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
-"Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",54,51,0
+"Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",76,73,0
 "Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",218,107,0
 "Preflight.jl :: resolve_hunt_lanes(cfg) -> Vector{Dict}",22,19,0
 "Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",65,40,0
@@ -182,7 +182,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: torn_check(cfg; io = stderr) -> Bool",43,15,0
 "Preflight.jl :: workflow_call(script, a) -> String",14,10,0
 "Preflight.jl :: write_payloads(cfg, instrument, round, roster; base = nothin",115,52,0
-"Recall.jl :: Recall",44,43,0
+"Recall.jl :: Recall",52,51,0
 "Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
 "Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0
 "Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
@@ -223,14 +223,14 @@ unit,words,longest_paragraph,admonitions
 "Rounds.jl :: load(cfg, round) -> (dir, record)",16,11,0
 "Rounds.jl :: prepare(cfg, round; io = stdout) -> Int",123,84,0
 "Rounds.jl :: render(cfg, round; io = stdout) -> Int",51,20,0
-"Rounds.jl :: rerun(cfg, round, lanes; io = stdout) -> Int",81,26,0
+"Rounds.jl :: rerun(cfg, round, lanes; io = stdout) -> Int",86,28,0
 "Rounds.jl :: run_under_round(cfg, round, cmdline; log) -> Int",60,29,0
 "Rounds.jl :: test(cfg, round; io = stdout) -> Int",54,24,0
 "Scan.jl :: AI_BANNER",28,27,0
 "Scan.jl :: Hit(file, line, text; symbol = '')",83,59,0
 "Scan.jl :: ProseLine",94,82,0
 "Scan.jl :: SCANS",35,34,0
-"Scan.jl :: ScanResult",85,76,0
+"Scan.jl :: ScanResult",100,91,0
 "Scan.jl :: apply_ledger(cfg, ledger, row, hits) -> (kept, exempted, dis",117,61,0
 "Scan.jl :: built_pages(build_dir) -> Vector{String}",37,34,0
 "Scan.jl :: cmd_scan(args) -> Int",37,34,0

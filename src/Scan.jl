@@ -36,7 +36,8 @@ The outcome of one scan. The fields are:
 - `population` — what the scan measured (files, docstrings, exports, arguments or pages); zero means
   the scan measured nothing and is DEAD.
 - `exempted` — the number of hits the ledger removed.
-- `note` — a scan-level message: an error, a dead-lane reason, empty otherwise.
+- `note` — a scan-level message: an error, a reason a lane is dead (a lane being one agent's share of
+  a round, bound in [`GBGCodingTools`](@ref)), empty otherwise.
 """
 struct ScanResult
     id::String

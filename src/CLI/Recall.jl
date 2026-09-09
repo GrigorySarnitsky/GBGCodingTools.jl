@@ -6,7 +6,8 @@
 
 [`Recall.mark!`](@ref) marks the banked findings that match a planted seed, [`Recall.per_class`](@ref)
 computes recall per class with skipped classes UNDEFINED, and [`Recall.suspect_hats`](@ref) names the
-hats with two or more seeds on their substrate (the view of the corpus a hat reads) and zero matches.
+hats that were handed two or more seeds and reported none (only a `siteonly` hat is handed a narrowed
+manuscript; every other substrate gets the whole seeded one).
 """
 module Recall
 

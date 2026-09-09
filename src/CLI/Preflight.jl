@@ -6,7 +6,8 @@
 """
     Preflight
 
-The opener of a round and the one renderer of Workflow args. [`Preflight.preflight`](@ref) is the verb;
+The opener of a round and the one renderer of the args of a Workflow — the instrument's `workflow/*.js`
+script, which the session running the round launches. [`Preflight.preflight`](@ref) is the verb;
 [`Preflight.resolve_roster`](@ref) turns config and catalogue into the numbered hats or lanes;
 [`Preflight.write_payloads`](@ref) writes every large payload as a file under the round's scratch;
 [`Preflight.render_args`](@ref) builds the small args object naming those paths;
@@ -239,8 +240,9 @@ lane_catalog(instrument) = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "cata
 """
     resolve_checkdocs_lanes(cfg) -> Vector{Dict}
 
-The check-docs lanes: one surface lane per non-empty surface key (`rationale`, `pages`, `src`, `ext`,
-`literate`, `built-html`) carrying the catalogue's surface brief and its files, refined by
+The check-docs lanes, a lane being one agent's share of the round — here one surface of the corpus,
+with the brief for reading it. One surface lane per non-empty surface key (`rationale`, `pages`, `src`,
+`ext`, `literate`, `built-html`) carrying the catalogue's surface brief and its files, refined by
 `lanes_extra` (a file named there leaves the engine's lane and joins the extra lane), then the
 catalogue's cross lanes (`family`, `cold-reader`, `operational-claims`). Returns the list.
 """
