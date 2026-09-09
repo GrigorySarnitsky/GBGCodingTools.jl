@@ -8,7 +8,8 @@
 bank. The arguments are:
 
 - `cfg` — the validated config.
-- `round` — the round id (`<date>-<instrument>-<NN>`).
+- `round` — the round id (`<date>-<instrument>-<NN>`), the instrument being one of the four review
+  procedures [`GBGCodingTools`](@ref) binds.
 - `io` — where the report goes.
 
 It runs `package.julia_test` (the gate claim) and every file named under `executable_claims` with

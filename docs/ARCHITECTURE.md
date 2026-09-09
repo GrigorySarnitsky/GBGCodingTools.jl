@@ -953,7 +953,7 @@ GBGCodingTools.jl/
       Config.jl Schema.jl       loader + the ONE JSON-Schema-subset validator (types, required, enum, pattern, additionalProperties)
                                 over the TOML.parsefile Dict; no JSONSchema.jl
       Doctor.jl Sync.jl Init.jl Fleet.jl Bump.jl Release.jl Install.jl
-      Git.jl                    THE git questions the round verbs, the gate and the doctor ask (no other module shells out to git)
+      Git.jl                    the git questions the round verbs and the gate ask (Main.jl's stamp and Doctor.jl's GIT.* checks run their own)
       Ledger.jl                 THE reader of `.gbg/exemptions.toml` (scope, target, expiry, the `EXEMPT.*` checks' source)
       Preflight.jl              doctor-quick + self verify + round open + THE Workflow-args renderer (also used by `pass open`)
       Rounds.jl                 open/prepare/build/test/bank/rerun/pass/grade/close/abandon/list/render/import (+ --empty)/compare (--recorded)

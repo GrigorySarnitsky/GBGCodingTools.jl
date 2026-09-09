@@ -69,6 +69,11 @@ function per_class(findings::AbstractVector, ground_truth::AbstractDict)
     return out
 end
 
+# Which planted seeds a hat's own substrate could ever have shown it.
+sees_seed(substrate, seed, site_pages) =
+    substrate in ("full", "rawhtml") ? true :
+    substrate == "siteonly" ? seed["page"] in site_pages : false
+
 """
     suspect_hats(findings, ground_truth, roster, site_pages) -> Vector{String}
 
@@ -81,13 +86,15 @@ The arguments are:
 - `site_pages` — the page banners the site-only manuscript keeps; a `siteonly` hat sees only seeds on
   those pages.
 
-Returns the keys.
+A hat is judged only on the seeds its own substrate could show it: `full` and `rawhtml` see every
+planted seed, `siteonly` only those on a kept page, and `docstrings`, `rulebook` and `none` see none of
+the planted prose at all, so they are never suspect. Returns the keys.
 """
 function suspect_hats(findings::AbstractVector, ground_truth::AbstractDict, roster::AbstractVector, site_pages::AbstractSet)
     out = String[]
     for h in roster
         get(h, "not_applicable", false) && continue
-        seeds = [s for s in get(ground_truth, "seeded", Any[]) if h["substrate"] != "siteonly" || s["page"] in site_pages]
+        seeds = [s for s in get(ground_truth, "seeded", Any[]) if sees_seed(h["substrate"], s, site_pages)]
         length(seeds) >= 2 || continue
         any(f -> get(f, "lane", "") == h["key"] && get(f, "seeded", false), findings) || push!(out, h["key"])
     end

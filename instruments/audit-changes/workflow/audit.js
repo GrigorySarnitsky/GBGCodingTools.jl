@@ -53,6 +53,18 @@ const SCHEMA = {
   required: ['schema_version', 'round', 'lane', 'verdict', 'checked', 'candidates_found', 'findings'],
 }
 
+// One item schema, but `previously_worked` is REQUIRED only on the lane the design asks it of
+// (PROTOCOL.md, the behaviour-change brief). Requiring it of all thirteen would make every other lane
+// answer a question its lens never looks at.
+const schemaFor = (lane) => {
+  const s = JSON.parse(JSON.stringify(SCHEMA))
+  if (lane.key !== 'behaviour-change') {
+    const req = s.properties.findings.items.required
+    s.properties.findings.items.required = req.filter(k => k !== 'previously_worked')
+  }
+  return s
+}
+
 const permitted = (lane) => [A.diff_path, A.diffstat_path, lane.brief_path, ...(lane.key === 'claim-versus-edit' && A.claims_path ? [A.claims_path] : [])].filter(Boolean)
 const PREAMBLE = (lane) => `You are auditing a CHANGE SET in ${A.package.name} — ${A.package.description}
 
@@ -86,7 +98,7 @@ const scribe = (r, path, label, phase) => !r ? null :
 phase('Audit')
 const results = await parallel(A.lanes.map(lane => () => agent(
   `${PREAMBLE(lane)}\n\nYOUR LENS: ${lane.key} — read your brief in full from ${lane.brief_path}; it is your procedure.${lane.key === 'claim-versus-edit' ? CLAIMS : ''}\n\nWhen done, FIRST use the Write tool to save the structured object as JSON to ${A.round_dir}/findings/${lane.nn}-${lane.key}.json with schema_version=${A.schema_version}, round="${A.round}", lane="${lane.key}". THEN return the same object.`,
-  { label: `audit:${lane.key}`, phase: 'Audit', schema: SCHEMA, agentType: 'general-purpose',
+  { label: `audit:${lane.key}`, phase: 'Audit', schema: schemaFor(lane), agentType: 'general-purpose',
     ...((STRENGTH === 'economy' && !lane.anchor) ? { model: ECONOMY } : {}) })
   .then(r => scribe(r, `${A.round_dir}/findings/${lane.nn}-${lane.key}.json`, `scribe:${lane.key}`, 'Audit'))))
 

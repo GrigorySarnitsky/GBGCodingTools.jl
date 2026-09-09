@@ -196,7 +196,7 @@ end
 """
     plan(cfg; ledger = Ledger.read(cfg)) -> Vector{ManagedFile}
 
-Every generated-managed file for a consumer: one skill stub per enabled instrument plus
+Every generated-managed file for a consumer: one skill stub per enabled instrument ([`GBGCodingTools`](@ref) binds the term) plus
 `gbg-doctor`, `.claude/settings.json`, `.claude/hooks/queue-guard.sh`, the policy copy and
 `test/regressions/README.md`. The arguments are:
 

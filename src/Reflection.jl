@@ -412,10 +412,10 @@ function signature_fidelity(cfg::AbstractDict; pkg::Module = load_package(cfg), 
         length(owners_of(name)) > 1 && continue
         def = defined_sets(name)
         def === nothing && continue
-        examined === nothing || (examined[] += 1)                 # what was COMPARED: the scan's population
         if def === :extension
             push!(out, "$name: EXTENSION-HOMED (no methods loaded) — skipped"); continue
         end
+        examined === nothing || (examined[] += 1)                 # what was COMPARED: the scan's population
         for a in setdiff(displayed_kw[name], def.kw)
             push!(out, "$name: displayed keyword `$a` matches NO defined method (stale signature?)")
         end

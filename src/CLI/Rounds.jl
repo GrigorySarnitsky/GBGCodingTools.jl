@@ -125,7 +125,7 @@ end
 """
     prepare(cfg, round; io = stdout) -> Int
 
-`gbg round prepare <round>`, by instrument. The arguments are:
+`gbg round prepare <round>`, by instrument ([`GBGCodingTools`](@ref) binds the term). The arguments are:
 
 - `cfg` — the validated config.
 - `round` — the round id.

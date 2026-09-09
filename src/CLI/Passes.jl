@@ -7,7 +7,7 @@
 [`Passes.pass_open`](@ref) opens a verification pass (nonce, range, expected counts, the regenerated
 manuscripts, the verifiers' Workflow calls); [`Passes.grade`](@ref) validates the verdict files, applies
 the demotion and the four closure channels and writes the tally; [`Passes.close`](@ref) checks every
-closing condition of the instrument in order and stamps the round closed.
+closing condition of the instrument ([`GBGCodingTools`](@ref) binds the term) in order and stamps the round closed.
 """
 module Passes
 

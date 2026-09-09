@@ -8,7 +8,8 @@
 The closure gate (§6.2 step 10). The arguments are:
 
 - `cfg` — the validated config.
-- `instruments...` — the instruments whose open rounds block (all four when none is named).
+- `instruments...` — the instruments whose open rounds block, an instrument being one of the four
+  review procedures [`GBGCodingTools`](@ref) binds (all four when none is named).
 - `io` — where the refusal is explained.
 
 It scans EVERY round directory under `.gbg/rounds/`. An open round of a named instrument is exit 1,

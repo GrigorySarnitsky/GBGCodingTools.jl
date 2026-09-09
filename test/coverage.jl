@@ -50,7 +50,20 @@ end
         # open. A brace count is not attempted: a regex literal and a nested template defeat one without a parser.
         code = replace(text, r"//[^\n]*" => "", r"/\*.*?\*/"s => "")
         @test iseven(count(==('`'), code))
+        # An even count is not enough, and a round proved it: a Markdown code span written into prompt
+        # prose with BARE backticks (`--glob …`) pairs, yet closes the template literal it sits in and
+        # reopens it, so the file stops parsing. A code span in prompt text is `\``-escaped. The shape
+        # here is a bare pair on one line holding a short run with no interpolation and no JS
+        # punctuation — what a span looks like and what stitched-together delimiters do not.
+        @test !occursin(r"(?<!\\)`[^`\n\$,)}]{1,60}(?<!\\)`", code)
     end
+end
+
+@testset "a bare code span in a Workflow prompt is caught" begin
+    # RULE.TEST.BOTH_DIRECTIONS: the check above must fail on the defect it was written for.
+    broken = replace(read(joinpath(TOOL, "instruments", "bug-hunt", "workflow", "hunt.js"), String), "\\`" => "`")
+    code = replace(broken, r"//[^\n]*" => "", r"/\*.*?\*/"s => "")
+    @test occursin(r"(?<!\\)`[^`\n\$,)}]{1,60}(?<!\\)`", code)
 end
 
 @testset "the consolidator against a golden manuscript" begin

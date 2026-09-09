@@ -85,7 +85,7 @@ const substrateText = (h) => {
   if (needs.includes('html')) parts.push(`ALSO inspect the RAW built HTML under: ${A.rawhtml}`)
   if (needs.includes('source')) parts.push(`ALSO the AUTHORED SOURCE (read it with Read/Grep; quote findings at file:line): the docstrings under ${A.repo}/src/ and ${A.repo}/ext/, the pages under ${A.repo}/docs/src/, and the rationale documents under ${A.repo}/docs/.`)
   if (needs.includes('rulebook')) parts.push(`THE RULEBOOK (AUTHORITATIVE — read it first, in full): ${A.rulebook_path}`)
-  if (needs.includes('git')) parts.push(`HISTORY: you may use Bash with git (log, diff, show, grep) and Read inside ${A.repo}; scope every search with `--glob '!.gbg/**'`. Never open anything under .gbg/ beyond the files named above, and never ~/.gbg/.`)
+  if (needs.includes('git')) parts.push(`HISTORY: you may use Bash with git (log, diff, show, grep) and Read inside ${A.repo}; scope every search with \`--glob '!.gbg/**'\`. Never open anything under .gbg/ beyond the files named above, and never ~/.gbg/.`)
   return parts.join('\n\n')
 }
 

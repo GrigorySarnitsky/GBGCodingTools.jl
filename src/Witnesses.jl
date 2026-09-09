@@ -10,7 +10,7 @@
 The witness runner of `/bug-hunt`. A witness is a self-contained Julia file asserting the CORRECT
 behaviour of the package, so it FAILS on a defective tree and PASSES once the defect is fixed;
 [`Witnesses.run`](@ref) executes every witness of a directory in a fresh process and holds the set to
-one expectation. The directory is usually a round's — a round being one run of one instrument over one
+one expectation. The directory is usually a round's — a round being one run of one instrument ([`GBGCodingTools`](@ref) binds the term) over one
 consumer, recorded as a tracked directory under `.gbg/rounds/`. An agent's account of a program that
 fails is not that program; this is.
 """

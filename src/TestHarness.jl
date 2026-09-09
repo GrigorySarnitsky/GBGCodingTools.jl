@@ -295,7 +295,8 @@ The function object a surface name denotes. The arguments are:
 - `name` — the symbol.
 - `pkg` — the umbrella module.
 - `modules` — the package modules.
-- `externals` — the external modules whose generics the package extends (searched last).
+- `externals` — the external modules whose generics the package extends (searched after `pkg` and
+  before `modules`).
 
 Returns the function, or `nothing`.
 """
@@ -580,7 +581,7 @@ The closure gate a consumer's `runtests.jl` ends with. The arguments are:
 - `root` — the consumer root, found by walking up from the working directory when not given.
 
 It runs the quick doctor set and [`GBGCodingTools.gate`](@ref), the generic closure gate, over the two
-code instruments (`bug-hunt`, `audit-changes`) in-process, `error()`ing on a non-zero return so a test run cannot pass over an open
+code instruments (`bug-hunt`, `audit-changes` — [`GBGCodingTools`](@ref) binds the term) in-process, `error()`ing on a non-zero return so a test run cannot pass over an open
 hunt or audit round, and prints one banner line `GBGCodingTools v<ver> gate` (the `TEST.PKG`
 witness). Never that generic gate over all four instruments: a test run must not fail on an open docs
 round.

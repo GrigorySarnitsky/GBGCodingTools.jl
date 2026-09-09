@@ -10,9 +10,9 @@ rendered `deviations.md` lists this package's declared deviations.
 
 Every rule has a stable id in the `RULE.` namespace — `RULE.<FAMILY>.<NAME>` — recorded in `RULES.toml`
 with its file, its one-line statement and its sentinel (the first sentence of its paragraph). The
-scan catalogue names the rule each scan enforces and an instrument's findings cite the ids they rest on;
-the doctor's `LEG.SENTINELS` check refuses a consumer `CLAUDE.md` that restates a rule verbatim outside
-the managed block.
+scan catalogue names the rule each scan enforces, and a ledger entry of scope `policy` names the rule it
+exempts; the doctor's `LEG.SENTINELS` check refuses a consumer `CLAUDE.md` that restates a rule verbatim
+outside the managed block. Each rule's `check` field says what catches its next violation.
 
 The files:
 

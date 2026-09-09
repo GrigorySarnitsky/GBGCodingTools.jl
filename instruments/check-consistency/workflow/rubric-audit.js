@@ -72,8 +72,8 @@ for (const u of unassigned) log(`   no rubric covers ${u.id}: ${u.why}`)
 // 2. BLIND RUN + 3. SCORE, pipelined per hat. The blind hat sees only the substrate text.
 phase('Blind run')
 const itemById = Object.fromEntries(A.items.map(i => [i.id, i]))
-const misassigned = Object.keys(byHat).filter(k => !A.hats.some(h => h.key === k))
-if (misassigned.length) log(`!! ${misassigned.length} finding-group(s) assigned to no hat of this roster: ${misassigned.join(', ')} — UNCOVERED, not clean`)
+const misassigned = Object.keys(byHat).filter(k => !A.hats.some(h => h.key === k)).map(k => ({ hat: k, ids: byHat[k] }))
+if (misassigned.length) log(`!! ${misassigned.length} finding-group(s) assigned to no hat of this roster: ${misassigned.map(m => m.hat).join(', ')} — UNCOVERED, not clean`)
 const hatKeys = Object.keys(byHat).filter(k => A.hats.some(h => h.key === k))
 const results = await pipeline(
   hatKeys,
@@ -114,9 +114,14 @@ const rank = { CAUGHT: 2, PARTIAL: 1, MISSED: 0 }
 for (const s of scores) if (!best[s.id] || rank[s.verdict] > rank[best[s.id].verdict]) best[s.id] = s
 const tally = { CAUGHT: 0, PARTIAL: 0, MISSED: 0 }
 for (const id of Object.keys(best)) tally[best[id].verdict]++
-log(`BEST-OF verdicts across assigned hats: ${JSON.stringify(tally)}; ${unassigned.length} findings NO persona claimed`)
-const gaps = Object.values(best).filter(s => s.verdict !== 'CAUGHT')
+// a finding assigned ONLY to a hat this roster does not carry was read by nobody. It is MISSED, and it
+// is named in the artifact, not only in a log line the reader of the JSON never sees.
+const orphaned = [...new Set(misassigned.flatMap(m => m.ids))].filter(id => !best[id])
+for (const id of orphaned) tally.MISSED++
+log(`BEST-OF verdicts across assigned hats: ${JSON.stringify(tally)}; ${unassigned.length} findings NO persona claimed; ${orphaned.length} assigned only to a hat outside this roster`)
+const gaps = Object.values(best).filter(s => s.verdict !== 'CAUGHT').concat(orphaned.map(id => (
+  { id, hat: '(off-roster)', verdict: 'MISSED', evidence: 'assigned only to a hat this roster does not carry, so no hat ever read it' })))
 for (const g of gaps) log(`   GAP ${g.id} [${g.hat}] ${g.verdict}: ${g.evidence}`)
-await agent(`Use the Write tool to write EXACTLY this JSON to ${A.out} and return the single word done:\n\n${JSON.stringify({ schema_version: A.schema_version, round: A.round, tally, unassigned, gaps, scores, byHat }, null, 2)}`,
+await agent(`Use the Write tool to write EXACTLY this JSON to ${A.out} and return the single word done:\n\n${JSON.stringify({ schema_version: A.schema_version, round: A.round, tally, unassigned, misassigned, orphaned, gaps, scores, byHat }, null, 2)}`,
   { label: 'write-rubric-audit', phase: 'Score', model: ECONOMY })
 return { written: Object.keys(best), dead: hatKeys.filter(k => !results[hatKeys.indexOf(k)]), empty: [], truncated: [] }

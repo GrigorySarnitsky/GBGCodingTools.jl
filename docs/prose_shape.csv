@@ -73,7 +73,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1788,1651,0
 "ARCHITECTURE.md § §8 Self-test and versioning",1508,446,0
 "ARCHITECTURE.md § §9 Resolution table",1475,1416,0
-"Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",101,55,0
+"Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",112,55,0
 "Bump.jl :: bump(cfg, ver; abandon = nothing, io = stdout) -> Int",119,78,0
 "CLI.md § CLI internals",31,22,1
 "Config.jl :: Config",64,63,0
@@ -105,7 +105,7 @@ unit,words,longest_paragraph,admonitions
 "Fleet.jl :: latest_tag(root) -> Union{VersionNumber,Nothing}",17,14,0
 "GBGCodingTools.jl :: GBGCodingTools",376,102,0
 "Gate.jl :: cmd_gate(args) -> Int",27,24,0
-"Gate.jl :: gate(cfg, instruments...; io = stderr) -> Int",174,69,0
+"Gate.jl :: gate(cfg, instruments...; io = stderr) -> Int",185,69,0
 "Git.jl :: Git",34,33,0
 "Git.jl :: Git.changed_paths(root, range, paths) -> Vector{String}",53,26,0
 "Git.jl :: Git.diff(root, range, paths) -> String",55,27,0
@@ -156,7 +156,7 @@ unit,words,longest_paragraph,admonitions
 "Main.jl :: running_dev() -> Bool",72,69,0
 "Main.jl :: tool_version() -> String",38,35,0
 "Main.jl :: usage(io = stderr)",16,13,0
-"Passes.jl :: Passes",49,48,0
+"Passes.jl :: Passes",53,52,0
 "Passes.jl :: audit_after_code(cfg, rec) -> Vector{String}",60,56,0
 "Passes.jl :: carry_deferrals(cfg, dir, round; io = stdout) -> Int",140,92,0
 "Passes.jl :: close(cfg, round; io = stdout) -> Int",159,112,0
@@ -186,7 +186,7 @@ unit,words,longest_paragraph,admonitions
 "Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
 "Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0
 "Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
-"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",68,39,0
+"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",114,49,0
 "Reflection.jl :: ARGS_THRESHOLD",33,32,0
 "Reflection.jl :: ArgcovHit",58,48,0
 "Reflection.jl :: Docstring",70,59,0
@@ -205,7 +205,7 @@ unit,words,longest_paragraph,admonitions
 "Reflection.jl :: xlink(cfg; pkg = load_package(cfg), apply = false) -> Vector",81,37,0
 "Reflection.md § Reflection",22,22,1
 "Release.jl :: release(ver; io = stdout, skip_tests = false) -> Int",156,94,0
-"RoundFiles.jl :: RoundFiles",53,52,0
+"RoundFiles.jl :: RoundFiles",57,56,0
 "RoundFiles.jl :: read_round(dir) -> Union{Dict,Nothing}",25,22,0
 "RoundFiles.jl :: round_dirs(cfg) -> Vector{String}",24,21,0
 "RoundFiles.jl :: rounds(cfg) -> Vector{NamedTuple}",25,22,0
@@ -221,7 +221,7 @@ unit,words,longest_paragraph,admonitions
 "Rounds.jl :: import_empty(cfg, round, reason; io = stdout) -> Int",113,37,0
 "Rounds.jl :: list(cfg; io = stdout) -> Int",42,21,0
 "Rounds.jl :: load(cfg, round) -> (dir, record)",16,11,0
-"Rounds.jl :: prepare(cfg, round; io = stdout) -> Int",119,84,0
+"Rounds.jl :: prepare(cfg, round; io = stdout) -> Int",123,84,0
 "Rounds.jl :: render(cfg, round; io = stdout) -> Int",51,20,0
 "Rounds.jl :: rerun(cfg, round, lanes; io = stdout) -> Int",81,26,0
 "Rounds.jl :: run_under_round(cfg, round, cmdline; log) -> Int",60,29,0
@@ -280,7 +280,7 @@ unit,words,longest_paragraph,admonitions
 "Sync.jl :: insert_fragments(yaml, frags; run_marker) -> String",111,61,0
 "Sync.jl :: managed_block(cfg, file, s) -> String",65,32,0
 "Sync.jl :: pin(cfg) -> String",19,16,0
-"Sync.jl :: plan(cfg; ledger = Ledger.read(cfg)) -> Vector{ManagedFile}",59,24,0
+"Sync.jl :: plan(cfg; ledger = Ledger.read(cfg)) -> Vector{ManagedFile}",63,28,0
 "Sync.jl :: read_sidecar(cfg) -> Dict",47,44,0
 "Sync.jl :: render(text, slots) -> String",27,23,0
 "Sync.jl :: render_policy(cfg, s; ledger) -> Vector{ManagedFile}",51,22,0
@@ -306,13 +306,13 @@ unit,words,longest_paragraph,admonitions
 "TestHarness.jl :: counting(data::Array) -> CountingArray",11,8,0
 "TestHarness.jl :: display_gate(modules; no_display = Dict{Symbol,String}(), mi",137,97,0
 "TestHarness.jl :: field_threshold(field_bytes; fraction = 16, per_thread = 409",92,65,0
-"TestHarness.jl :: gate(; root = GBGCodingTools.Config.find_root())",102,70,0
+"TestHarness.jl :: gate(; root = GBGCodingTools.Config.find_root())",107,75,0
 "TestHarness.jl :: has_display(type, modules) -> Bool",17,13,0
 "TestHarness.jl :: method_parity(pkg, modules, baseline; externals = (Base,))",105,64,0
 "TestHarness.jl :: module_method_count(mod, pkg, modules; externals = (Base,)) ",68,30,0
 "TestHarness.jl :: oracle_registry(pkg, modules, registry, testdir)",104,61,0
 "TestHarness.jl :: other_thread_count() -> Int",22,19,0
-"TestHarness.jl :: resolve_function(name, pkg, modules; externals = (Base,)) ->",53,30,0
+"TestHarness.jl :: resolve_function(name, pkg, modules; externals = (Base,)) ->",57,34,0
 "TestHarness.jl :: run_regressions(dir; parent = Main) -> Vector{String}",90,39,0
 "TestHarness.jl :: struct_types(modules) -> Dict{Symbol,Any}",65,62,0
 "TestHarness.jl :: thread_digest(probe_source; threads, project = Base.active_p",71,33,0
@@ -323,7 +323,7 @@ unit,words,longest_paragraph,admonitions
 "TreeHash.jl :: blob_hash(path) -> String",35,32,0
 "TreeHash.jl :: tree_hash(dir; skip = ('.git',)) -> String",96,42,0
 "Witnesses.jl :: WitnessResult",123,113,0
-"Witnesses.jl :: Witnesses",91,90,0
+"Witnesses.jl :: Witnesses",95,94,0
 "Witnesses.jl :: blocked_reason(path) -> Union{String,Nothing}",26,23,0
 "Witnesses.jl :: refusal(path, package) -> Union{String,Nothing}",54,50,0
 "Witnesses.jl :: run(dir; expect, package, project, names = String[], io = st",184,76,0

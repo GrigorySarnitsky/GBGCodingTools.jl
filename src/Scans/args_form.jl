@@ -32,7 +32,7 @@ register_scan!("SCAN.ARGS_FORM", function (cfg, files)
         if bulleted && prosed
             push!(hits, Hit(d.file, d.line, "`$(d.binding)` mixes the two argument forms in one docstring"; symbol = d.binding))
         elseif wants_bullets && !bulleted
-            push!(hits, Hit(d.file, d.line, "`$(d.binding)` takes $(length(pos)) positional and $(length(kw)) keyword argument(s): the bulleted `$ARGS_BULLET` form, not prose"; symbol = d.binding))
+            push!(hits, Hit(d.file, d.line, "`$(d.binding)` takes $(length(pos)) positional and $(length(kw)) keyword argument(s): the bulleted `The arguments are:` form, not prose"; symbol = d.binding))
         elseif !wants_bullets && bulleted
             push!(hits, Hit(d.file, d.line, "`$(d.binding)` takes $(length(pos) + length(kw)) argument(s): bind them in running prose, not bullets"; symbol = d.binding))
         end

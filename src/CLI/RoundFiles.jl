@@ -4,7 +4,7 @@
 """
     RoundFiles
 
-Readers over `.gbg/rounds/`, the round store: a round is one run of one instrument over one consumer,
+Readers over `.gbg/rounds/`, the round store: a round is one run of one instrument ([`GBGCodingTools`](@ref) binds the term) over one consumer,
 recorded as a tracked directory there. [`RoundFiles.round_dirs`](@ref) lists the round directories,
 [`RoundFiles.read_round`](@ref) parses a `ROUND.toml`, [`RoundFiles.state`](@ref) classifies a round as
 `:open`, `:closed` or `:abandoned`, and [`RoundFiles.sha256_file`](@ref) hashes a round artefact the way
