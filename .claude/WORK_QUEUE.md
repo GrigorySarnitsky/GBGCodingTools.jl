@@ -19,5 +19,5 @@ the block shows in the diff instead of being silent.
 - [x] BUG: /audit-changes lane routing misclassifies this package's covered paths
 - [x] BUG: docs/src/guide/verbs.md is declared generated but is hand-written and tracked
 - [x] BUG: package.modules names 9 of the 20 modules
-- [ ] populate this package's .gbg with its own hats, territories, oracles, audit claims, custom scans
-- [ ] declare the numerical audit engines inapplicable here, as ledger entries with reasons
+- [x] populate this package's .gbg with its own hats, territories, oracles, audit claims, custom scans
+- [x] declare the numerical audit engines inapplicable here, as ledger entries with reasons

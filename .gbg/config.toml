@@ -67,21 +67,42 @@ require_doi = true
 enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
 
     [instruments.audit-changes]
-    guard_symbols = []
+    # what this package REFUSES with: the under-rejection lane reads these to see a guard removed or weakened
+    guard_symbols = ["ConfigError", "SchemaError", "LedgerError", "RoundError", "PreflightError", "SyncError",
+                     "refusal", "torn_check", "guard", "assert_valid", "validate", "fail(", "push!(fails",
+                     "return 2", "return 3"]
     invariants_section = "docs/ARCHITECTURE.md#§5.5"
 
+        # test files the claim-versus-edit lane RUNS: a claim in a commit message about one of these
+        # subjects is checked by executing the file, never by reading it
         [instruments.audit-changes.executable_claims]
+        "the scans hit their planted defects and spare the clean twins" = "test/scans.jl"
+        "a round closes only through its channels" = "test/rounds.jl"
+        "the managed files are exactly what sync renders" = "test/sync_doctor.jl"
+        "the witness runner classifies pass, fail, broken, blocked and refused" = "test/witnesses.jl"
+        "the tree hash equals git's own" = "test/treehash.jl"
+        "every artefact matches its schema" = "test/schemas.jl"
+        "the ledger disables and refines" = "test/ledger.jl"
+        "the gate refuses a build around an open round" = "test/gate.jl"
 
     [instruments.bug-hunt]
     oracles = ["the fixture's defects.toml", "the exit contract", "git's own tree hash", "the documented definition over raw files"]
     witness_env = "test"
 
         [[instruments.bug-hunt.territories]]
-        brief = "the verbs, config, schema, sync, init, ledger"
-        files = ["src/CLI/*.jl"]
-        key = "cli"
+        brief = "the entry point, the option parser, the config reader and the schema validator — everything a verb passes through before it acts"
+        files = ["src/CLI/Main.jl", "src/CLI/Config.jl", "src/CLI/Schema.jl", "src/CLI/Ledger.jl"]
+        key = "entry"
         [[instruments.bug-hunt.territories]]
-        brief = "the scan engine and the 39 scans"
+        brief = "the round machinery: preflight, prepare, bank, the passes, grade and close, and the closure channels they compute"
+        files = ["src/CLI/Preflight.jl", "src/CLI/Rounds.jl", "src/CLI/Passes.jl", "src/CLI/RoundFiles.jl", "src/CLI/Demote.jl", "src/CLI/Seed.jl", "src/CLI/Recall.jl"]
+        key = "rounds"
+        [[instruments.bug-hunt.territories]]
+        brief = "the renderers and the read-only checks: sync, init, the doctor, the fleet verbs and git"
+        files = ["src/CLI/Sync.jl", "src/CLI/Init.jl", "src/CLI/Doctor.jl", "src/CLI/Fleet.jl", "src/CLI/Bump.jl", "src/CLI/Release.jl", "src/CLI/Git.jl", "src/CLI/Install.jl", "src/CLI/Self.jl", "src/CLI/Selftest.jl", "src/CLI/Gate.jl", "src/CLI/Hunt.jl", "src/CLI/Audit.jl"]
+        key = "renderers"
+        [[instruments.bug-hunt.territories]]
+        brief = "the scan engine and the 41 scans"
         files = ["src/Scan.jl", "src/Scans/*.jl"]
         key = "scans"
         [[instruments.bug-hunt.territories]]
@@ -100,7 +121,7 @@ enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
     latex_source_globs = []
     profile = "all"
     seed_catalog = ".gbg/seeds.toml"
-    seed_rounds = false
+    seed_rounds = true
 
         [[instruments.check-consistency.domain_hats]]
         anchor = true
@@ -109,7 +130,31 @@ enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
 
     [instruments.check-docs]
     argcov_policy = "gate"
-    lanes_extra = []
+
+        # The scan surfaces reach the design record, the pages, src/ and ext/. Most of this package is
+        # none of those: it is catalogues, templates, schemas, rulebook prose and the fan-out scripts.
+        # A lane's `files` are passed to its agent verbatim, so the judgment half reads them even though
+        # no scan can (2026-09-09; widening the surface vocabulary is a separate, MAJOR question).
+        [[instruments.check-docs.lanes_extra]]
+        key = "workflow-scripts"
+        files = ["instruments/check-docs/workflow", "instruments/check-consistency/workflow", "instruments/bug-hunt/workflow", "instruments/audit-changes/workflow"]
+        brief = "the eleven Workflow scripts that fan every instrument out. Read each as CODE, not prose: does the object it Writes match the schema beside it (instruments/<name>/schema.json and schema/*.json); does it validate the args it requires; can a lane die silently; is any prompt it builds self-contradictory or does it state a rule the CLI does not enforce; is there any package name, path or round datum hard-coded where the design says only `args` may carry it"
+        [[instruments.check-docs.lanes_extra]]
+        key = "catalogues"
+        files = ["catalog"]
+        brief = "the catalogues the engine obeys — hats, lanes, scans, models, seeds. For each row: does its `rule` name a rule that exists in policy/RULES.toml; does its `fixture` class exist in the fixture's defects.toml; do its `surfaces` name real surface keys; is a persona's brief consistent with the substrate it is granted; does any two rows contradict each other"
+        [[instruments.check-docs.lanes_extra]]
+        key = "rulebook"
+        files = ["policy"]
+        brief = "the 93 rules as prose. Judge them as rules: is each one a statement a reader can obey and a program could in principle check; does any rule contradict another; does any rule state a requirement that the instruments' own protocols contradict; is every rule's `sentinel` in RULES.toml still the first sentence of its paragraph; is any rule dead — nothing in catalog/scans.toml, src/CLI/Doctor.jl or test/ enforces it and no instrument cites it"
+        [[instruments.check-docs.lanes_extra]]
+        key = "templates"
+        files = ["templates"]
+        brief = "what `gbg sync` renders into every consumer. Read each template as the file a consumer will receive: is its prose correct about the tool it describes; does every `{{slot}}` correspond to a slot the renderer fills; would the rendered file be valid in its own right (YAML, JSON, sh, Markdown); does any template state a rule that the rulebook does not"
+        [[instruments.check-docs.lanes_extra]]
+        key = "schemas"
+        files = ["schema", "instruments/check-docs/schema.json", "instruments/check-consistency/schema.json", "instruments/bug-hunt/schema.json", "instruments/audit-changes/schema.json"]
+        brief = "the schemas every artefact is validated against. For each: is it within the validator's documented keyword subset (src/CLI/Schema.jl states it); is every `$ref` local; is it loaded by any code path at all, or is it dead; does it describe the artefact that is actually written, field for field"
 
 [cost]
 default = "economy"

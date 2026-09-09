@@ -4,3 +4,45 @@
 # and expires (≤ recorded + 365 d) — or overturn_when instead of expires on scope finding. An optional
 # [exemption.match] table (arg_name, arg_type, path, symbol) REFINES a scan|lint|policy|harness entry.
 # Empty until a rule needs a reason here; `gbg doctor` validates every entry (CFG.EXEMPTIONS).
+
+# Declared 2026-09-09 after the self-application sweep: four testing rules whose SUBJECT does not exist in
+# this package. It has no numerical operations, no arrays, no in-place operators over element storage and
+# no exported public surface, so the harness engines that measure those measure nothing here. Recording
+# them makes the gap visible in `gbg doctor` and in the rendered deviations page, instead of showing as
+# engines that are simply never called. Each is reviewed at expiry, not renewed silently.
+
+[[exemption]]
+id       = "RULE.TEST.ALLOC_ZERO"
+scope    = "policy"
+target   = "*"
+reason   = "no in-place operator over element storage exists here: this package's `!` functions mutate a registry, a dictionary or a string buffer, and an allocation bound on them measures the Julia runtime, not the package"
+recorded = 2026-09-09
+expires  = 2027-09-09
+evidence = "src/TestHarness.jl @alloc_below and allocation_completeness have no call site outside the fixture"
+
+[[exemption]]
+id       = "RULE.TEST.PASS_AUDIT"
+scope    = "policy"
+target   = "*"
+reason   = "the traffic audit counts reads and writes per array element; this package holds no array whose traffic is a correctness property, so a frozen row would record the runtime's behaviour and nothing of the package's"
+recorded = 2026-09-09
+expires  = 2027-09-09
+evidence = "src/TestHarness.jl CountingArray, Traffic and audit have no call site outside the fixture"
+
+[[exemption]]
+id       = "RULE.TEST.EXAMPLES_RUN"
+scope    = "policy"
+target   = "*"
+reason   = "this package ships no Literate examples: its `literate` surface is empty by design, since a worked example of a review instrument is a round, which is recorded under .gbg/rounds/ rather than executed as a script"
+recorded = 2026-09-09
+expires  = 2027-09-09
+evidence = ".gbg/config.toml surfaces.literate = []"
+
+[[exemption]]
+id       = "RULE.DOC.LEADING_IDENTITY"
+scope    = "policy"
+target   = "*"
+reason   = "the leading identity of a docstring is the physical meaning of the quantity it computes; this package computes no physical quantity, so its docstrings lead with what the operation does, which the rubric's own parameterisation already admits"
+recorded = 2026-09-09
+expires  = 2027-09-09
+evidence = "rubric.leading_identity is a declared variation point (ARCHITECTURE §5.5)"

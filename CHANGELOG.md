@@ -5,7 +5,19 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 
 ## Unreleased
 
-MINOR so far: `SCAN.HTML_STRAY_MATH` (hard) catches prose that Julia Markdown read as math — a
+MINOR so far. An adversarial sweep asked where the tool fails to apply its own machinery to itself; 46
+claims, 31 stood, none refuted. Seven were defects that had never fired because three instruments have
+never run here: the dismissal closure gate compared an `items_sha` the script never wrote (so no round
+with an adjudication could close), the architecture verifier wrote a file its schema rejected, a
+bug-hunt schema carried a cross-file `$ref` the validator refuses, five call sites bypassed
+`Witnesses.witness_project` (so no witness here could load the package), `audit_kind` decided prose by a
+`docs/` prefix (so `docs/make.jl` was prose), a hand-written page was declared a build product, and
+`package.modules` named nine of eighteen submodules. This package's own `.gbg/` is populated for the
+first time: five `/check-docs` lanes over the scripts, catalogues, rulebook, templates and schemas that
+no surface reaches, four bug-hunt territories mirroring the modules, the audit's guard symbols and
+executable claims, and a seed catalogue so an empty hat is falsifiable. Four testing and rubric rules
+whose subject does not exist here are declared in the ledger rather than left silently unenforced.
+`SCAN.HTML_STRAY_MATH` (hard) catches prose that Julia Markdown read as math — a
 double-backtick span quoting backticked syntax, which KaTeX leaves raw on the page; three shipped on the
 generated rules page and are fixed. With it, `RULE.INST.FROZEN_MIDROUND` says where a deferral goes: one
 line in the round's `deferred.md`, carried by `gbg round close` into `.claude/WORK_QUEUE.md`, whose Stop
