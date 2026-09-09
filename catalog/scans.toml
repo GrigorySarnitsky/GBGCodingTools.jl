@@ -187,7 +187,7 @@ rule = "RULE.CIT.FULL_INLINE"
 tier = "hard"
 surfaces = ["src"]
 runner = "julia"
-fixture = ["doi-missing"]
+fixture = ["doi-missing", "prose-reference"]
 
 [[scan]]
 id = "SCAN.HTML_RENDERED_MARKUP"

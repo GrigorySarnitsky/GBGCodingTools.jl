@@ -4,7 +4,10 @@
 # PF's script compares against all of ARCHITECTURE.md); DOIs compared percent-DECODED; where the heading
 # exists, the inline `[*Title*](https://doi.org/…)` title must equal the canonical title for that DOI;
 # the retired `[doi:…]` label form is a hit anywhere in a docstring; with `citations.require_doi`, a
-# `Reference:` line or bullet with no DOI or Open Library link is a hit. A canonical DOI no docstring
+# `Reference:` line or bullet with no DOI or Open Library link is a hit. Added 2026-09-09 with the rule's
+# rewrite: a title-as-link outside the docstring's `# References` section is the full reference sitting in
+# the running prose, which the rule now forbids — the prose cites author–year and the section carries the
+# work. A one-line `Reference: …` stays legal, being the lone-citation form of RULE.CIT.BLOCK_LIST. A canonical DOI no docstring
 # cites is information, not a hit (a design doc may cite alone).
 const DOI_RE = r"doi\.org/[^\s\)\]\"]+"
 const TITLE_LINK = r"\[(\*[^\]]+?\*)\]\((https://doi\.org/[^)\s]*)\)"
@@ -43,6 +46,14 @@ register_scan!("SCAN.DOI_CROSSCHECK", function (cfg, files)
                 flat = join(split(t), " ")
                 flat == canon_title[doi] || push!(hits, Hit(d.file, d.line, "inline title differs from the canonical one for $(doi): inline $(flat) / canonical $(canon_title[doi])"; symbol = d.binding))
             end
+        end
+        # the full reference belongs under the docstring's own `# References` heading, never in its prose
+        refs_at = findfirst(r"(?m)^#+\s+References\s*$", d.body)
+        for m in eachmatch(TITLE_LINK, d.body)
+            (refs_at !== nothing && m.offset > first(refs_at)) && continue
+            line = count(==('\n'), d.body[1:prevind(d.body, m.offset)])
+            occursin(r"(?m)^\s*Reference:", split(d.body, '\n')[line + 1]) && continue
+            push!(hits, Hit(d.file, d.line + line, "a full reference in the prose: cite author–year here and put the work under this docstring's `# References` section"; symbol = d.binding))
         end
         for m in eachmatch(r"\[doi:[^\]]+\]", d.body)
             push!(hits, Hit(d.file, d.line, "retired [doi:…] label form $(m.match) — use the title-as-link form"; symbol = d.binding))

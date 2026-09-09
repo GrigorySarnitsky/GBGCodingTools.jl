@@ -16,7 +16,7 @@ unit,words,longest_paragraph,admonitions
 "FixtureC.jl :: FixtureC",30,18,0
 "FixtureC.jl :: Options(; tolerance = 1e-8, iterations = 100)",38,12,0
 "FixtureC.jl :: _clamp_iterations(n) -> Int",22,19,0
-"FixtureC.jl :: describe(options) -> String",21,18,0
+"FixtureC.jl :: describe(options) -> String",54,27,0
 "FixtureC.md § Internal API",14,14,0
 "GBGFixture.jl :: GBGFixture",72,41,0
 "architecture.md § 1. Purpose",49,49,0

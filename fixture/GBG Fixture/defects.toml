@@ -140,6 +140,11 @@ scan = "SCAN.DOI_CROSSCHECK"
 file = "defects/Defects.jl"
 fragment = "10.9999/never-listed"
 [[defect]]
+class = "prose-reference"
+scan = "SCAN.DOI_CROSSCHECK"
+file = "defects/Defects.jl"
+fragment = "a full reference in the prose"
+[[defect]]
 class = "undocumented-last-positional"
 scan = "SCAN.ARGCOV"
 file = "defects/Defects.jl"
@@ -282,6 +287,9 @@ file = "docs/ARCHITECTURE.md"
 [[clean]]
 scan = "SCAN.DOI_CROSSCHECK"
 file = "src/FixtureB.jl"
+[[clean]]
+scan = "SCAN.DOI_CROSSCHECK"
+file = "src/FixtureC.jl"
 [[clean]]
 scan = "SCAN.SENTENCE_OPENER"
 file = "src/FixtureA.jl"

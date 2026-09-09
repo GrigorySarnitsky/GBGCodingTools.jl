@@ -2239,7 +2239,7 @@ verbatim — which `LEG.SENTINELS` matches against a consumer's `CLAUDE.md`. "So
 | `RULE.TEX.RENDERED_MARKUP` | latex-idiom | No emphasis marker survives into rendered prose (overlapping `*a **b***`). | `lint_rendered_markup` |
 | `RULE.TEX.GREEK_AB` | latex-idiom | The accumulation scalars are Unicode `α`/`β` everywhere; the two named ASCII holdouts stay. | "Greek scalars" |
 | `RULE.CIT.STYLE` | citations | In-text author–year: author-prominent → parenthesized year; ≤ 3 authors named, `First et al.` for four or more. | "Citations — one uniform style" |
-| `RULE.CIT.FULL_INLINE` | citations | A docstring carries its full reference inline, verbatim-identical to the canonical entry under the references heading (title and DOI compared). | same; `doi_crosscheck.py` (PF + IT) |
+| `RULE.CIT.FULL_INLINE` | citations | A docstring cites author–year in its prose and carries the full reference in a `# References` section at its end, verbatim-identical to the canonical entry (title and DOI compared). | same; `doi_crosscheck.py` (PF + IT) |
 | `RULE.CIT.DOI` | citations | Every reference carries a clickable DOI (or an Open Library link for a book) on its title, identical in every copy. | same; `citations.require_doi` |
 | `RULE.CIT.BLOCK_LIST` | citations | Two or more citations form a bullet list, one per line; a lone citation is `Reference: …`. | same; "crammed citation block" |
 | `RULE.CIT.NO_INACCESSIBLE` | citations | Never cite an inaccessible source (`inspiration/`, an accompanying thesis, an appendix the reader cannot open) on any user-facing surface. | same; memory rule |

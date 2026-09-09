@@ -186,6 +186,13 @@ struct FieldsNotLastRecord
 end
 
 """
+    prose_reference(u)
+
+The argument `u` is the field. The method of Cooley and Tukey, [*An algorithm for the machine calculation of complex Fourier series*](https://doi.org/10.1090/S0025-5718-1965-0178586-1), Mathematics of Computation 19 (1965), is applied to it: the whole reference sits in the sentence, where the rule says author–year belongs.
+"""
+prose_reference(u) = u
+
+"""
     doi_missing(u)
 
 The argument `u` is the field.

@@ -5,7 +5,13 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 
 ## Unreleased
 
-MINOR so far. `surfaces.data` is a new OPTIONAL surface, empty in every consumer: the comment prose of
+MINOR so far. `RULE.CIT.FULL_INLINE` is rewritten to the form the fleet actually uses and PF has used
+all along: a docstring cites author-year in its prose and carries the full reference in a `# References`
+section at its end, one bullet per work with the title clickable to the DOI. The rule had said the full
+reference goes inline in the prose, which no package does and which reads badly. `SCAN.DOI_CROSSCHECK`
+gains the check the rewrite needs: a title-as-link outside a docstring's `# References` section is a
+hit, with the `prose-reference` fixture class and a canonical clean twin; the lone `Reference: …` form
+stays legal. `surfaces.data` is a new OPTIONAL surface, empty in every consumer: the comment prose of
 a package's data and script files, with a reader per kind (`#` comments, `//` comments, and a JSON
 file's `description` strings). Only a full-line comment is prose. It is on in this package, where it
 adds 79 files and 319 prose lines that no scan had ever read; `all` does not include it, so no

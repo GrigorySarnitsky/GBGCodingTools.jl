@@ -29,8 +29,12 @@ Options(; tolerance::Real = 1e-8, iterations::Integer = 100) = Options(Float64(t
 """
     describe(options) -> String
 
-The one-line description of an [`Options`](@ref) record, tolerance first. The argument `options` is the
-record. Returns the string.
+The one-line description of an [`Options`](@ref) record, tolerance first, in the tabular convention of
+Cooley & Tukey (1965). The argument `options` is the record. Returns the string.
+
+# References
+
+  * J. W. Cooley, J. W. Tukey, [*An algorithm for the machine calculation of complex Fourier series*](https://doi.org/10.1090/S0025-5718-1965-0178586-1), Mathematics of Computation 19 (1965)
 """
 describe(options::Options) = "tolerance $(options.tolerance), at most $(options.iterations) iterations"
 

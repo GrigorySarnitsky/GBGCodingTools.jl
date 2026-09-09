@@ -362,8 +362,8 @@ sentinel = "A citation is context-standard author–year: author-prominent with 
 id = "RULE.CIT.FULL_INLINE"
 file = "citations.md"
 section = "### RULE.CIT.FULL_INLINE"
-statement = "A docstring carries its full reference inline, verbatim-identical to the canonical entry under the references heading (title and DOI compared)."
-sentinel = "A docstring carries its full reference inline, verbatim-identical to the canonical entry under the package's references heading, title and DOI compared."
+statement = "A docstring cites author–year in its prose and carries the full reference in a `# References` section at its end, verbatim-identical to the canonical entry (title and DOI compared)."
+sentinel = "A docstring cites author–year in its prose and carries the full reference in a `# References` section at its end: one bullet per work, `Authors, [*Title*](https://doi.org/…), Journal Volume (Year)`, verbatim-"
 [[rule]]
 id = "RULE.CIT.DOI"
 file = "citations.md"

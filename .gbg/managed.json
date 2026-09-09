@@ -1,6 +1,6 @@
 {
     "tool_version": "dev",
-    "inputs_sha": "f992d85fcb34617f80e20b70dbf39e9e68e5e707457ad114736380af293fe5a2",
+    "inputs_sha": "ab0d5a86c7b9cb3fd1fb083c6083d15d4f9c5e38c6cac27114d400830ff25598",
     "files": {
         "CLAUDE.md#gbg:managed": {
             "template": "claude-md.block",
@@ -69,7 +69,7 @@
         },
         ".gbg/policy/citations.md": {
             "template": "policy/citations.md",
-            "sha256": "7112188d84d6350037d54bf719bee9d78d6fb9f84581dda8b3fae779831f2d99",
+            "sha256": "3267daed4c294914049efaa8fd7c8bdb0084278e815d40aadcc2369bac9d4676",
             "version": "dev"
         },
         ".claude/hooks/queue-guard.sh": {
@@ -99,5 +99,5 @@
         }
     },
     "schema_version": 1,
-    "rendered": "2026-09-09T17:01:09"
+    "rendered": "2026-09-09T17:14:56"
 }
