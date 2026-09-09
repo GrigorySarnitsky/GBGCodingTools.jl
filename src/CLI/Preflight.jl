@@ -199,9 +199,11 @@ The check-consistency roster. The arguments are:
 A hat is one persona of the `check-consistency` panel, reading the corpus from a single standpoint.
 Each hat carries `key`; the persona with its placeholders filled; and the four fields below.
 
-`substrate` is which view of the corpus the hat reads — the closed set of `schema/hat.schema.json`:
-`full` (the whole manuscript), `siteonly` (the public pages' manuscript), `rawhtml` (the built site),
-`docstrings` (the docstring surface), `rulebook` (the rulebook sections) or `none`. `needs` holds the
+`substrate` names the view of the corpus the hat is asked to work in — the closed set of
+`schema/hat.schema.json`: `full` (the whole manuscript), `siteonly` (the public pages' manuscript),
+`rawhtml` (the built site), `docstrings` (the docstring surface), `rulebook` (the rulebook sections) or
+`none`. Only `siteonly` narrows the manuscript the panel actually hands over; every other value is the
+hat's brief over the full manuscript, with `needs` granting whatever else it must open. `needs` holds the
 requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from, and `not_applicable`
 says the substrate cannot exist here (`html` needs with no built site, `git` with no repository,
 `rulebook` with no rulebook sections).
