@@ -98,7 +98,7 @@ unit,words,longest_paragraph,admonitions
 "Fleet.jl :: Fleet.diff(a, b; io = stdout) -> Int",82,38,0
 "Fleet.jl :: Fleet.rows(; deep = false) -> (rows, code)",99,92,0
 "Fleet.jl :: latest_tag(root) -> Union{VersionNumber,Nothing}",17,14,0
-"GBGCodingTools.jl :: GBGCodingTools",245,68,0
+"GBGCodingTools.jl :: GBGCodingTools",257,68,0
 "Gate.jl :: cmd_gate(args) -> Int",27,24,0
 "Gate.jl :: gate(cfg, instruments...; io = stderr) -> Int",169,69,0
 "Git.jl :: Git",34,33,0

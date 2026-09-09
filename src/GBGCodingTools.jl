@@ -6,9 +6,9 @@ wrapper and its scans, the test harness, the doctor and the policy prose, at one
 consumer.
 
 A consumer is a package that uses the tool — one of the four sibling GBG packages, or the tool itself;
-a pin is the `GBGCodingTools = "=X.Y.Z"` compat entry in the consumer's sub-environments, the one
-version it runs. A consumer holds data; the tool holds behaviour; the only thing connecting them is that
-pin.
+a pin is the tool version the consumer names in `.gbg/config.toml` (`tool.version`: a released `X.Y.Z`,
+or `dev` for a checkout), which `gbg sync` renders into the consumer's sub-environment compat entries.
+A consumer holds data; the tool holds behaviour; the only thing connecting them is that pin.
 
 The module is a map; every part is documented at its home. The command line and its configuration:
 

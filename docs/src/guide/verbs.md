@@ -68,6 +68,7 @@ GBGCodingTools.audit_bank
 
 ```@docs
 GBGCodingTools.Fleet
+GBGCodingTools.Fleet.latest_tag
 GBGCodingTools.Fleet.rows
 GBGCodingTools.Fleet.diff
 GBGCodingTools.bump
