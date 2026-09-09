@@ -72,7 +72,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §9 Resolution table",1475,1416,0
 "Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",101,55,0
 "Bump.jl :: bump(cfg, ver; abandon = nothing, io = stdout) -> Int",112,102,0
-"CLI.md § CLI internals",9,9,0
+"CLI.md § CLI internals",31,22,1
 "Config.jl :: Config",64,63,0
 "Config.jl :: Config.parse(text; root, check = true) -> Dict",76,69,0
 "Config.jl :: ConfigError <: Exception",35,23,0
@@ -84,6 +84,7 @@ unit,words,longest_paragraph,admonitions
 "Config.jl :: read(root = find_root(); check = true) -> Dict",71,63,0
 "Config.jl :: resolve_anchor(root, anchor) -> (file, line, count)",69,63,0
 "Config.jl :: surface_files(cfg, key) -> Vector{String}",59,55,0
+"Config.md § Config",22,22,1
 "Consolidate.jl :: consolidate(build_dir, withheld; out_full, out_siteonly) -> ",117,109,0
 "Consolidate.jl :: discover_pages(build_dir) -> Vector{Tuple{String,String,Stri",82,79,0
 "Consolidate.jl :: page_text(path) -> String",36,33,0
@@ -197,6 +198,7 @@ unit,words,longest_paragraph,admonitions
 "Reflection.jl :: signature_parameters(inside) -> (positional, keyword)",58,54,0
 "Reflection.jl :: signature_types(inside) -> Dict{String,String}",21,18,0
 "Reflection.jl :: xlink(cfg; pkg = load_package(cfg), apply = false) -> Vector",81,37,0
+"Reflection.md § Reflection",22,22,1
 "Release.jl :: release(ver; io = stdout, skip_tests = false) -> Int",138,94,0
 "RoundFiles.jl :: RoundFiles",53,52,0
 "RoundFiles.jl :: read_round(dir) -> Union{Dict,Nothing}",25,22,0
@@ -310,6 +312,7 @@ unit,words,longest_paragraph,admonitions
 "TestHarness.jl :: thread_digest(probe_source; threads, project = Base.active_p",66,59,0
 "TestHarness.jl :: traffic_completeness(pkg, modules; exempt = Dict{Symbol,Stri",48,43,0
 "TestHarness.jl :: traffic_rows(baseline, name, symbols) -> Vector",70,35,0
+"TestHarness.md § TestHarness",22,22,1
 "TreeHash.jl :: TreeHash",54,53,0
 "TreeHash.jl :: blob_hash(path) -> String",35,32,0
 "TreeHash.jl :: tree_hash(dir; skip = ('.git',)) -> String",87,81,0
@@ -320,6 +323,7 @@ unit,words,longest_paragraph,admonitions
 "Witnesses.jl :: run(dir; expect, package, project, names = String[], io = st",184,76,0
 "Witnesses.jl :: run_one(path; project, package) -> WitnessResult",180,95,0
 "Witnesses.jl :: witness_project(root, witness_env, package) -> String",43,38,0
+"Witnesses.md § Witnesses",22,22,1
 "code_in_math.jl :: math_spans(lines) -> Vector{Tuple{Int,String}}",48,45,0
 "config.md § [The config](@id config)",171,63,1
 "html_docstring_once.jl :: page_bindings(page) -> Vector{NamedTuple}",43,40,0
