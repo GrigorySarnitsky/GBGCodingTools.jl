@@ -169,7 +169,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",135,97,0
 "Preflight.jl :: resolve_hunt_lanes(cfg) -> Vector{Dict}",22,19,0
 "Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",28,23,0
-"Preflight.jl :: stamps(cfg; record = nothing) -> Dict",83,77,0
+"Preflight.jl :: stamps(cfg; record = nothing) -> Dict",87,81,0
 "Preflight.jl :: substitute(text, cfg; extra = Dict()) -> String",69,62,0
 "Preflight.jl :: tag_tree(dir, ver) -> Union{String,Nothing}",54,50,0
 "Preflight.jl :: torn_check(cfg; io = stderr) -> Bool",40,34,0

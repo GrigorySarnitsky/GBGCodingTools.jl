@@ -91,9 +91,9 @@ tag_tree(dir::AbstractString, ver::AbstractString) = Git.run(dir, "rev-parse", "
 """
     stamps(cfg; record = nothing) -> Dict
 
-The tool and config stamps every `ROUND.toml` and `pass.toml` record: `tool_version` (the pin, or
-`dev+<sha>[-dirty]` from the working tree), `tool_rev`, `tool_tree_sha`, `config_sha`, `catalog_sha`,
-`seed_catalog_sha`. The keyword `record` is the `ROUND.toml` of a round already open: a dev checkout
+The tool and config stamps every `ROUND.toml` and `pass.toml` of the consumer `cfg` records:
+`tool_version` (the pin, or `dev+<sha>[-dirty]` from the working tree), `tool_rev`, `tool_tree_sha`,
+`config_sha`, `catalog_sha`, `seed_catalog_sha`. The keyword `record` is the `ROUND.toml` of a round already open: a dev checkout
 whose round was stamped with a tag keeps reading its tool stamps from that tag while the tag exists
 (D16), so the fix commits that move `HEAD` past the tag are not a moved tool; a moved TAG is.
 """
