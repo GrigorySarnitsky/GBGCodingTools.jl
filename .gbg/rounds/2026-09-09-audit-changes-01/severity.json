@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-09-audit-changes-01",
+  "ratings": [
+    {
+      "id": "2026-09-09-audit-changes-01/executing#1",
+      "severity": "blocker",
+      "reason": "Verified repro shows the tightened per_id.state enum rejects the exact PASS/FAIL/BROKEN/BLOCKED values Passes.grade (line 274) writes from witness status, so validate() throws and grade crashes on the normal success path of every bug-hunt round — not a doc-drift issue but a demonstrated total break of the grading verb."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/executing#2",
+      "severity": "major",
+      "reason": "Verified with a Preflight.resolve_hats run and code citations: dropping \"rulebook\" from latex-typesetter's needs means panel.js never discloses/permits rulebook_path, yet the unchanged persona still commands the hat to read and treat that same rendered policy file as authoritative (six more references) — a concrete contradiction between the catalog config and the persona/permission surfaces, confirmed asymmetric against the sibling doc-policy.toml hat, but scoped to one instrument's internal consistency rather than a math/API/cost claim misleading an external reader."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/executing#3",
+      "severity": "major",
+      "reason": "Measured code/doc divergence (base=2 hits, head=1 hit under mathbf_allowed=[]) shows the scan now silently exempts `\\mathbf{1}` regardless of the configured allow-list, while RULES.toml:357, ARCHITECTURE §12.A/§12.B, and the unamended §5.5 non-configurable-set bookkeeping still state the old contract — a genuine contradiction between surfaces (three of four authoritative texts vs. the code) that would give a reader of RULES.toml or a hat/ledger author a wrong belief about what SCAN.MATHBF enforces, but it's a documentation/process gap rather than a wrong mathematical or numeric claim baked into a single surface."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/executing#4",
+      "severity": "major",
+      "reason": "Verified before/after behavior shows a previously-valid 24-39 char ledger reason now makes Ledger.read throw LedgerError, which is uncaught by Sync.sync/plan/status/slots and Scan.run_scan and surfaces as main's exit-code-3 crash instead of a graceful doctor finding (exit 1) — a real, plausibly-hit regression for the four unmigrated consumers' existing ledgers, though not confirmed that any live ledger entry actually falls in that length band."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/executing#5",
+      "severity": "minor",
+      "reason": "The reviewer's own analysis concedes the guarantee is not lost — check_paths is unchanged and the docs_build/make.jl constraint is still enforced via the schema pattern under CFG.VALID — and the after-text is arguably more accurate (check_paths only verifies the fixed path exists, it never inspects the docs_build value, so the old \"names docs/make.jl\" phrasing over-claimed what this specific check does); the real complaint is an inconsistency in phrasing precision between two clauses of one table row, not a false or contradicted claim a reader would act on."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/executing#6",
+      "severity": "major",
+      "reason": "The diff made the scan header and ARCHITECTURE row honest about the caps applying only to docstrings/new page units, but left RULES.toml:231 and docs-rubric.md stating the caps bind \"always\" — a direct contradiction between the fleet's governing rule text (validated by the ledger, read by LEG.SENTINELS) and the scan's actual, unchanged, measured behavior, with concrete evidence (54 baselined page units over cap, one at 2810 words) that the stale \"always\" claim is not just theoretical drift."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/executing#7",
+      "severity": "major",
+      "reason": "The new regex is demonstrably overbroad (flags valid JS like `log(`ok`)` and `x = `a b c`` with no interpolation) so a future author writing a short, legitimate template literal in any instruments/*/workflow/*.js will plausibly hit a red test bearing a misleading message (\"bare code span in a Workflow prompt\") for code that has no such defect — a real, likely-to-recur false positive, though it's a test-suite precision gap rather than a docs claim that misstates the package's math/API/cost."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/executing#8",
+      "severity": "major",
+      "reason": "The scan change itself is a correct tightening (enforcing a rule clause RULES.toml already stated), but it is a hard-tier behavior change that will flip previously-green consumer corpora to a build-breaking failure on the next `gbg bump`, and the changeset carries no CHANGELOG entry or catalogue note flagging the new hit class — a missing load-bearing statement about a real, fleet-wide migration cost, not a wrong mathematical/API claim."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/under-rejection#1",
+      "severity": "major",
+      "reason": "The evidence shows a concrete, unchanged-docstring contradiction (Scan.jl:36-37 still says population==0 always means DEAD) against a real behavior change that lets population==0-with-hits skip the DEAD/exit-2 path in favor of exit-1, with a plausible concrete trigger (SCAN.PROSE_SHAPE's two independently-computed loops) rather than a purely hypothetical one — exactly the 'contradiction between surfaces' + exit-code-contract violation the major tier is defined for, not a standalone false statement of fact that alone would make it a blocker."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/under-rejection#2",
+      "severity": "major",
+      "reason": "Diff confirmed verbatim: checked += 1 moved before the NOLIST branch, so population now counts every struct opened rather than only ones actually field-compared, defeating the DEAD/exit-2 vacuous-pass guard for exactly the scenario (a broken marker or FIELD_DECL regex) it exists to catch, while the file's own header comment (lines 4-5, untouched) still asserts the old contract — a concrete, reproducible contradiction between the code and its adjacent documented guarantee."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/under-rejection#3",
+      "severity": "major",
+      "reason": "Verified: the scan/config header, latex-idiom.md prose, and the schema default were all updated in this commit to state \\mathbf{1} is unconditionally admitted regardless of notation.mathbf_allowed, but RULES.toml's one-line statement/sentinel for RULE.TEX.MATHBF (the register instruments cite and LEG.SENTINELS reads) was left unchanged, still asserting admission is governed solely by the config list — a stale claim contradicting a sibling surface on a load-bearing register, but not itself a math/API blocker since the actual behavior is consistently documented elsewhere."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/under-rejection#4",
+      "severity": "major",
+      "reason": "The needs= edit silently cuts the only path (panel.js's rulebook.includes check) that ever puts latex-idiom.md into this hat's prompt, while the unchanged persona still tells it to read that file first as authoritative and the hat is live in both the tool's and fixture's real rosters — a genuine contradiction between the toml and the persona that degrades a frozen instrument's actual output, not just a doc claim, but it's a silently-wrong review substrate rather than a mathematical/API/cost falsehood, so major rather than blocker."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/under-rejection#5",
+      "severity": "major",
+      "reason": "The edit doesn't make any surface false (all three rewritten passages now consistently and accurately describe what check_paths actually verifies — file existence only), so it isn't a blocker; but it silently deletes a real design requirement (that docs_build must name docs/make.jl) rather than either implementing the missing check or recording it as a declared weakness, per the evidence that Config.jl:208 only checks file existence and nothing else ties docs_build's actual command to the wrapper — leaving a concrete, exploitable gap (docs_build can point anywhere and pass) in a load-bearing assurance chain, which is exactly the kind of gap the same commit's own RULE.TEST.RULE_WITH_CHECK apparatus exists to surface rather than paper over."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/under-rejection#6",
+      "severity": "major",
+      "reason": "The commit stamps RULE.DOC.SHAPE with check = [\"scan:SCAN.PROSE_SHAPE\"] while leaving the rule's own stated text (docs-rubric.md, RULES.toml) as an unconditional \"always\" cap, even though the scan (unchanged code, ratchet-based) provably never flags a baselined page unit that violates that cap — a real, demonstrated contradiction between the rule statement and the enforcement it's now certified to have, which mis-registers a known gap as closed rather than as a recorded weakness; it's a process/integrity defect in the tool's own audit surfaces rather than a wrong mathematical or API result, so major rather than blocker."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/under-rejection#7",
+      "severity": "major",
+      "reason": "The new harness: oracle verifies enforcer bindings by bare substring match over all of src, reproducing—nine lines below a sibling arm in the same commit that was deliberately narrowed away from exactly this flaw for a stated reason—a check that stays green even after a rename/deletion of the bound function (e.g. Passes.grade, Witnesses.run, Preflight.render_args), silently invalidating the enforcer claim for 11 rules including core invariants like RULE.INST.NO_TRUNCATION and RULE.DOC.BUILD_VERIFY; that's a real, plausible latent defect in a load-bearing test guarantee (not merely cosmetic), but nothing is mis-certified today so it stops short of blocker."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/under-rejection#8",
+      "severity": "nit",
+      "reason": "The regex widening is a narrow, low-probability collateral effect (a whitespace/line-wrap in a fixed literal marker) riding along with a defensible, motivated fix to the same pattern class; the finding's own evidence shows the fixture/DEAD population is unaffected and the scan's other edits in the same commit move strictly, so this reads as a judgment call on a marginal edge case rather than a real defect a reader would plausibly hit."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/behaviour-change#1",
+      "severity": "major",
+      "reason": "Beyond the legitimate close-paren fix, the splat-counting addition is an undocumented widening of RULE.DOC.ARGS_FORM (the rule text never says a keyword splat counts as \"a keyword argument\") and the finding shows a concrete, demonstrable over-count bug — the splat regex matches a typed splat's type name (`rows::Traffic...`) in addition to the already-counted variable, inflating a 3-parameter signature to 4 and flipping the verdict — on a scan whose fixture (`wrong-args-form`) was not updated to cover it; this is a real, plausibly-hit contradiction between the rule surface and its enforcement, but it is confined to a `triage`-tier advisory scan (not a `hard` build-blocking gate), so it degrades trust in the hit list rather than corrupting a build or a documented fact."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/behaviour-change#2",
+      "severity": "major",
+      "reason": "The governing rule text is unchanged and already stated this requirement, so nothing is wrong or misleading; but turning on the previously-unreachable half of a HARD, fleet-wide scan with no CHANGELOG entry and no fixture case for the new branch is a real, load-bearing gap that a consumer will plausibly hit as a red, undocumented docs build on its next `gbg bump`."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/behaviour-change#3",
+      "severity": "major",
+      "reason": "Verified in the repo: Ledger.read validates against the schema and throws LedgerError on any invalid entry, and it is the default ledger source for Sync.sync/plan/status/slots and Scan.run_scan with no catch around it there (only Doctor.jl wraps the call and downgrades the exception to a reported fail); tightening minLength in the schema itself therefore turns a previously non-fatal, doctor-reported violation (a 24-39 char reason) into an uncaught crash (exit 3) across the tool's most-used verbs, breaking the exit-code contract for any existing consumer ledger entry in that range, with no migration note or schema_version bump."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/behaviour-change#4",
+      "severity": "major",
+      "reason": "Real contradiction between surfaces: the amended rule text (policy/latex-idiom.md) correctly states \\mathbf{1} is now non-withdrawable everywhere, but schema/config.schema.json and the existing \"agreed list of strings\" description of notation.mathbf_allowed are left stale/untouched, so a consumer reading the config surface forms a wrong belief that excluding \\mathbf{1} from their list still suppresses the scan hit — a load-bearing semantic change to a config key made silently, without a schema update, migration, or its own release, though the description itself concedes the underlying rule change is substantively sound rather than mathematically wrong."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/behaviour-change#5",
+      "severity": "minor",
+      "reason": "The evidence shows a fully coordinated rewrite (rule text, sentinel, and both hat personas all moved together to the same new order), so there's no contradiction between surfaces today and the rule's own check is already declared unenforceable ([\"weakness\"]); the alarming part of the finding is speculative future impact once a consumer bumps, but consumers are frozen until their migration phase per project policy, so no reader is misled right now — this is a process/governance gap (missing CHANGELOG rationale, future round-comparability risk), not a wrong or contradictory claim about math, API, or cost."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/behaviour-change#6",
+      "severity": "major",
+      "reason": "Tightening additionalProperties on managed.schema.json/tally.schema.json turns previously-valid on-disk state (sidecars/tallies written by older tool versions) into hard throws in gbg sync/doctor/round-grade with no migration or schema_version bump — a real, plausibly-hit regression on persisted consumer data, not merely a stale doc claim, but the failure mode is a loud crash rather than a silently wrong result/belief, so it lands at major rather than blocker."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/behaviour-change#7",
+      "severity": "major",
+      "reason": "The paired edits are a legitimate fix (population no longer excludes hit-producing structs, so hits are no longer swallowed by the DEAD branch), but they flip the exit code from 2 (cannot-evaluate) to 1 (finding) for a real, reachable corpus shape (a package with zero field-documented structs) in a system whose own CLAUDE.md declares \"exit codes are the contract\" and where named downstream consumers (the docs-build wrapper, `gbg round prepare`'s DEAD-scan line) branch on exactly that 2-vs-1 distinction — yet nothing in the evidence ties the two edits together or flags the verdict flip, so it's a real, plausibly-hit contract change missing its load-bearing note rather than a wrong result (the new behavior is in fact more correct) or a merely cosmetic drift."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/behaviour-change#8",
+      "severity": "major",
+      "reason": "The move is a defensible repair aligning code with the base docstring's own contract, but it silently flips a package whose exports are all extension-homed from a passing scan (population>0, exit 0) to DEAD (population 0, exit 2, cannot-evaluate) on an otherwise unchanged tree, and exit codes are this tool's explicit contract; nothing in the diff, a fixture, or a note records this verdict flip, leaving a plausible real scenario undocumented rather than the code being wrong."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/over-rejection#1",
+      "severity": "major",
+      "reason": "The evidence shows a hard-tier (build-blocking) scan gaining an undeclared second arm whose prefix-match site regex will false-positive on ordinary deep links into a sibling's docs, with the frozen catalogue row and fixture list not updated to cover it — a plausible, build-breaking false rejection of legitimate content and a contradiction between the catalogue's public description and actual scan behavior, but not itself a wrong mathematical/API claim, so major rather than blocker."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/over-rejection#2",
+      "severity": "major",
+      "reason": "Verified against the repo: schema/exemptions.schema.json's reason minLength moved 24→40 while Doctor.jl already enforced >=40 separately; Ledger.read throws an uncaught LedgerError on schema failure that only Doctor.jl's context() catches, while every other caller (Sync.plan/slots/status/sync, Scan.run_scan, Passes.jl, Preflight.jl) uses it as an unguarded default keyword, so Main.jl's catch-all turns a previously-legal 24-39 char reason into exit-3 'crashed' across most CLI verbs instead of a reportable exit-1 doctor FAIL, and a consumer in that state cannot even run gbg sync to repair itself; inside doctor the same failure is silently swallowed into an empty ledger, blinding every EXEMPT.* check. This is a real, plausible, fully-verified regression against the tool's own exit-code contract, but it surfaces as a loud crash/refusal rather than a subtle wrong belief a reader confidently acts on, so major rather than blocker."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/over-rejection#3",
+      "severity": "major",
+      "reason": "Empirically verified: the new regex matches any short bare-backtick pair on a line, so ordinary well-formed short template literals (not just the bare-span-in-open-template defect it targets) will fail Pkg.test(); currently latent (0/11 scripts trip it) but plausibly hit by a future frozen-instrument author, which is a real, concrete defect rather than mere style nitpicking, though it doesn't currently produce a wrong result or false belief."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/over-rejection#4",
+      "severity": "major",
+      "reason": "Confirmed (via actual Julia measurement) double-counting bug in SCAN.ARGS_FORM's splat handling that flips a 2-argument function's prose-vs-bullets verdict to a wrong 3-argument bulleted-form directive — a real, reproducible defect that a contributor will plausibly hit (the typed-splat idiom is named as common in the numerical consumers), but it is currently latent in this package, fires only in a triage (non-gating) scan, and produces an actionable-but-reversible false positive rather than a silently-trusted wrong belief baked into shipped prose or an API/cost claim."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/over-rejection#5",
+      "severity": "major",
+      "reason": "Verified against the actual code at 0d5a18c1: moving examined[]+=1 past the extension-homed skip, combined with signature_fidelity.jl's pre-existing filter of EXTENSION-HOMED rows out of hits, makes population==0 and isempty(hits) both true for an all-extension-homed package, tripping the triage DEAD branch (exit 2) where the pre-move counter would have kept population>0 and reported clean — a real, confirmed regression and a genuine contradiction between the diff's own isempty(hits) relaxation and the one scan it doesn't reach; it stops short of blocker because the failure is loud (an immediate, diagnosable build failure naming the exact scan) rather than a silent wrong belief, and the triggering shape (zero non-extension displayed bindings) is a narrow corner case with no test exercising it either way."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/over-rejection#6",
+      "severity": "minor",
+      "reason": "Verified in code that the RULE_WITH_CHECK test genuinely bars mixing a mechanical check with panel/session/weakness in one rule's check list, but at HEAD no rule trips this (RULE.DOC.LINKS's check is scan-only, no panel entry, so it validates today) and the policy prose never claims mixed declarations are allowed — the cost is a forward-looking constraint on how future partial-coverage rules can be honestly declared, not a present wrong claim, contradiction, or broken artefact."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/over-rejection#7",
+      "severity": "major",
+      "reason": "The new predicate rejects any legitimately-loaded schema whose name literal doesn't share a line with one of two hardcoded function names (load_schema/read_verdicts), so a loader via a helper, a variable, or a third wrapper fails the test though correctness is unaffected; this isn't hypothetical — the diff itself already added two validations solely shaped to satisfy the grep, showing the test is actively distorting production code rather than verifying a real property."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/over-rejection#8",
+      "severity": "major",
+      "reason": "Confirmed against the diff at 0d5a18c1: bank's new core-schema check throws RoundError (uncaught -> exit 3) instead of returning 2 like every sibling refusal in the same function, breaking the exit-code contract and firing after the witness runner/panel (and check-consistency's manuscript regeneration) have already run; the same audit's numerics#1 finding shows schema/validator drift already happens in this codebase, and a later commit (192a336, outside the audited range) fixes exactly this throw-vs-return-2 gap — corroborating it as a real defect rather than purely theoretical, though the finding's own analysis that the check is \"close to one that cannot fail\" under current schemas keeps it short of blocker."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/public-contract#1",
+      "severity": "minor",
+      "reason": "The finding's own evidence only shows the population==0-with-hits combination existing at base via SCAN.FIELD_DOCS's undercounting bug, which this same diff fixes at the root — it does not establish that any scan can still reach that state at head, so the flagged exit-2→exit-1 contract change reads as a correct, narrowly-scoped fix whose only real gap is a missing CHANGELOG note, not a currently reachable behavioral surprise."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/numerics#1",
+      "severity": "major",
+      "reason": "Verified against source: Doctor.jl catches Ledger.read failures via ctx.ledger_error, but Scan.jl:423's scan_docs calls Ledger.read(cfg) with no try/catch, so tightening minLength 24->40 turns a previously schema-valid (24-39 char reason) ledger into an uncaught LedgerError that crashes gbg scan docs/html and blanks every exemption in the file, not just the offending entry -- a concrete, plausible defect (a contradiction between call sites' error handling) rather than mere cosmetic drift, though it only triggers when a ledger already violates CFG.EXEMPTIONS' 40-char rule."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/numerics#2",
+      "severity": "nit",
+      "reason": "The finding's own analysis concedes the reorder is a correctness fix aligning the counter with the unchanged, already-documented behavior (extension-homed bindings are \"skipped\"); the only residual complaint is missing test coverage locking in the (now more accurate) population value, a judgment call rather than a wrong result or misleading claim."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/claim-versus-edit#1",
+      "severity": "major",
+      "reason": "Well-evidenced mismatch between commit 175fe95's stated all-docs scope and its actual diff, which added a hard-fail schema check to bank() that (per the quoted 235d292 fix commit message) crashed on every real hunt finding for two commits — a real, plausibly-hit defect and claim/edit contradiction, but the bug was already caught and corrected within the same audited range rather than remaining a live wrong-result/wrong-belief hazard at HEAD, so it falls short of blocker."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/claim-versus-edit#2",
+      "severity": "major",
+      "reason": "Verified via git diff that 175fe95 silently tightened exemptions.schema.json's reason.minLength from 24 to 40 (plus two additionalProperties:true -> $ref tightenings) with no mention in the commit message, and Scan.jl's run_scan takes `ledger = Ledger.read(cfg)` as a default argument evaluated outside its try/catch (which only guards `f(cfg, files)` and explicitly rethrows LedgerError anyway), so a legacy exemption with a 24-39 char reason now throws an uncaught LedgerError from scan/sync/passes call sites instead of the previous orderly CFG.EXEMPTIONS doctor FAIL -- a real, verified crash-vs-report regression smuggled into an unrelated docs-fix commit, though narrower in blast radius (no such short-reason entries exist in-repo today, no test exercises the band, and no confirming follow-up commit like the companion finding's 235d292) than a guaranteed-every-run breakage."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/contract-drift#1",
+      "severity": "major",
+      "reason": "Verified against panel.js: dropping \"rulebook\" from needs removes both the file grant and the substrate instruction to read latex-idiom.md, while the hat's unchanged persona still claims it reads that rulebook first as authoritative -- a genuine contradiction between surfaces (persona vs. actual grant) that recurs on every future /check-consistency round and silently weakens RULE.TEX.* enforcement with no error signal; it degrades an instrument's grounding rather than delivering a directly false quantified mathematical/API/cost claim to a reader, so it lands at major rather than blocker."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/contract-drift#2",
+      "severity": "major",
+      "reason": "The `report` guard now suppresses the DEAD verdict whenever hits exist, even though the unchanged ScanResult docstring still promises unconditionally that population==0 means DEAD — a real contradiction between the code contract (docstring) and the implementation that silently disarms the population-miscount alarm across all 42 scans (not just the one, field_docs, whose specific defect was already fixed independently), but it manifests only if/when some scan actually miscounts population while producing hits, which isn't shown to be presently occurring — a latent, plausible defect and doc/code contradiction rather than an active wrong result today."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/contract-drift#3",
+      "severity": "major",
+      "reason": "Evidence (unchanged check_paths body, three synchronized doc edits) supports a real, silent downgrade of a documented guarantee (that CFG.SURFACES verifies docs_build names docs/make.jl) into a weaker expectation-only claim with no governance record, while ARCHITECTURE's mandatory-makedocs-wrapper text elsewhere still assumes the two are the same file — a contradiction between surfaces and a missing load-bearing statement, but the reworded text itself is accurate about what the code actually checks, so it doesn't hand a reader a false belief outright (not blocker)."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/contract-drift#4",
+      "severity": "major",
+      "reason": "The commit rewrote the scan-header/§12.B description of RULE.DOC.SHAPE to match the actual unchanged code, but left RULES.toml:231 and ARCHITECTURE §12.A still stating the cap binds \"always\" — a direct contradiction between two authoritative surfaces (the pinned rulebook vs. the enforcement description) that a consumer relying on the \"always\" text will plausibly hit, since a baselined rationale paragraph can exceed the cap indefinitely; this is a surface contradiction rather than a wrong mathematical/API/cost claim, so major rather than blocker."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/contract-drift#5",
+      "severity": "major",
+      "reason": "The evidence shows a fleet-pinned rule's ordering and its enforcement class (moved to check=[\"weakness\"], i.e. unenforced by any program) were changed in the same commit as the rewrite of both judging personas and the structure-consistency hat's own example template, with no recorded rationale — a real, load-bearing behavioral shift (every existing caveat-before-formula docstring in four consumer packages becomes an ordering violation at the next round with no prose change) and a plausible contradiction with that hat's own untouched DIRECTION RULE against priming judgment toward the majority arrangement; it's not a blocker because it doesn't itself assert a false mathematical/API/cost claim and hinges on whether the reorder was an (undocumented) owner decision rather than confirmed wrong content."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/contract-drift#6",
+      "severity": "major",
+      "reason": "A hard-tier scan (exit-1, gates docs builds) gained a genuinely new hit class plus non-terminating-per-unit behavior, but ARCHITECTURE §12.B still states only the old half-rule, catalog/scans.toml's fixture list wasn't extended to cover the new arm, and no CHANGELOG/rate-comparability note exists — a real, plausibly-hit contradiction between the documented contract and the enforced one (legal, common consumer docs now fail to build unannounced), not a wrong mathematical/API claim rising to blocker, and not a cosmetic or localized drift."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/contract-drift#7",
+      "severity": "major",
+      "reason": "Evidence (Ledger.read throwing uncaught in Scan.scan_docs/scan_html and Sync, Doctor.context swallowing the error into an empty ledger, Doctor's own reason>=40 check) supports a real, plausible-to-hit backward-incompatible regression — a previously-valid consumer ledger entry (reason 24-39 chars) now crashes gbg sync/scan/gate outright instead of the doctor naming the one bad entry, and silently drops all other exemptions in the file — undocumented in the CHANGELOG; it's a concrete behavioral break a reader will hit, not a pervasive misleading-belief issue, so major rather than blocker."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/contract-drift#8",
+      "severity": "minor",
+      "reason": "The post-diff docstring text (\"searched after pkg and before modules\") is verified accurate against the unchanged code (Iterators.flatten(((pkg,), externals, modules))) and makes no false claim; the underlying Base-shadowing defect (confirmed real for Config.read/Git.run, though 3 of the finding's 5 named collisions are not actual Base exports) predates and is untouched by this diff and is explicitly out of the finding's own scope. What the diff actually did was replace an imprecise positional claim (\"searched last\", which was never literally true since modules is last, not externals) with a truthful one, while dropping the design-intent framing and any warning of the known shadowing risk — a real editorial gap, but not one that leaves a reader with a wrong belief about the API's behavior, since the resulting statement is correct as far as it goes."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/sweep-completeness#1",
+      "severity": "major",
+      "reason": "The sweep gap is real and demonstrated in-session (an unscoped grep during this very audit leaked verbatim prior-round verdict JSON from .gbg/rounds/), and two of the four left-behind files were touched in this same diff for unrelated reasons yet kept only the weaker text-only prohibition already shown insufficient — a plausible, already-triggered defect rather than hypothetical or cosmetic, but it's a process/instruction-consistency issue rather than a wrong mathematical, API, or cost claim, so it falls short of blocker."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/sweep-completeness#2",
+      "severity": "minor",
+      "reason": "Confirmed accurate against the actual diff endpoint (0d5a18c1) — Preflight.jl:200 does restate the hat definition verbatim without the @ref backlink sibling terms received in the same diff — but the duplicated content is itself correct, not contradictory or misleading about any mathematics, API, or cost, so it's a localized, low-consequence drift rather than something a reader would be misled by."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/sweep-completeness#3",
+      "severity": "major",
+      "reason": "This diff corrects ARCHITECTURE.md's schema count/list (18→16, dropping lane-file/hunt-candidate as separate files) but leaves IMPLEMENTATION.md — the tracked build plan, not frozen provenance — asserting the old count and naming two files verifiably absent from schema/, exactly the cross-surface contradiction and stale quantified claim the 'major' tier describes, with no nearby correction."
+    },
+    {
+      "id": "2026-09-09-audit-changes-01/reader-consequence#1",
+      "severity": "major",
+      "reason": "Verified against 0d5a18c1: SCAN.ARGS_FORM's wants_bullets formula there is exactly `>= ARGS_THRESHOLD || !isempty(kw)` with no eltype-keyword carve-out, while policy/docs-rubric.md's RULE.DOC.ARGS_FORM (confirmed untouched by the diff) explicitly exempts \"a single element-type keyword bound in one prose clause\" — a real, fleet-wide contradiction between the rendered rubric and its first-ever mechanical enforcer that will fire a dismissible false-positive triage finding on every legitimately-exempt docstring, with no ledger note; it doesn't rise to blocker because the scan is triage-tier (a dismissible finding, not a build-breaking or factually wrong API/math/cost claim), but it is squarely the \"contradiction between surfaces\" that defines major."
+    }
+  ]
+}
