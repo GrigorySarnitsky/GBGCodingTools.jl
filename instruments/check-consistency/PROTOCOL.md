@@ -64,9 +64,10 @@ Every hat is forbidden `.gbg/` and `~/.gbg/`. The panel is COLLECT-ONLY: it neve
    text, never from the diff) and the state verifier (blind to the diff; `PRESENT` / `PARTIAL` /
    `REGRESSED` / `ABSENT` / `NOT-A-DEFECT` / `UNCLEAR`, default `PRESENT`). Launch both as printed. Each
    verdict file carries the nonce and the sha of `findings.json`; a copy-forward verdict is REJECTED.
-7. **Grade.** `gbg round grade <round>` applies the demotion (`HONORED` with an empty
-   `class_surfaces[]` becomes `LINE-ONLY`, mechanically), the closure channels (`honored`, `adjudicated`,
-   `seeded`, `rescan`) and prints the pass series and the plateau signal; exit 1 while any id is open.
+7. **Grade.** `gbg round grade <round>` applies the demotion (`HONORED` becomes `LINE-ONLY`,
+   mechanically, when `class_surfaces[]` is empty and equally when any entry in it is `swept: false`),
+   the closure channels (`honored`, `adjudicated`, `seeded`, `rescan`, `carried`) and prints the pass
+   series and the plateau signal; exit 1 while any id is open.
    Loop 5–7 over the SAME `findings.json`: the denominator is fixed, so it converges. Re-running the
    panel over a just-edited corpus is a new search, not the closure loop; do it after closure if at all.
 8. **Adjudicate.** A finding that is not a defect is closed by a ledger entry in `.gbg/exemptions.toml`

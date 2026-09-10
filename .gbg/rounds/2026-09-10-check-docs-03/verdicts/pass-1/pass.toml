@@ -1,15 +1,16 @@
+tool_tree_sha = "85f8fa042322043de8a81e71334d17e71c3e4622"
+state_ids = ["2026-09-10-check-docs-03/rationale#1", "2026-09-10-check-docs-03/rationale#2", "2026-09-10-check-docs-03/pages#1", "2026-09-10-check-docs-03/pages#2", "2026-09-10-check-docs-03/pages#3", "2026-09-10-check-docs-03/src#1", "2026-09-10-check-docs-03/src#2", "2026-09-10-check-docs-03/src#3", "2026-09-10-check-docs-03/src#4", "2026-09-10-check-docs-03/ext#1", "2026-09-10-check-docs-03/built-html#1", "2026-09-10-check-docs-03/workflow-scripts#1", "2026-09-10-check-docs-03/workflow-scripts#2", "2026-09-10-check-docs-03/workflow-scripts#3", "2026-09-10-check-docs-03/workflow-scripts#4", "2026-09-10-check-docs-03/workflow-scripts#5", "2026-09-10-check-docs-03/workflow-scripts#6", "2026-09-10-check-docs-03/workflow-scripts#7", "2026-09-10-check-docs-03/catalogues#1", "2026-09-10-check-docs-03/catalogues#2", "2026-09-10-check-docs-03/catalogues#3", "2026-09-10-check-docs-03/rulebook#1", "2026-09-10-check-docs-03/schemas#1", "2026-09-10-check-docs-03/schemas#2", "2026-09-10-check-docs-03/schemas#3", "2026-09-10-check-docs-03/schemas#4", "2026-09-10-check-docs-03/cold-reader#1", "2026-09-10-check-docs-03/cold-reader#2", "2026-09-10-check-docs-03/cold-reader#3", "2026-09-10-check-docs-03/cold-reader#4", "2026-09-10-check-docs-03/operational-claims#1", "2026-09-10-check-docs-03/operational-claims#2", "2026-09-10-check-docs-03/operational-claims#3", "2026-09-10-check-docs-03/operational-claims#4", "2026-09-10-check-docs-03/operational-claims#5", "2026-09-10-check-docs-03/operational-claims#6", "2026-09-10-check-docs-03/operational-claims#7", "2026-09-10-check-docs-03/operational-claims#8", "2026-09-10-check-docs-03/operational-claims#9", "2026-09-10-check-docs-03/operational-claims#10"]
+range = "2b2797c95a34e514171881c4027076ea907207c1..14ee7135857422bf52e51bd161a7aeafb3b61313"
+superseded_by = 2
+pass = 1
+opened = "2026-09-10T21:31:15"
 tool_version = "1.0.0-rc.5"
 head = "14ee7135857422bf52e51bd161a7aeafb3b61313"
 fix_range = "2b2797c95a34e514171881c4027076ea907207c1..14ee7135857422bf52e51bd161a7aeafb3b61313"
-tool_tree_sha = "85f8fa042322043de8a81e71334d17e71c3e4622"
-state_ids = ["2026-09-10-check-docs-03/rationale#1", "2026-09-10-check-docs-03/rationale#2", "2026-09-10-check-docs-03/pages#1", "2026-09-10-check-docs-03/pages#2", "2026-09-10-check-docs-03/pages#3", "2026-09-10-check-docs-03/src#1", "2026-09-10-check-docs-03/src#2", "2026-09-10-check-docs-03/src#3", "2026-09-10-check-docs-03/src#4", "2026-09-10-check-docs-03/ext#1", "2026-09-10-check-docs-03/built-html#1", "2026-09-10-check-docs-03/workflow-scripts#1", "2026-09-10-check-docs-03/workflow-scripts#2", "2026-09-10-check-docs-03/workflow-scripts#3", "2026-09-10-check-docs-03/workflow-scripts#4", "2026-09-10-check-docs-03/workflow-scripts#5", "2026-09-10-check-docs-03/workflow-scripts#6", "2026-09-10-check-docs-03/workflow-scripts#7", "2026-09-10-check-docs-03/catalogues#1", "2026-09-10-check-docs-03/catalogues#2", "2026-09-10-check-docs-03/catalogues#3", "2026-09-10-check-docs-03/rulebook#1", "2026-09-10-check-docs-03/schemas#1", "2026-09-10-check-docs-03/schemas#2", "2026-09-10-check-docs-03/schemas#3", "2026-09-10-check-docs-03/schemas#4", "2026-09-10-check-docs-03/cold-reader#1", "2026-09-10-check-docs-03/cold-reader#2", "2026-09-10-check-docs-03/cold-reader#3", "2026-09-10-check-docs-03/cold-reader#4", "2026-09-10-check-docs-03/operational-claims#1", "2026-09-10-check-docs-03/operational-claims#2", "2026-09-10-check-docs-03/operational-claims#3", "2026-09-10-check-docs-03/operational-claims#4", "2026-09-10-check-docs-03/operational-claims#5", "2026-09-10-check-docs-03/operational-claims#6", "2026-09-10-check-docs-03/operational-claims#7", "2026-09-10-check-docs-03/operational-claims#8", "2026-09-10-check-docs-03/operational-claims#9", "2026-09-10-check-docs-03/operational-claims#10"]
 config_sha = "f173b70f9e732be3d706d072e763bae67d2f7628558db096d8e23de8321dde8b"
 tool_rev = "2b2797c95a34e514171881c4027076ea907207c1"
-range = "2b2797c95a34e514171881c4027076ea907207c1..14ee7135857422bf52e51bd161a7aeafb3b61313"
 regrade = false
-pass = 1
 nonce = "9d1c7af7febedace903c429b77375257"
-opened = "2026-09-10T21:31:15"
 
 [expected]
 rationale = 2
