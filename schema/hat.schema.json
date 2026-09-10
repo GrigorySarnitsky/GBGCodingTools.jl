@@ -34,14 +34,11 @@
       "minLength": 80
     },
     "substrate": {
+      "description": "the corpus the hat works in. TWO values, because the panel splits the manuscript once: what ELSE a hat is handed is `needs`, not a substrate value.",
       "type": "string",
       "enum": [
         "full",
-        "siteonly",
-        "rawhtml",
-        "docstrings",
-        "rulebook",
-        "none"
+        "siteonly"
       ]
     },
     "anchor": {

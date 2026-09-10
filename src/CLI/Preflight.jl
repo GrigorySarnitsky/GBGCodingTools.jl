@@ -231,11 +231,10 @@ The check-consistency roster. The arguments are:
 A hat — one persona of the `check-consistency` panel, bound in [`GBGCodingTools`](@ref) — carries
 `key`; the persona with its placeholders filled; and the four fields below.
 
-`substrate` names the view of the corpus the hat is asked to work in — the closed set of
-`schema/hat.schema.json`: `full` (the whole manuscript), `siteonly` (the public pages' manuscript),
-`rawhtml` (the built site), `docstrings` (the docstring surface), `rulebook` (the rulebook sections) or
-`none`. Only `siteonly` narrows the manuscript the panel actually hands over; every other value is the
-hat's brief over the full manuscript, with `needs` granting whatever else it must open. `needs` holds the
+`substrate` names the view of the corpus the hat works in — the closed set of `schema/hat.schema.json`,
+two values because the panel splits the manuscript once: `full` and `siteonly` (the public pages').
+What ELSE a hat is handed is `needs`, never a substrate value; the set named four more views that
+narrowed nothing and no hat took. `needs` holds the
 requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from, and `not_applicable`
 says the substrate cannot exist here (`html` needs with no built site, `git` with no repository,
 `rulebook` with an empty rulebook, which is the rendered policy and not the consumer's sections alone).

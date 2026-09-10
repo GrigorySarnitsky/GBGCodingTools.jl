@@ -24,6 +24,13 @@ include("helpers.jl")
     end
     @testset "every hat validates" begin
         hat = G.load_schema("hat")
+        # substrate holds the two views the panel actually delivers. It named four more — rawhtml,
+        # docstrings, rulebook, none — that narrowed nothing and no hat ever took; what ELSE a hat is
+        # handed is `needs`. Both directions, so the set cannot quietly grow back.
+        @test Set(hat["properties"]["substrate"]["enum"]) == Set(["full", "siteonly"])
+        base = Dict("key" => "k", "role" => "a role long enough", "persona" => "p"^100, "substrate" => "full")
+        @test isempty(G.validate(hat, base))
+        @test any(e -> occursin("substrate", e), G.validate(hat, merge(base, Dict("substrate" => "rawhtml"))))
         for f in readdir(joinpath(TOOL, "catalog", "hats"); join = true)
             endswith(f, ".toml") && @test isempty(G.validate(hat, TOML.parsefile(f)))
         end

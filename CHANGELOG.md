@@ -106,6 +106,15 @@ records the choice in `pass.toml`. An audit round is exempt, since it has no fix
 inside it, because a correction moves the tree and the staleness check then refuses the close for good —
 learned by making `2026-09-09-audit-changes-01` permanently unclosable and abandoning it).
 
+**The `substrate` vocabulary drops the four values that narrowed nothing.** It named six views of the
+corpus — `full`, `siteonly`, `rawhtml`, `docstrings`, `rulebook`, `none` — and the panel splits the
+manuscript exactly once, `siteonly` against `full`. The other four were briefs over the full text
+wearing the name of a corpus, no hat in the catalogue ever took one, and the consumer-facing
+`domain_hats` schema already admitted only two. What else a hat is handed is `needs`, which exists and
+works. A closed vocabulary shrank, which §5.5 makes MAJOR; nothing a hat sees changed, so no finding
+moves and rates stay comparable. Found by `2026-09-09-check-docs-02/operational-claims#10`, adjudicated
+inside that round because the remedy was a vocabulary change, and carried out here after it closed.
+
 **A pass that was opened and never graded no longer erases the last one that was.** `pass_scope` and
 `grade` read pass `k - 1`'s tally, so an opened-and-superseded pass — one with a `pass.toml` and no
 `tally.json` — read as "nothing was ever decided". A round whose every id was closed came back with all
