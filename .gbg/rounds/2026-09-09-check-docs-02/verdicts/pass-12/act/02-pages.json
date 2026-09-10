@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "420e6ee72163ae71e60d778ea66a30ed",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/pages#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "commit 175fe95, diff docs/src/guide/verbs.md: '-GBGCodingTools.Init.migrate_seeds' removed from the Consumer-setup @docs block; docs/src/api/CLI.md:26 now lists 'GBGCodingTools.Init.migrate_seeds' right after 'GBGCodingTools.Init.derive_config' (line 25) under '## Engines' — exactly the hinted destination, not a bare deletion.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/verbs.md:31 (pre-fix)",
+          "swept": true,
+          "evidence": "Init.migrate_seeds line removed from verbs.md's Consumer-setup @docs block in commit 175fe95"
+        },
+        {
+          "surface": "docs/src/api/CLI.md:26",
+          "swept": true,
+          "evidence": "Init.migrate_seeds re-homed here, adjacent to Init.derive_config (CLI.md:25), matching the finding's hint verbatim"
+        },
+        {
+          "surface": "grep for 'migrate seeds'/'migrate_seeds' across docs/src, ARCHITECTURE.md, IMPLEMENTATION.md",
+          "swept": true,
+          "evidence": "only remaining doc reference is CLI.md:26 (the engine page); no page still implies `gbg migrate seeds` is invocable"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "commit 175fe95 diff: '+GBGCodingTools.Options' added to verbs.md's Entry-point @docs block right after parse_options, matching the hint exactly. src/CLI/Main.jl:12-23 shows Options carries the full 'positional/flags/values' docstring the finding quotes, now rendered on verbs.md line 14.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/verbs.md:13-14",
+          "swept": true,
+          "evidence": "GBGCodingTools.Options now listed immediately below GBGCodingTools.parse_options"
+        },
+        {
+          "surface": "whole-repo grep for 'GBGCodingTools.Options'",
+          "swept": true,
+          "evidence": "only occurrence outside src is the new verbs.md line; no other derived-record type of this kind was named by the finding to check"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "commit 175fe95 diff adds 'GBGCodingTools.Doctor.cmd_doctor' to verbs.md's Checks-and-scans @docs block, next to Doctor.run as the hint asked. src/CLI/Doctor.jl:757-760 cmd_doctor's docstring reads '`gbg doctor [--deep] [--json] [--effective] [--only <id-or-prefix>[,…]|QUICK]`: exit 2 when the working directory is not a consumer…' — verbatim the flags and exit-2 behavior the finding says were missing.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/verbs.md:39-46",
+          "swept": true,
+          "evidence": "cmd_doctor now rendered alongside Doctor.run and doctor"
+        },
+        {
+          "surface": "whole-tree grep for 'cmd_doctor' under docs/src",
+          "swept": true,
+          "evidence": "now appears in verbs.md's @docs block, not just docs/prose_shape.csv"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "commit 175fe95 diff adds 'GBGCodingTools.cmd_scan' to verbs.md's Checks-and-scans block. src/Scan.jl:566-570 cmd_scan's docstring states '`gbg scan docs [--hard-only] [--only id,…] [--rebaseline prose-shape --reason \"…\"]`… a rebaseline writes `docs/prose_shape.csv` and returns 0' — the --rebaseline mode the finding says was undocumented is now on the page via this binding.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/verbs.md:42",
+          "swept": true,
+          "evidence": "cmd_scan now listed beside scan_docs and scan_html"
+        },
+        {
+          "surface": "whole-tree grep for 'cmd_scan' under docs/src",
+          "swept": true,
+          "evidence": "now appears in verbs.md's @docs block, not just docs/prose_shape.csv"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "commit 175fe95 diff, docs/src/guide/rounds.md:43-45: 'a build or a test' -> 'a build, a test or an audit's executable claim on that round's behalf', matching src/CLI/Gate.jl:9 gate's own docstring ('a build, a test or an executable claim'). No later commit in range reverts this line.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/rounds.md:43-44",
+          "swept": true,
+          "evidence": "phrase now names the audit's executable claim"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1521",
+          "swept": true,
+          "evidence": "already said 'invokes a build, a test or an executable claim' before this pass — not a surviving instance of the same defect, so nothing to sweep there"
+        },
+        {
+          "surface": "grep 'a build or a test' / 'build, a test' across docs/, src/, policy/ (excluding .gbg and docs/build generated output)",
+          "swept": true,
+          "evidence": "the only other guide/rationale hits already state the full three-way disjunction"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#7",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "commit 175fe95 diff, docs/src/guide/config.md:12-14: appended ', the glossary file, and any data or script surface whose comments are prose' to the [surfaces] parenthetical. schema/config.schema.json surfaces.properties keys are exactly {rationale, pages, generated, src, ext, literate, built_html, history_exempt, references_heading, glossary, data} — all 11 now have a named phrase in config.md's sentence (rationale documents, pages, generated copies, source, extensions, Literate examples, the built site, the history, references anchors, the glossary file, any data or script surface).",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/config.md:11-14",
+          "swept": true,
+          "evidence": "glossary and data keys added, completing the 11-key enumeration"
+        },
+        {
+          "surface": "adjacent [docs] enumeration on the same page",
+          "swept": true,
+          "evidence": "finding notes [docs] was already exhaustive (4/4 keys); untouched and still correct, not a surviving instance of the omission"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "420e6ee72163ae71e60d778ea66a30ed",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/audit-changes/workflow/audit.js:50 now `required: [..., 'previously_worked', ...]` on the shared item schema, and a new `schemaFor(lane)` (lines 55-64) filters `previously_worked` out of `required` for every lane except `lane.key === 'behaviour-change'` (matches catalog/lanes/audit-changes.toml:36 `key = \"behaviour-change\"`). The call site now passes `schema: schemaFor(lane)`, so the behaviour-change lane's agent output fails validation if it omits the field, closing the silent-default-to-'no' path Passes.jl:448 (`get(f, \"previously_worked\", \"no\")`) would otherwise take.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:46-64",
+          "swept": true,
+          "evidence": "required array for the behaviour-change lane's item schema now includes previously_worked via schemaFor(); this is the only surface the finding names as under-requiring the field."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/bug-hunt/workflow/dismissals.js:7 Args comment changed from '... items: [{id, title}], items_path, out ...' to '... items: [{id, title}], items_sha, items_path, out ...', matching the runtime-required key list at line 16 (items_sha in the required-args loop) and the items_sha: A.items_sha write at line 63 into dismissal.schema.json's required field. Exactly the hint's ask, nothing more added to that comment.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/dismissals.js:7",
+          "swept": true,
+          "evidence": "items_sha added to the Args comment; this is the single surface the finding names as stale."
+        }
+      ]
+    }
+  ]
+}

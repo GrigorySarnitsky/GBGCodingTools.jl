@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "420e6ee72163ae71e60d778ea66a30ed",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/catalogues#1",
+      "verdict": "PRESENT",
+      "evidence": "catalog/hats/latex-typesetter.toml:4 still `needs = [\"source\", \"rulebook\"]` (now with an explanatory comment) and its persona never references {package.rulebook_sections}. Preflight.jl:258-259 unchanged: na = (...) || (\"rulebook\" in needs && isempty(cfg[\"package\"][\"rulebook_sections\"])); line 488 excludes na hats from roster. rulebook_text() (Preflight.jl:358-368) renders POLICY_FILES unconditionally regardless of rulebook_sections, so latex-typesetter's actual grant is never gated by that emptiness, yet the roster gate still drops it for empty rulebook_sections."
+    }
+  ]
+}

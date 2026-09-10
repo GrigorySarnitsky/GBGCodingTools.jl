@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "420e6ee72163ae71e60d778ea66a30ed",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/pages#1",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md no longer lists migrate_seeds anywhere (grep for 'migrate_seeds|migrate seeds' repo-wide, excluding .gbg/, returns nothing). 'Consumer setup' now lists Init.migrate_baselines, matching the real VERBS[\"migrate baselines\"]=cmd_migrate_baselines registered in src/CLI/Init.jl:584."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#2",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:15 now lists 'GBGCodingTools.Options' right after parse_options in the Entry point @docs block; src/CLI/Main.jl:13-24 carries the full field-bulleted docstring. Options now has a rendered home."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#3",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:41 now lists 'GBGCodingTools.Doctor.cmd_doctor' in Checks and scans, alongside Doctor.run. src/CLI/Doctor.jl:761-766 docstring states exactly '--deep --json --effective --only' and the exit-2 not-a-consumer behavior."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#4",
+      "verdict": "ABSENT",
+      "evidence": "verbs.md:43 now lists 'GBGCodingTools.cmd_scan'. src/Scan.jl:568-573 docstring documents 'gbg scan docs [--hard-only] [--only id,…] [--rebaseline prose-shape --reason \"…\"]' and the prose_shape.csv write, now rendered on the page."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#6",
+      "verdict": "ABSENT",
+      "evidence": "rounds.md:44 now reads 'exported only while it runs a build, a test or an audit's executable claim', matching Gate.jl:16's three-way phrasing (build/test/executable claim) exactly; the audit case is no longer dropped."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/pages#7",
+      "verdict": "ABSENT",
+      "evidence": "config.md:11-13 now lists all 11 schema keys including 'the glossary file, and any data or script surface whose comments are prose' — verified against schema/config.schema.json surfaces.properties keys (rationale, pages, generated, src, ext, literate, built_html, history_exempt, references_heading, glossary, data): all 11 named."
+    }
+  ]
+}

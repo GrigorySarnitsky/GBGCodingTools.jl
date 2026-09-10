@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "420e6ee72163ae71e60d778ea66a30ed",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "Preflight.jl:240-242 now reads \"`anchor` is whether the hat runs at full strength... It is unrelated to the `file#heading` anchors of [`Config.resolve_anchor`](@ref)\"; Seed.jl:46-49 calls its anchor \"a third sense of the word\" and cross-links both others; Doctor.jl:260-262 adds the same disambiguating comment before CFG.HATS. Grepped all files containing \"anchor\" — remaining bare uses are the heading sense or plain-English, none unresolved."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "src/GBGCodingTools.jl:16 module docstring now states \"An **instrument** is one of four review procedures: check-docs, check-consistency, bug-hunt, audit-changes.\" read before any include. Grepped every file containing \"instrument\" (14+ files) — all cross-link `[`GBGCodingTools`](@ref) binds the term`."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#3",
+      "verdict": "ABSENT",
+      "evidence": "TestHarness.jl:590-593 now says \"[`GBGCodingTools.gate`](@ref), the generic closure gate... Never that generic gate over all four instruments\" — direct @ref link. DocLints.jl:17-18 (makedocs) also links `[`GBGCodingTools.gate`](@ref)` at first mention of \"the closure gate\". Both quoted sites are now cross-linked."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#4",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Schema.jl:40-42 (instrument_schema, first true use) now reads \"a lane is one agent's share of the round it runs, both bound in [`GBGCodingTools`](@ref)\"; GBGCodingTools.jl:19 defines it in the module docstring read before any include."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#5",
+      "verdict": "ABSENT",
+      "evidence": "GBGCodingTools.jl:20 (read first) states \"A hat is one persona of the check-consistency panel, reading the corpus from a single standpoint.\" Preflight.jl:228 restates the concept before its field list; Init.jl:233 points forward to Preflight.resolve_hats."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/cold-reader#7",
+      "verdict": "ABSENT",
+      "evidence": "GBGCodingTools.jl:20 defines \"A Workflow is the instrument's `workflow/*.js` script, launched by the session running the round\" in the module docstring read first. Schema.jl:41 (the finding's cited first use) restates the same definition inline."
+    }
+  ]
+}

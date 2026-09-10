@@ -208,7 +208,7 @@ check = ["scan:SCAN.LINK_UNIFORMITY", "scan:SCAN.DUPREF"]
 id = "RULE.DOC.SIBLING_LINK"
 file = "docs-rubric.md"
 section = "### RULE.DOC.SIBLING_LINK"
-statement = "The first mention of a sibling GBG package in a page, rationale document, Literate example or docstring links to that package's documentation site; later mentions are bare; a package never links its own name."
+statement = "The first mention of a sibling GBG package in a page, rationale document, Literate example or docstring links to that package's documentation site; a later mention does not link that site again, though it may deep-link a page of it; a package never links its own name."
 sentinel = "The first mention of a sibling GBG package in a page, a rationale document, a Literate example or a docstring is a link to that package's documentation site, written `[`Package`](https://<owner>.github.io/Package.jl/)`."
 check = ["scan:SCAN.SIBLING_LINK"]
 [[rule]]

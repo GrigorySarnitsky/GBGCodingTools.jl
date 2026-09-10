@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "420e6ee72163ae71e60d778ea66a30ed",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/schemas#1",
+      "verdict": "ABSENT",
+      "evidence": "Rounds.jl:417 now `core = load_schema(\"finding\"); coreprops = keys(core[\"properties\"])` then validates each finding projected onto coreprops (exit 2 on failure). test/schemas.jl's liveness test now requires the quoted name AND \"schema\"/\"read_verdicts\" on the same source line; a new testset 'a bug-hunt finding banks against the core schema' pins the projection both directions."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#2",
+      "verdict": "ABSENT",
+      "evidence": "instruments/bug-hunt/schema.json now has a single $defs.hunt_finding (the complete shape, kind/verdict/observed/file/line/mechanism all required); lane_file.properties.findings.items is `{\"$ref\": \"#/$defs/hunt_finding\"}` (line 191). grep for $defs.finding in this file returns nothing — the dead duplicate is gone."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#3",
+      "verdict": "ABSENT",
+      "evidence": "Both files now wire it: managed.schema.json 'files' is `additionalProperties: {\"$ref\": \"#/$defs/entry\"}` (line 16-17); tally.schema.json 'per_id' is the same (line 69-70). Swept every schema/*.schema.json and instruments/*/schema.json for unused $defs: none unwired except check-consistency's $defs.seeds, which Doctor.jl:296-297 reads directly via `inst[\"$defs\"][\"seeds\"]` (a different, intentional wiring, not this finding's class)."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/schemas#4",
+      "verdict": "NOT-A-DEFECT",
+      "evidence": "schema/exemptions.schema.json:62 now reads: 'a loose floor here on purpose: the schema refuses only a reason that is no reason at all, and CFG.EXEMPTIONS checks the real bound of 40 characters per entry. Raising this one crashes Ledger.read, and with it sync, every scan and the docs build...'. Confirmed via Ledger.jl:35-36: Ledger.read throws LedgerError on any schema-validation failure, used by every consumer, so a hard 40-char schema floor would turn a friendly per-entry doctor message into an uncaught crash everywhere. The 'on scope finding' misdescription is also gone; the doc now correctly says 'per entry', matching Doctor.jl:308's unconditional check."
+    }
+  ]
+}

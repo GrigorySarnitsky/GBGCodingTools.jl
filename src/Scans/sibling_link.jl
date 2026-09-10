@@ -1,7 +1,8 @@
 # SCAN.SIBLING_LINK — RULE.DOC.SIBLING_LINK. New with the owner's home-page review (2026-09-09): the
 # first mention of a sibling GBG package in a unit — a page, a rationale document, a Literate example, or
-# one docstring — is a link to that package's documentation site; later mentions in the unit are bare
-# code spans; a package never links its own name. Names and sites come from the fleet registry the tool
+# one docstring — is a link to that package's documentation site; a later mention does not link the site
+# again, though it may deep-link a named page of it (a cross-reference, not the repetition the rule is
+# about); a package never links its own name. Names and sites come from the fleet registry the tool
 # ships (fleet.toml: `github = "Owner/Repo.jl"` gives `https://owner.github.io/Repo.jl/`).
 function fleet_sites()
     p = joinpath(pkgdir(GBGCodingTools), "fleet.toml")

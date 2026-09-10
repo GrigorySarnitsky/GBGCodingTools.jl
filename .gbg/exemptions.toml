@@ -70,3 +70,17 @@ reason        = "the finding is right that `substrate` promises a narrowed corpu
 recorded      = 2026-09-09
 overturn_when = "panel.js delivers a corpus narrowed per substrate, or the substrate vocabulary drops the four values that narrow nothing — either makes the seed filter's siteonly-only rule wrong"
 evidence      = "src/CLI/Recall.jl; instruments/check-consistency/workflow/panel.js:60,82 branch on `siteonly` alone, and Preflight.render_args hands every hat the same {full, siteonly} manuscripts"
+
+# Adjudicated 2026-09-10 at pass 12 of round 2026-09-09-check-docs-02. The act verifier called the fix
+# LAUNDERED and was right about the diff: only the schema's description moved. The state verifier read
+# the code and found no defect to fix — the two floors are deliberate and they are not the same floor.
+# Recorded here rather than closed by another prose edit.
+
+[[exemption]]
+id            = "2026-09-09-check-docs-02/schemas#4"
+scope         = "finding"
+target        = "2026-09-09-check-docs-02/schemas#4"
+reason        = "the schema's floor and the doctor's are different instruments, not a gap to close. `Ledger.read` THROWS on any schema failure and is called by sync, every scan, the doctor and the docs build, so a schema floor refuses only a reason that is no reason at all — raising it to 40 would take the whole tool down over a short sentence in a consumer's ledger. CFG.EXEMPTIONS is where the real bound of 40 characters per entry belongs: it names the entry, keeps working, and the session fixes it"
+recorded      = 2026-09-10
+overturn_when = "Ledger.read stops throwing on a schema failure and names the entry instead, which would make one floor able to do both jobs"
+evidence      = "src/CLI/Ledger.jl:35-36 throws LedgerError on validation failure; src/CLI/Doctor.jl:308 enforces >= 40 per entry and reports it as a check"

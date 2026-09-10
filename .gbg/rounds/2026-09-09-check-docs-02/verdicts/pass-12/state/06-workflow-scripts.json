@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "420e6ee72163ae71e60d778ea66a30ed",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "audit.js:59-65 adds schemaFor(lane): clones SCHEMA and filters previously_worked out of `required` unless lane.key==='behaviour-change'; line 102 passes `schema: schemaFor(lane)` into agent(). So the behaviour-change lane's schema now requires previously_worked; other lanes correctly don't."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/workflow-scripts#4",
+      "verdict": "ABSENT",
+      "evidence": "dismissals.js:7 comment now reads 'Args: { schema_version, round, repo, package, items: [{id, title}], items_sha, items_path, out, models: {economy} }' — items_sha is present, matching line 16's required-args check and line 63's write."
+    }
+  ]
+}

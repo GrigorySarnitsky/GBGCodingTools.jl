@@ -186,9 +186,10 @@ function's own defining formula and validity clauses always staying.
 ### RULE.DOC.SIBLING_LINK
 The first mention of a sibling GBG package in a page, a rationale document, a Literate example or a
 docstring is a link to that package's documentation site, written `[`Package`](https://<owner>.github.io/Package.jl/)`.
-Later mentions in the same unit are bare code spans, and a package never links its own name. The names
-and sites come from the fleet registry the tool ships (`fleet.toml`), so the target is one string in every
-package.
+A later mention in the same unit does not link that site again — it is a bare code span, or a deep link
+to a named page of the site, which is a cross-reference rather than the repetition this rule is about.
+A package never links its own name. The names and sites come from the fleet registry the tool ships
+(`fleet.toml`), so the target is one string in every package.
 
 ### RULE.DOC.NO_DEAD_REFS
 A rendered docstring or a thrown error message cites no section number, repo path or inaccessible

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "420e6ee72163ae71e60d778ea66a30ed",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#1",
+      "verdict": "ABSENT",
+      "evidence": "docs-rubric.md:13-21 HOME_ORDER now lists caveats as item (7), last, and states 'Three rules each used to claim the end of a docstring; the order lives here, and they defer to it.' Matches ADMONITION_TITLE's 'last substantive block... before the fields list'. No conflicting order claim elsewhere."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#2",
+      "verdict": "ABSENT",
+      "evidence": "RULES.toml:429 sentinel for RULE.CIT.FULL_INLINE now ends '...title and DOI compared.' (full sentence, not 'verbatim-'). Programmatic check: all 94 sentinels in RULES.toml end in sentence-terminal punctuation; none truncated at a hyphen."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#3",
+      "verdict": "ABSENT",
+      "evidence": "RULES.toml:1-8 header no longer mentions POL.RULE_PARITY; now says 'test/schemas.jl fails when a heading exists without a row or a row without a heading' — verified real at test/schemas.jl:141. grep -rn RULE_PARITY outside .gbg/ returns zero hits."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#5",
+      "verdict": "ABSENT",
+      "evidence": "policy/00-index.md:11-14 no longer says 'the instruments cite these ids'; now reads 'The scan catalogue names the rule each scan enforces, and a ledger entry of scope policy names the rule it exempts.' grep for instrument+cite across policy/docs/instruments returns nothing."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rulebook#6",
+      "verdict": "ABSENT",
+      "evidence": "All 94 rules in RULES.toml now carry a non-empty check field (scan/doctor/test/harness/panel/weakness); the 16 example 'unchecked' ids (RULE.DOC.TWO_TIER etc.) now show panel or weakness. testing-protocol.md's RULE.TEST.RULE_WITH_CHECK text matches this exact vocabulary."
+    }
+  ]
+}

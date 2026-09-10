@@ -49,7 +49,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",772,333,0
 "ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1089,541,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
-"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3035,2910,0
+"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3048,2923,0
 "ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1462,1287,0
 "ARCHITECTURE.md § §12.C Doctor ids",135,134,0
 "ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
@@ -163,6 +163,7 @@ unit,words,longest_paragraph,admonitions
 "Passes.jl :: close(cfg, round; io = stdout) -> Int",159,112,0
 "Passes.jl :: finding_files(root, finding) -> Vector{String}",65,34,0
 "Passes.jl :: grade(cfg, round; io = stdout) -> Int",149,110,0
+"Passes.jl :: last_graded(dir, k) -> Int",108,68,0
 "Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, io ",208,77,0
 "Passes.jl :: pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects,",131,73,0
 "Passes.jl :: unswept(cfg, dir, ids, range) -> Vector{Pair{String,Vector{S",131,55,0
@@ -172,13 +173,13 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: config_sha(cfg) -> String",13,10,0
 "Preflight.jl :: copy_scripts(cfg, instrument, round) -> String",59,33,0
 "Preflight.jl :: covered_paths(cfg) -> Vector{String}",16,13,0
-"Preflight.jl :: dev_round(cfg, instrument, st) -> Union{Nothing,String}",165,83,0
+"Preflight.jl :: dev_round(cfg, instrument, st) -> Union{Nothing,String}",173,83,0
 "Preflight.jl :: next_round_id(cfg, instrument) -> String",21,17,0
 "Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",199,100,0
 "Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",131,80,0
 "Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
 "Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",76,73,0
-"Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",213,107,0
+"Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",224,118,0
 "Preflight.jl :: resolve_hunt_lanes(cfg) -> Vector{Dict}",22,19,0
 "Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",65,40,0
 "Preflight.jl :: stamps(cfg; record = nothing) -> Dict",104,66,0

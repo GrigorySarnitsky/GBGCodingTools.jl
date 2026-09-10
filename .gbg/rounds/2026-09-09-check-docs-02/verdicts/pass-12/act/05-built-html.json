@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "420e6ee72163ae71e60d778ea66a30ed",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/built-html#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Config.jl:166-168 docstring now reads 'the `glossary` file exists and a non-empty `built_html` has a `docs/` directory beside it' matching the code at lines 197-198 (`haskey(s, \"glossary\") && !isfile(...)` and `!isempty(s[\"built_html\"]) && !isdir(joinpath(root, \"docs\"))`). Diff hunk in src/CLI/Config.jl adds exactly this clause to the enumeration.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Config.jl:166",
+          "swept": true,
+          "evidence": "check_paths docstring enumeration now names glossary-exists and built_html-implies-docs/ checks alongside the pre-existing items."
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1770 (§7.3 QUICK checks table, CFG.SURFACES row)",
+          "swept": true,
+          "evidence": "diff changes the CFG.SURFACES table row to insert 'every [paths] entry is a directory; the glossary file exists and a non-empty built_html has a docs/ directory beside it;' — the same enumeration gap in the architecture doc's summary of CFG.SURFACES was closed in the same commit."
+        }
+      ]
+    }
+  ]
+}

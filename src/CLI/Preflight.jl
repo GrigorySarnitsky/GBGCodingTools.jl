@@ -130,8 +130,11 @@ end
     dev_round(cfg, instrument, st) -> Union{Nothing,String}
 
 The refusal when a documentation round would open with no released instrument to name, or `nothing`
-when it may open. The arguments are `cfg`, the validated config; `instrument`, the instrument asked
-for; and `st`, the stamps [`stamps`](@ref) computed for it.
+when it may open. The arguments are:
+
+- `cfg` — the validated config.
+- `instrument` — the instrument the round was asked for.
+- `st` — the stamps [`stamps`](@ref) computed for it.
 
 A `/check-docs` or `/check-consistency` round is a measurement, and D16 says a `dev`-stamped round is
 unclosable: a round graded by an unreleased tool compares with nothing and can be cited by no release.
@@ -235,7 +238,7 @@ A hat — one persona of the `check-consistency` panel, bound in [`GBGCodingTool
 hat's brief over the full manuscript, with `needs` granting whatever else it must open. `needs` holds the
 requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from, and `not_applicable`
 says the substrate cannot exist here (`html` needs with no built site, `git` with no repository,
-`rulebook` with no rulebook sections).
+`rulebook` with an empty rulebook, which is the rendered policy and not the consumer's sections alone).
 
 `anchor` is whether the hat runs at full strength rather than on the economy model; a `domain_hats`
 entry may anchor any key. It is unrelated to the `file#heading` anchors of
@@ -249,6 +252,12 @@ function resolve_hats(cfg::AbstractDict; profile = nothing, explicit = String[])
     keys_ = prof == "core" ? cc["core"] : prof == "explicit" ? explicit : cc["hats"]
     isempty(keys_) && throw(PreflightError("profile $prof names no hats"))
     anchors = Dict(d["key"] => d for d in cc["domain_hats"])
+    # A hat that NEEDS the rulebook is unusable only when the rulebook it would be handed is empty. The
+    # gate tested `rulebook_sections` — the consumer's OWN extra anchored sections — though `rulebook_text`
+    # renders the whole shared policy whatever that list holds, so every rulebook-needing hat silently
+    # vanished from a consumer that had added no sections of its own. latex-typesetter is one: it is told
+    # to read `latex-idiom.md` and treat it as authoritative, and that file is always there.
+    rulebook_absent = isempty(strip(rulebook_text(cfg)))
     out = Dict{String,Any}[]
     for key in keys_
         h = TOML.parsefile(hat_file(cfg, key))
@@ -256,7 +265,7 @@ function resolve_hats(cfg::AbstractDict; profile = nothing, explicit = String[])
         anchor = get(h, "anchor", false) || (haskey(anchors, key) && anchors[key]["anchor"])
         substrate = haskey(anchors, key) ? anchors[key]["substrate"] : get(h, "substrate", "full")
         na = ("html" in needs && isempty(cfg["surfaces"]["built_html"])) || ("git" in needs && !Git.is_repo(cfg["root"])) ||
-             ("rulebook" in needs && isempty(cfg["package"]["rulebook_sections"]))
+             ("rulebook" in needs && rulebook_absent)
         push!(out, Dict("key" => key, "substrate" => substrate, "needs" => needs, "anchor" => anchor, "not_applicable" => na,
                         "persona" => substitute(h["persona"], cfg), "role" => get(h, "role", "")))
     end

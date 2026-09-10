@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "420e6ee72163ae71e60d778ea66a30ed",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#1",
+      "verdict": "ABSENT",
+      "evidence": "src/Scan.jl:452-455,477-480: DEAD branch (hard and triage) now prints every hit via a for-loop over r.hits before setting code=2. Docstring updated: 'Its hits are still printed'. grep for other population==0-gated hit-drop sites returned none."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#2",
+      "verdict": "ABSENT",
+      "evidence": "src/TestHarness.jl:312: for mod in Iterators.flatten((owned, (pkg,), modules, externals)) — externals now last, matching docstring 'searched last' at line 285. Comment at 307-310 explains ordering. Only one call site found."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#3",
+      "verdict": "ABSENT",
+      "evidence": "src/Reflection.jl:420-424: def === :extension check (with continue) now precedes examined[] += 1 at line 424, so extension-homed bindings are never counted. Docstring at 320-323 says 'actually compared'."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#4",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Config.jl:203-207: docstring/comment now say the schema pins docs_build to name docs/make.jl; schema/config.schema.json:129-132 has pattern 'docs/make\\.jl' on docs_build, enforced by src/CLI/Schema.jl:111-112 — the two cannot diverge; claim is now true."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#6",
+      "verdict": "ABSENT",
+      "evidence": "src/TestHarness.jl:191-192: docstring now reads 'a frozen count differing from its ideal must carry a named holder', matching the != check at line 202. grep for 'above its ideal' across src/docs returned nothing."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#7",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/sibling_link.jl:29-40: loop no longer breaks after the first mention; uses a seen flag and, for later lines, checks home_re to flag a repeated site link. Both halves of header's rule (line 1-4) are now enforced."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#9",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Rounds.jl:255: docstring scopes quarantine to 'unparsable or invalid', excluding absent. Lines 267,271,274,276: all three mv calls now use the same replace(p, '.json'=>'.rejected.json') pattern — no divergent rename rule remains."
+    }
+  ]
+}

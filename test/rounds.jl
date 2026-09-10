@@ -30,6 +30,22 @@ end
     @test isempty(G.Passes.audit_after_code(cfg, Dict{String,Any}("head" => "HEAD~1")))     # prose only: not gated
 end
 
+# A hat that needs the rulebook is unusable only when the rulebook is empty. The gate tested the
+# consumer's OWN extra sections, though the shared policy is rendered whatever that list holds, so
+# latex-typesetter — told to read latex-idiom.md and treat it as authoritative — vanished from every
+# consumer that had added no sections of its own. Both directions: present with no sections, and absent.
+@testset "a rulebook hat drops only when there is no rulebook" begin
+    root = fixture_copy("rulebook-need")
+    cp_ = joinpath(root, ".gbg", "config.toml")
+    write(cp_, replace(read(cp_, String), r"^rulebook_sections = .*$"m => "rulebook_sections = []"))
+    cfg = G.Config.read(root)
+    @test isempty(cfg["package"]["rulebook_sections"])                     # a consumer that adds none
+    lt(c) = only(h for h in G.Preflight.resolve_hats(c) if h["key"] == "latex-typesetter")
+    @test "rulebook" in lt(cfg)["needs"] && !lt(cfg)["not_applicable"]     # the shared policy is its grant
+    for f in readdir(joinpath(root, ".gbg", "policy"); join = true); rm(f); end
+    @test lt(G.Config.read(root))["not_applicable"]                        # no rulebook at all: nothing to read
+end
+
 # The refusal that keeps a documentation round citable is at the DOOR: a /check-docs or
 # /check-consistency round at the tool root will not open while the tool names no released version,
 # because a round graded by an unreleased tool compares with nothing and no release may cite it. Both

@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "420e6ee72163ae71e60d778ea66a30ed",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/src#1",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "All 12 cited sites are now bulleted (commit 175fe95). But src/CLI/Preflight.jl:130-134 dev_round(cfg, instrument, st) -> ..., added later in the same audited range by commit 6351ca5, has 3 positional args and remains prose: 'The arguments are `cfg`, ...; `instrument`, ... and `st`, ...' — a fresh instance of the exact class, confirmed as the sole survivor by an independent mechanical scan of every docstring in src/+ext/.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:85 allocation_completeness",
+          "swept": true,
+          "evidence": "bulleted 'The arguments are:' list, 3 bullets"
+        },
+        {
+          "surface": "src/Witnesses.jl:93 witness_project",
+          "swept": true,
+          "evidence": "bulleted list, root/witness_env/package"
+        },
+        {
+          "surface": "src/Reflection.jl:311 signature_fidelity",
+          "swept": true,
+          "evidence": "bulleted list, cfg/pkg/examined"
+        },
+        {
+          "surface": "src/Scan.jl:268 regex_scan",
+          "swept": true,
+          "evidence": "bulleted list, 7 bullets"
+        },
+        {
+          "surface": "src/CLI/Config.jl:250 Config.parse",
+          "swept": true,
+          "evidence": "bulleted list, text/root/check"
+        },
+        {
+          "surface": "src/CLI/Sync.jl:560 sync",
+          "swept": true,
+          "evidence": "bulleted list, cfg/check/io/ledger"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:223 classify_lane",
+          "swept": true,
+          "evidence": "bulleted list, dir/inst/lane/first_sha"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:185 resolve_hats",
+          "swept": true,
+          "evidence": "bulleted list, cfg/profile/explicit"
+        },
+        {
+          "surface": "src/CLI/Bump.jl:12 bump",
+          "swept": true,
+          "evidence": "bulleted list, cfg/ver/abandon/io"
+        },
+        {
+          "surface": "src/CLI/Release.jl:7 release",
+          "swept": true,
+          "evidence": "bulleted list, ver/io/skip_tests"
+        },
+        {
+          "surface": "src/CLI/Gate.jl:8 gate",
+          "swept": true,
+          "evidence": "bulleted list, cfg/instruments.../io"
+        },
+        {
+          "surface": "src/CLI/Seed.jl:41 select",
+          "swept": true,
+          "evidence": "bulleted list, catalog/full/round"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:130-134 dev_round (added post-fix by commit 6351ca5)",
+          "swept": false,
+          "evidence": "3 positional args (cfg, instrument, st), still prose 'The arguments are `cfg`, ...; `instrument`, ...; and `st`, ...' — the only ARGS_FORM violation found by a mechanical scan of the entire corpus"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/args_form.jl:7 now `const ARGS_BULLET = r\"The\\s+arguments\\s+are:\"` (was a literal string), and line 8's ARGS_PROSE is likewise whitespace-tolerant. Verified `occursin(r\"The\\s+arguments\\s+are:\", \"The\\narguments are:\")` returns true, matching both named line-wrap victims.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/args_form.jl:6-8 (ARGS_BULLET/ARGS_PROSE constants)",
+          "swept": true,
+          "evidence": "literal substring/rigid-space regex replaced by \\s+-tolerant regexes, matching the hint's exact suggestion"
+        },
+        {
+          "surface": "src/Scan.jl:229-238 prose_text docstring",
+          "swept": true,
+          "evidence": "marker still wraps 'The\\narguments are:' at line 235-236, but the new regex matches across the break"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:372-388 write_payloads docstring",
+          "swept": true,
+          "evidence": "marker still wraps at line 375-376, matched by the new tolerant regex"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/args_form.jl:22-38 no longer strips the return arrow (found unsound in pass-2 for a default holding an arrow); instead it depth-matches parens from the FIRST '(' to its own closing ')', excluding any `-> (tuple)` return annotation without touching it. Replaying this logic on argcov's, classify_lane's, Rounds.load's and Demote.demote's signatures — all four named in the finding — extracts exactly the true argument list with no leaked return-tuple identifiers.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/args_form.jl:16-38 (parameter-list extraction)",
+          "swept": true,
+          "evidence": "depth-counted paren match replaces findlast(')')"
+        },
+        {
+          "surface": "src/Reflection.jl:154-166 argcov(cfg; exempt = (hit -> false)) -> (hits, population, skipped)",
+          "swept": true,
+          "evidence": "replayed logic extracts 'cfg; exempt = (hit -> false)', no spurious 'population'/'skipped'"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:246 classify_lane(...) -> (status, data, sha, note)",
+          "swept": true,
+          "evidence": "replayed logic extracts 'dir, inst, lane; first_sha=nothing' only"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:29 load(cfg, round) -> (dir, record)",
+          "swept": true,
+          "evidence": "replayed logic extracts 'cfg, round' only, not the old bug's 3-pseudo-positional corruption"
+        },
+        {
+          "surface": "src/CLI/Demote.jl:4 demote(verdict) -> (verdict′, demoted::Bool)",
+          "swept": true,
+          "evidence": "replayed logic extracts 'verdict' only"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Preflight.jl:234-237 now reads: '`needs` holds the requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from, and `not_applicable` says the substrate cannot exist here (...)' — matches the code (`na = (\"html\" in needs && isempty(...)) || (\"git\" in needs && !Git.is_repo(...)) || (\"rulebook\" in needs && isempty(...))`) exactly, and follows the hint's own wording almost verbatim.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Preflight.jl:220-244 resolve_hats docstring, `needs` field",
+          "swept": true,
+          "evidence": "explanatory clause added, verified accurate against the `na = ...` computation"
+        }
+      ]
+    }
+  ]
+}
