@@ -89,12 +89,18 @@ The arguments are:
 - `ground_truth` — the seed plan.
 - `roster` — the round's roster: the hats it resolved to run, each with its substrate.
 - `site_pages` — the page banners the site-only manuscript keeps; a `siteonly` hat sees only seeds on
-  those pages.
+  those pages. Empty means no narrowing: every roster entry is judged on every seed.
 
 A hat is judged only on the seeds it was actually handed, which follows the delivery. The panel splits
 the corpus once, `siteonly` against `full`: a `siteonly` hat sees only the seeds on a kept page, a
 `full` hat is handed the whole seeded manuscript and is judged on all of them.
-Returns the keys.
+
+That narrowing is the CONSISTENCY panel's, and it is the only one there is. A check-docs round calls
+this with the lane roster, whose `substrate` is the lane's `kind` (`surface`, `cross`, `territory`) and
+never `siteonly`, and with an empty `site_pages` — so on the docs path every lane is judged on every
+planted seed, including seeds in files that lane never opened. A docs lane's real view is its `files`
+list; until this function is given it, a docs SUSPECT means "handed two seeds SOMEWHERE in the round and
+reported none", not "on its own surface". Returns the keys.
 """
 function suspect_hats(findings::AbstractVector, ground_truth::AbstractDict, roster::AbstractVector, site_pages::AbstractSet)
     out = String[]

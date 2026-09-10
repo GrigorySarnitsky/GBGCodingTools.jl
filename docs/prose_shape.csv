@@ -6,7 +6,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D13 — Managed files: one sidecar `.gbg/managed.json` as a ca",533,474,0
 "ARCHITECTURE.md § D14 — Doctor: read-only, stable check ids, one exemptions le",473,366,0
 "ARCHITECTURE.md § D15 — Self-test: a fixture consumer at a path with a space, ",784,363,0
-"ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",776,708,0
+"ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",788,720,0
 "ARCHITECTURE.md § D17 — Migration: PF → IT → SS → CP, doctor-verified steps, n",324,239,0
 "ARCHITECTURE.md § D18 — Cost policy: economy default, anchors in the catalogue",167,100,0
 "ARCHITECTURE.md § D19 — Name: `GBGCodingTools`",128,127,0
@@ -18,7 +18,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D7 — Workflow scripts: one generic engine per instrument, ar",531,376,0
 "ARCHITECTURE.md § D8 — Deterministic helpers: one Julia CLI `gbg <noun> <verb>",480,306,0
 "ARCHITECTURE.md § D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `",1310,1199,0
-"ARCHITECTURE.md § GBGCodingTools — architecture",479,347,1
+"ARCHITECTURE.md § GBGCodingTools — architecture",513,381,1
 "ARCHITECTURE.md § Revision 10 (2026-09-09) — the rc.1 `/check-docs` round",140,95,0
 "ARCHITECTURE.md § Revision 11 (2026-09-09) — the owner's home-page review",136,136,0
 "ARCHITECTURE.md § Revision 12 (2026-09-09) — a documentation round that change",123,123,0
@@ -38,7 +38,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § item 14",102,72,0
 "ARCHITECTURE.md § item 2",156,156,0
 "ARCHITECTURE.md § item 3",101,101,0
-"ARCHITECTURE.md § item 4",81,81,0
+"ARCHITECTURE.md § item 4",98,98,0
 "ARCHITECTURE.md § item 5",13,13,0
 "ARCHITECTURE.md § item 6",61,61,0
 "ARCHITECTURE.md § item 7",27,27,0
@@ -47,7 +47,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §0 The design sentence and the requirements",440,337,0
 "ARCHITECTURE.md § §1 The platform / product model",802,565,0
 "ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",772,333,0
-"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1090,542,0
+"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1274,542,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
 "ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3115,2990,0
 "ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1481,1306,0
@@ -201,7 +201,7 @@ unit,words,longest_paragraph,admonitions
 "Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
 "Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0
 "Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
-"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",128,55,0
+"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",236,99,0
 "Reflection.jl :: ARGS_THRESHOLD",33,32,0
 "Reflection.jl :: ArgcovHit",58,48,0
 "Reflection.jl :: Docstring",70,59,0
@@ -240,7 +240,7 @@ unit,words,longest_paragraph,admonitions
 "Rounds.jl :: load(cfg, round) -> (dir, record)",16,11,0
 "Rounds.jl :: prepare(cfg, round; io = stdout) -> Int",160,58,0
 "Rounds.jl :: render(cfg, round; io = stdout) -> Int",51,20,0
-"Rounds.jl :: rerun(cfg, round, lanes; io = stdout) -> Int",86,28,0
+"Rounds.jl :: rerun(cfg, round, lanes; io = stdout) -> Int",98,40,0
 "Rounds.jl :: run_under_round(cfg, round, cmdline; log) -> Int",60,29,0
 "Rounds.jl :: seed_docs_corpus!(cfg, round, dir, rec; io = stdout) -> Int",179,120,0
 "Rounds.jl :: test(cfg, round; io = stdout) -> Int",54,24,0

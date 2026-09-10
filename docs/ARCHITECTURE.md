@@ -26,8 +26,10 @@ Vocabulary used throughout:
 - **Lane / hat** — one agent of an instrument (a *hat* is a persona in the panel; a *lane* is a
   surface or territory in the other three). Agents run inside Claude Code **Workflow scripts**
   (sandboxed JavaScript with no filesystem, configured only through an `args` object).
-- **Anchor** — a hat or lane that runs at full strength instead of the economy model. The word has
-  exactly this one meaning. Which *engine* lanes are anchors is a constant of the catalogue (the
+- **Anchor** — a hat or lane that runs at full strength instead of the economy model. This is the
+  sense every unqualified use below carries; the word has two others that are always qualified — a
+  `file#heading` anchor, the Markdown reference `Config.resolve_anchor` resolves, and a seed class's
+  anchor, the regular expression marking where a seed is planted. Which *engine* lanes are anchors is a constant of the catalogue (the
   `executing` audit lane, the two free hunt lanes, the dismissal auditor, the severity re-check); which
   *domain* hats are anchors is the consumer's config (`anchor = true|false` per hat). The
   never-economised **phases** (D18) are a different thing and are never called anchors.
@@ -840,8 +842,8 @@ that consumer's commit, stamped as `seed_catalog_sha`, §6.4), scoring/recall, a
 config key with default). PATCH: no verdict change on the fixture. `CHANGELOG.md` per tag states
 "rates comparable: yes/no" and, for a MAJOR, the recall figure on the fixture. Stamps in `ROUND.toml`
 and every `pass.toml`. `config_sha` covers `config.toml`, `hats/*.toml` and `exemptions.toml`; **every
-`gbg round` verb after `open` refuses (exit 2) a changed `config_sha` or a `tool_version` moved by
-`gbg bump`** → `gbg round pass open --regrade`, which re-validates `findings.json` under the current
+`gbg round` verb after `open` refuses a changed `config_sha` or a `tool_version` moved by `gbg bump`
+(exit 2 — except `close`, which lists it among its conditions and exits 1)** → `gbg round pass open --regrade`, which re-validates `findings.json` under the current
 schema and config, re-stamps, supersedes prior passes, and requires the closing pass at the round's
 current stamps. A changed `tool_tree_sha` under an UNCHANGED `tool_version` is "tag moved" —
 **abandon-only**, never regradable. `gbg bump` refuses open rounds unless
@@ -969,7 +971,7 @@ GBGCodingTools.jl/
       Doctor.jl Sync.jl Init.jl Fleet.jl Bump.jl Release.jl Install.jl
       Git.jl                    the git questions the round verbs and the gate ask (Main.jl's stamp and Doctor.jl's GIT.* checks run their own)
       Ledger.jl                 THE reader of `.gbg/exemptions.toml` (scope, target, expiry, the `EXEMPT.*` checks' source)
-      Preflight.jl              doctor-quick + self verify + round open + THE Workflow-args renderer (also used by `pass open`)
+      Preflight.jl              the QUICK doctor set + self verify + round open + THE Workflow-args renderer (also used by `pass open`)
       Rounds.jl                 open/prepare/build/test/bank/rerun/pass/grade/close/abandon/list/render/import (+ --empty)/compare (--recorded)
       Passes.jl                 the verification half of a round — `pass open`/`grade`/`close`, the dismissal gate, deferral carry
       RoundFiles.jl             reading and hashing what lives under `.gbg/rounds/` (the round record, the lane files, shas)
@@ -1464,7 +1466,8 @@ at the tool root, which must work when the dev checkout IS the consumer.
    copy preflight wrote from the pinned copy's `instruments/check-consistency/workflow/` (D7, V1).
    Hats run in parallel; each is told to `Write` `findings/NN-<key>.json` FIRST, then return the same
    object (schema-forced); each is forbidden to open `.gbg/**` and `~/.gbg/**` except the payload
-   files its `args` name — its manuscript, its persona, the rulebook where its substrate grants it —
+   files its `args` name — its manuscript, its persona, the rulebook where its `needs` grant it (never a substrate
+   value: the substrate enum is `full | siteonly` and narrows the CORPUS, nothing else) —
    under `.gbg/scratch/<round>/workflow/payload/` (D7, Revision 9). The script returns `{written, dead,
    empty, truncated}` and logs the next line. No tally.
 5. **Bank.** `gbg round bank <round>` (like every `gbg round` verb it runs `gbg self verify` and
@@ -1512,7 +1515,8 @@ at the tool root, which must work when the dev checkout IS the consumer.
    `findings.json`**; it terminates because the set is finite and closure is per finding.
 9. **Close.** `gbg round close <round>`: requires the latest pass `open_ids == []`, no DEAD lane, every
    expected lane graded in that pass, `config_sha` and `tool_version` unchanged since open or the round
-   re-graded (else exit 2 → `pass open --regrade`), `tool_tree_sha` unchanged under the same
+   re-graded (else a refusal line and **exit 1** — `close` reports it as one condition among the rest,
+   where every other round verb exits 2 → `pass open --regrade`), `tool_tree_sha` unchanged under the same
    `tool_version` (else "tag moved" → abandon-only), `ROUND.toml.head` an ancestor of `HEAD`
    (`git merge-base --is-ancestor`; else `pass open --regrade`), the round's existing files committed;
    runs `dismissals.js` over every `scope = "finding"` ledger entry recorded after `opened` and
@@ -2116,6 +2120,17 @@ lives at `.gbg/policy/` behind the explicit block (not `.claude/rules/`).
 - ground_truth is on disk after bank; the seeded copy lives outside the repo; a hat that opens it
   leaves a Read in its transcript.
 - Outside-project Workflow scriptPath is unverified until day 1.
+- **A fix cannot be certified across passes.** `pass_scope` hands the act verifier only the range from
+  the last GRADED pass to this one, and the act verifier's `UNDONE` means "nothing in THIS diff
+  addresses this finding". So an id whose fix landed in pass *k* and which pass *k+1* re-checks — the
+  fix pass having touched a file it names, for some other finding — is graded `UNDONE` however complete
+  the fix, and `grade`'s `honored` channel, which needs `HONORED` in the SAME pass and carries no
+  earlier act verdict forward, can never close it. There is nothing left to fix, so no later range can
+  contain a change addressing it: the only exits are a ledger adjudication or an id left open, and the
+  adjudications inflate `adjudicated_share`, the rate `gbg fleet --diff` compares. Measured on
+  2026-09-10-check-docs-03: 22 of 40 ids closed this way. The remedy is an instrument change — give the
+  act verifier every fix range since the finding was banked, or grade a re-checked CLOSED id on
+  regression rather than on this diff's contribution — and is that round's first deferral.
 
 Appended to the decision record on 2026-09-06 and reproduced verbatim: "The Workflow tool ACCEPTS a
 `scriptPath` outside the project directory and passes `args` through unchanged (probe run
@@ -2154,7 +2169,7 @@ targets the `docs/` environment, the one that always carries a manifest (D2).
   repository, `[sources] GBGCodingTools = {url, rev = "v1.0.0-rc.1"}` and `[compat] "=1.0.0"` in
   `test/` and `docs/`: both environments instantiated and loaded the tool from one read-only depot tree
   (`~/.julia/packages/GBGCodingTools/TcNy0`), and `Pkg.test()` resolved the tool from the tag before
-  running the fixture's suite. That suite then stopped in `TestHarness.gate()`, whose quick doctor set
+  running the fixture's suite. That suite then stopped in `TestHarness.gate()`, whose `QUICK` doctor set
   refuses a prerelease pin outside the tool root (`PIN.CONFIG`, `PIN.SOURCES`) — the refusal D16
   specifies, not a Pkg failure; a released `vX.Y.Z` tag is what a consumer pins. The plan's throwaway
   `v0.0.1` tag was not created: the tool's `Project.toml` says `1.0.0` at every commit, so a `=0.0.1`

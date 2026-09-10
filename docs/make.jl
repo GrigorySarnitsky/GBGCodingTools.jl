@@ -1,5 +1,5 @@
 # docs/make.jl — the tool's own site, built through its own wrapper (ARCHITECTURE D9, D15): the quick
-# doctor, the hard scans, the gate, Documenter, the built-HTML scans, the gate again. WIRE.MAKEDOCS holds
+# doctor set (QUICK: the checks that hold on any machine), the hard scans, the gate, Documenter, the built-HTML scans, the gate again. WIRE.MAKEDOCS holds
 # here as in every consumer. Run as `julia --project=docs docs/make.jl`.
 using Documenter, GBGCodingTools
 using GBGCodingTools: TestHarness, Reflection, Witnesses, Config, Doctor

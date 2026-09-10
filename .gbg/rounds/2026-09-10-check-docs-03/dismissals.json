@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-check-docs-03",
+  "items_sha": "7001995f31087b41dc7899fb7dc044785ae655e3edd8e3f8e3d0a413d4b28ec1",
+  "tally": {
+    "DISMISSAL-SOUND": 15,
+    "DISMISSAL-WRONG": 6,
+    "UNSAFE": 1
+  },
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/schemas#4",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "schema/exemptions.schema.json reason: `\"minLength\": 24, \"description\": \"a loose floor here on purpose... CFG.EXEMPTIONS checks the real bound of 40 characters per entry. Raising this one crashes Ledger.read\"`. Ledger.jl:39 `isempty(errs) || throw(LedgerError(...))`; Main.jl:146-148 `\"crashed\"` → `return 3`. Doctor.jl:74 catches into `ledger_error`; :313 `length(e[\"reason\"]) >= 40 || push!(errs, ...)`. Docs (ARCHITECTURE:742, guide/ledger.md:14) state 40 — the enforced bound."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/pages#2",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "docs/src/index.md:62-64 now reads \"an oracle class on / every public value-returning operation — `analytic`, `independent`, `property`, `relational` or / `structural`, and none resting on `relational` alone\"; the flagged phrase \"an independent reference\" appears nowhere in docs/, src/ or policy/. It matches src/TestHarness.jl:386 `ORACLE_CLASSES = (\"analytic\",\"independent\",\"property\",\"relational\",\"structural\")` and :400 \"no operation rests on `relational` alone\", plus the `relational_only` @test and `class == \"structural\" && continue` at :420."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/src#1",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "src/CLI/Release.jl:8-9 \"closed through `honored`, `adjudicated`, `rescan` or `seeded` — or carried into the next round, which `ROUND.toml`'s `closed_by.carried` records\"; L26 `get(e,\"closed_by\",nothing) in (\"honored\",\"adjudicated\",\"rescan\",\"seeded\") || String(id) in carried`; L45-46 release: \"every id through `honored`, `adjudicated`, `rescan` or `seeded`, or carried\". tally.schema.json enum: honored|adjudicated|seeded|rescan|null; round.schema.json has closed_by.carried.",
+      "what_would_bite": "n/a — docstring and code agree on all five channels, and Passes.close (Passes.jl:903-906, 994-995) closes a round only when every id is one of those four or is carried, so cites_round's predicate is exactly the closure contract."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/src#2",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "src/CLI/Passes.jl:250-254 now states it: \"plus any id that pass closed whose named locations the fix pass has touched again ... and any it closed that names no location at all, which is re-verified every pass rather than never, silence about where a defect lives being no evidence that it is gone.\" Matches the code's `(isempty(named) || any(x -> x in touched, named))`. git log -S'names no location at all' -- src/CLI/Passes.jl = 14ee713 only; git show eab66d3 -- src/CLI/Passes.jl is empty. Also stated at ARCHITECTURE.md:1501, both PROTOCOLs, guide/instruments.md:59,144."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/src#3",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "src/GBGCodingTools.jl:43 — \"- [`consolidate`](@ref) — the consolidator itself: the built site as one page-marked manuscript. A consistency round's hats read it, and its seeds go into it; a docs round seeds lane-file copies.\" Matches Rounds.jl:159-161 (\"Seeds.plant(f, s, plan); write(full, f2); write(site, s2)\") and seed_docs_corpus! (\"planted = Seeds.plant_files(dest, manuscript, plan)\"). docs/src/api/CLI.md:65 documents `GBGCodingTools.consolidate`, so the @ref resolves.",
+      "what_would_bite": "Nothing. The finding was that the engine map omitted the consolidator; the map now carries the bullet and every clause of it is true of the code. The only compression is \"one page-marked manuscript\" where `consolidate`'s home says \"Writes two manuscripts\" — but that is the map's licensed one-liner (RULE.DOC.TWO_TIER: \"a linked one-liner per operation family\", the contract at the home), and \"one page-marked manuscript\" is the package's settled name for the form, used identically at src/CLI/Seed.jl:122 and as \"one consolidated manuscript\" in seed_docs_corpus!'s docstring."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#2",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "All 11 instruments/*/workflow/*.js guard it, e.g. lanes.js:19 \"for (const k of ['round','round_dir','repo','lanes','preamble','models','policy_path','schema_version']) if (A[k] === undefined) throw\". git show 14ee713 shows exactly eleven guard lines gaining 'schema_version' (\"-...'out','models'])\" → \"+...'models','schema_version'])\"), inside the round being graded — the range artifact the adjudication names. Callers supply it: Preflight.jl:509, Passes.jl:412/846/939, Audit.jl:65.",
+      "what_would_bite": "n/a — the guard is present and used in all eleven scripts, and every CLI call site passes schema_version."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#4",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "verify-act.js:103-111 — `if (!batches.length) throw ...covering EVERY finding`; `if (covered.has(i)) throw ...is in two batches`; `for (let i = 1; i <= A.findings.length; i++) if (!covered.has(i)) throw ...is in no batch`. Only site of `batches` mode in the tree. Passes.jl:267 `range = \"$from..$head\"` (from = last graded pass's head); :611 `elseif entry[\"act\"] == \"HONORED\" && fav` is the sole honored path.",
+      "what_would_bite": "n/a — the guard is present and complete at the only site where mode=batches exists, and the range/closure machinery behaves exactly as the adjudication describes."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#7",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "hunt.js:76 (FREE_PREAMBLE): \"REPORT `candidates_found`: how many candidates you WEIGHED, not how many you report. You have no cap\" — true; only hunt.js:86 caps (\"Cap: your 6 most substantial candidates\"), and catalog/lanes/bug-hunt.toml gives the free lanes none. Passes.jl:264-266: `from = ...TOML.parsefile(prevpass), \"head\"...; range = \"$from..$head\"`. Passes.jl:611: `entry[\"act\"] == \"HONORED\" && fav` — honored needs act HONORED."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/catalogues#1",
+      "verdict": "DISMISSAL-WRONG",
+      "evidence": "docs/ARCHITECTURE.md:1467 (built as architecture.md, docs/make.jl:11): \"its manuscript, its persona, the rulebook where its substrate grants it\". schema/hat.schema.json: \"what ELSE a hat is handed is `needs`, not a substrate value\" (enum full|siteonly, pinned by test/schemas.jl:27-33); Preflight.jl:256 \"never a substrate value\"; panel.js:61 `if ((h.needs || []).includes('rulebook') ...) p.push(A.rulebook_path)`.",
+      "what_would_bite": "The dismissal's premise — \"the fix is sound, only the range blocks HONORED\" — fails: the fix is line-only. The four hat personas were corrected from \"named in your substrate\" to \"granted to you by `needs`\" (14ee713, eab66d3), but the design record's only account of how the rulebook reaches a hat still credits the substrate. A reader of the architecture page (or a consumer author configuring a hat) looks for a substrate value that grants the rulebook; none exists — the enum is {full, siteonly}, and panel.js gates the grant on `needs`. Closing the id as `adjudicated` files that surviving site permanently."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#1",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "schema/tally.schema.json $defs.entry.state: \"...,\"BROKEN\",\"BLOCKED\",\"REFUSED\",null\" — REFUSED present. Witnesses.jl:164 `return WitnessResult(name, :refused, 0, 0, 0, r)` is the sole producer; Passes.jl:642 `entry[\"state\"] = ... uppercase(String(r.status))` writes \"REFUSED\", which Passes.jl:688 `validate(load_schema(\"tally\"), tally)` now admits. ARCHITECTURE.md:1556 §6.3 row lists \"PASS | FAIL | BROKEN | BLOCKED | REFUSED\". No other enum carries this vocabulary."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#2",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "schema/audit.schema.json declares exactly: schema_version, round, base, head, kind, covered, diffstat, executable_claims, dispositions, verdict_all_clean. src/CLI/Audit.jl:40 writes exactly those ten, then validates: `errs = validate(load_schema(\"audit\"), audit)`. git show 14ee713 removed the only unwritten keys, \"staleness\" and \"severity_recheck\"; grep (excluding .gbg) finds no writer or reader of either — Passes.jl:958 computes staleness from `Git.changed_paths(...)`, Audit.jl:60 sends severity to severity.json. Tree clean."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#3",
+      "verdict": "DISMISSAL-WRONG",
+      "evidence": "Passes.jl:261-267 `j = last_graded(dir, k)` … `from = get(TOML.parsefile(prevpass), \"head\", rec[\"head\"])`; `range = \"$from..$head\"`. :450 `act = merge(base, Dict(\"range\" => fixrange, …))` — act gets only fixrange. :611 `elseif entry[\"act\"] == \"HONORED\" && fav`. ARCHITECTURE.md:1592 `honored | act = HONORED after demotion AND state ∈ {ABSENT, NOT-A-DEFECT} in the same pass`. No prior HONORED is carried forward.",
+      "what_would_bite": "`gbg round pass open` on any pass after a graded pass whose act and state verifiers disagreed. Concrete path: id X open after pass 1; the fix commit F lands in (head1, head2]; at pass 2 act=HONORED but state=PRESENT, so `fav` is false and X stays open. At pass 3 `pass_scope` sets `fixrange = head2..head3` (Passes.jl:266) and `pass_open` hands the act verifier only that (:450), so F is outside the diff and act can only return UNDONE — \"nothing in the diff addresses this finding\". `grade`'s honored channel (:611) requires act == HONORED in the SAME pass and carries no earlier act verdict forward (`carried` at :554-556 covers only ids OUTSIDE scope), so X can never close honored, at pass 3 or any later pass, however complete the fix. The only remaining exits are a ledger adjudication or leaving it open — and `unswept` (:301-311) additionally refuses the next pass unless `--sweep-ok`, since no commit touches X's named files any more. Two consequences: correct fixes are laundered into `closed_by = \"adjudicated\"`, inflating `adjudicated_share` (:668), the rate `gbg fleet --diff` compares — contradicting CHANGELOG.md:105-116's \"Rates comparable: yes … none of which alters what a verifier may conclude\" for the very change that narrowed the range; and the recovery the design grants the sibling case is missing here — ARCHITECTURE.md:1594 says a seeded id wrongly graded PRESENT \"needs no fix and no adjudication — the next pass re-grades it\", because the `seeded` channel needs no act verdict, while the identical state-verifier error on a real finding is unrecoverable. The dismissal's own reasoning (\"the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression\") describes a remedy the tree does not implement: `fixrange` starts at the last GRADED pass, never at the banked head. Nothing in test/rounds.jl asserts recovery across passes — :462-464 only check that pass 1's `fix_range` equals `range`."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#4",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "schema/carried.schema.json:2 now reads `\"$schema\": \"https://json-schema.org/draft/2020-12/schema\",` — the git diff of 14ee713 shows it replacing `\"$schema\": \"http://json-schema.org/draft-07/schema#\"`. Across the whole tree (excluding .gbg/.git) `grep -rh '\"$schema\"' | sort -u` yields exactly one line, that 2020-12 value; `grep -rn 'draft-07|draft-06|draft-04'` returns nothing. No .jl or .js file mentions `$schema`, so nothing branches on it."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#2",
+      "verdict": "DISMISSAL-WRONG",
+      "evidence": "Passes.jl:915-918: config_sha/tool_version mismatch `push!(fails,…)` (→ `return 1`); only tool_tree_sha-under-same-version `return 2`. But ARCHITECTURE.md:1513-1515 on `gbg round close`: \"`config_sha` and `tool_version` unchanged since open or the round re-graded (else exit 2 → `pass open --regrade`)\", and :841-843: \"every `gbg round` verb after `open` refuses (exit 2) a changed `config_sha` or a `tool_version` moved by `gbg bump`\".",
+      "what_would_bite": "The docstring was fixed but the class was not swept: `gbg round close <round>` after `gbg bump`, or after any edit to .gbg/config.toml, hats/*.toml or exemptions.toml, exits 1 (Rounds.jl:818 returns close()'s Int verbatim; guard is called with allow_config_change=true so it does not throw 2). A session or CI wrapper branching on the design's stated contract — ARCHITECTURE §6.2 step 9 and D16, both live site pages (docs/make.jl:11 copies ARCHITECTURE.md into the built site as architecture.md) — reads 2 = \"cannot evaluate, regrade\" where the CLI says 1 = \"finding\". grade() genuinely returns 2 there (Passes.jl:545-547), so the sibling verb's asymmetry is exactly what the prose flattens. The dismissal's \"fixed, only the grading window blocked HONORED\" is false on the current tree."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#3",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "Rounds.jl:331 \"`:dead` (absent; ... or well-formed with zero findings AND an empty `checked[]`...)\" matches :355 `(n == 0 && isempty(get(data, \"checked\", []))) && return (:dead, data, sha, \"zero findings AND empty checked[] — a dead lane, not a clean one\")`; git -L shows it landing in 14ee713, this round's earlier fix pass. Passes.jl:266-267 `from = ...get(TOML.parsefile(prevpass), \"head\", ...)`; `range = \"$from..$head\"` — the range does start at the last graded pass."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#6",
+      "verdict": "DISMISSAL-WRONG",
+      "evidence": "Rounds.jl:452-455 `rec[\"dead_lanes\"] = sort!(dead)` (dead = :dead ∪ :rejected), then \"Re-run only them: gbg round rerun $round --lanes\". Rounds.jl:636 rerun is \"restricted to the lanes / the last bank classified DEAD\"; :650 \"rerun: refused — not classified DEAD by the last bank\". instruments.md:48 and both PROTOCOL.md: \"A DEAD or REJECTED lane is exit 2 … re-runs only the dead ones.\" Rounds.jl:10 \"re-launches dead lanes\".",
+      "what_would_bite": "A lane file edited after first sight classifies :rejected (Rounds.jl:342); bank exits 2 and prints `gbg round rerun <round> --lanes <that lane>` for it, but rerun's docstring (Rounds.jl:636) and the refusal string it prints (Rounds.jl:650) both say only lanes \"classified DEAD\" may be re-run — the documented contract contradicts the command bank just issued. That is the same DEAD-where-the-code-means-DEAD-or-REJECTED claim finding #6 named, unswept one function below the line the fix changed (14ee713), and missed again by the pass-2 class sweep (eab66d3) which did fix the three protocol/guide mirrors. The adjudication closed the id on \"however sound the fix\"; the correct act verdict was LINE-ONLY."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#7",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "Release.jl:19 `\"v\" * String(r.round[\"tool_version\"]) == tag`; Preflight.jl:114 `(ver = tag[2:end])` — the stamp is written without the `v`, so the comparison now matches. Release.jl:26 `in (\"honored\",\"adjudicated\",\"rescan\",\"seeded\") || String(id) in carried` matches tally.schema.json's `closed_by` enum and round.schema.json's `closed_by.carried`. Asserted both ways: test/rounds.jl:84 `@test G.cites_round(cfg, \"v1.0.0-rc.1\")`, :87 `@test !G.cites_round(...)`. Passes.jl:266 `range = \"$from..$head\"` with `from` the last graded pass's head — the act verifier's UNDONE is that range, not the tree.",
+      "what_would_bite": "n/a — the criterion is satisfiable and matches its documented vocabulary on the current tree; the act verifier's UNDONE follows from pass_scope's fix range starting at the last graded pass, which the adjudication correctly names."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/rationale#2",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "ARCHITECTURE.md:495 \"(`Reflection.package_operations()`) to `.gbg/scratch/public_surface.json`\"; :538 \"`Reflection.package_operations()`, which it CALLS and does not define\"; :987 tree lists TestHarness.jl without it, \"Reflection.jl … public surface\". src/Reflection.jl:21 \"export argcov, signature_fidelity, xlink, dupref, package_operations\"; TestHarness.jl:98/226/407 call `Reflection.package_operations`. grep \"TestHarness.package_operations\" (excluding .gbg/.git) returns nothing; docs/src/architecture.md matches.",
+      "what_would_bite": "n/a — the only TestHarness-attributed listing left is docs/design-record/round1-platform.md:613, a superseded proposal (it still has a Python CLI) that is provenance, never rebuilt into the site, and not a site the finding named."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/pages#3",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "Lane surface is `pages = [\"docs/src/**/*.md\"]` (ARCHITECTURE.md:1365). Every live statement names both arms: rounds.md:45 \"empty, and equally when any entry in it is `swept: false`\"; instruments.md:153; architecture.md:1508,1548; Demote.jl:11-13/:23. Mechanism holds: Passes.jl:266 `from` = last graded pass head → fixrange (:450); :611 `act == \"HONORED\" && fav` is the sole honored channel, else the ledger."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/cold-reader#1",
+      "verdict": "DISMISSAL-WRONG",
+      "evidence": "docs/ARCHITECTURE.md:29-30 (and docs/src/architecture.md, same lines): \"**Anchor** — a hat or lane that runs at full strength instead of the economy model. The word has exactly this one meaning.\" Yet :1109 \"**Anchor semantics (used by every `file#heading` value below).**\", and src/CLI/Doctor.jl:14 \"`anchor` carries three unrelated senses across this package\"; src/CLI/Config.jl:123-124 \"A hat's or lane's `anchor` is a different thing … and a seed class's a third.\"",
+      "what_would_bite": "A cold reader on the built site: docs/src/architecture.md:29-30 binds `anchor` to one meaning, while docs/src/guide/config.md's `@docs` block renders Config.resolve_anchor's docstring saying the hat/lane sense \"is a different thing … and a seed class's a third\" — and architecture.md itself uses the file#heading sense at :96, :98, :1109, :1778-1779. The dismissal's premise (\"fixed at every site\") fails at the one site that binds the vocabulary; ARCHITECTURE.md is a live rationale surface (Init.jl:109; ARCHITECTURE :1148, :1365), not design-record provenance, so it was fixable and the fix made the tree self-contradictory rather than clear."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/cold-reader#3",
+      "verdict": "UNSAFE",
+      "evidence": "Recall.jl:94-96 \"A hat is judged only on the seeds it was actually handed... `siteonly` against `full`\". But Rounds.jl:525 `suspect_hats(findings, ..., rec[\"roster\"], Set{String}())`, and Preflight.jl:380 `\"substrate\" => get(r,\"substrate\", get(r,\"kind\",\"\"))` gives docs lanes \"surface\"/\"cross\", so sees_seed (Recall.jl:79-80) never narrows — yet Rounds.jl:530 prints \"SUSPECT lanes (≥ 2 seeds on their surface\"",
+      "what_would_bite": "The gloss text is present (Recall.jl:9-12, 90-96), so the \"fix landed\" half is visible; what I cannot establish is that it is right at \"every site the finding names\". The same docstring documents `suspect_hats`, whose second live caller is the check-docs bank (Rounds.jl:525): lane substrates are \"surface\"/\"cross\" and `site_pages` is empty, so `sees_seed` returns true for every seed and every lane is judged on all planted seeds regardless of the files it read — while the banner it prints claims \"≥ 2 seeds on their surface\". A reader of the API page (docs/src/api/CLI.md lists GBGCodingTools.Recall.suspect_hats) is told the function narrows by delivery; on the docs path it does not, and the sibling consistency path (Rounds.jl:506, real site_pages) does. The only assertion, test/seeds.jl:79-80, exercises substrate \"full\" alone, so nothing pins the gloss for the docs caller."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/cold-reader#2",
+      "verdict": "DISMISSAL-WRONG",
+      "evidence": "docs/make.jl:1 \"the tool's own site, built through its own wrapper (ARCHITECTURE D9, D15): the quick / # doctor, the hard scans, the gate\" — bare. Its own seed, swept in the same commit: templates/make.jl.seed:2 \"the quick doctor set (QUICK: the checks that hold on any machine)\". templates/README.md: \"make.jl.seed | docs/make.jl | S\" = \"seeded once … never rewritten\". Also CHANGELOG.md:176,263 \"the quick set\".",
+      "what_would_bite": "The premise \"every live use of the phrase now names QUICK; only six provenance files under docs/design-record/ remain\" is false on the current tree. Commit 6788672 (\"every live bare use of 'the quick doctor'\") swept templates/make.jl.seed but not docs/make.jl — the tool's own copy of that same header sentence, which D15 makes the fifth consumer's and which `gbg sync` never rewrites (class S), so it stays bare permanently. Reader path: anyone opening docs/make.jl, the build entry ARCHITECTURE D9 names as the per-push enforcement point, meets \"the quick doctor\" undefined, while every consumer's rendered docs/make.jl now glosses it. Same asymmetry in ARCHITECTURE.md:2157 (the sweep edited that line to \"quick doctor set\" and still left QUICK unnamed) and ARCHITECTURE.md:972 \"doctor-quick\", plus CHANGELOG.md:176 and :263 \"the quick set\" — none of these are docs/design-record/ provenance."
+    }
+  ],
+  "reopened": [
+    "2026-09-10-check-docs-03/catalogues#1",
+    "2026-09-10-check-docs-03/schemas#3",
+    "2026-09-10-check-docs-03/operational-claims#2",
+    "2026-09-10-check-docs-03/operational-claims#6",
+    "2026-09-10-check-docs-03/cold-reader#1",
+    "2026-09-10-check-docs-03/cold-reader#3",
+    "2026-09-10-check-docs-03/cold-reader#2"
+  ],
+  "dead": [],
+  "complete": false
+}

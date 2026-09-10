@@ -525,7 +525,7 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         suspect = Recall.suspect_hats(findings, Dict("seeded" => plan), rec["roster"], Set{String}())
         bankrec["recall"] = recall; bankrec["suspect_hats"] = suspect
         println(io, "bank: recall per class — ", join(("$c: " * (v isa AbstractDict ? "$(v["found"])/$(v["planted"])" : "UNDEFINED") for (c, v) in sort!(collect(recall); by = first)), ", "))
-        isempty(suspect) || println(io, "bank: SUSPECT lanes (≥ 2 seeds on their surface, zero matches): ", join(suspect, ", "))
+        isempty(suspect) || println(io, "bank: SUSPECT lanes (≥ 2 seeds planted anywhere in this round, zero matches — a docs lane is not narrowed to its own files; see Recall.suspect_hats): ", join(suspect, ", "))
         println(io, "bank: $marked seeded finding(s) marked; they are never fixed in the corpus")
         # the disposable corpus has done its work; a seeded tree left on disk is a tree someone will read
         sr = String(get(rec, "seed_root", ""))
@@ -633,7 +633,7 @@ end
 
 `gbg round rerun <round> --lanes a,b`: prints the call to the instrument's Workflow (its `workflow/*.js`
 script) restricted to the lanes
-the last bank classified DEAD. The arguments are:
+the last bank could not evaluate — DEAD or REJECTED, the two it records together in `dead_lanes`. The arguments are:
 
 - `cfg` — the validated config.
 - `round` — the round id.
@@ -647,7 +647,7 @@ function rerun(cfg::AbstractDict, round::AbstractString, lanes::AbstractVector{<
     dir, rec = guard(cfg, round; io)
     dead = Set(String.(rec["dead_lanes"]))
     bad = [l for l in lanes if !(l in dead)]
-    isempty(bad) || (println(io, "rerun: refused — not classified DEAD by the last bank: ", join(bad, ", "), " (a live lane is never re-run)"); return 2)
+    isempty(bad) || (println(io, "rerun: refused — not DEAD or REJECTED at the last bank: ", join(bad, ", "), " (a live lane is never re-run)"); return 2)
     argp = joinpath(Preflight.workflow_dir(cfg, round), "main.args.json")
     isfile(argp) || (println(io, "rerun: no saved args for $round"); return 2)
     a = JSON3.read(read(argp, String), Dict{String,Any})
