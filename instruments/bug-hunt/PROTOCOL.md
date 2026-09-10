@@ -55,7 +55,7 @@ forbidden `.gbg/` except the round's own `witnesses/` directory, and `~/.gbg/`.
    `REPRODUCED` whose witness does not fail mechanically; records the sha256 of every failing witness
    body; assigns `BLOCKED` only to a witness that ERRORED, was never observed to fail, and carries a
    `# blocked: <reason>` header (moved to `witnesses/blocked/`); freezes `findings.json` and the
-   disposition records `reproductions/<id>.json`. A DEAD lane is exit 2 and nothing is frozen.
+   disposition records `reproductions/<id>.json`. A DEAD or REJECTED lane is exit 2 and nothing is frozen.
 3. **Fix** — on the owner's word, at session strength, never economised, driven from `findings.md` by
    id. A witness is never edited to suit a fix: a witness edited to pass has stopped being evidence.
    Builds and tests during the pass are `gbg round build|test <round>`.

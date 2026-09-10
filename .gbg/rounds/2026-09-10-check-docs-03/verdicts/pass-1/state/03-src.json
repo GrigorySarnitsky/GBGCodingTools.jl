@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "9d1c7af7febedace903c429b77375257",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/src#1",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Release.jl:7-9 cites_round docstring now reads 'closed through honored, adjudicated, rescan or seeded — or carried into the next round, which ROUND.toml's closed_by.carried records'. Grepped policy/instruments.md, docs/src/guide/rounds.md, Fleet.jl for a repeat of the same omission: none found."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/src#2",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Passes.jl:235-239 pass_scope docstring now states the location-less branch explicitly: 'and any it closed that names no location at all, which is re-verified every pass rather than never, silence about where a defect lives being no evidence that it is gone.'"
+    },
+    {
+      "id": "2026-09-10-check-docs-03/src#3",
+      "verdict": "ABSENT",
+      "evidence": "src/GBGCodingTools.jl:34-43 'The engines:' list now includes a bullet: '[`consolidate`](@ref) — the consolidator itself: the built site as one page-marked manuscript...' immediately after the HtmlWalker bullet."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/src#4",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Main.jl:108 usage() string now reads '(exit 0 clean · 1 finding · 2 cannot evaluate · 3 crash)', matching main's docstring at line 121 ('2 cannot evaluate')."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-check-docs-03",
+  "lane": "rulebook",
+  "candidates_found": 6,
+  "checked": [
+    "policy/00-index.md",
+    "policy/docs-rubric.md (32 RULE.DOC.* + RULE.API.POSITIONAL paragraphs)",
+    "policy/latex-idiom.md (17 RULE.TEX.* paragraphs)",
+    "policy/citations.md (4 RULE.CIT.* paragraphs)",
+    "policy/testing-protocol.md (10 RULE.TEST.* paragraphs)",
+    "policy/instruments.md (11 RULE.INST.* paragraphs + Honest limits)",
+    "policy/git-conventions.md (6 RULE.GIT.* paragraphs)",
+    "policy/glossary.md",
+    "policy/RULES.toml (all 95 rule rows: id/file/section/statement/sentinel/check)",
+    "sentinel field vs. first sentence of each of the 95 rule paragraphs (programmatic diff, 0 mismatches)",
+    "all 42 distinct scan:SCAN.* ids in RULES.toml vs. all 42 ids in catalog/scans.toml (bijective) and vs. src/Scans/*.jl file count (42)",
+    "all 3 doctor:* ids in RULES.toml vs. check!() registrations in src/CLI/Doctor.jl",
+    "all 11 harness:* bindings in RULES.toml vs. actual function definitions in src/ and ext/",
+    "RULE.DOC.HOME_ORDER's claim about the shape scan vs. src/Scans/prose_shape.jl implementation",
+    "RULE.INST.NO_TRUNCATION's claim vs. src/Scan.jl report() implementation",
+    "RULE.DOC.API_GROUPING's three html scans vs. src/Scans/html_docstring_once.jl, html_public_home.jl, html_base_leak.jl",
+    "RULE.DOC.SIBLING_LINK's fleet.toml claim vs. src/Scans/sibling_link.jl fleet_sites()",
+    "the five {{...}} render-time template placeholders in policy/*.md vs. 00-index.md's own count of them, cross-checked against src/CLI/Sync.jl slots()"
+  ],
+  "findings": [
+    {
+      "type": "currency",
+      "severity": "major",
+      "confidence": "high",
+      "title": "00-index.md says \"Four values vary by package\" but the templates carry five",
+      "locations": [
+        "policy/00-index.md:7-9 — \"Four values vary by package and are substituted at render time: the leading identity of a docstring, the vector notation, the admonition-title rule and the admitted `\\mathbf` strings\"",
+        "policy/docs-rubric.md:248 (RULE.DOC.ARGCOV) — \"For this package the check is a {{instruments.check-docs.argcov_policy}} tier.\"",
+        "src/CLI/Sync.jl:129 — `\"instruments.check-docs.argcov_policy\" => cfg[\"instruments\"][\"check-docs\"][\"argcov_policy\"],`"
+      ],
+      "description": "00-index.md enumerates exactly four render-time template slots (leading_identity, vectors, admonition_titles, mathbf_allowed) and states the count as \"Four values\". But policy/docs-rubric.md itself carries a fifth `{{...}}` placeholder, `{{instruments.check-docs.argcov_policy}}` (in RULE.DOC.ARGCOV), which src/CLI/Sync.jl's `slots()` populates through the exact same mechanism and the exact same generic `render()` engine (Sync.jl:46-56) as the other four — it is not a separate substitution path. A grep of policy/*.md for `\\{\\{[a-zA-Z0-9_.-]+\\}\\}` turns up exactly five distinct keys. This is exactly the staleness pattern RULE.DOC.CURRENT itself names: \"a summary that names only a subset of what the code now provides is stale even if every sentence is literally true.\" It also undersells the package's own configuration surface: ARCHITECTURE §5.5 calls argcov_policy out by name as \"the sole configurable tier\" in the whole rulebook, yet the rulebook's own index of what varies per package omits it.",
+      "resolution_hint": "Either add the argument-coverage check tier to 00-index.md's enumeration (\"Five values vary by package...: ...and the check-docs argument-coverage tier\"), or, if the index is deliberately scoped to notation/prose parameters only and argcov_policy is meant to be documented solely via ARCHITECTURE §5.5, say so explicitly in 00-index.md rather than stating an unqualified \"Four\"."
+    }
+  ]
+}

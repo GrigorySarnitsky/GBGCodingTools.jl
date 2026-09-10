@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "9d1c7af7febedace903c429b77375257",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/catalogues#1",
+      "verdict": "PARTIAL",
+      "evidence": "doc-policy.toml:6, naming-policy.toml:6, invariants-and-decisions.toml:6 now say 'granted to you by `needs`' not 'your substrate' — fixed at the quoted sites.",
+      "surviving_class": "catalog/hats/latex-typesetter.toml:7 still reads \"FIRST read the house rulebook named in your substrate\", attributing the rulebook grant (actually via `needs = [\"source\", \"rulebook\"]`) to substrate — same misattribution, unfixed hat."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/catalogues#2",
+      "verdict": "ABSENT",
+      "evidence": "catalog/hats/README.md:6-8 now reads '`{policy.<file>}` reads the rendered .gbg/policy/<file>.md and no generic hat uses it today; a consumer's own domain hat may, which is why substitute fills it' — no longer implies a generic hat demonstrates it; grep for '{policy.' across catalog/hats/*.toml still returns none, consistent with the disclosure."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/catalogues#3",
+      "verdict": "ABSENT",
+      "evidence": "catalog/lanes/check-docs.toml:26 now reads 'YOUR LANE IS THE ONE CHECK NO PER-SURFACE AGENT CAN RUN' — the numeral 'CHECK 7' is gone; grep for 'CHECK 7' across catalog/ (case-insensitive) returns no hits, and surviving 'CHECK 2'/'CHECK 1' refs resolve against the surface brief's list."
+    }
+  ]
+}

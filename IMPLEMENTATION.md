@@ -140,7 +140,7 @@ consumers' setup exactly; nothing needed from the owner unless the API refuses.
 ## Phase 1 — The repository skeleton
 
 **Status (2026-09-09, `Aiporetne`).** Built and committed on `master` through 1.10 item 6: every verb of
-the 1.3 table, the engines and the catalogued scans, the templates and policy layer, the sixteen schemas, the
+the 1.3 table, the engines and the catalogued scans, the templates and policy layer, the eighteen schemas, the
 four instruments' protocols and scripts, the tool as its own consumer with its site built through its
 own wrapper, the fixture with its defects corpus, and the self-test suite (green on 1.12 and 1.11 —
 the 1.11 lane keeps its own `Manifest-v1.11.toml`, gitignored). Three things the build changed in the
@@ -295,7 +295,7 @@ through the `gbgdev` function defined at the top of this plan.
 | `gbg witnesses fail\|pass <round> [names…]` | wraps `Witnesses.run` | `Hunt.jl` |
 | `gbg audit-changes bank <round>` / `gbg bug-hunt bank <round>` | instrument-specific bank steps (the audit bank runs the executable claims under `GBG_ROUND`) | `Audit.jl`, `Hunt.jl` |
 | `gbg bump <ver> [--abandon-open-rounds "…"]` | moves the pin, runs `sync`, writes `.gbg/scratch/bump-message.txt`, records the fleet `[sweep]` window | `Bump.jl` |
-| `gbg release <ver>`, `gbg release <ver>-rc.<n>` | dev checkout only, at a clean tree; refuses (exit 2) unless `Pkg.test()` is green, the tool's own docs build exits 0 (`SELF.DOCS`), `gbg doctor --deep` is green at the tool root, no round is open under the tool's `.gbg/rounds/`, the `/check-docs` round opened at the latest `<ver>-rc.<n>` tag is closed (honored/adjudicated, never abandoned), the CHANGELOG entry is present and the tag is absent (§2 D16, §8) → tag + push; never re-tags. The prerelease form (tags `v1.0.0-rc.1`, …) runs the same refusals EXCEPT the open-round refusal and the closed-`/check-docs`-round precondition — the clean tag the tool's own instrument rounds open at (1.10 item 7); an rc tag is never a consumer pin (`PIN.SOURCES` refuses a `-rc.` rev outside the tool root) | `Release.jl` |
+| `gbg release <ver>`, `gbg release <ver>-rc.<n>` | dev checkout only, at a clean tree; refuses (exit 2) unless `Pkg.test()` is green, the tool's own docs build exits 0 (`SELF.DOCS`), `gbg doctor --deep` is green at the tool root, no round is open under the tool's `.gbg/rounds/`, the `/check-docs` round opened at the latest `<ver>-rc.<n>` tag is closed (through any of the five closure channels — honored, adjudicated, rescan, seeded, carried — never abandoned), the CHANGELOG entry is present and the tag is absent (§2 D16, §8) → tag + push; never re-tags. The prerelease form (tags `v1.0.0-rc.1`, …) runs the same refusals EXCEPT the open-round refusal and the closed-`/check-docs`-round precondition — the clean tag the tool's own instrument rounds open at (1.10 item 7); an rc tag is never a consumer pin (`PIN.SOURCES` refuses a `-rc.` rev outside the tool root) | `Release.jl` |
 | `gbg selftest [--pinned]` | a thin wrapper: runs the package's own `Pkg.test()` — which IS every arm of §8 — over the copy it runs from, from a temporary environment; `--pinned` copies the fixture to `${TMPDIR:-/tmp}/gbg-pinned-fixture/`, pins it at the released tag, instantiates `docs/`, exercises the pinned-copy behaviours and leaves the copy in place (Phase 3's `install` runs from it) | `Selftest.jl` |
 | `gbg schema <name>` | prints a schema with defaults | `Schema.jl` |
 
@@ -317,7 +317,7 @@ other module receives the validated `Dict`.
   `using Documenter`, so the wrapper exists in the docs environment and nowhere else; `gbg doctor` and
   every other shim call load no Documenter) — = `check(doctor(:QUICK))` (`QUICK` excludes
   `CFG.TORN`), `check(scan_docs(cfg; hard_only = true))`, `check(gate("check-docs", "check-consistency"))`, write
-  `.gbg/scratch/public_surface.json` from `TestHarness.package_operations()`,
+  `.gbg/scratch/public_surface.json` from `Reflection.package_operations()`,
   `Documenter.makedocs(; kwargs...)`, `check(scan_html(build_dir))`,
   `check(gate("check-docs", "check-consistency"))` again — where `check(code)` is
   `code == 0 || error("gbg <verb> returned $code")`; prints one banner line
@@ -346,7 +346,7 @@ other module receives the validated `Dict`.
   (`test/allocations.jl:45-61, 600-624`), `CountingArray`/`Traffic`/`audit` (`test/pass_audit.jl:57-122`),
   the method-parity engine (`test/method_parity.jl:277-318`; frozen tables become
   `test/method_parity_baseline.toml` in the consumer), the oracle-registry engine
-  (`test/oracle_registry.jl:146-198`), `package_operations` (`test/public_surface.jl:27-74`; the only
+  (`test/oracle_registry.jl:146-198`), `Reflection.package_operations`, which TestHarness calls (`test/public_surface.jl:27-74`; the only
   public-surface route), `run_regressions(dir)` (`test/runtests.jl:47-52`, one spelling), the display gate
   (`test/display.jl:36-75` + IT's `!(object isa UnionAll)` clause and planted-type falsification,
   `IT/test/display.jl:65-66,100-102`), the cross-`-t` subprocess bitwise check (`test/threading.jl`),
@@ -561,8 +561,8 @@ consumer's), in this order, every command from `$DEV`:
    `/check-docs` over the tool's own docs — the tool's first real corpus besides the fixture. The round
    is stamped `v1.0.0-rc.1`, not `dev+…`, and is a normal closable round (§2 D16; its `tool_tree_sha` is
    read from the tag, so the fix commits that move `HEAD` past it are not "tag moved"); drive it to
-   `open_ids == []` and close it with `gbgdev round close <round>` — through honored/adjudicated ids,
-   never `abandon`. `gbg release 1.0.0` (Phase 3) requires exactly this round closed and refuses any open
+   `open_ids == []` and close it with `gbgdev round close <round>` — through any of the five closure
+   channels, never `abandon`. `gbg release 1.0.0` (Phase 3) requires exactly this round closed and refuses any open
    round. A second candidate (`gbgdev release 1.0.0-rc.2`, a new round at it) is issued only when the
    closed round's fixes are themselves to be measured before the tag.
 8. Commit ⇒ push (`git add -u` plus `.gbg .claude/skills CLAUDE.md docs test/regressions
@@ -588,7 +588,8 @@ against the enclosing checkout through its `path` source and `dev` pin, no tag n
 own site builds through its docs environment's `path` source likewise; the doctor under `--dev` reports
 `PIN.TREESHA`/`PIN.NOT_DEV`/`PIN.SELF` as WARN "dev pin" and everything else green, at the fixture and
 at the root); the `/check-docs` round of 1.10 sits under `.gbg/rounds/` closed — opened at
-`v1.0.0-rc.1`, every id `closed_by` honored or adjudicated, never abandoned; the tag `v1.0.0-rc.1` is on
+`v1.0.0-rc.1`, every id `closed_by` honored, adjudicated, rescan, seeded or
+carried, never abandoned; the tag `v1.0.0-rc.1` is on
 GitHub; `git log` shows the skeleton committed and pushed to `master`.
 
 ---
@@ -686,7 +687,7 @@ cd "$DEV" && bash -e -o pipefail -c "
   gbgdev release 1.0.0                 # refuses (exit 2) unless, at a clean tree: Pkg.test() green, the tool's own docs build
                                        # exit 0 (SELF.DOCS), gbg doctor --deep green at the root, no open round under
                                        # .gbg/rounds/, the /check-docs round opened at the latest v1.0.0-rc.<n> tag closed
-                                       # (honored/adjudicated, never abandoned), the CHANGELOG entry present, the tag absent (§2 D16, §8)
+                                       # (through any of the five closure channels, never abandoned), the CHANGELOG entry present, the tag absent (§2 D16, §8)
   git push --tags"
 ```
 Then on **both** hosts: exercise the pinned copy on a throwaway fixture outside the repo, and install
@@ -720,7 +721,7 @@ while the named check is red.
 | PF-1 | CI auth, then `sync` | the PAT lists `GBGCodingTools.jl` and PF holds the `GBG_DEPS_TOKEN` secret since V4 (create them now if V4 ran elsewhere); then `git rm .claude/hooks/queue-guard.sh .claude/settings.json` (the hand-written copies the managed renders replace with the same bodies under a hash — removed BEFORE `sync` so the render meets no unmanaged file at either path), then `gbg --dev sync`, which renders every G file (the skills, `managed.json`, `.gbg/policy/`, the `CLAUDE.md` and `.gitignore` blocks, `.claude/hooks/queue-guard.sh` and `.claude/settings.json` — the pure-sh body of 1.6, PF's own script verbatim, so the guard on `WORK_QUEUE.md` is unchanged; `WORK_QUEUE.md` itself exists, so it is not seeded — `test/regressions/README.md`) and inserts `templates/CI.yml.snippet` and `docs.yml.snippet` into `.github/workflows/{CI,docs}.yml` at 1.7's insertion points — `sync` validates the config `init` wrote, which is why it cannot precede PF-0 | `WIRE.CI_AUTH`, `MANAGED.HASH`, `MANAGED.STALE`, `WIRE.GITIGNORE`, `WIRE.CLAUDE_MD` (locally); a `workflow_dispatch` of PF's `docs.yml` green |
 | PF-2 | Empty rounds, empty ledger | `.gbg/rounds/` holds only `.keep` (PF-0 wrote it; Phase 2's scratch imports were deleted at its step 4 — `gbg round list` prints no round); `.gbg/exemptions.toml` is the empty ledger `init` wrote: the old `.claude/doc-review-adjudicated.md` adjudications are NOT carried over (the no-history ruling, §A) — a finding a future panel raises again is adjudicated afresh under the new ledger; `rm -rf .claude/doc-review-prev` per Q13 (the closed round 6 of 2026-08-15, discarded, never imported) | `ROUND.DIR`, `ROUND.MARKER`, `CFG.EXEMPTIONS` |
 | PF-3 | `make.jl` | delete the lint DEFINITIONS `_doc_lint_sources` and every `lint_*` — L44–568, which includes `_prose_metrics`/`_prose_units` (L425–488) — and `lint_rendered_markup` (L653–682) with its call (L684); delete the lint CALLS at L571 and L574–580; KEEP `remove_jupyter_files()` (L570), `copy_rationale_pages()` (L572) and `build_examples()` (L573) — `build_examples()` must still run BEFORE `GBGCodingTools.makedocs`, the Literate page being a scanned surface; replace `makedocs(` (L591) with `GBGCodingTools.makedocs(GBGCodingTools.Config.read(); <same kwargs>)`; `gbg scan docs --rebaseline prose-shape --reason "unified schema"` (the reason goes in the commit); `julia --project=docs docs/make.jl` must exit 0 | `WIRE.MAKEDOCS`, `LEG.LINTS`, `BUILD.DOCS` |
-| PF-4 | `runtests.jl` + harness files | replace the engine bodies with `TestHarness` calls: `public_surface.jl` → `TestHarness.package_operations`; `allocations.jl` macro/completeness; `pass_audit.jl` CountingArray; `method_parity.jl` engine (its tables now read from `test/method_parity_baseline.toml`, written at PF-0 by `gbg migrate baselines` — `gbg migrate baselines --dry-run` re-derives them for comparison if a literal moved); `pass_audit.jl` rows from `test/pass_audit_baseline.toml`; `oracle_registry.jl` engine (from `test/oracle_registry.toml`); `display.jl` engine; the regression loop → `TestHarness.run_regressions(@__DIR__)`; add `TestHarness.gate()`; `julia --project -e 'using Pkg; Pkg.test()'` green — **re-measure the test and testset counts and record them; a DROP against the last recorded figure (9657 / 143 on 2026-09-05) is a finding, a rise from `gate()`'s own assertions is expected** | `WIRE.RUNTESTS`, `TEST.PKG` |
+| PF-4 | `runtests.jl` + harness files | replace the engine bodies with `TestHarness` calls: `public_surface.jl` → `Reflection.package_operations`; `allocations.jl` macro/completeness; `pass_audit.jl` CountingArray; `method_parity.jl` engine (its tables now read from `test/method_parity_baseline.toml`, written at PF-0 by `gbg migrate baselines` — `gbg migrate baselines --dry-run` re-derives them for comparison if a literal moved); `pass_audit.jl` rows from `test/pass_audit_baseline.toml`; `oracle_registry.jl` engine (from `test/oracle_registry.toml`); `display.jl` engine; the regression loop → `TestHarness.run_regressions(@__DIR__)`; add `TestHarness.gate()`; `julia --project -e 'using Pkg; Pkg.test()'` green — **re-measure the test and testset counts and record them; a DROP against the last recorded figure (9657 / 143 on 2026-09-05) is a finding, a rise from `gate()`'s own assertions is expected** | `WIRE.RUNTESTS`, `TEST.PKG` |
 | PF-5 | `CLAUDE.md` | cut the policy sections named in §7.1 (≈ 700 lines) — the managed block was inserted at PF-1; run the sentinel check (`gbg doctor --only LEG.SENTINELS`, which matches `RULES.toml`'s `sentinel` sentences against the block-free `CLAUDE.md`) until zero; every cut sentence must exist in `policy/*.md` or be package-specific and kept. THEN trim to `templates/CLAUDE.md.skeleton` (§A's `CLAUDE.md` ruling): "Current state and roadmap" (L1132–2006) and "Planned directions" (L2007–2668) are read item by item — finished work is deleted (git history keeps it), live plans move to a new tracked `docs/ROADMAP.md`, and one "Current state" paragraph pointing at it remains; "Modules and wiring", "Core invariants", "Code generation rules" (PF's own style) and "Working agreements" stay | `WIRE.CLAUDE_MD`, `POL.IMPORT`, `POL.SENTINEL`, `LEG.SENTINELS` |
 | PF-6 | Delete legacy | `git rm -r .claude/commands .claude/doc-review-adjudicated.md .claude/check-docs-2026-09-01 .claude/doc-review-checkdocs .claude/check-docs-2026-07-22-findings.json .claude/audit-changes`; `rm -rf .claude/doc-review .claude/doc-review-prev .claude/audit-changes` (the untracked and ignored contents `git rm` leaves on disk); `git rm .claude/to-IT-triage-reply-2026-07-19.md .claude/to-IT-phase-shift-questions-2026-07-28.md` (both concluded in July — §A's requests ruling: a concluded request is deleted, only an open one would move to `.gbg/requests/to-IT-<date>-<topic>.md`); `rmdir .claude/worktrees` (empty); `git rm --cached .claude/settings.local.json`; trim `.claude/WORK_QUEUE.md` to its header — the 93 `- [x]` lines are history and go; `gbg sync` again (idempotent — the G files, `.claude/hooks/queue-guard.sh` and `.claude/settings.json` among them, were rendered at PF-1; the re-run confirms the deletions touched nothing managed) | `LEG.COMMANDS`, `LEG.PILES`, `MANAGED.HASH`, `MANAGED.STALE`, `WIRE.GITIGNORE` |
 | PF-7 | Skills dry run | in a session: `/check-docs --dry`, `/check-consistency --dry`, `/bug-hunt --dry`, `/audit-changes --dry` — each injects the protocol and the Workflow line and opens nothing; `/gbg-doctor` runs the doctor | `gbg doctor` green |
@@ -1027,7 +1028,8 @@ id) is SUPERSEDED by Revision 7's prerelease tag. The per-item mapping is `out/F
 One ruling (see `ARCHITECTURE.md`'s Revision 7 note for the design side), on this document: 1.3's
 `gbg release` row gains the prerelease form `gbg release <ver>-rc.<n>` (the same refusals except the
 open-round refusal and the closed-`/check-docs`-round precondition) and the final release's new
-precondition (the round opened at the latest rc tag closed — honored/adjudicated, never abandoned);
+precondition (the round opened at the latest rc tag closed — through any of the five closure channels, never
+abandoned);
 1.10 item 7 is rewritten — commit, `gbgdev release 1.0.0-rc.1`, open the `/check-docs` round at that
 clean tag (stamped with it, a normal closable round), drive it to zero open ids and CLOSE it with
 `gbgdev round close`, never `abandon`; item 8 commits twice (before the rc tag, and with the fixes and the

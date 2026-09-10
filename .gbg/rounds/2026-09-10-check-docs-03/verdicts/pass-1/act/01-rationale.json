@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "9d1c7af7febedace903c429b77375257",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/rationale#1",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "docs/ARCHITECTURE.md:488 was rewritten with the SKIP/GBG_DOCS_NO_SKIP mechanism, matching ext/GBGCodingToolsDocumenterExt.jl:31-37. But src/DocLints.jl:20 — the makedocs docstring's own body, cited in the finding's own location list — still reads unchanged: 'Any non-zero return is an `error`, so the build fails.' The diff to DocLints.jl only touched the preceding clause (glossing 'the quick doctor set') and left this sentence untouched, so the same unconditional-error claim survives verbatim two lines above the docstring's own correct mention of the skip.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:488",
+          "swept": true,
+          "evidence": "now reads '`error()`s on any non-zero return, EXCEPT the one refusal that is not a breakage... GBG_DOCS_NO_SKIP restores the refusal, and gbg release and the deep doctor set it'"
+        },
+        {
+          "surface": "src/DocLints.jl:20",
+          "swept": false,
+          "evidence": "unchanged by the diff: 'Any non-zero return is an `error`, so the build fails.' stated flatly, immediately followed by a paragraph describing the nothing/skip return — the same false-unconditional claim left standing in the same function's own docstring"
+        },
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:31-37",
+          "swept": true,
+          "evidence": "ground-truth code, not a documentation claim; confirms the SKIP mechanism the ARCHITECTURE.md fix now describes"
+        },
+        {
+          "surface": "src/CLI/Gate.jl:70-78",
+          "swept": true,
+          "evidence": "frozen_rounds docstring already correctly described the skip-exit-0/GBG_DOCS_NO_SKIP behaviour before this pass; no false claim here to sweep"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/rationale#2",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "All three ARCHITECTURE.md instances named in the finding (the makedocs parenthetical at 491, the TestHarness: bullet at 532-534, and the §3 tree at 981) were corrected to Reflection.package_operations, and the §3 TestHarness.jl tree line dropped package_operations entirely. But IMPLEMENTATION.md — the build plan CLAUDE.md names alongside ARCHITECTURE.md — still makes the identical misattribution twice, untouched by this commit: line 320 ('write `.gbg/scratch/public_surface.json` from `TestHarness.package_operations()`') and line 349 ('`package_operations` (`test/public_surface.jl:27-74`; the only public-surface route)' listed under the TestHarness.jl port bullet). Same category error, same document family, not swept.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:491",
+          "swept": true,
+          "evidence": "now '(`Reflection.package_operations()`) to `.gbg/scratch/public_surface.json`'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:532-538",
+          "swept": true,
+          "evidence": "TestHarness bullet now reads '`Reflection.package_operations()`, which it CALLS and does not define'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:981",
+          "swept": true,
+          "evidence": "§3 TestHarness.jl tree line now omits package_operations: 'run_regressions, display gate, thread-subprocess check, gate()'"
+        },
+        {
+          "surface": "IMPLEMENTATION.md:320",
+          "swept": false,
+          "evidence": "unchanged: 'write `.gbg/scratch/public_surface.json` from `TestHarness.package_operations()`' — the identical misattribution, in the §1.4 module description of makedocs"
+        },
+        {
+          "surface": "IMPLEMENTATION.md:349",
+          "swept": false,
+          "evidence": "unchanged: the TestHarness.jl port bullet still lists '`package_operations` (`test/public_surface.jl:27-74`; the only public-surface route)' as one of TestHarness's own engines"
+        },
+        {
+          "surface": "src/Reflection.jl:16,21,264",
+          "swept": true,
+          "evidence": "ground truth, unaffected: Reflection defines and exports package_operations"
+        },
+        {
+          "surface": "src/TestHarness.jl:98,226,407",
+          "swept": true,
+          "evidence": "ground truth, unaffected: TestHarness only calls Reflection.package_operations, defines nothing of that name"
+        }
+      ]
+    }
+  ]
+}

@@ -6,6 +6,7 @@ the design docs; `siteonly` — the design docs withheld), `needs` (extra grants
 `persona` (the prompt body). Placeholders `{package.name}`, `{package.description}`, `{package.domain}`,
 `{package.terms}`, `{package.deliberate_absences}`, `{package.rulebook_sections}` and `{policy.<file>}`
 are filled by the CLI from the consumer's config when it renders the Workflow args. `{policy.<file>}`
-reads the rendered `.gbg/policy/<file>.md` and no generic hat uses it today; a consumer's own domain hat
+reads the rendered `.gbg/policy/<file>.md`, and it, `{package.name}` and `{package.description}`
+are used by no generic hat today; a consumer's own domain hat
 may, which is why `substitute` fills it. Domain hats never
 live here: a consumer's are its own `.gbg/hats/*.toml` with the same fields.

@@ -80,7 +80,8 @@ tool's own.
 2. `CHANGELOG.md` carries the entry `## <ver> — <date>` with MAJOR | MINOR | PATCH, the instruments
    affected and "rates comparable: yes | no" (a MAJOR states the fixture recall before and after).
 3. For a final release: no round open under `.gbg/rounds/`, and the `/check-docs` round opened at the
-   latest `<ver>-rc.<n>` tag closed by honored or adjudicated ids, never abandoned.
+   latest `<ver>-rc.<n>` tag closed by honored, adjudicated, rescan, seeded or carried ids, never
+   abandoned.
 4. `gbgdev release <ver>` (or `<ver>-rc.<n>`) tags and pushes; a tag is never moved or re-issued.
 5. Consumers adopt with `gbg bump <ver>` in their own commits; the fleet is at one version within the
    `[sweep]` window `gbg fleet` reports.

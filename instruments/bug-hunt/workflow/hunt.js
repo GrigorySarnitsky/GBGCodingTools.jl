@@ -17,7 +17,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'witness_cmd', 'models', 'schema_version']) if (A[k] === undefined) throw new Error(`hunt.js: args.${k} is required`)
+for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'witness_cmd', 'models', 'schema_version', 'package']) if (A[k] === undefined) throw new Error(`hunt.js: args.${k} is required`)
 const STRENGTH = A.strength === 'full' ? 'full' : 'economy'
 const ECONOMY = A.models.economy
 const WIT = `${A.round_dir}/witnesses`

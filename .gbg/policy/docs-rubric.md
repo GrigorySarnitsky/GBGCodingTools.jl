@@ -68,7 +68,7 @@ before the fields list.
 ### RULE.DOC.STEER
 Every `!` form that has an allocating sibling carries the in-place steer sentence verbatim, after the
 identity paragraph and before the arguments, naming its own destination argument. The sentence is
-"Use this in-place form when `destination` is already allocated; the allocating [`f`](@ref) returns a
+"Use this in-place form when `destination` is already allocated; the allocating \[`f`\](@ref) returns a
 fresh result instead", with `destination` replaced by the argument the signature actually has. A `!` form
 with no allocating sibling and a setter take no such sentence.
 

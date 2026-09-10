@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "9d1c7af7febedace903c429b77375257",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "verify-act.js:18 guard now includes 'package' in the required-arg list; verify-state.js:17 guard likewise includes 'package'. Both PREAMBLEs' A.package.name/.description dereferences are now guarded before use."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#2",
+      "verdict": "ABSENT",
+      "evidence": "Checked all 11 scripts' guard lists (lanes.js, panel.js, rubric-audit.js, severity-recheck.js, verify-act.js, verify-state.js, hunt.js, dismissals.js, verify-architecture.js, audit.js, attack-design.js): every one now includes 'schema_version' in its required-arg throw list."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#3",
+      "verdict": "ABSENT",
+      "evidence": "rubric-audit.js:92 stage 1 now `.then(r => r && ({key, ids, reported: r.findings || []}))` — returns falsy on a dead agent instead of wrapping it; comment lines 90-91 name the old bug; stage 2 (:95 `if (!run) return null`) and the dead tally (:129) are now reachable."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#4",
+      "verdict": "ABSENT",
+      "evidence": "verify-act.js:104-111 now builds a `covered` Set over every batch range, throws on a duplicate index and, in a separate loop over 1..A.findings.length, throws 'finding i is in no batch' for any gap — the union-coverage assertion the finding's hint asked for."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#5",
+      "verdict": "PRESENT",
+      "evidence": "grep confirms zero occurrences of A.kind in audit.js, A.witness_env in hunt.js, A.cost/A.opened in panel.js, and A.package in lanes.js's body, while each is still schema-required (audit-changes/check-consistency/bug-hunt/check-docs schema.json 'required' lists). All four unused-required-arg sites remain."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#6",
+      "verdict": "ABSENT",
+      "evidence": "verify-act.js:154-155 now `const want = Math.max(u.items.length, u.expected || 0)` then `if (got < want) truncated.push(...)` — the CLI-computed expected count is folded into the completeness check exactly as the hint asked."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#7",
+      "verdict": "ABSENT",
+      "evidence": "hunt.js FREE_PREAMBLE now ends with a paragraph on candidates_found: 'how many candidates you WEIGHED, not how many you report... a lane whose two numbers never differ is a lane that never discarded anything' — paralleling HUNT_PREAMBLE's cap explanation."
+    }
+  ]
+}

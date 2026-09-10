@@ -16,6 +16,7 @@ The terms the rest of the package uses as settled words, bound once here:
 - An **instrument** is one of four review procedures: `check-docs`, `check-consistency`, `bug-hunt`,
   `audit-changes`.
 - A **round** is one run of one instrument over one consumer, recorded under `.gbg/rounds/`.
+- A **surface** is one named file set of `[surfaces]`: `source`, `docs`, `built_html` and the rest.
 - A **lane** is one agent's share of a round — one surface, one territory, or one kind of change.
 - A **hat** is one persona of the `check-consistency` panel, reading the corpus from a single standpoint.
 - A **Workflow** is the instrument's `workflow/*.js` script, launched by the session running the round.
@@ -39,8 +40,8 @@ The engines:
   built-HTML scan engine over `catalog/scans.toml`, one function per scan id under `src/Scans/`.
 - `TreeHash` — git blob and tree hashing on the `SHA` stdlib, behind `gbg self verify`.
 - `HtmlWalker` — the Gumbo walker shared by the consolidator and the built-HTML scans.
-- [`consolidate`](@ref) — the consolidator itself: the built site as one page-marked manuscript, which a
-  consistency round's hats read and a docs round's seeds are planted into.
+- [`consolidate`](@ref) — the consolidator itself: the built site as one page-marked manuscript. A
+  consistency round's hats read it, and its seeds go into it; a docs round seeds lane-file copies.
 """
 module GBGCodingTools
 

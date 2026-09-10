@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "9d1c7af7febedace903c429b77375257",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/built-html#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "policy/docs-rubric.md:70 still reads \"the allocating [`f`](@ref) returns a fresh result\" verbatim, unchanged by the diff (git diff 2b2797c9..14ee7135 -- policy/docs-rubric.md and docs/build/guide/rules.html produces zero output — neither file was touched). The commit message itself lists this among 'Three findings are seeds and are not fixed.'",
+      "class_surfaces": [
+        {"surface": "policy/docs-rubric.md:70", "swept": false, "evidence": "grep confirms `[`f`](@ref)` still present verbatim, no escaping or rewording applied"},
+        {"surface": "docs/build/guide/rules.html", "swept": false, "evidence": "not present in the 38-file diff; rendered page still carries the unresolved link since its source (docs-rubric.md) is unchanged"}
+      ]
+    }
+  ]
+}

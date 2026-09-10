@@ -140,7 +140,7 @@ FIRST use the Write tool to save the structured object as JSON to ${outFile(u.na
     ...(STRENGTH === 'economy' ? { model: ECONOMY } : {}) })
   .then(r => scribe(r, outFile(u.name), `scribe:${u.lane}`, 'Verify act'))))
 
-const written = [], dead = [], empty = [], truncated = []
+const written = [], dead = [], empty = [], truncated = [], mismatched = []
 results.forEach((r, i) => {
   const u = units[i]
   if (r && r.__skip) { log(`${u.lane}: no findings in this unit — skipped`); return }
@@ -150,10 +150,18 @@ results.forEach((r, i) => {
   if (got === 0) empty.push(u.lane)
   // against the CLI's own count where it gave one (`lanes[].expected`, computed from the banked
   // findings before this script ran): comparing only with u.items.length checks the input against
-  // itself, so a unit the CLI expected more verdicts from reads as complete
-  const want = Math.max(u.items.length, u.expected || 0)
+  // itself, so a unit the CLI expected more verdicts from reads as complete. The two counts are
+  // checked against each other FIRST — a partition that dropped a finding and one that assigned it
+  // twice both show up here, and neither is masked by taking the larger side.
+  if (u.expected !== undefined && u.expected !== u.items.length) {
+    mismatched.push(u.lane)
+    log(`${u.lane}: PARTITION MISMATCH — the CLI expected ${u.expected} verdict(s), this unit carries ${u.items.length} finding(s); a finding was dropped, duplicated or mis-tagged`)
+  }
+  const want = u.expected === undefined ? u.items.length : u.expected
   if (got < want) { truncated.push(u.lane); log(`${u.lane}: UNDER-GRADED ${got}/${want} — the missing are UNVERIFIED, not clean`) }
+  else if (got > want) { mismatched.push(u.lane); log(`${u.lane}: OVER-GRADED ${got}/${want} — a duplicate or invented verdict, not extra coverage`) }
   else log(`${u.lane}: ${got}/${want} graded`)
 })
 if (dead.length) log(`!! ${dead.length} DEAD unit(s): ${dead.join(', ')} — the pass is incomplete; gbg round grade will report them`)
-return { written, dead, empty, truncated }
+if (mismatched.length) log(`!! ${mismatched.length} unit(s) whose verdict count does not match the CLI's: ${mismatched.join(', ')} — read them before grading`)
+return { written, dead, empty, truncated, mismatched }

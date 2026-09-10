@@ -16,7 +16,6 @@
         "package",
         "base",
         "head",
-        "kind",
         "covered",
         "diffstat_path",
         "diff_path",
@@ -233,7 +232,7 @@
       "type": "object"
     }
   },
-  "title": "/audit-changes — args of workflow/audit.js and the concern lane-file wrapper",
+  "title": "/audit-changes \u2014 args of workflow/audit.js and the concern lane-file wrapper",
   "$defs": {
     "finding": {
       "additionalProperties": false,

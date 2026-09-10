@@ -13,7 +13,6 @@
         "round",
         "round_dir",
         "repo",
-        "package",
         "preamble",
         "lanes",
         "policy_path",
@@ -188,7 +187,7 @@
       "type": "object"
     }
   },
-  "title": "/check-docs — args of workflow/lanes.js and the lane-file wrapper",
+  "title": "/check-docs \u2014 args of workflow/lanes.js and the lane-file wrapper",
   "$defs": {
     "finding": {
       "additionalProperties": false,

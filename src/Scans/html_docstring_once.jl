@@ -18,7 +18,7 @@ function page_bindings(page::AbstractString)
         t = HtmlWalker.tagname(n)
         t == :h2 && (section[] = strip(HtmlWalker.text_of(n)))
         if t == :a && "docstring-binding" in HtmlWalker.classes(n)
-            # Documenter puts the binding's anchor in the href (`#Module.name`), not in an id attribute.
+            # Documenter puts the binding's anchor in the href (`#Module.name`), or, failing that, its id attribute.
             id = lstrip(HtmlWalker.attr(n, "href", HtmlWalker.attr(n, "id")), '#')
             push!(out, (id = String(id), name = strip(HtmlWalker.text_of(n)), section = section[]))
         end

@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "9d1c7af7febedace903c429b77375257",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#1",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "verify-act.js:18 and verify-state.js:17 now include 'package' in the required-arg guard, matching verify-architecture.js:17. But hunt.js:20's guard still omits 'package' while hunt.js:102,118,124 dereference A.package.name unconditionally — the same omission class, unswept.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:18",
+          "swept": true,
+          "evidence": "guard list now reads [...'schema_version', 'package']"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-state.js:17",
+          "swept": true,
+          "evidence": "guard list now reads [...'schema_version', 'package']"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/verify-architecture.js:17",
+          "swept": true,
+          "evidence": "already included 'package' before this pass"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:20",
+          "swept": false,
+          "evidence": "guard list lacks 'package' — yet A.package.name is dereferenced at lines 102, 118, 124"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "All 11 workflow scripts now include 'schema_version' in their required-arg guard, verified across every listed file, each still using A.schema_version at its cited usage line.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-docs/workflow/lanes.js:19",
+          "swept": true,
+          "evidence": "guard now includes 'schema_version'"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js:22",
+          "swept": true,
+          "evidence": "guard now includes 'schema_version'"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:15",
+          "swept": true,
+          "evidence": "guard now includes 'schema_version'"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/severity-recheck.js:15",
+          "swept": true,
+          "evidence": "guard now includes 'schema_version'"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:18",
+          "swept": true,
+          "evidence": "guard now includes 'schema_version'"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-state.js:17",
+          "swept": true,
+          "evidence": "guard now includes 'schema_version'"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:20",
+          "swept": true,
+          "evidence": "guard now includes 'schema_version'"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/dismissals.js:16",
+          "swept": true,
+          "evidence": "guard now includes 'schema_version'"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/verify-architecture.js:17",
+          "swept": true,
+          "evidence": "guard now includes 'schema_version'"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:21",
+          "swept": true,
+          "evidence": "guard now includes 'schema_version'"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/attack-design.js:14",
+          "swept": true,
+          "evidence": "guard now includes 'schema_version'"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "rubric-audit.js:92 now reads `.then(r => r && ({ key, ids, reported: r.findings || [] }))` — a dead agent now resolves to falsy rather than a wrapped truthy object, so stage 2's liveness check and the `dead` computation on line 127 can now fire, matching the hint exactly.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:80-93",
+          "swept": true,
+          "evidence": "the only pipeline stage in the corpus that wrapped an agent's result in an unconditionally-truthy object; hunt.js:140 already used the correct ternary pattern"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "verify-act.js:104-110 now builds a `covered` Set over every batch range, throwing on any index covered twice and, after the loop, throwing if any index 1..A.findings.length is never covered — an exact partition check, matching the hint precisely, run before units are built.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:101-116",
+          "swept": true,
+          "evidence": "verify-act.js is the only script in the corpus with a `batches` mode"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#5",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "3 of 4 named sites are byte-identical to before: hunt.js:20 still requires unused 'witness_env'; panel.js:22-23 still requires unused 'cost'/'opened'; lanes.js:19 still requires unused 'package'. The 4th site, audit.js, only dropped 'kind' from the script's own guard list — but instruments/audit-changes/schema.json:19 still lists 'kind' as required, so the CLI still forces a caller to supply an arg nothing reads: neither hinted option (wire it in, or drop it from the schema's required list) was carried out anywhere.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:21",
+          "swept": false,
+          "evidence": "'kind' removed from the script's guard but instruments/audit-changes/schema.json:19 still requires it; still unused in audit.js's body"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:20",
+          "swept": false,
+          "evidence": "'witness_env' still required, still unreferenced in hunt.js"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js:22-23",
+          "swept": false,
+          "evidence": "'cost' and 'opened' still required, still unreferenced in panel.js"
+        },
+        {
+          "surface": "instruments/check-docs/workflow/lanes.js:19",
+          "swept": false,
+          "evidence": "'package' still required, still unreferenced anywhere in lanes.js's body"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#6",
+      "verdict": "ADJACENT",
+      "question": "implementation",
+      "evidence": "verify-act.js:143 now computes `want = Math.max(u.items.length, u.expected || 0)` and flags truncated when `got < want` — this catches under-supply relative to expected, but Math.max silently favours the larger side: a DUPLICATED finding (items.length > expected) never surfaces as a mismatch. The finding named 'dropped, duplicated, or mis-tagged' as the three failure modes; the fix only catches the under-count case and never logs the expected/items.length disagreement itself as the hint asked.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:143-152",
+          "swept": false,
+          "evidence": "Math.max(items.length, expected) masks any case where items.length > expected (duplicate assignment), the exact scenario the finding named"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#7",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "hunt.js:76 appends to FREE_PREAMBLE a sentence explaining candidates_found for the free lane (weighed vs. reported, no cap), placed inside the same template literal the finding flagged, and consistent with FREE_PREAMBLE genuinely stating no cap unlike HUNT_PREAMBLE's stated cap of 6.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:68-76",
+          "swept": true,
+          "evidence": "FREE_PREAMBLE now explains candidates_found for the free lane"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:78-86",
+          "swept": true,
+          "evidence": "HUNT_PREAMBLE already explained candidates_found against its stated cap of 6 — unchanged, already correct"
+        }
+      ]
+    }
+  ]
+}

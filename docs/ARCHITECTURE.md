@@ -602,7 +602,7 @@ by the CLI. A lane file is classified at `bank`: **DEAD** (absent, or unparsable
 quarantine the file as `NN-<lane>.rejected.json` — or zero findings with an empty `checked[]`), **EMPTY**
 (zero findings, non-empty `checked[]`), **ORPHAN** (a lane file no roster entry expects; reported,
 never counted), **TRUNCATED** (`candidates_found > findings.length`; reported, not fatal),
-**REJECTED** (a live lane whose sha changed after first sight). A DEAD lane is **exit 2** — cannot
+**REJECTED** (a live lane whose sha changed after first sight). A DEAD **or REJECTED** lane is **exit 2** — cannot
 evaluate — and nothing is frozen. Closure is per finding id through four channels (§6.5); the
 wholesale escape is `gbg round abandon --reason`, which lists every open id. `.gbg/rounds/` is the
 SOLE closure record: the tool never reads a work-queue file for **closure** — the Stop hook of D13,
@@ -628,9 +628,9 @@ the unseeded manuscript beside the seeded one is a one-line `diff` (attack 3.4).
 
 ### D11 — Schemas: one JSON Schema per artefact kind in `schema/`; closed union vocabularies; `schema_version` on every artefact
 
-**Choice.** Sixteen schemas: `schema/{config,exemptions,hat,round,pass,finding,verdict-act,
-verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import,
-managed}.schema.json`. An instrument's `instruments/<name>/schema.json` is its `args` object plus its
+**Choice.** Eighteen schemas: `schema/{config,exemptions,hat,round,pass,finding,verdict-act,
+verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import,managed,carried,
+severity}.schema.json`. An instrument's `instruments/<name>/schema.json` is its `args` object plus its
 lane-file wrapper and `$ref`s `finding.schema.json` for the findings array; the lane-file wrapper and
 `bug-hunt`'s candidate-file shape live inline in each instrument's own `schema.json`, not as files
 under `schema/`.
@@ -654,7 +654,7 @@ in the `RULE.` namespace (the full table is §12.A — `RULE.DOC.*`, `RULE.TEX.*
 `RULE.API.*`, `RULE.TEST.*`, `RULE.INST.*`, `RULE.GIT.*` — so no rule id can collide with a doctor
 check id such as `GIT.BRANCH`), recorded in `policy/RULES.toml`. `gbg sync` renders them to `.gbg/policy/*.md` (hash-managed): the enumerated
 variation points (`rubric.leading_identity`, `notation.vectors`, `docs.admonition_titles`,
-`notation.mathbf_allowed`) are substituted so a hat reads ONE statement; everything else is verbatim;
+`notation.mathbf_allowed`, `instruments.check-docs.argcov_policy`) are substituted so a hat reads ONE statement; everything else is verbatim;
 `deviations.md` is rendered from the ledger. `CLAUDE.md` carries one managed block:
 
 ```markdown
@@ -852,7 +852,7 @@ listing the managed files it changed; `gbg init --migrate` writes its own,
 unless, at a clean tree: `Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`);
 `gbg doctor --deep` is green at the tool root; no round is open under the tool's `.gbg/rounds/`; the
 `/check-docs` round opened at the latest `<ver>-rc.<n>` tag (next sentence) is closed — `closed` set,
-every id `closed_by` honored or adjudicated, never `abandoned`; the `CHANGELOG.md` entry for `<ver>`
+every id `closed_by` honored, adjudicated, rescan, seeded or carried, never `abandoned`; the `CHANGELOG.md` entry for `<ver>`
 is present; and the tag is absent — it never re-tags (§8 restates the list). **The prerelease form.**
 `gbg release <ver>-rc.<n>` (tags `v1.0.0-rc.1`, `v1.0.0-rc.2`, …) runs the same refusals EXCEPT the
 open-round refusal and the closed-`/check-docs`-round precondition: it exists so that the tool's own
@@ -975,7 +975,7 @@ GBGCodingTools.jl/
       RoundFiles.jl             reading and hashing what lives under `.gbg/rounds/` (the round record, the lane files, shas)
       Self.jl                   `gbg self verify` — the running copy's tree hash against what `Pkg.dependencies()` and every sub-environment manifest record (D2, D3, D15)
       Gate.jl                   THE closure gate for every instrument (honours GBG_ROUND); called in-process by makedocs and TestHarness.gate()
-      Demote.jl                 THE demotion predicate (emptiness of class_surfaces[])
+      Demote.jl                 THE demotion predicate (class_surfaces[] empty, or any entry unswept)
       Scan.jl                   `gbg scan docs|html` — the tiered engine over catalog/scans.toml
       Seed.jl Recall.jl Consolidate.jl Audit.jl Hunt.jl Selftest.jl
     Scans/<ScanId>.jl           the scan catalogue's implementations, one file per scan id (§12.B)
@@ -1479,7 +1479,7 @@ at the tool root, which must work when the dev checkout IS the consumer.
    classes UNDEFINED, kept in the denominator and named) and flags **SUSPECT** every hat with ≥ 2 seeds
    on its substrate and zero matches (reported in the tally, not fatal); writes `findings.json` and
    `findings_sha`; renders `findings.md` + `SUMMARY.md` (seeded hits subtracted, corroboration with a
-   denominator, capped hats marked — a reading aid). **Any DEAD lane ⇒ exit 2 and NOTHING is
+   denominator, capped hats marked — a reading aid). **Any DEAD or REJECTED lane ⇒ exit 2 and NOTHING is
    frozen** (`lane_shas` stays). `gbg round rerun <round> --lanes …` accepts only lanes `bank`
    classified DEAD; a live lane whose sha changed since first sight is REJECTED.
 6. **Fix pass** — on the owner's word, at session strength, driven from `findings.md` by finding id,
@@ -1497,13 +1497,15 @@ at the tool root, which must work when the dev checkout IS the consumer.
    `.gbg/**` and `~/.gbg/**`; both require `graded_sha256` and `pass_nonce`; both receive every
    finding's text **unabridged**, so a real defect co-quoted with a seed is graded on its own claim.
    Seeded findings are graded by the state verifier only. **A pass after the first verifies only its
-   `scope`**: the ids the previous pass left open, plus any it closed whose named locations the fix
-   pass has since touched, a closed finding being able to regress only where its own evidence lives.
+   `scope`**: the ids the previous pass left open, any it closed whose named locations the fix
+   pass has since touched, and any it closed that names no location at all — a closed finding being able
+   to regress only where its own evidence lives, and one with no evidence anywhere being re-verified
+   every pass rather than never.
    Every other id keeps the entry that closed it. The rc.1 round verified 56 findings ten times over
    where 90 verifications were owed, and the panel is the round's whole cost.
 8. **Grade.** `gbg round grade <round>`: refuses a changed `config_sha` (exit 2); validates both
    verdict sets; a file whose `graded_sha256` or `pass_nonce` mismatches is REJECTED, an absent one
-   DEAD (exit 2); applies `Demote.jl` (HONORED → LINE-ONLY iff `class_surfaces == []`, counted apart as
+   DEAD (exit 2); applies `Demote.jl` (HONORED → LINE-ONLY iff `class_surfaces == []` or any entry is `swept: false`, counted apart as
    `demoted_by_rule`); applies the closure channels (§6.5); writes `tally.json`/`tally.md`; prints the
    pass series and the plateau signal; exit 1 while `open_ids` is non-empty. **Loop 6–8 over the same
    `findings.json`**; it terminates because the set is finite and closure is per finding.
@@ -1542,7 +1544,7 @@ at the tool root, which must work when the dev checkout IS the consumer.
 | Artefact | Vocabulary | Default / rule |
 |---|---|---|
 | state verdict | `PRESENT \| PARTIAL(surviving_class) \| REGRESSED \| ABSENT \| NOT-A-DEFECT \| UNCLEAR` | default PRESENT; only ABSENT, NOT-A-DEFECT are favourable |
-| act verdict | `HONORED \| ADJACENT \| INSERTED \| LINE-ONLY \| NEW-DEFECT \| SCOPE-CREEP \| UNDONE \| LAUNDERED` + `question ∈ fidelity\|strategy\|implementation\|scope\|none` | HONORED demoted to LINE-ONLY iff `class_surfaces == []` |
+| act verdict | `HONORED \| ADJACENT \| INSERTED \| LINE-ONLY \| NEW-DEFECT \| SCOPE-CREEP \| UNDONE \| LAUNDERED` + `question ∈ fidelity\|strategy\|implementation\|scope\|none` | HONORED demoted to LINE-ONLY iff `class_surfaces == []` or any entry is `swept: false` |
 | severity (every instrument) | `blocker \| major \| minor \| nit`; `serious ≡ blocker \| major` | audit-changes runs `severity-recheck.js` (anchor) before "serious" is counted |
 | confidence | `high \| medium \| low` | |
 | hunter `observed` | `FAILS \| PASSES \| ERRORS \| NOT-WRITABLE` | only FAILS reaches reproduction |
@@ -1856,8 +1858,8 @@ A scan in `catalog/scans.toml` without a fixture pair fails the tool's test.
 **Release preconditions (not selftest arms).** `gbg release <ver>` refuses (exit 2) unless, in the dev
 checkout at a clean tree: `Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`);
 `gbg doctor --deep` is green at the tool root; no round is open under the tool's `.gbg/rounds/`; the
-`/check-docs` round opened at the latest `<ver>-rc.<n>` tag is closed (honored/adjudicated, never
-abandoned); the `CHANGELOG.md` entry for `<ver>` is present; the tag is absent (D16). The prerelease
+`/check-docs` round opened at the latest `<ver>-rc.<n>` tag is closed (through any of the five
+closure channels — honored, adjudicated, rescan, seeded, carried — never abandoned); the `CHANGELOG.md` entry for `<ver>` is present; the tag is absent (D16). The prerelease
 form `gbg release <ver>-rc.<n>` runs the same refusals except the open-round refusal and the
 closed-round precondition (D16); an rc tag is never a consumer pin. "The tool's own docs build green"
 is a release precondition and deliberately NOT a selftest arm: `Pkg.test()` IS `gbg selftest`, and a
@@ -2531,7 +2533,7 @@ at a PRERELEASE TAG. D16 gains the prerelease form — `gbg release <ver>-rc.<n>
 runs the same refusals except the open-round refusal and the closed-`/check-docs`-round precondition; a
 round opened at the tool root with a clean tree at an rc tag is a normal closable round stamped with the
 rc tag (the extension now says "a released tag — a prerelease included"); the final `gbg release 1.0.0`
-requires that round closed through honored/adjudicated ids, never abandon, and refuses any open round.
+requires that round closed through any of the five closure channels, never abandon, and refuses any open round.
 Semver: an rc tag is never a consumer pin — `PIN.CONFIG` accepts only `vX.Y.Z` and `PIN.SOURCES` refuses
 a `-rc.` rev in any consumer other than the tool itself (§7.3, both rows reworded; `ROUND.DEV` names the
 rc tag). D15 and §8 say the first round is opened at `v1.0.0-rc.1` and closed; §8's selftest arms gain

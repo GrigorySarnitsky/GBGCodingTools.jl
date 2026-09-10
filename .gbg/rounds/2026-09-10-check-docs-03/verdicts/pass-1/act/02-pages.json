@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "9d1c7af7febedace903c429b77375257",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/pages#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/index.md:61-62 now reads 'an oracle class on every public value-returning operation — analytic, independent, property, relational or structural, and none resting on relational alone', which matches src/TestHarness.jl:398-401 verbatim in substance. Grep for 'independent reference' (excluding .gbg) returns nothing anywhere in the corpus.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/index.md:61",
+          "swept": true,
+          "evidence": "diff replaces the false 'independent reference' guarantee with the correct oracle-class enumeration and the relational-alone bar, matching TestHarness.jl:385-401. No other file in the corpus mischaracterizes the oracle requirement this way; other 'oracle' hits are the accurate RULE.TEST.ORACLE_INDEPENDENT statement or unrelated design-record history."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/pages#3",
+      "verdict": "LINE-ONLY",
+      "question": "none",
+      "evidence": "docs/src/guide/rounds.md:42 now states both arms correctly, matching Demote.jl:22-23's isempty(cs) || any(swept==false) predicate. But git diff shows only rounds.md and index.md changed; the identical partial description ('emptiness of class_surfaces[]') survives verbatim at docs/ARCHITECTURE.md:978 and docs/src/architecture.md:978, in files this same commit otherwise edited for other findings.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/rounds.md:42",
+          "swept": true,
+          "evidence": "'HONORED becomes LINE-ONLY when class_surfaces[] is empty, and equally when any entry in it is swept: false' — names both trigger arms."
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:978",
+          "swept": false,
+          "evidence": "module-map row still reads 'Demote.jl THE demotion predicate (emptiness of class_surfaces[])' — names only the empty-array arm."
+        },
+        {
+          "surface": "docs/src/architecture.md:978",
+          "swept": false,
+          "evidence": "identical unswept mirrored text: 'Demote.jl THE demotion predicate (emptiness of class_surfaces[])'."
+        }
+      ]
+    }
+  ]
+}

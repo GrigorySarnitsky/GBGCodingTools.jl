@@ -133,10 +133,15 @@ end
 
 check-consistency: the docs build under `GBG_ROUND` (exit 0 required; the log path is printed
 otherwise), the two manuscripts consolidated into the payload directory, and — when the round is
-seeded — the seeds planted in place (ground truth NOT written). check-docs: `scan docs` with every
-hard hit banked as lane `00-scans`, the reflection checks, the build under `GBG_ROUND`, `scan html`
-(its hard hits banked too), the full report saved. audit-changes: the diff, diffstat and claims
-regenerated. bug-hunt: nothing to prepare. Returns the exit code.
+seeded — the seeds planted in place.
+
+check-docs: `scan docs` with every hard hit banked as lane `00-scans`, the reflection checks, the build
+under `GBG_ROUND`, `scan html` (its hard hits banked too), the full report saved, and — when the round
+is seeded — a seeded copy of the lane files under the round's `seed_root`, which the lanes read in
+place of the working tree.
+
+Either way the ground truth is NOT written here; `bank` writes it. audit-changes: the diff, diffstat
+and claims regenerated. bug-hunt: nothing to prepare. Returns the exit code.
 """
 function prepare(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = guard(cfg, round; io)
@@ -789,7 +794,7 @@ end
 
 function cmd_round(args)
     o = parse_options(args; valued = ["lanes", "reason"])
-    isempty(o.positional) && (println(stderr, "usage: gbg round prepare|build|test|bank|rerun|grade|close|abandon|list|render <round> | gbg round pass open <round> [--regrade] [--sweep-ok]"); return 2)
+    isempty(o.positional) && (println(stderr, "usage: gbg round prepare|build|test|bank|rerun|grade|close|abandon|list|render <round> | gbg round pass open <round> [--regrade] [--sweep-ok] [--full-state]"); return 2)
     verb = o.positional[1]
     cfg = Config.read()
     try

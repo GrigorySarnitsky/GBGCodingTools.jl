@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-check-docs-03",
+  "lane": "catalogues",
+  "candidates_found": 5,
+  "checked": [
+    "catalog/hats/*.toml (22 files) cross-checked for needs vocabulary, substrate consistency, persona-vs-grant consistency, key/filename match, duplicates",
+    "catalog/hats/README.md field/placeholder documentation vs actual hat usage",
+    "catalog/lanes/audit-changes.toml (13 lanes) kind/anchor values vs README vocabulary and vs docs/ARCHITECTURE.md §6.8",
+    "catalog/lanes/bug-hunt.toml (2 lanes) vs README vocabulary and ARCHITECTURE.md",
+    "catalog/lanes/check-docs.toml ([surface] + 3 [[lane]] cross entries) vs README vocabulary and src/CLI/Preflight.jl resolve_checkdocs_lanes",
+    "catalog/lanes/README.md vs actual lane kind/anchor fields",
+    "catalog/scans.toml (42 scans): rule field vs policy/RULES.toml ids (full bijection with each rule's check field)",
+    "catalog/scans.toml: surfaces field vs valid surface keys in src/CLI/Config.jl surface_files and schema/config.schema.json",
+    "catalog/scans.toml: fixture field vs fixture/GBG Fixture/defects.toml classes (full bijection, and per-row scan-to-class mapping)",
+    "catalog/scans.toml: tier values vs src/Scan.jl resolve_tier / apply_ledger handling of argcov_policy",
+    "catalog/models.toml single economy-model-name invariant checked against rest of catalog/",
+    "catalog/seeds/fixture.toml (8 classes): anchor regexes checked for at least one real match in fixture/GBG Fixture source text; occurrence/name/description fields cross-checked against src/CLI/Seed.jl and src/CLI/Init.jl field order",
+    "needs=[\"html\"/\"git\"/\"rulebook\"/\"source\"] grants on every hat cross-checked against src/CLI/Preflight.jl resolve_hats (na computation) and render_args (a[\"rawhtml\"], a[\"repo\"])"
+  ],
+  "findings": [
+    {
+      "type": "notation",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "Three rulebook hats call rulebook-section access a `substrate`, which the catalogue defines as something else",
+      "locations": [
+        "catalog/hats/doc-policy.toml:6: \"the rulebook sections named in your substrate — {package.rulebook_sections}\"",
+        "catalog/hats/naming-policy.toml:6: \"the rulebook sections named in your substrate FIRST\"",
+        "catalog/hats/invariants-and-decisions.toml:6: \"the rulebook sections named in your substrate FIRST\"",
+        "catalog/hats/README.md:3: \"substrate (`full` — the whole rendered site incl. the design docs; `siteonly` — ...)\"",
+        "src/CLI/Preflight.jl:254: \"What ELSE a hat is handed is `needs`, never a substrate value\"",
+        "src/CLI/Preflight.jl:256: \"requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from\""
+      ],
+      "description": "`substrate` is a closed two-value field (`full`/`siteonly`) naming which corpus view a hat gets; rulebook-section access is a `needs` grant, and Preflight.jl's own resolve_hats docstring is explicit that this is 'never a substrate value.' Yet doc-policy, naming-policy and invariants-and-decisions all instruct their agent to read 'the rulebook sections named in your substrate' — attributing a `needs`-granted resource to the wrong catalogue field. A reader of just these three persona strings (the cold-read test the docs-rubric itself applies) would reasonably conclude `substrate` carries rulebook content, which schema/hat.schema.json and the README both contradict.",
+      "resolution_hint": "Reword the three personas to 'the rulebook sections you are handed' or 'named in {package.rulebook_sections}' rather than 'named in your substrate', so the term `substrate` stays reserved for its one closed-vocabulary meaning."
+    },
+    {
+      "type": "self-containment",
+      "severity": "nit",
+      "confidence": "high",
+      "title": "hats/README.md documents a `{policy.<file>}` placeholder no generic hat ever uses",
+      "locations": [
+        "catalog/hats/README.md:7: \"and `{policy.<file>}` are filled by the CLI\"",
+        "catalog/hats/*.toml: no occurrence of the literal `{policy.` token in any of the 22 files"
+      ],
+      "description": "The README's placeholder list for hat personas names `{package.name}`, `{package.description}`, `{package.domain}`, `{package.terms}`, `{package.deliberate_absences}`, `{package.rulebook_sections}` and `{policy.<file>}` as the substitutions the CLI fills. `substitute()` (src/CLI/Preflight.jl:220-227) does implement `{policy.<file>}`, reading `.gbg/policy/<file>.md` — but not one of the 22 catalog/hats/*.toml personas contains that token; the rulebook-reading hats instead reference `{package.rulebook_sections}` or name the policy file in plain prose (\"the rendered policy file `docs-rubric.md`\"). The claim that this placeholder is part of the hats' own vocabulary is accordingly unverifiable from the catalogue that is supposed to demonstrate it.",
+      "resolution_hint": "Either drop `{policy.<file>}` from the hats/README.md placeholder list (it may only ever be used by a consumer's own .gbg/hats/*.toml, which is outside this catalogue), or point to the one hat that is meant to demonstrate it."
+    },
+    {
+      "type": "self-containment",
+      "severity": "nit",
+      "confidence": "medium",
+      "title": "check-docs.toml's `family` lane names itself \"CHECK 7\", a number the catalogue never defines",
+      "locations": [
+        "catalog/lanes/check-docs.toml:26: \"YOUR LANE IS CHECK 7, WHICH NO PER-SURFACE AGENT CAN RUN\"",
+        "catalog/lanes/check-docs.toml:6-18: the `[surface]` brief enumerates only checks 1 through 6"
+      ],
+      "description": "The `[surface]` brief numbers its own checklist 1 (CORRECT) through 6 (CITED). The `family` cross-lane brief calls its own concern \"CHECK 7\", and the `cold-reader` and `operational-claims` cross-lane briefs refer back to \"CHECK 2's audience half\" and \"CHECK 1's operational half\" respectively — both of which resolve against the surface brief's own numbering. \"Check 7\" has no such anchor anywhere in the catalogue: nothing in catalog/ enumerates a 7th check, so the label is meaningful only to someone who already knows the reasoning behind the number, which fails the self-containedness bar (RULE.DOC.TERMS_DEFINED / the cold-read test) the catalogue's own check #2 applies to everything else it reviews.",
+      "resolution_hint": "Either add a seventh bullet to the `[surface]` brief's numbered list (e.g. \"7. VARIANT PAIRS\") so \"CHECK 7\" resolves within the catalogue, or drop the numeral and describe the family lane's concern in words alone."
+    }
+  ]
+}

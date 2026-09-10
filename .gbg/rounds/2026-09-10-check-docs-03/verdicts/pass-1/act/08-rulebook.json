@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "9d1c7af7febedace903c429b77375257",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/rulebook#1",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "policy/00-index.md:7-9 diff: 'Four values' -> 'Five values ... the tier RULE.DOC.ARGCOV binds at ({{instruments.check-docs.argcov_policy}}, filled by the same renderer)'; matches Sync.jl's slots() (line 129) and the one render() engine (lines 49-53) exactly, so the flagged instance is correctly fixed. But docs/ARCHITECTURE.md:656-658 (D12, 'Policy prose') still reads 'the enumerated variation points (`rubric.leading_identity`, `notation.vectors`, `docs.admonition_titles`, `notation.mathbf_allowed`) are substituted' with no mention of argcov_policy at all -- the identical four-of-five undercount, in the tool's own design-of-record, untouched by this diff. docs/src/architecture.md:655-657 mirrors it verbatim (same omission, same lines). Both sit only ~230 lines below a DIFFERENT section (docs/src/architecture.md:89) that correctly says 'FIVE rubric variation points' -- so the document contradicts itself even after the fix.",
+      "class_surfaces": [
+        {"surface": "policy/00-index.md:7-9", "swept": true, "evidence": "diff changes 'Four values vary by package ... the admonition-title rule and the admitted `\\mathbf` strings' to 'Five values ... the admonition-title rule, the admitted `\\mathbf` strings and the tier `RULE.DOC.ARGCOV` binds at (`{{instruments.check-docs.argcov_policy}}`, filled by the same renderer)'"},
+        {"surface": "docs/ARCHITECTURE.md:656-658", "swept": false, "evidence": "'the enumerated variation points (`rubric.leading_identity`, `notation.vectors`, `docs.admonition_titles`, `notation.mathbf_allowed`) are substituted so a hat reads ONE statement' -- still four, argcov_policy absent; no hunk touches this D12 section in the diff (git diff hunks at 485,531,978,1545 only)"},
+        {"surface": "docs/src/architecture.md:655-657", "swept": false, "evidence": "verbatim mirror of the same sentence and omission; not touched by the diff"},
+        {"surface": "docs/src/guide/config.md:17-20", "swept": true, "evidence": "already reads 'Four values ... ; the fifth variation point, `instruments.check-docs.argcov_policy`, is a tier' -- pre-existing text already accounts for all five, not an instance of the defect, left untouched correctly"},
+        {"surface": "IMPLEMENTATION.md:472-477", "swept": true, "evidence": "already reads 'mark the four substituted variation points as ... slots (`argcov_policy`, the fifth, is a tier, not prose)' -- pre-existing text already accounts for all five, not an instance of the defect"}
+      ]
+    }
+  ]
+}

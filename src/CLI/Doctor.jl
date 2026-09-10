@@ -10,6 +10,12 @@ The read-only health check of a consumer's tooling (D14, §7.3). Every check has
 holds on a runner with no shim and a detached HEAD. A `scope = "check"` ledger entry on an exemptable
 id (`LEG.*`, `GIT.*`, `AUDIT.*`) turns its FAIL into a WARN naming the reason; the non-exemptable
 families are the tool's own enforcement.
+
+`anchor` carries three unrelated senses across this package and the checks below touch two of them: a
+hat's `anchor` is whether it runs at full strength rather than on the economy model (`CFG.HATS`); an
+instrument's *anchor agent* is the one lane of a round that always runs at full strength; and
+[`Config.resolve_anchor`](@ref)'s `file#heading` anchor is a Markdown reference. No one of them implies
+another.
 """
 module Doctor
 
@@ -257,9 +263,8 @@ function fleet_names()
     isfile(p) || return String[]
     return [c["name"] for c in get(TOML.parsefile(p), "consumer", Any[])]
 end
-# Two unrelated senses of `anchor` meet in this one check. A hat's `anchor` is whether it runs at full
-# strength rather than on the economy model; `Config.resolve_anchor` resolves a `file#heading` Markdown
-# reference. Neither is the other, and nothing but the surrounding line says so.
+# `CFG.HATS` reads a hat's `anchor` — the full-strength sense the `Doctor` docstring binds, not
+# `Config.resolve_anchor`'s Markdown one.
 check!("CFG.HATS", ctx -> begin
     cc = ctx.cfg["instruments"]["check-consistency"]; errs = String[]
     hats = String.(cc["hats"]); schema = load_schema("hat")

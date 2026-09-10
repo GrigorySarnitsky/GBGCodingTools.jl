@@ -20,10 +20,8 @@
         "hats",
         "adjudicated_titles",
         "finding_types",
-        "cost",
         "strength",
-        "models",
-        "opened"
+        "models"
       ],
       "properties": {
         "adjudicated_titles": {
@@ -233,7 +231,7 @@
       "type": "object"
     }
   },
-  "title": "/check-consistency — args of workflow/panel.js, the lane-file wrapper and the `seeds` definition of .gbg/seeds.toml",
+  "title": "/check-consistency \u2014 args of workflow/panel.js, the lane-file wrapper and the `seeds` definition of .gbg/seeds.toml",
   "$defs": {
     "finding": {
       "additionalProperties": false,

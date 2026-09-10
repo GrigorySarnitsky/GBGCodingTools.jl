@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "9d1c7af7febedace903c429b77375257",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/rationale#1",
+      "verdict": "ABSENT",
+      "evidence": "docs/ARCHITECTURE.md:489-492 now reads 'error()s on any non-zero return, EXCEPT the one refusal that is not a breakage: a gate that refuses only because a round of a docs instrument is open prints makedocs: SKIPPED and returns nothing, exit 0 ... GBG_DOCS_NO_SKIP restores the refusal, and gbg release and the deep doctor set it'. Matches ext/GBGCodingToolsDocumenterExt.jl:31-37 exactly. Grepped 'error()s|SKIP|frozen' in ARCHITECTURE.md; no remaining unconditional claim found."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/rationale#2",
+      "verdict": "ABSENT",
+      "evidence": "docs/ARCHITECTURE.md:495 attributes package_operations to Reflection.package_operations(); line 538 says under TestHarness bullet 'Reflection.package_operations(), which it CALLS and does not define'; §3 tree line 985 lists TestHarness.jl without package_operations and line 987 lists it under Reflection.jl as 'public surface'. Grepped all package_operations occurrences in docs/ARCHITECTURE.md, src, ext; no remaining TestHarness-attribution false claim."
+    }
+  ]
+}

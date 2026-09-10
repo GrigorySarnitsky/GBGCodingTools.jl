@@ -1,0 +1,53 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "additionalProperties": false,
+ "required": [
+  "ratings",
+  "round",
+  "schema_version"
+ ],
+ "properties": {
+  "schema_version": {
+   "type": "integer",
+   "description": "1"
+  },
+  "round": {
+   "type": "string",
+   "description": "the round whose findings were re-rated"
+  },
+  "ratings": {
+   "type": "array",
+   "description": "one entry per finding the re-check actually rated; a finding absent from this list is UNRATED, not confirmed, and the CLI keeps the lane's own rating for it",
+   "items": {
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "reason",
+     "severity"
+    ],
+    "properties": {
+     "id": {
+      "type": "string",
+      "description": "the banked finding id"
+     },
+     "severity": {
+      "type": "string",
+      "enum": [
+       "blocker",
+       "major",
+       "minor",
+       "nit"
+      ],
+      "description": "the blind re-rating; the CLI takes the MORE serious of this and the lane's own"
+     },
+     "reason": {
+      "type": "string",
+      "description": "one sentence: what the rating turns on"
+     }
+    },
+    "type": "object"
+   }
+  }
+ },
+ "type": "object"
+}

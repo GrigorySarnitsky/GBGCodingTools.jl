@@ -87,7 +87,7 @@ The arguments are:
 
 - `findings` — the banked findings after [`mark!`](@ref).
 - `ground_truth` — the seed plan.
-- `roster` — the round's roster.
+- `roster` — the round's roster: the hats it resolved to run, each with its substrate.
 - `site_pages` — the page banners the site-only manuscript keeps; a `siteonly` hat sees only seeds on
   those pages.
 

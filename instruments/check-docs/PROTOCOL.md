@@ -35,7 +35,7 @@ economy by default; the fix pass is never economised.
    docstring of a generic; verify each of its findings against source before fixing, since a term may be
    defined on a sibling method it did not open. Every lane is forbidden `.gbg/` and `~/.gbg/`.
 3. **Bank.** `gbg round bank <round>`: schema-validates each lane file, quarantines an invalid one,
-   assigns ids, freezes `findings.json`, renders `findings.md` and `SUMMARY.md`. A DEAD lane is exit 2 and
+   assigns ids, freezes `findings.json`, renders `findings.md` and `SUMMARY.md`. A DEAD or REJECTED lane is exit 2 and
    nothing is frozen; `gbg round rerun <round> --lanes …` re-runs only the dead ones.
 4. **Fix pass** — on the owner's word, at session strength. Work from `findings.md` by id. Fix the class,
    not the line. Drop the genuine false positives with a reason (universally standard math, the real Julia
@@ -46,8 +46,8 @@ economy by default; the fix pass is never economised.
    verifier (blind) with this instrument's lanes as the roster; launch both as printed. It refuses to
    open while an open finding names a file the fix pass did not touch — fix the class at every location
    the finding names, or re-open with `--sweep-ok` when the fix rightly lives elsewhere. A pass after
-   the first verifies only the ids still open plus any closed one the fix pass has touched again;
-   everything else keeps the entry that closed it. A dismissal is a
+   the first verifies only the ids still open, any closed one the fix pass has touched again, and any
+   closed one that names no location at all; everything else keeps the entry that closed it. A dismissal is a
    verdict the verifier grades like any other: it must name the rule or recorded decision that licenses
    it, and a dismissal the verifier cannot confirm is `UNDONE`, not closed.
 6. **Grade.** `gbg round grade <round>`: demotion, closure channels, plateau signal; a `hard` scan

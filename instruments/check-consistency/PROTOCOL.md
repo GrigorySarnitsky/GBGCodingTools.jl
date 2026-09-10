@@ -41,7 +41,7 @@ Every hat is forbidden `.gbg/` and `~/.gbg/`. The panel is COLLECT-ONLY: it neve
    manuscripts, recomputes the ground truth, marks seeded findings by fragment match, prints recall per
    class (a skipped class is UNDEFINED, not zero) and flags SUSPECT any hat with two or more seeds on its
    substrate and zero matches, freezes `findings.json`, and renders `findings.md` and `SUMMARY.md`.
-   **Any DEAD lane is exit 2 and nothing is frozen**; re-run only the dead lanes with
+   **Any DEAD or REJECTED lane is exit 2 and nothing is frozen**; re-run only the dead lanes with
    `gbg round rerun <round> --lanes …` and bank again. A live lane whose file changed after first sight
    is REJECTED.
 4. **Read.** `findings.md` is the work list, by id; `SUMMARY.md` is a reading aid — deduplicated, ranked
@@ -55,8 +55,9 @@ Every hat is forbidden `.gbg/` and `~/.gbg/`. The panel is COLLECT-ONLY: it neve
    the corpus from a seeded finding (bank marks them); never close a finding by declaring it "by design"
    or "for symmetry" — fix it, or put it to the owner as an adjudication with the trade-off.
 6. **Verify.** `gbg round pass open <round>` refuses while an open finding names a file the fix pass
-   left untouched (`--sweep-ok` overrides), verifies only the ids still open plus any closed one the
-   fix pass has touched again, records the fix range and a nonce, regenerates the
+   left untouched (`--sweep-ok` overrides), verifies only the ids still open, any closed one the
+   fix pass has touched again, and any closed one that names no location at all, records the fix range
+   and a nonce, regenerates the
    manuscripts after a fresh build, and prints two `Workflow` calls: the act verifier (sees the diff;
    grades `HONORED` / `ADJACENT` / `INSERTED` / `LINE-ONLY` / `NEW-DEFECT` / `SCOPE-CREEP` / `UNDONE` /
    `LAUNDERED`, `HONORED` earned by an enumerated `class_surfaces[]` list read from the finding's own

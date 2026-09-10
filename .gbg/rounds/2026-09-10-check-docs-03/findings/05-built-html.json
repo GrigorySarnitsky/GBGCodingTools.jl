@@ -1,0 +1,41 @@
+{
+  "candidates_found": 1,
+  "checked": [
+    "docs/build/index.html (home page: no AI banner per RULE.DOC.AI_BANNER exemption — confirmed absent; numeric claims '95 rules', '42 scans', '49 checks', '21 verbs' cross-checked against policy/*.md rule-header count, catalog/scans.toml, src/CLI/Doctor.jl CHECKS/QUICK/DEEP/EXEMPTABLE, and every VERBS[...] assignment across src/ — all exact matches)",
+    "docs/build/api/CLI.html (57 docstring blocks; every entry cross-checked against its defining .jl file: makedocs/VERBS, Sync.*, Init.*, Ledger, Doctor.*, Preflight.*, Rounds.*, Passes.*, Seeds.*, Recall.*, demote, RoundFiles.*, Git.*, HtmlWalker.*, consolidate, Hit, ScanResult, register_scan!, prose_lines, TreeHash.*)",
+    "docs/build/api/Config.html (6 docstrings; glob_to_regex/glob_files verified byte-for-byte against src/CLI/Config.jl)",
+    "docs/build/api/Reflection.html (8 docstrings; ARGS_THRESHOLD=3 verified against src/Reflection.jl and ARCHITECTURE §5.5's '>= 3-arguments threshold')",
+    "docs/build/api/TestHarness.html (16 docstrings; method_parity's detect_ambiguities claim and gate()'s banner-grep claim verified against src/TestHarness.jl)",
+    "docs/build/api/Witnesses.html (3 docstrings; WitnessResult status vocabulary and run()'s exit/refusal contract verified against src/Witnesses.jl line by line)",
+    "docs/build/guide/config.html (surface_files compound-key claim ['docs'/'all'] and the four/five package-varying config keys verified against src/CLI/Config.jl and schema/config.schema.json)",
+    "docs/build/guide/install.html (PKG_UUID literal in the worked example verified against src/GBGCodingTools.jl PKG_UUID constant)",
+    "docs/build/guide/ledger.html (EXEMPT.BROAD 'more than half' and the nine never-exemptable prefixes verified against src/CLI/Doctor.jl NON_EXEMPTABLE and the EXEMPT.BROAD check body)",
+    "docs/build/guide/doctor.html (full 49-row table extracted and cross-checked cell-by-cell against src/CLI/Doctor.jl's QUICK, DEEP and EXEMPTABLE constants — exact match on every column)",
+    "docs/build/guide/rounds.html (lifecycle claims incl. the severity-recheck.js carry mechanism traced through src/CLI/Preflight.jl's copy_scripts and src/CLI/Passes.jl's carry_conditions)",
+    "docs/build/guide/rules.html (95 rendered RULE.* headings counted and matched 1:1 against the policy payload's 95 rules; read in full for rendering artifacts)",
+    "docs/build/guide/verbs.html (45 docstrings read in full; verified the 21-verb VERBS table maps onto the documented functions, incl. the undocumented cmd_round dispatcher whose sub-verbs are each individually documented)",
+    "docs/build/guide/instruments.html (all four instrument protocols read in full; apparent 'garbled' passages traced to real HTML and confirmed to be well-formed <table> and <ol> markup, not built-page defects)",
+    "docs/build/architecture.html (373KB; tag-balance check on table/tr/td/th/ul/ol/li/p/code/pre/div/span/a — all balanced; 67 headings; spot-checked stray-dollar and mathbf-strings code-span examples)",
+    "site-wide mechanical sweep: every href in every built page resolved against the target file's ids (only benign 'javascript:;' theme-picker placeholders found, zero broken content links)",
+    "site-wide sweep for literal unrendered Markdown (stray '*', unresolved '@ref', un-rendered '[text](@ref)' link syntax, doubled HTML-entities, unclosed ``` fences, katex-error spans)",
+    "confirmed by design (not a defect): zero 'class=\"katex\"' spans anywhere in the built site, because documenter.js's auto-render KaTeX extension renders $...$ client-side in the browser, exactly as policy/latex-idiom.md's RULE.TEX.RENDERED_MATH states ('Documenter renders KaTeX client-side, so a formula's TeX is the page's text')",
+    "AI-banner sweep: exactly one 'Written by AI, not regularly reviewed' admonition on every page except index.html, and none on index.html, matching RULE.DOC.AI_BANNER's home-page exemption exactly"
+  ],
+  "findings": [
+    {
+      "type": "style",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "RULE.DOC.STEER's template sentence leaves a literal unresolved Markdown link in the rendered page",
+      "locations": [
+        "docs/build/guide/rules.html (byte offset ~15226): \"the allocating [<code>f</code>](@ref) returns a fresh result\" — no <a> wrapper present",
+        "policy/docs-rubric.md:70 (source of the quoted sentence): \"the allocating [`f`](@ref) returns a\""
+      ],
+      "description": "RULE.DOC.STEER's rendered page quotes the in-place steer sentence verbatim, including the placeholder link `[`f`](@ref)`. Because no docstring actually defines a binding named `f`, Documenter's Markdown parser cannot resolve the `@ref` and leaves the raw `[`, `` `f` ``, `]`, `(@ref)` characters as plain rendered text instead of a hyperlink — this is visible only in the built HTML. A reader of the rules page sees a literal, broken-looking `[f](@ref)` in the middle of a sentence. This is an isolated instance (a site-wide sweep of every `](@ref)` occurrence found no other unresolved case), so no class sweep is warranted beyond this one line.",
+      "resolution_hint": "In policy/docs-rubric.md's RULE.DOC.STEER paragraph, escape the placeholder so CommonMark cannot parse it as a link — e.g. wrap the whole template fragment in a double-backtick code span so it renders as literal text, or spell it without link brackets (\"the allocating `f` returns a fresh result instead, `@ref`-linked in the real docstring\")."
+    }
+  ],
+  "lane": "built-html",
+  "round": "2026-09-10-check-docs-03",
+  "schema_version": 1
+}

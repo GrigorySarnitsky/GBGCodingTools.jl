@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "9d1c7af7febedace903c429b77375257",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/schemas#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/tally.schema.json:189 now lists \"REFUSED\" in $defs.entry.properties.state.enum. The sole write-site, src/CLI/Passes.jl:626 (entry[\"state\"] = uppercase(String(r.status))), can now emit REFUSED without validate(load_schema(\"tally\"), tally) failing at Passes.jl:672. docs/ARCHITECTURE.md:1553 was also updated to list the widened five-value witness-status set, matching the commit message.",
+      "class_surfaces": [
+        {
+          "surface": "schema/tally.schema.json:178-190",
+          "swept": true,
+          "evidence": "the only enum in the repo constraining witness re-run status; now includes REFUSED"
+        },
+        {
+          "surface": "schema/reproduction.schema.json:79-87",
+          "swept": true,
+          "evidence": "a different vocabulary (reproduction verdicts, not witness run status); correctly left untouched"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:626 uppercase(String(r.status))",
+          "swept": true,
+          "evidence": "the only code site writing a witness Symbol status into a schema-validated field"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/audit.schema.json no longer declares `staleness` or `severity_recheck` under properties (both blocks removed in the diff); required list and additionalProperties:false preserved. This is the hint's second offered remedy. grep across src/ and ext/ for `\"staleness\"` and `severity_recheck` returns nothing, so no code expects the removed keys.",
+      "class_surfaces": [
+        {
+          "surface": "schema/audit.schema.json properties.staleness",
+          "swept": true,
+          "evidence": "property removed; audit_bank never wrote it"
+        },
+        {
+          "surface": "schema/audit.schema.json properties.severity_recheck",
+          "swept": true,
+          "evidence": "property removed; schema no longer promises a merge that never happened"
+        },
+        {
+          "surface": "severity.json's own schema surface",
+          "swept": false,
+          "evidence": "severity.json (Audit.jl:65-69) still has no schema of its own — the alternative half of the hint's either/or was not taken, but the finding is satisfied by the half that was"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/pass.schema.json's `probe_open` property block is deleted outright. grep for `probe_open` across src/, ext/, schema/, docs/ returns zero hits — pass.toml (built Passes.jl:373-379) never wrote it and now the schema no longer advertises it.",
+      "class_surfaces": [
+        {
+          "surface": "schema/pass.schema.json properties.probe_open",
+          "swept": true,
+          "evidence": "block removed in the diff"
+        },
+        {
+          "surface": "src/CLI/Passes.jl pass.toml construction (~373-379)",
+          "swept": true,
+          "evidence": "unchanged — never wrote probe_open, now matches trimmed schema"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/carried.schema.json:2 changed from draft-07 to https://json-schema.org/draft/2020-12/schema verbatim, matching every sibling. grep of $schema across all schema/*.json confirms uniform value post-fix.",
+      "class_surfaces": [
+        {
+          "surface": "schema/carried.schema.json:2",
+          "swept": true,
+          "evidence": "now reads the 2020-12 URI"
+        },
+        {
+          "surface": "schema/*.json ($schema declarations, all 17 files)",
+          "swept": true,
+          "evidence": "grep shows a single uniform dialect value"
+        }
+      ]
+    }
+  ]
+}

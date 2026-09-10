@@ -79,6 +79,22 @@ const CARRY_LIMIT = 3
 carry_file(cfg::AbstractDict) = joinpath(cfg["root"], ".gbg", "carried.toml")
 
 """
+    severity_ratings(dir) -> Dict{String,String}
+
+The blind re-ratings of `severity.json` under the round directory `dir`, id → severity, validated
+against `schema/severity.schema.json`. Returns an empty dictionary when the file is absent — an
+unrated finding keeps its lane's own rating, and the caller decides whether an absent file is fatal.
+"""
+function severity_ratings(dir::AbstractString)
+    p = joinpath(dir, "severity.json")
+    isfile(p) || return Dict{String,String}()
+    d = read_json(p)
+    errs = validate(load_schema("severity"), d)
+    isempty(errs) || throw(RoundError("severity.json does not validate: " * first(errs)))
+    return Dict(String(r["id"]) => String(r["severity"]) for r in d["ratings"])
+end
+
+"""
     carry_ledger(cfg) -> Dict
 
 `.gbg/carried.toml`, the findings a round closed by carrying them into the next round of their
@@ -298,9 +314,9 @@ function unswept(cfg::AbstractDict, dir::AbstractString, ids::AbstractVector, ra
 end
 
 """
-    pass_open(cfg, round; regrade = false, sweep_ok = false, io = stdout) -> Int
+    pass_open(cfg, round; regrade = false, sweep_ok = false, full_state = false, io = stdout) -> Int
 
-`gbg round pass open <round> [--regrade] [--sweep-ok]`: opens a verification pass. The arguments are:
+`gbg round pass open <round> [--regrade] [--sweep-ok] [--full-state]`: opens a verification pass. The arguments are:
 
 - `cfg` — the validated config.
 - `round` — the round id.
@@ -632,7 +648,7 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         end
     else
         audit = isfile(joinpath(dir, "audit.json")) ? read_json(joinpath(dir, "audit.json")) : Dict{String,Any}("dispositions" => Dict())
-        sev = isfile(joinpath(dir, "severity.json")) ? Dict(r["id"] => r["severity"] for r in read_json(joinpath(dir, "severity.json"))["ratings"]) : nothing
+        sev = isfile(joinpath(dir, "severity.json")) ? severity_ratings(dir) : nothing
         sev === nothing && !isempty(findings) && (println(io, "grade: the severity re-check has not run — gbg audit-changes bank $round printed its Workflow call; run it first (\"serious\" is counted after the re-check)"); return 2)
         rank = Dict("blocker" => 4, "major" => 3, "minor" => 2, "nit" => 1)
         for f in findings
@@ -814,7 +830,7 @@ function carry_conditions(cfg::AbstractDict, dir::AbstractString, rec::AbstractD
         id in openids || push!(fails, "--carry $id: it is not open in pass $k; a closed finding is done, not carried")
     end
     sev = joinpath(dir, "severity.json")
-    ratings = isfile(sev) ? Dict(String(r["id"]) => String(r["severity"]) for r in read_json(sev)["ratings"]) : Dict{String,String}()
+    ratings = severity_ratings(dir)
     missing_ = [id for id in carry if !haskey(ratings, id) && haskey(known, id)]
     if !isempty(missing_)
         payload = joinpath(Preflight.payload_dir(cfg, rec["round"]), "severity"); mkpath(payload)

@@ -18,7 +18,6 @@
         "lanes",
         "oracles",
         "witness_cmd",
-        "witness_env",
         "models",
         "strength"
       ],
@@ -201,7 +200,7 @@
       "type": "object"
     }
   },
-  "title": "/bug-hunt — args of workflow/hunt.js, the candidate file and the lane-file wrapper",
+  "title": "/bug-hunt \u2014 args of workflow/hunt.js, the candidate file and the lane-file wrapper",
   "$defs": {
     "hunt_finding": {
       "type": "object",

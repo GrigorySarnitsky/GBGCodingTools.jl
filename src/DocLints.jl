@@ -17,7 +17,8 @@ The arguments are:
 Before Documenter runs it runs, in-process, the quick doctor set — the `:QUICK` selection of
 [`GBGCodingTools.doctor`](@ref), the checks that hold on any machine with no build and no network — the hard scans over the source
 surfaces and [`GBGCodingTools.gate`](@ref), the closure gate, over the two docs instruments; after
-Documenter it runs the built-HTML scans and that gate again. Any non-zero return is an `error`, so the build fails. It prints one banner line,
+Documenter it runs the built-HTML scans and that gate again. Any non-zero return is an `error`, so the build fails — except a gate refusing only because a docs
+round is open, which prints a skip line and returns `nothing`, exit 0, unless `GBG_DOCS_NO_SKIP` is set. It prints one banner line,
 `GBGCodingTools v<ver> makedocs`, which a consumer's CI greps for.
 
 Returns whatever `Documenter.makedocs` returns, or `nothing` when an open round of a docs instrument

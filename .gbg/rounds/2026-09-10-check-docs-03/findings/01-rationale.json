@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-check-docs-03",
+  "lane": "rationale",
+  "candidates_found": 4,
+  "checked": [
+    "docs/ARCHITECTURE.md (full read, all ~2647 lines, §0 through Revision history)",
+    "cross-checked D9's makedocs description against ext/GBGCodingToolsDocumenterExt.jl",
+    "cross-checked D9's makedocs description against src/CLI/Gate.jl (gate, frozen_rounds) and src/DocLints.jl (makedocs docstring)",
+    "cross-checked D9's TestHarness/Reflection engine lists against src/TestHarness.jl and src/Reflection.jl (package_operations ownership)",
+    "cross-checked §3 repository-layout tree's TestHarness.jl member list against src/TestHarness.jl",
+    "cross-checked GBGCodingTools.jl module docstring and include order against docs' D1/D9/§3 claims",
+    "cross-checked src/CLI/Main.jl (main, VERBS, exit codes, --dev, --version) against D8's exit-code claims",
+    "cross-checked src/CLI/Doctor.jl QUICK/DEEP constants and all check ids against §7.3's doctor table and QUICK-set prose",
+    "cross-checked src/CLI/Doctor.jl EXEMPT.BROAD and LEG.SENTINELS check bodies against their §7.3 rows",
+    "cross-checked src/Witnesses.jl (run, run_one, refusal) against D9's Witnesses bullet and §6.7",
+    "cross-checked src/Reflection.jl xlink default against D9's \"dry-run default\" claim",
+    "cross-checked src/CLI/Self.jl self_verify against D3's PIN.SELF/exit-code claims",
+    "cross-checked src/TreeHash.jl and src/HtmlWalker.jl headers against D8/D9's tooling claims",
+    "grepped docs/ARCHITECTURE.md for any mention of SKIP/GBG_DOCS_NO_SKIP/frozen-build behaviour (none found)"
+  ],
+  "findings": [
+    {
+      "type": "currency",
+      "severity": "blocker",
+      "confidence": "high",
+      "title": "ARCHITECTURE.md claims makedocs \"error()s on any non-zero return\"; code SKIPS (exit 0) on a frozen docs round",
+      "locations": [
+        "docs/ARCHITECTURE.md:488 — \"and `error()`s on any non-zero return, so the gate is reachable on a CI runner with no shim\"",
+        "ext/GBGCodingToolsDocumenterExt.jl:31-37 — `if code == 1 && !isempty(frozen) && !haskey(ENV, \"GBG_DOCS_NO_SKIP\") … println(\"makedocs: SKIPPED …\"); return nothing end`",
+        "src/CLI/Gate.jl:70-78 — frozen_rounds docstring: \"the docs wrapper prints a skip line and exits 0 … gbg release and the deep doctor set [GBG_DOCS_NO_SKIP], which turns the skip back into the refusal\"",
+        "src/DocLints.jl:19-25 — the makedocs docstring's own body: \"Any non-zero return is an `error`… Returns … `nothing` when an open round of a docs instrument froze the build … the skip is exit 0\""
+      ],
+      "description": "D9's bullet on GBGCodingTools.makedocs states unconditionally that the wrapper error()s on any non-zero return from gate(\"check-docs\", \"check-consistency\"). The actual extension body checks `code == 1 && !isempty(frozen) && !haskey(ENV, \"GBG_DOCS_NO_SKIP\")` and, when true, prints a SKIPPED message and returns nothing — exit 0 — instead of erroring; only gbg release and the deep doctor force GBG_DOCS_NO_SKIP=1 to get the refusal back. This SKIP-on-frozen-round mechanism is a deliberate, load-bearing design decision (it has its own rationale in the code: a red docs run should mean 'broken', not 'a round is open') but is entirely absent from ARCHITECTURE.md — the authoritative design record — which instead makes the flatly false claim that any non-zero gate return is an unconditional error(). This is exactly the false-but-plausible, RULE.DOC.VERIFIED-violating claim the rubric singles out: a reader would believe an open check-docs/check-consistency round always fails a docs/make.jl build, when in fact it silently succeeds (skips) by default.",
+      "resolution_hint": "Add the SKIP mechanism to D9's makedocs bullet: describe the frozen_rounds/GBG_DOCS_NO_SKIP behaviour (skip-not-fail on a frozen docs round; forced back to a refusal by gbg release and --deep), and soften \"error()s on any non-zero return\" to state the exception explicitly."
+    },
+    {
+      "type": "self-containment",
+      "severity": "major",
+      "confidence": "high",
+      "title": "ARCHITECTURE.md attributes package_operations() to TestHarness, but the code defines/exports it from Reflection",
+      "locations": [
+        "docs/ARCHITECTURE.md:491 — \"It writes the derived public surface (`TestHarness.package_operations()`) to `.gbg/scratch/public_surface.json`\"",
+        "docs/ARCHITECTURE.md:532-534 — the TestHarness: bullet lists \"package_operations() (ownership-derived public surface — the constant derived route …)\"",
+        "docs/ARCHITECTURE.md:981 — the §3 repo-layout tree's TestHarness.jl line: \"package_operations, run_regressions, display gate, thread-subprocess check, gate()\"",
+        "src/Reflection.jl:16 — module docstring: \"the ownership-derived public surface ([`Reflection.package_operations`](@ref))\"",
+        "src/Reflection.jl:21 — `export argcov, signature_fidelity, xlink, dupref, package_operations`",
+        "src/Reflection.jl:264 — `function package_operations(pkg::Module, modules::AbstractVector{Module})`",
+        "src/TestHarness.jl:98,226,407 — TestHarness only ever calls Reflection.package_operations(pkg, modules); it defines no function of that name"
+      ],
+      "description": "package_operations is defined and exported by the Reflection module (its own module docstring names it as one of Reflection's engines), and TestHarness.jl merely calls Reflection.package_operations(...) three times — it never defines the function itself. ARCHITECTURE.md nonetheless lists package_operations() as a member of TestHarness in three places (D9's TestHarness bullet, the §3 repository tree's TestHarness.jl line, and the parenthetical TestHarness.package_operations() in the makedocs bullet), while D9's own Reflection bullet never names the function at all (it only says \"public_surface derivation\", an informal paraphrase). This is exactly the category error RULE.DOC.VERIFIED bans — attributing an operation to the wrong owning module — and it misleads a reader trying to locate the derivation engine.",
+      "resolution_hint": "Move package_operations() out of the TestHarness: bullet and the §3 tree's TestHarness.jl line into the Reflection: bullet (and Reflection.jl's tree line), and correct the makedocs bullet's parenthetical to Reflection.package_operations()."
+    }
+  ]
+}

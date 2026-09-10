@@ -16,7 +16,7 @@ grade, the CLI closes. Nothing is done by hand that a verb does.
 2. **Prepare** — `gbg round prepare <round>`: the build under `GBG_ROUND`, the manuscripts consolidated
    (and seeded), or the scan battery banked as lane `00-scans`, or the audit's diff files.
 3. **Lanes** — the printed `Workflow` call; each lane writes `findings/NN-<lane>.json` first.
-4. **Bank** — `gbg round bank <round>`: lane files validated and classified (a DEAD lane is exit 2 and
+4. **Bank** — `gbg round bank <round>`: lane files validated and classified (a DEAD or REJECTED lane is exit 2 and
    nothing is frozen), ids `<round>/<lane>#<n>` assigned, seeds marked, `findings.json` frozen.
 5. **Fix** — on the owner's word, from `findings.md` by id; builds and tests through
    `gbg round build|test <round>`.
@@ -38,6 +38,7 @@ grade, the CLI closes. Nothing is done by hand that a verb does.
 | `adjudicated` | a ledger entry `scope = "finding"` naming the id, reason ≥ 40 characters, `overturn_when` present, recorded after the round opened; audited at close |
 | `seeded` | a planted finding whose state is favourable |
 | `rescan` | a hard-scan hit of lane `00-scans` that no longer fires when `grade` re-runs the scan |
+| `carried` | an id the round hands to the next run of the same instrument, under the carry conditions |
 
 The demotion is mechanical: `HONORED` becomes `LINE-ONLY` when `class_surfaces[]` is empty, and equally when any entry in it is `swept: false` — a verdict that claims the fix landed while its own evidence names a surface the class still lives on.
 

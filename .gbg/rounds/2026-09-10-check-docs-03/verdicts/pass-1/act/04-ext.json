@@ -1,0 +1,26 @@
+{
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "lane": "ext",
+  "pass_nonce": "9d1c7af7febedace903c429b77375257",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/ext#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:14 now reads `check(verb::AbstractString, code::Integer)`, exactly mirroring the method at line 19 `check(verb::AbstractString, code::Integer) = code == 0 ? nothing : error(...)`. Diff hunk: `-    check(verb, code)` / `+    check(verb::AbstractString, code::Integer)` — matches the hint verbatim, no other change in the file.",
+      "class_surfaces": [
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:14",
+          "swept": true,
+          "evidence": "check()'s docstring signature line updated to include both explicit types, matching the method definition at line 19."
+        },
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:25",
+          "swept": true,
+          "evidence": "`function makedocs(cfg; kwargs...)` carries no docstring at all, so RULE.DOC.SIGNATURE_MIRROR (a docstring signature vs. method types) has no second docstring surface in this file to diverge."
+        }
+      ]
+    }
+  ]
+}

@@ -1,12 +1,12 @@
 unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D1 — Unit of distribution: one repository, one version, two ",247,111,0
-"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze",486,315,0
+"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze",488,317,0
 "ARCHITECTURE.md § D11 — Schemas: one JSON Schema per artefact kind in `schema/",112,68,0
-"ARCHITECTURE.md § D12 — Policy prose: single source `policy/*.md` with rule id",338,162,0
+"ARCHITECTURE.md § D12 — Policy prose: single source `policy/*.md` with rule id",339,162,0
 "ARCHITECTURE.md § D13 — Managed files: one sidecar `.gbg/managed.json` as a ca",533,474,0
 "ARCHITECTURE.md § D14 — Doctor: read-only, stable check ids, one exemptions le",473,366,0
 "ARCHITECTURE.md § D15 — Self-test: a fixture consumer at a path with a space, ",782,363,0
-"ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",773,705,0
+"ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",776,708,0
 "ARCHITECTURE.md § D17 — Migration: PF → IT → SS → CP, doctor-verified steps, n",324,239,0
 "ARCHITECTURE.md § D18 — Cost policy: economy default, anchors in the catalogue",167,100,0
 "ARCHITECTURE.md § D19 — Name: `GBGCodingTools`",128,127,0
@@ -29,7 +29,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § Revision 4 (2026-09-08) — IT amendments + Python retirement",361,361,0
 "ARCHITECTURE.md § Revision 5 (2026-09-08) — IT corrections A–D",426,426,0
 "ARCHITECTURE.md § Revision 6 (2026-09-09) — the tool as its own consumer",452,452,0
-"ARCHITECTURE.md § Revision 7 (2026-09-09) — the prerelease tag",198,198,0
+"ARCHITECTURE.md § Revision 7 (2026-09-09) — the prerelease tag",202,202,0
 "ARCHITECTURE.md § Revision 8 (2026-09-08) — the owner's rulings",358,243,0
 "ARCHITECTURE.md § Revision 9 (2026-09-09) — payloads are files, args carry pat",243,243,0
 "ARCHITECTURE.md § Revision history",23,23,0
@@ -42,7 +42,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § item 5",13,13,0
 "ARCHITECTURE.md § item 6",61,61,0
 "ARCHITECTURE.md § item 7",27,27,0
-"ARCHITECTURE.md § item 8",83,83,0
+"ARCHITECTURE.md § item 8",89,89,0
 "ARCHITECTURE.md § item 9",91,91,0
 "ARCHITECTURE.md § §0 The design sentence and the requirements",440,337,0
 "ARCHITECTURE.md § §1 The platform / product model",802,565,0
@@ -62,7 +62,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §5.5 Deliberately NOT configurable (changing any is MAJOR)",202,202,0
 "ARCHITECTURE.md § §5.6 The tool's own delta (the fifth consumer, D15)",485,484,0
 "ARCHITECTURE.md § §6.1 File formats (all instruments)",315,315,0
-"ARCHITECTURE.md § §6.3 Vocabularies (constants)",454,409,0
+"ARCHITECTURE.md § §6.3 Vocabularies (constants)",460,415,0
 "ARCHITECTURE.md § §6.4 Seeds",279,279,0
 "ARCHITECTURE.md § §6.5 Closure channels (per finding id; PARTIAL never closes)",156,156,0
 "ARCHITECTURE.md § §6.6 Deltas — `/check-docs`",173,173,0
@@ -71,7 +71,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §7.1 Policy migration map (which consumer sections become wh",290,238,0
 "ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",348,348,0
 "ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1881,1744,0
-"ARCHITECTURE.md § §8 Self-test and versioning",1508,446,0
+"ARCHITECTURE.md § §8 Self-test and versioning",1521,446,0
 "ARCHITECTURE.md § §9 Resolution table",1514,1455,0
 "Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",152,95,0
 "Bump.jl :: bump(cfg, ver; abandon = nothing, io = stdout) -> Int",119,78,0
@@ -85,16 +85,16 @@ unit,words,longest_paragraph,admonitions
 "Config.jl :: glob_files(root, pattern) -> Vector{String}",44,40,0
 "Config.jl :: glob_to_regex(pattern) -> Regex",36,33,0
 "Config.jl :: read(root = find_root(); check = true) -> Dict",74,39,0
-"Config.jl :: resolve_anchor(root, anchor) -> (file, line, count)",69,63,0
+"Config.jl :: resolve_anchor(root, anchor) -> (file, line, count)",107,101,0
 "Config.jl :: surface_files(cfg, key) -> Vector{String}",60,56,0
 "Config.md § Config",22,22,1
 "Consolidate.jl :: consolidate(build_dir, withheld; out_full, out_siteonly) -> ",150,77,0
 "Consolidate.jl :: discover_pages(build_dir) -> Vector{Tuple{String,String,Stri",82,79,0
 "Consolidate.jl :: page_text(path) -> String",36,33,0
 "Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",185,62,0
-"DocLints.jl :: makedocs(cfg; kwargs...)",253,82,0
+"DocLints.jl :: makedocs(cfg; kwargs...)",279,108,0
 "Doctor.jl :: Check",37,30,0
-"Doctor.jl :: Doctor",79,78,0
+"Doctor.jl :: Doctor",143,78,0
 "Doctor.jl :: cmd_doctor(args) -> Int",29,26,0
 "Doctor.jl :: doctor(cfg, set = :QUICK; io = stderr) -> Int",58,28,0
 "Doctor.jl :: run(cfg; only = nothing, deep = false, io = stdout, json = f",136,68,0
@@ -103,7 +103,7 @@ unit,words,longest_paragraph,admonitions
 "Fleet.jl :: Fleet.diff(a, b; io = stdout) -> Int",92,37,0
 "Fleet.jl :: Fleet.rows(; deep = false) -> (rows, code)",114,80,0
 "Fleet.jl :: latest_tag(root) -> Union{VersionNumber,Nothing}",17,14,0
-"GBGCodingTools.jl :: GBGCodingTools",403,102,0
+"GBGCodingTools.jl :: GBGCodingTools",423,118,0
 "Gate.jl :: cmd_gate(args) -> Int",27,24,0
 "Gate.jl :: frozen_rounds(cfg, instruments...) -> Vector{String}",115,68,0
 "Gate.jl :: gate(cfg, instruments...; io = stderr) -> Int",185,69,0
@@ -169,10 +169,11 @@ unit,words,longest_paragraph,admonitions
 "Passes.jl :: finding_files(root, finding) -> Vector{String}",65,34,0
 "Passes.jl :: grade(cfg, round; io = stdout) -> Int",170,98,0
 "Passes.jl :: last_graded(dir, k) -> Int",108,68,0
-"Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, io ",234,103,0
+"Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, ful",238,103,0
 "Passes.jl :: pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects,",163,105,0
 "Passes.jl :: quote_probe(root, finding) -> Vector{String}",177,104,0
 "Passes.jl :: save_carry(cfg, led)",25,23,0
+"Passes.jl :: severity_ratings(dir) -> Dict{String,String}",47,44,0
 "Passes.jl :: unswept(cfg, dir, ids, range) -> Vector{Pair{String,Vector{S",131,55,0
 "Preflight.jl :: Preflight",72,71,0
 "Preflight.jl :: audit_kind(cfg, base) -> String",56,52,0
@@ -200,7 +201,7 @@ unit,words,longest_paragraph,admonitions
 "Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
 "Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0
 "Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
-"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",118,55,0
+"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",128,55,0
 "Reflection.jl :: ARGS_THRESHOLD",33,32,0
 "Reflection.jl :: ArgcovHit",58,48,0
 "Reflection.jl :: Docstring",70,59,0
@@ -237,7 +238,7 @@ unit,words,longest_paragraph,admonitions
 "Rounds.jl :: import_empty(cfg, round, reason; io = stdout) -> Int",113,37,0
 "Rounds.jl :: list(cfg; io = stdout) -> Int",42,21,0
 "Rounds.jl :: load(cfg, round) -> (dir, record)",16,11,0
-"Rounds.jl :: prepare(cfg, round; io = stdout) -> Int",123,84,0
+"Rounds.jl :: prepare(cfg, round; io = stdout) -> Int",160,58,0
 "Rounds.jl :: render(cfg, round; io = stdout) -> Int",51,20,0
 "Rounds.jl :: rerun(cfg, round, lanes; io = stdout) -> Int",86,28,0
 "Rounds.jl :: run_under_round(cfg, round, cmdline; log) -> Int",60,29,0
@@ -325,7 +326,7 @@ unit,words,longest_paragraph,admonitions
 "TestHarness.jl :: counting(data::Array) -> CountingArray",11,8,0
 "TestHarness.jl :: display_gate(modules; no_display = Dict{Symbol,String}(), mi",137,97,0
 "TestHarness.jl :: field_threshold(field_bytes; fraction = 16, per_thread = 409",92,65,0
-"TestHarness.jl :: gate(; root = GBGCodingTools.Config.find_root())",107,75,0
+"TestHarness.jl :: gate(; root = GBGCodingTools.Config.find_root())",114,82,0
 "TestHarness.jl :: has_display(type, modules) -> Bool",17,13,0
 "TestHarness.jl :: method_parity(pkg, modules, baseline; externals = (Base,))",105,64,0
 "TestHarness.jl :: module_method_count(mod, pkg, modules; externals = (Base,)) ",68,30,0
@@ -367,13 +368,13 @@ unit,words,longest_paragraph,admonitions
 "ledger.md § [The ledger](@id ledger)",164,73,1
 "prose_shape.jl :: prose_units(cfg) -> Dict{String,NamedTuple}",31,28,0
 "prose_shape.jl :: write_prose_shape_baseline(cfg) -> Int",13,10,0
-"rounds.md § Closure channels",121,80,0
+"rounds.md § Closure channels",142,101,0
 "rounds.md § The gate",65,65,0
 "rounds.md § [Rounds](@id rounds)",83,61,1
 "rounds.md § item 1",42,42,0
 "rounds.md § item 2",29,29,0
 "rounds.md § item 3",12,12,0
-"rounds.md § item 4",29,29,0
+"rounds.md § item 4",31,31,0
 "rounds.md § item 5",19,19,0
 "rounds.md § item 6",29,29,0
 "rounds.md § item 7",27,27,0
