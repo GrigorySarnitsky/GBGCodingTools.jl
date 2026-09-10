@@ -87,3 +87,7 @@ executing = "939a5491d8604f60aa4e41f11a0846f79eeff13f52b1713fdc814518cc0abbcf"
 under-rejection = "bcd067c5b72aa2abb08fe6ecf1ef962d6c0e8e6ce3215af55b08436a168f0639"
 public-contract = "eeab4b0b61b20ee92ef904157b25d4fa0b54f1d20b70bca15c3ea60884cfad03"
 free-reader = "1fa57129cfb3cc3f14cd08abbb682aa8c596895b2ead04376f2b882ed0f92ef9"
+
+[abandoned]
+open_ids = []
+reason = "Its own fix pass corrected all 49 concerns inside the round, which moved the covered paths, so close refuses the audit as stale; bank will not run twice, so the executable-claim failures it recorded cannot be re-run either. The corrections stand and are pushed. A fresh audit over the same base covers them, and the workflow now says an audit is disposed and never corrected inside it."
