@@ -1,0 +1,44 @@
+# Tally — 2026-09-10-check-docs-03 pass 2
+
+18/40 closed, 18 open; demoted by rule: 0; adjudicated share: 0.0; plateau: 0 pass(es) flat.
+
+- `2026-09-10-check-docs-03/built-html#1` act=ADJACENT state=PRESENT → OPEN
+- `2026-09-10-check-docs-03/catalogues#1` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/catalogues#2` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/catalogues#3` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/cold-reader#1` act=LINE-ONLY state=ABSENT → OPEN
+- `2026-09-10-check-docs-03/cold-reader#2` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/cold-reader#3` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/cold-reader#4` act=NEW-DEFECT state=ABSENT → OPEN
+- `2026-09-10-check-docs-03/ext#1` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/operational-claims#1` act=LINE-ONLY state=— → OPEN
+- `2026-09-10-check-docs-03/operational-claims#10` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/operational-claims#2` act=UNDONE state=— → OPEN
+- `2026-09-10-check-docs-03/operational-claims#3` act=UNDONE state=— → OPEN
+- `2026-09-10-check-docs-03/operational-claims#4` act=— state=ABSENT → seeded
+- `2026-09-10-check-docs-03/operational-claims#5` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/operational-claims#6` act=HONORED state=PARTIAL → OPEN
+- `2026-09-10-check-docs-03/operational-claims#7` act=HONORED state=PARTIAL → OPEN
+- `2026-09-10-check-docs-03/operational-claims#8` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/operational-claims#9` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/pages#1` act=— state=— → OPEN
+- `2026-09-10-check-docs-03/pages#2` act=HONORED state=— → OPEN
+- `2026-09-10-check-docs-03/pages#3` act=LINE-ONLY state=PARTIAL → OPEN
+- `2026-09-10-check-docs-03/rationale#1` act=LINE-ONLY state=ABSENT → OPEN
+- `2026-09-10-check-docs-03/rationale#2` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/rulebook#1` act=LINE-ONLY state=PARTIAL → OPEN
+- `2026-09-10-check-docs-03/schemas#1` act=UNDONE state=— → OPEN
+- `2026-09-10-check-docs-03/schemas#2` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/schemas#3` act=UNDONE state=— → OPEN
+- `2026-09-10-check-docs-03/schemas#4` act=UNDONE state=— → OPEN
+- `2026-09-10-check-docs-03/src#1` act=LINE-ONLY state=ABSENT → OPEN
+- `2026-09-10-check-docs-03/src#2` act=LINE-ONLY state=ABSENT → OPEN
+- `2026-09-10-check-docs-03/src#3` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/src#4` act=— state=ABSENT → seeded
+- `2026-09-10-check-docs-03/workflow-scripts#1` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/workflow-scripts#2` act=HONORED state=— → OPEN
+- `2026-09-10-check-docs-03/workflow-scripts#3` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/workflow-scripts#4` act=HONORED state=— → OPEN
+- `2026-09-10-check-docs-03/workflow-scripts#5` act=LINE-ONLY state=PARTIAL → OPEN
+- `2026-09-10-check-docs-03/workflow-scripts#6` act=HONORED state=ABSENT → honored
+- `2026-09-10-check-docs-03/workflow-scripts#7` act=HONORED state=— → OPEN
