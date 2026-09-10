@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "0b4bebf9fc966fc412f1ec1e83ea2181",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#1",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Passes.jl:538-539 now reads 'Exit 1 while `open_ids` is non-empty, and equally while any id is `pending_state` ... 0 only when every id is closed', matching code at lines 700-701. Searched Passes.jl for 'Exit 1 while' and 'pending_state'; only one docstring, already three-valued."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#2",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Passes.jl:889-892 now reads 'Returns 0 when closed, 1 when a condition is unmet — a moved `config_sha` or `tool_version` among them ... and 2 for the one mismatch no regrade answers: a `tool_tree_sha` that moved under an unchanged `tool_version`', matching code at lines 915-919."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#3",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Rounds.jl:330-333 now enumerates all three :dead causes: absent; renamed/quarantined on unparsable or invalid; or 'well-formed with zero findings AND an empty `checked[]`', matching code lines 340-355 including the new case at 355."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#6",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Rounds.jl:434 now reads 'Any DEAD or REJECTED lane ⇒ exit 2 and nothing frozen', matching code line 451 (`dead = [k for (k,s) in statuses if s in (:dead, :rejected)]`). Grepped for 'Any DEAD' — single occurrence, already corrected."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#7",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Release.jl:44-46 now reads 'closed — every id through `honored`, `adjudicated`, `rescan` or `seeded`, or carried into the next round (`cites_round`)', matching all four dispositions plus `carried` in cites_round() at lines 24-26."
+    }
+  ]
+}

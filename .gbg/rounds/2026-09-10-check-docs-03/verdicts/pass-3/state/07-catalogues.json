@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "0b4bebf9fc966fc412f1ec1e83ea2181",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/catalogues#1",
+      "verdict": "ABSENT",
+      "evidence": "doc-policy.toml:6, naming-policy.toml:6, invariants-and-decisions.toml:6 all now read 'the rulebook sections granted to you by `needs` ... {package.rulebook_sections}', not 'your substrate'. grep -rn 'named in your substrate' catalog/hats/*.toml -> no hits. Checked the fourth same-class hat, latex-typesetter.toml:7, also fixed ('granted to you by `needs`'). Preflight.jl:252-254 still correctly defines substrate as full/siteonly, 'never a substrate value'."
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "0b4bebf9fc966fc412f1ec1e83ea2181",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "Config.jl:14-19 (file 6, first use, before Init/Seed/Preflight/Doctor) now: \"Two words this package overloads... An ANCHOR here is a `file#heading` reference... and NOTHING else: elsewhere the same word is a hat or lane that runs at full strength... and a regular expression marking where a seed is planted.\" Doctor.jl's disambiguation moved into the actual module docstring (lines 12-17), reachable via `?Doctor`, not a bare `#` comment. Init/Seed/Preflight cross-references still consistent."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "DocLints.jl:17 (file 3, first use) now reads \"the quick doctor set — the `:QUICK` selection of [`GBGCodingTools.doctor`](@ref)\"; TestHarness.jl:591 likewise links `:QUICK` on first mention. Both sites now name and link the closed value instead of using it as a bare informal phrase."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/cold-reader#3",
+      "verdict": "ABSENT",
+      "evidence": "Recall.jl:8-12 module docstring now inline-glosses all three: \"A HAT is one persona of a consistency panel, its SUBSTRATE the corpus view that hat is given, and the ROSTER the hats a round resolved to run: only a `siteonly` substrate is handed a narrowed manuscript...\" matching Preflight.jl's later fuller definitions; suspect_hats' `roster` arg also glossed at line 90."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/cold-reader#4",
+      "verdict": "ABSENT",
+      "evidence": "Config.jl:14-16 (same module docstring, first use site) now states plainly: \"A SURFACE is the config's unit of \\\"what gets read\\\": a named set of files — `rationale`, `pages`, `src`, `ext`, `literate`, `data`, and the compounds `docs` and `all` — that every scan, engine, doctor check and instrument works over.\" The originally quoted lines are unchanged but sit beside this new definition sentence, which is exactly the hint's requested fix."
+    }
+  ]
+}

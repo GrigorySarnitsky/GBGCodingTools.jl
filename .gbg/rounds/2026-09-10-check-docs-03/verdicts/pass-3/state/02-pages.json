@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "0b4bebf9fc966fc412f1ec1e83ea2181",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/pages#1",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/index.md:49 now reads \"49 read-only checks\". grep -o 'check!(\"[^\"]*\"' src/CLI/Doctor.jl | sort -u | wc -l = 49, matching exactly; \"47\" appears nowhere in index.md or Doctor.jl."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/pages#3",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/rounds.md:44 now reads: \"HONORED becomes LINE-ONLY when class_surfaces[] is empty, and equally when any entry in it is swept: false\" — states both arms, matching Demote.jl:22-23's `isempty(cs) || any(c -> !get(c,\"swept\",false), cs)` exactly."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "0b4bebf9fc966fc412f1ec1e83ea2181",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/pages#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "instruments/check-consistency/PROTOCOL.md:67-68 (this diff, commit 7a59f4c) now reads 'applies the demotion (`HONORED` becomes `LINE-ONLY`, mechanically, when `class_surfaces[]` is empty and equally when any entry in it is `swept: false`)', matching both arms of src/CLI/Demote.jl:22 (isempty(cs) || any(c -> !get(c,\"swept\",false), cs)). This was the one surviving one-arm site: docs/src/guide/rounds.md:44 already carried both arms going into this diff.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/PROTOCOL.md:67-68",
+          "swept": true,
+          "evidence": "diff (commit 7a59f4c) replaces '`HONORED` with an empty `class_surfaces[]` becomes `LINE-ONLY`, mechanically' with the two-arm statement naming both the empty case and the `swept: false` case, and adds `carried` to the adjacent closure-channel list."
+        },
+        {
+          "surface": "docs/src/guide/rounds.md:44",
+          "swept": true,
+          "evidence": "already reads '`HONORED` becomes `LINE-ONLY` when `class_surfaces[]` is empty, and equally when any entry in it is `swept: false`' at this diff's base (df2ba21) — fixed in an earlier pass of this same round, unmodified (and unbroken) by this diff."
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1508,1548",
+          "swept": true,
+          "evidence": "'HONORED → LINE-ONLY iff `class_surfaces == []` or any entry is `swept: false`' — both arms already stated; untouched by and consistent with this diff."
+        },
+        {
+          "surface": "docs/src/architecture.md:1508,1548",
+          "swept": true,
+          "evidence": "mirror of ARCHITECTURE.md carries the identical two-arm phrasing at the same lines."
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:68",
+          "swept": true,
+          "evidence": "the panel's own HONORED-definition prompt text already states 'HONORED means EVERY surface you list is swept: the tool demotes to LINE-ONLY any HONORED verdict whose own list leaves one unswept' — both arms, unaffected by this diff."
+        }
+      ]
+    }
+  ]
+}

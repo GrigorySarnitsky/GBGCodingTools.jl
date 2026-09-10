@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "0b4bebf9fc966fc412f1ec1e83ea2181",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#2",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff df2ba21..98f89f6 touches only header-comment lines in audit.js/hunt.js/panel.js/lanes.js and PROTOCOL.md; no hunk touches any of the 11 scripts' required-arg guard for-loops. schema_version was already present in every one of the 11 guards at df2ba21, the diff's own start point (e.g. audit.js:21, hunt.js:20, lanes.js:19, panel.js:22-23) — that guard predates this diff and this diff makes no change to it anywhere.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-docs/workflow/lanes.js:19",
+          "swept": false,
+          "evidence": "guard already had schema_version pre-diff; diff's only touch is the header-comment line"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js:22-23",
+          "swept": false,
+          "evidence": "guard already had schema_version pre-diff; diff's only touch to panel.js is the header-comment line"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:15",
+          "swept": false,
+          "evidence": "no diff hunk touches this file at all in df2ba21..98f89f6"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/severity-recheck.js:15",
+          "swept": false,
+          "evidence": "no diff hunk touches this file at all"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:18",
+          "swept": false,
+          "evidence": "no diff hunk touches this file at all"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-state.js:17",
+          "swept": false,
+          "evidence": "no diff hunk touches this file at all"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:20",
+          "swept": false,
+          "evidence": "guard already had schema_version pre-diff; diff's only touch to hunt.js is the header-comment line"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/dismissals.js:16",
+          "swept": false,
+          "evidence": "no diff hunk touches this file at all"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/verify-architecture.js:17",
+          "swept": false,
+          "evidence": "no diff hunk touches this file at all"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:21",
+          "swept": false,
+          "evidence": "guard already had schema_version pre-diff; diff's only touch to audit.js is the header-comment line"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/attack-design.js:14",
+          "swept": false,
+          "evidence": "no diff hunk touches this file at all"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "cb0e688 edits the header Args comment in all four named files in the same commit, dropping the unused arg from each doc string; current corpus confirms the schema.json required arrays and guard for-loops for all four already omit these keys (audit.js: no 'kind'; hunt.js: no 'witness_env'; panel.js: no 'cost'/'opened'; lanes.js: no 'package'), and every arg each header comment now lists is actually referenced via A.<key> in that script's own body, verified by grep for every remaining key in all four files.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:2,21",
+          "swept": true,
+          "evidence": "diff removes 'kind' from the header comment (cb0e688); schema.json required list and guard array already lack 'kind'; every remaining documented arg is used via A.<key> in the body"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:2,20",
+          "swept": true,
+          "evidence": "diff removes 'witness_env' from the header comment; schema.json required and guard array lack it; every remaining documented arg is used via A.<key>"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js:11-14,22-23",
+          "swept": true,
+          "evidence": "diff removes 'cost, ... opened' from the header comment; schema.json required and guard array lack both; every remaining documented arg is used via A.<key>"
+        },
+        {
+          "surface": "instruments/check-docs/workflow/lanes.js:6,19",
+          "swept": true,
+          "evidence": "diff removes 'package' from the header comment; schema.json required and guard array lack it; every remaining documented arg is used via A.<key>"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#7",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff df2ba21..98f89f6's only touch to hunt.js is the header-comment line removing 'witness_env'; FREE_PREAMBLE (lines 68-74) is untouched by this diff. The 'REPORT candidates_found: how many candidates you WEIGHED...' sentence the finding asks for is already present verbatim in FREE_PREAMBLE at df2ba21, the diff's own starting commit (introduced at an earlier fix pass, 14ee713) — this diff contributes nothing to it.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:68-74",
+          "swept": false,
+          "evidence": "FREE_PREAMBLE text identical before and after df2ba21..98f89f6; no hunk in this diff touches these lines"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "0b4bebf9fc966fc412f1ec1e83ea2181",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/rationale#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:488 now reads \"error()s on any non-zero return, EXCEPT the one refusal that is not a breakage: a gate that refuses only because a round of a docs instrument is open prints `makedocs: SKIPPED` and returns `nothing`, exit 0 ... `GBG_DOCS_NO_SKIP` restores the refusal, and `gbg release` and the deep doctor set it\" — matches ext/GBGCodingToolsDocumenterExt.jl:34-37 exactly, and Doctor.jl:643 / Release.jl:91 do set GBG_DOCS_NO_SKIP=1. IMPLEMENTATION.md:320-323, the surviving second instance of the same unconditional claim, was fixed in this diff with the identical exception clause.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:488",
+          "swept": true,
+          "evidence": "carries the EXCEPT clause verbatim, verified against ext/GBGCodingToolsDocumenterExt.jl:31-37"
+        },
+        {
+          "surface": "IMPLEMENTATION.md:322-323",
+          "swept": true,
+          "evidence": "diff df2ba21..98f89f6 inserts \", EXCEPT the one refusal that is not a breakage: a gate refusing only because a round of a docs instrument is open prints a skip line and returns `nothing`, exit 0, unless `GBG_DOCS_NO_SKIP` is set\""
+        },
+        {
+          "surface": "docs/src/architecture.md:488 (built mirror)",
+          "swept": true,
+          "evidence": "byte-identical to docs/ARCHITECTURE.md lines 478-560 (diff empty), confirming the rebuild the commit message claims"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:543 (TestHarness.gate() bullet)",
+          "swept": true,
+          "evidence": "a different function with no SKIP path at all (src/TestHarness.jl:588-604 has no frozen-round branch), so its unconditional \"error()s on a non-zero return\" claim is true, not part of this defect's class"
+        },
+        {
+          "surface": "docs/design-record/07-IT-amendments.md:15",
+          "swept": true,
+          "evidence": "banner \"Written by AI, not reviewed regularly\" — dated design-record provenance (CLAUDE.md: \"docs/design-record/ is provenance\"), not the live ARCHITECTURE.md the finding names as \"the authoritative design record\"; outside the finding's own scope"
+        },
+        {
+          "surface": "CHANGELOG.md:285-287",
+          "swept": true,
+          "evidence": "already states \"The wrapper now prints `makedocs: SKIPPED — <round> open`\", never claimed the unconditional error() this finding flags"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/rationale#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:495 now reads \"(`Reflection.package_operations()`) to `.gbg/scratch/public_surface.json`\" (was `TestHarness.package_operations()`); the §3 tree's TestHarness.jl line (985-986) no longer names package_operations at all; the TestHarness: prose bullet (536-539) now reads \"`Reflection.package_operations()`, which it CALLS and does not define\" instead of listing it as TestHarness's own. All three of the finding's cited misattribution sites are corrected in the current corpus.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:491->495 (makedocs bullet parenthetical)",
+          "swept": true,
+          "evidence": "reads `Reflection.package_operations()`, not `TestHarness.package_operations()`"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:532-534->536-539 (TestHarness: bullet)",
+          "swept": true,
+          "evidence": "names it `Reflection.package_operations()` and states \"which it CALLS and does not define\" — ownership stated correctly in place, rather than moved into the Reflection: bullet as the hint suggested; the category error itself is gone"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:981->985-987 (§3 repo-layout tree)",
+          "swept": true,
+          "evidence": "TestHarness.jl's line is now \"@alloc_below, CountingArray/Traffic/audit, method parity, oracle registry, run_regressions, display gate, thread-subprocess check, gate()\" — package_operations removed; Reflection.jl's line says \"public surface\" (not the bare function name, but no false attribution remains)"
+        },
+        {
+          "surface": "docs/src/architecture.md (built mirror, same line numbers)",
+          "swept": true,
+          "evidence": "diff against docs/ARCHITECTURE.md lines 478-560 and 970-995 is empty — mirror rebuilt and matches"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:545-547 (Reflection: bullet)",
+          "swept": true,
+          "evidence": "still says only \"`public_surface` derivation\", not the bare function name as the hint's second half asked (\"into the Reflection: bullet\"), but this is incompleteness of an informal paraphrase, not a misattribution — nowhere does any surface now attribute the function to TestHarness"
+        },
+        {
+          "surface": "IMPLEMENTATION.md:320,351,726",
+          "swept": true,
+          "evidence": "all three occurrences already read `Reflection.package_operations`, none attribute it to TestHarness"
+        },
+        {
+          "surface": "docs/src/api/Reflection.md:12",
+          "swept": true,
+          "evidence": "`GBGCodingTools.Reflection.package_operations` — generated @docs block, correctly owned by Reflection"
+        },
+        {
+          "surface": "grep for \"TestHarness.package_operations\" across src/ ext/ docs/ policy/ (excluding .gbg/)",
+          "swept": true,
+          "evidence": "zero matches in the current corpus"
+        }
+      ]
+    }
+  ]
+}

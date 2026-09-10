@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "0b4bebf9fc966fc412f1ec1e83ea2181",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/rulebook#1",
+      "verdict": "ABSENT",
+      "evidence": "policy/00-index.md:7-9 now reads 'Five values vary by package' and lists all five incl. 'the tier RULE.DOC.ARGCOV binds at'; docs/src/guide/config.md:17-20 matches, listing instruments.check-docs.argcov_policy as the fifth. grep -rn 'vary by package' src ext docs/src docs and grep -n Four src/CLI/Sync.jl: no stale four-item text anywhere."
+    }
+  ]
+}
