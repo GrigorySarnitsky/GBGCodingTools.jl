@@ -258,8 +258,9 @@ says the substrate cannot exist here (`html` needs with no built site, `git` wit
 `rulebook` with an empty rulebook, which is the rendered policy and not the consumer's sections alone).
 
 `anchor` is whether the hat runs at full strength rather than on the economy model; a `domain_hats`
-entry may anchor any key. It is unrelated to the `file#heading` anchors of
-[`Config.resolve_anchor`](@ref).
+entry may anchor any key. It is unrelated to the other two senses of the word: the `file#heading`
+anchors of [`Config.resolve_anchor`](@ref), and the regular expression marking where a seed is planted
+(`Seeds.select`).
 
 Returns the list in config order.
 """

@@ -6,7 +6,7 @@
 // operational-claims lane runs on the docstring surface. PAYLOADS ARE FILES (Revision 9): the rendered
 // policy and each lane's brief are files preflight wrote; args name their paths.
 //
-// Args (instruments/check-docs/schema.json): { schema_version, round, round_dir, repo, package,
+// Args (instruments/check-docs/schema.json): { schema_version, round, round_dir, repo,
 //   preamble, lanes: [{nn, key, kind, brief_path, files, anchor}], policy_path, finding_types,
 //   models: {economy}, strength }
 export const meta = {

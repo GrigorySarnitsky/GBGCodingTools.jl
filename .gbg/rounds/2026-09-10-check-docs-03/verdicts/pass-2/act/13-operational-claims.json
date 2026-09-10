@@ -10,10 +10,26 @@
       "question": "strategy",
       "evidence": "src/CLI/Passes.jl:538 already states the three-valued contract correctly. But docs/ARCHITECTURE.md:1510 still reads 'exit 1 while `open_ids` is non-empty' (no pending_state) inside the diff's own hunk (@@ -1497,13 +1497,15 @@) that edits the sentences immediately around it without touching this clause — the class survives in the very file being edited.",
       "class_surfaces": [
-        {"surface": "src/CLI/Passes.jl:538", "swept": true, "evidence": "'Exit 1 while `open_ids` is non-empty, and equally while any id is `pending_state` ... 0 only when every id is closed.' — matches code at lines 700-701 (open_ids check, then pending_state check, then return 0)."},
-        {"surface": "docs/ARCHITECTURE.md:1510", "swept": false, "evidence": "'pass series and the plateau signal; exit 1 while `open_ids` is non-empty.' — same omission as the original finding, in a hunk of this very diff that edits the two neighboring sentences (class_surfaces demotion rule, pass-scope wording) but leaves this clause untouched."},
-        {"surface": "docs/src/guide/rounds.md:25-26", "swept": false, "evidence": "'exit 1 while any id is open.' unchanged; this file is edited twice elsewhere in this same diff (bank's DEAD/REJECTED line 19, a new `carried` row at line 41) but step 7 Grade is left as-is a few lines below."},
-        {"surface": "instruments/check-consistency/PROTOCOL.md:70", "swept": false, "evidence": "'exit 1 while any id is open.' unchanged; this file's DEAD/REJECTED clause (line 44) and schema list are edited elsewhere in this diff, but not this clause."}
+        {
+          "surface": "src/CLI/Passes.jl:538",
+          "swept": true,
+          "evidence": "'Exit 1 while `open_ids` is non-empty, and equally while any id is `pending_state` ... 0 only when every id is closed.' — matches code at lines 700-701 (open_ids check, then pending_state check, then return 0)."
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1510",
+          "swept": false,
+          "evidence": "'pass series and the plateau signal; exit 1 while `open_ids` is non-empty.' — same omission as the original finding, in a hunk of this very diff that edits the two neighboring sentences (class_surfaces demotion rule, pass-scope wording) but leaves this clause untouched."
+        },
+        {
+          "surface": "docs/src/guide/rounds.md:25-26",
+          "swept": false,
+          "evidence": "'exit 1 while any id is open.' unchanged; this file is edited twice elsewhere in this same diff (bank's DEAD/REJECTED line 19, a new `carried` row at line 41) but step 7 Grade is left as-is a few lines below."
+        },
+        {
+          "surface": "instruments/check-consistency/PROTOCOL.md:70",
+          "swept": false,
+          "evidence": "'exit 1 while any id is open.' unchanged; this file's DEAD/REJECTED clause (line 44) and schema list are edited elsewhere in this diff, but not this clause."
+        }
       ]
     },
     {
@@ -22,7 +38,11 @@
       "question": "fidelity",
       "evidence": "close()'s docstring at src/CLI/Passes.jl:889 already states the narrowed, correct claim (config_sha/tool_version -> fails/exit 1; tool_tree_sha-under-same-version -> exit 2 directly), matching the body at lines 913-917 exactly. But `git diff 14ee7135..df2ba21 -- src/CLI/Passes.jl` shows exactly 3 hunks (a new severity_ratings helper ~line 81, pass_open's --full-state doc ~line 314, grade's/carry_conditions' severity lookup ~648/833) and NONE is within 100 lines of close()'s docstring (866-892) — this diff did nothing here; whatever fixed it predates this diff's start (14ee7135).",
       "class_surfaces": [
-        {"surface": "src/CLI/Passes.jl:889", "swept": true, "evidence": "'Returns 0 when closed, 1 when a condition is unmet — a moved `config_sha` or `tool_version` among them ... and 2 for the one mismatch no regrade answers: a `tool_tree_sha` that moved under an unchanged `tool_version`.' Correct, but not produced by any hunk in the audited diff; no other surface in the corpus restates the flagged 'stamp mismatch' claim."}
+        {
+          "surface": "src/CLI/Passes.jl:889",
+          "swept": true,
+          "evidence": "'Returns 0 when closed, 1 when a condition is unmet — a moved `config_sha` or `tool_version` among them ... and 2 for the one mismatch no regrade answers: a `tool_tree_sha` that moved under an unchanged `tool_version`.' Correct, but not produced by any hunk in the audited diff; no other surface in the corpus restates the flagged 'stamp mismatch' claim."
+        }
       ]
     },
     {
@@ -31,8 +51,16 @@
       "question": "fidelity",
       "evidence": "classify_lane()'s docstring at src/CLI/Rounds.jl:325-334 already enumerates the zero-findings/empty-checked[] :dead cause, matching the code at line 349 exactly. But `git diff 14ee7135..df2ba21 -- src/CLI/Rounds.jl` shows only 2 hunks (prepare()'s seeding paragraph, lines 133-149; the cmd_round usage string, 789-794) — nothing within 100 lines of classify_lane (310-343). This diff did nothing here.",
       "class_surfaces": [
-        {"surface": "src/CLI/Rounds.jl:333-334", "swept": true, "evidence": "'The status is `:dead` (absent; renamed to `<name>.rejected.json` ... or well-formed with zero findings AND an empty `checked[]`, which reports nothing about nothing rather than reporting a clean lane)...' Correct and matches code, but not produced by any hunk in the audited diff."},
-        {"surface": "docs/ARCHITECTURE.md:602-603", "swept": true, "evidence": "bank's DEAD definition already reads '...or zero findings with an empty `checked[]`)' — present as unchanged context inside this diff's own hunk (@@ -602,7 +602,7 @@, which only edits the adjacent DEAD/REJECTED sentence for #6) — correct, and visibly untouched-because-already-fine."}
+        {
+          "surface": "src/CLI/Rounds.jl:333-334",
+          "swept": true,
+          "evidence": "'The status is `:dead` (absent; renamed to `<name>.rejected.json` ... or well-formed with zero findings AND an empty `checked[]`, which reports nothing about nothing rather than reporting a clean lane)...' Correct and matches code, but not produced by any hunk in the audited diff."
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:602-603",
+          "swept": true,
+          "evidence": "bank's DEAD definition already reads '...or zero findings with an empty `checked[]`)' — present as unchanged context inside this diff's own hunk (@@ -602,7 +602,7 @@, which only edits the adjacent DEAD/REJECTED sentence for #6) — correct, and visibly untouched-because-already-fine."
+        }
       ]
     },
     {
@@ -41,12 +69,36 @@
       "question": "none",
       "evidence": "bank()'s own docstring (src/CLI/Rounds.jl:434, 'Any DEAD or REJECTED lane ⇒ exit 2') already matched the code (dead = [k for (k,s) in statuses if s in (:dead,:rejected)], line 446). This diff sweeps the same correction to every parallel prose surface with real hunks: docs/ARCHITECTURE.md ('A DEAD lane is exit 2'→'A DEAD or REJECTED lane is exit 2', 2 sites), docs/src/guide/rounds.md:19, and all four instruments/*/PROTOCOL.md files.",
       "class_surfaces": [
-        {"surface": "src/CLI/Rounds.jl:434", "swept": true, "evidence": "'Any DEAD or REJECTED lane ⇒ exit 2 and nothing frozen' — pre-existing, matches code."},
-        {"surface": "docs/ARCHITECTURE.md:605", "swept": true, "evidence": "hunk: '**REJECTED**...A DEAD lane is **exit 2**' → 'A DEAD **or REJECTED** lane is **exit 2**'."},
-        {"surface": "docs/ARCHITECTURE.md:1482", "swept": true, "evidence": "hunk: '**Any DEAD lane ⇒ exit 2**' → '**Any DEAD or REJECTED lane ⇒ exit 2**'."},
-        {"surface": "docs/src/guide/rounds.md:19", "swept": true, "evidence": "hunk: '4. Bank ... (a DEAD lane is exit 2' → '(a DEAD or REJECTED lane is exit 2'."},
-        {"surface": "instruments/check-consistency/PROTOCOL.md:44", "swept": true, "evidence": "hunk: '**Any DEAD lane is exit 2**' → '**Any DEAD or REJECTED lane is exit 2**'."},
-        {"surface": "instruments/bug-hunt/PROTOCOL.md:58, instruments/check-docs/PROTOCOL.md:38, instruments/audit-changes/PROTOCOL.md:9", "swept": true, "evidence": "each hunk adds 'or REJECTED' beside 'A DEAD lane is exit 2'."}
+        {
+          "surface": "src/CLI/Rounds.jl:434",
+          "swept": true,
+          "evidence": "'Any DEAD or REJECTED lane ⇒ exit 2 and nothing frozen' — pre-existing, matches code."
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:605",
+          "swept": true,
+          "evidence": "hunk: '**REJECTED**...A DEAD lane is **exit 2**' → 'A DEAD **or REJECTED** lane is **exit 2**'."
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1482",
+          "swept": true,
+          "evidence": "hunk: '**Any DEAD lane ⇒ exit 2**' → '**Any DEAD or REJECTED lane ⇒ exit 2**'."
+        },
+        {
+          "surface": "docs/src/guide/rounds.md:19",
+          "swept": true,
+          "evidence": "hunk: '4. Bank ... (a DEAD lane is exit 2' → '(a DEAD or REJECTED lane is exit 2'."
+        },
+        {
+          "surface": "instruments/check-consistency/PROTOCOL.md:44",
+          "swept": true,
+          "evidence": "hunk: '**Any DEAD lane is exit 2**' → '**Any DEAD or REJECTED lane is exit 2**'."
+        },
+        {
+          "surface": "instruments/bug-hunt/PROTOCOL.md:58, instruments/check-docs/PROTOCOL.md:38, instruments/audit-changes/PROTOCOL.md:9",
+          "swept": true,
+          "evidence": "each hunk adds 'or REJECTED' beside 'A DEAD lane is exit 2'."
+        }
       ]
     },
     {
@@ -55,11 +107,31 @@
       "question": "none",
       "evidence": "release()/cites_round() in src/CLI/Release.jl (lines 8-9, 45-46) already list all five channels (honored, adjudicated, rescan, seeded, carried), matching the accept-check at line 26. This diff sweeps the identical, previously-narrow 'honored/adjudicated, never abandoned' phrasing everywhere else with real hunks: docs/ARCHITECTURE.md (multiple sites), IMPLEMENTATION.md (multiple sites), CLAUDE.md's own release checklist, and docs/src/guide/rounds.md's closure table (new `carried` row).",
       "class_surfaces": [
-        {"surface": "src/CLI/Release.jl:45-46", "swept": true, "evidence": "'closed — every id through `honored`, `adjudicated`, `rescan` or `seeded`, or carried into the next round ([`cites_round`](@ref)).' — pre-existing, matches cites_round()'s own accept-check."},
-        {"surface": "docs/ARCHITECTURE.md:33,71-72,99,144,201,210", "swept": true, "evidence": "hunks replace 'closed by honored or adjudicated ids, never abandoned' / 'honored/adjudicated' with 'through any of the five closure channels — honored, adjudicated, rescan, seeded, carried'."},
-        {"surface": "IMPLEMENTATION.md:9-10,61,98-99", "swept": true, "evidence": "hunk: 'closed by honored or adjudicated ids, never abandoned' → 'closed by honored, adjudicated, rescan, seeded or carried ids, never abandoned'."},
-        {"surface": "CLAUDE.md (release checklist item 3)", "swept": true, "evidence": "current text: '...closed by honored, adjudicated, rescan, seeded or carried ids, never abandoned' — the narrow two-channel claim is gone."},
-        {"surface": "docs/src/guide/rounds.md:39,41", "swept": true, "evidence": "hunk adds a `carried` row to the closure-channel table beside the pre-existing honored/adjudicated/seeded/rescan rows."}
+        {
+          "surface": "src/CLI/Release.jl:45-46",
+          "swept": true,
+          "evidence": "'closed — every id through `honored`, `adjudicated`, `rescan` or `seeded`, or carried into the next round ([`cites_round`](@ref)).' — pre-existing, matches cites_round()'s own accept-check."
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:33,71-72,99,144,201,210",
+          "swept": true,
+          "evidence": "hunks replace 'closed by honored or adjudicated ids, never abandoned' / 'honored/adjudicated' with 'through any of the five closure channels — honored, adjudicated, rescan, seeded, carried'."
+        },
+        {
+          "surface": "IMPLEMENTATION.md:9-10,61,98-99",
+          "swept": true,
+          "evidence": "hunk: 'closed by honored or adjudicated ids, never abandoned' → 'closed by honored, adjudicated, rescan, seeded or carried ids, never abandoned'."
+        },
+        {
+          "surface": "CLAUDE.md (release checklist item 3)",
+          "swept": true,
+          "evidence": "current text: '...closed by honored, adjudicated, rescan, seeded or carried ids, never abandoned' — the narrow two-channel claim is gone."
+        },
+        {
+          "surface": "docs/src/guide/rounds.md:39,41",
+          "swept": true,
+          "evidence": "hunk adds a `carried` row to the closure-channel table beside the pre-existing honored/adjudicated/seeded/rescan rows."
+        }
       ]
     },
     {
@@ -68,7 +140,11 @@
       "question": "none",
       "evidence": "A real hunk in this diff (git diff -- src/CLI/Rounds.jl, @@ -133,10 +133,15 @@) adds to prepare()'s check-docs paragraph: 'and — when the round is seeded — a seeded copy of the lane files under the round's `seed_root`, which the lanes read in place of the working tree.' This matches the code at line 200 (`seed_docs_corpus!` call) and that function's own accurate docstring (lines 212-225: plants seeds into a disposable copy, repoints the lanes, `rec[\"seed_root\"] = dest`).",
       "class_surfaces": [
-        {"surface": "src/CLI/Rounds.jl:139-142", "swept": true, "evidence": "check-docs paragraph now names the seeded corpus copy, mirroring the check-consistency paragraph above it, exactly as the finding's hint asked."}
+        {
+          "surface": "src/CLI/Rounds.jl:139-142",
+          "swept": true,
+          "evidence": "check-docs paragraph now names the seeded corpus copy, mirroring the check-consistency paragraph above it, exactly as the finding's hint asked."
+        }
       ]
     },
     {
@@ -77,8 +153,16 @@
       "question": "none",
       "evidence": "page_bindings()'s own docstring (src/Scans/html_docstring_once.jl:7) already stated the fallback correctly ('its `href` without the `#`, or its `id` attribute when it has no `href`'), matching the code (`HtmlWalker.attr(n, \"href\", HtmlWalker.attr(n, \"id\"))`). This diff's real hunk fixes the one remaining wrong surface: the adjacent code comment, which had flatly contradicted both the docstring and the code ('not in an id attribute' → 'or, failing that, its id attribute').",
       "class_surfaces": [
-        {"surface": "src/Scans/html_docstring_once.jl:7", "swept": true, "evidence": "docstring already names the id-attribute fallback; pre-existing and correct."},
-        {"surface": "src/Scans/html_docstring_once.jl:21", "swept": true, "evidence": "hunk: '# Documenter puts the binding's anchor in the href (`#Module.name`), not in an id attribute.' → '...or, failing that, its id attribute.'"}
+        {
+          "surface": "src/Scans/html_docstring_once.jl:7",
+          "swept": true,
+          "evidence": "docstring already names the id-attribute fallback; pre-existing and correct."
+        },
+        {
+          "surface": "src/Scans/html_docstring_once.jl:21",
+          "swept": true,
+          "evidence": "hunk: '# Documenter puts the binding's anchor in the href (`#Module.name`), not in an id attribute.' → '...or, failing that, its id attribute.'"
+        }
       ]
     }
   ]

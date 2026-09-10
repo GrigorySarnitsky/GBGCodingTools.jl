@@ -13,8 +13,8 @@ families are the tool's own enforcement.
 
 `anchor` carries three unrelated senses across this package, and the checks below touch two: a hat's
 or lane's `anchor` is whether it runs at full strength rather than on the economy model (`CFG.HATS`);
-[`Config.resolve_anchor`](@ref)'s is a `file#heading` Markdown reference; a seed class's, in
-[`Seeds.select`](@ref), is the regular expression marking where the seed is planted. No one of them
+`Config.resolve_anchor`'s is a `file#heading` Markdown reference; a seed class's, in `Seeds.select`,
+is the regular expression marking where the seed is planted. No one of them
 implies another.
 """
 module Doctor

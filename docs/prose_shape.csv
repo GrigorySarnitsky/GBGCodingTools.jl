@@ -42,7 +42,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § item 5",13,13,0
 "ARCHITECTURE.md § item 6",61,61,0
 "ARCHITECTURE.md § item 7",27,27,0
-"ARCHITECTURE.md § item 8",89,89,0
+"ARCHITECTURE.md § item 8",109,109,0
 "ARCHITECTURE.md § item 9",91,91,0
 "ARCHITECTURE.md § §0 The design sentence and the requirements",440,337,0
 "ARCHITECTURE.md § §1 The platform / product model",802,565,0
@@ -103,7 +103,7 @@ unit,words,longest_paragraph,admonitions
 "Fleet.jl :: Fleet.diff(a, b; io = stdout) -> Int",92,37,0
 "Fleet.jl :: Fleet.rows(; deep = false) -> (rows, code)",114,80,0
 "Fleet.jl :: latest_tag(root) -> Union{VersionNumber,Nothing}",17,14,0
-"GBGCodingTools.jl :: GBGCodingTools",423,118,0
+"GBGCodingTools.jl :: GBGCodingTools",422,117,0
 "Gate.jl :: cmd_gate(args) -> Int",27,24,0
 "Gate.jl :: frozen_rounds(cfg, instruments...) -> Vector{String}",115,68,0
 "Gate.jl :: gate(cfg, instruments...; io = stderr) -> Int",185,69,0
@@ -188,7 +188,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: repoint_lanes(cfg, round, dest) -> String",88,50,0
 "Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
 "Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",76,73,0
-"Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",209,103,0
+"Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",227,103,0
 "Preflight.jl :: resolve_hunt_lanes(cfg) -> Vector{Dict}",22,19,0
 "Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",65,40,0
 "Preflight.jl :: stamps(cfg; record = nothing) -> Dict",104,66,0
@@ -351,7 +351,7 @@ unit,words,longest_paragraph,admonitions
 "Witnesses.jl :: witness_project(root, witness_env, package) -> String",48,30,0
 "Witnesses.md § Witnesses",22,22,1
 "code_in_math.jl :: math_spans(lines) -> Vector{Tuple{Int,String}}",48,45,0
-"config.md § [The config](@id config)",196,76,1
+"config.md § [The config](@id config)",195,76,1
 "html_docstring_once.jl :: page_bindings(page) -> Vector{NamedTuple}",52,49,0
 "html_stray_math.jl :: math_sources(page) -> Vector{String}",37,34,0
 "index.md § How a package adopts it",71,71,0
@@ -377,6 +377,6 @@ unit,words,longest_paragraph,admonitions
 "rounds.md § item 4",31,31,0
 "rounds.md § item 5",19,19,0
 "rounds.md § item 6",29,29,0
-"rounds.md § item 7",27,27,0
+"rounds.md § item 7",47,47,0
 "rounds.md § item 8",65,65,0
 "verbs.md § [The verbs](@id verbs)",75,53,1

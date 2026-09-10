@@ -320,7 +320,9 @@ other module receives the validated `Dict`.
   `.gbg/scratch/public_surface.json` from `Reflection.package_operations()`,
   `Documenter.makedocs(; kwargs...)`, `check(scan_html(build_dir))`,
   `check(gate("check-docs", "check-consistency"))` again — where `check(code)` is
-  `code == 0 || error("gbg <verb> returned $code")`; prints one banner line
+  `code == 0 || error("gbg <verb> returned $code")`, EXCEPT the one refusal that is not a breakage: a
+  gate refusing only because a round of a docs instrument is open prints a skip line and returns
+  `nothing`, exit 0, unless `GBG_DOCS_NO_SKIP` is set (`gbg release` and the deep doctor set it); prints one banner line
   `GBGCodingTools v<ver> makedocs` (the `BUILD.DOCS` witness). Never the bare `gate()` over all four
   instruments — a docs build must not fail on an open hunt round. Inside a
   `gbg round prepare|build|pass open`, the CLI has exported `GBG_ROUND`, so the gate inside this

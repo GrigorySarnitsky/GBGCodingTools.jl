@@ -11,7 +11,7 @@
 //   { schema_version, round, round_dir, repo, rawhtml, package: {name, description, domain, terms,
 //     deliberate_absences}, preamble, manuscripts: {full: path, siteonly: path}, rulebook_path,
 //     hats: [{nn, key, persona_path, substrate, needs, anchor}], adjudicated_titles, finding_types,
-//     cost, strength, models: {economy}, opened }
+//     strength, models: {economy} }
 export const meta = {
   name: 'check-consistency-panel',
   description: 'Fresh-eyed panel auditing the RENDERED docs for consistency, mathematics, typesetting, structure and design (concurrent, collect-only)',

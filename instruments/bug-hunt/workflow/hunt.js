@@ -8,7 +8,7 @@
 // invariants text are files preflight wrote; args name their paths.
 //
 // Args (instruments/bug-hunt/schema.json): { schema_version, round, round_dir, repo, package, preamble,
-//   lanes: [{nn, key, kind, brief_path, files, anchor}], oracles, witness_cmd, witness_env,
+//   lanes: [{nn, key, kind, brief_path, files, anchor}], oracles, witness_cmd,
 //   invariants_path?, models: {economy}, strength }
 export const meta = {
   name: 'bug-hunt',

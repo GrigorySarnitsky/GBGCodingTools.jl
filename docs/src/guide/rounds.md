@@ -23,7 +23,8 @@ grade, the CLI closes. Nothing is done by hand that a verb does.
 6. **Verify** — `gbg round pass open <round>`: a nonce, the range, the regenerated manuscripts; the act
    verifier (sees the diff) and the state verifier (blind) launched as printed.
 7. **Grade** — `gbg round grade <round>`: the demotion, the closure channels, the tally; exit 1 while
-   any id is open. Loop 5–7 over the same `findings.json`.
+   any id is open, and equally while any id is `pending_state` — closed by the act verifier with no
+   blind reading to confirm it. Loop 5–7 over the same `findings.json`.
 8. **Close** — `gbg round close <round>` when every condition holds. `--carry <id>,<id>` closes over a
    `minor` or `nit` finding by carrying it into the next round of that instrument, on a severity re-rated
    by `severity-recheck.js` rather than by the lane that reported it (`RULE.INST.CARRY`); it is re-banked

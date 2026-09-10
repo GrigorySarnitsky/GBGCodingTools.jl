@@ -1507,7 +1507,8 @@ at the tool root, which must work when the dev checkout IS the consumer.
    verdict sets; a file whose `graded_sha256` or `pass_nonce` mismatches is REJECTED, an absent one
    DEAD (exit 2); applies `Demote.jl` (HONORED → LINE-ONLY iff `class_surfaces == []` or any entry is `swept: false`, counted apart as
    `demoted_by_rule`); applies the closure channels (§6.5); writes `tally.json`/`tally.md`; prints the
-   pass series and the plateau signal; exit 1 while `open_ids` is non-empty. **Loop 6–8 over the same
+   pass series and the plateau signal; exit 1 while `open_ids` is non-empty and equally while any id is
+   `pending_state` — closed by the act verifier with no blind reading to confirm it. **Loop 6–8 over the same
    `findings.json`**; it terminates because the set is finite and closure is per finding.
 9. **Close.** `gbg round close <round>`: requires the latest pass `open_ids == []`, no DEAD lane, every
    expected lane graded in that pass, `config_sha` and `tool_version` unchanged since open or the round

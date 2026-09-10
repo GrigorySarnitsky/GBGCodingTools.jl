@@ -9,7 +9,7 @@
 // wrote under the round's scratch; args name their paths.
 //
 // Args (instruments/audit-changes/schema.json): { schema_version, round, round_dir, repo, package,
-//   base, head, kind, covered, diff_path, diffstat_path, claims_path, lanes: [{nn, key, kind,
+//   base, head, covered, diff_path, diffstat_path, claims_path, lanes: [{nn, key, kind,
 //   brief_path, anchor}], models: {economy}, strength }
 export const meta = {
   name: 'audit-changes',

@@ -49,7 +49,6 @@ open(joinpath(@__DIR__, "src", "guide", "rules.md"), "w") do io
         for l in readlines(joinpath(ROOT, ".gbg", "policy", f))
             startswith(l, "<!-- gbg:managed") && continue
             m = match(r"^### (RULE\.[A-Z]+\.[A-Z_]+)\s*$", l)
-            l = replace(l, "[`f`](@ref)" => "\\[`f`\\](@ref)")          # the rubric QUOTES the link syntax; escaped, Documenter leaves it
             println(io, m !== nothing ? "#### [`$(m.captures[1])`](@id $(m.captures[1]))" : demote(l))
         end
         println(io)
