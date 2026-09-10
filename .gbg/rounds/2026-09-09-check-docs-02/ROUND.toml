@@ -1,6 +1,7 @@
 # ROUND.toml — written by the gbg round verbs; never edited by hand (ARCHITECTURE §6.1)
 tool_tree_sha = "2a27852279864bf674a27d4072b206988f6a73db"
 findings_sha = "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb"
+closed = "2026-09-10T12:55:02"
 strength = "economy"
 round = "2026-09-09-check-docs-02"
 opened = "2026-09-09T18:04:10"
@@ -16,8 +17,13 @@ dead_lanes = []
 cost = "economy"
 tool_rev = "d01145de33c5afc12aae1b73f1ea76d3ec157fea"
 instrument = "check-docs"
+closed_head = "1239e173128d416e460eeb751fd10c2bd78a33f9"
 catalog_sha = "2234077ac19a705a10fc21b7c4a2830299efb1dc27b28e093d545a4d5473fda1"
 schema_version = 1
+
+[closed_by]
+tally_sha = "fa2b1a4a02d159c79510297d1ceb4085fecfa9e849e320668bce63ce109b4c7f"
+adjudicated = ["2026-09-09-check-docs-02/operational-claims#10", "2026-09-09-check-docs-02/schemas#4"]
 
 [[roster]]
 key = "rationale"
