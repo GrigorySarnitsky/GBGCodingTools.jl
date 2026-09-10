@@ -5,6 +5,15 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 
 ## Unreleased
 
+**`TestHarness.resolve_function` resolves a colliding name to the package, not to `Base`.** A name a
+package module OWNS is searched before anything else. Ordering the externals last, as an earlier commit
+in this cycle claimed to do, changed nothing at all: `isdefined(pkg, :read)` is true through the implicit
+`using Base`, so `pkg` decided every collision before the modules were reached, and 421 names resolved
+identically either way. For this package `read`, `list` and `report` now denote `Config.read`,
+`Rounds.list` and `Scan.report`. A consumer whose public surface collides with a `Base` export through a
+submodule will see `method_parity`'s counts move, which is the count being right rather than a
+regression, and its frozen row is re-recorded at the bump.
+
 **A docstring's order changed fleet-wide, and every consumer's prose is affected.**
 `RULE.DOC.HOME_ORDER` put the caveat admonition at position (4), before the formula, the citation and
 the cross-links; it now puts it last, before the fields list, which is where `RULE.DOC.ADMONITION_TITLE`

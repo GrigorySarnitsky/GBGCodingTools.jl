@@ -7,6 +7,18 @@ include("helpers.jl")
     @test G.Sync.sync(cfg; check = true, io = devnull) == 0
     @test G.doctor(cfg, :QUICK; io = devnull) == 0
     run_only(ids) = Dict(c.id => c for c in first(G.Doctor.run(cfg; only = ids, io = devnull)))
+    # A sidecar an older copy wrote fails the schema this release closed. That is a refusal to name and a
+    # next step to give — exit 2 — never a backtrace out of the verb whose job is to repair managed files.
+    @testset "a sidecar the schema refuses is exit 2, not a crash" begin
+        sc = joinpath(root, ".gbg", "managed.json")
+        keep = read(sc, String)
+        d = JSON3.read(keep, Dict{String,Any})
+        first_file = first(keys(d["files"])); d["files"][first_file]["recorded_by"] = "an older copy"
+        write(sc, JSON3.write(d))
+        @test_throws G.Sync.SyncError G.Sync.read_sidecar(cfg)          # the schema does refuse it
+        @test cd(() -> G.Sync.cmd_sync(String[]), root) == 2            # and the verb names it
+        write(sc, keep)
+    end
     @testset "a managed file edited (and its sidecar) is MODIFIED" begin
         hook = joinpath(root, ".claude", "hooks", "queue-guard.sh")
         open(hook, "a") do io; println(io, "# edited"); end

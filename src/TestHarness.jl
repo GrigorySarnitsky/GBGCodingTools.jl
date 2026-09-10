@@ -295,14 +295,21 @@ The function object a surface name denotes. The arguments are:
 - `name` — the symbol.
 - `pkg` — the umbrella module.
 - `modules` — the package modules.
-- `externals` — the external modules whose generics the package extends, searched LAST so a package
-  function always wins its own name (`Config.read`, `Git.run` and `Scan.report` all share one with a
-  `Base` export, and Base ahead of them handed the caller the wrong generic).
+- `externals` — the external modules whose generics the package extends, searched last.
+
+A package module that OWNS the name is searched before anything else, so `Config.read`, `Git.run` and
+`Scan.report` denote the package's function and not the `Base` export they collide with; ordering the
+externals last does not achieve that on its own, because `isdefined(pkg, :read)` is already true through
+the implicit `using Base`.
 
 Returns the function, or `nothing`.
 """
 function resolve_function(name::Symbol, pkg::Module, modules::AbstractVector{Module}; externals = (Base,))
-    for mod in Iterators.flatten(((pkg,), modules, externals))
+    # `pkg` first would decide every colliding name before `modules` is reached: `isdefined(pkg, :read)`
+    # is true through the implicit `using Base`, so ordering `externals` last alone changed nothing (421
+    # names, zero moved). A package module that OWNS the name wins; `pkg` and the externals follow.
+    owned = [m for m in modules if isdefined(m, name) && parentmodule(getfield(m, name)) === m]
+    for mod in Iterators.flatten((owned, (pkg,), modules, externals))
         isdefined(mod, name) || continue
         c = getfield(mod, name)
         c isa Function && return c

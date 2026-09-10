@@ -41,6 +41,20 @@ include("helpers.jl")
     # signature_fidelity's `examined` is the scan's population, and population 0 is the DEAD refusal. It
     # counts what was COMPARED: an extension-homed binding with no methods loaded is skipped, so it must
     # not be counted, and a package of nothing but those is DEAD rather than clean.
+    # RULE.TEST.BOTH_DIRECTIONS. A package function wins its own name against a Base export of the same
+    # name: `Config.read`, `Rounds.list` and `Scan.report` all collide with one. Ordering the externals
+    # last does NOT achieve this — `isdefined(pkg, :read)` is true through the implicit `using Base` — so
+    # the module that OWNS the name is searched first, and this test fails if that ordering is undone.
+    @testset "a package function wins its own name" begin
+        tcfg = G.Config.read(TOOL)                                       # the tool itself: it has the collisions
+        pkg = G.Reflection.load_package(tcfg)
+        mods = [getfield(pkg, Symbol(m)) for m in tcfg["package"]["modules"] if isdefined(pkg, Symbol(m))]
+        for n in (:read, :list, :report)
+            f = G.TestHarness.resolve_function(n, pkg, mods)
+            @test f !== nothing && parentmodule(f) !== Base             # not the Base generic
+        end
+        @test parentmodule(G.TestHarness.resolve_function(:read, pkg, mods)) === G.Config
+    end
     @testset "signature_fidelity counts what it compared" begin
         n = Ref(0)
         rows = G.Reflection.signature_fidelity(G.Config.read(FIXTURE); examined = n)

@@ -668,7 +668,15 @@ directory. Returns the exit code.
 function cmd_sync(args)
     o = parse_options(args)
     cfg = Config.read()
-    return sync(cfg; check = "check" in o.flags)
+    # a sidecar an older copy wrote can fail the schema this release closed; that is a refusal to name
+    # and a next step to give, never a backtrace out of a verb whose whole job is to repair managed files
+    try
+        return sync(cfg; check = "check" in o.flags)
+    catch err
+        err isa SyncError || rethrow()
+        println(stderr, "sync: ", sprint(showerror, err))
+        return 2
+    end
 end
 VERBS["sync"] = cmd_sync
 

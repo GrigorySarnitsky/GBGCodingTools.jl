@@ -315,7 +315,7 @@ unit,words,longest_paragraph,admonitions
 "TestHarness.jl :: module_method_count(mod, pkg, modules; externals = (Base,)) ",68,30,0
 "TestHarness.jl :: oracle_registry(pkg, modules, registry, testdir)",104,61,0
 "TestHarness.jl :: other_thread_count() -> Int",22,19,0
-"TestHarness.jl :: resolve_function(name, pkg, modules; externals = (Base,)) ->",84,61,0
+"TestHarness.jl :: resolve_function(name, pkg, modules; externals = (Base,)) ->",104,51,0
 "TestHarness.jl :: run_regressions(dir; parent = Main) -> Vector{String}",90,39,0
 "TestHarness.jl :: struct_types(modules) -> Dict{Symbol,Any}",65,62,0
 "TestHarness.jl :: thread_digest(probe_source; threads, project = Base.active_p",71,33,0
