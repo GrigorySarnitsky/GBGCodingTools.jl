@@ -3,7 +3,13 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
-## Unreleased
+## 1.0.0-rc.2 — 2026-09-10
+
+The second release candidate: MAJOR. Instruments affected: check-docs, check-consistency,
+audit-changes (the lane, panel, act and state scripts; the round lifecycle for all four). Rates
+comparable: yes — no scan's hit set moved this cycle and the fixture recall is unchanged either side,
+every planted class of `fixture/GBG Fixture/defects.toml` still hit and every clean twin still silent,
+which `test/scans.jl` asserts per class in both directions.
 
 **This cycle is MAJOR, not MINOR.** Two closed vocabularies moved, which §5.5 makes MAJOR on its own:
 the tally's `per_id.state` widened from six values to ten so a re-run witness's status can be recorded,
