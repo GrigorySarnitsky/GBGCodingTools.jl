@@ -230,12 +230,21 @@ function seed_docs_corpus!(cfg::AbstractDict, round::AbstractString, dir::Abstra
         println(io, "         a round that plants nothing measures nothing; fix .gbg/seeds.toml or preflight with --no-seed")
         return 2
     end
+    old = String(get(rec, "seed_root", ""))
+    isempty(old) || !isdir(old) || rm(old; recursive = true, force = true)   # a re-prepared round leaves no copy behind
     dest = mktempdir(; cleanup = false)
     for f in files
         src = joinpath(root, f); isfile(src) || continue
         d = joinpath(dest, f); mkpath(dirname(d)); cp(src, d; force = true)
     end
     planted = Seeds.plant_files(dest, manuscript, plan)
+    if length(planted) < length(plan)
+        missed = [s["class"] for s in plan if !any(p -> p["id"] == s["id"], planted)]
+        rm(dest; recursive = true, force = true)
+        println(io, "prepare: refused — $(length(plan) - length(planted)) of $(length(plan)) seed(s) did not plant: ", join(missed, ", "))
+        println(io, "         a round that plants fewer seeds than it counts measures against a denominator it does not have")
+        return 2
+    end
     rec["seed_root"] = dest; save(dir, rec)
     Preflight.repoint_lanes(cfg, round, dest)
     println(io, "prepare: $(length(planted)) seed(s) planted in a disposable copy of $(length(files)) lane file(s) at $dest",

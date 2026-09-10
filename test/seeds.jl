@@ -19,7 +19,24 @@ include("helpers.jl")
     dest = mktempdir()
     for f in files; mkpath(dirname(joinpath(dest, f))); cp(joinpath(root, f), joinpath(dest, f); force = true); end
     planted = G.Seeds.plant_files(dest, m, plan)
-    @test !isempty(planted)
+    @test length(planted) == length(plan)          # every planned seed lands, or the round measures a lie
+    # the occurrence index is counted INSIDE the page: `eachmatch` over a SubString reports offsets
+    # relative to it, and comparing them with the seed's absolute start asks for one occurrence past the
+    # end — which skipped the seed in silence. A page with the anchor twice is the case that catches it.
+    twice = joinpath(root, "src", "FixtureB.jl")
+    write(twice, "# 2 cannot evaluate here\n# and again: 2 cannot evaluate\n")
+    m2 = G.Seeds.file_manuscript(root, ["docs/src/notation.md", "src/FixtureB.jl"])
+    p2, _ = G.Seeds.select(cat, m2, "2026-01-01-check-docs-01")
+    hit = [s for s in p2 if s["page"] == "src/FixtureB.jl"]
+    if !isempty(hit)
+        d2 = mktempdir()
+        for f in ("docs/src/notation.md", "src/FixtureB.jl")
+            mkpath(dirname(joinpath(d2, f))); cp(joinpath(root, f), joinpath(d2, f); force = true)
+        end
+        @test length(G.Seeds.plant_files(d2, m2, p2)) == length(p2)
+        @test occursin("2 a second finding", read(joinpath(d2, "src", "FixtureB.jl"), String))
+        rm(d2; recursive = true, force = true)
+    end
     @test occursin("2 a second finding", read(joinpath(dest, files[1]), String))   # the copy carries the seed
     @test read(a, String) == before                                                # the tree is untouched
     @test !occursin("2 a second finding", read(a, String))

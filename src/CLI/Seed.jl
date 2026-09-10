@@ -98,7 +98,10 @@ function plant(full::AbstractString, siteonly::AbstractString, plan::AbstractVec
     for s in plan
         fp = findfirst(p -> p.start <= s["start"] <= p.stop, fpages); fp === nothing && continue
         page = fpages[fp]
-        idx = count(m -> m.offset < s["start"], eachmatch(Regex("\\Q" * s["original"] * "\\E"), SubString(full, page.start, page.stop))) + 1
+        # `eachmatch` over a SubString reports offsets INSIDE it, so the seed's absolute start must be
+        # made page-relative before they are comparable; comparing them raw counts every occurrence and
+        # asks for one past the end, which skips the seed in silence (found seeding a docs round, 2026-09-10)
+        idx = count(m -> m.offset < s["start"] - page.start + 1, eachmatch(Regex("\\Q" * s["original"] * "\\E"), SubString(full, page.start, page.stop))) + 1
         sp = findfirst(p -> p.name == page.name, spages); sp === nothing && continue
         site_page = spages[sp]
         hits = collect(eachmatch(Regex("\\Q" * s["original"] * "\\E"), SubString(siteonly, site_page.start, site_page.stop)))
@@ -144,28 +147,31 @@ selection [`select`](@ref) returned.
 
 A seed's page is its file. Within that page the occurrence index of the seed's `original` text is
 counted in the manuscript and the same occurrence is replaced in the file, so a neighbouring seed
-already applied cannot shift it. A seed whose file is gone from `dest` is skipped and named in the
-return. Returns the seeds that were planted.
+already applied cannot shift it.
+
+Returns only the seeds whose text was ACTUALLY replaced — never the ones whose page was merely found.
+A seeded round that plants three of six measures against a denominator it does not have, and the
+caller refuses on the difference.
 """
 function plant_files(dest::AbstractString, manuscript::AbstractString, plan::AbstractVector)
     done = Dict{String,Any}[]
     pages = page_spans(manuscript)
-    byfile = Dict{String,Vector{Tuple{Int,String,String}}}()
+    byfile = Dict{String,Vector{Tuple{Int,String,String,String}}}()
     for s in plan
         pi = findfirst(p -> p.start <= s["start"] <= p.stop, pages); pi === nothing && continue
         page = pages[pi]
-        idx = count(m -> m.offset < s["start"], eachmatch(Regex("\\Q" * s["original"] * "\\E"), SubString(manuscript, page.start, page.stop))) + 1
-        push!(get!(byfile, page.name, Tuple{Int,String,String}[]), (idx, s["original"], s["replacement"]))
-        push!(done, s)
+        idx = count(m -> m.offset < s["start"] - page.start + 1, eachmatch(Regex("\\Q" * s["original"] * "\\E"), SubString(manuscript, page.start, page.stop))) + 1
+        push!(get!(byfile, page.name, Tuple{Int,String,String,String}[]), (idx, s["original"], s["replacement"], s["id"]))
     end
     for (rel, edits) in byfile
         p = joinpath(dest, rel); isfile(p) || continue
         text = read(p, String)
-        for (idx, orig, repl) in sort(edits; by = first, rev = true)
+        for (idx, orig, repl, id) in sort(edits; by = first, rev = true)
             hits = collect(eachmatch(Regex("\\Q" * orig * "\\E"), text))
             idx <= length(hits) || continue
             m = hits[idx]
             text = text[1:prevind(text, m.offset)] * repl * text[nextind(text, m.offset + ncodeunits(m.match) - 1):end]
+            push!(done, only(s for s in plan if s["id"] == id))
         end
         write(p, text)
     end
