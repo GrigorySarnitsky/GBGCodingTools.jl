@@ -63,7 +63,7 @@ never sets it, so the commit/CI gate stays fail-closed.
 `close` requires the round's existing files committed, then writes its own, which the session commits.
 
 2.3 **Finding-scope expiry fails the doctor on closed rounds.** `expires` REQUIRED on every entry, expired → FAIL
-(§7.2, §7.3); the quick doctor runs inside every `run_gate` (D9). A year after an adjudicated doc round every docs
+(§7.2, §7.3); the quick doctor set (`QUICK`) runs inside every `run_gate` (D9). A year after an adjudicated doc round every docs
 build and preflight fails on an entry with nothing to decide (A14 relocated to the doctor). **BLOCKS-WRONGLY.** Fix:
 finding-scope entries carry `expires` only when the disposition is `escalated`; `EXEMPT.*` skips the rest.
 
@@ -134,7 +134,7 @@ untracked round; push. `Enteropia` and CI see no round: vacuous while the pass i
 step 10): in a working tree (not CI) `gbg gate` exits 1 when an open round is untracked/modified AND `HEAD ≠
 ROUND.toml.head`; §11 states that CI proves only the pushed state.
 
-5.2 **The quick doctor inside `run_gate` on a runner.** `ENV.SHIM`, `SHIM.HASH`, `PIN.TREESHA` ("the shim-selected
+5.2 **The quick doctor set (`QUICK`) inside `run_gate` on a runner.** `ENV.SHIM`, `SHIM.HASH`, `PIN.TREESHA` ("the shim-selected
 directory"), `GIT.BRANCH` (tag/PR checkouts are detached) all FAIL (§7.3); `--only QUICK` (I §1.4) is undefined.
 **BLOCKS-WRONGLY.** Fix (§7.3): QUICK = PIN.CONFIG, PIN.SOURCES, PIN.NOT_DEV, CFG.*, EXEMPT.*, WIRE.*, MANAGED.*,
 POL.*, ROUND.*; ENV.*, SHIM.*, GIT.*, PIN.TREESHA are host checks; `PIN.TREESHA` resolves against `pkgdir` when no
@@ -201,7 +201,7 @@ check-consistency only (§3, I §1.5). **EVADES** (mild). Fix (§6.8): run it (a
 
 8.2 **Wiring grep satisfied by a comment.** `# GBGCodingTools.makedocs(cfg)` above `Documenter.makedocs(` (is that
 "bare"? undefined) passes `WIRE.MAKEDOCS`; `# TestHarness.gate()` passes `WIRE.RUNTESTS`. D13 promised a structural
-check; §7.3 reads as substring presence — and an uncalled wrapper never runs the quick doctor from the build, so
+check; §7.3 reads as substring presence — and an uncalled wrapper never runs the quick doctor set from the build, so
 nothing fires. The real witnesses are `BUILD.DOCS`'s banner (`--deep`) and nothing for `gate()`. **EVADES.** Fix
 (§7.3): WIRE.* strip comments/strings; "bare" = a `makedocs(` token not preceded by `GBGCodingTools.`;
 `TestHarness.gate()` prints a banner and `TEST.PKG` requires it; the CI snippets grep both banners (CI-enforced).

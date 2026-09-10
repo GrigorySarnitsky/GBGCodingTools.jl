@@ -232,7 +232,7 @@ unit,words,longest_paragraph,admonitions
 "Rounds.jl :: bank(cfg, round; io = stdout) -> Int",193,96,0
 "Rounds.jl :: bank_next(inst, round) -> String",67,63,0
 "Rounds.jl :: build(cfg, round; io = stdout) -> Int",60,24,0
-"Rounds.jl :: classify_lane(dir, inst, lane; first_sha = nothing) -> (stat",124,68,0
+"Rounds.jl :: classify_lane(dir, inst, lane; first_sha = nothing) -> (stat",162,106,0
 "Rounds.jl :: guard(cfg, round; io = stderr, allow_config_change = false, ",114,46,0
 "Rounds.jl :: hunt_bank!(cfg, dir, rec, findings; io = stdout) -> Int",115,60,0
 "Rounds.jl :: import_empty(cfg, round, reason; io = stdout) -> Int",113,37,0

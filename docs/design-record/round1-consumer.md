@@ -674,7 +674,7 @@ managed files; the `~/.gbg/tools` path.
    → `~/.gbg/tools/skills/check-docs/SKILL.md` (`disable-model-invocation: true`). Its `!` block runs
    `gbg preflight check-docs --project "$CLAUDE_PROJECT_DIR" --strength "${0:-economy}"`.
 2. **Preflight** (read-only; exit 2 aborts the skill): `ENV-01/02`, `PIN-01/02`, `CFG-01..04`,
-   `WIRE-01..05`, `LEG-01` (the quick doctor); refuses if a check-docs round is already open. Prints:
+   `WIRE-01..05`, `LEG-01` (the quick doctor set, `QUICK`); refuses if a check-docs round is already open. Prints:
    the effective config (JSON), the round id it *will* create (`2026-09-06`), and the literal calls
    for steps 4–8 with their `args` filled in — the session copies them; it never composes args.
 3. **Open the round.** `gbg round open check-docs` writes `.gbg/rounds/check-docs/2026-09-06/round.toml`

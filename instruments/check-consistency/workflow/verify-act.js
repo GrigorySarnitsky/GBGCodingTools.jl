@@ -103,12 +103,20 @@ if (MODE === 'batches') {
   if (!batches.length) throw new Error('mode=batches needs a non-empty batches array covering EVERY finding')
   // and it must actually cover them: a gap silently drops findings into no unit at all, and nothing
   // downstream can see it, because every count downstream is derived from the units themselves
+  // covering 1..N is only half of it: an endpoint outside 1..N makes `slice` return an empty unit that
+  // is __skip-ped and counted nowhere, while the findings it should have carried are in no unit at all
   const covered = new Set()
-  for (const [from, to] of batches) for (let i = from; i <= to; i++) {
-    if (covered.has(i)) throw new Error(`mode=batches: finding ${i} is in two batches`)
-    covered.add(i)
+  const N = A.findings.length
+  for (const [from, to] of batches) {
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to > N || from > to) {
+      throw new Error(`mode=batches: [${from}, ${to}] is not a range within 1..${N}`)
+    }
+    for (let i = from; i <= to; i++) {
+      if (covered.has(i)) throw new Error(`mode=batches: finding ${i} is in two batches`)
+      covered.add(i)
+    }
   }
-  for (let i = 1; i <= A.findings.length; i++) if (!covered.has(i)) throw new Error(`mode=batches: finding ${i} is in no batch`)
+  for (let i = 1; i <= N; i++) if (!covered.has(i)) throw new Error(`mode=batches: finding ${i} is in no batch`)
   units = batches.map(([from, to]) => {
     const items = A.findings.slice(from - 1, to)
     return { name: `batch-${from}-${to}`, lane: `batch-${from}-${to}`, items }

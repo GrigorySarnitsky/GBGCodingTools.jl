@@ -328,9 +328,11 @@ Classifies one lane file. The arguments are:
 - `lane` — the roster entry (`nn`, `key`).
 - `first_sha` — the file's sha at first sight, when the bank has seen it before.
 
-The status is `:dead` (absent; renamed to `<name>.rejected.json` beside itself when unparsable or
-invalid; or well-formed with zero findings AND an empty `checked[]`, which reports nothing about
-nothing rather than reporting a clean lane), `:rejected`
+The status is `:dead` — absent; renamed to `<name>.rejected.json` beside itself when unparsable, when
+it fails the instrument's schema, or when it is schema-valid but its own `lane` field names a different
+lane than the roster entry asked for (a copied or mistyped lane file answers for a lane nobody ran); or
+well-formed with zero findings AND an empty `checked[]`, which reports nothing about
+nothing rather than reporting a clean lane. Then `:rejected`
 (present but its sha changed since first sight), `:empty` (zero findings, non-empty checked),
 `:truncated` (candidates_found > findings), or `:live`. Returns the status, the parsed object (or
 nothing), the file's sha and a note.
