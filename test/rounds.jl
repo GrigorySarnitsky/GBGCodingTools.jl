@@ -191,6 +191,64 @@ end
     @test G.Passes.pass_scope(cfg, dir, rec, 3)[1] === nothing             # nothing graded yet: verify everything
 end
 
+# A round may close by CARRYING a finding into the next round of its instrument, which is what breaks
+# the long fix-verify tail: the finding is real and unfixed, and it is re-banked next time rather than
+# left to be rediscovered. Severity decides eligibility — a serious finding is fixed, adjudicated or
+# escalated, never deferred — and the severity that decides is the RE-RATED one, because the moment a
+# rating licenses a deferral the reporting lane acquires a reason to under-rate. All three refusals and
+# the accepting path are exercised here.
+@testset "a round closes by carrying, and only what severity allows" begin
+    root = fixture_copy("carry")
+    cfg = G.Config.read(root)
+    rd = joinpath(root, ".gbg", "rounds", "2026-01-01-check-docs-01")
+    pd = joinpath(rd, "verdicts", "pass-1"); mkpath(pd)
+    ids = ["2026-01-01-check-docs-01/src#$i" for i in 1:2]
+    fs = [Dict{String,Any}("id" => ids[i], "lane" => "src", "n" => i, "title" => "t$i", "severity" => "minor",
+                           "confidence" => "high", "type" => "structure", "locations" => ["src/FixtureA.jl:$i — \"q$i\""],
+                           "description" => "d"^24) for i in 1:2]
+    write(joinpath(rd, "findings.json"), JSON3.write(Dict("schema_version" => 1, "round" => "2026-01-01-check-docs-01", "findings" => fs)))
+    st = G.Preflight.stamps(cfg)
+    rec = merge(st, Dict{String,Any}("round" => "2026-01-01-check-docs-01", "instrument" => "check-docs", "schema_version" => 1,
+        "head" => something(G.Git.head(root), "0"^40), "roster" => Any[Dict("key" => "src", "substrate" => "full", "anchor" => false)],
+        "cost" => "economy", "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00",
+        "dead_lanes" => String[], "passes" => 1, "banked" => "2026-01-01T00:00:01",
+        "findings_sha" => G.RoundFiles.sha256_file(joinpath(rd, "findings.json"))))
+    write_round(rd, rec)
+    per = Dict(ids[1] => Dict("act" => "HONORED", "act_demoted" => false, "state" => "ABSENT", "closed_by" => "honored"),
+               ids[2] => Dict("act" => "LINE-ONLY", "act_demoted" => false, "state" => "PRESENT", "closed_by" => nothing))
+    write(joinpath(pd, "tally.json"), JSON3.write(Dict("schema_version" => 1, "round" => "2026-01-01-check-docs-01", "pass" => 1,
+        "per_id" => per, "totals" => Dict("findings" => 2, "seeded" => 0, "closed" => 1, "open" => 1), "demoted_by_rule" => 0,
+        "adjudicated_share" => 0.0, "suspect_hats" => String[], "dead_lanes" => String[], "rejected_files" => String[],
+        "open_ids" => [ids[2]], "pending_state" => String[], "plateau" => 0)))
+    open(joinpath(pd, "pass.toml"), "w") do f
+        TOML.print(f, Dict("pass" => 1, "nonce" => "b"^32, "opened" => "2026-01-01T00:00:02", "head" => rec["head"],
+                           "range" => "$(rec["head"])..$(rec["head"])", "expected" => Dict("src" => 2), "regrade" => false,
+                           "tool_version" => rec["tool_version"], "tool_rev" => rec["tool_rev"],
+                           "tool_tree_sha" => rec["tool_tree_sha"], "config_sha" => rec["config_sha"]))
+    end
+    conds(carry) = first(G.Passes.carry_conditions(cfg, rd, rec, fs, carry, devnull))
+    # a CLOSED id is done, not carried; and no re-rating means no carry, whatever the lane said
+    @test any(f -> occursin("not open", f), conds([ids[1]]))
+    @test any(f -> occursin("not been re-rated", f), conds([ids[2]]))
+    sev = joinpath(rd, "severity.json")
+    rate(s) = write(sev, JSON3.write(Dict("schema_version" => 1, "round" => "2026-01-01-check-docs-01",
+                                          "ratings" => [Dict("id" => ids[2], "severity" => s, "reason" => "r"^12)])))
+    rate("major"); @test any(f -> occursin("never carried", f), conds([ids[2]]))   # serious: fix it
+    rate("minor"); @test isempty(conds([ids[2]]))                                   # minor: it may go
+    # and the round closes on it, with the finding written forward whole
+    @test G.Passes.close(cfg, "2026-01-01-check-docs-01"; carry = [ids[2]], io = devnull) == 0
+    led = TOML.parsefile(joinpath(root, ".gbg", "carried.toml"))
+    e = only(led["carried"])
+    @test e["id"] == ids[2] && e["severity"] == "minor" && e["carries"] == 1 && e["instrument"] == "check-docs"
+    @test e["title"] == "t2" && !isempty(e["locations"])                            # re-bankable, not just a note
+    @test G.RoundFiles.state(G.RoundFiles.read_round(rd))== :closed
+    @test G.RoundFiles.read_round(rd)["closed_by"]["carried"] == [ids[2]]
+    # the limit: a finding that has ridden CARRY_LIMIT rounds is not a deferral any more
+    e["carries"] = G.Passes.CARRY_LIMIT
+    open(joinpath(root, ".gbg", "carried.toml"), "w") do f; TOML.print(f, led); end
+    @test any(f -> occursin("escalate", f), conds([ids[2]]))
+end
+
 # The blind verifier judges the OPEN ids mid-round, not every id every pass: over this round's 860
 # verdict pairs it uniquely blocked 6, all early, while costing half the verifier bill in the four
 # passes that cost the most. What keeps that honest is that an id the act verifier closes without a
@@ -330,12 +388,25 @@ end
         @test !haskey(get(G.RoundFiles.read_round(dir), "lane_shas", Dict()), lanes[end]["key"])
         @test G.Rounds.rerun(cfg, round, [lanes[end]["key"]]; io = devnull) == 0
         write(victim, vtext)
+        # what an earlier round carried is re-banked here, after the lanes have run and so out of the
+        # panel's sight; a carried finding naming a lane this round does not run is refused, not orphaned
+        led = Dict("schema_version" => 1, "carried" => [Dict("id" => "2026-01-01-check-docs-01/src#9",
+            "instrument" => "check-docs", "round" => "2026-01-01-check-docs-01", "severity" => "minor",
+            "lane" => "no-such-lane", "title" => "carried in", "locations" => ["src/FixtureA.jl:1 — \"x\""],
+            "description" => "d"^24, "carries" => 1, "first_carried" => "2026-01-01T00:00:00")])
+        open(joinpath(root, ".gbg", "carried.toml"), "w") do fh; TOML.print(fh, led); end
+        @test G.Rounds.bank(cfg, round; io = devnull) == 2                     # orphaned: refused, not banked
+        led["carried"][1]["lane"] = lanes[1]["key"]
+        open(joinpath(root, ".gbg", "carried.toml"), "w") do fh; TOML.print(fh, led); end
         @test G.Rounds.bank(cfg, round; io = devnull) == 0
         @test isfile(joinpath(dir, "findings.json")) && isfile(joinpath(dir, "findings.md"))
         rec = G.RoundFiles.read_round(dir)
         @test haskey(rec, "findings_sha") && haskey(rec, "banked")
         findings = JSON3.read(read(joinpath(dir, "findings.json"), String), Dict{String,Any})["findings"]
-        @test length(findings) == 1 && findings[1]["id"] == "$round/$(lanes[1]["key"])#1"
+        @test length(findings) == 2 && findings[1]["id"] == "$round/$(lanes[1]["key"])#1"
+        # the carried finding rode in whole, keeping the id of the round that first found it
+        @test findings[2]["id"] == "2026-01-01-check-docs-01/src#9" && occursin("carry 1", findings[2]["carried_from"])
+        @test findings[2]["n"] == 2 && findings[2]["lane"] == lanes[1]["key"]
         # a changed config refuses every round verb until a regrade
         cpath = joinpath(root, ".gbg", "config.toml"); ctext = read(cpath, String)
         write(cpath, ctext * "\n# a comment changes the sha\n")
@@ -357,11 +428,14 @@ end
         @test aargs["range"] == pass["fix_range"]
         @test haskey(aargs, "quote_probe") && isfile(joinpath(pd, "probe.json"))  # evidence, computed once
         @test pass["state_ids"] == [f["id"] for f in findings]                    # pass 1 is a full blind sweep
-        id = findings[1]["id"]; lane = lanes[1]
+        id = findings[1]["id"]; id2 = findings[2]["id"]; lane = lanes[1]
+        swept = [Dict("surface" => "src/FixtureA.jl:1", "swept" => true, "evidence" => "the only site")]
         act = Dict("schema_version" => 1, "lane" => lane["key"], "graded_sha256" => rec["findings_sha"], "pass_nonce" => pass["nonce"],
-                   "verdicts" => [Dict("id" => id, "verdict" => "HONORED", "question" => "none", "evidence" => "x"^12, "class_surfaces" => Any[])])
+                   "verdicts" => [Dict("id" => id, "verdict" => "HONORED", "question" => "none", "evidence" => "x"^12, "class_surfaces" => Any[]),
+                                  Dict("id" => id2, "verdict" => "HONORED", "question" => "none", "evidence" => "y"^12, "class_surfaces" => swept)])
         state = Dict("schema_version" => 1, "lane" => lane["key"], "graded_sha256" => rec["findings_sha"], "pass_nonce" => pass["nonce"],
-                     "verdicts" => [Dict("id" => id, "verdict" => "ABSENT", "evidence" => "searched everywhere")])
+                     "verdicts" => [Dict("id" => id, "verdict" => "ABSENT", "evidence" => "searched everywhere"),
+                                    Dict("id" => id2, "verdict" => "ABSENT", "evidence" => "searched everywhere")])
         open(joinpath(pd, "act", "$(lane["nn"])-$(lane["key"]).json"), "w") do fh; JSON3.write(fh, act); end
         open(joinpath(pd, "state", "$(lane["nn"])-$(lane["key"]).json"), "w") do fh; JSON3.write(fh, state); end
         @test G.Passes.grade(cfg, round; io = devnull) == 1                      # HONORED with no class_surfaces is demoted: open

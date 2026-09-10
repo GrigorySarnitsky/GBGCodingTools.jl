@@ -68,6 +68,64 @@ end
 
 
 """
+    CARRY_LIMIT
+
+How many rounds a finding may be carried before it stops being a deferral and becomes neglect. At the
+limit `close` refuses the carry and the owner decides: a finding that has survived three batteries is
+not waiting for time, it is waiting for a ruling.
+"""
+const CARRY_LIMIT = 3
+
+carry_file(cfg::AbstractDict) = joinpath(cfg["root"], ".gbg", "carried.toml")
+
+"""
+    carry_ledger(cfg) -> Dict
+
+`.gbg/carried.toml`, the findings a round closed by carrying them into the next round of their
+instrument, and the backlog at each release. The argument is `cfg`, the validated config.
+
+A carried finding is real, unfixed, and re-banked next time rather than left to be found again: a fresh
+battery is a fresh search, and a finding trusted to rediscovery is a finding dropped. Only `minor` and
+`nit` carry, on a severity re-rated by someone other than the lane that reported it — the moment
+severity licenses a deferral it stops being a label and becomes a lever. Returns the ledger, empty when
+the file is absent.
+"""
+function carry_ledger(cfg::AbstractDict)
+    p = carry_file(cfg)
+    isfile(p) || return Dict{String,Any}("schema_version" => 1, "carried" => Any[], "history" => Any[])
+    d = Dict{String,Any}(TOML.parsefile(p))
+    errs = validate(load_schema("carried"), d)
+    isempty(errs) || throw(RoundError(".gbg/carried.toml does not validate: " * first(errs)))
+    haskey(d, "carried") || (d["carried"] = Any[]); haskey(d, "history") || (d["history"] = Any[])
+    return d
+end
+
+"""
+    save_carry(cfg, led)
+
+Writes the carry ledger `led` back to `.gbg/carried.toml` for the consumer `cfg`, with the banner that
+says no hand edits it. Returns nothing.
+"""
+function save_carry(cfg::AbstractDict, led::AbstractDict)
+    open(carry_file(cfg), "w") do f
+        println(f, "# .gbg/carried.toml — written by `gbg round close --carry`, never edited by hand. Each entry is a")
+        println(f, "# real, unfixed finding a round closed by carrying it into the next round of its instrument.")
+        TOML.print(f, led)
+    end
+    return nothing
+end
+
+"""
+    carry_outstanding(cfg, instrument) -> Vector{Dict}
+
+The carried findings of `instrument` still owed a fix, for the consumer `cfg`. `gbg round bank` re-banks
+them so the closure loop sees them again; they never reach the searching panel, exactly as an
+adjudicated title does not. Returns the entries.
+"""
+carry_outstanding(cfg::AbstractDict, instrument::AbstractString) =
+    [Dict{String,Any}(e) for e in carry_ledger(cfg)["carried"] if String(e["instrument"]) == instrument]
+
+"""
     quote_probe(root, finding) -> Vector{String}
 
 Every file the finding NAMES in which its own quoted text still stands verbatim. The arguments are
@@ -681,7 +739,66 @@ function items_file(path, items)
 end
 
 """
-    close(cfg, round; io = stdout) -> Int
+    carry_conditions(cfg, dir, rec, findings, carry, io) -> (Vector{String}, Dict{String,String})
+
+The refusals when a round would close by carrying the ids `carry`, and the re-rated severity of each.
+The arguments are `cfg`, the validated config; `dir` and `rec`, the round's directory and record;
+`findings`, the banked findings; `carry`, the ids asked for; and `io`, where the launch line is printed.
+
+Three conditions. The id must be OPEN — a closed one is not carried, it is done. Its severity must have
+been re-rated by `severity-recheck.js`, whose ratings the CLI compares against the lane's own, and the
+re-rating must be `minor` or `nit`: a serious finding is fixed, adjudicated or escalated, never
+deferred. And it must not already have been carried [`CARRY_LIMIT`](@ref) times. Returns the refusals
+and the re-ratings.
+"""
+function carry_conditions(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, findings::AbstractVector,
+                          carry::AbstractVector, io::IO)
+    fails = String[]; rerated = Dict{String,String}()
+    k = rec["passes"]; tj = joinpath(pass_dir(dir, k), "tally.json")
+    openids = isfile(tj) ? Set(String.(read_json(tj)["open_ids"])) : Set{String}()
+    known = Dict(f["id"] => f for f in findings)
+    for id in carry
+        haskey(known, id) || (push!(fails, "--carry $id: no such banked finding"); continue)
+        id in openids || push!(fails, "--carry $id: it is not open in pass $k; a closed finding is done, not carried")
+    end
+    sev = joinpath(dir, "severity.json")
+    ratings = isfile(sev) ? Dict(String(r["id"]) => String(r["severity"]) for r in read_json(sev)["ratings"]) : Dict{String,String}()
+    missing_ = [id for id in carry if !haskey(ratings, id) && haskey(known, id)]
+    if !isempty(missing_)
+        payload = joinpath(Preflight.payload_dir(cfg, rec["round"]), "severity"); mkpath(payload)
+        ip = joinpath(payload, "items.md")
+        open(ip, "w") do f
+            for id in missing_
+                x = known[id]
+                println(f, "--- ", id, " ---"); println(f, "title: ", x["title"])
+                for l in x["locations"]; println(f, "location: ", l); end
+                println(f, "description: ", x["description"]); println(f)
+            end
+        end
+        a = Dict{String,Any}("schema_version" => 1, "round" => rec["round"], "out" => sev,
+                             "subject" => "the documentation of $(cfg["package"]["name"])",
+                             "items" => [Dict("id" => id) for id in missing_], "items_path" => ip,
+                             "models" => Dict("economy" => Preflight.economy_model()))
+        Preflight.save_args(cfg, rec["round"], "severity", a)
+        push!(fails, "the severity of $(length(missing_)) carry candidate(s) has not been re-rated — the reporting lane's own rating cannot license its own deferral. Launch:\n    " *
+                     Preflight.workflow_call(joinpath(Preflight.workflow_dir(cfg, rec["round"]), "severity-recheck.js"), a) *
+                     "\n  then close again with the same --carry")
+    end
+    led = carry_ledger(cfg); before = Dict(String(e["id"]) => e for e in led["carried"])
+    for id in carry
+        haskey(ratings, id) || continue
+        rerated[id] = ratings[id]
+        ratings[id] in ("minor", "nit") ||
+            push!(fails, "--carry $id: re-rated $(ratings[id]); a serious finding is fixed, adjudicated or escalated, never carried")
+        e = get(before, id, nothing)
+        e === nothing || Int(e["carries"]) < CARRY_LIMIT ||
+            push!(fails, "--carry $id: carried $(e["carries"])× already (limit $CARRY_LIMIT) — this is not a deferral any more; escalate it")
+    end
+    return (fails, rerated)
+end
+
+"""
+    close(cfg, round; carry = String[], io = stdout) -> Int
 
 `gbg round close <round>`: checks every closing condition in the instrument's order and stamps the
 round closed. The arguments are:
@@ -696,9 +813,12 @@ tool tree sha, else abandon-only), the opening head an ancestor of HEAD, the dis
 every adjudication and refusal with `reopened == []` (its Workflow call is printed when it has not
 run), the hunt's witness, promotion, test and audit conditions, and for a check-docs round whose fix
 pass changed code, [`Passes.audit_after_code`](@ref). Then `closed`, `closed_head` and the
-tally sha are stamped. Returns 0 when closed, 1 when a condition is unmet, 2 on a stamp mismatch.
+tally sha are stamped.
+
+`carry` names the ids this round closes by carrying them into the next round of its instrument, which
+`carry_conditions` gates. Returns 0 when closed, 1 when a condition is unmet, 2 on a stamp mismatch.
 """
-function close(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
+function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector = String[], io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io, allow_config_change = true)
     root = cfg["root"]; inst = rec["instrument"]; k = rec["passes"]
     fails = String[]
@@ -708,7 +828,8 @@ function close(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         push!(fails, "no graded pass")
     else
         t = read_json(tj)
-        isempty(t["open_ids"]) || push!(fails, "$(length(t["open_ids"])) open id(s) in pass $k")
+        stillopen = [id for id in t["open_ids"] if !(id in carry)]
+        isempty(stillopen) || push!(fails, "$(length(stillopen)) open id(s) in pass $k" * (isempty(carry) ? "" : " beyond the $(length(carry)) carried"))
         isempty(get(t, "pending_state", String[])) || push!(fails, "$(length(t["pending_state"])) id(s) the blind verifier never read at this head — gbg round pass open $round, which sweeps them")
         isempty(t["dead_lanes"]) || push!(fails, "dead lane(s) in pass $k: " * join(t["dead_lanes"], ", "))
     end
@@ -768,14 +889,39 @@ function close(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
             push!(fails, "audit.json absent — gbg audit-changes bank $round")
         end
     end
+    rerated = Dict{String,String}()
+    if !isempty(carry)
+        cf, rerated = carry_conditions(cfg, dir, rec, findings, carry, io)
+        append!(fails, cf)
+    end
     if !isempty(fails)
         println(io, "close: refused —"); foreach(f -> println(io, "  - ", f), fails); return 1
     end
+    # the ledger moves: what this round carried joins it, what this round CLOSED leaves it
+    led = carry_ledger(cfg); entries = led["carried"]
+    closed_ids = Set(id for (id, e) in read_json(tj)["per_id"] if get(e, "closed_by", nothing) !== nothing)
+    filter!(e -> !(String(e["id"]) in closed_ids), entries)
+    known = Dict(f["id"] => f for f in findings)
+    for id in carry
+        f = known[id]; i = findfirst(e -> String(e["id"]) == id, entries)
+        if i === nothing
+            push!(entries, Dict{String,Any}("id" => id, "instrument" => inst, "round" => round, "severity" => rerated[id],
+                "lane" => String(get(f, "lane", "")), "type" => String(get(f, "type", "")), "confidence" => String(get(f, "confidence", "")),
+                "title" => f["title"], "locations" => String.(f["locations"]), "description" => f["description"],
+                "carries" => 1, "first_carried" => Rounds.timestamp(), "last_carried" => Rounds.timestamp()))
+        else
+            entries[i]["carries"] = Int(entries[i]["carries"]) + 1
+            entries[i]["last_carried"] = Rounds.timestamp(); entries[i]["severity"] = rerated[id]
+        end
+    end
+    (isempty(carry) && isempty(closed_ids)) || save_carry(cfg, led)
     carry_deferrals(cfg, dir, round; io)
     rec["closed"] = Rounds.timestamp(); rec["closed_head"] = head
     used = [e["target"] for e in ledger if e["scope"] == "finding" && startswith(e["target"], round * "/")]
     rec["closed_by"] = Dict{String,Any}("adjudicated" => used, "tally_sha" => RoundFiles.sha256_file(tj))
+    isempty(carry) || (rec["closed_by"]["carried"] = sort!(collect(String.(carry))))
     Rounds.save(dir, rec)
+    isempty(carry) || println(io, "close: carried $(length(carry)) finding(s) into the next $inst round — they are re-banked there, never rediscovered: ", join(carry, ", "))
     println(io, "close: $round CLOSED at $(first(head, 8)) — commit ⇒ push the round (ROUND.toml changed); cite the closure per lane and id in the message")
     return 0
 end

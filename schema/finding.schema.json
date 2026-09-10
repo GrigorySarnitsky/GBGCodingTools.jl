@@ -1,119 +1,123 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "additionalProperties": false,
-  "required": [
-    "type",
-    "severity",
-    "confidence",
-    "title",
-    "locations",
-    "description"
-  ],
-  "properties": {
-    "n": {
-      "minimum": 1,
-      "type": "integer"
-    },
-    "seeded": {
-      "type": "boolean"
-    },
-    "domain_type": {
-      "type": "string",
-      "description": "one of config [schema] finding_types_extra"
-    },
-    "after": {
-      "type": "string"
-    },
-    "severity": {
-      "type": "string",
-      "enum": [
-        "blocker",
-        "major",
-        "minor",
-        "nit"
-      ]
-    },
-    "lane": {
-      "pattern": "^[a-z0-9][a-z0-9-]*$",
-      "type": "string"
-    },
-    "confidence": {
-      "type": "string",
-      "enum": [
-        "high",
-        "medium",
-        "low"
-      ]
-    },
-    "justified": {
-      "type": "string",
-      "enum": [
-        "yes",
-        "no",
-        "unclear"
-      ]
-    },
-    "before": {
-      "type": "string"
-    },
-    "locations": {
-      "items": {
-        "type": "string"
-      },
-      "minItems": 1,
-      "type": "array"
-    },
-    "contradicts": {
-      "type": "string"
-    },
-    "previously_worked": {
-      "type": "string",
-      "enum": [
-        "yes",
-        "no",
-        "unknown"
-      ]
-    },
-    "why_it_matters": {
-      "type": "string"
-    },
-    "id": {
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}-[a-z-]+-\\d{2}/[a-z0-9-]+#\\d+$",
-      "type": "string",
-      "description": "<round>/<lane>#<n>"
-    },
-    "title": {
-      "type": "string",
-      "minLength": 8
-    },
-    "resolution_hint": {
-      "type": "string"
-    },
-    "evidence": {
-      "type": "string"
-    },
-    "type": {
-      "type": "string",
-      "description": "core type; a domain type goes in domain_type",
-      "enum": [
-        "math",
-        "notation",
-        "structure",
-        "citation",
-        "style",
-        "operational",
-        "currency",
-        "self-containment"
-      ]
-    },
-    "description": {
-      "type": "string",
-      "minLength": 20
-    },
-    "seed_class": {
-      "type": "string"
-    }
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "additionalProperties": false,
+ "required": [
+  "type",
+  "severity",
+  "confidence",
+  "title",
+  "locations",
+  "description"
+ ],
+ "properties": {
+  "n": {
+   "minimum": 1,
+   "type": "integer"
   },
-  "title": "one finding — the ONE shape of the fleet; findings.json entries add id, seeded, seed_class",
-  "type": "object"
+  "seeded": {
+   "type": "boolean"
+  },
+  "domain_type": {
+   "type": "string",
+   "description": "one of config [schema] finding_types_extra"
+  },
+  "after": {
+   "type": "string"
+  },
+  "severity": {
+   "type": "string",
+   "enum": [
+    "blocker",
+    "major",
+    "minor",
+    "nit"
+   ]
+  },
+  "lane": {
+   "pattern": "^[a-z0-9][a-z0-9-]*$",
+   "type": "string"
+  },
+  "confidence": {
+   "type": "string",
+   "enum": [
+    "high",
+    "medium",
+    "low"
+   ]
+  },
+  "justified": {
+   "type": "string",
+   "enum": [
+    "yes",
+    "no",
+    "unclear"
+   ]
+  },
+  "before": {
+   "type": "string"
+  },
+  "locations": {
+   "items": {
+    "type": "string"
+   },
+   "minItems": 1,
+   "type": "array"
+  },
+  "contradicts": {
+   "type": "string"
+  },
+  "previously_worked": {
+   "type": "string",
+   "enum": [
+    "yes",
+    "no",
+    "unknown"
+   ]
+  },
+  "why_it_matters": {
+   "type": "string"
+  },
+  "id": {
+   "pattern": "^\\d{4}-\\d{2}-\\d{2}-[a-z-]+-\\d{2}/[a-z0-9-]+#\\d+$",
+   "type": "string",
+   "description": "<round>/<lane>#<n>"
+  },
+  "title": {
+   "type": "string",
+   "minLength": 8
+  },
+  "resolution_hint": {
+   "type": "string"
+  },
+  "evidence": {
+   "type": "string"
+  },
+  "type": {
+   "type": "string",
+   "description": "core type; a domain type goes in domain_type",
+   "enum": [
+    "math",
+    "notation",
+    "structure",
+    "citation",
+    "style",
+    "operational",
+    "currency",
+    "self-containment"
+   ]
+  },
+  "description": {
+   "type": "string",
+   "minLength": 20
+  },
+  "seed_class": {
+   "type": "string"
+  },
+  "carried_from": {
+   "description": "the round and id this finding was carried from. A carried finding is re-banked into the next round of its instrument rather than left to be rediscovered, and it never reaches the searching panel \u2014 only the closure loop, like an adjudication.",
+   "type": "string"
+  }
+ },
+ "title": "one finding \u2014 the ONE shape of the fleet; findings.json entries add id, seeded, seed_class",
+ "type": "object"
 }

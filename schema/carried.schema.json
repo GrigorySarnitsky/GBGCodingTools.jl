@@ -1,0 +1,44 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "title": "carried",
+ "description": "`.gbg/carried.toml` — the findings a round closed by carrying them to the next round of its instrument. A carried finding is REAL, UNFIXED and re-banked next time, never rediscovered by chance: a fresh battery is a fresh search, and a finding left to be re-found is a finding dropped. Only `minor` and `nit` carry, and only on a severity re-rated by someone other than the lane that reported it.",
+ "type": "object",
+ "additionalProperties": false,
+ "required": ["schema_version"],
+ "properties": {
+  "schema_version": {"type": "integer", "minimum": 1},
+  "carried": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "instrument", "round", "severity", "title", "locations", "description", "carries", "first_carried"],
+    "properties": {
+     "id": {"type": "string"},
+     "instrument": {"type": "string"},
+     "round": {"description": "the round that first carried it", "type": "string"},
+     "severity": {"description": "the RE-RATED severity, never the reporting lane's own", "type": "string", "enum": ["minor", "nit"]},
+     "lane": {"type": "string"},
+     "type": {"type": "string"},
+     "confidence": {"type": "string"},
+     "title": {"type": "string"},
+     "locations": {"type": "array", "items": {"type": "string"}},
+     "description": {"type": "string"},
+     "carries": {"description": "how many rounds it has been carried through; at the limit it escalates to the owner instead", "type": "integer", "minimum": 1},
+     "first_carried": {"type": "string"},
+     "last_carried": {"type": "string"}
+    }
+   }
+  },
+  "history": {
+   "description": "the backlog at each release, so a release can require it to be draining",
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["version", "date", "backlog"],
+    "properties": {"version": {"type": "string"}, "date": {"type": "string"}, "backlog": {"type": "integer", "minimum": 0}}
+   }
+  }
+ }
+}

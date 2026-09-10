@@ -18,8 +18,12 @@ function cites_round(cfg::AbstractDict, tag::AbstractString)
         (r.state == :closed && String(r.round["instrument"]) == "check-docs" && "v" * String(r.round["tool_version"]) == tag) || return false
         tj = joinpath(r.dir, "verdicts", "pass-$(r.round["passes"])", "tally.json")
         isfile(tj) || return false
-        all(e -> e["closed_by"] in ("honored", "adjudicated", "rescan", "seeded"),
-            values(JSON3.read(read(tj, String), Dict{String,Any})["per_id"]))
+        # a carried id is disposed, not open: it is minor or nit on a re-rated severity and re-banked in
+        # the next round. Whether the BACKLOG is acceptable is a release condition, not a round's
+        carried = Set(String.(get(get(r.round, "closed_by", Dict{String,Any}()), "carried", String[])))
+        all(pairs(JSON3.read(read(tj, String), Dict{String,Any})["per_id"])) do (id, e)
+            get(e, "closed_by", nothing) in ("honored", "adjudicated", "rescan", "seeded") || String(id) in carried
+        end
     end
 end
 
@@ -65,6 +69,16 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false)
         else
             latest = last(sort(rcs; by = t -> parse(Int, last(split(t, ".")))))
             cites_round(cfg, latest) || push!(fails, "no closed /check-docs round stamped $latest under .gbg/rounds/")
+            # A carried finding is a debt, and a final release is where the debt is called. Severity has
+            # already decided what may be carried at all; what a release adds is that the pile is
+            # DRAINING — carrying is free while the backlog falls, and stops being free when it does not.
+            led = Passes.carry_ledger(cfg); out = led["carried"]; hist = led["history"]
+            over = [String(e["id"]) for e in out if Int(e["carries"]) >= Passes.CARRY_LIMIT]
+            isempty(over) || push!(fails, "carried $(Passes.CARRY_LIMIT)× and still unfixed: " * join(over, ", ") * " — escalate, do not release over it")
+            if !isempty(out) && !isempty(hist)
+                was = Int(last(hist)["backlog"])
+                length(out) < was || push!(fails, "the carry backlog is $(length(out)) and was $was at $(last(hist)["version"]): a final release needs it falling")
+            end
         end
     end
     if !isempty(fails)
@@ -83,7 +97,11 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false)
     end
     Git.run(root, "tag", "-a", "v$ver", "-m", "GBGCodingTools v$ver") === nothing && (println(io, "release: git tag failed"); return 3)
     Git.run(root, "push", "origin", "v$ver") === nothing && (println(io, "release: tag created but the push failed — push it by hand: git push origin v$ver"); return 3)
-    println(io, "release: v$ver tagged and pushed", rc ? " (a prerelease: nothing pins it; the /check-docs round opens at it)" : "")
+    led = Passes.carry_ledger(cfg)
+    push!(led["history"], Dict{String,Any}("version" => ver, "date" => string(Dates.today()), "backlog" => length(led["carried"])))
+    (isempty(led["carried"]) && length(led["history"]) == 1) || Passes.save_carry(cfg, led)
+    println(io, "release: v$ver tagged and pushed", rc ? " (a prerelease: nothing pins it; the /check-docs round opens at it)" : "",
+            isempty(led["carried"]) ? "" : " — carry backlog: $(length(led["carried"]))")
     return 0
 end
 

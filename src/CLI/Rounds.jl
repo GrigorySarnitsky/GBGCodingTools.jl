@@ -386,6 +386,33 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
             push!(findings, g)
         end
     end
+    # What the previous round carried is re-banked HERE, after the lanes have run: a carried finding is
+    # real and unfixed, and a fresh battery is a fresh search, so one left to be rediscovered is one
+    # dropped. Banking it after the search also keeps it out of the panel's sight, exactly as an
+    # adjudicated title is kept out — a known finding handed to the searchers is an answer key.
+    carried = GBGCodingTools.Passes.carry_outstanding(cfg, inst)
+    # a carried finding needs a lane in THIS round's roster or nothing will ever verify it: it would sit
+    # in findings.json, be dispatched to no verifier, and stay open until the round was abandoned
+    orphan = [String(e["id"]) for e in carried if !any(r -> String(r["key"]) == String(get(e, "lane", "")), rec["roster"])]
+    if !isempty(orphan)
+        println(io, "bank: refused — carried finding(s) name a lane this round does not run: ", join(orphan, ", "),
+                    ". The roster changed under them; re-open them by hand or drop them from .gbg/carried.toml.")
+        return 2
+    end
+    # `n` is the finding's index within its lane, and the schema floor is 1: a carried finding continues
+    # the lane's numbering rather than colliding with it. Its ID keeps the round that first found it.
+    nextn = Dict{String,Int}()
+    for f in findings; nextn[f["lane"]] = max(get(nextn, f["lane"], 0), Int(f["n"])); end
+    for e in carried
+        lane = String(get(e, "lane", "carried")); nextn[lane] = get(nextn, lane, 0) + 1
+        g = Dict{String,Any}("id" => String(e["id"]), "lane" => lane, "n" => nextn[lane], "seeded" => false,
+                             "title" => String(e["title"]), "severity" => String(e["severity"]),
+                             "confidence" => String(get(e, "confidence", "high")), "type" => String(get(e, "type", "structure")),
+                             "locations" => String.(e["locations"]), "description" => String(e["description"]),
+                             "carried_from" => String(e["round"]) * " (carry " * string(e["carries"]) * ")")
+        push!(findings, g)
+    end
+    isempty(carried) || println(io, "bank: re-banked $(length(carried)) finding(s) carried from an earlier round — they were never shown to the lanes")
     bankrec = Dict{String,Any}("suspect_hats" => String[], "recall" => Dict{String,Any}(), "statuses" => Dict(k => String(v) for (k, v) in statuses))
     if inst == "check-consistency" && haskey(rec, "seed_salt")
         full, site, _, _, _ = consolidate_to(cfg, round, ".unseeded")
@@ -686,7 +713,8 @@ function cmd_round(args)
         verb == "render" && return render(cfg, round)
         verb == "abandon" && return abandon(cfg, round, get(o.values, "reason", ""))
         verb == "grade" && return GBGCodingTools.Passes.grade(cfg, round)
-        verb == "close" && return GBGCodingTools.Passes.close(cfg, round)
+        verb == "close" && return GBGCodingTools.Passes.close(cfg, round;
+            carry = filter(!isempty, split(get(o.values, "carry", ""), ',')))
         if verb == "import"
             "empty" in o.flags && return import_empty(cfg, round, get(o.values, "reason", ""))
             println(stderr, "round import <pile>: the legacy pile readers are Phase 2's scratch tools (IMPLEMENTATION Phase 2 step 1); only `--empty` exists yet"); return 2
