@@ -588,7 +588,9 @@ The closure gate a consumer's `runtests.jl` ends with. The arguments are:
 
 - `root` — the consumer root, found by walking up from the working directory when not given.
 
-It runs the quick doctor set — the `:QUICK` selection of [`GBGCodingTools.doctor`](@ref) — and [`GBGCodingTools.gate`](@ref), the generic closure gate, over the two
+It runs the quick doctor set — the `:QUICK` selection of [`GBGCodingTools.doctor`](@ref), the checks
+that hold on any machine with no build and no network — and [`GBGCodingTools.gate`](@ref), the generic
+closure gate, over the two
 code instruments (`bug-hunt`, `audit-changes` — [`GBGCodingTools`](@ref) binds the term) in-process, `error()`ing on a non-zero return so a test run cannot pass over an open
 hunt or audit round, and prints one banner line `GBGCodingTools v<ver> gate` (the `TEST.PKG`
 witness). Never that generic gate over all four instruments: a test run must not fail on an open docs

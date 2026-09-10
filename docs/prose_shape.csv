@@ -326,7 +326,7 @@ unit,words,longest_paragraph,admonitions
 "TestHarness.jl :: counting(data::Array) -> CountingArray",11,8,0
 "TestHarness.jl :: display_gate(modules; no_display = Dict{Symbol,String}(), mi",137,97,0
 "TestHarness.jl :: field_threshold(field_bytes; fraction = 16, per_thread = 409",92,65,0
-"TestHarness.jl :: gate(; root = GBGCodingTools.Config.find_root())",114,82,0
+"TestHarness.jl :: gate(; root = GBGCodingTools.Config.find_root())",127,95,0
 "TestHarness.jl :: has_display(type, modules) -> Bool",17,13,0
 "TestHarness.jl :: method_parity(pkg, modules, baseline; externals = (Base,))",105,64,0
 "TestHarness.jl :: module_method_count(mod, pkg, modules; externals = (Base,)) ",68,30,0

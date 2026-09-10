@@ -84,3 +84,163 @@ reason        = "the schema's floor and the doctor's are different instruments, 
 recorded      = 2026-09-10
 overturn_when = "Ledger.read stops throwing on a schema failure and names the entry instead, which would make one floor able to do both jobs"
 evidence      = "src/CLI/Ledger.jl:35-36 throws LedgerError on validation failure; src/CLI/Doctor.jl:308 enforces >= 40 per entry and reports it as a check"
+
+# Adjudicated 2026-09-10, at the close of 2026-09-10-check-docs-03's third pass. THE DEFECT IS GONE in
+# every one of the sixteen: the blind state verifier, reading the corpus with no sight of any diff,
+# returned ABSENT for each in pass 3 (verdicts/pass-3/state/). What the loop cannot do is CLOSE them.
+# `Passes.pass_scope` hands the act verifier only the newest fix range — the last GRADED pass's head to
+# this pass's head — and the act verifier's own definition of UNDONE is "nothing in the diff addresses
+# this finding". A fix made in pass 1 and re-checked in pass 3, because pass 2 happened to touch a file
+# the finding names, is therefore graded UNDONE however sound it is; and `grade` closes only on act
+# HONORED plus a favourable state. No further fix pass can reach these: there is nothing left to fix,
+# so no later range can ever contain a change addressing them.
+#
+# The instrument fix — give the act verifier every fix range since the finding was banked, or let a
+# re-checked CLOSED id be graded on regression rather than on this diff's contribution — is an
+# instrument change, hence its own commit and its own release, and is recorded as a deferral of this
+# round (rounds/2026-09-10-check-docs-03/deferred.md, carried into .claude/WORK_QUEUE.md). Until it
+# ships, this is the honest closure: the work was done, the verifier confirms it, the arithmetic cannot.
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/pages#2"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/pages#2"
+reason        = "index.md's oracle-engine sentence is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/src#1"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/src#1"
+reason        = "cites_round's closure channels is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/src#2"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/src#2"
+reason        = "pass_scope's location-less branch is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/src#3"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/src#3"
+reason        = "the module map's Consolidate bullet is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/workflow-scripts#2"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/workflow-scripts#2"
+reason        = "the eleven scripts' schema_version guard is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/workflow-scripts#4"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/workflow-scripts#4"
+reason        = "verify-act.js's batches coverage guard is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/workflow-scripts#7"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/workflow-scripts#7"
+reason        = "hunt.js's free-lane candidates_found sentence is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/catalogues#1"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/catalogues#1"
+reason        = "the rulebook hats' `needs` grant is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/schemas#1"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/schemas#1"
+reason        = "tally.schema.json's REFUSED is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/schemas#2"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/schemas#2"
+reason        = "audit.schema.json's unwritten keys is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/schemas#3"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/schemas#3"
+reason        = "pass.schema.json's probe_open is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/schemas#4"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/schemas#4"
+reason        = "carried.schema.json's $schema draft is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/operational-claims#2"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/operational-claims#2"
+reason        = "close()'s stamp-mismatch exit codes is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/operational-claims#3"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/operational-claims#3"
+reason        = "classify_lane()'s :dead causes is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/operational-claims#6"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/operational-claims#6"
+reason        = "bank()'s DEAD-or-REJECTED exit is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/operational-claims#7"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/operational-claims#7"
+reason        = "release()'s closure criterion is fixed and the pass-3 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because the fix landed in an earlier fix range of this same round and its range starts at the last graded pass, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
