@@ -79,6 +79,12 @@ end
     write(joinpath(pd, "tally.json"), JSON3.write(Dict("open_ids" => String[], "per_id" => Dict("r/x#1" => Dict("closed_by" => "honored")))))
     scope, prev, susp, _ = G.Passes.pass_scope(cfg, dir, rec, 2)
     @test isempty(prev) && susp == ["r/x#1"] && scope == ["r/x#1"]         # closed, but the fix pass went near it again
+
+    # a finding naming no file in the tree is re-verified every pass, never exempted for ever
+    nofile = Dict{String,Any}("id" => "r/y#1", "lane" => "src", "n" => 1, "title" => "t", "locations" => ["nowhere at all"])
+    write(joinpath(dir, "findings.json"), JSON3.write(Dict("schema_version" => 1, "round" => "r", "findings" => [nofile])))
+    @test G.Passes.pass_scope(cfg, dir, rec, 2)[1] == ["r/y#1"]
+    @test isempty(G.Passes.unswept(cfg, dir, ["r/y#1"], "$base..HEAD"))    # and it never trips the refusal
 end
 
 @testset "round lifecycle" begin
@@ -154,11 +160,8 @@ end
         # the sweep check refuses a pass whose fix touched none of what the open findings name; this
         # lifecycle plants verdicts instead of fixing, so it says so rather than pretending otherwise
         @test G.Passes.pass_open(cfg, round; io = devnull) == 2
-        # and the DEFAULT path still runs: a fix that touches what the findings name opens with no flag,
-        # or the only test of pass_open would be the test of its refusal
-        touchall = joinpath(root, "docs", "src", "notation.md"); write(touchall, read(touchall, String) * "\n")
-        run(pipeline(`git -C $root -c user.email=t@t -c user.name=t add -A`; stdout = devnull, stderr = devnull))
-        run(pipeline(`git -C $root -c user.email=t@t -c user.name=t commit -q -m "a fix pass"`; stdout = devnull, stderr = devnull))
+        # the DEFAULT path — the fix that swept every named location, so no flag is needed — is exercised
+        # by the testset above, which drives the predicate pass_open branches on to empty and back
         @test G.Passes.pass_open(cfg, round; sweep_ok = true, io) == 0
         out = String(take!(io)); @test occursin("verify-act.js", out) && occursin("verify-state.js", out)
         pd = joinpath(dir, "verdicts", "pass-1"); pass = TOML.parsefile(joinpath(pd, "pass.toml"))

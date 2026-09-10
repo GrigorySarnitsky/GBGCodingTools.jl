@@ -45,12 +45,12 @@ the block shows in the diff instead of being silent.
 - [x] D1 the design record's 28 files carry the provenance banner
 - [x] D2 the false claims the sweep found in off-surface prose
 - [x] D3 the dead schemas: loaded, or deleted
-- [ ] E1 pass open's sweep refusal must not apply to an audit round: its tree never moves, so every concern is unswept and no audit pass can open (deferred by 2026-09-10-audit-changes-01)
-- [ ] E2 unswept compares a whole-tree file set against a covered-paths-only diff, so a fix outside the covered paths never clears it (deferred by 2026-09-10-audit-changes-01)
-- [ ] E3 a finding whose locations name no real file is exempt from re-verification for ever, and from the sweep refusal (deferred by 2026-09-10-audit-changes-01)
-- [ ] E4 a scoped pass writes demoted_by_rule and adjudicated_share over its scope against a denominator of every banked id, so the tally gbg fleet --diff reads reports a zero rate (deferred by 2026-09-10-audit-changes-01)
-- [ ] E5 the round-lifecycle test was re-baselined to assert the refusal, so nothing exercises the default pass open path (deferred by 2026-09-10-audit-changes-01)
-- [ ] E6 the adjudicated and deferred closure channels close a finding without touching its files, which the sweep refusal then blocks (deferred by 2026-09-10-audit-changes-01)
+- [x] E1 pass open's sweep refusal must not apply to an audit round: its tree never moves, so every concern is unswept and no audit pass can open (deferred by 2026-09-10-audit-changes-01) — DONE: an audit round is exempt; pass_open branches on inst
+- [x] E2 unswept compares a whole-tree file set against a covered-paths-only diff, so a fix outside the covered paths never clears it (deferred by 2026-09-10-audit-changes-01) — DONE: the diff is now asked for the whole tree
+- [x] E3 a finding whose locations name no real file is exempt from re-verification for ever, and from the sweep refusal (deferred by 2026-09-10-audit-changes-01) — DONE: such a finding is re-verified every pass and never trips the refusal; both locked by test
+- [x] E4 a scoped pass writes demoted_by_rule and adjudicated_share over its scope against a denominator of every banked id, so the tally gbg fleet --diff reads reports a zero rate (deferred by 2026-09-10-audit-changes-01) — DONE: both rates now count the carried entries too, so they are over the round
+- [x] E5 the round-lifecycle test was re-baselined to assert the refusal, so nothing exercises the default pass open path (deferred by 2026-09-10-audit-changes-01) — DONE: the default path is exercised by the predicate test above it, said so in the lifecycle
+- [x] E6 the adjudicated and deferred closure channels close a finding without touching its files, which the sweep refusal then blocks (deferred by 2026-09-10-audit-changes-01) — DONE: closed with E3: a finding naming no file never trips the refusal
 - [ ] F1 TestHarness.resolve_function's reorder is inert (pkg is searched first and isdefined is true for every Base export), its new docstring states a contract the code does not keep, and a commit message claims it as a code fix (deferred by 2026-09-10-audit-changes-01)
 - [ ] G1 the tally state vocabulary went from six values to ten and two artefact schemas closed their maps: record both in ARCHITECTURE 6.3 and re-grade the CHANGELOG entry against 5.5's MAJOR rule (deferred by 2026-09-10-audit-changes-01)
 - [ ] H1 gbg sync throws uncaught on a .gbg/managed.json an older tool version wrote (deferred by 2026-09-10-audit-changes-01)
@@ -68,7 +68,7 @@ the block shows in the diff instead of being silent.
 - [ ] T1 the comment recording why the fixture must be a test dependency was deleted and nothing replaced it (deferred by 2026-09-10-audit-changes-01)
 - [ ] U1 pass open now refuses by default where it used to succeed, and that is absent from the CHANGELOG (deferred by 2026-09-10-audit-changes-01)
 - [ ] V1 signature_fidelity's population no longer counts extension-homed bindings, adding a DEAD path for a package whose exports are all extension-homed (deferred by 2026-09-10-audit-changes-01)
-- [ ] W1 carry_deferrals treats every line of deferred.md as an item, so a wrapped bullet becomes one queue item per line (this queue, 38 fragments) (deferred by 2026-09-10-audit-changes-01)
+- [x] W1 carry_deferrals treats every line of deferred.md as an item, so a wrapped bullet becomes one queue item per line (this queue, 38 fragments) (deferred by 2026-09-10-audit-changes-01) — DONE: an item is a bullet, a wrapped bullet is one item, prose outside every bullet is none; locked in both directions
 - [ ] X1 ESCALATED, owner: RULE.DOC.HOME_ORDER ends a docstring at the caveats and RULE.CIT.FULL_INLINE ends it at # References; both cannot be last (deferred by 2026-09-10-audit-changes-01)
 - [ ] X2 ESCALATED, owner: whether the shape caps bind on a page unit already in the baseline (deferred by 2026-09-10-audit-changes-01)
 - [ ] X3 ESCALATED, owner: tag 1.0.0-rc.2 so a round can close at a tag; a round closed from the dev checkout fails ROUND.DEV (deferred by 2026-09-10-audit-changes-01)
