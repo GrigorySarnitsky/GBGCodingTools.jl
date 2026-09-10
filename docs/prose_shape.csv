@@ -49,7 +49,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",772,333,0
 "ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1089,541,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
-"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",2935,2810,0
+"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",2960,2835,0
 "ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1462,1287,0
 "ARCHITECTURE.md § §12.C Doctor ids",135,134,0
 "ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
@@ -72,7 +72,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",348,348,0
 "ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1813,1676,0
 "ARCHITECTURE.md § §8 Self-test and versioning",1508,446,0
-"ARCHITECTURE.md § §9 Resolution table",1475,1416,0
+"ARCHITECTURE.md § §9 Resolution table",1487,1428,0
 "Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",152,95,0
 "Bump.jl :: bump(cfg, ver; abandon = nothing, io = stdout) -> Int",119,78,0
 "CLI.md § CLI internals",31,22,1

@@ -355,7 +355,7 @@ check = ["scan:SCAN.MATHBB_DIGIT"]
 id = "RULE.TEX.MATHBF"
 file = "latex-idiom.md"
 section = "### RULE.TEX.MATHBF"
-statement = "\\mathbf is admitted only for the strings in notation.mathbf_allowed; vectors follow notation.vectors."
+statement = "\\mathbf is admitted only for the strings in notation.mathbf_allowed, plus \\mathbf{1}, which every package is granted whatever that list holds; vectors follow notation.vectors."
 sentinel = "`\\mathbf` is admitted only for an agreed list of strings, and vectors and tensors follow the package's one vector notation."
 check = ["scan:SCAN.MATHBF"]
 [[rule]]

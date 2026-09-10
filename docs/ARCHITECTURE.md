@@ -1959,7 +1959,7 @@ supports either way; ruled separately by the owner, never bundled with the adopt
 | Sentence-opener grep (IT) vs computed script (PF) — `:151` | PF's script (`SCAN.SENTENCE_OPENER`) | collapsed |
 | Prose-shape ratchets — `:169`, `survey-buildlints-hooks-policy.md:21` | one Julia scan, one CSV schema, always-binding caps + page units + structure checks; re-baselined once per consumer | collapsed (MAJOR-class baseline) |
 | PF `lint_retired_claims` (PF only) | `docs.retired_claims` feeding `SCAN.RETIRED_CLAIMS`; `[]` elsewhere | config |
-| `\mathbf` banned (IT) vs `\mathbf{1}` prescribed (PF/SS) — `survey-buildlints-hooks-policy.md:37` | one rule `RULE.TEX.MATHBF` with `mathbf_allowed`; IT `[]` until dispositioned | config |
+| `\mathbf` banned (IT) vs `\mathbf{1}` prescribed (PF/SS) — `survey-buildlints-hooks-policy.md:37` | one rule `RULE.TEX.MATHBF` with `mathbf_allowed`, and `\mathbf{1}` admitted in every package whatever that list holds (RULE.TEX.MATHBB's indicator); IT `[]` until dispositioned | config |
 | `\boldsymbol` vectors (IT) vs components (PF) | `notation.vectors` | config |
 | Estimand-first (SS) | `rubric.leading_identity = "estimand"` | config |
 | Admonition titles always (PF) vs bare `!!! note` (IT; no ruling on disk) | `docs.admonition_titles` supports both; which value IT takes is a decision about IT, ruled separately, never bundled with the adoption commit | consumer ruling (not tooling) |
@@ -2237,7 +2237,7 @@ the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`), one or more of `scan:<i
 | `RULE.DOC.SIBLING_LINK` | docs-rubric | The first mention of a sibling GBG package in a page, rationale document, Literate example or docstring links to that package's documentation site; later mentions are bare; a package never links its own name. | the owner's home-page review, 2026-09-09 |
 | `RULE.DOC.NO_DEAD_REFS` | docs-rubric | A docstring or error message cites no `§` number, repo path or inaccessible source; it reads complete at the REPL. | "No dead references on the user-facing surface" |
 | `RULE.DOC.AI_BANNER` | docs-rubric | Every AI-written page carries the one provenance banner verbatim (as `# ` comments in a Literate file); the home page never carries it. | `lint_ai_banner`; the home-page clause is the owner's ruling 2026-09-09 |
-| `RULE.DOC.SHAPE` | docs-rubric | A docstring's longest paragraph ≤ 120 words and admonitions ≤ 3 always; no unit grows past its baseline; `# Arguments` precedes any column-0 `!!!`; `# Fields` is last. | `lint_prose_shape`; IT `lint_docstring_shape` |
+| `RULE.DOC.SHAPE` | docs-rubric | A docstring's longest paragraph ≤ 120 words and admonitions ≤ 3, on every docstring and every NEW page unit; no unit grows past its baseline, a baselined page unit held by the ratchet alone; `# Arguments` precedes any column-0 `!!!`; `# Fields` is last. | `lint_prose_shape`; IT `lint_docstring_shape` |
 | `RULE.DOC.MODULE_MAP` | docs-rubric | A module docstring lists one linked one-liner per operation family and no formula. | "Module docstring = map"; IT deviation |
 | `RULE.DOC.ARG_BULLET` | docs-rubric | An argument or field bullet names its argument in a plain code span, never a bold one. | `guards.sh` "argument bullet is not bolded"; SS deviation candidate |
 | `RULE.DOC.SIGNATURE_MIRROR` | docs-rubric | A docstring signature mirrors the code's types; only the docstring wraps, to ≤ 88 columns with a hanging indent. | "A docstring signature mirrors the code's types" |
@@ -2254,7 +2254,7 @@ the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`), one or more of `scan:<i
 | `RULE.TEX.CODE_SPAN_JULIA` | latex-idiom | A backtick span holds only well-formed Julia, never code-looking math. | micro-rule (d), last clause |
 | `RULE.TEX.SPACING` | latex-idiom | Never manual `\;`/`\:`/`\,` around a relation or operator, `\!` before a `\bigl`, `\!\!` before a sum, or `\,` except before `\mathrm{d}`. | "Math spacing and command support" |
 | `RULE.TEX.MATHBB` | latex-idiom | `\mathbb` only on `A`–`Z` or `k`; the indicator is `\mathbf{1}`. | same |
-| `RULE.TEX.MATHBF` | latex-idiom | `\mathbf` is admitted only for the strings in `notation.mathbf_allowed` (★); vectors follow `notation.vectors` (★). | same; IT `\mathbf` ban |
+| `RULE.TEX.MATHBF` | latex-idiom | `\mathbf` is admitted only for the strings in `notation.mathbf_allowed` (★), plus `\mathbf{1}` in every package whatever that list holds; vectors follow `notation.vectors` (★). | same; IT `\mathbf` ban |
 | `RULE.TEX.LEFTRIGHT` | latex-idiom | `\left`/`\right` are banned; size by hand with `\bigl`/`\Bigl`; sole exception `\left\{ … \right.`. | same; fleet-wide rule 2026-07-17 |
 | `RULE.TEX.PARTIAL` | latex-idiom | A partial derivative is `\partial_{x_i}`; a bare-index `\partial_i` is banned. | "Notation"; `lint_notation_variants` |
 | `RULE.TEX.IMAGINARY` | latex-idiom | The imaginary unit is upright `\mathrm{i}`; `i, j, k` are indices. | "Notation" |
