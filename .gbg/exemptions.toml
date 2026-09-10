@@ -297,3 +297,43 @@ reason        = "every use of the phrase now names QUICK, the six files under do
 recorded      = 2026-09-10
 overturn_when = "the act verifier is handed every fix range since the finding was banked — then this id is regraded and must come back HONORED"
 evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-6/act/12-cold-reader.json (HONORED, with the unswept surfaces named as design-record files) and .../state/12-cold-reader.json (ABSENT)"
+
+# The last four of the same kind, from pass 8. Each closed HONORED earlier in this round; each was
+# re-scoped because a later fix pass touched a file it names, for an unrelated finding; each was then
+# graded UNDONE over a range containing none of its fix. All four read ABSENT by the blind verifier.
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/rationale#1"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/rationale#1"
+reason        = "makedocs's unconditional-error claim is fixed at every site the finding names and the pass-8 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because pass 8's range starts at the last graded pass and its fix landed earlier in this same round. That is the instrument defect ARCHITECTURE section 11 carries as an honest limit, filed as the round's first deferral, not a property of this fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-8/state/ (ABSENT) and .../act/ (UNDONE)"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/workflow-scripts#1"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/workflow-scripts#1"
+reason        = "the scripts' `package` guard is fixed at every site the finding names and the pass-8 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because pass 8's range starts at the last graded pass and its fix landed earlier in this same round. That is the instrument defect ARCHITECTURE section 11 carries as an honest limit, filed as the round's first deferral, not a property of this fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-8/state/ (ABSENT) and .../act/ (UNDONE)"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/workflow-scripts#6"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/workflow-scripts#6"
+reason        = "verify-act.js's use of the CLI's expected count is fixed at every site the finding names and the pass-8 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because pass 8's range starts at the last graded pass and its fix landed earlier in this same round. That is the instrument defect ARCHITECTURE section 11 carries as an honest limit, filed as the round's first deferral, not a property of this fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-8/state/ (ABSENT) and .../act/ (UNDONE)"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/operational-claims#9"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/operational-claims#9"
+reason        = "prepare's silence about check-docs seeding is fixed at every site the finding names and the pass-8 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because pass 8's range starts at the last graded pass and its fix landed earlier in this same round. That is the instrument defect ARCHITECTURE section 11 carries as an honest limit, filed as the round's first deferral, not a property of this fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-8/state/ (ABSENT) and .../act/ (UNDONE)"
