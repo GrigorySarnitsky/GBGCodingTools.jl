@@ -11,7 +11,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['repo', 'design_path', 'subject', 'out', 'models']) if (A[k] === undefined) throw new Error(`attack-design.js: args.${k} is required`)
+for (const k of ['repo', 'design_path', 'subject', 'out', 'models', 'schema_version']) if (A[k] === undefined) throw new Error(`attack-design.js: args.${k} is required`)
 const S = A.subject
 for (const k of ['object', 'defects', 'context', 'standpoint', 'source']) if (!S[k]) throw new Error(`attack-design.js: subject.${k} is required — the attacker has no default subject`)
 const DEFECTS = S.defects, OBJECT = S.object

@@ -58,8 +58,9 @@ evaluate, `3` when it crashed. The two a person runs most:
   built-site scans after.
 - [`GBGCodingTools.TestHarness`](@ref) — the engines a package's `test/runtests.jl` calls: a bound on what a
   call allocates ([`@alloc_below`](@ref GBGCodingTools.TestHarness.@alloc_below)); recorded baselines for an in-place operation's reads and writes and
-  for the public method set, failing the test suite when either moves unannounced; an independent
-  reference for every public value-returning operation; and [a run of the witnesses](@ref GBGCodingTools.TestHarness.run_regressions) kept from bug hunts.
+  for the public method set, failing the test suite when either moves unannounced; an oracle class on
+  every public value-returning operation — `analytic`, `independent`, `property`, `relational` or
+  `structural`, and none resting on `relational` alone; and [a run of the witnesses](@ref GBGCodingTools.TestHarness.run_regressions) kept from bug hunts.
 
 ## The written rules
 

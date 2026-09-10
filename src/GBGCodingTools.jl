@@ -39,6 +39,8 @@ The engines:
   built-HTML scan engine over `catalog/scans.toml`, one function per scan id under `src/Scans/`.
 - `TreeHash` — git blob and tree hashing on the `SHA` stdlib, behind `gbg self verify`.
 - `HtmlWalker` — the Gumbo walker shared by the consolidator and the built-HTML scans.
+- [`consolidate`](@ref) — the consolidator itself: the built site as one page-marked manuscript, which a
+  consistency round's hats read and a docs round's seeds are planted into.
 """
 module GBGCodingTools
 

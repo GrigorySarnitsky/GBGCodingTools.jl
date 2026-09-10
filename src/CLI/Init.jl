@@ -233,7 +233,8 @@ It writes `.gbg/config.toml` from the tree, an empty ledger, `.gbg/rounds/.keep`
 for every domain hat without one (`Preflight.resolve_hats` binds the term), the seeded-once files that are absent (`test/Project.toml`,
 `docs/make.jl`, `test/runtests.jl`, `test/regressions/`, `docs/ROADMAP.md`, `docs/prose_shape.csv`),
 and the tool's entries into `docs/`, `test/` and every sub-environment that lists the tool. It refuses
-an existing `.gbg/config.toml` (exit 2). Returns the exit code.
+an existing `.gbg/config.toml` (exit 2) unless `dry_run`, which previews over one rather than refusing,
+a preview writing nothing. Returns the exit code.
 """
 function init(root::AbstractString = pwd(); migrate::Bool = false, dry_run::Bool = false, io::IO = stdout)
     root = abspath(root)

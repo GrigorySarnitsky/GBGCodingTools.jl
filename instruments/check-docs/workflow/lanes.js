@@ -16,7 +16,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'models', 'policy_path']) if (A[k] === undefined) throw new Error(`lanes.js: args.${k} is required`)
+for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'models', 'policy_path', 'schema_version']) if (A[k] === undefined) throw new Error(`lanes.js: args.${k} is required`)
 const STRENGTH = A.strength === 'full' ? 'full' : 'economy'
 const ECONOMY = A.models.economy
 const TYPES = A.finding_types || ['math', 'notation', 'structure', 'citation', 'style', 'operational', 'currency', 'self-containment']

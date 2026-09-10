@@ -19,7 +19,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['round', 'round_dir', 'repo', 'manuscripts', 'hats', 'preamble', 'models', 'package']) {
+for (const k of ['round', 'round_dir', 'repo', 'manuscripts', 'hats', 'preamble', 'models', 'package', 'schema_version']) {
   if (A[k] === undefined) throw new Error(`panel.js: args.${k} is required`)
 }
 const ECONOMY = A.models.economy

@@ -10,6 +10,13 @@ obtained — by every verb, by the `makedocs` wrapper and by `TestHarness.gate()
 [`Config.ConfigError`](@ref) is what a config that cannot be used raises. The helpers
 [`Config.glob_files`](@ref) and [`Config.resolve_anchor`](@ref) are the two readers of the config's
 path vocabulary (globs and `file#heading` anchors), shared with the doctor and the scans.
+
+Two words this package overloads, both first met here. A SURFACE is the config's unit of "what gets
+read": a named set of files — `rationale`, `pages`, `src`, `ext`, `literate`, `data`, and the compounds
+`docs` and `all` — that every scan, engine, doctor check and instrument works over. An ANCHOR here is a
+`file#heading` reference into a document, and NOTHING else: elsewhere the same word is a hat or lane
+that runs at full strength rather than on the economy model (`Preflight.resolve_hats`), and a regular
+expression marking where a seed is planted (`Seeds.select`). Three unrelated senses, one word.
 """
 module Config
 

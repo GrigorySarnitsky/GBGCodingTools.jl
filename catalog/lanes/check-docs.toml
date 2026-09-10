@@ -23,7 +23,7 @@ OUTPUT: report only GENUINE findings, each with file:line, the decisive quote (<
 key = "family"
 kind = "cross"
 anchor = false
-brief = '''YOUR LANE IS CHECK 7, WHICH NO PER-SURFACE AGENT CAN RUN because its grouping is relational rather than per-file. Enumerate every f / f! pair and every getter / set_...! pair (and every physical / spectral variant pair) across the source surface, then verify for EACH pair: the two share ONE HOME for the formula (the in-place ! form owns it and is listed first), the other is a thin @ref-linking wrapper with NO second copy of the formula, and NO NOTATION DRIFTS across the pair (partial-derivative spelling, vector boldness, symbol choice). Report a pair whose formula is duplicated, whose home is the wrong member, or whose notation differs between the two.'''
+brief = '''YOUR LANE IS THE ONE CHECK NO PER-SURFACE AGENT CAN RUN because its grouping is relational rather than per-file. Enumerate every f / f! pair and every getter / set_...! pair (and every physical / spectral variant pair) across the source surface, then verify for EACH pair: the two share ONE HOME for the formula (the in-place ! form owns it and is listed first), the other is a thin @ref-linking wrapper with NO second copy of the formula, and NO NOTATION DRIFTS across the pair (partial-derivative spelling, vector boldness, symbol choice). Report a pair whose formula is duplicated, whose home is the wrong member, or whose notation differs between the two.'''
 
 [[lane]]
 key = "cold-reader"

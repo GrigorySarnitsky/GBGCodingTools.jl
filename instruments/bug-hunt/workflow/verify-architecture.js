@@ -14,7 +14,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['round', 'pass_dir', 'repo', 'range', 'nonce', 'graded_sha256', 'findings', 'findings_path', 'package', 'models']) if (A[k] === undefined) throw new Error(`verify-architecture.js: args.${k} is required`)
+for (const k of ['round', 'pass_dir', 'repo', 'range', 'nonce', 'graded_sha256', 'findings', 'findings_path', 'package', 'models', 'schema_version']) if (A[k] === undefined) throw new Error(`verify-architecture.js: args.${k} is required`)
 if (!A.findings.length) throw new Error('verify-architecture.js: an empty audit must not report success')
 
 const SCHEMA = {

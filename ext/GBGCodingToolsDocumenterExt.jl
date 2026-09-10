@@ -11,7 +11,7 @@ using GBGCodingTools, Documenter
 import GBGCodingTools: makedocs
 
 """
-    check(verb, code)
+    check(verb::AbstractString, code::Integer)
 
 Turns the exit code `code` of the verb `verb` into a build failure: returns `nothing` when `code == 0`, else throws
 `ErrorException("gbg <verb> returned <code>")`.

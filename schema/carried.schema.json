@@ -1,5 +1,5 @@
 {
- "$schema": "http://json-schema.org/draft-07/schema#",
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
  "title": "carried",
  "description": "`.gbg/carried.toml` — the findings a round closed by carrying them to the next round of its instrument. A carried finding is REAL, UNFIXED and re-banked next time, never rediscovered by chance: a fresh battery is a fresh search, and a finding left to be re-found is a finding dropped. Only `minor` and `nit` carry, and only on a severity re-rated by someone other than the lane that reported it.",
  "type": "object",

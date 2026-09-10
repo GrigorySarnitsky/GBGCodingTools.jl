@@ -323,8 +323,9 @@ Classifies one lane file. The arguments are:
 - `lane` — the roster entry (`nn`, `key`).
 - `first_sha` — the file's sha at first sight, when the bank has seen it before.
 
-The status is `:dead` (absent, or — renamed to `<name>.rejected.json` beside itself — unparsable or
-invalid), `:rejected`
+The status is `:dead` (absent; renamed to `<name>.rejected.json` beside itself when unparsable or
+invalid; or well-formed with zero findings AND an empty `checked[]`, which reports nothing about
+nothing rather than reporting a clean lane), `:rejected`
 (present but its sha changed since first sight), `:empty` (zero findings, non-empty checked),
 `:truncated` (candidates_found > findings), or `:live`. Returns the status, the parsed object (or
 nothing), the file's sha and a note.
@@ -425,7 +426,7 @@ classifies (DEAD, REJECTED, EMPTY, TRUNCATED), assigns ids `<round>/<lane>#<n>`;
 regenerates the unseeded manuscripts, recomputes the ground truth, marks seeded findings, prints recall
 per class and SUSPECT hats; for a hunt runs the witness runner over `witnesses/` expecting failure and
 freezes the disposition records; writes `findings.json` and `findings_sha`, `findings.md` and
-`SUMMARY.md`. Any DEAD lane ⇒ exit 2 and nothing frozen (`lane_shas` stays). Returns the exit code.
+`SUMMARY.md`. Any DEAD or REJECTED lane ⇒ exit 2 and nothing frozen (`lane_shas` stays). Returns the exit code.
 """
 function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = guard(cfg, round; io)

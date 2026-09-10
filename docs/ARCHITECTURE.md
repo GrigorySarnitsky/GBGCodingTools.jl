@@ -485,10 +485,14 @@ status quo. *Bash scans*: `guards.sh`'s awk.
   `scan_html(build_dir)` (the rendered-markup and built-page checks) and
   `gate("check-docs", "check-consistency")` again after — the same Julia functions the CLI verbs
   `gbg doctor --only QUICK`, `gbg scan docs --hard-only`, `gbg gate …` and `gbg scan html` wrap, no
-  child process — and `error()`s on any non-zero return, so the gate is reachable on a CI runner with
+  child process — and `error()`s on any non-zero return, EXCEPT the one refusal that is not a breakage:
+  a gate that refuses only because a round of a docs instrument is open prints `makedocs: SKIPPED` and
+  returns `nothing`, exit 0, so a red docs build keeps meaning something is broken rather than meaning a
+  round is open. `GBG_DOCS_NO_SKIP` restores the refusal, and `gbg release` and the deep doctor set it,
+  so no release accepts a build that did not happen. The gate is reachable on a CI runner with
   no shim. The docs instruments' gate, never the bare four-instrument `gate()`, so a docs build does
   not fail on an open hunt. It writes the derived public surface
-  (`TestHarness.package_operations()`) to `.gbg/scratch/public_surface.json` for `scan_html`.
+  (`Reflection.package_operations()`) to `.gbg/scratch/public_surface.json` for `scan_html`.
   It prints one banner line `GBGCodingTools v<ver> makedocs` (`BUILD.DOCS`'s witness).
   `gbg doctor` fails on a **bare** `makedocs(` in `make.jl` (`WIRE.MAKEDOCS`, a token check that
   strips comments and strings). The tool's own `docs/make.jl` calls this same wrapper —
@@ -531,7 +535,8 @@ status quo. *Bash scans*: `guards.sh`'s awk.
   `gbg scan docs --rebaseline prose-shape --reason …` are the ONLY writers.
 - `TestHarness`: `@alloc_below` + derived allocation completeness, `CountingArray`/`Traffic`/`audit`,
   method-parity engine (frozen tables stay in the consumer), oracle-registry engine,
-  `package_operations()` (ownership-derived public surface — the constant `derived` route; the
+  `Reflection.package_operations()`, which it CALLS and does not define (ownership-derived public
+  surface — the constant `derived` route; the
   `names()` route PF found blind to extended generics is not offered), `run_regressions(dir)` (the one
   wrapper-module include loop), display gate with IT's `UnionAll` fix, cross-thread subprocess bitwise
   check, `gate()` (calls `doctor(:QUICK)` and `gate("bug-hunt", "audit-changes")` in-process,
@@ -978,7 +983,7 @@ GBGCodingTools.jl/
     HtmlWalker.jl               the Gumbo + AbstractTrees walker shared by Consolidate.jl and the SCAN.HTML_* scans
     DocLints.jl                 the bare `function makedocs end` + its docstring (the body is ext/GBGCodingToolsDocumenterExt.jl; no regex twins)
     TestHarness.jl              @alloc_below, CountingArray/Traffic/audit, method parity, oracle registry,
-                                package_operations, run_regressions, display gate, thread-subprocess check, gate()
+                                run_regressions, display gate, thread-subprocess check, gate()
     Reflection.jl               argcov, signature_fidelity, xlink (dry-run), dupref, public surface
     Witnesses.jl                run(dir; expect, names)
   ext/
@@ -1545,7 +1550,7 @@ at the tool root, which must work when the dev checkout IS the consumer.
 | candidate `kind` | `runtime \| architecture \| api-semantics` | |
 | disposition record (`reproductions/<id>.json`) | `fixed \| refused(reason ≥ 24 chars) \| escalated(overturn_when)` | terminator `fixed + refused + escalated == confirmed`; a refutation happens at reproduction and never enters a disposition; frozen at bank (`reproductions_sha`) |
 | dismissal audit | `DISMISSAL-SOUND \| UNSAFE \| DISMISSAL-WRONG` | default UNSAFE; `complete = dead == 0 && reopened == []` |
-| tally `per_id.state` | the state verdicts above, plus `PASS \| FAIL \| BROKEN \| BLOCKED` | a bug-hunt finding whose witness was re-run records that witness's status, not a verifier's verdict; widened from six values to ten, which is MAJOR under §5.5 |
+| tally `per_id.state` | the state verdicts above, plus `PASS \| FAIL \| BROKEN \| BLOCKED \| REFUSED` | a bug-hunt finding whose witness was re-run records that witness's status, not a verifier's verdict; widened from six values to ten, which is MAJOR under §5.5 |
 | rule `check` (`policy/RULES.toml`) | `scan:<id> \| doctor:<id> \| test:<path> \| harness:<binding> \| panel \| weakness` | what catches the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`); `panel` only where a running instrument decides it |
 | architecture fix | `FIXED \| RELOCATED \| PARTIAL \| ABSENT \| NOT-A-DEFECT` | default ABSENT |
 | audit concern | `severity` as above; `justified ∈ yes\|no\|unclear`; `previously_worked ∈ yes\|no\|unknown` (required on the behaviour-change lane; `unknown` gated like `yes`); per lane `checked[]` + `candidates_found` required | |

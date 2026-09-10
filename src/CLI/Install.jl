@@ -35,7 +35,7 @@ julia_floor_ok() = VERSION >= JULIA_FLOOR
 
 `gbg install [--dev-checkout <path>]`: copies the running copy's `bin/gbg` to `~/.local/bin/gbg` with mode
 755 and, with the option, writes the one-line pointer `~/.gbg/dev`. Runs from whichever copy Pkg resolved
-for the calling environment — no depot glob is ever expanded. Returns 0 when both files are written, 2
+for the calling environment — no depot glob is ever expanded. Returns 0 when the shim is written, and the `~/.gbg/dev` pointer with it under `--dev-checkout`, 2
 when the Julia in use is below the floor, when `--dev-checkout` names a directory that is not a
 `GBGCodingTools` checkout, or when `~/.local/bin` is not on `PATH` (the shim would be installed but
 never found).

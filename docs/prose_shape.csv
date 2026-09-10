@@ -17,7 +17,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D6 — Skills: generated per-consumer stubs, bare names, `!`-b",446,311,0
 "ARCHITECTURE.md § D7 — Workflow scripts: one generic engine per instrument, ar",531,376,0
 "ARCHITECTURE.md § D8 — Deterministic helpers: one Julia CLI `gbg <noun> <verb>",480,306,0
-"ARCHITECTURE.md § D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `",1230,1119,0
+"ARCHITECTURE.md § D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `",1307,1196,0
 "ARCHITECTURE.md § GBGCodingTools — architecture",479,347,1
 "ARCHITECTURE.md § Revision 10 (2026-09-09) — the rc.1 `/check-docs` round",140,95,0
 "ARCHITECTURE.md § Revision 11 (2026-09-09) — the owner's home-page review",136,136,0
@@ -62,7 +62,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §5.5 Deliberately NOT configurable (changing any is MAJOR)",202,202,0
 "ARCHITECTURE.md § §5.6 The tool's own delta (the fifth consumer, D15)",485,484,0
 "ARCHITECTURE.md § §6.1 File formats (all instruments)",315,315,0
-"ARCHITECTURE.md § §6.3 Vocabularies (constants)",452,407,0
+"ARCHITECTURE.md § §6.3 Vocabularies (constants)",454,409,0
 "ARCHITECTURE.md § §6.4 Seeds",279,279,0
 "ARCHITECTURE.md § §6.5 Closure channels (per finding id; PARTIAL never closes)",156,156,0
 "ARCHITECTURE.md § §6.6 Deltas — `/check-docs`",173,173,0
@@ -76,7 +76,7 @@ unit,words,longest_paragraph,admonitions
 "Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",152,95,0
 "Bump.jl :: bump(cfg, ver; abandon = nothing, io = stdout) -> Int",119,78,0
 "CLI.md § CLI internals",31,22,1
-"Config.jl :: Config",64,63,0
+"Config.jl :: Config",162,98,0
 "Config.jl :: Config.parse(text; root, check = true) -> Dict",81,43,0
 "Config.jl :: ConfigError <: Exception",35,23,0
 "Config.jl :: check_paths(cfg) -> Vector{String}",90,87,0
@@ -92,7 +92,7 @@ unit,words,longest_paragraph,admonitions
 "Consolidate.jl :: discover_pages(build_dir) -> Vector{Tuple{String,String,Stri",82,79,0
 "Consolidate.jl :: page_text(path) -> String",36,33,0
 "Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",185,62,0
-"DocLints.jl :: makedocs(cfg; kwargs...)",233,67,0
+"DocLints.jl :: makedocs(cfg; kwargs...)",253,82,0
 "Doctor.jl :: Check",37,30,0
 "Doctor.jl :: Doctor",79,78,0
 "Doctor.jl :: cmd_doctor(args) -> Int",29,26,0
@@ -103,7 +103,7 @@ unit,words,longest_paragraph,admonitions
 "Fleet.jl :: Fleet.diff(a, b; io = stdout) -> Int",92,37,0
 "Fleet.jl :: Fleet.rows(; deep = false) -> (rows, code)",114,80,0
 "Fleet.jl :: latest_tag(root) -> Union{VersionNumber,Nothing}",17,14,0
-"GBGCodingTools.jl :: GBGCodingTools",376,102,0
+"GBGCodingTools.jl :: GBGCodingTools",403,102,0
 "Gate.jl :: cmd_gate(args) -> Int",27,24,0
 "Gate.jl :: frozen_rounds(cfg, instruments...) -> Vector{String}",115,68,0
 "Gate.jl :: gate(cfg, instruments...; io = stderr) -> Int",185,69,0
@@ -133,13 +133,13 @@ unit,words,longest_paragraph,admonitions
 "Init.jl :: convert_pass_audit(text) -> Union{Dict,Nothing}",53,50,0
 "Init.jl :: derive_config(root) -> Dict",101,98,0
 "Init.jl :: enclosed_by_tool(root) -> Bool",31,28,0
-"Init.jl :: init(root = pwd(); migrate = false, dry_run = false, io = st",130,60,0
+"Init.jl :: init(root = pwd(); migrate = false, dry_run = false, io = st",143,73,0
 "Init.jl :: is_tool_root(root) -> Bool",17,14,0
 "Init.jl :: migrate_baselines(root = pwd(); dry_run = false, io = stdout",105,48,0
 "Init.jl :: migrate_seeds(root, cfg; io = stdout) -> Int",70,23,0
 "Init.jl :: new(pkgname; parent = pwd(), io = stdout) -> Int",77,31,0
 "Init.jl :: write_config(root, cfg) -> String",17,13,0
-"Install.jl :: cmd_install(args) -> Int",86,83,0
+"Install.jl :: cmd_install(args) -> Int",94,91,0
 "Install.jl :: dev_pointer() -> String",29,26,0
 "Install.jl :: julia_floor_ok() -> Bool",20,17,0
 "Install.jl :: shim_source() -> String",26,23,0
@@ -165,12 +165,12 @@ unit,words,longest_paragraph,admonitions
 "Passes.jl :: carry_ledger(cfg) -> Dict",109,77,0
 "Passes.jl :: carry_outstanding(cfg, instrument) -> Vector{Dict}",45,41,0
 "Passes.jl :: class_candidates(cfg, finding; cap = 24) -> Vector{String}",152,110,0
-"Passes.jl :: close(cfg, round; carry = String[], io = stdout) -> Int",182,97,0
+"Passes.jl :: close(cfg, round; carry = String[], io = stdout) -> Int",219,97,0
 "Passes.jl :: finding_files(root, finding) -> Vector{String}",65,34,0
-"Passes.jl :: grade(cfg, round; io = stdout) -> Int",149,110,0
+"Passes.jl :: grade(cfg, round; io = stdout) -> Int",170,98,0
 "Passes.jl :: last_graded(dir, k) -> Int",108,68,0
 "Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, io ",234,103,0
-"Passes.jl :: pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects,",131,73,0
+"Passes.jl :: pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects,",163,105,0
 "Passes.jl :: quote_probe(root, finding) -> Vector{String}",177,104,0
 "Passes.jl :: save_carry(cfg, led)",25,23,0
 "Passes.jl :: unswept(cfg, dir, ids, range) -> Vector{Pair{String,Vector{S",131,55,0
@@ -184,6 +184,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: next_round_id(cfg, instrument) -> String",21,17,0
 "Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",199,100,0
 "Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",131,80,0
+"Preflight.jl :: repoint_lanes(cfg, round, dest) -> String",88,50,0
 "Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
 "Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",76,73,0
 "Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",209,103,0
@@ -195,7 +196,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: torn_check(cfg; io = stderr) -> Bool",43,15,0
 "Preflight.jl :: workflow_call(script, a) -> String",14,10,0
 "Preflight.jl :: write_payloads(cfg, instrument, round, roster; base = nothin",115,52,0
-"Recall.jl :: Recall",52,51,0
+"Recall.jl :: Recall",80,79,0
 "Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
 "Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0
 "Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
@@ -217,8 +218,8 @@ unit,words,longest_paragraph,admonitions
 "Reflection.jl :: signature_types(inside) -> Dict{String,String}",21,18,0
 "Reflection.jl :: xlink(cfg; pkg = load_package(cfg), apply = false) -> Vector",81,37,0
 "Reflection.md § Reflection",22,22,1
-"Release.jl :: cites_round(cfg, tag) -> Bool",111,75,0
-"Release.jl :: release(ver; io = stdout, skip_tests = false) -> Int",156,94,0
+"Release.jl :: cites_round(cfg, tag) -> Bool",131,95,0
+"Release.jl :: release(ver; io = stdout, skip_tests = false) -> Int",167,105,0
 "RoundFiles.jl :: RoundFiles",57,56,0
 "RoundFiles.jl :: read_round(dir) -> Union{Dict,Nothing}",25,22,0
 "RoundFiles.jl :: round_dirs(cfg) -> Vector{String}",24,21,0
@@ -227,10 +228,10 @@ unit,words,longest_paragraph,admonitions
 "RoundFiles.jl :: state(round) -> Symbol",16,13,0
 "Rounds.jl :: Rounds",67,66,0
 "Rounds.jl :: abandon(cfg, round, reason; io = stdout) -> Int",157,82,0
-"Rounds.jl :: bank(cfg, round; io = stdout) -> Int",137,100,0
+"Rounds.jl :: bank(cfg, round; io = stdout) -> Int",139,102,0
 "Rounds.jl :: bank_next(inst, round) -> String",67,63,0
 "Rounds.jl :: build(cfg, round; io = stdout) -> Int",60,24,0
-"Rounds.jl :: classify_lane(dir, inst, lane; first_sha = nothing) -> (stat",106,50,0
+"Rounds.jl :: classify_lane(dir, inst, lane; first_sha = nothing) -> (stat",124,68,0
 "Rounds.jl :: guard(cfg, round; io = stderr, allow_config_change = false, ",114,46,0
 "Rounds.jl :: hunt_bank!(cfg, dir, rec, findings; io = stdout) -> Int",115,60,0
 "Rounds.jl :: import_empty(cfg, round, reason; io = stdout) -> Int",113,37,0
@@ -240,6 +241,7 @@ unit,words,longest_paragraph,admonitions
 "Rounds.jl :: render(cfg, round; io = stdout) -> Int",51,20,0
 "Rounds.jl :: rerun(cfg, round, lanes; io = stdout) -> Int",86,28,0
 "Rounds.jl :: run_under_round(cfg, round, cmdline; log) -> Int",60,29,0
+"Rounds.jl :: seed_docs_corpus!(cfg, round, dir, rec; io = stdout) -> Int",179,120,0
 "Rounds.jl :: test(cfg, round; io = stdout) -> Int",54,24,0
 "Scan.jl :: AI_BANNER",28,27,0
 "Scan.jl :: Hit(file, line, text; symbol = '')",83,59,0
@@ -273,9 +275,11 @@ unit,words,longest_paragraph,admonitions
 "Schema.jl :: schema_dir() -> String",17,14,0
 "Schema.jl :: validate(schema, value; root = schema, path = '\$') -> Vecto",86,48,0
 "Seed.jl :: Seeds",42,41,0
+"Seed.jl :: file_manuscript(root, files) -> String",93,55,0
 "Seed.jl :: page_of(text, pos) -> String",17,13,0
 "Seed.jl :: page_spans(text) -> Vector{NamedTuple}",34,31,0
 "Seed.jl :: plant(full, siteonly, plan) -> (full′, siteonly′)",107,70,0
+"Seed.jl :: plant_files(dest, manuscript, plan) -> Vector{Dict}",117,41,0
 "Seed.jl :: read_catalog(path) -> Dict",16,13,0
 "Seed.jl :: salt_offset(round, class) -> Int",34,30,0
 "Seed.jl :: select(catalog, full, round) -> (seeded, skipped)",140,52,0
@@ -347,13 +351,13 @@ unit,words,longest_paragraph,admonitions
 "Witnesses.md § Witnesses",22,22,1
 "code_in_math.jl :: math_spans(lines) -> Vector{Tuple{Int,String}}",48,45,0
 "config.md § [The config](@id config)",196,76,1
-"html_docstring_once.jl :: page_bindings(page) -> Vector{NamedTuple}",43,40,0
+"html_docstring_once.jl :: page_bindings(page) -> Vector{NamedTuple}",52,49,0
 "html_stray_math.jl :: math_sources(page) -> Vector{String}",37,34,0
 "index.md § How a package adopts it",71,71,0
 "index.md § The command-line program `gbg`",165,94,0
 "index.md § The four review procedures",216,127,0
 "index.md § The written rules",75,75,0
-"index.md § What a package's docs build and tests call",90,90,0
+"index.md § What a package's docs build and tests call",103,103,0
 "index.md § What it is",143,76,0
 "index.md § Where to start",70,70,0
 "install.md § The dev checkout",48,48,0
@@ -363,7 +367,7 @@ unit,words,longest_paragraph,admonitions
 "ledger.md § [The ledger](@id ledger)",164,73,1
 "prose_shape.jl :: prose_units(cfg) -> Dict{String,NamedTuple}",31,28,0
 "prose_shape.jl :: write_prose_shape_baseline(cfg) -> Int",13,10,0
-"rounds.md § Closure channels",91,80,0
+"rounds.md § Closure channels",121,80,0
 "rounds.md § The gate",65,65,0
 "rounds.md § [Rounds](@id rounds)",83,61,1
 "rounds.md § item 1",42,42,0

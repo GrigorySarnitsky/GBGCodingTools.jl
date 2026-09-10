@@ -15,7 +15,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['round', 'pass_dir', 'repo', 'range', 'nonce', 'graded_sha256', 'findings', 'findings_path', 'models']) {
+for (const k of ['round', 'pass_dir', 'repo', 'range', 'nonce', 'graded_sha256', 'findings', 'findings_path', 'models', 'schema_version', 'package']) {
   if (A[k] === undefined) throw new Error(`verify-act.js: args.${k} is required — without a range a lane grades edits it cannot see`)
 }
 const MODE = A.mode === 'batches' ? 'batches' : 'lanes'
@@ -101,6 +101,14 @@ let units
 if (MODE === 'batches') {
   const batches = A.batches || []
   if (!batches.length) throw new Error('mode=batches needs a non-empty batches array covering EVERY finding')
+  // and it must actually cover them: a gap silently drops findings into no unit at all, and nothing
+  // downstream can see it, because every count downstream is derived from the units themselves
+  const covered = new Set()
+  for (const [from, to] of batches) for (let i = from; i <= to; i++) {
+    if (covered.has(i)) throw new Error(`mode=batches: finding ${i} is in two batches`)
+    covered.add(i)
+  }
+  for (let i = 1; i <= A.findings.length; i++) if (!covered.has(i)) throw new Error(`mode=batches: finding ${i} is in no batch`)
   units = batches.map(([from, to]) => {
     const items = A.findings.slice(from - 1, to)
     return { name: `batch-${from}-${to}`, lane: `batch-${from}-${to}`, items }
@@ -140,8 +148,12 @@ results.forEach((r, i) => {
   written.push(u.lane)
   const got = (r.verdicts || []).length
   if (got === 0) empty.push(u.lane)
-  if (got < u.items.length) { truncated.push(u.lane); log(`${u.lane}: UNDER-GRADED ${got}/${u.items.length} — the missing are UNVERIFIED, not clean`) }
-  else log(`${u.lane}: ${got}/${u.items.length} graded`)
+  // against the CLI's own count where it gave one (`lanes[].expected`, computed from the banked
+  // findings before this script ran): comparing only with u.items.length checks the input against
+  // itself, so a unit the CLI expected more verdicts from reads as complete
+  const want = Math.max(u.items.length, u.expected || 0)
+  if (got < want) { truncated.push(u.lane); log(`${u.lane}: UNDER-GRADED ${got}/${want} — the missing are UNVERIFIED, not clean`) }
+  else log(`${u.lane}: ${got}/${want} graded`)
 })
 if (dead.length) log(`!! ${dead.length} DEAD unit(s): ${dead.join(', ')} — the pass is incomplete; gbg round grade will report them`)
 return { written, dead, empty, truncated }

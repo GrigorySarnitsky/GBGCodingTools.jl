@@ -4,7 +4,7 @@
 """
     page_bindings(page) -> Vector{NamedTuple}
 
-Every rendered docstring on a built page as `(id, name, section)`: the binding anchor's target (its `href` without the `#`), its
+Every rendered docstring on a built page as `(id, name, section)`: the binding anchor's target: its `href` without the `#`, or its `id` attribute when it has no `href`, its
 displayed name and the `<h2>` section it sits under (`""` before the first). Returns the list in page
 order.
 """

@@ -1,5 +1,5 @@
 // /audit-changes — WERE THESE EDITS JUSTIFIED, AND DID THEY SILENTLY CHANGE BEHAVIOUR? Sources: IT
-// audit-changes/audit.js (`base` required, the kind switch, checked[], candidates_found, pin-at-base,
+// audit-changes/audit.js (`base` required, checked[], candidates_found, pin-at-base,
 // test-in-diff), PF audit-changes/audit.js (previously_worked, strength honoured). Changes: the lanes
 // arrive from the catalogue via args (briefs with the guard symbols and invariants substituted);
 // previously_worked ∈ yes|no|unknown REQUIRED on the behaviour-change lane; the diffstat, the claims and
@@ -18,7 +18,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['round', 'round_dir', 'repo', 'base', 'head', 'kind', 'lanes', 'package', 'models', 'diff_path']) if (A[k] === undefined) throw new Error(`audit.js: args.${k} is required (base is the commit the norm is read at)`)
+for (const k of ['round', 'round_dir', 'repo', 'base', 'head', 'lanes', 'package', 'models', 'diff_path', 'schema_version']) if (A[k] === undefined) throw new Error(`audit.js: args.${k} is required (base is the commit the norm is read at)`)
 const STRENGTH = A.strength === 'full' ? 'full' : 'economy'
 const ECONOMY = A.models.economy
 

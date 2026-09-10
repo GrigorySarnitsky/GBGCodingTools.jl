@@ -234,7 +234,9 @@ Which finding ids the next pass must verify, and the range of the fix pass it gr
 
 Pass 1 verifies every id. Later passes verify the ids left open by the previous pass, plus any id that
 pass closed whose named locations the fix pass has touched again — a closed finding can only regress
-where its own evidence lives, and the diff says whether anything went near it. Returns the scope, the
+where its own evidence lives, and the diff says whether anything went near it — and any it closed that
+names no location at all, which is re-verified every pass rather than never, silence about where a
+defect lives being no evidence that it is gone. Returns the scope, the
 previously open ids, the suspects and the fix pass's commit range; `scope === nothing` means every id.
 """
 function pass_scope(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, k::Int)
@@ -515,8 +517,10 @@ non-zero expectation is DEAD ⇒ exit 2), carries forward the entry of every id 
 rest, then the closure channels per id —
 `honored`, `adjudicated`, `seeded`, `rescan`; for a hunt the disposition records and the witness
 re-run; for an audit the disposition gate after the severity re-check — and writes `tally.json` and
-`tally.md` with the pass series and the plateau signal. Exit 1 while `open_ids` is non-empty, 0 when
-every id is closed.
+`tally.md` with the pass series and the plateau signal.
+
+Exit 1 while `open_ids` is non-empty, and equally while any id is `pending_state` — read by the act
+verifier and not by the blind one — 0 only when every id is closed.
 """
 function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io, allow_config_change = true)
@@ -864,7 +868,12 @@ pass changed code, [`Passes.audit_after_code`](@ref). Then `closed`, `closed_hea
 tally sha are stamped.
 
 `carry` names the ids this round closes by carrying them into the next round of its instrument, which
-`carry_conditions` gates. Returns 0 when closed, 1 when a condition is unmet, 2 on a stamp mismatch.
+`carry_conditions` gates.
+
+Returns 0 when closed, 1 when a condition is unmet — a moved `config_sha` or `tool_version` among them,
+since a regrade answers those — and 2 for the one mismatch no regrade answers: a `tool_tree_sha` that
+moved under an unchanged `tool_version`, which is the tag itself moving, and leaves the round
+abandon-only.
 """
 function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector = String[], io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io, allow_config_change = true)

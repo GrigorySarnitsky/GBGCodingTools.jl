@@ -12,7 +12,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['subject', 'hats', 'items', 'personas_path', 'models', 'out']) if (A[k] === undefined) throw new Error(`rubric-audit.js: args.${k} is required`)
+for (const k of ['subject', 'hats', 'items', 'personas_path', 'models', 'out', 'schema_version']) if (A[k] === undefined) throw new Error(`rubric-audit.js: args.${k} is required`)
 if (!A.hats.length || !A.items.length) throw new Error('rubric-audit.js: an empty audit is not a clean one')
 const ECONOMY = A.models.economy
 
@@ -87,7 +87,9 @@ ${ids.map(i => `  passage ${i}: ${itemById[i].substrate_path}`).join('\n')}
 
 Apply your lens and REPORT EVERY DEFECT YOU FIND. Be specific about which passage and what. These are excerpts, so ignore anything that is merely cut off at an edge; judge what is present. Open no file other than those named here.`,
       { label: `blind:${key}`, phase: 'Blind run', schema: REPORT_SCHEMA, agentType: 'general-purpose' })
-      .then(r => ({ key, ids, reported: (r && r.findings) || [] }))
+      // a dead agent must stay dead: wrapping it in a truthy object made stage 2's liveness check and
+      // the `dead` tally below unreachable, so a hat that CRASHED read as a hat that found nothing
+      .then(r => r && ({ key, ids, reported: r.findings || [] }))
   },
   (run) => {
     if (!run) return null

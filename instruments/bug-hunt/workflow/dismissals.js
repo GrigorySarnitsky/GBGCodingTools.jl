@@ -13,7 +13,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['repo', 'items', 'items_path', 'out', 'package', 'models', 'items_sha', 'round']) if (A[k] === undefined) throw new Error(`dismissals.js: args.${k} is required`)
+for (const k of ['repo', 'items', 'items_path', 'out', 'package', 'models', 'items_sha', 'round', 'schema_version']) if (A[k] === undefined) throw new Error(`dismissals.js: args.${k} is required`)
 if (!A.items.length) throw new Error('dismissals.js: an EMPTY audit is not a clean one — the CLI does not invoke this over nothing')
 
 const SCHEMA = {

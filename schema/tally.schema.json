@@ -186,6 +186,7 @@
       "FAIL",
       "BROKEN",
       "BLOCKED",
+      "REFUSED",
       null
      ],
      "description": "a state verifier's verdict, or \u2014 on a bug-hunt finding whose witness was re-run \u2014 that witness's status"

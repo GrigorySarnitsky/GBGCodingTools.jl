@@ -17,7 +17,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'witness_cmd', 'models']) if (A[k] === undefined) throw new Error(`hunt.js: args.${k} is required`)
+for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'witness_cmd', 'models', 'schema_version']) if (A[k] === undefined) throw new Error(`hunt.js: args.${k} is required`)
 const STRENGTH = A.strength === 'full' ? 'full' : 'economy'
 const ECONOMY = A.models.economy
 const WIT = `${A.round_dir}/witnesses`
@@ -71,7 +71,9 @@ YOUR BRIEF IS TO FIND WHAT IS WRONG WITH THIS CODE. That is the whole brief.
 
 You are deliberately given NO list of defect classes to look for. Other lanes in this panel work from territories, and any list is somebody's guess about where bugs live — so a defect that falls outside every one of them is invisible to every one of them, and the run still reports success. You are the lane that catches what the guess missed. If you find yourself working through a mental checklist, stop and read the actual code again.
 
-Read the source. Follow the data. Nothing under \`.gbg/\` or \`~/.gbg/\` is yours to open but the files this prompt names; scope every grep with \`--glob '!.gbg/**'\`. Ask, of each thing you read, what would have to be true for it to be correct, and then check whether it is.`
+Read the source. Follow the data. Nothing under \`.gbg/\` or \`~/.gbg/\` is yours to open but the files this prompt names; scope every grep with \`--glob '!.gbg/**'\`. Ask, of each thing you read, what would have to be true for it to be correct, and then check whether it is.
+
+REPORT \`candidates_found\`: how many candidates you WEIGHED, not how many you report. You have no cap, so the two usually agree — but where you weighed something and set it aside, the count says so, and a lane whose two numbers never differ is a lane that never discarded anything.`
 
 const HUNT_PREAMBLE = `${A.preamble}
 

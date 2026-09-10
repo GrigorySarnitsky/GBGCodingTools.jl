@@ -39,7 +39,7 @@ grade, the CLI closes. Nothing is done by hand that a verb does.
 | `seeded` | a planted finding whose state is favourable |
 | `rescan` | a hard-scan hit of lane `00-scans` that no longer fires when `grade` re-runs the scan |
 
-The demotion is mechanical: `HONORED` with an empty `class_surfaces[]` becomes `LINE-ONLY`.
+The demotion is mechanical: `HONORED` becomes `LINE-ONLY` when `class_surfaces[]` is empty, and equally when any entry in it is `swept: false` — a verdict that claims the fix landed while its own evidence names a surface the class still lives on.
 
 ## The gate
 

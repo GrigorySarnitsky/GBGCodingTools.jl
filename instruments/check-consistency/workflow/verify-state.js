@@ -14,7 +14,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['round', 'pass_dir', 'repo', 'nonce', 'graded_sha256', 'lanes', 'findings', 'findings_path', 'models']) {
+for (const k of ['round', 'pass_dir', 'repo', 'nonce', 'graded_sha256', 'lanes', 'findings', 'findings_path', 'models', 'schema_version', 'package']) {
   if (A[k] === undefined) throw new Error(`verify-state.js: args.${k} is required`)
 }
 const STRENGTH = A.strength === 'full' ? 'full' : 'economy'

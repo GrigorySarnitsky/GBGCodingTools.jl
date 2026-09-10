@@ -6,7 +6,8 @@
 
 Whether the consumer `cfg` holds the review a release at `tag` leans on: a CLOSED `/check-docs` round
 stamped with that tag, every id of its last tally closed through `honored`, `adjudicated`, `rescan` or
-`seeded`. `tag` is the git tag (`vX.Y.Z`, `vX.Y.Z-rc.N`); the round's stamp is written without the `v`
+`seeded` — or carried into the next round, which `ROUND.toml`'s `closed_by.carried` records and which is
+a disposal, not an open id. `tag` is the git tag (`vX.Y.Z`, `vX.Y.Z-rc.N`); the round's stamp is written without the `v`
 (`Preflight.stamps`), and comparing the two raw made this precondition unsatisfiable — no final release
 could pass it, and it would have rejected a correctly stamped round.
 
@@ -41,7 +42,8 @@ Refused (exit 2) unless: the tree is clean and on the configured branch; the tag
 carries `## <ver> — `; `Project.toml`'s version equals the release version (the base version for a
 prerelease); `Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`); `gbg doctor --deep`
 is green at the root; and, for a final release only, no round is open under `.gbg/rounds/` and the
-`/check-docs` round opened at the latest `<ver>-rc.<n>` tag is closed by honored or adjudicated ids.
+`/check-docs` round opened at the latest `<ver>-rc.<n>` tag is closed — every id through `honored`,
+`adjudicated`, `rescan` or `seeded`, or carried into the next round ([`cites_round`](@ref)).
 A tag is never moved or re-issued. Returns the exit code.
 """
 function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false)
