@@ -30,6 +30,19 @@ end
     @test isempty(G.Passes.audit_after_code(cfg, Dict{String,Any}("head" => "HEAD~1")))     # prose only: not gated
 end
 
+# RULE.INST.AUDIT_DISPOSED: bank tells an audit round to record dispositions and NEVER to run a fix pass,
+# because a correction inside the round moves the tree and the staleness check then refuses the close for
+# good. Both directions: every other instrument is still told the fix pass comes next.
+@testset "bank sends an audit round to dispositions, not to a fix pass" begin
+    a = G.Rounds.bank_next("audit-changes", "2026-01-01-audit-changes-01")
+    @test occursin("record a disposition", a) && occursin("NEVER a fix pass", a)
+    @test !occursin("the fix pass on the owner's word", a)
+    for inst in ("check-docs", "bug-hunt", "check-consistency")
+        n = G.Rounds.bank_next(inst, "2026-01-01-$inst-01")
+        @test occursin("the fix pass on the owner's word", n) && !occursin("disposition", n)
+    end
+end
+
 # RULE.INST.FROZEN_MIDROUND: a deferral written in the round's deferred.md is carried into the work
 # queue at close, where the Stop hook holds the next session to it; a note nothing reads is not a mechanism.
 @testset "a round's deferrals reach the work queue" begin

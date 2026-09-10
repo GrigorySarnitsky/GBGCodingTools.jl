@@ -576,6 +576,13 @@ statement = "A fix pass that changed code is audited before its round closes: al
 sentinel = "A fix pass that changed code is audited before its round closes."
 check = ["test:test/rounds.jl"]
 [[rule]]
+id = "RULE.INST.AUDIT_DISPOSED"
+file = "instruments.md"
+section = "### RULE.INST.AUDIT_DISPOSED"
+statement = "An audit round is closed by disposing its concerns, never by correcting them inside it; a correction rides the next change set, which the next audit covers."
+sentinel = "An audit round is closed by disposing its concerns, never by correcting them inside it."
+check = ["test:test/rounds.jl"]
+[[rule]]
 id = "RULE.INST.FIX_FROM_LANES"
 file = "instruments.md"
 section = "### RULE.INST.FIX_FROM_LANES"

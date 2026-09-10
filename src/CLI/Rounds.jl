@@ -325,6 +325,20 @@ function render_summary_md(dir, round, findings, rec, statuses)
     write(joinpath(dir, "SUMMARY.md"), String(take!(io)))
 end
 
+
+"""
+    bank_next(inst, round) -> String
+
+The NEXT line `bank` prints, which differs by instrument. An audit round is told to record a disposition
+per gated concern and never to run a fix pass (`RULE.INST.AUDIT_DISPOSED`): a correction inside the round
+moves the tree, the staleness check then refuses the close, and there is no re-bank. Every other
+instrument is told the fix pass comes next, on the owner's word.
+"""
+bank_next(inst::AbstractString, round::AbstractString) =
+    inst == "audit-changes" ?
+        "NEXT: record a disposition per gated concern in audit.json, then gbg round pass open $round. NEVER a fix pass here: a correction moves the tree, close then refuses the audit as stale, and the round can no longer be closed at all. A correction is committed after this round closes, in the change set the next audit covers." :
+        "NEXT: the fix pass on the owner's word, then gbg round pass open $round"
+
 """
     bank(cfg, round; io = stdout) -> Int
 
@@ -418,9 +432,7 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     render_findings_md(dir, round, findings)
     render_summary_md(dir, round, findings, rec, statuses)
     println(io, "bank: $(length(findings)) finding(s) frozen in findings.json (sha $(rec["findings_sha"][1:12])); findings.md is the work list, SUMMARY.md the reading aid")
-    println(io, inst == "audit-changes" ?
-        "NEXT: record a disposition per gated concern in audit.json, then gbg round pass open $round. NEVER a fix pass here: a correction moves the tree, close then refuses the audit as stale, and the round can no longer be closed at all. A correction is committed after this round closes, in the change set the next audit covers." :
-        "NEXT: the fix pass on the owner's word, then gbg round pass open $round")
+    println(io, bank_next(inst, round))
     return 0
 end
 
