@@ -1,13 +1,14 @@
+tool_tree_sha = "c56e4d3e970065ca6658e4d659a5978fe10c9205"
+range = "07d27fbf6e227729f659698fcedd29ce1beba78d..f88de16dc7efd10a7b49e64d26a4eb8247a6075c"
+superseded_by = 2
+pass = 1
+opened = "2026-09-10T07:16:51"
 tool_version = "dev+f88de16"
 head = "f88de16dc7efd10a7b49e64d26a4eb8247a6075c"
-tool_tree_sha = "c56e4d3e970065ca6658e4d659a5978fe10c9205"
 config_sha = "7d2f48192726816a226615dfd7e9b3690e207b1ce32f5152ba2b5cb51b7b77bf"
 tool_rev = "f88de16dc7efd10a7b49e64d26a4eb8247a6075c"
-range = "07d27fbf6e227729f659698fcedd29ce1beba78d..f88de16dc7efd10a7b49e64d26a4eb8247a6075c"
 regrade = false
-pass = 1
 nonce = "ffeb4bde610f2e18fed06aa7bfd541e8"
-opened = "2026-09-10T07:16:51"
 
 [expected]
 reader-consequence = 1
