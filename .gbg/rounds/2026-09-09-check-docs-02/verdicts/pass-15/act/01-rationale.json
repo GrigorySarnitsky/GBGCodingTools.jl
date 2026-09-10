@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "b36c10f9a3da3163f25e43d7d3fc89ce",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rationale#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:41-46: D11 now reads 'Sixteen schemas: schema/{config,exemptions,hat,round,pass,finding,verdict-act,verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import,managed}.schema.json' (16 items, matches `ls schema/*.schema.json` exactly) with a new sentence explaining lane-file and bug-hunt's candidate shape live inline in each instrument's own schema.json. §3 tree line 994 changed 'eighteen' to 'sixteen'. grep for 'eighteen' over the corpus (excluding .gbg) returns nothing.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:41 (D11 Choice paragraph)",
+          "swept": true,
+          "evidence": "now 'Sixteen schemas' with the correct 16-item list"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:994 (§3 tree schema/*.schema.json line)",
+          "swept": true,
+          "evidence": "now 'the sixteen of D11'"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md §7.3 QUICK formula now ends '...POL.SENTINEL, SELF.CONSUMER, AUDIT.GAP}', matching src/CLI/Doctor.jl:42-45's const QUICK array which ends with \"AUDIT.GAP\". The following sentence changed from '...AUDIT.*, SELF.DOCS... never in QUICK' to '...AUDIT.* other than AUDIT.GAP, SELF.DOCS... never in QUICK'. Only one 'never in QUICK' statement exists in the doc and it is now correct.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md §7.3 QUICK set formula",
+          "swept": true,
+          "evidence": "AUDIT.GAP added to the {..} set"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md §7.3 'never in QUICK' sentence",
+          "swept": true,
+          "evidence": "carve-out 'AUDIT.* other than AUDIT.GAP' added"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md now has a row '| SCAN.ARGS_FORM | RULE.DOC.ARGS_FORM | triage | src, ext | julia | new 2026-09-09: three or more arguments, or any keyword argument, must be bulleted... | wrong-args-form |' added to the §12.B table right after SCAN.ARGCOV. Fields match catalog/scans.toml:129-134 (rule, tier=triage, surfaces=[src,ext], runner=julia, fixture=wrong-args-form) and the description matches src/Scans/args_form.jl's actual threshold/mixing logic.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md §12.B table",
+          "swept": true,
+          "evidence": "SCAN.ARGS_FORM row added with fields matching catalog/scans.toml and the scan's own comment header"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md §3 CLI/ tree block now lists Git.jl, Ledger.jl, Passes.jl, RoundFiles.jl and Self.jl, each with a one-line description matching the surrounding entries' style. `ls src/CLI/*.jl` = 25 files and every one of the 25 basenames now appears in the tree block (verified name-for-name).",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md §3 CLI/ file tree",
+          "swept": true,
+          "evidence": "all 25 actual src/CLI/*.jl files now named in the tree"
+        }
+      ]
+    }
+  ]
+}

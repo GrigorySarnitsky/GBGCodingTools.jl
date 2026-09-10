@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "b36c10f9a3da3163f25e43d7d3fc89ce",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#7",
+      "verdict": "ABSENT",
+      "evidence": "sibling_link.jl:23-43 has no `break`; loop continues over all lines with a `seen` flag, and lines after the first are checked via `linked && match(home_re, raw)` to flag a later re-link (hit text 'later mention ... links its site again'). grep for 'later mention' outside .gbg/ finds only this file (plus docs prose)."
+    }
+  ]
+}

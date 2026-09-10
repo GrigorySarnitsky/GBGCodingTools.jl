@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "b36c10f9a3da3163f25e43d7d3fc89ce",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rationale#1",
+      "verdict": "ABSENT",
+      "evidence": "docs/ARCHITECTURE.md:626 now reads 'Sixteen schemas: schema/{config,exemptions,hat,round,pass,finding,verdict-act,verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import,managed}' — 16 names, lane-file/hunt-candidate dropped with an explanatory sentence; ls schema/*.schema.json returns exactly these 16 files. Line 1010 says 'the sixteen of D11'."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#2",
+      "verdict": "ABSENT",
+      "evidence": "docs/ARCHITECTURE.md:1745-1750: QUICK formula now ends '...POL.SENTINEL, SELF.CONSUMER, AUDIT.GAP}', and the 'never in QUICK' sentence is qualified to 'AUDIT.* other than AUDIT.GAP ... are never in QUICK'. Matches src/CLI/Doctor.jl:42-45 const QUICK ending in AUDIT.GAP exactly."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#3",
+      "verdict": "ABSENT",
+      "evidence": "docs/ARCHITECTURE.md:2355 now has the row `| SCAN.ARGS_FORM | RULE.DOC.ARGS_FORM | triage | src, ext | julia | ... | wrong-args-form |`, matching catalog/scans.toml's entry exactly. Table now has 43 SCAN rows (42 concrete incl. ARGS_FORM + SCAN.CUSTOM), matching the 42 id= entries in catalog/scans.toml."
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#4",
+      "verdict": "ABSENT",
+      "evidence": "docs/ARCHITECTURE.md:960-975 §3 tree's CLI/ block now lists Git.jl, Ledger.jl, Preflight.jl, Rounds.jl, Passes.jl, RoundFiles.jl, Self.jl, Gate.jl, Demote.jl, Scan.jl each with a one-line description — all five previously-missing files present; ls src/CLI/ confirms 25 files, all now named."
+    }
+  ]
+}

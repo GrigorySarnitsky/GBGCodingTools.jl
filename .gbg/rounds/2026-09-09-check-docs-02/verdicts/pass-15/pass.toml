@@ -1,0 +1,16 @@
+tool_version = "dev+d01145d"
+head = "d01145de33c5afc12aae1b73f1ea76d3ec157fea"
+scope = ["2026-09-09-check-docs-02/operational-claims#7", "2026-09-09-check-docs-02/pages#4", "2026-09-09-check-docs-02/rationale#1", "2026-09-09-check-docs-02/rationale#2", "2026-09-09-check-docs-02/rationale#3", "2026-09-09-check-docs-02/rationale#4"]
+tool_tree_sha = "2a27852279864bf674a27d4072b206988f6a73db"
+config_sha = "11845192ce547a76ad643707f6f6516c6cee50fda77054d965bf9ef223147760"
+tool_rev = "d01145de33c5afc12aae1b73f1ea76d3ec157fea"
+range = "209cb212e97f7565482dd7a01c75370cad28b79b..d01145de33c5afc12aae1b73f1ea76d3ec157fea"
+regrade = true
+pass = 15
+nonce = "b36c10f9a3da3163f25e43d7d3fc89ce"
+opened = "2026-09-10T12:45:34"
+
+[expected]
+rationale = 4
+pages = 1
+operational-claims = 1
