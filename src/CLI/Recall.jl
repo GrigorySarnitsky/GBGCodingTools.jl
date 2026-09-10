@@ -96,8 +96,8 @@ the corpus once, `siteonly` against `full`: a `siteonly` hat sees only the seeds
 `full` hat is handed the whole seeded manuscript and is judged on all of them.
 
 That narrowing is the CONSISTENCY panel's, and it is the only one there is. A check-docs round calls
-this with the lane roster, whose `substrate` is the lane's `kind` (`surface`, `cross`, `territory`) and
-never `siteonly`, and with an empty `site_pages` — so on the docs path every lane is judged on every
+this with the lane roster, whose `substrate` is the lane's `kind` (`surface` or `cross`, never
+`siteonly`) and with an empty `site_pages`, so on the docs path every lane is judged on every
 planted seed, including seeds in files that lane never opened. A docs lane's real view is its `files`
 list; until this function is given it, a docs SUSPECT means "handed two seeds SOMEWHERE in the round and
 reported none", not "on its own surface". Returns the keys.

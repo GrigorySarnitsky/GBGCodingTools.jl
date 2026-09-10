@@ -427,11 +427,17 @@ bank_next(inst::AbstractString, round::AbstractString) =
 
 It validates every expected lane file, records each classified file's sha at first sight (`lane_shas`;
 a DEAD lane's file is not recorded, and [`Rounds.rerun`](@ref) forgets the sha of a lane it re-runs),
-classifies (DEAD, REJECTED, EMPTY, TRUNCATED), assigns ids `<round>/<lane>#<n>`; for a seeded round
+classifies (DEAD, REJECTED, EMPTY, TRUNCATED), assigns ids `<round>/<lane>#<n>`; re-banks the findings
+carried into this round from the previous one; for a seeded round
 regenerates the unseeded manuscripts, recomputes the ground truth, marks seeded findings, prints recall
 per class and SUSPECT hats; for a hunt runs the witness runner over `witnesses/` expecting failure and
 freezes the disposition records; writes `findings.json` and `findings_sha`, `findings.md` and
-`SUMMARY.md`. Any DEAD or REJECTED lane ⇒ exit 2 and nothing frozen (`lane_shas` stays). Returns the exit code.
+`SUMMARY.md`.
+
+Four things make it exit 2, and nothing is frozen in any of them (`lane_shas` stays): a round already
+banked; any DEAD or REJECTED lane; a carried finding naming a lane this round does not run, which means
+the roster changed under it; and a banked finding that does not validate against the core finding
+schema. Returns the exit code.
 """
 function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = guard(cfg, round; io)
