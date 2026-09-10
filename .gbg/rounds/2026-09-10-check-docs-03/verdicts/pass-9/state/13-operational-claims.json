@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "25b01daba519088122f02e9d9ec91828",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#9",
+      "verdict": "NOT-A-DEFECT",
+      "evidence": "owner-adjudicated"
+    }
+  ]
+}

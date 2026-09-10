@@ -1,0 +1,22 @@
+{
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "lane": "workflow-scripts",
+  "pass_nonce": "25b01daba519088122f02e9d9ec91828",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff 93e3eb6d..585d60dd touches neither verify-act.js nor verify-state.js in instruments/check-consistency/workflow/ — no hunk in range. Current tree (verify-act.js:18) does carry 'package' in the required-arg list, but that fix landed in an earlier pass outside this pass's diff scope, so nothing in the graded range addresses this finding.",
+      "class_surfaces": []
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#6",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff 93e3eb6d..585d60dd has no hunk touching instruments/check-consistency/workflow/verify-act.js. Current tree (verify-act.js:164-169) does compare u.expected against u.items.length and got against want, but that fix landed in an earlier pass outside this pass's diff scope, so nothing in the graded range addresses this finding.",
+      "class_surfaces": []
+    }
+  ]
+}

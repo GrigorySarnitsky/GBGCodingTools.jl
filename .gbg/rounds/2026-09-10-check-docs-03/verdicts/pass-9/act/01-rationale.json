@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "25b01daba519088122f02e9d9ec91828",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/rationale#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff 93e3eb6d..585d60d touches only .gbg/rounds/... and .gbg/exemptions.toml (pass-8 verdicts + adjudication commit) — zero hunks in docs/ARCHITECTURE.md, ext/GBGCodingToolsDocumenterExt.jl, src/CLI/Gate.jl, or src/DocLints.jl. The current corpus DOES carry the fix (ARCHITECTURE.md:488 now reads '...error()s on any non-zero return, EXCEPT the one refusal that is not a breakage...'), but this pass's graded range holds none of it — matching the named deferral for exactly this id. UNDONE is the only verdict available for this range regardless of the fix's completeness elsewhere.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:488",
+          "swept": false,
+          "evidence": "current text carries the EXCEPT clause, but no hunk in this diff range touches this file"
+        },
+        {
+          "surface": "docs/src/architecture.md:2257",
+          "swept": false,
+          "evidence": "generated mirror of ARCHITECTURE.md; not touched in this diff range"
+        },
+        {
+          "surface": "docs/src/guide/rules.md:129",
+          "swept": false,
+          "evidence": "not touched in this diff range"
+        },
+        {
+          "surface": "docs/src/guide/rules.md:286",
+          "swept": false,
+          "evidence": "not touched in this diff range"
+        },
+        {
+          "surface": "policy/RULES.toml:124",
+          "swept": false,
+          "evidence": "not touched in this diff range"
+        },
+        {
+          "surface": "policy/RULES.toml:126",
+          "swept": false,
+          "evidence": "not touched in this diff range"
+        },
+        {
+          "surface": "policy/docs-rubric.md:120",
+          "swept": false,
+          "evidence": "not touched in this diff range"
+        },
+        {
+          "surface": "policy/docs-rubric.md:277",
+          "swept": false,
+          "evidence": "not touched in this diff range"
+        },
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:31-37",
+          "swept": false,
+          "evidence": "code already implements the skip mechanism; not touched in this diff range"
+        },
+        {
+          "surface": "src/CLI/Gate.jl:70-78",
+          "swept": false,
+          "evidence": "frozen_rounds docstring already documents the mechanism; not touched in this diff range"
+        },
+        {
+          "surface": "src/DocLints.jl:19-25",
+          "swept": false,
+          "evidence": "makedocs docstring already documents the exception; not touched in this diff range"
+        }
+      ]
+    }
+  ]
+}
