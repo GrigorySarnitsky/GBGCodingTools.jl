@@ -10,7 +10,8 @@ grade, the CLI closes. Nothing is done by hand that a verb does.
 
 ## The lifecycle
 
-1. **Open** — `gbg preflight <instrument>` (the skill's `!` block): the quick doctor, the torn-file guard,
+1. **Open** — `gbg preflight <instrument>` (the skill's `!` block): the quick doctor set (`QUICK` — the checks that hold
+   on any machine, with no build and no network), the torn-file guard,
    `gbg self verify`; the roster resolved; `ROUND.toml` written with every stamp; the Workflow scripts
    copied into `.gbg/scratch/<round>/workflow/` and every payload written beside them as a file.
 2. **Prepare** — `gbg round prepare <round>`: the build under `GBG_ROUND`, the manuscripts consolidated

@@ -33,6 +33,16 @@ only wholesale exit and names every open id. Closing a banked round terminates b
 fixed; re-running the lanes over a just-edited corpus is a new search with no fixed point. Stop on a
 plateau — three passes flat within noise, with no dead lane — never on a good round.
 
+### RULE.INST.CARRY
+A round may close by CARRYING a finding into the next round of its instrument, and only severity decides
+which: a `blocker` or a `major` is fixed, adjudicated or escalated, never deferred, while a `minor` or a
+`nit` may ride. The severity that licenses the carry is a re-rating by someone other than the lane that
+reported it, because a rating that can defer a finding is a rating its author has a reason to lower. A
+carried finding is re-banked into the next round after its lanes have run — never shown to the searching
+panel, and never left to be rediscovered, since a fresh battery is a fresh search and a finding trusted
+to luck is a finding dropped. There is no per-round cap: the constraint is that the pile drains, which a
+final release checks, and no finding rides more than three rounds before the owner rules on it instead.
+
 ### RULE.INST.AUDIT_AFTER_CODE
 A fix pass that changed code is audited before its round closes. `/bug-hunt` always qualifies, and so does
 a `/check-docs` round whose pass touched the `src` or `ext` surfaces: closing refuses until a `/audit-changes`
@@ -40,6 +50,13 @@ round based at the closing round's opening head is itself closed. The two verifi
 asked; neither reads the diff whole, runs anything, or asks whether input that worked before still does.
 A prose-only pass is not gated: run the audit's prose lenses on judgment when the pass rewrote docstrings
 that state a contract.
+
+### RULE.INST.AUDIT_DISPOSED
+An audit round is closed by disposing its concerns, never by correcting them inside it. A correction moves
+the tree, the staleness check then refuses the close, and there is no re-bank; the round would be
+permanently unclosable. Each gated concern takes a disposition record instead, and a correction the
+audit asks for rides the next change set, which the next audit covers. This is why `bank` on an audit
+round names the disposition and not a fix pass.
 
 ### RULE.INST.FIX_FROM_LANES
 A fix pass is driven from the per-lane findings by id, never from the consolidated summary. Consolidation

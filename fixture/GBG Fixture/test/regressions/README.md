@@ -1,4 +1,4 @@
-<!-- gbg:managed regressions-README.md — rewritten by `gbg sync`; do not edit -->
+<!-- gbg:managed regressions-README.md vdev — rewritten by `gbg sync`; do not edit -->
 # `test/regressions/` — witnesses, promoted
 
 Each file here began as a **witness** from `/bug-hunt`: a self-contained `@testset` asserting the

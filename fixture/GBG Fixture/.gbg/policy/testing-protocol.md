@@ -58,8 +58,13 @@ status — each fails; "nothing to check" is not "all clear".
 A rule and its check land in the same commit, and a stated rule without a check is a known weakness. A
 rule is written by whoever has just fixed an instance, at the moment they are most confident the class is
 handled — which is precisely when nobody builds the check; afterwards the rule's presence reads as
-compliance. When a rule is written down, name what would catch its next violation, and if the answer is
-"someone remembering this rule", it is not enforced. A sweep reporting zero is the one to distrust:
+compliance. When a rule is written down, name what would catch its next violation in its `RULES.toml` `check`
+field: a `scan:`, `doctor:` or `test:` id, a `harness:` binding the tool enforces it by, `panel` for a
+rule a reading panel decides inside an instrument that runs, or `weakness` — a check is possible and none
+is built. Only `panel` is an answer without a program behind it, and only because the panel is itself a
+procedure with a roster, a record and a verdict; "someone remembering this rule" is not one, and a rule
+resting on nothing but that is `weakness` however old the habit. A rule no program could ever decide is
+`panel`; `weakness` is reserved for the check that could exist and does not. A sweep reporting zero is the one to distrust:
 falsify it against a fixture carrying a known positive before believing it.
 
 ### RULE.TEST.EXAMPLES_RUN

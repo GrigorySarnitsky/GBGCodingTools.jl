@@ -1,6 +1,6 @@
 {
     "tool_version": "dev",
-    "inputs_sha": "3fa238bc3ddf4013a65c6b4cd4bb23198b5923a5e69984109a3faf2f7abda51a",
+    "inputs_sha": "d808939795f7a124d9d9b2e8ae2cf67754eb422e8ae654867f91f3920bab391a",
     "files": {
         "CLAUDE.md#gbg:managed": {
             "template": "claude-md.block",
@@ -9,17 +9,17 @@
         },
         ".claude/skills/check-consistency/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "2f7e0b0fbce70b9132678a4947492462f25b81ca82be8cdf85eb7b78119f697a",
+            "sha256": "79ad47a938879fdbb5f7ba376879c07479889f95df862f0c66dca0738541c6b5",
             "version": "dev"
         },
         ".claude/skills/gbg-doctor/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "e71909930548d7b94a6b84fe28a58b0618b54d85c8371b88ff98acdcc1c14ed0",
+            "sha256": "19610bef623c239abb1262fd8a64b2479cdb3c3fde1d6ab5acfff291d9734d6e",
             "version": "dev"
         },
         ".gbg/policy/latex-idiom.md": {
             "template": "policy/latex-idiom.md",
-            "sha256": "22a782d2f244b406f85178c6d1f34557dae90eb53a4f97002c22ee5ac7b5b65a",
+            "sha256": "56f575e78846669582fade4a8377c35a0feef0d3019d682e6379713018f75f7b",
             "version": "dev"
         },
         ".gbg/policy/glossary.md": {
@@ -29,22 +29,22 @@
         },
         ".gbg/policy/testing-protocol.md": {
             "template": "policy/testing-protocol.md",
-            "sha256": "0cedbdd2f0d73f4e76b6b48f46ef112339a3be67c71a9b193318bb0956683ab0",
+            "sha256": "e2e310aa330064445d21bf3aeb5678bbb9b9013fc16ecd51febfba8ff0155ccc",
             "version": "dev"
         },
         ".claude/skills/audit-changes/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "205fbd629bea436c593692b2c956c5162df85cce3ef6741a0623ac8a91c0ab62",
+            "sha256": "a249a1bedf272a7d43390e59170e4b53e9e31004926e53a4aeacfe742d1bcb68",
             "version": "dev"
         },
         ".gbg/policy/docs-rubric.md": {
             "template": "policy/docs-rubric.md",
-            "sha256": "4fa79894fa01bad9b9ba534e18a6665a0b681941ed3300665f9c77f46b3295c5",
+            "sha256": "40c5de0b06fb18fca313973393f8809655a38ff64faba5058bac3ab5b1c3ee11",
             "version": "dev"
         },
         ".gbg/policy/00-index.md": {
             "template": "policy/00-index.md",
-            "sha256": "067047fb84687b147818f9a0273729b73746f2636fe6ee7a7b7bf56e4ea10f19",
+            "sha256": "6f02d1ff25966d7c544f42af4376a110ea7edcd1b5b0649d4fdab3398e1512e9",
             "version": "dev"
         },
         ".claude/settings.json": {
@@ -54,22 +54,22 @@
         },
         ".claude/skills/check-docs/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "65ca51cc4a24c9cc1819ff4698601ee622a0313d922d9726aa86493f827e10a5",
+            "sha256": "d621106d3250704ac964111b858ccf400f6c6fc622ca0dac7b72bc299818ff32",
             "version": "dev"
         },
         ".gbg/policy/instruments.md": {
             "template": "policy/instruments.md",
-            "sha256": "9b714ad8773dc627fb0b6e62408e4f21e3eea0790fafecc12bb512fc72eb0f7f",
+            "sha256": "ab78d9c4bccfdcaeb815fcc5417cb261af115ef79c6306bfdbfe367d1aee5b85",
             "version": "dev"
         },
         ".claude/skills/bug-hunt/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "ac0bc569d05d0130ee099a02cd656f80c2c7c3114e0910bb2b4360f161050299",
+            "sha256": "64b4ca0ad52181934bcc9feb42f582448e2f22a36632f1c2bec1c81eba6b7408",
             "version": "dev"
         },
         ".gbg/policy/citations.md": {
             "template": "policy/citations.md",
-            "sha256": "3267daed4c294914049efaa8fd7c8bdb0084278e815d40aadcc2369bac9d4676",
+            "sha256": "2cf0431fc2236312cbd5b1684c32d5d31219147af1d78686ce7cc016950037b8",
             "version": "dev"
         },
         ".claude/hooks/queue-guard.sh": {
@@ -89,7 +89,7 @@
         },
         "test/regressions/README.md": {
             "template": "regressions-README.md",
-            "sha256": "db62ef680a0686ba776a46b43720be3c9dfaea5becef6c441d0bb3197dd2b1cb",
+            "sha256": "639b8140587fb813d999cf40cdf3af745fee5b33d717de4fee9e9992aa304107",
             "version": "dev"
         },
         ".gbg/policy/deviations.md": {
@@ -99,5 +99,5 @@
         }
     },
     "schema_version": 1,
-    "rendered": "2026-09-09T17:56:09"
+    "rendered": "2026-09-10T23:18:01"
 }

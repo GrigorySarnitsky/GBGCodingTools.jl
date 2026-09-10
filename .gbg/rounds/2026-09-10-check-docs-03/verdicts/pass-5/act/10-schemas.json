@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "e61933077f591bb5665d031076da42ba",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/schemas#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "schema/tally.schema.json's enum already carries REFUSED (added in commit 14ee713, an ancestor of range-start 07fa463) but the audited diff 07fa463..01baa4 touches zero files under schema/, so the fix is invisible inside the range graded.",
+      "class_surfaces": [
+        {
+          "surface": "schema/tally.schema.json:189",
+          "swept": false,
+          "evidence": "REFUSED already present pre-range (14ee713); not touched by 07fa463..01baa4."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#2",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "schema/audit.schema.json (at 01baa4) has no staleness or severity_recheck properties — removed in commit 14ee713, an ancestor of range-start 07fa463. The audited diff makes zero changes under schema/.",
+      "class_surfaces": [
+        {
+          "surface": "schema/audit.schema.json (properties.staleness, properties.severity_recheck)",
+          "swept": false,
+          "evidence": "Both keys absent from current schema; removal predates 07fa463, not part of audited diff."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#3",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "schema/pass.schema.json (at 01baa4) has no probe_open property — removed in commit 14ee713, an ancestor of range-start 07fa463. The audited diff makes zero changes under schema/.",
+      "class_surfaces": [
+        {
+          "surface": "schema/pass.schema.json (properties.probe_open)",
+          "swept": false,
+          "evidence": "probe_open block removed in 14ee713, before audited range."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#4",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "schema/carried.schema.json:2 already reads the 2020-12 $schema URI (changed in commit 14ee713), an ancestor of range-start 07fa463. The audited diff makes zero changes under schema/, so the correction is not attributable to it.",
+      "class_surfaces": [
+        {
+          "surface": "schema/carried.schema.json:2",
+          "swept": false,
+          "evidence": "$schema corrected to 2020-12 in 14ee713, before the audited range."
+        }
+      ]
+    }
+  ]
+}

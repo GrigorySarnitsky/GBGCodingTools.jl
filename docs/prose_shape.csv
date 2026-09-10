@@ -5,7 +5,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D12 — Policy prose: single source `policy/*.md` with rule id",339,162,0
 "ARCHITECTURE.md § D13 — Managed files: one sidecar `.gbg/managed.json` as a ca",533,474,0
 "ARCHITECTURE.md § D14 — Doctor: read-only, stable check ids, one exemptions le",473,366,0
-"ARCHITECTURE.md § D15 — Self-test: a fixture consumer at a path with a space, ",782,363,0
+"ARCHITECTURE.md § D15 — Self-test: a fixture consumer at a path with a space, ",784,363,0
 "ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",776,708,0
 "ARCHITECTURE.md § D17 — Migration: PF → IT → SS → CP, doctor-verified steps, n",324,239,0
 "ARCHITECTURE.md § D18 — Cost policy: economy default, anchors in the catalogue",167,100,0
@@ -17,7 +17,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D6 — Skills: generated per-consumer stubs, bare names, `!`-b",446,311,0
 "ARCHITECTURE.md § D7 — Workflow scripts: one generic engine per instrument, ar",531,376,0
 "ARCHITECTURE.md § D8 — Deterministic helpers: one Julia CLI `gbg <noun> <verb>",480,306,0
-"ARCHITECTURE.md § D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `",1307,1196,0
+"ARCHITECTURE.md § D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `",1310,1199,0
 "ARCHITECTURE.md § GBGCodingTools — architecture",479,347,1
 "ARCHITECTURE.md § Revision 10 (2026-09-09) — the rc.1 `/check-docs` round",140,95,0
 "ARCHITECTURE.md § Revision 11 (2026-09-09) — the owner's home-page review",136,136,0
@@ -47,7 +47,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §0 The design sentence and the requirements",440,337,0
 "ARCHITECTURE.md § §1 The platform / product model",802,565,0
 "ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",772,333,0
-"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1089,541,0
+"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1090,542,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
 "ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3115,2990,0
 "ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1481,1306,0
@@ -183,7 +183,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: covered_paths(cfg) -> Vector{String}",16,13,0
 "Preflight.jl :: dev_round(cfg, instrument, st) -> Union{Nothing,String}",173,83,0
 "Preflight.jl :: next_round_id(cfg, instrument) -> String",21,17,0
-"Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",199,100,0
+"Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",207,100,0
 "Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",131,80,0
 "Preflight.jl :: repoint_lanes(cfg, round, dest) -> String",88,50,0
 "Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
@@ -371,7 +371,7 @@ unit,words,longest_paragraph,admonitions
 "rounds.md § Closure channels",142,101,0
 "rounds.md § The gate",65,65,0
 "rounds.md § [Rounds](@id rounds)",83,61,1
-"rounds.md § item 1",42,42,0
+"rounds.md § item 1",58,58,0
 "rounds.md § item 2",29,29,0
 "rounds.md § item 3",12,12,0
 "rounds.md § item 4",31,31,0

@@ -10,11 +10,15 @@ scope and place in the architecture, and its invariants — then a linked one-li
 and no formulas; every formula lives in the operation's own docstring.
 
 ### RULE.DOC.HOME_ORDER
-A function docstring is ordered: identity, when-to-use, arguments, caveats, one formula, citation, links.
+A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats.
 In full: (1) a plain one-sentence identity in the user's terms; (2) when to use it, versus the
-alternatives; (3) each argument (positional and keyword) and its effect; (4) the caveats a user needs, as
-an admonition where load-bearing; (5) one formula if a clean one exists, never overflowing; (6) an inline
-citation for a named or published method and none for a classical one; (7) cross-links. Excluded:
+alternatives; (3) each argument (positional and keyword) and its effect; (4) one formula if a clean one
+exists, never overflowing; (5) an inline citation for a named or published method and none for a
+classical one; (6) cross-links; (7) the caveats a user needs, as an admonition where load-bearing — the
+last block of the home's PROSE. Then the sections that are not prose, in this order and no other: the
+`# References` section of `RULE.CIT.FULL_INLINE`, then `# Fields`, which is last (`RULE.DOC.SHAPE`, and
+the shape scan reads any heading after `# Fields` as a hit). Three rules each used to claim the end of a
+docstring; the order lives here, and they defer to it. Excluded:
 implementation internals (a `#` comment), unexplained specialist jargon, architectural rationale and the
 formal apparatus (the rationale documents).
 
@@ -63,10 +67,17 @@ before the fields list.
 
 ### RULE.DOC.STEER
 Every `!` form that has an allocating sibling carries the in-place steer sentence verbatim, after the
-identity paragraph and before the arguments, naming its own destination argument. The sentence is
-"Use this in-place form when `destination` is already allocated; the allocating [`f`](@ref) returns a
-fresh result instead", with `destination` replaced by the argument the signature actually has. A `!` form
-with no allocating sibling and a setter take no such sentence.
+identity paragraph and before the arguments, naming its own destination argument. The sentence is the
+template below — a template, not a link: `destination` is replaced by the argument the signature
+actually has and `f` by the allocating sibling's own name, so the `@ref` resolves in the docstring that
+carries it, never here.
+
+```
+Use this in-place form when `destination` is already allocated; the allocating [`f`](@ref) returns a
+fresh result instead
+```
+
+A `!` form with no allocating sibling and a setter take no such sentence.
 
 ### RULE.DOC.ALIASING_BULLET
 An operation-specific statement of whether the destination may alias an input lives in the destination
@@ -183,9 +194,10 @@ function's own defining formula and validity clauses always staying.
 ### RULE.DOC.SIBLING_LINK
 The first mention of a sibling GBG package in a page, a rationale document, a Literate example or a
 docstring is a link to that package's documentation site, written `[`Package`](https://<owner>.github.io/Package.jl/)`.
-Later mentions in the same unit are bare code spans, and a package never links its own name. The names
-and sites come from the fleet registry the tool ships (`fleet.toml`), so the target is one string in every
-package.
+A later mention in the same unit does not link that site again — it is a bare code span, or a deep link
+to a named page of the site, which is a cross-reference rather than the repetition this rule is about.
+A package never links its own name. The names and sites come from the fleet registry the tool ships
+(`fleet.toml`), so the target is one string in every package.
 
 ### RULE.DOC.NO_DEAD_REFS
 A rendered docstring or a thrown error message cites no section number, repo path or inaccessible
@@ -206,6 +218,10 @@ there would be false. A package that wants the banner on more of its pages says 
 ### RULE.DOC.SHAPE
 A docstring's longest paragraph stays within 120 words and it carries at most three admonitions, no unit
 grows past its recorded baseline, `# Arguments` precedes any column-0 admonition, and `# Fields` is last.
+The caps bind on every docstring and every page unit that is new; a page unit already in the baseline is
+held by the ratchet alone, which is the one place the baseline is the whole of the check. A paragraph is
+a run of lines between blank ones, so a Markdown table is ONE paragraph however long: that is why the
+caps bind on docstrings, where a table is rare, and why an inherited page section is held by the ratchet.
 A docstring that has taken three or more rounds of patches is rewritten whole rather than appended to
 again; the shape baseline is re-recorded deliberately, never by accident.
 

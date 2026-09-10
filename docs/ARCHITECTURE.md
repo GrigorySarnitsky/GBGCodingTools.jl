@@ -497,7 +497,7 @@ status quo. *Bash scans*: `guards.sh`'s awk.
   `gbg doctor` fails on a **bare** `makedocs(` in `make.jl` (`WIRE.MAKEDOCS`, a token check that
   strips comments and strings). The tool's own `docs/make.jl` calls this same wrapper —
   `WIRE.MAKEDOCS` applies to the tool itself (D15) — with `checkdocs = :exports` and
-  `doctest = true`, so every docs build of the tool runs the quick doctor, the hard scans over the
+  `doctest = true`, so every docs build of the tool runs the quick doctor set (`QUICK`, §7.3), the hard scans over the
   tool's own surfaces and the gate. **This wrapper is the per-push, harness-independent enforcement
   point, and deliberately so:** every consumer's `docs.yml` runs on every push while its `CI.yml` is
   manual and tag-only (`RULE.GIT.CI_MANUAL`), so a later "simplification" that moved the doctor, the
@@ -811,7 +811,7 @@ four, `seed_rounds = false` until a seed catalogue exists, and ONE domain hat, `
 stubs and its `CLAUDE.md` block. The doctor and the fleet treat the tool root as a consumer whose pin
 is `dev` (`SELF.CONSUMER`, `SELF.DOCS`, §7.3; the fleet's fifth row, D4), and the tool's own footprint
 is the same set as a consumer's (§4). **Checks the tool passes on itself, enforced:** (a) every docs
-build runs the quick doctor, the hard scans over the tool's own surfaces and the gate, through the
+build runs the quick doctor set (`QUICK`), the hard scans over the tool's own surfaces and the gate, through the
 wrapper (D9); (b) `test/runtests.jl` calls `TestHarness.gate()` and
 `TestHarness.run_regressions(@__DIR__)` besides the engine tests, so `WIRE.RUNTESTS` holds at the
 root; (c) `gbg release` refuses unless the release preconditions of D16 and §8 hold; (d) the tool's
@@ -2154,7 +2154,7 @@ targets the `docs/` environment, the one that always carries a manifest (D2).
   repository, `[sources] GBGCodingTools = {url, rev = "v1.0.0-rc.1"}` and `[compat] "=1.0.0"` in
   `test/` and `docs/`: both environments instantiated and loaded the tool from one read-only depot tree
   (`~/.julia/packages/GBGCodingTools/TcNy0`), and `Pkg.test()` resolved the tool from the tag before
-  running the fixture's suite. That suite then stopped in `TestHarness.gate()`, whose quick doctor
+  running the fixture's suite. That suite then stopped in `TestHarness.gate()`, whose quick doctor set
   refuses a prerelease pin outside the tool root (`PIN.CONFIG`, `PIN.SOURCES`) — the refusal D16
   specifies, not a Pkg failure; a released `vX.Y.Z` tag is what a consumer pins. The plan's throwaway
   `v0.0.1` tag was not created: the tool's `Project.toml` says `1.0.0` at every commit, so a `=0.0.1`

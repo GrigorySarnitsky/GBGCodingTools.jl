@@ -614,7 +614,8 @@ The arguments are:
 - `base` — the audit's base commit (required for `audit-changes`).
 - `io` — where the protocol, the call and the next step are printed.
 
-It runs the quick doctor, `CFG.TORN` and `gbg self verify`; refuses (exit 2) an open round of this
+It runs the quick doctor set — the `QUICK` selection of [`GBGCodingTools.doctor`](@ref) — `CFG.TORN`
+and `gbg self verify`; refuses (exit 2) an open round of this
 instrument or an uncommitted change under a closed or abandoned round; opens the round (writes
 `ROUND.toml`, never `git add`); copies the scripts and writes the payloads; prints the protocol, the
 Workflow call and the next step. Returns the exit code.
@@ -625,7 +626,7 @@ function preflight(cfg::AbstractDict, instrument::AbstractString; profile = noth
     instrument in cfg["instruments"]["enabled"] || (println(io, "preflight: $instrument is not enabled in .gbg/config.toml"); return 2)
     root = cfg["root"]
     code = doctor(cfg, :QUICK; io)
-    code == 0 || (println(io, "preflight: the quick doctor failed — fix the FAIL lines above (or exempt an exemptable one)"); return 2)
+    code == 0 || (println(io, "preflight: the quick doctor set (QUICK) failed — fix the FAIL lines above (or exempt an exemptable one)"); return 2)
     torn_check(cfg; io) || (println(io, "preflight: refused — a pinned or managed file is modified in the working tree (CFG.TORN)"); return 2)
     sv = self_verify(root; io = devnull)
     sv == 0 || (println(io, "preflight: gbg self verify exit $sv — the running copy is not the pinned one"); return 2)

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "e61933077f591bb5665d031076da42ba",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/schemas#1",
+      "verdict": "ABSENT",
+      "evidence": "schema/tally.schema.json $defs.entry.properties.state.enum now lists ...\"BROKEN\",\"BLOCKED\",\"REFUSED\",null. Checked reproduction.schema.json's witness-facing enums too (already had lowercase \"refused\"); no other tally-like enum omits it."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#2",
+      "verdict": "ABSENT",
+      "evidence": "schema/audit.schema.json's full properties list has no staleness or severity_recheck key at all (grep returns nothing); additionalProperties is false. Properties were dropped rather than wired, matching the finding's second remedy option."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#3",
+      "verdict": "ABSENT",
+      "evidence": "schema/pass.schema.json properties keys are [tool_version, expected, head, tool_tree_sha, config_sha, tool_rev, range, superseded_by, regrade, pass, nonce, opened, scope, fix_range, state_ids] — no probe_open. Passes.jl still writes quote_still_stands to probe.json, unchanged mechanism."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#4",
+      "verdict": "ABSENT",
+      "evidence": "schema/carried.schema.json:2 now reads \"$schema\": \"https://json-schema.org/draft/2020-12/schema\". grep -rln draft-07 across schema/, docs/, src/, ext/ returns no files."
+    }
+  ]
+}
