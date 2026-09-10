@@ -5,6 +5,12 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 
 ## Unreleased
 
+**This cycle is MAJOR, not MINOR.** Two closed vocabularies moved, which §5.5 makes MAJOR on its own:
+the tally's `per_id.state` widened from six values to ten so a re-run witness's status can be recorded,
+and `managed.schema.json` and `tally.schema.json` closed their previously open per-entry maps, so a
+sidecar or tally an older copy wrote can now fail validation. Both are in §6.3. The fixture recall is
+unchanged either side, since no scan's hit set moved with them.
+
 **`TestHarness.resolve_function` resolves a colliding name to the package, not to `Base`.** A name a
 package module OWNS is searched before anything else. Ordering the externals last, as an earlier commit
 in this cycle claimed to do, changed nothing at all: `isdefined(pkg, :read)` is true through the implicit

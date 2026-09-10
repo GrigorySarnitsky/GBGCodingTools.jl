@@ -165,7 +165,7 @@ include("helpers.jl")
                     # in a comment as readily as in the function this rule rests on
                     @test occursin(Regex("function\\s+" * last(split(c[9:end], '.')) * "\\b"), srctext)
                 else
-                    @test c in ("panel", "session", "weakness")  # judged, agreed, or owed
+                    @test c in ("panel", "weakness")             # judged by a running panel, or owed
                 end
             end
         end

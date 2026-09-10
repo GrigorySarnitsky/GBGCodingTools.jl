@@ -1536,6 +1536,8 @@ at the tool root, which must work when the dev checkout IS the consumer.
 | candidate `kind` | `runtime \| architecture \| api-semantics` | |
 | disposition record (`reproductions/<id>.json`) | `fixed \| refused(reason ≥ 24 chars) \| escalated(overturn_when)` | terminator `fixed + refused + escalated == confirmed`; a refutation happens at reproduction and never enters a disposition; frozen at bank (`reproductions_sha`) |
 | dismissal audit | `DISMISSAL-SOUND \| UNSAFE \| DISMISSAL-WRONG` | default UNSAFE; `complete = dead == 0 && reopened == []` |
+| tally `per_id.state` | the state verdicts above, plus `PASS \| FAIL \| BROKEN \| BLOCKED` | a bug-hunt finding whose witness was re-run records that witness's status, not a verifier's verdict; widened from six values to ten, which is MAJOR under §5.5 |
+| rule `check` (`policy/RULES.toml`) | `scan:<id> \| doctor:<id> \| test:<path> \| harness:<binding> \| panel \| weakness` | what catches the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`); `panel` only where a running instrument decides it |
 | architecture fix | `FIXED \| RELOCATED \| PARTIAL \| ABSENT \| NOT-A-DEFECT` | default ABSENT |
 | audit concern | `severity` as above; `justified ∈ yes\|no\|unclear`; `previously_worked ∈ yes\|no\|unknown` (required on the behaviour-change lane; `unknown` gated like `yes`); per lane `checked[]` + `candidates_found` required | |
 | finding `type` | core: `math \| notation \| structure \| citation \| style \| operational \| currency \| self-containment`; `domain_type` from config | |
@@ -2199,7 +2201,7 @@ prefixes of §7.3) or a scan id (`SCAN.`); the ledger's `scope = "policy"` entri
 statement below, a `sentinel` — the first sentence of the rule's paragraph in `policy/*.md`,
 verbatim — which `LEG.SENTINELS` matches against a consumer's `CLAUDE.md`, and a `check`: what catches
 the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`), one or more of `scan:<id>`, `doctor:<id>`,
-`test:<path>`, `harness:<binding>`, `panel`, `session` or `weakness`. "Source" is the
+`test:<path>`, `harness:<binding>`, `panel` or `weakness`. "Source" is the
 `CLAUDE.md` heading or bold lead the text comes from (PF unless marked).
 
 | Id | File | Statement | Source |

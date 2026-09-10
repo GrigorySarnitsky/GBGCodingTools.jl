@@ -1,8 +1,9 @@
 # policy/RULES.toml — the rule register: every RULE.* id with its policy file, its section heading, its
 # one-line statement (ARCHITECTURE §12.A), its sentinel — the first sentence of the rule's paragraph,
 # verbatim — and its `check`: what catches the rule's next violation (RULE.TEST.RULE_WITH_CHECK), one or
-# more of `scan:<id>`, `doctor:<id>`, `test:<path>`, `harness:<binding>`, `panel` (only a reading panel
-# decides it), `session` (a working agreement, no artefact) or `weakness` (checkable, unbuilt). LEG.SENTINELS (doctor) fails when a sentinel is absent from its file; the tool's own test
+# more of `scan:<id>`, `doctor:<id>`, `test:<path>`, `harness:<binding>`, `panel` (a reading panel decides
+# it inside an instrument that runs) or `weakness` (no check, however settled the habit).
+# LEG.SENTINELS (doctor) fails when a sentinel is absent from its file; the tool's own test
 # suite (test/schemas.jl) fails when a heading exists without a row or a row without a heading, and when
 # a sentinel is not a verbatim run of its paragraph. Regenerated from policy/*.md by
 # `gbgdev rules` (Phase 1) whenever a rule paragraph changes; edit the paragraph, not this file.
@@ -538,7 +539,7 @@ file = "instruments.md"
 section = "### RULE.INST.CONSENT"
 statement = "Unasked, run only Pkg.test(); every instrument, survey, benchmark and panel runs only on the user's request, in words or by slash."
 sentinel = "Unasked, run only `Pkg.test()`; every instrument, survey, benchmark and panel runs only on the user's request, in words or by slash."
-check = ["session"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.INST.FOUR_OBJECTS"
 file = "instruments.md"
@@ -580,7 +581,7 @@ file = "instruments.md"
 section = "### RULE.INST.FIX_FROM_LANES"
 statement = "A fix pass is driven from the per-lane findings by id, never from the consolidated summary."
 sentinel = "A fix pass is driven from the per-lane findings by id, never from the consolidated summary."
-check = ["session"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.INST.SEEDS"
 file = "instruments.md"
@@ -615,7 +616,7 @@ file = "git-conventions.md"
 section = "### RULE.GIT.PUSH"
 statement = "Commit ⇒ push, directly on the configured branch; no feature branches."
 sentinel = "Commit ⇒ push, directly on the configured branch; no feature branches."
-check = ["session"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.GIT.TRAILER"
 file = "git-conventions.md"
@@ -629,14 +630,14 @@ file = "git-conventions.md"
 section = "### RULE.GIT.CI_MANUAL"
 statement = "CI is manual-only; the matrix runs locally before a commit; docs deploy on push."
 sentinel = "CI is manual-only; the matrix runs locally before a commit, and the docs deploy on every push."
-check = ["session"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.GIT.NO_SHIMS"
 file = "git-conventions.md"
 section = "### RULE.GIT.NO_SHIMS"
 statement = "The API is not frozen; no backward-compatibility shims."
 sentinel = "The API is not frozen; no backward-compatibility shims are built."
-check = ["session"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.GIT.BRANCH"
 file = "git-conventions.md"
@@ -657,4 +658,4 @@ file = "git-conventions.md"
 section = "### RULE.GIT.REQUESTS"
 statement = "A cross-package request is a tracked file .gbg/requests/to-<PKG>-<date>-<topic>.md in the requester with a status paragraph on top; a concluded request is deleted."
 sentinel = "A cross-package request is a tracked file `.gbg/requests/to-<PKG>-<date>-<topic>.md` in the requester with a status paragraph on top, and a concluded request is deleted, not kept."
-check = ["session"]
+check = ["weakness"]
