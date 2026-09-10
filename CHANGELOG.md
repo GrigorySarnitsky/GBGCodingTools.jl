@@ -3,6 +3,18 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
+## 1.0.0-rc.4 — 2026-09-10
+
+PATCH on rc.3, and its whole content is one defect the first seeded round found in the seeding itself:
+a seed's occurrence index was counted against the whole manuscript while the offsets it compared were
+page-relative, so the planter asked for one occurrence past the end of the page and skipped the seed
+silently. `prepare` reported six planted and the copy carried none. The same arithmetic sat in the
+shipped `Seeds.plant` site-only branch, never yet run, where it would have planted into the full
+manuscript and not the site-only one — two manuscripts disagreeing, and a wrong recall denominator for
+every `siteonly` hat. `plant_files` now returns only seeds whose text actually moved, and a prepare that
+plants fewer than it planned refuses. Instruments affected: check-docs, check-consistency (seeding
+only). Rates comparable: yes — no round has ever been seeded, so nothing measured moves.
+
 ## 1.0.0-rc.3 — 2026-09-10
 
 The third release candidate: MAJOR. Instruments affected: check-docs (seeded lanes, the closure loop,

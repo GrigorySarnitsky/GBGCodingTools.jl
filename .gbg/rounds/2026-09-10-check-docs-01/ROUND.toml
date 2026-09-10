@@ -1,0 +1,77 @@
+# ROUND.toml — written by the gbg round verbs; never edited by hand (ARCHITECTURE §6.1)
+tool_tree_sha = "b3554d57d624e84c04ad61b236ea4593c27f98b1"
+strength = "economy"
+round = "2026-09-10-check-docs-01"
+opened = "2026-09-10T16:48:08"
+tool_version = "1.0.0-rc.3"
+passes = 0
+seed_salt = "2026-09-10-check-docs-01"
+seed_root = "/tmp/jl_Q1BG0G"
+head = "ddae93e8cc6d54b7c024d3f1f6d701a589a7da9a"
+model_hint = "sonnet"
+hostname = "Aiporetne"
+seed_catalog_sha = "fdd564c6a6a6d1ddb946c10d2922a72d728e45d47585b49fdbcbd5a95efc8ba3"
+config_sha = "f173b70f9e732be3d706d072e763bae67d2f7628558db096d8e23de8321dde8b"
+dead_lanes = []
+cost = "economy"
+tool_rev = "ddae93e8cc6d54b7c024d3f1f6d701a589a7da9a"
+instrument = "check-docs"
+catalog_sha = "e29343ddd199db2129c56fe5a699d33ef665024c6ec25a49291874fc7ef2c297"
+schema_version = 1
+
+[[roster]]
+key = "rationale"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "pages"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "src"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "ext"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "built-html"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "workflow-scripts"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "catalogues"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "rulebook"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "templates"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "schemas"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "family"
+substrate = "cross"
+anchor = false
+[[roster]]
+key = "cold-reader"
+substrate = "cross"
+anchor = false
+[[roster]]
+key = "operational-claims"
+substrate = "cross"
+anchor = false
+
+[abandoned]
+open_ids = []
+reason = "the seeding engine changed under it: prepare reported six seeds planted and the copy carried none, so this round would have measured recall against a denominator it never had. The instrument is frozen mid-round; the fix is its own release and the round re-opens at it"
