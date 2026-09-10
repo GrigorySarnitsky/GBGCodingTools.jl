@@ -119,9 +119,10 @@ end
 """
     resolve_anchor(root, anchor) -> (file, line, count)
 
-Resolves a `file#heading` ANCHOR — this sense only, a Markdown reference to one heading; a hat's
-`anchor` is a different thing entirely (whether it runs at full strength rather than on the economy
-model), and an instrument's *anchor agent* a third. Here: `file` relative to `root`, `heading` a prefix of the text of exactly
+Resolves a `file#heading` ANCHOR — this sense of the word only, a Markdown reference to one heading.
+A hat's or lane's `anchor` is a different thing (whether it runs at full strength rather than on the
+economy model, [`Preflight.resolve_hats`](@ref)), and a seed class's a third ([`Seeds.select`](@ref)).
+Here: `file` relative to `root`, `heading` a prefix of the text of exactly
 one Markdown heading (any `#` level) in it. Returns the file, the 1-based line of the match and the
 number of headings that matched — `0` or `2+` is a config error to the caller; the line is `0` when
 the file is absent or nothing matched.

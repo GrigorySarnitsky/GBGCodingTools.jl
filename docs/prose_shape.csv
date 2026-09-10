@@ -85,7 +85,7 @@ unit,words,longest_paragraph,admonitions
 "Config.jl :: glob_files(root, pattern) -> Vector{String}",44,40,0
 "Config.jl :: glob_to_regex(pattern) -> Regex",36,33,0
 "Config.jl :: read(root = find_root(); check = true) -> Dict",74,39,0
-"Config.jl :: resolve_anchor(root, anchor) -> (file, line, count)",107,101,0
+"Config.jl :: resolve_anchor(root, anchor) -> (file, line, count)",112,106,0
 "Config.jl :: surface_files(cfg, key) -> Vector{String}",60,56,0
 "Config.md § Config",22,22,1
 "Consolidate.jl :: consolidate(build_dir, withheld; out_full, out_siteonly) -> ",150,77,0
@@ -94,7 +94,7 @@ unit,words,longest_paragraph,admonitions
 "Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",185,62,0
 "DocLints.jl :: makedocs(cfg; kwargs...)",279,108,0
 "Doctor.jl :: Check",37,30,0
-"Doctor.jl :: Doctor",143,78,0
+"Doctor.jl :: Doctor",139,78,0
 "Doctor.jl :: cmd_doctor(args) -> Int",29,26,0
 "Doctor.jl :: doctor(cfg, set = :QUICK; io = stderr) -> Int",58,28,0
 "Doctor.jl :: run(cfg; only = nothing, deep = false, io = stdout, json = f",136,68,0

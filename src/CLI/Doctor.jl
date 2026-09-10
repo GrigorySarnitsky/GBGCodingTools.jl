@@ -11,11 +11,11 @@ holds on a runner with no shim and a detached HEAD. A `scope = "check"` ledger e
 id (`LEG.*`, `GIT.*`, `AUDIT.*`) turns its FAIL into a WARN naming the reason; the non-exemptable
 families are the tool's own enforcement.
 
-`anchor` carries three unrelated senses across this package and the checks below touch two of them: a
-hat's `anchor` is whether it runs at full strength rather than on the economy model (`CFG.HATS`); an
-instrument's *anchor agent* is the one lane of a round that always runs at full strength; and
-[`Config.resolve_anchor`](@ref)'s `file#heading` anchor is a Markdown reference. No one of them implies
-another.
+`anchor` carries three unrelated senses across this package, and the checks below touch two: a hat's
+or lane's `anchor` is whether it runs at full strength rather than on the economy model (`CFG.HATS`);
+[`Config.resolve_anchor`](@ref)'s is a `file#heading` Markdown reference; a seed class's, in
+[`Seeds.select`](@ref), is the regular expression marking where the seed is planted. No one of them
+implies another.
 """
 module Doctor
 
