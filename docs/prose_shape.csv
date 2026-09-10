@@ -70,7 +70,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",290,198,0
 "ARCHITECTURE.md § §7.1 Policy migration map (which consumer sections become wh",290,238,0
 "ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",348,348,0
-"ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1809,1672,0
+"ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1813,1676,0
 "ARCHITECTURE.md § §8 Self-test and versioning",1508,446,0
 "ARCHITECTURE.md § §9 Resolution table",1475,1416,0
 "Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",152,95,0
@@ -79,7 +79,7 @@ unit,words,longest_paragraph,admonitions
 "Config.jl :: Config",64,63,0
 "Config.jl :: Config.parse(text; root, check = true) -> Dict",81,43,0
 "Config.jl :: ConfigError <: Exception",35,23,0
-"Config.jl :: check_paths(cfg) -> Vector{String}",88,85,0
+"Config.jl :: check_paths(cfg) -> Vector{String}",90,87,0
 "Config.jl :: cmd_config(args) -> Int",68,65,0
 "Config.jl :: find_root(start = pwd()) -> Union{String,Nothing}",34,29,0
 "Config.jl :: glob_files(root, pattern) -> Vector{String}",44,40,0

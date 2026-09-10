@@ -48,15 +48,15 @@ register_scan!("SCAN.ARGS_FORM", function (cfg, files)
         semi === nothing || append!(kw, splats(inside[nextind(inside, semi):end]))
         isempty(pos) && isempty(kw) && continue
         population += 1
-        bulleted = occursin(ARGS_BULLET, d.body)
         prosed = occursin(ARGS_PROSE, d.body)
-        # RULE.DOC.ARGS_FORM's own last exemption: "a single element-type keyword bound in one prose
-        # clause". A lone `T`/`eltype`/`*_type` keyword under the threshold is that clause, and the rule
-        # is rendered into every consumer, so a scan that flagged it would manufacture a dismissal every
-        # time the written exemption is exercised.
-        eltype_kw = length(kw) == 1 && occursin(r"^(T|eltype|[A-Za-z_][A-Za-z0-9_]*_type)$", first(kw))
-        wants_bullets = length(pos) + length(kw) >= Reflection.ARGS_THRESHOLD ||
-                        (!isempty(kw) && !(eltype_kw && length(pos) + length(kw) < Reflection.ARGS_THRESHOLD))
+        bulleted = occursin(ARGS_BULLET, d.body)
+        # RULE.DOC.ARGS_FORM's own last exemption, and no wider: "a single ELEMENT-TYPE keyword BOUND IN
+        # ONE PROSE CLAUSE". `return_type` is not an element type, and a docstring that binds nothing at
+        # all is not a prose clause — exempting either turns a hit into silence, which is the direction
+        # that costs a reader something.
+        eltype_kw = length(kw) == 1 && first(kw) in ("T", "eltype", "element_type") && prosed &&
+                    length(pos) + length(kw) < Reflection.ARGS_THRESHOLD
+        wants_bullets = length(pos) + length(kw) >= Reflection.ARGS_THRESHOLD || (!isempty(kw) && !eltype_kw)
         if bulleted && prosed
             push!(hits, Hit(d.file, d.line, "`$(d.binding)` mixes the two argument forms in one docstring"; symbol = d.binding))
         elseif wants_bullets && !bulleted

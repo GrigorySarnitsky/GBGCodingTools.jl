@@ -23,6 +23,9 @@ function sibling_link_hits!(hits, file, lines, sites, own)
         name == own && continue
         name_re = Regex("(?<![A-Za-z0-9_])" * name * "(?![A-Za-z0-9_])")
         link_re = Regex("\\[`?" * name * "`?\\]\\(\\Q" * site * "\\E")
+        # a LATER link is a defect only when it repeats the first one; a deep link sends the reader to a
+        # named page, which is a cross-reference and not the redundant repetition the rule forbids
+        home_re = Regex("\\[`?" * name * "`?\\]\\(\\Q" * site * "\\E[\"')]")
         seen = false
         for (n, raw) in lines
             o = findfirst(name_re, raw); o === nothing && continue
@@ -31,8 +34,8 @@ function sibling_link_hits!(hits, file, lines, sites, own)
             if !seen
                 seen = true
                 linked || push!(hits, Hit(file, n, "first mention of `$name` is not a link to $site: " * strip(raw)))
-            elseif linked
-                push!(hits, Hit(file, n, "later mention of `$name` is a link, not a bare code span: " * strip(raw)))
+            elseif linked && match(home_re, raw) !== nothing
+                push!(hits, Hit(file, n, "later mention of `$name` links its site again where a bare code span belongs: " * strip(raw)))
             end
         end
     end
