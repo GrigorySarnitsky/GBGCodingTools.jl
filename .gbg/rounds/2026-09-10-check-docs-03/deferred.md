@@ -40,3 +40,11 @@
   runs, leaving `dismissals.json` stale while all 26 item agents had returned. The aggregate is a
   mechanical assembly of returns the script already holds; it should be written by the script's own
   scribe path (as the lane files are), not by an agent asked to retype the whole object.
+
+- Every `scope = "finding"` ledger entry's reason is fed verbatim into `adjudicated_titles`
+  (`Preflight.adjudicated_titles`, no date or round filter), and the verifier and panel prompts present
+  that list as findings "settled by the owner as NOT defects". This round's 26 entries are the opposite
+  — real defects, fixed, closed by adjudication only because the act range could not hold their fix — so
+  every future round of both docs instruments will open with 26 paragraphs telling its readers not to
+  flag things that were never non-defects. The list should carry only entries that rule a finding NOT a
+  defect, or be scoped to the round that recorded it. Found by the dismissal auditor's sixth reading.

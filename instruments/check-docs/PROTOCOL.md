@@ -25,7 +25,11 @@ economy by default; the fix pass is never economised.
    the reflection checks (argument coverage under the package's `argcov_policy`, signature fidelity,
    `dupref`, `xlink` dry-run), builds the docs under `GBG_ROUND` (exit 0 required) and runs the built-HTML
    scans (`gbg scan html`): no docstring rendered on two pages, every derived public operation on a public
-   page, no unexpected `Base.` name in an internal section (the config's allowance excepted). One question
+   page, no unexpected `Base.` name in an internal section (the config's allowance excepted). When the
+   round is seeded (`check-docs.seed_rounds`), it also plants the labelled defects of the consumer's seed
+   catalogue into a DISPOSABLE COPY of the lane files under the round's `seed_root`, with a per-round
+   salt, and the lanes read that copy in place of the working tree. The ground truth is written at bank,
+   never before; do not open the seeded copy yourself. One question
    is a read, not a scan: each API page's blurb against what its `@docs` block holds — read it from the
    build.
 2. **Lanes.** Launch the `Workflow` call preflight printed, exactly as printed. Each lane runs the six
@@ -36,7 +40,10 @@ economy by default; the fix pass is never economised.
    defined on a sibling method it did not open. Every lane is forbidden `.gbg/` and `~/.gbg/`.
 3. **Bank.** `gbg round bank <round>`: schema-validates each lane file, quarantines an invalid one,
    assigns ids, freezes `findings.json`, renders `findings.md` and `SUMMARY.md`. A DEAD or REJECTED lane is exit 2 and
-   nothing is frozen; `gbg round rerun <round> --lanes …` re-runs only the dead ones.
+   nothing is frozen; `gbg round rerun <round> --lanes …` re-runs only the dead ones. On a seeded round it
+   also recomputes the ground truth from the untouched tree and the salt, marks the seeded findings (they
+   are never fixed in the corpus), prints recall per class and the SUSPECT lanes — those handed two or
+   more seeds that reported none — and deletes the seeded copy.
 4. **Fix pass** — on the owner's word, at session strength. Work from `findings.md` by id. Fix the class,
    not the line. Drop the genuine false positives with a reason (universally standard math, the real Julia
    operators `×` `⋅` `≈`, comment-line hits, a kwarg correctly backticked). The build is the oracle for
