@@ -8,50 +8,154 @@
       "id": "2026-09-10-check-docs-03/cold-reader#1",
       "verdict": "UNDONE",
       "question": "fidelity",
-      "evidence": "Diff 01baa4db..6788672 touches only src/CLI/Preflight.jl lines 614-629 (the unrelated 'quick doctor' phrase) and doc/skill/template files for cold-reader#2. `diff <(git show 01baa4db:F) F` is byte-identical for src/CLI/Config.jl, src/CLI/Init.jl, src/CLI/Seed.jl, src/CLI/Doctor.jl and src/GBGCodingTools.jl — none of the six named locations (Config.jl:8-12/112-119, Init.jl:94, Seed.jl:47-51, Preflight.jl:260-262/252-262, Doctor.jl:260-261) or the module map's bound-terms list changed in this act.",
+      "evidence": "Diff 01baa4db..6788672 touches only src/CLI/Preflight.jl lines 614-629 (the unrelated 'quick doctor' phrase) and doc/skill/template files for cold-reader#2. Config.jl, Init.jl, Seed.jl, Doctor.jl and GBGCodingTools.jl are byte-identical to baseline — none of the six named locations or the module map's bound-terms list changed in this act.",
       "class_surfaces": [
-        {"surface": "src/CLI/Config.jl:8-12", "swept": false, "evidence": "module docstring byte-identical to baseline; still no overload warning at first use"},
-        {"surface": "src/CLI/Config.jl:112-119", "swept": false, "evidence": "resolve_anchor docstring unchanged in the diff"},
-        {"surface": "src/CLI/Init.jl:94", "swept": false, "evidence": "derive_config's 'references anchors found by heading' phrase unchanged"},
-        {"surface": "src/CLI/Seed.jl:47-51", "swept": false, "evidence": "select's 'third sense of the word' passage unchanged"},
-        {"surface": "src/CLI/Preflight.jl:252-262", "swept": false, "evidence": "resolve_hats docstring untouched; the diff's only Preflight.jl hunks are at lines 614-629, an unrelated fix"},
-        {"surface": "src/CLI/Doctor.jl:260-261", "swept": false, "evidence": "the `#` comment location is outside the diff; Doctor.jl is byte-identical to baseline"},
-        {"surface": "src/GBGCodingTools.jl (module map bound-terms list)", "swept": false, "evidence": "file byte-identical to baseline; no `anchor` entry added, and no @ref links added anywhere in the diff"}
+        {
+          "surface": "src/CLI/Config.jl:8-12",
+          "swept": false,
+          "evidence": "module docstring byte-identical to baseline; still no overload warning at first use"
+        },
+        {
+          "surface": "src/CLI/Config.jl:112-119",
+          "swept": false,
+          "evidence": "resolve_anchor docstring unchanged in the diff"
+        },
+        {
+          "surface": "src/CLI/Init.jl:94",
+          "swept": false,
+          "evidence": "derive_config's 'references anchors found by heading' phrase unchanged"
+        },
+        {
+          "surface": "src/CLI/Seed.jl:47-51",
+          "swept": false,
+          "evidence": "select's 'third sense of the word' passage unchanged"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:252-262",
+          "swept": false,
+          "evidence": "resolve_hats docstring untouched; the diff's only Preflight.jl hunks are at lines 614-629, an unrelated fix"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:260-261",
+          "swept": false,
+          "evidence": "the `#` comment location is outside the diff; Doctor.jl is byte-identical to baseline"
+        },
+        {
+          "surface": "src/GBGCodingTools.jl (module map bound-terms list)",
+          "swept": false,
+          "evidence": "file byte-identical to baseline; no `anchor` entry added, and no @ref links added anywhere in the diff"
+        }
       ]
     },
     {
       "id": "2026-09-10-check-docs-03/cold-reader#2",
       "verdict": "HONORED",
       "question": "none",
-      "evidence": "This act's own commit (6788672) sweeps every remaining bare 'the quick doctor' phrase the pass-5 fix (baseline 01baa4db, already glossing DocLints.jl:17, TestHarness.jl:591, docs/src/index.md:57 and the four instrument PROTOCOL.md files) had left standing: all 5 .claude/skills/*/SKILL.md + 5 fixture mirrors + templates/SKILL.md.tmpl now read '...quick doctor set (`QUICK` — the checks that hold on any machine, with no build and no network)...'; templates/make.jl.seed, IMPLEMENTATION.md's preflight row, docs/src/guide/rounds.md and the three remaining docs/ARCHITECTURE.md passages (D9 line 814, the D15 passage line 500, item-1 line 364) are all glossed inline at first mention, verified against the diff hunks quoted above. `grep -rn 'quick doctor' src/ ext/` now shows every hit already carrying '`:QUICK`/`QUICK`' plus an inline explanation or [`GBGCodingTools.doctor`](@ref) link before Doctor.jl (include position 19) is reached; the QUICK array (src/CLI/Doctor.jl:48-51) confirms the gloss text is accurate (excludes exactly the BUILD.DOCS/SELF.DOCS/TEST.PKG/LOAD.ENVS items, consistent with 'no build, no network').",
+      "evidence": "This act's commit (6788672) sweeps every remaining bare 'the quick doctor' phrase left after pass-5 (baseline 01baa4db already glossed DocLints.jl:17, TestHarness.jl:591, docs/src/index.md:57 and the four PROTOCOL.md files): all 5 .claude/skills/*/SKILL.md + 5 fixture mirrors + templates/SKILL.md.tmpl now read '...quick doctor set (`QUICK` — the checks that hold on any machine, with no build and no network)...'; templates/make.jl.seed, IMPLEMENTATION.md's preflight row, docs/src/guide/rounds.md and the ARCHITECTURE.md D9/D15 passages are glossed inline. grep -rn 'quick doctor' src/ ext/ shows every hit already carrying `:QUICK`/`QUICK` plus an inline gloss or an @ref link before Doctor.jl (include position 19) is reached; the QUICK array (Doctor.jl:48-51) confirms the gloss is accurate.",
       "class_surfaces": [
-        {"surface": "src/DocLints.jl:17", "swept": true, "evidence": "'the quick doctor set — the `:QUICK` selection of [`GBGCodingTools.doctor`](@ref)...' (fixed at baseline 01baa4db, pass-5)"},
-        {"surface": "src/TestHarness.jl:591", "swept": true, "evidence": "identical gloss+link pattern, fixed at baseline (pass-5)"},
-        {"surface": "src/CLI/Doctor.jl:5-9 (definition)", "swept": true, "evidence": "unchanged authoritative definition of QUICK, not itself a bare-use site"},
-        {"surface": "docs/src/index.md:57", "swept": true, "evidence": "same gloss+link pattern present, fixed at baseline (pass-5, 'the home page')"},
-        {"surface": "instruments/{bug-hunt,check-docs,audit-changes,check-consistency}/PROTOCOL.md", "swept": true, "evidence": "each reads 'the quick doctor set (the `QUICK` selection of checks...)', fixed at baseline (pass-5, 'the four PROTOCOLs')"},
-        {"surface": ".claude/skills/{audit-changes,bug-hunt,check-consistency,check-docs,gbg-doctor}/SKILL.md (+5 fixture mirrors)", "swept": true, "evidence": "diff hunk: 'runs the quick doctor set (`QUICK` — the checks that hold on any machine, with no build and no network)'"},
-        {"surface": "templates/SKILL.md.tmpl", "swept": true, "evidence": "same hunk pattern, generator source of the SKILL.md renders"},
-        {"surface": "templates/make.jl.seed:2", "swept": true, "evidence": "'the quick doctor set (QUICK: the checks that hold on any machine)...'"},
-        {"surface": "IMPLEMENTATION.md preflight row (line ~288)", "swept": true, "evidence": "'quick doctor set (`QUICK`) + `CFG.TORN` + self verify...'"},
-        {"surface": "docs/src/guide/rounds.md item 1", "swept": true, "evidence": "'the quick doctor set (`QUICK` — the checks that hold on any machine, with no build and no network), the torn-file guard...'"},
-        {"surface": "docs/ARCHITECTURE.md:364,500,814,1443", "swept": true, "evidence": "line 364 'runs the quick doctor (the `QUICK` set, §7.3)'; lines 500/814 diff-hunked to add '(`QUICK`, §7.3)'/'(`QUICK`)'; line 1443 already carries '(`QUICK`)'"},
-        {"surface": "docs/ARCHITECTURE.md:2157 (post-definition mention)", "swept": true, "evidence": "reached only after QUICK is glossed three times earlier in the same linear document; not a first-use site"},
-        {"surface": "src/CLI/Fleet.jl:41", "swept": true, "evidence": "'QUICK doctor' used already-defined; Fleet.jl is include position 29, after Doctor.jl (19), so never a bare first use"},
-        {"surface": "docs/design-record/{04-decision-record,09-revision6-self-application,REVIEW-attack,REVIEW-dryrun,round1-consumer,FIXLOG}.md", "swept": false, "evidence": "still say bare 'the quick doctor'/'quick doctor', untouched by this diff — but docs/src/architecture.md's own self-containment statement calls the design-record surveys 'the historical basis, not a dependency of the reader', and docs/make.jl never includes docs/design-record/ in the built site, so these are outside the self-containment class RULE.DOC.TERMS_DEFINED polices for a cold reader of the docstrings/site"}
+        {
+          "surface": "src/DocLints.jl:17",
+          "swept": true,
+          "evidence": "'the quick doctor set — the `:QUICK` selection of [`GBGCodingTools.doctor`](@ref)...' (fixed at baseline, pass-5)"
+        },
+        {
+          "surface": "src/TestHarness.jl:591",
+          "swept": true,
+          "evidence": "identical gloss+link pattern, fixed at baseline (pass-5)"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:5-9 (definition)",
+          "swept": true,
+          "evidence": "unchanged authoritative definition of QUICK, not itself a bare-use site"
+        },
+        {
+          "surface": "docs/src/index.md:57",
+          "swept": true,
+          "evidence": "same gloss+link pattern present, fixed at baseline (pass-5, 'the home page')"
+        },
+        {
+          "surface": "instruments/{bug-hunt,check-docs,audit-changes,check-consistency}/PROTOCOL.md",
+          "swept": true,
+          "evidence": "each reads 'the quick doctor set (the `QUICK` selection of checks...)', fixed at baseline (pass-5, 'the four PROTOCOLs')"
+        },
+        {
+          "surface": ".claude/skills/*/SKILL.md (5 files, +5 fixture mirrors)",
+          "swept": true,
+          "evidence": "diff hunk: 'runs the quick doctor set (`QUICK` — the checks that hold on any machine, with no build and no network)'"
+        },
+        {
+          "surface": "templates/SKILL.md.tmpl",
+          "swept": true,
+          "evidence": "same hunk pattern, generator source of the SKILL.md renders"
+        },
+        {
+          "surface": "templates/make.jl.seed:2",
+          "swept": true,
+          "evidence": "'the quick doctor set (QUICK: the checks that hold on any machine)...'"
+        },
+        {
+          "surface": "IMPLEMENTATION.md preflight row (~line 288)",
+          "swept": true,
+          "evidence": "'quick doctor set (`QUICK`) + `CFG.TORN` + self verify...'"
+        },
+        {
+          "surface": "docs/src/guide/rounds.md item 1",
+          "swept": true,
+          "evidence": "'the quick doctor set (`QUICK` — the checks that hold on any machine, with no build and no network), the torn-file guard...'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:364,500,814,1443",
+          "swept": true,
+          "evidence": "line 364 already glossed '(the `QUICK` set, §7.3)'; 500/814 diff-hunked to add the gloss; 1443 already carries '(`QUICK`)'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2157 (later mention)",
+          "swept": true,
+          "evidence": "reached only after QUICK is glossed three times earlier in the same linear document; not a first-use site"
+        },
+        {
+          "surface": "src/CLI/Fleet.jl:41",
+          "swept": true,
+          "evidence": "'QUICK doctor' used already-defined; Fleet.jl is include position 29, after Doctor.jl (19), never a bare first use"
+        },
+        {
+          "surface": "docs/design-record/{04-decision-record,09-revision6-self-application,REVIEW-attack,REVIEW-dryrun,round1-consumer,FIXLOG}.md",
+          "swept": false,
+          "evidence": "still bare 'quick doctor', untouched — but docs/src/architecture.md's own self-containment statement calls the design-record surveys 'the historical basis, not a dependency of the reader', and docs/make.jl never builds docs/design-record/ into the site, so these fall outside the self-containment class this rule polices for a cold reader"
+        }
       ]
     },
     {
       "id": "2026-09-10-check-docs-03/cold-reader#3",
       "verdict": "UNDONE",
       "question": "fidelity",
-      "evidence": "src/CLI/Recall.jl is byte-identical between baseline and current (whatever definition it now carries predates baseline 01baa4db and is outside this act). src/CLI/Preflight.jl's only hunks in this diff are at lines 614-629 (the cold-reader#2 fix); resolve_hats (`substrate`/`siteonly`, lines ~252-262) and resolve_roster (`roster`, lines ~361-363) are untouched, so the include-order problem this diff was supposed to close (or the module-map @ref alternative) received no edit at all.",
+      "evidence": "src/CLI/Recall.jl is byte-identical between baseline and current (whatever text it now carries predates this act). Preflight.jl's only hunks in this diff are at lines 614-629 (the cold-reader#2 fix); resolve_hats (`substrate`/`siteonly`, ~252-262) and resolve_roster (`roster`, ~361-363) are untouched, and the include order (Seed/Recall/Preflight at lines 76-78 of GBGCodingTools.jl, unchanged) was not reordered either.",
       "class_surfaces": [
-        {"surface": "src/CLI/Recall.jl:4-9 (module docstring)", "swept": false, "evidence": "file unchanged in this diff; whatever text it carries now was not produced by this act"},
-        {"surface": "src/CLI/Recall.jl:88 (suspect_hats `roster` arg)", "swept": false, "evidence": "unchanged in this diff"},
-        {"surface": "src/CLI/Preflight.jl:252-262 (resolve_hats, defines `substrate`/`siteonly`)", "swept": false, "evidence": "not among this diff's two hunks (614-629 only)"},
-        {"surface": "src/CLI/Preflight.jl:361-363 (resolve_roster, defines `roster`)", "swept": false, "evidence": "not among this diff's two hunks"},
-        {"surface": "include order in src/GBGCodingTools.jl (Recall before Preflight)", "swept": false, "evidence": "file byte-identical to baseline; include order (Seed, Recall, Preflight at lines 76-78) unchanged, so the reorder option was not taken either"}
+        {
+          "surface": "src/CLI/Recall.jl:4-9 (module docstring)",
+          "swept": false,
+          "evidence": "file unchanged in this diff; whatever text it carries now was not produced by this act"
+        },
+        {
+          "surface": "src/CLI/Recall.jl:88 (suspect_hats `roster` arg)",
+          "swept": false,
+          "evidence": "unchanged in this diff"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:252-262 (resolve_hats, defines `substrate`/`siteonly`)",
+          "swept": false,
+          "evidence": "not among this diff's two hunks (614-629 only)"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:361-363 (resolve_roster, defines `roster`)",
+          "swept": false,
+          "evidence": "not among this diff's two hunks"
+        },
+        {
+          "surface": "include order in src/GBGCodingTools.jl (Recall before Preflight)",
+          "swept": false,
+          "evidence": "file byte-identical to baseline; include order unchanged, so the reorder alternative was not taken either"
+        }
       ]
     }
   ]
