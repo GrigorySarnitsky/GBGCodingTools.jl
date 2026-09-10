@@ -66,6 +66,25 @@ function finding_files(root::AbstractString, finding::AbstractDict)
     return out
 end
 
+
+"""
+    last_graded(dir, k) -> Int
+
+The highest pass below `k` that was GRADED — the one that has a `tally.json` — or 0 when none was. The
+arguments are `dir`, the round directory, and `k`, the pass being opened or graded.
+
+A pass that was opened and never graded is superseded, not evidence: reading `k - 1` blindly made an
+abandoned pass erase what the last real one decided, so a round whose every id was closed came back
+with all of them open, the sweep check refused the next pass over findings nobody had reopened, and a
+regrade would have re-verified the whole round. Returns the pass number.
+"""
+function last_graded(dir::AbstractString, k::Int)
+    for j in (k - 1):-1:1
+        isfile(joinpath(pass_dir(dir, j), "tally.json")) && return j
+    end
+    return 0
+end
+
 """
     pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects, range)
 
@@ -84,9 +103,10 @@ previously open ids, the suspects and the fix pass's commit range; `scope === no
 function pass_scope(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, k::Int)
     root = cfg["root"]; head = something(Git.head(root), "0"^40)
     k > 1 || return (nothing, String[], String[], "$(rec["head"])..$head")
-    prevtally = joinpath(pass_dir(dir, k - 1), "tally.json")
-    prevpass = joinpath(pass_dir(dir, k - 1), "pass.toml")
-    isfile(prevtally) || return (nothing, String[], String[], "$(rec["head"])..$head")
+    j = last_graded(dir, k)
+    j == 0 && return (nothing, String[], String[], "$(rec["head"])..$head")
+    prevtally = joinpath(pass_dir(dir, j), "tally.json")
+    prevpass = joinpath(pass_dir(dir, j), "pass.toml")
     tally = read_json(prevtally)
     from = isfile(prevpass) ? get(TOML.parsefile(prevpass), "head", rec["head"]) : rec["head"]
     range = "$from..$head"
@@ -332,8 +352,8 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     scope = get(pass, "scope", nothing)
     carried = Dict{String,Any}()
     if scope !== nothing
-        prevtally = joinpath(pass_dir(dir, k - 1), "tally.json")
-        isfile(prevtally) && (carried = Dict{String,Any}(String(i) => e for (i, e) in read_json(prevtally)["per_id"] if !(String(i) in scope)))
+        j = last_graded(dir, k)
+        j == 0 || (carried = Dict{String,Any}(String(i) => e for (i, e) in read_json(joinpath(pass_dir(dir, j), "tally.json"))["per_id"] if !(String(i) in scope)))
     end
     findings = scope === nothing ? all_findings : [f for f in all_findings if f["id"] in scope || f["lane"] == "scans"]
     per_id = copy(carried); dead = String[]; rejected = String[]; demoted = 0; adjudicated = 0

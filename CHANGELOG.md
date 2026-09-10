@@ -106,6 +106,13 @@ records the choice in `pass.toml`. An audit round is exempt, since it has no fix
 inside it, because a correction moves the tree and the staleness check then refuses the close for good —
 learned by making `2026-09-09-audit-changes-01` permanently unclosable and abandoning it).
 
+**A pass that was opened and never graded no longer erases the last one that was.** `pass_scope` and
+`grade` read pass `k - 1`'s tally, so an opened-and-superseded pass — one with a `pass.toml` and no
+`tally.json` — read as "nothing was ever decided". A round whose every id was closed came back with all
+of them open: the sweep check then refused the next pass over findings nobody had reopened, and a
+regrade would have re-verified the whole round at full cost. `Passes.last_graded` walks back to the
+newest pass that has a tally, and both call sites use it.
+
 **The dev-round rule moves to the door, and stops being a trap.** D4 and D16 both said a dev-stamped
 round is unclosable except by abandon; the attack review marked that defence DEFEATED; no verb
 enforced it. `Passes.close` had the string only to exempt a dev round from the tag-moved refusal. So

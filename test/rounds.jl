@@ -159,6 +159,20 @@ end
     write(joinpath(dir, "findings.json"), JSON3.write(Dict("schema_version" => 1, "round" => "r", "findings" => [nofile])))
     @test G.Passes.pass_scope(cfg, dir, rec, 2)[1] == ["r/y#1"]
     @test isempty(G.Passes.unswept(cfg, dir, ["r/y#1"], "$base..HEAD"))    # and it never trips the refusal
+
+    # A pass OPENED and never graded is superseded, not evidence. Reading k-1 blindly let it erase what
+    # the last graded pass decided: a round whose every id was closed came back with all of them open,
+    # so the sweep check refused the next pass over findings nobody had reopened and a regrade would
+    # have re-verified the whole round. Both directions: the ungraded pass is skipped, and a round with
+    # no graded pass at all still verifies everything.
+    write(joinpath(dir, "findings.json"), JSON3.write(Dict("schema_version" => 1, "round" => "r", "findings" => [two])))
+    ungraded = joinpath(dir, "verdicts", "pass-2"); mkpath(ungraded)
+    open(joinpath(ungraded, "pass.toml"), "w") do f; TOML.print(f, Dict("head" => base, "regrade" => true)); end
+    @test G.Passes.last_graded(dir, 3) == 1 && G.Passes.last_graded(dir, 2) == 1 && G.Passes.last_graded(dir, 1) == 0
+    scope3, prev3, _, _ = G.Passes.pass_scope(cfg, dir, rec, 3)
+    @test isempty(prev3) && scope3 == ["r/x#1"]                            # pass 1's tally, not pass 2's absence
+    rm(joinpath(pd, "tally.json"))
+    @test G.Passes.pass_scope(cfg, dir, rec, 3)[1] === nothing             # nothing graded yet: verify everything
 end
 
 @testset "round lifecycle" begin
