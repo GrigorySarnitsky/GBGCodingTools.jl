@@ -1,0 +1,105 @@
+{
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "lane": "rationale",
+  "pass_nonce": "18bc1c8eac9cd5f04df63486dc738888",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/rationale#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:625-628 now reads 'Sixteen schemas: schema/{config,exemptions,hat,round,pass,finding,verdict-act,verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import,managed}.schema.json' with an added sentence that the lane-file wrapper and bug-hunt's candidate shape live inline in each instrument's schema.json, not under schema/. `ls schema/*.schema.json` returns exactly these 16 files. Line 994's tree annotation now reads 'the sixteen of D11'. IMPLEMENTATION.md:143,430,443 (not cited by the finding but carrying the identical 'eighteen'/18-name claim) was swept too in the same commit.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:625-628",
+          "swept": true,
+          "evidence": "'Eighteen schemas...lane-file...hunt-candidate...' -> 'Sixteen schemas' with the 16 names matching schema/'s actual 16 files, plus an explanatory sentence"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:994 (now ~1008)",
+          "swept": true,
+          "evidence": "'schema/*.schema.json the eighteen of D11' -> 'the sixteen of D11'"
+        },
+        {
+          "surface": "IMPLEMENTATION.md:143,430,443",
+          "swept": true,
+          "evidence": "same 'eighteen'/18-name enumeration corrected to 'sixteen' in the same commit range, though not a location the finding cited"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:1745-1746 now reads 'QUICK = {..., POL.SENTINEL, SELF.CONSUMER, AUDIT.GAP}', matching src/CLI/Doctor.jl:42-45's const QUICK array which ends '..., \"POL.SENTINEL\", \"SELF.CONSUMER\", \"AUDIT.GAP\"'. Line 1749-1750's 'never in QUICK' list was correspondingly rewritten to 'AUDIT.* other than AUDIT.GAP, SELF.DOCS and every other --deep check are never in QUICK', so AUDIT.GAP is carved out of the exclusion list exactly where the code puts it in QUICK. No other 'never in QUICK' sentence in the corpus misstates AUDIT.GAP.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:1745-1746 (QUICK set formula)",
+          "swept": true,
+          "evidence": "AUDIT.GAP added to the brace-set, matching Doctor.jl:42-45"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1749-1750 ('never in QUICK' sentence)",
+          "swept": true,
+          "evidence": "'AUDIT.*' changed to 'AUDIT.* other than AUDIT.GAP' before the 'never in QUICK' clause"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1799 (AUDIT.GAP table row)",
+          "swept": true,
+          "evidence": "row unchanged and not in conflict: it states the check's predicate, not its QUICK membership"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:750 (§7.2 exemptable-set cross-reference)",
+          "swept": true,
+          "evidence": "already notes 'AUDIT.* joined it with AUDIT.GAP, which post-dates ruling 13's list' — consistent with the corrected QUICK formula, no separate contradiction found"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:2358 (new) adds the row '| `SCAN.ARGS_FORM` | `RULE.DOC.ARGS_FORM` | triage | src, ext | julia | new 2026-09-09: three or more arguments... | `wrong-args-form` |', placed directly after SCAN.ARGCOV. Every column matches catalog/scans.toml:129-134 (rule, tier=triage, surfaces=[src,ext], runner=julia, fixture=wrong-args-form) exactly. The table now carries 43 `| `SCAN` rows (42 concrete scans + the SCAN.CUSTOM.<id> placeholder), matching catalog/scans.toml's 42 `[[scan]]` entries.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md §12.B table row for SCAN.ARGS_FORM",
+          "swept": true,
+          "evidence": "row added, verified against catalog/scans.toml:129-134 field for field"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/rationale#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md's §3 CLI/ tree block now lists Git.jl, Ledger.jl, Passes.jl, RoundFiles.jl and Self.jl, each with a one-line description in the same style as the surrounding entries (e.g. 'Self.jl `gbg self verify` — the running copy's tree hash against what Pkg.dependencies() and every sub-environment manifest record (D2, D3, D15)'). All five files exist at src/CLI/<name>.jl and their file-header comments match the added descriptions (verified by `head` on each file).",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md §3 tree, Git.jl row",
+          "swept": true,
+          "evidence": "added with description matching src/CLI/Git.jl's header comment"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md §3 tree, Ledger.jl row",
+          "swept": true,
+          "evidence": "added with description matching src/CLI/Ledger.jl's header comment"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md §3 tree, Passes.jl row",
+          "swept": true,
+          "evidence": "added with description matching src/CLI/Passes.jl's header comment"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md §3 tree, RoundFiles.jl row",
+          "swept": true,
+          "evidence": "added with description matching src/CLI/RoundFiles.jl's header comment"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md §3 tree, Self.jl row",
+          "swept": true,
+          "evidence": "added with description matching src/CLI/Self.jl's header comment; notable since gbg self verify is discussed extensively elsewhere in the doc"
+        }
+      ]
+    }
+  ]
+}

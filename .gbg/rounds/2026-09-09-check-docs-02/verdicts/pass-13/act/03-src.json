@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "18bc1c8eac9cd5f04df63486dc738888",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/src#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/args_form.jl:7 ARGS_BULLET fixed from a literal string to a regex; all 12 cited docstrings now open with the bulleted 'The arguments are:' list (e.g. TestHarness.jl:85, CLI/Preflight.jl:185, CLI/Seed.jl:41), none of which carried it at start SHA 209cb21 (grep confirms 0 occurrences in Config.jl/Sync.jl/Rounds.jl/Bump.jl/Release.jl/Gate.jl/Seed.jl there). Ran `gbg scan docs --only SCAN.ARGS_FORM` against this live checkout (julia loads src/GBGCodingTools.jl from this tree): result is 0 hits corpus-wide, confirming a real class sweep, not a 12-site patch.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:85",
+          "swept": true,
+          "evidence": "allocation_completeness now opens with bulleted 'The arguments are:' list (pkg, modules, exempt)"
+        },
+        {
+          "surface": "src/Witnesses.jl:93",
+          "swept": true,
+          "evidence": "witness_project now bulleted (root, witness_env, package)"
+        },
+        {
+          "surface": "src/Reflection.jl:311",
+          "swept": true,
+          "evidence": "signature_fidelity now bulleted (cfg, pkg, examined)"
+        },
+        {
+          "surface": "src/Scan.jl:268",
+          "swept": true,
+          "evidence": "regex_scan now bulleted (cfg, files, re, skip_comments, on, exclude, mask_code)"
+        },
+        {
+          "surface": "src/CLI/Config.jl:250",
+          "swept": true,
+          "evidence": "Config.parse now bulleted (text, root, check); 0 hits for the marker in this file at start SHA"
+        },
+        {
+          "surface": "src/CLI/Sync.jl:560",
+          "swept": true,
+          "evidence": "sync now bulleted (cfg, check, io, ledger); 0 hits at start SHA"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:223",
+          "swept": true,
+          "evidence": "classify_lane now bulleted (dir, inst, lane, first_sha); 0 hits at start SHA"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:185",
+          "swept": true,
+          "evidence": "resolve_hats now bulleted (cfg, profile, explicit)"
+        },
+        {
+          "surface": "src/CLI/Bump.jl:12",
+          "swept": true,
+          "evidence": "bump now bulleted (cfg, ver, abandon, io); 0 hits at start SHA"
+        },
+        {
+          "surface": "src/CLI/Release.jl:7",
+          "swept": true,
+          "evidence": "release now bulleted (ver, io, skip_tests); 0 hits at start SHA"
+        },
+        {
+          "surface": "src/CLI/Gate.jl:8",
+          "swept": true,
+          "evidence": "gate now bulleted (cfg, instruments..., io); 0 hits at start SHA"
+        },
+        {
+          "surface": "src/CLI/Seed.jl:41",
+          "swept": true,
+          "evidence": "select now bulleted (catalog, full, round); 0 hits at start SHA"
+        },
+        {
+          "surface": "src/HtmlWalker.jl:47",
+          "swept": true,
+          "evidence": "named attribute-of-a-node function is bulleted (line 47 opens 'The arguments are:')"
+        },
+        {
+          "surface": "src/TreeHash.jl:37",
+          "swept": true,
+          "evidence": "named tree-hash function is bulleted (line 37 opens 'The arguments are:')"
+        },
+        {
+          "surface": "corpus-wide (SCAN.ARGS_FORM, all ~19 of 25 src/CLI files plus src/*.jl)",
+          "swept": true,
+          "evidence": "`gbg scan docs --only SCAN.ARGS_FORM` on the live checkout returns exactly 0 hits, i.e. no remaining docstring with 3+ positional or any keyword argument is left in unbulleted prose anywhere the scan reads"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scans/args_form.jl:7-8 (diff 209cb21..6f7f2b1): ARGS_BULLET changed from the literal `\"The arguments are:\"` to `r\"The\\s+arguments\\s+are:\"`, and ARGS_PROSE was made whitespace-tolerant the same way — exactly the hint's suggested fix. Scan.jl:229-238 prose_text and CLI/Preflight.jl:317-333 write_payloads still line-wrap the phrase ('The\\narguments are:') and both now read `bulleted = true` under the new regex; the corpus-wide scan run (0 hits) directly confirms no false-positive fires against either.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/args_form.jl:7",
+          "swept": true,
+          "evidence": "ARGS_BULLET is now `r\"The\\s+arguments\\s+are:\"`, matching across a line wrap"
+        },
+        {
+          "surface": "src/Scans/args_form.jl:8",
+          "swept": true,
+          "evidence": "ARGS_PROSE made the same whitespace-tolerant regex, for the same reason (comment at line 3 notes it explicitly)"
+        },
+        {
+          "surface": "src/Scan.jl:229-238 (prose_text)",
+          "swept": true,
+          "evidence": "docstring still wraps 'The\\narguments are:' across the line but is correctly read as bulleted now; scan reports 0 hits, no false FAIL"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:317-333 (write_payloads)",
+          "swept": true,
+          "evidence": "docstring still wraps 'The\\narguments are:'; correctly read as bulleted; 0 hits from the corpus scan"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-09-check-docs-02/src#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Preflight.jl (resolve_hats docstring, ~line 239 of current file): the bare '`needs`;' mention was replaced with '`needs` holds the requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from' — matching the code (`needs = String.(get(h, \"needs\", String[]))`) and the hint verbatim. At start SHA 209cb21 the docstring read only '...or `none`; `needs`;\\n`anchor`, whether...' with no clause, confirming this is a real, in-range fix.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Preflight.jl:239 (resolve_hats docstring, `needs` field)",
+          "swept": true,
+          "evidence": "now reads '`needs` holds the requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from', the only site this field is documented"
+        }
+      ]
+    }
+  ]
+}

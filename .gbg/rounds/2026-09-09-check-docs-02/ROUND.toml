@@ -1,20 +1,20 @@
 # ROUND.toml — written by the gbg round verbs; never edited by hand (ARCHITECTURE §6.1)
-tool_tree_sha = "5a7ed8b4f831d1a0fcc6c380475d7b0425ada97e"
+tool_tree_sha = "69c5d79799edadfd68aa6ea136716327a31f0f37"
 findings_sha = "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb"
 strength = "economy"
 round = "2026-09-09-check-docs-02"
 opened = "2026-09-09T18:04:10"
 banked = "2026-09-09T18:23:43"
-tool_version = "dev+e4969af"
-passes = 12
+tool_version = "dev+6f7f2b1"
+passes = 13
 head = "209cb212e97f7565482dd7a01c75370cad28b79b"
 model_hint = "sonnet"
 hostname = "Aiporetne"
 seed_catalog_sha = "fdd564c6a6a6d1ddb946c10d2922a72d728e45d47585b49fdbcbd5a95efc8ba3"
-config_sha = "3be8ad7766487b99e3064ec7c0cd493ba1e2c977b7b1872cd633d9144d769413"
+config_sha = "11845192ce547a76ad643707f6f6516c6cee50fda77054d965bf9ef223147760"
 dead_lanes = []
 cost = "economy"
-tool_rev = "e4969afa7d27ddc7626e83062ec837d070a4e5a9"
+tool_rev = "6f7f2b1044ad8a0fb49df7d3fe057deac509add2"
 instrument = "check-docs"
 catalog_sha = "2234077ac19a705a10fc21b7c4a2830299efb1dc27b28e093d545a4d5473fda1"
 schema_version = 1

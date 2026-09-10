@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "18bc1c8eac9cd5f04df63486dc738888",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/catalogues#1",
+      "verdict": "ABSENT",
+      "evidence": "Preflight.jl:194-195,256-268: na = (\"html\" in needs && ...) || (\"git\" in needs && ...) || (\"rulebook\" in needs && rulebook_absent), with rulebook_absent = isempty(strip(rulebook_text(cfg))) — the always-rendered POLICY_FILES text, not cfg.package.rulebook_sections. grep of rulebook_sections across src/ shows no other gating site; latex-typesetter is no longer dropped when rulebook_sections=[]."
+    }
+  ]
+}

@@ -18,7 +18,8 @@ end
 
 # `lines` are the (line number, raw text) pairs of ONE unit, in order. Both halves of the rule are
 # checked: the first line naming a sibling must carry the mention inside `[`Name`](site…)` or
-# `[Name](site…)`, and every later line naming it must NOT.
+# `[Name](site…)`, and no later line may link the SITE again — a later deep link to a named page of it
+# is a cross-reference, not the repetition the rule forbids, and passes.
 function sibling_link_hits!(hits, file, lines, sites, own)
     for (name, site) in sites
         name == own && continue

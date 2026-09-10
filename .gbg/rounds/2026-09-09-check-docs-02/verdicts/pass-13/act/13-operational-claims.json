@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "18bc1c8eac9cd5f04df63486dc738888",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#7",
+      "verdict": "LINE-ONLY",
+      "question": "strategy",
+      "evidence": "src/Scans/sibling_link.jl:1-6 now says a later mention 'does not link the site again, though it may deep-link a named page' (matches code: sibling_link_hits! keeps scanning after the first hit and only flags a later match against `home_re`, a link ending exactly at `site`). But the function's own preceding comment at lines 19-21, inside the exact 17-30 range this finding cited, still says flatly 'every later line naming it must NOT' carry the mention inside a link — false, since a deep link (matching `link_re` but not `home_re`) is permitted and produces no hit. The class this finding names — a comment overstating what SCAN.SIBLING_LINK enforces — is fixed at the file header and in policy/docs-rubric.md:186-192 (which correctly states the deep-link exception) but survives verbatim in the docstring immediately above sibling_link_hits!.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/sibling_link.jl:1-6",
+          "swept": true,
+          "evidence": "header now reads 'a later mention does not link the site again, though it may deep-link a named page of it' — matches the home_re-gated implementation"
+        },
+        {
+          "surface": "src/Scans/sibling_link.jl:19-21",
+          "swept": false,
+          "evidence": "function docstring still states the absolute pre-exception rule: 'every later line naming it must NOT' [carry the mention inside a link] — contradicted by the deep-link exception the same function implements three lines later via `home_re`"
+        },
+        {
+          "surface": "policy/docs-rubric.md:186-192 (RULE.DOC.SIBLING_LINK)",
+          "swept": true,
+          "evidence": "'A later mention ... does not link that site again — it is a bare code span, or a deep link to a named page of the site, which is a cross-reference' — matches implementation"
+        }
+      ]
+    }
+  ]
+}

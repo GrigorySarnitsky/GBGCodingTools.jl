@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "18bc1c8eac9cd5f04df63486dc738888",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/catalogues#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Preflight.jl:255-260 replaces `na = ... || (\"rulebook\" in needs && isempty(cfg[\"package\"][\"rulebook_sections\"]))` with `rulebook_absent = isempty(strip(rulebook_text(cfg)))` and `na = ... || (\"rulebook\" in needs && rulebook_absent)`; rulebook_text() (Preflight.jl:367-379) unconditionally emits Sync.POLICY_FILES (latex-idiom.md included) plus deviations.md before any rulebook_sections, so it is non-empty for any synced consumer — latex-typesetter (catalog/hats/latex-typesetter.toml:4, needs retained, annotated with the rationale comment) is no longer gated on an unrelated field. This supersedes two prior wrong attempts in the same lineage: commit 175fe95 dropped `rulebook` from needs entirely (wrong surface), commit 968f38b restored it, and an intermediate pass only added a defending comment (LAUNDERED, correctly reopened) before this commit fixed the actual predicate.",
+      "class_surfaces": [
+        {
+          "surface": "catalog/hats/latex-typesetter.toml:4",
+          "swept": true,
+          "evidence": "needs=[\"source\",\"rulebook\"] kept and annotated: '`rulebook` IS the grant: rulebook_text renders latex-idiom.md, which this persona is told to read first and treat as authoritative'"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:255-260 (na / rulebook_absent computation)",
+          "swept": true,
+          "evidence": "gate changed from testing cfg.package.rulebook_sections to testing isempty(strip(rulebook_text(cfg))) — the actual rendered rulebook the hat would be handed"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:497 (roster filter `if !h[\"not_applicable\"]`)",
+          "swept": true,
+          "evidence": "downstream of the same corrected not_applicable value, so the exclusion is now correct without a separate edit"
+        },
+        {
+          "surface": "catalog/hats/doc-policy.toml, naming-policy.toml, invariants-and-decisions.toml (the three sibling hats sharing needs=[\"rulebook\",\"source\"])",
+          "swept": true,
+          "evidence": "no per-file edit needed or made: they share the one gate function in Preflight.jl that was fixed, so they too are no longer wrongly excluded by an empty rulebook_sections list while still being excluded only when the whole rendered rulebook is genuinely absent"
+        }
+      ]
+    }
+  ]
+}

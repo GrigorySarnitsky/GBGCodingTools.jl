@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "18bc1c8eac9cd5f04df63486dc738888",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/pages#4",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/guide/verbs.md's 'Checks and scans' @docs block now lists GBGCodingTools.cmd_scan (line 43). src/Scan.jl:568-573 cmd_scan docstring: 'gbg scan docs [--hard-only] [--only id,…] [--rebaseline prose-shape --reason \"…\"] ... a rebaseline writes docs/prose_shape.csv and returns 0.' Confirmed rendered in docs/build/guide/verbs.html (grep hits for 'rebaseline')."
+    }
+  ]
+}
