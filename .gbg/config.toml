@@ -137,6 +137,12 @@ enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
 
     [instruments.check-docs]
     argcov_policy = "gate"
+    # The lanes are seeded like the hats: the catalogue is planted into a disposable copy of the lane
+    # surfaces, so a lane that reports nothing on a surface carrying a planted defect is SUSPECT and
+    # recall per class is a number rather than a hope. The tree itself is never mutated. All six classes
+    # of .gbg/seeds.toml match the lane surfaces (2026-09-10).
+    seed_rounds = true
+    seed_catalog = ".gbg/seeds.toml"
 
         # The scan surfaces reach the design record, the pages, src/ and ext/. Most of this package is
         # none of those: it is catalogues, templates, schemas, rulebook prose and the fan-out scripts.

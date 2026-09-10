@@ -210,6 +210,10 @@
    "minimum": 1,
    "type": "integer",
    "description": "the tool MAJOR this artefact was written under"
+  },
+  "seed_root": {
+   "description": "the disposable corpus a seeded documentation round's lanes read: the lane surfaces copied outside the repository and mutated. Written at prepare, destroyed at bank; the repository itself is never seeded.",
+   "type": "string"
   }
  },
  "title": "ROUND.toml \u2014 written by the CLI only (ARCHITECTURE \u00a76.1); the field list is complete",

@@ -1,6 +1,38 @@
 using Test, GBGCodingTools, TOML
 include("helpers.jl")
 
+# A documentation round's corpus is the source TREE, not a rendered manuscript, so its seeds are planted
+# in a copy outside the repository and the lanes are pointed at that. Two properties carry the whole
+# design: the repository is never mutated, and the ground truth is REPRODUCIBLE from the untouched tree
+# plus the salt — which is why nothing on disk between prepare and bank can answer the panel.
+@testset "a docs round is seeded in a copy, never in the tree" begin
+    root = fixture_copy("seeded-docs")
+    files = ["src/FixtureA.jl", "docs/src/notation.md"]
+    a = joinpath(root, files[1])
+    write(a, read(a, String) * "\n# the exit contract: 2 cannot evaluate\n")
+    before = read(a, String)
+    cat = G.Seeds.read_catalog(joinpath(TOOL, ".gbg", "seeds.toml"))
+    m = G.Seeds.file_manuscript(root, files)
+    @test occursin("===== PAGE: src/FixtureA.jl =====", m) && occursin("2 cannot evaluate", m)
+    plan, _ = G.Seeds.select(cat, m, "2026-01-01-check-docs-01")
+    @test !isempty(plan) && any(s -> s["page"] == "src/FixtureA.jl", plan)
+    dest = mktempdir()
+    for f in files; mkpath(dirname(joinpath(dest, f))); cp(joinpath(root, f), joinpath(dest, f); force = true); end
+    planted = G.Seeds.plant_files(dest, m, plan)
+    @test !isempty(planted)
+    @test occursin("2 a second finding", read(joinpath(dest, files[1]), String))   # the copy carries the seed
+    @test read(a, String) == before                                                # the tree is untouched
+    @test !occursin("2 a second finding", read(a, String))
+    # the ground truth is recomputed at bank from the untouched tree: same salt, same plan
+    again, _ = G.Seeds.select(cat, G.Seeds.file_manuscript(root, files), "2026-01-01-check-docs-01")
+    @test [s["id"] for s in again] == [s["id"] for s in plan]
+    @test [s["original"] for s in again] == [s["original"] for s in plan]
+    # a different round salts differently, so two rounds do not plant the same occurrence by construction
+    other, _ = G.Seeds.select(cat, G.Seeds.file_manuscript(root, files), "2026-02-02-check-docs-07")
+    @test [s["id"] for s in other] == [s["id"] for s in plan]                       # same classes
+    rm(dest; recursive = true, force = true)
+end
+
 @testset "seeds, recall, demotion" begin
     cat = G.Seeds.read_catalog(joinpath(TOOL, "catalog", "seeds", "fixture.toml"))
     full = "===== PAGE: Home =====\nThe energy is \\tfrac{1}{2} h sum, exact at every node, per Cooley and Tukey (1965). The spacing h and the spacing again. The unit \\mathrm{i}. `mean_value` writes its destination and nothing else and may alias the source.\n===== PAGE: Notation =====\nA second page with \\tfrac{1}{2} once more."

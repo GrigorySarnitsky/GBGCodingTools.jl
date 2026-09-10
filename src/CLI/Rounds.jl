@@ -192,6 +192,7 @@ function prepare(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         mkpath(joinpath(dir, "findings"))
         open(joinpath(dir, "findings", "00-scans.json"), "w") do f; JSON3.pretty(f, JSON3.write(lane)); println(f); end
         println(io, "prepare: $(length(banked)) hard scan hit(s) banked as lane 00-scans (key `scans`); the full report (every triage line) is $report — read ALL of it")
+        haskey(rec, "seed_salt") && (seed_docs_corpus!(cfg, round, dir, rec; io) == 0 || return 2)
         return 0
     elseif inst == "audit-changes"
         roster = [Dict{String,Any}(r) for r in rec["roster"]]
@@ -201,6 +202,46 @@ function prepare(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     else
         mkpath(joinpath(dir, "witnesses")); println(io, "prepare: nothing to prepare for a hunt; launch the Workflow call preflight printed"); return 0
     end
+end
+
+"""
+    seed_docs_corpus!(cfg, round, dir, rec; io = stdout) -> Int
+
+Plants the seed catalogue into a disposable copy of a documentation round's lane surfaces and points
+the lanes at the copy. The arguments are `cfg`, the validated config; `round` and `dir`, the round and
+its directory; `rec`, the round record, which gains `seed_root`; and `io`, where the count is printed.
+
+A consistency round seeds one consolidated manuscript; a docs round's corpus is the source tree itself,
+which must not be mutated — so every file its lanes list is copied outside the repository, the seeds are
+planted in the copy, and each lane's `repo` is repointed at it. The real tree is never touched, so the
+fix pass edits the corpus the findings actually describe (a lane reports relative paths, identical on
+both sides), and a seeded defect exists nowhere to be fixed. The ground truth is not written here: `bank`
+recomputes it from the untouched files and the salt, so nothing on disk between the two can answer the
+panel. Returns 0, or 2 when the catalogue plants nothing.
+"""
+function seed_docs_corpus!(cfg::AbstractDict, round::AbstractString, dir::AbstractString, rec::AbstractDict; io::IO = stdout)
+    root = cfg["root"]
+    cat = Seeds.read_catalog(joinpath(root, get(cfg["instruments"]["check-docs"], "seed_catalog", ".gbg/seeds.toml")))
+    files = unique(vcat([String.(l["files"]) for l in Preflight.resolve_checkdocs_lanes(cfg) if !isempty(get(l, "files", String[]))]...))
+    manuscript = Seeds.file_manuscript(root, files)
+    plan, skipped = Seeds.select(cat, manuscript, rec["seed_salt"])
+    if isempty(plan)
+        println(io, "prepare: refused — the seed catalogue matched nothing in the lane surfaces", isempty(skipped) ? "" : " (skipped: " * join(skipped, ", ") * ")")
+        println(io, "         a round that plants nothing measures nothing; fix .gbg/seeds.toml or preflight with --no-seed")
+        return 2
+    end
+    dest = mktempdir(; cleanup = false)
+    for f in files
+        src = joinpath(root, f); isfile(src) || continue
+        d = joinpath(dest, f); mkpath(dirname(d)); cp(src, d; force = true)
+    end
+    planted = Seeds.plant_files(dest, manuscript, plan)
+    rec["seed_root"] = dest; save(dir, rec)
+    Preflight.repoint_lanes(cfg, round, dest)
+    println(io, "prepare: $(length(planted)) seed(s) planted in a disposable copy of $(length(files)) lane file(s) at $dest",
+                isempty(skipped) ? "" : "; skipped classes (anchor absent): " * join(skipped, ", "))
+    println(io, "         the lanes read the COPY; the repository is untouched and the ground truth is recomputed at bank")
+    return 0
 end
 
 """
@@ -431,6 +472,31 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         println(io, "bank: recall per class — ", join(("$c: " * (v isa AbstractDict ? "$(v["found"])/$(v["planted"])" : "UNDEFINED") for (c, v) in sort!(collect(recall); by = first)), ", "))
         isempty(suspect) || println(io, "bank: SUSPECT hats (≥ 2 seeds on their substrate, zero matches): ", join(suspect, ", "))
         println(io, "bank: $marked seeded finding(s) marked; they are never fixed in the corpus")
+    end
+    if inst == "check-docs" && haskey(rec, "seed_salt")
+        # recomputed from the UNTOUCHED tree and the salt, exactly as a consistency round recomputes from
+        # the unseeded manuscripts: nothing on disk between prepare and bank can answer the panel
+        cat = Seeds.read_catalog(joinpath(cfg["root"], get(cfg["instruments"]["check-docs"], "seed_catalog", ".gbg/seeds.toml")))
+        files = unique(vcat([String.(l["files"]) for l in Preflight.resolve_checkdocs_lanes(cfg) if !isempty(get(l, "files", String[]))]...))
+        plan, skipped = Seeds.select(cat, Seeds.file_manuscript(cfg["root"], files), rec["seed_salt"])
+        gt = Dict{String,Any}("schema_version" => 1, "round" => round, "salt" => rec["seed_salt"], "skipped" => skipped,
+                              "seeded" => [Dict("id" => s["id"], "class" => s["class"], "page" => s["page"], "original_context" => s["original_context"], "mutated_context" => s["mutated_context"]) for s in plan])
+        errs = validate(load_schema("ground-truth"), gt)
+        isempty(errs) || throw(RoundError("ground_truth.json would not validate: " * join(errs, "; ")))
+        open(joinpath(dir, "ground_truth.json"), "w") do f; JSON3.pretty(f, JSON3.write(gt)); println(f); end
+        marked = Recall.mark!(findings, Dict("seeded" => plan, "skipped" => skipped))
+        recall = Recall.per_class(findings, Dict("seeded" => plan, "skipped" => skipped))
+        suspect = Recall.suspect_hats(findings, Dict("seeded" => plan), rec["roster"], Set{String}())
+        bankrec["recall"] = recall; bankrec["suspect_hats"] = suspect
+        println(io, "bank: recall per class — ", join(("$c: " * (v isa AbstractDict ? "$(v["found"])/$(v["planted"])" : "UNDEFINED") for (c, v) in sort!(collect(recall); by = first)), ", "))
+        isempty(suspect) || println(io, "bank: SUSPECT lanes (≥ 2 seeds on their surface, zero matches): ", join(suspect, ", "))
+        println(io, "bank: $marked seeded finding(s) marked; they are never fixed in the corpus")
+        # the disposable corpus has done its work; a seeded tree left on disk is a tree someone will read
+        sr = String(get(rec, "seed_root", ""))
+        if !isempty(sr) && isdir(sr)
+            rm(sr; recursive = true, force = true); delete!(rec, "seed_root")
+            println(io, "bank: the seeded copy is destroyed")
+        end
     end
     if inst == "bug-hunt"
         code = hunt_bank!(cfg, dir, rec, findings; io)

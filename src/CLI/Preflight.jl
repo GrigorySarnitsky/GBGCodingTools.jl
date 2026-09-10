@@ -157,6 +157,24 @@ function dev_round(cfg::AbstractDict, instrument::AbstractString, st::AbstractDi
            "Tag first — `gbg release <ver>-rc.<n>` — and open the round at the tag."
 end
 
+"""
+    repoint_lanes(cfg, round, dest) -> String
+
+Rewrites a round's lane args so the agents read the corpus at `dest` instead of the repository. The
+arguments are `cfg`, the validated config; `round`, the round id; and `dest`, the corpus root.
+
+Only `repo` moves: a lane's `files` are relative and identical in both trees, and every path a lane
+reports is therefore a path in the real repository too. This is how a seeded documentation round shows
+its readers a mutated corpus without mutating anything. Returns the args file it rewrote.
+"""
+function repoint_lanes(cfg::AbstractDict, round::AbstractString, dest::AbstractString)
+    p = joinpath(workflow_dir(cfg, round), "main.args.json")
+    a = JSON3.read(read(p, String), Dict{String,Any})
+    a["repo"] = dest
+    open(p, "w") do f; JSON3.pretty(f, JSON3.write(a)); println(f); end
+    return p
+end
+
 # ---- substitution -----------------------------------------------------------------------------------------
 
 function section_text(root::AbstractString, anchor::AbstractString)
@@ -635,8 +653,11 @@ function preflight(cfg::AbstractDict, instrument::AbstractString; profile = noth
         return 0
     end
     cc = cfg["instruments"]["check-consistency"]
-    seeding = instrument == "check-consistency" && cc["seed_rounds"] && !no_seed
-    seeding && !isfile(joinpath(root, cc["seed_catalog"])) && (println(io, "preflight: seed_rounds = true but $(cc["seed_catalog"]) is absent (CFG.SEEDS); --no-seed to run unseeded"); return 2)
+    dcfg = cfg["instruments"]["check-docs"]
+    seeding = !no_seed && ((instrument == "check-consistency" && cc["seed_rounds"]) ||
+                           (instrument == "check-docs" && get(dcfg, "seed_rounds", false)))
+    seedcat = instrument == "check-docs" ? get(dcfg, "seed_catalog", ".gbg/seeds.toml") : cc["seed_catalog"]
+    seeding && !isfile(joinpath(root, seedcat)) && (println(io, "preflight: seed_rounds = true but $seedcat is absent (CFG.SEEDS); --no-seed to run unseeded"); return 2)
     st = stamps(cfg)
     opened = Dates.format(now(), dateformat"yyyy-mm-ddTHH:MM:SS")
     head = something(Git.head(root), "0"^40)

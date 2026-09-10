@@ -5,6 +5,27 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 
 ## Unreleased
 
+**`/check-docs` rounds can be seeded, so the lanes are measured and not merely believed.** Seeding
+existed for `/check-consistency` alone, and that instrument has never run here: both real rounds record
+`recall = {}` and `seeded = 0`. Every claim about what the lanes catch — and every "rates comparable"
+line in this file — has rested on the lanes' own report of their own denominator, which
+`RULE.INST.SELF_REPORT` forbids by name.
+
+A consistency round seeds one consolidated manuscript. A docs round's corpus is the source tree, which
+must not be mutated, so `Rounds.seed_docs_corpus!` copies every file its lanes list to a disposable root
+outside the repository, plants the catalogue there, and repoints the lanes' `repo` at the copy. A lane's
+`files` are relative and identical on both sides, so every path a finding reports is a real path and the
+fix pass edits the corpus the findings describe; a seeded defect exists nowhere to be fixed, and closes
+through the `seeded` channel. `Seeds.file_manuscript` shows the files to the existing selector in the
+page-marked shape it already understands, the page name being the path, and `Seeds.plant_files` applies
+each seed to its file by occurrence within that page.
+
+The ground truth is NOT written at prepare: `bank` recomputes it from the untouched tree and the round's
+salt, exactly as a consistency round recomputes from the unseeded manuscripts, so nothing on disk
+between the two can answer the panel. `bank` then marks the seeded findings, records recall per class
+and the suspect lanes, and destroys the copy. Turned on for this package: all six classes of
+`.gbg/seeds.toml` plant into the lane surfaces with none skipped.
+
 **A round may close by CARRYING a finding, and `RULE.INST.CARRY` says which.** The long fix-verify tail
 had two exits — fix it, or adjudicate it — and when neither fits, the pressure goes into a prose
 adjudication, which is how the last round collected two LAUNDERED verdicts. There is a third honest

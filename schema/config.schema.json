@@ -353,6 +353,15 @@
         "$ref": "#/$defs/lane"
        },
        "default": []
+      },
+      "seed_rounds": {
+       "description": "plant the seed catalogue into a DISPOSABLE copy of the lane surfaces before the lanes read them, so the round measures what they miss and not only what they report. Default false: a consumer opts in.",
+       "type": "boolean",
+       "default": false
+      },
+      "seed_catalog": {
+       "type": "string",
+       "default": ".gbg/seeds.toml"
       }
      }
     },
