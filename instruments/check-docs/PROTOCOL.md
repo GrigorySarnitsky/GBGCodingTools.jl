@@ -61,7 +61,7 @@ economy by default; the fix pass is never economised.
    itself closed (`RULE.INST.AUDIT_AFTER_CODE`): the verifiers graded each finding, and nothing yet asked
    whether the edits were proportionate or whether behaviour moved for input that worked before.
    A class the pass could not fix because the fix is an INSTRUMENT change (a new scan, a changed lane) is
-   one line in `<round>/deferred.md`; `close` carries it into `.claude/WORK_QUEUE.md`, where the Stop hook
+   one BULLET in `<round>/deferred.md` (a bullet may wrap; prose outside every bullet is carried nowhere); `close` carries it into `.claude/WORK_QUEUE.md`, where the Stop hook
    holds the next session to it. Never the roadmap: nothing reads the roadmap. Commit ⇒ push the round with the per-lane closure counts in the message.
 
 ## The rules that carry the weight

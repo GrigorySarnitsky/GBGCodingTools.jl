@@ -38,9 +38,14 @@ end
     dir = joinpath(root, ".gbg", "rounds", "2026-01-01-check-docs-01"); mkpath(dir)
     queue = joinpath(root, ".claude", "WORK_QUEUE.md")
     @test G.Passes.carry_deferrals(cfg, dir, "r"; io = devnull) == 0            # no deferred.md: nothing
-    write(joinpath(dir, "deferred.md"), "# a comment is not an item\n\nSCAN.X: the class this round could not fix\n")
+    # an item is a BULLET, not a line: a wrapped bullet is ONE item and prose outside every bullet is none,
+    # or a round's deferred.md becomes one queue fragment per line and the Stop hook holds a session to prose
+    write(joinpath(dir, "deferred.md"),
+          "# a comment is not an item\n\nA paragraph outside every bullet is not an item either.\n\n" *
+          "- SCAN.X: the class this round\n  could not fix\n")
     @test G.Passes.carry_deferrals(cfg, dir, "2026-01-01-check-docs-01"; io = devnull) == 1
     @test occursin("- [ ] SCAN.X: the class this round could not fix (deferred by 2026-01-01-check-docs-01)", read(queue, String))
+    @test !occursin("A paragraph outside every bullet", read(queue, String))
     @test G.Passes.carry_deferrals(cfg, dir, "2026-01-01-check-docs-01"; io = devnull) == 0   # never twice
 end
 
@@ -149,6 +154,11 @@ end
         # the sweep check refuses a pass whose fix touched none of what the open findings name; this
         # lifecycle plants verdicts instead of fixing, so it says so rather than pretending otherwise
         @test G.Passes.pass_open(cfg, round; io = devnull) == 2
+        # and the DEFAULT path still runs: a fix that touches what the findings name opens with no flag,
+        # or the only test of pass_open would be the test of its refusal
+        touchall = joinpath(root, "docs", "src", "notation.md"); write(touchall, read(touchall, String) * "\n")
+        run(pipeline(`git -C $root -c user.email=t@t -c user.name=t add -A`; stdout = devnull, stderr = devnull))
+        run(pipeline(`git -C $root -c user.email=t@t -c user.name=t commit -q -m "a fix pass"`; stdout = devnull, stderr = devnull))
         @test G.Passes.pass_open(cfg, round; sweep_ok = true, io) == 0
         out = String(take!(io)); @test occursin("verify-act.js", out) && occursin("verify-state.js", out)
         pd = joinpath(dir, "verdicts", "pass-1"); pass = TOML.parsefile(joinpath(pd, "pass.toml"))

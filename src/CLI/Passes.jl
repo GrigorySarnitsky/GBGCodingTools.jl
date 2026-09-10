@@ -96,7 +96,10 @@ function pass_scope(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, k
     for f in findings_of(dir)
         id = f["id"]
         (id in prev_open || f["lane"] == "scans") && continue
-        any(x -> x in touched, finding_files(root, f)) && push!(suspects, id)
+        named = finding_files(root, f)
+        # A finding that names no file in the tree cannot be checked against the diff, so it is re-verified
+        # every pass rather than never: silence about where a defect lives is not evidence it is gone.
+        (isempty(named) || any(x -> x in touched, named)) && push!(suspects, id)
     end
     return (sort!(unique(vcat(prev_open, suspects))), prev_open, suspects, range)
 end
@@ -118,14 +121,17 @@ files it names that the range left alone, empty when every id was swept.
 """
 function unswept(cfg::AbstractDict, dir::AbstractString, ids::AbstractVector, range::AbstractString)
     root = cfg["root"]
-    touched = Set(Git.changed_paths(root, range, Preflight.covered_paths(cfg)))
+    # the diff is asked for the WHOLE tree: scoping it to the covered paths while the named set is not
+    # scoped at all makes a fix outside them — a policy file, a catalogue, an instrument — never clear
+    touched = Set(Git.changed_paths(root, range, String[]))
     out = Pair{String,Vector{String}}[]
     want = Set(String.(ids))
     for f in findings_of(dir)
         f["id"] in want || continue
         (get(f, "seeded", false) || f["lane"] == "scans") && continue   # never fixed in the corpus; closed by rescan
         named = finding_files(root, f)
-        isempty(named) && continue
+        isempty(named) && continue                                      # nothing named: see `pass_scope`, which
+                                                                        # re-verifies such a finding every pass
         missed = [x for x in named if !(x in touched)]
         isempty(missed) || push!(out, f["id"] => missed)
     end
@@ -170,7 +176,9 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
     head = something(Git.head(root), "0"^40)
     all_findings = findings_of(dir)
     scope, prev_open, suspects, fixrange = pass_scope(cfg, dir, rec, k)
-    if !sweep_ok
+    # Never on an audit round: its concerns are disposed and its tree must NOT move, so nothing is ever
+    # touched, every concern naming a covered file counts as unswept, and no audit pass could open at all.
+    if !sweep_ok && inst != "audit-changes"
         missed = unswept(cfg, dir, isempty(prev_open) && scope === nothing ? [f["id"] for f in all_findings] : prev_open, fixrange)
         if !isempty(missed)
             println(io, "pass open: refused — the fix pass over $fixrange left a named location of an open finding untouched:")
@@ -329,6 +337,13 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     end
     findings = scope === nothing ? all_findings : [f for f in all_findings if f["id"] in scope || f["lane"] == "scans"]
     per_id = copy(carried); dead = String[]; rejected = String[]; demoted = 0; adjudicated = 0
+    # the rates are over the ROUND, not over this pass: counting a scoped pass's demotions and
+    # adjudications against a denominator of every banked id writes a zero rate into the tally that
+    # `gbg fleet --diff` compares, for a round that adjudicated half its findings in an earlier pass
+    for e in values(carried)
+        get(e, "act_demoted", false) && (demoted += 1)
+        get(e, "closed_by", nothing) == "adjudicated" && (adjudicated += 1)
+    end
     opened = rec["opened"]
     if inst in ("check-consistency", "check-docs")
         lanes = unique(f["lane"] for f in findings if f["lane"] != "scans")
@@ -499,8 +514,18 @@ function carry_deferrals(cfg::AbstractDict, dir::AbstractString, round::Abstract
     src = joinpath(dir, "deferred.md")
     queue = joinpath(cfg["root"], ".claude", "WORK_QUEUE.md")
     (isfile(src) && isfile(queue)) || return 0
-    lines = [strip(l) for l in readlines(src)]
-    items = [l for l in lines if !isempty(l) && !startswith(l, "#")]
+    # An item is a BULLET, not a line: a bullet that wraps is one item, and prose outside every bullet is
+    # not an item at all. Reading line by line turned one round's deferred.md into 38 queue fragments,
+    # each half a sentence, and the Stop hook then held the session to prose.
+    items = String[]
+    for l in strip.(readlines(src))
+        if startswith(l, "- ") || startswith(l, "* ")
+            push!(items, strip(l[nextind(l, 1):end]))
+        elseif !isempty(items) && !isempty(l) && !startswith(l, "#")
+            items[end] *= " " * l                                  # the continuation of the bullet above
+        end
+    end
+    items = [replace(i, r"\s+" => " ") for i in items if !isempty(i)]
     isempty(items) && return 0
     text = read(queue, String); added = 0
     open(queue, "a") do f
