@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "ae5268129593e4387998cdf81d3d4745",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/rationale#2",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff 98f89f6b..07fa463b touches only .gbg/exemptions.toml, two .gbg round-bookkeeping files, docs/prose_shape.csv and src/TestHarness.jl (an unrelated cold-reader#2 gate-gloss change). None of the finding's sites (ARCHITECTURE.md:491,532-534,981; architecture.md mirror; Reflection.jl) are touched. The corpus does read Reflection.package_operations() at ARCHITECTURE.md:495/538, but git log shows that text entered via commit 14ee713 ('The fix pass of 2026-09-10-check-docs-03: 37 findings answered'), an ancestor of 98f89f6b that predates this diff's start entirely. rationale#2 is not among the 16 findings the owner named as exempt from the act verifier's range limitation, so it is graded on the diff actually given: nothing in it addresses this finding.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:491",
+          "swept": false,
+          "evidence": "not touched in 98f89f6b..07fa463b"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:532-534",
+          "swept": false,
+          "evidence": "not touched in this diff"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:981",
+          "swept": false,
+          "evidence": "not touched in this diff"
+        },
+        {
+          "surface": "docs/src/architecture.md:495,538 (mirror)",
+          "swept": false,
+          "evidence": "not touched in this diff"
+        },
+        {
+          "surface": "src/Reflection.jl:16,21,264",
+          "swept": false,
+          "evidence": "not touched in this diff; correct-attribution reference points, not the bug site"
+        },
+        {
+          "surface": "src/TestHarness.jl:98,226,407",
+          "swept": false,
+          "evidence": "already read Reflection.package_operations(...) in current corpus, but this diff's only TestHarness.jl change is the unrelated cold-reader#2 gate gloss"
+        }
+      ]
+    }
+  ]
+}

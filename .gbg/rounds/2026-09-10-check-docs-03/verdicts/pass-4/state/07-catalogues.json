@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "ae5268129593e4387998cdf81d3d4745",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/catalogues#1",
+      "verdict": "ABSENT",
+      "evidence": "grep 'substrate' in catalog/hats/{doc-policy,naming-policy,invariants-and-decisions}.toml: only field lines `substrate = \"full\"` remain. All three personas now read 'the rulebook sections granted to you by `needs`', never 'named in your substrate'. grep -rn 'your substrate' repo-wide (excl .gbg) hits only unrelated legitimate uses in instruments/check-consistency workflow JS referring to the real substrate grant."
+    }
+  ]
+}

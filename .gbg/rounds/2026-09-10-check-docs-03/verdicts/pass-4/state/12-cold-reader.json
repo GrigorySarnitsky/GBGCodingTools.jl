@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "ae5268129593e4387998cdf81d3d4745",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "src/DocLints.jl:17 and src/TestHarness.jl:591 both now read 'the quick doctor set — the `:QUICK` selection of [`GBGCodingTools.doctor`](@ref), the checks that hold on any machine with no build and no network' — full inline definition at first use, no longer a bare settled term. Grepped 'quick doctor set' fleet-wide; only these two src sites plus the Doctor.jl module docstring (still the canonical definition) remain, no bare unglossed use in early-included files."
+    }
+  ]
+}

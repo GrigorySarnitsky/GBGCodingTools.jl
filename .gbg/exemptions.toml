@@ -244,3 +244,16 @@ reason        = "release()'s closure criterion is fixed and the pass-3 blind sta
 recorded      = 2026-09-10
 overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
 evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-3/state/ (ABSENT) and .../act/ (UNDONE: 'nothing in the diff addresses this finding')"
+
+# The seventeenth of the same kind: rationale#2 closed HONORED in pass 3, was re-scoped in pass 4
+# because that fix pass touched src/TestHarness.jl (a file it names, for an unrelated finding), and the
+# pass-4 act verifier then read a range that contains none of its fix. Same cause, same remedy.
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/rationale#2"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/rationale#2"
+reason        = "package_operations is attributed to Reflection at every site the finding names and the pass-4 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because pass 4's range starts at the last graded pass and its fix landed in pass 1 of this same round, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-4/state/01-rationale.json (ABSENT) and .../act/01-rationale.json (UNDONE: the fix 'entered via commit 14ee713 ... predates this diff's start entirely')"

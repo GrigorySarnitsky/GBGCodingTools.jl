@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "ae5268129593e4387998cdf81d3d4745",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/rationale#2",
+      "verdict": "ABSENT",
+      "evidence": "All 3 quoted sites now read Reflection: L495 'Reflection.package_operations()'; L538 TestHarness bullet 'Reflection.package_operations(), which it CALLS and does not define'; L985-986 tree drops it from TestHarness.jl. grep for 'package_operations'/'public surface' near 'TestHarness' in docs/src+ARCHITECTURE.md: no hits."
+    }
+  ]
+}

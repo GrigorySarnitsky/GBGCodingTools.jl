@@ -54,8 +54,9 @@ evaluate, `3` when it crashed. The two a person runs most:
 ## What a package's docs build and tests call
 
 - [`GBGCodingTools.makedocs`](@ref) — what a package's `docs/make.jl` calls instead of `Documenter.makedocs`.
-  It runs the quick doctor checks and the build-failing scans before building the site, and the
-  built-site scans after.
+  It runs the quick doctor set — the `QUICK` selection of [`GBGCodingTools.doctor`](@ref), the checks
+  that hold on any machine with no build and no network — and the build-failing scans before building
+  the site, and the built-site scans after.
 - [`GBGCodingTools.TestHarness`](@ref) — the engines a package's `test/runtests.jl` calls: a bound on what a
   call allocates ([`@alloc_below`](@ref GBGCodingTools.TestHarness.@alloc_below)); recorded baselines for an in-place operation's reads and writes and
   for the public method set, failing the test suite when either moves unannounced; an oracle class on

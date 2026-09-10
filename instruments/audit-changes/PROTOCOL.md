@@ -1,7 +1,7 @@
 # /audit-changes — were these edits justified, and did they silently change behaviour?
 
 This text is injected into the session by `gbg preflight audit-changes`, which has already validated
-the config, run the quick doctor, verified the running copy and OPENED the round named in the lines
+the config, run the quick doctor set (the `QUICK` selection of checks, the ones that hold on any machine with no build and no network), verified the running copy and OPENED the round named in the lines
 that follow it, with the REQUIRED `base` commit recorded in it. Everything below is done in that
 round, through the `gbg` verbs.
 

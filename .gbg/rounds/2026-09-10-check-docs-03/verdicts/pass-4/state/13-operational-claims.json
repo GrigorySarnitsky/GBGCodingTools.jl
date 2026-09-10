@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "ae5268129593e4387998cdf81d3d4745",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#2",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Passes.jl:889-891 now reads '1 when a condition is unmet — a moved config_sha or tool_version among them ... — and 2 for the one mismatch no regrade answers: a tool_tree_sha that moved under an unchanged tool_version'. Matches code at lines 915-918. Grepped repo (excl .gbg) for 'stamp mismatch'/'on a stamp': no hits elsewhere."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#3",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Rounds.jl:333-334 now enumerates 'absent; renamed ... when unparsable or invalid; or well-formed with zero findings AND an empty checked[]', matching code line 349. Grepped repo for other ':dead' docstrings (Passes.jl:491-494 read_verdicts has no enumerating docstring)."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#6",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Rounds.jl:434 now reads 'Any DEAD or REJECTED lane ⇒ exit 2', matching code at 445-450. Grepped docs/src, docs, src for 'Any DEAD lane' and 'DEAD lane ⇒'/'=>' outside .gbg: no remaining stale instances."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#7",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Release.jl:44-45 now lists 'honored, adjudicated, rescan or seeded, or carried into the next round ([`cites_round`](@ref))', matching cites_round at lines 25-27. docs/ARCHITECTURE.md and CLAUDE.md already list all five channels; only docs/design-record/REVIEW-final.md (a historical provenance record) still says 'honored or adjudicated', not active documentation."
+    }
+  ]
+}

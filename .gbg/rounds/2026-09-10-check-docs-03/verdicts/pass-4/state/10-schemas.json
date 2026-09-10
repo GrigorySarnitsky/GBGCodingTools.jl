@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "ae5268129593e4387998cdf81d3d4745",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/schemas#1",
+      "verdict": "ABSENT",
+      "evidence": "schema/tally.schema.json $defs.entry.properties.state.enum now reads [PRESENT, PARTIAL, REGRESSED, ABSENT, NOT-A-DEFECT, UNCLEAR, PASS, FAIL, BROKEN, BLOCKED, REFUSED, null] — REFUSED is present. grep for other status enums in schema/*.schema.json found no other omission."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#2",
+      "verdict": "ABSENT",
+      "evidence": "schema/audit.schema.json's properties no longer declare staleness or severity_recheck at all (full file dump shows only head, executable_claims, covered, kind, base, verdict_all_clean, dispositions, diffstat, schema_version, round). grep -n \"staleness|severity_recheck\" schema/audit.schema.json returns nothing."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#3",
+      "verdict": "ABSENT",
+      "evidence": "grep -n probe_open schema/pass.schema.json and repo-wide (excl .gbg) both return nothing; the property is gone from the schema. Passes.jl still uses quote_still_stands/quote_probe/class_candidates, consistent with the schema no longer promising a probe_open key."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#4",
+      "verdict": "ABSENT",
+      "evidence": "schema/carried.schema.json:2 now reads \"$schema\": \"https://json-schema.org/draft/2020-12/schema\", matching all 17 other schema/*.schema.json files (grep -n '\"$schema\"' schema/*.schema.json shows 2020-12 uniformly); no draft-07 string remains anywhere outside .gbg/build."
+    }
+  ]
+}

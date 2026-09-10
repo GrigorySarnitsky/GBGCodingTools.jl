@@ -1,7 +1,7 @@
 # /check-consistency — the fresh-eyed multi-hat panel over the RENDERED docs
 
 This text is injected into the session by `gbg preflight check-consistency`, which has already
-validated the config, run the quick doctor, verified the running copy and OPENED the round named in
+validated the config, run the quick doctor set (the `QUICK` selection of checks, the ones that hold on any machine with no build and no network), verified the running copy and OPENED the round named in
 the lines that follow it. Everything below is done in that round, through the `gbg` verbs; nothing is
 done by hand that a verb does.
 
