@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-audit-changes-01",
+  "lane": "numerics",
+  "verdict": "CONCERNS",
+  "checked": [
+    "src/CLI/Passes.jl: grade() — the new scoped-pass carry-forward (`carried`/`scope`) and how `closed`, `demoted_by_rule` and `adjudicated_share` are each derived from `per_id` vs from the per-call `demoted`/`adjudicated` accumulators, at base and at head",
+    "src/Scans/args_form.jl: the new balanced-paren scan for the signature's argument list (replacing findfirst('(')/findlast(')')), the new splat-detection helpers `bare`/`splats`, and the new `eltype_kw` exemption gating `wants_bullets`, against RULE.DOC.ARGS_FORM's text in policy/docs-rubric.md (unchanged at base and head)",
+    "src/Scans/sibling_link.jl: the new both-directions (first-mention-linked, later-mention-bare) loop replacing the old first-mention-only `break`",
+    "src/Scans/mathbf.jl: the unconditional push!(allowed, \"\\\\mathbf{1}\") against RULE.TEX.MATHBF's rendered text (updated in this diff) and schema/config.schema.json's new description of mathbf_allowed",
+    "src/Reflection.jl: signature_fidelity — the examined[] += 1 counter moved to after the def === :extension check, and its only consumer src/Scans/signature_fidelity.jl (unchanged) plus the new test in test/scans.jl asserting n[] > 0 and n[] >= count(...)",
+    "src/TestHarness.jl: resolve_function's search order swapped from (pkg, externals, modules) to (pkg, modules, externals), and module_method_count's use of the resulting function object for count(m -> m.module === mod, methods(f))",
+    "src/CLI/Config.jl: check_paths' new regex-driven docs_build script existence check replacing the hardcoded docs/make.jl check, and its two new test/config.jl cases",
+    "schema/pass.schema.json, schema/tally.schema.json, schema/exemptions.schema.json, schema/config.schema.json, schema/managed.schema.json: every changed minimum/maximum/minLength/maxLength value (all confirmed unchanged in value; the diffs are reindentation plus a new scope field and new descriptions)",
+    "docs/prose_shape.csv and fixture/GBG Fixture/docs/prose_shape.csv: the updated ratchet baseline word/paragraph counts, checked against the actual prose additions in the same diff (ARCHITECTURE.md, RULES.toml) that plausibly produced them",
+    "src/Scans/code_in_math.jl and src/Scans/prose_shape.jl: confirmed the header-comment changes describe pre-existing, unchanged regexes/logic (subscript regex already matched any length; the docstring/new-page-unit cap logic was already in the base code) rather than a behaviour change dressed as a comment fix",
+    "src/CLI/Recall.jl: suspect_hats' new sees_seed helper against the original inline condition — confirmed logically identical (De Morgan equivalent), not a behaviour change",
+    "test/coverage.jl: the new SPAN_IN_PROSE regex bound {1,60} and the new bug-hunt/hunt.js regression test pair"
+  ],
+  "candidates_found": 4,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "grade()'s adjudicated_share and demoted_by_rule silently undercount from pass 2 onward under the new scoped-pass carry-forward",
+      "locations": [
+        "src/CLI/Passes.jl:317-341 (scope/carried setup)",
+        "src/CLI/Passes.jl:436-440 (closed vs demoted_by_rule/adjudicated_share)"
+      ],
+      "before": "At base every `grade()` call re-graded ALL findings every pass: `inst = rec[\"instrument\"]; findings = findings_of(dir); ledger = Ledger.read(cfg)` then `per_id = Dict{String,Any}(); ... demoted = 0; adjudicated = 0`, and the tally wrote `\"demoted_by_rule\" => demoted, \"adjudicated_share\" => isempty(findings) ? 0.0 : adjudicated / length(findings)` — both counters were recomputed fresh over the round's whole finding set on every single grade, so they were always the round's true cumulative totals no matter how many passes had run.",
+      "after": "The diff adds scoping: `scope = get(pass, \"scope\", nothing)`; `carried` copies forward every id's PREVIOUS `per_id` entry that fell outside `scope` (i.e. every id already closed and not touched again) via `carried = Dict{String,Any}(String(i) => e for (i, e) in read_json(prevtally)[\"per_id\"] if !(String(i) in scope))`; `findings` becomes the scoped subset (`[f for f in all_findings if f[\"id\"] in scope || f[\"lane\"] == \"scans\"]`); and `per_id = copy(carried); ...; demoted = 0; adjudicated = 0` resets the two accumulators to zero and increments them ONLY while iterating the scoped `findings`. The tally then writes `\"totals\" => Dict(\"findings\" => length(all_findings), ...)` and `\"demoted_by_rule\" => demoted, \"adjudicated_share\" => isempty(all_findings) ? 0.0 : adjudicated / length(all_findings)` — the denominator was correctly widened to `all_findings`, but the numerators (`demoted`, `adjudicated`) were left as pass-local counters that never see the carried entries. `closed`, two lines above, was correctly fixed to `count(e -> e[\"closed_by\"] !== nothing, values(per_id))` over the FULL merged map — proving the author knew the right pattern — but `demoted`/`adjudicated` were not given the same treatment.",
+      "why_it_matters": "From pass 2 of any round onward (the exact scenario this diff's own sweep feature is built to produce), `tally.json`'s `demoted_by_rule` and `adjudicated_share` report only what THIS pass re-graded, silently dropping every demotion/adjudication carried forward from earlier passes — even though `closed`/`open`/`totals.findings` right next to them are correctly cumulative. `gbg fleet --diff <consumer>:<round> ...` (src/CLI/Fleet.jl:132-133) prints this same `adjudicated_share`/`demoted_by_rule` as one of the numbers used to compare rounds' rates fleet-wide, and ARCHITECTURE.md documents `gbg round grade` as writing these fields as the round's record. A human (or the fleet-diff tool) reading a multi-pass round's tally now sees an artificially low adjudicated/demoted rate with no indication anything changed.",
+      "justified": "no",
+      "description": "The scoped-grading feature is a legitimate, well-motivated addition (it avoids re-verifying ids nobody touched), and `closed`/`open`/`totals.findings` were correctly adjusted to stay cumulative. `demoted_by_rule` and `adjudicated_share`, however, were left as simple per-call accumulators — an oversight, not a deliberate design choice, since the fix for `closed` (deriving it from the full `per_id` map rather than a running counter) was already at hand two lines away and simply wasn't applied to the other two statistics.",
+      "evidence": "\"demoted_by_rule\" => demoted, \"adjudicated_share\" => isempty(all_findings) ? 0.0 : adjudicated / length(all_findings)  — vs the correct pattern two lines above: closed = count(e -> e[\"closed_by\"] !== nothing, values(per_id))"
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "SCAN.ARGS_FORM's new eltype-keyword exemption regex is wider than the written exemption it implements",
+      "locations": [
+        "src/Scans/args_form.jl:57-59"
+      ],
+      "before": "The base scan never implemented the docs-rubric's exemption at all: `wants_bullets = length(pos) + length(kw) >= Reflection.ARGS_THRESHOLD || !isempty(kw)` forced the bulleted form on ANY docstring carrying so much as one keyword argument, regardless of what it was named.",
+      "after": "`eltype_kw = length(kw) == 1 && occursin(r\"^(T|eltype|[A-Za-z_][A-Za-z0-9_]*_type)$\", first(kw))` then `wants_bullets = length(pos) + length(kw) >= Reflection.ARGS_THRESHOLD || (!isempty(kw) && !(eltype_kw && length(pos) + length(kw) < Reflection.ARGS_THRESHOLD))`. The comment justifies this as implementing RULE.DOC.ARGS_FORM's own written exemption for \"a single element-type keyword bound in one prose clause\" (policy/docs-rubric.md, unchanged across this diff). But the regex's third alternative, `[A-Za-z_][A-Za-z0-9_]*_type`, matches ANY identifier ending in `_type` — `return_type`, `cache_type`, `sort_type` — not only ones that name an element type.",
+      "why_it_matters": "A docstring whose sole keyword argument is, say, `return_type` (unrelated to a container's element type) and whose total argument count is under the threshold will now silently pass the triage scan in prose form, where before this diff it was correctly flagged as needing the bulleted form (per the rule's own text, `!isempty(kw)` already forced bullets for any keyword). The exemption implemented is broader than \"a single ELEMENT-type keyword\" the rule actually grants, so the scan under-reports on names the rule was never written to exempt.",
+      "justified": "unclear",
+      "description": "The fix correctly closes a real gap (the written exemption existed in policy/docs-rubric.md at base but SCAN.ARGS_FORM never implemented it), but the implementation is wider than the rule's own wording: \"element-type\" became \"any name ending in _type\", silently widening what a keyword-bearing docstring can get away with in prose form.",
+      "evidence": "r\"^(T|eltype|[A-Za-z_][A-Za-z0-9_]*_type)$\" — matches return_type, cache_type, sort_type, none of which name an element type"
+    }
+  ]
+}

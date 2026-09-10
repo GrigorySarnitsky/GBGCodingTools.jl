@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-audit-changes-01",
+  "lane": "public-contract",
+  "verdict": "CONCERNS",
+  "checked": [
+    "schema/managed.schema.json and schema/tally.schema.json: files.additionalProperties / per_id.additionalProperties, before vs after, and whether $defs.entry existed at base",
+    "src/CLI/Sync.jl :: read_sidecar (SyncError message and whether the throw is caught by sync())",
+    "src/CLI/Sync.jl :: sync() call path into status()/read_sidecar() for an uncaught throw",
+    "schema/exemptions.schema.json reason.minLength (confirmed unchanged end-to-end, matching the changelog's 'reverted')",
+    "CHANGELOG.md 'Unreleased' entry for schema-tightening and rule-order admissions",
+    "src/TestHarness.jl :: resolve_function search-order change, and its callers method_parity/oracle_registry",
+    "test/ for any coverage of resolve_function's collision behaviour (none found)",
+    "src/CLI/Passes.jl :: pass_open new sweep_ok keyword, pass_scope, unswept, and the bank()-time core-schema check",
+    "test/rounds.jl diff for pass_open's return-code change on the identical call (0 -> 2)",
+    "test/schemas.jl new test 'a bug-hunt finding banks against the core schema'",
+    "src/CLI/Rounds.jl :: bank() new core-schema projection/validation block and classify_lane's quarantine filename change",
+    "src/CLI/Recall.jl :: suspect_hats/sees_seed refactor (confirmed logically identical to the prior inline predicate)",
+    "src/Scans/sibling_link.jl :: sibling_link_hits! before/after (first-mention-only vs. both-directions) and its 'hard' tier in catalog/scans.toml",
+    "src/CLI/Config.jl :: check_paths() docs_build script-extraction regex vs. the old fixed docs/make.jl check, and its new test/config.jl coverage",
+    "src/CLI/Main.jl :: parse_options (docstring reworded; function body diffed and found unchanged)",
+    "instruments/bug-hunt/schema.json de-duplication into $defs/hunt_finding (confirmed same properties/required, pure refactor)",
+    "git diff of every src/**, ext/**, schema/**, catalog/**, instruments/**/schema.json file between the two commits",
+    "docs/src/api/CLI.md, docs/src/guide/verbs.md for export/documentation moves (Init.migrate_seeds, Options, cmd_doctor, cmd_scan — additive documentation only, no export changes)",
+    "schema/ directory listing at base vs. head (16 files both sides — the 'eighteen -> sixteen' ARCHITECTURE.md text catches up to a pre-existing state, not a change in this diff)"
+  ],
+  "candidates_found": 7,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "blocker",
+      "confidence": "high",
+      "title": "managed.json/tally.json schemas newly reject shapes they used to accept, and the throw is uncaught in `gbg sync`",
+      "locations": [
+        "schema/managed.schema.json:15-23 (files.additionalProperties)",
+        "schema/tally.schema.json:68-76 (per_id.additionalProperties)",
+        "src/CLI/Sync.jl:494-503 (read_sidecar, SyncError message)",
+        "src/CLI/Sync.jl:600-604 (sync() calling status()/read_sidecar with no try/catch)"
+      ],
+      "before": "\"files\": { \"additionalProperties\": true, \"required\": [], \"properties\": {}, \"type\": \"object\", ... } — and the identical shape for tally.schema.json's \"per_id\". The base commit's `$defs.entry` (additionalProperties:false, required [template,version,sha256]) existed but was never referenced, so any object was accepted at each map key.",
+      "after": "\"files\": { \"additionalProperties\": { \"$ref\": \"#/$defs/entry\" }, ... } (and the same for tally.json's per_id). Sync.jl's error message was also extended to: \"... does not validate: ... — a sidecar written before its schema was closed; delete it and re-run gbg sync\".",
+      "why_it_matters": "Any consumer's existing `.gbg/managed.json` whose per-file entries do not exactly match {template, version, sha256} with no extra keys (plausible for a sidecar written by any earlier tool version, since the schema never checked this before) now fails schema validation. `Sync.read_sidecar` throws `SyncError`, and `sync()` calls `status(cfg; ledger)` -> `read_sidecar(cfg)` with no try/catch of its own (only Doctor.jl's separate `sync_status` wraps it) — so `gbg sync`, a command that previously ran cleanly against any managed.json shape, now crashes with an uncaught exception for a previously-working consumer, requiring the user to manually delete the sidecar per the new error text. The tool's own CHANGELOG for this exact commit range says so in its own words: \"Three JSON schemas were tightened in a commit whose message did not name them: `managed` and `tally` closed their per-entry maps, and `exemptions` raised its `reason` floor. The last was reverted, because `Ledger.read` throws where the doctor would have named the entry and carried on; the other two stand, and a sidecar an older copy wrote now names itself in the refusal.\" The identical class of risk was judged bad enough to revert for `exemptions`, but was kept for `managed`/`tally`.",
+      "justified": "unclear",
+      "description": "A JSON-Schema tightening on two persisted, cross-version artifacts (the managed-file sidecar and a round's tally) turns a previously-permissive validation into a closed one, and the resulting throw is not caught at the one CLI verb (`gbg sync`) that reads the newly-strict file on every run — for a class of breakage the authors themselves flagged (and partially reverted) in the same commit.",
+      "evidence": "CHANGELOG.md, 'Unreleased': \"Three JSON schemas were tightened in a commit whose message did not name them: `managed` and `tally` closed their per-entry maps, and `exemptions` raised its `reason` floor. The last was reverted, because `Ledger.read` throws where the doctor would have named the entry and carried on; the other two stand, and a sidecar an older copy wrote now names itself in the refusal.\""
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "TestHarness.resolve_function's search order flipped (externals before modules -> modules before externals), silently changing which colliding function every consumer's method_parity/oracle_registry count",
+      "locations": [
+        "src/TestHarness.jl:304-310 (resolve_function)"
+      ],
+      "before": "function resolve_function(name::Symbol, pkg::Module, modules::AbstractVector{Module}; externals = (Base,))\n    for mod in Iterators.flatten(((pkg,), externals, modules))",
+      "after": "function resolve_function(name::Symbol, pkg::Module, modules::AbstractVector{Module}; externals = (Base,))\n    for mod in Iterators.flatten(((pkg,), modules, externals))",
+      "why_it_matters": "For any name defined both by one of the package's own `modules` and by an `externals` module (Base by default) but not directly by the umbrella `pkg`, the resolved `Function` object flips from the external's method table to the package's own. `resolve_function` is what `method_parity` and `oracle_registry` — two frozen-baseline TestHarness engines every one of the four consumer packages pins and runs under `Pkg.test()` — use to look up the function whose methods they count/classify. The new docstring names real collisions this fixes (`Config.read`, `Git.run`, `Scan.report` all share a name with a `Base` export) as evidence the OLD order was wrong, which is exactly the point: for exactly those and any similar name in any consumer, a `method_parity_baseline.toml` or `oracle_registry.toml` written and frozen against the OLD (Base-first) resolution can silently start counting a different function's methods the moment a consumer bumps to this tool version, with no code change on their side.",
+      "justified": "yes",
+      "description": "A one-line reorder in a shared, pinned test-harness primitive changes which of two colliding functions is resolved for a name — a genuine bug fix per its own comment, but a computed-result change for every consumer with no changelog entry, and no test in this repository exercises the collision case it fixes.",
+      "evidence": "src/TestHarness.jl docstring added in this diff: \"`externals` — the external modules whose generics the package extends, searched LAST so a package function always wins its own name (`Config.read`, `Git.run` and `Scan.report` all share one with a `Base` export, and Base ahead of them handed the caller the wrong generic).\" CHANGELOG.md has no mention of `resolve_function`, `method_parity`, or `oracle_registry` for this range."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "`gbg round pass open` now refuses by default (exit 2) on calls that previously succeeded (exit 0), and the change is absent from CHANGELOG.md",
+      "locations": [
+        "src/CLI/Passes.jl:96-115 (pass_open signature and new sweep_ok logic)",
+        "test/rounds.jl:149-153"
+      ],
+      "before": "function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = false, io::IO = stdout) — and the matching test: `@test G.Passes.pass_open(cfg, round; io) == 0`.",
+      "after": "function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = false, sweep_ok::Bool = false, io::IO = stdout) — with a new refusal path when `unswept(...)` is non-empty; the SAME test call now reads: `@test G.Passes.pass_open(cfg, round; io = devnull) == 2` followed by `@test G.Passes.pass_open(cfg, round; sweep_ok = true, io) == 0`.",
+      "why_it_matters": "On a round's first pass, `unswept` is checked against EVERY banked finding id (`isempty(prev_open) && scope === nothing ? [f[\"id\"] for f in all_findings] : prev_open`), so any round whose commits since it opened did not touch every single finding's own named location now refuses to open a verification pass at all, where it previously would have opened cleanly. The test file in this very diff shows the identical call flipping from returning 0 to returning 2. The behaviour is documented in the function's own docstring and in `docs/ARCHITECTURE.md` (\"a pass spent learning that a fix stopped at the line it quoted is a pass wasted\"), but CHANGELOG.md — the project's own single per-release record of what changed, per its own header (\"Every tag has one entry\") — has no mention of `pass open`, `--sweep-ok`, `sweep_ok`, or the scoped-verification feature at all for this range.",
+      "justified": "yes",
+      "description": "A new keyword defaulting to a stricter mode changes the CLI's default outcome for previously-valid invocations of `gbg round pass open`; the change is real, intentional, and documented in the source and the architecture doc, but not in the changelog a reader would check for exactly this kind of change.",
+      "evidence": "test/rounds.jl diff: \"-        @test G.Passes.pass_open(cfg, round; io) == 0\\n+        @test G.Passes.pass_open(cfg, round; io = devnull) == 2\\n+        @test G.Passes.pass_open(cfg, round; sweep_ok = true, io) == 0\""
+    },
+    {
+      "type": "structure",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "`gbg round bank` gained a new exit-2 refusal path (core-schema validation) after every witness/panel cost is already spent",
+      "locations": [
+        "src/CLI/Rounds.jl:395-410 (bank(), new core-schema validation block)"
+      ],
+      "before": "bank() wrote findings.json directly from the banked findings with no validation against schema/finding.schema.json's core property set (only each instrument's own lane-file schema was checked, in classify_lane, before this point).",
+      "after": "core = load_schema(\"finding\"); coreprops = keys(core[\"properties\"])\nfor f in findings\n    errs = validate(core, Dict{String,Any}(k => v for (k, v) in f if k in coreprops))\n    isempty(errs) || (println(io, \"bank: banked finding $(get(f, \\\"id\\\", \\\"?\\\")) does not validate: \", first(errs), \" — fix the lane file and gbg round rerun $round --lanes $(get(f, \\\"lane\\\", \\\"?\\\"))\"); return 2)\nend",
+      "why_it_matters": "A round whose lane files individually validated against their own instrument schema, but whose projected core fields (e.g. `title` under 8 chars, `description` under 20, an out-of-enum `type`/`severity`/`confidence`, or empty `locations`) were malformed, used to bank successfully; it will now fail `gbg round bank` with exit 2 after the code's own comment notes \"this one fires after the whole panel and every witness have already been paid for\" — a new, potentially expensive-to-discover refusal for input that previously passed.",
+      "justified": "yes",
+      "description": "This is a narrowly-scoped, well-tested fix for a real prior gap (the core finding shape was never checked at bank time), added with a paired regression test — but it is still a new failure mode for previously-accepted lane files, arriving at the most expensive possible point in the round's cost.",
+      "evidence": "test/schemas.jl new test: \"The regression this pins: `bank` validated every finding against schema/finding.schema.json, which closes its property set, while a bug-hunt finding carries its own `kind`, `verdict`, `file`, `line`, `mechanism` — so every real hunt bank threw on its first finding.\" — confirming the core-schema check is new in this range."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "SCAN.SIBLING_LINK (hard tier, gates the docs build) now fails on a sibling name that is correctly linked TWICE, which used to be clean",
+      "locations": [
+        "src/Scans/sibling_link.jl:20-33 (sibling_link_hits!)",
+        "catalog/scans.toml (SCAN.SIBLING_LINK fixture list)"
+      ],
+      "before": "for (n, raw) in lines\n    o = findfirst(name_re, raw); o === nothing && continue\n    m = match(link_re, raw)\n    ok = m !== nothing && m.offset <= first(o) <= m.offset + ncodeunits(m.match)\n    ok || push!(hits, Hit(file, n, \"first mention of `$name` is not a link to $site: \" * strip(raw)))\n    break\nend",
+      "after": "for (n, raw) in lines\n    ...\n    linked = m !== nothing && ...\n    if !seen\n        seen = true\n        linked || push!(hits, Hit(file, n, \"first mention of ...\"))\n    elseif linked\n        push!(hits, Hit(file, n, \"later mention of `$name` is a link, not a bare code span: \" * strip(raw)))\n    end\nend",
+      "why_it_matters": "SCAN.SIBLING_LINK is a `hard` tier scan (catalog/scans.toml), and the `makedocs` wrapper fails the docs build on any hard-scan hit. Previously only the FIRST mention of a sibling name in a unit was checked; a page or docstring that linked the same sibling package a second time (a common, previously-harmless pattern) was clean. After this change, that same page now produces a new hit and can fail a build that used to pass, for every one of the four consumer packages once they adopt this tool version and any of their existing docs happen to link a sibling more than once.",
+      "justified": "yes",
+      "description": "An intentional, documented and fixture-tested strengthening of a hard-tier scan's rule (RULES.toml and catalog/scans.toml were updated in the same commit, and a new fixture defect/clean-twin pair was added) — but it is exactly the shape the audit brief calls out: it rejects a previously-clean usage under a scan whose exit code gates a real build.",
+      "evidence": "fixture/GBG Fixture/defects/page.md addition: \"A twice-linked sibling: [`GBGIsotropicTurbulence`](...) is linked here, correctly, and then linked a second time — [`GBGIsotropicTurbulence`](...) — where a bare code span belongs.\" and policy/RULES.toml's SCAN.SIBLING_LINK row updated to: \"the FIRST mention of each sibling must sit inside `[`Name`](site)` and every LATER mention must not\"."
+    }
+  ]
+}

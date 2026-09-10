@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-audit-changes-01",
+  "lane": "executing",
+  "verdict": "CONCERNS",
+  "candidates_found": 9,
+  "checked": [
+    "RAN: TestHarness.resolve_function under the head order and under the base order, over all 421 names of Reflection.all_package_functions(GBGCodingTools, modules) — 0 names resolve differently; and the three names the new docstring cites (read, run, report) individually.",
+    "RAN: `:report in names(Base)` = false and `isdefined(Base, :report)` = false — Base has no `report` at all.",
+    "RAN: TestHarness.module_method_count for every one of the 19 package modules under both orders — every count identical.",
+    "RAN: Reflection.signature_fidelity(cfg; examined=n) on the fixture (examined = 8, rows = 0, EXTENSION-HOMED skips = 0) and on the tool (examined = 191, rows = 1, one EXTENSION-HOMED skip: `makedocs`), and computed the base-order value (fixture 8, tool 192).",
+    "RAN: the new test/scans.jl assertion `n[] >= count(r -> !occursin(\"EXTENSION-HOMED\", r), rows)` with the measured fixture numbers — it evaluates to 8 >= 0 under both the head and the base ordering.",
+    "RAN: SCAN.ARGS_FORM at head vs a faithful re-implementation of the base scan, over the tool's src+ext (base: population 208, 11 hits; head: population 208, 0 hits) and over the fixture (base 5, head 6) — the 11 base hits are the two defects the change fixes (unbalanced-paren parse: `resolve_anchor`, `split_block`; line-wrapped `The arguments are:` marker: `Git.is_ancestor`, `thread_digest`, `Fleet.diff`, …).",
+    "RAN: the old and new signature-parenthesis parse of `span(options) -> (lo, hi)` (old -> ([\"hi\"], []); new -> ([\"options\"], [])), of `resolve_anchor(root, anchor) -> (file, line, count)` (old -> ([\"root\",\"line\",\"count\"]); new -> ([\"root\",\"anchor\"])), of `argcov(cfg; exempt = (hit -> false))`, `makedocs(cfg; kwargs...)` and `tree_hash(dir; skip = (\".git\",))`.",
+    "RAN: the new bare-splat counter on `cfg; kwargs...`, `src::AbstractArray..., dst`, `operation!, name, rows::Traffic...; print = false`, `a, b...; c...`, `dir; skip = (\".git\",)` — the comment's double-count claim holds exactly (typed splats already come back bare, only the bare splat is added).",
+    "RAN: SCAN.SIBLING_LINK over fixture/GBG Fixture/defects/page.md — both planted classes fire (`bare-sibling` at line 8, the new `linked-later-mention` at line 11); and over the whole tool and fixture surfaces (274 / 22 population, 0 hits).",
+    "RAN: SCAN.MATHBF over the tool (88 population, 0 hits) and against the fixture's `mathbf-banned` defect (still caught) after `\\mathbf{1}` was force-added to the allowed set; read RULE.TEX.MATHBB's sentinel at base, which already names `\\mathbf{1}` the indicator.",
+    "RAN: all 37 fixture defect classes through run_scan to confirm no scan regressed to silence.",
+    "READ AT BASE: policy/docs-rubric.md § RULE.DOC.ARGS_FORM — the 'single element-type keyword bound in one prose clause' exemption the new `eltype_kw` branch implements was already in the base rule prose, unchanged.",
+    "RAN: a $ref-resolution walk over all four instruments/*/schema.json — no dangling `$ref` after `$defs/finding` was deleted from bug-hunt's.",
+    "RAN: a semantic (parsed-object) diff of schema/{config,exemptions,managed,pass,tally,finding}.schema.json base vs head — the 800 reformatted lines carry exactly five semantic changes; finding.schema.json is byte-for-byte identical after parse.",
+    "RAN: validation of a synthetic tally.json and managed.json against the base and head schemas — proved `$defs/entry` was unreachable at base in both (`additionalProperties: true`) and is live at head, and that `state = \"PASS\"` now validates where the base entry schema's enum did not admit it.",
+    "READ: Passes.grade at base — it already wrote `entry[\"state\"] = uppercase(String(r.status))` for hunt findings, i.e. PASS/FAIL/BROKEN/BLOCKED, which is why the enum had to widen.",
+    "RAN: `git grep load_schema(\"finding\")` / `load_schema(\"import\")` at base 209cb21 over src/ — no hits, so neither validation existed before this change set.",
+    "RAN: the four instrument $defs/finding property sets and required lists against schema/finding.schema.json — every instrument's properties are a subset of the core's after bank's projection, and every required list is a superset, so bank's new core check cannot fail.",
+    "RAN: the new test/coverage.jl SPAN_IN_PROSE regex over all 11 Workflow scripts (no hits, as the test asserts) and over seven ordinary-JavaScript probes and six prose probes.",
+    "RAN: the documented call of every newly-documented entry point — parse_options([\"--lanes=a,b\",\"--regrade\",\"x\"]; valued=String[]), parse_options with a valueless `--lanes`, the `--` terminator; Doctor.select(nothing), (nothing; deep=true), ([\"SELF.DOCS\"]), ([\"QUICK\"]); HtmlWalker.attr on an element, a missing attribute and a text node; Git.is_ancestor(root,h,h), (root,base,head) and outside a repository — every one behaves as its new docstring says.",
+    "RAN: an exhaustive equivalence check of Recall's new `sees_seed` helper against the base predicate over all six substrate values x three pages — identical.",
+    "READ: Preflight.rulebook_text and check-consistency/workflow/panel.js `substrateText` — the latex-typesetter hat's new `needs` comment ('rulebook IS the grant: rulebook_text renders latex-idiom.md') and resolve_hats' new claim that only `siteonly` narrows the manuscript are both accurate.",
+    "READ: TestHarness.audit's body at base and head — byte-identical (`r.frozen != r.ideal && @test !isempty(r.holder)`); the docstring's 'above its ideal' -> 'differing from its ideal' is a correction toward code that never moved.",
+    "READ: Doctor.jl `const QUICK` at base — `AUDIT.GAP` was already in QUICK, so the ARCHITECTURE §7.3 edit is a currency fix, not a widening of what makedocs and TestHarness.gate() refuse.",
+    "READ: Config.check_paths at base — the `glossary` and `built_html` checks the new docstring adds already existed in code at base 209cb21 lines 199-200; only the `docs_build` check changed.",
+    "READ: git diff --stat over Project.toml and CHANGELOG.md for this range — Project.toml unchanged, CHANGELOG gained 13 lines still headed 'MINOR so far'."
+  ],
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "no",
+      "title": "resolve_function's reorder is inert, and the docstring it gained states a contract the code does not keep",
+      "locations": [
+        "src/TestHarness.jl:305 — the loop",
+        "src/TestHarness.jl:293-301 — the new `externals` bullet"
+      ],
+      "before": "    for mod in Iterators.flatten(((pkg,), externals, modules))\n…\nThe function object a surface name denotes. The arguments are `name`, the symbol; `pkg`, the umbrella\nmodule; `modules`, the package modules; and `externals`, the external modules whose generics the\npackage extends (searched last). Returns the function, or `nothing`.",
+      "after": "    for mod in Iterators.flatten(((pkg,), modules, externals))\n…\n- `externals` — the external modules whose generics the package extends, searched LAST so a package\n  function always wins its own name (`Config.read`, `Git.run` and `Scan.report` all share one with a\n  `Base` export, and Base ahead of them handed the caller the wrong generic).",
+      "why_it_matters": "I ran both orders over the whole surface: of the 421 names Reflection.all_package_functions returns for this package, ZERO resolve differently, and module_method_count is identical for all 19 modules. The reason is structural, not incidental: `pkg` is searched FIRST, and `isdefined(pkg, name)` is true for every exported Base name through the implicit `using Base`, so the `externals` tuple is unreachable for exactly the names the bullet cites. Measured: resolve_function(:read, …) = Base.read and resolve_function(:run, …) = Base.run BOTH before and after — the docstring's 'a package function always wins its own name' is false at head, and a consumer that reads it and calls resolve_function(:read, …) expecting Config.read gets Base.read. The third example is worse: `:report in names(Base)` is false and `isdefined(Base, :report)` is false, so Scan.report shares no name with any Base export and never could have been shadowed. The edit is a real change to a public helper's search order, justified in its own docstring by a defect that does not exist, and shipped with a wrong contract for consumers that pin this version.",
+      "justified": "no",
+      "description": "The search order of TestHarness.resolve_function was changed and a new docstring bullet was added to justify it. Re-running both orders shows the change has no effect on this package at all, and the docstring's three named examples are wrong: Base has no `report`, and `read`/`run` still resolve to Base after the change because the umbrella module shadows Base in the first tuple element. Either the loop should also stop preferring `pkg` for Base-shadowed names, or the bullet should say what the order actually does.",
+      "evidence": "Measured with `julia --project`: `:report in names(Base)` -> false; `isdefined(Base, :report)` -> false. `resolve_function(:read, GBGCodingTools, mods)` -> `read (Base)` under BOTH orders; `:run` -> `run (Base)` under both; `:report` -> `report (GBGCodingTools)` under both. Sweep over all 421 surface names: 'names resolving DIFFERENTLY after the reorder: Symbol[]'. module_method_count per module: no differences."
+    },
+    {
+      "type": "structure",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "tally.schema.json widens the closed `state` vocabulary from six values to ten, undeclared in §6.3 and in the CHANGELOG",
+      "locations": [
+        "schema/tally.schema.json:177 — the added enum members",
+        "schema/tally.schema.json — properties.per_id.additionalProperties",
+        "docs/ARCHITECTURE.md §6.3 — the state-verdict row, untouched by this diff",
+        "CHANGELOG.md — the Unreleased entry"
+      ],
+      "before": "\"per_id\": { \"additionalProperties\": true, … }\n\"state\": { \"enum\": [\"PRESENT\",\"PARTIAL\",\"REGRESSED\",\"ABSENT\",\"NOT-A-DEFECT\",\"UNCLEAR\",null] }",
+      "after": "\"per_id\": { \"additionalProperties\": {\"$ref\": \"#/$defs/entry\"}, … }\n\"state\": { \"enum\": [\"PRESENT\",\"PARTIAL\",\"REGRESSED\",\"ABSENT\",\"NOT-A-DEFECT\",\"UNCLEAR\",\"PASS\",\"FAIL\",\"BROKEN\",\"BLOCKED\",null], \"description\": \"a state verifier's verdict, or — on a bug-hunt finding whose witness was re-run — that witness's status\" }",
+      "why_it_matters": "ARCHITECTURE §6.3 is the normative table of closed vocabularies and still reads `state verdict | PRESENT | PARTIAL(surviving_class) | REGRESSED | ABSENT | NOT-A-DEFECT | UNCLEAR`; the diff edits ARCHITECTURE.md in nine other places and leaves that row alone. CLAUDE.md's core invariants say 'Closed vocabularies (ARCHITECTURE §6.3) … changing either is MAJOR', and §6.3 itself carries a 'Precondition for every consumer's adoption: before it adopts, audit its tally and adjudication code for closed switches over the old enums — a switch written for the old set silently misreads the new one.' The CHANGELOG entry added in this same change set names the tightening ('`managed` and `tally` closed their per-entry maps') but not the widening, and still classifies the release 'MINOR so far'. So a consumer reading either the design record or the CHANGELOG is told this release does not touch a closed vocabulary, while a graded hunt tally now carries four values its switch was never written for.",
+      "justified": "unclear",
+      "description": "Two changes to tally.schema.json land together: per_id's value schema is closed against `$defs/entry` (which base never referenced — I verified `additionalProperties: true` made it unreachable), and the `state` enum grows by PASS, FAIL, BROKEN, BLOCKED. The widening is NECESSARY given the tightening — Passes.grade already wrote `uppercase(String(r.status))` into `state` for hunt findings at base, so a hunt tally would now throw RoundError — but the necessity is precisely what makes the omission from §6.3 and from the CHANGELOG's classification a problem: the artefact vocabulary and the design record now disagree, and the release is labelled MINOR.",
+      "evidence": "Parsed-object diff base vs head: '$/properties/per_id/additionalProperties: true -> Dict(\"$ref\" => \"#/$defs/entry\")' and '$/$defs/entry/properties/state/enum length 7 -> 11'. Validation run: a tally whose per_id entry has `state = \"NOT-AN-ENUM\"` yields NO enum error under the base schema and '$.per_id.x.state: \"NOT-AN-ENUM\" is not one of \"PRESENT\", …, \"BLOCKED\", nothing' under the head schema. Base Passes.jl line 271: `entry[\"state\"] = r === nothing ? nothing : uppercase(String(r.status))`; Witnesses.jl:31 documents `status` as `:pass, :fail, :broken, :blocked`. ARCHITECTURE grep over the diff: '§6.3 NOT touched' for the state-verdict row. CHANGELOG (added here): 'MINOR so far' and '`managed` and `tally` closed their per-entry maps'."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "no",
+      "title": "The new signature_fidelity test cannot fail on the defect it names: on the fixture it evaluates to 8 >= 0",
+      "locations": [
+        "test/scans.jl:41-49 — the added @testset",
+        "src/Reflection.jl:418-421 — the moved counter"
+      ],
+      "before": "        examined === nothing || (examined[] += 1)                 # what was COMPARED: the scan's population\n        if def === :extension\n            push!(out, \"$name: EXTENSION-HOMED (no methods loaded) — skipped\"); continue\n        end",
+      "after": "        if def === :extension\n            push!(out, \"$name: EXTENSION-HOMED (no methods loaded) — skipped\"); continue\n        end\n        examined === nothing || (examined[] += 1)                 # what was COMPARED: the scan's population\n…\n    @testset \"signature_fidelity counts what it compared\" begin\n        n = Ref(0)\n        rows = G.Reflection.signature_fidelity(G.Config.read(FIXTURE); examined = n)\n        @test n[] > 0                                                    # population 0 would be DEAD\n        @test n[] >= count(r -> !occursin(\"EXTENSION-HOMED\", r), rows)   # a skipped binding is not one compared\n    end",
+      "why_it_matters": "The oracle is part of this change set, and this one certifies itself. I measured the fixture: signature_fidelity returns ZERO rows and skips ZERO extension-homed bindings there, so the second assertion is literally `8 >= 0`, and the first is `8 > 0` — both hold identically with the counter in its base position. Reverting the fix breaks neither. The only binding in reach that exercises the fix is `makedocs`, and it lives in the TOOL's own config (examined 192 -> 191, one EXTENSION-HOMED row), not the fixture's. A future regression of the population counter — the counter that decides DEAD, i.e. exit 2 — will pass this test.",
+      "justified": "unclear",
+      "description": "The counter move in Reflection.signature_fidelity is correct and matches the base docstring's own words ('how many bindings were actually compared'), but the test added in the same commit to pin it is written against the fixture, which has no extension-homed binding and produces no rows. It measures nothing about the change. Pinning it against the tool's own config (where the EXTENSION-HOMED row exists) would make it discriminate.",
+      "evidence": "Measured: 'fixture: examined(NEW) = 8   rows = 0   extension-homed skipped = 0   examined(OLD) would be = 8' and 'tool: examined(NEW) = 191   rows = 1   extension-homed skipped = 1   examined(OLD) would be = 192', the single row being 'makedocs: EXTENSION-HOMED (no methods loaded) — skipped'."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "no",
+      "title": "The fixture regression planted for the signature parser states a measurement that is false for its own example",
+      "locations": [
+        "fixture/GBG Fixture/src/FixtureC.jl:41-50 — the new `span` docstring",
+        "src/Scans/args_form.jl:16-31 — the balanced-paren walk"
+      ],
+      "before": "(no `span` in the fixture; the scan read)\n        o = findfirst('(', sig); c = findlast(')', sig)",
+      "after": "Two arguments and a returned tuple: RULE.DOC.ARGS_FORM binds fewer than three in running prose, and\nSCAN.ARGS_FORM must read the parameter list as the parenthesis that closes the first one — a parser\nthat stopped at the last `)` counted the return tuple as three more parameters and demanded bullets.",
+      "why_it_matters": "I ran the base parser on this exact signature. `span(options) -> (lo, hi)` under `findlast(')')` parses the inside as `options) -> (lo, hi` and Reflection.signature_parameters returns `([\"hi\"], String[])` — ONE positional named `hi`, not 'three more parameters', and one positional with no keyword never wants bullets, so the base scan produced no hit on it either. The planted case therefore does not distinguish the base parser from the head parser at all; it only moves the fixture's ARGS_FORM population from 5 to 6. The class IS real — `resolve_anchor(root, anchor) -> (file, line, count)` parses to `([\"root\",\"line\",\"count\"])` under the base parser and does demand bullets — so the fixture pins the wrong shape: a signature whose return tuple actually pushes the count to three, such as one with two arguments and a three-element returned tuple, would discriminate.",
+      "justified": "unclear",
+      "description": "A new binding was added to the clean fixture as the regression for the args_form parser fix, and its docstring records a measurement of the old behaviour. Re-run, the old parser yields one positional for this signature and raises no hit, so neither the defect nor the fix is observable on the planted case. The parser fix itself is warranted — I confirmed two genuine victims in the tool's own source.",
+      "evidence": "Measured: `span(options) -> (lo, hi)` OLD -> ([\"hi\"], String[]); NEW -> ([\"options\"], String[]). `resolve_anchor(root, anchor) -> (file, line, count)` OLD -> ([\"root\", \"line\", \"count\"], String[]); NEW -> ([\"root\", \"anchor\"], String[]). Base-scan re-run over the tool: `src/CLI/Config.jl:112 WANTS-BULLETS resolve_anchor pos=[\"root\", \"line\", \"count\"]` and `src/CLI/Sync.jl:258 WANTS-BULLETS split_block pos=[\"text\", \"block\", \"after\"]`. Fixture ARGS_FORM population 5 (base) -> 6 (head), 0 hits either way."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "no",
+      "title": "The new Workflow-prompt guard flags ordinary JavaScript its own both-directions test claims it passes",
+      "locations": [
+        "test/coverage.jl:38-40 — SPAN_IN_PROSE",
+        "test/coverage.jl:63 — the guard over all 11 scripts",
+        "test/coverage.jl:69-78 — the both-directions testset"
+      ],
+      "before": "        code = replace(text, r\"//[^\\n]*\" => \"\", r\"/\\*.*?\\*/\"s => \"\")\n        @test iseven(count(==('`'), code))",
+      "after": "const SPAN_IN_PROSE = r\"(?<=[a-z,.;:] )(?<!\\\\)`[^`\\n\\$,)}]{1,60}(?<!\\\\)`\"\n…\n        @test !occursin(SPAN_IN_PROSE, code)\n…\n    for js in (\"const banner = `ready`\", \"log(`ok`)\", \"x = `a b c`\", \"const q = `\\${x}/y`\", \"x = `Audit`;\")\n        @test !occursin(SPAN_IN_PROSE, js)                       # valid JavaScript is not a finding\n    end",
+      "why_it_matters": "The test's own comment says the check 'polices every future edit to eleven frozen scripts' and its second testset asserts 'valid JavaScript is not a finding'. All five negative probes happen to put the template literal after `=`, `(` or `,`. I ran the regex on the JavaScript forms it does not probe: `return \\`ok\\``, `if (x) return \\`y\\`` and `const x = cond ? \\`a\\` : \\`b\\`` are all FLAGGED, because `return` and `:` end in a character the lookbehind `[a-z,.;:] ` accepts. None of the 11 current scripts happens to contain one, so the suite is green today; the first author who writes `return \\`…\\`` in a Workflow script gets a red Pkg.test() with a message about Markdown code spans. In the other direction the class is also under-covered: a real bare span holding a comma, `)`, `}` or `$` — `\\`read \\`x, y\\`\\`` — is missed.",
+      "justified": "unclear",
+      "description": "A new suite-level guard was added to catch a bare Markdown code span inside a Workflow prompt template. It is a real class and the guard catches it, but its stated contract (ordinary JavaScript is never a finding) is falsified by re-running it on the commonest JS form that ends a word before a template literal. Anchoring on the escape state rather than on the preceding character class, or excluding a `return`/`:` predecessor, would keep the true positives.",
+      "evidence": "Measured over all 11 workflow scripts: no hits (as the test asserts). Probes: 'return `ok`  <-- WOULD FLAG', 'const x = cond ? `a` : `b`  <-- WOULD FLAG', 'if (x) return `y`  <-- WOULD FLAG', 'log(`x`); return `done`  <-- WOULD FLAG'; and 'read `x, y` now  <-- MISSED', 'open `foo)bar`  <-- MISSED', 'see `A$B` there  <-- MISSED'."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "no",
+      "title": "A new test comment reports a regression that never existed: nothing validated against finding.schema.json at base",
+      "locations": [
+        "test/schemas.jl:104-116 — the added @testset and its comment",
+        "src/CLI/Rounds.jl:397-409 — the validation loop added in the same change set"
+      ],
+      "before": "(no reference to schema/finding.schema.json anywhere under src/ at base 209cb21)",
+      "after": "        # The regression this pins: `bank` validated every finding against schema/finding.schema.json,\n        # which closes its property set, while a bug-hunt finding carries its own `kind`, `verdict`,\n        # `file`, `line`, `mechanism` — so every real hunt bank threw on its first finding.",
+      "why_it_matters": "`git grep 'load_schema(\"finding\")' 209cb21 -- src` returns nothing: at base, bank did not validate findings against the core schema, and no hunt bank ever threw on it. The validation loop and the projection that makes it survive were BOTH written in this change set — the Rounds.jl comment beside them ('The schema existed and nothing validated against it') is accurate, and the test comment contradicts it. A reader of the test file is told a defect was found and fixed, when what happened is that a check was added and made to pass in one step; that is exactly the shape this audit is asked to distinguish, and here the record itself misdirects it.",
+      "justified": "unclear",
+      "description": "The added test is harmless in itself (it asserts that the core schema rejects an unprojected hunt finding and accepts the projected one), but its comment misdescribes the base state, and it exercises `validate` directly rather than `bank`, so the projection the change actually introduces is never run by the test. Correcting the comment and driving the assertion through Rounds.bank would make the record honest and the test load-bearing.",
+      "evidence": "`git grep -n 'load_schema(\"finding\")\\|load_schema(\"import\")' 209cb212e97f7565482dd7a01c75370cad28b79b -- src` -> no hits ('NONE at base'). At head: `src/CLI/Rounds.jl:403: core = load_schema(\"finding\"); coreprops = keys(core[\"properties\"])`, itself commented '# The schema existed and nothing validated against it.'"
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "no",
+      "title": "bank's new core-schema refusal is unreachable: every instrument's finding shape already validates after projection",
+      "locations": [
+        "src/CLI/Rounds.jl:397-409 — the added loop and its exit 2"
+      ],
+      "before": "    open(joinpath(dir, \"findings.json\"), \"w\") do f",
+      "after": "    core = load_schema(\"finding\"); coreprops = keys(core[\"properties\"])\n    for f in findings\n        errs = validate(core, Dict{String,Any}(k => v for (k, v) in f if k in coreprops))\n        isempty(errs) || (println(io, \"bank: banked finding $(get(f, \"id\", \"?\")) does not validate: \", first(errs), …); return 2)\n    end",
+      "why_it_matters": "I compared the four instrument schemas against schema/finding.schema.json. check-docs, check-consistency and audit-changes have property sets IDENTICAL to the core's minus id/lane/n/seeded (which bank adds and the core admits) and the SAME required list; bug-hunt's extra fields (kind, verdict, file, line, mechanism, observed, witness_path, witness_plan, second_location, docs_url) are exactly the keys the projection drops, and its required list is a superset of the core's. Every lane file that survives classify_lane therefore survives this loop, so the new exit-2 path and the operator instruction it prints ('gbg round rerun … --lanes …') can never be reached. The cost is a false sense that findings.json is independently checked; the actual guarantee still rests entirely on the instrument schema at classify_lane. It is a new refusal path added to the most expensive point of a round that measures nothing.",
+      "justified": "unclear",
+      "description": "The loop is defensible as belt-and-braces, but as written it is provably a no-op given the current schema set, and the change set presents it (in test/schemas.jl and in the CHANGELOG's spirit) as closing a real gap. Either the core schema should carry a requirement the instrument schemas do not (so the check discriminates), or the projection should be dropped in favour of validating what is actually written to findings.json.",
+      "evidence": "Measured per instrument — check-docs / check-consistency / audit-changes: 'props NOT in core (dropped by bank's projection): String[]' and 'core-required NOT required by the instrument: Any[]'; bug-hunt: dropped = [docs_url, file, kind, line, mechanism, observed, second_location, verdict, witness_path, witness_plan], core-required not required = Any[]. Core required = [type, severity, confidence, title, locations, description], additionalProperties = false."
+    }
+  ]
+}

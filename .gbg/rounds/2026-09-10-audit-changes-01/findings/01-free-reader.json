@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-audit-changes-01",
+  "lane": "free-reader",
+  "verdict": "CONCERNS",
+  "checked": [
+    "src/CLI/Passes.jl: pass_scope, unswept, finding_files, and the changed pass_open/grade bodies that use them, against the base version (which always did `findings = findings_of(dir)` unconditionally in both pass_open and grade)",
+    "test/rounds.jl's new 'a pass verifies what is open, and refuses an unswept fix' testset and the round-lifecycle test's changed pass_open assertions, to see whether the new scoping is exercised and whether a no-resolvable-location finding is covered (it is not)",
+    "src/CLI/Config.jl: check_paths' old fixed docs/make.jl check vs. the new eachmatch(r\"[^\\s\\\"']+\\.jl\") extraction, and test/config.jl's new assertions for it",
+    "src/TestHarness.jl: resolve_function's search-order change ((pkg,),externals,modules) -> ((pkg,),modules,externals) and whether the tool's own test/method_parity_baseline.toml exists to be affected by it (it does not; only future consumers are)",
+    "schema/managed.schema.json and schema/tally.schema.json: additionalProperties changed from `true` to `{$ref: entry}` for the `files`/`per_id` maps, and Sync.jl's read_sidecar/Passes.jl's grade() code paths that now validate against the tightened schema",
+    "src/Scans/mathbf.jl, latex-idiom.md, RULES.toml, catalog/scans.toml for the new standing \\mathbf{1} exception, to confirm it is a disclosed policy change rather than a silent one",
+    "src/Scans/args_form.jl's new paren-depth matching and 'eltype' keyword exemption against policy/docs-rubric.md at base, to confirm the exemption text pre-existed the code fix (it did) rather than being invented alongside it",
+    "src/Reflection.jl's signature_fidelity reordering of the `examined[] += 1` counter around the extension-homed skip, and src/Scans/code_in_math.jl's comment-only change, to separate real behaviour changes from stale-comment corrections",
+    "src/Scans/sibling_link.jl's new later-mention check and the matching fixture defect/config additions",
+    "instruments/check-consistency/workflow/rubric-audit.js's new misassigned/orphaned MISSED accounting"
+  ],
+  "candidates_found": 8,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "medium",
+      "title": "A closed finding whose locations never resolve to a real file is exempt from re-verification forever, and from the new sweep-refusal too",
+      "locations": [
+        "src/CLI/Passes.jl:58-66 (finding_files)",
+        "src/CLI/Passes.jl:84-116 (pass_scope)",
+        "src/CLI/Passes.jl:119-133 (unswept)"
+      ],
+      "before": "Base `pass_open`/`grade` both did `findings = findings_of(dir)` unconditionally — every pass re-verified every banked finding, closed or not, with no notion of a finding being exempt from re-verification.",
+      "after": "pass_scope decides who stays open to re-check: `for f in findings_of(dir); id = f[\"id\"]; (id in prev_open || f[\"lane\"] == \"scans\") && continue; any(x -> x in touched, finding_files(root, f)) && push!(suspects, id); end`, and `finding_files` only returns a location string when `eachmatch(r\"[A-Za-z0-9_][A-Za-z0-9_./\\-]*\\.[A-Za-z0-9]+\", ...)` finds a substring that is ALSO `isfile(joinpath(root, f))`. When a finding's `locations` never yield such a string — a policy/architecture finding that cites a rule id, a section heading, or 'every consumer' rather than a bare `path:line` — `finding_files` returns `[]`, so `any(x -> x in touched, [])` is `false` for every future fix range: the id can never become a 'suspect' again, and `grade()`'s `carried = Dict(... for (i,e) in ... if !(String(i) in scope))` copies its old, once-only-verified entry forward for every subsequent pass without ever asking a verifier to look at it again. The same emptiness also exempts it from the new refusal gate: `unswept` does `isempty(named) && continue`, so a location-less open finding never blocks `pass open` even if nothing about it was ever touched.",
+      "why_it_matters": "The design intent stated in the same commit (ARCHITECTURE §6.2 step 7, PROTOCOL.md) is 'a closed finding can only regress where its own evidence lives, and the diff says whether anything went near it' — but that safety property silently degrades to 'never re-verified once closed' for exactly the findings whose evidence is not a bare file:line, which architecture/structure/policy findings routinely are. A round can close 'clean' while a finding closed in pass 1 is carried unexamined through every later pass, even though later fix passes may have touched the very files or logic the finding was about, just not under a location string the regex could resolve.",
+      "justified": "unclear",
+      "description": "The scoped-reverification feature (new in this diff, extensively documented as an intentional cost-saving change) has an undocumented failure mode: it assumes every finding's `locations` field resolves to at least one real repository file, and when that assumption fails the finding is not flagged as a corner case — it is silently and permanently treated as un-suspectable, which is a stronger exemption than 'not yet re-verified' and was not called out anywhere the design or tests describe the feature.",
+      "evidence": "\"(id in prev_open || f[\\\"lane\\\"] == \\\"scans\\\") && continue\\n        any(x -> x in touched, finding_files(root, f)) && push!(suspects, id)\" and \"named = finding_files(root, f)\\n        isempty(named) && continue\" (src/CLI/Passes.jl)"
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The new docs_build script-existence check drops a quoted, space-containing script path to a bare filename fragment and then reports it missing",
+      "locations": [
+        "src/CLI/Config.jl:210-215 (check_paths)"
+      ],
+      "before": "`isfile(joinpath(root, \"docs\", \"make.jl\")) || push!(errs, \"package.docs_build: docs/make.jl does not exist\")` — a fixed, command-independent check; any `docs_build` string passed as long as the seeded `docs/make.jl` template file existed, which every consumer created by `gbg init` has by default regardless of what its `docs_build` actually names.",
+      "after": "`scripts = [String(m.match) for m in eachmatch(r\"[^\\s\\\"']+\\.jl\", cfg[\"package\"][\"docs_build\"])]` followed by `isfile(joinpath(root, s)) || push!(errs, \"package.docs_build: $(repr(s)) does not exist\")` for each match. The character class excludes both whitespace and quote characters, so a legitimately quoted path containing a space — e.g. `julia --project=\"docs\" \"docs/build script.jl\"` — is not recovered as one token: the regex yields `\"script.jl\"` (confirmed by direct simulation of the same pattern), which is then checked at the wrong location and reported as not existing.",
+      "why_it_matters": "CLAUDE.md states twice, as a first-class invariant of this very package, that 'Paths carry spaces (every consumer path has two): quote them in every rendered command.' A consumer whose `docs_build` legitimately needs a quoted path with a space — the exact case the package's own rules anticipate — passed `check_paths`/`CFG.SURFACES` trivially under the old, command-independent check (since their seeded docs/make.jl existed) and now fails it with a spurious 'does not exist' error, blocking `gbg doctor`, `preflight`, and every round verb that gates on it, for a docs_build value that never changed.",
+      "justified": "no",
+      "description": "The fix correctly targets a real defect (the old check verified an unrelated fixed path instead of what `docs_build` actually runs), but its regex-based extraction of `.jl` tokens is narrower than the paths the package's own conventions require it to handle, so it swaps one false-pass defect for a new false-fail one on exactly the input shape (space-containing, quoted paths) this codebase calls out as a live concern.",
+      "evidence": "\"scripts = [String(m.match) for m in eachmatch(r\\\"[^\\\\s\\\\\\\"']+\\\\.jl\\\", cfg[\\\"package\\\"][\\\"docs_build\\\"])]\" (src/CLI/Config.jl); python simulation of the identical character class against `julia --project=\\\"docs\\\" \\\"docs/build script.jl\\\"` returns `['script.jl']`, not `['docs/build script.jl']"
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "managed.json's `files` map and tally.json's `per_id` map went from unconstrained additionalProperties to a closed `entry` shape, which can hard-fail sync and grading on a sidecar/tally an older tool version wrote",
+      "locations": [
+        "schema/managed.schema.json:16 (properties.files.additionalProperties)",
+        "schema/tally.schema.json:69 (properties.per_id.additionalProperties)",
+        "src/CLI/Sync.jl (read_sidecar)",
+        "src/CLI/Passes.jl (grade — the `carried` dict merged into `per_id` before the final schema validate)"
+      ],
+      "before": "`\"additionalProperties\": true` on both maps — any shape for an entry under `files` (managed.schema.json) or `per_id` (tally.schema.json) validated, whatever a given release actually wrote there.",
+      "after": "`\"additionalProperties\": {\"$ref\": \"#/$defs/entry\"}\"` on both — every entry must now match a closed, `additionalProperties: false` object (`{template, version, sha256}` for managed; the tally entry shape, enum-restricted, for per_id). `read_sidecar` throws a `SyncError` on any managed.json that does not conform, and `grade()` now validates the WHOLE tally — including `carried` entries copied verbatim from a PRIOR pass's tally.json, not freshly computed this pass — against this tightened schema before writing.",
+      "why_it_matters": "This is the intended fix for a real gap ('the schema existed and nothing validated against it'), and a sidecar/tally written by the current tool version will already conform. But a consumer upgrading from an older tool version with an existing, slightly different managed.json (or a round left open across a tool upgrade, so its prior-pass tally.json predates a later minor schema change) now hard-fails `gbg sync` or `gbg round grade` outright, with no degraded/warn path — every managed-file check and every round verb depending on it stops working until the file is deleted by hand, for consumers whose files previously validated under the looser schema.",
+      "justified": "yes",
+      "description": "A validation-tightening fix that is correctly scoped to the defect it targets (closing a schema hole nothing previously checked), but is wider in effect than a normal PATCH/MINOR-shaped fix because it can retroactively invalidate data files written by any prior release of the tool, and the diff does not add a migration or a softer failure mode for that transition — it is disclosed only in a docstring's prose ('a sidecar an older copy wrote can fail here'), not in any compatibility note.",
+      "evidence": "\"/properties/files/additionalProperties: type changed <class 'bool'> -> <class 'dict'>: True -> {'$ref': '#/$defs/entry'}\" and \"/properties/per_id/additionalProperties: type changed <class 'bool'> -> <class 'dict'>: True -> {'$ref': '#/$defs/entry'}\" (semantic diff of schema/managed.schema.json and schema/tally.schema.json between base and head)"
+    },
+    {
+      "type": "operational",
+      "severity": "nit",
+      "confidence": "high",
+      "title": "resolve_function's search order was reversed (externals before modules -> modules before externals), which changes which method-count a consumer's method_parity baseline measures for any name shared with Base",
+      "locations": [
+        "src/TestHarness.jl:305 (resolve_function)"
+      ],
+      "before": "`for mod in Iterators.flatten(((pkg,), externals, modules))` — for a name not bound directly on the umbrella module, `externals` (Base by default) was searched BEFORE the package's own submodules, so a name like `read`/`run`/`report` that both Base and a package submodule (e.g. `Config`, `Git`, `Scan`) define would resolve to Base's generic.",
+      "after": "`for mod in Iterators.flatten(((pkg,), modules, externals))` — the package's own submodules are now searched first, so the same name resolves to the package's own function instead of Base's.",
+      "why_it_matters": "This is a real, named bug fix ('Base ahead of them handed the caller the wrong generic', citing `Config.read`, `Git.run`, `Scan.report`), and I could not find a baseline in this repo's own test/ that it would change (no `method_parity_baseline.toml` exists here yet). But it is a shared-tooling change: for any of the four consumer packages that already runs `TestHarness.method_parity` and has a public surface name colliding with a `Base` export via a submodule, this silently changes the computed method count for that generic the next time the consumer upgrades to this version, which can flip a previously-passing frozen baseline to failing (or vice versa) for a count nobody edited.",
+      "justified": "yes",
+      "description": "A narrowly-scoped, well-justified one-line fix to a real defect, included here only because it is a genuine change to a previously-computed result (which method's methods get counted) for any consumer whose surface shadows a Base generic through a submodule, and that class of consumer is named explicitly in the fix's own comment as existing.",
+      "evidence": "\"external modules whose generics the package extends, searched LAST so a package function always wins its own name (`Config.read`, `Git.run` and `Scan.report` all share one with a `Base` export, and Base ahead of them handed the caller the wrong generic)\" (src/TestHarness.jl docstring, head)"
+    }
+  ]
+}

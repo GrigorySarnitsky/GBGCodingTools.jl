@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-audit-changes-01",
+  "lane": "sweep-completeness",
+  "verdict": "CONCERNS",
+  "checked": [
+    "RULE.DOC.HOME_ORDER reorder (caveats moved to last): catalog/hats/doc-policy.toml, catalog/hats/structure-consistency.toml, policy/RULES.toml, policy/docs-rubric.md, docs/ARCHITECTURE.md §12.A row — all four sites found consistently updated; docs/design-record/survey-checkdocs.md still states the old order but is historical provenance, not a live contract",
+    "RULE.DOC.SHAPE ratchet-scoping change ('caps bind always' → 'caps bind on docstrings and NEW page units; an already-baselined page unit is held by the ratchet alone'): compared policy/RULES.toml statement/sentinel, policy/docs-rubric.md §RULE.DOC.SHAPE paragraph, catalog/scans.toml + docs/ARCHITECTURE.md §12.B SCAN.PROSE_SHAPE row, docs/ARCHITECTURE.md §12.A RULE.DOC.SHAPE row, src/Scans/prose_shape.jl",
+    "RULE.TEX.MATHBF \\mathbf{1} standing-exception change (from 'admitted only if a package's mathbf_allowed lists it' to 'admitted in every package unconditionally'): compared policy/latex-idiom.md, src/Scans/mathbf.jl, schema/config.schema.json, docs/src/guide/config.md, docs/ARCHITECTURE.md §12.B SCAN.MATHBF row, docs/ARCHITECTURE.md §12.A RULE.TEX.MATHBF row, policy/RULES.toml statement/sentinel, catalog/hats/latex-typesetter.toml persona",
+    "RULE.TEST.RULE_WITH_CHECK's new panel/weakness/session taxonomy and its explicit self-referential clause about a rule 'long called a known weakness': compared policy/testing-protocol.md, policy/RULES.toml's per-rule check= assignments (esp. RULE.API.POSITIONAL → check=[\"panel\"]), and CLAUDE.md's own declared-deviation prose for RULE.API.POSITIONAL (which this very diff re-rendered via gbg sync)",
+    "new --sweep-ok flag on `gbg round pass open`: compared docs/ARCHITECTURE.md §6.2 step 7, instruments/check-docs/PROTOCOL.md, instruments/check-consistency/PROTOCOL.md, src/CLI/Passes.jl, src/CLI/Rounds.jl usage strings, test/rounds.jl, docs/src/guide/rounds.md, IMPLEMENTATION.md's CLI verb table",
+    "D11 schema count (eighteen → sixteen) and the retired lane-file/hunt-candidate schema files: docs/ARCHITECTURE.md §2 D11, docs/ARCHITECTURE.md §3 layout, IMPLEMENTATION.md §2's own schema list, actual schema/ directory contents — all agree (IMPLEMENTATION.md already said sixteen before this diff, so ARCHITECTURE.md was the one catching up, not falling behind)",
+    "GBG_ROUND now also covers 'an audit's executable claim': docs/src/guide/rounds.md, docs/ARCHITECTURE.md §6.2 step 10 — both consistent",
+    "docs/src/guide/config.md, docs/src/guide/install.md prose additions (fixture routing, mathbf_allowed carve-out) against their ARCHITECTURE.md counterparts — consistent",
+    "RULE.DOC.ARGS_FORM eltype-keyword exemption newly enforced in src/Scans/args_form.jl — the exemption text itself predates this diff verbatim in policy/docs-rubric.md, so this is code catching up to prose already in place at base, not a new prose change requiring a sweep"
+  ],
+  "candidates_found": 6,
+  "findings": [
+    {
+      "type": "currency",
+      "severity": "major",
+      "confidence": "high",
+      "title": "RULE.DOC.SHAPE's new ratchet-scoping clause reached the scan catalogue but not its own declared source paragraph or the rule table",
+      "locations": [
+        "policy/RULES.toml:231 (statement)",
+        "policy/docs-rubric.md:205-209 (### RULE.DOC.SHAPE, unchanged)",
+        "docs/ARCHITECTURE.md:2238 (§12.A RULE.DOC.SHAPE row, unchanged)",
+        "docs/ARCHITECTURE.md:2333 (§12.B SCAN.PROSE_SHAPE row, updated)"
+      ],
+      "before": "docs/ARCHITECTURE.md §12.B (base): \"caps 120 words / 3 admonitions always; ratchet against `docs/prose_shape.csv`…\"; policy/RULES.toml statement (base): \"…it has at most 3 admonitions, always; no unit grows past its baseline…\"; policy/docs-rubric.md's own paragraph (base, unchanged by this diff): \"…it carries at most three admonitions, no unit grows past its recorded baseline…\"",
+      "after": "docs/ARCHITECTURE.md §12.B (head, updated): \"caps 120 words / 3 admonitions on every docstring and every NEW page unit, a baselined page unit held by the ratchet alone…\"; policy/RULES.toml statement (head, updated): \"…it has at most 3 admonitions; no unit grows past its baseline, and a page unit already baselined is held by that ratchet alone…\"; policy/docs-rubric.md's paragraph is byte-identical to base — still says only \"no unit grows past its recorded baseline\", with no mention of the new new-vs-already-baselined distinction; docs/ARCHITECTURE.md §12.A's RULE.DOC.SHAPE row is also byte-identical to base.",
+      "why_it_matters": "This package's own D12 invariant is that policy/RULES.toml's statement is regenerated FROM the policy/*.md paragraph (RULES.toml's header comment: \"edit the paragraph, not this file\") — here the statement now says something the paragraph it is supposedly derived from does not say, so RULES.toml has drifted ahead of its declared source. A reader of policy/docs-rubric.md (the rulebook a hat is told to treat as authoritative) or of ARCHITECTURE §12.A (the rule-id table) still learns the old, stricter behaviour and would wrongly flag an already-baselined page unit that merely stays under the 120-word cap, or wrongly believe the cap is inescapable everywhere it is quoted from the rule table rather than the scan table.",
+      "justified": "no",
+      "description": "A real behavioural relaxation (an already-baselined page unit is now held by the ratchet alone, not by the fixed 120-word/3-admonition cap) was swept into the scan catalogue's own descriptive row (§12.B) and into RULES.toml's summary statement, but not into the rulebook paragraph RULES.toml is generated from, nor into the twin rule-id table (§12.A) that sits a few hundred lines away in the same file and describes the identical rule.",
+      "evidence": "policy/RULES.toml:231 \"no unit grows past its baseline, and a page unit already baselined is held by that ratchet alone\" vs policy/docs-rubric.md:206-207 \"no unit grows past its recorded baseline, `# Arguments` precedes…\" (no such clause); docs/ARCHITECTURE.md §12.A line 2238 unchanged from base (`git show 209cb21:docs/ARCHITECTURE.md` line 2215 is byte-identical to head line 2238) while §12.B line 2333 was edited in the same diff."
+    },
+    {
+      "type": "currency",
+      "severity": "major",
+      "confidence": "high",
+      "title": "\\mathbf{1}'s new unconditional, fleet-wide exception reached five sites but not the rule table, RULES.toml's statement, or the LaTeX-typesetter hat's persona",
+      "locations": [
+        "policy/RULES.toml:357-358 (statement/sentinel, unchanged)",
+        "docs/ARCHITECTURE.md:2255 (§12.A RULE.TEX.MATHBF row, unchanged)",
+        "docs/ARCHITECTURE.md:2321 (§12.B SCAN.MATHBF row, updated)",
+        "catalog/hats/latex-typesetter.toml:9 (persona, unchanged)"
+      ],
+      "before": "src/Scans/mathbf.jl (base): `allowed = Set(String.(cfg[\"notation\"][\"mathbf_allowed\"]))` — \\mathbf{1} was only exempt for a package that listed it; policy/latex-idiom.md (base): no standing-exception sentence; catalog/hats/latex-typesetter.toml persona (base, unchanged by this diff): \"…the indicator is \\mathbf{1} where the rulebook allows it\".",
+      "after": "src/Scans/mathbf.jl (head): `allowed = Set(…); push!(allowed, \"\\\\mathbf{1}\")` — now unconditionally exempt in every package; policy/latex-idiom.md:59-60 (head, new): \"`\\mathbf{1}`…is admitted in every package whatever that list holds; it is not a package's to withhold.\"; docs/ARCHITECTURE.md §12.B row (head) gained the parenthetical \"(admits `\\mathbf{1}` in every package, RULE.TEX.MATHBF's standing exception, whatever `notation.mathbf_allowed` holds)\"; RULES.toml's statement/sentinel and ARCHITECTURE §12.A's row are byte-identical to base, and catalog/hats/latex-typesetter.toml's persona still reads \"where the rulebook allows it\" — conditional language the new rule contradicts.",
+      "why_it_matters": "A LaTeX-typesetter hat run against a consumer package that leaves `mathbf_allowed = []` (IT, per this same corpus's own record) is instructed by its own persona to treat `\\mathbf{1}` as conditional on \"where the rulebook allows it\" — exactly the reading the new rule overturns — so the hat can misjudge the same construct the automated scan now waves through, and anyone reading RULES.toml's statement or ARCHITECTURE §12.A instead of latex-idiom.md still gets the old, stricter rule.",
+      "justified": "no",
+      "description": "A behavioural and policy change (a consumer that sets `notation.mathbf_allowed = []` can no longer be flagged for writing `\\mathbf{1}`) was propagated to the scan implementation, the rulebook paragraph, the config schema description and the config guide, and to the §12.B scan-catalogue mirror — but not to the §12.A rule-id mirror two hundred lines above it in the same ARCHITECTURE.md, not to RULES.toml's own one-line statement of the rule, and not to the latex-typesetter hat's persona, which this very diff touched (its `needs` line) without touching the now-contradicted \"where the rulebook allows it\" clause a few lines below.",
+      "evidence": "catalog/hats/latex-typesetter.toml:9 \"the indicator is \\mathbf{1} where the rulebook allows it\" (untouched) vs policy/latex-idiom.md:59-60 \"\\mathbf{1}…is admitted in every package whatever that list holds; it is not a package's to withhold\" (added by this diff); docs/ARCHITECTURE.md line 2255 identical between `git show 209cb21` and head, while line 2321 (SCAN.MATHBF row) differs."
+    },
+    {
+      "type": "currency",
+      "severity": "major",
+      "confidence": "high",
+      "title": "The new panel-vs-weakness distinction, written to correct exactly this case, was not carried into CLAUDE.md's own deviation entry — even though this diff re-rendered that very line",
+      "locations": [
+        "policy/testing-protocol.md:63-69 (new panel/weakness/session taxonomy)",
+        "policy/RULES.toml:296 (RULE.API.POSITIONAL check=[\"panel\"])",
+        "CLAUDE.md:5 (deviation entry, still \"KNOWN WEAKNESS\")"
+      ],
+      "before": "policy/testing-protocol.md (base) said only: \"…name what would catch its next violation, and if the answer is ‘someone remembering this rule’, it is not enforced.\" RULE.API.POSITIONAL carried no `check` field at base. CLAUDE.md (base): \"`RULE.API.POSITIONAL` on `*` — no program decides whether an argument affects the result: the rule is semantic, so it has no check anywhere and is a KNOWN WEAKNESS by RULE.TEST.RULE_WITH_CHECK's own terms…\"",
+      "after": "policy/testing-protocol.md (head) adds: \"…`panel` for a rule only a reading panel can decide…or `weakness`…A rule this rulebook has long called a known weakness because no program could ever decide it is `panel`, not `weakness`: `weakness` is reserved for the check that could exist and does not.\" policy/RULES.toml now assigns RULE.API.POSITIONAL `check = [\"panel\"]` (not weakness) — matching the new rule precisely. CLAUDE.md was resynced in this same diff (its managed-block sha changed and this exact line was touched, wrapping `RULE.TEST.RULE_WITH_CHECK` in backticks) yet still reads \"…is a KNOWN WEAKNESS by `RULE.TEST.RULE_WITH_CHECK`'s own terms…\" — the label the new rule says is wrong for precisely this kind of case.",
+      "why_it_matters": "CLAUDE.md's deviation prose is what a session or reviewer reads to understand why this package is exempt from RULE.API.POSITIONAL's normal enforcement; left saying \"KNOWN WEAKNESS\" after the rulebook redefines that exact situation as `panel` (judged, not owed), it misstates the package's own standing under its newly-revised policy, in the one artifact (the checked-in CLAUDE.md) most likely to be read on its own without cross-referencing testing-protocol.md.",
+      "justified": "no",
+      "description": "testing-protocol.md's new text is self-referential (\"a rule this rulebook has long called a known weakness\") and RULES.toml was updated in lock-step to classify RULE.API.POSITIONAL as `panel`, but the one place that actually spells out RULE.API.POSITIONAL's deviation in prose — CLAUDE.md, touched by this very diff for an unrelated formatting reason — still asserts the terminology the new rule explicitly retires.",
+      "evidence": "CLAUDE.md:5 \"…is a KNOWN WEAKNESS by `RULE.TEST.RULE_WITH_CHECK`'s own terms…\" (present at head, only backticks added by this diff) vs policy/testing-protocol.md's new sentence \"A rule this rulebook has long called a known weakness because no program could ever decide it is `panel`, not `weakness`\" and policy/RULES.toml:296 `check = [\"panel\"]` for the identical rule."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The new `--sweep-ok` flag on `gbg round pass open` reached six sites but not IMPLEMENTATION.md's own CLI verb table",
+      "locations": [
+        "IMPLEMENTATION.md:289",
+        "docs/ARCHITECTURE.md:1474-1476",
+        "src/CLI/Passes.jl:138",
+        "src/CLI/Rounds.jl:646,652"
+      ],
+      "before": "IMPLEMENTATION.md:289 (unchanged by this diff): \"`gbg round prepare\\|build\\|test\\|bank\\|rerun\\|grade\\|close\\|abandon\\|list\\|render <round>`, `gbg round pass open <round> [--regrade]`…\"",
+      "after": "src/CLI/Rounds.jl:646,652 (head): usage strings read \"gbg round pass open <round> [--regrade] [--sweep-ok]\"; docs/ARCHITECTURE.md:1474-1476, instruments/check-docs/PROTOCOL.md and instruments/check-consistency/PROTOCOL.md all now describe `--sweep-ok`; IMPLEMENTATION.md:289 is byte-for-byte the same signature as at base, still listing only `[--regrade]`.",
+      "why_it_matters": "IMPLEMENTATION.md is cited in CLAUDE.md as \"the build plan\" and is precise elsewhere about exact flags (e.g. `--profile`, `--strength`, `--no-seed`, `--dry` for `preflight`); a reader relying on it to know the real CLI surface of `pass open` would not learn `--sweep-ok` exists, or that a pass can now be refused outright pending it.",
+      "justified": "no",
+      "description": "IMPLEMENTATION.md is the package's own build-plan spec table for exact CLI signatures, so it is exactly the kind of site this rule's sweep should have reached; the new flag was added to the ARCHITECTURE narrative, the code, the usage strings, and two instrument protocols, but the CLI-signature reference table describing the very same verb was left untouched.",
+      "evidence": "IMPLEMENTATION.md:289 \"`gbg round pass open <round> [--regrade]`\" vs src/CLI/Rounds.jl:652 `(println(stderr, \"usage: gbg round pass open <round> [--regrade] [--sweep-ok]\"); return 2)` and docs/ARCHITECTURE.md:1474 \"refuses outright — `--sweep-ok` overrides — while an open finding names a file the fix pass did not touch…\""
+    }
+  ]
+}

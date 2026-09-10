@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-audit-changes-01",
+  "lane": "reader-consequence",
+  "verdict": "CONCERNS",
+  "checked": [
+    "catalog/hats/doc-policy.toml, structure-consistency.toml personas: HOME_ORDER reorder (caveats moved from position 4 to last) reflected consistently in both hat personas",
+    "docs/ARCHITECTURE.md D11 'Sixteen schemas' claim cross-checked against the actual schema/*.schema.json directory listing (16 files) — accurate",
+    "docs/ARCHITECTURE.md D10/§6.2/§6.8/§7.3 prose additions (AUDIT.GAP, CFG.SURFACES row rewording, pass-scope step 7, audit-disposed-not-corrected-inside) cross-checked against src/CLI/Passes.jl, src/CLI/Config.jl, src/CLI/Doctor.jl implementations",
+    "docs/src/guide/install.md new paragraph on the fixture's dev-pin routing to the enclosing tool repository, cross-checked against bin/gbg's actual shell logic — accurate",
+    "docs/src/guide/config.md additions (glossary/data-surface note, mathbf_allowed \\mathbf{1} exception) cross-checked against schema/config.schema.json and src/Scans/mathbf.jl — accurate",
+    "policy/docs-rubric.md RULE.DOC.HOME_ORDER reorder cross-checked against docs/src/guide/rules.md and docs/ARCHITECTURE.md §12.A for any remaining stale 'caveats before formula' text — none found, sweep was complete",
+    "policy/latex-idiom.md / RULES.toml \\mathbf{1} standing-exception addition cross-checked against src/Scans/mathbf.jl's new push!(allowed, \"\\\\mathbf{1}\") — consistent",
+    "RULE.DOC.SIBLING_LINK 'later mention must be bare' requirement (already present in base docs-rubric.md/latex text) cross-checked against the new src/Scans/sibling_link.jl enforcement and the new fixture defect (defects.toml, defects/page.md, docs/src/index.md) — code closes a pre-existing enforcement gap, doc text unchanged",
+    "RULE.DOC.ARGS_FORM's pre-existing 'single element-type keyword' exemption (present at base) cross-checked against the new eltype_kw logic in src/Scans/args_form.jl — code now implements a promise that already existed in the rubric, not a new promise added to match new code",
+    "src/CLI/Config.jl check_paths docstring update (docs_build now checks every named .jl script, not a fixed docs/make.jl) cross-checked against the implementation and against docs/ARCHITECTURE.md's CFG.SURFACES row and test/config.jl",
+    "src/Reflection.jl signature_fidelity: the reordered examined[]-increment (extension-homed skips no longer inflate the population counter) cross-checked against its pre-existing docstring claim ('how many bindings were actually compared') and the new test in test/scans.jl — code now matches a promise that predates the diff",
+    "src/TestHarness.jl resolve_function: search-order change (externals now searched after modules, not before) cross-checked against its rewritten docstring, which states and justifies the new order — accurate",
+    "src/CLI/Main.jl parse_options docstring rewrite ('--name=value works whatever valued says') cross-checked against the (unchanged) implementation — code was already correct, doc was previously ambiguous and is now accurate",
+    "docs/src/api/CLI.md / docs/src/guide/verbs.md: Init.migrate_seeds moved from verbs.md to CLI.md, and Options/cmd_doctor/cmd_scan added — grepped the whole docs/src tree for duplicate @docs entries of each binding — none found",
+    "Mass docstring reformatting across src/CLI/*.jl and src/*.jl (Git.jl, Ledger.jl, Doctor.jl, Fleet.jl, Gate.jl, Sync.jl, Preflight.jl, Recall.jl, HtmlWalker.jl, DocLints.jl, GBGCodingTools.jl) implementing the bulleted 'The arguments are:' form — spot-checked each against its function signature for argument-name or default drift; none found",
+    "fixture/GBG Fixture/src/FixtureC.jl new span() docstring and its parenthesis-matching rationale, checked against src/Scans/args_form.jl's new balanced-paren scan logic and against every other fixture docstring for precedent of citing internal RULE.*/SCAN.* ids",
+    "src/CLI/Passes.jl new pass_scope/unswept/finding_files functions and docstrings cross-checked against docs/ARCHITECTURE.md's rewritten §6.2 step 7 and instruments/audit-changes/PROTOCOL.md's new 'never edits the tree' paragraph — consistent",
+    "templates/README.md, templates/regressions-README.md, templates/test-Project.toml.seed changes (versioned headers, queue-guard.sh.tmpl exception, self-source entry) — read for reader-facing accuracy, no misleading claims found"
+  ],
+  "candidates_found": 1,
+  "findings": [
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "New fixture docstring cites internal RULE./SCAN. ids meaningless to a REPL reader",
+      "locations": [
+        "fixture/GBG Fixture/src/FixtureC.jl:41-49 (new `span` function and its docstring)"
+      ],
+      "before": "(no such function or docstring existed at base; FixtureC.jl had no `span` binding)",
+      "after": "\"\"\"\n    span(options) -> (lo, hi)\n\nThe iteration bounds of an [`Options`](@ref) record; internal, so it needs no page home. The argument\n`options` is the record. Returns the pair.\n\nTwo arguments and a returned tuple: RULE.DOC.ARGS_FORM binds fewer than three in running prose, and\nSCAN.ARGS_FORM must read the parameter list as the parenthesis that closes the first one — a parser\nthat stopped at the last `)` counted the return tuple as three more parameters and demanded bullets.\n\"\"\"\nspan(options::Options) = (1, options.iterations)",
+      "why_it_matters": "A reader who runs `?span` (or opens this docstring on any page it is ever homed to) hits two bare identifiers — `RULE.DOC.ARGS_FORM` and `SCAN.ARGS_FORM` — that resolve to nothing outside `policy/RULES.toml` and `catalog/scans.toml`; the paragraph is also architectural rationale about a bug in the SCANNER's own parenthesis-matching, which RULE.DOC.HOME_ORDER's own exclusion list (\"implementation internals ... architectural rationale\") explicitly keeps out of a function docstring. This is the one instance of this pattern anywhere in the fixture — every other fixture docstring reads as clean, self-contained prose — so it is a new precedent, not a continuation of an existing one, and it evades the existing SCAN.DEAD_REF pattern (which only matches `§`, `docs/`, `ALLCAPS.md`, `inspiration/`) even though it is exactly the class of thing RULE.DOC.NO_DEAD_REFS and RULE.DOC.SELF_CONTAINED are written to prevent.",
+      "justified": "no",
+      "description": "The diff adds a new `span(options)` fixture function whose docstring, after the ordinary identity/argument/returns prose, appends an explanatory paragraph about why the SCAN.ARGS_FORM parenthesis-matching bug in GBGCodingTools' own scanner used to mis-parse this exact signature. That explanation is meta-commentary for a future maintainer reading the source, not documentation of what `span` does — but it lives inside the rendered docstring body, so it is exactly as reachable to a REPL reader as the rest of the text, in a package whose own rubric (RULE.DOC.NO_DEAD_REFS, RULE.DOC.SELF_CONTAINED, RULE.DOC.HOME_ORDER's exclusion list) exists specifically to keep this kind of content out.",
+      "evidence": "fixture/GBG Fixture/src/FixtureC.jl (new lines): \"Two arguments and a returned tuple: RULE.DOC.ARGS_FORM binds fewer than three in running prose, and\\nSCAN.ARGS_FORM must read the parameter list as the parenthesis that closes the first one — a parser\\nthat stopped at the last `)` counted the return tuple as three more parameters and demanded bullets.\"; confirmed via `grep -n \"RULE\\.\\|SCAN\\.\" \"fixture/GBG Fixture/src/\"*.jl \"fixture/GBG Fixture/defects/\"*.md` that this is the only docstring in the whole fixture citing an internal RULE.*/SCAN.* id."
+    }
+  ]
+}
