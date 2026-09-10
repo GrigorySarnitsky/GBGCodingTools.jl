@@ -2207,7 +2207,7 @@ the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`), one or more of `scan:<i
 | Id | File | Statement | Source |
 |---|---|---|---|
 | `RULE.DOC.TWO_TIER` | docs-rubric | A module docstring is a map (linked one-liners, no formulas); a function docstring is a home. | "Two-tier structure." |
-| `RULE.DOC.HOME_ORDER` | docs-rubric | A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats; internals, jargon and rationale are excluded. | "Function docstring = home" |
+| `RULE.DOC.HOME_ORDER` | docs-rubric | A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats, then `# References`, then `# Fields` last; internals, jargon and rationale are excluded. The tail order lives in this rule alone. | "Function docstring = home"; the owner's ruling 2026-09-10 |
 | `RULE.DOC.LEADING_IDENTITY` | docs-rubric | Item (1) is a plain one-sentence identity — physical-meaning first, or estimand first (★ `rubric.leading_identity`). | "Physical-space meaning first"; SS "estimand first" |
 | `RULE.DOC.ONE_HOME` | docs-rubric | One concept, one home: one docstring per operation on the bare binding; the `!` form owns the formula and is listed first; every other variant is a thin wrapper that `@ref`-links the home and carries no second formula. | "One concept, one home." |
 | `RULE.DOC.VARIANT_PAIR` | docs-rubric | Across an `f`/`f!` or getter/setter pair the defining math appears once; the wrapper carries no display formula (the review unit is the variant set). | "The review unit is the operation's whole variant set" |
@@ -2264,7 +2264,7 @@ the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`), one or more of `scan:<i
 | `RULE.TEX.RENDERED_MARKUP` | latex-idiom | No emphasis marker survives into rendered prose (overlapping `*a **b***`). | `lint_rendered_markup` |
 | `RULE.TEX.GREEK_AB` | latex-idiom | The accumulation scalars are Unicode `α`/`β` everywhere; the two named ASCII holdouts stay. | "Greek scalars" |
 | `RULE.CIT.STYLE` | citations | In-text author–year: author-prominent → parenthesized year; ≤ 3 authors named, `First et al.` for four or more. | "Citations — one uniform style" |
-| `RULE.CIT.FULL_INLINE` | citations | A docstring cites author–year in its prose and carries the full reference in a `# References` section at its end, verbatim-identical to the canonical entry (title and DOI compared). | same; `doi_crosscheck.py` (PF + IT) |
+| `RULE.CIT.FULL_INLINE` | citations | A docstring cites author–year in its prose and carries the full reference in a `# References` section after the home's prose and before any `# Fields`, verbatim-identical to the canonical entry (title and DOI compared). | same; `doi_crosscheck.py` (PF + IT) |
 | `RULE.CIT.DOI` | citations | Every reference carries a clickable DOI (or an Open Library link for a book) on its title, identical in every copy. | same; `citations.require_doi` |
 | `RULE.CIT.BLOCK_LIST` | citations | Two or more citations form a bullet list, one per line; a lone citation is `Reference: …`. | same; "crammed citation block" |
 | `RULE.CIT.NO_INACCESSIBLE` | citations | Never cite an inaccessible source (`inspiration/`, an accompanying thesis, an appendix the reader cannot open) on any user-facing surface. | same; memory rule |

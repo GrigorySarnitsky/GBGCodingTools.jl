@@ -19,7 +19,7 @@ check = ["panel"]
 id = "RULE.DOC.HOME_ORDER"
 file = "docs-rubric.md"
 section = "### RULE.DOC.HOME_ORDER"
-statement = "A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats; internals, jargon and rationale are excluded."
+statement = "A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats, then `# References`, then `# Fields` last; internals, jargon and rationale are excluded."
 sentinel = "A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats."
 check = ["weakness"]
 [[rule]]
@@ -425,8 +425,8 @@ check = ["panel"]
 id = "RULE.CIT.FULL_INLINE"
 file = "citations.md"
 section = "### RULE.CIT.FULL_INLINE"
-statement = "A docstring cites author–year in its prose and carries the full reference in a `# References` section at its end, verbatim-identical to the canonical entry (title and DOI compared)."
-sentinel = "A docstring cites author–year in its prose and carries the full reference in a `# References` section at its end: one bullet per work, `Authors, [*Title*](https://doi.org/…), Journal Volume (Year)`, verbatim-identical to the canonical entry under the package's references heading, title and DOI compared."
+statement = "A docstring cites author–year in its prose and carries the full reference in a `# References` section after the home's prose and before any `# Fields`, verbatim-identical to the canonical entry (title and DOI compared)."
+sentinel = "A docstring cites author–year in its prose and carries the full reference in a `# References` section after the home's prose, before any `# Fields`: one bullet per work, `Authors, [*Title*](https://doi.org/…), Journal Volume (Year)`, verbatim-identical to the canonical entry under the package's references heading, title and DOI compared."
 check = ["scan:SCAN.DOI_CROSSCHECK"]
 [[rule]]
 id = "RULE.CIT.DOI"
