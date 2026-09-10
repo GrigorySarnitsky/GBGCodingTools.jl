@@ -191,6 +191,42 @@ end
     @test G.Passes.pass_scope(cfg, dir, rec, 3)[1] === nothing             # nothing graded yet: verify everything
 end
 
+# The class checklist is COMPUTED, not invented: every place the tree writes down a rule or scan id the
+# finding cites, plus the other end of the scan/rule pair, because a finding that names only the scan is
+# about the rule's prose too. This is what makes a class enumerable in one pass instead of one site per
+# pass. Both directions: a finding citing an id gets its sites, a finding citing none gets nothing.
+@testset "the class checklist is computed from the ids a finding cites" begin
+    tcfg = G.Config.read(TOOL)
+    f = Dict{String,Any}("id" => "r/x#1", "title" => "SCAN.SIBLING_LINK's header overstates what it enforces",
+                         "description" => "d"^24, "locations" => ["src/Scans/sibling_link.jl:1"])
+    sites = G.Passes.class_candidates(tcfg, f)
+    @test any(s -> startswith(s, "src/Scans/sibling_link.jl:"), sites)      # the scan itself
+    @test any(s -> startswith(s, "policy/docs-rubric.md:"), sites)          # the RULE's paragraph, via the pair
+    @test any(s -> startswith(s, "docs/ARCHITECTURE.md:"), sites)           # the catalogue and rule tables
+    @test !any(s -> startswith(s, ".gbg/"), sites)                          # never a round's own answer key
+    @test !any(s -> s == "CHANGELOG.md", sites) && !any(s -> startswith(s, "CHANGELOG.md:"), sites)
+    quiet = Dict{String,Any}("id" => "r/y#1", "title" => "a docstring reads badly", "description" => "d"^24,
+                             "locations" => ["src/CLI/Gate.jl:8"])
+    @test isempty(G.Passes.class_candidates(tcfg, quiet))                   # no id cited, nothing computed
+end
+
+# A HONORED verdict whose own checklist leaves a surface unswept says two things at once: the fix landed,
+# and here is where the class still lives. The second is the true one. Emptiness alone fired 0 times in
+# 571 verdicts of the last round while admitting 21 such closures, one of them five times.
+@testset "a HONORED verdict that names an unswept surface is a LINE-ONLY" begin
+    swept(b) = [Dict("surface" => "src/CLI/Sync.jl:154", "swept" => b, "evidence" => "e"^12)]
+    v, d = G.demote(Dict("verdict" => "HONORED", "class_surfaces" => swept(false)))
+    @test v["verdict"] == "LINE-ONLY" && d && v["demoted_from"] == "HONORED"
+    v, d = G.demote(Dict("verdict" => "HONORED", "class_surfaces" => swept(true)))
+    @test v["verdict"] == "HONORED" && !d                                   # every surface swept: it stands
+    v, d = G.demote(Dict("verdict" => "HONORED", "class_surfaces" => vcat(swept(true), swept(false))))
+    @test v["verdict"] == "LINE-ONLY" && d                                  # one unswept is enough
+    v, d = G.demote(Dict("verdict" => "HONORED", "class_surfaces" => Any[]))
+    @test v["verdict"] == "LINE-ONLY" && d                                  # the emptiness half still holds
+    v, d = G.demote(Dict("verdict" => "LAUNDERED", "class_surfaces" => swept(false)))
+    @test v["verdict"] == "LAUNDERED" && !d                                 # only HONORED is demoted
+end
+
 # A round may close by CARRYING a finding into the next round of its instrument, which is what breaks
 # the long fix-verify tail: the finding is real and unfixed, and it is re-banked next time rather than
 # left to be rediscovered. Severity decides eligibility — a serious finding is fixed, adjudicated or

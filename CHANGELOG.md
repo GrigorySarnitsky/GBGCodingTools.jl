@@ -5,6 +5,49 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 
 ## Unreleased
 
+**A round may close by CARRYING a finding, and `RULE.INST.CARRY` says which.** The long fix-verify tail
+had two exits — fix it, or adjudicate it — and when neither fits, the pressure goes into a prose
+adjudication, which is how the last round collected two LAUNDERED verdicts. There is a third honest
+answer: the finding is real, it is not fixed, and it rides into the next round of its instrument.
+
+Severity decides eligibility, not a quota: a `blocker` or a `major` is fixed, adjudicated or escalated,
+a `minor` or a `nit` may be carried. On the last round that is 35 of 56 eligible, including
+`operational-claims#7`, the minor whose four surfaces cost three passes — while both majors that
+reopened at pass 12 would have stayed to be fixed, which is what happened anyway. The severity that
+licenses a carry is a re-rating by `severity-recheck.js`, never the reporting lane's own: a rating that
+can defer a finding is one its author has a reason to lower. That script already existed and is copied
+into every round's workflow directory; `/check-docs` had simply never called it.
+
+A carried finding is written forward whole into `.gbg/carried.toml` and re-banked into the next round
+AFTER its lanes have run, so it reaches the closure loop and never the searching panel — a finding
+trusted to rediscovery is a finding dropped, and `bank` refuses rather than orphan one whose lane the
+roster no longer runs. There is no per-round cap: a final release refuses while the backlog is not
+smaller than at the previous release, and refuses outright anything carried three times. `closed_by`
+gains `carried`, a closed vocabulary, so this is MAJOR; `Release.cites_round` counts a carried id as
+disposed and the backlog conditions live in the release.
+
+**The demotion rule reads the checklist instead of counting it, and the checklist is computed.** An act
+verifier grading a fix must list every surface the finding's class lives on and mark each swept or not.
+The rule demoted `HONORED` to `LINE-ONLY` when that list was EMPTY — and in the 571 act verdicts of
+`2026-09-09-check-docs-02` it fired **zero times**, because the list was never empty. Over the same
+verdicts it admitted **21 closures whose own list named a surface `swept: false`**, across 13 ids,
+`templates#3` five times naming `src/CLI/Sync.jl` — a contradiction the verifier wrote down, the tool
+accepted, and the release shipped. §9's fork, demotion by content or by emptiness, is settled by that
+measurement in favour of content: a `HONORED` verdict with any unswept surface is now `LINE-ONLY`.
+
+Only 3 of the 21 were an id's final verdict, so that round would have ended with three ids open rather
+than fifty-six closed — and one of the three is a `minor`, which `RULE.INST.CARRY` now lets ride. The
+two changes are complements: one raises the standard, the other bounds its cost.
+
+`Passes.class_candidates` greps every place the tree writes down a rule or scan id the finding cites,
+following the scan/rule pair through `catalog/scans.toml` so a finding naming only the scan still
+reaches the rule's prose. On `operational-claims#7`, whose four surfaces cost three passes at one per
+pass, it names the scan's header, the rule's paragraph in `policy/docs-rubric.md` and the §12.B
+catalogue row in one call. The verifier marks that list and adds what a grep cannot know; a site nobody
+checked is visibly unmarked instead of unthought-of, and the verifier is told the demotion rule plainly:
+if the class is alive somewhere, LINE-ONLY is the verdict, not a penalty. The demotion predicate is
+measurement-affecting under D16, so this is MAJOR.
+
 **The closure loop stops paying for what it already knows.** A cost forensics pass over the two real
 rounds fitted the bill: the act verifier costs ~81k tokens per LANE-UNIT and ~12k per id, so **77% of a
 pass is fixed overhead**, and 61 of the 67 id-verifications in the last round's tail were closed ids

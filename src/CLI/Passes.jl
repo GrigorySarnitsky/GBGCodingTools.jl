@@ -160,6 +160,51 @@ function quote_probe(root::AbstractString, finding::AbstractDict)
 end
 
 """
+    class_candidates(cfg, finding; cap = 24) -> Vector{String}
+
+Every place in the tree that writes down a rule or scan id the finding cites, as `file:line`. The
+arguments are `cfg`, the validated config; `finding`, one banked finding; and `cap`, the most sites
+returned.
+
+This is the checklist the act verifier marks instead of inventing. A class rarely lives where it was
+quoted: `operational-claims#7` of `2026-09-09-check-docs-02` was one comment overstating what
+`SCAN.SIBLING_LINK` enforces, and it lived in four places — the scan's file header, the docstring above
+its function, the rule's paragraph in `policy/`, and a row of the §12.B catalogue table. The verifier
+found one per pass and the round paid three passes to enumerate a set a grep names at once. A site the
+tool cannot name is still the verifier's to add; what changes is that a site nobody looked at is now
+visibly unmarked rather than unthought-of. Returns the sites.
+"""
+function class_candidates(cfg::AbstractDict, finding::AbstractDict; cap::Int = 24)
+    root = cfg["root"]
+    text = string(finding["title"], " ", get(finding, "description", ""), " ", join(get(finding, "locations", String[]), " "))
+    ids = unique(String(m.match) for m in eachmatch(r"\b(?:SCAN|RULE)\.[A-Z0-9_]+(?:\.[A-Z0-9_]+)?\b", text))
+    isempty(ids) && return String[]
+    # a scan and the rule it enforces are two ends of one thing: a finding that cites only the scan is
+    # about the rule's prose as well, and the catalogue already records which is which
+    for row in scan_catalog()
+        (row["id"] in ids || row["rule"] in ids) && union!(ids, [String(row["id"]), String(row["rule"])])
+    end
+    skipdir = (".git", ".gbg", "build", ".tmp", "node_modules", ".claude")
+    out = String[]
+    for (dir, dirs, files) in walkdir(root)
+        filter!(d -> !(d in skipdir), dirs)
+        for f in files
+            endswith(f, ".jl") || endswith(f, ".md") || endswith(f, ".toml") || endswith(f, ".json") || endswith(f, ".js") || continue
+            f == "CHANGELOG.md" && continue                       # history, not a surface the class lives on
+            p = joinpath(dir, f); rel = relpath(p, root)
+            local lines
+            try; lines = readlines(p); catch; continue; end
+            for (n, l) in enumerate(lines)
+                any(id -> occursin(id, l), ids) || continue
+                push!(out, "$rel:$n")
+                length(out) >= cap && return sort!(out)
+            end
+        end
+    end
+    return sort!(out)
+end
+
+"""
     last_graded(dir, k) -> Int
 
 The highest pass below `k` that was GRADED — the one that has a `tally.json` — or 0 when none was. The
@@ -342,9 +387,12 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
     fpath = findings_text_file(joinpath(payload, "findings.md"), findings)
     ledger = Ledger.read(cfg)
     probe = Dict{String,Any}(f["id"] => quote_probe(root, f) for f in findings if f["lane"] != "scans")
-    open(joinpath(pd, "probe.json"), "w") do fh; JSON3.pretty(fh, JSON3.write(Dict("quote_still_stands" => probe))); println(fh); end
+    candidates = Dict{String,Any}(f["id"] => class_candidates(cfg, f) for f in findings if f["lane"] != "scans")
+    open(joinpath(pd, "probe.json"), "w") do fh
+        JSON3.pretty(fh, JSON3.write(Dict("quote_still_stands" => probe, "class_candidates" => candidates))); println(fh)
+    end
     base = Dict{String,Any}("schema_version" => 1, "round" => round, "round_dir" => dir, "pass_dir" => pd, "repo" => root, "nonce" => nonce,
-                            "quote_probe" => probe,
+                            "quote_probe" => probe, "class_candidates" => candidates,
                             "graded_sha256" => graded_sha, "package" => Preflight.package_block(cfg), "models" => Dict("economy" => Preflight.economy_model()),
                             "strength" => rec["strength"], "adjudicated_titles" => Preflight.adjudicated_titles(cfg, ledger), "findings_path" => fpath)
     wdir = Preflight.workflow_dir(cfg, round)

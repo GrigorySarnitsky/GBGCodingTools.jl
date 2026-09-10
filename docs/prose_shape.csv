@@ -72,7 +72,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",348,348,0
 "ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1881,1744,0
 "ARCHITECTURE.md § §8 Self-test and versioning",1508,446,0
-"ARCHITECTURE.md § §9 Resolution table",1487,1428,0
+"ARCHITECTURE.md § §9 Resolution table",1514,1455,0
 "Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",152,95,0
 "Bump.jl :: bump(cfg, ver; abandon = nothing, io = stdout) -> Int",119,78,0
 "CLI.md § CLI internals",31,22,1
@@ -91,7 +91,7 @@ unit,words,longest_paragraph,admonitions
 "Consolidate.jl :: consolidate(build_dir, withheld; out_full, out_siteonly) -> ",150,77,0
 "Consolidate.jl :: discover_pages(build_dir) -> Vector{Tuple{String,String,Stri",82,79,0
 "Consolidate.jl :: page_text(path) -> String",36,33,0
-"Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",104,100,0
+"Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",185,62,0
 "DocLints.jl :: makedocs(cfg; kwargs...)",233,67,0
 "Doctor.jl :: Check",37,30,0
 "Doctor.jl :: Doctor",79,78,0
@@ -164,6 +164,7 @@ unit,words,longest_paragraph,admonitions
 "Passes.jl :: carry_deferrals(cfg, dir, round; io = stdout) -> Int",140,92,0
 "Passes.jl :: carry_ledger(cfg) -> Dict",109,77,0
 "Passes.jl :: carry_outstanding(cfg, instrument) -> Vector{Dict}",45,41,0
+"Passes.jl :: class_candidates(cfg, finding; cap = 24) -> Vector{String}",152,110,0
 "Passes.jl :: close(cfg, round; carry = String[], io = stdout) -> Int",182,97,0
 "Passes.jl :: finding_files(root, finding) -> Vector{String}",65,34,0
 "Passes.jl :: grade(cfg, round; io = stdout) -> Int",149,110,0

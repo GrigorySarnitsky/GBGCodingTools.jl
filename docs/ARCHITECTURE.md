@@ -1938,7 +1938,7 @@ supports either way; ruled separately by the owner, never bundled with the adopt
 
 | Divergence | Resolution | Class |
 |---|---|---|
-| Demotion by content (PF) vs emptiness (IT) — `survey-check-consistency.md:237-239` | emptiness of `class_surfaces[]`, applied in the CLI | collapsed (IT) |
+| Demotion by content (PF) vs emptiness (IT) — `survey-check-consistency.md:237-239` | CONTENT since 2026-09-10: any `class_surfaces[]` entry `swept: false` demotes, emptiness included. Emptiness alone fired 0 times in 571 verdicts while admitting 21 closures whose own list named an unswept surface | PF's option, restored on the measurement |
 | Staleness mtime (PF) vs none (IT) — `:242-244` | hash + nonce, no mtime | collapsed (neither) |
 | State/act verdict sets — `:247-249` | the unions of §6.3 | collapsed (union) |
 | Closure gate: untracked pile + `CLOSED.md` (PF) vs marker + `closed:` (IT) — `:252-254` | tracked rounds, per-finding by id, `abandon` with enumerated ids | collapsed |

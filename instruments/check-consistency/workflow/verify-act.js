@@ -65,7 +65,7 @@ FOR EACH FINDING, ask FOUR questions in order and stop at the first failure:
   (4) SCOPE — anything changed that was not asked for; a flagged TERM carried through a rewrite because it was not the literal flagged word.
 
 VERDICTS — HONORED is the ONLY verdict that must be earned by evidence; prefer the others when in doubt:
-  HONORED     — the ask landed, by the right means, correctly, without creep — AND class_surfaces enumerates, FROM THE FINDING'S OWN TEXT, every other surface carrying the same class, each with whether the diff swept it and a file:line. A class swept to zero still lists what you checked. Never grade HONORED on a plausible story; grade it on hunks you can quote.
+  HONORED     — the ask landed, by the right means, correctly, without creep — AND class_surfaces enumerates every other surface carrying the same class, each with whether the diff swept it and a file:line. Start from the computed list where one is given, add what it could not know, and check every entry. A class swept to zero still lists what you checked. Never grade HONORED on a plausible story; grade it on hunks you can quote. HONORED means EVERY surface you list is swept: the tool demotes to LINE-ONLY any HONORED verdict whose own list leaves one unswept, so if the class is alive somewhere, say LINE-ONLY and name the site — that is the verdict, not a penalty.
   ADJACENT    — something was done, but not what was asked.
   INSERTED    — repaired by appending; the flagged text survives.
   LINE-ONLY   — the instance is fixed, the class is alive. Name the surviving sites. THIS IS THE MOST COMMON REAL OUTCOME.
@@ -86,7 +86,14 @@ const probe = (id) => {
   return p.length ? `\n      [computed] its quoted text still stands in: ${p.join(', ')}`
                   : `\n      [computed] its quoted text is gone from every file it names`
 }
-const fmt = (f) => `  ${f.id} (lane ${f.lane}, #${f.n}) — ${f.title}${probe(f.id)}`
+// The CLI greps every place the tree writes down a rule or scan id this finding cites, so the class
+// checklist is one to MARK rather than one to invent — a class rarely lives only where it was quoted,
+// and enumerating it one site per pass is what makes a round long. The list is a floor, never a ceiling.
+const sites = (id) => {
+  const s = A.class_candidates && A.class_candidates[id]
+  return (s && s.length) ? `\n      [computed] this id is written down at: ${s.join(', ')}` : ''
+}
+const fmt = (f) => `  ${f.id} (lane ${f.lane}, #${f.n}) — ${f.title}${probe(f.id)}${sites(f.id)}`
 const outFile = (name) => `${A.pass_dir}/act/${name}.json`
 
 phase('Verify act')

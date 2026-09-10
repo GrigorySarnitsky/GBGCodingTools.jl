@@ -5,13 +5,22 @@
 
 The one demotion rule over an act verdict — the act verifier's grade of what the fix pass DID to one
 finding, from the diff (the state verifier grades, blind to the diff, whether the defect is still
-there). `class_surfaces` is the list the verifier fills from the finding's own text: every surface
-carrying the same class and whether the diff swept it. An act verdict `HONORED` whose `class_surfaces`
-is empty becomes `LINE-ONLY` (a fix graded honoured without the class enumerated is a line fix by
-construction); every other verdict is returned unchanged. Returns the verdict and whether it moved.
+there). `class_surfaces` is the list the verifier fills: every surface carrying the same class and whether the
+diff swept it.
+
+An act verdict `HONORED` becomes `LINE-ONLY` when that list is empty, a fix graded honoured without the
+class enumerated being a line fix by construction, OR when any entry is `swept: false` — a verdict that
+says "the fix landed" while its own evidence says "and here is where the class still lives" is a line
+fix that has said so.
+
+Emptiness alone fired 0 times in the 571 act verdicts of `2026-09-09-check-docs-02`, which never handed
+in an empty list, while admitting 21 closures whose own list named an unswept surface — `templates#3`
+five times, and that contradiction shipped. §12 records the fork, content against emptiness; the data
+settled it. Every other verdict is returned unchanged. Returns the verdict and whether it moved.
 """
 function demote(verdict::AbstractDict)
-    if get(verdict, "verdict", "") == "HONORED" && isempty(get(verdict, "class_surfaces", Any[]))
+    cs = get(verdict, "class_surfaces", Any[])
+    if get(verdict, "verdict", "") == "HONORED" && (isempty(cs) || any(c -> !get(c, "swept", false), cs))
         demoted = copy(verdict); demoted["verdict"] = "LINE-ONLY"; demoted["demoted_from"] = "HONORED"
         return (demoted, true)
     end
