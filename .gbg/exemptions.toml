@@ -257,3 +257,43 @@ reason        = "package_operations is attributed to Reflection at every site th
 recorded      = 2026-09-10
 overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
 evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-4/state/01-rationale.json (ABSENT) and .../act/01-rationale.json (UNDONE: the fix 'entered via commit 14ee713 ... predates this diff's start entirely')"
+
+# Three more of the same kind, from pass 6: each closed HONORED earlier in this round, was re-scoped
+# because a later fix pass touched a file it names for an unrelated finding, and pass 6's act range
+# contains none of its fix. The pass-6 blind state verifier read all three ABSENT.
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/pages#3"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/pages#3"
+reason        = "the demotion rule's second arm is fixed at every site the finding names and the pass-6 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because pass 6's range starts at the last graded pass and its fix landed in an earlier pass of this same round, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-6/state/ (ABSENT) and .../act/ (UNDONE)"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/cold-reader#1"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/cold-reader#1"
+reason        = "the three senses of `anchor` is fixed at every site the finding names and the pass-6 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because pass 6's range starts at the last graded pass and its fix landed in an earlier pass of this same round, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-6/state/ (ABSENT) and .../act/ (UNDONE)"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/cold-reader#3"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/cold-reader#3"
+reason        = "`Recall`'s substrate/siteonly/roster gloss is fixed at every site the finding names and the pass-6 blind state verifier read it ABSENT; the act verifier grades it UNDONE only because pass 6's range starts at the last graded pass and its fix landed in an earlier pass of this same round, so honored closure is unreachable however sound the fix"
+recorded      = 2026-09-10
+overturn_when = "the act verifier is handed every fix range since the finding was banked, or a re-checked closed id is graded on regression rather than on this diff's contribution — then this id is regraded and must come back HONORED"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-6/state/ (ABSENT) and .../act/ (UNDONE)"
+
+[[exemption]]
+id            = "2026-09-10-check-docs-03/cold-reader#2"
+scope         = "finding"
+target        = "2026-09-10-check-docs-03/cold-reader#2"
+reason        = "the pass-6 act verifier graded this HONORED and the blind verifier read it ABSENT: every live use of the phrase now names QUICK. The mechanical demotion to LINE-ONLY fires on the only surfaces left, six files under docs/design-record/, which are provenance — the historical basis, never rebuilt into the site and never rewritten"
+recorded      = 2026-09-10
+overturn_when = "the design record stops being provenance and becomes prose a reader is expected to rely on, or the demotion predicate learns to skip a surface the design forbids editing"
+evidence      = ".gbg/rounds/2026-09-10-check-docs-03/verdicts/pass-6/act/12-cold-reader.json (HONORED, with the unswept surfaces named as design-record files) and .../state/12-cold-reader.json (ABSENT)"
