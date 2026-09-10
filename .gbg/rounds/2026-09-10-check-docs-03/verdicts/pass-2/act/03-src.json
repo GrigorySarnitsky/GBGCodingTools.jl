@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "876502a63d9bafe897380fbd889ec85d",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/src#1",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "src/CLI/Release.jl's cites_round docstring already names carried; pass 2's own commit extended the class to docs/ARCHITECTURE.md:855,1862,2536 and IMPLEMENTATION.md:298,591. But docs/src/architecture.md — the paired Documenter-source mirror of the same D16 prose — still reads the pre-fix two-of-five list verbatim at all three corresponding sites: 855, 1859, 2534.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:855",
+          "swept": true,
+          "evidence": "now reads 'honored, adjudicated, rescan, seeded or carried'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1862",
+          "swept": true,
+          "evidence": "now reads 'through any of the five closure channels — honored, adjudicated, rescan, seeded, carried'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2536",
+          "swept": true,
+          "evidence": "now reads 'through any of the five closure channels, never abandon'"
+        },
+        {
+          "surface": "IMPLEMENTATION.md:298",
+          "swept": true,
+          "evidence": "release verb row lists 'honored, adjudicated, rescan, seeded, carried'"
+        },
+        {
+          "surface": "IMPLEMENTATION.md:591",
+          "swept": true,
+          "evidence": "'every id closed_by honored, adjudicated, rescan, seeded or'"
+        },
+        {
+          "surface": "CLAUDE.md:83",
+          "swept": true,
+          "evidence": "release checklist: 'closed by honored, adjudicated, rescan, seeded or carried ids, never abandoned'"
+        },
+        {
+          "surface": "docs/src/guide/rounds.md closure table",
+          "swept": true,
+          "evidence": "table gained a `carried` row alongside honored/adjudicated/seeded/rescan"
+        },
+        {
+          "surface": "src/CLI/Release.jl cites_round docstring",
+          "swept": true,
+          "evidence": "already names carried; unchanged by this diff but not regressed"
+        },
+        {
+          "surface": "docs/src/architecture.md:855",
+          "swept": false,
+          "evidence": "still 'every id closed_by honored or adjudicated, never abandoned' — the two-of-five list the finding flagged, verbatim, in the doc-site's own source mirror of D16"
+        },
+        {
+          "surface": "docs/src/architecture.md:1859",
+          "swept": false,
+          "evidence": "still '...is closed (honored/adjudicated, never abandoned)'"
+        },
+        {
+          "surface": "docs/src/architecture.md:2534",
+          "swept": false,
+          "evidence": "still 'requires that round closed through honored/adjudicated ids, never abandon'"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/src#2",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "pass_scope's own docstring already states the location-less unconditional-suspect branch. Pass 2's commit swept it into docs/ARCHITECTURE.md:1500-1501 and both instruments/*/PROTOCOL.md. But two other prose restatements of the identical pass-scope logic omit the branch entirely: docs/src/architecture.md:1500-1501 and docs/src/guide/instruments.md at both its pass-description sections (lines 58 and 144).",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Passes.jl:250-254 (pass_scope docstring)",
+          "swept": true,
+          "evidence": "'and any it closed that names no location at all, which is re-verified every pass rather than never'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1500-1501",
+          "swept": true,
+          "evidence": "'any it closed that names no location at all — ... one with no evidence anywhere being re-verified every pass rather than never'"
+        },
+        {
+          "surface": "instruments/check-docs/PROTOCOL.md:49-50",
+          "swept": true,
+          "evidence": "'any closed one the fix pass has touched again, and any closed one that names no location at all'"
+        },
+        {
+          "surface": "instruments/check-consistency/PROTOCOL.md:59",
+          "swept": true,
+          "evidence": "'fix pass has touched again, and any closed one that names no location at all'"
+        },
+        {
+          "surface": "docs/src/architecture.md:1500-1501",
+          "swept": false,
+          "evidence": "still only 'the ids the previous pass left open, plus any it closed whose named locations the fix pass has since touched, a closed finding being able to regress only where its own evidence lives' — no location-less clause, unlike the just-fixed docs/ARCHITECTURE.md twin"
+        },
+        {
+          "surface": "docs/src/guide/instruments.md:55-58",
+          "swept": false,
+          "evidence": "'A pass after the first verifies only the ids still open plus any closed one the fix pass has touched again; everything else keeps the entry that closed it.' — omits the location-less branch entirely"
+        },
+        {
+          "surface": "docs/src/guide/instruments.md:142-144",
+          "swept": false,
+          "evidence": "'verifies only the ids still open plus any closed one the fix pass has touched again, records the fix range...' — same omission"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/src#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/GBGCodingTools.jl:41-43 already carries a `[`consolidate`](@ref)` bullet immediately beside `HtmlWalker` in 'The engines:' list, unregressed by this diff's rewording of the bullet's second sentence (for unrelated pages#3). Matches CLAUDE.md:26 and the ASCII module tree in docs/ARCHITECTURE.md:983 / docs/src/architecture.md:983.",
+      "class_surfaces": [
+        {
+          "surface": "src/GBGCodingTools.jl:41-43",
+          "swept": true,
+          "evidence": "'`HtmlWalker` — the Gumbo walker shared by the consolidator...' immediately followed by '- [`consolidate`](@ref) — the consolidator itself: ...'"
+        },
+        {
+          "surface": "CLAUDE.md:26",
+          "swept": true,
+          "evidence": "'HtmlWalker` and `Consolidate.jl` (the built site to reader text)'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:983",
+          "swept": true,
+          "evidence": "'HtmlWalker.jl the Gumbo + AbstractTrees walker shared by Consolidate.jl and the SCAN.HTML_* scans'"
+        },
+        {
+          "surface": "docs/src/architecture.md:983",
+          "swept": true,
+          "evidence": "same wording as the root ARCHITECTURE.md tree"
+        }
+      ]
+    }
+  ]
+}

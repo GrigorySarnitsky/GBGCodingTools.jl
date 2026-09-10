@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "876502a63d9bafe897380fbd889ec85d",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "verify-act.js:18 guard now lists 'package'; verify-state.js:17 guard now lists 'package' — both match verify-architecture.js:17. Checked siblings panel.js:22, hunt.js:20, dismissals.js:16, audit.js:21 that also dereference A.package.name: all guard 'package' too."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#5",
+      "verdict": "PARTIAL",
+      "evidence": "Named sites fixed: kind/witness_env/cost+opened/package dropped from audit-changes, bug-hunt, check-consistency, check-docs schema.json required lists and from audit.js/hunt.js/panel.js/lanes.js guards; every remaining required key is used.",
+      "surviving_class": "'round' is guard-required but never dereferenced (no A.round) in instruments/bug-hunt/workflow/verify-architecture.js:17, instruments/check-consistency/workflow/verify-act.js:18, instruments/check-consistency/workflow/verify-state.js:17; 'repo' is guard-required but never dereferenced in instruments/audit-changes/workflow/attack-design.js:14."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/workflow-scripts#6",
+      "verdict": "ABSENT",
+      "evidence": "verify-act.js:156-160 now: `if (u.expected !== undefined && u.expected !== u.items.length)` pushes PARTITION MISMATCH, and `const want = u.expected === undefined ? u.items.length : u.expected` is what `got` is compared against — exactly the hint's expected/actual/items-length trio check."
+    }
+  ]
+}

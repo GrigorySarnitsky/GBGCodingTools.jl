@@ -1,0 +1,284 @@
+{
+    "class_candidates": {
+        "2026-09-10-check-docs-03/cold-reader#1": [
+            "docs/ARCHITECTURE.md:2243",
+            "docs/src/architecture.md:2241",
+            "docs/src/guide/rules.md:136",
+            "docs/src/guide/rules.md:280",
+            "policy/RULES.toml:138",
+            "policy/RULES.toml:140",
+            "policy/docs-rubric.md:127",
+            "policy/docs-rubric.md:271"
+        ],
+        "2026-09-10-check-docs-03/workflow-scripts#2": [
+        ],
+        "2026-09-10-check-docs-03/workflow-scripts#4": [
+        ],
+        "2026-09-10-check-docs-03/schemas#3": [
+        ],
+        "2026-09-10-check-docs-03/src#2": [
+        ],
+        "2026-09-10-check-docs-03/catalogues#2": [
+        ],
+        "2026-09-10-check-docs-03/operational-claims#7": [
+        ],
+        "2026-09-10-check-docs-03/operational-claims#3": [
+            "docs/ARCHITECTURE.md:2296",
+            "docs/src/architecture.md:2294",
+            "docs/src/guide/rules.md:468",
+            "policy/RULES.toml:509",
+            "policy/RULES.toml:511",
+            "policy/testing-protocol.md:51"
+        ],
+        "2026-09-10-check-docs-03/src#1": [
+            "docs/ARCHITECTURE.md:2306",
+            "docs/src/architecture.md:2304",
+            "docs/src/guide/rounds.md:29",
+            "docs/src/guide/rules.md:529",
+            "policy/RULES.toml:572",
+            "policy/RULES.toml:574",
+            "policy/instruments.md:35"
+        ],
+        "2026-09-10-check-docs-03/pages#2": [
+            "docs/ARCHITECTURE.md:2241",
+            "docs/src/architecture.md:2239",
+            "docs/src/guide/rules.md:122",
+            "docs/src/guide/rules.md:279",
+            "policy/RULES.toml:124",
+            "policy/RULES.toml:126",
+            "policy/docs-rubric.md:113",
+            "policy/docs-rubric.md:270"
+        ],
+        "2026-09-10-check-docs-03/cold-reader#4": [
+        ],
+        "2026-09-10-check-docs-03/rationale#2": [
+            "docs/ARCHITECTURE.md:2241",
+            "docs/src/architecture.md:2239",
+            "docs/src/guide/rules.md:122",
+            "docs/src/guide/rules.md:279",
+            "policy/RULES.toml:124",
+            "policy/RULES.toml:126",
+            "policy/docs-rubric.md:113",
+            "policy/docs-rubric.md:270"
+        ],
+        "2026-09-10-check-docs-03/workflow-scripts#5": [
+        ],
+        "2026-09-10-check-docs-03/workflow-scripts#1": [
+        ],
+        "2026-09-10-check-docs-03/built-html#1": [
+            "IMPLEMENTATION.md:805",
+            "docs/ARCHITECTURE.md:1292",
+            "docs/ARCHITECTURE.md:1694",
+            "docs/ARCHITECTURE.md:1982",
+            "docs/ARCHITECTURE.md:2233",
+            "docs/design-record/FIXLOG.md:185",
+            "docs/src/architecture.md:1292",
+            "docs/src/architecture.md:1692",
+            "docs/src/architecture.md:1980",
+            "docs/src/architecture.md:2231",
+            "docs/src/guide/ledger.md:11",
+            "docs/src/guide/rules.md:76",
+            "policy/RULES.toml:68",
+            "policy/RULES.toml:70",
+            "policy/docs-rubric.md:67"
+        ],
+        "2026-09-10-check-docs-03/rulebook#1": [
+            "IMPLEMENTATION.md:437",
+            "catalog/scans.toml:161",
+            "catalog/scans.toml:162",
+            "catalog/scans.toml:241",
+            "catalog/scans.toml:242",
+            "docs/ARCHITECTURE.md:105",
+            "docs/ARCHITECTURE.md:1165",
+            "docs/ARCHITECTURE.md:1712",
+            "docs/ARCHITECTURE.md:1736",
+            "docs/ARCHITECTURE.md:1741",
+            "docs/ARCHITECTURE.md:1742",
+            "docs/ARCHITECTURE.md:1977",
+            "docs/ARCHITECTURE.md:2244",
+            "docs/ARCHITECTURE.md:2262",
+            "docs/ARCHITECTURE.md:2351",
+            "docs/ARCHITECTURE.md:2362",
+            "docs/ARCHITECTURE.md:2483",
+            "docs/ARCHITECTURE.md:2649",
+            "docs/design-record/07-IT-amendments.md:25",
+            "docs/design-record/08-IT-corrections.md:13",
+            "docs/design-record/FIXLOG.md:280",
+            "docs/design-record/FIXLOG.md:53",
+            "docs/design-record/REVIEW-verify.md:50",
+            "docs/src/architecture.md:105"
+        ],
+        "2026-09-10-check-docs-03/schemas#1": [
+        ],
+        "2026-09-10-check-docs-03/pages#1": [
+            "catalog/scans.toml:161",
+            "catalog/scans.toml:162",
+            "docs/ARCHITECTURE.md:105",
+            "docs/ARCHITECTURE.md:1165",
+            "docs/ARCHITECTURE.md:1977",
+            "docs/ARCHITECTURE.md:2244",
+            "docs/ARCHITECTURE.md:2351",
+            "docs/ARCHITECTURE.md:2649",
+            "docs/design-record/FIXLOG.md:53",
+            "docs/design-record/REVIEW-verify.md:50",
+            "docs/src/architecture.md:105",
+            "docs/src/architecture.md:1165",
+            "docs/src/architecture.md:1975",
+            "docs/src/architecture.md:2242",
+            "docs/src/architecture.md:2349",
+            "docs/src/architecture.md:2647",
+            "docs/src/guide/rules.md:142",
+            "docs/src/guide/rules.md:283",
+            "fixture/GBG Fixture/defects.toml:114",
+            "fixture/GBG Fixture/defects.toml:292",
+            "policy/RULES.toml:145",
+            "policy/RULES.toml:147",
+            "policy/RULES.toml:150",
+            "policy/docs-rubric.md:133"
+        ],
+        "2026-09-10-check-docs-03/pages#3": [
+            "catalog/scans.toml:161",
+            "catalog/scans.toml:162",
+            "docs/ARCHITECTURE.md:105",
+            "docs/ARCHITECTURE.md:1165",
+            "docs/ARCHITECTURE.md:1977",
+            "docs/ARCHITECTURE.md:2244",
+            "docs/ARCHITECTURE.md:2351",
+            "docs/ARCHITECTURE.md:2649",
+            "docs/design-record/FIXLOG.md:53",
+            "docs/design-record/REVIEW-verify.md:50",
+            "docs/src/architecture.md:105",
+            "docs/src/architecture.md:1165",
+            "docs/src/architecture.md:1975",
+            "docs/src/architecture.md:2242",
+            "docs/src/architecture.md:2349",
+            "docs/src/architecture.md:2647",
+            "docs/src/guide/rules.md:142",
+            "docs/src/guide/rules.md:283",
+            "fixture/GBG Fixture/defects.toml:114",
+            "fixture/GBG Fixture/defects.toml:292",
+            "policy/RULES.toml:145",
+            "policy/RULES.toml:147",
+            "policy/RULES.toml:150",
+            "policy/docs-rubric.md:133"
+        ],
+        "2026-09-10-check-docs-03/workflow-scripts#6": [
+        ],
+        "2026-09-10-check-docs-03/schemas#2": [
+        ],
+        "2026-09-10-check-docs-03/cold-reader#2": [
+        ],
+        "2026-09-10-check-docs-03/operational-claims#2": [
+        ],
+        "2026-09-10-check-docs-03/operational-claims#6": [
+        ],
+        "2026-09-10-check-docs-03/src#3": [
+        ],
+        "2026-09-10-check-docs-03/operational-claims#1": [
+        ],
+        "2026-09-10-check-docs-03/operational-claims#9": [
+        ],
+        "2026-09-10-check-docs-03/operational-claims#10": [
+        ],
+        "2026-09-10-check-docs-03/rationale#1": [
+            "docs/ARCHITECTURE.md:2241",
+            "docs/src/architecture.md:2239",
+            "docs/src/guide/rules.md:122",
+            "docs/src/guide/rules.md:279",
+            "policy/RULES.toml:124",
+            "policy/RULES.toml:126",
+            "policy/docs-rubric.md:113",
+            "policy/docs-rubric.md:270"
+        ],
+        "2026-09-10-check-docs-03/workflow-scripts#7": [
+        ],
+        "2026-09-10-check-docs-03/catalogues#1": [
+        ],
+        "2026-09-10-check-docs-03/schemas#4": [
+        ],
+        "2026-09-10-check-docs-03/cold-reader#3": [
+        ]
+    },
+    "quote_still_stands": {
+        "2026-09-10-check-docs-03/cold-reader#1": [
+        ],
+        "2026-09-10-check-docs-03/workflow-scripts#2": [
+        ],
+        "2026-09-10-check-docs-03/workflow-scripts#4": [
+        ],
+        "2026-09-10-check-docs-03/schemas#3": [
+        ],
+        "2026-09-10-check-docs-03/src#2": [
+        ],
+        "2026-09-10-check-docs-03/catalogues#2": [
+        ],
+        "2026-09-10-check-docs-03/operational-claims#7": [
+            "src/CLI/Release.jl"
+        ],
+        "2026-09-10-check-docs-03/operational-claims#3": [
+            "src/CLI/Rounds.jl"
+        ],
+        "2026-09-10-check-docs-03/src#1": [
+            "src/CLI/Release.jl"
+        ],
+        "2026-09-10-check-docs-03/pages#2": [
+        ],
+        "2026-09-10-check-docs-03/cold-reader#4": [
+            "src/CLI/Config.jl",
+            "src/GBGCodingTools.jl"
+        ],
+        "2026-09-10-check-docs-03/rationale#2": [
+            "src/Reflection.jl"
+        ],
+        "2026-09-10-check-docs-03/workflow-scripts#5": [
+        ],
+        "2026-09-10-check-docs-03/workflow-scripts#1": [
+        ],
+        "2026-09-10-check-docs-03/built-html#1": [
+            "docs/build/guide/rules.html"
+        ],
+        "2026-09-10-check-docs-03/rulebook#1": [
+            "src/CLI/Sync.jl"
+        ],
+        "2026-09-10-check-docs-03/schemas#1": [
+        ],
+        "2026-09-10-check-docs-03/pages#1": [
+        ],
+        "2026-09-10-check-docs-03/pages#3": [
+            "src/CLI/Demote.jl"
+        ],
+        "2026-09-10-check-docs-03/workflow-scripts#6": [
+        ],
+        "2026-09-10-check-docs-03/schemas#2": [
+        ],
+        "2026-09-10-check-docs-03/cold-reader#2": [
+        ],
+        "2026-09-10-check-docs-03/operational-claims#2": [
+            "src/CLI/Passes.jl"
+        ],
+        "2026-09-10-check-docs-03/operational-claims#6": [
+        ],
+        "2026-09-10-check-docs-03/src#3": [
+            "src/GBGCodingTools.jl"
+        ],
+        "2026-09-10-check-docs-03/operational-claims#1": [
+        ],
+        "2026-09-10-check-docs-03/operational-claims#9": [
+        ],
+        "2026-09-10-check-docs-03/operational-claims#10": [
+            "src/Scans/html_docstring_once.jl"
+        ],
+        "2026-09-10-check-docs-03/rationale#1": [
+            "ext/GBGCodingToolsDocumenterExt.jl"
+        ],
+        "2026-09-10-check-docs-03/workflow-scripts#7": [
+        ],
+        "2026-09-10-check-docs-03/catalogues#1": [
+            "src/CLI/Preflight.jl"
+        ],
+        "2026-09-10-check-docs-03/schemas#4": [
+        ],
+        "2026-09-10-check-docs-03/cold-reader#3": [
+        ]
+    }
+}

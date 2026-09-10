@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "876502a63d9bafe897380fbd889ec85d",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/rationale#1",
+      "verdict": "ABSENT",
+      "evidence": "docs/ARCHITECTURE.md:490 now reads 'error()s on any non-zero return, EXCEPT the one refusal that is not a breakage: a gate that refuses only because a round of a docs instrument is open prints makedocs: SKIPPED and returns nothing, exit 0' — matches ext/GBGCodingToolsDocumenterExt.jl:31-37 exactly, including GBG_DOCS_NO_SKIP restoring the refusal for release/deep doctor."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/rationale#2",
+      "verdict": "ABSENT",
+      "evidence": "All three cited sites now attribute correctly: ARCHITECTURE.md:495 says 'Reflection.package_operations()'; line 538 says 'Reflection.package_operations(), which it CALLS and does not define'; the §3 tree's TestHarness.jl line (984) lists no package_operations, only Reflection.jl's line names public surface. Matches src/Reflection.jl:264 definition/export and src/TestHarness.jl:98,226,407 call-only sites."
+    }
+  ]
+}

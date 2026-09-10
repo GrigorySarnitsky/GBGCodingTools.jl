@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "876502a63d9bafe897380fbd889ec85d",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/catalogues#1",
+      "verdict": "ABSENT",
+      "evidence": "grep -n 'substrate' catalog/hats/*.toml plus a targeted read of doc-policy.toml:6, naming-policy.toml:6, invariants-and-decisions.toml:6 and latex-typesetter.toml:4,7 (the 4th same-class file) show all now say 'granted to you by `needs`' / 'the rulebook granted to you by `needs`', never 'your substrate'. Preflight.jl:252-254 still states 'never a substrate value' unchanged. Checked all 22 hats containing 'rulebook' (structure-consistency.toml, style-editor.toml) - neither misattributes rulebook access to substrate."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/catalogues#2",
+      "verdict": "ABSENT",
+      "evidence": "catalog/hats/README.md:7-11 now reads '{policy.<file>}... and `{package.name}` and `{package.description}` are used by no generic hat today; a consumer's own domain hat may, which is why `substitute` fills it.' grep '{policy\\.' catalog/hats/*.toml returns nothing (confirmed), matching this disclosure; substitute() at Preflight.jl:220-227 still implements it. No longer presented as demonstrated hat vocabulary."
+    }
+  ]
+}

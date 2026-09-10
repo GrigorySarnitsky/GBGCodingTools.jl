@@ -1,0 +1,69 @@
+{
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "lane": "pages",
+  "pass_nonce": "876502a63d9bafe897380fbd889ec85d",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/pages#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/index.md:61-62 now reads 'an oracle class on every public value-returning operation — analytic, independent, property, relational or structural, and none resting on relational alone' — matches RULE.TEST.ORACLE_INDEPENDENT exactly, no independent-reference overstatement remains. Fix predates this pass's diff (already correct at base 14ee7135) but a corpus-wide grep for 'independent reference'/'reference for every' outside .gbg/ finds zero occurrences.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/index.md:61-62",
+          "swept": true,
+          "evidence": "current text: 'an oracle class on every public value-returning operation — analytic, independent, property, relational or structural, and none resting on relational alone' — classification framing, no independent-reference claim"
+        },
+        {
+          "surface": "policy/testing-protocol.md:10-16 (RULE.TEST.ORACLE_INDEPENDENT)",
+          "swept": true,
+          "evidence": "rule text already states 'classified in the oracle registry... relational-only coverage is a finding', never an independent-reference requirement; unchanged and correct"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2289 / docs/src/architecture.md:2287 (rule table row)",
+          "swept": true,
+          "evidence": "'Every public value-returning operation is classified in the oracle registry; relational-only coverage is a finding.' — accurate, no overstatement"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/pages#3",
+      "verdict": "LINE-ONLY",
+      "question": "strategy",
+      "evidence": "docs/src/guide/rounds.md:42 diff hunk adds the second arm correctly, and ARCHITECTURE.md/architecture.md's module map, closure step and vocabulary-table rows were swept too. But instruments/check-consistency/PROTOCOL.md:67-68 — edited by this SAME commit two hunks earlier for other findings (operational-claims#6, src#2) — still says 'applies the demotion (HONORED with an empty class_surfaces[] becomes LINE-ONLY, mechanically)', the identical partial statement the finding flags, untouched.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/rounds.md:42-43",
+          "swept": true,
+          "evidence": "diff: 'The demotion is mechanical: HONORED becomes LINE-ONLY when class_surfaces[] is empty, and equally when any entry in it is swept: false...'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:49-50 (module map) and docs/src/architecture.md mirror",
+          "swept": true,
+          "evidence": "diff: 'Demote.jl THE demotion predicate (class_surfaces[] empty, or any entry unswept)'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:77-78 (closure step) and docs/src/architecture.md mirror",
+          "swept": true,
+          "evidence": "diff: 'applies Demote.jl (HONORED → LINE-ONLY iff class_surfaces == [] or any entry is swept: false...)'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:86-87 (vocabulary table) and docs/src/architecture.md mirror",
+          "swept": true,
+          "evidence": "diff: '...HONORED demoted to LINE-ONLY iff class_surfaces == [] or any entry is swept: false'"
+        },
+        {
+          "surface": "instruments/check-consistency/PROTOCOL.md:67-68",
+          "swept": false,
+          "evidence": "unchanged by this commit despite adjacent hunks in the same file/step: 'applies the demotion (HONORED with an empty class_surfaces[] becomes LINE-ONLY, mechanically)' — the same half-stated trigger the finding names, surviving verbatim"
+        },
+        {
+          "surface": "src/CLI/Demote.jl:6-17 (docstring)",
+          "swept": true,
+          "evidence": "already stated both arms before this pass ('becomes LINE-ONLY when that list is empty... OR when any entry is swept: false'); ground-truth code/docstring, not part of the stale class"
+        }
+      ]
+    }
+  ]
+}
