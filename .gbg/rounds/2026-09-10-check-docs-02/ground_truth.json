@@ -1,0 +1,51 @@
+{
+    "seeded": [
+        {
+            "original_context": "] <noun> [<verb>] [options]   (exit 0 clean · 1 finding · 2 cannot evaluate · 3 crash)\")\n    for k in sort!(collect(keys(VERBS)))\n    ",
+            "mutated_context": "] <noun> [<verb>] [options]   (exit 0 clean · 1 finding · 2 a second finding · 3 crash)\")\n    for k in sort!(collect(keys(VERBS)))\n    ",
+            "class": "exit-code-drift",
+            "id": "seed-01-exit-code-drift",
+            "page": "src/CLI/Main.jl"
+        },
+        {
+            "original_context": "uns most:\n\n- [`gbg doctor`](@ref \"The doctor's checks\") — 49 read-only checks that a package is wired correctly: the installed version ma",
+            "mutated_context": "uns most:\n\n- [`gbg doctor`](@ref \"The doctor's checks\") — 47 read-only checks that a package is wired correctly: the installed version ma",
+            "class": "count-drift",
+            "id": "seed-02-count-drift",
+            "page": "docs/src/index.md"
+        },
+        {
+            "original_context": "for staleness (`survey-checkdocs.md:211`); a second copy of every consumer's config in another repo is\nthe disease with a check bolted",
+            "mutated_context": "for staleness (`survey-checkdocs.md:211`); a second copy of almost every consumer's config in another repo is\nthe disease with a check bolted",
+            "class": "quantifier",
+            "id": "seed-03-quantifier",
+            "page": "docs/ARCHITECTURE.md"
+        },
+        {
+            "original_context": "nts | The closure loop runs over the banked findings by id, never by re-running the battery; abandon is the only wholesale exit and names every open id",
+            "mutated_context": "nts | The closure loop runs over the banked findings by id, by re-running the battery; abandon is the only wholesale exit and names every open id",
+            "class": "inverted-rule",
+            "id": "seed-04-inverted-rule",
+            "page": "docs/ARCHITECTURE.md"
+        },
+        {
+            "original_context": " the tool never reads a work-queue file for **closure** — the Stop hook of D13,\npresent in every consumer, reads `.claude/WORK_QUEU",
+            "mutated_context": " the tool never reads a work-queue file for **closure** — the docs build of D13,\npresent in every consumer, reads `.claude/WORK_QUEU",
+            "class": "false-mechanism",
+            "id": "seed-05-false-mechanism",
+            "page": "docs/ARCHITECTURE.md"
+        },
+        {
+            "original_context": "red by [`gbg sync`](@ref GBGCodingTools.Sync.sync) from the pinned version in\n`.gbg/config.toml`:\n\n```toml\n[deps]\nGBGCodingTools = \"3a",
+            "mutated_context": "red by [`gbg sync`](@ref GBGCodingTools.Sync.sync) from the installed version in\n`.gbg/config.toml`:\n\n```toml\n[deps]\nGBGCodingTools = \"3a",
+            "class": "vocabulary-collision",
+            "id": "seed-06-vocabulary-collision",
+            "page": "docs/src/guide/install.md"
+        }
+    ],
+    "salt": "2026-09-10-check-docs-02",
+    "schema_version": 1,
+    "round": "2026-09-10-check-docs-02",
+    "skipped": [
+    ]
+}

@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-check-docs-02",
+  "lane": "schemas",
+  "candidates_found": 7,
+  "checked": [
+    "/tmp/jl_XGd0LR/instruments/check-docs/schema.json",
+    "/tmp/jl_XGd0LR/instruments/check-consistency/schema.json",
+    "/tmp/jl_XGd0LR/instruments/bug-hunt/schema.json",
+    "/tmp/jl_XGd0LR/instruments/audit-changes/schema.json",
+    "/tmp/jl_XGd0LR/src/CLI/Schema.jl (validator: keyword subset, $ref resolution, materialize!, cmd_schema)",
+    "/tmp/jl_XGd0LR/src/CLI/Preflight.jl (render_args + validate(schema['args']) call sites)",
+    "/tmp/jl_XGd0LR/src/CLI/Rounds.jl (classify_lane, bank, core-finding re-check call sites)",
+    "/tmp/jl_XGd0LR/src/CLI/Passes.jl (read_verdicts / carried / pass / tally / dismissal schema_name call sites)",
+    "/tmp/jl_XGd0LR/src/CLI/Sync.jl, Config.jl, Init.jl, Ledger.jl, RoundFiles.jl, Audit.jl, Doctor.jl, Seed.jl (grep-verified load_schema/instrument_schema call sites for every schema name)",
+    "/tmp/jl_XGd0LR/docs/ARCHITECTURE.md (D11 section, cross-checked against the schema files it describes)",
+    "schema/*.schema.json (17 files: architecture-fix, audit, carried, config, dismissal, exemptions, finding, ground-truth, hat, import, managed, pass, reproduction, round, tally, verdict-act, verdict-state) — read from the live working tree because /tmp/jl_XGd0LR/schema does not exist; see the operational finding below"
+  ],
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "The assigned surface directory schema/ is absent from this round's /tmp snapshot",
+      "locations": [
+        "/tmp/jl_XGd0LR/schema — does not exist; find /tmp/jl_XGd0LR -maxdepth 2 -type d lists only docs, ext, instruments, src"
+      ],
+      "description": "The lane brief names /tmp/jl_XGd0LR/schema as the primary surface to audit (the 17 canonical *.schema.json files), but that directory was never populated in this round's snapshot — only docs/, ext/, instruments/ and src/ exist under /tmp/jl_XGd0LR. This is not a defect in the package: the live project tree (outside .gbg/, so permitted to read) has a complete schema/ directory of 17 files. To still cover 3 of my 4 checklist items against real content, I read those 17 files from the live working tree and cross-checked them against the code actually present in /tmp/jl_XGd0LR/src. Their newest mtimes (2026-09-10 15:26-16:25) predate the /tmp snapshot's own creation (17:00) and nothing in this session edited them, so the substitution is very likely faithful, but that is inferred from timestamps, not a hash match against whatever the snapshot step intended to copy.",
+      "resolution_hint": "Fix whichever preflight/round-open step populates a round's /tmp scratch checkout so it includes schema/ next time a schemas lane runs; until then, treat this lane's findings about schema/*.schema.json content as verified against the live tree rather than the round's own snapshot."
+    },
+    {
+      "type": "structure",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Design record and a source comment wrongly claim per-instrument schemas $ref finding.schema.json",
+      "locations": [
+        "docs/ARCHITECTURE.md:629 — \"lane-file wrapper and $ref's finding.schema.json for the findings array\"",
+        "src/CLI/Rounds.jl:514-515 — \"an instrument's / own schema $ref's it and adds its own fields\"",
+        "src/CLI/Schema.jl:62 — startswith(ref, \"#/\") || throw(ArgumentError(\"only local $ref is supported: $ref\"))",
+        "instruments/check-docs/schema.json:183 (and the equivalent line in the other 3 instrument schema.json files) — \"$ref\": \"#/$defs/finding\""
+      ],
+      "description": "ARCHITECTURE.md D11 and a Rounds.jl comment both assert that each instrument's schema.json '$ref's finding.schema.json' for its findings array. That mechanism cannot exist as described: Schema.jl's _deref only resolves a same-document fragment ('#/...') and throws ArgumentError on anything else, so a genuine cross-file $ref into schema/finding.schema.json is structurally impossible with this validator. What each of the 4 instrument schema.json files actually does is define its own separate, hand-typed $defs.finding (bug-hunt: $defs.hunt_finding) — a subset of schema/finding.schema.json's fields (missing the bank-assigned n/lane/seeded/id/carried_from/seed_class, which is correct) but otherwise a manual duplicate of the shared fields (severity/confidence/title/locations/description/type enums), not a reference to the one canonical copy. The core-shape re-check at Rounds.jl:519 narrows a banked finding onto the core schema's property set before validating, which catches an extra key but not a shared-field enum or pattern that has quietly drifted between the 5 hand-typed copies — exactly the single-source guarantee the design record and the comment both claim already exists.",
+      "resolution_hint": "Either extend Schema.jl's $ref resolution to support a cross-file pointer and change the 4 instrument schema.json files to actually reference it, or correct the ARCHITECTURE.md D11 prose and the Rounds.jl:514-515 comment to describe the real mechanism (a hand-synchronized duplicate subset, not a $ref)."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "ARCHITECTURE D11's 'Sixteen schemas' enumeration omits carried.schema.json",
+      "locations": [
+        "docs/ARCHITECTURE.md:626-628 — \"Sixteen schemas: schema/{config,exemptions,hat,round,pass,finding,verdict-act, verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import, managed}.schema.json.\"",
+        "schema/carried.schema.json (exists in the live tree)",
+        "src/CLI/Passes.jl:97 — errs = validate(load_schema(\"carried\"), d)"
+      ],
+      "description": "D11's enumerated list names sixteen schema files and does not include carried, yet schema/carried.schema.json exists, is loaded by literal name and validated at Passes.jl:97, and backs RULE.INST.CARRY's persisted .gbg/carried.toml record of findings carried between rounds. The live schema/ directory holds seventeen *.schema.json files, not sixteen; every name D11 does list is still accurate, but the list as a whole no longer names everything the code ships, which RULE.DOC.CURRENT treats as stale.",
+      "resolution_hint": "Add carried to the D11 enumeration and change 'Sixteen' to 'Seventeen'."
+    },
+    {
+      "type": "notation",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "carried.schema.json alone declares JSON Schema draft-07 instead of 2020-12",
+      "locations": [
+        "schema/carried.schema.json:2 — \"$schema\": \"http://json-schema.org/draft-07/schema#\"",
+        "schema/round.schema.json:2 — \"$schema\": \"https://json-schema.org/draft/2020-12/schema\" (representative of the other 16 files, including the 4 instruments/*/schema.json)"
+      ],
+      "description": "Every schema file in schema/ and instruments/*/schema.json declares $schema: https://json-schema.org/draft/2020-12/schema except carried.schema.json, which declares the older draft-07 identifier. Schema.jl's validator ignores $schema entirely, so this has no functional effect on validation, but it is a visible inconsistency in a corpus that ARCHITECTURE D11 advertises as 'one JSON Schema per artefact kind' — a uniform mechanism whose own metadata is not in fact uniform.",
+      "resolution_hint": "Change carried.schema.json's $schema value to the 2020-12 URL used by every other schema file."
+    }
+  ]
+}

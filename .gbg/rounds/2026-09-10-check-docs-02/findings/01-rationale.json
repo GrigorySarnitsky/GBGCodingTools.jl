@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-check-docs-02",
+  "lane": "rationale",
+  "candidates_found": 18,
+  "checked": [
+    "docs/ARCHITECTURE.md (full document, all sections and the revision history) verified against src/GBGCodingTools.jl, ext/GBGCodingToolsDocumenterExt.jl, src/DocLints.jl, src/CLI/Gate.jl, src/CLI/Doctor.jl, src/CLI/Schema.jl, src/CLI/Self.jl, src/CLI/Main.jl, src/Reflection.jl, src/TestHarness.jl, src/TreeHash.jl",
+    "D9's makedocs-wrapper description against ext/GBGCodingToolsDocumenterExt.jl and src/DocLints.jl's makedocs docstring",
+    "§7.3's WIRE.MAKEDOCS doctor-check row against its implementation in src/CLI/Doctor.jl",
+    "§6.2 step 10 / D9's 'per-push, harness-independent enforcement point' claim against src/CLI/Gate.jl's frozen_rounds and gate functions",
+    "§7.3's QUICK/DEEP/non-exemptable/exemptable id sets against src/CLI/Doctor.jl's QUICK, DEEP, NON_EXEMPTABLE, EXEMPTABLE constants",
+    "D5's JSON-Schema-subset keyword list against src/CLI/Schema.jl's validate() implementation",
+    "D3/§7.3's PIN.SELF description against src/CLI/Self.jl's self_verify()",
+    "D8's exit-code contract and main()'s try/catch-to-3 against src/CLI/Main.jl",
+    "D9's Reflection.jl operation list and xlink dry-run default against src/Reflection.jl's exports and xlink signature",
+    "D9's TestHarness.gate() description against src/TestHarness.jl's gate() docstring and body",
+    "D14/§7.2's reason-length (>=40) and expiry-bound (<=365 d) constants against src/CLI/Doctor.jl",
+    "Revision 10's TreeHash empty-directory fix against the current src/TreeHash.jl behaviour",
+    "§3's module/file layout against the actual src/ and ext/ tree"
+  ],
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "D9 and §7.3 describe makedocs as erroring on any gate failure; the code silently skips the build instead when a docs round is open",
+      "locations": [
+        "docs/ARCHITECTURE.md:483-488 — \"gate(\\\"check-docs\\\", \\\"check-consistency\\\") **in-process** before Documenter ... `error()`s on any non-zero return, so the gate is reachable on a CI runner with no shim\"",
+        "docs/ARCHITECTURE.md:1777 — `WIRE.MAKEDOCS` row: \"calls `GBGCodingTools.makedocs(` and contains no `makedocs(` token not preceded by `GBGCodingTools.` and no `function lint_`\" (no mention of the deploydocs guard clause)"
+      ],
+      "contradicts": "ext/GBGCodingToolsDocumenterExt.jl:24-31 — \"if code == 1 && !isempty(frozen) && !haskey(ENV, \\\"GBG_DOCS_NO_SKIP\\\") ... println(\\\"makedocs: SKIPPED — \\\", ...); return nothing end\"; src/CLI/Doctor.jl:381-386 — the WIRE.MAKEDOCS check also fails on an unconditional `deploydocs(` because \"the wrapper returns nothing when a round froze the build\"",
+      "description": "D9 states the makedocs wrapper `error()`s on any non-zero return from `gate(\"check-docs\", \"check-consistency\")`, and calls this the tool's 'per-push, harness-independent enforcement point' precisely because every push runs it. But the actual `ext/GBGCodingToolsDocumenterExt.jl` body has a documented exception: when the gate returns 1 because a docs-instrument round is open (RULE.INST.FROZEN_MIDROUND), it does NOT error — it prints a 'SKIPPED' line and returns `nothing` without ever calling `Documenter.makedocs`, exiting 0, unless the environment variable `GBG_DOCS_NO_SKIP` is set (which only `gbg release` and the deep doctor set). This is not a stray implementation detail: it is load-bearing enough that a second doctor check, `WIRE.MAKEDOCS`, was extended to fail on an unconditional `deploydocs(` call specifically because 'the wrapper returns nothing when a round froze the build' (src/CLI/Doctor.jl comment). The `makedocs` docstring in src/DocLints.jl documents this skip behaviour clearly and accurately, so the feature is real and current — but ARCHITECTURE.md, whose purpose is exactly to record such design decisions with their 'forced by' rationale, never mentions it anywhere (no revision entry references `GBG_DOCS_NO_SKIP`, 'SKIPPED', or 'frozen' in this sense outside of D10/D13's round-freeze vocabulary). A reader relying on D9's account would wrongly conclude that `docs.yml` fails loudly on every push while a `/check-docs` or `/check-consistency` round is open, when it actually degrades to a silent no-op build (exit 0) — the opposite of what 'per-push, harness-independent enforcement point' promises.",
+      "resolution_hint": "Add a clause to D9's makedocs bullet (and to the §7.3 WIRE.MAKEDOCS row) stating the frozen-round exception: makedocs returns `nothing` and prints a SKIPPED line instead of erroring when `frozen_rounds` reports an open docs-instrument round, unless `GBG_DOCS_NO_SKIP` is set (as `gbg release` and the deep doctor do); cross-reference `Gate.frozen_rounds`'s own docstring, which already states the rationale precisely."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "D5's list of supported JSON-Schema-subset keywords omits minLength/minimum/maximum, which Schema.jl already validates",
+      "locations": [
+        "docs/ARCHITECTURE.md:334-336 — \"the JSON-Schema-subset validator (types, `required`, `enum`, `pattern`, `additionalProperties`, nested objects and arrays)\"",
+        "docs/ARCHITECTURE.md:962 — \"the ONE JSON-Schema-subset validator (types, required, enum, pattern, additionalProperties)\""
+      ],
+      "contradicts": "src/CLI/Schema.jl:107-117 — the validator also checks `minLength` (line 113-114), `minimum` (line 116) and `maximum` (line 117) in addition to type/enum/pattern/additionalProperties",
+      "description": "RULE.DOC.CURRENT says a summary naming only a subset of what the code now provides is stale even if every listed item is literally true. D5's two enumerations of Schema.jl's supported keywords (repeated near-verbatim at two places in the document) both omit `minLength`, `minimum` and `maximum`, which src/CLI/Schema.jl's `validate()` function implements alongside the listed keywords. This is a minor completeness gap rather than a behavioural contradiction, but it is the kind of stale enumerated list the doc-edit checklist's currency item exists to catch, and it recurs at two locations (a small class).",
+      "resolution_hint": "Extend both enumerations to \"(types, `required`, `enum`, `pattern`, `minLength`, `minimum`, `maximum`, `additionalProperties`, nested objects and arrays)\" so the parenthetical is exhaustive rather than illustrative, or explicitly mark it as illustrative if that is the intent."
+    }
+  ]
+}

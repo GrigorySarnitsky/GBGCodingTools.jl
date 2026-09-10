@@ -1,0 +1,37 @@
+{
+  "candidates_found": 1,
+  "checked": [
+    "/tmp/jl_XGd0LR/instruments/check-docs/ (contents: schema.json only)",
+    "/tmp/jl_XGd0LR/instruments/check-consistency/ (contents: schema.json only)",
+    "/tmp/jl_XGd0LR/instruments/bug-hunt/ (contents: schema.json only)",
+    "/tmp/jl_XGd0LR/instruments/audit-changes/ (contents: schema.json only)",
+    "find /tmp/jl_XGd0LR -type d -iname workflow (no matches)",
+    "find /tmp/jl_XGd0LR -iname '*.js' (no matches)",
+    "/tmp/jl_XGd0LR/src/CLI/Preflight.jl (copy_scripts, main_script, PROTOCOL.md read, workflow_dir/payload_dir)",
+    "/tmp/jl_XGd0LR/src/CLI/Rounds.jl (round rerun printing the Workflow call)",
+    "/tmp/jl_XGd0LR/src/CLI/Passes.jl (verify-act.js, verify-state.js, verify-architecture.js, dismissals.js call sites)",
+    "/tmp/jl_XGd0LR/src/CLI/Audit.jl (severity-recheck.js call site)",
+    "/tmp/jl_XGd0LR/src/CLI/Schema.jl (Workflow/lane glossary docstring)",
+    "/tmp/jl_XGd0LR/src/GBGCodingTools.jl (module docstring's Workflow definition)"
+  ],
+  "findings": [
+    {
+      "type": "structure",
+      "severity": "blocker",
+      "confidence": "high",
+      "title": "The whole workflow-scripts surface is absent — nothing on this lane can be evaluated",
+      "locations": [
+        "/tmp/jl_XGd0LR/instruments/{check-docs,check-consistency,bug-hunt,audit-changes}/ — only schema.json present, no workflow/ subdirectory, no PROTOCOL.md",
+        "/tmp/jl_XGd0LR/src/CLI/Preflight.jl:551 — `src = joinpath(instrument_dir(instrument), \"workflow\"); ... for f in readdir(src)`",
+        "/tmp/jl_XGd0LR/src/CLI/Preflight.jl:578 — `main_script(instrument) = Dict(\"check-consistency\" => \"panel.js\", \"check-docs\" => \"lanes.js\", \"bug-hunt\" => \"hunt.js\", \"audit-changes\" => \"audit.js\")[instrument]`",
+        "/tmp/jl_XGd0LR/src/CLI/Preflight.jl:685 — `println(io, read(joinpath(instrument_dir(instrument), \"PROTOCOL.md\"), String))`",
+        "/tmp/jl_XGd0LR/src/GBGCodingTools.jl:21 — \"A **Workflow** is the instrument's `workflow/*.js` script, launched by the session running the round.\""
+      ],
+      "description": "This lane's charter is to read the eleven Workflow scripts under instruments/{check-docs,check-consistency,bug-hunt,audit-changes}/workflow as code and check what they Write against instruments/<name>/schema.json, their arg validation, silent-death paths, prompt self-consistency, and hard-coded package/path/round data. None of those files exist in the checked-out tree: every one of the four instrument directories holds only schema.json, `find -type d -iname workflow` and `find -iname '*.js'` both return no matches anywhere under the tree, and there is no PROTOCOL.md either. Meanwhile the Julia source unconditionally depends on that surface: `Preflight.copy_scripts` (Preflight.jl:551) does `readdir(joinpath(instrument_dir(instrument), \"workflow\"))` with no existence guard, `main_script` (Preflight.jl:578) names four required entry scripts (`panel.js`, `lanes.js`, `hunt.js`, `audit.js`), Passes.jl and Audit.jl call out `verify-act.js`, `verify-state.js`, `verify-architecture.js`, `severity-recheck.js` and `dismissals.js` by literal path, and Preflight.jl:685 reads `PROTOCOL.md` from each instrument directory unconditionally. Every one of these calls would throw (readdir/read on a nonexistent path) the first time `gbg round open` or `gbg round rerun` ran against this tree. This is not a wording defect inside a script — it means the check-docs battery's own workflow-scripts lane has zero material to apply its six checks (correct, self-contained, notation, formatted, current & complete, cited) to, and per the testing protocol a zero count here is a dead lane, not a clean one.",
+      "resolution_hint": "Either the instruments/<name>/workflow/*.js scripts and PROTOCOL.md files need to be added to this checkout before this lane can run (they are Phase-1 deliverables the engines/CLI already assume exist), or, if they were deliberately withheld from this scratch checkout, the round should record this lane as cannot-evaluate rather than banking an empty findings list as a pass."
+    }
+  ],
+  "round": "2026-09-10-check-docs-02",
+  "lane": "workflow-scripts",
+  "schema_version": 1
+}

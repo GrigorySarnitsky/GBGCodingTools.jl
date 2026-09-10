@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-check-docs-02",
+  "lane": "pages",
+  "candidates_found": 2,
+  "checked": [
+    "docs/src/api/CLI.md",
+    "docs/src/api/Config.md",
+    "docs/src/api/Reflection.md",
+    "docs/src/api/TestHarness.md",
+    "docs/src/api/Witnesses.md",
+    "docs/src/guide/config.md",
+    "docs/src/guide/install.md",
+    "docs/src/guide/ledger.md",
+    "docs/src/guide/rounds.md",
+    "docs/src/guide/verbs.md",
+    "docs/src/index.md"
+  ],
+  "findings": [
+    {
+      "type": "currency",
+      "severity": "major",
+      "confidence": "high",
+      "title": "index.md links to headings that do not exist anywhere in the docs source",
+      "locations": [
+        "docs/src/index.md:49 — `[`gbg doctor`](@ref \"The doctor's checks\")`",
+        "docs/src/index.md:85 — `[The doctor](@ref \"The doctor's checks\")`",
+        "docs/src/index.md:24,30,33,36,38,66,67,87 — `@ref instruments`, `@ref check-docs`, `@ref check-consistency`, `@ref bug-hunt`, `@ref audit-changes`, `@ref rules`, `@ref RULE.DOC.ARGCOV`, `@ref \"GBGCodingTools — architecture\"`"
+      ],
+      "description": "index.md's `@ref \"The doctor's checks\"` (used twice) does not resolve to any heading in the docs tree: `find docs -type f` returns exactly the 12 files that exist (docs/ARCHITECTURE.md plus this lane's 11 files), none titled 'The doctor's checks', and no guide/doctor.md file exists at all — though src/CLI/Init.jl:141 shows one is meant to (docs/src/guide/doctor.md is named in the tool's own surfaces.generated.globs). The same class of dead ref hits every other quoted-heading/id @ref in index.md pointing outside this lane's 11 files: instruments, check-docs, check-consistency, bug-hunt, audit-changes, rules, RULE.DOC.ARGCOV, and \"GBGCodingTools — architecture\" — none of these ids/headings are defined anywhere in the shipped docs/src tree (only ledger, rounds, config, install, verbs — the 5 @ids actually declared in guide/*.md — resolve). RULE.DOC.NO_DEAD_REFS bars exactly this, and an unresolved Documenter @ref fails the build (RULE.DOC.BUILD_VERIFY), contradicting the release checklist's `julia --project=docs docs/make.jl` exiting 0.",
+      "resolution_hint": "Either write the missing pages/anchors (instruments.md, rules.md, docs/src/architecture.md, docs/src/guide/doctor.md with a heading Documenter can resolve as \"The doctor's checks\") before wiring these links, or drop the forward @refs from index.md until those pages exist so the site it currently describes actually builds."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "\"47 read-only checks\" is stale — the doctor registers 49",
+      "locations": [
+        "docs/src/index.md:49 — \"47 read-only checks that a package is wired correctly\"",
+        "src/CLI/Doctor.jl — 49 check!(\"…\", …) registrations (lines 98–674), 6 of them in const DEEP (line 46)"
+      ],
+      "description": "grep -c '^check!(\"' src/CLI/Doctor.jl counts 49 registered checks, not 47: 43 run by default and 6 more (LOAD.ENVS, BUILD.DOCS, SELF.DOCS, TEST.PKG, WITNESSES.ESCALATED, WITNESSES.BLOCKED) only under --deep. Neither the full count (49) nor the non-deep subset (43) matches the stated \"47\", so the figure is stale against the current check registry — a RULE.DOC.CURRENT violation, which requires every summary to match the code's present state.",
+      "resolution_hint": "Re-measure and update to the current count (49 total / 43 without --deep), phrased to match whichever set `gbg doctor` runs by default."
+    }
+  ]
+}

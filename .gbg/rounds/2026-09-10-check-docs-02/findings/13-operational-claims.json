@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-10-check-docs-02",
+  "lane": "operational-claims",
+  "candidates_found": 14,
+  "checked": [
+    "src/GBGCodingTools.jl",
+    "src/Scan.jl",
+    "src/Reflection.jl",
+    "src/Witnesses.jl",
+    "src/TestHarness.jl",
+    "src/TreeHash.jl",
+    "src/HtmlWalker.jl",
+    "src/DocLints.jl",
+    "src/CLI/Main.jl",
+    "src/CLI/Schema.jl",
+    "src/CLI/Config.jl",
+    "src/CLI/Ledger.jl",
+    "src/CLI/RoundFiles.jl",
+    "src/CLI/Git.jl",
+    "src/CLI/Doctor.jl",
+    "src/CLI/Gate.jl",
+    "src/CLI/Demote.jl",
+    "src/CLI/Seed.jl",
+    "src/CLI/Recall.jl",
+    "src/CLI/Preflight.jl",
+    "src/CLI/Rounds.jl",
+    "src/CLI/Passes.jl",
+    "src/CLI/Hunt.jl",
+    "src/CLI/Audit.jl",
+    "src/CLI/Fleet.jl",
+    "src/CLI/Bump.jl",
+    "src/CLI/Release.jl",
+    "src/CLI/Selftest.jl",
+    "src/CLI/Self.jl",
+    "src/CLI/Install.jl",
+    "src/CLI/Sync.jl (partial)",
+    "src/CLI/Consolidate.jl",
+    "ext/GBGCodingToolsDocumenterExt.jl"
+  ],
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Rounds.close: \"2 on a stamp mismatch\" is true for only one of three stamp mismatches",
+      "locations": [
+        "src/CLI/Passes.jl:867: \"Returns 0 when closed, 1 when a condition is unmet, 2 on a stamp mismatch.\"",
+        "src/CLI/Passes.jl:890: \"(st[\\\"config_sha\\\"] == rec[\\\"config_sha\\\"] || latest_regrade) || push!(fails, \\\"config changed since open ...\\\")\"",
+        "src/CLI/Passes.jl:891: \"(st[\\\"tool_version\\\"] == rec[\\\"tool_version\\\"] || latest_regrade) || push!(fails, \\\"tool version moved (...) ...\\\")\"",
+        "src/CLI/Passes.jl:892: \"if st[\\\"tool_tree_sha\\\"] != rec[\\\"tool_tree_sha\\\"] && st[\\\"tool_version\\\"] == rec[\\\"tool_version\\\"] && !startswith(...) ... return 2\""
+      ],
+      "description": "close()'s docstring states the exit contract as \"0 when closed, 1 when a condition is unmet, 2 on a stamp mismatch\", reading as if any stamp disagreement (config_sha, tool_version, tool_tree_sha) yields exit 2. The body only returns 2 for the tool_tree_sha-under-same-version anomaly (a moved tag). A changed config_sha or a moved tool_version is instead pushed onto `fails` and returns 1 like any other unmet condition.",
+      "resolution_hint": "Reword to: \"2 only when the tool's tree hash moved under an unchanged version (a moved tag, abandon-only); a changed config_sha or tool_version is an ordinary refused condition (exit 1, fixed by --regrade).\""
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Release.release: cites_round's closure test is narrower in the docstring than in the code",
+      "locations": [
+        "src/CLI/Release.jl:44: \"the `/check-docs` round opened at the latest `<ver>-rc.<n>` tag is closed by honored or adjudicated ids\"",
+        "src/CLI/Release.jl:25: \"get(e, \\\"closed_by\\\", nothing) in (\\\"honored\\\", \\\"adjudicated\\\", \\\"rescan\\\", \\\"seeded\\\") || String(id) in carried\""
+      ],
+      "description": "The `release` docstring says the gating round must have every id \"closed by honored or adjudicated ids\", but `cites_round` (the function that actually performs this check) accepts four closure channels — honored, adjudicated, rescan, seeded — plus any id in the round's carried-forward set.",
+      "resolution_hint": "List all four closure channels plus the carried-id exemption, matching cites_round's actual `in (\"honored\",\"adjudicated\",\"rescan\",\"seeded\")` test."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Rounds.classify_lane omits the zero-findings/empty-checked path to :dead",
+      "locations": [
+        "src/CLI/Rounds.jl:305-309: \"The status is `:dead` (absent, or — renamed to `<name>.rejected.json` beside itself — unparsable or invalid), `:rejected` ... `:empty` (zero findings, non-empty checked), `:truncated` (candidates_found > findings), or `:live`.\"",
+        "src/CLI/Rounds.jl:328: \"(n == 0 && isempty(get(data, \\\"checked\\\", []))) && return (:dead, data, sha, \\\"zero findings AND empty checked[] — a dead lane, not a clean one\\\")\""
+      ],
+      "description": "The docstring enumerates every path to :dead as only 'absent, or ... unparsable or invalid' (all renamed-to-.rejected cases). It never mentions the distinct branch where a schema-valid, correctly-named lane file with zero findings AND an empty checked[] is also :dead (not renamed) — exactly the RULE.TEST.MISSING_IS_FAILING mechanism.",
+      "resolution_hint": "Add a fourth :dead case: \"or — not renamed — zero findings with an empty checked[] (a dead lane that never ran, not a clean one).\""
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Rounds.seed_docs_corpus! has two distinct exit-2 paths but the docstring names only one",
+      "locations": [
+        "src/CLI/Rounds.jl:220: \"Returns 0, or 2 when the catalogue plants nothing.\"",
+        "src/CLI/Rounds.jl:228-232: \"if isempty(plan) ... return 2 end\"",
+        "src/CLI/Rounds.jl:241-247: \"if length(planted) < length(plan) ... return 2 end\""
+      ],
+      "description": "The docstring's return contract describes only the isempty(plan) branch. A second, independent branch also returns 2 when the catalogue matched something but plant_files() only planted SOME of it — a materially different failure (partial planting) with its own message, never mentioned.",
+      "resolution_hint": "State both conditions: \"Returns 0, or 2 when the catalogue matches nothing in the lane surfaces, or when some matched seeds fail to plant into the copied files.\""
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "Install.cmd_install: \"Returns 0 when both files are written\" overstates the normal (no --dev-checkout) path",
+      "locations": [
+        "src/CLI/Install.jl:38: \"Returns 0 when both files are written, 2 when the Julia in use is below the floor, ...\"",
+        "src/CLI/Install.jl:53-65: the `--dev-checkout` block (writes dev_pointer()) runs only `if haskey(o.values, \"dev-checkout\")`; the shim copy always runs"
+      ],
+      "description": "In the common invocation `gbg install` with no `--dev-checkout`, only the shim file is ever written — dev_pointer() is skipped — and the function still returns 0, contradicting \"Returns 0 when both files are written\".",
+      "resolution_hint": "Split the claim: \"Returns 0 when the shim is written (and, with --dev-checkout, the pointer too); 2 when ...\"."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "Git.changed_paths's docstring doesn't flag that an empty `paths` means UNRESTRICTED, not \"no paths\"",
+      "locations": [
+        "src/CLI/Git.jl:128-133: \"The files changed in a commit range under a set of paths ... `paths` — the paths the listing is restricted to.\"",
+        "src/CLI/Passes.jl:281-283: \"# the diff is asked for the WHOLE tree: scoping it to the covered paths while the named set is not scoped at all ... touched = Set(Git.changed_paths(root, range, String[]))\""
+      ],
+      "description": "changed_paths's docstring describes `paths` uniformly as restricting the listing. Passing an empty vector actually means NO restriction at all (git's `--` semantics) — the opposite of restricting — as the one caller's own comment has to explain because the function's docstring gives no warning.",
+      "resolution_hint": "Add: \"an empty `paths` restricts to nothing being excluded — i.e. the WHOLE tree — not to zero files.\""
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "Fleet's docstrings enumerate four row statuses; the code produces a fifth (\"MISSING\")",
+      "locations": [
+        "src/CLI/Fleet.jl:7-9: \"computes one row per consumer of `fleet.toml` — `OK`, `NOT-INITIALISED`, `BEHIND` or `RED` with a detail\"",
+        "src/CLI/Fleet.jl:70: \"push!(out, (name = c[\\\"name\\\"], pin = \\\"—\\\", status = \\\"MISSING\\\", detail = \\\"$(c[\\\"path\\\"]) does not exist\\\")); code = 2\""
+      ],
+      "description": "Both the module docstring and Fleet.rows's docstring name exactly four status values. The code assigns a fifth literal, \"MISSING\", for a consumer whose path doesn't exist; the exit-2 behaviour is documented but this status string never appears in either enumeration.",
+      "resolution_hint": "Add MISSING to the enumerated statuses."
+    },
+    {
+      "type": "operational",
+      "severity": "nit",
+      "confidence": "medium",
+      "title": "Audit.audit_bank's \"afterwards it prints the severity re-check\" is conditional, not unconditional",
+      "locations": [
+        "src/CLI/Audit.jl:19-21: \"then runs [`Rounds.bank`](@ref); afterwards it prints the severity re-check Workflow call ...\"",
+        "src/CLI/Audit.jl:54-72: `if !isempty(findings) ... println(...severity re-check...) else println(io, \"audit-changes bank: no concern banked; ...\") end`"
+      ],
+      "description": "The docstring presents printing the severity re-check call as unconditional. The body only does this when the bank produced at least one finding; a clean bank prints a 'no concern banked' line instead and never renders the call.",
+      "resolution_hint": "Qualify: \"when the bank produced any finding, it afterwards prints the severity re-check Workflow call; otherwise it reports a clean bank.\""
+    }
+  ]
+}
