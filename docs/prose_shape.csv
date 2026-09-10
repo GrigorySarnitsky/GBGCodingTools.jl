@@ -244,9 +244,9 @@ unit,words,longest_paragraph,admonitions
 "Scan.jl :: prose_lines(cfg, file) -> Vector{ProseLine}",64,60,0
 "Scan.jl :: prose_text(cfg, file; history_cut = true) -> String",81,44,0
 "Scan.jl :: regex_scan(cfg, files, re; skip_comments = true, on = :text,",153,101,0
-"Scan.jl :: register_scan!(id, f)",45,43,0
+"Scan.jl :: register_scan!(id, f)",66,64,0
 "Scan.jl :: report(results; io = stdout) -> Int",108,52,0
-"Scan.jl :: run_scan(cfg, row; ledger = Ledger.read(cfg), files = nothin",99,49,0
+"Scan.jl :: run_scan(cfg, row; ledger = Ledger.read(cfg), files = nothin",122,52,0
 "Scan.jl :: scan_catalog() -> Vector{Dict}",18,15,0
 "Scan.jl :: scan_docs(cfg; hard_only = false, only = nothing, io = stdou",121,39,0
 "Scan.jl :: scan_html(cfg, build_dir; only = nothing, io = stdout) -> (r",100,35,0

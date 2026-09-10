@@ -1,6 +1,12 @@
 using Test, GBGCodingTools, TOML, Dates
 include("helpers.jl")
 
+# A package whose whole displayed surface is homed in an extension that is not loaded: `ghost` is
+# declared and never given a method, exactly as `makedocs` is homed in this tool's Documenter extension.
+module ExtensionHomed
+    function ghost end
+end
+
 @testset "scans" begin
     @testset "registry ≡ catalogue, every scan has a fixture pair" begin
         ids = Set(keys(CATALOG)); reg = Set(keys(G.SCANS))
@@ -55,11 +61,41 @@ include("helpers.jl")
         end
         @test parentmodule(G.TestHarness.resolve_function(:read, pkg, mods)) === G.Config
     end
+    # `examined` is the scan's population and counts what was COMPARED. Both directions, and the second
+    # is the one that can fail: on the fixture every displayed binding has methods, so the count is the
+    # whole surface; on a package whose displayed surface is entirely extension-homed nothing is
+    # compared, the count is 0 — moving the increment above the skip would make it 1 — and the scan is
+    # DEAD carrying the names as its reason, since "measured nothing" without the why is a puzzle.
     @testset "signature_fidelity counts what it compared" begin
         n = Ref(0)
         rows = G.Reflection.signature_fidelity(G.Config.read(FIXTURE); examined = n)
         @test n[] > 0                                                    # population 0 would be DEAD
-        @test n[] >= count(r -> !occursin("EXTENSION-HOMED", r), rows)   # a skipped binding is not one compared
+        @test isempty(rows)                                              # the fixture skips nothing
+        root = fixture_copy("extension-homed")
+        write(joinpath(root, "src", "Ghost.jl"), """
+        \"\"\"
+            ghost(x; opt = 1)
+
+        A binding whose methods live in an extension that is not loaded.
+        \"\"\"
+        function ghost end
+        """)
+        gcfg = G.Config.read(root)
+        m = Ref(0)
+        grows = G.Reflection.signature_fidelity(gcfg; pkg = ExtensionHomed, examined = m)
+        @test any(r -> occursin("ghost", r) && occursin("EXTENSION-HOMED", r), grows)
+        @test m[] == 0                                                   # a skipped binding is NOT compared
+        res = G.ScanResult("SCAN.SIGNATURE_FIDELITY", "RULE.DOC.SIGNATURE_FIDELITY", "triage", G.Hit[], m[], 0,
+                           "1 extension-homed binding(s) not compared (no methods loaded): ghost")
+        io = IOBuffer(); @test G.report([res]; io) == 2                   # DEAD, not clean
+        out = String(take!(io))
+        @test occursin("DEAD", out) && occursin("measured nothing", out) && occursin("ghost", out)
+        # the wrapper builds that reason itself, and run_scan carries a scan's third element as its note:
+        # this tool homes `makedocs` in its Documenter extension, so the note names it while the
+        # population stays what was compared
+        r = G.run_scan(G.Config.read(TOOL), CATALOG["SCAN.SIGNATURE_FIDELITY"]; ledger = Dict{String,Any}[])
+        @test occursin("makedocs", r.note) && occursin("not compared", r.note)
+        @test r.population > 0 && all(h -> !occursin("EXTENSION-HOMED", h.text), r.hits)
     end
     @testset "the clean fixture passes every hard scan" begin
         results, code = G.scan_docs(G.Config.read(FIXTURE); hard_only = true, io = devnull)

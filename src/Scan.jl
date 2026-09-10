@@ -63,7 +63,9 @@ const SCANS = Dict{String,Function}()
 
 Registers `f` as the scan `id`. The contract: `f(cfg, files)` receives the validated config and the
 surface files (relative paths) the catalogue resolves for the scan, and returns `(hits::Vector{Hit},
-population::Int)`; an HTML scan receives the built pages instead of source files. Returns `f`.
+population::Int)`, or `(hits, population, note::AbstractString)` when the scan owes the reader
+something about the measurement itself, which a DEAD line then carries. An HTML scan receives the built
+pages instead of source files. Returns `f`.
 """
 function register_scan!(id::AbstractString, f::Function)
     haskey(SCANS, id) && error("scan $id registered twice")
@@ -376,7 +378,8 @@ Runs one catalogued scan and applies the ledger. The arguments are:
 - `files` — the files to scan instead of the row's resolved surfaces (the built pages for an HTML scan).
 
 A scan function that throws yields a result with an empty population and the error as `note`, so a
-broken scan reads DEAD rather than clean. Returns the result.
+broken scan reads DEAD rather than clean; a scan that returns a third element carries it as `note`
+instead, which is how a DEAD verdict states why nothing was measured. Returns the result.
 """
 function run_scan(cfg::AbstractDict, row::AbstractDict; ledger = Ledger.read(cfg), files = nothing)
     id = row["id"]; tier = resolve_tier(cfg, row["tier"])
@@ -384,8 +387,8 @@ function run_scan(cfg::AbstractDict, row::AbstractDict; ledger = Ledger.read(cfg
     f === nothing && return ScanResult(id, row["rule"], tier, Hit[], 0, 0, "no scan function registered for $id")
     files = files === nothing ? resolve_surfaces(cfg, row["surfaces"]) : files
     hits, population, note = try
-        h, p = f(cfg, files)
-        (h, p, "")
+        r = f(cfg, files)                         # (hits, population), or (hits, population, note)
+        length(r) == 3 ? (r[1], r[2], String(r[3])) : (r[1], r[2], "")
     catch err
         err isa Ledger.LedgerError && rethrow()
         (Hit[], 0, "scan raised: " * sprint(showerror, err))

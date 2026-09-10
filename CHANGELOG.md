@@ -92,6 +92,26 @@ documented bang-backtick form; the bare `!command` line the first rc rendered is
 client at all (Phase 1.9 V2). Tests: the suite resolves the fixture's `test/` environment once, so a
 fresh clone's witnesses load `GBGFixture` (the first CI dispatch failed there). Rates comparable: yes.
 
+**A closure pass now verifies what is open, and `pass open` REFUSES by default.** Two changes to the
+closure loop, made after the second documentation round spent ten passes and most of its cost
+re-verifying findings that were already closed. A pass past the first is scoped: it verifies the open
+ids plus every closed id whose named files the fix pass touched again (a finding that names no file is
+always a suspect), the carried verdicts come forward into the tally, and a lane with nothing in scope is
+not dispatched at all. And `gbg round pass open` refuses, exit 2, when the fix pass left untouched a
+file an open finding names — five of that round's ten passes were spent discovering that a fix had
+stopped at the line it quoted. This is a behaviour change at a verb that used to succeed: a pass over a
+fix that deliberately swept nothing (an adjudication, a rescan-only pass) now needs `--sweep-ok`, which
+records the choice in `pass.toml`. An audit round is exempt, since it has no fix pass at all
+(`RULE.INST.AUDIT_DISPOSED`, new: an audit is closed by disposing its concerns, never by correcting them
+inside it, because a correction moves the tree and the staleness check then refuses the close for good —
+learned by making `2026-09-09-audit-changes-01` permanently unclosable and abandoning it).
+
+**A scan may carry a note, and `SCAN.SIGNATURE_FIDELITY` uses one.** A registered scan returns
+`(hits, population)` as before, or `(hits, population, note)`; `run_scan` carries the third element into
+the result, where a DEAD line prints it. Signature fidelity counts only the bindings it COMPARED, so a
+package whose displayed surface is homed entirely in an extension that is not loaded measures nothing
+and reads DEAD — correctly, but until now with no reason given. The note names the skipped bindings.
+
 The rc.1 `/check-docs` round (2026-09-09-check-docs-01, 22 findings) fixed in code: `TreeHash.tree_hash`
 now omits an empty directory as `git write-tree` does; the rescan needle is cut in characters, not
 bytes; a witness that both failed and errored is `:broken`, never `:blocked`. In prose: the module map

@@ -36,8 +36,12 @@ end
 end
 
 # A Markdown code span in prompt prose: a bare backtick pair holding a short run, PRECEDED by prose —
-# a word and a space — where an ordinary template literal follows `=`, `(` or `,`.
-const SPAN_IN_PROSE = r"(?<=[a-z,.;:] )(?<!\\)`[^`\n\$,)}]{1,60}(?<!\\)`"
+# a lowercase word or a sentence end, and a space — where an ordinary template literal follows `=`, `(`,
+# `,` or `:`. A comma and a colon were in that lookbehind and are not: `{phase: `Review`}` and
+# `f(a, `b`)` are ordinary JavaScript, and so is a literal after `return`, `case`, `await` and the rest
+# of the keywords excluded here — a guard that flags six ordinary forms to catch one defect is a guard
+# nobody can leave switched on.
+const SPAN_IN_PROSE = r"(?<=[a-z.] )(?<!return )(?<!yield )(?<!throw )(?<!typeof )(?<!await )(?<!case )(?<!else )(?<!new )(?<!in )(?<!of )(?<!do )(?<!delete )(?<!instanceof )(?<!\\)`[^`\n\$,)}]{1,60}(?<!\\)`"
 
 @testset "every Workflow script is well formed" begin
     scripts = [joinpath(r, f) for i in ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
@@ -73,7 +77,9 @@ end
     for prose in ("scope every search with `--glob '!.gbg/**'`.", "Nothing under `.gbg/` is yours to open")
         @test occursin(SPAN_IN_PROSE, prose)
     end
-    for js in ("const banner = `ready`", "log(`ok`)", "x = `a b c`", "const q = `\${x}/y`", "x = `Audit`;")
+    for js in ("const banner = `ready`", "log(`ok`)", "x = `a b c`", "const q = `\${x}/y`", "x = `Audit`;",
+               "return `done`", "const o = {phase: `Review`}", "f(a, `b`)", "case `x`:", "yield `v`",
+               "await `x`", "arr.map(x => `y`)")
         @test !occursin(SPAN_IN_PROSE, js)                       # valid JavaScript is not a finding
     end
 end
