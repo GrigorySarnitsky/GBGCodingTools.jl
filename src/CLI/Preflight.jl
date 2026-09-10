@@ -134,7 +134,7 @@ when it may open. The arguments are:
 
 - `cfg` — the validated config.
 - `instrument` — the instrument the round was asked for.
-- `st` — the stamps [`stamps`](@ref) computed for it.
+- `st` — the stamps `Preflight.stamps` computed for it.
 
 A `/check-docs` or `/check-consistency` round is a measurement, and D16 says a `dev`-stamped round is
 unclosable: a round graded by an unreleased tool compares with nothing and can be cited by no release.

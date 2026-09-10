@@ -168,10 +168,10 @@ end
 - `regrade` — accept a changed stamp (`config_sha`, or the tool stamps) and re-stamp it; the round is
   re-graded from here, and the pass records `regrade = true`.
 - `sweep_ok` — open even though an open finding names a file the fix pass did not touch
-  ([`unswept`](@ref)), for the fix that rightly lives somewhere else.
+  (`Passes.unswept`), for the fix that rightly lives somewhere else.
 - `io` — where the calls and messages are printed.
 
-A pass after the first verifies only what [`pass_scope`](@ref) returns, and refuses to open at all
+A pass after the first verifies only what `Passes.pass_scope` returns, and refuses to open at all
 while an open finding's own named locations are untouched, since a pass spent discovering that a fix
 stopped at the line it quoted is a pass wasted.
 
