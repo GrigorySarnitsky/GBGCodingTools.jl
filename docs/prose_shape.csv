@@ -1,6 +1,6 @@
 unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D1 — Unit of distribution: one repository, one version, two ",247,111,0
-"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze",488,317,0
+"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze",504,333,0
 "ARCHITECTURE.md § D11 — Schemas: one JSON Schema per artefact kind in `schema/",112,68,0
 "ARCHITECTURE.md § D12 — Policy prose: single source `policy/*.md` with rule id",339,162,0
 "ARCHITECTURE.md § D13 — Managed files: one sidecar `.gbg/managed.json` as a ca",533,474,0
@@ -229,7 +229,7 @@ unit,words,longest_paragraph,admonitions
 "RoundFiles.jl :: state(round) -> Symbol",16,13,0
 "Rounds.jl :: Rounds",67,66,0
 "Rounds.jl :: abandon(cfg, round, reason; io = stdout) -> Int",157,82,0
-"Rounds.jl :: bank(cfg, round; io = stdout) -> Int",234,101,0
+"Rounds.jl :: bank(cfg, round; io = stdout) -> Int",263,96,0
 "Rounds.jl :: bank_next(inst, round) -> String",67,63,0
 "Rounds.jl :: build(cfg, round; io = stdout) -> Int",60,24,0
 "Rounds.jl :: classify_lane(dir, inst, lane; first_sha = nothing) -> (stat",162,106,0

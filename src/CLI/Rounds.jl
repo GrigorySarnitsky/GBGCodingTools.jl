@@ -439,9 +439,14 @@ freezes the disposition records; writes `findings.json` and `findings_sha`, `fin
 Five things make it exit 2: a round already banked; any DEAD or REJECTED lane; a carried finding naming
 a lane this round does not run, which means the roster changed under it; on a hunt, a witness the runner
 could not decide (`hunt_bank!` returns its own code); and a banked finding that does not validate against
-the core finding schema. `lane_shas` survives all five. Nothing else is frozen in the first three; by the
-last two a hunt's `reproductions/` and a seeded round's `ground_truth.json` are already written, so a
-re-bank rewrites them rather than creating them. Returns the exit code.
+the core finding schema.
+
+`lane_shas` reaches `ROUND.toml` on the DEAD-or-REJECTED exit and on success, and only there: the other
+three return before the record is saved, so a first-sight sha seen on such a run is not kept.
+
+`findings.json` is frozen on no refusal. By the last two exits a hunt's `reproductions/` and a seeded
+round's `ground_truth.json` are already written, so a re-bank rewrites them rather than creating them.
+Returns the exit code.
 """
 function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = guard(cfg, round; io)

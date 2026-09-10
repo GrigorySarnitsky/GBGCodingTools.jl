@@ -600,8 +600,9 @@ and seeded copies live **inside the project**, under
 and never in the tracked round. **Staleness by hash, not mtime**: every verdict file carries
 `graded_sha256` (= the sha of `findings.json`) and the `pass_nonce` from `pass.toml`; mismatch →
 REJECTED; absent → DEAD. Roster and denominator come from `ROUND.toml` and `findings.json`, counted
-by the CLI. A lane file is classified at `bank`: **DEAD** (absent, or unparsable or schema-invalid, which
-quarantine the file as `NN-<lane>.rejected.json` — or zero findings with an empty `checked[]`), **EMPTY**
+by the CLI. A lane file is classified at `bank`: **DEAD** (absent; unparsable, schema-invalid, or schema-valid
+with a `lane` field naming a lane the roster entry did not ask for — those three quarantine the file as
+`NN-<lane>.rejected.json` — or zero findings with an empty `checked[]`), **EMPTY**
 (zero findings, non-empty `checked[]`), **ORPHAN** (a lane file no roster entry expects; reported,
 never counted), **TRUNCATED** (`candidates_found > findings.length`; reported, not fatal),
 **REJECTED** (a live lane whose sha changed after first sight). A DEAD **or REJECTED** lane is **exit 2** — cannot
