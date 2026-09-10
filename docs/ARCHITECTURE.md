@@ -2120,6 +2120,14 @@ lives at `.gbg/policy/` behind the explicit block (not `.claude/rules/`).
 - ground_truth is on disk after bank; the seeded copy lives outside the repo; a hat that opens it
   leaves a Read in its transcript.
 - Outside-project Workflow scriptPath is unverified until day 1.
+- **The abandon-only rule for a moved tag is walkable.** `gbg round close` returns 2 and says the round
+  is abandon-only when `tool_tree_sha` moved under an unchanged `tool_version` — the tag itself having
+  been force-moved. But `pass open --regrade` re-stamps every moved stamp, `tool_tree_sha` among them,
+  so a regrade after that refusal makes the next `close` find the stamps equal and return 0. The round
+  closes, stamped with the moved tag, and its record says nothing happened. The fix is one line of
+  `pass_open`'s regrade branch — never re-stamp `tool_tree_sha` under an unchanged non-dev
+  `tool_version` — and is a deferral of 2026-09-10-check-docs-03. Until it ships, "a tag is never moved
+  or re-issued" is enforced by the release verb and by discipline, not by the round record.
 - **A fix cannot be certified across passes.** `pass_scope` hands the act verifier only the range from
   the last GRADED pass to this one, and the act verifier's `UNDONE` means "nothing in THIS diff
   addresses this finding". So an id whose fix landed in pass *k* and which pass *k+1* re-checks — the

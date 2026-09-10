@@ -47,7 +47,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §0 The design sentence and the requirements",440,337,0
 "ARCHITECTURE.md § §1 The platform / product model",802,565,0
 "ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",772,333,0
-"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1274,542,0
+"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1400,542,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
 "ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3115,2990,0
 "ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1481,1306,0
@@ -165,7 +165,7 @@ unit,words,longest_paragraph,admonitions
 "Passes.jl :: carry_ledger(cfg) -> Dict",109,77,0
 "Passes.jl :: carry_outstanding(cfg, instrument) -> Vector{Dict}",45,41,0
 "Passes.jl :: class_candidates(cfg, finding; cap = 24) -> Vector{String}",152,110,0
-"Passes.jl :: close(cfg, round; carry = String[], io = stdout) -> Int",219,97,0
+"Passes.jl :: close(cfg, round; carry = String[], io = stdout) -> Int",291,97,0
 "Passes.jl :: finding_files(root, finding) -> Vector{String}",65,34,0
 "Passes.jl :: grade(cfg, round; io = stdout) -> Int",170,98,0
 "Passes.jl :: last_graded(dir, k) -> Int",108,68,0

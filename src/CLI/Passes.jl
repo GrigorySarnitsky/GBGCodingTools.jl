@@ -887,9 +887,15 @@ tally sha are stamped.
 `carry_conditions` gates.
 
 Returns 0 when closed, 1 when a condition is unmet — a moved `config_sha` or `tool_version` among them,
-since a regrade answers those — and 2 for the one mismatch no regrade answers: a `tool_tree_sha` that
-moved under an unchanged `tool_version`, which is the tag itself moving, and leaves the round
-abandon-only.
+since a regrade answers those — and 2 for a `tool_tree_sha` that moved under an unchanged
+`tool_version`, which is the tag itself moving.
+
+That last one is meant to leave the round abandon-only, and today it does not: `pass open --regrade`
+re-stamps every moved stamp, `tool_tree_sha` included, so a regrade after the refusal makes `close`
+find the stamps equal and return 0. The round then closes on a moved tag, having recorded the moved
+one. ARCHITECTURE section 11 carries this; the fix — `--regrade` re-stamps `config_sha`, `tool_version`
+and `tool_rev`, never `tool_tree_sha` under an unchanged non-dev `tool_version` — is an instrument
+change and a deferral of 2026-09-10-check-docs-03.
 """
 function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector = String[], io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io, allow_config_change = true)

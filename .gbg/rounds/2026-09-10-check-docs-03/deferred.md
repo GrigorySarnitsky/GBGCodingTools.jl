@@ -30,3 +30,13 @@
   Nothing says so; the loop only discovers it when `grade` refuses. Either `--regrade` should be able
   to re-stamp the CURRENT pass in place when its verdicts are complete, or `grade` should say plainly
   that the stamp moved because the ledger grew and name the pass that will be lost.
+
+- `pass open --regrade` re-stamps `tool_tree_sha`, which defeats `close`'s abandon-only refusal for a
+  moved tag: refuse, regrade, close, and the round closes stamped with the moved tag. The regrade
+  branch should re-stamp `config_sha`, `tool_version` and `tool_rev` only, never `tool_tree_sha` under
+  an unchanged non-dev `tool_version`. Found by the dismissal auditor's fifth reading of this round.
+
+- `dismissals.js`'s final `write-dismissals` agent was blocked by a safety classifier on two of five
+  runs, leaving `dismissals.json` stale while all 26 item agents had returned. The aggregate is a
+  mechanical assembly of returns the script already holds; it should be written by the script's own
+  scribe path (as the lane files are), not by an agent asked to retype the whole object.
