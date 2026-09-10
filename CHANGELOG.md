@@ -3,6 +3,38 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
+## Unreleased
+
+**The closure loop stops paying for what it already knows.** A cost forensics pass over the two real
+rounds fitted the bill: the act verifier costs ~81k tokens per LANE-UNIT and ~12k per id, so **77% of a
+pass is fixed overhead**, and 61 of the 67 id-verifications in the last round's tail were closed ids
+re-checked for regression, whose measured yield of genuine regressions across both rounds is 4 in 475.
+
+Four changes, none of which alters what a verifier may conclude:
+
+- **The act verifier reads the fix pass's own diff.** It was handed `range`, the whole round: at pass 15
+  of `2026-09-09-check-docs-02` that was 456 files and 36,559 insertions, re-read by three lane agents to
+  grade six ids whose work was 9 files and 499 lines. `pass_scope` had computed the incremental range
+  since the last GRADED pass and thrown it away. `pass.toml` records both, `fix_range` being what the
+  verifier gets.
+- **The blind verifier judges the open ids mid-round, and everything on a pass that could close.** Over
+  860 verdict pairs it uniquely blocked 6 ids, all in passes 2, 6 and 8, while costing half the verifier
+  bill in the four passes that cost most. What keeps it honest: an id the act verifier closes with no
+  blind reading is `pending_state` — not closed, not open, driving no fix — and `close` refuses while one
+  stands, so a round still ends with a full blind sweep and nothing ever closes on one reading.
+  `--full-state` forces the sweep early.
+- **The quote probe.** The CLI greps each finding's own quoted text in the files that finding names and
+  hands the answer to both verifiers, which spent 22% of their blind evidence strings re-establishing it.
+  It is evidence and never a gate: over the 56 findings of a round that closed every id honestly, 19
+  quotes still stood, because a location quotes the site's identifying text as often as the defect's.
+  Gating on it would have held a third of that round open with no way out.
+- **A build is not re-run at an unmoved, clean HEAD.** `pass open` rebuilt the site and re-consolidated
+  both manuscripts every pass; a regrade at the same head paid for byte-identical output twice.
+
+Also: `pass open` says so when the previous pass was opened and never graded — passes 9 and 11 of that
+round bought nothing at all. Rates comparable: yes; no verdict vocabulary, closure predicate or scan
+threshold moved, and `per_id.state` still holds only what a verifier said.
+
 ## 1.0.0-rc.2 — 2026-09-10
 
 The second release candidate: MAJOR. Instruments affected: check-docs, check-consistency,

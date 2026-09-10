@@ -76,7 +76,17 @@ VERDICTS — HONORED is the ONLY verdict that must be earned by evidence; prefer
 ${ADJ}
 DEFAULT TO THE UNFAVOURABLE VERDICT. Grade EVERY finding you are given, in order, one verdict per id; a shortfall is under-grading and the missing ones are UNVERIFIED, not clean. Do not propose fixes. Do not rank. Do not soften.`
 
-const fmt = (f) => `  ${f.id} (lane ${f.lane}, #${f.n}) — ${f.title}`
+// The CLI already grepped each finding's own quoted text in the files that finding names, so no verifier
+// spends a tool call on it. It is EVIDENCE, never a verdict: the quote is the site's identifying text as
+// often as the defect's, so a surviving one does not settle STRATEGY and a vanished one does not settle
+// the class. Absent (an older CLI), the line is simply omitted.
+const probe = (id) => {
+  const p = A.quote_probe && A.quote_probe[id]
+  if (!p) return ''
+  return p.length ? `\n      [computed] its quoted text still stands in: ${p.join(', ')}`
+                  : `\n      [computed] its quoted text is gone from every file it names`
+}
+const fmt = (f) => `  ${f.id} (lane ${f.lane}, #${f.n}) — ${f.title}${probe(f.id)}`
 const outFile = (name) => `${A.pass_dir}/act/${name}.json`
 
 phase('Verify act')

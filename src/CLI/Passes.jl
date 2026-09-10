@@ -68,6 +68,40 @@ end
 
 
 """
+    quote_probe(root, finding) -> Vector{String}
+
+Every file the finding NAMES in which its own quoted text still stands verbatim. The arguments are
+`root`, the consumer root, and `finding`, one banked finding.
+
+A location is written `path:lines — "…"`, and the quoted text is handed to both verifiers as a computed
+fact so neither spends a tool call establishing it: 22% of this round's blind verdicts cited a grep the
+CLI can run in milliseconds.
+
+It is EVIDENCE, never a gate. The quote is the site's identifying text as often as the defect's: over
+the 56 findings of `2026-09-09-check-docs-02`, a round that closed every id honestly, 19 quotes still
+stood — `templates#3` quoting a filename, `cold-reader#1` a sentence that was always correct. Closing on
+a vanished quote would miss the class that moved; OPENING on a surviving one would have held a third of
+that round open with no way out. Only the verifier decides. It searches the named file alone, so a
+quotation of the defect in a changelog cannot hold its own fix open. Returns the files.
+"""
+function quote_probe(root::AbstractString, finding::AbstractDict)
+    out = String[]
+    for l in get(finding, "locations", String[])
+        s = String(l)
+        m = match(r"^([A-Za-z0-9_][A-Za-z0-9_./\-]*\.[A-Za-z0-9]+)", s)
+        m === nothing && continue
+        file = String(m.captures[1]); p = joinpath(root, file)
+        (isfile(p) && !(file in out)) || continue
+        text = read(p, String)
+        for q in eachmatch(r"\"([^\"\n]{12,200})\"", s)
+            frag = strip(String(q.captures[1]))
+            length(frag) >= 12 && occursin(frag, text) && (push!(out, file); break)
+        end
+    end
+    return out
+end
+
+"""
     last_graded(dir, k) -> Int
 
 The highest pass below `k` that was GRADED — the one that has a `tally.json` — or 0 when none was. The
@@ -165,6 +199,8 @@ end
 
 - `cfg` — the validated config.
 - `round` — the round id.
+- `full_state` — give the blind verifier every id in scope, not only the open ones; a pass that could
+  close the round does this anyway.
 - `regrade` — accept a changed stamp (`config_sha`, or the tool stamps) and re-stamp it; the round is
   re-graded from here, and the pass records `regrade = true`.
 - `sweep_ok` — open even though an open finding names a file the fix pass did not touch
@@ -182,7 +218,8 @@ the doc instruments rebuilds under `GBG_ROUND` and regenerates the manuscripts; 
 unabridged text as a payload file; prints the verifiers' Workflow calls rendered by Preflight's
 renderer. Returns the exit code.
 """
-function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = false, sweep_ok::Bool = false, io::IO = stdout)
+function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = false, sweep_ok::Bool = false,
+                   full_state::Bool = false, io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io, allow_config_change = regrade)
     haskey(rec, "banked") || (println(io, "pass open: $round is not banked yet"); return 2)
     root = cfg["root"]; inst = rec["instrument"]
@@ -217,8 +254,21 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
         expected_state[f["lane"]] = get(expected_state, f["lane"], 0) + 1
         get(f, "seeded", false) || (expected_act[f["lane"]] = get(expected_act, f["lane"], 0) + 1)
     end
+    # The blind verifier reads the corpus, not the diff, so it need not read every id every pass. Mid-round
+    # it judges what is OPEN; a pass that could close the round judges everything in scope, so nothing is
+    # ever closed without two independent readings of the corpus it closes in. An id the act verifier
+    # closes with no blind reading is `pending_state` at grade: it drives no fix, and `close` refuses
+    # while one remains. Across this round's 860 verdict pairs the blind reader uniquely blocked 6 ids,
+    # all of them in passes 2, 6 and 8, and none in the four passes that cost the most.
+    j_prev = last_graded(dir, k)
+    closing = full_state || j_prev == 0 || isempty(prev_open)
+    state_findings = closing ? findings : [f for f in findings if f["id"] in prev_open]
+    if k > 1 && !isfile(joinpath(pass_dir(dir, k - 1), "tally.json"))
+        println(io, "pass open: pass $(k - 1) was opened and never graded — its build and payloads bought nothing. Grade every pass, or the loop pays for verdicts it never reads.")
+    end
     nonce = bytes2hex(rand(RandomDevice(), UInt8, 16))
     pass = merge(Dict{String,Any}("pass" => k, "nonce" => nonce, "opened" => Rounds.timestamp(), "head" => head, "range" => "$(rec["head"])..$head",
+                                  "fix_range" => fixrange, "state_ids" => [f["id"] for f in state_findings],
                                   "expected" => expected_state, "regrade" => regrade),
                  (scope === nothing ? Dict{String,Any}() : Dict{String,Any}("scope" => scope)),
                  Dict(x => st[x] for x in ("tool_version", "tool_rev", "tool_tree_sha", "config_sha")))
@@ -233,7 +283,10 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
     payload = joinpath(Preflight.payload_dir(cfg, round), "pass-$k"); mkpath(payload)
     fpath = findings_text_file(joinpath(payload, "findings.md"), findings)
     ledger = Ledger.read(cfg)
+    probe = Dict{String,Any}(f["id"] => quote_probe(root, f) for f in findings if f["lane"] != "scans")
+    open(joinpath(pd, "probe.json"), "w") do fh; JSON3.pretty(fh, JSON3.write(Dict("quote_still_stands" => probe))); println(fh); end
     base = Dict{String,Any}("schema_version" => 1, "round" => round, "round_dir" => dir, "pass_dir" => pd, "repo" => root, "nonce" => nonce,
+                            "quote_probe" => probe,
                             "graded_sha256" => graded_sha, "package" => Preflight.package_block(cfg), "models" => Dict("economy" => Preflight.economy_model()),
                             "strength" => rec["strength"], "adjudicated_titles" => Preflight.adjudicated_titles(cfg, ledger), "findings_path" => fpath)
     wdir = Preflight.workflow_dir(cfg, round)
@@ -241,26 +294,47 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
     if inst in ("check-consistency", "check-docs")
         manuscripts = nothing
         if inst == "check-consistency"
-            log = joinpath(Preflight.scratch_dir(cfg, round), "pass-$k-build.log")
-            code = Rounds.run_under_round(cfg, round, cfg["package"]["docs_build"]; log)
-            code == 0 || (println(io, "pass open: the docs build failed (exit $code) — see $log; the pass stays open, fix and re-run pass open"); return 2)
-            build = joinpath(root, cfg["surfaces"]["built_html"])
             full = joinpath(payload, "manuscript-full.md"); site = joinpath(payload, "manuscript-siteonly.md")
-            consolidate(build, String.(cfg["instruments"]["check-consistency"]["design_docs_withheld"]); out_full = full, out_siteonly = site)
+            # A build and a manuscript are a function of the tree. A pass that opens at the same clean HEAD
+            # as the last one rebuilds the site and re-consolidates it to produce the same bytes; a regrade
+            # or an ungraded pass paid that twice for nothing. Reuse is refused on a dirty tree, where HEAD
+            # names nothing about what would be built.
+            prevp = k > 1 ? joinpath(Preflight.payload_dir(cfg, round), "pass-$(k - 1)") : ""
+            keyf = joinpath(payload, "build.key"); prevkey = joinpath(prevp, "build.key")
+            reuse = k > 1 && isempty(Git.porcelain(root)) && isfile(prevkey) && chomp(read(prevkey, String)) == head &&
+                    isfile(joinpath(prevp, "manuscript-full.md")) && isfile(joinpath(prevp, "manuscript-siteonly.md"))
+            if reuse
+                cp(joinpath(prevp, "manuscript-full.md"), full; force = true)
+                cp(joinpath(prevp, "manuscript-siteonly.md"), site; force = true)
+                println(io, "pass open: HEAD has not moved since pass $(k - 1) and the tree is clean — the build and both manuscripts are reused")
+            else
+                log = joinpath(Preflight.scratch_dir(cfg, round), "pass-$k-build.log")
+                code = Rounds.run_under_round(cfg, round, cfg["package"]["docs_build"]; log)
+                code == 0 || (println(io, "pass open: the docs build failed (exit $code) — see $log; the pass stays open, fix and re-run pass open"); return 2)
+                build = joinpath(root, cfg["surfaces"]["built_html"])
+                consolidate(build, String.(cfg["instruments"]["check-consistency"]["design_docs_withheld"]); out_full = full, out_siteonly = site)
+            end
+            isempty(Git.porcelain(root)) && write(keyf, head)
             manuscripts = Dict("full" => full, "siteonly" => site)
         end
         lanes = [Dict("nn" => lpad(i, 2, '0'), "key" => r["key"], "substrate" => get(r, "substrate", "")) for (i, r) in enumerate(rec["roster"])
                  if !get(r, "not_applicable", false) && (get(expected_state, r["key"], 0) > 0 || r["key"] == "scans")]
         inst == "check-docs" && pushfirst!(lanes, Dict("nn" => "00", "key" => "scans", "substrate" => "scans"))
-        act = merge(base, Dict("range" => pass["range"], "mode" => "lanes",
+        # the act verifier reads the diff of THIS fix pass, not of the round: at pass 15 of
+        # 2026-09-09-check-docs-02 `range` was 456 files and 36,559 insertions where the work was 9 files
+        # and 499, and every lane agent re-read all of it to grade six ids
+        act = merge(base, Dict("range" => fixrange, "mode" => "lanes",
                     "lanes" => [Dict("nn" => l["nn"], "key" => l["key"], "expected" => get(expected_act, l["key"], 0)) for l in lanes if l["key"] != "scans"],
                     "findings" => [Dict("id" => f["id"], "lane" => f["lane"], "n" => f["n"], "title" => f["title"]) for f in findings if !get(f, "seeded", false) && f["lane"] != "scans"]))
-        state = merge(base, Dict("lanes" => [Dict("nn" => l["nn"], "key" => l["key"], "substrate" => l["substrate"], "expected" => get(expected_state, l["key"], 0)) for l in lanes if l["key"] != "scans"],
-                      "findings" => [Dict("id" => f["id"], "lane" => f["lane"], "n" => f["n"], "title" => f["title"], "seeded" => get(f, "seeded", false)) for f in findings if f["lane"] != "scans"],
+        expected_blind = Dict{String,Int}()
+        for f in state_findings; f["lane"] == "scans" || (expected_blind[f["lane"]] = get(expected_blind, f["lane"], 0) + 1); end
+        state = merge(base, Dict("lanes" => [Dict("nn" => l["nn"], "key" => l["key"], "substrate" => l["substrate"], "expected" => get(expected_blind, l["key"], 0)) for l in lanes if l["key"] != "scans" && get(expected_blind, l["key"], 0) > 0],
+                      "findings" => [Dict("id" => f["id"], "lane" => f["lane"], "n" => f["n"], "title" => f["title"], "seeded" => get(f, "seeded", false)) for f in state_findings if f["lane"] != "scans"],
                       "source_scope" => ["src", "ext", "docs/src", "docs"]))
         manuscripts === nothing || (state["manuscripts"] = manuscripts)
         Preflight.save_args(cfg, round, "pass-$k-act", act); Preflight.save_args(cfg, round, "pass-$k-state", state)
-        println(io, "\nLaunch BOTH verifiers exactly as printed (the act verifier sees the diff; the state verifier is blind), then gbg round grade $round:\n")
+        println(io, closing ? "\nLaunch BOTH verifiers exactly as printed (the act verifier sees the diff; the state verifier is blind), then gbg round grade $round:\n" :
+                              "\nLaunch BOTH exactly as printed, then gbg round grade $round. The blind verifier judges the $(length(state_findings)) OPEN id(s) this pass; an id the act verifier closes without one is pending_state, and close refuses while any remains:\n")
         println(io, Preflight.workflow_call(joinpath(wdir, "verify-act.js"), act), "\n")
         println(io, Preflight.workflow_call(joinpath(wdir, "verify-state.js"), state))
         println(io, "\n(lane 00-scans is closed by rescan at grade, never by a verdict)")
@@ -356,7 +430,7 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         j == 0 || (carried = Dict{String,Any}(String(i) => e for (i, e) in read_json(joinpath(pass_dir(dir, j), "tally.json"))["per_id"] if !(String(i) in scope)))
     end
     findings = scope === nothing ? all_findings : [f for f in all_findings if f["id"] in scope || f["lane"] == "scans"]
-    per_id = copy(carried); dead = String[]; rejected = String[]; demoted = 0; adjudicated = 0
+    per_id = copy(carried); dead = String[]; rejected = String[]; demoted = 0; adjudicated = 0; pending = String[]
     # the rates are over the ROUND, not over this pass: counting a scoped pass's demotions and
     # adjudications against a denominator of every banked id writes a zero rate into the tally that
     # `gbg fleet --diff` compares, for a round that adjudicated half its findings in an earlier pass
@@ -397,6 +471,15 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
             end
             s === nothing || (entry["state"] = s["verdict"])
             fav = s !== nothing && s["verdict"] in FAVOURABLE
+            # the blind verifier judges the open ids mid-round (`pass.toml`'s `state_ids`); an id the act
+            # verifier closed without one is PENDING — it drives no fix pass and closes no round, and
+            # `close` refuses while one stands, so the last pass is always a full blind sweep
+            # `per_id.state` is a closed vocabulary (§6.3) and holds what a verifier SAID; an id nobody
+            # was asked about is recorded in the tally's own `pending_state`, not by widening the set
+            asked = !haskey(pass, "state_ids") || id in pass["state_ids"]
+            if !asked && s === nothing && entry["act"] == "HONORED"
+                push!(pending, id); per_id[id] = entry; continue
+            end
             if get(f, "seeded", false)
                 fav && (entry["closed_by"] = "seeded")
             elseif entry["act"] == "HONORED" && fav
@@ -460,7 +543,8 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         println(io, "grade: the pass is incomplete — re-launch the verifier(s) named above for this pass (same nonce), then grade again")
         isempty(dead) || return 2
     end
-    open_ids = sort!([id for (id, e) in per_id if e["closed_by"] === nothing])
+    pending_state = sort!(unique(pending))
+    open_ids = sort!([id for (id, e) in per_id if e["closed_by"] === nothing && !(id in pending_state)])
     prev_open = k > 1 && isfile(joinpath(pass_dir(dir, k - 1), "tally.json")) ? length(read_json(joinpath(pass_dir(dir, k - 1), "tally.json"))["open_ids"]) : -1
     flat = 0
     for j in k-1:-1:1
@@ -473,6 +557,7 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         "totals" => Dict("findings" => length(all_findings), "seeded" => count(f -> get(f, "seeded", false), all_findings), "closed" => closed, "open" => length(open_ids)),
         "demoted_by_rule" => demoted, "adjudicated_share" => isempty(all_findings) ? 0.0 : adjudicated / length(all_findings),
         "suspect_hats" => get(bank, "suspect_hats", String[]), "dead_lanes" => dead, "rejected_files" => rejected, "open_ids" => open_ids,
+        "pending_state" => pending_state,
         "plateau" => Dict("passes_flat" => flat), "recall" => get(bank, "recall", Dict()))
     errs = validate(load_schema("tally"), tally); isempty(errs) || throw(RoundError("tally.json would not validate: " * join(errs, "; ")))
     write_json(joinpath(pd, "tally.json"), tally)
@@ -486,7 +571,9 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     series = join(("pass $j: $(length(read_json(joinpath(pass_dir(dir, j), "tally.json"))["open_ids"])) open" for j in 1:k if isfile(joinpath(pass_dir(dir, j), "tally.json"))), " → ")
     println(io, "grade: $series")
     flat >= 2 && println(io, "grade: PLATEAU — the open count has not moved for $flat passes; adjudicate what is not a defect, or gbg round abandon")
-    isempty(open_ids) ? (println(io, "grade: every id closed — gbg round close $round"); return 0) : (println(io, "grade: $(length(open_ids)) open id(s): ", join(open_ids, ", ")); return 1)
+    isempty(open_ids) || (println(io, "grade: $(length(open_ids)) open id(s): ", join(open_ids, ", ")); return 1)
+    isempty(pending_state) || (println(io, "grade: 0 open, $(length(pending_state)) awaiting a blind reading — gbg round pass open $round (the next pass sweeps them; nothing closes on the act verifier alone)"); return 1)
+    println(io, "grade: every id closed — gbg round close $round"); return 0
 end
 
 # ---- close -------------------------------------------------------------------------------------------------
@@ -622,6 +709,7 @@ function close(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     else
         t = read_json(tj)
         isempty(t["open_ids"]) || push!(fails, "$(length(t["open_ids"])) open id(s) in pass $k")
+        isempty(get(t, "pending_state", String[])) || push!(fails, "$(length(t["pending_state"])) id(s) the blind verifier never read at this head — gbg round pass open $round, which sweeps them")
         isempty(t["dead_lanes"]) || push!(fails, "dead lane(s) in pass $k: " * join(t["dead_lanes"], ", "))
     end
     isempty(rec["dead_lanes"]) || push!(fails, "dead lanes at bank: " * join(rec["dead_lanes"], ", "))

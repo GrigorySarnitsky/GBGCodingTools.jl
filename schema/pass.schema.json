@@ -71,6 +71,25 @@
     "type": "string"
    },
    "description": "the finding ids this pass verifies: the ids open after the previous pass, plus any closed id whose named locations the fix pass touched again. Absent on pass 1, which verifies every id. `grade` carries a closed id's entry forward when the pass did not cover it"
+  },
+  "fix_range": {
+   "description": "the range the act verifier reads: the last GRADED pass's head to this pass's head. `range` is the whole round, kept for the record; handing that to the verifier made it re-read every commit of the round to grade one fix.",
+   "pattern": "^[0-9a-f]{40}\\.\\.[0-9a-f]{40}$",
+   "type": "string"
+  },
+  "probe_open": {
+   "description": "ids the quote probe found still present in the corpus. No verifier is dispatched for them: a surviving quote is evidence the defect is there, and an id with no verdict stays open. The probe may open an id, never close one.",
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "state_ids": {
+   "description": "the ids the blind state verifier judges this pass. Mid-round it is the open ids alone; on a pass that could close the round it is every id in scope, so nothing closes without two independent readings of the corpus it closes in.",
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
   }
  },
  "title": "verdicts/pass-<k>/pass.toml \u2014 one verification pass (CLI-written)",

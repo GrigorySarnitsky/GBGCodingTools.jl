@@ -164,8 +164,9 @@ unit,words,longest_paragraph,admonitions
 "Passes.jl :: finding_files(root, finding) -> Vector{String}",65,34,0
 "Passes.jl :: grade(cfg, round; io = stdout) -> Int",149,110,0
 "Passes.jl :: last_graded(dir, k) -> Int",108,68,0
-"Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, io ",208,77,0
+"Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, io ",234,103,0
 "Passes.jl :: pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects,",131,73,0
+"Passes.jl :: quote_probe(root, finding) -> Vector{String}",177,104,0
 "Passes.jl :: unswept(cfg, dir, ids, range) -> Vector{Pair{String,Vector{S",131,55,0
 "Preflight.jl :: Preflight",72,71,0
 "Preflight.jl :: audit_kind(cfg, base) -> String",56,52,0
@@ -179,7 +180,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",131,80,0
 "Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
 "Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",76,73,0
-"Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",224,118,0
+"Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",209,103,0
 "Preflight.jl :: resolve_hunt_lanes(cfg) -> Vector{Dict}",22,19,0
 "Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",65,40,0
 "Preflight.jl :: stamps(cfg; record = nothing) -> Dict",104,66,0
@@ -192,7 +193,7 @@ unit,words,longest_paragraph,admonitions
 "Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
 "Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0
 "Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
-"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",136,73,0
+"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",118,55,0
 "Reflection.jl :: ARGS_THRESHOLD",33,32,0
 "Reflection.jl :: ArgcovHit",58,48,0
 "Reflection.jl :: Docstring",70,59,0

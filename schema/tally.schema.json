@@ -2,18 +2,19 @@
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "additionalProperties": false,
  "required": [
-  "schema_version",
-  "round",
-  "pass",
-  "per_id",
-  "totals",
-  "demoted_by_rule",
   "adjudicated_share",
-  "suspect_hats",
   "dead_lanes",
-  "rejected_files",
+  "demoted_by_rule",
   "open_ids",
-  "plateau"
+  "pass",
+  "pending_state",
+  "per_id",
+  "plateau",
+  "rejected_files",
+  "round",
+  "schema_version",
+  "suspect_hats",
+  "totals"
  ],
  "properties": {
   "recall": {
@@ -113,6 +114,13 @@
    "minimum": 0,
    "type": "number",
    "maximum": 1
+  },
+  "pending_state": {
+   "description": "ids the act verifier closed this pass that the blind verifier did not read. Neither open nor closed: they drive no fix, and `close` refuses while any remains, so the round ends with a full blind sweep.",
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
   }
  },
  "title": "verdicts/pass-<k>/tally.json \u2014 written by `gbg round grade`",

@@ -69,7 +69,17 @@ const substrateFor = (lane) => {
   }
   return `THE CURRENT SOURCE under ${A.repo}: ${SCOPE.join(', ')}. Ground truth for a documentation finding is the source text; the built site under ${A.repo}/docs/build is available for rendering questions.`
 }
-const fmt = (f) => `  ${f.id} (lane ${f.lane}, #${f.n}) — ${f.title}`
+// The CLI already grepped each finding's own quoted text in the files that finding names, so no verifier
+// spends a tool call on it. It is EVIDENCE, never a verdict: the quote is the site's identifying text as
+// often as the defect's, so a surviving one does not settle STRATEGY and a vanished one does not settle
+// the class. Absent (an older CLI), the line is simply omitted.
+const probe = (id) => {
+  const p = A.quote_probe && A.quote_probe[id]
+  if (!p) return ''
+  return p.length ? `\n      [computed] its quoted text still stands in: ${p.join(', ')}`
+                  : `\n      [computed] its quoted text is gone from every file it names`
+}
+const fmt = (f) => `  ${f.id} (lane ${f.lane}, #${f.n}) — ${f.title}${probe(f.id)}`
 
 phase('Verify state')
 const units = A.lanes.map(l => ({ lane: l, items: A.findings.filter(f => f.lane === l.key) }))

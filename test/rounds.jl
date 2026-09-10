@@ -191,6 +191,87 @@ end
     @test G.Passes.pass_scope(cfg, dir, rec, 3)[1] === nothing             # nothing graded yet: verify everything
 end
 
+# The blind verifier judges the OPEN ids mid-round, not every id every pass: over this round's 860
+# verdict pairs it uniquely blocked 6, all early, while costing half the verifier bill in the four
+# passes that cost the most. What keeps that honest is that an id the act verifier closes without a
+# blind reading is PENDING — not closed, not open, driving no fix — and `close` refuses while one
+# stands, so the round always ends with a full blind sweep. Both directions here: the id that was read
+# closes, the id that was not goes pending and blocks the close until it is read.
+@testset "nothing closes on one reading: pending_state" begin
+    root = fixture_copy("blind-scope")
+    cfg = G.Config.read(root)
+    dir = joinpath(root, ".gbg", "rounds", "2026-01-01-check-docs-01")
+    pd = joinpath(dir, "verdicts", "pass-1"); mkpath(joinpath(pd, "act")); mkpath(joinpath(pd, "state"))
+    lane = rec_lane = "src"
+    fs = [Dict{String,Any}("id" => "2026-01-01-check-docs-01/src#$i", "lane" => lane, "n" => i, "title" => "t$i", "severity" => "minor",
+                           "confidence" => "high", "type" => "structure", "locations" => ["src/FixtureA.jl:1 — \"q$i\""],
+                           "description" => "d"^24) for i in 1:2]
+    fj = joinpath(dir, "findings.json")
+    write(fj, JSON3.write(Dict("schema_version" => 1, "round" => "2026-01-01-check-docs-01", "findings" => fs)))
+    st = G.Preflight.stamps(cfg)
+    rec = merge(st, Dict{String,Any}("round" => "2026-01-01-check-docs-01", "instrument" => "check-docs", "schema_version" => 1,
+        "head" => something(G.Git.head(root), "0"^40), "roster" => Any[Dict("key" => lane, "substrate" => "full", "anchor" => false)],
+        "cost" => "economy", "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet",
+        "opened" => "2026-01-01T00:00:00", "dead_lanes" => String[], "passes" => 1,
+        "banked" => "2026-01-01T00:00:01", "findings_sha" => G.RoundFiles.sha256_file(fj)))
+    write_round(dir, rec)
+    nonce = "a"^32
+    # the blind verifier was asked for #1 alone; #2 is a suspect the act verifier re-confirmed
+    open(joinpath(pd, "pass.toml"), "w") do f
+        TOML.print(f, Dict("pass" => 1, "nonce" => nonce, "opened" => "2026-01-01T00:00:02", "head" => rec["head"],
+                           "range" => "$(rec["head"])..$(rec["head"])", "fix_range" => "$(rec["head"])..$(rec["head"])",
+                           "expected" => Dict(lane => 2), "regrade" => false, "state_ids" => ["2026-01-01-check-docs-01/src#1"],
+                           "tool_version" => rec["tool_version"], "tool_rev" => rec["tool_rev"],
+                           "tool_tree_sha" => rec["tool_tree_sha"], "config_sha" => rec["config_sha"]))
+    end
+    surf = [Dict("surface" => "src/FixtureA.jl:1", "swept" => true, "evidence" => "the only site")]
+    write(joinpath(pd, "act", "01-$lane.json"), JSON3.write(Dict("schema_version" => 1, "lane" => lane,
+        "graded_sha256" => rec["findings_sha"], "pass_nonce" => nonce,
+        "verdicts" => [Dict("id" => f["id"], "verdict" => "HONORED", "question" => "none", "evidence" => "e"^12,
+                            "class_surfaces" => surf) for f in fs])))
+    write(joinpath(pd, "state", "01-$lane.json"), JSON3.write(Dict("schema_version" => 1, "lane" => lane,
+        "graded_sha256" => rec["findings_sha"], "pass_nonce" => nonce,
+        "verdicts" => [Dict("id" => "2026-01-01-check-docs-01/src#1", "verdict" => "ABSENT", "evidence" => "searched the corpus")])))
+    @test G.Passes.grade(cfg, "2026-01-01-check-docs-01"; io = devnull) == 1     # not clean: one is unread
+    tal = JSON3.read(read(joinpath(pd, "tally.json"), String), Dict{String,Any})
+    @test tal["per_id"]["2026-01-01-check-docs-01/src#1"]["closed_by"] == "honored"                     # read twice: closed
+    @test tal["per_id"]["2026-01-01-check-docs-01/src#2"]["closed_by"] === nothing
+    @test tal["per_id"]["2026-01-01-check-docs-01/src#2"]["state"] === nothing   # nobody was asked
+    @test tal["open_ids"] == String[] && tal["pending_state"] == ["2026-01-01-check-docs-01/src#2"]     # pending is not open
+    io3 = IOBuffer(); @test G.Passes.close(cfg, "2026-01-01-check-docs-01"; io = io3) == 1
+    @test occursin("blind verifier never read", String(take!(io3)))
+    # read it, and the round closes
+    write(joinpath(pd, "state", "01-$lane.json"), JSON3.write(Dict("schema_version" => 1, "lane" => lane,
+        "graded_sha256" => rec["findings_sha"], "pass_nonce" => nonce,
+        "verdicts" => [Dict("id" => f["id"], "verdict" => "ABSENT", "evidence" => "searched the corpus") for f in fs])))
+    p2 = TOML.parsefile(joinpath(pd, "pass.toml")); p2["state_ids"] = ["2026-01-01-check-docs-01/src#1", "2026-01-01-check-docs-01/src#2"]
+    open(joinpath(pd, "pass.toml"), "w") do f; TOML.print(f, p2); end
+    @test G.Passes.grade(cfg, "2026-01-01-check-docs-01"; io = devnull) == 0
+    tal = JSON3.read(read(joinpath(pd, "tally.json"), String), Dict{String,Any})
+    @test isempty(tal["pending_state"]) && tal["per_id"]["2026-01-01-check-docs-01/src#2"]["closed_by"] == "honored"
+end
+
+# The quote probe is EVIDENCE, never a gate. It reports whether a finding's own quoted text still
+# stands in a file the finding named, so no verifier spends a tool call establishing it — and it decides
+# nothing, because the quote is the site's identifying text as often as the defect's. Both directions:
+# it finds a surviving quote, and it stays silent when the text is gone or the file is not named.
+@testset "the quote probe reports, and decides nothing" begin
+    root = fixture_copy("probe")
+    a = joinpath(root, "src", "FixtureA.jl"); write(a, read(a, String) * "\n# the offending sentence stands here\n")
+    f = Dict{String,Any}("id" => "r/x#1", "lane" => "src", "n" => 1, "title" => "t",
+                         "locations" => ["src/FixtureA.jl:1 — \"the offending sentence stands here\"",
+                                         "docs/src/notation.md:2 — \"a sentence that was never written\""])
+    @test G.Passes.quote_probe(root, f) == ["src/FixtureA.jl"]
+    write(a, replace(read(a, String), "# the offending sentence stands here\n" => ""))
+    @test isempty(G.Passes.quote_probe(root, f))                       # gone from the file it named
+    nofile = Dict{String,Any}("id" => "r/y#1", "locations" => ["nowhere at all — \"the offending sentence\""])
+    @test isempty(G.Passes.quote_probe(root, nofile))
+    # a quotation elsewhere in the tree is not the defect: the probe reads the named file alone, or a
+    # changelog entry describing the fix would report its own defect for ever
+    write(joinpath(root, "CHANGELOG.md"), "fixed: \"the offending sentence stands here\"\n")
+    @test isempty(G.Passes.quote_probe(root, f))
+end
+
 @testset "round lifecycle" begin
     root = fixture_copy("round")
     cfg = G.Config.read(root)
@@ -269,6 +350,13 @@ end
         @test G.Passes.pass_open(cfg, round; sweep_ok = true, io) == 0
         out = String(take!(io)); @test occursin("verify-act.js", out) && occursin("verify-state.js", out)
         pd = joinpath(dir, "verdicts", "pass-1"); pass = TOML.parsefile(joinpath(pd, "pass.toml"))
+        # the act verifier reads the fix pass's own diff, not the round's: handing it `range` made every
+        # lane agent re-read every commit since the round opened to grade one fix
+        @test haskey(pass, "fix_range") && pass["fix_range"] == pass["range"]     # pass 1: they coincide
+        aargs = JSON3.read(read(joinpath(G.Preflight.workflow_dir(cfg, round), "pass-1-act.args.json"), String), Dict{String,Any})
+        @test aargs["range"] == pass["fix_range"]
+        @test haskey(aargs, "quote_probe") && isfile(joinpath(pd, "probe.json"))  # evidence, computed once
+        @test pass["state_ids"] == [f["id"] for f in findings]                    # pass 1 is a full blind sweep
         id = findings[1]["id"]; lane = lanes[1]
         act = Dict("schema_version" => 1, "lane" => lane["key"], "graded_sha256" => rec["findings_sha"], "pass_nonce" => pass["nonce"],
                    "verdicts" => [Dict("id" => id, "verdict" => "HONORED", "question" => "none", "evidence" => "x"^12, "class_surfaces" => Any[])])
@@ -288,7 +376,7 @@ end
         open(joinpath(pd, "act", "$(lane["nn"])-$(lane["key"]).json"), "w") do fh; JSON3.write(fh, act); end
         @test G.Passes.grade(cfg, round; io = devnull) == 0
         t = JSON3.read(read(joinpath(pd, "tally.json"), String), Dict{String,Any})
-        @test t["per_id"][id]["closed_by"] == "honored" && isempty(t["open_ids"])
+        @test t["per_id"][id]["closed_by"] == "honored" && isempty(t["open_ids"]) && isempty(t["pending_state"])
         # close: the copy is untracked in the tool's repository, so "committed" holds vacuously; the
         # closing head is the tool's HEAD and the opening head is an ancestor of it
         @test G.Passes.close(cfg, round; io = devnull) == 0
