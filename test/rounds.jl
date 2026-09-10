@@ -30,6 +30,67 @@ end
     @test isempty(G.Passes.audit_after_code(cfg, Dict{String,Any}("head" => "HEAD~1")))     # prose only: not gated
 end
 
+# The refusal that keeps a documentation round citable is at the DOOR: a /check-docs or
+# /check-consistency round at the tool root will not open while the tool names no released version,
+# because a round graded by an unreleased tool compares with nothing and no release may cite it. Both
+# directions and both scopes: a tag stamp opens, an audit round is never refused (it reads base..HEAD
+# and is off-tag by construction), and a consumer that is not the tool root is not this rule's business.
+@testset "a documentation round will not open at a dev stamp" begin
+    tcfg = G.Config.read(TOOL)
+    dev = Dict{String,Any}("tool_version" => "dev+abc1234")
+    tagged = Dict{String,Any}("tool_version" => "1.0.0-rc.1")
+    r = G.Preflight.dev_round(tcfg, "check-docs", dev)
+    @test r !== nothing && occursin("dev+abc1234", r) && occursin("release", r)
+    @test G.Preflight.dev_round(tcfg, "check-consistency", dev) !== nothing
+    @test G.Preflight.dev_round(tcfg, "check-docs", tagged) === nothing        # a released instrument
+    @test G.Preflight.dev_round(tcfg, "audit-changes", dev) === nothing        # off-tag by construction
+    @test G.Preflight.dev_round(tcfg, "bug-hunt", dev) === nothing
+    @test G.Preflight.dev_round(G.Config.read(FIXTURE), "check-docs", dev) === nothing   # not the tool root
+end
+
+# `gbg release` leans on ONE round: the closed /check-docs round stamped with the latest rc tag, every
+# id honored or adjudicated. The stamp is written without the `v` and the tag list carries it, so the
+# raw comparison this replaced could never be true — the precondition was unsatisfiable and would have
+# rejected a correctly stamped round. Both directions: the tag must match and the ids must be closed.
+@testset "the release finds the round it cites" begin
+    root = fixture_copy("cites")
+    cfg = G.Config.read(root)
+    rd = joinpath(root, ".gbg", "rounds", "2026-01-01-check-docs-01"); mkpath(joinpath(rd, "verdicts", "pass-1"))
+    st = G.Preflight.stamps(cfg)
+    rec = merge(st, Dict{String,Any}("round" => "2026-01-01-check-docs-01", "instrument" => "check-docs",
+        "schema_version" => 1, "head" => "0"^40, "roster" => Any[], "cost" => "economy", "strength" => "economy",
+        "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00", "dead_lanes" => String[],
+        "passes" => 1, "closed" => "2026-01-02T00:00:00"))
+    rec["tool_version"] = "1.0.0-rc.1"; rec["tool_rev"] = "v1.0.0-rc.1"
+    write_round(rd, rec)
+    tally(state) = Dict("per_id" => Dict("r/lane#1" => Dict("closed_by" => state)))
+    write(joinpath(rd, "verdicts", "pass-1", "tally.json"), JSON3.write(tally("honored")))
+    @test G.cites_round(cfg, "v1.0.0-rc.1")
+    @test !G.cites_round(cfg, "v1.0.0-rc.2")                  # a round of the previous candidate
+    write(joinpath(rd, "verdicts", "pass-1", "tally.json"), JSON3.write(tally("abandoned")))
+    @test !G.cites_round(cfg, "v1.0.0-rc.1")                  # an id that was never closed
+end
+
+# A closed round stamped dev has an exit. Nothing else does: a state a check can name and no verb can
+# leave is a trap, and the repair reached for instead is editing a frozen record.
+@testset "a closed dev-stamped round can still be abandoned" begin
+    root = fixture_copy("unclose")
+    cfg = G.Config.read(root)
+    rd = joinpath(root, ".gbg", "rounds", "2026-01-01-bug-hunt-01"); mkpath(rd)
+    st = G.Preflight.stamps(cfg)
+    rec = merge(st, Dict{String,Any}("round" => "2026-01-01-bug-hunt-01", "instrument" => "bug-hunt",
+        "schema_version" => 1, "head" => "0"^40, "roster" => Any[], "cost" => "economy", "strength" => "economy",
+        "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00", "dead_lanes" => String[],
+        "passes" => 0, "closed" => "2026-01-02T00:00:00"))
+    rec["tool_version"] = "1.0.0-rc.1"; rec["tool_rev"] = "v1.0.0-rc.1"; write_round(rd, rec)
+    # a closed round stamped with a TAG is a release's evidence: abandon does not take it back
+    @test_throws G.Rounds.RoundError G.Rounds.abandon(cfg, "2026-01-01-bug-hunt-01", "a released round is not re-openable"; io = devnull)
+    rec["tool_version"] = "dev+abc1234"; rec["tool_rev"] = "abc1234" * "0"^33; write_round(rd, rec)
+    @test G.Rounds.abandon(cfg, "2026-01-01-bug-hunt-01", "closed at a dev stamp, which no release may cite"; io = devnull) == 0
+    back = G.RoundFiles.read_round(rd)
+    @test G.RoundFiles.state(back) == :abandoned && haskey(back, "closed")     # the closing is still on the record
+end
+
 # RULE.INST.AUDIT_DISPOSED: bank tells an audit round to record dispositions and NEVER to run a fix pass,
 # because a correction inside the round moves the tree and the staleness check then refuses the close for
 # good. Both directions: every other instrument is still told the fix pass comes next.
@@ -208,7 +269,9 @@ end
         tj = joinpath(pd, "tally.json"); write(tj, read(tj, String) * "\n")
         checks, _ = G.Doctor.run(cfg; only = ["ROUND.FROZEN"], io = devnull)
         @test first(checks).status == :FAIL
-        # abandon is refused on a closed round; a fresh round can be abandoned with its open ids
-        @test_throws G.Rounds.RoundError G.Rounds.abandon(cfg, round, "a plateau after three passes"; io = devnull)
+        # this round closed at a dev stamp, so no release may cite it and abandon still takes it — the exit
+        # that a closed dev round would otherwise not have. A tag-stamped one is refused (the testset above).
+        @test G.Rounds.abandon(cfg, round, "closed at a dev stamp, which no release may cite"; io = devnull) == 0
+        @test G.RoundFiles.state(G.RoundFiles.read_round(dir)) == :abandoned
     end
 end

@@ -634,10 +634,20 @@ end
 
 It writes `abandoned = {reason, open_ids}` with every id still open (all banked ids when no pass was
 graded). Returns 0.
+
+It takes an open round, and one other: a CLOSED round stamped `dev`, which no release may cite and
+which `preflight` no longer lets anyone open. That is the exit such a round would otherwise not have —
+a state a check can name and no verb can leave is a trap, and the repair reached for instead would be
+editing a frozen record. `closed` is kept beside `abandoned`, so the record says it happened; the
+round reads abandoned from then on.
 """
 function abandon(cfg::AbstractDict, round::AbstractString, reason::AbstractString; io::IO = stdout)
     length(strip(reason)) >= 12 || (println(io, "abandon: --reason needs at least 12 characters; a plateau is the usual reason"); return 2)
-    dir, rec = guard(cfg, round; io, allow_config_change = true)
+    dir, rec = guard(cfg, round; io, allow_config_change = true, need_open = false)
+    st = RoundFiles.state(rec)
+    if st != :open && !(st == :closed && startswith(String(get(rec, "tool_version", "")), "dev"))
+        throw(RoundError("$round is $st; abandon takes an open round, or a closed one stamped dev (which no release may cite)"))
+    end
     open_ids = String[]
     k = rec["passes"]; tj = joinpath(dir, "verdicts", "pass-$k", "tally.json")
     if isfile(tj)

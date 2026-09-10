@@ -173,8 +173,9 @@ four working repos with their own docs deploys; not needed to get the one-versio
    `release`, `new`, `selftest`; no `~/.gbg/dev` → exit 2 "no dev checkout registered".
    `gbg --dev …` (the shim's first argument; `main` accepts the same flag and sets `GBG_DEV=1`)
    inside a consumer routes to the registered dev checkout and stamps
-   `tool_version = "dev+<sha>[-dirty]"`; a dev-stamped round is **unclosable** except by abandon —
-   unless it was opened at the tool's own root at a clean released tag (D16's extension).
+   `tool_version = "dev+<sha>[-dirty]"`; a documentation round does not **open** at such a stamp
+   (`Preflight.dev_round`), and one already closed at it is cited by no release (D16, revised
+   2026-09-10).
    A config whose pin is the literal `version = "dev"` is legal in exactly two places (D15): a
    consumer enclosed by the tool repository — the fixture — which is routed the same way, to the
    enclosing tool repository (found by walking up to a `Project.toml` with
@@ -852,9 +853,17 @@ is present; and the tag is absent — it never re-tags (§8 restates the list). 
 open-round refusal and the closed-`/check-docs`-round precondition: it exists so that the tool's own
 instrument rounds before a release have a clean tag to open at. An rc tag is never a consumer pin —
 `PIN.CONFIG` accepts only `vX.Y.Z`, and `PIN.SOURCES` refuses a `-rc.` rev in any consumer other than
-the tool itself (§7.3). **The dev-round rule, extended.** A round stamped `dev+<sha>[-dirty]` — opened
-under `gbg --dev`, or on the tool's own root (D15) — is unclosable except by abandon, UNLESS it was
-opened at a clean tag: a round whose `tool_version` equals a released tag — a prerelease
+the tool itself (§7.3). **The dev-round rule, revised 2026-09-10.** A round stamped `dev+<sha>[-dirty]` — opened under
+`gbg --dev`, or on the tool's own root (D15) — is refused AT `preflight` for `/check-docs` and
+`/check-consistency`, the two instruments whose rounds are measurements compared across versions: the
+round is not opened and nothing is spent. `/bug-hunt` and `/audit-changes` read `base..HEAD`, which is
+off a tag by construction, so they open, close and carry a dev stamp as the normal case. A closed
+dev-stamped documentation round is a record, not a measurement: `ROUND.DEV` names it (WARN),
+`Release.cites_round` refuses it a release, and `abandon` takes it back, since a state with no exit
+invites editing a frozen record. Until this revision the rule was enforced by nothing — `Passes.close`
+held the string only to exempt a dev round from the tag-moved refusal — and the doctor's FAIL on the
+frozen record that resulted stopped `Pkg.test()` and every docs build. A refusal belongs where the
+answer is still cheap. The earlier form of the rule admitted a round opened at a clean tag: a round whose `tool_version` equals a released tag — a prerelease
 `vX.Y.Z-rc.<n>` included — AND whose tree was clean at open (`git describe --exact-match --dirty`
 naming that tag with no `-dirty` suffix) is stamped with the tag, not `dev+…`, and is a normal
 closable round; this is the tool's own way to run its instruments on a release, and at an rc tag on
@@ -1785,8 +1794,8 @@ implementation plan refers to it and adds no id of its own.
 | `ROUND.MARKER` | every round directory has `ROUND.toml` | one without |
 | `ROUND.OPEN` | lists open rounds (WARN; never FAIL — a fix pass may span sessions) | — |
 | `ROUND.ABANDONED` | lists abandoned rounds with their carried `open_ids` (WARN) | — |
-| `ROUND.DEV` | no closed round stamped `dev+` or `dev` (a round opened at the tool root at a clean released tag — a prerelease `vX.Y.Z-rc.<n>` included — is stamped with the tag, D16, and closes normally) | present |
-| `ROUND.FROZEN` | every closed round's stored tally sha matches `ROUND.toml`; every closed round's `findings.json` sha matches `findings_sha`; `reproductions_sha` where present | tampered |
+| `ROUND.DEV` | lists closed `/check-docs` and `/check-consistency` rounds stamped `dev+` or `dev` — recorded, not comparable, and citable by no release (WARN; the refusal is at `preflight`, where the round can still not be opened, and in `gbg release`, on the round it cites). An audit or hunt round reads `base..HEAD` and is off-tag by construction, so it is never named | — |
+| `ROUND.FROZEN` | every closed round's stored tally sha matches `ROUND.toml`; every closed round's `findings.json` sha matches `findings_sha`; `reproductions_sha` where present; and every stamp names its own revision — `dev+<sha>` begins `tool_rev`, a pinned `vX.Y.Z` equals it, a tag stamp resolves to it where the tool repository is in reach (the shas cover the evidence, not the stamps, so a re-stamped record passed unseen) | tampered |
 | `AUDIT.GAP` | every closed audit round's `base` equals the previous closed audit's `head` | otherwise (WARN) |
 | `LOAD.ENVS` (`--deep`) | `using GBGCodingTools` loads in every sub-env that lists it (resolve/instantiate/LOAD are not interchangeable; `Pkg.gc()` can remove a copy referenced only by a test sandbox — instantiate restores it) | error |
 | `BUILD.DOCS` (`--deep`) | `docs_build` exits 0 and the build log carries the `GBGCodingTools v<ver> makedocs` banner | otherwise |

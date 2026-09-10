@@ -126,6 +126,34 @@ function stamps(cfg::AbstractDict; record = nothing)
         "seed_catalog_sha" => seed_catalog_sha(cfg))
 end
 
+"""
+    dev_round(cfg, instrument, st) -> Union{Nothing,String}
+
+The refusal when a documentation round would open with no released instrument to name, or `nothing`
+when it may open. The arguments are `cfg`, the validated config; `instrument`, the instrument asked
+for; and `st`, the stamps [`stamps`](@ref) computed for it.
+
+A `/check-docs` or `/check-consistency` round is a measurement, and D16 says a `dev`-stamped round is
+unclosable: a round graded by an unreleased tool compares with nothing and can be cited by no release.
+That refusal belongs where it can still be acted on — the round is not opened, and nothing is spent —
+rather than after the record is frozen and every verb refuses. An audit or hunt round reads
+`base..HEAD` and is off-tag by construction, so it is never refused here.
+
+The limit: this is the tool's own root, where the stamp is the working tree's. A consumer driven by
+`gbg --dev` still records a `dev` stamp; `PIN.NOT_DEV` warns while it does, and `ROUND.DEV` names the
+round afterwards.
+"""
+function dev_round(cfg::AbstractDict, instrument::AbstractString, st::AbstractDict)
+    instrument in ("check-docs", "check-consistency") || return nothing
+    here(x) = normpath(joinpath(abspath(String(x)), "."))       # a config root carries a trailing slash
+    here(cfg["root"]) == here(pkgdir(GBGCodingTools)) || return nothing
+    v = String(get(st, "tool_version", ""))
+    startswith(v, "dev") || return nothing
+    return "the tool root is at `$v`, which names no released instrument. A documentation round is a " *
+           "measurement: one graded here compares with no other round and no release may cite it (D16). " *
+           "Tag first — `gbg release <ver>-rc.<n>` — and open the round at the tag."
+end
+
 # ---- substitution -----------------------------------------------------------------------------------------
 
 function section_text(root::AbstractString, anchor::AbstractString)
@@ -588,6 +616,8 @@ function preflight(cfg::AbstractDict, instrument::AbstractString; profile = noth
         base === nothing && (println(io, "preflight: audit-changes needs --base <commit> — the commit the norm is pinned at"); return 2)
         Git.run(root, "cat-file", "-e", base * "^{commit}") === nothing && (println(io, "preflight: --base $base is not a commit of this repository"); return 2)
     end
+    refusal = dev_round(cfg, instrument, stamps(cfg))
+    refusal === nothing || (println(io, "preflight: refused — ", refusal); return 2)
     round = next_round_id(cfg, instrument)
     kind = instrument == "audit-changes" ? audit_kind(cfg, base) : "both"
     roster = resolve_roster(cfg, instrument; profile, explicit = hats, kind)

@@ -2,6 +2,28 @@
 # clean tree, after every precondition of ARCHITECTURE D16 and §8 (IMPLEMENTATION 1.10 item 7).
 
 """
+    cites_round(cfg, tag) -> Bool
+
+Whether the consumer `cfg` holds the review a release at `tag` leans on: a CLOSED `/check-docs` round
+stamped with that tag, every id of its last tally closed through `honored`, `adjudicated`, `rescan` or
+`seeded`. `tag` is the git tag (`vX.Y.Z`, `vX.Y.Z-rc.N`); the round's stamp is written without the `v`
+(`Preflight.stamps`), and comparing the two raw made this precondition unsatisfiable — no final release
+could pass it, and it would have rejected a correctly stamped round.
+
+This is where "the released version was reviewed" is enforced. `ROUND.DEV` only reports what is already
+recorded; the refusal that keeps a round citable is `Preflight.dev_round`, at the door. Returns the answer.
+"""
+function cites_round(cfg::AbstractDict, tag::AbstractString)
+    return any(RoundFiles.rounds(cfg)) do r
+        (r.state == :closed && String(r.round["instrument"]) == "check-docs" && "v" * String(r.round["tool_version"]) == tag) || return false
+        tj = joinpath(r.dir, "verdicts", "pass-$(r.round["passes"])", "tally.json")
+        isfile(tj) || return false
+        all(e -> e["closed_by"] in ("honored", "adjudicated", "rescan", "seeded"),
+            values(JSON3.read(read(tj, String), Dict{String,Any})["per_id"]))
+    end
+end
+
+"""
     release(ver; io = stdout, skip_tests = false) -> Int
 
 Tags and pushes `v<ver>` from the dev checkout. The arguments are:
@@ -42,11 +64,7 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false)
             push!(fails, "no v$base-rc.N tag: a final release follows a candidate whose /check-docs round is closed")
         else
             latest = last(sort(rcs; by = t -> parse(Int, last(split(t, ".")))))
-            ok = any(RoundFiles.rounds(cfg)) do r
-                r.state == :closed && r.round["instrument"] == "check-docs" && String(r.round["tool_version"]) == latest &&
-                    all(e -> e["closed_by"] in ("honored", "adjudicated", "rescan", "seeded"), values(JSON3.read(read(joinpath(r.dir, "verdicts", "pass-$(r.round["passes"])", "tally.json"), String), Dict{String,Any})["per_id"]))
-            end
-            ok || push!(fails, "no closed /check-docs round stamped $latest under .gbg/rounds/")
+            cites_round(cfg, latest) || push!(fails, "no closed /check-docs round stamped $latest under .gbg/rounds/")
         end
     end
     if !isempty(fails)

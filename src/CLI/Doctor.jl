@@ -546,14 +546,37 @@ check!("ROUND.ABANDONED", ctx -> begin
     ab = [r for r in RoundFiles.rounds(ctx.cfg) if r.state == :abandoned]
     isempty(ab) ? pass("ROUND.ABANDONED") : warn("ROUND.ABANDONED", join(("$(r.name) carries $(length(r.round["abandoned"]["open_ids"])) open id(s)" for r in ab), "; "))
 end)
+# A round is stopped from closing at a dev stamp where that can still be acted on — `Preflight.dev_round`
+# refuses to OPEN one. This reports what is already recorded, and a recorded round is frozen: FAILing on
+# it made a fact about last week's round the reason `Pkg.test()` and every docs build refused today, with
+# no verb able to clear it. What a release leans on is enforced in `Release.release`, on the one round it
+# cites. An audit or hunt round at the tool root is off-tag by construction — it reads `base..HEAD` — so
+# a dev stamp there is the normal case and never named here.
 check!("ROUND.DEV", ctx -> begin
-    bad = [r.name for r in RoundFiles.rounds(ctx.cfg) if r.state == :closed && startswith(String(r.round["tool_version"]), "dev")]
-    isempty(bad) ? pass("ROUND.DEV") : fail("ROUND.DEV", "closed rounds stamped dev: " * join(bad, ", "))
+    docs = ("check-docs", "check-consistency")
+    bad = [r.name for r in RoundFiles.rounds(ctx.cfg)
+           if r.state == :closed && String(r.round["instrument"]) in docs && startswith(String(r.round["tool_version"]), "dev")]
+    isempty(bad) ? pass("ROUND.DEV") :
+        warn("ROUND.DEV", "closed at a dev stamp, so not comparable across versions and no release may cite " *
+                          (length(bad) == 1 ? "it" : "them") * ": " * join(bad, ", "))
 end)
 check!("ROUND.FROZEN", ctx -> begin
     errs = String[]
     for r in RoundFiles.rounds(ctx.cfg)
         r.state == :closed || continue
+        # the shas below cover the evidence, not the stamps, so a hand-edited `tool_version` passed
+        # unseen — and re-stamping a round is the one repair that would falsify rather than fix it.
+        # Every stamp form names its own revision, so they check each other.
+        v = String(get(r.round, "tool_version", "")); rev = String(get(r.round, "tool_rev", ""))
+        m = match(r"^dev\+([0-9a-f]{7,40})", v)
+        if m !== nothing
+            startswith(rev, m.captures[1]) || push!(errs, "$(r.name): tool_rev $rev does not begin with the revision tool_version $v names")
+        elseif startswith(rev, "v")
+            rev == "v" * v || push!(errs, "$(r.name): tool_rev $rev does not name tool_version $v")
+        elseif occursin(r"^\d+\.\d+\.\d+(-rc\.\d+)?$", v) && ctx.tool_root !== nothing
+            c = Git.run(ctx.tool_root, "rev-parse", "-q", "--verify", "refs/tags/v$v^{commit}")
+            (c === nothing || c == rev) || push!(errs, "$(r.name): tool_version says v$v, whose tag is $(first(c, 8)), but tool_rev is $(first(rev, 8))")
+        end
         fj = joinpath(r.dir, "findings.json")
         if haskey(r.round, "findings_sha")
             isfile(fj) && RoundFiles.sha256_file(fj) == r.round["findings_sha"] || push!(errs, "$(r.name): findings.json ≠ findings_sha")

@@ -125,7 +125,7 @@ unchanged version is "tag moved" → abandon-only.
 narrowed, 1.5). `config_sha` has no consumer. **EVADES.** Fix: `config_sha` covers `config.toml`, `hats/*.toml` and
 the non-finding ledger entries; every verb after `open` refuses a change.
 
-4.4 **`--dev` rounds.** Unclosable except by abandon (D2); `ROUND.DEV` (§7.3). **DEFEATED.**
+4.4 **`--dev` rounds.** Unclosable except by abandon (D2); `ROUND.DEV` (§7.3). **DEFEATED — wrongly.** Corrected 2026-09-10: no verb enforced the rule (`Passes.close` used the string only to exempt a dev round from the tag-moved refusal), so a dev round did close and `ROUND.DEV` failed forever on a frozen record. The refusal now sits at `preflight` for the two documentation instruments; D16 carries the revision.
 
 ## 5. Fresh clone / CI passing vacuously
 

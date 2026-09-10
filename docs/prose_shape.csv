@@ -6,7 +6,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D13 — Managed files: one sidecar `.gbg/managed.json` as a ca",533,474,0
 "ARCHITECTURE.md § D14 — Doctor: read-only, stable check ids, one exemptions le",473,366,0
 "ARCHITECTURE.md § D15 — Self-test: a fixture consumer at a path with a space, ",782,363,0
-"ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",633,565,0
+"ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",773,705,0
 "ARCHITECTURE.md § D17 — Migration: PF → IT → SS → CP, doctor-verified steps, n",324,239,0
 "ARCHITECTURE.md § D18 — Cost policy: economy default, anchors in the catalogue",167,100,0
 "ARCHITECTURE.md § D19 — Name: `GBGCodingTools`",128,127,0
@@ -70,7 +70,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",290,198,0
 "ARCHITECTURE.md § §7.1 Policy migration map (which consumer sections become wh",290,238,0
 "ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",348,348,0
-"ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1813,1676,0
+"ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1881,1744,0
 "ARCHITECTURE.md § §8 Self-test and versioning",1508,446,0
 "ARCHITECTURE.md § §9 Resolution table",1487,1428,0
 "Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",152,95,0
@@ -172,6 +172,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: config_sha(cfg) -> String",13,10,0
 "Preflight.jl :: copy_scripts(cfg, instrument, round) -> String",59,33,0
 "Preflight.jl :: covered_paths(cfg) -> Vector{String}",16,13,0
+"Preflight.jl :: dev_round(cfg, instrument, st) -> Union{Nothing,String}",165,83,0
 "Preflight.jl :: next_round_id(cfg, instrument) -> String",21,17,0
 "Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",199,100,0
 "Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",131,80,0
@@ -208,6 +209,7 @@ unit,words,longest_paragraph,admonitions
 "Reflection.jl :: signature_types(inside) -> Dict{String,String}",21,18,0
 "Reflection.jl :: xlink(cfg; pkg = load_package(cfg), apply = false) -> Vector",81,37,0
 "Reflection.md § Reflection",22,22,1
+"Release.jl :: cites_round(cfg, tag) -> Bool",111,75,0
 "Release.jl :: release(ver; io = stdout, skip_tests = false) -> Int",156,94,0
 "RoundFiles.jl :: RoundFiles",57,56,0
 "RoundFiles.jl :: read_round(dir) -> Union{Dict,Nothing}",25,22,0
@@ -216,7 +218,7 @@ unit,words,longest_paragraph,admonitions
 "RoundFiles.jl :: sha256_file(path) -> String",17,14,0
 "RoundFiles.jl :: state(round) -> Symbol",16,13,0
 "Rounds.jl :: Rounds",67,66,0
-"Rounds.jl :: abandon(cfg, round, reason; io = stdout) -> Int",75,33,0
+"Rounds.jl :: abandon(cfg, round, reason; io = stdout) -> Int",157,82,0
 "Rounds.jl :: bank(cfg, round; io = stdout) -> Int",137,100,0
 "Rounds.jl :: bank_next(inst, round) -> String",67,63,0
 "Rounds.jl :: build(cfg, round; io = stdout) -> Int",60,24,0

@@ -53,3 +53,12 @@ const CATALOG = Dict(r["id"] => r for r in G.scan_catalog())
 const REFLECTION = ("SCAN.ARGCOV", "SCAN.SIGNATURE_FIDELITY", "SCAN.XLINK", "SCAN.DUPREF")
 
 quiet(f) = f(devnull)
+
+# A ROUND.toml as `preflight` writes it, for a test that needs a round in a given state without paying
+# for one. The banner line is what `RoundFiles` and the doctor read past.
+function write_round(dir, rec)
+    open(joinpath(dir, "ROUND.toml"), "w") do f
+        println(f, "# ROUND.toml — written by gbg preflight; the CLI's marker, never edited by hand (ARCHITECTURE §6.1)")
+        TOML.print(f, rec)
+    end
+end

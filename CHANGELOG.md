@@ -106,6 +106,30 @@ records the choice in `pass.toml`. An audit round is exempt, since it has no fix
 inside it, because a correction moves the tree and the staleness check then refuses the close for good —
 learned by making `2026-09-09-audit-changes-01` permanently unclosable and abandoning it).
 
+**The dev-round rule moves to the door, and stops being a trap.** D4 and D16 both said a dev-stamped
+round is unclosable except by abandon; the attack review marked that defence DEFEATED; no verb
+enforced it. `Passes.close` had the string only to exempt a dev round from the tag-moved refusal. So
+this tool closed its own audit round at `dev+f897ee0`, and `ROUND.DEV` — a FAIL, in the quick set,
+non-exemptable, on a record frozen at close, with `abandon` refusing a closed round — made a fact about
+a finished round the reason `Pkg.test()` and every docs build refused, permanently and with no repair.
+Five changes, one property: a refusal belongs where the answer is still cheap.
+
+`Preflight.dev_round` refuses to OPEN a `/check-docs` or `/check-consistency` round at the tool root
+while the tool names no released version; nothing is spent and the round does not exist. `/bug-hunt`
+and `/audit-changes` read `base..HEAD`, off a tag by construction, and are never refused — which is
+also why `ROUND.DEV` no longer names them: it is now a WARN over closed documentation rounds alone,
+saying they are records rather than measurements and that no release may cite them. `Release.cites_round`
+is where "the released version was reviewed" is actually enforced, on the one round a release leans on,
+and it is FIXED: it compared a tag-stripped stamp (`1.0.0-rc.1`) with a tag (`v1.0.0-rc.1`), so the
+final-release precondition was unsatisfiable and would have rejected a correctly stamped round.
+`abandon` now takes a closed round stamped dev, keeping `closed` on the record beside `abandoned`, so
+the state has an exit. And `ROUND.FROZEN` covers the stamps: its shas hashed the evidence and not the
+record, so re-stamping a frozen `ROUND.toml` — the one repair that falsifies rather than fixes — passed
+unseen; each stamp form now names its own revision and the three check each other.
+
+Instruments affected: none of the scripts; the round lifecycle for all four. A round closed before this
+release keeps its stamp and its meaning. Rates comparable: yes.
+
 **A docs build during a round is SKIPPED, not failed.** `RULE.INST.FROZEN_MIDROUND` freezes the
 instruments while a round is open, and the `makedocs` wrapper enforced that by failing: every push
 during the second documentation round turned the Docs workflow red — twenty-five in a row — so a red

@@ -52,6 +52,7 @@ GBGCodingTools.frozen_rounds
 
 ```@docs
 GBGCodingTools.Preflight.preflight
+GBGCodingTools.Preflight.dev_round
 GBGCodingTools.Rounds.prepare
 GBGCodingTools.Rounds.build
 GBGCodingTools.Rounds.test
@@ -77,5 +78,6 @@ GBGCodingTools.Fleet.rows
 GBGCodingTools.Fleet.diff
 GBGCodingTools.bump
 GBGCodingTools.release
+GBGCodingTools.cites_round
 GBGCodingTools.selftest
 ```
