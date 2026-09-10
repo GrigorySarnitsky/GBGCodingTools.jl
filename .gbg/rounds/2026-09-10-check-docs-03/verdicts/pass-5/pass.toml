@@ -1,16 +1,17 @@
+tool_tree_sha = "85f8fa042322043de8a81e71334d17e71c3e4622"
+state_ids = ["2026-09-10-check-docs-03/rationale#2", "2026-09-10-check-docs-03/pages#1", "2026-09-10-check-docs-03/pages#2", "2026-09-10-check-docs-03/schemas#1", "2026-09-10-check-docs-03/schemas#2", "2026-09-10-check-docs-03/schemas#3", "2026-09-10-check-docs-03/schemas#4", "2026-09-10-check-docs-03/cold-reader#2"]
+range = "2b2797c95a34e514171881c4027076ea907207c1..01baa4dbe26d4149fca4e4ddba007c70cb33d1db"
+superseded_by = 6
+pass = 5
+opened = "2026-09-10T23:11:01"
 tool_version = "1.0.0-rc.5"
 head = "01baa4dbe26d4149fca4e4ddba007c70cb33d1db"
 fix_range = "07fa463bd68f93b7747f6bc71a3263c1c3b6a5cb..01baa4dbe26d4149fca4e4ddba007c70cb33d1db"
 scope = ["2026-09-10-check-docs-03/cold-reader#2", "2026-09-10-check-docs-03/pages#1", "2026-09-10-check-docs-03/pages#2", "2026-09-10-check-docs-03/rationale#2", "2026-09-10-check-docs-03/schemas#1", "2026-09-10-check-docs-03/schemas#2", "2026-09-10-check-docs-03/schemas#3", "2026-09-10-check-docs-03/schemas#4"]
-tool_tree_sha = "85f8fa042322043de8a81e71334d17e71c3e4622"
-state_ids = ["2026-09-10-check-docs-03/rationale#2", "2026-09-10-check-docs-03/pages#1", "2026-09-10-check-docs-03/pages#2", "2026-09-10-check-docs-03/schemas#1", "2026-09-10-check-docs-03/schemas#2", "2026-09-10-check-docs-03/schemas#3", "2026-09-10-check-docs-03/schemas#4", "2026-09-10-check-docs-03/cold-reader#2"]
 config_sha = "ec9898643fd1a6fcd0132d8238587101702ac6971f97338facafcddf6df00d1f"
 tool_rev = "2b2797c95a34e514171881c4027076ea907207c1"
-range = "2b2797c95a34e514171881c4027076ea907207c1..01baa4dbe26d4149fca4e4ddba007c70cb33d1db"
 regrade = true
-pass = 5
 nonce = "e61933077f591bb5665d031076da42ba"
-opened = "2026-09-10T23:11:01"
 
 [expected]
 rationale = 1

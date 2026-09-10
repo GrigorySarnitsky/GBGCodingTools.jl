@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "65d4d2a9ec74f97842885a6744e7904b",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Config.jl:13-19 (first use, file 6) now reads 'Two words this package overloads... An ANCHOR here is a file#heading reference... and NOTHING else: elsewhere the same word is a hat or lane... and a regular expression... Three unrelated senses, one word.' Doctor.jl:14-17 and Seed.jl/Preflight.jl also disambiguate. grep for 'anchor' in files 1-5 (TreeHash/HtmlWalker/DocLints/Main/Schema) is empty, confirming Config.jl is genuinely first use."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "src/DocLints.jl:17 (file 3, first use) now reads 'the quick doctor set — the `:QUICK` selection of [`GBGCodingTools.doctor`](@ref), the checks that hold on any machine with no build and no network', glossed inline rather than left as a bare settled phrase. TestHarness.jl:591 carries the same gloss."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/cold-reader#3",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Recall.jl:9-11 module docstring now reads 'A HAT is one persona of a consistency panel, its SUBSTRATE the corpus view that hat is given, and the ROSTER the hats a round resolved to run', and suspect_hats' `roster` arg (line 89) is glossed 'the round's roster: the hats it resolved to run, each with its substrate' — all three terms defined in-file before Preflight.jl (included after, per src/GBGCodingTools.jl includes)."
+    }
+  ]
+}

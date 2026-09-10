@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "65d4d2a9ec74f97842885a6744e7904b",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/pages#3",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff 01baa4dbe..67886723 -- docs/src/guide/rounds.md touches only the 'Open' bullet (line ~13); line 42's demotion sentence is byte-identical at both endpoints of the audited range. The two-arm sentence ('becomes LINE-ONLY when class_surfaces[] is empty, and equally when any entry in it is swept: false') was written by commit 14ee7135 ('The fix pass of 2026-09-10-check-docs-03: 37 findings answered'), which git merge-base --is-ancestor confirms is an ancestor of 01baa4dbe — i.e. it predates and falls outside the diff range this pass audits. Nothing in the audited diff addresses this finding.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/rounds.md:42",
+          "swept": false,
+          "evidence": "Text already correct (both arms stated) at commit 01baa4dbe, the diff's own start point, and unchanged through 67886723 — the repair exists in the corpus but was made by commit 14ee7135, before the audited range begins, so this range sweeps nothing here."
+        },
+        {
+          "surface": "src/CLI/Demote.jl:22-23 (docstring)",
+          "swept": true,
+          "evidence": "Docstring already states both arms ('when that list is empty ... OR when any entry is swept: false') and the flagged half-phrase 'with an empty class_surfaces[] becomes LINE-ONLY' does not occur here or anywhere in the tracked corpus (grep -rn confirms zero matches outside .gbg/) — the computed same-text hint for this surface does not hold."
+        }
+      ]
+    }
+  ]
+}

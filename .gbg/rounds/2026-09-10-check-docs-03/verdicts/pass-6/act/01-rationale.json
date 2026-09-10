@@ -1,0 +1,54 @@
+{
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "lane": "rationale",
+  "pass_nonce": "65d4d2a9ec74f97842885a6744e7904b",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/rationale#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:488-491 now reads 'error()s on any non-zero return, EXCEPT the one refusal that is not a breakage: a gate that refuses only because a round of a docs instrument is open prints `makedocs: SKIPPED` and returns `nothing`, exit 0 ... `GBG_DOCS_NO_SKIP` restores the refusal, and `gbg release` and the deep doctor set it' — exactly the hinted correction. Landed in commit 14ee713 ('The fix pass of 2026-09-10-check-docs-03: 37 findings answered'), an earlier fix range of this same round, predating pass-6's audited range 01baa4db..6788672 (which touches only an unrelated 'quick doctor set' phrase); the audited diff itself is silent on this finding but the fix is present, correct and unsurpassed at HEAD.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:488",
+          "swept": true,
+          "evidence": "the false unconditional-error() claim now carries the EXCEPT/SKIPPED/GBG_DOCS_NO_SKIP clause, matching src/DocLints.jl:19-26 and ext/GBGCodingToolsDocumenterExt.jl:29-37"
+        },
+        {
+          "surface": "docs/src/architecture.md:488",
+          "swept": true,
+          "evidence": "byte-identical mirror of docs/ARCHITECTURE.md (diff shows no difference between the two files); carries the same corrected passage"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/rationale#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "All three flagged ARCHITECTURE.md sites now attribute package_operations() to Reflection: line 495 reads '(`Reflection.package_operations()`) to `.gbg/scratch/public_surface.json`'; line 538's TestHarness bullet reads '`Reflection.package_operations()`, which it CALLS and does not define'; the §3 tree (~line 985) removed `package_operations` from the TestHarness.jl row entirely, leaving it only implied under the Reflection.jl row. Landed in commit 14ee713, an earlier fix range of this same round predating pass-6's audited range; matches src/Reflection.jl:264 (defines it) and src/TestHarness.jl:98,226,407 (only calls it).",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:495",
+          "swept": true,
+          "evidence": "makedocs bullet parenthetical now says `Reflection.package_operations()`"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:538",
+          "swept": true,
+          "evidence": "TestHarness bullet now says '`Reflection.package_operations()`, which it CALLS and does not define'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:985",
+          "swept": true,
+          "evidence": "§3 repo-layout tree's TestHarness.jl row no longer lists package_operations; only run_regressions, display gate, thread-subprocess check, gate() remain"
+        },
+        {
+          "surface": "docs/src/architecture.md:495,538,985",
+          "swept": true,
+          "evidence": "byte-identical mirror of docs/ARCHITECTURE.md carries the same three corrections"
+        }
+      ]
+    }
+  ]
+}

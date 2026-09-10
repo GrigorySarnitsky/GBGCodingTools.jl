@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "65d4d2a9ec74f97842885a6744e7904b",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/schemas#1",
+      "verdict": "ABSENT",
+      "evidence": "grep -n -A3 '\"state\"' schema/tally.schema.json: enum now reads PRESENT, PARTIAL, REGRESSED, ABSENT, NOT-A-DEFECT, UNCLEAR, PASS, FAIL, BROKEN, BLOCKED, REFUSED, null — REFUSED is present, matching Witnesses.jl's five statuses."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#2",
+      "verdict": "ABSENT",
+      "evidence": "Full dump of schema/audit.schema.json: properties are head, executable_claims, covered, kind, base, verdict_all_clean, dispositions, diffstat, schema_version, round. No staleness, no severity_recheck key anywhere in the file; grep for both names in src/ext also empty."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#3",
+      "verdict": "ABSENT",
+      "evidence": "python parse of schema/pass.schema.json properties: tool_version, expected, head, tool_tree_sha, config_sha, tool_rev, range, superseded_by, regrade, pass, nonce, opened, scope, fix_range, state_ids — no probe_open. grep -rn probe_open src ext: no matches."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#4",
+      "verdict": "ABSENT",
+      "evidence": "schema/carried.schema.json:2 now reads \"$schema\": \"https://json-schema.org/draft/2020-12/schema\", matching all 17 other schema/*.schema.json files (grep confirms every file uses 2020-12, none draft-07)."
+    }
+  ]
+}

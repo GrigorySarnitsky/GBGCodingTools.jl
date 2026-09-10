@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "65d4d2a9ec74f97842885a6744e7904b",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/catalogues#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff 01baa4dbe26d4149fca4e4ddba007c70cb33d1db..678867230d6a05a659ac25d3f605b3f917ad7cdf touches only src/CLI/Preflight.jl (the 'quick doctor' phrasing, unrelated) and never catalog/hats/doc-policy.toml, naming-policy.toml, invariants-and-decisions.toml or README.md. The three personas do now read 'granted to you by `needs`' instead of 'named in your substrate', but that rewrite lives in commit eab66d3 (fix pass 2 of this round), an ancestor of 01baa4d and outside this pass's graded range — nothing in THIS diff addresses the finding.",
+      "class_surfaces": [
+        {"surface": "catalog/hats/doc-policy.toml:6", "swept": false, "evidence": "unchanged by this diff; now reads 'granted to you by `needs` (the rendered rulebook)' but that edit predates 01baa4d (commit eab66d3)"},
+        {"surface": "catalog/hats/naming-policy.toml:6", "swept": false, "evidence": "unchanged by this diff; same pre-existing 'granted to you by `needs`' wording from commit eab66d3, not this range"},
+        {"surface": "catalog/hats/invariants-and-decisions.toml:6", "swept": false, "evidence": "unchanged by this diff; same pre-existing 'granted to you by `needs`' wording from commit eab66d3, not this range"},
+        {"surface": "catalog/hats/README.md:3", "swept": false, "evidence": "unchanged by this diff in either range; already correctly defines substrate as full/siteonly and was never the flagged defect text"}
+      ]
+    }
+  ]
+}

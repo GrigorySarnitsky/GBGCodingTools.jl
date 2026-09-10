@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "65d4d2a9ec74f97842885a6744e7904b",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/schemas#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/tally.schema.json:189 adds \"REFUSED\" into $defs.entry.properties.state.enum (commit 14ee713); docs/ARCHITECTURE.md:1556 (§6.3) updated in the same commit to list REFUSED alongside PASS|FAIL|BROKEN|BLOCKED. This landed in the round's initial fix-pass commit 14ee713, predating the given diff range (01baa4d..6788672) — not visible in that diff but confirmed live in the current corpus; a pre-ruled 'fix landed in an earlier fix range' case.",
+      "class_surfaces": [
+        {
+          "surface": "schema/tally.schema.json:189",
+          "swept": true,
+          "evidence": "\"REFUSED\" present in $defs.entry.properties.state.enum, between BLOCKED and null"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1556",
+          "swept": true,
+          "evidence": "§6.3 vocabulary table's tally per_id.state row lists \"PASS | FAIL | BROKEN | BLOCKED | REFUSED\""
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "commit 14ee713 removes both staleness and severity_recheck from audit.schema.json entirely (hint's first alternative); follow-up sweep commit eab66d3 adds schema/severity.schema.json, its own schema for severity.json, validated at src/CLI/Passes.jl:92 via validate(load_schema(\"severity\"), d) (hint's second alternative, applied to the file that actually carries the re-check). No remaining reference to staleness or severity_recheck as audit.json schema keys; Audit.jl/Passes.jl never write either key back onto audit.json.",
+      "class_surfaces": [
+        {
+          "surface": "schema/audit.schema.json (properties.staleness, properties.severity_recheck)",
+          "swept": true,
+          "evidence": "both properties absent from the current file; additionalProperties:false confirms nothing can silently re-add them"
+        },
+        {
+          "surface": "schema/severity.schema.json",
+          "swept": true,
+          "evidence": "new schema file (commit eab66d3) with ratings[].{id,severity,reason}, wired at src/CLI/Passes.jl:92"
+        },
+        {
+          "surface": "src/CLI/Audit.jl / src/CLI/Passes.jl audit_bank and close",
+          "swept": true,
+          "evidence": "no assignment of a[\"staleness\"] or a[\"severity_recheck\"] anywhere in either file"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "commit 14ee713 deletes the probe_open property block entirely (hint's second alternative), since the mechanism lives in probe.json's quote_still_stands key (src/CLI/Passes.jl:409-410, unchanged) and pass.toml never carried it. Repo-wide grep for probe_open (excluding .gbg/) returns zero hits in src/, docs/, schema/.",
+      "class_surfaces": [
+        {
+          "surface": "schema/pass.schema.json (properties.probe_open)",
+          "swept": true,
+          "evidence": "property block removed; grep -rn probe_open across src/docs/schema (excluding .gbg/) returns nothing"
+        },
+        {
+          "surface": "src/CLI/Passes.jl (pass.toml construction, ~373-395)",
+          "swept": true,
+          "evidence": "probe results are written only to probe.json under quote_still_stands (Passes.jl:409-410); pass.toml never carries a probe_open key"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "commit 14ee713 changes schema/carried.schema.json line 2 from \"http://json-schema.org/draft-07/schema#\" to \"https://json-schema.org/draft/2020-12/schema\", verified present at schema/carried.schema.json:2 currently. A sweep of every file under schema/ (18 files) shows all now declare draft/2020-12 and none declare draft-07.",
+      "class_surfaces": [
+        {
+          "surface": "schema/carried.schema.json:2",
+          "swept": true,
+          "evidence": "$schema now reads \"https://json-schema.org/draft/2020-12/schema\""
+        },
+        {
+          "surface": "every other file under schema/ (17 siblings)",
+          "swept": true,
+          "evidence": "grep across schema/*.json shows draft/2020-12 in all 18 files, draft-07 in none"
+        }
+      ]
+    }
+  ]
+}
