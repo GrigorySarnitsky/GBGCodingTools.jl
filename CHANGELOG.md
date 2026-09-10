@@ -3,7 +3,15 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
-## Unreleased
+## 1.0.0-rc.3 — 2026-09-10
+
+The third release candidate: MAJOR. Instruments affected: check-docs (seeded lanes, the closure loop,
+the demotion predicate), check-consistency and audit-changes (the same closure engine and verifier
+scripts). Rates comparable: **no** — the demotion predicate moved, so a `HONORED` share from an earlier
+round counts a different thing, and `closed_by` gained `carried`. The fixture recall is unchanged (every
+planted class of `fixture/GBG Fixture/defects.toml` still hit, every clean twin still silent, asserted
+per class in `test/scans.jl`); what changed is the standard a fix is held to, not what the scans see.
+
 
 **`/check-docs` rounds can be seeded, so the lanes are measured and not merely believed.** Seeding
 existed for `/check-consistency` alone, and that instrument has never run here: both real rounds record
