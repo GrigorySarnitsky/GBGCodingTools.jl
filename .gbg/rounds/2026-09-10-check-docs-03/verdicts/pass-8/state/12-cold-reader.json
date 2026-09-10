@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "034544649f09c4722783faf94bbaf90a",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/cold-reader#3",
+      "verdict": "ABSENT",
+      "evidence": "Include order still Recall (77) before Preflight (78), but Recall.jl now glosses all three terms in place: module docstring defines 'A HAT is one persona... its SUBSTRATE the corpus view... the ROSTER the hats a round resolved to run', and suspect_hats' `roster` arg reads 'the round's roster: the hats it resolved to run, each with its substrate.' Checked Consolidate.jl/Seed.jl (earlier includes) for the same terms: both gloss `siteonly`/`out_siteonly` locally too. No unglossed forward reference remains."
+    }
+  ]
+}

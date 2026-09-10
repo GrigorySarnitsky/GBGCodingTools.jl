@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "034544649f09c4722783faf94bbaf90a",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/rationale#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "docs/ARCHITECTURE.md:488-493 in the base commit 26ea06edcd80ae7f4a8de07625a4610f9c454d81 already reads '`error()`s on any non-zero return, EXCEPT the one refusal that is not a breakage: ... prints `makedocs: SKIPPED` and returns `nothing`, exit 0 ... `GBG_DOCS_NO_SKIP` restores the refusal'. `git diff 26ea06e..93e3eb6 -- docs/ARCHITECTURE.md` contains no hunk touching these lines at all (confirmed by full diff review and grep for SKIP/GBG_DOCS_NO_SKIP/frozen_rounds/error() over the diff, zero hits). The repair is real and correct but predates this pass's diff range; per ARCHITECTURE.md's own new S11 bullet (added in this same diff) on cross-pass fixes, the act verifier's UNDONE means only 'nothing in THIS diff addresses this finding', which holds here regardless of the fix's completeness.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:488",
+          "swept": false,
+          "evidence": "text already corrected at base commit 26ea06e (before this diff's range); diff 26ea06e..93e3eb6 does not touch this line"
+        },
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:31-37",
+          "swept": false,
+          "evidence": "not present in diff --stat for the range; code was never the false part (docs were), and is unchanged by this pass"
+        },
+        {
+          "surface": "src/CLI/Gate.jl:70-78",
+          "swept": false,
+          "evidence": "not present in diff --stat for the range; frozen_rounds docstring untouched by this pass"
+        },
+        {
+          "surface": "src/DocLints.jl:19-25",
+          "swept": false,
+          "evidence": "not present in diff --stat for the range; makedocs docstring untouched by this pass"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/rationale#2",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "docs/ARCHITECTURE.md at base commit 26ea06e already reads (line 495) '`Reflection.package_operations()`' for the makedocs bullet, (lines 536-538) 'TestHarness: ... `Reflection.package_operations()`, which it CALLS and does not define', and the S3 tree's TestHarness.jl line (984-985) lists only '@alloc_below, CountingArray/Traffic/audit, method parity, oracle registry, run_regressions, display gate, thread-subprocess check, gate()' with no package_operations. `git diff 26ea06e..93e3eb6 -- docs/ARCHITECTURE.md` has no hunk anywhere near lines 491-538 or 981-987 (confirmed against the full diff and a grep for package_operations, zero hits in the range). The attribution fix is correct and complete but predates this diff; nothing in this pass's act addresses it.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:491",
+          "swept": false,
+          "evidence": "already reads Reflection.package_operations() at base commit 26ea06e; diff 26ea06e..93e3eb6 does not touch this line"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:532-534",
+          "swept": false,
+          "evidence": "already reads 'which it CALLS and does not define' at base commit 26ea06e; diff does not touch this line"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:981",
+          "swept": false,
+          "evidence": "the S3 TestHarness.jl tree line already omits package_operations at base commit 26ea06e; diff does not touch this line"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "034544649f09c4722783faf94bbaf90a",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#3",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "src/CLI/Rounds.jl:330-333: the zero-findings/empty-checked[] clause ('or well-formed with zero findings AND an empty `checked[]` ... reports nothing about nothing rather than reporting a clean lane') is verbatim identical at 26ea06e (window start) and 93e3eb6 (window end). The only edit 93e3eb6 makes to this docstring inserts an unrelated fifth cause (schema-valid lane whose own `lane` field mismatches the roster entry). Nothing in 26ea06e..93e3eb6 touches the clause #3 asks for.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Rounds.jl:331",
+          "swept": false,
+          "evidence": "zero-findings/empty-checked[] clause unchanged by this diff; already present before the window"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2312",
+          "swept": false,
+          "evidence": "RULE.TEST.MISSING_IS_FAILING summary row untouched by this diff; carries the general principle, not classify_lane's own enumeration"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#6",
+      "verdict": "NEW-DEFECT",
+      "question": "implementation",
+      "evidence": "src/CLI/Rounds.jl:439-442 (act 6fc53c4) rewrites bank()'s exit-2 sentence into 'Four things make it exit 2' — already-banked, DEAD/REJECTED, orphaned carried finding, schema-invalid finding. But `hunt_bank!` (called at ~line 558, `code == 0 || return code`) also returns 2 on a REFUSED witness (~line 602: 'a witness loads what it may not (REFUSED)'), a fifth cause the new absolute count omits — the same undercounting the finding named, reintroduced by the fix's own new claim.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Rounds.jl:439-442",
+          "swept": false,
+          "evidence": "'Four things' omits hunt_bank!'s witness-REFUSED exit 2 path (src/CLI/Rounds.jl ~602)"
+        },
+        {
+          "surface": "docs/src/guide/instruments.md:129",
+          "swept": true,
+          "evidence": "already says 'Any DEAD or REJECTED lane is exit 2' without an exhaustive-count claim, so it does not carry this overclaim defect"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/operational-claims#9",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "src/CLI/Rounds.jl:134-136: prepare()'s check-docs paragraph already reads '...and — when the round is seeded — a seeded copy of the lane files under the round's `seed_root`, which the lanes read in place of the working tree' verbatim at 26ea06e (window start). `git diff 26ea06e..93e3eb6 -- src/CLI/Rounds.jl` shows zero hunks inside `prepare()` (only classify_lane, bank and rerun docstrings changed). Nothing in this diff addresses the finding.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Rounds.jl:134-136",
+          "swept": false,
+          "evidence": "check-docs seeding clause already present pre-window; not touched by 26ea06e..93e3eb6"
+        }
+      ]
+    }
+  ]
+}

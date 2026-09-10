@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "034544649f09c4722783faf94bbaf90a",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/cold-reader#3",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "src/CLI/Recall.jl:4-9 (module docstring) and :88 (`roster` arg) are byte-identical between 26ea06ed and 93e3eb6d -- git diff shows zero hunks touching either. The diff's only Recall.jl hunk (~lines 92-105) adds a docs-path-vs-consistency-path paragraph to suspect_hats' body; it never reorders the includes, adds an @ref link, or changes the flagged lines. Whatever glossed HAT/SUBSTRATE/ROSTER inline predates this diff -- nothing in this pass addresses the ordering complaint.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Recall.jl:4-9",
+          "swept": false,
+          "evidence": "module docstring text unchanged across the diff range; still uses substrate/siteonly/roster (now glossed inline, but that gloss predates 26ea06ed, not this diff)"
+        },
+        {
+          "surface": "src/CLI/Recall.jl:88",
+          "swept": false,
+          "evidence": "`roster` argument line unchanged across the diff range: \"`roster` — the round's roster: the hats it resolved to run, each with its substrate.\" -- identical text before and after"
+        }
+      ]
+    }
+  ]
+}
