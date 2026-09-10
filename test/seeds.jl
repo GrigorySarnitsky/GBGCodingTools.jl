@@ -16,8 +16,14 @@ include("helpers.jl")
     @test occursin("===== PAGE: src/FixtureA.jl =====", m) && occursin("2 cannot evaluate", m)
     plan, _ = G.Seeds.select(cat, m, "2026-01-01-check-docs-01")
     @test !isempty(plan) && any(s -> s["page"] == "src/FixtureA.jl", plan)
+    # a lane's surface is a file OR a directory: copying only the files left six of thirteen lanes with
+    # no corpus at all, and two of them reported on the fragments they could still reach
+    dirsurface = "docs/src"
     dest = mktempdir()
-    for f in files; mkpath(dirname(joinpath(dest, f))); cp(joinpath(root, f), joinpath(dest, f); force = true); end
+    for f in vcat(files, [dirsurface])
+        src = joinpath(root, f); d = joinpath(dest, f); mkpath(dirname(d)); cp(src, d; force = true)
+    end
+    @test isdir(joinpath(dest, dirsurface)) && !isempty(readdir(joinpath(dest, dirsurface)))
     planted = G.Seeds.plant_files(dest, m, plan)
     @test length(planted) == length(plan)          # every planned seed lands, or the round measures a lie
     # the occurrence index is counted INSIDE the page: `eachmatch` over a SubString reports offsets

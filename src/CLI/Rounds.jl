@@ -233,9 +233,30 @@ function seed_docs_corpus!(cfg::AbstractDict, round::AbstractString, dir::Abstra
     old = String(get(rec, "seed_root", ""))
     isempty(old) || !isdir(old) || rm(old; recursive = true, force = true)   # a re-prepared round leaves no copy behind
     dest = mktempdir(; cleanup = false)
+    # A lane's surface is a FILE or a DIRECTORY — `catalog`, `policy`, `schema`, `templates`, `docs/build`
+    # and the four `instruments/*/workflow` trees are directories. Copying only the files left six of
+    # thirteen lanes reading a corpus that was not there; four said so as a blocker and two reported on
+    # the fragments they could still reach, which is worse (2026-09-10, the first seeded round).
+    missing = String[]
     for f in files
-        src = joinpath(root, f); isfile(src) || continue
-        d = joinpath(dest, f); mkpath(dirname(d)); cp(src, d; force = true)
+        src = joinpath(root, f); d = joinpath(dest, f)
+        if isfile(src)
+            mkpath(dirname(d)); cp(src, d; force = true)
+        elseif isdir(src)
+            mkpath(dirname(d)); cp(src, d; force = true)      # the whole tree, as the lane reads it
+        else
+            push!(missing, f)
+        end
+    end
+    if !isempty(missing)
+        rm(dest; recursive = true, force = true)
+        println(io, "prepare: refused — a lane surface is neither a file nor a directory: ", join(missing, ", "))
+        return 2
+    end
+    for f in files                                             # every surface reached the copy
+        ispath(joinpath(dest, f)) || (rm(dest; recursive = true, force = true);
+            println(io, "prepare: refused — $f did not reach the seeded copy; a lane reading nothing reports nothing");
+            return 2)
     end
     planted = Seeds.plant_files(dest, manuscript, plan)
     if length(planted) < length(plan)
