@@ -609,7 +609,8 @@ The arguments are:
 - `profile` — the check-consistency profile (`all`, `core`, `explicit`); the config's when `nothing`.
 - `hats` — the keys an explicit profile names.
 - `strength` — `economy` (the default) or `full`.
-- `no_seed` — open an unseeded check-consistency round.
+- `no_seed` — open an unseeded round; it applies to check-consistency and, where the config turns
+  `seed_rounds` on, to check-docs.
 - `dry` — open and write nothing; print the round id and paths that would be used.
 - `base` — the audit's base commit (required for `audit-changes`).
 - `io` — where the protocol, the call and the next step are printed.
@@ -691,7 +692,7 @@ function preflight(cfg::AbstractDict, instrument::AbstractString; profile = noth
         println(io, "\nNEXT: gbg round prepare $round      (builds the docs under GBG_ROUND, consolidates the manuscripts", seeding ? ", plants the seeds)" : ")")
         println(io, "THEN launch the panel exactly as printed here:\n")
     elseif instrument == "check-docs"
-        println(io, "\nNEXT: gbg round prepare $round      (scans, reflection checks, the build, the built-HTML scans; banks lane 00-scans)")
+        println(io, "\nNEXT: gbg round prepare $round      (scans, reflection checks, the build, the built-HTML scans; banks lane 00-scans", seeding ? "; plants the seeds into a disposable copy of the lane files, which the lanes read in place of the working tree)" : ")")
         println(io, "THEN launch the lanes exactly as printed here:\n")
     elseif instrument == "bug-hunt"
         println(io, "\nNEXT: launch the hunt exactly as printed here (no prepare step; the witnesses go to $rd/witnesses/):\n")

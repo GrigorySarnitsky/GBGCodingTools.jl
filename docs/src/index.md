@@ -24,8 +24,10 @@ The procedures, called instruments, are slash commands inside [Claude Code](http
 automatically. Their full protocols are on [The instruments](@ref instruments). Each command opens a
 [round](@ref rounds): a directory under the package's `.gbg/rounds/` holding the findings, the fixes and their
 independent verification, open until every finding is fixed or dismissed with a recorded reason. An
-open `/check-docs` or `/check-consistency` round fails the package's docs build; an open `/bug-hunt` or
-`/audit-changes` round fails the package's tests.
+open `/check-docs` or `/check-consistency` round freezes the package's docs build: the wrapper prints
+`makedocs: SKIPPED` and returns `nothing`, exit 0, so a red docs run still means something is broken
+(`GBG_DOCS_NO_SKIP`, which `gbg release` and the deep doctor set, turns the skip back into a refusal).
+An open `/bug-hunt` or `/audit-changes` round fails the package's tests outright.
 
 - [`/check-docs`](@ref check-docs) — checks that the pages and docstrings say what the code does and follow the
   documentation rules: deterministic scans, then AI agents that read every documentation file, then a

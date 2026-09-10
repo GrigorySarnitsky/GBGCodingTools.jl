@@ -89,7 +89,8 @@ The arguments are:
 - `ground_truth` — the seed plan.
 - `roster` — the round's roster: the hats it resolved to run, each with its substrate.
 - `site_pages` — the page banners the site-only manuscript keeps; a `siteonly` hat sees only seeds on
-  those pages. Empty means no narrowing: every roster entry is judged on every seed.
+  those pages, so an EMPTY set means a `siteonly` hat sees none and can never be SUSPECT, while a
+  `full` hat is unaffected.
 
 A hat is judged only on the seeds it was actually handed, which follows the delivery. The panel splits
 the corpus once, `siteonly` against `full`: a `siteonly` hat sees only the seeds on a kept page, a

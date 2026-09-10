@@ -109,7 +109,7 @@ FIRST use the Write tool to save the structured object as JSON to ${A.pass_dir}/
     ...(STRENGTH === 'economy' ? { model: ECONOMY } : {}) })
   .then(r => scribe(r, `${A.pass_dir}/state/${u.lane.nn}-${u.lane.key}.json`, `scribe:${u.lane.key}`, 'Verify state'))))
 
-const written = [], dead = [], empty = [], truncated = []
+const written = [], dead = [], empty = [], truncated = [], mismatched = []
 results.forEach((r, i) => {
   const u = units[i]
   if (r && r.__skip) { log(`${u.lane.key}: no findings — skipped`); return }
@@ -117,8 +117,17 @@ results.forEach((r, i) => {
   written.push(u.lane.key)
   const got = (r.verdicts || []).length
   if (got === 0) empty.push(u.lane.key)
-  if (got < u.items.length) { truncated.push(u.lane.key); log(`${u.lane.key}: UNDER-GRADED ${got}/${u.items.length}`) }
-  else log(`${u.lane.key}: ${got}/${u.items.length} adjudicated`)
+  // the CLI's own count where it gave one, not the unit's: comparing got with u.items.length checks the
+  // input against itself, and a duplicated or invented verdict then reads as extra coverage
+  const want = u.lane.expected === undefined ? u.items.length : u.lane.expected
+  if (u.lane.expected !== undefined && u.lane.expected !== u.items.length) {
+    mismatched.push(u.lane.key)
+    log(`${u.lane.key}: PARTITION MISMATCH — the CLI expected ${u.lane.expected} verdict(s), this unit carries ${u.items.length} finding(s)`)
+  }
+  if (got < want) { truncated.push(u.lane.key); log(`${u.lane.key}: UNDER-GRADED ${got}/${want} — the missing are UNREAD, not clean`) }
+  else if (got > want) { mismatched.push(u.lane.key); log(`${u.lane.key}: OVER-GRADED ${got}/${want} — a duplicate or invented verdict, not extra coverage`) }
+  else log(`${u.lane.key}: ${got}/${want} adjudicated`)
 })
 if (dead.length) log(`!! ${dead.length} DEAD lane(s): ${dead.join(', ')} — the pass is incomplete`)
-return { written, dead, empty, truncated }
+if (mismatched.length) log(`!! ${mismatched.length} lane(s) whose verdict count does not match the CLI's: ${mismatched.join(', ')} — read them before grading`)
+return { written, dead, empty, truncated, mismatched }

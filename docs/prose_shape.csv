@@ -183,7 +183,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: covered_paths(cfg) -> Vector{String}",16,13,0
 "Preflight.jl :: dev_round(cfg, instrument, st) -> Union{Nothing,String}",173,83,0
 "Preflight.jl :: next_round_id(cfg, instrument) -> String",21,17,0
-"Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",207,100,0
+"Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",219,112,0
 "Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",131,80,0
 "Preflight.jl :: repoint_lanes(cfg, round, dest) -> String",88,50,0
 "Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
@@ -201,7 +201,7 @@ unit,words,longest_paragraph,admonitions
 "Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
 "Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0
 "Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
-"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",234,97,0
+"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",243,97,0
 "Reflection.jl :: ARGS_THRESHOLD",33,32,0
 "Reflection.jl :: ArgcovHit",58,48,0
 "Reflection.jl :: Docstring",70,59,0
@@ -229,7 +229,7 @@ unit,words,longest_paragraph,admonitions
 "RoundFiles.jl :: state(round) -> Symbol",16,13,0
 "Rounds.jl :: Rounds",67,66,0
 "Rounds.jl :: abandon(cfg, round, reason; io = stdout) -> Int",157,82,0
-"Rounds.jl :: bank(cfg, round; io = stdout) -> Int",193,96,0
+"Rounds.jl :: bank(cfg, round; io = stdout) -> Int",234,101,0
 "Rounds.jl :: bank_next(inst, round) -> String",67,63,0
 "Rounds.jl :: build(cfg, round; io = stdout) -> Int",60,24,0
 "Rounds.jl :: classify_lane(dir, inst, lane; first_sha = nothing) -> (stat",162,106,0
@@ -356,7 +356,7 @@ unit,words,longest_paragraph,admonitions
 "html_stray_math.jl :: math_sources(page) -> Vector{String}",37,34,0
 "index.md § How a package adopts it",71,71,0
 "index.md § The command-line program `gbg`",165,94,0
-"index.md § The four review procedures",216,127,0
+"index.md § The four review procedures",253,127,0
 "index.md § The written rules",75,75,0
 "index.md § What a package's docs build and tests call",123,123,0
 "index.md § What it is",143,76,0

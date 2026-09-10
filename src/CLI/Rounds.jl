@@ -436,10 +436,12 @@ per class and SUSPECT hats; for a hunt runs the witness runner over `witnesses/`
 freezes the disposition records; writes `findings.json` and `findings_sha`, `findings.md` and
 `SUMMARY.md`.
 
-Four things make it exit 2, and nothing is frozen in any of them (`lane_shas` stays): a round already
-banked; any DEAD or REJECTED lane; a carried finding naming a lane this round does not run, which means
-the roster changed under it; and a banked finding that does not validate against the core finding
-schema. Returns the exit code.
+Five things make it exit 2: a round already banked; any DEAD or REJECTED lane; a carried finding naming
+a lane this round does not run, which means the roster changed under it; on a hunt, a witness the runner
+could not decide (`hunt_bank!` returns its own code); and a banked finding that does not validate against
+the core finding schema. `lane_shas` survives all five. Nothing else is frozen in the first three; by the
+last two a hunt's `reproductions/` and a seeded round's `ground_truth.json` are already written, so a
+re-bank rewrites them rather than creating them. Returns the exit code.
 """
 function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = guard(cfg, round; io)
