@@ -18,3 +18,15 @@
   an earlier fix range and verified swept there is reported untouched at every later pass. Pass 2 of
   this round had to be opened with `--sweep-ok` for 13 ids whose named locations were already correct.
   The refusal should compare against every fix range since the finding was banked, not only the last.
+
+- The nonce and `graded_sha256` reach a verdict file by an agent RETYPING them, and a one-character
+  slip is indistinguishable from the copy-forward the check exists to catch: pass 7 of this round had
+  `…ec5662` for `…ed5662` in two of three act lanes and both were REJECTED. The scribe step should
+  write those two fields from the args it already holds rather than from the model's transcription —
+  `scribe()` in `verify-act.js`/`verify-state.js` can stamp them after the agent returns.
+
+- `pass open` opens a NEW pass whenever the config stamp has moved, so adjudicating between a pass's
+  verifiers and its `grade` throws that pass's verdicts away — a ledger entry moves `config_sha`.
+  Nothing says so; the loop only discovers it when `grade` refuses. Either `--regrade` should be able
+  to re-stamp the CURRENT pass in place when its verdicts are complete, or `grade` should say plainly
+  that the stamp moved because the ledger grew and name the pass that will be lost.

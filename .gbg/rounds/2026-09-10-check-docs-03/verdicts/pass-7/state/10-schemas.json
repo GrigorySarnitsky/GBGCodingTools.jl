@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "schemas",
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "pass_nonce": "30b005287628214794d8542995ed5662",
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/schemas#1",
+      "verdict": "ABSENT",
+      "evidence": "schema/tally.schema.json $defs.entry.properties.state.enum now lists REFUSED alongside PASS/FAIL/BROKEN/BLOCKED (line ~171). grep -n BLOCKED schema/*.json shows no other per-id witness-status enum missing it; reproduction.schema.json's verdict enum is a distinct vocabulary."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#2",
+      "verdict": "ABSENT",
+      "evidence": "schema/audit.schema.json's properties keys are now [head, executable_claims, covered, kind, base, verdict_all_clean, dispositions, diffstat, schema_version, round] — no staleness/severity_recheck. severity.json is validated separately via a new schema/severity.schema.json (Passes.jl:92 load_schema(\"severity\"))."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#3",
+      "verdict": "ABSENT",
+      "evidence": "grep -rl probe_open (excluding .gbg) returns nothing — removed from schema/pass.schema.json. The probe mechanism lives solely in probe.json under quote_still_stands (Passes.jl:409-410), matching the hint's second option."
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#4",
+      "verdict": "ABSENT",
+      "evidence": "schema/carried.schema.json line 2 now reads \"$schema\": \"https://json-schema.org/draft/2020-12/schema\", identical to all 17 other files under schema/ (checked via head -3 on every schema/*.json)."
+    }
+  ]
+}

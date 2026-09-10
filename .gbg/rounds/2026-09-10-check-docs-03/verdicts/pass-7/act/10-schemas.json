@@ -1,0 +1,100 @@
+{
+  "graded_sha256": "9c0bccf80add89c6a05f0c08696278701eb8f5228eab2a7b944f8810562abcd6",
+  "lane": "schemas",
+  "pass_nonce": "30b005287628214794d8542995ed5662",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-10-check-docs-03/schemas#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/tally.schema.json:187 now lists \"REFUSED\" in $defs.entry.properties.state.enum, added cleanly in commit 14ee713 (\"schemas#1: tally.schema.json's per_id.state omitted REFUSED...\"); docs/ARCHITECTURE.md:1556 (§6.3 closed-vocabulary table) was updated in the same commit to add REFUSED to the same row. The fix landed before the act range this pass audits (already present at 67886723), but the owner's ruling names \"tally.schema.json's REFUSED\" as fixed in an earlier fix range of this round.",
+      "class_surfaces": [
+        {
+          "surface": "schema/tally.schema.json:187",
+          "swept": true,
+          "evidence": "$defs.entry.properties.state.enum now includes \"REFUSED\" alongside PASS/FAIL/BROKEN/BLOCKED"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1556",
+          "swept": true,
+          "evidence": "§6.3 table row for tally per_id.state now reads \"...PASS | FAIL | BROKEN | BLOCKED | REFUSED\""
+        },
+        {
+          "surface": "docs/src/architecture.md:1556",
+          "swept": true,
+          "evidence": "mirrored copy already carries the same updated row text"
+        },
+        {
+          "surface": "schema/reproduction.schema.json:78-86",
+          "swept": true,
+          "evidence": "distinct verdict enum (REPRODUCED/EVIDENCED/NOT-REPRODUCED/WITNESS-WRONG/NO-WITNESS-POSSIBLE/BLOCKED) is a different vocabulary, not the witness-status class this finding names, so it is out of scope rather than unswept"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "Current schema/audit.schema.json has no \"staleness\" or \"severity_recheck\" properties (grep finds none); commit 14ee713 removed both from the file. src/CLI/Audit.jl:39-53 still never writes either key, matching the schema now. A separate schema/severity.schema.json was created (commit eab66d3) and is actually validated against at src/CLI/Passes.jl:92 (load_schema(\"severity\")), giving severity.json its own schema per the hint's second option. No code reads audit.json's staleness/severity_recheck keys.",
+      "class_surfaces": [
+        {
+          "surface": "schema/audit.schema.json (properties.staleness)",
+          "swept": true,
+          "evidence": "property removed; not present in current file"
+        },
+        {
+          "surface": "schema/audit.schema.json (properties.severity_recheck)",
+          "swept": true,
+          "evidence": "property removed; not present in current file"
+        },
+        {
+          "surface": "schema/severity.schema.json",
+          "swept": true,
+          "evidence": "new dedicated schema created and wired into src/CLI/Passes.jl:92 via load_schema(\"severity\")"
+        },
+        {
+          "surface": "src/CLI/Audit.jl:39-53 (audit_bank)",
+          "swept": true,
+          "evidence": "still builds audit Dict with only schema_version/round/base/head/kind/covered/diffstat/executable_claims/dispositions/verdict_all_clean, consistent with the trimmed schema"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "Current schema/pass.schema.json has no \"probe_open\" property (grep finds none). Commit 14ee713's diff shows a surgical removal: the probe_open block deleted, state_ids left untouched immediately below. src/CLI/Passes.jl still writes the probe result under \"quote_still_stands\" to probe.json (line 410) and never writes a \"probe_open\" key anywhere in the repo, matching the hint's second option of dropping the property rather than wiring it.",
+      "class_surfaces": [
+        {
+          "surface": "schema/pass.schema.json",
+          "swept": true,
+          "evidence": "probe_open property block removed entirely, no residual reference"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:410 (probe.json write)",
+          "swept": true,
+          "evidence": "still uses \"quote_still_stands\" key, consistent with pass.toml carrying no probe_open"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-10-check-docs-03/schemas#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "schema/carried.schema.json:2 now reads \"$schema\": \"https://json-schema.org/draft/2020-12/schema\" (git show 14ee713 diff: one line changed from the draft-07 URL to the 2020-12 URL). A repo-wide grep of every file under schema/ confirms all 17 other schema files already declare the same 2020-12 URL, so carried.schema.json is now the last file brought in line, not an outlier.",
+      "class_surfaces": [
+        {
+          "surface": "schema/carried.schema.json:2",
+          "swept": true,
+          "evidence": "changed from draft-07 to 2020-12"
+        },
+        {
+          "surface": "schema/{audit,config,architecture-fix,finding,tally,severity,import,round,exemptions,hat,verdict-act,ground-truth,dismissal,verdict-state,reproduction,managed,pass}.schema.json",
+          "swept": true,
+          "evidence": "all 17 remaining schema files already declare \"https://json-schema.org/draft/2020-12/schema\" at line 2, per grep across schema/*.json"
+        }
+      ]
+    }
+  ]
+}
