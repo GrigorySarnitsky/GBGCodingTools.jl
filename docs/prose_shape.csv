@@ -50,7 +50,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1089,541,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
 "ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3048,2923,0
-"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1462,1287,0
+"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1481,1306,0
 "ARCHITECTURE.md § §12.C Doctor ids",135,134,0
 "ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
 "ARCHITECTURE.md § §3 Repository layout",1,1,0

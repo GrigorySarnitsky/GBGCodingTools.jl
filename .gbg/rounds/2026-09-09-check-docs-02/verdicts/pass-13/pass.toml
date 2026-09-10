@@ -1,14 +1,15 @@
+tool_tree_sha = "69c5d79799edadfd68aa6ea136716327a31f0f37"
+range = "209cb212e97f7565482dd7a01c75370cad28b79b..6f7f2b1044ad8a0fb49df7d3fe057deac509add2"
+superseded_by = 14
+pass = 13
+opened = "2026-09-10T12:28:11"
 tool_version = "dev+6f7f2b1"
 head = "6f7f2b1044ad8a0fb49df7d3fe057deac509add2"
 scope = ["2026-09-09-check-docs-02/catalogues#1", "2026-09-09-check-docs-02/cold-reader#1", "2026-09-09-check-docs-02/cold-reader#2", "2026-09-09-check-docs-02/cold-reader#4", "2026-09-09-check-docs-02/cold-reader#5", "2026-09-09-check-docs-02/cold-reader#7", "2026-09-09-check-docs-02/operational-claims#7", "2026-09-09-check-docs-02/pages#4", "2026-09-09-check-docs-02/rationale#1", "2026-09-09-check-docs-02/rationale#2", "2026-09-09-check-docs-02/rationale#3", "2026-09-09-check-docs-02/rationale#4", "2026-09-09-check-docs-02/rulebook#1", "2026-09-09-check-docs-02/rulebook#2", "2026-09-09-check-docs-02/rulebook#3", "2026-09-09-check-docs-02/schemas#4", "2026-09-09-check-docs-02/src#1", "2026-09-09-check-docs-02/src#2", "2026-09-09-check-docs-02/src#4"]
-tool_tree_sha = "69c5d79799edadfd68aa6ea136716327a31f0f37"
 config_sha = "11845192ce547a76ad643707f6f6516c6cee50fda77054d965bf9ef223147760"
 tool_rev = "6f7f2b1044ad8a0fb49df7d3fe057deac509add2"
-range = "209cb212e97f7565482dd7a01c75370cad28b79b..6f7f2b1044ad8a0fb49df7d3fe057deac509add2"
 regrade = true
-pass = 13
 nonce = "18bc1c8eac9cd5f04df63486dc738888"
-opened = "2026-09-10T12:28:11"
 
 [expected]
 rationale = 4

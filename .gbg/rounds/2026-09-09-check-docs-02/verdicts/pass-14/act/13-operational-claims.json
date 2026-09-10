@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "8a8655677c6e760fe12aaa6bb2916ed2",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#7",
+      "verdict": "LINE-ONLY",
+      "question": "strategy",
+      "evidence": "src/Scans/sibling_link.jl:3-4,19-22: the header and function comment now say a later mention 'does not link the site again, though it may deep-link a named page'; the code (removed `break`, added `seen`, `home_re`) actually scans past the first mention and flags a repeated home link, verified by fixture linked-later-mention/bare-sibling and a clean deep-link case. But docs/ARCHITECTURE.md:2339 (SCAN.SIBLING_LINK's own catalog-table row) still states the absolute, unfixed claim 'every LATER mention must not' with no deep-link carve-out -- the exact overstated-enforcement class the finding names, surviving verbatim two lines away from the corrected RULE.DOC.SIBLING_LINK row (ARCHITECTURE.md:2246) in the same file.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scans/sibling_link.jl:1-6",
+          "swept": true,
+          "evidence": "header comment rewritten: 'a later mention does not link the site again, though it may deep-link a named page of it (a cross-reference, not the repetition the rule is about)' -- matches the code's home_re/seen logic"
+        },
+        {
+          "surface": "src/Scans/sibling_link.jl:19-22",
+          "swept": true,
+          "evidence": "function docstring rewritten: 'Both halves of the rule are checked ... no later line may link the SITE again ... a later deep link ... passes' -- matches the loop that no longer breaks after the first hit"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2339",
+          "swept": false,
+          "evidence": "SCAN.SIBLING_LINK's own §12.B catalog row still reads 'the FIRST mention of each sibling must sit inside `[`Name`](site)` and every LATER mention must not', an absolute claim with no deep-link exception, unchanged since the initial (overzealous) fix and never reconciled with the corrected RULE.DOC.SIBLING_LINK statement two rows above it or with the shipped implementation"
+        },
+        {
+          "surface": "policy/docs-rubric.md:186-192",
+          "swept": true,
+          "evidence": "RULE.DOC.SIBLING_LINK prose updated: 'A later mention in the same unit does not link that site again — it is a bare code span, or a deep link to a named page of the site' -- consistent with the fixed scan"
+        }
+      ]
+    }
+  ]
+}

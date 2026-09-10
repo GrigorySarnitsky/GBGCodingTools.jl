@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "b79ed176ea5e0b4df178c939ee36f2d56e1678b50d7eb0d5905cf586ccb76fbb",
+  "pass_nonce": "8a8655677c6e760fe12aaa6bb2916ed2",
+  "verdicts": [
+    {
+      "id": "2026-09-09-check-docs-02/operational-claims#7",
+      "verdict": "ABSENT",
+      "evidence": "src/Scans/sibling_link.jl: grep for 'break' returns nothing. sibling_link_hits! (lines 32-42) loops all lines per name with no early exit; elseif linked && match(home_re,...) flags later same-site links. Header comments (lines 1-6, 19-22) now state and match this two-half check."
+    }
+  ]
+}
