@@ -67,7 +67,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §6.5 Closure channels (per finding id; PARTIAL never closes)",156,156,0
 "ARCHITECTURE.md § §6.6 Deltas — `/check-docs`",173,173,0
 "ARCHITECTURE.md § §6.7 Deltas — `/bug-hunt`",366,366,0
-"ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",199,198,0
+"ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",290,198,0
 "ARCHITECTURE.md § §7.1 Policy migration map (which consumer sections become wh",290,238,0
 "ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",348,348,0
 "ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1809,1672,0

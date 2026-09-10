@@ -418,7 +418,9 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     render_findings_md(dir, round, findings)
     render_summary_md(dir, round, findings, rec, statuses)
     println(io, "bank: $(length(findings)) finding(s) frozen in findings.json (sha $(rec["findings_sha"][1:12])); findings.md is the work list, SUMMARY.md the reading aid")
-    println(io, "NEXT: the fix pass on the owner's word, then gbg round pass open $round")
+    println(io, inst == "audit-changes" ?
+        "NEXT: record a disposition per gated concern in audit.json, then gbg round pass open $round. NEVER a fix pass here: a correction moves the tree, close then refuses the audit as stale, and the round can no longer be closed at all. A correction is committed after this round closes, in the change set the next audit covers." :
+        "NEXT: the fix pass on the owner's word, then gbg round pass open $round")
     return 0
 end
 

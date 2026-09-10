@@ -39,7 +39,9 @@ a `/check-docs` round whose pass touched the `src` or `ext` surfaces: closing re
 round based at the closing round's opening head is itself closed. The two verifiers grade each finding as
 asked; neither reads the diff whole, runs anything, or asks whether input that worked before still does.
 A prose-only pass is not gated: run the audit's prose lenses on judgment when the pass rewrote docstrings
-that state a contract.
+that state a contract. An audit round is closed by disposing its concerns, never by correcting them
+inside it: a correction moves the tree, the staleness check then refuses the close, and there is no
+re-bank. A correction rides the next change set, which the next audit covers.
 
 ### RULE.INST.FIX_FROM_LANES
 A fix pass is driven from the per-lane findings by id, never from the consolidated summary. Consolidation

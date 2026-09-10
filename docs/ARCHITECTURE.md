@@ -1642,6 +1642,13 @@ requires `checked[]` on every lane AND the recorded executable-claim exit codes 
 `base` ≠ the previous closed audit's `head`. `attack-design.js` (four attackers, generic `subject`) is
 the instrument every lens list must survive.
 
+**An audit round is disposed, never corrected inside.** The staleness rule and the frozen bank say so
+together: a correction moves a covered path, `close` then refuses the round, and `bank` will not run
+twice, so the round can never be closed and every disposition recorded in it is lost. `fixed` therefore
+names a correction the NEXT change set carries and the next audit covers — the chain `AUDIT.GAP` watches.
+The rc.1 audit learned this the expensive way: 49 concerns were corrected inside the round, and the
+round could not close.
+
 ---
 ## §7 Policy, managed files, ledger, doctor
 

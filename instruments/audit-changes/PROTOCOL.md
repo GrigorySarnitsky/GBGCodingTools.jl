@@ -72,6 +72,11 @@ the config; config can only add.
    reason of at least 24 characters, or `escalated` to the owner with `overturn_when`. An absent
    disposition is a dropped finding. Never close a concern by declaring it "by design": answer it or
    escalate it.
+
+   **This step never edits the tree.** `fixed` names a correction the NEXT change set carries, which the
+   next audit then covers; it does not mean "corrected just now". Closing requires that no covered path
+   has moved since the audited head, so a correction made inside the round makes that round unclosable —
+   there is no re-bank — and every disposition recorded in it is lost with it.
 5. **Close.** `gbg round close <round>` requires: no dead lane; every gated concern disposed; an
    empty audit's `verdict_all_clean` backed by `checked[]` on every lane AND every recorded
    executable-claim exit code zero; staleness clean — `git diff <audited head>..HEAD -- <covered>` empty,
