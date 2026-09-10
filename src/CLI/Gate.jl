@@ -66,6 +66,26 @@ function gate(cfg::AbstractDict, instruments::AbstractString...; io::IO = stderr
 end
 
 """
+    frozen_rounds(cfg, instruments...) -> Vector{String}
+
+The open rounds of `instruments` that [`gate`](@ref) refuses a build for here — every open round of a
+named instrument except those `GBG_ROUND` admits. The arguments are `cfg`, the validated config, and
+the instruments to ask about (all four when none is named).
+
+A build refused ONLY for these is frozen, not broken: the docs wrapper prints a skip line and exits 0,
+so a red docs run keeps meaning something is broken rather than meaning a round is open. `gbg release`
+and the deep doctor set `GBG_DOCS_NO_SKIP`, which turns the skip back into the refusal — a release
+never accepts a build that did not happen. Returns the round names.
+"""
+function frozen_rounds(cfg::AbstractDict, instruments::AbstractString...)
+    isdir(RoundFiles.rounds_dir(cfg)) || return String[]
+    wanted = isempty(instruments) ? Sync.INSTRUMENTS : instruments
+    ignored = Set(filter(!isempty, split(get(ENV, "GBG_ROUND", ""), ',')))
+    return [r.name for r in RoundFiles.rounds(cfg)
+            if r.state == :open && String(r.round["instrument"]) in wanted && !(r.name in ignored)]
+end
+
+"""
     cmd_gate(args) -> Int
 
 `gbg gate [instrument…]`: the CLI face of [`gate`](@ref) over the config found from the working

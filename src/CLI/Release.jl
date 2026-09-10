@@ -54,7 +54,7 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false)
     end
     if !skip_tests
         for (label, cmd) in (("Pkg.test()", `$(Base.julia_cmd()) --startup-file=no --project=$root -e "using Pkg; Pkg.test()"`),
-                             ("docs build (SELF.DOCS)", `$(Base.julia_cmd()) --startup-file=no --project=$(joinpath(root, "docs")) $(joinpath(root, "docs", "make.jl"))`))
+                             ("docs build (SELF.DOCS)", addenv(`$(Base.julia_cmd()) --startup-file=no --project=$(joinpath(root, "docs")) $(joinpath(root, "docs", "make.jl"))`, "GBG_DOCS_NO_SKIP" => "1")))
             println(io, "release: running $label …"); flush(io)
             ok = success(pipeline(setenv(cmd; dir = root); stdout = devnull, stderr = devnull))
             ok || (println(io, "release: refused — $label failed"); return 2)

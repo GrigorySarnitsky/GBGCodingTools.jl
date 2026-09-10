@@ -380,6 +380,10 @@ check!("WIRE.MAKEDOCS", ctx -> begin
     occursin("GBGCodingTools.makedocs(", t) || return fail("WIRE.MAKEDOCS", "docs/make.jl does not call GBGCodingTools.makedocs( (a commented-out call does not count)")
     occursin(r"(?<!GBGCodingTools\.)\bmakedocs\(", t) && return fail("WIRE.MAKEDOCS", "a bare makedocs( call bypasses the wrapper")
     occursin("function lint_", t) && return fail("WIRE.MAKEDOCS", "a lint_ function body remains in make.jl")
+    # the wrapper returns nothing when a round froze the build; a deploy at column 0 runs anyway and
+    # publishes the previous run's directory, or none
+    occursin(r"^deploydocs\("m, t) && return fail("WIRE.MAKEDOCS",
+        "deploydocs( is called unconditionally — guard it on the wrapper's result, which is nothing when an open round froze the build")
     pass("WIRE.MAKEDOCS")
 end)
 check!("WIRE.RUNTESTS", ctx -> begin
@@ -607,7 +611,8 @@ check!("BUILD.DOCS", ctx -> begin
 end)
 check!("SELF.DOCS", ctx -> begin
     (ctx.tool_root !== nothing && abspath(ctx.root) == ctx.tool_root) || return na("SELF.DOCS", "not the tool root")
-    ok, log = run_logged(ctx, `$(Base.julia_cmd()) --startup-file=no --project=docs docs/make.jl`)
+    # a build skipped because a round is open is not a green build: the release checks read this one
+    ok, log = run_logged(ctx, addenv(`$(Base.julia_cmd()) --startup-file=no --project=docs docs/make.jl`, "GBG_DOCS_NO_SKIP" => "1"))
     banner = occursin(r"GBGCodingTools v\S+ makedocs", log)
     ok && banner || return fail("SELF.DOCS", ok ? "no makedocs banner" : "the tool's docs build failed: " * last(split(strip(log), '\n')))
     ok2, log2 = run_logged(ctx, `$(Base.julia_cmd()) --startup-file=no --project=docs -e "using Pkg; d = first(v for (u, v) in Pkg.dependencies() if u == Base.UUID(\"3aee1de0-bb62-4679-b1c5-a861fbcaaa51\")); print(d.is_tracking_path)"`)

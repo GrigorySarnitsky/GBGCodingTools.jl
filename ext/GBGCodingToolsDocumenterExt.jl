@@ -23,7 +23,21 @@ function makedocs(cfg; kwargs...)
     root = cfg["root"]
     check("doctor --only QUICK", GBGCodingTools.doctor(cfg, :QUICK))
     check("scan docs --hard-only", last(GBGCodingTools.scan_docs(cfg; hard_only = true)))
-    check("gate check-docs check-consistency", GBGCodingTools.gate(cfg, "check-docs", "check-consistency"))
+    # A round of a docs instrument freezes the build (`RULE.INST.FROZEN_MIDROUND`). That is not a
+    # breakage, and failing on it turned every push during a round red — 25 in a row, and a red run
+    # that means "a round is open" is a red run nobody reads. It prints the skip and exits 0 instead;
+    # `GBG_DOCS_NO_SKIP` restores the refusal, and `gbg release` and the deep doctor set it, so no
+    # release ever accepts a build that did not happen.
+    buf = IOBuffer()                                   # held back: a frozen build prints the skip, not a refusal
+    code = GBGCodingTools.gate(cfg, "check-docs", "check-consistency"; io = buf)
+    frozen = GBGCodingTools.frozen_rounds(cfg, "check-docs", "check-consistency")
+    if code == 1 && !isempty(frozen) && !haskey(ENV, "GBG_DOCS_NO_SKIP")
+        println("makedocs: SKIPPED — ", join(frozen, ", "), " open; the instruments are frozen mid-round. ",
+                "Nothing was built and nothing is deployed. Set GBG_DOCS_NO_SKIP=1 to make this a refusal again.")
+        return nothing
+    end
+    print(stderr, String(take!(buf)))
+    check("gate check-docs check-consistency", code)
     GBGCodingTools.write_public_surface(cfg)
     result = Documenter.makedocs(; kwargs...)
     build_dir = get(Dict(kwargs), :build, joinpath(root, "docs", "build"))

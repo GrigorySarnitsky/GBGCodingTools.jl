@@ -106,6 +106,17 @@ records the choice in `pass.toml`. An audit round is exempt, since it has no fix
 inside it, because a correction moves the tree and the staleness check then refuses the close for good —
 learned by making `2026-09-09-audit-changes-01` permanently unclosable and abandoning it).
 
+**A docs build during a round is SKIPPED, not failed.** `RULE.INST.FROZEN_MIDROUND` freezes the
+instruments while a round is open, and the `makedocs` wrapper enforced that by failing: every push
+during the second documentation round turned the Docs workflow red — twenty-five in a row — so a red
+run stopped meaning anything. The wrapper now prints `makedocs: SKIPPED — <round> open`, builds
+nothing and returns `nothing`, which is exit 0. `GBGCodingTools.frozen_rounds` is the new predicate
+that separates a frozen build from a broken one; the gate's own refusal is held back when it is only
+that. `GBG_DOCS_NO_SKIP=1` restores the refusal, and `gbg release` and the deep doctor's `SELF.DOCS`
+both set it — a release never accepts a build that did not happen. A consumer's `make.jl` must guard
+its `deploydocs` on the wrapper's return, or it publishes the previous run's directory; `WIRE.MAKEDOCS`
+fails an unguarded `deploydocs(` at column 0, and the seed says so.
+
 **A scan may carry a note, and `SCAN.SIGNATURE_FIDELITY` uses one.** A registered scan returns
 `(hits, population)` as before, or `(hits, population, note)`; `run_scan` carries the third element into
 the result, where a DEAD line prints it. Signature fidelity counts only the bindings it COMPARED, so a

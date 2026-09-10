@@ -45,6 +45,7 @@ GBGCodingTools.scan_docs
 GBGCodingTools.scan_html
 GBGCodingTools.write_public_surface
 GBGCodingTools.gate
+GBGCodingTools.frozen_rounds
 ```
 
 ## Rounds

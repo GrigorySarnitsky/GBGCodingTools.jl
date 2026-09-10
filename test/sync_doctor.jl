@@ -35,6 +35,13 @@ include("helpers.jl")
         write(mk, replace(orig, "GBGCodingTools.makedocs(" => "# GBGCodingTools.makedocs(\nmakedocs("))
         @test run_only(["WIRE.MAKEDOCS"])["WIRE.MAKEDOCS"].status == :FAIL     # a commented-out call and a bare one
         write(mk, orig)
+        # the wrapper returns nothing when a round froze the build, so an unguarded deploy publishes the
+        # previous run's directory or none. Both directions: at column 0 it fails, guarded it passes.
+        write(mk, orig * "\ndeploydocs(repo = \"github.com/x/y.jl\")\n")
+        @test run_only(["WIRE.MAKEDOCS"])["WIRE.MAKEDOCS"].status == :FAIL
+        write(mk, orig * "\nresult === nothing || deploydocs(repo = \"github.com/x/y.jl\")\n")
+        @test run_only(["WIRE.MAKEDOCS"])["WIRE.MAKEDOCS"].status == :PASS
+        write(mk, orig)
         cm = joinpath(root, "CLAUDE.md"); co = read(cm, String)
         write(cm, replace(co, "@.gbg/policy/00-index.md" => "@.gbg/policy/00-index.md (edited)"))
         r = run_only(["WIRE.CLAUDE_MD", "POL.IMPORT"])

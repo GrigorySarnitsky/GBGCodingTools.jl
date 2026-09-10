@@ -21,9 +21,19 @@ include("helpers.jl")
     withenv("GBG_ROUND" => "2026-09-09-bug-hunt-02") do
         @test G.gate(cfg; io = devnull) == 1                                        # another name ignores nothing
     end
+    # frozen_rounds names what the gate refuses FOR, so the docs wrapper can tell a frozen build from a
+    # broken one. Both directions: a hunt round is named to whoever asks about bug-hunt and to nobody
+    # asking about the docs instruments, and GBG_ROUND removes it exactly as it does for the gate.
+    @test G.frozen_rounds(cfg, "bug-hunt", "audit-changes") == ["2026-09-09-bug-hunt-01"]
+    @test isempty(G.frozen_rounds(cfg, "check-docs", "check-consistency"))
+    @test G.frozen_rounds(cfg) == ["2026-09-09-bug-hunt-01"]                        # all four when none is named
+    withenv("GBG_ROUND" => "2026-09-09-bug-hunt-01") do
+        @test isempty(G.frozen_rounds(cfg))                                         # the round's own build is not frozen out
+    end
     rm(joinpath(rd, "ROUND.toml"))
     @test G.gate(cfg; io = devnull) == 2                                            # a directory without a marker
     rm(rd; recursive = true)
     rm(joinpath(root, ".gbg", "rounds"); recursive = true)
     @test G.gate(cfg; io = devnull) == 2                                            # ROUND.DIR: never vacuous
+    @test isempty(G.frozen_rounds(cfg))                                             # no rounds directory freezes nothing
 end

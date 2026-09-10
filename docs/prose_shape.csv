@@ -92,7 +92,7 @@ unit,words,longest_paragraph,admonitions
 "Consolidate.jl :: discover_pages(build_dir) -> Vector{Tuple{String,String,Stri",82,79,0
 "Consolidate.jl :: page_text(path) -> String",36,33,0
 "Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",104,100,0
-"DocLints.jl :: makedocs(cfg; kwargs...)",175,67,0
+"DocLints.jl :: makedocs(cfg; kwargs...)",233,67,0
 "Doctor.jl :: Check",37,30,0
 "Doctor.jl :: Doctor",79,78,0
 "Doctor.jl :: cmd_doctor(args) -> Int",29,26,0
@@ -105,6 +105,7 @@ unit,words,longest_paragraph,admonitions
 "Fleet.jl :: latest_tag(root) -> Union{VersionNumber,Nothing}",17,14,0
 "GBGCodingTools.jl :: GBGCodingTools",376,102,0
 "Gate.jl :: cmd_gate(args) -> Int",27,24,0
+"Gate.jl :: frozen_rounds(cfg, instruments...) -> Vector{String}",115,68,0
 "Gate.jl :: gate(cfg, instruments...; io = stderr) -> Int",185,69,0
 "Git.jl :: Git",34,33,0
 "Git.jl :: Git.changed_paths(root, range, paths) -> Vector{String}",53,26,0

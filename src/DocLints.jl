@@ -17,7 +17,11 @@ The arguments are:
 Before Documenter runs it runs, in-process, the quick doctor set, the hard scans over the source
 surfaces and [`GBGCodingTools.gate`](@ref), the closure gate, over the two docs instruments; after
 Documenter it runs the built-HTML scans and that gate again. Any non-zero return is an `error`, so the build fails. It prints one banner line,
-`GBGCodingTools v<ver> makedocs`, which a consumer's CI greps for. Returns whatever `Documenter.makedocs`
-returns.
+`GBGCodingTools v<ver> makedocs`, which a consumer's CI greps for.
+
+Returns whatever `Documenter.makedocs` returns, or `nothing` when an open round of a docs instrument
+froze the build ([`GBGCodingTools.frozen_rounds`](@ref)): the skip is exit 0, so a red docs run keeps
+meaning something is broken, and a `make.jl` deploys only when a result comes back. `GBG_DOCS_NO_SKIP`
+turns the skip back into the refusal, which is how `gbg release` and the deep doctor run it.
 """
 function makedocs end

@@ -56,7 +56,7 @@ open(joinpath(@__DIR__, "src", "guide", "rules.md"), "w") do io
     end
 end
 
-GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
+result = GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
     sitename = "GBGCodingTools",
     modules = [GBGCodingTools, TestHarness, Reflection, Witnesses, Config],
     checkdocs = :exports,
@@ -75,4 +75,7 @@ GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
     ],
 )
 
-deploydocs(repo = "github.com/GrigorySarnitsky/GBGCodingTools.jl", devbranch = "master", push_preview = false)
+# The wrapper returns nothing when a round froze the build: there is nothing built to deploy, and an
+# unguarded deploy would publish the previous run's directory or none at all (WIRE.MAKEDOCS).
+result === nothing ||
+    deploydocs(repo = "github.com/GrigorySarnitsky/GBGCodingTools.jl", devbranch = "master", push_preview = false)

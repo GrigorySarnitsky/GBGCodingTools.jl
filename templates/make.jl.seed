@@ -1,6 +1,8 @@
 # docs/make.jl — {{package.name}}. The build goes through the tool's wrapper (WIRE.MAKEDOCS): it runs
 # the quick doctor, the hard scans over the source surfaces, the closure gate, Documenter, and the
 # built-HTML scans, and exits non-zero on any of them. Run it as `julia --project=docs docs/make.jl`.
+# It returns nothing when an open round of a docs instrument froze the build (the instruments are frozen
+# mid-round): that is exit 0, not a failure, so guard any deploydocs call on the value it returns.
 using Documenter, GBGCodingTools
 using {{package.name}}
 
