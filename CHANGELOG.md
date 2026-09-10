@@ -3,6 +3,19 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
+## 1.0.0-rc.5 — 2026-09-10
+
+PATCH on rc.4, and again its content is one defect the seeded round found in the seeding. Nine of the
+thirteen `/check-docs` lane surfaces are DIRECTORIES — `catalog`, `policy`, `schema`, `templates`,
+`docs/build` and the four `instruments/*/workflow` trees — and the disposable copy took files and
+skipped the rest, so six lanes read a corpus that was partly or wholly absent. Four raised it as a
+blocker, which is the lanes behaving correctly; `rulebook` and `schemas` reported on the fragments they
+could still reach, which is worse, because those read as ordinary findings. Directories are copied
+whole now, and `prepare` refuses unless every surface reached the copy: a lane reading nothing reports
+nothing, and nothing is what a clean lane reports too. Round `2026-09-10-check-docs-02` is abandoned
+over it, with its 39 findings and its recall figure of 2/6 recorded but not citable. Instruments
+affected: check-docs (seeding only). Rates comparable: yes.
+
 ## 1.0.0-rc.4 — 2026-09-10
 
 PATCH on rc.3, and its whole content is one defect the first seeded round found in the seeding itself:
