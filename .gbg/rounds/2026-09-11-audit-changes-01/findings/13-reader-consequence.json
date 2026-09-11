@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-01",
+  "lane": "reader-consequence",
+  "verdict": "CONCERNS",
+  "checked": [
+    "ext/GBGCodingToolsDocumenterExt.jl makedocs(): the new `return something(result, true)` against the rewritten DocLints.jl docstring and the ARCHITECTURE.md/make.jl.seed prose describing the return contract — all three agree with each other and with docs/make.jl's existing `result === nothing || deploydocs(...)` guard",
+    "src/CLI/Doctor.jl WIRE.MAKEDOCS check's unchanged error text against the new makedocs() return semantics — still accurate, unaffected by the return-value fix",
+    "src/CLI/Audit.jl new `lane_verdict_contradictions` and the printed remedy 'gbg round rerun $round --lanes ...' against src/CLI/Rounds.jl `rerun()` (requires the named lanes to be in `rec[\"dead_lanes\"]`) and `classify_lane()` (what actually earns :dead/:rejected) and `bank()` (the only writer of `dead_lanes`, called only after audit_bank's new precheck already returned)",
+    "the new test 'an audit lane's verdict must agree with its findings' in test/rounds.jl — confirms the printed string but not that the printed command succeeds",
+    "docs/ARCHITECTURE.md's D9 gate-sequencing rewrite (pre- vs post-Documenter gate skip behaviour) against ext/GBGCodingToolsDocumenterExt.jl's actual (unchanged) dual gate() calls",
+    "src/CLI/Passes.jl's expanded module docstring (act verifier / state verifier closed vocabularies) against schema/verdict-act.schema.json and schema/verdict-state.schema.json enum lists, and against src/CLI/Demote.jl's demote()",
+    "schema/reproduction.schema.json's new 'open' enum value and description against src/CLI/Rounds.jl's hunt_bank! and the new test/schemas.jl case",
+    "instruments/audit-changes/workflow/attack-design.js's rewritten args comment against the script's actual `subject` destructuring and required-keys list",
+    "instruments/bug-hunt/workflow/hunt.js's trimmed free-lane sentence against FREE_PREAMBLE/HUNT_PREAMBLE to confirm free lanes never had an invariants file named in their prompt",
+    "src/HtmlWalker.jl, src/TestHarness.jl, src/CLI/Main.jl, src/CLI/Init.jl, templates/SKILL.md.tmpl docstring/comment edits against the bindings and code paths they name",
+    "docs/ARCHITECTURE.md's directory-tree reordering of Scan.jl and the ProseShape.jl -> prose_shape.jl rename against the actual paths on disk",
+    "policy/RULES.toml's weakness<->panel flips for six DOC/TEX/CIT rules and five TEST rules against the catalog/hats/*.toml personas and catalog/lanes/*.toml briefs that would constitute a 'panel' check"
+  ],
+  "candidates_found": 3,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "audit-changes bank's new lane-verdict-contradiction message tells the session to run a `gbg round rerun` that will always be refused",
+      "locations": [
+        "src/CLI/Audit.jl:41-50 (lane_verdict_contradictions check in audit_bank)",
+        "src/CLI/Rounds.jl:662-666 (rerun's DEAD/REJECTED guard)",
+        "src/CLI/Rounds.jl:340-361 (classify_lane — what actually earns :dead/:rejected)",
+        "src/CLI/Rounds.jl:452-473 (bank — the only writer of rec[\"dead_lanes\"])"
+      ],
+      "before": "(new code — no prior version) Rounds.bank's own analogous message at line 471, which a reader would take as the model: `println(io, \"bank: $(length(dead)) DEAD/REJECTED lane(s) — nothing frozen. Re-run only them: gbg round rerun $round --lanes \", join(dead, \",\"))` — printed only AFTER `rec[\"dead_lanes\"] = sort!(dead); save(dir, rec)` on the line just above it, so the named lanes are already recorded as dead when the reader is told to re-run them.",
+      "after": "audit_bank's new precheck prints the identical-looking instruction without ever calling Rounds.bank first: `bad = lane_verdict_contradictions(joinpath(dir, \"findings\")); if !isempty(bad) ... println(io, \"  re-run it: gbg round rerun $round --lanes \", join([...], \",\")); return 2 end` — it returns 2 immediately, before `Rounds.bank` (called later, at line 74, only on the path this branch skips) ever runs and could populate `rec[\"dead_lanes\"]`.",
+      "why_it_matters": "A session (or the owner) that hits this refusal and types the exact command the tool just printed — `gbg round rerun <round> --lanes <the named lanes>` — gets a second refusal: `rerun` requires every named lane to already be in `rec[\"dead_lanes\"]`, which only `Rounds.bank`'s own classification writes, and `classify_lane` has no rule that would mark a schema-valid-but-self-contradictory (CLEAN-with-findings or CONCERNS-with-none) lane file as dead or rejected in the first place — such a file classifies `:live`. So for the realistic case, the printed remedy is not merely stale prose but an unreachable command: `rerun` answers \"refused — not DEAD or REJECTED at the last bank ... (a live lane is never re-run)\" no matter how many times it is tried. The new test only asserts the string is printed, never that the command it names would succeed, so this went unnoticed.",
+      "justified": "unclear",
+      "description": "The lane-verdict-contradiction check itself is a reasonable, narrowly-scoped addition (RULE.TEST.BOTH_DIRECTIONS: refuse before the executable claims run rather than after). But its user-facing remedy copies the wording of `Rounds.bank`'s dead-lane message without copying the state write (`rec[\"dead_lanes\"] = ...; save(dir, rec)`) that makes that message's command actually work, and there is no `classify_lane` rule that would ever route a verdict/findings mismatch into DEAD/REJECTED on a later real bank pass either. A reader of the printed output has no way to discover this without reading Rounds.jl's rerun/classify_lane source — exactly the gap this lens is built to catch.",
+      "evidence": "src/CLI/Audit.jl: `println(io, \"  re-run it: gbg round rerun $round --lanes \", join([replace(f, r\"^\\d+-\" => \"\", r\"\\.json$\" => \"\") for (f, _, _) in bad], \",\"))` immediately followed by `return 2` with no call to `Rounds.bank` on this path; src/CLI/Rounds.jl: `dead = Set(String.(rec[\"dead_lanes\"])); bad = [l for l in lanes if !(l in dead)]; isempty(bad) || (println(io, \"rerun: refused — not DEAD or REJECTED at the last bank: \", join(bad, \", \"), \" (a live lane is never re-run)\"); return 2)`; and `classify_lane`'s only dead/rejected branches are absent file, changed-since-first-sight, unparsable JSON, schema-invalid, wrong `lane` field, or zero findings with an empty `checked[]` — none of which fires on a schema-valid lane whose `verdict` merely disagrees with its own `findings` count."
+    }
+  ]
+}

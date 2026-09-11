@@ -1,0 +1,229 @@
+{
+    "pending_state": [
+    ],
+    "plateau": {
+        "passes_flat": 0
+    },
+    "recall": {
+    },
+    "totals": {
+        "seeded": 0,
+        "open": 0,
+        "closed": 33,
+        "findings": 33
+    },
+    "rejected_files": [
+    ],
+    "per_id": {
+        "2026-09-11-audit-changes-01/behaviour-change#3": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/public-contract#1": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/contract-drift#2": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/public-contract#2": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/under-rejection#3": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/free-reader#1": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/behaviour-change#1": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/claim-versus-edit#1": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/executing#3": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/behaviour-change#6": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/contract-drift#3": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/executing#6": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/executing#1": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/executing#2": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/executing#4": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/under-rejection#1": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/behaviour-change#5": {
+            "act": null,
+            "closed_by": "adjudicated",
+            "act_demoted": false,
+            "adjudicated_entry": "audit.json: refused",
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/over-rejection#3": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/contract-drift#4": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/contract-drift#5": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/executing#5": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/free-reader#2": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/sweep-completeness#1": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/contract-drift#7": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/reader-consequence#1": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/public-contract#3": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/over-rejection#1": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/contract-drift#6": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/behaviour-change#4": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/contract-drift#1": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/behaviour-change#2": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/over-rejection#2": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        },
+        "2026-09-11-audit-changes-01/under-rejection#2": {
+            "act": null,
+            "closed_by": "honored",
+            "act_demoted": false,
+            "state": null
+        }
+    },
+    "dead_lanes": [
+    ],
+    "open_ids": [
+    ],
+    "suspect_hats": [
+    ],
+    "pass": 1,
+    "schema_version": 1,
+    "round": "2026-09-11-audit-changes-01",
+    "demoted_by_rule": 0,
+    "adjudicated_share": 0.030303030303030304
+}

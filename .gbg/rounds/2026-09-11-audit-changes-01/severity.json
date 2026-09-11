@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-01",
+  "ratings": [
+    {
+      "id": "2026-09-11-audit-changes-01/free-reader#1",
+      "severity": "major",
+      "reason": "The new refusal path prints a rerun command that will deterministically fail again (rerun refuses live lanes and this check never writes dead_lanes/saves the record the way generic bank does), leaving no documented recovery besides hand-deleting a findings file — a real, plausibly-hit dead end in an operator-facing remedy, but one that blocks progress rather than producing a wrong computed result or a wrong belief about the API or math."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/free-reader#2",
+      "severity": "major",
+      "reason": "Verified in source: `v isa AbstractString || continue` accepts any string, so an enum-invalid verdict (e.g. wrong case) paired with zero findings is misdiagnosed as a self-contradiction and short-circuits before reaching the generic bank's schema check that would name the real problem — violating the function's own documented contract (\"a file that ... carries no verdict[not just malformed] is the generic bank's to judge\"); the remedy given (rerun the lane) is still plausibly workable, so the practical harm is a wrong diagnosis rather than a wrong exit code or lost result."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/executing#1",
+      "severity": "major",
+      "reason": "RAN evidence confirms a reproducible regression: the new verdict-check globs every *.json in findings/, so a routine classify_lane quarantine (*.rejected.json) is picked up as a live lane, permanently returns exit 2 on every subsequent bank, and the emitted rerun hint names a lane key (\\\"invariants.rejected\\\") that `rerun` itself refuses — leaving the round stuck until someone deletes the stale file by hand; this is a plausible, self-inflicted operational block on the tool's own bank path, not a cosmetic or localized wording issue, but it has a manual workaround and doesn't corrupt data or produce a wrong scientific/API claim, so it falls short of blocker."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/executing#2",
+      "severity": "blocker",
+      "reason": "Demonstrated (RAN) regression: a lane file with findings:null — a plausible agent output — now throws an uncaught MethodError in audit_bank that Main's catch maps to exit 3 (crash), where base classified it as DEAD via schema validation and returned exit 2 with a rerun hint; this inverts the documented exit-code contract (2=cannot evaluate/rerun vs 3=tool crash), misleading whoever consumes the exit code into believing the tool itself is broken rather than the lane needing a rerun, and the same code path also silently accepts a string findings value (length() on a string) without flagging the CONCERNS contradiction it was meant to catch."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/executing#3",
+      "severity": "minor",
+      "reason": "The new hard refusal enforces a rule the lane schema already states (\"CLEAN only if you found nothing... worth the owner reading\"), and the finding itself calls the refusal deliberate and tested in both directions; the residual gap — lane schema/briefs not spelling out that this is now a hard, exit-2 enforced constraint — is a real but localized documentation lag with the underlying rule already stated nearby, not a contradiction or a wrong belief about behavior, math, or cost."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/executing#4",
+      "severity": "major",
+      "reason": "Verified (RAN) behavior change: the new re-render loop rewrites any freshly-seeded test/Project.toml on every init (dropping the seed's explanatory comment) and, on the tool-itself branch, inserts a self-referential GBGCodingTools deps/sources entry that directly contradicts the code's own adjacent comment saying the tool's test env must list neither a tool entry nor a pin — a confirmed contradiction between two code surfaces, wider in scope than the dev-pin defect it was meant to fix, though not a documentation claim about math/API/cost that would make it blocker-level."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/executing#5",
+      "severity": "major",
+      "reason": "The evidence is verified (RAN against Documenter 1.19.0 source) and shows a genuine, warranted fix that nonetheless silently flips makedocs' public return contract (nothing vs. true on success) with real downstream effect — any consumer make.jl gating deploydocs on `result === nothing`, including this package's own docs/make.jl, now behaves differently on every successful build — yet nothing records this as the breaking contract change it is (only an in-code comment), which is exactly the kind of missing load-bearing statement that plausibly bites a reader/release-manager rather than a cosmetic or self-correcting gap."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/executing#6",
+      "severity": "nit",
+      "reason": "The finding itself verifies the re-baselined numbers are accurate (0 head-CSV mismatches, no row lowered, no unit over the 120-word cap) and that the scan's own message explicitly sanctions re-baselining for new content — it flags a transparency/process point (\"the owner should know\") rather than any wrong, misleading, or contradicted claim, so it doesn't meet blocker/major/minor's bar of an actual defect a reader could be misled by."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/under-rejection#1",
+      "severity": "major",
+      "reason": "The evidence supports a real, concrete production side effect (docs.yml's untouched deploydocs guard flips from never-firing to firing on every built run with GITHUB_TOKEN) that is correct in direction but genuinely unannounced (no CHANGELOG) and untested — a missing load-bearing statement a release manager will plausibly hit, not a false claim that misleads about math/API semantics, so major rather than blocker; not minor/nit since the consequence (automatic gh-pages publication for the tool and any consumer following the same seed pattern) is certain and externally visible, not a localized or low-impact wording issue."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/under-rejection#2",
+      "severity": "nit",
+      "reason": "The finding's own investigation clears it: every raised ceiling matches genuine new content this diff adds, nothing unrelated was absorbed, no row was deleted, and the always-binding 120-word paragraph cap still holds independently — exactly the \"re-baseline deliberately if the growth is new content\" case the scan's own message licenses, so there is no wrong result, no contradiction, and no hidden absorption, only a self-acknowledged theoretical pattern-risk."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/under-rejection#3",
+      "severity": "major",
+      "reason": "The diff reclassifies six rules from weakness to panel in RULES.toml, but the evidence shows at least RULE.CIT.DOI is already partially checked by a real scan (doi_crosscheck.jl's header names it) and RULE.DOC.MODULE_MAP/RULE.TEX.IMAGINARY are text-decidable — directly contradicting the unchanged testing-protocol.md norm that panel means \"no program could ever decide\"; this silently erases tracked technical debt in a self-referential tool whose own quality process depends on that distinction, and no test (schemas.jl:186 accepts either value) catches it, so it's a real, load-bearing contradiction between the policy surface and the codebase rather than a cosmetic wording issue — but it changes no computed result or user-facing output, so it stops short of blocker."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/behaviour-change#1",
+      "severity": "blocker",
+      "reason": "The new refusal path prints a `gbg round rerun --lanes ...` remedy that `rerun` itself refuses (the lane was never added to dead_lanes, since only Rounds.bank writes it), so an operator who acts on the tool's own printed instruction gets a command that fails, and the round is left with no route to bank short of forbidden hand-editing or abandonment — a concrete, reproducible dead end in a core CLI workflow, not just a documentation gap."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/behaviour-change#2",
+      "severity": "major",
+      "reason": "Concrete, plausible workflow bug: after a quarantined lane file is corrected and re-run, the leftover NN-key.rejected.json is still picked up by the widened readdir/filter in Audit.jl, so a legitimate rebank is wrongly refused and the emitted remedy hint (--lanes key.rejected) names no real lane, giving the user no working recovery path — but it fails loudly (a refusal) rather than silently producing a wrong computed result or belief, which keeps it below blocker."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/behaviour-change#3",
+      "severity": "major",
+      "reason": "The evidence shows a correct, intentional fix (makedocs now distinguishes a build from a skip) that nonetheless silently flips a public-contract return value and, via the tool's own docs/make.jl guard and the seed every consumer inherits, turns previously-inert `deploydocs` calls into real gh-pages pushes on every master push — an unannounced, untested external-side-effect change (no CHANGELOG entry, no test pinning built-vs-frozen), not merely cosmetic wording, but the docstring itself was updated correctly so no reader is misled into a wrong belief — it's a real, plausibly-hit defect of omission rather than a wrong/misleading claim."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/behaviour-change#4",
+      "severity": "major",
+      "reason": "The unconditional widening of the dev-pin fix produces a concrete, unconditional side effect — every run of `gbg init` at the tool's own root now writes a self path-dependency into [deps]/[sources] while the adjacent comment still claims no tool entry exists, a real contradiction hit on ordinary use (not a rare edge case) rather than a hypothetical; the second effect (comment/order loss on TOML.parsefile round-trip for consumers) is milder, but the self-contradictory tool-root case alone is a real, plausibly-hit defect the evidence supports, short of a confirmed hard failure (no test exercises it) that would push it to blocker."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/behaviour-change#5",
+      "severity": "major",
+      "reason": "The evidence shows a genuine internal contradiction in a frozen, executable instrument prompt (FREE_PREAMBLE still grants two files while a later line narrows the grant to one), which a free-lane hunter will plausibly hit whenever invariants_section is configured, causing it to skip a file it is supposed to search against — a real, quotable contradiction between two instructions on the same surface, not a cosmetic issue but also not a wrong belief about mathematics, API, or cost."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/behaviour-change#6",
+      "severity": "minor",
+      "reason": "The finding is real (two hat personas now read authored source, not just the rendered site, widening what check-consistency can flag) but it names a bookkeeping gap, not a wrong or misleading claim reaching a reader now: CHANGELOG entries are written at release time per the project's own checklist, head is only 5 commits past an rc tag with no new release cut yet, and the rule itself (RULE.DOC.ALIASING_BULLET) and the `source` grant are unchanged — so this is a gap that has a natural, already-scheduled correction point (the next CHANGELOG entry) rather than an active contradiction or stale claim."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/over-rejection#1",
+      "severity": "blocker",
+      "reason": "Verified in source: audit_bank returns exit 2 with a printed `gbg round rerun <round> --lanes X` remedy before calling Rounds.bank, so on any first-bank verdict contradiction dead_lanes is still the empty String[] open() wrote (Preflight.jl:670) — dead_lanes is populated only inside Rounds.bank (Rounds.jl:468) — and rerun's own guard (Rounds.jl:664-666) refuses that exact printed command since the lane isn't in dead_lanes, so a reader who acts on the tool's own remedy text gets a wrong result with no cheap recovery (hand-edit is forbidden, full relaunch is the only path), stranding the round."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/over-rejection#2",
+      "severity": "major",
+      "reason": "Verified against source: classify_lane/bank never inspected the self-reported verdict (only findings/checked counts), so a CLEAN-labeled lane with real findings was previously banked and gated normally, and the base protocol (audit.js) only names CONCERNS-with-zero as a contradiction — so the new lane_verdict_contradictions gate in audit_bank, which hard-refuses (exit 2) before Rounds.bank ever runs, is a genuine asymmetric behavior change, not a misreading. Its printed remedy (\"gbg round rerun\") is confirmed broken on a first bank (rerun requires the lane already in rec['dead_lanes'], populated only by a completed Rounds.bank — corroborated by the sibling contract-drift#1 finding), leaving a hand-edit of the lane JSON as the only undocumented way forward; this stops short of blocker (no wrong mathematical/API/cost claim, and the file itself isn't destroyed), but it is a real, code-verified contradiction with a broken stated recovery path that a normal user will plausibly hit when a hat mislabels a lane."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/over-rejection#3",
+      "severity": "major",
+      "reason": "Malformed-but-parseable lane files (findings: null, findings as a string, or stray .rejected.json/non-roster files in findings/) now hit lane_verdict_contradictions before any schema check, producing a crash (exit 3) or a false contradiction report with an unusable rerun hint instead of the documented quarantine-to-DEAD path — a real, plausible regression against the function's own stated contract, but not a blocker since the failure is loud (crash/refusal) rather than a silently wrong audit verdict."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/public-contract#1",
+      "severity": "minor",
+      "reason": "The finding itself concedes the return-value change is correct and already thoroughly re-documented across DocLints.jl, ARCHITECTURE.md, and the make.jl seed comment, so no reader of current docs gets a wrong belief about the API; the actual complaint is a process gap (no CHANGELOG entry yet in this diff) which the project's own release checklist ties to release time, not every commit, making this a real but low-risk-of-misleading observation rather than a load-bearing documentation defect."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/public-contract#2",
+      "severity": "major",
+      "reason": "The evidence shows a real, code-supported contradiction between two public surfaces (--dry-run preview vs. actual init behavior): the new envs mutation only fires in the real run path, so dry-run's file-write listing is missing a load-bearing entry (the test/Project.toml dev-pin rewrite) that a real run performs — a user trusting dry-run on a fresh package gets an incomplete picture, though the underlying fix itself is correct and the gap is narrowly scoped to one file/one init scenario, not a math/cost error or broad misbehavior."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/public-contract#3",
+      "severity": "minor",
+      "reason": "The new exit-2 gate is a real, deliberate, tested behavior change to the exit-code contract, but it's accurately self-documented (docstring comment + new test) at the point of change — the only gap is a missing CHANGELOG line, which is a process/tracking omission rather than something that leaves a reader with a wrong result or a false belief about the API's current behavior."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/claim-versus-edit#1",
+      "severity": "major",
+      "reason": "Verified against src/CLI/Init.jl:296-298 and Sync.jl's subenv_entries/render_project (unchanged): the added push!(envs, \"test\") sits outside the cfg[\"package\"][\"name\"] == PKG_NAME ternary and unconditionally routes \"test\" into the later render_project pass, which has no self-exclusion and will inject a [deps]/[sources] tool entry into test/Project.toml even on a from-scratch bootstrap of the tool's own repo — directly contradicting the adjacent comment's stated intent (\"its test environment lists neither a tool entry nor a pin\") and unmentioned by the commit message, which describes only the general-consumer dev-pin fix; init() has zero test coverage (confirmed: only derive_config is exercised in test/config.jl) so nothing catches this. This is a real, plausible-to-hit contradiction between the code's own adjacent design comment and its post-fix behavior in the explicitly sanctioned D15 self-consumer scenario, not merely cosmetic wording drift — but it is a narrow init-time code-path defect rather than a claim that misleads a reader about math/API/cost, so major rather than blocker."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/contract-drift#1",
+      "severity": "major",
+      "reason": "The new audit_bank refusal and Rounds.rerun's precondition contradict each other on a surface a session will actually hit (a CONCERNS lane with empty findings and non-empty checked[]): the printed recovery command is not a workaround but a false claim about what rerun will accept, since dead_lanes is never written on this path, leaving only an undocumented manual deletion as the real fix."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/contract-drift#2",
+      "severity": "major",
+      "reason": "The evidence shows a genuine contradiction between two load-bearing surfaces — the schema/test now allow a fourth enum value (\"open\") while ARCHITECTURE.md §6.3, the closed-vocabulary table that also claims the record is \"frozen at bank,\" was left listing only three values and wasn't marked MAJOR — a reader trusting §6.3 gets a wrong belief about the disposition contract and its \"frozen\" state, but this is a doc/schema drift rather than a mathematically wrong or actively misleading statement."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/contract-drift#3",
+      "severity": "major",
+      "reason": "The finding shows a direct contradiction between RULE.TEST.RULE_WITH_CHECK's own definition (panel only for what no program could ever decide) and reclassifying several plainly program-checkable rules (DOI cross-check, module-map formula presence, variant-pair display formula, one-docstring-per-method count) from weakness to panel, with schemas.jl accepting either value so the drift goes unmonitored — a real, unflagged contradiction between the policy's stated contract and its application, not a cosmetic wording issue."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/contract-drift#4",
+      "severity": "major",
+      "reason": "Verified against src/CLI/Audit.jl: audit_bank's docstring states it \"runs the executable claims itself, then the generic bank\" and \"returns the bank's exit code,\" but the new lane_verdict_contradictions check returns exit 2 before either the claims or Rounds.bank ever run — a missing/false load-bearing statement about a CLI verb whose exit codes are this package's stated contract, though the new path is still a semantically consistent \"refuse\" code (2) rather than a computational wrong-result, so it falls short of blocker."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/contract-drift#5",
+      "severity": "major",
+      "reason": "The narrowed carve-out is itself truthful, but the general rationale sentence (\"a red docs build keeps meaning something is broken rather than meaning a round is open\") was retained unchanged in the same passage (D9/DocLints) even though the text right next to it now admits the post-build gate has no such protection — a load-bearing invariant statement now directly contradicts an exception documented in the same breath, which a maintainer debugging a red build could plausibly rely on and be misled by, though it's a design-doc internal inconsistency rather than a wrong mathematical/API/cost claim."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/contract-drift#6",
+      "severity": "minor",
+      "reason": "The finding itself confirms the code fix is correct and the docstring was updated to accurately describe the new true/nothing contract, so no reader following current docs/code is misled; it's a heads-up that a public return-value change needs a CHANGELOG entry, without evidence that entry is actually missing, making this a real-but-low-impact process note rather than a live contradiction or wrong belief."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/contract-drift#7",
+      "severity": "major",
+      "reason": "Verified in src/CLI/Init.jl: the new `\"test\" in envs || push!(envs, \"test\")` sits after `write(tp, text)` outside the tool/consumer ternary, so on a fresh `gbg init` at the tool's own root with no test/ directory it still adds \"test\" to envs, causing the later `Sync.render_project(cfg, \"test\")` call to inject a self-referencing GBGCodingTools deps/sources entry into the tool's own test/Project.toml -- directly contradicting the comment three lines above it and the documented D15 invariant that the tool's test env carries neither a tool entry nor a pin; no test exercises this branch, so the drift ships unnoticed, though it only fires on the comparatively rare fresh-bootstrap/reseed path rather than everyday usage."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/sweep-completeness#1",
+      "severity": "minor",
+      "reason": "docs/make.jl's comment is stale (omits the new `true` sentinel and the `!==` idiom) but the guard `result === nothing || deploydocs(...)` is logically equivalent to `result !== nothing && deploydocs(...)` regardless of what non-nothing value result holds, so the code is not broken and no reader acting on it gets a wrong result; the correct explanation is already present in three other places (ARCHITECTURE.md D9, DocLints.jl, templates/make.jl.seed), making this localized drift on a secondary, already-corrected-elsewhere surface."
+    },
+    {
+      "id": "2026-09-11-audit-changes-01/reader-consequence#1",
+      "severity": "blocker",
+      "reason": "The finding shows, with exact line citations across Audit.jl and Rounds.jl, that audit_bank's new contradiction-check prints a literal remedy command (gbg round rerun ... --lanes ...) without ever calling Rounds.bank to populate rec[\"dead_lanes\"], and classify_lane has no branch that marks a schema-valid verdict/findings-mismatch lane as dead or rejected on a real bank pass either — so a reader who runs the exact command the tool just printed is guaranteed a second refusal: not stale prose but an unreachable fix presented as the way out of the error."
+    }
+  ]
+}

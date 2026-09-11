@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-01",
+  "lane": "behaviour-change",
+  "verdict": "CONCERNS",
+  "checked": [
+    "ext/GBGCodingToolsDocumenterExt.jl: `return result` -> `return something(result, true)`; Documenter 13nbQ/AXNMp makedocs.jl:286 `return debug ? document : nothing`; docs/make.jl:78-80 `result === nothing || deploydocs(...)`; .github/workflows/docs.yml (push to master, GITHUB_TOKEN); CI.yml docs-build job; Doctor WIRE.MAKEDOCS; base DocLints docstring and CHANGELOG rc entry on the skip",
+    "src/CLI/Audit.jl: new lane_verdict_contradictions + early `return 2` in audit_bank; traced against Rounds.classify_lane (CONCERNS+0 findings with checked[] -> :empty, CLEAN+findings -> :live, both banked at base), Rounds.bank dead_lanes write (Rounds.jl:467-468), Rounds.rerun refusal (Rounds.jl:664-666), quarantine renames to .rejected.json (Rounds.jl:347,352,355)",
+    "src/CLI/Init.jl: `\"test\" in envs || push!(envs, \"test\")`; envs is a local vector (no caller aliasing); traced Sync.render_project/subenv_entries for dev pin, released pin, and the PKG_NAME branch; templates/test-Project.toml.seed comments; derive_config version (Init.jl:107)",
+    "schema/reproduction.schema.json: enum gains \"open\"; Rounds.jl:633 writes state \"open\" for REPRODUCED/EVIDENCED — widens acceptance only, no previously valid record changes",
+    "policy/RULES.toml check swaps (6 weakness->panel, 5 panel->weakness): no src consumer reads the check value except test/schemas.jl:186 membership; no computed count changes",
+    "src/Scan.jl apply_ledger: docstring only; code at Scan.jl:352-357 unchanged and already treats scan-scope `*` with `match` as a filter",
+    "instruments/bug-hunt/workflow/hunt.js free-lane prompt vs FREE_PREAMBLE line 86 grant and Preflight.jl:437 invariants_path under the payload dir",
+    "instruments/audit-changes/workflow/attack-design.js: header comment only; code line 16-18 reads object/defects/context/standpoint/source/directions, matches the new header",
+    "catalog/hats/doc-policy.toml, naming-policy.toml persona edits; both `needs` include \"source\"",
+    "docstring-only edits: Demote.jl, Main.jl running_dev, Passes.jl, Rounds.jl bank, DocLints.jl, GBGCodingTools.jl module map, HtmlWalker.jl, TestHarness.jl, Witnesses.jl; templates/SKILL.md.tmpl, templates/make.jl.seed prose; docs/prose_shape.csv ratchet rows; ARCHITECTURE.md prose",
+    "test/rounds.jl new testset (asserts the hint text but never runs the hinted rerun); test/schemas.jl new reproduction testset"
+  ],
+  "candidates_found": 8,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "audit_bank's new verdict refusal prints a rerun remedy that `gbg round rerun` refuses: the round cannot be banked",
+      "locations": [
+        "src/CLI/Audit.jl:43-52 (audit_bank, the new early return 2)",
+        "src/CLI/Rounds.jl:664-666 (rerun refuses any lane not in dead_lanes)",
+        "src/CLI/Rounds.jl:467-468 (dead_lanes written only inside Rounds.bank)"
+      ],
+      "before": "audit_bank went straight to the claims and `code = Rounds.bank(cfg, round; io)`; a lane file with verdict CLEAN and findings classified :live (banked), CONCERNS with zero findings and non-empty checked[] classified :empty (banked clean).",
+      "after": "`bad = lane_verdict_contradictions(joinpath(dir, \"findings\"))` ... `println(io, \"  re-run it: gbg round rerun $round --lanes \", ...)`; `return 2` — before Rounds.bank, so rec[\"dead_lanes\"] never gains the contradicting lanes, and rerun answers `rerun: refused — not DEAD or REJECTED at the last bank`.",
+      "why_it_matters": "Concrete previously-valid input: an audit round whose lane file 03-invariants.json reads {verdict: CLEAN, findings: [one concern], checked: [...]}. At base `gbg audit-changes bank` banked the concern and exited 0. At head it exits 2 and prints `gbg round rerun <round> --lanes invariants`; that verb then exits 2 because `invariants` is not in dead_lanes (the open record starts with `dead_lanes = []` and only Rounds.bank writes it). The operator's only ways out are to hand-edit a lane file, which the first-sight sha regime exists to forbid, or to abandon the round. The new test asserts the hint's text but never runs the hinted rerun, so it certifies a remedy that does not work.",
+      "justified": "unclear",
+      "description": "Refusing a lane whose verdict contradicts its own findings is defensible under RULE.TEST.BOTH_DIRECTIONS. But the refusal was placed ahead of the one step that records a lane as re-runnable. The result is wider than the defect: a mislabeled CLEAN now costs the whole round instead of one lane's re-run, and a CONCERNS-with-no-findings that used to bank harmlessly as :empty now does the same. The fix would be to route contradictions through classify_lane as :rejected, or to write them into dead_lanes before returning.",
+      "evidence": "Audit.jl: `println(io, \"  re-run it: gbg round rerun $round --lanes \", join([replace(f, r\"^\\d+-\" => \"\", r\"\\.json$\" => \"\") for (f, _, _) in bad], \",\"))` / `return 2`; Rounds.jl:664-666: `dead = Set(String.(rec[\"dead_lanes\"]))` ... `rerun: refused — not DEAD or REJECTED at the last bank`; Rounds.jl:467-468: `dead = [k for (k, s) in statuses if s in (:dead, :rejected)]` / `rec[\"dead_lanes\"] = sort!(dead)`; test/rounds.jl: `@test occursin(\"--lanes invariants,free-reader\", s) && !occursin(\"claim gate\", s)`"
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "previously_worked": "yes",
+      "title": "lane_verdict_contradictions also reads quarantined `*.rejected.json` files, which nothing removes",
+      "locations": [
+        "src/CLI/Audit.jl:27 (`filter(endswith(\".json\"), readdir(fdir))`)",
+        "src/CLI/Rounds.jl:347,352,355 (quarantine: `mv(p, replace(p, \".json\" => \".rejected.json\"))`)"
+      ],
+      "before": "a quarantined `NN-key.rejected.json` sat beside the lane files and nothing read it; classify_lane reads only `$(lane[\"nn\"])-$(lane[\"key\"]).json`.",
+      "after": "`for f in sort!(filter(endswith(\".json\"), readdir(fdir)))` also matches `NN-key.rejected.json`, and the hint names the lane as `key.rejected`.",
+      "why_it_matters": "Concrete input: an earlier bank quarantined 04-free-reader.json for `lane field x ≠ free-reader` or a schema error, and that file also read CONCERNS with []. After the lane is re-run and a correct 04-free-reader.json is written, the next `gbg audit-changes bank` still refuses on 04-free-reader.rejected.json. Rerun does not delete it, and the hint `--lanes free-reader.rejected` names no lane. At base that re-bank succeeded.",
+      "justified": "no",
+      "description": "The new scan reads more of the findings directory than the lane set the generic bank classifies. The fix is to restrict it to the expected lane files (`expected_lanes(rec)`) or to exclude `.rejected.json`.",
+      "evidence": "Audit.jl: `for f in sort!(filter(endswith(\".json\"), readdir(fdir)))`; Rounds.jl:352: `mv(p, replace(p, \".json\" => \".rejected.json\"); force = true)`; Rounds.jl:341: `p = joinpath(dir, \"findings\", \"$(lane[\"nn\"])-$(lane[\"key\"]).json\")`"
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "makedocs' return value changes from `nothing` to `true` for every normal build, and every push to master now deploys",
+      "locations": [
+        "ext/GBGCodingToolsDocumenterExt.jl:47-49",
+        "src/DocLints.jl:26-31 (docstring)",
+        "templates/make.jl.seed:5-6",
+        "docs/make.jl:78-80",
+        ".github/workflows/docs.yml (push: master, GITHUB_TOKEN)"
+      ],
+      "before": "`return result` with the base docstring `Returns whatever Documenter.makedocs returns` (Documenter: `return debug ? document : nothing`), so a normal build returned `nothing`, the same value as the frozen skip.",
+      "after": "`return something(result, true)` and the docstring `Returns what Documenter.makedocs returns, true when that is nothing`.",
+      "why_it_matters": "`GBGCodingTools.makedocs(cfg; ...)` without `debug` returned nothing at base and returns true at head. The tool's own docs/make.jl `result === nothing || deploydocs(...)`, run by docs.yml on every push to master with GITHUB_TOKEN, never deployed at base and deploys at head. Any consumer make.jl that followed the base seed's `guard any deploydocs call on the value it returns` flips the same way on `gbg bump`. The change fixes a real defect (the guard could not tell a build from a skip). But it is a public-contract change of the mandatory wrapper with external side effects (gh-pages pushes), and no test pins the new value.",
+      "justified": "yes",
+      "description": "Justified and correct in direction. It is recorded here because it silently changes what an existing, unchanged make.jl does on CI. The next CHANGELOG entry needs to state it, and a test would pin `!== nothing` on a built run and `=== nothing` on a frozen one.",
+      "evidence": "ext: `-    return result` / `+    return something(result, true)`; Documenter makedocs.jl:286 `return debug ? document : nothing`; docs/make.jl:79-80 `result === nothing || deploydocs(repo = \"github.com/GrigorySarnitsky/GBGCodingTools.jl\", ...)`; docs.yml `on: push: branches: - master` with `GITHUB_TOKEN`"
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "init now rewrites every seeded test/Project.toml through render_project: wider than the dev-pin defect",
+      "locations": [
+        "src/CLI/Init.jl:291-298",
+        "src/CLI/Sync.jl:324-355 (render_project)",
+        "templates/test-Project.toml.seed"
+      ],
+      "before": "a freshly seeded test/Project.toml was written once from the seed (or, for the tool itself, as `[deps]\\nTest = ...` under the comment `its test environment lists neither a tool entry nor a pin`), and the `for e in envs` pass skipped it because test/ was absent when envs was computed.",
+      "after": "`\"test\" in envs || push!(envs, \"test\")`, so `Sync.render_project(cfg, \"test\")` re-parses and rewrites it for every pin and every package, the tool included.",
+      "why_it_matters": "The claimed defect is the dev pin only (the seed's slots render `rev = \"vdev\"`). The change also takes two other paths. (a) `gbg init` at the tool's own root (pin \"dev\" per Init.jl:107) now writes `GBGCodingTools = {path = \"..\"}` into [deps]/[sources], contradicting the unchanged comment two lines above that it lists no tool entry. (b) A consumer at a released pin gets the same values back, but TOML.parsefile drops the seed's explanatory comment on the package-itself entry and reorders the file. No test covers init's seeded test/Project.toml.",
+      "justified": "no",
+      "description": "The fix is correct for the dev pin, but it was applied unconditionally. The narrow fix would gate the push on the dev pin and on the non-tool branch, or render the seed correctly for a dev pin.",
+      "evidence": "Init.jl: `text = cfg[\"package\"][\"name\"] == PKG_NAME ? \"[deps]\\nTest = ...\" : Sync.render(...)` / `+        \"test\" in envs || push!(envs, \"test\")`; Sync.jl:328-329 `get!(proj, \"deps\", ...)[PKG_NAME] = e[\"deps\"]` / `get!(proj, \"sources\", ...)[PKG_NAME] = e[\"sources\"]`; Sync.jl:326 `proj = isfile(path) ? TOML.parsefile(path) : ...`"
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "previously_worked": "yes",
+      "title": "hunt.js free-lane prompt now says the brief is the ONE .gbg/ file, contradicting the preamble's invariants grant",
+      "locations": [
+        "instruments/bug-hunt/workflow/hunt.js:94",
+        "instruments/bug-hunt/workflow/hunt.js:85-86 (FREE_PREAMBLE)",
+        "src/CLI/Preflight.jl:437 (invariants.md written under the payload dir)"
+      ],
+      "before": "`(the one file under .gbg/ you may open besides the invariants named above)`",
+      "after": "`(the one file under .gbg/ you may open)`",
+      "why_it_matters": "Concrete input: a bug-hunt round in a consumer whose config sets `invariants_section`. A.invariants_path is then under .gbg/scratch/<round>/, and FREE_PREAMBLE still says `read them first from ${A.invariants_path}` and `FILES UNDER .gbg/ YOU MAY OPEN: your brief and the invariants file`. At base the two free-lane instructions agreed. At head the last instruction narrows the grant to the brief, so a free hunter obeying the latest scope statement skips the recorded invariants. That changes what the two free lanes, both anchors, search against, in a frozen instrument script.",
+      "justified": "no",
+      "description": "An instrument-script edit that removes a grant qualifier and leaves a contradiction the base prompt did not have.",
+      "evidence": "hunt.js:86 `FILES UNDER .gbg/ YOU MAY OPEN: your brief and the invariants file named in this prompt, and nothing else under .gbg/ or ~/.gbg/`; diff `- (the one file under .gbg/ you may open besides the invariants named above)` / `+ (the one file under .gbg/ you may open)`"
+    },
+    {
+      "type": "operational",
+      "severity": "nit",
+      "confidence": "medium",
+      "previously_worked": "unknown",
+      "title": "doc-policy and naming-policy hat personas widen what the check-consistency panel reports",
+      "locations": [
+        "catalog/hats/doc-policy.toml:9-13",
+        "catalog/hats/naming-policy.toml:10"
+      ],
+      "before": "doc-policy: `... so no section numbers, decision-log entries, or repo paths.` / `Quote the rule and the violation.`; naming-policy hunted the rendered surface only.",
+      "after": "doc-policy adds `Enforce the aliasing placement: ...` and `open the docstring's \"\"\"…\"\"\" in the authored source ... the violation at its source file:line`; naming-policy adds `read the export lists and the signatures in the authored source ... so a keyword or an exported binding no page shows is still weighed`.",
+      "why_it_matters": "A docstring with standalone aliasing prose, or an exported keyword no page shows, was outside these hats' brief at base and is inside it now, so the same corpus can yield more findings from a check-consistency round. The rule itself (RULE.DOC.ALIASING_BULLET) is not new, and both hats already hold the `source` grant. The effect is a measurement change in a catalogue file, which under D16 needs its own release entry and a 'rates comparable' statement. Head is 5 commits past v1.0.0-rc.6 and no entry exists yet.",
+      "justified": "unclear",
+      "description": "Not a code-computation change. The instrument's output distribution changes, so it needs recording when the next tag's CHANGELOG entry is written.",
+      "evidence": "doc-policy.toml diff `+... Enforce the aliasing placement: an operation-specific statement of whether the destination may alias an input lives in the destination argument's bullet ...`; naming-policy.toml diff `+... read the export lists and the signatures in the authored source, whose grant you hold ...`; `git describe --tags c452982` -> v1.0.0-rc.6-5-gc452982"
+    }
+  ]
+}

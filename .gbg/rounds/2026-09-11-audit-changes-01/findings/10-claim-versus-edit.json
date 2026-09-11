@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-01",
+  "lane": "claim-versus-edit",
+  "verdict": "CONCERNS",
+  "checked": [
+    "c8ef916 'Fix pass 1' bullet 'schema/reproduction.schema.json admits disposition.state \"open\" ... Tested both directions' against schema/reproduction.schema.json's enum edit and test/schemas.jl's new both-directions test, and against Rounds.jl:633 (unchanged) which writes disposition.state=\"open\"",
+    "c8ef916 bullet 'audit-changes bank refuses a lane whose own verdict contradicts its findings ... before the executable claims run ... Tested both directions' against src/CLI/Audit.jl's new lane_verdict_contradictions + its call site, and test/rounds.jl's new testset, including that the test's '!occursin(\"claim gate\", s)' check is a real proxy (Audit.jl:56 prints exactly that string when claims do run)",
+    "c8ef916 bullet 'makedocs returns true for a build that happened ... the seed's deploydocs guard could never tell them apart (templates#3)' against ext/GBGCodingToolsDocumenterExt.jl's 'return something(result, true)', confirming the frozen-skip path still returns nothing via its own early 'return nothing' (untouched), and against the tool's own docs/make.jl which has a live 'result === nothing || deploydocs(...)' guard that was actually broken before this fix (Documenter.makedocs returns nothing on an ordinary build too, absent debug=true)",
+    "c8ef916 bullet 'init adds a seeded test/ to the sub-environment pass, so a dev pin gets a path source rather than rev = \"vdev\" (templates#2)' against src/CLI/Init.jl's unconditional '\"test\" in envs || push!(envs, \"test\")', against templates/test-Project.toml.seed's hard-coded 'rev = \"v{{tool.version}}\"', and against the adjacent self-consumer comment and Sync.jl's subenv_entries/render_project (which inject a tool dep+source unconditionally, with no PKG_NAME exclusion)",
+    "c8ef916 'six rules ... panel' / 'five ... weakness' bullet against every check=[...] line changed in policy/RULES.toml (counted 6 weakness→panel: HOME_ORDER, ONE_HOME, VARIANT_PAIR, MODULE_MAP, TEX.IMAGINARY, CIT.DOI; and 5 panel→weakness: GATE_VS_SURVEY, DEFINITION_OF_DONE, MUTATION, BOTH_DIRECTIONS, MISSING_IS_FAILING)",
+    "c8ef916 rulebook#2/catalogues#2 bullet against catalog/hats/doc-policy.toml and catalog/hats/naming-policy.toml diffs (both add a 'read the authored source, whose grant you hold' sentence)",
+    "c8ef916 rationale/catalogues/workflow-scripts#1 bullet against docs/ARCHITECTURE.md's D17/D18/§6.8 hunks (Scan.jl's tree position, prose_shape.jl casing, D18's five named audit anchors at both mentions, attack-design.js/rubric-audit.js run-by-hand note)",
+    "c8ef916 workflow-scripts#4/#5 bullet against instruments/bug-hunt/workflow/hunt.js's FREE_PREAMBLE line and instruments/audit-changes/workflow/attack-design.js's header comment, cross-checked against the script's actual required-fields list",
+    "c8ef916/22119aa/c452982 src#1/src#2/src#3/cold-reader#1/cold-reader#2 prose bullets against src/GBGCodingTools.jl, src/CLI/Demote.jl, src/CLI/Main.jl, src/Scan.jl (apply_ledger, confirmed against the unchanged apply_ledger code body), src/TestHarness.jl ('counting' confirmed to already exist), src/CLI/Passes.jl (module docstring + class_candidates/pass_scope/pass_open/grade docstrings), src/HtmlWalker.jl (confirmed all 7 exports now named) and src/Witnesses.jl — all docstring-only hunks, no accompanying code-body changes",
+    "2d5bcae 'SKILL.md.tmpl says what /gbg-doctor does' bullet against templates/SKILL.md.tmpl's diff (splits the instrument case from the /gbg-doctor case)",
+    "6684d8e and the .gbg/rounds/*, .claude/skills/*, .gbg/managed.json, IMPLEMENTATION.md changes visible via `git show --stat` for each commit but outside the declared diff.patch path scope (src, test, ext, docs, Project.toml, fixture, policy, instruments, templates, catalog, schema) — confirmed present but out of this lane's file scope, not analysed further"
+  ],
+  "candidates_found": 6,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "Init.jl's templates#2 fix widens test/ sub-environment rendering to the self-consumer branch it explicitly excludes",
+      "locations": [
+        "src/CLI/Init.jl:284-298 (the `if !isfile(tp)` block)",
+        "src/CLI/Sync.jl:305-334 (subenv_entries / render_project, unchanged, no PKG_NAME guard)"
+      ],
+      "before": "text = cfg[\"package\"][\"name\"] == PKG_NAME ? \"[deps]\\nTest = \\\"8dfed614-e22c-5e08-85e1-65c5234f0b40\\\"\\n\" :\n       Sync.render(Sync.template(\"test-Project.toml.seed\"), s)\nwrite(tp, text)\nend",
+      "after": "text = cfg[\"package\"][\"name\"] == PKG_NAME ? \"[deps]\\nTest = \\\"8dfed614-e22c-5e08-85e1-65c5234f0b40\\\"\\n\" :\n       Sync.render(Sync.template(\"test-Project.toml.seed\"), s)\nwrite(tp, text)\n# the seed's slots always name a released tag; the pass over `envs` below rewrites the tool entry\n# through `Sync.subenv_entries`, which a `dev` pin needs, so a seeded test/ joins it\n\"test\" in envs || push!(envs, \"test\")\nend",
+      "why_it_matters": "The commit message scopes this fix to 'a dev pin gets a path source rather than rev = \"vdev\"' — true only on the cfg[\"package\"][\"name\"] != PKG_NAME branch, where test-Project.toml.seed hard-codes rev = \"v{{tool.version}}\" and needs the later render_project pass to correct it for a dev pin. The push!(envs, \"test\") line sits outside that ternary and fires on BOTH branches, including the tool auditing itself (cfg[\"package\"][\"name\"] == PKG_NAME), where the seed text is the two-line \"[deps]\\nTest = ...\\n\" stub and a comment eight lines above states the design intent explicitly: 'the package under test IS the tool, so its test environment lists neither a tool entry nor a pin.' Sync.render_project/subenv_entries (unchanged) carry no PKG_NAME-self exclusion — they unconditionally inject a [deps]/[sources] entry for the tool into whatever env they are pointed at. So on a from-scratch bootstrap of the tool's own repo (gbg init with no existing test/Project.toml, the D15 fifth-consumer scenario this same commit's templates#2 note is otherwise about), the fix now also writes a self-referential GBGCodingTools dep+path-source into test/Project.toml, directly contradicting the adjacent comment's stated design and widening the fix beyond what the commit message describes. init has zero test coverage in test/*.jl (no test file calls init(...) at all), so neither the intended dev-pin fix nor this side effect on the self branch is exercised by the suite.",
+      "justified": "no",
+      "description": "The claim ('a dev pin gets a path source') describes only the general-consumer half of the branch this edit touches; the edit itself is unconditional and also fires on the self-consumer half, which the surrounding code and comments treat as a case that must NOT receive a tool dep/pin entry. This is exactly a claim narrower in scope than the edit made.",
+      "evidence": "\"test\" in envs || push!(envs, \"test\") -- placed after the `if cfg[\"package\"][\"name\"] == PKG_NAME ? ... : ...` write, not inside either arm; and the comment three lines above it in the same function: \"the tool as its own consumer: the package under test IS the tool, so its test environment lists neither a tool entry nor a pin\""
+    }
+  ]
+}

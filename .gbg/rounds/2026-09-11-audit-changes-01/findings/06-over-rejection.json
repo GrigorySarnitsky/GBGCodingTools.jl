@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-01",
+  "lane": "over-rejection",
+  "verdict": "CONCERNS",
+  "checked": [
+    "src/CLI/Audit.jl lane_verdict_contradictions + the new early `return 2` in audit_bank: the only argument/input validation the diff adds; traced its remedy line against Rounds.rerun (src/CLI/Rounds.jl:662-666) and the dead_lanes writers (Preflight.jl:670 sets String[] at open; only Rounds.bank:468 updates it)",
+    "Rounds.classify_lane at head (unchanged by the diff): at base a CONCERNS lane with zero findings and non-empty checked[] classified :empty and banked; a CLEAN lane with findings classified :live and banked; verdict was read by no bank code (rg '\"verdict\"' src)",
+    "base instruments/audit-changes/workflow/audit.js:85 ('A lane returning CONCERNS with an empty findings array is a contradiction and is read as dead') and base PROTOCOL.md:68 ('A DEAD or REJECTED lane is exit 2') — the stated contract the new refusal enforces for CONCERNS+0",
+    "instruments/audit-changes/schema.json lane_file: findings is type array, verdict enum CLEAN|CONCERNS — the contradiction check runs BEFORE this schema validation",
+    "test/rounds.jl new testset: asserts the printed '--lanes invariants,free-reader' string and exit 2, never runs `rerun` on that round (whose dead_lanes = String[])",
+    "schema/reproduction.schema.json: enum widened with \"open\" — accepts more, rejects nothing previously valid; test/schemas.jl checks both directions",
+    "src/CLI/Init.jl `\"test\" in envs || push!(envs, \"test\")`: not a refusal; for the tool's own root it renders a tool entry into a test/Project.toml the comment above says lists none — a behaviour change for another lane, not a rejection",
+    "ext/GBGCodingToolsDocumenterExt.jl `something(result, true)`: return value change, rejects no input (behaviour-change lane)",
+    "policy/RULES.toml check flips weakness<->panel: the only consumer is test/schemas.jl:186 `c in (\"panel\", \"weakness\")`; no doctor or gate refuses on the value",
+    "attack-design.js and hunt.js: header comment and prompt text only; no args validation added in code",
+    "src/Scan.jl apply_ledger: docstring only, no code change",
+    "catalog/hats/*.toml, templates/SKILL.md.tmpl, templates/make.jl.seed, docs/*, src docstrings: prose, no validation"
+  ],
+  "candidates_found": 4,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "audit_bank's new verdict refusal prints a rerun remedy that `gbg round rerun` refuses: a first bank has no recovery path",
+      "locations": [
+        "src/CLI/Audit.jl:43-50 (audit_bank, the new early return)",
+        "src/CLI/Rounds.jl:664-666 (rerun, unchanged)",
+        "src/CLI/Preflight.jl:670 (open sets dead_lanes = String[])"
+      ],
+      "before": "audit_bank went straight to the claims and `Rounds.bank`; a lane file with verdict CONCERNS and zero findings (non-empty checked[]) classified `:empty` and banked, and a lane recorded DEAD by `Rounds.bank` landed in `rec[\"dead_lanes\"]`, which is what `rerun` accepts.",
+      "after": "\"bad = lane_verdict_contradictions(joinpath(dir, \\\"findings\\\"))\\n    if !isempty(bad) ... println(io, \\\"  re-run it: gbg round rerun $round --lanes \\\", ...)\\n        return 2\" — returns before `Rounds.bank`, so `dead_lanes` is never written; `rerun` then does `dead = Set(String.(rec[\"dead_lanes\"])); bad = [l for l in lanes if !(l in dead)]; isempty(bad) || (println(io, \"rerun: refused — not DEAD or REJECTED at the last bank: ...\"); return 2)`.",
+      "why_it_matters": "On the first bank of any audit round, where dead_lanes is still the String[] that open wrote, a contradicting lane makes bank exit 2 and prints `gbg round rerun <round> --lanes X`. rerun then exits 2 because X is not in dead_lanes. The round was bankable before this change. Now the only ways forward are to relaunch the whole audit workflow (every lane, anchors included, at full cost), to hand-edit a lane's self-report (which the frozen-instrument discipline forbids), or to abandon. The new test asserts only that the remedy string is printed, `occursin(\"--lanes invariants,free-reader\", s)`, and never runs it against its own round's `\"dead_lanes\" => String[]`. The oracle therefore certifies a remedy that cannot run.",
+      "justified": "no",
+      "previously_worked": "yes",
+      "description": "Refusing CONCERNS with zero findings enforces a contract the base prompt already stated ('read as dead'). But the refusal bypasses the one mechanism that makes a dead lane re-runnable: `Rounds.bank` recording it in `dead_lanes`. It should record the contradicting lanes in dead_lanes (or route them through classify_lane as :dead) before returning. As written, the refusal is wider than the defect: it strands the round.",
+      "evidence": "Audit.jl:50 `return 2` precedes Audit.jl:74 `code = Rounds.bank(cfg, round; io)`; Rounds.jl:468 `rec[\"dead_lanes\"] = sort!(dead)` is the only writer after open; Preflight.jl:670 `\"dead_lanes\" => String[]`; Rounds.jl:666 `rerun: refused — not DEAD or REJECTED at the last bank`; test/rounds.jl new testset writes `\"dead_lanes\" => String[]` and checks only the printed text."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "A CLEAN lane that reports findings is now refused outright; before, its findings were banked and had to be disposed",
+      "locations": [
+        "src/CLI/Audit.jl:14 `(v == \"CLEAN\") == (n == 0) || push!(bad, ...)`"
+      ],
+      "before": "No bank code read the lane's `verdict`. A lane file with verdict CLEAN and one or more findings classified `:live` (Rounds.classify_lane), its concerns got ids `<round>/<lane>#n`, and `verdict_all_clean` was derived from the banked findings (`isempty(findings) && all(c -> c[\"exit\"] == 0, claims)`), never from the self-reported verdict.",
+      "after": "The same file is refused before anything is banked: \"$f reports $v with $n finding(s) — its verdict contradicts its own findings\", exit 2, with advice to re-run the lane, which replaces the file and its reported concerns.",
+      "why_it_matters": "When a lane mislabels an inert field but reports real concerns with quoted before/after, the concerns now reach the bank only if a re-run happens to find them again, and an audit re-run is a fresh search with no memory of them. The base contract named only the CONCERNS-with-none direction as a contradiction ('A lane returning CONCERNS with an empty findings array is a contradiction and is read as dead'). The CLEAN-with-findings direction lost nothing at base, because the findings were banked and gated. Refusing it favours the self-report over the evidence, the reverse of what the bank does everywhere else.",
+      "justified": "unclear",
+      "previously_worked": "yes",
+      "description": "Under RULE.TEST.BOTH_DIRECTIONS it is reasonable to flag the CLEAN+n case, but a refusal that throws away banked evidence is wider than a warning or a normalisation (treat the verdict as CONCERNS when findings are non-empty). Combined with the rerun defect above, this case also has no working re-run path on a first bank.",
+      "evidence": "base audit.js:85 names only 'CONCERNS with an empty findings array' as the contradiction; Audit.jl:77 `audit[\"verdict_all_clean\"] = isempty(findings) && all(...)` ignores the lane verdict; new test writes `lane(\"CLEAN\", 1)` and expects refusal."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "The contradiction check runs before schema validation: a schema-invalid lane file now crashes or is misreported instead of being quarantined as DEAD",
+      "locations": [
+        "src/CLI/Audit.jl:10-14 (lane_verdict_contradictions)",
+        "src/CLI/Audit.jl:100 (VERBS wrapper rethrows non-RoundError)"
+      ],
+      "before": "Every lane file went first to `Rounds.classify_lane`, which validated it against `schema[\"properties\"][\"lane_file\"]` (findings: array) and quarantined an invalid one as `<name>.rejected.json` with status :dead, which put it in dead_lanes and made it re-runnable (exit 2).",
+      "after": "\"n = length(get(d, \\\"findings\\\", Any[]))\" runs over every `*.json` in findings/ before any schema check. A lane written with `\"findings\": null` gives `length(nothing)`, a MethodError that the VERBS wrapper rethrows, so the verb crashes (exit 3). A lane with `\"findings\": \"none\"` counts 4 and is reported as a verdict contradiction with the unrunnable rerun hint. The `filter(endswith(\".json\"), readdir(fdir))` also takes in `*.rejected.json` quarantine files and non-roster files, whose hint lane names (e.g. `invariants.rejected`) rerun never accepts.",
+      "why_it_matters": "An agent's malformed lane file used to go down the documented DEAD, rerun, re-bank path. Now it produces a crash, or a refusal whose remedy is wrong. The file's own comment says 'a file that does not parse, or carries no verdict, is the generic bank's to judge', but a parseable file with the wrong shape is not handed on.",
+      "justified": "no",
+      "previously_worked": "yes",
+      "description": "The contradiction predicate should apply only to schema-valid roster lane files (after classify_lane), or skip any file whose `findings` is not an array and any file not named `NN-<roster key>.json`.",
+      "evidence": "Audit.jl:10 `for f in sort!(filter(endswith(\".json\"), readdir(fdir)))`; Audit.jl:13 `n = length(get(d, \"findings\", Any[]))`; Rounds.jl:347/352 quarantine with `replace(p, \".json\" => \".rejected.json\")` beside itself in findings/; schema.json lane_file findings `items` (array)."
+    }
+  ]
+}

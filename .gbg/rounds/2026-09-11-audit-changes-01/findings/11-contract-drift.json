@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-01",
+  "lane": "contract-drift",
+  "verdict": "CONCERNS",
+  "checked": [
+    "src/CLI/Audit.jl: new lane_verdict_contradictions + the refusal in audit_bank, against Rounds.rerun (src/CLI/Rounds.jl:664-666) and where dead_lanes is written (Rounds.jl:468 only)",
+    "src/CLI/Audit.jl audit_bank docstring (unchanged) against its new exit-2 path",
+    "schema/reproduction.schema.json disposition.state enum + test/schemas.jl new testset, against ARCHITECTURE §6.3 row 'disposition record' (base and head) and Rounds.jl:633 (writes state=open at base and head)",
+    "policy/RULES.toml check swaps (6 weakness->panel, 5 panel->weakness) against RULE.TEST.RULE_WITH_CHECK text (policy/testing-protocol.md:56-67), ARCHITECTURE §6.3 'rule check' row, catalog/scans.toml (no scan names the six rules), catalog/hats needs, test/schemas.jl:166-190 (accepts either value)",
+    "ext/GBGCodingToolsDocumenterExt.jl return something(result, true) + DocLints.jl makedocs docstring + templates/make.jl.seed, against base docstring ('a make.jl deploys only when a result comes back') and docs/make.jl:79 'result === nothing || deploydocs'",
+    "DocLints.jl / ARCHITECTURE D9 narrowing of the SKIPPED exception to the pre-Documenter gate, against the ext code (second check() has no skip) and the stated rationale",
+    "src/CLI/Init.jl push!(envs, \"test\") against the comment above it (tool-as-own-consumer branch) and Sync.subenv_entries/render_project",
+    "src/Scan.jl apply_ledger docstring: code unchanged (`!haskey(e, \"match\")` at base); new text matches code and ARCHITECTURE §7.2 ('with `match` the entry REFINES the rule') — no finding",
+    "instruments/bug-hunt/workflow/hunt.js free-lane prompt: FREE_PREAMBLE and PREAMBLES[\"bug-hunt\"] name no invariants file, so dropping 'besides the invariants named above' corrects the text — no finding",
+    "instruments/audit-changes/workflow/attack-design.js header against the body's required keys (object, defects, context, standpoint, source; directions optional) — matches",
+    "src/CLI/Passes.jl module docstring vocabularies against schema/verdict-act.schema.json, verdict-state.schema.json and §6.3 (PRESENT default) — match",
+    "src/CLI/Demote.jl docstring against demote() body — matches",
+    "src/CLI/Rounds.jl bank docstring exit order: hunt refusal Rounds.jl:607 returns before mkpath at :610; finding-validation refusal :567 after ground_truth/reproductions — matches",
+    "src/CLI/Main.jl running_dev docstring against bin/gbg and Install.jl — matches",
+    "templates/SKILL.md.tmpl against Sync.jl:215 (gbg-doctor -> `gbg doctor`) and Doctor.jl:757 (one line per check) — matches",
+    "ARCHITECTURE D18/§10 'five audit anchors' against catalog/lanes/audit-changes.toml (executing, under-rejection, behaviour-change, over-rejection, contract-drift anchor=true; catalog unchanged in window) — matches",
+    "ARCHITECTURE D17/§6.8 'no verb launches attack-design.js / rubric-audit.js': grep over src finds no reference — matches (a caveat added, not removed)",
+    "src/GBGCodingTools.jl module map: Preflight, Rounds, Passes, Seeds (Seed.jl), Recall, RoundFiles, Git, Sync, Init, Ledger, Doctor all exist as modules; Schema.jl is under src/CLI — matches",
+    "HtmlWalker, TestHarness (counting exported), Witnesses (WitnessResult) docstring cross-refs — bindings exist",
+    "catalog/hats/doc-policy.toml and naming-policy.toml persona edits: aliasing rule exists at base as RULE.DOC.ALIASING_BULLET; both hats hold the `source` grant — no finding",
+    "docs/prose_shape.csv: re-measured rows for the edited docstrings and sections only — consistent with the prose edits"
+  ],
+  "candidates_found": 11,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "The new audit-bank refusal prints a `gbg round rerun` command that rerun itself refuses",
+      "locations": [
+        "src/CLI/Audit.jl:43-51 (audit_bank, new refusal)",
+        "src/CLI/Rounds.jl:664-666 (rerun refuses lanes not in rec[\"dead_lanes\"])",
+        "src/CLI/Rounds.jl:468 (the only writer of dead_lanes, inside Rounds.bank)",
+        "test/rounds.jl:757-775"
+      ],
+      "before": "audit_bank went straight to the claims and then `Rounds.bank`; a lane file with `verdict = \"CONCERNS\"`, zero findings and a non-empty `checked[]` was classified `:empty`, and a `CLEAN` lane carrying findings was `:live` — both banked.",
+      "after": "`bad = lane_verdict_contradictions(joinpath(dir, \"findings\"))` ... `println(io, \"  re-run it: gbg round rerun $round --lanes \", ...)`; `return 2` — this runs before `Rounds.bank`, so `rec[\"dead_lanes\"]` is never updated, and `rerun` answers `rerun: refused — not DEAD or REJECTED at the last bank`.",
+      "why_it_matters": "A lane file that the old bank accepted (e.g. `CONCERNS` with `findings: []` and a non-empty `checked[]`) now stops the bank at exit 2, and the one next step it prints cannot be taken: `dead_lanes` is written only at Rounds.jl:468, which this path never reaches. The session is left with no printed way forward. The only escape is to delete the lane file by hand so the generic bank sees it as absent and DEAD, and nothing tells the session that. The new test checks only that the hint text contains `--lanes invariants,free-reader` and never runs the command.",
+      "justified": "unclear",
+      "previously_worked": "yes",
+      "description": "The refusal is a new contract: it rejects lane files the generic bank accepted, and its recovery instruction is false. Either the contradicting lanes must go into `dead_lanes` (saved) before returning, or the refusal belongs inside `classify_lane`, which already quarantines and records DEAD lanes so that `rerun` accepts them.",
+      "evidence": "Audit.jl: `println(io, \"  re-run it: gbg round rerun $round --lanes \", join([replace(f, r\"^\\d+-\" => \"\", r\"\\.json$\" => \"\") for (f, _, _) in bad], \",\"))` / `return 2`; Rounds.jl:664-666: `dead = Set(String.(rec[\"dead_lanes\"]))` ... `isempty(bad) || (println(io, \"rerun: refused — not DEAD or REJECTED at the last bank: \" ...); return 2)`; grep: `dead_lanes` is assigned only at Rounds.jl:468 (inside bank) and at round creation (Preflight.jl:670, Rounds.jl:707)."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "medium",
+      "title": "The disposition-state closed vocabulary was widened in the schema to fit the code; §6.3 still says three values",
+      "locations": [
+        "schema/reproduction.schema.json:62-70",
+        "docs/ARCHITECTURE.md:1574 (§6.3 disposition record row, unchanged)",
+        "src/CLI/Rounds.jl:633",
+        "test/schemas.jl:125-135"
+      ],
+      "before": "\"state\": {\"type\": \"string\", \"enum\": [\"fixed\", \"refused\", \"escalated\"]} — agreeing with §6.3: `disposition record | fixed | refused(reason ≥ 24 chars) | escalated(overturn_when)`",
+      "after": "\"description\": \"open — the state bank writes for every REPRODUCED or EVIDENCED finding, before any disposition is recorded\", \"enum\": [\"open\", \"fixed\", \"refused\", \"escalated\"]",
+      "why_it_matters": "§6.3 is the closed-vocabulary table; CLAUDE.md says changing it is MAJOR, and §6.3 itself tells every consumer to audit its closed switches before adopting a widened enum. This change adds a fourth value only in the schema. The architecture row, which still lists three, was not edited, and nothing marks the change MAJOR. The same row says the record is 'frozen at bank (reproductions_sha)', and bank now freezes a record whose state is `open`. The base defect was real: `hunt_bank!` wrote `open` and then threw at validation on the first confirmed finding. But the fix bent the contract to fit the code rather than making the code honour the contract, and the new test certifies the widened enum.",
+      "justified": "unclear",
+      "previously_worked": "no",
+      "description": "The contract was rewritten to match the code: the code already wrote `open` at base (Rounds.jl:632 at ed16027). Either §6.3 has to record `open` as the pre-disposition default (a MAJOR vocabulary change, with the frozen-at-bank wording reconciled), or bank should not write a disposition until one is recorded.",
+      "evidence": "base Rounds.jl:632 `verdict in (\"REPRODUCED\", \"EVIDENCED\") && (rep[\"disposition\"] = Dict(\"state\" => \"open\"); push!(confirmed, f))`; ARCHITECTURE.md:1574 at head `| disposition record (`reproductions/<id>.json`) | `fixed \\| refused(reason ≥ 24 chars) \\| escalated(overturn_when)` | terminator ...; frozen at bank (`reproductions_sha`) |`"
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "Six program-decidable rules moved from `weakness` to `panel`, which by the rule's own text hides owed checks",
+      "locations": [
+        "policy/RULES.toml:24 (RULE.DOC.HOME_ORDER)",
+        "policy/RULES.toml:38 (RULE.DOC.ONE_HOME)",
+        "policy/RULES.toml:45 (RULE.DOC.VARIANT_PAIR)",
+        "policy/RULES.toml:241 (RULE.DOC.MODULE_MAP)",
+        "policy/RULES.toml:437 (RULE.CIT.DOI)",
+        "policy/RULES.toml:381 (RULE.TEX.IMAGINARY)"
+      ],
+      "before": "check = [\"weakness\"]",
+      "after": "check = [\"panel\"]",
+      "why_it_matters": "RULE.TEST.RULE_WITH_CHECK says 'A rule no program could ever decide is `panel`; `weakness` is reserved for the check that could exist and does not.' Several of the reclassified rules are plainly decidable by a program. RULE.CIT.DOI ('Every reference carries a clickable DOI ... on its title') is a text scan; SCAN.DOI_CROSSCHECK already parses those bullets. RULE.DOC.MODULE_MAP's 'carries no formula' and RULE.DOC.VARIANT_PAIR's 'wrapper carries no display formula' are text or reflection checks. RULE.DOC.ONE_HOME's 'never one docstring per method' is a reflection count. Relabelling them `panel` converts owed checks into answers and shrinks the visible debt. test/schemas.jl accepts either value, so nothing notices. The five moves the other way (TEST.* panel→weakness) are the honest direction and are not flagged.",
+      "justified": "unclear",
+      "previously_worked": "no",
+      "description": "The change lets a reading panel stand in for a buildable scan, contrary to the rule's own final sentence. RULE.TEX.IMAGINARY is the defensible case, since `i` as an index versus the imaginary unit is a judgment call; the other five are not.",
+      "evidence": "policy/testing-protocol.md:65-66 'A rule no program could ever decide is `panel`; `weakness` is reserved for the check that could exist and does not.'; RULES.toml:436 sentinel 'Every reference carries a clickable DOI on its title, `[*Title*](https://doi.org/…)` ...'; catalog/scans.toml names none of the six rules."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "audit_bank's docstring does not mention its new refusal",
+      "locations": [
+        "src/CLI/Audit.jl:19-37 (docstring, unchanged)",
+        "src/CLI/Audit.jl:43-51"
+      ],
+      "before": "\"`gbg audit-changes bank <round>`: the audit's bank runs the executable claims itself, then the generic bank. ... Returns the bank's exit code.\"",
+      "after": "Same docstring, while the body now returns 2 before any claim runs when a lane's verdict contradicts its findings: `bad = lane_verdict_contradictions(...)` ... `return 2`.",
+      "why_it_matters": "The public docstring still promises that the bank runs the claims and returns the bank's exit code. A new exit 2 that is neither a claim failure nor the generic bank's is undocumented, and `lane_verdict_contradictions` has only a comment, no docstring.",
+      "justified": "no",
+      "previously_worked": "yes",
+      "description": "A behaviour change landed without the contract text that describes it.",
+      "evidence": "Audit.jl docstring: 'the audit's bank runs the executable claims itself, then the generic bank' ... 'Returns the bank's exit code.'"
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "The makedocs SKIPPED exception was narrowed in the prose to fit the code, contradicting the stated rationale",
+      "locations": [
+        "src/DocLints.jl:20-24",
+        "docs/ARCHITECTURE.md:491-495 (D9)",
+        "ext/GBGCodingToolsDocumenterExt.jl:46"
+      ],
+      "before": "\"except a gate refusing only because a docs round is open, which prints a skip line and returns `nothing`, exit 0\" (DocLints); ARCHITECTURE: \"a gate that refuses only because a round of a docs instrument is open prints `makedocs: SKIPPED` ... so a red docs build keeps meaning something is broken rather than meaning a round is open\"",
+      "after": "\"except the gate before Documenter refusing only because a docs round is open ... The gate after Documenter has no such skip: a round opened while the build ran fails it.\"",
+      "why_it_matters": "The code is unchanged: the post-build `check(\"gate check-docs check-consistency\", GBGCodingTools.gate(...))` never had the skip. The promise was cut back to match it rather than the code being made to honour it. The rationale kept in the same sentence ('a red docs build keeps meaning something is broken rather than meaning a round is open') is now false for the post-build gate: a local build during which a round opens goes red for exactly the reason the design says must not turn it red.",
+      "justified": "unclear",
+      "previously_worked": "no",
+      "description": "The documentation now tells the truth, which is an improvement, but it was bent to fit the code. The exception the base contract stated in general terms is now documented as absent in one of its two places.",
+      "evidence": "ext:46 `check(\"gate check-docs check-consistency\", GBGCodingTools.gate(cfg, \"check-docs\", \"check-consistency\"))` (no frozen_rounds test, unlike lines 31-37)"
+    },
+    {
+      "type": "operational",
+      "severity": "nit",
+      "confidence": "high",
+      "title": "makedocs now returns `true` instead of Documenter's `nothing` on a completed build",
+      "locations": [
+        "ext/GBGCodingToolsDocumenterExt.jl:48-50",
+        "src/DocLints.jl:26-30",
+        "templates/make.jl.seed:4-6"
+      ],
+      "before": "`return result` — docstring: \"Returns whatever `Documenter.makedocs` returns, or `nothing` when an open round ... froze the build ... a `make.jl` deploys only when a result comes back.\"",
+      "after": "`return something(result, true)` — docstring: \"Returns what `Documenter.makedocs` returns, `true` when that is `nothing` — as it is unless `debug = true` is passed — or `nothing` when an open round ... froze the build\"",
+      "why_it_matters": "The public binding's return value changes for every completed build. This direction is correct: the code was fixed to honour the base promise. At base a completed build returned `nothing`, the same as the skip, so the tool's own `docs/make.jl:79` (`result === nothing || deploydocs(...)`) never deployed. It is recorded here because a consumer make.jl that compared the result against `nothing` in the opposite sense would change behaviour, and the change belongs in the CHANGELOG as a contract change.",
+      "justified": "yes",
+      "previously_worked": "yes",
+      "description": "A justified fix that still changes a public return contract; noted so it is not released silently.",
+      "evidence": "docs/make.jl:79-80 `result === nothing ||\\n    deploydocs(repo = ...)`"
+    },
+    {
+      "type": "operational",
+      "severity": "nit",
+      "confidence": "medium",
+      "title": "Init's new `push!(envs, \"test\")` also fires on the tool-as-own-consumer branch, contradicting the comment just above it",
+      "locations": [
+        "src/CLI/Init.jl:290-298",
+        "src/CLI/Init.jl:307-310",
+        "src/CLI/Sync.jl:305-313"
+      ],
+      "before": "Only an existing `test/` directory put \"test\" into `envs` (Init.jl:259); a freshly seeded tool test/Project.toml stayed `[deps]\\nTest = ...`.",
+      "after": "`\"test\" in envs || push!(envs, \"test\")` runs after `write(tp, text)` in both branches of `cfg[\"package\"][\"name\"] == PKG_NAME ? ... : ...`, so `render_project(cfg, \"test\")` adds `GBGCodingTools` deps/sources (path) to the tool's own test/Project.toml.",
+      "why_it_matters": "The comment three lines above says: 'the tool as its own consumer: ... its test environment lists neither a tool entry nor a pin — Pkg.test provides the package itself'. For `gbg init` at a tool root with no `test/` directory, the new line now writes exactly the entry that comment rules out. The fix was meant for a `dev`-pinned consumer's seed and is wider than that defect.",
+      "justified": "no",
+      "previously_worked": "yes",
+      "description": "Scope the push to the non-tool branch, or move it inside the consumer arm of the ternary.",
+      "evidence": "Init.jl: `# the tool as its own consumer: the package under test IS the tool, so its test environment lists\\n# neither a tool entry nor a pin` ... `write(tp, text)` / `\"test\" in envs || push!(envs, \"test\")`"
+    }
+  ]
+}

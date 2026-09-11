@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-01",
+  "lane": "invariants",
+  "verdict": "CLEAN",
+  "checked": [
+    "src/Scan.jl apply_ledger: diff touches only the docstring (target=`*` disable condition); confirmed via `git show <base>:src/Scan.jl` that the function body's `!haskey(e, \"match\")` guard was already present at base — no change to how the ledger silences a scan tier, so the §5.5 'scan tiers, one ledger exception' invariant is untouched",
+    "docs/ARCHITECTURE.md D18 cost-policy paragraph: diff expands 'the executing audit lane' to five named anchors (executing, under-rejection, behaviour-change, over-rejection, contract-drift); confirmed catalog/lanes/audit-changes.toml (the actual engine-lane anchors D18 protects) has NO diff between base and head — the catalogue's anchor=true set is unchanged, this is a doc-only correction of a previously understated description",
+    "ext/GBGCodingToolsDocumenterExt.jl makedocs: the two `gate(...)` calls (pre- and post-Documenter) and the frozen-round skip logic are byte-identical to base; the only functional change is the final `return result` -> `return something(result, true)`, which does not touch the skip/refusal mechanism or the exit contract, only the Julia return value consumers use to guard `deploydocs`",
+    "src/CLI/Init.jl: the added `\"test\" in envs || push!(envs, \"test\")` runs only inside the `!isfile(tp)` (fresh test/Project.toml) branch; for a release-pinned consumer `Sync.render_project` reproduces byte-identical text to the seed template (same deps/sources/compat), so `changed` is false and no file is rewritten — the fix is scoped to the dev-pin case and does not alter output for a previously-working release-pinned init",
+    "src/CLI/Audit.jl lane_verdict_contradictions + the new pre-claims check in audit_bank: verified the two-value verdict vocabulary (CLEAN/CONCERNS) it checks is the lane self-report schema already used throughout the audit-changes instrument (not the §5.5 'verdict vocabulary and schema' of findings/closure); a lane file that was CLEAN-with-findings or CONCERNS-with-none was never a valid prior state, so no previously-valid round is newly rejected — the audit's executable gate (`package.julia_test`) itself is untouched, only preceded by this check",
+    "schema/reproduction.schema.json state enum add \"open\": traced the write site (src/CLI/Rounds.jl:633-635, unchanged by this diff) which already set `disposition = Dict(\"state\" => \"open\")` and then called `validate(...)` and `throw`s on any schema mismatch at base — so before this fix every bug-hunt bank of a REPRODUCED/EVIDENCED finding threw a RoundError; the schema widening legalizes pre-existing code behaviour rather than expanding a deliberately closed vocabulary by design choice",
+    "policy/RULES.toml `check` field swaps (several RULE.DOC.*/RULE.TEX.IMAGINARY/RULE.CIT.DOI: weakness->panel; several RULE.TEST.*: panel->weakness): this field is rule-catalogue metadata (which instrument catches the rule), not one of the §5.5 enumerated closed items — out of this lane's scope",
+    "src/CLI/Passes.jl, src/CLI/Demote.jl, src/CLI/Rounds.jl (bank docstring), src/GBGCodingTools.jl, src/HtmlWalker.jl, src/Witnesses.jl, src/TestHarness.jl, src/CLI/Main.jl: all diffs in these files are confined to docstring/comment text (cross-reference links, added clarifying clauses); no algorithmic lines changed — none touch the demotion predicate, closure predicates, round layout/stamp fields, or the exit contract",
+    "src/CLI/Preflight.jl covered_paths(cfg): confirmed zero diff between base and head for this file — the §5.5 audit-changes covered-path constants are untouched"
+  ],
+  "candidates_found": 7,
+  "findings": []
+}

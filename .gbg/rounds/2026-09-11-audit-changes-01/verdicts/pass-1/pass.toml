@@ -1,0 +1,26 @@
+tool_version = "dev+30c9be3-dirty"
+head = "30c9be3e01a08d3ed85a91195dddc35329b52d99"
+fix_range = "c452982224f8d9aea57fbd753e34af8b4fde2eeb..30c9be3e01a08d3ed85a91195dddc35329b52d99"
+tool_tree_sha = "3ca66eb11b52c6560b9d39a198b8ce8470764061"
+state_ids = ["2026-09-11-audit-changes-01/free-reader#1", "2026-09-11-audit-changes-01/free-reader#2", "2026-09-11-audit-changes-01/executing#1", "2026-09-11-audit-changes-01/executing#2", "2026-09-11-audit-changes-01/executing#3", "2026-09-11-audit-changes-01/executing#4", "2026-09-11-audit-changes-01/executing#5", "2026-09-11-audit-changes-01/executing#6", "2026-09-11-audit-changes-01/under-rejection#1", "2026-09-11-audit-changes-01/under-rejection#2", "2026-09-11-audit-changes-01/under-rejection#3", "2026-09-11-audit-changes-01/behaviour-change#1", "2026-09-11-audit-changes-01/behaviour-change#2", "2026-09-11-audit-changes-01/behaviour-change#3", "2026-09-11-audit-changes-01/behaviour-change#4", "2026-09-11-audit-changes-01/behaviour-change#5", "2026-09-11-audit-changes-01/behaviour-change#6", "2026-09-11-audit-changes-01/over-rejection#1", "2026-09-11-audit-changes-01/over-rejection#2", "2026-09-11-audit-changes-01/over-rejection#3", "2026-09-11-audit-changes-01/public-contract#1", "2026-09-11-audit-changes-01/public-contract#2", "2026-09-11-audit-changes-01/public-contract#3", "2026-09-11-audit-changes-01/claim-versus-edit#1", "2026-09-11-audit-changes-01/contract-drift#1", "2026-09-11-audit-changes-01/contract-drift#2", "2026-09-11-audit-changes-01/contract-drift#3", "2026-09-11-audit-changes-01/contract-drift#4", "2026-09-11-audit-changes-01/contract-drift#5", "2026-09-11-audit-changes-01/contract-drift#6", "2026-09-11-audit-changes-01/contract-drift#7", "2026-09-11-audit-changes-01/sweep-completeness#1", "2026-09-11-audit-changes-01/reader-consequence#1"]
+config_sha = "f173b70f9e732be3d706d072e763bae67d2f7628558db096d8e23de8321dde8b"
+tool_rev = "30c9be3e01a08d3ed85a91195dddc35329b52d99"
+range = "c452982224f8d9aea57fbd753e34af8b4fde2eeb..30c9be3e01a08d3ed85a91195dddc35329b52d99"
+counted = true
+rechecked = []
+regrade = false
+pass = 1
+nonce = "d30e9e150fe5dc15413e544f8fb63224"
+opened = "2026-09-11T17:48:30"
+
+[expected]
+contract-drift = 7
+behaviour-change = 6
+executing = 6
+sweep-completeness = 1
+reader-consequence = 1
+public-contract = 3
+claim-versus-edit = 1
+under-rejection = 3
+over-rejection = 3
+free-reader = 2
