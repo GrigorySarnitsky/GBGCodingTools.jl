@@ -71,8 +71,8 @@ Anything still LIVE (a runbook, an escalated witness) gets a proper tracked home
 - **Stage with `git add -u` PLUS every new file by name** — `-u` skips untracked files (it cost IT a
   follow-up commit on 2026-09-04) — and never `git add -A`, which sweeps in whatever the working tree
   holds.
-- **Decided by the record, not open (former Q8–Q11):** the tool declares `julia = "1.11"` and its CI
-  carries a 1.11 lane (`juliaup add 1.11` on both hosts; SS's floor untouched); the name is
+- **Decided by the record, not open (former Q8–Q11):** the tool declares `julia = "1.12"`, every
+  consumer's floor (it declared 1.11 with a 1.11 CI lane until the owner raised SS to 1.12 on 2026-09-11); the name is
   `GBGCodingTools` (`GBGDevTools` recorded as the alternative, not asked again);
   `gbg audit-changes bank` re-runs the executable claims itself and records their exit codes (minutes
   per audit, accepted); `.gbg/requests/` is a tracked pile in the requester (PF's `to-IT-*.md` and IT's
@@ -549,7 +549,7 @@ consumer's), in this order, every command from `$DEV`:
 4. **`test/runtests.jl`** gains `TestHarness.gate()` and `TestHarness.run_regressions(@__DIR__)` besides
    the engine tests (`WIRE.RUNTESTS` holds at the root).
 5. **`docs.yml`** deploys on push to `master` (V7 verifies the private-Pages deploy); `CI.yml` (manual +
-   tags) runs `Pkg.test()` on 1.11 and 1.12 AND `julia --project=docs docs/make.jl`, with no consumer
+   tags) runs `Pkg.test()` on 1.12 AND `julia --project=docs docs/make.jl`, with no consumer
    checked out.
 6. **Scans and doctor on the tool itself.** `gbgdev scan docs` at the root: fix every `hard` hit or
    ledger it with a reason — `docs/ARCHITECTURE.md` is a rationale surface and meets the same scans (the
@@ -579,7 +579,6 @@ consumer's), in this order, every command from `$DEV`:
 ```bash
 cd "$DEV" && bash -e -o pipefail -c "
   julia --project -e 'using Pkg; Pkg.test()'                  # IS gbg selftest; runs TestHarness.gate() on the tool itself
-  julia +1.11 --project -e 'using Pkg; Pkg.test()'
   julia --project=\"fixture/GBG Fixture/docs\" \"fixture/GBG Fixture/docs/make.jl\"
   ( cd \"fixture/GBG Fixture\" && gbgdev doctor )
   julia --project=docs docs/make.jl                            # the tool's own site, through its own wrapper (1.10)
@@ -872,15 +871,14 @@ round `.claude/doc-review/` (12 files, July; never verified, not imported — th
 `gate()` and `test/regressions/` is created; `CLAUDE.md` cuts (≈ 197 lines; the `inspiration/` citation
 and the `\!` before `\left(` sentence go), then the trim to the skeleton — SS's 246-line "Current state
 and roadmap": finished work deleted, live plans to a new tracked `docs/ROADMAP.md`; `sync` renders the
-Stop hook, `settings.json` and seeds `WORK_QUEUE.md` as everywhere; `julia = "1.11"` untouched; `seed_rounds = false`
+Stop hook, `settings.json` and seeds `WORK_QUEUE.md` as everywhere; SS's `julia` compat as the owner set it (1.12); `seed_rounds = false`
 (no `.gbg/seeds.toml` yet — SS writes one, a consumer commit with no tool release, when it runs its
 first panel).
 
 **Deleted from SS**: `.claude/commands/{check-consistency.md,check-docs.md,check-consistency/{.gitignore,consolidate.py,panel.js}}`,
 `.claude/doc-review/` (deleted, not imported), `lint_inline_math` in `make.jl`, the policy lines in `CLAUDE.md`.
 
-**Definition of done.** Phase 4's block in SS (`Pkg.test()` under `julia +1.11` as well, since SS's floor
-is 1.11); `gbg fleet` shows PF, IT and SS `OK` beside the tool's own row.
+**Definition of done.** Phase 4's block in SS; `gbg fleet` shows PF, IT and SS `OK` beside the tool's own row.
 
 ---
 

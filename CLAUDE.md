@@ -48,7 +48,7 @@ tool's own.
 
 ## Code generation rules
 
-- Julia 1.11 floor; no Python anywhere; no child process except the consumer commands the design names
+- Julia 1.12 floor; no Python anywhere; no child process except the consumer commands the design names
   (`docs_build`, `julia_test`, the witnesses, git) and the `--deep` doctor checks.
 - Every public binding carries a docstring written to `policy/docs-rubric.md`; module docstrings are
   maps. `checkdocs = :exports` in the tool's own build verifies them.
@@ -75,7 +75,7 @@ tool's own.
 
 ## Release checklist
 
-1. Clean tree on `master`, pushed; `Pkg.test()` green on 1.11 and 1.12; `julia --project=docs
+1. Clean tree on `master`, pushed; `Pkg.test()` green on 1.12; `julia --project=docs
    docs/make.jl` exits 0 (`SELF.DOCS`); `gbgdev doctor --deep` green at the root.
 2. `CHANGELOG.md` carries the entry `## <ver> — <date>` with MAJOR | MINOR | PATCH, the instruments
    affected and "rates comparable: yes | no" (a MAJOR states the fixture recall before and after).

@@ -5,7 +5,7 @@ using Test, GBGCodingTools
 
 const TOOL = normpath(joinpath(@__DIR__, ".."))
 const FIXTURE = joinpath(TOOL, "fixture", "GBG Fixture")
-const TMP = joinpath(TOOL, "fixture", ".tmp", string(getpid()))   # gitignored; per process, so two suites (1.11 and 1.12) never share a copy; inside the repository so a `dev` pin stays legal
+const TMP = joinpath(TOOL, "fixture", ".tmp", string(getpid()))   # gitignored; per process, so two concurrent suites never share a copy; inside the repository so a `dev` pin stays legal
 isdir(TMP) && rm(TMP; recursive = true, force = true)
 mkpath(TMP)
 

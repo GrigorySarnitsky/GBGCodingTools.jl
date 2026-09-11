@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - version: '1.11'   # the floor
+          - version: '1.12'   # the floor, and the fleet's version
             threads: '1'
           - version: '1.12'
             threads: '4'

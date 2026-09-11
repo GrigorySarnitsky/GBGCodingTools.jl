@@ -3,14 +3,22 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
-## Unreleased
+## 1.0.0-rc.7 — 2026-09-11
 
 MAJOR on rc.6. Instruments affected: bug-hunt (the reproduction record), audit-changes (its bank),
 check-consistency (two hat personas) and the docs build of every consumer (`makedocs`' return value and
 both of its gates). Rates comparable: **no** for check-consistency — the doc-policy and naming-policy
 hats now read the authored source and report at its file:line, and doc-policy enforces the aliasing
 placement, so those two hats may report what they did not; yes for the other three. The fixture recall
-is not re-measured here: the two personas are the only change to what a lane reads.
+is unchanged, before and after: every planted class of `fixture/GBG Fixture/defects.toml` still hit and
+every clean twin still silent, asserted per class in `test/scans.jl`. No scan changed since rc.6 (one
+docstring in `Scan.jl`), and the two personas are the only change to what a lane reads.
+
+**The Julia floor is 1.12.** `julia = "1.12"` in the tool's and the fixture's `[compat]`,
+`JULIA_FLOOR = v"1.12"` (so `gbg install` and the doctor's `ENV.JULIA` refuse 1.11), and CI's 1.11 lane
+is gone: both lanes run 1.12, one thread and four. The 1.11 floor served GBGStreamingStatistics alone,
+and the owner raises it to 1.12, every consumer's version (ruling 2026-09-11). A session still on 1.11
+cannot resolve this release.
 
 From 2026-09-11-check-docs-01 (closed at the pass budget, 22 closed, 5 carried) and the audit that covered
 its code, 2026-09-11-audit-changes-01:

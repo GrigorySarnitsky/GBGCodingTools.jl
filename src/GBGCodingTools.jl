@@ -72,7 +72,7 @@ using Gumbo, AbstractTrees
 
 const PKG_UUID = Base.UUID("3aee1de0-bb62-4679-b1c5-a861fbcaaa51")
 const PKG_NAME = "GBGCodingTools"
-const JULIA_FLOOR = v"1.11"
+const JULIA_FLOOR = v"1.12"
 
 include("TreeHash.jl")
 include("HtmlWalker.jl")

@@ -26,7 +26,7 @@ dev_pointer() = joinpath(homedir(), ".gbg", "dev")
 """
     julia_floor_ok() -> Bool
 
-Whether the running Julia is at or above the tool's floor (`julia = "1.11"`). Returns the comparison.
+Whether the running Julia is at or above the tool's floor (`julia = "1.12"`). Returns the comparison.
 """
 julia_floor_ok() = VERSION >= JULIA_FLOOR
 

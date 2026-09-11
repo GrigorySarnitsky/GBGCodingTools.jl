@@ -475,7 +475,7 @@ and the `!` block pays the Julia start once per instrument invocation (D6) — a
 language, a second test suite and a `python3` step in four CIs bought nothing. *Loose scripts*: the
 status quo. *Bash scans*: `guards.sh`'s awk.
 
-### D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `TestHarness`, `Reflection`, `Witnesses`, `Config`; `julia = "1.11"`
+### D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `TestHarness`, `Reflection`, `Witnesses`, `Config`; `julia = "1.12"`
 
 **Choice.**
 - `GBGCodingTools.makedocs(cfg; kwargs...)` — the **mandatory** wrapper a consumer's `make.jl` calls
@@ -557,10 +557,10 @@ status quo. *Bash scans*: `guards.sh`'s awk.
 - `Config`: `read()` = `TOML.parsefile` of `.gbg/config.toml` validated by the one validator
   (`src/CLI/Schema.jl`, D5), defaults materialised, every path checked — the object `gbg config --toml`
   prints, obtained without a child process.
-- Compat `julia = "1.11"`; the tool's CI (manual + tags) runs `Pkg.test()` on 1.11 and 1.12
-  (`juliaup add 1.11` on one host) AND the tool's own docs build, with no consumer checked out (D15);
-  consumer floors untouched (SS stays 1.11). **`Documenter` is a weak dependency**: `[weakdeps]` +
-  `[extensions]` (`GBGCodingToolsDocumenterExt = "Documenter"`; Julia 1.11 supports extensions) with
+- Compat `julia = "1.12"`, the floor of every consumer (owner ruling 2026-09-11, raising SS's from
+  1.11); the tool's CI (manual + tags) runs `Pkg.test()` on 1.12, one thread and four, AND the tool's
+  own docs build, with no consumer checked out (D15). **`Documenter` is a weak dependency**: `[weakdeps]` +
+  `[extensions]` (`GBGCodingToolsDocumenterExt = "Documenter"`; extensions exist since Julia 1.9) with
   `ext/GBGCodingToolsDocumenterExt.jl`, the main module declaring `function makedocs end` and the
   extension defining `GBGCodingTools.makedocs(cfg; kwargs...)`; a consumer's `make.jl` already does
   `using Documenter`, so the wrapper is present in the docs environment and nowhere else. A hard
@@ -571,7 +571,7 @@ status quo. *Bash scans*: `guards.sh`'s awk.
   `WIRE.MAKEDOCS` is unchanged. The tool declares its own `[deps]`/`[compat]`
   minimally: the stdlibs `TOML`, `SHA` (the tree hashing of D3), `Dates`, `Pkg` (the pin checks and
 `self verify` read `Pkg.dependencies()`), `Random` (the pass nonce) and `Test`, plus `JSON3` (the
-  round artefacts — there is no JSON stdlib at the 1.11 floor) and `Gumbo` + `AbstractTrees` (the HTML
+  round artefacts — there is no JSON stdlib at the 1.12 floor) and `Gumbo` + `AbstractTrees` (the HTML
   walker behind `scan_html` and the consolidator, D8) — both hard dependencies; no JET/Aqua dependency —
   those stay consumer test deps, so the tool does not inherit SS's `LoweredCodeUtils` pin problem
   (`round2-consumer.md:159-164`). No consumer CI carries a `python3` step.
@@ -584,7 +584,8 @@ through a shim (`round2-measurement.md:75-82`, A7); a witness weakened through a
 (attack 6.2).
 
 **Dominated.** *Lints kept in each `make.jl`*: the status quo. *Separate harness package*: a second pin.
-*`julia = "1.12"` and collapse SS*: not evidence, a `juliaup add 1.11` away. *The bare four-instrument `gate()`
+*A 1.11 floor with a 1.11 CI lane*, the choice until 2026-09-11: it served SS alone, and once the owner
+raised SS to 1.12 the lane tested a Julia no consumer runs. *The bare four-instrument `gate()`
 in the docs build*: fails a docs build on an open hunt round (dry-run 17).
 ### D10 — Rounds: tracked, one layout, CLI-written marker, frozen denominator, hash-bound verdicts, per-finding closure
 
@@ -803,7 +804,7 @@ behaviours the in-tree fixture cannot (the shim's resolution through the docs en
 under the merged engine; the tallies must equal the recorded ones (§8). The imports are SCRATCH:
 graded, compared, recorded as one table in the tool's `CHANGELOG.md`, then deleted — a consumer's
 `.gbg/rounds/` starts empty at migration (owner ruling 2026-09-08: no history carried). Tool CI: manual + tags (fleet
-cost policy): `Pkg.test()` on 1.11 and 1.12 AND the tool's own docs build, with no consumer checked out.
+cost policy): `Pkg.test()` on 1.12 AND the tool's own docs build, with no consumer checked out.
 
 **The tool as its own fifth consumer.** The tool repository carries `.gbg/config.toml` with
 `[tool] version = "dev"` — the dev pin already legal inside the tool repository for the fixture,
@@ -958,7 +959,7 @@ that "tools" is a cover word was withdrawn (2026-09-08).
 
 ```
 GBGCodingTools.jl/
-  Project.toml                  name, uuid, version, julia = "1.11"; deps: TOML, SHA, Dates, Pkg, Random, Test (stdlib), JSON3, Gumbo,
+  Project.toml                  name, uuid, version, julia = "1.12"; deps: TOML, SHA, Dates, Pkg, Random, Test (stdlib), JSON3, Gumbo,
                                 AbstractTrees; weakdeps: Documenter (compat-bounded) → extension GBGCodingToolsDocumenterExt
   CHANGELOG.md                  per tag: MAJOR/MINOR/PATCH, instruments affected, "rates comparable: yes|no"
   README.md                     what it is, the three bootstrap commands, the design sentence
@@ -1052,7 +1053,7 @@ GBGCodingTools.jl/
   .claude/skills/<name>/SKILL.md  the five stubs, rendered by `gbg --dev sync` at the root (D6)
   CLAUDE.md                     the managed policy block + the design sentence, the freeze rule, the release checklist (D12)
   .gitignore                    + the managed block
-  .github/workflows/CI.yml      manual + tags: julia 1.11 and 1.12 lanes × `Pkg.test()` (= `gbg selftest`) AND the tool's own docs
+  .github/workflows/CI.yml      manual + tags: julia 1.12 lanes (1 and 4 threads) × `Pkg.test()` (= `gbg selftest`) AND the tool's own docs
                                 build, no consumer checked out; the auth step and the banner grep as WIRE.CI_AUTH requires;
                                 no python step
   .github/workflows/docs.yml    deploys the tool's site on push to master (the per-push enforcement point, D9); GitHub Pages on
@@ -2020,7 +2021,7 @@ supports either way; ruled separately by the owner, never bundled with the adopt
 | Module map "deliberately tighter" (IT) | ledger `RULE.DOC.MODULE_MAP` | deviation |
 | Bold argument bullets required (SS) vs forbidden (PF) — `survey-checkdocs.md:109` | SS's corpus counted 2026-09-08: 0 bold, 80 plain — the bold form lived only in SS's old command prose; the hard scan applies to SS unchanged | collapsed (PF; owner-ruled 2026-09-08) |
 | Result-affecting smoothing controls as keywords (SS) | ledger `RULE.API.POSITIONAL` | deviation |
-| SS `julia = "1.11"` | tool supports 1.11; SS floor untouched | config (kept) |
+| SS `julia = "1.11"` | the owner raises SS to 1.12 (2026-09-11); the tool's floor follows | collapsed (owner-ruled 2026-09-11) |
 | IT `doctest = false` | `docs.doctest` | config |
 | IT `git checkout -- docs/Project.toml` post-build | `docs_post` | config |
 | IT on `main` | `git.branch` supports both; a rename is a decision about IT, ruled separately, never bundled with the adoption commit | consumer ruling (not tooling) |
@@ -2138,7 +2139,8 @@ one in every repository. 13. (2026-09-09) The Stop hook is fleet-wide; `hooks.wo
 deleted.
 
 **Decided by the record, not open** (they appeared as questions in an earlier draft and are stated
-in the implementation plan's working agreements): the Julia floor stays `1.11` with a 1.11 CI lane; the
+in the implementation plan's working agreements): the Julia floor is `1.12`, every consumer's (it was `1.11` with a 1.11 CI lane until the owner
+raised SS's floor on 2026-09-11); the
 name is `GBGCodingTools`; the CLI re-runs the executable claims at `gbg audit-changes bank`;
 `.gbg/requests/` is a tracked pile; `UNCLEAR` is kept as a non-passing state verdict; the policy copy
 lives at `.gbg/policy/` behind the explicit block (not `.claude/rules/`).
@@ -2217,8 +2219,8 @@ targets the `docs/` environment, the one that always carries a manifest (D2).
   first CI dispatch failed on its test matrix for an unrelated reason recorded in the CHANGELOG: a fresh
   clone carries no manifest in the fixture's `test/` environment, so every witness errored on
   `using GBGFixture`; the suite resolves that environment once now.
-- **V6 — 2026-09-09, `Aiporetne`: PASSED** (`Pkg.test()` green on 1.11 and 1.12); `Enteropia` still
-  needs `juliaup add 1.11`.
+- **V6 — 2026-09-09, `Aiporetne`: PASSED** (`Pkg.test()` green on 1.11 and 1.12); `Enteropia` never
+  needed its `juliaup add 1.11`: the floor rose to 1.12 on 2026-09-11 and the lane went with it.
 
 **Residues this design states rather than closes** (each is transcript- or diff-visible, none
 gate-visible):
@@ -2560,7 +2562,7 @@ and D12: every public binding carries a rubric docstring, module docstrings are 
 block plus the design sentence, the freeze rule and the release checklist. **(4)** D15 lists the four
 checks the tool passes on itself; D16 and §8 carry the release preconditions (`Pkg.test()`, the docs
 build, `gbg doctor --deep`, no open round, the CHANGELOG entry, the tag absent); D9 and D15 state the
-CI matrix (1.11 and 1.12 × `Pkg.test()` AND the docs build, no consumer checked out). **(5)** D6 and D15:
+CI matrix (`Pkg.test()` on 1.12 AND the docs build, no consumer checked out). **(5)** D6 and D15:
 the stubs rendered into the tool's own `.claude/skills/`, its rounds under its `.gbg/rounds/`; §8 says
 "the tool's own docs build green" is a release precondition, not a selftest arm. **(6)** D2 states the
 bootstrap circularity once — the docs environment loads the working tree by path, the shim execs
