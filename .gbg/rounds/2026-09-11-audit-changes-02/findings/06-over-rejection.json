@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-02",
+  "lane": "over-rejection",
+  "verdict": "CONCERNS",
+  "checked": [
+    "Enumerated every validation the diff adds: exactly one, in src/DocLints.jl docs_build_skipped (a skip now also requires every gate_problems entry to be :open). No other hunk adds an argument check, a throw or a new exit path.",
+    "src/CLI/Gate.jl: gate refactored onto gate_problems. Compared it with base (git show e21e57f:src/CLI/Gate.jl). The conditions, the order, the exit codes 0/1/2, the ROUND.DIR branch, the GBG_ROUND handling, the in_ci exclusion and the printed refusal lines are all the same (the message is printed as last(p)). gate itself rejects nothing new.",
+    "gate_problems returns early with (false, []) when .gbg/rounds/ is absent. gate handles that case first, so its ROUND.DIR exit 2 is unchanged.",
+    "ext/GBGCodingToolsDocumenterExt.jl: gate_or_skip's signature `function gate_or_skip(cfg, what::AbstractString)` falls outside the diff hunk and was already typed at base. Only the docstring header changed, so no new rejection. The comment change from RULE.INST.FROZEN_MIDROUND to ARCHITECTURE D9 is prose.",
+    "The :disabled part of the new skip condition: at base, an open round of a disabled instrument already made the gate exit 1, and with no docs round open the build already failed. Only an open docs round beside it turned that into a skip, so failing it now restores consistency. The input was not valid before, so this is not an over-rejection.",
+    "The :committed part of the new skip condition: judged against base Gate.jl, Git.porcelain (untracked = true by default), ROUND.head being recorded at open (Preflight.jl:723), and the check-docs / check-consistency PROTOCOL.md build steps (`gbg round build|test`, run under GBG_ROUND). Reported below.",
+    "test/gate.jl: the added assertions exercise :disabled only (`Set([:open, :disabled])`). None exercises :committed through docs_build_skipped, so the test does not certify that half.",
+    "CI and release paths: :committed is pushed only when !in_ci, and Release.jl:108 and Doctor.jl:644 set GBG_DOCS_NO_SKIP, so neither CI nor release changes behaviour.",
+    "Every other hunk: docstring, ARCHITECTURE.md, docs/src/guide/verbs.md @docs lines, templates/*.tmpl and README prose, and docs/prose_shape.csv ratchet numbers. None adds a validation.",
+    "Commit 47db044's message, read after forming the verdict: it names both :disabled and :committed as intended, and says the test covers only the disabled-instrument case."
+  ],
+  "candidates_found": 2,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "A bare local docs build during an open docs round now throws whenever the round's files are uncommitted after HEAD moved, where it used to skip with exit 0",
+      "locations": [
+        "src/DocLints.jl:47-51 (docs_build_skipped)",
+        "src/CLI/Gate.jl:84-88 (the :committed problem inside gate_problems)",
+        "ext/GBGCodingToolsDocumenterExt.jl:32-44 (gate_or_skip, the caller)"
+      ],
+      "before": "docs_build_skipped(cfg::AbstractDict, code::Integer) =\n    code == 1 && !haskey(ENV, \"GBG_DOCS_NO_SKIP\") ? frozen_rounds(cfg, \"check-docs\", \"check-consistency\") : String[]",
+      "after": "function docs_build_skipped(cfg::AbstractDict, code::Integer)\n    (code == 1 && !haskey(ENV, \"GBG_DOCS_NO_SKIP\")) || return String[]\n    all(p -> first(p) == :open, last(gate_problems(cfg, \"check-docs\", \"check-consistency\"))) || return String[]\n    return frozen_rounds(cfg, \"check-docs\", \"check-consistency\")\nend",
+      "previously_worked": "yes",
+      "why_it_matters": "The concrete input is a local (no CI variable) `julia --project=docs docs/make.jl` with GBG_DOCS_NO_SKIP unset, during an open check-docs or check-consistency round, after at least one commit since the round opened (ROUND.head is the HEAD at open, so the round-opening commit is already one), while any file under the round directory is untracked or modified. Git.porcelain counts untracked files by default, so lane findings/*.json not yet committed or a pass's verdicts/pass-k files are enough. At base that build printed `makedocs: SKIPPED` and returned `nothing`, exit 0. Now gate_problems adds a :committed problem beside the :open one, the skip is refused, and check() throws `gbg gate check-docs check-consistency returned 1`. That state is the normal one for most of a round, and it does not yet mean the fixes were committed without the round, because the round files are simply not committed yet. A session that follows CLAUDE.md's 'gate every commit on exit codes' with the bare docs build mid-round used to get exit 0 and now gets a failure. Mitigation: both PROTOCOL.md files send a mid-round build through `gbg round build`, which sets GBG_ROUND, makes the gate skip the round and so avoids both :open and :committed. check-consistency's protocol even says a bare make.jl under an open round 'is refused by the gate, by design'. The usage that is newly rejected was therefore already off-protocol, but it was previously an exit-0 no-op.",
+      "justified": "unclear",
+      "description": "The defect the round names (ext#4, per the test comment 'beside an open round of a disabled instrument the build fails') is the disabled-instrument case, and the only new test covers that case alone. The fix goes wider: it also ends the skip for :committed, a signal that at build time cannot tell 'fixes committed without the round' from 'round files not committed yet'. The commit message says the :committed exclusion is intended. Even so, it converts a known over-approximation of the gate, which the skip used to absorb, into a hard failure of the local docs build, and no test checks it.",
+      "evidence": "Gate.jl (unchanged logic): `if !in_ci && head !== nothing && head != r.round[\"head\"] ... any(p -> startswith(p, rel * \"/\") || p == rel, dirty) && push!(problems, :committed => ...)`, with `dirty = Set(p for (_, p) in Git.porcelain(root))` and Git.jl `Git.porcelain(root; untracked = true)`. Preflight.jl:723 records `\"head\" => head` at open. test/gate.jl adds only `@test Set(first.(last(G.gate_problems(off, ...)))) == Set([:open, :disabled])` and `@test isempty(G.docs_build_skipped(off, 1))`, and no :committed case. The DocLints docstring now says: 'A refusal that also names an open round of a disabled instrument, or a round whose fixes were committed without it, fails the build.'"
+    }
+  ]
+}

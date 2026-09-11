@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-02",
+  "lane": "under-rejection",
+  "verdict": "CONCERNS",
+  "checked": [
+    "Every removed code line in src/, ext/ and test/ (diff restricted to lines that are not docstrings or comments): only src/CLI/Gate.jl (the `wanted` line, `problems = String[]`, the three push!(problems, ...) calls, and the `fatal && return 2` / refusal / `return 0` tail) and src/DocLints.jl (the one-line docs_build_skipped) lose code; every other src hunk (Config, Demote, Design, Doctor, Init, Passes, Preflight, RoundFiles, Rounds, Selftest, Sync, Reflection, Scan, TestHarness) and the ext hunk changes docstrings or comments only -- grep for changed function/const/return/throw/@assert/||/&& lines outside Gate.jl and DocLints.jl returned nothing",
+    "Gate.gate at head against base: the self_verify guard (return 2), the ROUND.DIR guard (return 2 when .gbg/rounds/ is absent while instruments are enabled), `fatal && return 2`, and the exit 1 on any problem are all still in gate; the loop moved into gate_problems unchanged -- :nomarker/:invalid sets fatal, a disabled instrument's open round is pushed whatever was named, the GBG_ROUND skip, and the outside-CI committed-without-round check keep the same conjuncts (`!in_ci && head !== nothing && head != r.round[\"head\"]` and the dirty-prefix `any`). Every input gate refused at base it still refuses with the same code; the fatal message still goes to the caller's io because `; io` is forwarded",
+    "DocLints.docs_build_skipped: base `code == 1 && !haskey(ENV, \"GBG_DOCS_NO_SKIP\") ? frozen_rounds(...) : String[]`; head adds the conjunct `all(p -> first(p) == :open, last(gate_problems(...)))`. The new skip condition implies the old one, so no refusal that failed the build at base is skipped now: the change only tightens (a :disabled or :committed problem beside an open docs round now fails the build, where the base skipped). `all` over an empty problem list would be true, but with code == 1 it only happens if the rounds changed between the two calls, in which case frozen_rounds is empty too and no skip follows",
+    "The gate_problems call inside docs_build_skipped passes io = devnull and ignores `fatal`: harmless, because code == 1 means gate saw no fatal round (a TOCTOU window only)",
+    "ext/GBGCodingToolsDocumenterExt.jl: only the gate_or_skip docstring signature and one comment changed; `function gate_or_skip(cfg, what::AbstractString)` was already typed at base; the check() guard, the GBG_DOCS_NO_SKIP path and both gate_or_skip call sites are unchanged",
+    "Scan.report: the docstring was loosened from 'zero means DEAD' to 'zero, with no hit removed by the ledger'; `git show e21e57f:src/Scan.jl` already has `dead(r) = r.population == 0 && r.exempted == 0`, so the code did not change in this window and the docstring was corrected to match existing behaviour, not rewritten to cover a new one",
+    "Rounds.classify_lane: the docstring was reordered (:rejected decided before reading; zero-findings/empty-checked is :dead with the file left in place); the code is not in the diff and does exactly that (line 347 before the parse, line 362 with no mv)",
+    "Rounds.abandon: the docstring says 'every banked id but the seeded ones'; the code (not in the diff) already filters `!get(f, \"seeded\", false)`; the reason-length guard (>= 12, return 2), the RoundError throw for a non-open, non-dev-closed round, and the guard() call are unchanged",
+    "test/gate.jl: zero deleted lines; the existing assertions (skip on exit 1 with an open docs round, none on 0/2, none under GBG_DOCS_NO_SKIP, none with no docs round) are kept, and the added block exercises the new tightening (:open + :disabled -> no skip). No oracle was loosened",
+    "templates/*.tmpl and templates/README.md, docs/ARCHITECTURE.md, docs/prose_shape.csv, docs/src/guide/verbs.md: prose only, with no guard or validator; prose_shape.csv is a measurement table that was re-measured, not a threshold that was relaxed"
+  ],
+  "candidates_found": 4,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "nit",
+      "confidence": "low",
+      "title": "The new public gate_problems leaves out two of gate's refusals, and returns 'no problem' where gate never passes vacuously",
+      "locations": [
+        "src/CLI/Gate.jl:60-64 (gate_problems, the `isdir(RoundFiles.rounds_dir(cfg)) || return (fatal, problems)` early return)",
+        "src/CLI/Gate.jl:28-35 (gate keeps self_verify and ROUND.DIR to itself)",
+        "docs/src/guide/verbs.md:51 (gate_problems added to the public API page)"
+      ],
+      "before": "Only `gate` existed: `code = self_verify(root; io = devnull)` ... `return 2`; `if !isdir(RoundFiles.rounds_dir(cfg)) isempty(enabled) && return 0 ... return 2 end`; then the loop and `fatal && return 2` -- one function, all refusals in it.",
+      "after": "`gate_problems(cfg, instruments...; io = devnull)` is documented as \"What [`gate`](@ref) refuses for\" and published on the API page, but it opens with `isdir(RoundFiles.rounds_dir(cfg)) || return (fatal, problems)` -- (false, []) -- and never runs self_verify; those two refusals stay in `gate` only.",
+      "why_it_matters": "No input that worked before behaves differently: gate refuses exactly what it refused, and the one caller (docs_build_skipped) calls gate_problems only after gate returned exit 1, which rules out both missing cases. The risk is latent. A caller that reads the empty problem list as 'the gate would pass' is told nothing refuses for a consumer with instruments enabled and no .gbg/rounds/, which gate itself refuses with exit 2 ('the gate never passes vacuously'), and for a running copy that is not the pinned one. The guard was split off, not deleted, and the new public entry point carries neither piece.",
+      "justified": "yes",
+      "previously_worked": "no",
+      "description": "Moving the loop into gate_problems was justified: docs_build_skipped needs the kinds of the problems to fix the skip that swallowed a :disabled refusal. But the helper's docstring claims to list what gate refuses for, while the function silently returns 'no problems' for two conditions gate refuses (self-verify failure; ROUND.DIR absent while instruments are enabled). Either the docstring should name the two refusals gate_problems leaves out, or it should say that it is only meaningful after gate returned 1.",
+      "evidence": "Gate.jl head: `function gate_problems(cfg::AbstractDict, instruments::AbstractString...; io::IO = devnull)` / `problems = Pair{Symbol,String}[]; fatal = false` / `isdir(RoundFiles.rounds_dir(cfg)) || return (fatal, problems)`; docstring: \"What [`gate`](@ref) refuses for, each problem a `kind => message` pair.\"; gate keeps `println(io, \"gate: ROUND.DIR — .gbg/rounds/ is absent while instruments are enabled; the gate never passes vacuously (gbg init writes it)\")` / `return 2`. verbs.md: `+GBGCodingTools.gate_problems`."
+    }
+  ]
+}

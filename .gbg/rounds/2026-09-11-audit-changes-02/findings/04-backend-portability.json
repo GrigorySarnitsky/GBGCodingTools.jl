@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-02",
+  "lane": "backend-portability",
+  "verdict": "CLEAN",
+  "checked": [
+    "Full diff.patch read end to end (954 lines) across all 24 changed files listed in diffstat.txt",
+    "src/TestHarness.jl diff hunk: confirmed only docstring changes (module docstring gains @ref lines to AUDITED_ALLOCATION_OPS / AUDITED_TRAFFIC_OPS; a docstring example changed 'Scan.report' to 'Ledger.read') — no change to CountingArray, Traffic, audit(), allocation_completeness, or traffic_completeness implementations",
+    "src/CLI/Gate.jl: gate() split into gate() + new gate_problems(cfg, instruments...) returning (fatal, problems::Vector{Pair{Symbol,String}}) — reviewed as ordinary control flow over Dict/Set/String, no array storage or device-relevant dispatch",
+    "src/DocLints.jl: docs_build_skipped() now requires every gate_problems() entry to be kind :open before treating a gate refusal as a skip — string/tuple logic only",
+    "src/Reflection.jl, src/Scan.jl, src/CLI/{Config,Demote,Design,Doctor,Init,Passes,Preflight,RoundFiles,Rounds,Selftest,Sync}.jl, ext/GBGCodingToolsDocumenterExt.jl: all changed hunks are docstring/comment prose edits (removing internal section-number cross-refs like '§6.2 step 10', clarifying 'the rubric' -> 'the docstring rubric', adding economy_model() docstring) — no functional code touched in any of these files' hunks",
+    "docs/ARCHITECTURE.md, docs/prose_shape.csv, docs/src/guide/verbs.md, templates/*.tmpl, templates/README.md: prose/doc-only changes, no code",
+    "test/gate.jl: new assertions added for gate_problems()/docs_build_skipped() interaction with a disabled-instrument round — operate on Dict-backed cfg and Set{Symbol}, the only backend this domain has",
+    "Searched the full diff and current tree context for any AbstractArray/CuArray/ROCArray-shaped code, scalar indexing patterns, RNG fills, sort/findfirst on field storage, kernel-launch closures, or Float64-literal/FFTW paths: none exist — this package (a text-scan, docstring-reflection and round/pass bookkeeping CLI) has no device/GPU computation path at all; TestHarness.CountingArray is a host-only element-traffic accounting wrapper for consumer test suites, and this diff does not touch its implementation"
+  ],
+  "candidates_found": 0,
+  "findings": []
+}

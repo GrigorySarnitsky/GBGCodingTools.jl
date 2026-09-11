@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-02",
+  "lane": "numerics",
+  "verdict": "CLEAN",
+  "checked": [
+    "src/Scan.jl: the ScanResult.population / report() docstrings changed ('zero population, no hit removed by the ledger' → DEAD) but the actual gating predicate `dead(r) = r.population == 0 && r.exempted == 0` in `report()` is byte-identical at base and head (confirmed via `git show <base>:src/Scan.jl`) — the edit is a doc-only correction of a previously inaccurate docstring, not a behaviour change.",
+    "src/CLI/Rounds.jl `abandon()`: docstring changed from 'all banked ids' to 'every banked id but the seeded ones' for `open_ids`, but the code (`open_ids = [f[\"id\"] for f in ... if !get(f, \"seeded\", false)]`) is unchanged between base and head — again a doc-only correction, not a filter change.",
+    "src/CLI/Gate.jl: the extraction of `gate_problems(cfg, instruments...; io) -> (fatal, problems)` out of `gate()` — verified the loop body, the order of the :disabled/:open/:committed pushes, the `ignored`/`ci`/`dirty` set computations, and the early isdir-guard are reproduced unchanged from the pre-refactor `gate()`; the three exit codes gate() returns (0/1/2) are identical before and after for every path traced.",
+    "src/DocLints.jl `docs_build_skipped()`: new `all(p -> first(p) == :open, last(gate_problems(cfg, \"check-docs\", \"check-consistency\")))` guard — confirmed the instruments passed match the instruments the caller (`gate_or_skip` in ext/GBGCodingToolsDocumenterExt.jl) passes to `gate()` itself, so the two calls are asking about the same instrument pair; confirmed `code == 1` (the only code for which the guard runs) can only occur when `gate_problems` returns a non-empty `problems` list (fatal path returns 2, not 1), so `all(...)` over a guaranteed-nonempty collection is well-defined and not a vacuous-truth trap.",
+    "test/gate.jl: new assertions (`Set(first.(last(gate_problems(...)))) == Set([:open, :disabled])`, the frozen_rounds / docs_build_skipped pair, and the id-set narrowing after `rm(crd)`) checked against the `gate_problems` code path by hand — the expected sets match what the code produces for the constructed fixture rounds.",
+    "docs/ARCHITECTURE.md D11: 'Eighteen schemas' → 'Twenty-two schemas', schema list extended with attack-subject/attack/rubric-audit/human-findings — counted `schema/*.schema.json` in the working tree: 22 files, matching the new prose exactly (a currency fix, not introduced by this diff since schema/ itself is untouched here).",
+    "Reflection.jl ARGS_THRESHOLD (=3) and WRAPPER_PHRASE constants: docstrings reworded to name `docs-rubric.md`/`RULE.DOC.*` as their source; the numeric literal `3` and the string constant are untouched in the diff.",
+    "Swept every changed file in the diffstat (docs/ARCHITECTURE.md, docs/prose_shape.csv, docs/src/guide/verbs.md, ext/GBGCodingToolsDocumenterExt.jl, src/CLI/{Config,Demote,Design,Doctor,Gate,Init,Passes,Preflight,RoundFiles,Rounds,Selftest,Sync}.jl, src/DocLints.jl, src/Reflection.jl, src/Scan.jl, src/TestHarness.jl, templates/{README.md,bump-message.tmpl,commit-message.tmpl}, test/gate.jl) with `git diff <base>..<head> -- <path> | grep -E '^\\+' | grep -E '[0-9]'` to isolate every added numeric literal — the only hits were the sha256 hash-name mention (prose, algorithm unchanged) and the docs/prose_shape.csv word-count table (an auto-generated prose metrics file with no gating role); no changed cutoff, bound, index range, constant type, or comparison that gates whether a value is served was found outside the Gate.jl/DocLints.jl boolean refactor already covered."
+  ],
+  "candidates_found": 1,
+  "findings": []
+}

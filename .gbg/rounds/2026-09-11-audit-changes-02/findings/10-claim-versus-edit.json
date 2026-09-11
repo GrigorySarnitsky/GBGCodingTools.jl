@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-02",
+  "lane": "claim-versus-edit",
+  "verdict": "CONCERNS",
+  "checked": [
+    "Matched all six commit messages (8a1d8d4 open/bank, 47db044 fix pass 1, f4f99cd grade, 272e01b fix pass 2, cf6eb7a grade, 249b795 fix pass 3) against git log --name-only per-commit file lists over the audited path set",
+    "47db044 'Code (ext#4)' claim vs the actual Gate.jl/DocLints.jl/test/gate.jl diff: verified gate() control flow and printed strings are byte-identical to before (confirmed old vs new push!/println text), verified gate_problems() is a faithful extraction (not a widened refusal surface), verified docs_build_skipped's new all(:open) gate matches the added test/gate.jl scenario",
+    "47db044 src#1 'no rendered docstring cites a section number any more (Gate, Demote, Doctor, Init, Preflight, RoundFiles, Selftest, Sync, Passes)': grepped current src/ext for remaining '§[0-9]' and confirmed every surviving hit is inside a '#'-comment, println string, or config string value, never inside a triple-quoted docstring",
+    "47db044 src#2 'resolve_function's third example is Ledger.read, a real package name colliding with Base': confirmed Ledger.jl defines read(cfg) which collides with Base.read, matching the corrected example",
+    "47db044 rationale#1-2 (twenty-two schemas, Design.jl and catalog/attack/ in the tree): counted schema/*.schema.json (22), confirmed src/CLI/Design.jl and catalog/attack/<instrument>.toml exist",
+    "47db044 op#1-4 and cold-reader items (classify_lane, report's DEAD rule, resolve_hats' role field, abandon's seeded exclusion, economy_model): diffed each named function's actual body across base..head and confirmed zero body changes -- only the preceding docstring/comment text changed, so the 'Prose' label holds and only ext#4 is a behavioural change, as the commit claims",
+    "Diffed src/Scan.jl base vs head report()/dead() bodies verbatim: byte-identical code despite the docstring being rewritten to describe the exempted-population case, confirming the docstring fix is a correction of stale prose and not a smuggled-in behaviour change",
+    "Traced the Preflight.jl 'role' field docstring claim ('nothing downstream of the roster reads it') by grepping all [\"role\"]/.role sites in src/ext/test and confirming none reads a resolved hat's role field",
+    "272e01b fix pass 2 itemized bullets (built-html#2-3, cold-reader#1, cold-reader#3, carried cold-reader#1) against its own diff on Config.jl/Sync.jl/Reflection.jl/TestHarness.jl: each named symbol and phrase change matches",
+    "249b795 fix pass 3's three named 'cold-reader' sites against its diff on Demote.jl/Preflight.jl/Reflection.jl: each matches exactly, including the closed-verdict-vocabulary enumeration text",
+    "Grepped 'swept' across src/ext to confirm the fix pass 3 claim that no other use of the word carries a different sense from the act-verifier meaning",
+    "Read src/Scans/prose_shape.jl to confirm docs/prose_shape.csv is a documented, designed re-baseline ratchet (not a self-certifying test edit) and that the commits' 'ratchet re-baselined' claims are the sanctioned use of that mechanism"
+  ],
+  "candidates_found": 1,
+  "findings": [
+    {
+      "type": "self-containment",
+      "severity": "nit",
+      "confidence": "high",
+      "title": "Design.jl calibrate() wording fix ('own rubric' -> 'persona') is a drive-by not itemized in the fix-pass-1 commit message",
+      "locations": [
+        "src/CLI/Design.jl:125 (calibrate docstring)",
+        "commit 47db044"
+      ],
+      "before": "site found — for each defect, which hat's own rubric should have caught it, and whether that hat, run",
+      "after": "site found — for each defect, which hat's persona should have caught it, and whether that hat, run",
+      "why_it_matters": "47db044's message goes to unusual lengths to itemize all 26 findings it claims to address or defer by id (src#1-2, ext#1-4, built-html#1-3, cold-reader#1-4 + carried, op#1-4, rationale#1-2, templates#1-3) plus 6 deferred ids -- a level of precision this audit lane exists to check because the author is finder, fixer and reporter at once. This one-word terminology correction in Design.jl (the only touched file with no bullet naming it, 'rubric' vs the vocabulary's actual term 'persona' used consistently elsewhere in Preflight.jl) has no matching id in either the addressed or the deferred list, so a reader auditing the round against its own commit message cannot account for every line the diff actually touched. The edit itself is correct and harmless -- verified 'persona' is the term this package's config vocabulary actually uses for a hat -- so this is a completeness gap in the self-report, not a behavioural or scope problem.",
+      "justified": "yes",
+      "description": "The commit message for 47db044 itemizes every other touched file's finding id precisely, but the Design.jl edit to calibrate()'s docstring is present in the diff with no corresponding bullet, deferred item, or code-claim covering it -- a small but real drive-by against an otherwise complete self-report.",
+      "evidence": "git show 47db044 -- src/CLI/Design.jl shows the sole hunk in that file; the commit message's full bullet list (src#1, src#2, ext#1-3, built-html#1, built-html#2-3, cold-reader#1-4 + carried cold-reader#1, op#1-4, rationale#1-2, templates#1-3, plus the deferred ids) contains no mention of Design.jl, calibrate, rubric, or persona."
+    }
+  ]
+}

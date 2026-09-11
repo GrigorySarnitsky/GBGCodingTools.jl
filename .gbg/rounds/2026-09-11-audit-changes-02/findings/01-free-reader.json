@@ -1,0 +1,21 @@
+{
+  "candidates_found": 2,
+  "checked": [
+    "src/CLI/Gate.jl: the gate()->gate_problems() extraction — confirmed the top-level gate() entry point (isdir check, enabled-empty short-circuit, fatal/problems loop, exit-code contract 0/1/2, and the printed message text via last(p)) is behaviourally identical to the pre-diff version for every existing caller; only the internal problems collection changed from Vector{String} to Vector{Pair{Symbol,String}} so a caller of the new gate_problems() can distinguish :open from :disabled/:committed.",
+    "src/DocLints.jl docs_build_skipped(): the new all(p -> first(p) == :open, ...) condition — confirmed this narrows (does not widen) the prior 'code==1 && no GBG_DOCS_NO_SKIP => always skip' rule; it now fails the build instead of skipping when a refusal also carries a :disabled or :committed problem. Traced this to a real prior bug (test comment cites ext#4 of 2026-09-11-check-docs-02: 'the skip used to swallow it') and confirmed both directions are covered by new tests in test/gate.jl (the :disabled case explicitly; the :committed case is logically covered by the same all() but not separately exercised).",
+    "test/gate.jl new assertions: re-read the whole file, checked fixture construction (rec/off dicts), confirmed each new @test exercises real, distinct states (open-only, open+disabled, GBG_DOCS_NO_SKIP set, no matching round) rather than re-asserting a tautology.",
+    "src/Scan.jl: population==0/exempted==0 'DEAD' docstring rewording — diffed src/Scan.jl against base and found the decision line `dead(r) = r.population == 0 && r.exempted == 0` is unchanged code (pre-existing at base e21e57f); the diff only fixes the ScanResult/report docstrings, which previously omitted the exempted-count exception, to match already-existing behaviour.",
+    "src/CLI/Rounds.jl classify_lane and abandon docstrings: diffed against base, confirmed zero code-line changes accompany the reworded docstrings; read the current abandon() body (`!get(f, \"seeded\", false)`) and confirmed it already excluded seeded ids at base — the old docstring ('all banked ids') was simply wrong and is now corrected to match the standing code.",
+    "src/CLI/TestHarness.jl example rename (Scan.report -> Ledger.read): confirmed Base has no `report` export, so the old example did not illustrate the ownership-resolution point it was attached to; Ledger.read correctly collides with Base.read the way Config.read and Git.run do.",
+    "src/CLI/Design.jl calibrate() docstring ('rubric' -> 'persona'): grepped the function body and confirmed roster entries actually carry a `persona` field written to personas.md/hats/<key>.md, not a per-hat 'rubric' object.",
+    "docs/ARCHITECTURE.md D11 schema count (eighteen -> twenty-two) and D10 seed-corpus exception (Rounds.seed_docs_corpus!): confirmed schema/ holds exactly 22 *.schema.json files including attack-subject/attack/rubric-audit/human-findings, and that seed_docs_corpus! already exists in src/CLI/Rounds.jl at a line untouched by this diff — both edits catch the design doc up to already-shipped code.",
+    "docs/src/guide/verbs.md additions (cmd_self_verify, cmd_sync, cmd_gate, gate_problems): confirmed gate_problems is the one genuinely new public binding and carries its own docstring; the other three are pre-existing functions newly listed.",
+    "templates/README.md, bump-message.tmpl, commit-message.tmpl: confirmed these are prose/wording changes only, not managed-file byte contracts subject to sync's hash check.",
+    "Swept every remaining hunk (docs/prose_shape.csv, ext/GBGCodingToolsDocumenterExt.jl, src/CLI/{Config,Demote,Doctor,Init,Passes,Preflight,RoundFiles,Selftest,Sync}.jl, src/Reflection.jl) and found each to be a docstring/comment reword with no accompanying code-line change."
+  ],
+  "findings": [],
+  "lane": "free-reader",
+  "round": "2026-09-11-audit-changes-02",
+  "schema_version": 1,
+  "verdict": "CLEAN"
+}

@@ -1,0 +1,72 @@
+# ROUND.toml — written by gbg preflight; the CLI's marker, never edited by hand (ARCHITECTURE §6.1)
+tool_version = "dev+249b795-dirty"
+passes = 0
+head = "249b795c6604c69d62637e85c00bbe84e68d3008"
+model_hint = "sonnet"
+hostname = "Aiporetne"
+tool_tree_sha = "535a480a28f0240af4e083672bb39e56a16bc7ad"
+seed_catalog_sha = "fdd564c6a6a6d1ddb946c10d2922a72d728e45d47585b49fdbcbd5a95efc8ba3"
+config_sha = "3daa040f54a778a95ce45be87ae94de8caa967d0d08aa427b71160f30f8b6255"
+dead_lanes = []
+cost = "economy"
+tool_rev = "249b795c6604c69d62637e85c00bbe84e68d3008"
+instrument = "audit-changes"
+base = "e21e57f916145a3380102026adb27c265af21f48"
+catalog_sha = "97ed6dd4088cc2aca03d8ceb8be51c3e5c12e99d3e350b53949afa8384252f87"
+strength = "economy"
+schema_version = 1
+round = "2026-09-11-audit-changes-02"
+opened = "2026-09-11T23:26:46"
+
+[[roster]]
+key = "free-reader"
+substrate = "code"
+anchor = false
+[[roster]]
+key = "executing"
+substrate = "code"
+anchor = true
+[[roster]]
+key = "under-rejection"
+substrate = "code"
+anchor = true
+[[roster]]
+key = "backend-portability"
+substrate = "code"
+anchor = false
+[[roster]]
+key = "behaviour-change"
+substrate = "code"
+anchor = true
+[[roster]]
+key = "over-rejection"
+substrate = "code"
+anchor = true
+[[roster]]
+key = "public-contract"
+substrate = "code"
+anchor = false
+[[roster]]
+key = "numerics"
+substrate = "code"
+anchor = false
+[[roster]]
+key = "invariants"
+substrate = "code"
+anchor = false
+[[roster]]
+key = "claim-versus-edit"
+substrate = "code"
+anchor = false
+[[roster]]
+key = "contract-drift"
+substrate = "prose"
+anchor = true
+[[roster]]
+key = "sweep-completeness"
+substrate = "prose"
+anchor = false
+[[roster]]
+key = "reader-consequence"
+substrate = "prose"
+anchor = false
