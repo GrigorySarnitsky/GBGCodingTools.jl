@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "393736a7995908893c11984c71c9e819",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/built-html#1",
+      "verdict": "ABSENT",
+      "evidence": "docs/build/guide/verbs.html now has real <details class=\"docstring\"> blocks for cmd_gate, cmd_sync, cmd_self_verify (rendered bodies, not just text mentions). Exhaustively checked all 9 cmd_* functions in src/ carrying their own docstring (cmd_config/doctor/gate/witnesses/install/probe/schema/self_verify/sync/scan) — all 9 appear in built verbs.html; no CLI-face wrapper docstring is missing."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/built-html#2",
+      "verdict": "PARTIAL",
+      "evidence": "src/TestHarness.jl module docstring now names TestHarness.traffic_completeness (also confirmed rendered in docs/build/api/TestHarness.html).",
+      "surviving_class": "Same file, same page: docs/build/api/TestHarness.html's 'Allocation and traffic' @docs block also documents TestHarness.AUDITED_ALLOCATION_OPS and TestHarness.AUDITED_TRAFFIC_OPS, but the module docstring's 'allocation audit'/'element-traffic audit' clauses name neither."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/built-html#3",
+      "verdict": "PARTIAL",
+      "evidence": "src/CLI/Config.jl module docstring now names both Config.find_root and Config.check_paths (confirmed rendered in docs/build/api/Config.html).",
+      "surviving_class": "src/Reflection.jl module docstring names argcov/signature_fidelity/xlink/dupref/package_operations but omits Reflection.ARGS_THRESHOLD and Reflection.WRAPPER_PHRASE, both documented via full @docs blocks on the same rendered docs/build/api/Reflection.html page."
+    }
+  ]
+}

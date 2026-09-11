@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "lane": "ext",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "393736a7995908893c11984c71c9e819",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/ext#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:22 now reads `gate_or_skip(cfg, what::AbstractString) -> Bool`, matching the method at line 32 `function gate_or_skip(cfg, what::AbstractString)` exactly. `cfg` carries no type in the method either, so it is correctly left bare. Diff: `-    gate_or_skip(cfg, what) -> Bool` / `+    gate_or_skip(cfg, what::AbstractString) -> Bool`.",
+      "class_surfaces": [
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:22",
+          "swept": true,
+          "evidence": "signature line now types `what::AbstractString`, mirroring the method declaration at line 32."
+        },
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:14",
+          "swept": true,
+          "evidence": "`check(verb::AbstractString, code::Integer)` docstring signature already mirrored the method before this pass (finding itself cites it as the correct sibling); unchanged and still correct."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-02/ext#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "Line 24 now reads 'Runs [`GBGCodingTools.gate`](@ref), the closure gate that refuses a build while a round is open, over the two docs instruments...' — adds the @ref link to `GBGCodingTools.gate` (src/CLI/Gate.jl:26) and states in-clause what it checks ('refuses a build while a round is open'), matching Gate.jl's own docstring ('whether an open round blocks a build, a test or a release here').",
+      "class_surfaces": [
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:24",
+          "swept": true,
+          "evidence": "the only occurrence of 'closure gate' in this file (grep confirms), now linked and glossed."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-02/ext#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "Comment at line 51 now reads '# A round of a docs instrument freezes the build (ARCHITECTURE D9).' replacing the wrong `RULE.INST.FROZEN_MIDROUND` cite. ARCHITECTURE.md:478-495 (D9) explicitly describes this exact mechanism ('either gate refusing only because a round of a docs instrument is open prints `makedocs: SKIPPED` ... exit 0'), so the new citation is accurate where the old one was not.",
+      "class_surfaces": [
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:51",
+          "swept": true,
+          "evidence": "the flagged comment, now citing D9 instead of the rule."
+        },
+        {
+          "surface": "src/CLI/Passes.jl:886",
+          "swept": true,
+          "evidence": "'Carries a round's deferrals into the session work queue (RULE.INST.FROZEN_MIDROUND)' — this is the finding's own-cited correct usage of the rule id, unchanged, still matches the rule's text."
+        },
+        {
+          "surface": "CHANGELOG.md:459",
+          "swept": true,
+          "evidence": "'RULE.INST.FROZEN_MIDROUND freezes the instruments while a round is open' — states what the rule actually does (freezes instrument edits), a historical dated entry not restated as a live mechanism-citation for the build-skip behavior; not the same misattribution."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-02/ext#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "Real code fix, not a doc reword: src/CLI/Gate.jl extracts `gate_problems` returning `(fatal, problems::Vector{Pair{Symbol,String}})` tagged `:open|:disabled|:committed`; src/DocLints.jl:47-51 `docs_build_skipped` now requires `all(p -> first(p) == :open, ...)` before treating a refusal as skippable, so a concurrent disabled-instrument or committed-fix refusal now fails the build instead of being silently absorbed. test/gate.jl:55-64 adds a disabled-instrument-round test asserting `docs_build_skipped` returns empty (build fails) in exactly the composed case the finding described, and asserts the old `frozen_rounds`-only check would have wrongly skipped.",
+      "class_surfaces": [
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:35",
+          "swept": true,
+          "evidence": "`gate_or_skip`'s only call to `docs_build_skipped` — now backed by the corrected logic; no other call site of `docs_build_skipped` exists in the corpus (grep confirms)."
+        },
+        {
+          "surface": "src/CLI/Gate.jl:26 gate()",
+          "swept": true,
+          "evidence": "`gate()` itself is refactored to call the new shared `gate_problems`, so its own exit-1 refusal message and `gate_or_skip`'s skip decision are now derived from the same tagged problem list — no divergent duplicate logic left uncorrected."
+        }
+      ]
+    }
+  ]
+}

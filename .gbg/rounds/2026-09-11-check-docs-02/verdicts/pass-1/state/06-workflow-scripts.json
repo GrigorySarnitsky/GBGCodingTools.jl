@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "393736a7995908893c11984c71c9e819",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/workflow-scripts#1",
+      "verdict": "PRESENT",
+      "evidence": "verify-act.js:21,99-121 still declares and validates mode:'batches'. grep -rln batches --exclude-dir=.gbg . finds only verify-act.js itself (plus prose docs); Passes.jl:544 is still the sole caller and still hardcodes \"mode\" => \"lanes\"; test/rounds.jl has no batches test."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/workflow-scripts#2",
+      "verdict": "PRESENT",
+      "evidence": "Unchanged: dismissals.js:21, severity-recheck.js:17, rubric-audit.js:16, verify-architecture.js:18 still guard `.items`/`.hats`; lanes.js, panel.js, hunt.js, audit.js, verify-state.js, and verify-act.js's default lanes branch still have no such guard on A.lanes/A.hats."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Design.jl:209 registers VERBS[\"attack\"] launching attack-design.js and :214 VERBS[\"calibrate\"] launching rubric-audit.js; test/rounds.jl:228,253 test both. WORK_QUEUE.md confirms this was wired 2026-09-11 per owner's word."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#2",
+      "verdict": "ABSENT",
+      "evidence": "Both scripts now explicitly instruct id-echo: dismissals.js:57 \"THEN return {id: \\\"${d.id}\\\", ...}\"; verify-architecture.js:49 \"Return {id: \\\"${f.id}\\\", ...}\". Both also now pipe agent output through stampIds() (prelude.js:32), which force-overwrites id from A.items[i]/A.findings[i] by position regardless of what the model returns, eliminating the paraphrase-causes-DIED failure at the code level too."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#3",
+      "verdict": "ABSENT",
+      "evidence": "severity-recheck.js:16 required-args list now includes 'round'; attack-design.js:14 required-args list now includes 'round'. WORK_QUEUE.md: \"DONE 2026-09-11: round is in both scripts' required-args guard\"."
+    }
+  ]
+}

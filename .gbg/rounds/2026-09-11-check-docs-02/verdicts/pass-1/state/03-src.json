@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "393736a7995908893c11984c71c9e819",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/src#1",
+      "verdict": "ABSENT",
+      "evidence": "Read the docstring text at all 10 quoted sites (Sync.jl:467-472, Demote.jl:19-27, Selftest.jl:8-12, Gate.jl:8-11, RoundFiles.jl:66-73, Init.jl:92-95, Preflight.jl:59-65, Doctor.jl:8-11, Passes.jl:201-208, Passes.jl:1055-1061): none carries a §N citation now. Full grep -rn '§' src (excluding .gbg) shows every remaining § is in a # top-of-file/inline comment or prose_shape.jl's unrelated §-as-separator key syntax, not an ARCHITECTURE citation in a docstring."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/src#2",
+      "verdict": "ABSENT",
+      "evidence": "src/TestHarness.jl:301-304, resolve_function's docstring now reads 'Config.read, Git.run and Ledger.read denote the package's function...'. Ledger.read is genuine: module Ledger (src/CLI/Ledger.jl:13) defines function read(cfg) at line 30, colliding with Base.read as Config.read/Git.run do. grep -rn 'Scan.report' src ext docs/src returns nothing."
+    }
+  ]
+}

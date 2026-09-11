@@ -1,0 +1,279 @@
+{
+    "class_candidates": {
+        "2026-09-11-check-docs-02/src#2": [
+        ],
+        "2026-09-11-check-docs-02/workflow-scripts#2": [
+            "docs/ARCHITECTURE.md:2353",
+            "fixture/GBG Fixture/.gbg/policy/testing-protocol.md:52",
+            "policy/RULES.toml:509",
+            "policy/RULES.toml:511",
+            "policy/testing-protocol.md:51"
+        ],
+        "2026-09-11-check-docs-02/cold-reader#2": [
+        ],
+        "2026-09-11-check-docs-02/rationale#1": [
+        ],
+        "2026-09-11-check-docs-02/rulebook#2": [
+            "catalog/scans.toml:129",
+            "catalog/scans.toml:130",
+            "catalog/scans.toml:177",
+            "catalog/scans.toml:178",
+            "docs/ARCHITECTURE.md:2287",
+            "docs/ARCHITECTURE.md:2313",
+            "docs/ARCHITECTURE.md:2410",
+            "docs/ARCHITECTURE.md:2420",
+            "docs/ARCHITECTURE.md:533",
+            "docs/ROADMAP.md:7",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:19",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:218",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:47",
+            "fixture/GBG Fixture/defects.toml:129",
+            "fixture/GBG Fixture/defects.toml:134",
+            "fixture/GBG Fixture/defects.toml:149",
+            "fixture/GBG Fixture/defects.toml:265",
+            "fixture/GBG Fixture/src/FixtureC.jl:47",
+            "fixture/GBG Fixture/src/FixtureC.jl:48",
+            "policy/RULES.toml:229",
+            "policy/RULES.toml:231",
+            "policy/RULES.toml:47",
+            "policy/RULES.toml:49",
+            "policy/RULES.toml:52"
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#2": [
+        ],
+        "2026-09-11-check-docs-02/templates#2": [
+        ],
+        "2026-09-11-check-docs-02/ext#1": [
+            "catalog/scans.toml:305",
+            "catalog/scans.toml:306",
+            "docs/ARCHITECTURE.md:2316",
+            "docs/ARCHITECTURE.md:2428",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:236",
+            "fixture/GBG Fixture/defects.toml:199",
+            "policy/RULES.toml:250",
+            "policy/RULES.toml:252",
+            "policy/RULES.toml:255",
+            "policy/docs-rubric.md:235",
+            "src/Scans/signature_wide.jl:1",
+            "src/Scans/signature_wide.jl:5"
+        ],
+        "2026-09-11-check-docs-02/operational-claims#3": [
+        ],
+        "2026-09-11-check-docs-02/ext#3": [
+            "docs/ARCHITECTURE.md:2368",
+            "docs/ARCHITECTURE.md:2692",
+            "fixture/GBG Fixture/.gbg/policy/instruments.md:81",
+            "policy/RULES.toml:614",
+            "policy/RULES.toml:616",
+            "policy/instruments.md:80",
+            "src/CLI/Passes.jl:886",
+            "test/rounds.jl:294"
+        ],
+        "2026-09-11-check-docs-02/built-html#1": [
+        ],
+        "2026-09-11-check-docs-02/templates#3": [
+        ],
+        "2026-09-11-check-docs-02/cold-reader#1": [
+        ],
+        "2026-09-11-check-docs-02/operational-claims#4": [
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#1": [
+        ],
+        "2026-09-11-check-docs-02/rationale#2": [
+        ],
+        "2026-09-11-check-docs-02/ext#2": [
+            "docs/ARCHITECTURE.md:2300",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:135",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:279",
+            "policy/RULES.toml:138",
+            "policy/RULES.toml:140",
+            "policy/docs-rubric.md:134",
+            "policy/docs-rubric.md:278"
+        ],
+        "2026-09-11-check-docs-02/built-html#3": [
+        ],
+        "2026-09-11-check-docs-02/rulebook#1": [
+            "CLAUDE.md:5",
+            "catalog/scans.toml:193",
+            "catalog/scans.toml:194",
+            "docs/ARCHITECTURE.md:1590",
+            "docs/ARCHITECTURE.md:2276",
+            "docs/ARCHITECTURE.md:2340",
+            "docs/ARCHITECTURE.md:2341",
+            "docs/ARCHITECTURE.md:2354",
+            "docs/ARCHITECTURE.md:2413",
+            "fixture/GBG Fixture/.gbg/policy/citations.md:10",
+            "fixture/GBG Fixture/.gbg/policy/citations.md:19",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:19",
+            "fixture/GBG Fixture/.gbg/policy/testing-protocol.md:57",
+            "fixture/GBG Fixture/defects.toml:144",
+            "fixture/GBG Fixture/defects.toml:154",
+            "fixture/GBG Fixture/defects.toml:301",
+            "fixture/GBG Fixture/defects.toml:304",
+            "policy/RULES.toml:3",
+            "policy/RULES.toml:425",
+            "policy/RULES.toml:427",
+            "policy/RULES.toml:430",
+            "policy/RULES.toml:432",
+            "policy/RULES.toml:434",
+            "policy/RULES.toml:516"
+        ],
+        "2026-09-11-check-docs-02/operational-claims#2": [
+        ],
+        "2026-09-11-check-docs-01/cold-reader#1": [
+            "docs/ARCHITECTURE.md:2302",
+            "docs/ARCHITECTURE.md:2360",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:147",
+            "fixture/GBG Fixture/.gbg/policy/instruments.md:24",
+            "policy/RULES.toml:152",
+            "policy/RULES.toml:154",
+            "policy/RULES.toml:558",
+            "policy/RULES.toml:560",
+            "policy/docs-rubric.md:146",
+            "policy/instruments.md:23"
+        ],
+        "2026-09-11-check-docs-02/ext#4": [
+        ],
+        "2026-09-11-check-docs-02/src#1": [
+            "catalog/scans.toml:289",
+            "catalog/scans.toml:290",
+            "docs/ARCHITECTURE.md:2311",
+            "docs/ARCHITECTURE.md:2426",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:202",
+            "fixture/GBG Fixture/defects.toml:189",
+            "policy/RULES.toml:215",
+            "policy/RULES.toml:217",
+            "policy/RULES.toml:220",
+            "policy/docs-rubric.md:201",
+            "src/Scans/dead_ref.jl:1",
+            "src/Scans/dead_ref.jl:4"
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#3": [
+        ],
+        "2026-09-11-check-docs-02/operational-claims#1": [
+        ],
+        "2026-09-11-check-docs-02/cold-reader#3": [
+        ],
+        "2026-09-11-check-docs-02/templates#1": [
+        ],
+        "2026-09-11-check-docs-02/built-html#2": [
+            "IMPLEMENTATION.md:810",
+            "catalog/scans.toml:161",
+            "catalog/scans.toml:162",
+            "docs/ARCHITECTURE.md:107",
+            "docs/ARCHITECTURE.md:1186",
+            "docs/ARCHITECTURE.md:1314",
+            "docs/ARCHITECTURE.md:2022",
+            "docs/ARCHITECTURE.md:2028",
+            "docs/ARCHITECTURE.md:2301",
+            "docs/ARCHITECTURE.md:2314",
+            "docs/ARCHITECTURE.md:2408",
+            "docs/ARCHITECTURE.md:2706",
+            "docs/design-record/FIXLOG.md:185",
+            "docs/design-record/FIXLOG.md:53",
+            "docs/design-record/REVIEW-verify.md:50",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:141",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:228",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:282",
+            "fixture/GBG Fixture/defects.toml:114",
+            "fixture/GBG Fixture/defects.toml:292",
+            "policy/RULES.toml:145",
+            "policy/RULES.toml:147",
+            "policy/RULES.toml:150",
+            "policy/RULES.toml:236"
+        ],
+        "2026-09-11-check-docs-02/cold-reader#4": [
+            "IMPLEMENTATION.md:810",
+            "docs/ARCHITECTURE.md:1314",
+            "docs/ARCHITECTURE.md:2028",
+            "docs/ARCHITECTURE.md:2314",
+            "docs/design-record/FIXLOG.md:185",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:228",
+            "policy/RULES.toml:236",
+            "policy/RULES.toml:238",
+            "policy/docs-rubric.md:227"
+        ],
+        "2026-09-11-check-docs-01/rationale#1": [
+        ],
+        "2026-09-11-check-docs-02/workflow-scripts#1": [
+        ]
+    },
+    "quote_still_stands": {
+        "2026-09-11-check-docs-02/src#2": [
+        ],
+        "2026-09-11-check-docs-02/workflow-scripts#2": [
+        ],
+        "2026-09-11-check-docs-02/cold-reader#2": [
+        ],
+        "2026-09-11-check-docs-02/rationale#1": [
+        ],
+        "2026-09-11-check-docs-02/rulebook#2": [
+            "policy/docs-rubric.md",
+            "src/Scans/prose_shape.jl"
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#2": [
+        ],
+        "2026-09-11-check-docs-02/templates#2": [
+            "templates/gitignore.block",
+            "templates/claude-md.block"
+        ],
+        "2026-09-11-check-docs-02/ext#1": [
+            "ext/GBGCodingToolsDocumenterExt.jl"
+        ],
+        "2026-09-11-check-docs-02/operational-claims#3": [
+        ],
+        "2026-09-11-check-docs-02/ext#3": [
+        ],
+        "2026-09-11-check-docs-02/built-html#1": [
+            "docs/build/guide/verbs.html",
+            "src/CLI/Gate.jl",
+            "src/CLI/Sync.jl",
+            "src/CLI/Self.jl"
+        ],
+        "2026-09-11-check-docs-02/templates#3": [
+        ],
+        "2026-09-11-check-docs-02/cold-reader#1": [
+            "src/CLI/Config.jl"
+        ],
+        "2026-09-11-check-docs-02/operational-claims#4": [
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#1": [
+            "src/CLI/Preflight.jl"
+        ],
+        "2026-09-11-check-docs-02/rationale#2": [
+        ],
+        "2026-09-11-check-docs-02/ext#2": [
+        ],
+        "2026-09-11-check-docs-02/built-html#3": [
+        ],
+        "2026-09-11-check-docs-02/rulebook#1": [
+            "src/Scans/doi_crosscheck.jl"
+        ],
+        "2026-09-11-check-docs-02/operational-claims#2": [
+        ],
+        "2026-09-11-check-docs-01/cold-reader#1": [
+        ],
+        "2026-09-11-check-docs-02/ext#4": [
+        ],
+        "2026-09-11-check-docs-02/src#1": [
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#3": [
+        ],
+        "2026-09-11-check-docs-02/operational-claims#1": [
+        ],
+        "2026-09-11-check-docs-02/cold-reader#3": [
+        ],
+        "2026-09-11-check-docs-02/templates#1": [
+        ],
+        "2026-09-11-check-docs-02/built-html#2": [
+        ],
+        "2026-09-11-check-docs-02/cold-reader#4": [
+            "src/CLI/Passes.jl"
+        ],
+        "2026-09-11-check-docs-01/rationale#1": [
+        ],
+        "2026-09-11-check-docs-02/workflow-scripts#1": [
+            "src/CLI/Passes.jl"
+        ]
+    }
+}

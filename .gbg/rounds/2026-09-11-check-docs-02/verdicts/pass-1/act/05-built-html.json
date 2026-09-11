@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "lane": "built-html",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "393736a7995908893c11984c71c9e819",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/built-html#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/src/guide/verbs.md adds `GBGCodingTools.cmd_gate`, `GBGCodingTools.Sync.cmd_sync`, `GBGCodingTools.cmd_self_verify` to the @docs blocks; docs/build/guide/verbs.html (rebuilt 22:53, before the 22:55 commit) now renders full docstring articles for all three (e.g. cmd_self_verify's article quotes 'gbg self verify: the command-line face of self_verify'), each appearing 4x (TOC+heading+body+source link), confirming a real rebuild not a stray reference.",
+      "class_surfaces": [
+        {
+          "surface": "docs/build/guide/verbs.html",
+          "swept": true,
+          "evidence": "grep -o for cmd_gate/cmd_sync/cmd_self_verify each returns 4 hits with full docstring articles rendered"
+        },
+        {
+          "surface": "src/CLI/Gate.jl:88-92 (cmd_gate docstring)",
+          "swept": true,
+          "evidence": "docstring pre-existed and is now referenced by verbs.md's @docs block and rendered"
+        },
+        {
+          "surface": "src/CLI/Sync.jl:662-666 (cmd_sync docstring)",
+          "swept": true,
+          "evidence": "docstring pre-existed and is now referenced by verbs.md's @docs block and rendered"
+        },
+        {
+          "surface": "src/CLI/Self.jl:97-101 (cmd_self_verify docstring)",
+          "swept": true,
+          "evidence": "docstring pre-existed and is now referenced by verbs.md's @docs block and rendered"
+        },
+        {
+          "surface": "all other VERBS[...] = cmd_* registrations (bump, init, migrate_baselines, new, preflight, selftest, release, round, fleet)",
+          "swept": true,
+          "evidence": "checked each cmd_* definition in src/CLI/*.jl: none carries a docstring above the function (unlike gate/sync/self_verify which did), so none is an instance of 'a real docstring exists but is unrendered' — the page's claim is not broken by these, matching the finding's own stated hint about verbs documented only via an underlying function"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-02/built-html#2",
+      "verdict": "LINE-ONLY",
+      "question": "strategy",
+      "evidence": "src/TestHarness.jl:13 now reads '...[`TestHarness.audit`](@ref), [`TestHarness.traffic_completeness`](@ref)), the' — correctly named as the twin of allocation_completeness, and docs/build/api/TestHarness.html renders it (6 hits). But the same module map still omits `AUDITED_ALLOCATION_OPS` (src/TestHarness.jl:32) and `AUDITED_TRAFFIC_OPS` (src/TestHarness.jl:177), both carrying their own genuine docstrings and both rendered as standalone @docs entries on docs/src/api/TestHarness.md / docs/build/api/TestHarness.html, yet neither is named anywhere in the module docstring's prose map — the identical omission class (page-documented member missing from the map) survives on the very same page the finding was about.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:13-14 (traffic_completeness in map)",
+          "swept": true,
+          "evidence": "traffic_completeness added correctly next to allocation_completeness"
+        },
+        {
+          "surface": "docs/build/api/TestHarness.html (traffic_completeness rendering)",
+          "swept": true,
+          "evidence": "grep -o traffic_completeness returns 6 hits, full @docs article present"
+        },
+        {
+          "surface": "src/TestHarness.jl:32 AUDITED_ALLOCATION_OPS — documented via its own @docs entry (docs/src/api/TestHarness.md) but absent from the module map prose",
+          "swept": false,
+          "evidence": "docs/src/api/TestHarness.md lists `GBGCodingTools.TestHarness.AUDITED_ALLOCATION_OPS` under '## Allocation and traffic' with its own rendered article, but the module docstring's map sentence never names it"
+        },
+        {
+          "surface": "src/TestHarness.jl:177 AUDITED_TRAFFIC_OPS — documented via its own @docs entry but absent from the module map prose",
+          "swept": false,
+          "evidence": "docs/src/api/TestHarness.md lists `GBGCodingTools.TestHarness.AUDITED_TRAFFIC_OPS` with its own rendered article; module map sentence never names it"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-02/built-html#3",
+      "verdict": "LINE-ONLY",
+      "question": "strategy",
+      "evidence": "src/CLI/Config.jl:9-13 module docstring now names find_root and check_paths correctly, and docs/build/api/Config.html renders both (6 hits each, full @docs articles). But the same page's @docs block also documents `Config.glob_to_regex` (src/CLI/Config.jl:64-71, own docstring 'glob_to_regex(pattern) -> Regex', rendered at docs/build/api/Config.html id=GBGCodingTools.Config.glob_to_regex with full article) which the module map still never names — the identical class (a non-exported, page-documented Config function missing from the map) survives in the very file just edited to fix that class for two other functions.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Config.jl:9-11 (find_root in map)",
+          "swept": true,
+          "evidence": "find_root added to module docstring, rendered in docs/build/api/Config.html"
+        },
+        {
+          "surface": "src/CLI/Config.jl:10-11 (check_paths in map)",
+          "swept": true,
+          "evidence": "check_paths added to module docstring, rendered in docs/build/api/Config.html"
+        },
+        {
+          "surface": "src/CLI/Config.jl:64-71 glob_to_regex — full @docs entry on docs/src/api/Config.md, own rendered article on docs/build/api/Config.html, never named in the module map",
+          "swept": false,
+          "evidence": "docs/build/api/Config.html contains a full docstring article headed 'GBGCodingTools.Config.glob_to_regex' with signature 'glob_to_regex(pattern) -> Regex'; the module docstring's map paragraph lists only read/ConfigError/find_root/check_paths/glob_files/resolve_anchor and never mentions glob_to_regex"
+        }
+      ]
+    }
+  ]
+}

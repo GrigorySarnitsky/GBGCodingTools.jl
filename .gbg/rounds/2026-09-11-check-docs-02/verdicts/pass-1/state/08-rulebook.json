@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "393736a7995908893c11984c71c9e819",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/rulebook#1",
+      "verdict": "PRESENT",
+      "evidence": "policy/RULES.toml:437 still `check = [\"weakness\"]` for RULE.CIT.DOI, while src/Scans/doi_crosscheck.jl:1 still names RULE.CIT.DOI as one of two rules SCAN.DOI_CROSSCHECK enforces and its require_doi loop (line 61ff) still flags refs lacking a DOI/Open Library link; RULE.CIT.FULL_INLINE's row correctly shows check=[\"scan:SCAN.DOI_CROSSCHECK\"], contrast unresolved."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/rulebook#2",
+      "verdict": "PRESENT",
+      "evidence": "policy/docs-rubric.md:219 still reads '`# Arguments` precedes any column-0 admonition, and `# Fields` is last'; ARGS_FORM (lines 46-51) still mandates only the prose lead-in `The arguments are:`, never a heading; src/Scans/prose_shape.jl:118 still tests `^# Arguments\\b`; no `# Arguments` heading occurs in any src docstring; no provenance note added near the clause."
+    }
+  ]
+}

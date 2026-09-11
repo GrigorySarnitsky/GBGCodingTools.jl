@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "393736a7995908893c11984c71c9e819",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/src#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "All 10 flagged docstrings rewritten to state the invariant without the §N citation, e.g. Gate.jl:8 'The closure gate: whether an open round blocks a build, a test or a release here.' (was '(§6.2 step 10)'); RoundFiles.jl:66 drops '(ARCHITECTURE §6.3)'; Sync.jl:466 drops '(ARCHITECTURE §6.1)'. True rewrites, not appends — flagged text does not survive beside the fix.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Sync.jl:466",
+          "swept": true,
+          "evidence": "'in that order; the stamp every round records' — §6.1 removed"
+        },
+        {
+          "surface": "src/CLI/Demote.jl:20",
+          "swept": true,
+          "evidence": "'The design record weighed the two rules, content against emptiness' — §12 removed"
+        },
+        {
+          "surface": "src/CLI/Selftest.jl:8",
+          "swept": true,
+          "evidence": "'so the self-test's arms run over the fixture' — §8 removed"
+        },
+        {
+          "surface": "src/CLI/Gate.jl:8",
+          "swept": true,
+          "evidence": "'The closure gate: whether an open round blocks a build, a test or a release here.' — §6.2 step 10 removed"
+        },
+        {
+          "surface": "src/CLI/RoundFiles.jl:66",
+          "swept": true,
+          "evidence": "'recorded after bank, so recording one leaves the hash' — §6.3 removed"
+        },
+        {
+          "surface": "src/CLI/Init.jl:92",
+          "swept": true,
+          "evidence": "'The best config the package tree supports: name and description from' — §5 removed; §5.6 also removed further down the same docstring"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:59",
+          "swept": true,
+          "evidence": "'The config stamp every round and pass records' — §6.1 removed"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:8",
+          "swept": true,
+          "evidence": "'The read-only health check of a consumer's tooling.' — D14, §7.3 removed"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:203",
+          "swept": true,
+          "evidence": "'and its row in the design's scan catalogue' — §12.B removed"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:1057",
+          "swept": true,
+          "evidence": "'The conditions: the latest pass fully closed' — §6.2 step 9; §6.7; §6.8 removed"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-02/src#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TestHarness.jl:302 now reads '`Config.read`, `Git.run` and `Ledger.read` denote the package's function...'. Verified: src/CLI/Ledger.jl:13 `module Ledger`, line 30 `function read(cfg::AbstractDict)` — a real package-owned name colliding with the implicit `Base.read` import, exactly the ownership-vs-Base-collision point the sentence makes. Correct replacement, no other text disturbed.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:301-302",
+          "swept": true,
+          "evidence": "the sole location of this docstring's worked-example list; `Scan.report` (nonexistent module, no Base collision) replaced by `Ledger.read` (real module, real Base.read collision)"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "lane": "templates",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "393736a7995908893c11984c71c9e819",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/templates#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/commit-message.tmpl:5-7 now reads 'are superseded by the tool's skills at the pinned version above; `gbg doctor`'s `LEG.COMMANDS` fails until the old files are deleted.' Verified against src/CLI/Doctor.jl:437-444 (LEG.COMMANDS FAILs while any `.claude/commands/{Sync.INSTRUMENTS-prefixed}*`, manifest.py, MANIFEST.txt or INVENTORY.md is present) and src/CLI/Sync.jl:22 (INSTRUMENTS = check-docs/check-consistency/bug-hunt/audit-changes, matching Doctor's own row). The false 'replaced by the tool's' claim is gone, replaced by an accurate statement plus the doctor pointer the hint asked for; no code change (Init.jl untouched) so this took the 'soften the sentence' branch of the hint rather than the 'make migrate delete them' branch, which the hint offered as an equally valid alternative.",
+      "class_surfaces": [
+        {
+          "surface": "templates/commit-message.tmpl:6",
+          "swept": true,
+          "evidence": "the only occurrence of `.claude/commands` anywhere under templates/ (grep -rln '\\.claude/commands' templates/); the false-replacement wording is gone here and appears nowhere else in templates/"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1836 / IMPLEMENTATION.md PF-6/MIG-5 rows",
+          "swept": true,
+          "evidence": "these describe `.claude/commands/**` deletion as an explicit manual migration step (git rm/rm -rf commands) rather than asserting the tool performs it automatically, so they never carried this finding's false-accomplished-fact claim and needed no edit"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-02/templates#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/README.md:31-35 adds the begin/end paragraph: 'gbg:managed begin v<version> line ... whose opener also carries sha256:<hash> ... and after `#` in .gitignore ... and a gbg:managed end line; sync rewrites only what lies between the two.' Verified verbatim against templates/claude-md.block:1 ('<!-- gbg:managed begin v{{tool.version}} sha256:{{sha256}} ... -->'), templates/gitignore.block:1 ('# gbg:managed begin v{{tool.version}} ...'), and src/CLI/Sync.jl:227-256 (BLOCKS begin_re/end_line per file, managed_block's sha256-of-body-lines comment). Matches the hint's first option exactly; the dead `:hash` branch of managed_header (Sync.jl:154) was left alone, which the hint also allowed.",
+      "class_surfaces": [
+        {
+          "surface": "templates/README.md:28-35 (Managed headers section)",
+          "swept": true,
+          "evidence": "the only prose in the corpus describing the two-shapes-only header contract that omitted the begin/end block; now amended"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:667-681",
+          "swept": true,
+          "evidence": "already documents the CLAUDE.md managed-block begin/end/sha256 shape independently and correctly, so it never carried this omission and needed no edit"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-02/templates#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/bump-message.tmpl:6 header changed from 'Managed files changed:' to 'Managed files, each re-rendered at {{to}}:'. Verified against src/CLI/Bump.jl:35-39 (Sync.sync(cfg2) re-renders every managed file, then `files` lists every :OK entry — the full footprint, unchanged by this fix) — the new wording ('re-rendered at {{to}}') is true of every listed entry regardless of whether its bytes differ, unlike the old 'changed' claim which was false for settings.json.tmpl and queue-guard.sh.tmpl (no slots, byte-identical every bump). This is the header-rename branch the finding's own hint offered as an alternative to diffing pre/post content, so it is the right kind of repair, not a workaround.",
+      "class_surfaces": [
+        {
+          "surface": "templates/bump-message.tmpl:6",
+          "swept": true,
+          "evidence": "the only 'Managed files changed' header in the corpus; now reworded to a version-neutral, factually-true claim"
+        },
+        {
+          "surface": "templates/commit-message.tmpl:9 ('Files written or changed:')",
+          "swept": true,
+          "evidence": "different mechanism and not the same overclaim: src/CLI/Init.jl:259-275 only `note()`s files that are conditionally absent/newly written (isfile(...) || note(...)) during a one-time `--migrate`, not a full always-re-rendered footprint like Bump.jl's, so it does not carry this finding's class"
+        }
+      ]
+    }
+  ]
+}

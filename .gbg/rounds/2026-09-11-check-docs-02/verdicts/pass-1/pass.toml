@@ -1,0 +1,25 @@
+tool_version = "1.0.0-rc.9"
+head = "47db044c509c5e2254dfdb4d59b2a4a1f2c5717f"
+fix_range = "e21e57f916145a3380102026adb27c265af21f48..47db044c509c5e2254dfdb4d59b2a4a1f2c5717f"
+tool_tree_sha = "98c1cb1fb018b1e5ea20e67c25218f174cec57ee"
+state_ids = ["2026-09-11-check-docs-02/rationale#1", "2026-09-11-check-docs-02/rationale#2", "2026-09-11-check-docs-02/src#1", "2026-09-11-check-docs-02/src#2", "2026-09-11-check-docs-02/ext#1", "2026-09-11-check-docs-02/ext#2", "2026-09-11-check-docs-02/ext#3", "2026-09-11-check-docs-02/ext#4", "2026-09-11-check-docs-02/built-html#1", "2026-09-11-check-docs-02/built-html#2", "2026-09-11-check-docs-02/built-html#3", "2026-09-11-check-docs-02/workflow-scripts#1", "2026-09-11-check-docs-02/workflow-scripts#2", "2026-09-11-check-docs-02/rulebook#1", "2026-09-11-check-docs-02/rulebook#2", "2026-09-11-check-docs-02/templates#1", "2026-09-11-check-docs-02/templates#2", "2026-09-11-check-docs-02/templates#3", "2026-09-11-check-docs-02/cold-reader#1", "2026-09-11-check-docs-02/cold-reader#2", "2026-09-11-check-docs-02/cold-reader#3", "2026-09-11-check-docs-02/cold-reader#4", "2026-09-11-check-docs-02/operational-claims#1", "2026-09-11-check-docs-02/operational-claims#2", "2026-09-11-check-docs-02/operational-claims#3", "2026-09-11-check-docs-02/operational-claims#4", "2026-09-11-check-docs-01/cold-reader#1", "2026-09-11-check-docs-01/rationale#1", "2026-09-11-check-docs-01/workflow-scripts#1", "2026-09-11-check-docs-01/workflow-scripts#2", "2026-09-11-check-docs-01/workflow-scripts#3"]
+config_sha = "3daa040f54a778a95ce45be87ae94de8caa967d0d08aa427b71160f30f8b6255"
+tool_rev = "efd9b35fafd87d96fd33309780e646b4878e92d4"
+range = "e21e57f916145a3380102026adb27c265af21f48..47db044c509c5e2254dfdb4d59b2a4a1f2c5717f"
+counted = true
+rechecked = []
+regrade = false
+pass = 1
+nonce = "393736a7995908893c11984c71c9e819"
+opened = "2026-09-11T22:55:53"
+
+[expected]
+rationale = 3
+ext = 4
+src = 2
+workflow-scripts = 5
+built-html = 3
+rulebook = 2
+templates = 3
+cold-reader = 5
+operational-claims = 4

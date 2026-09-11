@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "393736a7995908893c11984c71c9e819",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/rulebook#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff e21e57f9..47db044c -- policy/RULES.toml src/Scans/doi_crosscheck.jl shows zero changes to either file. The fix-pass commit message itself lists 'rulebook#1-2' under 'Deferred (deferred.md, instrument changes frozen mid-round)' — RULE.CIT.DOI's check field at policy/RULES.toml still reads whatever it read before; nothing in the diff addresses the finding.",
+      "class_surfaces": []
+    },
+    {
+      "id": "2026-09-11-check-docs-02/rulebook#2",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff e21e57f9..47db044c -- policy/docs-rubric.md src/Scans/prose_shape.jl shows zero changes to either file (prose_shape.jl's only diff-adjacent artifact touched was docs/prose_shape.csv, a ratchet baseline, not the rule text). The fix-pass commit message explicitly lists 'rulebook#1-2' under 'Deferred (deferred.md, instrument changes frozen mid-round)'; the RULE.DOC.SHAPE ordering clause is untouched.",
+      "class_surfaces": []
+    }
+  ]
+}

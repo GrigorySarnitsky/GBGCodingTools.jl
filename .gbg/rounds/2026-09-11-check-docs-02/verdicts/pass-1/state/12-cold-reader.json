@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "393736a7995908893c11984c71c9e819",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "Config.jl:23-25 module docstring now defines 'the ECONOMY MODEL' at first mention, cross-referencing Preflight.economy_model, and Preflight.jl:499-502 gives economy_model() its own docstring ('the cheaper AI model... every lane and hat that is not an anchor runs in an economy round'). Config.jl includes before Doctor.jl/Preflight.jl."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "Preflight.jl:530-532 render_args docstring now distinguishes them: 'strength ... which alone decides whether a lane or hat ... runs on the economy model; cost ... copied into a consistency round's args and read by no script'."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/cold-reader#3",
+      "verdict": "ABSENT",
+      "evidence": "Reflection.jl:26 now binds it: 'The docstring rubric's constant (the `RULE.DOC.*` rules of the shared policy)'; line 209 uses 'the docstring rubric' consistently. grep -rn 'the rubric\\b' src/ returns nothing; remaining 'rubric' uses are config-key refs or 'persona's rubric' (plain English), not the bare unbound term."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/cold-reader#4",
+      "verdict": "ABSENT",
+      "evidence": "Passes.jl:21 module docstring now names all four at first mention: 'the four closure channels — `honored`, `adjudicated`, `seeded` and `rescan` —', immediately after defining act/state verifiers (lines 9-16)."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "Passes.jl:7-16 module docstring now defines both verifiers and enumerates HONORED/LINE-ONLY/.../LAUNDERED and PRESENT/.../UNCLEAR fully. Demote.jl:6-8, encountered first, now glosses both verifiers inline and cross-refs `[GBGCodingTools.Passes](@ref)` which 'binds both verifiers and their verdicts'."
+    }
+  ]
+}
