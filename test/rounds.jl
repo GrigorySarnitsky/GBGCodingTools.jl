@@ -183,6 +183,16 @@ end
     @test st == :dead && occursin("invalid", note)                          # DEAD on the schema, not a crash
 end
 
+# The audit's severity re-check reads only the concerns a re-rating can move across the disposition gate:
+# grade takes the more serious rating, so a major or a previously-working concern is gated whatever the
+# re-rating says. Both directions (22 of 33 concerns once went to it for nothing).
+@testset "the audit re-rates only what the gate could still move" begin
+    c(sev, pw) = (d = Dict{String,Any}("id" => "r/l#$(sev)-$(pw)", "severity" => sev); pw === nothing || (d["previously_worked"] = pw); d)
+    fs = [c("minor", nothing), c("nit", "no"), c("minor", "yes"), c("nit", "unknown"), c("major", nothing), c("blocker", "no")]
+    @test [x["id"] for x in G.recheck_candidates(fs)] == ["r/l#minor-nothing", "r/l#nit-no"]
+    @test isempty(G.recheck_candidates([c("major", "no"), c("minor", "yes")]))
+end
+
 # RULE.INST.FROZEN_MIDROUND: a deferral written in the round's deferred.md is carried into the work
 # queue at close, where the Stop hook holds the next session to it; a note nothing reads is not a mechanism.
 @testset "a round's deferrals reach the work queue" begin

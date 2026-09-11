@@ -38,7 +38,7 @@
        "minor",
        "nit"
       ],
-      "description": "the blind re-rating; the CLI takes the MORE serious of this and the lane's own"
+      "description": "the blind re-rating. The audit's disposition gate takes the MORE serious of this and the lane's own, so it only ever raises a concern; a carry takes this one alone, since a reporting lane's rating cannot license its own deferral"
      },
      "reason": {
       "type": "string",

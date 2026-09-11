@@ -1567,7 +1567,7 @@ at the tool root, which must work when the dev checkout IS the consumer.
 |---|---|---|
 | state verdict | `PRESENT \| PARTIAL(surviving_class) \| REGRESSED \| ABSENT \| NOT-A-DEFECT \| UNCLEAR` | default PRESENT; only ABSENT, NOT-A-DEFECT are favourable |
 | act verdict | `HONORED \| ADJACENT \| INSERTED \| LINE-ONLY \| NEW-DEFECT \| SCOPE-CREEP \| UNDONE \| LAUNDERED` + `question ∈ fidelity\|strategy\|implementation\|scope\|none` | HONORED demoted to LINE-ONLY iff `class_surfaces == []` or any entry is `swept: false` |
-| severity (every instrument) | `blocker \| major \| minor \| nit`; `serious ≡ blocker \| major` | audit-changes runs `severity-recheck.js` (anchor) before "serious" is counted |
+| severity (every instrument) | `blocker \| major \| minor \| nit`; `serious ≡ blocker \| major` | audit-changes runs `severity-recheck.js` (anchor) before "serious" is counted, over the concerns a re-rating can move across the gate (`minor`/`nit`, not already gated by `previously_worked`), several per agent |
 | confidence | `high \| medium \| low` | |
 | hunter `observed` | `FAILS \| PASSES \| ERRORS \| NOT-WRITABLE` | only FAILS reaches reproduction |
 | reproduction | `REPRODUCED \| EVIDENCED \| NOT-REPRODUCED \| WITNESS-WRONG \| NO-WITNESS-POSSIBLE \| BLOCKED \| ALREADY-COVERED \| NOT-A-DEFECT` | default NOT-REPRODUCED; confirmed = REPRODUCED ∪ EVIDENCED; REPRODUCED ⇒ `witness_path` in the bank-time fail set; EVIDENCED ⇒ `kind = architecture`; ALREADY-COVERED ⇒ `evidence = <file:line of the assertion>`; BLOCKED ⇒ `reason = environment`, assignable only at bank to a witness that ERRORED and was never observed FAILS |
@@ -1670,7 +1670,8 @@ under-rejection†, backend-portability, behaviour-change†, over-rejection†,
 invariants, claim-versus-edit; prose: contract-drift†, sweep-completeness, reader-consequence; † =
 anchor); `strength` honoured. Concern schema: `{severity, title, file, before, after, why_it_matters,
 justified, previously_worked, evidence}` + per lane `checked[]`, `candidates_found`;
-`severity-recheck.js` (anchor) runs before "serious" is counted. **Covered paths** are the constants
+`severity-recheck.js` (anchor) runs before "serious" is counted, over the concerns a re-rating can
+move across the gate, several per agent. **Covered paths** are the constants
 `src`, `test`, `ext`, `docs`, `Project.toml` plus every `[paths]` entry — config can only ADD.
 **Bank** (`gbg audit-changes bank`) itself RUNS the executable claims — `package.julia_test` as the
 gate claim, plus each file named in `executable_claims` — under `GBG_ROUND` and records their exit

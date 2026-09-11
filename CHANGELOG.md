@@ -78,6 +78,15 @@ removed — the one field recorded after bank — in bank, the doctor and close 
 Rates comparable: the unswept, class and SUSPECT changes alter what a round reports about itself, never
 what a lane sees.
 
+**The severity re-check costs a fraction of what it did.** It spent one agent per finding — 1.52M
+tokens to re-rate the 33 concerns of 2026-09-11-audit-changes-01, near the 2.23M of the audit lanes that
+found them. `severity-recheck.js` now rates several findings per agent (`batch`, default 6), each still
+on its own block alone, and an agent answers only for the ids it was handed. `audit-changes bank` sends
+it only the concerns a re-rating can move across the disposition gate: the gate takes the more serious
+rating, so a `major`, a `blocker` or a concern gated by `previously_worked` is gated whatever the
+re-rating says (22 of those 33). A carry still re-rates every candidate, since a carry takes the
+re-rating alone.
+
 The rest is prose: the module map names the round machinery and every module's docstring names its
 exports; Passes binds the act and state verifiers; the skill template says what `/gbg-doctor` runs;
 ARCHITECTURE and IMPLEMENTATION correct `Scan.jl`'s place, the prose-shape file, D18's five audit anchors

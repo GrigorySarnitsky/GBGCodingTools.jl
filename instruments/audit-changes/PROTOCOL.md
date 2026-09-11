@@ -64,8 +64,9 @@ the config; config can only add.
    the torn-file guard first): schema-validates the lane files; RUNS the executable claims itself —
    the package's test gate and each file the config names under `executable_claims` — under
    `GBG_ROUND` and records their exit codes in `audit.json`, so the `executing` lane's account is
-   corroborated by a program; runs the severity re-check (an anchor) before "serious" is counted;
-   freezes `findings.json`. A DEAD or REJECTED lane is exit 2: that lens is UNAPPLIED, not clean.
+   corroborated by a program; runs the severity re-check (an anchor) before "serious" is counted —
+   over the `minor` and `nit` concerns not already gated by `previously_worked`, several per agent,
+   since the gate takes the more serious rating and nothing else can move; freezes `findings.json`. A DEAD or REJECTED lane is exit 2: that lens is UNAPPLIED, not clean.
 4. **Dispose.** Every serious concern (`blocker` or `major`) and every concern with
    `previously_worked ∈ {yes, unknown}` — that field is what the instrument exists to surface, so its
    severity is not the reporting lane's to downgrade — carries a disposition: `fixed`, `refused` with a

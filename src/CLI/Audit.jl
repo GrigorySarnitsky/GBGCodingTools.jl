@@ -17,6 +17,13 @@ function lane_contradictions(dir::AbstractString, rec::AbstractDict)
     return bad
 end
 
+# The concerns a blind re-rating can move across the disposition gate. `grade` takes the MORE serious of
+# the lane's rating and the re-rating, so a concern already `major` or `blocker`, or gated because input
+# that worked before now behaves differently (`previously_worked` yes or unknown), is gated whatever the
+# re-rating says; re-rating it bought nothing (22 of the 33 concerns of 2026-09-11-audit-changes-01).
+recheck_candidates(findings) =
+    [x for x in findings if x["severity"] in ("minor", "nit") && !(get(x, "previously_worked", "no") in ("yes", "unknown"))]
+
 """
     audit_bank(cfg, round; io = stdout) -> Int
 
@@ -32,9 +39,12 @@ It runs `package.julia_test` (the gate claim) and every file named under `execut
 `GBG_ROUND` exported, each claim as `julia --project=test <file>` — which is why `test/Project.toml`
 names the package itself as a path source, and without that every claim fails to load it and the
 audit's account of what runs is built on nothing — records `{command, file, exit, log}` in `audit.json` together with `base`,
-`head`, `kind` and the covered paths, then runs [`Rounds.bank`](@ref); afterwards it prints the
-severity re-check Workflow call (an anchor, before "serious" is counted at grade). Returns the bank's
-exit code.
+`head`, `kind` and the covered paths, then runs [`Rounds.bank`](@ref).
+
+Afterwards it prints the severity re-check Workflow call (an anchor, before "serious" is counted at grade) over the concerns a
+re-rating can move across the gate — the `minor` and `nit` ones not already gated by
+`previously_worked` — and, when there are none, writes an empty `severity.json` itself. Returns the
+bank's exit code.
 
 A lane whose `verdict` contradicts its own findings — `CLEAN` with a concern, `CONCERNS` with none — is
 refused before any claim runs: the generic bank is called at once, quarantines that lane as DEAD and
@@ -74,11 +84,18 @@ function audit_bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     findings = JSON3.read(read(joinpath(dir, "findings.json"), String), Dict{String,Any})["findings"]
     audit["verdict_all_clean"] = isempty(findings) && all(c -> c["exit"] == 0, claims)
     open(aj, "w") do f; JSON3.pretty(f, JSON3.write(audit)); println(f); end
-    if !isempty(findings)
+    rerate = recheck_candidates(findings)
+    if !isempty(findings) && isempty(rerate)
+        # every concern is gated whatever a re-rating says: nothing to launch, and grade still finds its file
+        open(joinpath(dir, "severity.json"), "w") do f
+            JSON3.pretty(f, JSON3.write(Dict("schema_version" => 1, "round" => round, "ratings" => Any[]))); println(f)
+        end
+        println(io, "audit-changes bank: all $(length(findings)) concern(s) are gated whatever a re-rating says — no severity re-check to run; gbg round grade $round")
+    elseif !isempty(findings)
         payload = joinpath(Preflight.payload_dir(cfg, round), "severity"); mkpath(payload)
         ip = joinpath(payload, "items.md")
         open(ip, "w") do f
-            for x in findings
+            for x in rerate
                 println(f, "--- ", x["id"], " ---"); println(f, "title: ", x["title"])
                 for l in x["locations"]; println(f, "location: ", l); end
                 for k in ("before", "after", "why_it_matters", "evidence", "description"); haskey(x, k) && println(f, k, ": ", x[k]); end
@@ -86,9 +103,10 @@ function audit_bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
             end
         end
         a = Dict{String,Any}("schema_version" => 1, "round" => round, "out" => joinpath(dir, "severity.json"), "subject" => "the change set $(first(rec["base"], 8))..$(first(rec["head"], 8)) of $(cfg["package"]["name"])",
-                             "items" => [Dict("id" => x["id"]) for x in findings], "items_path" => ip, "models" => Dict("economy" => Preflight.economy_model()))
+                             "items" => [Dict("id" => x["id"]) for x in rerate], "items_path" => ip, "models" => Dict("economy" => Preflight.economy_model()))
         Preflight.save_args(cfg, round, "severity", a)
-        println(io, "\nNEXT (an anchor, before \"serious\" is counted): launch the severity re-check exactly as printed, then gbg round grade $round:\n")
+        println(io, "\nNEXT (an anchor, before \"serious\" is counted): launch the severity re-check exactly as printed — $(length(rerate)) of ",
+                "$(length(findings)) concern(s), the rest being gated whatever a re-rating says — then gbg round grade $round:\n")
         println(io, Preflight.workflow_call(joinpath(Preflight.workflow_dir(cfg, round), "severity-recheck.js"), a))
     else
         println(io, "audit-changes bank: no concern banked; verdict_all_clean = $(audit["verdict_all_clean"]) (checked[] on every lane and every claim exit 0)")
