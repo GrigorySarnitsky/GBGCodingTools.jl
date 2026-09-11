@@ -20,7 +20,7 @@ end
 # The concerns a blind re-rating can move across the disposition gate. `grade` takes the MORE serious of
 # the lane's rating and the re-rating, so a concern already `major` or `blocker`, or gated because input
 # that worked before now behaves differently (`previously_worked` yes or unknown), is gated whatever the
-# re-rating says; re-rating it bought nothing (22 of the 33 concerns of 2026-09-11-audit-changes-01).
+# re-rating says; re-rating it bought nothing (23 of the 33 concerns of 2026-09-11-audit-changes-01).
 recheck_candidates(findings) =
     [x for x in findings if x["severity"] in ("minor", "nit") && !(get(x, "previously_worked", "no") in ("yes", "unknown"))]
 

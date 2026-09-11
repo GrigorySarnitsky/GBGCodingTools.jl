@@ -185,7 +185,7 @@ end
 
 # The audit's severity re-check reads only the concerns a re-rating can move across the disposition gate:
 # grade takes the more serious rating, so a major or a previously-working concern is gated whatever the
-# re-rating says. Both directions (22 of 33 concerns once went to it for nothing).
+# re-rating says. Both directions (23 of 33 concerns once went to it for nothing).
 @testset "the audit re-rates only what the gate could still move" begin
     c(sev, pw) = (d = Dict{String,Any}("id" => "r/l#$(sev)-$(pw)", "severity" => sev); pw === nothing || (d["previously_worked"] = pw); d)
     fs = [c("minor", nothing), c("nit", "no"), c("minor", "yes"), c("nit", "unknown"), c("major", nothing), c("blocker", "no")]

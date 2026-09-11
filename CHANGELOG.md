@@ -84,7 +84,7 @@ found them. `severity-recheck.js` now rates several findings per agent (`batch`,
 on its own block alone, and an agent answers only for the ids it was handed. `audit-changes bank` sends
 it only the concerns a re-rating can move across the disposition gate: the gate takes the more serious
 rating, so a `major`, a `blocker` or a concern gated by `previously_worked` is gated whatever the
-re-rating says (22 of those 33). A carry still re-rates every candidate, since a carry takes the
+re-rating says (23 of those 33; the other 10 would have gone to two agents). A carry still re-rates every candidate, since a carry takes the
 re-rating alone.
 
 The rest is prose: the module map names the round machinery and every module's docstring names its
