@@ -11,7 +11,10 @@ coverage ([`Reflection.argcov`](@ref)), the displayed-versus-defined signature t
 ([`Reflection.signature_fidelity`](@ref)), unlinked cross-module first mentions
 ([`Reflection.xlink`](@ref)), a target linked twice in one docstring ([`Reflection.dupref`](@ref)),
 and the ownership-derived public surface ([`Reflection.package_operations`](@ref)) every
-completeness guard covers. The text scans need no loaded package; the two reflective ones load it.
+completeness guard covers. Two constants of the docstring rubric bind the argument checks: the count
+from which a docstring lists its arguments in the bulleted form ([`Reflection.ARGS_THRESHOLD`](@ref)),
+and the phrase that marks a thin allocating wrapper ([`Reflection.WRAPPER_PHRASE`](@ref)). The text
+scans need no loaded package; the two reflective ones load it.
 """
 module Reflection
 
@@ -32,7 +35,7 @@ const ARGS_THRESHOLD = 3
 """
     WRAPPER_PHRASE
 
-The rubric's spelling of a thin allocating wrapper — a docstring carrying it documents no arguments,
+The docstring rubric's spelling of a thin allocating wrapper — a docstring carrying it documents no arguments,
 `@ref`-linking its home instead — which is what makes the exemption detectable rather than a judgement.
 """
 const WRAPPER_PHRASE = "Allocating form of"
@@ -161,11 +164,11 @@ a code span, bare (`n`) or carrying its default (`n = 2`).
 
 The arguments are:
 
-- `cfg` — the validated config, whose `src` surface names the files swept.
+- `cfg` — the validated config, whose `src` surface names the files read.
 - `exempt` — the [`GBGCodingTools.Ledger`](@ref)'s `[exemption.match]` predicate, called per trigger as
   `exempt(hit)`; the trigger population is returned so the doctor can dry-run it.
 
-The rubric's exemptions are applied, and counted rather than silently dropped: an internal `_`-prefixed
+The docstring rubric's exemptions are applied, and counted rather than silently dropped: an internal `_`-prefixed
 helper; a thin allocating wrapper (the body carries [`WRAPPER_PHRASE`](@ref)); a docstring with fewer
 than [`ARGS_THRESHOLD`](@ref) arguments and no keyword (the prose form, a human read).
 

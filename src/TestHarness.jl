@@ -7,10 +7,12 @@
 """
     TestHarness
 
-The engines behind a consumer's `test/`: the allocation audit ([`@alloc_below`](@ref) and
-[`TestHarness.allocation_completeness`](@ref)), the element-traffic audit
+The engines behind a consumer's `test/`: the allocation audit ([`@alloc_below`](@ref),
+[`TestHarness.allocation_completeness`](@ref) and the operations it covers,
+[`TestHarness.AUDITED_ALLOCATION_OPS`](@ref)), the element-traffic audit
 ([`TestHarness.counting`](@ref), [`TestHarness.CountingArray`](@ref), [`TestHarness.Traffic`](@ref),
-[`TestHarness.audit`](@ref), [`TestHarness.traffic_completeness`](@ref)), the
+[`TestHarness.audit`](@ref), [`TestHarness.traffic_completeness`](@ref) and the operations it covers,
+[`TestHarness.AUDITED_TRAFFIC_OPS`](@ref)), the
 method-parity baselines ([`TestHarness.method_parity`](@ref)), the oracle registry
 ([`TestHarness.oracle_registry`](@ref)), the display gate ([`TestHarness.display_gate`](@ref)), the
 cross-thread-count digest ([`TestHarness.thread_digest`](@ref)), the promoted-witness loop

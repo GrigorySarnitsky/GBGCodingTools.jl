@@ -9,8 +9,8 @@ The loader of a consumer's `.gbg/config.toml`. [`Config.read`](@ref) is the one 
 obtained — by every verb, by the `makedocs` wrapper and by `TestHarness.gate()` — and
 [`Config.ConfigError`](@ref) is what a config that cannot be used raises; [`Config.find_root`](@ref)
 finds the consumer root a directory lies in, and [`Config.check_paths`](@ref) runs every existence check
-the config implies (the doctor's `CFG.SURFACES`). The helpers [`Config.glob_files`](@ref) and
-[`Config.resolve_anchor`](@ref) are the two readers of the config's path vocabulary (globs and
+the config implies (the doctor's `CFG.SURFACES`). The helpers [`Config.glob_files`](@ref), over
+[`Config.glob_to_regex`](@ref), and [`Config.resolve_anchor`](@ref) are the two readers of the config's path vocabulary (globs and
 `file#heading` anchors), shared with the doctor and the scans.
 
 Two words this package overloads, both first met here. A SURFACE is the config's unit of "what gets
@@ -127,7 +127,8 @@ end
 
 Resolves a `file#heading` ANCHOR — this sense of the word only, a Markdown reference to one heading.
 A hat's or lane's `anchor` is a different thing (whether it runs at full strength rather than on the
-economy model, `Preflight.resolve_hats`), and a seed class's a third (`Seeds.select`).
+economy model the module docstring defines, `Preflight.resolve_hats`), and a seed class's a third
+(`Seeds.select`).
 Here: `file` relative to `root`, `heading` a prefix of the text of exactly
 one Markdown heading (any `#` level) in it. Returns the file, the 1-based line of the match and the
 number of headings that matched — `0` or `2+` is a config error to the caller; the line is `0` when

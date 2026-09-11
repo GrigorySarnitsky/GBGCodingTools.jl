@@ -10,7 +10,10 @@ the consumer and hash-checks thereafter, edited only by `gbg sync`, never by han
 `settings.json`, the policy copy under `.gbg/policy/`, the regressions README, the managed blocks of
 `CLAUDE.md` and `.gitignore`, the tool's entries in every sub-environment `Project.toml`, the CI
 fragments, and the sidecar `.gbg/managed.json`. [`Sync.plan`](@ref) computes what every managed file
-must contain; [`Sync.status`](@ref) compares the tree with it; [`Sync.sync`](@ref) writes.
+must contain; [`Sync.status`](@ref) compares the tree with it; [`Sync.sync`](@ref) writes. Two of the
+parts it renders are documented on their own: [`Sync.managed_block`](@ref), the managed block of
+`CLAUDE.md` or `.gitignore`, and [`Sync.subenv_entries`](@ref), the tool's `[deps]`, `[sources]` and
+`[compat]` entries in one sub-environment.
 """
 module Sync
 

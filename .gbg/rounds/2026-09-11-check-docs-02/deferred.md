@@ -15,6 +15,11 @@ into `.claude/WORK_QUEUE.md`.
   enforces `RULE.CIT.FULL_INLINE` only).
 - `rulebook#2`: `RULE.DOC.SHAPE` orders a `# Arguments` heading that `RULE.DOC.ARGS_FORM` never
   produces; drop the clause, or name the heading as the form some consumers use instead.
+- `ext#1`'s class: `RULE.DOC.SIGNATURE_MIRROR` says an argument typed in the method is typed in the
+  docstring, yet its register entry names only `SCAN.SIGNATURE_WIDE`, which checks width. Measured at
+  pass 2: 451 bare arguments across 247 docstrings of `src/` (Rounds.jl 55, Passes.jl 52, Preflight.jl
+  44, ...). Build the mirror half as a scan, then either sweep the corpus in one deliberate change or
+  narrow the rule to what the house style is; the owner decides which.
 - A carried check-docs finding fixed between rounds cannot close: the act verifier reads only this
   round's fix range and grades it `UNDONE` (four of `2026-09-11-check-docs-01`'s five carried ids at
   rc.9). A re-banked carried id should go to the state verifier alone, as a closed id back in scope does.

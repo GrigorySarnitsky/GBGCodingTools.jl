@@ -76,7 +76,7 @@ unit,words,longest_paragraph,admonitions
 "Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",233,74,0
 "Bump.jl :: bump(cfg, ver; abandon = nothing, io = stdout) -> Int",119,78,0
 "CLI.md § CLI internals",31,22,1
-"Config.jl :: Config",225,98,0
+"Config.jl :: Config",227,98,0
 "Config.jl :: Config.parse(text; root, check = true) -> Dict",81,43,0
 "Config.jl :: ConfigError <: Exception",35,23,0
 "Config.jl :: check_paths(cfg) -> Vector{String}",90,87,0
@@ -85,7 +85,7 @@ unit,words,longest_paragraph,admonitions
 "Config.jl :: glob_files(root, pattern) -> Vector{String}",44,40,0
 "Config.jl :: glob_to_regex(pattern) -> Regex",36,33,0
 "Config.jl :: read(root = find_root(); check = true) -> Dict",74,39,0
-"Config.jl :: resolve_anchor(root, anchor) -> (file, line, count)",112,106,0
+"Config.jl :: resolve_anchor(root, anchor) -> (file, line, count)",116,110,0
 "Config.jl :: surface_files(cfg, key) -> Vector{String}",60,56,0
 "Config.md § Config",22,22,1
 "Consolidate.jl :: consolidate(build_dir, withheld; out_full, out_siteonly) -> ",150,77,0
@@ -217,10 +217,10 @@ unit,words,longest_paragraph,admonitions
 "Reflection.jl :: ARGS_THRESHOLD",41,40,0
 "Reflection.jl :: ArgcovHit",58,48,0
 "Reflection.jl :: Docstring",70,59,0
-"Reflection.jl :: Reflection",58,57,0
-"Reflection.jl :: WRAPPER_PHRASE",33,32,0
+"Reflection.jl :: Reflection",92,91,0
+"Reflection.jl :: WRAPPER_PHRASE",34,33,0
 "Reflection.jl :: all_package_functions(pkg, modules) -> Set{Symbol}",29,25,0
-"Reflection.jl :: argcov(cfg; exempt = (hit -> false)) -> (hits, population, s",147,43,0
+"Reflection.jl :: argcov(cfg; exempt = (hit -> false)) -> (hits, population, s",148,43,0
 "Reflection.jl :: docstrings(root, files) -> Vector{Docstring}",30,26,0
 "Reflection.jl :: dupref(cfg) -> Vector",41,38,0
 "Reflection.jl :: load_package(cfg) -> Module",41,38,0
@@ -305,7 +305,7 @@ unit,words,longest_paragraph,admonitions
 "Selftest.jl :: selftest(; pinned = false, io = stdout) -> Int",124,83,0
 "Sync.jl :: Entry",38,28,0
 "Sync.jl :: ManagedFile",43,33,0
-"Sync.jl :: Sync",87,86,0
+"Sync.jl :: Sync",118,117,0
 "Sync.jl :: cmd_sync(args) -> Int",23,20,0
 "Sync.jl :: config_sha(cfg) -> String",25,22,0
 "Sync.jl :: deviations(cfg, ledger) -> Vector{Dict}",31,27,0
@@ -332,7 +332,7 @@ unit,words,longest_paragraph,admonitions
 "TestHarness.jl :: AUDITED_TRAFFIC_OPS",15,14,0
 "TestHarness.jl :: CountingArray{T,N} <: AbstractArray{T,N}",66,40,0
 "TestHarness.jl :: DIGEST_SOURCE",16,15,0
-"TestHarness.jl :: TestHarness",73,72,0
+"TestHarness.jl :: TestHarness",84,83,0
 "TestHarness.jl :: Traffic",67,56,0
 "TestHarness.jl :: allocation_completeness(pkg, modules; exempt = Dict{Symbol,S",94,46,0
 "TestHarness.jl :: audit(operation!, name, rows::Traffic...; print = false)",117,56,0
