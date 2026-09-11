@@ -1,0 +1,6 @@
+{
+  "id": "2026-09-11-audit-changes-02/public-contract#1",
+  "verdict": "DISMISSAL-SOUND",
+  "evidence": "Gate.jl: `r.name in ignored && continue` precedes both pushes, and `:committed` is pushed only after `:open` and only `if !in_ci`, so GBG_ROUND (gbg round build) and CI never see it. Every contract text scopes the skip to 'refusing only because a docs round is open' (DocLints.jl:22, index.md:28, ARCHITECTURE:491). rounds.md:55: the makedocs gate exists 'so a fix pass cannot be committed around an open round.' IMPLEMENTATION.md:90: a bare build under an open round 'is refused by design'.",
+  "what_would_bite": ""
+}

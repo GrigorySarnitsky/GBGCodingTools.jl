@@ -1,58 +1,49 @@
 {
   "schema_version": 1,
   "round": "2026-09-11-audit-changes-02",
-  "items_sha": "4d684900e7794f4e9ea4d3602b9b6b0b4a80755091640c71a93d632a55da4a86",
+  "items_sha": "c8a442ec816b432189b70c992829926baa98ee0176e640b3e5d34755c0b5b5ec",
   "tally": {
-    "DISMISSAL-SOUND": 6,
-    "UNSAFE": 1
+    "DISMISSAL-SOUND": 6
   },
   "verdicts": [
     {
       "id": "2026-09-11-audit-changes-02/executing#1",
       "verdict": "DISMISSAL-SOUND",
-      "evidence": "DocLints.jl docs_build_skipped: `all(p -> first(p) == :open, last(gate_problems(...))) || return String[]`; docstring: \"a round whose fixes were committed without it, fails the build.\" Gate.jl: `r.name in ignored && continue` precedes the :committed push, guarded by `!in_ci`; Rounds.jl:94 exports GBG_ROUND. The printed :open line names `gbg round build|test`, matching TestHarness's gate.",
+      "evidence": "DocLints.jl docs_build_skipped: \"A refusal that also names an open round of a disabled instrument, or a round whose fixes were committed without it, fails the build.\" Gate.jl:80 `r.name in ignored && continue` precedes :committed; Gate.jl:82 `if !in_ci && head !== nothing && head != r.round[\"head\"]`. Release.jl:108 and Doctor.jl:644 set GBG_DOCS_NO_SKIP. The same gate already refuses Pkg.test in this state.",
       "what_would_bite": ""
-    },
-    {
-      "id": "2026-09-11-audit-changes-02/public-contract#2",
-      "verdict": "UNSAFE",
-      "evidence": "gate() is unchanged: same messages, order and exit codes (diff e21e57f..249b795). But the new public gate_problems says \"What [`gate`](@ref) refuses for\" while its code runs `isdir(RoundFiles.rounds_dir(cfg)) || return (fatal, problems)`, which is clean. gate returns 2 in that case (ROUND.DIR) and on a self_verify failure. The record's claim field is empty, and the dismissal checked only gate, never the new binding's own contract.",
-      "what_would_bite": "GBGCodingTools.gate_problems(cfg) with .gbg/rounds/ absent and instruments enabled, or with self verify failing, returns (false, []), which reads as nothing to refuse, where gate(cfg) returns 2. docs_build_skipped only calls it after code == 1, so today's caller is safe. A direct caller of the documented public binding is not."
     },
     {
       "id": "2026-09-11-audit-changes-02/executing#5",
       "verdict": "DISMISSAL-SOUND",
-      "evidence": "ext/GBGCodingToolsDocumenterExt.jl: \"A round of a docs instrument freezes the build (ARCHITECTURE D9).\" D9 states it: \"either gate refusing only because a round of a docs instrument is open prints `makedocs: SKIPPED` ... `GBG_DOCS_NO_SKIP` restores the refusal\". RULE.INST.FROZEN_MIDROUND: \"An instrument is never changed mid-round; a change is its own commit and release\" -- nothing about builds. The new citation is the one that states the skip.",
+      "evidence": "The audited edit is a comment-only retarget in ext/GBGCodingToolsDocumenterExt.jl:51 ('freezes the build (`RULE.INST.FROZEN_MIDROUND`)' -> '(ARCHITECTURE D9)'); no code changed. D9 (ARCHITECTURE.md:490-494) states the skip: 'a round of a docs instrument is open prints `makedocs: SKIPPED` ... `GBG_DOCS_NO_SKIP` restores the refusal'. The rule (instruments.md:81) says only 'An instrument is never changed mid-round'.",
       "what_would_bite": ""
     },
     {
       "id": "2026-09-11-audit-changes-02/public-contract#1",
       "verdict": "DISMISSAL-SOUND",
-      "evidence": "DocLints.jl: `all(p -> first(p) == :open, last(gate_problems(...))) || return String[]`; docstring: \"a round whose fixes were committed without it, fails the build.\" Gate.jl pushes `:committed` only after `:open` for the same round, only when `!in_ci`, and skips GBG_ROUND rounds (`r.name in ignored && continue`). The gate already makes it exit 1: \"the fixes were committed without the round\". Only a bare local build changes.",
+      "evidence": "Gate.jl: `r.name in ignored && continue` precedes both pushes; `:committed` is pushed only after `:open` and only `if !in_ci`, so GBG_ROUND (gbg round build) and CI never hit it. Contract texts scope the skip to \"refusing only because a docs round is open\" (DocLints.jl:22, index.md:28, ARCHITECTURE:491). rounds.md:55: the gate exists \"so a fix pass cannot be committed around an open round\". IMPLEMENTATION.md:90: a bare build under an open round \"is refused by design\".",
       "what_would_bite": ""
     },
     {
       "id": "2026-09-11-audit-changes-02/claim-versus-edit#1",
       "verdict": "DISMISSAL-SOUND",
-      "evidence": "47db044's only Design.jl hunk is docstring text: '-which hat's own rubric should have caught it' -> '+which hat's persona should have caught it'. The message lists it under 'cold-reader#1-4 ...; \"the rubric\" named', and the same commit swept 'the rubric' -> 'the docstring rubric' in Reflection.jl. 'persona' is the bound term: GBGCodingTools.jl:21 'A **hat** is one persona of the check-consistency panel'; Design.jl:155 writes h[\"persona\"].",
+      "evidence": "47db044's only Design.jl change is one docstring line: \"hat's own rubric should have caught it\" -> \"hat's persona should have caught it\". The message itemizes that class: \"cold-reader#1-4 ...; \\\"the rubric\\\" named\". The new word is accurate: catalog/hats/README.md defines \"`persona` (the prompt body)\", and calibrate writes h[\"persona\"] to each blind hat's payload. No code changed.",
       "what_would_bite": ""
     },
     {
       "id": "2026-09-11-audit-changes-02/behaviour-change#1",
       "verdict": "DISMISSAL-SOUND",
-      "evidence": "Gate.jl: `r.name in ignored && continue` precedes both the `:open` push and `if !in_ci && ... push!(problems, :committed ...)`, so GBG_ROUND builds (Rounds.jl:151/188/297, Passes.jl:530) and CI never see :committed. DocLints.jl: `all(p -> first(p) == :open, ...) || return String[]`. All prose says the skip is for 'refusing only because a round of a docs instrument is open'; IMPLEMENTATION.md:91 'A bare ... docs/make.jl under an open round is refused by design'.",
+      "evidence": "Gate.jl gate_problems: `r.name in ignored && continue` precedes both :open and :committed pushes (GBG_ROUND exempts both); :committed needs `!in_ci`, `in_ci = haskey(ENV, \"CI\")`. DocLints.jl docs_build_skipped skips only if `all(p -> first(p) == :open, ...)`; docstring: \"a round whose fixes were committed without it, fails the build\". IMPLEMENTATION.md:90-91: \"A bare julia --project=docs docs/make.jl under an open round is refused by design\".",
       "what_would_bite": ""
     },
     {
       "id": "2026-09-11-audit-changes-02/over-rejection#1",
       "verdict": "DISMISSAL-SOUND",
-      "evidence": "Gate.jl gate_problems: `r.name in ignored && continue` precedes the :committed push, itself guarded by `!in_ci`. Every in-round build (Rounds.jl run_under_round 94/151/188/297; Passes.jl 530) exports GBG_ROUND; release and deep doctor set GBG_DOCS_NO_SKIP. check-consistency PROTOCOL: \"a bare julia --project=docs docs/make.jl under an open round is refused by the gate, by design.\" Only a bare local mid-round build with dirty round files changes: exit-0 skip (nothing built) becomes a named refusal.",
+      "evidence": "Gate.jl frozen_rounds doc: \"A build refused ONLY for these is frozen\". gate_problems: `r.name in ignored && continue` precedes the :committed push, which needs `!in_ci && head != r.round[\"head\"]`. Round builds use run_under_round (GBG_ROUND); release/doctor add GBG_DOCS_NO_SKIP; logs go to scratch_dir. Only a bare local build changes: before, it skipped with exit 0 and built nothing (\"Nothing was built\"). Now it fails with exit 1, and the gate CLI refuses the same state.",
       "what_would_bite": ""
     }
   ],
-  "reopened": [
-    "2026-09-11-audit-changes-02/public-contract#2"
-  ],
+  "reopened": [],
   "dead": [],
-  "complete": false
+  "complete": true
 }
