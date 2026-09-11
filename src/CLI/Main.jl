@@ -67,8 +67,9 @@ end
 """
     running_dev() -> Bool
 
-Whether the running copy is a working tree rather than a fetched tag: `GBG_DEV` is set (the shim's
-`--dev` route or `main`'s own flag), or the package directory holds a `.git` entry — the dev checkout
+Whether the running copy is a working tree rather than a fetched tag: `GBG_DEV` is set (the `--dev`
+route of the shim — `bin/gbg`, the small script `gbg install` copies to `~/.local/bin/gbg` and which
+execs [`main`](@ref) — or `main`'s own flag), or the package directory holds a `.git` entry — the dev checkout
 loaded by path, as the tool's own `docs/` environment and the fixture's sub-environments do. A copy Pkg
 fetched into the depot at a tag has no `.git`. Returns `true` for a working tree.
 """

@@ -4,7 +4,19 @@
 """
     Passes
 
-[`Passes.pass_open`](@ref) opens a verification pass (nonce, range, expected counts, the regenerated
+The verification half of a round. Each pass has two verifiers, both agents the session launches:
+
+- the **act verifier** sees the fix pass's diff and grades what it did to each open finding, in a
+  closed vocabulary: `HONORED` (the ask landed by the right means, and `class_surfaces` lists every
+  other surface carrying the same class with whether the diff swept it), `LINE-ONLY` (the instance
+  is fixed, the class is alive), `ADJACENT`, `INSERTED`, `NEW-DEFECT`, `SCOPE-CREEP`, `UNDONE`
+  (nothing in the diff addresses it) and `LAUNDERED` (closed by declaring it acceptable);
+- the **state verifier**, also called the blind verifier, never sees the diff and grades whether the
+  defect is in the tree now: `PRESENT` (its default), `PARTIAL`, `REGRESSED`, `ABSENT`,
+  `NOT-A-DEFECT` or `UNCLEAR`.
+
+[`GBGCodingTools.demote`](@ref) turns an `HONORED` whose list is empty or names an unswept surface
+into `LINE-ONLY`. [`Passes.pass_open`](@ref) opens a verification pass (nonce, range, expected counts, the regenerated
 manuscripts, the verifiers' Workflow calls); [`Passes.grade`](@ref) validates the verdict files, applies
 the demotion and the four closure channels and writes the tally; [`Passes.close`](@ref) checks every
 closing condition of the instrument ([`GBGCodingTools`](@ref) binds the term) in order and stamps the round closed.

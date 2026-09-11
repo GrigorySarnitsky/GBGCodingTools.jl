@@ -293,6 +293,9 @@ function init(root::AbstractString = pwd(); migrate::Bool = false, dry_run::Bool
         text = cfg["package"]["name"] == PKG_NAME ? "[deps]\nTest = \"8dfed614-e22c-5e08-85e1-65c5234f0b40\"\n" :
                Sync.render(Sync.template("test-Project.toml.seed"), s)
         write(tp, text)
+        # the seed's slots always name a released tag; the pass over `envs` below rewrites the tool entry
+        # through `Sync.subenv_entries`, which a `dev` pin needs, so a seeded test/ joins it
+        "test" in envs || push!(envs, "test")
     end
     mkpath(joinpath(root, "test", "regressions"))
     for (path, tmpl) in ((joinpath("docs", "make.jl"), "make.jl.seed"), (joinpath("test", "runtests.jl"), "runtests.jl.seed"))

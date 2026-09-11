@@ -44,7 +44,9 @@ function makedocs(cfg; kwargs...)
     isabspath(build_dir) || (build_dir = joinpath(root, "docs", build_dir))
     check("scan html", last(GBGCodingTools.scan_html(cfg, build_dir)))
     check("gate check-docs check-consistency", GBGCodingTools.gate(cfg, "check-docs", "check-consistency"))
-    return result
+    # Documenter returns `nothing` unless `debug = true`, which is the frozen skip's own value, so a
+    # build that happened says so with `true`
+    return something(result, true)
 end
 
 end # module

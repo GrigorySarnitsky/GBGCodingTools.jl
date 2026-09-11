@@ -1,6 +1,21 @@
 # Audit.jl — `gbg audit-changes bank <round>`: the audit's bank RUNS the executable claims itself under
 # GBG_ROUND (ARCHITECTURE §6.8) and records their exit codes in audit.json before the generic bank.
 
+# The lane files under `fdir` whose own `verdict` contradicts their `findings`: `CLEAN` with one or more,
+# `CONCERNS` with none. Returns `(file, verdict, count)` per contradiction; a file that does not parse, or
+# carries no verdict, is the generic bank's to judge.
+function lane_verdict_contradictions(fdir::AbstractString)
+    bad = Tuple{String,String,Int}[]
+    isdir(fdir) || return bad
+    for f in sort!(filter(endswith(".json"), readdir(fdir)))
+        d = try JSON3.read(read(joinpath(fdir, f), String), Dict{String,Any}) catch; continue end
+        v = get(d, "verdict", nothing); v isa AbstractString || continue
+        n = length(get(d, "findings", Any[]))
+        (v == "CLEAN") == (n == 0) || push!(bad, (f, String(v), n))
+    end
+    return bad
+end
+
 """
     audit_bank(cfg, round; io = stdout) -> Int
 
@@ -23,6 +38,16 @@ exit code.
 function audit_bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io)
     rec["instrument"] == "audit-changes" || (println(io, "audit-changes bank: $round is a $(rec["instrument"]) round"); return 2)
+    # a lane's `verdict` is its own report, kept only where its findings bear it out: CLEAN with a
+    # concern, or CONCERNS with none, is refused before the claims run (RULE.TEST.BOTH_DIRECTIONS)
+    bad = lane_verdict_contradictions(joinpath(dir, "findings"))
+    if !isempty(bad)
+        for (f, v, n) in bad
+            println(io, "audit-changes bank: $f reports $v with $n finding(s) — its verdict contradicts its own findings")
+        end
+        println(io, "  re-run it: gbg round rerun $round --lanes ", join([replace(f, r"^\d+-" => "", r"\.json$" => "") for (f, _, _) in bad], ","))
+        return 2
+    end
     root = cfg["root"]; scratch = Preflight.scratch_dir(cfg, round)
     claims = Dict{String,Any}[]
     log = joinpath(scratch, "claim-gate.log")

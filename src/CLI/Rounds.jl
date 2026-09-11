@@ -444,8 +444,9 @@ the core finding schema.
 `lane_shas` reaches `ROUND.toml` on the DEAD-or-REJECTED exit and on success, and only there: the other
 three return before the record is saved, so a first-sight sha seen on such a run is not kept.
 
-`findings.json` is frozen on no refusal. By the last two exits a hunt's `reproductions/` and a seeded
-round's `ground_truth.json` are already written, so a re-bank rewrites them rather than creating them.
+`findings.json` is frozen on no refusal. By the last exit, a finding that does not validate, a hunt's
+`reproductions/` and a seeded round's `ground_truth.json` are already written, so a re-bank rewrites
+them rather than creating them; the hunt's own refusal returns before `reproductions/` is written.
 Returns the exit code.
 """
 function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)

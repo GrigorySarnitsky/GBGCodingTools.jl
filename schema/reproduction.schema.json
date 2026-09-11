@@ -61,7 +61,9 @@
         },
         "state": {
           "type": "string",
+          "description": "open — the state bank writes for every REPRODUCED or EVIDENCED finding, before any disposition is recorded",
           "enum": [
+            "open",
             "fixed",
             "refused",
             "escalated"

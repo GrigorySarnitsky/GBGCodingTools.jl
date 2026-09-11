@@ -21,7 +21,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.HOME_ORDER"
 statement = "A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats, then `# References`, then `# Fields` last; internals, jargon and rationale are excluded."
 sentinel = "A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats."
-check = ["weakness"]
+check = ["panel"]
 [[rule]]
 id = "RULE.DOC.LEADING_IDENTITY"
 file = "docs-rubric.md"
@@ -35,14 +35,14 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.ONE_HOME"
 statement = "One concept, one home: one docstring per operation on the bare binding; the ! form owns the formula and is listed first; every other variant is a thin wrapper that @ref-links the home and carries no second formula."
 sentinel = "One concept has one home: one docstring per operation, on the bare binding, and a generic carries one docstring, never one per method."
-check = ["weakness"]
+check = ["panel"]
 [[rule]]
 id = "RULE.DOC.VARIANT_PAIR"
 file = "docs-rubric.md"
 section = "### RULE.DOC.VARIANT_PAIR"
 statement = "Across an f/f! or getter/setter pair the defining math appears once; the wrapper carries no display formula (the review unit is the variant set)."
 sentinel = "The review unit is the operation's whole variant set, so the defining math appears once across an `f`/`f!` or getter/setter pair and the wrapper carries no display formula."
-check = ["weakness"]
+check = ["panel"]
 [[rule]]
 id = "RULE.DOC.ARGS_FORM"
 file = "docs-rubric.md"
@@ -238,7 +238,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.MODULE_MAP"
 statement = "A module docstring lists one linked one-liner per operation family and no formula."
 sentinel = "A module docstring lists one linked one-liner per operation family and carries no formula."
-check = ["weakness"]
+check = ["panel"]
 [[rule]]
 id = "RULE.DOC.ARG_BULLET"
 file = "docs-rubric.md"
@@ -378,7 +378,7 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.IMAGINARY"
 statement = "The imaginary unit is upright \\mathrm{i}; i, j, k are indices."
 sentinel = "The imaginary unit is upright `\\mathrm{i}`, and `i`, `j`, `k` are indices."
-check = ["weakness"]
+check = ["panel"]
 [[rule]]
 id = "RULE.TEX.FRAC_BRACED"
 file = "latex-idiom.md"
@@ -434,7 +434,7 @@ file = "citations.md"
 section = "### RULE.CIT.DOI"
 statement = "Every reference carries a clickable DOI (or an Open Library link for a book) on its title, identical in every copy."
 sentinel = "Every reference carries a clickable DOI on its title, `[*Title*](https://doi.org/…)`, or an Open Library link for a book with no DOI, identical in every copy."
-check = ["weakness"]
+check = ["panel"]
 [[rule]]
 id = "RULE.CIT.BLOCK_LIST"
 file = "citations.md"
@@ -455,7 +455,7 @@ file = "testing-protocol.md"
 section = "### RULE.TEST.GATE_VS_SURVEY"
 statement = "Pkg.test() is a gate; the exhaustive suite is a survey; a specific oracle and every completeness guard go in the gate."
 sentinel = "`Pkg.test()` is a gate and the exhaustive suite is a survey; a specific oracle and every completeness guard go in the gate."
-check = ["panel"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.TEST.ORACLE_INDEPENDENT"
 file = "testing-protocol.md"
@@ -469,7 +469,7 @@ file = "testing-protocol.md"
 section = "### RULE.TEST.DEFINITION_OF_DONE"
 statement = "A feature is done when its correctness tests, performance test, four guiding docs, remaining docs, benchmarks (built AND run) and examples (run) are each verified."
 sentinel = "A feature is done when its correctness tests, its performance test, the guiding documents, the remaining documents, the benchmarks built and run, and the examples run are each verified, not assumed."
-check = ["panel"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.TEST.ALLOC_ZERO"
 file = "testing-protocol.md"
@@ -497,21 +497,21 @@ file = "testing-protocol.md"
 section = "### RULE.TEST.MUTATION"
 statement = "A symmetric fixture cannot see an asymmetric defect; a self-referential assertion cannot see a shared defect; a stated convention must be falsifiable by its fixture."
 sentinel = "A symmetric fixture cannot see an asymmetric defect, a self-referential assertion cannot see a shared defect, and a stated convention must be falsifiable by its fixture."
-check = ["panel"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.TEST.BOTH_DIRECTIONS"
 file = "testing-protocol.md"
 section = "### RULE.TEST.BOTH_DIRECTIONS"
 statement = "Test the check in both directions; a check that cannot fail is not a check; a self-reported field is acceptable only when the missing case is the failing case."
 sentinel = "Test the check in both directions: a check that cannot fail is not a check, and a self-reported field is acceptable only when the missing case is the failing case."
-check = ["panel"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.TEST.MISSING_IS_FAILING"
 file = "testing-protocol.md"
 section = "### RULE.TEST.MISSING_IS_FAILING"
 statement = "The missing case is the failing case: derived denominators, absence arms, zero count = dead."
 sentinel = "The missing case is the failing case: a denominator is derived, an absence arm exits non-zero, and a zero count is a dead lane rather than a clean one."
-check = ["panel"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.TEST.RULE_WITH_CHECK"
 file = "testing-protocol.md"

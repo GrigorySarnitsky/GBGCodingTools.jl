@@ -137,6 +137,30 @@ end
     end
 end
 
+# An audit lane's `verdict` is a self-report the schema requires; the bank keeps it only where the lane's
+# own findings bear it out (RULE.TEST.BOTH_DIRECTIONS). Both directions, and the refusal comes before the
+# executable claims are run, so a contradiction costs no test-suite run.
+@testset "an audit lane's verdict must agree with its findings" begin
+    root = fixture_copy("audit-verdict")
+    cfg = G.Config.read(root)
+    id = "2026-01-01-audit-changes-01"
+    rd = joinpath(root, ".gbg", "rounds", id); fd = joinpath(rd, "findings"); mkpath(fd)
+    write_round(rd, merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => id, "instrument" => "audit-changes",
+        "schema_version" => 1, "head" => "0"^40, "base" => "0"^40, "roster" => Any[], "cost" => "economy", "strength" => "economy",
+        "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00", "dead_lanes" => String[], "passes" => 0)))
+    lane(v, n) = Dict("verdict" => v, "findings" => [Dict("title" => "t$i") for i in 1:n])
+    write(joinpath(fd, "01-executing.json"), JSON3.write(lane("CLEAN", 0)))
+    write(joinpath(fd, "02-numerics.json"), JSON3.write(lane("CONCERNS", 2)))
+    @test isempty(G.lane_verdict_contradictions(fd))                        # agreeing self-reports
+    write(joinpath(fd, "03-invariants.json"), JSON3.write(lane("CLEAN", 1)))
+    write(joinpath(fd, "04-free-reader.json"), JSON3.write(lane("CONCERNS", 0)))
+    @test G.lane_verdict_contradictions(fd) == [("03-invariants.json", "CLEAN", 1), ("04-free-reader.json", "CONCERNS", 0)]
+    out = IOBuffer()
+    @test G.audit_bank(cfg, id; io = out) == 2
+    s = String(take!(out))
+    @test occursin("--lanes invariants,free-reader", s) && !occursin("claim gate", s)   # refused before any claim ran
+end
+
 # RULE.INST.FROZEN_MIDROUND: a deferral written in the round's deferred.md is carried into the work
 # queue at close, where the Stop hook holds the next session to it; a note nothing reads is not a mechanism.
 @testset "a round's deferrals reach the work queue" begin

@@ -341,8 +341,9 @@ Applies the ledger to one scan's hits. The arguments are:
 - `row` — the scan's catalogue row (`id`, `rule`).
 - `hits` — the scan's hits before the ledger.
 
-An entry `scope = "scan"` on the scan id, or `scope = "policy"` on its rule, with target `*` disables
-the scan (every hit exempted, `disabled = true`); any other live `scan`-scope entry on the id drops the
+An entry `scope = "policy"` on the scan's rule with target `*`, or `scope = "scan"` on the scan id
+with target `*` and no `match` table, disables the scan (every hit exempted, `disabled = true`); any
+other live `scan`-scope entry on the id — a target-`*` one carrying `match` among them — drops the
 hits it [`Ledger.matches`](@ref). A text scan meets an `arg_type` predicate as an error. Returns the
 kept hits, the exempted count and the flag.
 """

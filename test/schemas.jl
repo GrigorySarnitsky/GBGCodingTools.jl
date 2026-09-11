@@ -122,6 +122,17 @@ include("helpers.jl")
         @test !isempty(G.validate(core, hunt))                             # the defect, both directions
         @test isempty(G.validate(core, Dict{String,Any}(k => v for (k, v) in hunt if k in keys(core["properties"]))))
     end
+    @testset "the reproduction record bank writes validates" begin
+        # `hunt_bank!` writes `disposition.state = "open"` for every REPRODUCED or EVIDENCED finding and
+        # validates the record at once; an enum without "open" threw on the first confirmed finding
+        rep = Dict{String,Any}("schema_version" => 1, "id" => "2026-09-09-bug-hunt-01/free#1", "title" => "a title long enough",
+                               "kind" => "runtime", "severity" => "major", "verdict" => "REPRODUCED",
+                               "observed" => "what happened", "evidence" => "", "disposition" => Dict{String,Any}("state" => "open"))
+        schema = G.load_schema("reproduction")
+        @test isempty(G.validate(schema, rep))
+        rep["disposition"]["state"] = "closed"                             # both directions: the enum still refuses
+        @test !isempty(G.validate(schema, rep))
+    end
     @testset "the home page's counts are the real ones" begin
         # every number the home page cites is re-measured here; a cited count nothing asserts drifts
         page = read(joinpath(TOOL, "docs", "src", "index.md"), String)

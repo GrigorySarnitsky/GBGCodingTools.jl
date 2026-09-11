@@ -7,8 +7,8 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D14 — Doctor: read-only, stable check ids, one exemptions le",473,366,0
 "ARCHITECTURE.md § D15 — Self-test: a fixture consumer at a path with a space, ",784,363,0
 "ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",788,720,0
-"ARCHITECTURE.md § D17 — Migration: PF → IT → SS → CP, doctor-verified steps, n",324,239,0
-"ARCHITECTURE.md § D18 — Cost policy: economy default, anchors in the catalogue",167,100,0
+"ARCHITECTURE.md § D17 — Migration: PF → IT → SS → CP, doctor-verified steps, n",371,286,0
+"ARCHITECTURE.md § D18 — Cost policy: economy default, anchors in the catalogue",174,107,0
 "ARCHITECTURE.md § D19 — Name: `GBGCodingTools`",128,127,0
 "ARCHITECTURE.md § D2 — Delivery: Pkg fetches the pinned copy; a per-machine `s",5,5,0
 "ARCHITECTURE.md § D3 — Binding: `[sources] url + rev` (https) rendered from on",405,199,0
@@ -46,7 +46,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § item 9",91,91,0
 "ARCHITECTURE.md § §0 The design sentence and the requirements",440,337,0
 "ARCHITECTURE.md § §1 The platform / product model",802,565,0
-"ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",772,333,0
+"ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",774,333,0
 "ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1306,542,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
 "ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3154,3029,0
@@ -67,7 +67,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §6.5 Closure channels (per finding id; PARTIAL never closes)",156,156,0
 "ARCHITECTURE.md § §6.6 Deltas — `/check-docs`",173,173,0
 "ARCHITECTURE.md § §6.7 Deltas — `/bug-hunt`",366,366,0
-"ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",290,198,0
+"ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",300,208,0
 "ARCHITECTURE.md § §7.1 Policy migration map (which consumer sections become wh",290,238,0
 "ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",348,348,0
 "ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1881,1744,0
@@ -91,8 +91,8 @@ unit,words,longest_paragraph,admonitions
 "Consolidate.jl :: consolidate(build_dir, withheld; out_full, out_siteonly) -> ",150,77,0
 "Consolidate.jl :: discover_pages(build_dir) -> Vector{Tuple{String,String,Stri",82,79,0
 "Consolidate.jl :: page_text(path) -> String",36,33,0
-"Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",185,62,0
-"DocLints.jl :: makedocs(cfg; kwargs...)",279,108,0
+"Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",192,65,0
+"DocLints.jl :: makedocs(cfg; kwargs...)",315,79,0
 "Doctor.jl :: Check",37,30,0
 "Doctor.jl :: Doctor",139,78,0
 "Doctor.jl :: cmd_doctor(args) -> Int",29,26,0
@@ -103,7 +103,7 @@ unit,words,longest_paragraph,admonitions
 "Fleet.jl :: Fleet.diff(a, b; io = stdout) -> Int",92,37,0
 "Fleet.jl :: Fleet.rows(; deep = false) -> (rows, code)",114,80,0
 "Fleet.jl :: latest_tag(root) -> Union{VersionNumber,Nothing}",17,14,0
-"GBGCodingTools.jl :: GBGCodingTools",422,117,0
+"GBGCodingTools.jl :: GBGCodingTools",573,117,0
 "Gate.jl :: cmd_gate(args) -> Int",27,24,0
 "Gate.jl :: frozen_rounds(cfg, instruments...) -> Vector{String}",115,68,0
 "Gate.jl :: gate(cfg, instruments...; io = stderr) -> Int",185,69,0
@@ -154,11 +154,11 @@ unit,words,longest_paragraph,admonitions
 "Main.jl :: git_stamp(dir) -> String",32,29,0
 "Main.jl :: main(args) -> Int",108,105,0
 "Main.jl :: parse_options(args; valued = String[]) -> Options",92,44,0
-"Main.jl :: running_dev() -> Bool",72,69,0
+"Main.jl :: running_dev() -> Bool",89,86,0
 "Main.jl :: tool_version() -> String",38,35,0
 "Main.jl :: usage(io = stderr)",16,13,0
 "Passes.jl :: CARRY_LIMIT",47,46,0
-"Passes.jl :: Passes",53,52,0
+"Passes.jl :: Passes",189,105,0
 "Passes.jl :: audit_after_code(cfg, rec) -> Vector{String}",87,83,0
 "Passes.jl :: audit_coverage(cfg, head, dirs) -> (exists, covers)",112,49,0
 "Passes.jl :: carry_conditions(cfg, dir, rec, findings, carry, io; at_cap ",164,92,0
@@ -232,7 +232,7 @@ unit,words,longest_paragraph,admonitions
 "RoundFiles.jl :: state(round) -> Symbol",16,13,0
 "Rounds.jl :: Rounds",67,66,0
 "Rounds.jl :: abandon(cfg, round, reason; io = stdout) -> Int",179,82,0
-"Rounds.jl :: bank(cfg, round; io = stdout) -> Int",263,96,0
+"Rounds.jl :: bank(cfg, round; io = stdout) -> Int",277,96,0
 "Rounds.jl :: bank_next(inst, round) -> String",67,63,0
 "Rounds.jl :: build(cfg, round; io = stdout) -> Int",60,24,0
 "Rounds.jl :: classify_lane(dir, inst, lane; first_sha = nothing) -> (stat",162,106,0
@@ -252,7 +252,7 @@ unit,words,longest_paragraph,admonitions
 "Scan.jl :: ProseLine",94,82,0
 "Scan.jl :: SCANS",35,34,0
 "Scan.jl :: ScanResult",100,91,0
-"Scan.jl :: apply_ledger(cfg, ledger, row, hits) -> (kept, exempted, dis",117,61,0
+"Scan.jl :: apply_ledger(cfg, ledger, row, hits) -> (kept, exempted, dis",134,78,0
 "Scan.jl :: built_pages(build_dir) -> Vector{String}",37,34,0
 "Scan.jl :: cmd_scan(args) -> Int",37,34,0
 "Scan.jl :: data_prose_lines(kind, lines) -> Vector{ProseLine}",92,88,0
@@ -321,7 +321,7 @@ unit,words,longest_paragraph,admonitions
 "TestHarness.jl :: AUDITED_TRAFFIC_OPS",15,14,0
 "TestHarness.jl :: CountingArray{T,N} <: AbstractArray{T,N}",66,40,0
 "TestHarness.jl :: DIGEST_SOURCE",16,15,0
-"TestHarness.jl :: TestHarness",71,70,0
+"TestHarness.jl :: TestHarness",72,71,0
 "TestHarness.jl :: Traffic",67,56,0
 "TestHarness.jl :: allocation_completeness(pkg, modules; exempt = Dict{Symbol,S",94,46,0
 "TestHarness.jl :: audit(operation!, name, rows::Traffic...; print = false)",117,56,0

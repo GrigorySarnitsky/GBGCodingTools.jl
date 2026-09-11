@@ -32,6 +32,26 @@ The module is a map; every part is documented at its home. The command line and 
 - [`makedocs`](@ref) — the mandatory wrapper around `Documenter.makedocs` (defined by the Documenter
   extension; declared in `DocLints`).
 
+The round machinery, one module per concern under `src/CLI/`:
+
+- [`Preflight`](@ref), [`Rounds`](@ref), [`Passes`](@ref) — a round's life: the preflight and the
+  open, prepare and bank, then the verification passes, the grade and the close.
+- [`Seeds`](@ref), [`Recall`](@ref) — the labelled defects a seeded round plants, and the recall
+  measured on them.
+- [`RoundFiles`](@ref), [`Git`](@ref) — reading what a round wrote, and the git questions the round
+  verbs ask.
+
+The upkeep verbs and the rest of `src/CLI/`:
+
+- [`Sync`](@ref), [`Init`](@ref) — rendering the managed files into a consumer, and seeding a new
+  consumer's `.gbg/`.
+- [`Ledger`](@ref) — the reader of `.gbg/exemptions.toml`; [`Doctor`](@ref) — the read-only health
+  check.
+- `Hunt.jl`, `Audit.jl` — the verbs particular to `bug-hunt` and `audit-changes`; `Fleet.jl`,
+  `Bump.jl`, `Release.jl`, `Install.jl`, `Self.jl`, `Selftest.jl` — the fleet report, the pin bump,
+  the release, the shim install, `gbg self verify` and the self-test; `Schema.jl` — the one validator
+  of every artefact against `schema/`.
+
 The engines:
 
 - `TestHarness`, `Reflection`, `Witnesses` — the Julia-side engines a consumer's tests and the

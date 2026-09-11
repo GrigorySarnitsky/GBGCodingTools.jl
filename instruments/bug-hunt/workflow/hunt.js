@@ -91,7 +91,7 @@ const laneModel = (lane) => (STRENGTH === 'economy' && !lane.anchor) ? { model: 
 const results = await pipeline(
   A.lanes,
   (lane) => agent(lane.kind === 'free'
-    ? `${FREE_PREAMBLE}\n\nWHERE TO START: read your brief in full from ${lane.brief_path} (the one file under .gbg/ you may open besides the invariants named above).\n\nReturn the structured object with lane="${lane.key}".`
+    ? `${FREE_PREAMBLE}\n\nWHERE TO START: read your brief in full from ${lane.brief_path} (the one file under .gbg/ you may open).\n\nReturn the structured object with lane="${lane.key}".`
     : `${HUNT_PREAMBLE}\n\nYOUR TERRITORY (hunt HERE; you may read anything else in the repository to understand it): read your brief in full from ${lane.brief_path}, then these files:\n${(lane.files || []).map(f => `  ${A.repo}/${f}`).join('\n')}\n\nReturn the structured object with lane="${lane.key}".`,
     { label: `hunt:${lane.key}`, phase: 'Hunt', schema: CANDIDATE_SCHEMA, agentType: 'general-purpose', ...laneModel(lane) }),
 

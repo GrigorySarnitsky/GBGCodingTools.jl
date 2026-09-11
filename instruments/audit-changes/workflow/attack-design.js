@@ -2,8 +2,8 @@
 // audit-changes/attack-design.js. Changes: generic — the default CONTEXT is removed and `subject` is
 // REQUIRED; the design arrives as text; the result is Written to `out`.
 //
-// Args: { schema_version, round, repo, design_path, subject: {object, defect, defects, lanes, context,
-//         directions, standpoint, source}, out, models: {economy} }  (Revision 9: the design is a file)
+// Args: { schema_version, round, repo, design_path, subject: {object, defects, context, standpoint,
+//         source, directions?}, out, models: {economy} }  (Revision 9: the design is a file)
 export const meta = {
   name: 'attack-design',
   description: 'Adversarial attack on ANY instrument\'s lens set: what defect passes every lane?',

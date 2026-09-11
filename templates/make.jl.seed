@@ -2,7 +2,8 @@
 # the quick doctor set (QUICK: the checks that hold on any machine), the hard scans over the source surfaces, the closure gate, Documenter, and the
 # built-HTML scans, and exits non-zero on any of them. Run it as `julia --project=docs docs/make.jl`.
 # It returns nothing when an open round of a docs instrument froze the build (the instruments are frozen
-# mid-round): that is exit 0, not a failure, so guard any deploydocs call on the value it returns.
+# mid-round): that is exit 0, not a failure. A build that ran returns a value that is not nothing (`true`,
+# or Documenter's document under `debug = true`), so guard any deploydocs call on `!== nothing`.
 using Documenter, GBGCodingTools
 using {{package.name}}
 

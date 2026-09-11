@@ -528,7 +528,7 @@ status quo. *Bash scans*: `guards.sh`'s awk.
   is what fails the build on a missing one. The tool's own `CLAUDE.md` carries the managed policy
   block, rendered from its own `policy/`, plus its package-specific content — the design sentence,
   the freeze rule, the release checklist (D12).
-- The prose-shape ratchet is a scan like any other (`src/Scans/ProseShape.jl`, `catalog/scans.toml`
+- The prose-shape ratchet is a scan like any other (`src/Scans/prose_shape.jl`, `catalog/scans.toml`
   entry `SCAN.PROSE_SHAPE`), one CSV schema
   `docs/prose_shape.csv` (`unit,kind,total_words,longest_paragraph_words,admonitions`; kinds
   `docstring|page|section`): IT's always-binding caps (120 words / 3 admonitions on every docstring),
@@ -897,7 +897,10 @@ about measurement. *`--regraded "<account>"` as a rubber stamp*: prose, not a re
 contributions (the panel profile, attack-design, rubric-audit, severity-recheck, the
 `operational-claims` lane, `PARTIAL`/`surviving_class`, `checked[]`/`candidates_found`, required
 `base`) are **part of v1.0.0**, verified against IT's imported rounds in Phase 5.1 before IT migrates;
-a defect that verification finds is fixed and released as a **1.0.x PATCH**; SS third (a July fork,
+a defect that verification finds is fixed and released as a **1.0.x PATCH**. Two of them ship as
+scripts alone: no verb builds the args of `attack-design.js` or `rubric-audit.js`, prints their
+launch line or validates what they write, so a session that wants either assembles its args from the
+script's header and launches it by hand; wiring them is deferred. SS third (a July fork,
 replaced wholesale); CP last (greenfield `gbg init`, which also creates its `test/Project.toml`). §9
 names each divergence's disposition. Deletions per consumer are listed in the implementation plan.
 **Effort:** IT's executability review put the whole programme at roughly 17–23 working sessions, with
@@ -921,7 +924,8 @@ and the two documents contradicted each other on what 1.0.0 held (dry-run 11).
 ### D18 — Cost policy: economy default, anchors in the catalogue (engine) and in config (domain hats), never-economised phases as engine constants
 
 **Choice.** `[cost] default = "economy"`; each hat/lane has `anchor = true|false` — engine lanes carry
-it in the catalogue as a constant (the `executing` audit lane, the two free hunt lanes, the dismissal
+it in the catalogue as a constant (five audit lanes — `executing`, `under-rejection`,
+`behaviour-change`, `over-rejection` and `contract-drift` — the two free hunt lanes, the dismissal
 auditor and the severity re-check are `anchor = true` there); domain hats carry it in the consumer's
 config (default anchor); generic hats default economy. `catalog/models.toml` holds
 `economy = "sonnet"` (the only place the model name appears; a bump is PATCH). **Never economised, not
@@ -979,8 +983,8 @@ GBGCodingTools.jl/
       Self.jl                   `gbg self verify` — the running copy's tree hash against what `Pkg.dependencies()` and every sub-environment manifest record (D2, D3, D15)
       Gate.jl                   THE closure gate for every instrument (honours GBG_ROUND); called in-process by makedocs and TestHarness.gate()
       Demote.jl                 THE demotion predicate (class_surfaces[] empty, or any entry unswept)
-      Scan.jl                   `gbg scan docs|html` — the tiered engine over catalog/scans.toml
       Seed.jl Recall.jl Consolidate.jl Audit.jl Hunt.jl Selftest.jl
+    Scan.jl                     `gbg scan docs|html` — the tiered engine over catalog/scans.toml
     Scans/<ScanId>.jl           the scan catalogue's implementations, one file per scan id (§12.B)
     TreeHash.jl                 git blob/tree hashing on the SHA stdlib; `gbg self verify`, PIN.SELF, PIN.TREESHA
     HtmlWalker.jl               the Gumbo + AbstractTrees walker shared by Consolidate.jl and the SCAN.HTML_* scans
@@ -1674,7 +1678,7 @@ serious concern and every `previously_worked ∈ {yes, unknown}` concern carries
 requires `checked[]` on every lane AND the recorded executable-claim exit codes all zero; staleness
 `git diff <audited>..HEAD -- <covered>` with UNCHECKABLE ≠ clean; `AUDIT.GAP` (doctor, WARN) when
 `base` ≠ the previous closed audit's `head`. `attack-design.js` (four attackers, generic `subject`) is
-the instrument every lens list must survive.
+the instrument every lens list must survive; no verb launches it, so it runs by hand (D17).
 
 **An audit round is disposed, never corrected inside.** The staleness rule and the frozen bank say so
 together: a correction moves a covered path, `close` then refuses the round, and `bank` will not run
@@ -2083,8 +2087,8 @@ agree):**
   its directory still names itself), `tool_tree_sha`, `seed_salt`, `base`, `lane_shas`,
   `reproductions_sha`, `closed_by`, `abandoned`, `roster[].not_applicable`, and `tool_rev`,
   `tool_tree_sha`, `config_sha` stamped on every `pass.toml`; §6.1 is the complete list.
-- *Cost policy.* The never-economised phases are exactly the record's five; the `executing` audit
-  lane, the free hunt lanes, the dismissal auditor and the severity re-check are engine-lane anchors in
+- *Cost policy.* The never-economised phases are exactly the record's five; the five audit anchors
+  D18 names, the free hunt lanes, the dismissal auditor and the severity re-check are engine-lane anchors in
   the catalogue, which is a different mechanism.
 - *Doctor.* Read-only, as the record says; a `--deep` witness re-run prints a recommendation and
   writes nothing.

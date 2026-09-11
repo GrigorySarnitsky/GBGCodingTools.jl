@@ -5,7 +5,8 @@
 
 The one demotion rule over an act verdict — the act verifier's grade of what the fix pass DID to one
 finding, from the diff (the state verifier grades, blind to the diff, whether the defect is still
-there). `class_surfaces` is the list the verifier fills: every surface carrying the same class and whether the
+there; [`GBGCodingTools.Passes`](@ref) binds both verifiers and their verdicts). `class_surfaces` is
+the list the verifier fills: every surface carrying the same class and whether the
 diff swept it.
 
 An act verdict `HONORED` becomes `LINE-ONLY` when that list is empty, a fix graded honoured without the
