@@ -1,0 +1,6 @@
+{
+  "id": "2026-09-11-audit-changes-02/public-contract#1",
+  "verdict": "DISMISSAL-SOUND",
+  "evidence": "DocLints.jl docs_build_skipped: `all(p -> first(p) == :open, last(gate_problems(...))) || return String[]`; its docstring: \"A refusal that also names ... a round whose fixes were committed without it, fails the build.\" Gate.jl: `:committed` is pushed only right after `:open` for the same round, and only when `!in_ci` and the round is not in GBG_ROUND (`r.name in ignored && continue`). The gate's own contract already calls it exit 1: \"the fixes were committed without the round\". So the narrower skip matches both documented contracts. It fires only on a bare local build, never in CI or under `gbg round build`, and release/doctor already set GBG_DOCS_NO_SKIP.",
+  "what_would_bite": ""
+}

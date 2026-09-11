@@ -1,0 +1,6 @@
+{
+  "id": "2026-09-11-audit-changes-02/over-rejection#1",
+  "verdict": "DISMISSAL-SOUND",
+  "evidence": "Gate.jl gate_problems: `r.name in ignored && continue` precedes the :committed push, which is guarded by `!in_ci`; every in-round build (Rounds.jl run_under_round, lines 94/151/188/297; Passes.jl 530) exports GBG_ROUND; release and deep doctor set GBG_DOCS_NO_SKIP. check-consistency PROTOCOL: `a bare julia --project=docs docs/make.jl under an open round is refused by the gate, by design.` Only a bare local mid-round build with dirty round files changes: skip-exit-0 (nothing built) -> named refusal.",
+  "what_would_bite": ""
+}

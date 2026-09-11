@@ -1,0 +1,6 @@
+{
+  "id": "2026-09-11-audit-changes-02/executing#1",
+  "verdict": "DISMISSAL-SOUND",
+  "evidence": "src/DocLints.jl docs_build_skipped: `all(p -> first(p) == :open, last(gate_problems(...))) || return String[]`; its docstring: \"A refusal that also names ... a round whose fixes were committed without it, fails the build.\" Gate.jl gate_problems: `r.name in ignored && continue` precedes the :committed push, which is guarded by `!in_ci`; Rounds.jl:94 exports GBG_ROUND. The :open message printed beside it names `gbg round build|test`.",
+  "what_would_bite": ""
+}

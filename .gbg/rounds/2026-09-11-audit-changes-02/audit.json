@@ -21,8 +21,8 @@
             "state": "fixed"
         },
         "2026-09-11-audit-changes-02/public-contract#2": {
-            "reason": "gate_problems is new in this change set and documented on the verbs page; gate()'s signature, return type, exit codes and printed refusal text are unchanged line for line, so no existing caller of gate moves",
-            "state": "refused"
+            "reason": "the dismissal auditor is right: gate_problems is documented as what gate refuses for, yet returns (false, []) when .gbg/rounds/ is absent or self verify fails, where gate returns 2, so a direct caller reads nothing to refuse. The next change set states in its docstring that it lists the round-based refusals only, gate's self-verify and ROUND.DIR refusals coming first and outside it (the same correction as under-rejection#1)",
+            "state": "fixed"
         },
         "2026-09-11-audit-changes-02/executing#5": {
             "reason": "D9's own body states the frozen-build skip (the makedocs bullet: a docs round open, `makedocs: SKIPPED`, GBG_DOCS_NO_SKIP); RULE.INST.FROZEN_MIDROUND is the rule that an instrument is not edited mid-round, which is not what the skip does — the citation it replaced was precise about the wrong thing",
