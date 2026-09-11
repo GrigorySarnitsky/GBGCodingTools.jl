@@ -1,0 +1,25 @@
+tool_version = "dev+a472092-dirty"
+head = "a4720929f9ac938709e9e1c43120a67738075167"
+fix_range = "249b795c6604c69d62637e85c00bbe84e68d3008..a4720929f9ac938709e9e1c43120a67738075167"
+tool_tree_sha = "cef9536c504178be4d87143ad85e05c2f8bc753d"
+state_ids = ["2026-09-11-audit-changes-02/executing#1", "2026-09-11-audit-changes-02/executing#2", "2026-09-11-audit-changes-02/executing#3", "2026-09-11-audit-changes-02/executing#4", "2026-09-11-audit-changes-02/executing#5", "2026-09-11-audit-changes-02/under-rejection#1", "2026-09-11-audit-changes-02/behaviour-change#1", "2026-09-11-audit-changes-02/behaviour-change#2", "2026-09-11-audit-changes-02/over-rejection#1", "2026-09-11-audit-changes-02/public-contract#1", "2026-09-11-audit-changes-02/public-contract#2", "2026-09-11-audit-changes-02/invariants#1", "2026-09-11-audit-changes-02/claim-versus-edit#1", "2026-09-11-audit-changes-02/contract-drift#1", "2026-09-11-audit-changes-02/contract-drift#2", "2026-09-11-audit-changes-02/contract-drift#3", "2026-09-11-audit-changes-02/contract-drift#4", "2026-09-11-audit-changes-02/contract-drift#5", "2026-09-11-audit-changes-02/contract-drift#6", "2026-09-11-audit-changes-02/contract-drift#7", "2026-09-11-audit-changes-02/sweep-completeness#1", "2026-09-11-audit-changes-02/sweep-completeness#2", "2026-09-11-audit-changes-02/sweep-completeness#3", "2026-09-11-audit-changes-02/sweep-completeness#4", "2026-09-11-audit-changes-02/sweep-completeness#5"]
+config_sha = "3daa040f54a778a95ce45be87ae94de8caa967d0d08aa427b71160f30f8b6255"
+tool_rev = "a4720929f9ac938709e9e1c43120a67738075167"
+range = "249b795c6604c69d62637e85c00bbe84e68d3008..a4720929f9ac938709e9e1c43120a67738075167"
+counted = true
+rechecked = []
+regrade = false
+pass = 1
+nonce = "76c1a18c7f39ced1bf913d5316ff57dd"
+opened = "2026-09-11T23:47:10"
+
+[expected]
+invariants = 1
+behaviour-change = 2
+executing = 5
+contract-drift = 7
+public-contract = 2
+claim-versus-edit = 1
+under-rejection = 1
+over-rejection = 1
+sweep-completeness = 5

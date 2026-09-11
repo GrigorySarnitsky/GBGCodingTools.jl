@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-02",
+  "ratings": [
+    {
+      "id": "2026-09-11-audit-changes-02/executing#2",
+      "severity": "major",
+      "reason": "The prose-shape ratchet's baseline was regenerated in the same window that grew the prose it guards, silencing 25 GREW hits with no per-row record of which growth was judged new content — for four ARCHITECTURE-page units this removes the only guard that exists, a missing load-bearing justification rather than an outright false claim."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/executing#3",
+      "severity": "major",
+      "reason": "The DEAD contract's revised sentence contradicts the retained neighboring sentence ('a scan that measured nothing yet hit something is a scan whose own counter is wrong' vs. now calling that same case 'accounted for' and not DEAD) — a real internal contradiction in a public docstring, but the predicate itself is unchanged and no executed call yields a result inconsistent with the new prose."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/executing#4",
+      "severity": "blocker",
+      "reason": "Measured: resolve_function(:read, G, [G, Config, Ledger]) returns Config.read, not Ledger.read as the docstring's example implies — a reader who runs the documented example with the package's actual module list gets a concretely wrong result about the API's lookup order."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/executing#5",
+      "severity": "minor",
+      "reason": "A source-code comment swapped a live, correct rule-id citation for a vaguer architecture-section pointer that covers a different decision — a real inaccuracy but confined to an internal comment (a secondary surface), not a public docstring or doc page."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/under-rejection#1",
+      "severity": "blocker",
+      "reason": "gate_problems is published on the API page as 'What gate refuses for' yet measurably returns (false, []) — 'no problems' — for two conditions (self-verify failure, missing rounds dir with instruments enabled) that gate itself refuses with exit 2, so a caller trusting the documented coverage gets a concretely wrong belief that nothing refuses."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/behaviour-change#2",
+      "severity": "minor",
+      "reason": "The finding itself concedes the scan's own message permits a deliberate re-baseline for new content and that most of the growth is legitimate new definitional prose, flagging only one appended D10 sentence as pattern-violating — a hedged, largely self-acknowledged procedural concern rather than a demonstrated false or contradictory claim."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/invariants#1",
+      "severity": "major",
+      "reason": "The docstring's 'fifth channel' label for `carried` collides with ARCHITECTURE §6.5's explicit framing that such an item never closes and with §5.5's closed four-channel vocabulary, a real cross-surface terminology contradiction even though no code/schema changed and the sentence itself still correctly says carried only holds what was 'left open'."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/claim-versus-edit#1",
+      "severity": "nit",
+      "reason": "A single correct, harmless terminology fix (rubric->persona) missing from an otherwise exhaustive commit-message itemization is a self-report completeness gap, not a content or behavior defect."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/contract-drift#2",
+      "severity": "major",
+      "reason": "Re-baselining docs/prose_shape.csv in the same diff that appended growth (notably D10's already over-cap paragraph, 333->379 words by appending) defeats the GREW ratchet's stated purpose, silently absorbing exactly the append-not-rewrite pattern the scan exists to catch."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/contract-drift#3",
+      "severity": "blocker",
+      "reason": "The edited §6.4 sentence asserts that during a docs round's panel only seeded copies exist and unseeded ones are 'regenerated at bank,' directly contradicted by Rounds.jl's own docstring ('The real tree is never touched') and the fact that the unseeded originals are the live working tree throughout — a verifiably false belief about the panel's behavior."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/contract-drift#4",
+      "severity": "major",
+      "reason": "The design record narrows the 'inside the project' rule to a docs-round exception living in mktempdir but never states the consequence (the stated prompt-free rationale no longer holds for docs-round lane Reads) and leaves the 'residue is unchanged' bullet applying to both cases without qualifying it — a missing load-bearing statement rather than a false one."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/contract-drift#6",
+      "severity": "blocker",
+      "reason": "Redefining class_surfaces to exclude the finding's own site makes an empty list a normal, correct outcome for a class unique to one site, yet demote()'s unchanged `isempty(cs) || ...` logic still demotes that case to LINE-ONLY, so the corrected docstring now documents a contract that silently mis-grades legitimately honored fixes."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/contract-drift#7",
+      "severity": "major",
+      "reason": "The module docstring now states carry follows only after a spent pass budget, omitting the documented below-budget carry path (minor/nit/serious-being-adjudicated), so a reader of the module-level overview gets a materially incomplete, load-bearing account of when --carry applies, contradicted by the very carry_conditions docstring it summarizes."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/sweep-completeness#3",
+      "severity": "minor",
+      "reason": "ARCHITECTURE's D10 paragraph is a plain enumeration of categories, not an assertion of decision order, so its unchanged REJECTED-last listing doesn't actually contradict the rewritten docstring's explicit precedence -- this is unsynced detail on a secondary/parallel surface rather than something that would mislead a reader into a wrong belief."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/sweep-completeness#4",
+      "severity": "minor",
+      "reason": "A terminology fix in one docstring (rubric->persona) leaves a frozen instrument script's self-description using the retired word, which is a real but localized wording collision -- not a computational or contract error, and the finding itself notes instruments are frozen so this may be an intentional deferral rather than an oversight."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/sweep-completeness#5",
+      "severity": "nit",
+      "reason": "The finding is explicitly low-confidence and self-flags that the retained D16 citations may legitimately be out of this diff's scope (a different design point), so at best it's a cosmetic consistency observation, not a demonstrated defect."
+    }
+  ]
+}
