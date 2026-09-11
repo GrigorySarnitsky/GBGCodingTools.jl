@@ -40,6 +40,18 @@ An open `/bug-hunt` or `/audit-changes` round fails the package's tests outright
 - [`/audit-changes`](@ref audit-changes) — over a range of commits: were the edits justified, did behaviour change silently,
   do the commit messages match the diff.
 
+## Checking the instruments themselves
+
+Two `gbg` verbs test the review procedures rather than a package. Each runs outside any round, prints
+the AI workflow to launch, and then checks what that workflow wrote.
+
+- [`gbg attack <instrument>`](@ref GBGCodingTools.attack) — four AI adversaries read an instrument's list of reviewers and try
+  to build a harmful defect all of them would miss; run it whenever that list changes.
+  [`gbg attack read`](@ref GBGCodingTools.attack_read) lists each gap and the reviewer that would catch it.
+- [`gbg calibrate`](@ref GBGCodingTools.calibrate) — measures `/check-consistency` against a person's reading: each defect
+  the owner recorded in `.gbg/human-findings.toml` goes, passage only, to the reviewer whose role
+  should catch it, and [`gbg calibrate read`](@ref GBGCodingTools.calibrate_read) reports what was caught, missed, or covered by no role.
+
 ## The command-line program `gbg`
 
 `gbg` is a program run from a terminal, in the directory of one of the packages. It is invoked as
