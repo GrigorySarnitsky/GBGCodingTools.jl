@@ -1,6 +1,7 @@
 # ROUND.toml — written by the gbg round verbs; never edited by hand (ARCHITECTURE §6.1)
 tool_tree_sha = "59146bd51a36e70ace87bf90dc690e810274e7d3"
 findings_sha = "dcac86d26b8879b91d680954f24edb94cc5aa83e064e69d3290e3456953c897f"
+closed = "2026-09-11T23:59:10"
 strength = "economy"
 round = "2026-09-11-audit-changes-02"
 opened = "2026-09-11T23:26:46"
@@ -17,8 +18,13 @@ cost = "economy"
 tool_rev = "d7120ff61f8fbec9057a46e061bc69eb0f94930f"
 instrument = "audit-changes"
 base = "e21e57f916145a3380102026adb27c265af21f48"
+closed_head = "1653736da7ae84ca94be1e4f41a6ef6edbf82d79"
 catalog_sha = "97ed6dd4088cc2aca03d8ceb8be51c3e5c12e99d3e350b53949afa8384252f87"
 schema_version = 1
+
+[closed_by]
+tally_sha = "40f72fc76ad5883d6b219b479fee1a72523d95e9c631dca5ed8692967cecb416"
+adjudicated = []
 
 [[roster]]
 key = "free-reader"
