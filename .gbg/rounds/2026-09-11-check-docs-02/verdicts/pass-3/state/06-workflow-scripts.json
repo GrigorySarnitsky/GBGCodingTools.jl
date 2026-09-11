@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "87ce050e75793878cc3b42570d620492",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/workflow-scripts#1",
+      "verdict": "PRESENT",
+      "evidence": "verify-act.js:21,99-121 still branches on mode:'batches' with full gap/overlap validation; header comment (line 5) still says 'mode ∈ lanes|batches'; grep of src/ext/test for 'batches' finds only Passes.jl:544 which hard-codes mode:'lanes'. No caller ever sets 'batches'."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/workflow-scripts#2",
+      "verdict": "PRESENT",
+      "evidence": "dismissals.js:21, severity-recheck.js:17, rubric-audit.js:16, verify-architecture.js:18 still `throw` on empty lists; lanes.js, panel.js, hunt.js, audit.js, verify-state.js, verify-act.js's lanes path, attack-design.js check only `A[k]===undefined`, never `.length`, on A.lanes/A.hats."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Design.jl now exists (included at GBGCodingTools.jl:105), registers VERBS[\"attack\"] and VERBS[\"calibrate\"] (Design.jl:209,214), and launches attack-design.js (line 86) and rubric-audit.js (line 179) via Preflight.workflow_call. Both scripts are now CLI-invoked."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#2",
+      "verdict": "ABSENT",
+      "evidence": "dismissals.js:57 now says 'THEN return {id: \"${d.id}\", verdict, evidence, what_would_bite}.'; verify-architecture.js:49 says 'Return {id: \"${f.id}\", verdict, evidence, residue}.' Both also now call stampIds() (prelude.js:32) which overwrites id positionally from the known item list regardless of what the agent returns."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#3",
+      "verdict": "ABSENT",
+      "evidence": "severity-recheck.js:15 required list now includes 'round' (for (const k of ['out','items','items_path','subject','models','round','schema_version'])); attack-design.js:13 required list now includes 'round' too, both before writing round: A.round at their tails."
+    }
+  ]
+}

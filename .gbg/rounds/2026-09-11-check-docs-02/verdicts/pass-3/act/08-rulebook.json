@@ -1,0 +1,39 @@
+{
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "lane": "rulebook",
+  "pass_nonce": "87ce050e75793878cc3b42570d620492",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/rulebook#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff 272e01b1..249b795c touches only docs/prose_shape.csv, src/CLI/Demote.jl, src/CLI/Preflight.jl, src/Reflection.jl (plus .gbg/ round bookkeeping) — policy/RULES.toml is untouched, so RULE.CIT.DOI's check field at policy/RULES.toml:432-437 still reads [\"weakness\"]. The pass-3 commit message itself lists rulebook#1-2 as 'instrument changes, deferred'.",
+      "class_surfaces": [
+        {
+          "surface": "policy/RULES.toml:432-437",
+          "swept": false,
+          "evidence": "No hunk in the diff touches policy/RULES.toml; the file is absent from `git diff --stat` for this range entirely."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-02/rulebook#2",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff 272e01b1..249b795c does not touch policy/docs-rubric.md or src/Scans/prose_shape.jl at all; the ordering clause at docs-rubric.md:219 and the `# Arguments` heading check at prose_shape.jl:118 are both unchanged. The pass-3 commit message explicitly names rulebook#1-2 as deferred instrument changes, not addressed this pass.",
+      "class_surfaces": [
+        {
+          "surface": "policy/docs-rubric.md:219",
+          "swept": false,
+          "evidence": "policy/docs-rubric.md is absent from `git diff --stat` for this range; the ordering clause naming a `# Arguments` heading is untouched."
+        },
+        {
+          "surface": "src/Scans/prose_shape.jl:118",
+          "swept": false,
+          "evidence": "src/Scans/prose_shape.jl is absent from `git diff --stat` for this range; the `# Arguments` heading regex check is untouched."
+        }
+      ]
+    }
+  ]
+}

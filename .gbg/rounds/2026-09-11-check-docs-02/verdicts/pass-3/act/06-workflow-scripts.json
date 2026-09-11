@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "87ce050e75793878cc3b42570d620492",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/workflow-scripts#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff 272e01b..249b795 touches only docs/prose_shape.csv, src/CLI/Demote.jl, src/CLI/Preflight.jl (strength bullet), src/Reflection.jl. verify-act.js unchanged since c8169d8 (ancestor of range start): header still says 'mode ∈ lanes|batches', lines 99-121 still hold the full batches branch. Passes.jl:542 still hard-codes `\"mode\" => \"lanes\"`, the only call site.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:21",
+          "swept": false,
+          "evidence": "`const MODE = A.mode === 'batches' ? 'batches' : 'lanes'` — unchanged, file untouched by the diff"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:99-121",
+          "swept": false,
+          "evidence": "the whole `if (MODE === 'batches')` block with its gap/overlap/duplicate checks is still present verbatim"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:542",
+          "swept": false,
+          "evidence": "`act = merge(base, Dict(\"range\" => fixrange, \"mode\" => \"lanes\", ...` — still the only caller, still hard-coded to lanes; Passes.jl does not appear in the diff's changed-file list at all"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-02/workflow-scripts#2",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "None of the eleven named scripts changed in 272e01b..249b795 (all last touched at c8169d8, an ancestor of the range's base). Current corpus still shows exactly the same split: dismissals.js/severity-recheck.js/rubric-audit.js/verify-architecture.js guard their item list; lanes.js/panel.js/hunt.js/audit.js/verify-state.js/verify-act.js's lanes-branch do not.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/dismissals.js:19",
+          "swept": false,
+          "evidence": "guard already present, unchanged by this diff"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/severity-recheck.js:17",
+          "swept": false,
+          "evidence": "guard already present, unchanged by this diff"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:16",
+          "swept": false,
+          "evidence": "`if (!A.hats.length || !A.items.length) throw ...` — still present, unchanged"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/verify-architecture.js:18",
+          "swept": false,
+          "evidence": "guard already present, unchanged by this diff"
+        },
+        {
+          "surface": "instruments/check-docs/workflow/lanes.js",
+          "swept": false,
+          "evidence": "grep for `.lanes.length` finds no guard; only the required-arg check at line 19 exists"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js",
+          "swept": false,
+          "evidence": "no `.hats.length` guard added; only the required-arg check at line 23"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js",
+          "swept": false,
+          "evidence": "no `.lanes.length` guard added; only the required-arg check at line 20"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js",
+          "swept": false,
+          "evidence": "no `.lanes.length` guard added; only the required-arg check at line 21"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-state.js",
+          "swept": false,
+          "evidence": "no `.lanes`/`.findings` length guard added; only the required-arg check at line 18"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js (lanes path)",
+          "swept": false,
+          "evidence": "the default `mode==='lanes'` branch (line ~121 onward) still has no `.lanes.length` guard"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "src/CLI/Preflight.jl's diff in this range is limited to the `strength` bullet in render_args' docstring (line ~530); `main_script` (line 579, `Dict(\"check-consistency\" => \"panel.js\", ...)`) is untouched. rubric-audit.js and attack-design.js still appear nowhere in src/ or ext/ as a launch target; Passes.jl (the file with the launch lines) shows no diff at all in this range.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:1",
+          "swept": false,
+          "evidence": "no wiring added anywhere; still an orphan script"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/attack-design.js:1",
+          "swept": false,
+          "evidence": "no wiring added anywhere; still an orphan script"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:579 (main_script)",
+          "swept": false,
+          "evidence": "the instrument->script map is unchanged; neither script is a value in it"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:528,958,1068 (launch lines)",
+          "swept": false,
+          "evidence": "Passes.jl does not appear among the 4 files changed in 272e01b..249b795"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#2",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "dismissals.js and verify-architecture.js are unchanged in 272e01b..249b795 (last touched c8169d8, before the range's base). Whatever their current wording (both already carry an id description and an explicit `Return {id: \"${...}\"}` line), that state predates this fix pass entirely — it is not an act this diff performed, so nothing in the audited diff addresses the finding.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/dismissals.js:19-28,57",
+          "swept": false,
+          "evidence": "file untouched by the diff; any id-echo wording present there is pre-existing, not from this fix pass"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/verify-architecture.js:20-29,47",
+          "swept": false,
+          "evidence": "file untouched by the diff; any id-echo wording present there is pre-existing, not from this fix pass"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#3",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "severity-recheck.js and attack-design.js are unchanged in 272e01b..249b795 (last touched c8169d8, before the range's base). Their required-arg lists already include 'round' in the current tree, but that predates this fix pass entirely — the diff performed no edit to either file, so it is not this act's doing.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/severity-recheck.js:15,48",
+          "swept": false,
+          "evidence": "file untouched by the diff; whatever the required list currently reads is pre-existing state"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/attack-design.js:14,71",
+          "swept": false,
+          "evidence": "file untouched by the diff; whatever the required list currently reads is pre-existing state"
+        }
+      ]
+    }
+  ]
+}

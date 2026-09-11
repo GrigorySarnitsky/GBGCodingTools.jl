@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "87ce050e75793878cc3b42570d620492",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/rulebook#1",
+      "verdict": "PRESENT",
+      "evidence": "policy/RULES.toml:437 still has `check = [\"weakness\"]` for RULE.CIT.DOI, while doi_crosscheck.jl:1 still names RULE.CIT.DOI as enforced and require_doi (tier hard) implements it. Sibling RULE.CIT.FULL_INLINE:430 already uses `check = [\"scan:SCAN.DOI_CROSSCHECK\"]`, showing the fix pattern was not applied here."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/rulebook#2",
+      "verdict": "PRESENT",
+      "evidence": "docs-rubric.md:219 unchanged: \"`# Arguments` precedes any column-0 admonition, and `# Fields` is last.\" ARGS_FORM:47-48 still mandates only the prose lead-in `The arguments are:`. grep confirms 0 `# Arguments` headings vs 102 uses of the prose form; prose_shape.jl:118 still tests for the heading. No provenance note added to docs-rubric.md."
+    }
+  ]
+}
