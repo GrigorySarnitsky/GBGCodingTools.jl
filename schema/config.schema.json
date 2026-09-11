@@ -362,6 +362,12 @@
       "seed_catalog": {
        "type": "string",
        "default": ".gbg/seeds.toml"
+      },
+      "max_passes": {
+       "description": "the pass budget: after this many verification passes, what is still open is carried into the next round at close instead of verified again. 0 is no budget. A --regrade that verifies no new fix does not spend it.",
+       "type": "integer",
+       "minimum": 0,
+       "default": 3
       }
      }
     },
@@ -394,6 +400,12 @@
       "seed_catalog": {
        "type": "string",
        "default": ".gbg/seeds.toml"
+      },
+      "max_passes": {
+       "description": "the pass budget: after this many verification passes, what is still open is carried into the next round at close instead of verified again. 0 is no budget. A --regrade that verifies no new fix does not spend it.",
+       "type": "integer",
+       "minimum": 0,
+       "default": 3
       },
       "design_docs_withheld": {
        "$ref": "#/$defs/strlist",

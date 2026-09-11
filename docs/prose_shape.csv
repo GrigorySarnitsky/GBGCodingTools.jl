@@ -42,14 +42,14 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § item 5",13,13,0
 "ARCHITECTURE.md § item 6",61,61,0
 "ARCHITECTURE.md § item 7",27,27,0
-"ARCHITECTURE.md § item 8",109,109,0
+"ARCHITECTURE.md § item 8",134,134,0
 "ARCHITECTURE.md § item 9",91,91,0
 "ARCHITECTURE.md § §0 The design sentence and the requirements",440,337,0
 "ARCHITECTURE.md § §1 The platform / product model",802,565,0
 "ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",772,333,0
-"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1400,542,0
+"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1306,542,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
-"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3115,2990,0
+"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3154,3029,0
 "ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1481,1306,0
 "ARCHITECTURE.md § §12.C Doctor ids",135,134,0
 "ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
@@ -159,18 +159,20 @@ unit,words,longest_paragraph,admonitions
 "Main.jl :: usage(io = stderr)",16,13,0
 "Passes.jl :: CARRY_LIMIT",47,46,0
 "Passes.jl :: Passes",53,52,0
-"Passes.jl :: audit_after_code(cfg, rec) -> Vector{String}",60,56,0
-"Passes.jl :: carry_conditions(cfg, dir, rec, findings, carry, io) -> (Vec",127,68,0
+"Passes.jl :: audit_after_code(cfg, rec) -> Vector{String}",87,83,0
+"Passes.jl :: audit_coverage(cfg, head, dirs) -> (exists, covers)",112,49,0
+"Passes.jl :: carry_conditions(cfg, dir, rec, findings, carry, io; at_cap ",164,92,0
 "Passes.jl :: carry_deferrals(cfg, dir, round; io = stdout) -> Int",140,92,0
 "Passes.jl :: carry_ledger(cfg) -> Dict",109,77,0
 "Passes.jl :: carry_outstanding(cfg, instrument) -> Vector{Dict}",45,41,0
 "Passes.jl :: class_candidates(cfg, finding; cap = 24) -> Vector{String}",152,110,0
-"Passes.jl :: close(cfg, round; carry = String[], io = stdout) -> Int",291,97,0
+"Passes.jl :: close(cfg, round; carry = String[], io = stdout) -> Int",333,97,0
 "Passes.jl :: finding_files(root, finding) -> Vector{String}",65,34,0
-"Passes.jl :: grade(cfg, round; io = stdout) -> Int",170,98,0
+"Passes.jl :: grade(cfg, round; io = stdout) -> Int",206,98,0
 "Passes.jl :: last_graded(dir, k) -> Int",108,68,0
-"Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, ful",238,103,0
-"Passes.jl :: pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects,",163,105,0
+"Passes.jl :: pass_budget(cfg, dir, rec, k) -> (used, cap)",146,85,0
+"Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, ful",297,105,0
+"Passes.jl :: pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects,",205,84,0
 "Passes.jl :: quote_probe(root, finding) -> Vector{String}",177,104,0
 "Passes.jl :: save_carry(cfg, led)",25,23,0
 "Passes.jl :: severity_ratings(dir) -> Dict{String,String}",47,44,0
@@ -219,8 +221,9 @@ unit,words,longest_paragraph,admonitions
 "Reflection.jl :: signature_types(inside) -> Dict{String,String}",21,18,0
 "Reflection.jl :: xlink(cfg; pkg = load_package(cfg), apply = false) -> Vector",81,37,0
 "Reflection.md § Reflection",22,22,1
+"Release.jl :: carry_release_fails(led) -> Vector{String}",100,81,0
 "Release.jl :: cites_round(cfg, tag) -> Bool",131,95,0
-"Release.jl :: release(ver; io = stdout, skip_tests = false) -> Int",167,105,0
+"Release.jl :: release(ver; io = stdout, skip_tests = false) -> Int",178,116,0
 "RoundFiles.jl :: RoundFiles",57,56,0
 "RoundFiles.jl :: read_round(dir) -> Union{Dict,Nothing}",25,22,0
 "RoundFiles.jl :: round_dirs(cfg) -> Vector{String}",24,21,0
@@ -228,7 +231,7 @@ unit,words,longest_paragraph,admonitions
 "RoundFiles.jl :: sha256_file(path) -> String",17,14,0
 "RoundFiles.jl :: state(round) -> Symbol",16,13,0
 "Rounds.jl :: Rounds",67,66,0
-"Rounds.jl :: abandon(cfg, round, reason; io = stdout) -> Int",157,82,0
+"Rounds.jl :: abandon(cfg, round, reason; io = stdout) -> Int",179,82,0
 "Rounds.jl :: bank(cfg, round; io = stdout) -> Int",263,96,0
 "Rounds.jl :: bank_next(inst, round) -> String",67,63,0
 "Rounds.jl :: build(cfg, round; io = stdout) -> Int",60,24,0
@@ -378,5 +381,5 @@ unit,words,longest_paragraph,admonitions
 "rounds.md § item 5",19,19,0
 "rounds.md § item 6",29,29,0
 "rounds.md § item 7",47,47,0
-"rounds.md § item 8",65,65,0
+"rounds.md § item 8",98,98,0
 "verbs.md § [The verbs](@id verbs)",75,53,1

@@ -47,7 +47,7 @@
      "type": "array"
     },
     "carried": {
-     "description": "the ids this round closed by carrying them into the next round of its instrument. Real, unfixed, minor or nit on a re-rated severity, and re-banked next time.",
+     "description": "the ids this round closed by carrying them into the next round of its instrument. Real, unfixed, on a re-rated severity — minor or nit, or any severity once the round has spent its pass budget — and re-banked next time.",
      "type": "array",
      "items": {
       "type": "string"

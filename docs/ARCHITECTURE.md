@@ -1502,15 +1502,21 @@ at the tool root, which must work when the dev checkout IS the consumer.
    finding's text **unabridged**, so a real defect co-quoted with a seed is graded on its own claim.
    Seeded findings are graded by the state verifier only. **A pass after the first verifies only its
    `scope`**: the ids the previous pass left open, any it closed whose named locations the fix
-   pass has since touched, and any it closed that names no location at all — a closed finding being able
-   to regress only where its own evidence lives, and one with no evidence anywhere being re-verified
-   every pass rather than never.
+   pass has since touched, any it closed that names no location at all, and any it left `pending_state`
+   — a closed finding being able to regress only where its own evidence lives, and one with no evidence
+   anywhere being re-verified every pass rather than never. **The act verifier grades the open ids; a
+   closed id back in scope is a RE-CHECK, which the blind verifier alone reads**: the question is whether
+   it regressed, and its fix is not in this pass's diff, so the act verifier could only ever say
+   `UNDONE` — 22 of 2026-09-10-check-docs-03's 40 ids closed by adjudication for that alone.
    Every other id keeps the entry that closed it. The rc.1 round verified 56 findings ten times over
-   where 90 verifications were owed, and the panel is the round's whole cost.
+   where 90 verifications were owed, and the panel is the round's whole cost. **A round has a pass
+   budget**, `max_passes` (3 by default for both doc instruments): past it `pass open` refuses, and a
+   `--regrade` whose fix range changed no covered file does not spend it.
 8. **Grade.** `gbg round grade <round>`: refuses a changed `config_sha` (exit 2); validates both
    verdict sets; a file whose `graded_sha256` or `pass_nonce` mismatches is REJECTED, an absent one
    DEAD (exit 2); applies `Demote.jl` (HONORED → LINE-ONLY iff `class_surfaces == []` or any entry is `swept: false`, counted apart as
-   `demoted_by_rule`); applies the closure channels (§6.5); writes `tally.json`/`tally.md`; prints the
+   `demoted_by_rule`); keeps a re-checked id closed on the act verdict that closed it while the blind
+   verifier still reads it `ABSENT`, and reopens it when not; applies the closure channels (§6.5); writes `tally.json`/`tally.md`; prints the
    pass series and the plateau signal; exit 1 while `open_ids` is non-empty and equally while any id is
    `pending_state` — closed by the act verifier with no blind reading to confirm it. **Loop 6–8 over the same
    `findings.json`**; it terminates because the set is finite and closure is per finding.
@@ -1524,8 +1530,12 @@ at the tool root, which must work when the dev checkout IS the consumer.
    requires `reopened == []` — for EVERY instrument, not the hunt alone; snapshots the adjudicated ids
    used into `ROUND.toml.closed_by`; writes `closed`, `closed_head`, the tally sha (its own writes are
    what the session then commits and pushes). `gbg round abandon <round> --reason "…"` writes
-   `abandoned = {reason, open_ids}` — a plateau is the usual reason, and it is a decision the diff
-   shows.
+   `abandoned = {reason, open_ids}` and carries the round's deferrals into the work queue as `close`
+   does — a plateau is the usual reason, and it is a decision the diff shows. **Once the pass budget is
+   spent**, `close` carries every id still open or never blind-read into the next round of the
+   instrument, on a blind severity re-check, a `blocker` or `major` among them: the budget and not the
+   severity stopped the loop, so severity decides releasability instead, and a final release refuses
+   while a carried serious finding stands.
 10. **Gate.** `gbg gate [instrument…]` — the CLI face of `gate(instruments...)`, called in-process as
     `gate("check-docs", "check-consistency")` by `GBGCodingTools.makedocs` and as
     `gate("bug-hunt", "audit-changes")` by `TestHarness.gate()`, bare (all four) as `gbg gate` by hand
@@ -2129,17 +2139,11 @@ lives at `.gbg/policy/` behind the explicit block (not `.claude/rules/`).
   `pass_open`'s regrade branch — never re-stamp `tool_tree_sha` under an unchanged non-dev
   `tool_version` — and is a deferral of 2026-09-10-check-docs-03. Until it ships, "a tag is never moved
   or re-issued" is enforced by the release verb and by discipline, not by the round record.
-- **A fix cannot be certified across passes.** `pass_scope` hands the act verifier only the range from
-  the last GRADED pass to this one, and the act verifier's `UNDONE` means "nothing in THIS diff
-  addresses this finding". So an id whose fix landed in pass *k* and which pass *k+1* re-checks — the
-  fix pass having touched a file it names, for some other finding — is graded `UNDONE` however complete
-  the fix, and `grade`'s `honored` channel, which needs `HONORED` in the SAME pass and carries no
-  earlier act verdict forward, can never close it. There is nothing left to fix, so no later range can
-  contain a change addressing it: the only exits are a ledger adjudication or an id left open, and the
-  adjudications inflate `adjudicated_share`, the rate `gbg fleet --diff` compares. Measured on
-  2026-09-10-check-docs-03: 22 of 40 ids closed this way. The remedy is an instrument change — give the
-  act verifier every fix range since the finding was banked, or grade a re-checked CLOSED id on
-  regression rather than on this diff's contribution — and is that round's first deferral.
+- **A re-checked id rests on one fresh reading.** An id closed in pass *k* and back in scope later is
+  kept closed on pass *k*'s act verdict and a fresh blind reading; no act verifier looks at it again. A
+  regression the blind verifier misses therefore stays closed — it defaults to `PRESENT`, which makes a
+  miss unlikely, not impossible. Before rc.6 the act verifier was asked instead, over a diff that could
+  not hold the fix, and 22 of 2026-09-10-check-docs-03's 40 ids closed by adjudication for that alone.
 
 Appended to the decision record on 2026-09-06 and reproduced verbatim: "The Workflow tool ACCEPTS a
 `scriptPath` outside the project directory and passes `args` through unchanged (probe run
@@ -2326,9 +2330,9 @@ the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`), one or more of `scan:<i
 | `RULE.INST.FOUR_OBJECTS` | instruments | The four instruments audit different objects: changes, source prose, rendered prose, code. | "Four instruments" |
 | `RULE.INST.WITNESS` | instruments | A static claim about code is a hypothesis; the only evidence is a program that fails; a fixed witness is promoted unchanged. | "`/bug-hunt` … one rule" |
 | `RULE.INST.SELF_REPORT` | instruments | Self-reported closure is not closure; the act verifier sees the diff, the state verifier is blind; the demotion is mechanical. | "Self-reported closure is not closure." |
-| `RULE.INST.AUDIT_AFTER_CODE` | instruments | A fix pass that changed code is audited before its round closes: always for a hunt, and for a check-docs round whose pass touched `src` or `ext`. | the owner's ruling 2026-09-09, on the rc.1 round, whose documentation pass changed three code behaviours unaudited |
+| `RULE.INST.AUDIT_AFTER_CODE` | instruments | A fix pass that changed code is audited before its round closes — always for a hunt, and for a check-docs round whose pass touched `src` or `ext` — by an audit that read the round's last code change. | the owner's ruling 2026-09-09, on the rc.1 round, whose documentation pass changed three code behaviours unaudited |
 | `RULE.INST.CLOSURE_LOOP` | instruments | The closure loop runs over the banked findings by id, never by re-running the battery; abandon is the only wholesale exit and names every open id. | "The closure loop is BUILD-ENFORCED" |
-| `RULE.INST.CARRY` | instruments | A round may close by carrying a minor or nit finding into the next round of its instrument, on a severity re-rated by someone other than the lane that reported it; it is re-banked there after the lanes run, never rediscovered, and a final release requires the backlog to be draining and nothing carried three times. | the owner's ruling 2026-09-10 |
+| `RULE.INST.CARRY` | instruments | A round may close by carrying a finding into the next round of its instrument — a minor or nit at will, anything still open once its pass budget (`max_passes`, 3) is spent — on a severity re-rated by someone other than the lane that reported it; it is re-banked there after the lanes run, never rediscovered, and a final release refuses while a carried blocker or major stands, the backlog is not draining, or anything has been carried three times. | the owner's rulings 2026-09-10 and 2026-09-11 |
 | `RULE.INST.AUDIT_DISPOSED` | instruments | An audit round is closed by disposing its concerns, never by correcting them inside it; a correction moves the tree, the staleness check refuses the close, and there is no re-bank, so the correction rides the next change set. | the abandoned `2026-09-09-audit-changes-01`, 2026-09-10 |
 | `RULE.INST.FIX_FROM_LANES` | instruments | A fix pass is driven from the per-lane findings by id, never from the consolidated summary. | "a fix pass is driven from the banked per-hat reports" |
 | `RULE.INST.SEEDS` | instruments | A seeded finding is never fixed in the corpus and never enters the ledger. | "The seeded calibration and the closure gate" |

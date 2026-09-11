@@ -19,13 +19,37 @@ function cites_round(cfg::AbstractDict, tag::AbstractString)
         (r.state == :closed && String(r.round["instrument"]) == "check-docs" && "v" * String(r.round["tool_version"]) == tag) || return false
         tj = joinpath(r.dir, "verdicts", "pass-$(r.round["passes"])", "tally.json")
         isfile(tj) || return false
-        # a carried id is disposed, not open: it is minor or nit on a re-rated severity and re-banked in
-        # the next round. Whether the BACKLOG is acceptable is a release condition, not a round's
+        # a carried id is disposed, not open: re-rated, and re-banked in the next round. Whether the
+        # BACKLOG is acceptable — a serious one in it above all — is a release condition, not a round's
         carried = Set(String.(get(get(r.round, "closed_by", Dict{String,Any}()), "carried", String[])))
         all(pairs(JSON3.read(read(tj, String), Dict{String,Any})["per_id"])) do (id, e)
             get(e, "closed_by", nothing) in ("honored", "adjudicated", "rescan", "seeded") || String(id) in carried
         end
     end
+end
+
+"""
+    carry_release_fails(led) -> Vector{String}
+
+Why the carry ledger `led` (`Passes.carry_ledger`) holds a final release back; empty when it does not.
+
+Three things do. A carried `blocker` or `major`: a round past its pass budget may carry a serious finding
+in order to close, but severity decides releasability, so a final release fixes it first. A finding
+carried `Passes.CARRY_LIMIT` times, which is no longer a deferral and is the owner's to rule on. And a
+backlog that has not fallen since the last release: carrying is free while the pile drains and stops
+being free when it does not. Returns the refusals.
+"""
+function carry_release_fails(led::AbstractDict)
+    fails = String[]; out = led["carried"]; hist = led["history"]
+    serious = [String(e["id"]) for e in out if String(get(e, "severity", "")) in ("blocker", "major")]
+    isempty(serious) || push!(fails, "a serious finding is carried: " * join(serious, ", ") * " — carrying closed its round; a final release fixes it first")
+    over = [String(e["id"]) for e in out if Int(e["carries"]) >= Passes.CARRY_LIMIT]
+    isempty(over) || push!(fails, "carried $(Passes.CARRY_LIMIT)× and still unfixed: " * join(over, ", ") * " — escalate, do not release over it")
+    if !isempty(out) && !isempty(hist)
+        was = Int(last(hist)["backlog"])
+        length(out) < was || push!(fails, "the carry backlog is $(length(out)) and was $was at $(last(hist)["version"]): a final release needs it falling")
+    end
+    return fails
 end
 
 """
@@ -43,8 +67,9 @@ carries `## <ver> — `; `Project.toml`'s version equals the release version (th
 prerelease); `Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`); `gbg doctor --deep`
 is green at the root; and, for a final release only, no round is open under `.gbg/rounds/` and the
 `/check-docs` round opened at the latest `<ver>-rc.<n>` tag is closed — every id through `honored`,
-`adjudicated`, `rescan` or `seeded`, or carried into the next round ([`cites_round`](@ref)).
-A tag is never moved or re-issued. Returns the exit code.
+`adjudicated`, `rescan` or `seeded`, or carried into the next round ([`cites_round`](@ref)) — and
+nothing in the carry ledger holds it back (`carry_release_fails`). A tag is never moved or re-issued.
+Returns the exit code.
 """
 function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false)
     m = match(r"^(\d+\.\d+\.\d+)(-rc\.(\d+))?$", ver)
@@ -71,16 +96,8 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false)
         else
             latest = last(sort(rcs; by = t -> parse(Int, last(split(t, ".")))))
             cites_round(cfg, latest) || push!(fails, "no closed /check-docs round stamped $latest under .gbg/rounds/")
-            # A carried finding is a debt, and a final release is where the debt is called. Severity has
-            # already decided what may be carried at all; what a release adds is that the pile is
-            # DRAINING — carrying is free while the backlog falls, and stops being free when it does not.
-            led = Passes.carry_ledger(cfg); out = led["carried"]; hist = led["history"]
-            over = [String(e["id"]) for e in out if Int(e["carries"]) >= Passes.CARRY_LIMIT]
-            isempty(over) || push!(fails, "carried $(Passes.CARRY_LIMIT)× and still unfixed: " * join(over, ", ") * " — escalate, do not release over it")
-            if !isempty(out) && !isempty(hist)
-                was = Int(last(hist)["backlog"])
-                length(out) < was || push!(fails, "the carry backlog is $(length(out)) and was $was at $(last(hist)["version"]): a final release needs it falling")
-            end
+            # a carried finding is a debt, and a final release is where the debt is called
+            append!(fails, carry_release_fails(Passes.carry_ledger(cfg)))
         end
     end
     if !isempty(fails)

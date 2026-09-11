@@ -3,6 +3,39 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
+## 1.0.0-rc.6 — 2026-09-11
+
+MAJOR on rc.5. Instruments affected: check-docs and check-consistency (the closure loop: who reads a
+re-check, the pass budget, carrying), bug-hunt (the audit it waits on), and every instrument's
+`abandon`. Rates comparable: **no** — an `adjudicated_share` from an earlier round counts ids that would
+now close `honored`, and a round's carried set may now hold a serious finding. The fixture recall is
+unchanged: nothing here changes what a lane or a scan sees.
+
+**A re-check asks whether an id regressed.** A closed id back in scope — the fix pass having touched a
+file it names — used to be regraded by the act verifier over this pass's diff alone, which cannot hold a
+fix made earlier, so all it could say was `UNDONE`, and nothing but a ledger entry could close the id
+again. 2026-09-10-check-docs-03 closed 22 of 40 ids that way and spent seven dismissal-audit readings
+failing to certify them. A re-check now goes to the blind verifier alone, and `grade` keeps the id
+closed on the act verdict that closed it while that reading is still `ABSENT`. An id left
+`pending_state` is re-read the next pass; before, it fell out of every scope for good.
+
+**A pass budget.** `max_passes` (3 by default for both doc instruments) bounds a round. Past it `pass
+open` refuses, and `close` carries every id still open into the next round of its instrument on a blind
+severity re-check — a `blocker` or `major` included, since the budget and not the severity stopped the
+loop. Severity decides releasability instead: a final release refuses while a carried serious finding
+stands. A `--regrade` that verifies no new fix spends none of the budget.
+
+**The audit must cover the last fix.** A round whose fix passes changed code accepted any closed
+`/audit-changes` round based at its opening head, one closed before a later fix pass touched code again
+included. It now needs an audit that read the round's last code change.
+
+**Abandoning keeps what a round owes.** `gbg round abandon` carries the round's `deferred.md` into the
+work queue as `close` does.
+
+Vocabularies (§6.3; MAJOR under §5.5): `carried.toml`'s `severity` gains `blocker` and `major`;
+`pass.toml` gains `rechecked` and `counted`; a tally entry gains `rechecked`; the config gains
+`max_passes` under `instruments.check-docs` and `instruments.check-consistency`.
+
 ## 1.0.0-rc.5 — 2026-09-10
 
 PATCH on rc.4, and again its content is one defect the seeded round found in the seeding. Nine of the

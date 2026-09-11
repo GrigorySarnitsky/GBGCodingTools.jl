@@ -29,7 +29,9 @@ grade, the CLI closes. Nothing is done by hand that a verb does.
 8. **Close** — `gbg round close <round>` when every condition holds. `--carry <id>,<id>` closes over a
    `minor` or `nit` finding by carrying it into the next round of that instrument, on a severity re-rated
    by `severity-recheck.js` rather than by the lane that reported it (`RULE.INST.CARRY`); it is re-banked
-   there and never rediscovered. `gbg round abandon` is the only
+   there and never rediscovered. A round has a budget of `max_passes` verification passes, 3 by default;
+   once it is spent, `close` carries every id still open, a serious one included, which then holds a final
+   release back. `gbg round abandon` is the only
    wholesale exit and names every open id.
 
 ## Closure channels

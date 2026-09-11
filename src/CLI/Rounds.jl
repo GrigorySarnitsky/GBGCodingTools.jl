@@ -777,7 +777,8 @@ end
 - `io` — where the outcome is printed.
 
 It writes `abandoned = {reason, open_ids}` with every id still open (all banked ids when no pass was
-graded). Returns 0.
+graded), and carries the round's `deferred.md` into the work queue exactly as `close` does: abandoning
+drops the round's record, not what it owes. Returns 0.
 
 It takes an open round, and one other: a CLOSED round stamped `dev`, which no release may cite and
 which `preflight` no longer lets anyone open. That is the exit such a round would otherwise not have —
@@ -801,6 +802,7 @@ function abandon(cfg::AbstractDict, round::AbstractString, reason::AbstractStrin
     end
     rec["abandoned"] = Dict("reason" => reason, "open_ids" => open_ids)
     save(dir, rec)
+    GBGCodingTools.Passes.carry_deferrals(cfg, dir, round; io)
     println(io, "abandon: $round abandoned with $(length(open_ids)) open id(s) — the decision shows in the diff; commit the round")
     return 0
 end

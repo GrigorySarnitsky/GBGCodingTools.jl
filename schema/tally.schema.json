@@ -170,6 +170,10 @@
     "adjudicated_entry": {
      "type": "string"
     },
+    "rechecked": {
+     "description": "a closed id re-read for regression: its act verdict is the one that closed it, and only its state is fresh",
+     "type": "boolean"
+    },
     "state": {
      "type": [
       "string",

@@ -572,14 +572,14 @@ check = ["harness:Passes.grade"]
 id = "RULE.INST.CARRY"
 file = "instruments.md"
 section = "### RULE.INST.CARRY"
-statement = "A round may close by carrying a minor or nit finding into the next round of its instrument, on a re-rated severity; it is re-banked there, never rediscovered, and a final release requires the backlog to be draining."
-sentinel = "A round may close by CARRYING a finding into the next round of its instrument, and only severity decides which: a `blocker` or a `major` is fixed, adjudicated or escalated, never deferred, while a `minor` or a `nit` may ride."
+statement = "A round may close by carrying a finding into the next round of its instrument — a minor or nit at will, anything still open once its pass budget is spent — on a re-rated severity; it is re-banked there, never rediscovered, and a final release refuses while a carried blocker or major stands or the backlog is not draining."
+sentinel = "A round may close by CARRYING a finding into the next round of its instrument: a `minor` or a `nit` whenever the owner chooses, and every finding still open once the round has spent its pass budget, a `blocker` or a `major` among them."
 check = ["test:test/rounds.jl"]
 [[rule]]
 id = "RULE.INST.AUDIT_AFTER_CODE"
 file = "instruments.md"
 section = "### RULE.INST.AUDIT_AFTER_CODE"
-statement = "A fix pass that changed code is audited before its round closes: always for a hunt, and for a check-docs round whose pass touched src or ext."
+statement = "A fix pass that changed code is audited before its round closes — always for a hunt, and for a check-docs round whose pass touched src or ext — by an audit that read the round's last code change."
 sentinel = "A fix pass that changed code is audited before its round closes."
 check = ["test:test/rounds.jl"]
 [[rule]]

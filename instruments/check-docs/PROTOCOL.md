@@ -54,7 +54,10 @@ economy by default; the fix pass is never economised.
    open while an open finding names a file the fix pass did not touch — fix the class at every location
    the finding names, or re-open with `--sweep-ok` when the fix rightly lives elsewhere. A pass after
    the first verifies only the ids still open, any closed one the fix pass has touched again, and any
-   closed one that names no location at all; everything else keeps the entry that closed it. A dismissal is a
+   closed one that names no location at all; everything else keeps the entry that closed it. The act
+   verifier grades only the open ids; a closed id back in scope is a re-check, read by the blind verifier
+   alone, and it stays closed while that reading is still `ABSENT`. The round has a budget of
+   `max_passes` passes (3 by default); past it `pass open` refuses. A dismissal is a
    verdict the verifier grades like any other: it must name the rule or recorded decision that licenses
    it, and a dismissal the verifier cannot confirm is `UNDONE`, not closed.
 6. **Grade.** `gbg round grade <round>`: demotion, closure channels, plateau signal; a `hard` scan
@@ -63,9 +66,11 @@ economy by default; the fix pass is never economised.
    always returns new findings, so it has no termination condition.
 7. **Adjudicate and close.** Ledger entries with `scope = "finding"` and `overturn_when` for what is not
    a defect; `gbg round close <round>` when no id is open, no lane is dead, the files are committed and the
-   stamps are unchanged. If the fix pass touched `src/` or `ext/` — an operational finding fixed in the
+   stamps are unchanged — or, once the pass budget is spent, with every id still open carried into the
+   next round on a blind severity re-check, a serious one included, which then holds a final release back. If the fix pass touched `src/` or `ext/` — an operational finding fixed in the
    code, not in the prose — closing refuses until `/audit-changes --base <this round's opening head>` is
-   itself closed (`RULE.INST.AUDIT_AFTER_CODE`): the verifiers graded each finding, and nothing yet asked
+   itself closed and has read the round's LAST code change, so it runs after the final fix pass
+   (`RULE.INST.AUDIT_AFTER_CODE`): the verifiers graded each finding, and nothing yet asked
    whether the edits were proportionate or whether behaviour moved for input that worked before.
    A class the pass could not fix because the fix is an INSTRUMENT change (a new scan, a changed lane) is
    one BULLET in `<round>/deferred.md` (a bullet may wrap; prose outside every bullet is carried nowhere); `close` carries it into `.claude/WORK_QUEUE.md`, where the Stop hook

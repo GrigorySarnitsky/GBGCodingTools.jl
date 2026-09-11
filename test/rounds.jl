@@ -28,6 +28,23 @@ end
     note = joinpath(root, "docs", "src", "notation.md"); write(note, read(note, String) * "\n")
     git("add", "-A"); git("commit", "-q", "-m", "a prose edit")
     @test isempty(G.Passes.audit_after_code(cfg, Dict{String,Any}("head" => "HEAD~1")))     # prose only: not gated
+    # an audit must have READ the round's last code change, not merely exist: one closed before a later
+    # fix pass touched `src` again covers what it saw. Both directions, at the audit's own head.
+    base = chomp(read(`git -C $root rev-parse "HEAD~2"`, String))
+    rec = Dict{String,Any}("head" => base)
+    @test length(G.Passes.audit_after_code(cfg, rec)) == 1                 # code changed, no audit at all
+    ad = joinpath(root, ".gbg", "rounds", "2026-01-02-audit-changes-01"); mkpath(ad)
+    audited(h) = write_round(ad, merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => "2026-01-02-audit-changes-01",
+        "instrument" => "audit-changes", "schema_version" => 1, "head" => h, "base" => base,
+        "roster" => Any[], "cost" => "economy", "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet",
+        "opened" => "2026-01-02T00:00:00", "dead_lanes" => String[], "passes" => 0, "closed" => "2026-01-02T00:00:01")))
+    audited(chomp(read(`git -C $root rev-parse HEAD`, String)))
+    @test isempty(G.Passes.audit_after_code(cfg, rec))                    # it read up to HEAD: covered
+    write(src, read(src, String) * "\n"); git("add", "-A"); git("commit", "-q", "-m", "a later code edit")
+    fails = G.Passes.audit_after_code(cfg, rec)
+    @test length(fails) == 1 && occursin("does not cover", fails[1])      # closed before the last fix
+    audited(chomp(read(`git -C $root rev-parse HEAD`, String)))
+    @test isempty(G.Passes.audit_after_code(cfg, rec))                    # re-run after it: covered again
 end
 
 # A hat that needs the rulebook is unusable only when the rulebook is empty. The gate tested the
@@ -137,6 +154,14 @@ end
     @test occursin("- [ ] SCAN.X: the class this round could not fix (deferred by 2026-01-01-check-docs-01)", read(queue, String))
     @test !occursin("A paragraph outside every bullet", read(queue, String))
     @test G.Passes.carry_deferrals(cfg, dir, "2026-01-01-check-docs-01"; io = devnull) == 0   # never twice
+    # abandoning drops the round's record, not what it owes: the deferral still reaches the queue
+    write(joinpath(dir, "deferred.md"), "- SCAN.Y: owed whatever became of the round\n")
+    write_round(dir, merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => "2026-01-01-check-docs-01",
+        "instrument" => "check-docs", "schema_version" => 1, "head" => "0"^40, "roster" => Any[], "cost" => "economy",
+        "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00",
+        "dead_lanes" => String[], "passes" => 0)))
+    @test G.Rounds.abandon(cfg, "2026-01-01-check-docs-01", "superseded by a tool change"; io = devnull) == 0
+    @test occursin("- [ ] SCAN.Y: owed whatever became of the round (deferred by 2026-01-01-check-docs-01)", read(queue, String))
 end
 
 # A pass verifies what is still open, plus a closed id the fix pass has touched again; and it refuses to
@@ -189,6 +214,14 @@ end
     @test isempty(prev3) && scope3 == ["r/x#1"]                            # pass 1's tally, not pass 2's absence
     rm(joinpath(pd, "tally.json"))
     @test G.Passes.pass_scope(cfg, dir, rec, 3)[1] === nothing             # nothing graded yet: verify everything
+    # an id the blind verifier never read is re-read next pass whether or not the fix went near it, or it
+    # is read never: 2026-09-10-check-docs-03 left two such ids out of every scope for seven passes
+    quietf = Dict{String,Any}("id" => "r/z#1", "lane" => "src", "n" => 1, "title" => "t", "locations" => ["Project.toml:1 — untouched"])
+    write(joinpath(dir, "findings.json"), JSON3.write(Dict("schema_version" => 1, "round" => "r", "findings" => [quietf])))
+    pend(p) = write(joinpath(pd, "tally.json"), JSON3.write(Dict("open_ids" => String[], "pending_state" => p,
+                                                                  "per_id" => Dict("r/z#1" => Dict("act" => "HONORED")))))
+    pend(String[]);   @test isempty(G.Passes.pass_scope(cfg, dir, rec, 2)[1])      # read, untouched: not in scope
+    pend(["r/z#1"]);  @test G.Passes.pass_scope(cfg, dir, rec, 2)[3] == ["r/z#1"]  # never read: re-checked
 end
 
 # The class checklist is COMPUTED, not invented: every place the tree writes down a rule or scan id the
@@ -285,12 +318,126 @@ end
     @test any(f -> occursin("escalate", f), conds([ids[2]]))
 end
 
-# The blind verifier judges the OPEN ids mid-round, not every id every pass: over this round's 860
-# verdict pairs it uniquely blocked 6, all early, while costing half the verifier bill in the four
-# passes that cost the most. What keeps that honest is that an id the act verifier closes without a
-# blind reading is PENDING — not closed, not open, driving no fix — and `close` refuses while one
-# stands, so the round always ends with a full blind sweep. Both directions here: the id that was read
-# closes, the id that was not goes pending and blocks the close until it is read.
+# A closed id back in scope — the fix pass touched a file it names — is asked whether it REGRESSED, and by
+# the blind verifier alone: its fix is not in this pass's diff, so the act verifier could only ever say
+# UNDONE, and in 2026-09-10-check-docs-03 that closed 22 of 40 ids by adjudication instead of by their
+# fixes. The act verdict that closed it stands. All three outcomes: still absent, back, and unread.
+@testset "a re-checked id is asked whether it regressed, by the blind verifier alone" begin
+    root = fixture_copy("recheck")
+    cfg = G.Config.read(root)
+    name = "2026-01-01-check-docs-01"
+    dir = joinpath(root, ".gbg", "rounds", name)
+    p1 = joinpath(dir, "verdicts", "pass-1"); p2 = joinpath(dir, "verdicts", "pass-2")
+    mkpath(p1); mkpath(joinpath(p2, "act")); mkpath(joinpath(p2, "state"))
+    ids = ["$name/src#$i" for i in 1:3]
+    fs = [Dict{String,Any}("id" => ids[i], "lane" => "src", "n" => i, "title" => "t$i", "severity" => "minor",
+                           "confidence" => "high", "type" => "structure", "locations" => ["src/FixtureA.jl:$i — \"q$i\""],
+                           "description" => "d"^24) for i in 1:3]
+    fj = joinpath(dir, "findings.json")
+    write(fj, JSON3.write(Dict("schema_version" => 1, "round" => name, "findings" => fs)))
+    head = something(G.Git.head(root), "0"^40)
+    rec = merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => name, "instrument" => "check-docs", "schema_version" => 1,
+        "head" => head, "roster" => Any[Dict("key" => "src", "substrate" => "full", "anchor" => false)],
+        "cost" => "economy", "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet",
+        "opened" => "2026-01-01T00:00:00", "dead_lanes" => String[], "passes" => 2,
+        "banked" => "2026-01-01T00:00:01", "findings_sha" => G.RoundFiles.sha256_file(fj)))
+    write_round(dir, rec)
+    honored = Dict("act" => "HONORED", "act_demoted" => false, "state" => "ABSENT", "closed_by" => "honored")
+    write(joinpath(p1, "tally.json"), JSON3.write(Dict("schema_version" => 1, "round" => name, "pass" => 1,
+        "per_id" => Dict(id => honored for id in ids), "totals" => Dict("findings" => 3, "seeded" => 0, "closed" => 3, "open" => 0),
+        "demoted_by_rule" => 0, "adjudicated_share" => 0.0, "suspect_hats" => String[], "dead_lanes" => String[],
+        "rejected_files" => String[], "open_ids" => String[], "pending_state" => String[], "plateau" => 0)))
+    stamp(d, extra) = open(joinpath(d, "pass.toml"), "w") do f
+        TOML.print(f, merge(Dict{String,Any}("nonce" => "c"^32, "opened" => "2026-01-01T00:00:02", "head" => head,
+            "range" => "$head..$head", "fix_range" => "$head..$head", "expected" => Dict("src" => 3), "regrade" => false,
+            "tool_version" => rec["tool_version"], "tool_rev" => rec["tool_rev"],
+            "tool_tree_sha" => rec["tool_tree_sha"], "config_sha" => rec["config_sha"]), extra))
+    end
+    stamp(p1, Dict("pass" => 1))
+    stamp(p2, Dict("pass" => 2, "nonce" => "d"^32, "scope" => ids, "rechecked" => ids, "state_ids" => ids))
+    # no act file at all: none is owed for a re-check. The blind verifier: one absent, one back, one unread.
+    write(joinpath(p2, "state", "01-src.json"), JSON3.write(Dict("schema_version" => 1, "lane" => "src",
+        "graded_sha256" => rec["findings_sha"], "pass_nonce" => "d"^32,
+        "verdicts" => [Dict("id" => ids[1], "verdict" => "ABSENT", "evidence" => "searched the corpus"),
+                       Dict("id" => ids[2], "verdict" => "PRESENT", "evidence" => "the sentence is back")])))
+    @test G.Passes.grade(cfg, name; io = devnull) == 1                     # one regressed: not clean
+    tal = JSON3.read(read(joinpath(p2, "tally.json"), String), Dict{String,Any})
+    @test isempty(tal["dead_lanes"])                                      # no act lane was owed, none is dead
+    e1, e2 = tal["per_id"][ids[1]], tal["per_id"][ids[2]]
+    @test e1["closed_by"] == "honored" && e1["act"] == "HONORED" && e1["rechecked"] == true   # still absent: stays closed
+    @test e2["closed_by"] === nothing && e2["state"] == "PRESENT"                           # back: reopened
+    @test tal["open_ids"] == [ids[2]] && tal["pending_state"] == [ids[3]]                   # unread: re-read next pass
+end
+
+# A round has a budget of passes (`max_passes`, 3 by default). Past it no pass opens, and `close` carries
+# what is still open into the next round — a serious finding too, since the budget and not the severity
+# is what stopped the loop; severity then decides whether a final release may cite the round. Both
+# directions: below the budget a serious finding is fixed, not carried, and a --regrade that verified no
+# new fix spends nothing; at it the pass is refused and the close carries the rest.
+@testset "three passes, then what is still open is carried" begin
+    root = fixture_copy("budget")
+    cfg = G.Config.read(root)
+    @test cfg["instruments"]["check-docs"]["max_passes"] == 3
+    name = "2026-01-01-check-docs-01"
+    dir = joinpath(root, ".gbg", "rounds", name); mkpath(dir)
+    ids = ["$name/src#$i" for i in 1:2]
+    fs = [Dict{String,Any}("id" => ids[i], "lane" => "src", "n" => i, "title" => "t$i", "severity" => "major",
+                           "confidence" => "high", "type" => "structure", "locations" => ["src/FixtureA.jl:$i — \"q$i\""],
+                           "description" => "d"^24) for i in 1:2]
+    fj = joinpath(dir, "findings.json")
+    write(fj, JSON3.write(Dict("schema_version" => 1, "round" => name, "findings" => fs)))
+    head = something(G.Git.head(root), "0"^40)
+    rec = merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => name, "instrument" => "check-docs", "schema_version" => 1,
+        "head" => head, "roster" => Any[Dict("key" => "src", "substrate" => "full", "anchor" => false)],
+        "cost" => "economy", "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet",
+        "opened" => "2026-01-01T00:00:00", "dead_lanes" => String[], "passes" => 3,
+        "banked" => "2026-01-01T00:00:01", "findings_sha" => G.RoundFiles.sha256_file(fj)))
+    write_round(dir, rec)
+    per = Dict(ids[1] => Dict("act" => "LINE-ONLY", "act_demoted" => false, "state" => "PRESENT", "closed_by" => nothing),
+               ids[2] => Dict("act" => "HONORED", "act_demoted" => false, "state" => "ABSENT", "closed_by" => "honored"))
+    passfile(j, counted) = open(joinpath(dir, "verdicts", "pass-$j", "pass.toml"), "w") do f
+        TOML.print(f, Dict("pass" => j, "nonce" => string(j)^32, "opened" => "2026-01-01T00:00:02", "head" => head,
+            "range" => "$head..$head", "fix_range" => "$head..$head", "expected" => Dict("src" => 2), "regrade" => !counted,
+            "counted" => counted, "tool_version" => rec["tool_version"], "tool_rev" => rec["tool_rev"],
+            "tool_tree_sha" => rec["tool_tree_sha"], "config_sha" => rec["config_sha"]))
+    end
+    for j in 1:3
+        mkpath(joinpath(dir, "verdicts", "pass-$j"))
+        write(joinpath(dir, "verdicts", "pass-$j", "tally.json"), JSON3.write(Dict("schema_version" => 1, "round" => name, "pass" => j,
+            "per_id" => per, "totals" => Dict("findings" => 2, "seeded" => 0, "closed" => 1, "open" => 1), "demoted_by_rule" => 0,
+            "adjudicated_share" => 0.0, "suspect_hats" => String[], "dead_lanes" => String[], "rejected_files" => String[],
+            "open_ids" => [ids[1]], "pending_state" => String[], "plateau" => 0)))
+        passfile(j, j != 2)                                              # pass 2: a regrade that verified no new fix
+    end
+    write(joinpath(dir, "severity.json"), JSON3.write(Dict("schema_version" => 1, "round" => name,
+        "ratings" => [Dict("id" => ids[1], "severity" => "major", "reason" => "r"^12)])))
+    # below the budget: two passes spent, and a serious finding is fixed, not carried
+    @test G.Passes.pass_budget(cfg, dir, rec, 4) == (2, 3)
+    io = IOBuffer(); @test G.Passes.close(cfg, name; io) == 1
+    @test occursin("1 open id(s) in pass 3", String(take!(io)))
+    io = IOBuffer(); @test G.Passes.close(cfg, name; carry = [ids[1]], io) == 1
+    @test occursin("never carried", String(take!(io)))
+    # at the budget: no fourth pass, and close carries the rest, serious or not
+    passfile(2, true)
+    @test G.Passes.pass_budget(cfg, dir, rec, 4) == (3, 3)
+    io = IOBuffer(); @test G.Passes.pass_open(cfg, name; io) == 2
+    @test occursin("budget is spent", String(take!(io)))
+    @test !isdir(joinpath(dir, "verdicts", "pass-4"))                     # nothing half-opened left behind
+    io = IOBuffer(); @test G.Passes.close(cfg, name; io) == 0
+    @test occursin("carrying the 1 id(s) still open", String(take!(io)))
+    e = only(TOML.parsefile(joinpath(root, ".gbg", "carried.toml"))["carried"])
+    @test e["id"] == ids[1] && e["severity"] == "major"
+    @test G.RoundFiles.read_round(dir)["closed_by"]["carried"] == [ids[1]]
+    # severity now decides the release: a carried serious finding holds it back, a minor one does not
+    led(sev) = Dict{String,Any}("carried" => [Dict{String,Any}("id" => "x", "severity" => sev, "carries" => 1)], "history" => Any[])
+    @test any(f -> occursin("serious finding is carried", f), G.carry_release_fails(led("major")))
+    @test isempty(G.carry_release_fails(led("minor")))
+end
+
+# Nothing closes on one reading. An id the act verifier closes with no blind reading is PENDING — not
+# closed, not open, driving no fix — and `close` refuses while one stands; `pass_scope` re-reads it next
+# pass. Both directions here: the id that was read closes, the id that was not goes pending and blocks
+# the close until it is read.
 @testset "nothing closes on one reading: pending_state" begin
     root = fixture_copy("blind-scope")
     cfg = G.Config.read(root)

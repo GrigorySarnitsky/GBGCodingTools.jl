@@ -17,7 +17,7 @@
      "id": {"type": "string"},
      "instrument": {"type": "string"},
      "round": {"description": "the round that first carried it", "type": "string"},
-     "severity": {"description": "the RE-RATED severity, never the reporting lane's own", "type": "string", "enum": ["minor", "nit"]},
+     "severity": {"description": "the RE-RATED severity, never the reporting lane's own; a blocker or major rides only out of a round that spent its pass budget, and holds a final release back", "type": "string", "enum": ["blocker", "major", "minor", "nit"]},
      "lane": {"type": "string"},
      "type": {"type": "string"},
      "confidence": {"type": "string"},

@@ -239,6 +239,32 @@ function last_graded(dir::AbstractString, k::Int)
 end
 
 """
+    pass_budget(cfg, dir, rec, k) -> (used, cap)
+
+How much of a round's pass budget is spent before pass `k`, and the budget itself. The arguments are:
+
+- `cfg` — the validated config.
+- `dir` — the round directory.
+- `rec` — the round record.
+- `k` — the pass about to open, or one past the last graded pass when closing.
+
+`cap` is the instrument's `max_passes`; 0, or an instrument without the key, is no budget. A graded pass
+counts unless its `pass.toml` says `counted = false`, which `pass_open` writes for a `--regrade` whose fix
+range changed no covered file: re-stamping a moved config verifies no new fix and costs no budget, or a
+ledger edit after the last pass would leave the round able neither to regrade nor to close. An ungraded
+pass bought nothing and counts nothing. Returns the passes used and the cap.
+"""
+function pass_budget(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, k::Int)
+    cap = Int(get(get(cfg["instruments"], rec["instrument"], Dict{String,Any}()), "max_passes", 0))
+    used = count(1:(k - 1)) do j
+        pd = pass_dir(dir, j)
+        isfile(joinpath(pd, "tally.json")) && isfile(joinpath(pd, "pass.toml")) &&
+            get(TOML.parsefile(joinpath(pd, "pass.toml")), "counted", true)
+    end
+    return (used, cap)
+end
+
+"""
     pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects, range)
 
 Which finding ids the next pass must verify, and the range of the fix pass it grades. The arguments are:
@@ -252,8 +278,12 @@ Pass 1 verifies every id. Later passes verify the ids left open by the previous 
 pass closed whose named locations the fix pass has touched again — a closed finding can only regress
 where its own evidence lives, and the diff says whether anything went near it — and any it closed that
 names no location at all, which is re-verified every pass rather than never, silence about where a
-defect lives being no evidence that it is gone. Returns the scope, the
-previously open ids, the suspects and the fix pass's commit range; `scope === nothing` means every id.
+defect lives being no evidence that it is gone.
+
+An id the previous pass left `pending_state` — graded by the act verifier, never read by the blind one —
+is a suspect too, or nothing would read it again. The suspects are re-checks, which `pass_open` sends to
+the blind verifier alone. Returns the scope, the previously open ids, the suspects and the fix pass's
+commit range; `scope === nothing` means every id.
 """
 function pass_scope(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, k::Int)
     root = cfg["root"]; head = something(Git.head(root), "0"^40)
@@ -266,11 +296,14 @@ function pass_scope(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, k
     from = isfile(prevpass) ? get(TOML.parsefile(prevpass), "head", rec["head"]) : rec["head"]
     range = "$from..$head"
     prev_open = String.(tally["open_ids"])
+    # an id the act verifier closed with no blind reading is neither open nor closed; unless it is re-read
+    # here it is never read again (2026-09-10-check-docs-03 left two such ids out of scope for seven passes)
+    pending = String.(get(tally, "pending_state", String[]))
     touched = Set(Git.changed_paths(root, range, Preflight.covered_paths(cfg)))
-    suspects = String[]
+    suspects = copy(pending)
     for f in findings_of(dir)
         id = f["id"]
-        (id in prev_open || f["lane"] == "scans") && continue
+        (id in prev_open || id in pending || f["lane"] == "scans") && continue
         named = finding_files(root, f)
         # A finding that names no file in the tree cannot be checked against the diff, so it is re-verified
         # every pass rather than never: silence about where a defect lives is not evidence it is gone.
@@ -320,8 +353,8 @@ end
 
 - `cfg` — the validated config.
 - `round` — the round id.
-- `full_state` — give the blind verifier every id in scope, not only the open ones; a pass that could
-  close the round does this anyway.
+- `full_state` — kept for the command line; it changes nothing, since the blind verifier reads every id
+  in scope on every pass.
 - `regrade` — accept a changed stamp (`config_sha`, or the tool stamps) and re-stamp it; the round is
   re-graded from here, and the pass records `regrade = true`.
 - `sweep_ok` — open even though an open finding names a file the fix pass did not touch
@@ -330,7 +363,10 @@ end
 
 A pass after the first verifies only what `Passes.pass_scope` returns, and refuses to open at all
 while an open finding's own named locations are untouched, since a pass spent discovering that a fix
-stopped at the line it quoted is a pass wasted.
+stopped at the line it quoted is a pass wasted. The act verifier grades the OPEN ids against this fix
+pass's diff; a closed id back in scope is a re-check, read by the blind verifier alone, because the
+question is whether it regressed and its fix is not in this diff. It refuses, too, once the pass budget
+is spent (`pass_budget`): the round then closes by carrying what is still open.
 
 It refuses a changed `config_sha` unless `regrade`; creates `verdicts/pass-<k>/pass.toml` with the
 nonce, `head`, `range = <opening head>..HEAD`, the scope, the expected verdict count per lane and the
@@ -354,6 +390,18 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
     head = something(Git.head(root), "0"^40)
     all_findings = findings_of(dir)
     scope, prev_open, suspects, fixrange = pass_scope(cfg, dir, rec, k)
+    # the pass budget: past it, what is still open is carried at close rather than verified again
+    counted = !(regrade && isempty(Git.changed_paths(root, fixrange, Preflight.covered_paths(cfg))))
+    used, cap = pass_budget(cfg, dir, rec, k)
+    if cap > 0 && counted && used >= cap
+        isfile(joinpath(pd, "pass.toml")) || rm(pd; recursive = true, force = true)
+        println(io, "pass open: refused — the pass budget is spent ($used of $cap). gbg round close $round carries every id still open into the next $inst round.")
+        return 2
+    end
+    # A CLOSED id back in scope is asked whether it REGRESSED, and only the blind verifier can answer:
+    # the act verifier reads this fix pass's diff, where a fix made in an earlier pass is not, so all it
+    # could say is UNDONE — 22 of 2026-09-10-check-docs-03's 40 ids closed by adjudication for that alone.
+    rechecked = scope === nothing ? String[] : suspects
     # Never on an audit round: its concerns are disposed and its tree must NOT move, so nothing is ever
     # touched, every concern naming a covered file counts as unswept, and no audit pass could open at all.
     if !sweep_ok && inst != "audit-changes"
@@ -373,23 +421,22 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
     expected_act = Dict{String,Int}(); expected_state = Dict{String,Int}()
     for f in findings
         expected_state[f["lane"]] = get(expected_state, f["lane"], 0) + 1
-        get(f, "seeded", false) || (expected_act[f["lane"]] = get(expected_act, f["lane"], 0) + 1)
+        (get(f, "seeded", false) || f["id"] in rechecked) || (expected_act[f["lane"]] = get(expected_act, f["lane"], 0) + 1)
     end
-    # The blind verifier reads the corpus, not the diff, so it need not read every id every pass. Mid-round
-    # it judges what is OPEN; a pass that could close the round judges everything in scope, so nothing is
-    # ever closed without two independent readings of the corpus it closes in. An id the act verifier
-    # closes with no blind reading is `pending_state` at grade: it drives no fix, and `close` refuses
-    # while one remains. Across this round's 860 verdict pairs the blind reader uniquely blocked 6 ids,
-    # all of them in passes 2, 6 and 8, and none in the four passes that cost the most.
+    # The blind verifier reads the whole scope every pass: the open ids, and the closed ones back in scope,
+    # which only it can answer for (above). An id it does not read is `pending_state` at grade and is
+    # re-read next pass; `close` refuses while one remains. `full_state` is kept for the command line and
+    # changes nothing: the scope is already everything this pass owes a reading.
     j_prev = last_graded(dir, k)
-    closing = full_state || j_prev == 0 || isempty(prev_open)
-    state_findings = closing ? findings : [f for f in findings if f["id"] in prev_open]
+    last_pass = cap > 0 && used + 1 >= cap
+    state_findings = findings
     if k > 1 && !isfile(joinpath(pass_dir(dir, k - 1), "tally.json"))
         println(io, "pass open: pass $(k - 1) was opened and never graded — its build and payloads bought nothing. Grade every pass, or the loop pays for verdicts it never reads.")
     end
     nonce = bytes2hex(rand(RandomDevice(), UInt8, 16))
     pass = merge(Dict{String,Any}("pass" => k, "nonce" => nonce, "opened" => Rounds.timestamp(), "head" => head, "range" => "$(rec["head"])..$head",
                                   "fix_range" => fixrange, "state_ids" => [f["id"] for f in state_findings],
+                                  "rechecked" => rechecked, "counted" => counted,
                                   "expected" => expected_state, "regrade" => regrade),
                  (scope === nothing ? Dict{String,Any}() : Dict{String,Any}("scope" => scope)),
                  Dict(x => st[x] for x in ("tool_version", "tool_rev", "tool_tree_sha", "config_sha")))
@@ -448,8 +495,8 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
         # 2026-09-09-check-docs-02 `range` was 456 files and 36,559 insertions where the work was 9 files
         # and 499, and every lane agent re-read all of it to grade six ids
         act = merge(base, Dict("range" => fixrange, "mode" => "lanes",
-                    "lanes" => [Dict("nn" => l["nn"], "key" => l["key"], "expected" => get(expected_act, l["key"], 0)) for l in lanes if l["key"] != "scans"],
-                    "findings" => [Dict("id" => f["id"], "lane" => f["lane"], "n" => f["n"], "title" => f["title"]) for f in findings if !get(f, "seeded", false) && f["lane"] != "scans"]))
+                    "lanes" => [Dict("nn" => l["nn"], "key" => l["key"], "expected" => get(expected_act, l["key"], 0)) for l in lanes if l["key"] != "scans" && get(expected_act, l["key"], 0) > 0],
+                    "findings" => [Dict("id" => f["id"], "lane" => f["lane"], "n" => f["n"], "title" => f["title"]) for f in findings if !get(f, "seeded", false) && f["lane"] != "scans" && !(f["id"] in rechecked)]))
         expected_blind = Dict{String,Int}()
         for f in state_findings; f["lane"] == "scans" || (expected_blind[f["lane"]] = get(expected_blind, f["lane"], 0) + 1); end
         state = merge(base, Dict("lanes" => [Dict("nn" => l["nn"], "key" => l["key"], "substrate" => l["substrate"], "expected" => get(expected_blind, l["key"], 0)) for l in lanes if l["key"] != "scans" && get(expected_blind, l["key"], 0) > 0],
@@ -457,9 +504,11 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
                       "source_scope" => ["src", "ext", "docs/src", "docs"]))
         manuscripts === nothing || (state["manuscripts"] = manuscripts)
         Preflight.save_args(cfg, round, "pass-$k-act", act); Preflight.save_args(cfg, round, "pass-$k-state", state)
-        println(io, closing ? "\nLaunch BOTH verifiers exactly as printed (the act verifier sees the diff; the state verifier is blind), then gbg round grade $round:\n" :
-                              "\nLaunch BOTH exactly as printed, then gbg round grade $round. The blind verifier judges the $(length(state_findings)) OPEN id(s) this pass; an id the act verifier closes without one is pending_state, and close refuses while any remains:\n")
-        println(io, Preflight.workflow_call(joinpath(wdir, "verify-act.js"), act), "\n")
+        nact = length(act["findings"])
+        last_pass && println(io, "\nThis is pass $(used + 1) of $cap: whatever is still open after it is carried into the next $inst round at close.")
+        println(io, nact > 0 ? "\nLaunch BOTH verifiers exactly as printed — the act verifier grades the $nact open id(s) against this fix pass's diff; the blind verifier reads all $(length(state_findings)) in scope, the $(length(rechecked)) re-checked closed id(s) among them — then gbg round grade $round:\n" :
+                              "\nNo id is open, so the act verifier has nothing to grade. Launch the blind verifier exactly as printed — it reads the $(length(rechecked)) re-checked closed id(s) for regression — then gbg round grade $round:\n")
+        nact > 0 && println(io, Preflight.workflow_call(joinpath(wdir, "verify-act.js"), act), "\n")
         println(io, Preflight.workflow_call(joinpath(wdir, "verify-state.js"), state))
         println(io, "\n(lane 00-scans is closed by rescan at grade, never by a verdict)")
     elseif inst == "bug-hunt"
@@ -535,6 +584,9 @@ rest, then the closure channels per id —
 re-run; for an audit the disposition gate after the severity re-check — and writes `tally.json` and
 `tally.md` with the pass series and the plateau signal.
 
+A re-checked id — closed earlier, back in scope — keeps the act verdict that closed it: it stays closed
+while the blind verifier still reads it absent, and reopens when that reading finds it back.
+
 Exit 1 while `open_ids` is non-empty, and equally while any id is `pending_state` — read by the act
 verifier and not by the blind one — 0 only when every id is closed.
 """
@@ -556,6 +608,10 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         j == 0 || (carried = Dict{String,Any}(String(i) => e for (i, e) in read_json(joinpath(pass_dir(dir, j), "tally.json"))["per_id"] if !(String(i) in scope)))
     end
     findings = scope === nothing ? all_findings : [f for f in all_findings if f["id"] in scope || f["lane"] == "scans"]
+    # a closed id back in scope keeps the act verdict that closed it; only its blind reading is fresh
+    rechecked = Set(String.(get(pass, "rechecked", String[])))
+    jp = last_graded(dir, k)
+    prevper = jp == 0 ? Dict{String,Any}() : Dict{String,Any}(read_json(joinpath(pass_dir(dir, jp), "tally.json"))["per_id"])
     per_id = copy(carried); dead = String[]; rejected = String[]; demoted = 0; adjudicated = 0; pending = String[]
     # the rates are over the ROUND, not over this pass: counting a scoped pass's demotions and
     # adjudications against a denominator of every banked id writes a zero rate into the tally that
@@ -570,7 +626,7 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         acts = Dict{String,Any}(); states = Dict{String,Any}()
         for lane in lanes
             nn = something(findfirst(r -> r["key"] == lane, rec["roster"]), 0); nnlabel = lpad(nn, 2, '0')
-            exp_act = count(f -> f["lane"] == lane && !get(f, "seeded", false), findings); exp_state = count(f -> f["lane"] == lane, findings)
+            exp_act = count(f -> f["lane"] == lane && !get(f, "seeded", false) && !(f["id"] in rechecked), findings); exp_state = count(f -> f["lane"] == lane, findings)
             if exp_act > 0
                 st, d, note = read_verdicts(pd, "act", "$nnlabel-$lane", pass["nonce"], rec["findings_sha"], "verdict-act")
                 st == :ok ? (for v in d["verdicts"]; acts[v["id"]] = v; end) : st == :rejected ? push!(rejected, "act/$nnlabel-$lane: $note") : push!(dead, "act/$nnlabel-$lane: $note")
@@ -597,6 +653,22 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
             end
             s === nothing || (entry["state"] = s["verdict"])
             fav = s !== nothing && s["verdict"] in FAVOURABLE
+            # A re-check asks whether a closed id REGRESSED. The act verdict that closed it stands — its fix
+            # is outside this pass's range, so the act verifier was not asked (`pass_open`) — and the blind
+            # reading decides: still absent, it stays closed; back, it reopens for the next fix pass.
+            prev = get(prevper, id, nothing)
+            if id in rechecked && !get(f, "seeded", false) && prev !== nothing && get(prev, "act", nothing) == "HONORED"
+                entry["act"] = "HONORED"; entry["rechecked"] = true
+                if s === nothing
+                    push!(pending, id)
+                elseif fav
+                    entry["closed_by"] = "honored"
+                else
+                    e = ledger_adjudication(ledger, id, opened)
+                    e !== nothing && (entry["closed_by"] = "adjudicated"; entry["adjudicated_entry"] = "$(e["id"])@$(e["target"])"; adjudicated += 1)
+                end
+                per_id[id] = entry; continue
+            end
             # the blind verifier judges the open ids mid-round (`pass.toml`'s `state_ids`); an id the act
             # verifier closed without one is PENDING — it drives no fix pass and closes no round, and
             # `close` refuses while one stands, so the last pass is always a full blind sweep
@@ -708,23 +780,54 @@ end
     audit_after_code(cfg, rec) -> Vector{String}
 
 `RULE.INST.AUDIT_AFTER_CODE` for a documentation round: the refusals when the fix pass of the round
-`rec` changed code and no `/audit-changes` round based at its opening head is closed. The arguments are
-`cfg`, the validated config, and `rec`, the round record. A pass that touched only prose is not gated.
-Returns the refusals, empty when none applies.
+`rec` changed code and no closed `/audit-changes` round based at its opening head read the LAST of that
+code — an audit closed before a later fix pass touched `src` or `ext` again covers what it saw, not what
+came after. The arguments are `cfg`, the validated config, and `rec`, the round record. A pass that
+touched only prose is not gated. Returns the refusals, empty when none applies.
 """
 function audit_after_code(cfg::AbstractDict, rec::AbstractDict)
     root = cfg["root"]
-    # the leading directory of each `src`/`ext` surface glob (`src/**/*.jl` → `src`), as a git pathspec
-    globs = vcat(get(cfg["surfaces"], "src", String[]), get(cfg["surfaces"], "ext", String[]))
-    dirs = unique(filter(!isempty, [rstrip(String(first(split(String(g), r"[*?\[]"; limit = 2))), '/') for g in globs]))
+    dirs = code_dirs(cfg)
     isempty(dirs) && return String[]
     touched = Git.changed_paths(root, "$(rec["head"])..HEAD", dirs)
     isempty(touched) && return String[]
     base = first(rec["head"], 8)
-    any(r -> r.state == :closed && r.round["instrument"] == "audit-changes" && get(r.round, "base", "") == rec["head"],
-        RoundFiles.rounds(cfg)) && return String[]
-    return ["the fix pass changed code (" * join(first(touched, 3), ", ") * (length(touched) > 3 ? ", …" : "") *
-            ") and no closed audit-changes round has base = $base — run /audit-changes --base $base and close it"]
+    exists, covers = audit_coverage(cfg, rec["head"], dirs)
+    covers && return String[]
+    exists || return ["the fix pass changed code (" * join(first(touched, 3), ", ") * (length(touched) > 3 ? ", …" : "") *
+                      ") and no closed audit-changes round has base = $base — run /audit-changes --base $base and close it"]
+    return ["the audit based at $base does not cover the round's last code change — run /audit-changes --base $base again after the last fix pass, and close it"]
+end
+
+# the leading directory of each `src`/`ext` surface glob (`src/**/*.jl` → `src`), as git pathspecs
+code_dirs(cfg::AbstractDict) = unique(filter(!isempty, [rstrip(String(first(split(String(g), r"[*?\[]"; limit = 2))), '/')
+                                                        for g in vcat(get(cfg["surfaces"], "src", String[]), get(cfg["surfaces"], "ext", String[]))]))
+
+"""
+    audit_coverage(cfg, head, dirs) -> (exists, covers)
+
+Whether a closed `/audit-changes` round is based at the commit `head`, and whether one of them read the
+last change under `dirs`. The arguments are:
+
+- `cfg` — the validated config.
+- `head` — the opening head of the round that needs the audit.
+- `dirs` — the code paths the audit must cover, as git pathspecs.
+
+An audit covers what it saw: one closed before a later fix touched `dirs` again leaves that change
+unaudited, and an audit whose head is unreachable proves nothing either way. With no `dirs` there is no
+later change to miss, so any based audit covers. Returns the two flags.
+"""
+function audit_coverage(cfg::AbstractDict, head::AbstractString, dirs::AbstractVector)
+    root = cfg["root"]
+    audits = [r for r in RoundFiles.rounds(cfg)
+              if r.state == :closed && r.round["instrument"] == "audit-changes" && get(r.round, "base", "") == head]
+    isempty(dirs) && return (!isempty(audits), !isempty(audits))
+    covers = any(audits) do r
+        ah = String(get(r.round, "head", ""))
+        !isempty(ah) && Git.run(root, "cat-file", "-e", ah * "^{commit}") !== nothing &&
+            isempty(Git.changed_paths(root, "$ah..HEAD", dirs))
+    end
+    return (!isempty(audits), covers)
 end
 
 """
@@ -807,23 +910,26 @@ function items_file(path, items)
 end
 
 """
-    carry_conditions(cfg, dir, rec, findings, carry, io) -> (Vector{String}, Dict{String,String})
+    carry_conditions(cfg, dir, rec, findings, carry, io; at_cap = false) -> (Vector{String}, Dict{String,String})
 
 The refusals when a round would close by carrying the ids `carry`, and the re-rated severity of each.
 The arguments are `cfg`, the validated config; `dir` and `rec`, the round's directory and record;
-`findings`, the banked findings; `carry`, the ids asked for; and `io`, where the launch line is printed.
+`findings`, the banked findings; `carry`, the ids asked for; `io`, where the launch line is printed; and
+`at_cap`, whether the round has spent its pass budget (`pass_budget`).
 
-Three conditions. The id must be OPEN — a closed one is not carried, it is done. Its severity must have
-been re-rated by `severity-recheck.js`, whose ratings the CLI compares against the lane's own, and the
-re-rating must be `minor` or `nit`: a serious finding is fixed, adjudicated or escalated, never
-deferred. And it must not already have been carried [`CARRY_LIMIT`](@ref) times. Returns the refusals
-and the re-ratings.
+Three conditions. The id must be OPEN, or `pending_state` — a closed one is not carried, it is done. Its
+severity must have been re-rated by `severity-recheck.js`, whose ratings the CLI compares against the
+lane's own; below the pass budget the re-rating must be `minor` or `nit`, a serious finding being fixed,
+adjudicated or escalated rather than deferred, while past it any severity rides and severity decides
+instead whether a final release may cite the round. And it must not already have been carried
+[`CARRY_LIMIT`](@ref) times. Returns the refusals and the re-ratings.
 """
 function carry_conditions(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, findings::AbstractVector,
-                          carry::AbstractVector, io::IO)
+                          carry::AbstractVector, io::IO; at_cap::Bool = false)
     fails = String[]; rerated = Dict{String,String}()
     k = rec["passes"]; tj = joinpath(pass_dir(dir, k), "tally.json")
-    openids = isfile(tj) ? Set(String.(read_json(tj)["open_ids"])) : Set{String}()
+    t = isfile(tj) ? read_json(tj) : Dict{String,Any}("open_ids" => String[])
+    openids = Set(String.(vcat(t["open_ids"], get(t, "pending_state", String[]))))
     known = Dict(f["id"] => f for f in findings)
     for id in carry
         haskey(known, id) || (push!(fails, "--carry $id: no such banked finding"); continue)
@@ -856,8 +962,8 @@ function carry_conditions(cfg::AbstractDict, dir::AbstractString, rec::AbstractD
     for id in carry
         haskey(ratings, id) || continue
         rerated[id] = ratings[id]
-        ratings[id] in ("minor", "nit") ||
-            push!(fails, "--carry $id: re-rated $(ratings[id]); a serious finding is fixed, adjudicated or escalated, never carried")
+        ratings[id] in ("minor", "nit") || at_cap ||
+            push!(fails, "--carry $id: re-rated $(ratings[id]); below the pass budget a serious finding is fixed, adjudicated or escalated, never carried")
         e = get(before, id, nothing)
         e === nothing || Int(e["carries"]) < CARRY_LIMIT ||
             push!(fails, "--carry $id: carried $(e["carries"])× already (limit $CARRY_LIMIT) — this is not a deferral any more; escalate it")
@@ -884,7 +990,9 @@ pass changed code, [`Passes.audit_after_code`](@ref). Then `closed`, `closed_hea
 tally sha are stamped.
 
 `carry` names the ids this round closes by carrying them into the next round of its instrument, which
-`carry_conditions` gates.
+`carry_conditions` gates. Once the pass budget is spent (`pass_budget`) an empty `carry` means every
+id still open or never blind-read, and a serious one rides too: its severity then decides whether a
+final release may cite the round, not whether the round may close.
 
 Returns 0 when closed, 1 when a condition is unmet — a moved `config_sha` or `tool_version` among them,
 since a regrade answers those — and 2 for a `tool_tree_sha` that moved under an unchanged
@@ -900,16 +1008,26 @@ change and a deferral of 2026-09-10-check-docs-03.
 function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector = String[], io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io, allow_config_change = true)
     root = cfg["root"]; inst = rec["instrument"]; k = rec["passes"]
-    fails = String[]
+    fails = String[]; at_cap = false
     haskey(rec, "banked") || push!(fails, "not banked")
     tj = joinpath(pass_dir(dir, k), "tally.json")
     if k == 0 || !isfile(tj)
         push!(fails, "no graded pass")
     else
         t = read_json(tj)
+        used, cap = pass_budget(cfg, dir, rec, k + 1)
+        at_cap = cap > 0 && used >= cap
+        pend = String.(get(t, "pending_state", String[]))
+        # the budget is spent: every id still open, and every one never blind-read, is carried — no pass can
+        # open to verify them, so waiting on one would leave the round unable to close at all
+        if at_cap && isempty(carry) && !(isempty(t["open_ids"]) && isempty(pend))
+            carry = sort!(unique(vcat(String.(t["open_ids"]), pend)))
+            println(io, "close: the pass budget is spent ($used of $cap) — carrying the $(length(carry)) id(s) still open: ", join(carry, ", "))
+        end
         stillopen = [id for id in t["open_ids"] if !(id in carry)]
         isempty(stillopen) || push!(fails, "$(length(stillopen)) open id(s) in pass $k" * (isempty(carry) ? "" : " beyond the $(length(carry)) carried"))
-        isempty(get(t, "pending_state", String[])) || push!(fails, "$(length(t["pending_state"])) id(s) the blind verifier never read at this head — gbg round pass open $round, which sweeps them")
+        unread = [p for p in pend if !(p in carry)]
+        isempty(unread) || push!(fails, "$(length(unread)) id(s) the blind verifier never read at this head — gbg round pass open $round, which sweeps them")
         isempty(t["dead_lanes"]) || push!(fails, "dead lane(s) in pass $k: " * join(t["dead_lanes"], ", "))
     end
     isempty(rec["dead_lanes"]) || push!(fails, "dead lanes at bank: " * join(rec["dead_lanes"], ", "))
@@ -970,7 +1088,7 @@ function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector =
     end
     rerated = Dict{String,String}()
     if !isempty(carry)
-        cf, rerated = carry_conditions(cfg, dir, rec, findings, carry, io)
+        cf, rerated = carry_conditions(cfg, dir, rec, findings, carry, io; at_cap)
         append!(fails, cf)
     end
     if !isempty(fails)
@@ -1046,8 +1164,10 @@ function hunt_close_conditions(cfg, dir, rec, findings; io)
     log = joinpath(Preflight.scratch_dir(cfg, dir |> basename), "close-test.log")
     code = Rounds.run_under_round(cfg, basename(dir), cfg["package"]["julia_test"]; log)
     code == 0 || push!(fails, "Pkg.test() under GBG_ROUND exit $code — $log")
-    audits = [r for r in RoundFiles.rounds(cfg) if r.state == :closed && r.round["instrument"] == "audit-changes" && get(r.round, "base", "") == rec["head"]]
-    isempty(audits) && push!(fails, "no closed audit-changes round with base = $(first(rec["head"], 8)) (this hunt's opening head) — run /audit-changes --base $(first(rec["head"], 8)) and close it")
+    exists, covers = audit_coverage(cfg, rec["head"], code_dirs(cfg))
+    b8 = first(rec["head"], 8)
+    exists || push!(fails, "no closed audit-changes round with base = $b8 (this hunt's opening head) — run /audit-changes --base $b8 and close it")
+    exists && !covers && push!(fails, "the audit based at $b8 does not cover this hunt's last code change — run /audit-changes --base $b8 again after the last fix, and close it")
     blocked = joinpath(dir, "witnesses", "blocked")
     isdir(blocked) && !isempty(readdir(blocked)) && println(io, "close: BLOCKED witnesses (re-run by gbg doctor --deep on a host with the device): ", join(readdir(blocked), ", "))
     all_dirty = Git.porcelain(root)

@@ -55,9 +55,10 @@ Every hat is forbidden `.gbg/` and `~/.gbg/`. The panel is COLLECT-ONLY: it neve
    the corpus from a seeded finding (bank marks them); never close a finding by declaring it "by design"
    or "for symmetry" — fix it, or put it to the owner as an adjudication with the trade-off.
 6. **Verify.** `gbg round pass open <round>` refuses while an open finding names a file the fix pass
-   left untouched (`--sweep-ok` overrides), verifies only the ids still open, any closed one the
-   fix pass has touched again, and any closed one that names no location at all, records the fix range
-   and a nonce, regenerates the
+   left untouched (`--sweep-ok` overrides) or once the round's `max_passes` budget (3 by default) is
+   spent; verifies only the ids still open, any closed one the fix pass has touched again, and any closed
+   one that names no location at all — the act verifier the open ids, the blind verifier all of them, a
+   closed id back in scope being a re-check it alone reads; records the fix range and a nonce, regenerates the
    manuscripts after a fresh build, and prints two `Workflow` calls: the act verifier (sees the diff;
    grades `HONORED` / `ADJACENT` / `INSERTED` / `LINE-ONLY` / `NEW-DEFECT` / `SCOPE-CREEP` / `UNDONE` /
    `LAUNDERED`, `HONORED` earned by an enumerated `class_surfaces[]` list read from the finding's own
@@ -77,8 +78,9 @@ Every hat is forbidden `.gbg/` and `~/.gbg/`. The panel is COLLECT-ONLY: it neve
    auditor at close.
 9. **Close.** `gbg round close <round>` when the latest pass has no open id, no lane is dead, the round's
    files are committed and the stamps are unchanged (a changed config or a moved pinned version means
-   `gbg round pass open --regrade` first). Commit ⇒ push the round; cite the closure per lat and id in
-   the commit message. `gbg round abandon <round> --reason "…"` is the only wholesale exit and lists
+   `gbg round pass open --regrade` first). Once the pass budget is spent it carries every id still open
+   into the next round on a blind severity re-check, a serious one included, which then holds a final
+   release back. Commit ⇒ push the round; cite the closure per lane and id in the commit message. `gbg round abandon <round> --reason "…"` is the only wholesale exit and lists
    every open id — a plateau is the usual reason.
 
 ## The rules that carry the weight

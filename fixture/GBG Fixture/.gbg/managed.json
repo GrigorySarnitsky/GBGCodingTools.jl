@@ -1,6 +1,6 @@
 {
     "tool_version": "dev",
-    "inputs_sha": "d808939795f7a124d9d9b2e8ae2cf67754eb422e8ae654867f91f3920bab391a",
+    "inputs_sha": "b2500a142843b2823fd72e97eafbcb646d9f1868585f0e521c2878046e040309",
     "files": {
         "CLAUDE.md#gbg:managed": {
             "template": "claude-md.block",
@@ -59,7 +59,7 @@
         },
         ".gbg/policy/instruments.md": {
             "template": "policy/instruments.md",
-            "sha256": "ab78d9c4bccfdcaeb815fcc5417cb261af115ef79c6306bfdbfe367d1aee5b85",
+            "sha256": "bde4262d83e9b9b97ad6a50da0d17f581babeb25d305d292eb5ee5903df308bb",
             "version": "dev"
         },
         ".claude/skills/bug-hunt/SKILL.md": {
@@ -99,5 +99,5 @@
         }
     },
     "schema_version": 1,
-    "rendered": "2026-09-10T23:18:01"
+    "rendered": "2026-09-11T16:03:11"
 }

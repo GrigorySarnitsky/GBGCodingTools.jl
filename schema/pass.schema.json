@@ -78,11 +78,22 @@
    "type": "string"
   },
   "state_ids": {
-   "description": "the ids the blind state verifier judges this pass. Mid-round it is the open ids alone; on a pass that could close the round it is every id in scope, so nothing closes without two independent readings of the corpus it closes in.",
+   "description": "the ids the blind state verifier judges this pass: every id in the pass's scope, the open ones and the closed ones re-checked, so nothing is closed, or kept closed, without a blind reading of the corpus it closes in.",
    "type": "array",
    "items": {
     "type": "string"
    }
+  },
+  "rechecked": {
+   "description": "the CLOSED ids this pass re-checks, because the fix pass touched what they name or because the blind verifier never read them. Only the blind verifier reads them: a re-check asks whether an id regressed, and the act verifier's diff holds this pass's work alone.",
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "counted": {
+   "description": "whether this pass spends the instrument's pass budget (`max_passes`). False for a --regrade whose fix range changed no covered file: re-stamping a moved config verifies no new fix.",
+   "type": "boolean"
   }
  },
  "title": "verdicts/pass-<k>/pass.toml \u2014 one verification pass (CLI-written)",
