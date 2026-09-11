@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "d67b46417bed63eaac0dad6cb6af1086",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/rationale#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff 47db044c..272e01b18 touches only .gbg/rounds/2026-09-11-check-docs-02/deferred.md, docs/prose_shape.csv, src/CLI/Config.jl, src/CLI/Sync.jl, src/Reflection.jl, src/TestHarness.jl — no hunk on docs/ARCHITECTURE.md or src/GBGCodingTools.jl. ARCHITECTURE.md:996 already reads '    Scan.jl ...' at 4-space indent (sibling of TreeHash.jl/HtmlWalker.jl, not nested under CLI/), and src/GBGCodingTools.jl:87 already reads include(\"Scan.jl\"). git blame dates that correction to c8ef9162 ('Fix pass 1 of 2026-09-11-check-docs-01'), an ancestor of 47db044c — the fix predates this pass-2 window entirely; nothing in the pass-2 act repairs or even references it.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:996",
+          "swept": false,
+          "evidence": "Not in the diff; text already correct as of the base commit 47db044c, from a prior round's fix — this pass makes no edit here."
+        },
+        {
+          "surface": "src/GBGCodingTools.jl:87",
+          "swept": false,
+          "evidence": "Not in the diff; include(\"Scan.jl\") already matches the corrected tree as of the base commit — this pass makes no edit here."
+        }
+      ]
+    }
+  ]
+}

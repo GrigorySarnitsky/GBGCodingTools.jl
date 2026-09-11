@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "d67b46417bed63eaac0dad6cb6af1086",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/workflow-scripts#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "The audited diff (47db044c..272e01b1) never touches verify-act.js or Passes.jl. deferred.md's bullet for this id is byte-identical at both ends of the range. verify-act.js:99-121 still holds the dead batches block, its header (line 6) still claims both modes live, and Passes.jl:542 still hard-codes mode=>\"lanes\".",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:21",
+          "swept": false,
+          "evidence": "MODE ternary unchanged; file untouched by the diff"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:99-121",
+          "swept": false,
+          "evidence": "dead batches block still present verbatim"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:6",
+          "swept": false,
+          "evidence": "header still says 'mode ∈ lanes|batches from args'"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:542",
+          "swept": false,
+          "evidence": "still hard-codes \"mode\" => \"lanes\", only call site"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-02/workflow-scripts#2",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "deferred.md's bullet for this id is unchanged across the range. Direct inspection confirms none of the six named scripts gained the empty-list guard; the diff touches none of them.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-docs/workflow/lanes.js:69",
+          "swept": false,
+          "evidence": "A.lanes.map used with no preceding length guard"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js:105",
+          "swept": false,
+          "evidence": "A.hats.map used with no preceding length guard"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:89",
+          "swept": false,
+          "evidence": "A.lanes used with no preceding length guard"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:90",
+          "swept": false,
+          "evidence": "A.lanes.map used with no preceding length guard"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-state.js:83",
+          "swept": false,
+          "evidence": "A.lanes.map used with no preceding length guard"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js (lanes path, line 123)",
+          "swept": false,
+          "evidence": "only the batches branch guards length; default lanes path has none"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "Design.jl does now wire both scripts, but that wiring (commit 440fb95) predates 47db044c, the start of the audited range; git show 47db044c --stat already lists Design.jl among files it touched, and the range 47db044c..272e01b1 makes no further change to Design.jl or Preflight.jl. Preflight.jl:579's main_script dict, the finding's own anchor, is byte-identical across the range. deferred.md itself documents this exact class of situation ('a carried finding fixed between rounds ... grades it UNDONE... four of check-docs-01's five carried ids at rc.9'), consistent with Demote.jl scoping the act verdict strictly to the diff.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:1",
+          "swept": false,
+          "evidence": "no hunk in the audited range touches this file"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/attack-design.js:1",
+          "swept": false,
+          "evidence": "no hunk in the audited range touches this file"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:579",
+          "swept": false,
+          "evidence": "main_script dict unchanged across the range"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#2",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "dismissals.js and verify-architecture.js now both carry id: {type:'string', description:'the finding id EXACTLY as given'} in the corpus, but neither file appears in git diff 47db044c..272e01b1 --stat, so the fix predates the audited range. Same diff-scope conclusion as the sibling carried ids, per deferred.md's own note on fixes made between rounds.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/dismissals.js:23",
+          "swept": false,
+          "evidence": "description present in corpus but introduced by no hunk in the audited diff"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/verify-architecture.js:22",
+          "swept": false,
+          "evidence": "description present in corpus but introduced by no hunk in the audited diff"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#3",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "severity-recheck.js:16 and attack-design.js:14 now include 'round' in their required-arg lists in the corpus, but neither file is touched anywhere in git diff 47db044c..272e01b1, so the fix predates the audited range. Same diff-scope conclusion: the act verifier grades from the diff, and the diff shows nothing here.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/severity-recheck.js:16",
+          "swept": false,
+          "evidence": "'round' present in corpus's required list but introduced by no hunk in the audited diff"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/attack-design.js:14",
+          "swept": false,
+          "evidence": "'round' present in corpus's required list but introduced by no hunk in the audited diff"
+        }
+      ]
+    }
+  ]
+}

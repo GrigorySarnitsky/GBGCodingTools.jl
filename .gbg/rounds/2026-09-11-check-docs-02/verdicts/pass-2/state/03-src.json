@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "d67b46417bed63eaac0dad6cb6af1086",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/src#1",
+      "verdict": "ABSENT",
+      "evidence": "grep -rn '§' src ext: every hit in Sync.jl, Demote.jl, Selftest.jl, Gate.jl, RoundFiles.jl, Init.jl, Preflight.jl, Doctor.jl, Passes.jl, Recall.jl, Ledger.jl, Audit.jl, Rounds.jl, Release.jl, Seed.jl, Scan.jl is now a top-of-file `#` comment (checked context: the triple-quoted docstrings right below carry no §). Init.jl:130/174 are TOML default data, not docstrings. No remaining docstring instance found."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/src#2",
+      "verdict": "ABSENT",
+      "evidence": "TestHarness.jl:303-304 now reads '`Config.read`, `Git.run` and `Ledger.read` denote the package's function...'. `Ledger.read` is real: `function read(cfg::AbstractDict)` inside `module Ledger` (src/CLI/Ledger.jl:30), colliding with Base.read like Config.read/Git.run. grep -rn 'Scan.report' src ext: no hits."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "ext",
+  "graded_sha256": "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd",
+  "pass_nonce": "d67b46417bed63eaac0dad6cb6af1086",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/ext#1",
+      "verdict": "ABSENT",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:22 now reads 'gate_or_skip(cfg, what::AbstractString) -> Bool', matching the method at line 32 'function gate_or_skip(cfg, what::AbstractString)'. ext/ contains only this one file, both its docstrings (check, gate_or_skip) mirror their methods; no other signature in scope."
+    }
+  ]
+}
