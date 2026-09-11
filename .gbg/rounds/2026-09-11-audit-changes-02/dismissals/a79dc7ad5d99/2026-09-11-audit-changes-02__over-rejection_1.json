@@ -1,0 +1,6 @@
+{
+  "id": "2026-09-11-audit-changes-02/over-rejection#1",
+  "verdict": "DISMISSAL-SOUND",
+  "evidence": "DocLints.jl docs_build_skipped: `all(p -> first(p) == :open, last(gate_problems(cfg, \"check-docs\", \"check-consistency\"))) || return String[]` -- the skip is specified for a refusal 'only because a round of a docs instrument is open' (ARCHITECTURE line 491; frozen_rounds: 'A build refused ONLY for these is frozen'). Gate.jl: `r.name in ignored && continue` precedes the `:committed` push, which is guarded by `!in_ci`; Rounds.jl/Passes.jl build via `run_under_round` (GBG_ROUND).",
+  "what_would_bite": ""
+}

@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-audit-changes-02",
+  "items_sha": "a79dc7ad5d99c42022a1742c85af27f8ab2125dc0cf960149c25039323883ac0",
+  "tally": {
+    "DISMISSAL-SOUND": 7,
+    "DISMISSAL-WRONG": 2,
+    "UNSAFE": 1
+  },
+  "verdicts": [
+    {
+      "id": "2026-09-11-audit-changes-02/executing#1",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "Gate.jl: `r.name in ignored && continue` precedes the `:committed` push, and it applies only when `!in_ci`, so a `gbg round build` (GBG_ROUND, Rounds.jl:94) and CI never see it. DocLints.jl says the build fails on anything but a refusal ONLY because a docs round is open. ARCHITECTURE:2243: \"a fix pass committed without its round is green on the runner and red on the next local `gbg gate`.\"",
+      "what_would_bite": ""
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/public-contract#2",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "Diff 47db044 of src/CLI/Gate.jl only moves gate's loop into gate_problems and tags each message (:open/:disabled/:committed => same string). gate keeps signature `gate(cfg, instruments...; io = stderr) -> Int`, runs self_verify then ROUND.DIR first, passes its own io (`gate_problems(cfg, instruments...; io)`), `fatal && return 2`, prints `\"  \", last(p)` (the same text), returns 1/0. Callers TestHarness.jl:608 and ext:34 are unchanged. gate_problems is not exported and is documented in verbs.md:51.",
+      "what_would_bite": ""
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/executing#5",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "The edit is comment-only (ext/GBGCodingToolsDocumenterExt.jl makedocs: \"freezes the build (ARCHITECTURE D9)\", formerly `RULE.INST.FROZEN_MIDROUND`). D9 (docs/ARCHITECTURE.md:478ff) states the skip: \"either gate refusing only because a round of a docs instrument is open prints `makedocs: SKIPPED` ... `GBG_DOCS_NO_SKIP` restores the refusal\". policy/instruments.md:80 FROZEN_MIDROUND: \"An instrument is never changed mid-round; a change is its own commit and release\" -- nothing about builds.",
+      "what_would_bite": ""
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/public-contract#1",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "Gate.jl: \"r.name in ignored && continue\" precedes both the :open and :committed pushes, and :committed also needs \"!in_ci && head != r.round[\"head\"]\", so GBG_ROUND builds and CI are unaffected. ARCHITECTURE.md:491, IMPLEMENTATION.md:326 and DocLints.jl:22 limit the skip to \"either gate refusing only because a round of a docs instrument is open\". Release.jl:108 and Doctor.jl:644 already set GBG_DOCS_NO_SKIP.",
+      "what_would_bite": ""
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/claim-versus-edit#1",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "47db044 touches src/CLI/Design.jl in one docstring line only: '-which hat's own rubric should have caught it' -> '+which hat's persona should have caught it'. Message itemizes cold-reader#3: '\"the rubric\" named'; same commit sweeps sibling unbound uses ('The rubric's constant' -> 'The docstring rubric's constant', 'the rubric caps' -> 'the docstring rubric caps'). calibrate writes h[\"persona\"] files; no code changed.",
+      "what_would_bite": ""
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/behaviour-change#1",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "ARCHITECTURE.md:490-491 makes the one exception \"either gate refusing only because a round of a docs instrument is open\"; DocLints.jl:49 `all(p -> first(p) == :open, last(gate_problems(...))) || return String[]` enforces exactly that. Gate.jl:80 `r.name in ignored && continue` comes before the :committed push. Nothing is built either way (`gate_or_skip(...) && return nothing`). check-consistency PROTOCOL:54: bare make.jl \"under an open round is refused by the gate, by design.\"",
+      "what_would_bite": ""
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/over-rejection#1",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "DocLints.jl: `all(p -> first(p) == :open, last(gate_problems(cfg, \"check-docs\", \"check-consistency\"))) || return String[]` — skip specified only for a refusal \"only because a round of a docs instrument is open\" (ARCHITECTURE:491; frozen_rounds: \"refused ONLY for these\"). Gate.jl: `r.name in ignored && continue` precedes the `:committed` push, guarded by `!in_ci`; round builds go through `run_under_round` (GBG_ROUND).",
+      "what_would_bite": ""
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/executing#2",
+      "verdict": "DISMISSAL-WRONG",
+      "evidence": "The dismissal says \"Nothing grew by appending a restatement.\" But Config.jl:23 reads \"The ECONOMY MODEL is the cheaper AI model the tool's model catalogue names (`Preflight.economy_model`)\", and Preflight.jl:501 repeats it: \"The economy model: the cheaper AI model the tool's model catalogue names...\". Both lines came in 47db044, whose message says the model \"is defined in Config's map and on economy_model\". Config's docstring grew 162->227 words and was re-baselined, although the scan's own message says \"rewrite, do not append\".",
+      "what_would_bite": "The Config module docstring and Preflight.economy_model's docstring each define the economy model in full, though the Config map already links to economy_model. The 47db044 re-baseline recorded that duplicate as the ratchet's new ceiling, so the ratchet can no longer flag it. If catalog/models.toml's economy entry or the anchor semantics change, one definition can drift from the other. Demote.jl is similar: its docstring was patched in 2026-09-09-check-docs-01, in 2026-09-11-check-docs-01 and twice in this round, and grew 192->234 words. RULE.DOC.SHAPE says a docstring patched three or more rounds \"is rewritten whole rather than appended to again\", yet it was extended and re-baselined."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/behaviour-change#2",
+      "verdict": "UNSAFE",
+      "evidence": "Dismissal: 'every re-baseline in this window carries its reason'. src/Scan.jl:586: 'the reason goes in the commit'. 47db044 and 272e01b say 're-baselined'. 249b795 also rewrites docs/prose_shape.csv (Demote 224->234, render_args 159->160, ARGS_THRESHOLD 41->42, Reflection 92->102). Its message never mentions prose-shape or a reason. docs-rubric.md: 're-recorded deliberately, never by accident.'",
+      "what_would_bite": "The dismissal's key premise is false for one of the window's three re-baselines. Commit 249b795 ('fix pass 3') raised four docstring ratchet rows but its message gives no --reason, which breaks cmd_scan's contract that 'the reason goes in the commit'. Someone reading git log to find why the baseline moved finds nothing. The re-baseline also landed in the same commit as the prose it lets through, the self-certifying shape that instruments/audit-changes/workflow/audit.js:77 says to check. Part of the growth repeats text: ARGS_THRESHOLD restates the rubric's home, which the Reflection map already names."
+    },
+    {
+      "id": "2026-09-11-audit-changes-02/contract-drift#2",
+      "verdict": "DISMISSAL-WRONG",
+      "evidence": "src/Scan.jl:586 says the --rebaseline reason \"goes in the commit\". Commit 249b795 rewrites four docs/prose_shape.csv rows (demote 224,94 -> 234,104; the Reflection map 92,91 -> 102,101; ARGS_THRESHOLD; render_args), and its message never mentions a re-baseline. The demote change appends \"and enumerates both closed verdict vocabularies, `HONORED` through `LAUNDERED` and `PRESENT` through `UNCLEAR`)\", which grew its longest paragraph from 94 to 104 words.",
+      "what_would_bite": "The dismissal's premise, \"every re-baseline in this window carries its reason; nothing grew by appending\", is false for commit 249b795. That commit re-baselined with no reason in the commit and absorbed an appended clause into demote's docstring. Fix passes in three rounds (7503a84, c8ef916, 47db044) had already edited that docstring, and docs-rubric.md says such a docstring is \"rewritten whole rather than appended to again\". The ratchet (src/Scans/prose_shape.jl:113) now holds the new ceiling, so this growth passes SCAN.PROSE_SHAPE silently from now on."
+    }
+  ],
+  "reopened": [
+    "2026-09-11-audit-changes-02/executing#2",
+    "2026-09-11-audit-changes-02/behaviour-change#2",
+    "2026-09-11-audit-changes-02/contract-drift#2"
+  ],
+  "dead": [],
+  "complete": false
+}

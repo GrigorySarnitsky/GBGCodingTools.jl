@@ -1,0 +1,6 @@
+{
+  "id": "2026-09-11-audit-changes-02/executing#1",
+  "verdict": "DISMISSAL-SOUND",
+  "evidence": "Gate.jl: `r.name in ignored && continue` precedes the `:committed` push, and it applies only when `!in_ci`, so a `gbg round build` (GBG_ROUND, Rounds.jl:94) and CI never see it. DocLints.jl says the build fails on anything but a refusal ONLY because a docs round is open. ARCHITECTURE:2243: \"a fix pass committed without its round is green on the runner and red on the next local `gbg gate`.\"",
+  "what_would_bite": ""
+}

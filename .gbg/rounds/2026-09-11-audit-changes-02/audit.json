@@ -69,8 +69,8 @@
             "state": "refused"
         },
         "2026-09-11-audit-changes-02/executing#2": {
-            "reason": "deliberate, and named each time: the prose-shape ratchet says re-baseline when the growth is new content, and every re-baseline in this window carries its reason — the definitions the verifiers asked for (economy model, closure channels, class_surfaces), gate_problems, the docs-round seeding exception and the schema count. Nothing grew by appending a restatement.",
-            "state": "refused"
+            "reason": "the dismissal auditor is right, and the refusal is withdrawn: two re-baselines were not what the ratchet admits. The economy-model definition was appended in two homes (Config's map and economy_model's docstring), and 249b795 re-baselined four rows with no reason in its message, which the --rebaseline contract requires. The next change set gives the definition one home (economy_model's docstring, Config's map pointing at it), rewrites Demote's appended clause instead of extending the paragraph, re-baselines the ratchet to what is left, and states every re-baselined unit and its reason in its commit message.",
+            "state": "fixed"
         },
         "2026-09-11-audit-changes-02/contract-drift#1": {
             "reason": "the next change set restores the DEAD promise and makes the code keep it: report's predicate becomes population == 0 alone (apply_ledger never alters population, so the conjunct only hid a broken counter), with a test",
@@ -85,8 +85,8 @@
             "state": "fixed"
         },
         "2026-09-11-audit-changes-02/behaviour-change#2": {
-            "reason": "deliberate, and named each time: the prose-shape ratchet says re-baseline when the growth is new content, and every re-baseline in this window carries its reason — the definitions the verifiers asked for (economy model, closure channels, class_surfaces), gate_problems, the docs-round seeding exception and the schema count. Nothing grew by appending a restatement.",
-            "state": "refused"
+            "reason": "the dismissal auditor is right, and the refusal is withdrawn: two re-baselines were not what the ratchet admits. The economy-model definition was appended in two homes (Config's map and economy_model's docstring), and 249b795 re-baselined four rows with no reason in its message, which the --rebaseline contract requires. The next change set gives the definition one home (economy_model's docstring, Config's map pointing at it), rewrites Demote's appended clause instead of extending the paragraph, re-baselines the ratchet to what is left, and states every re-baselined unit and its reason in its commit message.",
+            "state": "fixed"
         },
         "2026-09-11-audit-changes-02/sweep-completeness#5": {
             "reason": "the next change set removes the D16 citations from tag_tree's and stamps' rendered docstrings, keeping them in the file's comment header as the rest of the pass did",
@@ -97,8 +97,8 @@
             "state": "fixed"
         },
         "2026-09-11-audit-changes-02/contract-drift#2": {
-            "reason": "deliberate, and named each time: the prose-shape ratchet says re-baseline when the growth is new content, and every re-baseline in this window carries its reason — the definitions the verifiers asked for (economy model, closure channels, class_surfaces), gate_problems, the docs-round seeding exception and the schema count. Nothing grew by appending a restatement.",
-            "state": "refused"
+            "reason": "the dismissal auditor is right, and the refusal is withdrawn: two re-baselines were not what the ratchet admits. The economy-model definition was appended in two homes (Config's map and economy_model's docstring), and 249b795 re-baselined four rows with no reason in its message, which the --rebaseline contract requires. The next change set gives the definition one home (economy_model's docstring, Config's map pointing at it), rewrites Demote's appended clause instead of extending the paragraph, re-baselines the ratchet to what is left, and states every re-baselined unit and its reason in its commit message.",
+            "state": "fixed"
         },
         "2026-09-11-audit-changes-02/contract-drift#5": {
             "reason": "the next change set adds the missing test/gate.jl case: outside CI, an open docs round whose files are untracked after HEAD moved is :committed and not a skip",

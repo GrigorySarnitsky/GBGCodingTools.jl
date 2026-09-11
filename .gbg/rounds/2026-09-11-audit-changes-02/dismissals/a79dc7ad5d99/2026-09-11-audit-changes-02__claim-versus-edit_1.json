@@ -1,0 +1,6 @@
+{
+  "id": "2026-09-11-audit-changes-02/claim-versus-edit#1",
+  "verdict": "DISMISSAL-SOUND",
+  "evidence": "47db044 touches src/CLI/Design.jl in one docstring line only: '-which hat's own rubric should have caught it' -> '+which hat's persona should have caught it'. Message itemizes cold-reader#3: '\"the rubric\" named'; same commit sweeps sibling unbound uses ('The rubric's constant' -> 'The docstring rubric's constant', 'the rubric caps' -> 'the docstring rubric caps'). calibrate writes h[\"persona\"] files; no code changed.",
+  "what_would_bite": ""
+}
