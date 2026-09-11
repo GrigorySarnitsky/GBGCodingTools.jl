@@ -1,0 +1,56 @@
+{
+    "statuses": {
+        "family": "empty",
+        "rationale": "truncated",
+        "pages": "live",
+        "ext": "empty",
+        "workflow-scripts": "live",
+        "rulebook": "truncated",
+        "built-html": "truncated",
+        "templates": "truncated",
+        "operational-claims": "truncated",
+        "cold-reader": "truncated",
+        "scans": "empty",
+        "src": "truncated",
+        "catalogues": "truncated",
+        "schemas": "truncated"
+    },
+    "suspect_hats": [
+        "rationale",
+        "src",
+        "ext",
+        "workflow-scripts",
+        "catalogues",
+        "rulebook",
+        "templates",
+        "schemas",
+        "family",
+        "cold-reader"
+    ],
+    "recall": {
+        "quantifier": {
+            "found": 0,
+            "planted": 1
+        },
+        "exit-code-drift": {
+            "found": 1,
+            "planted": 1
+        },
+        "count-drift": {
+            "found": 1,
+            "planted": 1
+        },
+        "vocabulary-collision": {
+            "found": 0,
+            "planted": 1
+        },
+        "false-mechanism": {
+            "found": 0,
+            "planted": 1
+        },
+        "inverted-rule": {
+            "found": 0,
+            "planted": 1
+        }
+    }
+}

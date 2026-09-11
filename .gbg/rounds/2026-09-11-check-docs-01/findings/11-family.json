@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-check-docs-01",
+  "lane": "family",
+  "candidates_found": 0,
+  "checked": [
+    "Enumerated every function definition ending in `!` across /tmp/jl_sVK6Mv/src and /tmp/jl_sVK6Mv/ext (regex over `^(function\\s+)?[A-Za-z_][A-Za-z0-9_]*!\\s*\\(`): render_node! (CLI/Consolidate.jl:92), check! (CLI/Doctor.jl:102, plus ~50 invocations as the doctor-check registrar), number! (CLI/Preflight.jl:359), mark! (CLI/Recall.jl:45), seed_docs_corpus! (CLI/Rounds.jl:227), hunt_bank! (CLI/Rounds.jl:600), materialize! (CLI/Schema.jl:162), register_scan! (Scan.jl:70, plus one invocation per Scans/*.jl file), sibling_link_hits! (Scans/sibling_link.jl:23)",
+    "For each `!` name, searched the whole source for a same-named allocating counterpart without the `!` (render_node, check, number, mark, seed_docs_corpus, hunt_bank, materialize, register_scan, sibling_link_hits) — none exist; the one `check(...)` hit (ext/GBGCodingToolsDocumenterExt.jl:19) is an unrelated exit-code helper, not check!'s allocating sibling",
+    "Read the docstrings (or confirmed the absence of one, for internal helpers) of every `!` function found, to check for a wrongly-placed RULE.DOC.STEER sentence or an incorrectly implied allocating sibling: mark!, seed_docs_corpus!, hunt_bank!, materialize!, register_scan! all carry docstrings and none mentions an allocating form or carries the steer sentence; render_node!, check!, number!, sibling_link_hits! are undocumented internal helpers",
+    "Searched src/ and ext/ for `set_...!` / `get_...` getter-setter naming (regex `function set_[a-zA-Z_]*!\\(` and `function get_[a-zA-Z_]*\\(`) — no hits",
+    "Searched src/ and ext/ for 'physical'/'spectral' variant naming (grep -i) — the only hits are the two literal config strings `\"physical-meaning\"` in CLI/Sync.jl and CLI/Init.jl, which are IDENTITY_SHORT/rubric template values for a consumer's config, not a physical/spectral code-variant pair in this package's own source",
+    "Searched src/ and ext/ for the rubric's own allocating-wrapper marker \"Allocating form of\" (Reflection.jl's WRAPPER_PHRASE, RULE.DOC.ONE_HOME's detection string) across every docstring — the only occurrence is the constant's own definition at src/Reflection.jl:37; no docstring in this package's own source uses it",
+    "Read src/Reflection.jl's pairing/wrapper-detection logic (lines ~20-190) to confirm it is detection machinery for consumer packages' variant pairs, not itself exercised by GBGCodingTools's own docstrings"
+  ],
+  "findings": []
+}

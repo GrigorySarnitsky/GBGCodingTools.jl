@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-check-docs-01",
+  "lane": "catalogues",
+  "candidates_found": 6,
+  "checked": [
+    "catalog/hats/*.toml (22 files) + README.md — role/persona/substrate/needs/anchor fields, cross-checked against catalog/hats/README.md's grant vocabulary and against docs/ARCHITECTURE.md's hat provenance notes",
+    "catalog/lanes/audit-changes.toml, bug-hunt.toml, check-docs.toml + README.md — key/kind/anchor/brief fields, cross-checked against docs/ARCHITECTURE.md D18 and against docs/design-record/survey-bughunt-auditchanges.md",
+    "catalog/models.toml — the economy model constant",
+    "catalog/scans.toml (35 rows) — every `rule` id checked against policy/RULES.toml (all 35 resolve); every `fixture` class checked against fixture/GBG Fixture/defects.toml (all resolve, defect+clean twin present); every `surfaces` token checked against schema/config.schema.json and src/CLI/Config.jl's surface_files/resolve_surfaces (rationale, pages, src, ext, literate, data, built_html, plus compound docs/all all real)",
+    "catalog/seeds/fixture.toml (8 classes) — each `anchor` regex checked against the real fixture text (src/FixtureA.jl, src/FixtureB.jl, src/FixtureC.jl, docs/ARCHITECTURE.md, CLAUDE.md) for presence and semantic fit; occurrence fields sanity-checked against src/CLI/Seed.jl's selection formula",
+    "hat `needs` grants (source/rulebook/html/git) cross-checked against src/CLI/Preflight.jl:267-291 (resolve_hats) and instruments/check-consistency/workflow/panel.js:84-88 (what each grant actually unlocks)",
+    "policy/RULES.toml (72 rules) skimmed to confirm every id scans.toml cites exists and its `check` field is not contradicted by a scan row"
+  ],
+  "findings": [
+    {
+      "type": "currency",
+      "severity": "major",
+      "confidence": "medium",
+      "title": "audit-changes.toml's anchor flags contradict the D18 they cite",
+      "locations": [
+        "catalog/lanes/audit-changes.toml:3 — \"diffstat arrive in args. † anchors are constants (D18).\"",
+        "catalog/lanes/audit-changes.toml:22,38,44,78 — anchor = true on under-rejection, behaviour-change, over-rejection, contract-drift",
+        "docs/ARCHITECTURE.md:923-925 (D18) — \"engine lanes carry it in the catalogue as a constant (the `executing` audit lane, the two free hunt lanes, the dismissal auditor and the severity re-check are `anchor = true` there)\"",
+        "docs/ARCHITECTURE.md:2086-2088 — restates the identical list a second time",
+        "docs/design-record/survey-bughunt-auditchanges.md:233 — \"IT five (executing, under-rejection, behaviour-change, over-rejection, contract-drift)\" — the set actually shipped"
+      ],
+      "description": "The catalogue file's own comment says its `anchor` column instantiates D18. But D18, stated twice in ARCHITECTURE.md in near-identical wording, names only the `executing` lane as an anchor among the audit-changes lanes (plus the two free hunt lanes, the dismissal auditor and the severity re-check — none of which are audit-changes rows). The shipped file actually marks FIVE audit-changes lanes anchor=true: executing, under-rejection, behaviour-change, over-rejection and contract-drift. The design-record survey shows this five-lane set was the deliberate IT-derived choice (over PF's rival five, which swapped `invariants` for `over-rejection`), so the catalogue itself looks like the intended, adopted state — it is ARCHITECTURE.md's D18 paragraph that under-lists what it claims to define exhaustively. Either way, one of the two texts a reader is told to treat as authoritative is currently wrong about the other, and the catalogue's own citation of D18 is the false claim as written.",
+      "resolution_hint": "Expand D18's parenthetical (both occurrences, ARCHITECTURE.md:923-925 and :2086-2088) to name all five audit-changes anchors (executing, under-rejection, behaviour-change, over-rejection, contract-drift), or drop the `(D18)` citation from catalog/lanes/audit-changes.toml:3 if the anchor set is no longer meant to be read off that paragraph."
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "low",
+      "title": "doc-policy and naming-policy carry a `source` grant their persona text never invokes",
+      "locations": [
+        "catalog/hats/doc-policy.toml:55 — needs = [\"rulebook\", \"source\"]",
+        "catalog/hats/naming-policy.toml:142 — needs = [\"rulebook\", \"source\"]",
+        "instruments/check-consistency/workflow/panel.js:86 — the `source` grant's payoff: \"ALSO the AUTHORED SOURCE (read it with Read/Grep; quote findings at file:line)\"",
+        "catalog/hats/invariants-and-decisions.toml:111 — the sibling rulebook hat that DOES use its `source` grant: \"check the invariants and decision log against the code and docs BOTH WAYS\"",
+        "catalog/hats/latex-typesetter.toml:120 — another `source`-needing hat that explicitly instructs \"quote each finding at its SOURCE file:line\""
+      ],
+      "description": "Of the three catalogue \"rulebook hats\" (naming-policy, doc-policy, invariants-and-decisions — docs/ARCHITECTURE.md:417, design-record/05-fix-rulings.md:9), all three carry `needs = [\"rulebook\", \"source\"]`, and every other hat that carries a `source` grant (fossil-and-drift, latex-typesetter) explicitly tells the hat to open src/ext and quote file:line. invariants-and-decisions does too (\"against the code\"). doc-policy and naming-policy do not: their checklists (docstring section order/shape; public-name meaning and uniqueness) are entirely answerable from the rendered manuscript their `full` substrate already grants, and their own output instructions ask only for a quoted rule/name, never a file:line. The `source` grant on these two looks copied uniformly across the three rulebook hats rather than set per hat's actual need.",
+      "resolution_hint": "Either add a sentence to doc-policy's and naming-policy's persona text that uses the source grant (e.g. verifying a docstring's displayed section order against the raw `\"\"\"...\"\"\"` source rather than the rendered page), or drop `\"source\"` from their `needs` lists if the rendered manuscript alone suffices."
+    }
+  ]
+}

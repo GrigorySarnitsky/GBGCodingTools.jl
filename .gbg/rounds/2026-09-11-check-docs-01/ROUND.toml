@@ -1,0 +1,90 @@
+# ROUND.toml — written by the gbg round verbs; never edited by hand (ARCHITECTURE §6.1)
+tool_tree_sha = "28bc2240736f49b6dc8c41e1b4ea721b26f2b1ba"
+findings_sha = "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636"
+strength = "economy"
+round = "2026-09-11-check-docs-01"
+opened = "2026-09-11T16:26:44"
+banked = "2026-09-11T16:43:41"
+tool_version = "1.0.0-rc.6"
+passes = 0
+seed_salt = "2026-09-11-check-docs-01"
+head = "ed16027d6d5055280b381df44efb6c7dec0c135b"
+model_hint = "sonnet"
+hostname = "Aiporetne"
+seed_catalog_sha = "fdd564c6a6a6d1ddb946c10d2922a72d728e45d47585b49fdbcbd5a95efc8ba3"
+config_sha = "f173b70f9e732be3d706d072e763bae67d2f7628558db096d8e23de8321dde8b"
+dead_lanes = []
+cost = "economy"
+tool_rev = "ed16027d6d5055280b381df44efb6c7dec0c135b"
+instrument = "check-docs"
+catalog_sha = "6e1400fd0dfbfca91d6a143296c172e01b844616cd413af20d403a5116826ba4"
+schema_version = 1
+
+[[roster]]
+key = "rationale"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "pages"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "src"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "ext"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "built-html"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "workflow-scripts"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "catalogues"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "rulebook"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "templates"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "schemas"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "family"
+substrate = "cross"
+anchor = false
+[[roster]]
+key = "cold-reader"
+substrate = "cross"
+anchor = false
+[[roster]]
+key = "operational-claims"
+substrate = "cross"
+anchor = false
+
+[lane_shas]
+family = "e574bf5563aca796d139231ef0b3362a183f1e4195fc85ece29c771c801dbcce"
+rationale = "7d1fe41dbc8158305496cf3f595823d26f4bb60279192990902b765738bed6a5"
+pages = "12f0bcc812fd6c8e506d0d4f35fd97b82ed447f6df75ed1ee32e5c489960e2f4"
+workflow-scripts = "87f90bf4b82e76bf479f096d9ad4d91deb86fa6550fe42299c6542573681efbd"
+cold-reader = "60d50051252cb7c6622a966ff1cd2cd226b260a74ddccaa98a9690a7b2395b64"
+scans = "5586badc5142c4afd0f25e3b4c6f0ac29adaacaa5ed6de760e18462d02ea6b30"
+src = "dc162964a9f340f416be01005c8b3a09f358e021c9488c54bf033c52a3a9f843"
+ext = "f1f78264888fc290a373ba41525a2bc9f9fed635253af223283dc416dcce32e6"
+rulebook = "6896fbc00846af82a13d091e5fb6dedbe106bd8580e573a6f78f9a0558ebea8f"
+built-html = "1b9bb2c6c1668d32a479884af66c1a8d1ef90e4e5b28971307e549c3c62178df"
+templates = "b915da7b87a9022138435f79c277fa3c58d97f26e20b8fb8c5bd37b138048a95"
+operational-claims = "37ecfff0ee742665b68edbed5377af14843544f87c4ea3f329fc6631a0117c5b"
+catalogues = "8cc43e802db00d7fad622baa6dde1cabf706dcb4eccbcdbed3b95c16d664b9b6"
+schemas = "67e5dcce34649454c107e243f9689894fe141da8abbe7e38ef1c030cad684e44"

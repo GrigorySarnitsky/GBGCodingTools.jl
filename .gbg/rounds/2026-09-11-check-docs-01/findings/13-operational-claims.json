@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-check-docs-01",
+  "lane": "operational-claims",
+  "candidates_found": 11,
+  "checked": [
+    "src/GBGCodingTools.jl",
+    "src/CLI/Main.jl",
+    "src/CLI/Config.jl",
+    "src/CLI/Doctor.jl",
+    "src/Scan.jl",
+    "src/Scans/prose_shape.jl",
+    "src/Scans/argcov.jl",
+    "src/Scans/signature_fidelity.jl",
+    "src/Scans/xlink.jl",
+    "src/Scans/dupref.jl",
+    "src/Scans/html_stray_math.jl",
+    "src/Scans/html_docstring_once.jl",
+    "src/Scans/code_in_math.jl",
+    "src/Reflection.jl",
+    "src/Witnesses.jl",
+    "src/TestHarness.jl",
+    "src/HtmlWalker.jl",
+    "src/TreeHash.jl",
+    "src/CLI/Self.jl",
+    "src/CLI/Ledger.jl",
+    "src/CLI/Gate.jl",
+    "src/CLI/RoundFiles.jl",
+    "src/CLI/Sync.jl",
+    "src/CLI/Preflight.jl",
+    "src/CLI/Rounds.jl",
+    "src/CLI/Passes.jl",
+    "src/CLI/Demote.jl",
+    "src/CLI/Git.jl",
+    "src/CLI/Seed.jl",
+    "src/CLI/Recall.jl",
+    "src/DocLints.jl",
+    "ext/GBGCodingToolsDocumenterExt.jl",
+    "src/CLI/Consolidate.jl",
+    "src/CLI/Audit.jl",
+    "src/CLI/Hunt.jl",
+    "src/CLI/Fleet.jl",
+    "src/CLI/Release.jl",
+    "src/CLI/Install.jl",
+    "src/CLI/Bump.jl",
+    "src/CLI/Selftest.jl",
+    "src/CLI/Schema.jl",
+    "src/CLI/Init.jl (first ~300 lines)"
+  ],
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Module docstring misstates what exit code 2 means",
+      "locations": [
+        "src/GBGCodingTools.jl:28-30: \"the exit contract is 0 clean, 1 substantive finding, 2 a second finding, 3 crash.\"",
+        "src/CLI/Main.jl:120-121: \"returns that function's exit code: 0 clean, 1 substantive finding, 2 cannot evaluate, 3 crash.\""
+      ],
+      "description": "The package's very first docstring (the module doc of GBGCodingTools.jl) states the CLI's exit contract as '0 clean, 1 substantive finding, 2 a second finding, 3 crash.' Every other statement of the same contract disagrees: Main.jl's own `main` docstring, the `usage()` banner ('2 cannot evaluate'), and CLAUDE.md all say exit 2 means 'cannot evaluate.' Checking actual call sites (Main.jl's unknown-verb handler, Scan.jl's cmd_scan usage errors, Doctor.jl's not-a-consumer case, Config.jl's unreadable-config case, and every 'usage: gbg ...' refusal across the CLI files) confirms 2 is used uniformly for cannot-evaluate/usage-error conditions, never to report 'a second finding' as a distinct concept from exit 1.",
+      "contradicts": "src/CLI/Main.jl:108 and :121, and CLAUDE.md's 'Modules and wiring' section ('each verb a function returning its exit code 0 clean, 1 finding, 2 cannot evaluate, 3 crash')",
+      "resolution_hint": "Change 'a second finding' to 'cannot evaluate' in the GBGCodingTools.jl module docstring so it matches Main.jl, usage(), and CLAUDE.md."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "bank() docstring claims reproductions/ is already written by an exit where it is not",
+      "locations": [
+        "src/CLI/Rounds.jl:447 (bank() docstring): \"By the last two exits a hunt's `reproductions/` and a seeded round's `ground_truth.json` are already written, so a re-bank rewrites them rather than creating them.\"",
+        "src/CLI/Rounds.jl:604-609 (hunt_bank!): \"any(r -> r.status == :refused, results) && (println(io, \\\"bank: a witness loads what it may not (REFUSED) — fix it before anything is banked\\\"); return 2)\" followed by \"rdir = joinpath(dir, \\\"reproductions\\\"); mkpath(rdir)\""
+      ],
+      "description": "bank()'s docstring enumerates five exit-2 conditions and then asserts that 'by the last two exits' (the hunt-could-not-decide exit and the finding-schema-validation exit) reproductions/ and ground_truth.json are already on disk, so a re-bank only rewrites them. But hunt_bank! has exactly one non-zero return path — the REFUSED-witness check — and that `return 2` executes strictly before `rdir = joinpath(dir, \"reproductions\"); mkpath(rdir)` and before any reproduction JSON file is written for this bank attempt. So when bank() exits via 'on a hunt, a witness the runner could not decide (hunt_bank! returns its own code),' reproductions/ has NOT yet been created or written for this run, contrary to the docstring's claim. (The claim does hold for the fifth/last exit, the core-schema-validation failure, since for a hunt round hunt_bank! must have already returned 0 — i.e. finished writing reproductions/ — before that check is reached.)",
+      "resolution_hint": "Narrow the claim to the schema-validation exit only, or note explicitly that the hunt-refusal exit precedes reproductions/ being written (mkpath(rdir) sits after the REFUSED check)."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "makedocs docstring implies the open-round skip applies to both gate calls; only the first has it",
+      "locations": [
+        "src/DocLints.jl (makedocs docstring): \"after Documenter it runs the built-HTML scans and that gate again. Any non-zero return is an `error`, so the build fails — except a gate refusing only because a docs round is open, which prints a skip line and returns `nothing`, exit 0, unless `GBG_DOCS_NO_SKIP` is set.\"",
+        "ext/GBGCodingToolsDocumenterExt.jl:32-38 (pre-build gate call with skip handling) vs :46 (post-build gate call: \"check(\\\"gate check-docs check-consistency\\\", GBGCodingTools.gate(cfg, \\\"check-docs\\\", \\\"check-consistency\\\"))\")"
+      ],
+      "description": "The docstring states the 'gate refusing only because a docs round is open ⇒ skip, exit 0' behavior as a general exception to 'any non-zero return is an error,' right after describing that the gate runs both before and after Documenter ('that gate again'). In the implementation, only the pre-Documenter gate call (lines 32-38) checks `frozen_rounds` and prints the skip line before returning nothing; the post-Documenter gate call (line 46) is a bare `check(...)` with no frozen-round check at all — any non-zero code there (including one caused solely by a docs round opening, e.g. by another session, while Documenter.makedocs was running) unconditionally throws via `error(...)`, hard-failing the build rather than skipping it.",
+      "resolution_hint": "Either give the post-build gate call the same frozen_rounds/skip handling as the pre-build one, or state in the docstring that the skip exception applies only to the gate check taken before Documenter runs."
+    }
+  ]
+}
