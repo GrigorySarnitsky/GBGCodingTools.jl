@@ -37,3 +37,24 @@ include("helpers.jl")
     @test G.gate(cfg; io = devnull) == 2                                            # ROUND.DIR: never vacuous
     @test isempty(G.frozen_rounds(cfg))                                             # no rounds directory freezes nothing
 end
+
+# Both of makedocs' gates skip on one condition (docs_build_skipped): a refusal (exit 1) caused by an open
+# round of a docs instrument, with GBG_DOCS_NO_SKIP unset. The gate after Documenter once had no skip, so a
+# round opened while the site built turned the build red for a round being open. Both directions.
+@testset "a docs build skips, not fails, for an open docs round" begin
+    root = fixture_copy("docs-skip")
+    cfg = G.Config.read(root)
+    id = "2026-09-09-check-docs-01"
+    rd = joinpath(root, ".gbg", "rounds", id); mkpath(rd)
+    rec = merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => id, "instrument" => "check-docs", "schema_version" => 1,
+        "head" => something(G.Git.head(root), "0"^40), "roster" => Any[], "cost" => "economy", "strength" => "economy", "hostname" => "test",
+        "model_hint" => "sonnet", "opened" => "2026-09-09T00:00:00", "dead_lanes" => String[], "passes" => 0))
+    open(joinpath(rd, "ROUND.toml"), "w") do f; TOML.print(f, rec); end
+    @test G.docs_build_skipped(cfg, 1) == [id]                                      # frozen: a skip
+    @test isempty(G.docs_build_skipped(cfg, 0)) && isempty(G.docs_build_skipped(cfg, 2))   # passed, or cannot evaluate
+    withenv("GBG_DOCS_NO_SKIP" => "1") do
+        @test isempty(G.docs_build_skipped(cfg, 1))                                 # release and the deep doctor refuse
+    end
+    rm(rd; recursive = true)
+    @test isempty(G.docs_build_skipped(cfg, 1))                                     # a refusal no docs round explains
+end

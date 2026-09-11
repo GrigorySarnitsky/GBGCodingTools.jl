@@ -17,7 +17,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D6 — Skills: generated per-consumer stubs, bare names, `!`-b",446,311,0
 "ARCHITECTURE.md § D7 — Workflow scripts: one generic engine per instrument, ar",531,376,0
 "ARCHITECTURE.md § D8 — Deterministic helpers: one Julia CLI `gbg <noun> <verb>",480,306,0
-"ARCHITECTURE.md § D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `",1328,1217,0
+"ARCHITECTURE.md § D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `",1330,1219,0
 "ARCHITECTURE.md § GBGCodingTools — architecture",513,381,1
 "ARCHITECTURE.md § Revision 10 (2026-09-09) — the rc.1 `/check-docs` round",140,95,0
 "ARCHITECTURE.md § Revision 11 (2026-09-09) — the owner's home-page review",136,136,0
@@ -62,7 +62,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §5.5 Deliberately NOT configurable (changing any is MAJOR)",202,202,0
 "ARCHITECTURE.md § §5.6 The tool's own delta (the fifth consumer, D15)",485,484,0
 "ARCHITECTURE.md § §6.1 File formats (all instruments)",315,315,0
-"ARCHITECTURE.md § §6.3 Vocabularies (constants)",460,415,0
+"ARCHITECTURE.md § §6.3 Vocabularies (constants)",506,461,0
 "ARCHITECTURE.md § §6.4 Seeds",279,279,0
 "ARCHITECTURE.md § §6.5 Closure channels (per finding id; PARTIAL never closes)",156,156,0
 "ARCHITECTURE.md § §6.6 Deltas — `/check-docs`",173,173,0
@@ -73,7 +73,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1881,1744,0
 "ARCHITECTURE.md § §8 Self-test and versioning",1521,446,0
 "ARCHITECTURE.md § §9 Resolution table",1514,1455,0
-"Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",152,95,0
+"Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",201,95,0
 "Bump.jl :: bump(cfg, ver; abandon = nothing, io = stdout) -> Int",119,78,0
 "CLI.md § CLI internals",31,22,1
 "Config.jl :: Config",162,98,0
@@ -92,7 +92,8 @@ unit,words,longest_paragraph,admonitions
 "Consolidate.jl :: discover_pages(build_dir) -> Vector{Tuple{String,String,Stri",82,79,0
 "Consolidate.jl :: page_text(path) -> String",36,33,0
 "Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",192,65,0
-"DocLints.jl :: makedocs(cfg; kwargs...)",315,79,0
+"DocLints.jl :: docs_build_skipped(cfg, code) -> Vector{String}",66,62,0
+"DocLints.jl :: makedocs(cfg; kwargs...)",318,79,0
 "Doctor.jl :: Check",37,30,0
 "Doctor.jl :: Doctor",139,78,0
 "Doctor.jl :: cmd_doctor(args) -> Int",29,26,0
@@ -138,6 +139,7 @@ unit,words,longest_paragraph,admonitions
 "Init.jl :: migrate_baselines(root = pwd(); dry_run = false, io = stdout",105,48,0
 "Init.jl :: migrate_seeds(root, cfg; io = stdout) -> Int",70,23,0
 "Init.jl :: new(pkgname; parent = pwd(), io = stdout) -> Int",77,31,0
+"Init.jl :: seeded_test_rewritten(cfg, root) -> Bool",83,79,0
 "Init.jl :: write_config(root, cfg) -> String",17,13,0
 "Install.jl :: cmd_install(args) -> Int",94,91,0
 "Install.jl :: dev_pointer() -> String",29,26,0
@@ -235,7 +237,7 @@ unit,words,longest_paragraph,admonitions
 "Rounds.jl :: bank(cfg, round; io = stdout) -> Int",277,96,0
 "Rounds.jl :: bank_next(inst, round) -> String",67,63,0
 "Rounds.jl :: build(cfg, round; io = stdout) -> Int",60,24,0
-"Rounds.jl :: classify_lane(dir, inst, lane; first_sha = nothing) -> (stat",162,106,0
+"Rounds.jl :: classify_lane(dir, inst, lane; first_sha = nothing) -> (stat",171,115,0
 "Rounds.jl :: guard(cfg, round; io = stderr, allow_config_change = false, ",114,46,0
 "Rounds.jl :: hunt_bank!(cfg, dir, rec, findings; io = stdout) -> Int",115,60,0
 "Rounds.jl :: import_empty(cfg, round, reason; io = stdout) -> Int",113,37,0

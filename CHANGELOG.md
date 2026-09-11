@@ -3,6 +3,50 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
+## Unreleased
+
+MAJOR on rc.6. Instruments affected: bug-hunt (the reproduction record), audit-changes (its bank),
+check-consistency (two hat personas) and the docs build of every consumer (`makedocs`' return value and
+both of its gates). Rates comparable: **no** for check-consistency — the doc-policy and naming-policy
+hats now read the authored source and report at its file:line, and doc-policy enforces the aliasing
+placement, so those two hats may report what they did not; yes for the other three. The fixture recall
+is not re-measured here: the two personas are the only change to what a lane reads.
+
+From 2026-09-11-check-docs-01 (closed at the pass budget, 22 closed, 5 carried) and the audit that covered
+its code, 2026-09-11-audit-changes-01:
+
+**A confirmed bug-hunt finding banks.** `hunt_bank!` writes `disposition.state = "open"` for every
+REPRODUCED or EVIDENCED finding and validates the record at once, against an enum without `open`: the
+first confirmed finding of any hunt threw. The enum admits it, and ARCHITECTURE §6.3 records it as the
+state bank writes before any disposition (MAJOR under §5.5: widened from three values to four).
+
+**An audit lane's verdict must agree with its findings.** A lane that says `CLEAN` and reports a concern,
+or `CONCERNS` and reports none, is quarantined as DEAD by `classify_lane`, recorded in `dead_lanes`, and
+re-run by the `gbg round rerun` bank prints; `audit-changes bank` refuses it before running the
+executable claims. Before, the required `verdict` was read by nothing. (The first version of this check,
+in the fix pass, printed a rerun that rerun refused, read quarantined files, and crashed on a null
+`findings`; the audit caught all three.)
+
+**`makedocs` says whether it built.** It returns `true` for a build that ran (Documenter's own result is
+`nothing` unless `debug = true`, the frozen skip's value too, so a deploy guard on it could never fire),
+and `nothing` when either gate skips for an open docs round — the gate after Documenter now skips like
+the one before it rather than failing, the site built and not deployed. The tool's own site therefore
+deploys on a push or a tag once no docs round is open; it had not deployed since 2026-09-09.
+
+**`init` rewrites a seeded `test/Project.toml` only for a `dev` pin**, whose seed names a tag that does
+not resolve; never for the tool itself or a release pin.
+
+**The rule register tells a weakness from a panel.** Under RULE.TEST.RULE_WITH_CHECK's last sentence,
+`panel` is for a rule no program could decide: RULE.DOC.HOME_ORDER, ONE_HOME, VARIANT_PAIR, MODULE_MAP
+and RULE.CIT.DOI stay `weakness` (a check could exist and none is built; SCAN.DOI_CROSSCHECK enforces
+RULE.CIT.FULL_INLINE, not CIT.DOI), and RULE.TEX.IMAGINARY is `panel`. The five RULE.TEST rules a panel
+was said to read — no instrument reads a test suite's construction against them — are `weakness`.
+
+The rest is prose: the module map names the round machinery and every module's docstring names its
+exports; Passes binds the act and state verifiers; the skill template says what `/gbg-doctor` runs;
+ARCHITECTURE and IMPLEMENTATION correct `Scan.jl`'s place, the prose-shape file, D18's five audit anchors
+and that `attack-design.js` and `rubric-audit.js` run by hand.
+
 ## 1.0.0-rc.6 — 2026-09-11
 
 MAJOR on rc.5. Instruments affected: check-docs and check-consistency (the closure loop: who reads a

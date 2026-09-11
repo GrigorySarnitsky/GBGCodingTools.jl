@@ -138,27 +138,49 @@ end
 end
 
 # An audit lane's `verdict` is a self-report the schema requires; the bank keeps it only where the lane's
-# own findings bear it out (RULE.TEST.BOTH_DIRECTIONS). Both directions, and the refusal comes before the
-# executable claims are run, so a contradiction costs no test-suite run.
+# own findings bear it out (RULE.TEST.BOTH_DIRECTIONS). A contradiction is a DEAD lane like any other:
+# quarantined, recorded in `dead_lanes`, so the `gbg round rerun` the refusal prints is one rerun accepts
+# (it once printed a rerun that rerun refused, stranding the round), and it is refused before the
+# executable claims run. Only schema-valid roster lane files are judged: a stale quarantined copy is
+# never read, and a `findings` of the wrong shape is the schema's to refuse — never a crash.
 @testset "an audit lane's verdict must agree with its findings" begin
     root = fixture_copy("audit-verdict")
     cfg = G.Config.read(root)
     id = "2026-01-01-audit-changes-01"
     rd = joinpath(root, ".gbg", "rounds", id); fd = joinpath(rd, "findings"); mkpath(fd)
+    keys_ = ("executing", "numerics", "invariants", "free-reader")
     write_round(rd, merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => id, "instrument" => "audit-changes",
-        "schema_version" => 1, "head" => "0"^40, "base" => "0"^40, "roster" => Any[], "cost" => "economy", "strength" => "economy",
+        "schema_version" => 1, "head" => "0"^40, "base" => "0"^40, "cost" => "economy", "strength" => "economy",
+        "roster" => Any[Dict{String,Any}("key" => k, "anchor" => false, "substrate" => "code") for k in keys_],
         "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00", "dead_lanes" => String[], "passes" => 0)))
-    lane(v, n) = Dict("verdict" => v, "findings" => [Dict("title" => "t$i") for i in 1:n])
-    write(joinpath(fd, "01-executing.json"), JSON3.write(lane("CLEAN", 0)))
-    write(joinpath(fd, "02-numerics.json"), JSON3.write(lane("CONCERNS", 2)))
-    @test isempty(G.lane_verdict_contradictions(fd))                        # agreeing self-reports
-    write(joinpath(fd, "03-invariants.json"), JSON3.write(lane("CLEAN", 1)))
-    write(joinpath(fd, "04-free-reader.json"), JSON3.write(lane("CONCERNS", 0)))
-    @test G.lane_verdict_contradictions(fd) == [("03-invariants.json", "CLEAN", 1), ("04-free-reader.json", "CONCERNS", 0)]
+    concern(i) = Dict("type" => "operational", "severity" => "minor", "confidence" => "high", "title" => "a concern number $i",
+        "locations" => ["src/X.jl:1"], "description" => "a description long enough to pass", "before" => "b",
+        "after" => "a", "why_it_matters" => "it matters", "justified" => "no", "evidence" => "e")
+    lane(key, v, n) = Dict("schema_version" => 1, "round" => id, "lane" => key, "verdict" => v, "checked" => ["the diff"],
+        "candidates_found" => n, "findings" => [concern(i) for i in 1:n])
+    put(nn, key, v, n) = write(joinpath(fd, "$nn-$key.json"), JSON3.write(lane(key, v, n)))
+    put("01", "executing", "CLEAN", 0); put("02", "numerics", "CONCERNS", 2)
+    put("03", "invariants", "CLEAN", 0); put("04", "free-reader", "CONCERNS", 1)
+    rec = G.RoundFiles.read_round(rd)
+    @test isempty(G.lane_contradictions(rd, rec))                           # agreeing self-reports
+    write(joinpath(fd, "03-invariants.rejected.json"), JSON3.write(lane("invariants", "CLEAN", 1)))
+    @test isempty(G.lane_contradictions(rd, rec))                           # a quarantined copy is never read
+    put("03", "invariants", "CLEAN", 1); put("04", "free-reader", "CONCERNS", 0)
+    @test G.lane_contradictions(rd, rec) == ["invariants", "free-reader"]
+    st, _, _, note = G.Rounds.classify_lane(rd, "audit-changes", Dict("nn" => "03", "key" => "invariants"))
+    @test st == :dead && occursin("contradicts", note) && isfile(joinpath(fd, "03-invariants.rejected.json"))
+    put("03", "invariants", "CLEAN", 1)                                     # the quarantined lane, back
     out = IOBuffer()
     @test G.audit_bank(cfg, id; io = out) == 2
     s = String(take!(out))
-    @test occursin("--lanes invariants,free-reader", s) && !occursin("claim gate", s)   # refused before any claim ran
+    @test !occursin("claim gate", s) && occursin("--lanes free-reader,invariants", s)   # before any claim ran
+    @test sort(G.RoundFiles.read_round(rd)["dead_lanes"]) == ["free-reader", "invariants"]
+    r = IOBuffer(); G.Rounds.rerun(cfg, id, ["invariants", "free-reader"]; io = r)
+    @test !occursin("not DEAD or REJECTED", String(take!(r)))              # the printed remedy is accepted
+    write(joinpath(fd, "01-executing.json"), JSON3.write(merge(lane("executing", "CLEAN", 0), Dict("findings" => nothing))))
+    @test isempty(G.lane_contradictions(rd, rec))                           # the wrong shape: the schema's
+    st, _, _, note = G.Rounds.classify_lane(rd, "audit-changes", Dict("nn" => "01", "key" => "executing"))
+    @test st == :dead && occursin("invalid", note)                          # DEAD on the schema, not a crash
 end
 
 # RULE.INST.FROZEN_MIDROUND: a deferral written in the round's deferred.md is carried into the work

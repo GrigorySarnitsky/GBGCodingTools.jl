@@ -488,10 +488,10 @@ status quo. *Bash scans*: `guards.sh`'s awk.
   `gate("check-docs", "check-consistency")` again after — the same Julia functions the CLI verbs
   `gbg doctor --only QUICK`, `gbg scan docs --hard-only`, `gbg gate …` and `gbg scan html` wrap, no
   child process — and `error()`s on any non-zero return, EXCEPT the one refusal that is not a breakage:
-  the gate before Documenter refusing only because a round of a docs instrument is open prints
-  `makedocs: SKIPPED` and returns `nothing`, exit 0, so a red docs build keeps meaning something is
-  broken rather than meaning a round is open. The gate after Documenter has no such skip: a round
-  opened while the build ran fails it. `GBG_DOCS_NO_SKIP` restores the refusal, and `gbg release` and the deep doctor set it,
+  either gate refusing only because a round of a docs instrument is open prints `makedocs: SKIPPED`
+  and returns `nothing`, exit 0, so a red docs build keeps meaning something is broken rather than
+  meaning a round is open. Before Documenter nothing is built; after it (a round opened while the site
+  built) the site is built and not deployed. `GBG_DOCS_NO_SKIP` restores the refusal, and `gbg release` and the deep doctor set it,
   so no release accepts a build that did not happen. The gate is reachable on a CI runner with
   no shim. The docs instruments' gate, never the bare four-instrument `gate()`, so a docs build does
   not fail on an open hunt. It writes the derived public surface
@@ -1571,7 +1571,7 @@ at the tool root, which must work when the dev checkout IS the consumer.
 | hunter `observed` | `FAILS \| PASSES \| ERRORS \| NOT-WRITABLE` | only FAILS reaches reproduction |
 | reproduction | `REPRODUCED \| EVIDENCED \| NOT-REPRODUCED \| WITNESS-WRONG \| NO-WITNESS-POSSIBLE \| BLOCKED \| ALREADY-COVERED \| NOT-A-DEFECT` | default NOT-REPRODUCED; confirmed = REPRODUCED ∪ EVIDENCED; REPRODUCED ⇒ `witness_path` in the bank-time fail set; EVIDENCED ⇒ `kind = architecture`; ALREADY-COVERED ⇒ `evidence = <file:line of the assertion>`; BLOCKED ⇒ `reason = environment`, assignable only at bank to a witness that ERRORED and was never observed FAILS |
 | candidate `kind` | `runtime \| architecture \| api-semantics` | |
-| disposition record (`reproductions/<id>.json`) | `fixed \| refused(reason ≥ 24 chars) \| escalated(overturn_when)` | terminator `fixed + refused + escalated == confirmed`; a refutation happens at reproduction and never enters a disposition; frozen at bank (`reproductions_sha`) |
+| disposition record (`reproductions/<id>.json`) | `open \| fixed \| refused(reason ≥ 24 chars) \| escalated(overturn_when)` | `open` is the state bank writes for every confirmed finding before any disposition, and close refuses it; terminator `fixed + refused + escalated == confirmed`; a refutation happens at reproduction and never enters a disposition; the verdict, witness sha and id are frozen at bank (`reproductions_sha`), the disposition being the one field recorded after it; widened from three values to four, which is MAJOR under §5.5 |
 | dismissal audit | `DISMISSAL-SOUND \| UNSAFE \| DISMISSAL-WRONG` | default UNSAFE; `complete = dead == 0 && reopened == []` |
 | tally `per_id.state` | the state verdicts above, plus `PASS \| FAIL \| BROKEN \| BLOCKED \| REFUSED` | a bug-hunt finding whose witness was re-run records that witness's status, not a verifier's verdict; widened from six values to eleven, which is MAJOR under §5.5 |
 | rule `check` (`policy/RULES.toml`) | `scan:<id> \| doctor:<id> \| test:<path> \| harness:<binding> \| panel \| weakness` | what catches the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`); `panel` only where a running instrument decides it |

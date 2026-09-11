@@ -331,8 +331,9 @@ Classifies one lane file. The arguments are:
 The status is `:dead` — absent; renamed to `<name>.rejected.json` beside itself when unparsable, when
 it fails the instrument's schema, or when it is schema-valid but its own `lane` field names a different
 lane than the roster entry asked for (a copied or mistyped lane file answers for a lane nobody ran); or
-well-formed with zero findings AND an empty `checked[]`, which reports nothing about
-nothing rather than reporting a clean lane. Then `:rejected`
+when its own `verdict` contradicts its findings (`verdict_contradiction`); or well-formed with zero
+findings AND an empty `checked[]`, which reports nothing about nothing rather than reporting a clean
+lane. Then `:rejected`
 (present but its sha changed since first sight), `:empty` (zero findings, non-empty checked),
 `:truncated` (candidates_found > findings), or `:live`. Returns the status, the parsed object (or
 nothing), the file's sha and a note.
@@ -353,11 +354,24 @@ function classify_lane(dir::AbstractString, inst::AbstractString, lane::Abstract
         return (:dead, nothing, sha, "invalid (quarantined): " * first(errs))
     end
     data["lane"] == lane["key"] || (mv(p, replace(p, ".json" => ".rejected.json"); force = true); return (:dead, nothing, sha, "lane field $(data["lane"]) ≠ $(lane["key"])"))
+    c = verdict_contradiction(data)
+    c === nothing || (mv(p, replace(p, ".json" => ".rejected.json"); force = true); return (:dead, nothing, sha, c * " (quarantined)"))
     n = length(data["findings"])
     (n == 0 && isempty(get(data, "checked", []))) && return (:dead, data, sha, "zero findings AND empty checked[] — a dead lane, not a clean one")
     n == 0 && return (:empty, data, sha, "")
     get(data, "candidates_found", 0) > n && return (:truncated, data, sha, "weighed $(data["candidates_found"]), reported $n")
     return (:live, data, sha, "")
+end
+
+# A lane file's own `verdict`, where its instrument's lane file carries one (an audit lane's `CLEAN` or
+# `CONCERNS`), is a self-report kept only where the lane's findings bear it out (RULE.TEST.BOTH_DIRECTIONS):
+# `CLEAN` with a finding, or `CONCERNS` with none, is a contradiction. Returns its note, or `nothing`. It
+# reads a schema-valid lane file, so `findings` is an array and the verdict one of the two.
+function verdict_contradiction(data::AbstractDict)
+    v = get(data, "verdict", nothing); v isa AbstractString || return nothing
+    n = length(data["findings"])
+    (v == "CLEAN") == (n == 0) && return nothing
+    return "verdict $v with $n finding(s) contradicts its own findings"
 end
 
 expected_lanes(rec) = vcat(rec["instrument"] == "check-docs" ? [Dict("nn" => "00", "key" => "scans")] : Dict{String,Any}[],

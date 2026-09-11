@@ -21,7 +21,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.HOME_ORDER"
 statement = "A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats, then `# References`, then `# Fields` last; internals, jargon and rationale are excluded."
 sentinel = "A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats."
-check = ["panel"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.DOC.LEADING_IDENTITY"
 file = "docs-rubric.md"
@@ -35,14 +35,14 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.ONE_HOME"
 statement = "One concept, one home: one docstring per operation on the bare binding; the ! form owns the formula and is listed first; every other variant is a thin wrapper that @ref-links the home and carries no second formula."
 sentinel = "One concept has one home: one docstring per operation, on the bare binding, and a generic carries one docstring, never one per method."
-check = ["panel"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.DOC.VARIANT_PAIR"
 file = "docs-rubric.md"
 section = "### RULE.DOC.VARIANT_PAIR"
 statement = "Across an f/f! or getter/setter pair the defining math appears once; the wrapper carries no display formula (the review unit is the variant set)."
 sentinel = "The review unit is the operation's whole variant set, so the defining math appears once across an `f`/`f!` or getter/setter pair and the wrapper carries no display formula."
-check = ["panel"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.DOC.ARGS_FORM"
 file = "docs-rubric.md"
@@ -238,7 +238,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.MODULE_MAP"
 statement = "A module docstring lists one linked one-liner per operation family and no formula."
 sentinel = "A module docstring lists one linked one-liner per operation family and carries no formula."
-check = ["panel"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.DOC.ARG_BULLET"
 file = "docs-rubric.md"
@@ -434,7 +434,7 @@ file = "citations.md"
 section = "### RULE.CIT.DOI"
 statement = "Every reference carries a clickable DOI (or an Open Library link for a book) on its title, identical in every copy."
 sentinel = "Every reference carries a clickable DOI on its title, `[*Title*](https://doi.org/…)`, or an Open Library link for a book with no DOI, identical in every copy."
-check = ["panel"]
+check = ["weakness"]
 [[rule]]
 id = "RULE.CIT.BLOCK_LIST"
 file = "citations.md"

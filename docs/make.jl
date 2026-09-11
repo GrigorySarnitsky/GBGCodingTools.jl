@@ -74,7 +74,9 @@ result = GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
     ],
 )
 
-# The wrapper returns nothing when a round froze the build: there is nothing built to deploy, and an
-# unguarded deploy would publish the previous run's directory or none at all (WIRE.MAKEDOCS).
+# The wrapper returns nothing when a docs round froze the build, before Documenter or after it: nothing
+# built under a frozen round is deployed, and an unguarded deploy would publish the previous run's
+# directory or none at all (WIRE.MAKEDOCS). A build that ran returns `true` (Documenter's own result is
+# nothing unless `debug = true`), so a push or a tag with no docs round open deploys the site.
 result === nothing ||
     deploydocs(repo = "github.com/GrigorySarnitsky/GBGCodingTools.jl", devbranch = "master", push_preview = false)

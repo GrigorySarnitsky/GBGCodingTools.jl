@@ -105,3 +105,17 @@ include("helpers.jl")
         @test haskey(JSON3.read(String(take!(io))), :checks)
     end
 end
+
+# init rewrites a freshly seeded test/Project.toml only where the seed is wrong: a consumer pinned dev,
+# whose seed names a tag that does not resolve. Never the tool itself, whose test environment carries no
+# tool entry, nor a release pin, nor a test/ that already has its Project.toml (2026-09-11-audit-changes-01
+# found the rewrite applied to all four).
+@testset "init rewrites a seeded test environment only for a dev pin" begin
+    root = mktempdir()
+    c(name, v) = Dict{String,Any}("package" => Dict{String,Any}("name" => name), "tool" => Dict{String,Any}("version" => v))
+    @test G.Init.seeded_test_rewritten(c("Foo", "dev"), root)
+    @test !G.Init.seeded_test_rewritten(c("Foo", "1.0.0"), root)                 # a release pin: the seed is right
+    @test !G.Init.seeded_test_rewritten(c(G.PKG_NAME, "dev"), root)              # the tool itself: no tool entry
+    mkpath(joinpath(root, "test")); touch(joinpath(root, "test", "Project.toml"))
+    @test !G.Init.seeded_test_rewritten(c("Foo", "dev"), root)                   # nothing was seeded
+end

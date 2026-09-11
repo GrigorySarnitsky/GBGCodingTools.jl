@@ -219,6 +219,19 @@ const LEDGER_HEADER = """
 """
 
 """
+    seeded_test_rewritten(cfg, root) -> Bool
+
+Whether `init` passes a freshly seeded `test/Project.toml` through the sub-environment rewrite
+(`Sync.render_project`): the seed's slots always name a released tag, which a `dev` pin cannot
+resolve, so a consumer pinned `dev` whose `test/` holds no `Project.toml` yet needs the rewrite. The
+tool itself never does — its test environment carries no tool entry — nor does a consumer pinned at a
+release, whose seed is already right. The arguments are `cfg`, the derived config, and `root`, the
+package root.
+"""
+seeded_test_rewritten(cfg::AbstractDict, root::AbstractString) =
+    !isfile(joinpath(root, "test", "Project.toml")) && cfg["package"]["name"] != PKG_NAME && Sync.pin(cfg) == "dev"
+
+"""
     init(root = pwd(); migrate = false, dry_run = false, io = stdout) -> Int
 
 `gbg init [--migrate] [--dry-run]`: seeds a consumer. The arguments are:
@@ -257,6 +270,7 @@ function init(root::AbstractString = pwd(); migrate::Bool = false, dry_run::Bool
     isfile(joinpath(root, "docs", "ROADMAP.md")) || note("docs/ROADMAP.md (seed)")
     isfile(joinpath(root, "docs", "prose_shape.csv")) || note("docs/prose_shape.csv (baseline)")
     envs = unique(vcat([e for e in ("docs", "test") if isdir(joinpath(root, e))], GBGCodingTools.tool_sub_envs(root)))
+    "test" in envs || !seeded_test_rewritten(cfg, root) || push!(envs, "test")
     for e in envs; note("$e/Project.toml ([deps]/[sources]/[compat] $PKG_NAME)"); end
     migrate && (note("test/*_baseline.toml, test/oracle_registry.toml (migrate baselines, where the literals exist)"); note(".gbg/seeds.toml (from seed_defects.py, where it exists)"); note(".gbg/scratch/commit-message.txt"))
     if dry_run
@@ -293,9 +307,6 @@ function init(root::AbstractString = pwd(); migrate::Bool = false, dry_run::Bool
         text = cfg["package"]["name"] == PKG_NAME ? "[deps]\nTest = \"8dfed614-e22c-5e08-85e1-65c5234f0b40\"\n" :
                Sync.render(Sync.template("test-Project.toml.seed"), s)
         write(tp, text)
-        # the seed's slots always name a released tag; the pass over `envs` below rewrites the tool entry
-        # through `Sync.subenv_entries`, which a `dev` pin needs, so a seeded test/ joins it
-        "test" in envs || push!(envs, "test")
     end
     mkpath(joinpath(root, "test", "regressions"))
     for (path, tmpl) in ((joinpath("docs", "make.jl"), "make.jl.seed"), (joinpath("test", "runtests.jl"), "runtests.jl.seed"))

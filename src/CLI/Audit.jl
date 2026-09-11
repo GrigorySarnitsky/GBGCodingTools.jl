@@ -1,17 +1,18 @@
 # Audit.jl — `gbg audit-changes bank <round>`: the audit's bank RUNS the executable claims itself under
 # GBG_ROUND (ARCHITECTURE §6.8) and records their exit codes in audit.json before the generic bank.
 
-# The lane files under `fdir` whose own `verdict` contradicts their `findings`: `CLEAN` with one or more,
-# `CONCERNS` with none. Returns `(file, verdict, count)` per contradiction; a file that does not parse, or
-# carries no verdict, is the generic bank's to judge.
-function lane_verdict_contradictions(fdir::AbstractString)
-    bad = Tuple{String,String,Int}[]
-    isdir(fdir) || return bad
-    for f in sort!(filter(endswith(".json"), readdir(fdir)))
-        d = try JSON3.read(read(joinpath(fdir, f), String), Dict{String,Any}) catch; continue end
-        v = get(d, "verdict", nothing); v isa AbstractString || continue
-        n = length(get(d, "findings", Any[]))
-        (v == "CLEAN") == (n == 0) || push!(bad, (f, String(v), n))
+# The roster lanes whose lane file's own `verdict` contradicts its `findings` (`Rounds.verdict_contradiction`),
+# read without touching anything. Only a roster lane file `NN-<key>.json` is read — a quarantined
+# `*.rejected.json` never is — and a file that does not parse, or whose `verdict` or `findings` is not the
+# schema's shape, is left to `Rounds.classify_lane`, which refuses it on the schema. Returns the lane keys.
+function lane_contradictions(dir::AbstractString, rec::AbstractDict)
+    bad = String[]
+    for l in Rounds.expected_lanes(rec)
+        p = joinpath(dir, "findings", "$(l["nn"])-$(l["key"]).json")
+        isfile(p) || continue
+        d = try JSON3.read(read(p, String), Dict{String,Any}) catch; continue end
+        get(d, "verdict", nothing) in ("CLEAN", "CONCERNS") && get(d, "findings", nothing) isa AbstractVector || continue
+        Rounds.verdict_contradiction(d) === nothing || push!(bad, l["key"])
     end
     return bad
 end
@@ -34,20 +35,17 @@ audit's account of what runs is built on nothing — records `{command, file, ex
 `head`, `kind` and the covered paths, then runs [`Rounds.bank`](@ref); afterwards it prints the
 severity re-check Workflow call (an anchor, before "serious" is counted at grade). Returns the bank's
 exit code.
+
+A lane whose `verdict` contradicts its own findings — `CLEAN` with a concern, `CONCERNS` with none — is
+refused before any claim runs: the generic bank is called at once, quarantines that lane as DEAD and
+records it, and the `gbg round rerun` it prints re-runs exactly that lane.
 """
 function audit_bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io)
     rec["instrument"] == "audit-changes" || (println(io, "audit-changes bank: $round is a $(rec["instrument"]) round"); return 2)
-    # a lane's `verdict` is its own report, kept only where its findings bear it out: CLEAN with a
-    # concern, or CONCERNS with none, is refused before the claims run (RULE.TEST.BOTH_DIRECTIONS)
-    bad = lane_verdict_contradictions(joinpath(dir, "findings"))
-    if !isempty(bad)
-        for (f, v, n) in bad
-            println(io, "audit-changes bank: $f reports $v with $n finding(s) — its verdict contradicts its own findings")
-        end
-        println(io, "  re-run it: gbg round rerun $round --lanes ", join([replace(f, r"^\d+-" => "", r"\.json$" => "") for (f, _, _) in bad], ","))
-        return 2
-    end
+    # a lane whose verdict contradicts its findings fails the bank anyway; the claims are not run for it.
+    # The generic bank quarantines the lane as DEAD and records it, so the rerun it prints is accepted
+    isempty(lane_contradictions(dir, rec)) || return Rounds.bank(cfg, round; io)
     root = cfg["root"]; scratch = Preflight.scratch_dir(cfg, round)
     claims = Dict{String,Any}[]
     log = joinpath(scratch, "claim-gate.log")

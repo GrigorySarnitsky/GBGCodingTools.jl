@@ -19,10 +19,11 @@ Before Documenter runs it runs, in-process, the quick doctor set — the `:QUICK
 surfaces and [`GBGCodingTools.gate`](@ref), the closure gate, over the two docs instruments; after
 Documenter it runs the built-HTML scans and that gate again.
 
-Any non-zero return is an `error`, so the build fails — except the gate before Documenter refusing
-only because a docs round is open, which prints a skip line and returns `nothing`, exit 0, unless
-`GBG_DOCS_NO_SKIP` is set. The gate after Documenter has no such skip: a round opened while the build
-ran fails it. It prints one banner line, `GBGCodingTools v<ver> makedocs`, which a consumer's CI greps for.
+Any non-zero return is an `error`, so the build fails — except either gate refusing only because a
+docs round is open, which prints a skip line and returns `nothing`, exit 0, unless `GBG_DOCS_NO_SKIP`
+is set: before Documenter nothing is built, and after it (a round opened while the site built) the site
+is built and not deployed. It prints one banner line, `GBGCodingTools v<ver> makedocs`, which a
+consumer's CI greps for.
 
 Returns what `Documenter.makedocs` returns, `true` when that is `nothing` — as it is unless `debug =
 true` is passed — or `nothing` when an open round of a docs instrument froze the build
@@ -31,3 +32,14 @@ is broken, and a `make.jl` deploys only when the value is not `nothing`. `GBG_DO
 turns the skip back into the refusal, which is how `gbg release` and the deep doctor run it.
 """
 function makedocs end
+
+"""
+    docs_build_skipped(cfg, code) -> Vector{String}
+
+The rounds that make a docs-build gate's refusal a skip rather than a failure: the open rounds of the
+two docs instruments ([`GBGCodingTools.frozen_rounds`](@ref)) when the gate refused with exit `1` and
+`GBG_DOCS_NO_SKIP` is unset, and otherwise none. Both of [`makedocs`](@ref)' gates ask it, so they share
+the one exception. The arguments are `cfg`, the validated config, and `code`, the gate's exit code.
+"""
+docs_build_skipped(cfg::AbstractDict, code::Integer) =
+    code == 1 && !haskey(ENV, "GBG_DOCS_NO_SKIP") ? frozen_rounds(cfg, "check-docs", "check-consistency") : String[]
