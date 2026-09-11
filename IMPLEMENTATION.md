@@ -202,10 +202,10 @@ Tree (create every directory; one-line purposes in §3):
 
 ```
 Project.toml CHANGELOG.md README.md fleet.toml install.sh bin/gbg
-src/{GBGCodingTools.jl,DocLints.jl,TestHarness.jl,Reflection.jl,Witnesses.jl,TreeHash.jl,HtmlWalker.jl}
+src/{GBGCodingTools.jl,DocLints.jl,TestHarness.jl,Reflection.jl,Witnesses.jl,TreeHash.jl,HtmlWalker.jl,Scan.jl}
 ext/GBGCodingToolsDocumenterExt.jl                     # the Documenter extension (weak dependency): defines GBGCodingTools.makedocs
 src/CLI/{Main.jl,Config.jl,Schema.jl,Doctor.jl,Sync.jl,Init.jl,Fleet.jl,Bump.jl,Release.jl,Install.jl,
-         Preflight.jl,Rounds.jl,Gate.jl,Demote.jl,Scan.jl,Seed.jl,Recall.jl,Consolidate.jl,
+         Preflight.jl,Rounds.jl,Gate.jl,Demote.jl,Seed.jl,Recall.jl,Consolidate.jl,
          Audit.jl,Hunt.jl,Selftest.jl,consolidate.py}     # consolidate.py: the ONE transitional Python file; deleted in 1.6
 src/Scans/<one file per scan id of §12.B>.jl
 instruments/{check-docs,check-consistency,bug-hunt,audit-changes}/{PROTOCOL.md,schema.json,workflow/,selftest/}
@@ -320,9 +320,10 @@ other module receives the validated `Dict`.
   `.gbg/scratch/public_surface.json` from `Reflection.package_operations()`,
   `Documenter.makedocs(; kwargs...)`, `check(scan_html(build_dir))`,
   `check(gate("check-docs", "check-consistency"))` again — where `check(code)` is
-  `code == 0 || error("gbg <verb> returned $code")`, EXCEPT the one refusal that is not a breakage: a
-  gate refusing only because a round of a docs instrument is open prints a skip line and returns
-  `nothing`, exit 0, unless `GBG_DOCS_NO_SKIP` is set (`gbg release` and the deep doctor set it); prints one banner line
+  `code == 0 || error("gbg <verb> returned $code")`, EXCEPT the one refusal that is not a breakage: the
+  FIRST gate refusing only because a round of a docs instrument is open prints a skip line and returns
+  `nothing`, exit 0, unless `GBG_DOCS_NO_SKIP` is set (`gbg release` and the deep doctor set it) — the
+  gate after Documenter has no skip, so a round opened during the build fails it; prints one banner line
   `GBGCodingTools v<ver> makedocs` (the `BUILD.DOCS` witness). Never the bare `gate()` over all four
   instruments — a docs build must not fail on an open hunt round. Inside a
   `gbg round prepare|build|pass open`, the CLI has exported `GBG_ROUND`, so the gate inside this

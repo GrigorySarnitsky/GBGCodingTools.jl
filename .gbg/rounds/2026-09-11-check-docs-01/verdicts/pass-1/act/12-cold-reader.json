@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "63eead639cfa4b6818a748553b1b2e23",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/cold-reader#1",
+      "verdict": "LINE-ONLY",
+      "question": "strategy",
+      "evidence": "Passes.jl's new module docstring binds 'act verifier'/'state verifier' (also called 'blind verifier') and states both closed vocabularies, and Demote.jl gets an @ref link to it. But two of the finding's own four cited locations are untouched: Passes.jl:295 'graded by the act verifier, never read by the blind one' and Passes.jl:602 'read by the act verifier and not by the blind one' still use the terms as already-known, with no @ref back to the new definition.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Demote.jl:8",
+          "swept": true,
+          "evidence": "diff adds '([`GBGCodingTools.Passes`](@ref) binds both verifiers and their verdicts)' right after the act/state-verifier sentence"
+        },
+        {
+          "surface": "src/CLI/Demote.jl:11-13",
+          "swept": true,
+          "evidence": "same docstring, now reachable via the Passes @ref added just above; 'class_surfaces'/'swept' follow the anchor"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:295",
+          "swept": false,
+          "evidence": "\"graded by the act verifier, never read by the blind one\" — unchanged by the diff, no @ref, terms used as already-known"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:602",
+          "swept": false,
+          "evidence": "\"read by the act verifier and not by the blind one\" — unchanged by the diff, no @ref, terms used as already-known"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/cold-reader#2",
+      "verdict": "LINE-ONLY",
+      "question": "strategy",
+      "evidence": "The two flagged Main.jl mentions are fixed correctly: running_dev's docstring now spells out 'the shim ... bin/gbg, the small script gbg install copies to ~/.local/bin/gbg and which execs [`main`](@ref)' before main's own docstring uses the bare word, matching bin/gbg and Install.jl's shim_source/shim_target exactly. But this same fix-pass commit's own diff to GBGCodingTools.jl (added for a different finding, src#1) plants a fresh unglossed 'the shim install' at line 52 of the module docstring, which precedes CLI/Main.jl in both file and include order (include(\"CLI/Main.jl\") is line 78) — the same ordinary-word-before-definition pattern recurring one file earlier than the fix's own anchor.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Main.jl:70-73",
+          "swept": true,
+          "evidence": "running_dev docstring now defines the shim inline at its first use"
+        },
+        {
+          "surface": "src/CLI/Main.jl:119",
+          "swept": true,
+          "evidence": "main's docstring's bare 'the shim' now follows running_dev's definition in reading order"
+        },
+        {
+          "surface": "src/GBGCodingTools.jl:52",
+          "swept": false,
+          "evidence": "\"the release, the shim install, `gbg self verify` and the self-test\" — new text added by this same commit, using 'shim' as an already-known noun, and it precedes running_dev's definition in both source order and include order"
+        }
+      ]
+    }
+  ]
+}

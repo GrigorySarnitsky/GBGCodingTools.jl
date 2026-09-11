@@ -1,0 +1,27 @@
+tool_version = "1.0.0-rc.6"
+head = "c8ef91626436c77e24b66906e90add7053b550b1"
+fix_range = "ed16027d6d5055280b381df44efb6c7dec0c135b..c8ef91626436c77e24b66906e90add7053b550b1"
+tool_tree_sha = "28bc2240736f49b6dc8c41e1b4ea721b26f2b1ba"
+state_ids = ["2026-09-11-check-docs-01/rationale#1", "2026-09-11-check-docs-01/rationale#2", "2026-09-11-check-docs-01/pages#1", "2026-09-11-check-docs-01/src#1", "2026-09-11-check-docs-01/src#2", "2026-09-11-check-docs-01/src#3", "2026-09-11-check-docs-01/built-html#1", "2026-09-11-check-docs-01/workflow-scripts#1", "2026-09-11-check-docs-01/workflow-scripts#2", "2026-09-11-check-docs-01/workflow-scripts#3", "2026-09-11-check-docs-01/workflow-scripts#4", "2026-09-11-check-docs-01/workflow-scripts#5", "2026-09-11-check-docs-01/catalogues#1", "2026-09-11-check-docs-01/catalogues#2", "2026-09-11-check-docs-01/rulebook#1", "2026-09-11-check-docs-01/rulebook#2", "2026-09-11-check-docs-01/rulebook#3", "2026-09-11-check-docs-01/templates#1", "2026-09-11-check-docs-01/templates#2", "2026-09-11-check-docs-01/templates#3", "2026-09-11-check-docs-01/schemas#1", "2026-09-11-check-docs-01/schemas#2", "2026-09-11-check-docs-01/cold-reader#1", "2026-09-11-check-docs-01/cold-reader#2", "2026-09-11-check-docs-01/operational-claims#1", "2026-09-11-check-docs-01/operational-claims#2", "2026-09-11-check-docs-01/operational-claims#3"]
+config_sha = "f173b70f9e732be3d706d072e763bae67d2f7628558db096d8e23de8321dde8b"
+tool_rev = "ed16027d6d5055280b381df44efb6c7dec0c135b"
+range = "ed16027d6d5055280b381df44efb6c7dec0c135b..c8ef91626436c77e24b66906e90add7053b550b1"
+counted = true
+rechecked = []
+regrade = false
+pass = 1
+nonce = "63eead639cfa4b6818a748553b1b2e23"
+opened = "2026-09-11T17:01:09"
+
+[expected]
+rationale = 2
+pages = 1
+workflow-scripts = 5
+cold-reader = 2
+src = 3
+rulebook = 3
+built-html = 1
+templates = 3
+operational-claims = 3
+catalogues = 2
+schemas = 2

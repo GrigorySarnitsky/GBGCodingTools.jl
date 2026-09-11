@@ -35,7 +35,8 @@ The module is a map; every part is documented at its home. The command line and 
 The round machinery, one module per concern under `src/CLI/`:
 
 - [`Preflight`](@ref), [`Rounds`](@ref), [`Passes`](@ref) — a round's life: the preflight and the
-  open, prepare and bank, then the verification passes, the grade and the close.
+  open, prepare and bank, then the verification passes, the grade and the close;
+  [`demote`](@ref) is the one demotion rule the grade applies to an act verdict.
 - [`Seeds`](@ref), [`Recall`](@ref) — the labelled defects a seeded round plants, and the recall
   measured on them.
 - [`RoundFiles`](@ref), [`Git`](@ref) — reading what a round wrote, and the git questions the round
@@ -49,7 +50,7 @@ The upkeep verbs and the rest of `src/CLI/`:
   check.
 - `Hunt.jl`, `Audit.jl` — the verbs particular to `bug-hunt` and `audit-changes`; `Fleet.jl`,
   `Bump.jl`, `Release.jl`, `Install.jl`, `Self.jl`, `Selftest.jl` — the fleet report, the pin bump,
-  the release, the shim install, `gbg self verify` and the self-test; `Schema.jl` — the one validator
+  the release, the install of the `gbg` command, `gbg self verify` and the self-test; `Schema.jl` — the one validator
   of every artefact against `schema/`.
 
 The engines:

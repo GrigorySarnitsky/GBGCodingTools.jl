@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "lane": "operational-claims",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "63eead639cfa4b6818a748553b1b2e23",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/operational-claims#1",
+      "verdict": "ABSENT",
+      "evidence": "src/GBGCodingTools.jl:29 now reads 'the exit contract is 0 clean, 1 substantive finding, 2 cannot evaluate, 3 crash', matching Main.jl:121. grep -rn \"second finding\" --include='*.jl' src ext docs returned nothing."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/operational-claims#2",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Rounds.jl:447-449 now reads 'By the last exit ... are already written ... the hunt's own refusal returns before `reproductions/` is written' — matches hunt_bank! (line 607: return 2 precedes line 610: mkpath(rdir))."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/operational-claims#3",
+      "verdict": "ABSENT",
+      "evidence": "src/DocLints.jl:22-24 now reads 'except the gate before Documenter refusing only because a docs round is open ... The gate after Documenter has no such skip: a round opened while the build ran fails it' — matches ext/GBGCodingToolsDocumenterExt.jl:32-46 (pre-build gate has skip handling, post-build gate at line 46 is a bare check)."
+    }
+  ]
+}

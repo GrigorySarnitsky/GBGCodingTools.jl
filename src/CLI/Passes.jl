@@ -292,8 +292,8 @@ where its own evidence lives, and the diff says whether anything went near it �
 names no location at all, which is re-verified every pass rather than never, silence about where a
 defect lives being no evidence that it is gone.
 
-An id the previous pass left `pending_state` — graded by the act verifier, never read by the blind one —
-is a suspect too, or nothing would read it again. The suspects are re-checks, which `pass_open` sends to
+An id the previous pass left `pending_state` — graded by the act verifier, never read by the blind one,
+the two verifiers [`GBGCodingTools.Passes`](@ref) binds — is a suspect too, or nothing would read it again. The suspects are re-checks, which `pass_open` sends to
 the blind verifier alone. Returns the scope, the previously open ids, the suspects and the fix pass's
 commit range; `scope === nothing` means every id.
 """
@@ -600,7 +600,8 @@ A re-checked id — closed earlier, back in scope — keeps the act verdict that
 while the blind verifier still reads it absent, and reopens when that reading finds it back.
 
 Exit 1 while `open_ids` is non-empty, and equally while any id is `pending_state` — read by the act
-verifier and not by the blind one — 0 only when every id is closed.
+verifier and not by the blind one, the two verifiers [`GBGCodingTools.Passes`](@ref) binds — 0 only
+when every id is closed.
 """
 function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io, allow_config_change = true)

@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "63eead639cfa4b6818a748553b1b2e23",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/src#1",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "src/GBGCodingTools.jl:35-53 inserts 'The round machinery' and 'The upkeep verbs' sections naming Preflight, Rounds, Passes, Seeds, Recall, RoundFiles, Git, Sync, Init, Ledger, Doctor, Hunt, Audit, Fleet, Bump, Release, Install, Self, Selftest, Schema -- 18 of the 19 files the finding named as unmapped. Demote, explicitly named in the finding's description ('Init, Demote, Hunt, Audit...'), is still absent: grep -ni 'demot' src/GBGCodingTools.jl matches only the include line (95), never the docstring text. ARCHITECTURE.md:985 confirms Demote.jl is a real operation ('THE demotion predicate'), so this is a live instance of the same omission the finding flagged, not a trivial file.",
+      "class_surfaces": [
+        {
+          "surface": "src/GBGCodingTools.jl:37-38",
+          "swept": true,
+          "evidence": "Preflight/Rounds/Passes added: 'a round's life: the preflight and the open, prepare and bank, then the verification passes, the grade and the close.'"
+        },
+        {
+          "surface": "src/GBGCodingTools.jl:39-40",
+          "swept": true,
+          "evidence": "Seeds/Recall added: 'the labelled defects a seeded round plants, and the recall measured on them.'"
+        },
+        {
+          "surface": "src/GBGCodingTools.jl:41-42",
+          "swept": true,
+          "evidence": "RoundFiles/Git added: 'reading what a round wrote, and the git questions the round verbs ask.'"
+        },
+        {
+          "surface": "src/GBGCodingTools.jl:46-49",
+          "swept": true,
+          "evidence": "Sync/Init/Ledger/Doctor added with linked one-liners."
+        },
+        {
+          "surface": "src/GBGCodingTools.jl:50-53",
+          "swept": true,
+          "evidence": "Hunt.jl/Audit.jl/Fleet.jl/Bump.jl/Release.jl/Install.jl/Self.jl/Selftest.jl/Schema.jl all named with one-liners."
+        },
+        {
+          "surface": "src/CLI/Demote.jl",
+          "swept": false,
+          "evidence": "Demote (the act-verdict demotion rule, an operation family the finding named by name) has no entry anywhere in the module docstring; only the bare `include(\"CLI/Demote.jl\")` at line 95 names it, and that is code, not the map."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/src#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/Scan.jl:344-347: the docstring now reads 'An entry scope = \"policy\" ... with target `*`, or scope = \"scan\" ... with target `*` and no `match` table, disables the scan ... any other live scan-scope entry on the id -- a target-`*` one carrying `match` among them -- drops the hits it matches.' This matches the code exactly: the policy-scope check (lines 351-352) has no match guard; the scan-scope wildcard-disable check (line 356) is `!haskey(e, \"match\")`-gated; any other scan-scope entry (wildcard+match included) falls into the per-hit `Ledger.matches` loop. apply_ledger is the only place in src/, ext/ or docs/ describing this behaviour, so the class is not alive elsewhere.",
+      "class_surfaces": [
+        {
+          "surface": "src/Scan.jl:344-347",
+          "swept": true,
+          "evidence": "apply_ledger docstring now qualifies both disable paths and correctly describes the target-`*`-with-match fallthrough; verified line-by-line against apply_ledger's body (lines 350-365)."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/src#3",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "src/TestHarness.jl:11-12 now reads '(TestHarness.counting, TestHarness.CountingArray, TestHarness.Traffic, TestHarness.audit)', exactly the hint's wording, and counting's own docstring exists at line ~133. But the same enumeration -- CountingArray/Traffic/audit without counting -- survives verbatim in docs/ARCHITECTURE.md:538 and :992, and identically in its mirror docs/src/architecture.md at the same two lines. Those are hand-authored descriptions of TestHarness's exports, the same class of map-omits-counting defect the finding named, and the diff touched only src/TestHarness.jl.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:11-12",
+          "swept": true,
+          "evidence": "counting inserted into the element-traffic-audit bullet, matching the finding's hint verbatim."
+        },
+        {
+          "surface": "docs/src/api/TestHarness.md:13",
+          "swept": true,
+          "evidence": "the @docs block already listed GBGCodingTools.TestHarness.counting before this fix pass; not a defect site."
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:538",
+          "swept": false,
+          "evidence": "'`TestHarness`: `@alloc_below` + derived allocation completeness, `CountingArray`/`Traffic`/`audit`, method-parity engine...' -- counting absent, untouched by the diff."
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:992",
+          "swept": false,
+          "evidence": "'TestHarness.jl              @alloc_below, CountingArray/Traffic/audit, method parity, oracle registry,' -- counting absent, untouched by the diff."
+        },
+        {
+          "surface": "docs/src/architecture.md:538",
+          "swept": false,
+          "evidence": "mirror of ARCHITECTURE.md:538, identical text, same omission, untouched by the diff."
+        },
+        {
+          "surface": "docs/src/architecture.md:992",
+          "swept": false,
+          "evidence": "mirror of ARCHITECTURE.md:992, identical text, same omission, untouched by the diff."
+        }
+      ]
+    }
+  ]
+}

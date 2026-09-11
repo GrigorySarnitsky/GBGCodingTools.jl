@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "lane": "templates",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "63eead639cfa4b6818a748553b1b2e23",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/templates#1",
+      "verdict": "ABSENT",
+      "evidence": "templates/SKILL.md.tmpl now branches: 'For `/gbg-doctor` it is `gbg doctor`, which opens no round — the doctor is not an instrument — and prints one line per check', matching cmd_doctor (Doctor.jl: '$(length(out)) checks, $nf FAIL, $nw WARN'). Closing line: 'Follow what it printed ... an instrument's protocol step by step, or, for the doctor, each check that did not pass.' Grepped templates/ for the old 'protocol printed above' text: gone."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/templates#2",
+      "verdict": "ABSENT",
+      "evidence": "Seed still writes rev=v{{tool.version}} (templates/test-Project.toml.seed:9), but Init.jl:298 now pushes \"test\" into envs after seeding, and the envs loop (Init.jl:307-310) overwrites test/Project.toml via Sync.render_project/subenv_entries (dev pin -> path source, Sync.jl:307-312) BEFORE the Pkg.instantiate() message at Init.jl:320. Comment at Init.jl:296-297 states this rationale explicitly."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/templates#3",
+      "verdict": "ABSENT",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:49 `return something(result, true)` makes every successful build return a non-nothing value, distinguishable from the frozen-skip's explicit `return nothing` (line 37). templates/make.jl.seed's comment now matches: 'A build that ran returns a value that is not nothing (`true`, or Documenter's document under `debug = true`), so guard ... on `!== nothing`.'"
+    }
+  ]
+}

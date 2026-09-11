@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "63eead639cfa4b6818a748553b1b2e23",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/rationale#1",
+      "verdict": "LINE-ONLY",
+      "question": "strategy",
+      "evidence": "docs/ARCHITECTURE.md:987 moved Scan.jl out from under CLI/ to the 4-space level beside TreeHash.jl/HtmlWalker.jl/DocLints.jl/TestHarness.jl/Reflection.jl/Witnesses.jl, exactly per the hint. But IMPLEMENTATION.md:208 (src/CLI/{Main.jl,...,Gate.jl,Demote.jl,Scan.jl,Seed.jl,...}), a tracked, untouched file, still asserts Scan.jl lives under src/CLI/ — the same misplacement, unswept.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:987",
+          "swept": true,
+          "evidence": "\"    Scan.jl                     `gbg scan docs|html` — the tiered engine over catalog/scans.toml\" now sits at the 4-space top-level indent, no longer nested under the CLI/ block (which ends at the preceding \"Seed.jl Recall.jl Consolidate.jl Audit.jl Hunt.jl Selftest.jl\" line)."
+        },
+        {
+          "surface": "IMPLEMENTATION.md:208",
+          "swept": false,
+          "evidence": "\"src/CLI/{Main.jl,Config.jl,Schema.jl,Doctor.jl,Sync.jl,Init.jl,Fleet.jl,Bump.jl,Release.jl,Install.jl, Preflight.jl,Rounds.jl,Gate.jl,Demote.jl,Scan.jl,Seed.jl,Recall.jl,Consolidate.jl, Audit.jl,Hunt.jl,Selftest.jl,consolidate.py}\" — Scan.jl is listed inside the src/CLI/{...} brace group; this file was not touched by the diff (git diff ...--stat -- IMPLEMENTATION.md returns empty) and is tracked, not generated."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/rationale#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:531 changed src/Scans/ProseShape.jl to src/Scans/prose_shape.jl in D9's parenthetical, matching the real file. A repo-wide grep -rln \"ProseShape\" --exclude-dir=.gbg . (tracked corpus) returns zero hits anywhere; the sites the computed hint names (catalog/scans.toml:177-178, policy/RULES.toml:229-234, policy/docs-rubric.md:18/217, fixture defects.toml:129/134, src/Scans/prose_shape.jl itself) all cite only the scan id SCAN.PROSE_SHAPE, never a file path. docs/src/architecture.md and docs/src/guide/rules.md are gitignored build-generated mirrors (confirmed via git ls-files/check-ignore), not independently authored surfaces.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:531",
+          "swept": true,
+          "evidence": "\"The prose-shape ratchet is a scan like any other (`src/Scans/prose_shape.jl`, `catalog/scans.toml` entry `SCAN.PROSE_SHAPE`)\" — the only citation of this file's path in the document, now correct lower_snake_case."
+        },
+        {
+          "surface": "catalog/scans.toml:177-178",
+          "swept": true,
+          "evidence": "id = \"SCAN.PROSE_SHAPE\" / rule = \"RULE.DOC.SHAPE\" — cites the scan id, not a file path; no PascalCase filename present."
+        },
+        {
+          "surface": "policy/RULES.toml:229-234, policy/docs-rubric.md:18/217, docs/src/guide/rules.md, fixture/GBG Fixture/defects.toml:129/134",
+          "swept": true,
+          "evidence": "grep for prose_shape|prose-shape|ProseShape across these files returns no filename citation at all — they reference only RULE.DOC.SHAPE / SCAN.PROSE_SHAPE, so there was nothing to sweep."
+        }
+      ]
+    }
+  ]
+}

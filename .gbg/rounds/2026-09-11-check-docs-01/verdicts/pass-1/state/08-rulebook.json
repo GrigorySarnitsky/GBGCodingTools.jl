@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "lane": "rulebook",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "63eead639cfa4b6818a748553b1b2e23",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/rulebook#1",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml now tags all six rules check=[\"panel\"]: HOME_ORDER (24), ONE_HOME (38), VARIANT_PAIR (45), MODULE_MAP (241), TEX.IMAGINARY (381), CIT.DOI (437). Checked remaining check=[\"weakness\"] rules (ADMONITION_TITLE, STEER, LITERATE, RETURNS, NO_HSCROLL, CODE_SPAN_JULIA, GREEK_AB, INST.*, GIT.*) against catalog/hats+lanes for matching keywords: no hits, so no sibling mislabeling survives."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/rulebook#2",
+      "verdict": "ABSENT",
+      "evidence": "catalog/hats/doc-policy.toml:8 now adds: \"Enforce the aliasing placement: an operation-specific statement of whether the destination may alias an input lives in the destination argument's bullet, not as standalone prose, and the package-wide guarantee lives in the module docstring\" — verbatim to RULE.DOC.ALIASING_BULLET's statement."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/rulebook#3",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml now tags all five as check=[\"weakness\"], not \"panel\": GATE_VS_SURVEY (line 458), DEFINITION_OF_DONE (472), MUTATION (500), BOTH_DIRECTIONS (507), MISSING_IS_FAILING (514) — matching the finding's own hint. No hat/lane claims to check them, and none now claims to."
+    }
+  ]
+}

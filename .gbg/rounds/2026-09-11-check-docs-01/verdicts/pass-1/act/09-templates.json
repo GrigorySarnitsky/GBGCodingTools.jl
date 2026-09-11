@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "lane": "templates",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "63eead639cfa4b6818a748553b1b2e23",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/templates#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/SKILL.md.tmpl:7-15 no longer asserts the preflight paragraph for gbg-doctor. It now branches: 'For an instrument it is the preflight: ... opens the round, and prints this instrument's protocol...' vs 'For `/gbg-doctor` it is `gbg doctor`, which opens no round ... and prints one line per check.' Verified against Doctor.jl run() (749-761): it prints one status line per selected check and never opens a round or prints a protocol/Workflow call, matching the new text.",
+      "class_surfaces": [
+        {
+          "surface": "templates/SKILL.md.tmpl:7-11",
+          "swept": true,
+          "evidence": "opening paragraph rewritten to branch by instrument vs. gbg-doctor, matching cmd_doctor's real read-only check-and-report behaviour"
+        },
+        {
+          "surface": "templates/SKILL.md.tmpl:15",
+          "swept": true,
+          "evidence": "closing line rewritten to cover both cases instead of the single false 'Follow the protocol printed above'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:358-366 (D6)",
+          "swept": true,
+          "evidence": "already correctly states '/gbg-doctor is not an instrument ... and SKILL.md.tmpl says so' — no false claim here, and it now matches the template"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/templates#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/CLI/Init.jl:293-298: after seeding test/Project.toml from the static template (still literally 'rev = \"v{{tool.version}}\"' at line 294, hence the computed hint), the fix pushes \"test\" into `envs` so the loop at line 307 runs Sync.render_project(cfg, \"test\"), which calls subenv_entries and overwrites the tool's [sources] entry with a dev-pin path source before init's final 'Next: instantiate' message prints (line 320). Traced full order: seed write (295) -> envs push (298) -> render_project overwrite (307-309) -> print (320): a dev-pinned consumer's test/Project.toml already carries the correct path source by the time Pkg.instantiate() would run.",
+      "class_surfaces": [
+        {
+          "surface": "templates/test-Project.toml.seed:9",
+          "swept": true,
+          "evidence": "still emits the git-rev form verbatim (only source using 'rev = ' among templates/src, confirmed by rg), but Init.jl now rewrites the file with subenv_entries's dev-path source in the same init() call before it is ever read by Pkg"
+        },
+        {
+          "surface": "src/CLI/Init.jl:293-295 (seed write)",
+          "swept": true,
+          "evidence": "corrected downstream by the new envs-push + render_project pass rather than edited directly; no other seed template writes a tool [sources] entry outside subenv_entries"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/templates#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:42-49 now returns something(result, true) instead of bare result; since Documenter.makedocs returns nothing unless debug=true, a completed build now returns true (or the Document under debug=true), distinguishable from the frozen path's explicit 'return nothing' at line 37. templates/make.jl.seed:4-6 comment updated to state this precisely and matches the code.",
+      "class_surfaces": [
+        {
+          "surface": "ext/GBGCodingToolsDocumenterExt.jl:49",
+          "swept": true,
+          "evidence": "the shared makedocs wrapper is the single source of the return value every consumer's guard reads, so fixing it here fixes every guard built on it, not just the seed template"
+        },
+        {
+          "surface": "docs/make.jl:77-79 (the tool's own docs build)",
+          "swept": true,
+          "evidence": "already uses the same 'result === nothing || deploydocs(...)' idiom the finding describes as broken; unchanged in the diff, but now correctly distinguishes success (true) from a frozen skip (nothing) because the wrapper it calls was fixed"
+        },
+        {
+          "surface": "fixture/GBG Fixture/docs/make.jl",
+          "swept": true,
+          "evidence": "no deploydocs call present, so this surface never carried the defect"
+        }
+      ]
+    }
+  ]
+}

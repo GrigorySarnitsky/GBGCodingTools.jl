@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "63eead639cfa4b6818a748553b1b2e23",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/pages#1",
+      "verdict": "ABSENT",
+      "evidence": "docs/src/index.md:51 now reads '49 read-only checks'. grep -c 'check!(\"' src/CLI/Doctor.jl = 49; sort -u of check!(\"[A-Z_.]+\" also = 49. Number matches code exactly; no other doctor-check-count mention found in index.md."
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "63eead639cfa4b6818a748553b1b2e23",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/catalogues#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "docs/ARCHITECTURE.md:924-925 (D18, first occurrence) now reads 'it in the catalogue as a constant (five audit lanes — `executing`, `under-rejection`, `behaviour-change`, `over-rejection` and `contract-drift` — the two free hunt lanes, the dismissal auditor and the severity re-check are `anchor = true` there)', matching exactly the five rows anchor=true in catalog/lanes/audit-changes.toml:14,22,38,44,78 and the design-record's IT-five (survey-bughunt-auditchanges.md:233). The second occurrence at ARCHITECTURE.md:2086-2087 was reworded to 'the five audit anchors D18 names' rather than re-listing them, staying consistent by construction. catalog/lanes/audit-changes.toml:3's own '(D18)' citation is unchanged but no longer false, since D18 itself was expanded — the hint's first alternative (expand D18) was the one taken.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:924-925",
+          "swept": true,
+          "evidence": "D18 parenthetical now names all five anchors, matching the shipped catalogue"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2086-2087",
+          "swept": true,
+          "evidence": "second D18 restatement now says 'the five audit anchors D18 names' instead of re-listing an incomplete set"
+        },
+        {
+          "surface": "catalog/lanes/audit-changes.toml:3",
+          "swept": true,
+          "evidence": "comment text unchanged, but its '(D18)' citation is now accurate since D18 was corrected to match"
+        },
+        {
+          "surface": "catalog/lanes/bug-hunt.toml:2",
+          "swept": true,
+          "evidence": "cites D18 for the free lanes only, no enumerated audit-changes list to contradict — unaffected by this class"
+        },
+        {
+          "surface": "catalog/models.toml:1",
+          "swept": true,
+          "evidence": "cites D18 for the economy-model-name location only, no anchor list — unaffected by this class"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/catalogues#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "catalog/hats/doc-policy.toml persona now adds: 'The rendered page shows what a docstring collected, not how it was written: where an order, a link or a bullet is in doubt, open the docstring's `\"\"\"…\"\"\"` in the authored source, whose grant you hold. Quote the rule and the violation, the violation at its source file:line.' catalog/hats/naming-policy.toml persona now adds: 'A rendered page shows the documented names, not every one the package exports or accepts: read the export lists and the signatures in the authored source, whose grant you hold... For each finding quote the name at its source file:line.' Both hats now use the `source` grant their needs list carries, matching the sibling hats that already did.",
+      "class_surfaces": [
+        {
+          "surface": "catalog/hats/doc-policy.toml:7",
+          "swept": true,
+          "evidence": "persona now opens the authored source and cites file:line"
+        },
+        {
+          "surface": "catalog/hats/naming-policy.toml:9",
+          "swept": true,
+          "evidence": "persona now reads export lists/signatures in source and cites file:line"
+        },
+        {
+          "surface": "catalog/hats/invariants-and-decisions.toml:111",
+          "swept": true,
+          "evidence": "already invoked its source grant before this fix pass ('against the code and docs BOTH WAYS'), unchanged and correct"
+        },
+        {
+          "surface": "catalog/hats/latex-typesetter.toml:120",
+          "swept": true,
+          "evidence": "already invoked its source grant before this fix pass ('quote each finding at its SOURCE file:line'), unchanged and correct"
+        },
+        {
+          "surface": "catalog/hats/fossil-and-drift.toml",
+          "swept": true,
+          "evidence": "the fifth hat carrying needs=[\"source\"...]; not flagged by the finding and confirmed to invoke its grant, so the full set of source-granted hats is accounted for"
+        }
+      ]
+    }
+  ]
+}

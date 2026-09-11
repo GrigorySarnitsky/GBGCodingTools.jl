@@ -488,9 +488,10 @@ status quo. *Bash scans*: `guards.sh`'s awk.
   `gate("check-docs", "check-consistency")` again after — the same Julia functions the CLI verbs
   `gbg doctor --only QUICK`, `gbg scan docs --hard-only`, `gbg gate …` and `gbg scan html` wrap, no
   child process — and `error()`s on any non-zero return, EXCEPT the one refusal that is not a breakage:
-  a gate that refuses only because a round of a docs instrument is open prints `makedocs: SKIPPED` and
-  returns `nothing`, exit 0, so a red docs build keeps meaning something is broken rather than meaning a
-  round is open. `GBG_DOCS_NO_SKIP` restores the refusal, and `gbg release` and the deep doctor set it,
+  the gate before Documenter refusing only because a round of a docs instrument is open prints
+  `makedocs: SKIPPED` and returns `nothing`, exit 0, so a red docs build keeps meaning something is
+  broken rather than meaning a round is open. The gate after Documenter has no such skip: a round
+  opened while the build ran fails it. `GBG_DOCS_NO_SKIP` restores the refusal, and `gbg release` and the deep doctor set it,
   so no release accepts a build that did not happen. The gate is reachable on a CI runner with
   no shim. The docs instruments' gate, never the bare four-instrument `gate()`, so a docs build does
   not fail on an open hunt. It writes the derived public surface
@@ -535,7 +536,7 @@ status quo. *Bash scans*: `guards.sh`'s awk.
   PF's page and section units, IT's structure checks (`# Arguments` before any column-0 `!!!`,
   `# Fields` last); a missing CSV is an error — `gbg init` and
   `gbg scan docs --rebaseline prose-shape --reason …` are the ONLY writers.
-- `TestHarness`: `@alloc_below` + derived allocation completeness, `CountingArray`/`Traffic`/`audit`,
+- `TestHarness`: `@alloc_below` + derived allocation completeness, `counting`/`CountingArray`/`Traffic`/`audit`,
   method-parity engine (frozen tables stay in the consumer), oracle-registry engine,
   `Reflection.package_operations()`, which it CALLS and does not define (ownership-derived public
   surface — the constant `derived` route; the
@@ -989,7 +990,7 @@ GBGCodingTools.jl/
     TreeHash.jl                 git blob/tree hashing on the SHA stdlib; `gbg self verify`, PIN.SELF, PIN.TREESHA
     HtmlWalker.jl               the Gumbo + AbstractTrees walker shared by Consolidate.jl and the SCAN.HTML_* scans
     DocLints.jl                 the bare `function makedocs end` + its docstring (the body is ext/GBGCodingToolsDocumenterExt.jl; no regex twins)
-    TestHarness.jl              @alloc_below, CountingArray/Traffic/audit, method parity, oracle registry,
+    TestHarness.jl              @alloc_below, counting/CountingArray/Traffic/audit, method parity, oracle registry,
                                 run_regressions, display gate, thread-subprocess check, gate()
     Reflection.jl               argcov, signature_fidelity, xlink (dry-run), dupref, public surface
     Witnesses.jl                run(dir; expect, names)

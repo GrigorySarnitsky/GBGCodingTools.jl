@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "lane": "rationale",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "63eead639cfa4b6818a748553b1b2e23",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/rationale#1",
+      "verdict": "PARTIAL",
+      "evidence": "docs/ARCHITECTURE.md:987 now lists `Scan.jl` at the 4-space level, sibling to TreeHash.jl/HtmlWalker.jl/DocLints.jl, not under CLI/ — matches src/GBGCodingTools.jl:85 `include(\"Scan.jl\")` (top-level, unlike surrounding `include(\"CLI/*.jl\")` lines).",
+      "surviving_class": "IMPLEMENTATION.md:207-208 — `src/CLI/{Main.jl,...,Gate.jl,Demote.jl,Scan.jl,Seed.jl,...}` still places Scan.jl inside the src/CLI/{} brace-list tree, same misplacement class."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/rationale#2",
+      "verdict": "ABSENT",
+      "evidence": "docs/ARCHITECTURE.md:531 now reads `src/Scans/prose_shape.jl` (snake_case), matching the actual file src/Scans/prose_shape.jl. Grepped whole repo (excluding .gbg) for `ProseShape\\.jl` (camelCase): zero hits anywhere, including docs/design-record and docs/src/architecture.md."
+    }
+  ]
+}

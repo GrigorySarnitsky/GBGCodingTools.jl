@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "catalogues",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "63eead639cfa4b6818a748553b1b2e23",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/catalogues#1",
+      "verdict": "ABSENT",
+      "evidence": "catalog/lanes/audit-changes.toml still has anchor=true on all five (executing:14, under-rejection:22, behaviour-change:38, over-rejection:44, contract-drift:78), but ARCHITECTURE.md:923-925 (D18) now reads '(five audit lanes — executing, under-rejection, behaviour-change, over-rejection and contract-drift)' and :2091 says 'the five audit anchors D18 names' — both occurrences now name all five; texts agree with the catalogue."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/catalogues#2",
+      "verdict": "ABSENT",
+      "evidence": "catalog/hats/doc-policy.toml now reads 'open the docstring's \"\"\"...\"\"\" in the authored source, whose grant you hold. Quote the rule and the violation, the violation at its source file:line.' catalog/hats/naming-policy.toml now reads 'read the export lists and the signatures in the authored source, whose grant you hold ... quote the name at its source file:line.' Both hats now explicitly invoke the source grant, matching invariants-and-decisions.toml and latex-typesetter.toml."
+    }
+  ]
+}
