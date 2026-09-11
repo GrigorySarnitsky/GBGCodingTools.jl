@@ -3,7 +3,7 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
-## Unreleased
+## 1.0.0-rc.8 — 2026-09-11
 
 PATCH on rc.7. Instruments affected: none (the `gbg attack` verb). Rates comparable: yes.
 
