@@ -1,0 +1,75 @@
+# .gbg/carried.toml — written by `gbg round close --carry`, never edited by hand. Each entry is a
+# real, unfixed finding a round closed by carrying it into the next round of its instrument.
+history = []
+schema_version = 1
+
+[[carried]]
+first_carried = "2026-09-11T17:52:03"
+severity = "major"
+lane = "cold-reader"
+confidence = "high"
+last_carried = "2026-09-11T17:52:03"
+locations = ["src/CLI/Demote.jl:6-9: \"The one demotion rule over an act verdict — the act verifier's grade of what the fix pass DID to one finding, from the diff (the state verifier grades, blind to the diff, whether the defect is still there). `class_surfaces` is the list the verifier fills…\"", "src/CLI/Demote.jl:11-12: \"An act verdict `HONORED` becomes `LINE-ONLY` when that list is empty…\"", "src/CLI/Passes.jl:283-285 (pass_scope): \"An id the previous pass left `pending_state` — graded by the act verifier, never read by the blind one — is a suspect too…\"", "src/CLI/Passes.jl:587-591 (grade): \"applies the demotion to the rest, then the closure channels per id — `honored`, `adjudicated`, `seeded`, `rescan`… A re-checked id — closed earlier, back in scope — keeps the act verdict that closed it…\""]
+instrument = "check-docs"
+carries = 1
+id = "2026-09-11-check-docs-01/cold-reader#1"
+title = "\"act verifier\" / \"state verifier\" and the HONORED/LINE-ONLY verdict vocabulary are used with no definition anywhere in the source"
+round = "2026-09-11-check-docs-01"
+type = "self-containment"
+description = "A cold reader meets `?GBGCodingTools.demote` (Demote.jl is included right after Doctor.jl, well before Passes.jl) and is immediately handed four unglossed terms of art at once: \"act verdict\", \"the act verifier\" (vs. \"the state verifier\", elsewhere called \"the blind verifier\" — three names for what turn out to be two roles), \"class_surfaces\", and \"swept\". None is a plain-English read: an \"act verifier\" does not mean a verifier that acts, and \"swept\" here means specifically \"a location a finding names that the fix pass's diff touched\" (RULE.DOC.CLASS_SWEEP's sense), not the ordinary sense used two lines earlier in Reflection.jl (\"whose `src` surface names the files swept\", meaning merely \"read\"). The closed verdict vocabulary itself — `HONORED`, `LINE-ONLY`, and later `PHANTOM`/`UNFIXED`/`ABSENT`/`NOT-A-DEFECT` (Witnesses.jl, Passes.jl) — is never enumerated or explained as a vocabulary anywhere a `?name` lookup would land; each docstring just uses the members as already-known constants. I verified this is not merely a link I missed: I grepped the whole `src/` and `ext/` tree for \"act verifier\", \"state verifier\", \"blind verifier\", \"class_surfaces\", \"HONORED\", \"LINE-ONLY\" and every occurrence is inside a docstring or comment that USES the term, none DEFINES it (the closest thing to a definition, RULE.INST.SELF_REPORT's \"the act verifier sees the diff, the state verifier is blind\", lives only in the policy rulebook, which a `?name` REPL read never surfaces). By contrast, every other overloaded-but-central term in this package (`consumer`, `instrument`, `round`, `lane`, `hat`, `gate`, the three senses of `anchor`, `surface`, `managed file`, DEAD/REJECTED/EMPTY/TRUNCATED lane statuses) gets exactly this kind of module-docstring or first-use definition elsewhere in the same corpus, which is what makes its absence here conspicuous rather than a house style."
+[[carried]]
+first_carried = "2026-09-11T17:52:03"
+severity = "nit"
+lane = "rationale"
+confidence = "high"
+last_carried = "2026-09-11T17:52:03"
+locations = ["docs/ARCHITECTURE.md:981 — \"      Scan.jl                   `gbg scan docs|html` — the tiered engine over catalog/scans.toml\" (6-space indent, nested under `CLI/`)", "src/GBGCodingTools.jl:65 — `include(\"Scan.jl\")` (listed among the top-level src/ includes, between Reflection.jl/TestHarness.jl and CLI/Ledger.jl, not among the `CLI/*.jl` includes)"]
+instrument = "check-docs"
+carries = 1
+id = "2026-09-11-check-docs-01/rationale#1"
+title = "§3's tree places `Scan.jl` under `src/CLI/`, but it lives at `src/Scan.jl`"
+round = "2026-09-11-check-docs-01"
+type = "self-containment"
+description = "§3's repository-layout diagram indents `Scan.jl` at the same 6-space level as `Gate.jl`, `Demote.jl`, `Seed.jl`, `Recall.jl`, `Consolidate.jl`, `Audit.jl`, `Hunt.jl`, `Selftest.jl` — all of which the diagram correctly places under `CLI/` and which the module does `include(\"CLI/<name>.jl\")`. But the actual file is `src/Scan.jl` (confirmed by `find src -type f`, which lists it as a sibling of `TreeHash.jl`, `HtmlWalker.jl`, `Reflection.jl`, `Witnesses.jl`, `TestHarness.jl`, `DocLints.jl`) and the module includes it as `include(\"Scan.jl\")`, not `include(\"CLI/Scan.jl\")`. A reader locating the scan engine by this diagram would look in the wrong directory."
+[[carried]]
+first_carried = "2026-09-11T17:52:03"
+severity = "minor"
+lane = "workflow-scripts"
+confidence = "high"
+last_carried = "2026-09-11T17:52:03"
+locations = ["instruments/check-consistency/workflow/rubric-audit.js:1", "instruments/audit-changes/workflow/attack-design.js:1", "src/CLI/Preflight.jl:579 — `main_script(instrument) = Dict(\"check-consistency\" => \"panel.js\", ... )[instrument]`", "src/CLI/Passes.jl:528, :958, :1068 — launch lines exist for verify-architecture.js/severity-recheck.js/dismissals.js, none for these two"]
+instrument = "check-docs"
+carries = 1
+id = "2026-09-11-check-docs-01/workflow-scripts#1"
+title = "rubric-audit.js and attack-design.js are never invoked by any CLI verb"
+round = "2026-09-11-check-docs-01"
+type = "structure"
+description = "Of the eleven workflow scripts, nine are wired into a gbg verb that builds their args and prints their launch line (every \"*.js\" literal in src/ and ext/ is only: audit.js, dismissals.js, hunt.js, lanes.js, panel.js, severity-recheck.js, verify-act.js, verify-architecture.js, verify-state.js). rubric-audit.js and attack-design.js never appear anywhere in src/ or ext/. Neither script's args/output shape is documented in its instrument's schema.json, and no schema/*.json exists for either output, unlike every other script. docs/ARCHITECTURE.md documents both as delivered v1.0.0 contributions (D17, §6.8: \"attack-design.js ... is the instrument every lens list must survive\"), but no gbg command can actually launch either."
+[[carried]]
+first_carried = "2026-09-11T17:52:03"
+severity = "major"
+lane = "workflow-scripts"
+confidence = "high"
+last_carried = "2026-09-11T17:52:03"
+locations = ["instruments/bug-hunt/workflow/dismissals.js:19-28 (SCHEMA `id: { type: 'string' }`, no description) and :31-51 (prompt never says \"return id=...\")", "instruments/bug-hunt/workflow/verify-architecture.js:20-29 and :32-47 (same pattern)", "instruments/check-consistency/workflow/severity-recheck.js:43 — `Return {id: \"${it.id}\", severity, reason}.` (contrast)", "instruments/check-consistency/workflow/verify-act.js:35 — `id: { type: 'string', description: 'the finding id EXACTLY as given' }` (contrast)"]
+instrument = "check-docs"
+carries = 1
+id = "2026-09-11-check-docs-01/workflow-scripts#2"
+title = "dismissals.js and verify-architecture.js never instruct the agent to echo the finding id"
+round = "2026-09-11-check-docs-01"
+type = "operational"
+description = "dismissals.js and verify-architecture.js ask one agent per finding to return {id, verdict, evidence,...} but never tell it what to put in id — no schema description, no explicit \"return id=\" instruction — unlike severity-recheck.js and verify-act.js which do this explicitly. schema/dismissal.schema.json and schema/architecture-fix.schema.json both require id to match a strict `round/lane#n` pattern, and each script's own liveness check (`A.items.filter(i => !verdicts.some(v => v.id === i.id))`) silently reclassifies a correctly-audited finding as \"auditor DIED\" if the model paraphrases the id."
+[[carried]]
+first_carried = "2026-09-11T17:52:03"
+severity = "major"
+lane = "workflow-scripts"
+confidence = "high"
+last_carried = "2026-09-11T17:52:03"
+locations = ["instruments/check-consistency/workflow/severity-recheck.js:15 (required list omits 'round') vs :48 (`round: A.round` written)", "instruments/audit-changes/workflow/attack-design.js:14 (required list omits 'round') vs :71 (`round: A.round` written)"]
+instrument = "check-docs"
+carries = 1
+id = "2026-09-11-check-docs-01/workflow-scripts#3"
+title = "severity-recheck.js and attack-design.js write A.round without validating it was supplied"
+round = "2026-09-11-check-docs-01"
+type = "operational"
+description = "Both scripts document 'round' as part of Args and write it into their output, but neither's required-arg guard (`for (const k of [...]) if (A[k]===undefined) throw`) includes 'round', unlike every sibling script that writes round (lanes.js, panel.js, audit.js, hunt.js, dismissals.js all validate it). If round were omitted, JSON.stringify silently drops the undefined property instead of throwing the clear 'args.round is required' error every other script gives."
