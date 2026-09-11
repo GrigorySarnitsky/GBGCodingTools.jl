@@ -13,7 +13,7 @@ export const meta = {
   phases: [{ title: 'Audit' }],
 }
 
-const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
+// gbg:prelude
 for (const k of ['round', 'pass_dir', 'repo', 'range', 'nonce', 'graded_sha256', 'findings', 'findings_path', 'package', 'models', 'schema_version']) if (A[k] === undefined) throw new Error(`verify-architecture.js: args.${k} is required`)
 if (!A.findings.length) throw new Error('verify-architecture.js: an empty audit must not report success')
 
@@ -49,8 +49,7 @@ Do NOT accept a comment, a docstring, or a decision-log entry as a fix: prose as
 Return {id: "${f.id}", verdict, evidence, residue}.`,
   { label: `arch:${f.id}`.slice(0, 60), phase: 'Audit', schema: SCHEMA, agentType: 'general-purpose' })))
 
-// the id is the finding's, stamped here, never the model's retyping: a paraphrased id reads as a DEAD auditor
-const verdicts = out.map((v, i) => v && { ...v, id: A.findings[i].id }).filter(Boolean)
+const verdicts = stampIds(out, A.findings)
 const dead = A.findings.filter(f => !verdicts.some(v => v.id === f.id)).map(f => f.id)
 const tally = {}
 for (const v of verdicts) tally[v.verdict] = (tally[v.verdict] || 0) + 1

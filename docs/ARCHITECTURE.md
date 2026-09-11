@@ -1004,6 +1004,7 @@ GBGCodingTools.jl/
                         (its schema.json also carries the `seeds` definition a consumer's .gbg/seeds.toml validates against, §6.4)
     bug-hunt/           PROTOCOL.md  workflow/{hunt,dismissals,verify-architecture}.js  schema.json  selftest/
     audit-changes/      PROTOCOL.md  workflow/{audit,attack-design}.js  schema.json  selftest/
+    prelude.js          the helpers every workflow script shares — the args object, the model choice, the scribe, the id and nonce stamps — spliced in at each script's `// gbg:prelude` line when the CLI copies it (Preflight.install_script)
   catalog/
     hats/*.toml                 generic hats: the eight shared keys (consistency-matrix, software-architect,
                                 structure-consistency, latex-typesetter, api-user, citations-integrity, style-editor,
@@ -1649,7 +1650,7 @@ body**; assigns BLOCKED only to a witness that ERRORED, was never observed FAILS
 (`reproductions_sha` in `ROUND.toml`) — a bank-time failing witness ends promoted, escalated or refused,
 never relabelled BLOCKED. **Fix** (never economised). **Close** requires, in this order: the round's
 existing files committed (the hunt directory is untracked until the session commits it; `close` and
-the audit round it needs both refuse otherwise); `Witnesses.run(…; expect = :pass)` green; every
+the audit round it needs both refuse otherwise); the witness of every `fixed` finding passing under `Witnesses.run(…; expect = :pass)`; every
 `fixed` witness **promoted** into `test/regressions/` with the promoted body (provenance header
 stripped) hash-equal to the bank-time body; `Pkg.test()` green under `GBG_ROUND` (`gbg round test`);
 `dismissals.js` run with `reopened == []`; **then** an audit-changes round with `base == ROUND.head`
@@ -1663,6 +1664,14 @@ checks also run over `test/regressions/escalated/` and `test/regressions/blocked
 directories (class S, §4) that hold the pre-tool escalated and blocked witnesses a migration carries
 (IT's; each file's header carries its `# overturn_when:` or `# blocked:` line), since no imported round
 exists to hold them (D17).
+
+**The pass budget.** A hunt has `max_passes` passes (3 by default), as the two doc instruments do; past
+it `close` carries every finding still open, which then owes the round no disposition and is left out
+of the arithmetic. A carried hunt finding takes its evidence: its carry entry records its kind, the
+verdict it was confirmed with and its witness (`Passes.hunt_carry_fields`), and the next hunt's bank
+copies that witness in under a name of its own and re-runs it (`Rounds.rebank_hunt_carried!`). A
+defect that still fails is confirmed again; one whose witness now passes is not re-banked, and the close
+of that round removes it from `carried.toml`.
 `closure.py`'s follow-up-hunt rule is deleted (`survey-bughunt-auditchanges.md:50-52`).
 
 ### §6.8 Deltas — `/audit-changes`

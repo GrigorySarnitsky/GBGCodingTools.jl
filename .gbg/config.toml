@@ -150,8 +150,8 @@ enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
         # no scan can (2026-09-09; widening the surface vocabulary is a separate, MAJOR question).
         [[instruments.check-docs.lanes_extra]]
         key = "workflow-scripts"
-        files = ["instruments/check-docs/workflow", "instruments/check-consistency/workflow", "instruments/bug-hunt/workflow", "instruments/audit-changes/workflow"]
-        brief = "the eleven Workflow scripts that fan every instrument out. Read each as CODE, not prose: does the object it Writes match the schema beside it (instruments/<name>/schema.json and schema/*.json); does it validate the args it requires; can a lane die silently; is any prompt it builds self-contradictory or does it state a rule the CLI does not enforce; is there any package name, path or round datum hard-coded where the design says only `args` may carry it"
+        files = ["instruments/prelude.js", "instruments/check-docs/workflow", "instruments/check-consistency/workflow", "instruments/bug-hunt/workflow", "instruments/audit-changes/workflow"]
+        brief = "the eleven Workflow scripts that fan every instrument out, and instruments/prelude.js, the helpers the CLI splices into each at its `// gbg:prelude` line (read a script as it runs: prelude first). Read each as CODE, not prose: does the object it Writes match the schema beside it (instruments/<name>/schema.json and schema/*.json); does it validate the args it requires; can a lane die silently; is any prompt it builds self-contradictory or does it state a rule the CLI does not enforce; is there any package name, path or round datum hard-coded where the design says only `args` may carry it"
         [[instruments.check-docs.lanes_extra]]
         key = "catalogues"
         files = ["catalog"]

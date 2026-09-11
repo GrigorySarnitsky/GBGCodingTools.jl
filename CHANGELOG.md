@@ -96,6 +96,20 @@ and `.gbg/calibrations/`; `gbg attack read` and `gbg calibrate read` validate wh
 (`schema/attack.schema.json`, `schema/rubric-audit.schema.json`). Before, both scripts shipped with no
 verb and ran only by hand. Four new verbs (25), four new schemas.
 
+**A bug hunt has a pass budget, and carries with its evidence.** `instruments.bug-hunt.max_passes`
+(default 3) gives the hunt the budget the two doc instruments have; past it `close` carries every
+finding still open. A carried hunt finding owes its round no disposition, and its carry entry records
+its kind, verdict and witness: the next hunt's bank copies the witness in under a name of its own and
+re-runs it, confirming a defect that still fails and dropping from the ledger one that no longer does.
+Before, nothing could carry a hunt finding: it arrived with no witness and no verdict and could never
+close. (`schema/carried.schema.json` gains five optional hunt fields.)
+
+**The Workflow scripts share one prelude.** The args object, the model choice, the scribe and the id
+and nonce stamps lived in up to eleven copies, and a fix to one had to be made in each. They are now
+`instruments/prelude.js`, spliced into each script at its `// gbg:prelude` line by
+`Preflight.install_script` whenever a script is copied into a round or a design-check record; a test
+assembles all eleven and refuses a missing splice or a name declared twice. No script's behaviour changes.
+
 The rest is prose: the module map names the round machinery and every module's docstring names its
 exports; Passes binds the act and state verifiers; the skill template says what `/gbg-doctor` runs;
 ARCHITECTURE and IMPLEMENTATION correct `Scan.jl`'s place, the prose-shape file, D18's five audit anchors

@@ -517,6 +517,7 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
                              "confidence" => String(get(e, "confidence", "high")), "type" => String(get(e, "type", "structure")),
                              "locations" => String.(e["locations"]), "description" => String(e["description"]),
                              "carried_from" => String(e["round"]) * " (carry " * string(e["carries"]) * ")")
+        inst == "bug-hunt" && rebank_hunt_carried!(g, e, cfg["root"], dir)
         push!(findings, g)
     end
     isempty(carried) || println(io, "bank: re-banked $(length(carried)) finding(s) carried from an earlier round — they were never shown to the lanes")
@@ -594,6 +595,26 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     println(io, "bank: $(length(findings)) finding(s) frozen in findings.json (sha $(rec["findings_sha"][1:12])); findings.md is the work list, SUMMARY.md the reading aid")
     println(io, bank_next(inst, round))
     return 0
+end
+
+# A carried bug-hunt finding brings its evidence with it. The witness of the round that carried it is copied
+# into this round's `witnesses/` under a name none of this round's own can take, and the finding enters
+# `hunt_bank!` as it was confirmed — REPRODUCED, or EVIDENCED for an architecture finding — so the runner
+# re-runs the witness: still failing, it is confirmed again with a fresh disposition; passing, the defect
+# is gone and it is not re-banked. Without this a carried hunt finding arrived with no witness and no
+# verdict, and could never close. Returns `g`.
+function rebank_hunt_carried!(g::AbstractDict, e::AbstractDict, root::AbstractString, dir::AbstractString)
+    g["kind"] = String(get(e, "kind", "runtime"))
+    g["verdict"] = String(get(e, "verdict", g["kind"] == "architecture" ? "EVIDENCED" : "REPRODUCED"))
+    g["observed"] = "carried from $(e["round"]): " * String(get(e, "observed", ""))
+    g["evidence"] = String(get(e, "evidence", ""))
+    w = String(get(e, "witness", ""))
+    if !isempty(w) && isfile(joinpath(root, w))
+        name = "carried_" * replace(String(e["id"]), "/" => "__", "#" => "_") * ".jl"
+        mkpath(joinpath(dir, "witnesses")); cp(joinpath(root, w), joinpath(dir, "witnesses", name); force = true)
+        g["witness_path"] = "witnesses/" * name
+    end
+    return g
 end
 
 """

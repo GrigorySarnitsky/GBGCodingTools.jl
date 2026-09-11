@@ -465,6 +465,12 @@
       "witness_env": {
        "type": "string",
        "default": "test"
+      },
+      "max_passes": {
+       "description": "the pass budget: after this many verification passes, what is still open is carried into the next hunt at close — its witness and reproduction record with it — instead of verified again. 0 is no budget. A --regrade that verifies no new fix does not spend it.",
+       "type": "integer",
+       "minimum": 0,
+       "default": 3
       }
      }
     },

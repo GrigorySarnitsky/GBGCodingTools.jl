@@ -1146,7 +1146,7 @@ function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector =
         end
     end
     if inst == "bug-hunt"
-        append!(fails, hunt_close_conditions(cfg, dir, rec, findings; io))
+        append!(fails, hunt_close_conditions(cfg, dir, rec, findings; io, carry))
     elseif inst == "check-docs"
         append!(fails, audit_after_code(cfg, rec))
     elseif inst == "audit-changes"
@@ -1174,6 +1174,12 @@ function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector =
     led = carry_ledger(cfg); entries = led["carried"]
     closed_ids = Set(id for (id, e) in read_json(tj)["per_id"] if get(e, "closed_by", nothing) !== nothing)
     filter!(e -> !(String(e["id"]) in closed_ids), entries)
+    # a carried hunt finding whose witness PASSED at this round's bank reproduces no more and was not
+    # re-banked, so no close would ever name it closed: it leaves the ledger here, never re-banked for ever
+    before = length(entries)
+    banked = Set(String(f["id"]) for f in findings)
+    inst == "bug-hunt" && filter!(e -> String(e["instrument"]) != inst || String(e["id"]) in banked, entries)
+    pruned = length(entries) < before
     known = Dict(f["id"] => f for f in findings)
     for id in carry
         f = known[id]; i = findfirst(e -> String(e["id"]) == id, entries)
@@ -1182,12 +1188,15 @@ function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector =
                 "lane" => String(get(f, "lane", "")), "type" => String(get(f, "type", "")), "confidence" => String(get(f, "confidence", "")),
                 "title" => f["title"], "locations" => String.(f["locations"]), "description" => f["description"],
                 "carries" => 1, "first_carried" => Rounds.timestamp(), "last_carried" => Rounds.timestamp()))
+            i = length(entries)
         else
             entries[i]["carries"] = Int(entries[i]["carries"]) + 1
             entries[i]["last_carried"] = Rounds.timestamp(); entries[i]["severity"] = rerated[id]
         end
+        # a hunt finding carries its evidence: the next hunt's bank copies in and re-runs the witness it names
+        inst == "bug-hunt" && merge!(entries[i], hunt_carry_fields(root, dir, id))
     end
-    (isempty(carry) && isempty(closed_ids)) || save_carry(cfg, led)
+    (isempty(carry) && isempty(closed_ids) && !pruned) || save_carry(cfg, led)
     carry_deferrals(cfg, dir, round; io)
     rec["closed"] = Rounds.timestamp(); rec["closed_head"] = head
     used = [e["target"] for e in ledger if e["scope"] == "finding" && startswith(e["target"], round * "/")]
@@ -1201,11 +1210,27 @@ end
 
 strip_provenance(text) = join(Iterators.dropwhile(l -> startswith(strip(l), "#") || isempty(strip(l)), split(text, '\n')), "\n")
 
-function hunt_close_conditions(cfg, dir, rec, findings; io)
+# What a carried hunt finding needs to be re-banked with its evidence: its kind, the verdict it was
+# confirmed with and what was observed, from its reproduction record in the round `dir`, and its witness
+# file relative to `root`. Empty when the finding has no record.
+function hunt_carry_fields(root::AbstractString, dir::AbstractString, id::AbstractString)
+    rp = joinpath(dir, "reproductions", replace(id, "/" => "__", "#" => "_") * ".json")
+    isfile(rp) || return Dict{String,Any}()
+    r = read_json(rp)
+    out = Dict{String,Any}("kind" => String(r["kind"]), "verdict" => String(r["verdict"]),
+                           "observed" => String(get(r, "observed", "")), "evidence" => String(get(r, "evidence", "")))
+    haskey(r, "witness_path") && (out["witness"] = relpath(joinpath(dir, r["witness_path"]), root))
+    return out
+end
+
+# The disposition conditions of a hunt's close: every confirmed finding fixed (its witness passing and
+# promoted), refused or escalated, and the arithmetic over them. A carried finding rides into the next
+# round and owes this one no disposition, so the ids in `carry` are left out of both. Returns the fails.
+function hunt_disposition_fails(cfg, dir, rec; carry = String[])
     fails = String[]; root = cfg["root"]
     project = Witnesses.witness_project(root, cfg["instruments"]["bug-hunt"]["witness_env"], cfg["package"]["name"])
     rdir = joinpath(dir, "reproductions")
-    reps = isdir(rdir) ? [read_json(joinpath(rdir, f)) for f in readdir(rdir)] : Dict{String,Any}[]
+    reps = [r for r in (isdir(rdir) ? [read_json(joinpath(rdir, f)) for f in readdir(rdir)] : Dict{String,Any}[]) if !(String(r["id"]) in carry)]
     confirmed = [r for r in reps if r["verdict"] in ("REPRODUCED", "EVIDENCED")]
     # dispositions may change (they are the record of the fix pass), but verdicts, witness shas and ids may not
     haskey(rec, "reproductions_sha") && RoundFiles.reproductions_sha(rdir) != rec["reproductions_sha"] &&
@@ -1238,6 +1263,11 @@ function hunt_close_conditions(cfg, dir, rec, findings; io)
     end
     nf = count(r -> get(get(r, "disposition", Dict()), "state", "") == "fixed", confirmed); nr = count(r -> get(get(r, "disposition", Dict()), "state", "") == "refused", confirmed); ne = count(r -> get(get(r, "disposition", Dict()), "state", "") == "escalated", confirmed)
     nf + nr + ne == length(confirmed) || push!(fails, "disposition arithmetic: fixed $nf + refused $nr + escalated $ne ≠ confirmed $(length(confirmed))")
+    return fails
+end
+
+function hunt_close_conditions(cfg, dir, rec, findings; io, carry = String[])
+    fails = hunt_disposition_fails(cfg, dir, rec; carry); root = cfg["root"]
     log = joinpath(Preflight.scratch_dir(cfg, dir |> basename), "close-test.log")
     code = Rounds.run_under_round(cfg, basename(dir), cfg["package"]["julia_test"]; log)
     code == 0 || push!(fails, "Pkg.test() under GBG_ROUND exit $code — $log")

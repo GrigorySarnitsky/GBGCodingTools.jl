@@ -12,7 +12,7 @@ export const meta = {
   phases: [{ title: 'Re-rate' }],
 }
 
-const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
+// gbg:prelude
 for (const k of ['out', 'items', 'items_path', 'subject', 'models', 'round', 'schema_version']) if (A[k] === undefined) throw new Error(`severity-recheck.js: args.${k} is required`)
 if (!A.items.length) throw new Error('severity-recheck.js: an EMPTY item list must not report success')
 

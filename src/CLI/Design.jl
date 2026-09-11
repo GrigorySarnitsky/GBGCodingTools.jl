@@ -77,7 +77,7 @@ function attack(cfg::AbstractDict, instrument::AbstractString; subject = nothing
         TOML.print(f, subj; sorted = true)
     end
     wd = Preflight.workflow_dir(cfg, id); mkpath(wd)
-    cp(joinpath(Preflight.instrument_dir("audit-changes"), "workflow", "attack-design.js"), joinpath(wd, "attack-design.js"); force = true)
+    Preflight.install_script(joinpath(Preflight.instrument_dir("audit-changes"), "workflow", "attack-design.js"), joinpath(wd, "attack-design.js"))
     a = Dict{String,Any}("schema_version" => 1, "round" => id, "repo" => cfg["root"], "design_path" => design, "subject" => subj,
                          "out" => joinpath(rd, "attack.json"), "models" => Dict("economy" => Preflight.economy_model()))
     Preflight.save_args(cfg, id, "attack", a)
@@ -169,7 +169,7 @@ function calibrate(cfg::AbstractDict; io::IO = stdout)
     end
     cp(hp, joinpath(rd, "human-findings.toml"); force = true)
     wd = Preflight.workflow_dir(cfg, id)
-    cp(joinpath(Preflight.instrument_dir("check-consistency"), "workflow", "rubric-audit.js"), joinpath(wd, "rubric-audit.js"); force = true)
+    Preflight.install_script(joinpath(Preflight.instrument_dir("check-consistency"), "workflow", "rubric-audit.js"), joinpath(wd, "rubric-audit.js"))
     a = Dict{String,Any}("schema_version" => 1, "round" => id, "subject" => "the rendered documentation of $(cfg["package"]["name"])",
                          "hats" => hatargs, "items" => items, "personas_path" => personas,
                          "models" => Dict("economy" => Preflight.economy_model()), "out" => joinpath(rd, "rubric-audit.json"))

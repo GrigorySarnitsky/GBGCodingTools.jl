@@ -555,15 +555,38 @@ Returns the directory.
 function copy_scripts(cfg::AbstractDict, instrument::AbstractString, round::AbstractString)
     src = joinpath(instrument_dir(instrument), "workflow"); dst = workflow_dir(cfg, round); mkpath(dst)
     for f in readdir(src)
-        endswith(f, ".js") && cp(joinpath(src, f), joinpath(dst, f); force = true)
+        endswith(f, ".js") && install_script(joinpath(src, f), joinpath(dst, f))
     end
     # the verifiers and auditors of other instruments a round may need (dismissals, severity, verifiers)
     for other in ("check-consistency", "bug-hunt")
         other == instrument && continue
         for f in ("verify-act.js", "verify-state.js", "severity-recheck.js", "dismissals.js")
-            p = joinpath(instrument_dir(other), "workflow", f); isfile(p) && cp(p, joinpath(dst, f); force = true)
+            p = joinpath(instrument_dir(other), "workflow", f); isfile(p) && install_script(p, joinpath(dst, f))
         end
     end
+    return dst
+end
+
+"""
+    install_script(src, dst) -> String
+
+Copies the Workflow script `src` to `dst` with the shared prelude, `instruments/prelude.js`, spliced in at
+its one `// gbg:prelude` line; a script without the marker is copied unchanged. A Workflow script cannot
+import, so this is how the eleven scripts share their helpers (the args object, the model choice, the
+scribe, the id and nonce stamps) instead of each keeping a copy that drifts. Every copy of a script into
+a round or a design-check record goes through here. Throws when the marker appears more than once.
+Returns `dst`.
+"""
+function install_script(src::AbstractString, dst::AbstractString)
+    text = read(src, String)
+    marker = "// gbg:prelude"
+    n = length(findall(marker, text))
+    n > 1 && throw(PreflightError("$src carries the prelude marker $n times"))
+    if n == 1
+        prelude = read(joinpath(pkgdir(GBGCodingTools), "instruments", "prelude.js"), String)
+        text = replace(text, marker => rstrip(prelude); count = 1)
+    end
+    mkpath(dirname(dst)); write(dst, text)
     return dst
 end
 

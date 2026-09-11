@@ -16,10 +16,8 @@ export const meta = {
   phases: [{ title: 'Hunt' }, { title: 'Reproduce' }],
 }
 
-const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
+// gbg:prelude
 for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'witness_cmd', 'models', 'schema_version', 'package']) if (A[k] === undefined) throw new Error(`hunt.js: args.${k} is required`)
-const STRENGTH = A.strength === 'full' ? 'full' : 'economy'
-const ECONOMY = A.models.economy
 const WIT = `${A.round_dir}/witnesses`
 
 const CANDIDATE_SCHEMA = {
@@ -86,7 +84,6 @@ ${A.invariants_path ? `\nTHE PACKAGE'S RECORDED INVARIANTS: read them first from
 Report files_read honestly: it is cross-checked against the tree. FILES UNDER .gbg/ YOU MAY OPEN: your brief and the invariants file named in this prompt, and nothing else under .gbg/ or ~/.gbg/. Cap: your 6 most substantial candidates, ranked by what would actually go wrong; report candidates_found, the number you weighed before the cap.`
 
 phase('Hunt')
-const laneModel = (lane) => (STRENGTH === 'economy' && !lane.anchor) ? { model: ECONOMY } : {}
 
 const results = await pipeline(
   A.lanes,

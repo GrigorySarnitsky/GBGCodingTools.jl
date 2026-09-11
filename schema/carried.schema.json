@@ -26,7 +26,12 @@
      "description": {"type": "string"},
      "carries": {"description": "how many rounds it has been carried through; at the limit it escalates to the owner instead", "type": "integer", "minimum": 1},
      "first_carried": {"type": "string"},
-     "last_carried": {"type": "string"}
+     "last_carried": {"type": "string"},
+     "kind": {"description": "bug-hunt only: runtime | api-semantics | architecture", "type": "string"},
+     "verdict": {"description": "bug-hunt only: the confirmation it was carried with", "type": "string", "enum": ["REPRODUCED", "EVIDENCED"]},
+     "observed": {"description": "bug-hunt only: what the reproducer observed", "type": "string"},
+     "evidence": {"description": "bug-hunt only", "type": "string"},
+     "witness": {"description": "bug-hunt only: the witness file, relative to the root, in the round that last carried it; the next hunt's bank copies it in and re-runs it, so a defect that no longer reproduces is not re-banked", "type": "string"}
     }
    }
   },

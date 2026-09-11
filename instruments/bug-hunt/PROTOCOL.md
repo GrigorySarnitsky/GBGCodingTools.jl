@@ -78,14 +78,19 @@ forbidden `.gbg/` except the round's own `witnesses/` directory, and `~/.gbg/`.
    and `head` = HEAD must be run and closed: a witness exists only for a defect the hunt FOUND, so a
    regression introduced by a FIX is invisible to the witness gate — measured: `NEWLY BROKEN = 0` while
    two regressions were live.
-8. **Close.** `gbg round close <round>` requires, in order: the round's files committed; every witness
-   PASSING under the runner (`gbg witnesses pass <round>`); every `fixed` witness promoted with a
+8. **Close.** `gbg round close <round>` requires, in order: the round's files committed; the witness
+   of every `fixed` finding PASSING under the runner (`gbg witnesses pass <round>`); every `fixed` witness promoted with a
    hash-equal body; `Pkg.test()` green under `GBG_ROUND` (`gbg round test`); the dismissal auditor run
    over every refusal and adjudication with `reopened == []` (a filed dismissal is never revisited
    otherwise, and two of a real round's were wrong, one a blocker — it defaults to `UNSAFE`); the
    audit-changes round closed; `fixed + refused + escalated == confirmed`; the opening head an ancestor
    of HEAD; a clean tree; pushed. BLOCKED witnesses are listed in the close account with their reasons
    and re-run by `gbg doctor --deep` on a host that has the device.
+9. **The pass budget.** A hunt has `max_passes` verification passes (3 by default); past it `pass open`
+   refuses, and `close` carries every finding still open into the next hunt, a `blocker` or `major`
+   included, which then holds a final release back. A carried finding owes this round no disposition
+   and takes its evidence with it: the next hunt's bank copies its witness in and re-runs it, so a
+   defect still failing is confirmed again, and one whose witness now passes leaves the carried ledger.
 
 ## Run the hunt ONCE; loop the disposition
 

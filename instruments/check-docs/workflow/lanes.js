@@ -15,10 +15,8 @@ export const meta = {
   phases: [{ title: 'Lanes' }],
 }
 
-const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
+// gbg:prelude
 for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'models', 'policy_path', 'schema_version']) if (A[k] === undefined) throw new Error(`lanes.js: args.${k} is required`)
-const STRENGTH = A.strength === 'full' ? 'full' : 'economy'
-const ECONOMY = A.models.economy
 const TYPES = A.finding_types || ['math', 'notation', 'structure', 'citation', 'style', 'operational', 'currency', 'self-containment']
 
 const SCHEMA = {
@@ -66,19 +64,10 @@ When done, FIRST use the Write tool to save the structured object as JSON to:
 with schema_version=${A.schema_version}, round="${A.round}", lane="${l.key}". THEN return the same object. Report checked[] even when you found nothing — an empty checked[] reads as a dead lane.`
 
 
-// The scribe. A lane's own Write happens BEFORE its object is validated against SCHEMA, so the file can
-// carry a value outside a closed set while the returned object cannot (the rc.1 round's built-html lane
-// wrote `type: "formatted"` and was quarantined twice). The validated object is therefore written again,
-// verbatim, by a cheap agent; the lane's own Write stays as the durable fallback when a return is lost.
-const DONE = { type: 'object', properties: { done: { type: 'boolean' } }, required: ['done'] }
-const scribe = (r, path, label, phase) => !r ? null :
-  agent(`Use the Write tool to write EXACTLY this JSON to ${path} and return {done: true}. No other text.\n\n${JSON.stringify(r, null, 2)}`,
-        { label, phase, schema: DONE, model: ECONOMY }).then(w => { if (!(w && w.done)) log(`${label}: the scribe did not confirm; the lane's own file stands`); return r })
-
+// the scribe, the model choice and the stamps: instruments/prelude.js
 phase('Lanes')
 const outcomes = await parallel(A.lanes.map(l => () => agent(prompt(l),
-  { label: l.key, phase: 'Lanes', schema: SCHEMA, agentType: 'general-purpose',
-    ...((STRENGTH === 'economy' && !l.anchor) ? { model: ECONOMY } : {}) })
+  { label: l.key, phase: 'Lanes', schema: SCHEMA, agentType: 'general-purpose', ...laneModel(l) })
   .then(r => scribe(r, `${A.round_dir}/findings/${l.nn}-${l.key}.json`, `scribe:${l.key}`, 'Lanes'))))
 
 const written = [], dead = [], empty = [], truncated = []

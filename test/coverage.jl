@@ -68,6 +68,34 @@ const SPAN_IN_PROSE = r"(?<=[a-z.] )(?<!return )(?<!yield )(?<!throw )(?<!typeof
     end
 end
 
+# The helpers every script shares live once, in instruments/prelude.js, spliced in at each script's
+# `// gbg:prelude` line when the CLI copies it (Preflight.install_script). Without a JS runtime to catch
+# them, the two failures that matter are a script with no marker (its `A` undefined) and a name the
+# prelude declares declared again, which JavaScript refuses and which would kill the whole Workflow. Both
+# are checked on the ASSEMBLED text of all eleven scripts, and the splice itself in both directions.
+@testset "every Workflow script takes the shared prelude, once" begin
+    prelude = read(joinpath(TOOL, "instruments", "prelude.js"), String)
+    pcode = replace(prelude, r"//[^\n]*" => "", r"/\*.*?\*/"s => "")
+    @test iseven(count(==('`'), pcode)) && !occursin(SPAN_IN_PROSE, pcode)
+    declared(text) = [m.captures[1] for m in eachmatch(r"^const ([A-Za-z_]\w*)"m, text)]
+    n = 0
+    for i in ("check-docs", "check-consistency", "bug-hunt", "audit-changes"), (r, _, fs) in walkdir(joinpath(TOOL, "instruments", i, "workflow")), f in fs
+        endswith(f, ".js") || continue
+        n += 1
+        src = joinpath(r, f)
+        @test length(findall("// gbg:prelude", read(src, String))) == 1
+        text = read(G.Preflight.install_script(src, joinpath(mktempdir(), f)), String)
+        @test occursin("const stampIds", text) && !occursin("// gbg:prelude", text)
+        names = declared(text)
+        @test length(names) == length(unique(names))             # no name declared twice
+    end
+    @test n == 11
+    plain = joinpath(mktempdir(), "plain.js"); write(plain, "export const meta = { name: 'p', description: 'd' }\n")
+    @test read(G.Preflight.install_script(plain, joinpath(mktempdir(), "p.js")), String) == read(plain, String)
+    twice = joinpath(mktempdir(), "twice.js"); write(twice, "// gbg:prelude\n// gbg:prelude\n")
+    @test_throws G.Preflight.PreflightError G.Preflight.install_script(twice, joinpath(mktempdir(), "t.js"))
+end
+
 @testset "a bare code span in a Workflow prompt is caught" begin
     # RULE.TEST.BOTH_DIRECTIONS, and in both: the check must fail on the defect it was written for and
     # must pass ordinary JavaScript, since it polices every future edit to eleven frozen scripts.

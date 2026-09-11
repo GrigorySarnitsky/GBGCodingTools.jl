@@ -11,10 +11,9 @@ export const meta = {
   phases: [{ title: 'Assign' }, { title: 'Blind run' }, { title: 'Score' }],
 }
 
-const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
+// gbg:prelude
 for (const k of ['subject', 'hats', 'items', 'personas_path', 'models', 'out', 'round', 'schema_version']) if (A[k] === undefined) throw new Error(`rubric-audit.js: args.${k} is required`)
 if (!A.hats.length || !A.items.length) throw new Error('rubric-audit.js: an empty audit is not a clean one')
-const ECONOMY = A.models.economy
 
 const ASSIGN_SCHEMA = {
   type: 'object', additionalProperties: false,

@@ -14,7 +14,7 @@ export const meta = {
   phases: [{ title: 'Audit dismissals' }],
 }
 
-const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
+// gbg:prelude
 for (const k of ['repo', 'items', 'items_path', 'out', 'verdicts_dir', 'package', 'models', 'items_sha', 'round', 'schema_version']) if (A[k] === undefined) throw new Error(`dismissals.js: args.${k} is required`)
 // the file an auditor writes its own verdict to, named as the CLI reads it back
 const verdictFile = id => `${A.verdicts_dir}/${id.replaceAll('/', '__').replaceAll('#', '_')}.json`
@@ -57,8 +57,7 @@ Do not hunt for anything else. Your scope is this one claim.
 FIRST use the Write tool to save your verdict as JSON — {id, verdict, evidence, what_would_bite} — to ${verdictFile(d.id)} (the one file you may write). THEN return {id: "${d.id}", verdict, evidence, what_would_bite}.`,
   { label: `dismissal:${d.id}`.slice(0, 60), phase: 'Audit dismissals', schema: SCHEMA, agentType: 'general-purpose' })))
 
-// the id is the item's, stamped here, never the model's retyping: a paraphrased id once read as a DEAD auditor
-const verdicts = out.map((v, i) => v && { ...v, id: A.items[i].id }).filter(Boolean)
+const verdicts = stampIds(out, A.items)
 const dead = A.items.filter(i => !verdicts.some(v => v.id === i.id)).map(i => i.id)
 const tally = {}
 for (const v of verdicts) tally[v.verdict] = (tally[v.verdict] || 0) + 1

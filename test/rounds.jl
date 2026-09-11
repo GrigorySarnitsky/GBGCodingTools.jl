@@ -249,6 +249,33 @@ end
     cal("MISSED"); @test G.calibrate_read(cfg, cid; io = devnull) == 1
 end
 
+# A bug hunt has a pass budget too, and what it carries brings its evidence: the carry entry names the
+# confirmation and the witness, the next hunt's bank copies the witness in under a name none of that
+# round's own can take, and a carried finding owes the round that carried it no disposition. Before,
+# a carried hunt finding arrived with no witness and no verdict and could never close.
+@testset "a bug hunt carries its open findings with their witnesses" begin
+    cfg = G.Config.read(FIXTURE)
+    @test cfg["instruments"]["bug-hunt"]["max_passes"] == 3                    # every consumer's default
+    root = mktempdir(); old = joinpath(root, ".gbg", "rounds", "2026-01-01-bug-hunt-01")
+    mkpath(joinpath(old, "witnesses")); mkpath(joinpath(old, "reproductions"))
+    id = "2026-01-01-bug-hunt-01/free-modules#1"
+    write(joinpath(old, "witnesses", "w1.jl"), "using Test\n@test 1 == 2\n")
+    write(joinpath(old, "reproductions", replace(id, "/" => "__", "#" => "_") * ".json"), JSON3.write(Dict(
+        "schema_version" => 1, "id" => id, "title" => "a defect of some length", "kind" => "runtime", "severity" => "major",
+        "verdict" => "REPRODUCED", "observed" => "FAILS", "evidence" => "e", "witness_path" => "witnesses/w1.jl",
+        "disposition" => Dict("state" => "open"))))
+    fields = G.Passes.hunt_carry_fields(root, old, id)
+    @test fields["verdict"] == "REPRODUCED" && fields["witness"] == ".gbg/rounds/2026-01-01-bug-hunt-01/witnesses/w1.jl"
+    new = joinpath(root, ".gbg", "rounds", "2026-02-01-bug-hunt-01"); mkpath(new)
+    e = merge(Dict{String,Any}("id" => id, "round" => "2026-01-01-bug-hunt-01"), fields)
+    g = G.Rounds.rebank_hunt_carried!(Dict{String,Any}("id" => id), e, root, new)
+    @test g["verdict"] == "REPRODUCED" && g["kind"] == "runtime" && isfile(joinpath(new, g["witness_path"]))
+    @test startswith(basename(g["witness_path"]), "carried_")                  # never a name of the round's own
+    # the round that carries it owes it no disposition; an open finding it does not carry is a dropped one
+    @test isempty(G.Passes.hunt_disposition_fails(cfg, old, Dict{String,Any}(); carry = [id]))
+    @test any(f -> occursin("has no disposition", f), G.Passes.hunt_disposition_fails(cfg, old, Dict{String,Any}()))
+end
+
 # RULE.INST.FROZEN_MIDROUND: a deferral written in the round's deferred.md is carried into the work
 # queue at close, where the Stop hook holds the next session to it; a note nothing reads is not a mechanism.
 @testset "a round's deferrals reach the work queue" begin

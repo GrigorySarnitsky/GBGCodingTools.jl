@@ -66,7 +66,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §6.4 Seeds",279,279,0
 "ARCHITECTURE.md § §6.5 Closure channels (per finding id; PARTIAL never closes)",156,156,0
 "ARCHITECTURE.md § §6.6 Deltas — `/check-docs`",173,173,0
-"ARCHITECTURE.md § §6.7 Deltas — `/bug-hunt`",366,366,0
+"ARCHITECTURE.md § §6.7 Deltas — `/bug-hunt`",480,367,0
 "ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",309,217,0
 "ARCHITECTURE.md § §7.1 Policy migration map (which consumer sections become wh",290,238,0
 "ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",386,386,0
@@ -190,6 +190,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: copy_scripts(cfg, instrument, round) -> String",59,33,0
 "Preflight.jl :: covered_paths(cfg) -> Vector{String}",16,13,0
 "Preflight.jl :: dev_round(cfg, instrument, st) -> Union{Nothing,String}",173,83,0
+"Preflight.jl :: install_script(src, dst) -> String",93,89,0
 "Preflight.jl :: next_round_id(cfg, instrument) -> String",21,17,0
 "Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",219,112,0
 "Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",131,80,0
@@ -364,6 +365,7 @@ unit,words,longest_paragraph,admonitions
 "config.md § [The config](@id config)",195,76,1
 "html_docstring_once.jl :: page_bindings(page) -> Vector{NamedTuple}",52,49,0
 "html_stray_math.jl :: math_sources(page) -> Vector{String}",37,34,0
+"index.md § Checking the instruments themselves",120,91,0
 "index.md § How a package adopts it",71,71,0
 "index.md § The command-line program `gbg`",165,94,0
 "index.md § The four review procedures",253,127,0
