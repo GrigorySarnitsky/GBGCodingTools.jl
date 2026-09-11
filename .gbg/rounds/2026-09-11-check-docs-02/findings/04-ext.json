@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-check-docs-02",
+  "lane": "ext",
+  "candidates_found": 4,
+  "checked": [
+    "ext/GBGCodingToolsDocumenterExt.jl (full file, all 3 docstrings and both functions)",
+    "src/DocLints.jl (makedocs and docs_build_skipped homes, cross-checked against the ext wrapper's behaviour)",
+    "src/CLI/Gate.jl (gate() and frozen_rounds() bodies, to verify gate_or_skip's claims about refusal reasons)",
+    "src/CLI/Doctor.jl (doctor(cfg, set) signature and QUICK set)",
+    "src/Scan.jl (scan_docs, scan_html, write_public_surface signatures and ordering contract)",
+    "src/CLI/Main.jl (tool_version)",
+    "src/GBGCodingTools.jl (module map, include order, confirms gate/doctor/scan_docs/scan_html/write_public_surface/tool_version all live in the GBGCodingTools namespace)",
+    "src/CLI/Passes.jl:884 (the other, correctly-scoped use of RULE.INST.FROZEN_MIDROUND, for comparison)",
+    "docs/make.jl (the actual consumer call site: confirms kwargs shape, no :build kwarg, result-handling contract)",
+    "Project.toml (Documenter as weakdep/extension, confirms 'no shim loads Documenter' claim)",
+    "grep for 'Documenter' and 'FROZEN_MIDROUND' across src/ and ext/ (no other loader; exactly one other rule citation)"
+  ],
+  "findings": [
+    {
+      "type": "structure",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "gate_or_skip's printed signature omits the type the method actually declares",
+      "locations": [
+        "ext/GBGCodingToolsDocumenterExt.jl:22 — \"gate_or_skip(cfg, what) -> Bool\"",
+        "ext/GBGCodingToolsDocumenterExt.jl:31 — \"function gate_or_skip(cfg, what::AbstractString)\""
+      ],
+      "description": "RULE.DOC.SIGNATURE_MIRROR requires that an argument typed in the method is typed in the docstring's signature line. The method types `what::AbstractString`, but the docstring's code-block signature shows bare `what`. The sibling docstring in the same file (`check(verb::AbstractString, code::Integer)`, line 14) gets this right, showing the mismatch is a slip rather than a house convention."
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "\"the closure gate\" (a listed term of art) is named but not linked or explained at first use",
+      "locations": [
+        "ext/GBGCodingToolsDocumenterExt.jl:24 — \"Runs the closure gate over the two docs instruments and says whether the build is skipped\""
+      ],
+      "description": "`gate` is one of this lane's flagged terms of art and is a documented public binding (`GBGCodingTools.gate`, src/CLI/Gate.jl:26). `gate_or_skip`'s docstring is the first and only place this file names \"the closure gate\", and it neither `@ref`-links to `GBGCodingTools.gate` nor states in a clause what the gate itself checks (only what happens to its return code). A cold read (module context withheld, per RULE.DOC.TERMS_DEFINED) leaves \"the closure gate\" as an unexplained term the reader must already know."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "Comment cites RULE.INST.FROZEN_MIDROUND for a mechanism the rule's text does not describe",
+      "locations": [
+        "ext/GBGCodingToolsDocumenterExt.jl:50 — \"A round of a docs instrument freezes the build (`RULE.INST.FROZEN_MIDROUND`).\""
+      ],
+      "description": "RULE.INST.FROZEN_MIDROUND (rendered policy, instruments.md) states: \"An instrument is never changed mid-round... A change the round wanted and could not make is written one line per deferral in the round's `deferred.md`, and `gbg round close` carries each into `.claude/WORK_QUEUE.md`\". That is about not editing an instrument's own code/catalogue while a round using it is open — it says nothing about a docs build skipping while a round is open. The only other citation of this rule id in the codebase, src/CLI/Passes.jl:884 (\"Carries a round's deferrals into the session work queue\"), matches the rule's actual text; this one does not."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "\"refuses only because a round... is open\" is not what the code actually checks",
+      "locations": [
+        "ext/GBGCodingToolsDocumenterExt.jl:25 — \"the gate refuses only because a round of a docs instrument is open and `GBG_DOCS_NO_SKIP` is unset\""
+      ],
+      "description": "`docs_build_skipped` (src/DocLints.jl:44) treats any `code == 1` together with a nonempty `frozen_rounds(cfg, \"check-docs\", \"check-consistency\")` as skippable; it never checks that an open docs-instrument round is the sole source of the refusal. `gate()` (src/CLI/Gate.jl:26) can return 1 for an unrelated reason that is independently true at the same time — e.g. an open round of a disabled instrument, added regardless of `wanted` and regardless of `CI` — while a check-docs/check-consistency round also happens to be open. In that concurrent case `gate_or_skip` prints the benign SKIPPED message and returns `true`, silently absorbing the unrelated disabled-instrument refusal into what reads as a routine, expected skip."
+    }
+  ]
+}

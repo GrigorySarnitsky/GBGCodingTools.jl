@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-check-docs-02",
+  "lane": "operational-claims",
+  "candidates_found": 7,
+  "checked": [
+    "src/GBGCodingTools.jl (module map docstring vs include order)",
+    "src/TestHarness.jl (every docstring: @alloc_below, field_threshold, allocation_completeness, CountingArray, counting, Traffic, audit, traffic_completeness, count_expression, traffic_rows, resolve_function, module_method_count, method_parity, oracle_registry, struct_types, has_display, display_gate, thread_digest, other_thread_count, run_regressions, gate)",
+    "src/Reflection.jl (every docstring: docstrings, signature_parameters, signature_types, argcov, dupref, load_package, package_modules, package_operations, all_package_functions, signature_fidelity, xlink)",
+    "src/HtmlWalker.jl (every docstring)",
+    "src/TreeHash.jl (blob_hash, tree_hash, _nonempty against the empty-tree id and mode claims)",
+    "src/Scan.jl (every docstring, especially ScanResult.population/report()'s DEAD predicate vs dead(r) in code)",
+    "src/Scans/prose_shape.jl, html_stray_math.jl, html_docstring_once.jl, code_in_math.jl",
+    "src/DocLints.jl (makedocs stub docstring, docs_build_skipped) cross-checked against ext/GBGCodingToolsDocumenterExt.jl's actual makedocs/gate_or_skip body",
+    "src/Witnesses.jl (every docstring: refusal, blocked_reason, witness_project, run_one's status classification, run's exit-code contract)",
+    "src/CLI/Config.jl (every docstring, especially check_paths' enumerated existence checks)",
+    "src/CLI/Sync.jl (every docstring, especially sync()'s exit-code contract and classify()/classify_block()'s MODIFIED/STALE logic vs inputs_sha docstring)",
+    "src/CLI/Preflight.jl (every docstring, especially resolve_hats' field enumeration, preflight()'s refusal order, copy_scripts' verifier-source claim cross-checked against instruments/*/workflow/*.js on disk)",
+    "src/CLI/Passes.jl (every docstring, especially bank's 'five things make it exit 2' and lane_shas persistence claim, pass_open, grade, close, carry_conditions, audit_after_code)",
+    "src/CLI/Rounds.jl (every docstring, especially classify_lane's status-priority ordering and quarantine claim vs the actual branch order and mv() calls; bank's exit/lane_shas claims cross-checked against Passes.jl; abandon's open_ids claim)",
+    "src/CLI/Demote.jl (demote)",
+    "src/CLI/Gate.jl (gate, frozen_rounds)"
+  ],
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "classify_lane checks REJECTED (sha-changed) before any DEAD content check, and the last DEAD branch never quarantines the file — both contradicting the docstring's ordering and blanket rename claim",
+      "locations": [
+        "src/CLI/Rounds.jl:333-339 (docstring)",
+        "src/CLI/Rounds.jl:345 (sha-changed → :rejected, before parsing)",
+        "src/CLI/Rounds.jl:346-358 (unparsable/schema/lane/verdict DEAD branches, each with mv(...))",
+        "src/CLI/Rounds.jl:360 (zero-findings-and-empty-checked DEAD branch, no mv(...))"
+      ],
+      "description": "classify_lane's docstring reads: 'The status is `:dead` — absent; renamed to `<name>.rejected.json` beside itself when unparsable, when it fails the instrument's schema, or when it is schema-valid but its own `lane` field names a different lane... or when its own `verdict` contradicts its findings...; or well-formed with zero findings AND an empty `checked[]`... Then `:rejected` (present but its sha changed since first sight), `:empty`..., `:truncated`..., or `:live`.' Read naturally, every DEAD reason (including the last, zero-findings-and-empty-checked) gets the file renamed to `.rejected.json`, and REJECTED is determined only after the DEAD checks have had their turn. The body does the opposite on both counts: line 345, `first_sha !== nothing && first_sha != sha && return (:rejected, nothing, sha, \"changed since first sight\")`, fires before the file is even parsed — so a lane file that both changed sha since first sight AND is unparsable/schema-invalid/mislabelled is reported REJECTED, never DEAD, and is never quarantined by the mv() the other DEAD branches use. Separately, the docstring's own last-listed DEAD reason — 'well-formed with zero findings AND an empty `checked[]`' — maps to line 360, `(n == 0 && isempty(get(data, \"checked\", []))) && return (:dead, data, sha, \"zero findings AND empty checked[] — a dead lane, not a clean one\")` — which, unlike every other DEAD branch above it (lines 348, 353, 356, 358), calls no `mv(...)` at all: the file is left at its original path, not renamed to `.rejected.json`. So a lane that reports zero findings with an empty `checked[]` is graded DEAD (correctly) but is never quarantined, contradicting the docstring's 'renamed to `<name>.rejected.json` beside itself when ... or well-formed with zero findings AND an empty `checked[]`.'",
+      "resolution_hint": "Either add the missing mv(...) quarantine to the zero-findings/empty-checked DEAD branch (matching the docstring), or reword the docstring to state that only the schema/parse/lane/verdict DEAD reasons quarantine the file while the empty-corpus DEAD reason does not; and reorder either the code (check DEAD content reasons before the sha-changed check) or the docstring (state explicitly that a changed sha is checked, and reported, before the file's content is even read)."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "medium",
+      "title": "report()'s DEAD predicate requires exempted == 0, silently contradicting the docstrings' claim that a zero-population scan is DEAD 'whatever else it did'",
+      "locations": [
+        "src/Scan.jl:36-37 (ScanResult.population docstring)",
+        "src/Scan.jl:449-451 (report() docstring)",
+        "src/Scan.jl:457 (dead(r) = r.population == 0 && r.exempted == 0)"
+      ],
+      "description": "ScanResult's docstring states unconditionally: 'population — ...; zero means the scan measured nothing and is DEAD.' report()'s own docstring reinforces this as an invariant: 'A scan whose population is zero measured nothing and is DEAD whatever else it did — that refusal is the point of the counter,' and further: 'Its hits are still printed: a scan that measured nothing yet hit something is a scan whose own counter is wrong, and dropping the evidence hides which one.' The actual predicate is `dead(r) = r.population == 0 && r.exempted == 0` (line 457) — an extra `exempted == 0` conjunct the docstrings never mention. When a scan measures zero population yet its raw hits (before the ledger) are non-empty and the ledger then exempts/disables the scan (`apply_ledger` sets `exempted = length(hits)`), `dead(r)` is false: the result is routed into the plain 'ok' branch of report(), never into the DEAD branch that prints the offending hits. That is precisely the scenario the docstring says cannot happen ('DEAD whatever else it did', 'dropping the evidence hides which one') — the code drops exactly that evidence when the scan is also ledger-exempted.",
+      "resolution_hint": "Either drop the `&& r.exempted == 0` conjunct from dead(r) so a zero-population scan is always DEAD regardless of ledger exemptions (matching the docstrings), or amend both docstrings to state the real rule: 'population zero AND no ledger exemption is DEAD; a zero-population scan the ledger has exempted is reported ok instead.'"
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "resolve_hats' docstring enumerates 'the four fields below' but the returned hat dict carries a fifth, undocumented field ('role') that is also never propagated onward",
+      "locations": [
+        "src/CLI/Preflight.jl:268-284 (resolve_hats docstring)",
+        "src/CLI/Preflight.jl:306-307 (the pushed Dict, including \"role\" => get(h, \"role\", \"\"))",
+        "src/CLI/Preflight.jl:538 (render_args' a[\"hats\"] projection, which omits \"role\")"
+      ],
+      "description": "resolve_hats' docstring says a hat 'carries `key`; the persona with its placeholders filled; and the four fields below' — then names exactly four: substrate, needs, anchor, not_applicable. The dict actually pushed at line 306-307 carries a fifth data field beyond key and persona: `\"role\" => get(h, \"role\", \"\")`. The claim of an exact count ('the four fields below') is therefore off by one against the body. Compounding it operationally: `role` is never read anywhere the roster is consumed afterward — `roster_record` (line 399) and `render_args`' `a[\"hats\"]` projection (line 538) both list out only key/persona_path/substrate/needs/anchor(/not_applicable), never role — so the field the docstring omits is also a value nothing downstream ever uses.",
+      "resolution_hint": "Either document the fifth field (`role`) in resolve_hats' docstring, or remove it from the pushed dict if it is genuinely unused dead data."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "abandon's docstring says open_ids becomes 'all banked ids' when no pass was graded, but the body excludes seeded findings",
+      "locations": [
+        "src/CLI/Rounds.jl:816-817 (abandon docstring)",
+        "src/CLI/Rounds.jl:837-838 (open_ids computed from findings.json)"
+      ],
+      "description": "abandon's docstring: 'It writes `abandoned = {reason, open_ids}` with every id still open (all banked ids when no pass was graded)...'. The body, for the no-graded-pass branch, is `open_ids = [f[\"id\"] for f in JSON3.read(...)[\"findings\"] if !get(f, \"seeded\", false)]` — this explicitly drops every finding with `seeded == true`, so the recorded open_ids is NOT 'all banked ids' but 'all non-seeded banked ids.' A round banked with seeded findings and abandoned before any pass is graded would have its abandoned.open_ids silently omit the seeded ones, contrary to the docstring's literal claim.",
+      "resolution_hint": "Reword the parenthetical to 'all non-seeded banked ids when no pass was graded' (a seeded finding is never a real defect and is correctly excluded per RULE.INST.SEEDS; the docstring just needs to say so)."
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-check-docs-02",
+  "lane": "rulebook",
+  "candidates_found": 6,
+  "checked": [
+    "policy/00-index.md — the 5 substituted values and the file index",
+    "policy/docs-rubric.md — 41 RULE.DOC.*/RULE.API.* rules + the doc-edit checklist",
+    "policy/latex-idiom.md — 17 RULE.TEX.* rules",
+    "policy/citations.md — 5 RULE.CIT.* rules",
+    "policy/testing-protocol.md — 12 RULE.TEST.* rules",
+    "policy/instruments.md — 13 RULE.INST.* rules + Honest limits",
+    "policy/git-conventions.md — 7 RULE.GIT.* rules",
+    "policy/glossary.md — 14 bound terms",
+    "policy/RULES.toml — all 95 rows: file/section/statement/sentinel/check fields",
+    "programmatic check: every sentinel is verbatim the leading substring of its rule's paragraph (95/95 pass)",
+    "programmatic cross-check: every catalog/scans.toml `rule = ...` field matches a RULES.toml row that lists that scan in `check` (39/39 scan ids, both directions)",
+    "doctor: check ids GIT.TRAILER, GIT.BRANCH, WIRE.GITIGNORE — present in src/CLI/Doctor.jl",
+    "harness: bindings TestHarness.{oracle_registry,allocation_completeness,traffic_completeness,method_parity}, makedocs, Preflight.{resolve_checkdocs_lanes,preflight,render_args}, Witnesses.run, Passes.grade, Scan.report — all present in src/",
+    "test: test/schemas.jl (RULE_WITH_CHECK, COUNTS_REMEASURED) and test/rounds.jl (CARRY, AUDIT_AFTER_CODE, AUDIT_DISPOSED, FROZEN_MIDROUND) — all cite the claimed rule ids",
+    "all 23 rules marked check=[\"weakness\"] grepped against src/ext/catalog/test for an uncredited implementation (RULE.CIT.DOI found live; RULE.TEX.CODE_SPAN_JULIA and RULE.TEST.BOTH_DIRECTIONS found only as rationale citations, not checks)",
+    "src/Scans/doi_crosscheck.jl — the require_doi block and the scan's own header comment against RULE.CIT.DOI's text and RULES.toml's check field",
+    ".gbg/config.toml — citations.require_doi=true and the scan's catalog tier (hard), confirming SCAN.DOI_CROSSCHECK is live for this package",
+    "RULE.DOC.ARGS_FORM vs RULE.DOC.SHAPE's `# Arguments` clause, cross-checked against src/Scans/prose_shape.jl and against actual docstring bodies (grep for a literal `# Arguments` heading vs `The arguments are:` prose — 0 vs 30 occurrences)",
+    "docs/ARCHITECTURE.md and docs/design-record/*.md for the `# Arguments` heading's provenance (IT's corpus) to rule out a documented, deliberate cross-consumer accommodation",
+    "declared deviations (policy/deviations.md, rendered) cross-checked against rules with no applicable corpus in this package (RULE.TEX.GREEK_AB, RULE.TEX.MATHBF/MATHBB/etc. — confirmed vacuously clean, not deviation-worthy)",
+    "instruments/check-docs/PROTOCOL.md, instruments/bug-hunt/PROTOCOL.md, instruments/check-consistency/PROTOCOL.md for contradiction with RULE.INST.CARRY (max_passes=3, plateau signal) and RULE.DOC.BATTERY (full matrix) — consistent",
+    "the five {{...}} template placeholders in policy/*.md against schema/config.schema.json and .gbg/config.toml's current values — all 5 resolve, no orphaned or stale keys"
+  ],
+  "findings": [
+    {
+      "type": "structure",
+      "severity": "major",
+      "confidence": "high",
+      "title": "RULE.CIT.DOI's check field says \"weakness\" but a hard-tier scan already enforces it",
+      "locations": [
+        "policy/RULES.toml:432-437 — check = [\"weakness\"]",
+        "src/Scans/doi_crosscheck.jl:1 — \"SCAN.DOI_CROSSCHECK — RULE.CIT.FULL_INLINE, RULE.CIT.DOI.\"",
+        "src/Scans/doi_crosscheck.jl:61-67 — the `require_doi` loop flagging \"a reference without a DOI or Open Library link on its title\"",
+        ".gbg/config.toml:71 — require_doi = true; catalog/scans.toml SCAN.DOI_CROSSCHECK tier = \"hard\""
+      ],
+      "description": "RULE.TEST.RULE_WITH_CHECK defines `weakness` as \"a check is possible and none is built.\" For RULE.CIT.DOI (\"Every reference carries a clickable DOI... identical in every copy\") a check IS built: SCAN.DOI_CROSSCHECK's own header comment names RULE.CIT.DOI as one of the two rules it enforces, and its `require_doi` block (live in this package, tier hard, config flag true) is exactly that enforcement. RULES.toml nonetheless records RULE.CIT.DOI as an unpaid-check weakness — the rulebook misreporting its own coverage, the one thing RULE.TEST.RULE_WITH_CHECK exists to keep honest. Failure scenario: a reader (or `gbgdev rules`/doctor tooling) trusts RULES.toml's `check` column to know what still needs a scan; taking RULE.CIT.DOI at its word, they either build a redundant second check or treat the rule as unenforced and stop trusting SCAN.DOI_CROSSCHECK's DOI-presence hits as authoritative.",
+      "resolution_hint": "Change RULE.CIT.DOI's `check` in policy/RULES.toml to `[\"scan:SCAN.DOI_CROSSCHECK\"]` (matching RULE.CIT.FULL_INLINE's row, since one scan enforces both rules)."
+    },
+    {
+      "type": "structure",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "RULE.DOC.SHAPE's \"`# Arguments` precedes any column-0 admonition\" clause names a heading form no other rule in this package's rubric ever produces",
+      "locations": [
+        "policy/docs-rubric.md:219 — \"`# Arguments` precedes any column-0 admonition, and `# Fields` is last.\"",
+        "policy/docs-rubric.md:47-48 (RULE.DOC.ARGS_FORM) — \"uses the bulleted form led by `The arguments are:`\" (a prose lead-in, never a heading)",
+        "src/Scans/prose_shape.jl:118 — `findfirst(l -> occursin(r\"^# Arguments\\b\", l), lines)`"
+      ],
+      "description": "docs-rubric.md's only rule governing how a docstring's arguments are documented, RULE.DOC.ARGS_FORM, mandates the prose lead-in `The arguments are:` and never a `# Arguments` Markdown heading; this package's own docstrings confirm it (0 uses of a `# Arguments` heading vs 30 uses of `The arguments are:`). Yet RULE.DOC.SHAPE's ordering clause, and the scan enforcing it, test specifically for a `# Arguments` heading — a structural element no other rule in this file ever sanctions the corpus to produce. (docs/ARCHITECTURE.md shows this heading is a different fleet consumer's (IT's) argument-doc style, so the clause is a deliberate cross-consumer accommodation, but that provenance is not disclosed anywhere in the rendered docs-rubric.md itself.) Failure scenario: a reader of docs-rubric.md in isolation — exactly how it is meant to be read, rendered whole into every consumer's session — hits this clause with no antecedent, and either concludes the rulebook is self-contradictory (ARGS_FORM bans the heading it implies) or hunts for a heading form that, for this package, never legitimately exists.",
+      "resolution_hint": "Either drop the `# Arguments`-heading half of RULE.DOC.SHAPE's ordering clause for a rubric whose ARGS_FORM never produces that heading, or add one clause naming `# Arguments` as the heading-form equivalent some consumers use instead of the prose lead-in, so the two rules read as one coordinated policy."
+    }
+  ]
+}

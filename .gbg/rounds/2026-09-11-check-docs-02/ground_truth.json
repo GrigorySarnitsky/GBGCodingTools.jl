@@ -1,0 +1,51 @@
+{
+    "seeded": [
+        {
+            "original_context": "b>`; the exit contract is 0 clean,\n  1 substantive finding, 2 cannot evaluate, 3 crash. The verbs live under `src/CLI/`, one file per\n  n",
+            "mutated_context": "b>`; the exit contract is 0 clean,\n  1 substantive finding, 2 a second finding, 3 crash. The verbs live under `src/CLI/`, one file per\n  n",
+            "class": "exit-code-drift",
+            "id": "seed-01-exit-code-drift",
+            "page": "src/GBGCodingTools.jl"
+        },
+        {
+            "original_context": "uns most:\n\n- [`gbg doctor`](@ref \"The doctor's checks\") — 49 read-only checks that a package is wired correctly: the installed version ma",
+            "mutated_context": "uns most:\n\n- [`gbg doctor`](@ref \"The doctor's checks\") — 47 read-only checks that a package is wired correctly: the installed version ma",
+            "class": "count-drift",
+            "id": "seed-02-count-drift",
+            "page": "docs/src/index.md"
+        },
+        {
+            "original_context": "9) — the optional data surface\n\n`surfaces.data`, empty in every consumer and on in the tool. The scan surfaces were derived from fou",
+            "mutated_context": "9) — the optional data surface\n\n`surfaces.data`, empty in almost every consumer and on in the tool. The scan surfaces were derived from fou",
+            "class": "quantifier",
+            "id": "seed-03-quantifier",
+            "page": "docs/ARCHITECTURE.md"
+        },
+        {
+            "original_context": "nts | The closure loop runs over the banked findings by id, never by re-running the battery; abandon is the only wholesale exit and names every open id",
+            "mutated_context": "nts | The closure loop runs over the banked findings by id, by re-running the battery; abandon is the only wholesale exit and names every open id",
+            "class": "inverted-rule",
+            "id": "seed-04-inverted-rule",
+            "page": "docs/ARCHITECTURE.md"
+        },
+        {
+            "original_context": "bg round close` carries into\n`.claude/WORK_QUEUE.md`, where the Stop hook holds the next session to it. A note is not a mechanism.\nMI",
+            "mutated_context": "bg round close` carries into\n`.claude/WORK_QUEUE.md`, where the docs build holds the next session to it. A note is not a mechanism.\nMI",
+            "class": "false-mechanism",
+            "id": "seed-05-false-mechanism",
+            "page": "docs/ARCHITECTURE.md"
+        },
+        {
+            "original_context": "ool holds behaviour; the only thing\nconnecting them is that pinned version.\n\nThe terms the rest of the package uses as settled words, ",
+            "mutated_context": "ool holds behaviour; the only thing\nconnecting them is that installed version.\n\nThe terms the rest of the package uses as settled words, ",
+            "class": "vocabulary-collision",
+            "id": "seed-06-vocabulary-collision",
+            "page": "src/GBGCodingTools.jl"
+        }
+    ],
+    "salt": "2026-09-11-check-docs-02",
+    "schema_version": 1,
+    "round": "2026-09-11-check-docs-02",
+    "skipped": [
+    ]
+}

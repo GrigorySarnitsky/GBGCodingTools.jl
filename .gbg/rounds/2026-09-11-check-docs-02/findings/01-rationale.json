@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-check-docs-02",
+  "lane": "rationale",
+  "candidates_found": 4,
+  "checked": [
+    "docs/ARCHITECTURE.md (full read, all ~2705 lines: vocabulary, §0-§12, revision history)",
+    "src/GBGCodingTools.jl module map",
+    "src/CLI/Design.jl (attack/calibrate verbs)",
+    "src/CLI/Rounds.jl (seed_docs_corpus!, repoint_lanes call site)",
+    "src/CLI/Preflight.jl (repoint_lanes)",
+    "src/TestHarness.jl (gate())",
+    "ext/GBGCodingToolsDocumenterExt.jl (makedocs wrapper)",
+    "src/CLI/Doctor.jl (doctor check ids, cross-checked against §7.3 table)",
+    "schema/*.schema.json (file inventory vs D11's list; round.schema.json properties vs §6.1 field list)",
+    "catalog/ directory listing vs §3 repository layout",
+    "Project.toml (deps/compat vs D9's dependency claims)",
+    "bin/gbg (shim walk logic vs D2)",
+    "CHANGELOG.md (rc.7/rc.8/rc.9 entries, Julia floor, gbg attack fix)",
+    "git tag listing (v1.0.0-rc.1..rc.9)"
+  ],
+  "findings": [
+    {
+      "type": "currency",
+      "severity": "major",
+      "confidence": "high",
+      "title": "check-docs seeding contradicts the doc's 'seeds live inside the project' claim; undocumented",
+      "locations": [
+        "docs/ARCHITECTURE.md:600-601 (D10)",
+        "docs/ARCHITECTURE.md:1606-1607 (§6.4)",
+        "docs/ARCHITECTURE.md:2229-2230 (§11 residues)",
+        "src/CLI/Rounds.jl:218-221,236 (mktempdir, 'copied outside the repository')",
+        "src/CLI/Preflight.jl:189-195 (repoint_lanes)",
+        "schema/config.schema.json:363-368 (check-docs.seed_rounds)"
+      ],
+      "description": "ARCHITECTURE.md states 3x, unqualified, that seeded copies live 'inside the project, under .gbg/scratch/<round>/' to keep a Workflow agent's Read prompt-free. But check-docs's own seed_docs_corpus! copies the corpus to mktempdir() (system temp, outside the repo per the code's own comment), and repoint_lanes points lane agents there. This whole feature is also absent from §6.4/§6.6.",
+      "resolution_hint": "Document the check-docs seeding mechanism as an explicit exception with its own-outside-project justification, or move the destination under .gbg/scratch/<round>/ to match the stated invariant."
+    },
+    {
+      "type": "currency",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Schema/file inventory stale and self-contradictory: 'eighteen' (D11) vs 'sixteen' (§3) vs 22 actual",
+      "locations": [
+        "docs/ARCHITECTURE.md:636 (D11: 'Eighteen schemas')",
+        "docs/ARCHITECTURE.md:1027 (§3: 'the sixteen of D11')",
+        "src/GBGCodingTools.jl:47-49 (module map names Design.jl)",
+        "src/CLI/Design.jl (gbg attack/calibrate, absent from §3's CLI/ tree)",
+        "schema/attack.schema.json, attack-subject.schema.json, human-findings.schema.json, rubric-audit.schema.json (4 undocumented)",
+        "catalog/attack/ (absent from §3's catalog/ tree)"
+      ],
+      "description": "D11 says 'Eighteen schemas' and lists 18; §3 describing the same directory says 'the sixteen of D11' — an internal 18-vs-16 contradiction. Actual schema/ holds 22 files; the 4 missing back gbg attack/gbg calibrate (src/CLI/Design.jl), which the tool's own module docstring names but ARCHITECTURE.md's §3 repo tree never lists, along with catalog/attack/.",
+      "resolution_hint": "Update D11 to name all 22 schemas (or scope the 18 explicitly) and fix §3's count to match; add Design.jl and catalog/attack/ to §3's trees."
+    }
+  ]
+}

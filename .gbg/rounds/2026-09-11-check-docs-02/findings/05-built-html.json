@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-check-docs-02",
+  "lane": "built-html",
+  "candidates_found": 6,
+  "checked": [
+    "docs/build/api/CLI.html",
+    "docs/build/api/Config.html",
+    "docs/build/api/Reflection.html",
+    "docs/build/api/TestHarness.html",
+    "docs/build/api/Witnesses.html",
+    "docs/build/guide/config.html",
+    "docs/build/guide/doctor.html",
+    "docs/build/guide/install.html",
+    "docs/build/guide/instruments.html",
+    "docs/build/guide/ledger.html",
+    "docs/build/guide/rounds.html",
+    "docs/build/guide/rules.html",
+    "docs/build/guide/verbs.html",
+    "docs/build/index.html",
+    "docs/build/architecture.html",
+    "docs/build/objects.inv (existence check for cmd_gate/cmd_sync/cmd_self_verify)",
+    "cross-checked every @docs block's rendered content against src/TestHarness.jl, src/CLI/Config.jl, src/CLI/Gate.jl, src/CLI/Sync.jl, src/CLI/Self.jl, src/Reflection.jl, src/TreeHash.jl, src/CLI/RoundFiles.jl, src/CLI/Seed.jl, src/CLI/Demote.jl, src/HtmlWalker.jl",
+    "verified every internal href/#id link across all built pages resolves (script-driven full-site check, 0 broken)",
+    "verified index.html's numeric claims (25 verbs, 49 doctor checks, 42 scans, 95 rules) against VERBS table, guide/doctor.html table, catalog/scans.toml, policy/RULES.toml — all four exact matches"
+  ],
+  "findings": [
+    {
+      "type": "self-containment",
+      "severity": "major",
+      "confidence": "high",
+      "title": "verbs.html promises every verb is rendered from its own docstring, but three verbs' docstrings are missing from the entire built site",
+      "locations": [
+        "docs/build/guide/verbs.html — \"the table is closed, and every verb below is rendered from its own docstring so the page cannot drift from the code\"",
+        "src/CLI/Gate.jl:88-92 — docstring `cmd_gate(args) -> Int` / \"`gbg gate [instrument…]`: the CLI face of [`gate`](@ref)\"",
+        "src/CLI/Sync.jl:662-666 — docstring `cmd_sync(args) -> Int` / \"`gbg sync [--check]`: the CLI face of [`Sync.sync`](@ref)\"",
+        "src/CLI/Self.jl:97-101 — docstring `cmd_self_verify(args) -> Int` / \"`gbg self verify`: the command-line face of [`self_verify`](@ref)\""
+      ],
+      "description": "guide/verbs.html states as its organizing invariant that the page cannot drift from the code because every verb is rendered from its own docstring. `VERBS[\"gate\"] = cmd_gate`, `VERBS[\"sync\"] = cmd_sync` and `VERBS[\"self verify\"] = cmd_self_verify` are three of the 25 registered CLI verbs (confirmed by grep over every `VERBS[\"...\"] =` assignment in src/), and each of `cmd_gate`, `cmd_sync` and `cmd_self_verify` carries its own genuine docstring in source (verified above each function). None of the three appears anywhere in docs/build (grep -rl across every built HTML file for \"cmd_gate\", \"cmd_sync\", \"cmd_self_verify\" returns nothing) — they were never placed in any `@docs` block. This is visible only by reading the rendered pages: the page's own current-and-complete claim is false for exactly these three verbs, and a reader following the page has no rendered documentation at all for `gbg gate`, `gbg sync` or `gbg self verify`, despite each having a hand-written usage line (`gbg gate [instrument…]`, `gbg sync [--check]`, `gbg self verify`) ready to render.",
+      "resolution_hint": "Add `@docs` blocks for `GBGCodingTools.cmd_gate`, `GBGCodingTools.Sync.cmd_sync` and `GBGCodingTools.cmd_self_verify` to docs/src/guide/verbs.md (or soften the page's \"every verb\" claim if some verbs are meant to be documented only via their underlying function, in which case the underlying function's own docstring should still say so)."
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "TestHarness module map omits `traffic_completeness`, the twin of the map's own `allocation_completeness` entry",
+      "locations": [
+        "docs/build/api/TestHarness.html — module docstring: \"the allocation audit (@alloc_below and TestHarness.allocation_completeness), the element-traffic audit (TestHarness.counting, TestHarness.CountingArray, TestHarness.Traffic, TestHarness.audit) …\"",
+        "src/TestHarness.jl:214 — `traffic_completeness(pkg, modules; exempt = Dict{Symbol,String}())`, documented on the same page immediately after `allocation_completeness`"
+      ],
+      "description": "The module docstring (the page's map, rendered at the top of api/TestHarness.html) names `allocation_completeness` as a member of the \"allocation audit\" family, but its own docstring calls `traffic_completeness` \"the twin of allocation_completeness\" for the \"element-traffic audit\" family — yet the map lists only `counting`, `CountingArray`, `Traffic` and `audit` for that family and never names `traffic_completeness`, even though it is documented via its own `@docs` block lower on the very same rendered page. The map names a subset of what the page actually documents (RULE.DOC.CURRENT / RULE.DOC.MODULE_MAP), and the omission is visible only by reading the built page's full content, not from the module docstring's source text alone next to a diff.",
+      "resolution_hint": "Add `[`TestHarness.traffic_completeness`](@ref)` to the module docstring's \"element-traffic audit\" clause, symmetrically with `allocation_completeness`."
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "Config module map omits `find_root` and `check_paths`, both documented lower on the same rendered page",
+      "locations": [
+        "docs/build/api/Config.html — module docstring names only `Config.read`, `Config.ConfigError`, `Config.glob_files` and `Config.resolve_anchor`",
+        "src/CLI/Config.jl:42-47 — `find_root(start = pwd()) -> Union{String,Nothing}`, documented on the same page",
+        "src/CLI/Config.jl:172-181 — `check_paths(cfg) -> Vector{String}`, documented on the same page"
+      ],
+      "description": "api/Config.html's module docstring (the map) names four functions/types as the module's interface, but the rendered page also carries full `@docs` blocks for `find_root` (walks up to the consumer root) and `check_paths` (every existence check the config implies — the doctor's CFG.SURFACES) — two substantial, independently useful entries that the map never mentions. As with the TestHarness case, this is only visible by reading the whole rendered page rather than the isolated docstring.",
+      "resolution_hint": "Extend the Config module docstring to name `find_root` and `check_paths` alongside `read`/`glob_files`/`resolve_anchor`."
+    }
+  ]
+}

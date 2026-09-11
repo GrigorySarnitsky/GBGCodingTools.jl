@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-check-docs-02",
+  "lane": "family",
+  "candidates_found": 0,
+  "checked": [
+    "Full docstring inventory extracted from every '\"\"\" ... \"\"\"' block across all of src/**/*.jl and ext/*.jl (~140 docstrings, 34 files) to enumerate every documented binding and look for f/f!, getter/set_...!, or physical/spectral variant pairs",
+    "grep for 'function \\w+!\\(' across src and ext: the package's own in-place functions are register_scan! (Scan.jl), materialize! (CLI/Schema.jl), harvest! (Reflection.jl, internal closure), render_node! (CLI/Consolidate.jl, undocumented internal), mark! (CLI/Recall.jl), sibling_link_hits! (Scans/sibling_link.jl), seed_docs_corpus! and hunt_bank!/rebank_hunt_carried! (CLI/Rounds.jl), flush!/number!/check! (internal helpers) -- none has a documented allocating sibling of the same base name",
+    "grep for the RULE.DOC.STEER template phrase 'already allocated' across src/ext -- zero hits, confirming no f/f! pair carries (or should carry) the in-place steer sentence",
+    "grep for get_<name>/set_<name>! naming convention across src/ext -- zero package-owned hits; the only matches (Test.get_test_counts in Witnesses.jl, KernelAbstractions.get_backend example in TestHarness.jl docstring, bs4's get_text() mentioned in a Consolidate.jl comment) are references to external libraries, not this package's own getter/setter pairs",
+    "grep -i for 'spectral', 'physical representation', 'getter', 'setter' across src/ext -- zero hits; this package has no physical/spectral representation variants",
+    "grep for '```math' fences and LaTeX math content across src/ext -- zero hits outside the scan files that detect such patterns in OTHER packages' docstrings (src/Scans/*.jl); GBGCodingTools' own docstrings carry no formulas to duplicate or drift, consistent with the declared RULE.DOC.LEADING_IDENTITY deviation ('this package computes no physical quantity')",
+    "TestHarness.jl: allocation_completeness (line 97) vs traffic_completeness (line 225), explicitly called 'the twin of allocation_completeness' -- read both docstrings and bodies in full; each documents a distinct completeness check (AUDITED_ALLOCATION_OPS vs AUDITED_TRAFFIC_OPS) with no shared formula and no notation to drift between them",
+    "CLI/Rounds.jl: build (line 283) vs test (line 312), the docstring for build stating 'test is its twin for julia_test' -- read both; each documents a distinct CLI verb (docs_build vs julia_test) around the same round machinery, no duplicated computation",
+    "CLI/Design.jl: attack (line 32) vs attack_read, and calibrate vs calibrate_read -- read attack in full; this is a write-launcher/read-result pair (attack writes attack.json via a Workflow script, attack_read parses it), correctly cross-referenced via a single @ref from attack to attack_read with no duplicated description; not a formula-bearing pair",
+    "CLI/Schema.jl: validate (schema check) vs materialize! (fills schema defaults in place) -- read both in full; distinct operations, no duplicated logic or drifted notation",
+    "TestHarness.jl audit(operation!, name, rows...): 'operation!' is a caller-supplied zero-argument closure parameter name, not a package-defined function with an allocating sibling",
+    "Cross-checked against this package's own CLAUDE.md declared deviations: RULE.TEST.ALLOC_ZERO is deviated on the grounds that 'no in-place operator over element storage exists here: this package's ! functions mutate a registry, a dictionary or a string buffer' -- consistent with finding no numeric f/f! formula pairs anywhere in the source"
+  ],
+  "findings": []
+}

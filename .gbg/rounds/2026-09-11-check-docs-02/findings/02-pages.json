@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-check-docs-02",
+  "lane": "pages",
+  "candidates_found": 0,
+  "checked": [
+    "docs/src/api/CLI.md — cross-checked every listed binding (Sync.plan/status/render/managed_block/subenv_entries, Init.derive_config/migrate_seeds, Doctor.select, Preflight.resolve_roster/write_payloads/render_args/workflow_call, Seeds.select/plant, Recall.mark!/per_class/suspect_hats, RoundFiles.*, Git.*, HtmlWalker.*, TreeHash.*) against src/ definitions — all resolve",
+    "docs/src/api/Config.md — @docs block only, banner present, bindings (Config.read/parse/find_root/glob_files/glob_to_regex/check_paths) all found in src/Config.jl",
+    "docs/src/api/Reflection.md — @docs block only; argcov/signature_fidelity/xlink/dupref/package_operations/WRAPPER_PHRASE/ARGS_THRESHOLD all present in src/Reflection.jl",
+    "docs/src/api/TestHarness.md — @docs block only; all listed bindings (@alloc_below, CountingArray, counting, Traffic, audit, AUDITED_ALLOCATION_OPS, AUDITED_TRAFFIC_OPS, allocation_completeness, traffic_completeness, method_parity, oracle_registry, display_gate, thread_digest, run_regressions, gate) present in src/TestHarness",
+    "docs/src/api/Witnesses.md — @docs block only; Witnesses, WitnessResult, run all present in src/Witnesses.jl",
+    "docs/src/guide/config.md — verified against schema/config.schema.json: top-level section list [tool,package,paths,git,surfaces,docs,rubric,notation,citations,instruments,cost,schema,scans] matches exactly; surfaces sub-keys match the prose enumeration; the five package-varying keys (rubric.leading_identity, notation.vectors, docs.admonition_titles, notation.mathbf_allowed, instruments.check-docs.argcov_policy) verified against schema properties; [[scans.custom]] verified against schema",
+    "docs/src/guide/install.md — verified against bin/gbg shim script line-by-line (dev route, walk-up to .gbg/config.toml, fixture/enclosing-tool-root routing, ordinary docs/ route) and src/CLI/Main.jl's running_dev()/GBG_DEV handling and src/CLI/Install.jl's cmd_install — all claims accurate",
+    "docs/src/guide/ledger.md — verified TOML example fields, scope enum, match sub-keys, and never-exemptable family list against schema/exemptions.schema.json and src/CLI/Doctor.jl's NON_EXEMPTABLE=(PIN.,CFG.,EXEMPT.,WIRE.,MANAGED.,SHIM.,POL.,ROUND.,SELF.) — exact match; ruling enum and overturn_when requirement verified; doctor check ids EXEMPT.EXPIRED/EXPIRING/STALE/BROAD confirmed present",
+    "docs/src/guide/rounds.md — verified lifecycle steps, closure channel table (honored/adjudicated/seeded/rescan/carried) and demotion rule against src/CLI/Passes.jl vocabulary, pending_state semantics, severity-recheck.js existence, max_passes default=3 from schema — all accurate",
+    "docs/src/guide/verbs.md — verified exit-code line verbatim against src/CLI/Main.jl's main() docstring; spot-checked binding existence across the closed verb table",
+    "docs/src/index.md — verified headline counts against source: '25 verbs' counted from VERBS[...] assignments (exactly 25); '49 read-only checks' counted from Doctor.jl check ids (exactly 49); '42 scans' counted from catalog/scans.toml [[scan]] entries (exactly 42); '95 rules of prose' counted from policy/RULES.toml [[rule]] entries (exactly 95); RULE.DOC.AI_BANNER home-page exemption confirmed; RULE.DOC.ARGCOV @ref target confirmed to exist",
+    "cross-page: confirmed no bare (unbacktick) mentions of GBG_ROUND/GBG_DEV/GBG_DOCS_NO_SKIP anywhere in the lane's surface; confirmed no stray math spans on this surface"
+  ],
+  "findings": []
+}

@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-check-docs-02",
+  "lane": "cold-reader",
+  "candidates_found": 8,
+  "checked": [
+    "src/GBGCodingTools.jl",
+    "src/TreeHash.jl",
+    "src/HtmlWalker.jl",
+    "src/DocLints.jl",
+    "src/CLI/Main.jl",
+    "src/CLI/Schema.jl",
+    "src/CLI/Config.jl",
+    "src/Witnesses.jl",
+    "src/Reflection.jl",
+    "src/TestHarness.jl",
+    "src/CLI/Ledger.jl",
+    "src/Scan.jl",
+    "src/CLI/Consolidate.jl",
+    "src/CLI/Self.jl",
+    "src/CLI/Install.jl",
+    "src/CLI/Sync.jl",
+    "src/CLI/Init.jl",
+    "src/CLI/RoundFiles.jl",
+    "src/CLI/Git.jl",
+    "src/CLI/Doctor.jl",
+    "src/CLI/Gate.jl",
+    "src/CLI/Demote.jl",
+    "src/CLI/Seed.jl",
+    "src/CLI/Recall.jl",
+    "src/CLI/Preflight.jl",
+    "src/CLI/Rounds.jl",
+    "src/CLI/Passes.jl",
+    "src/CLI/Hunt.jl",
+    "src/CLI/Audit.jl",
+    "src/CLI/Design.jl",
+    "src/CLI/Fleet.jl",
+    "src/CLI/Bump.jl",
+    "src/CLI/Release.jl",
+    "src/CLI/Selftest.jl",
+    "ext/GBGCodingToolsDocumenterExt.jl",
+    "src/Scans/prose_shape.jl",
+    "src/Scans/code_in_math.jl",
+    "src/Scans/html_docstring_once.jl",
+    "src/Scans/html_stray_math.jl",
+    "src/Scans/register.jl",
+    "catalog/models.toml (verification only)"
+  ],
+  "findings": [
+    {
+      "type": "self-containment",
+      "severity": "major",
+      "confidence": "high",
+      "title": "\"the economy model\" used as a settled term across three modules but never defined; it is actually an AI-model swap",
+      "locations": [
+        "src/CLI/Config.jl:18 — \"that runs at full strength rather than on the economy model (`Preflight.resolve_hats`), and a regular\"",
+        "src/CLI/Doctor.jl:15 — \"or lane's `anchor` is whether it runs at full strength rather than on the economy model (`CFG.HATS`);\"",
+        "src/CLI/Preflight.jl:279 — \"`anchor` is whether the hat runs at full strength rather than on the economy model; a `domain_hats`\"",
+        "src/CLI/Preflight.jl:496 — \"economy_model() = TOML.parsefile(...)[\\\"economy\\\"]\" (no docstring)",
+        "catalog/models.toml:2 — \"economy = \\\"sonnet\\\"\""
+      ],
+      "description": "Config, Doctor and Preflight each introduce anchor's \"full strength\" sense by contrasting it with \"the economy model\", treating the phrase as already understood; none says what running on it does. It reads as ordinary English for a frugal operating mode, but per economy_model() (itself undocumented) and catalog/models.toml it is literally a different AI model name (\"sonnet\") substituted into the Workflow call for a non-anchor lane or hat. No docstring states this; a cold reader would have to trace the implementation to discover it.",
+      "resolution_hint": "Give Preflight.economy_model a docstring, and state at the term's first mention (Config's module docstring) that economy/full names which model runs the lane, sourced once from catalog/models.toml."
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "a second economy/full axis, `cost`, is plumbed alongside `strength` with no docstring distinguishing them",
+      "locations": [
+        "src/CLI/Preflight.jl:522 — \"`strength` — `economy` or `full`; `cost` — the config's cost default; `opened` — the round's\"",
+        "src/CLI/Init.jl:175 — \"\\\"cost\\\" => Dict(\\\"default\\\" => \\\"economy\\\"),\""
+      ],
+      "description": "render_args takes both strength (drives the model swap above) and an independently-sourced cost, both valued economy/full, with cost glossed only as \"the config's cost default\" — circular. Nothing says what a Workflow does differently when args.cost and args.strength diverge, or whether they are meant to move together.",
+      "resolution_hint": "Document what distinguishes cost from strength, or fold them into one documented concept."
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "\"the rubric\" used as a proper-noun term of art but never bound to anything in source",
+      "locations": [
+        "src/Reflection.jl:26 — \"The rubric's constant: a docstring with this many arguments or more, or any keyword, documents them in\"",
+        "src/Reflection.jl:208 — \"(the rubric caps a target at its first genuine mention; invisible in the rendered text)\"",
+        "src/CLI/Design.jl:125 — \"which hat's own rubric should have caught it, and whether that hat, run\""
+      ],
+      "description": "ARGS_THRESHOLD, WRAPPER_PHRASE and dupref's docstrings speak of \"the rubric\" as a settled, singular authority the way the top module docstring binds consumer/round/lane/hat/gate once — but no docstring says the rubric is policy/docs-rubric.md, a file outside the src surface entirely. A cold reader cannot resolve the reference.",
+      "resolution_hint": "Name the rubric's home explicitly at its first mention (policy/docs-rubric.md), as Sync's module docstring names its own files."
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "\"the four closure channels\" named in the module map before any of the four are named",
+      "locations": [
+        "src/CLI/Passes.jl:21 — \"the demotion and the four closure channels and writes the tally; [`Passes.close`](@ref) checks every\" (the Passes MODULE docstring)",
+        "src/CLI/Passes.jl:627 — \"rest, then the closure channels per id —\" (grade's docstring, ~600 lines later, names honored/adjudicated/seeded/rescan)"
+      ],
+      "description": "?Passes, the map a cold reader opens first, asserts a count (\"the four closure channels\") before naming any of them; the names surface only deep inside grade's docstring. RULE.DOC.MODULE_MAP asks the map to carry a one-liner per family precisely so a reader who stops there is not left with a dangling count.",
+      "resolution_hint": "Either name the four channels in the module docstring alongside the two verifiers' vocabularies, or drop the count from the module docstring and let grade's docstring be the one place it is asserted with the names."
+    }
+  ]
+}
