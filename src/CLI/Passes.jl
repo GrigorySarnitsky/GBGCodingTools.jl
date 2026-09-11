@@ -194,7 +194,8 @@ Every place in the tree that writes down a rule or scan id the finding cites, as
 arguments are `cfg`, the validated config; `finding`, one banked finding; and `cap`, the most sites
 returned.
 
-This is the checklist the act verifier marks instead of inventing. A class rarely lives where it was
+This is the checklist the act verifier ([`GBGCodingTools.Passes`](@ref) binds it) marks instead of
+inventing. A class rarely lives where it was
 quoted: `operational-claims#7` of `2026-09-09-check-docs-02` was one comment overstating what
 `SCAN.SIBLING_LINK` enforces, and it lived in four places — the scan's file header, the docstring above
 its function, the rule's paragraph in `policy/`, and a row of the §12.B catalogue table. The verifier
@@ -365,8 +366,8 @@ end
 
 - `cfg` — the validated config.
 - `round` — the round id.
-- `full_state` — kept for the command line; it changes nothing, since the blind verifier reads every id
-  in scope on every pass.
+- `full_state` — kept for the command line; it changes nothing, since the blind verifier (the state
+  verifier; [`GBGCodingTools.Passes`](@ref) binds both verifiers) reads every id in scope on every pass.
 - `regrade` — accept a changed stamp (`config_sha`, or the tool stamps) and re-stamp it; the round is
   re-graded from here, and the pass records `regrade = true`.
 - `sweep_ok` — open even though an open finding names a file the fix pass did not touch

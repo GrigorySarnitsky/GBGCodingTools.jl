@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "9de67d165024a05ae2bfe7c01a899dbc",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/cold-reader#1",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "Passes.jl pass_scope (~292-297) and grade (~600-603) now append \"...the two verifiers [`GBGCodingTools.Passes`](@ref) binds\" (this diff's hunk), and Demote.jl already links there. But pass_open's docstring (Passes.jl:361-389) — \"The act verifier grades the OPEN ids... a re-check...read by the blind verifier alone\" (378-379), \"since the blind verifier reads every id\" (368) — carries the identical unglossed pair with no link at all, untouched by either pass. \"blind verifier\" also stays the dominant name (13 uses in Passes.jl vs. 1 for \"state verifier\"), never retired as the hint asked — only aliased once in the module doc (\"also called the blind verifier\").",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Demote.jl:6-9",
+          "swept": true,
+          "evidence": "\"(the state verifier grades, blind to the diff, whether the defect is still there; [`GBGCodingTools.Passes`](@ref) binds both verifiers and their verdicts)\" — links to the definition."
+        },
+        {
+          "surface": "src/CLI/Passes.jl:292-297 (pass_scope)",
+          "swept": true,
+          "evidence": "diff hunk adds \"the two verifiers [`GBGCodingTools.Passes`](@ref) binds\" right after \"never read by the blind one\"."
+        },
+        {
+          "surface": "src/CLI/Passes.jl:600-603 (grade)",
+          "swept": true,
+          "evidence": "diff hunk adds the same \"[`GBGCodingTools.Passes`](@ref) binds\" clause after \"not by the blind one\"."
+        },
+        {
+          "surface": "src/CLI/Passes.jl:4-23 (Passes module docstring, the definition itself)",
+          "swept": true,
+          "evidence": "enumerates the full act vocabulary (HONORED..LAUNDERED) and state vocabulary (PRESENT..UNCLEAR) and both verifier names, but keeps \"also called the blind verifier\" as an official alias rather than retiring it — the definition exists, the name multiplicity the finding flagged does not go away."
+        },
+        {
+          "surface": "src/CLI/Passes.jl:361-389 (pass_open docstring)",
+          "swept": false,
+          "evidence": "\"full_state ... since the blind verifier reads every id\" (368); \"The act verifier grades the OPEN ids against this fix pass's diff; a closed id back in scope is a re-check, read by the blind verifier alone\" (378-379) — same two unglossed terms, no [`GBGCodingTools.Passes`](@ref) link, not touched by pass 1 or pass 2."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/cold-reader#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "This diff's hunk in GBGCodingTools.jl replaces \"the shim install\" with \"the install of the `gbg` command\", removing the one remaining unglossed \"shim\" mention (introduced by pass 1's own map edit) that stood before running_dev's definition. Main.jl:70-72 (running_dev, the first \"shim\" mention in include order) already reads \"(the `--dev` route of the shim — `bin/gbg`, the small script `gbg install` copies to `~/.local/bin/gbg` and which execs [`main`](@ref)...)\", matching bin/gbg's actual behaviour; main's mention (118-119) now follows an established term.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Main.jl:70-72 (running_dev, first shim mention in source)",
+          "swept": true,
+          "evidence": "carries the full inline gloss at first use, per the finding's own hint wording almost verbatim."
+        },
+        {
+          "surface": "src/CLI/Main.jl:118-119 (main, second mention)",
+          "swept": true,
+          "evidence": "\"the shim execs `julia -e '...'`\" — now reads as a restatement of an already-defined term, not a premature use."
+        },
+        {
+          "surface": "src/GBGCodingTools.jl module map (\"the rest of src/CLI/\" bullet)",
+          "swept": true,
+          "evidence": "diff hunk: \"the shim install\" -> \"the install of the `gbg` command\" — the site pass 1 had left naming \"shim\" without a gloss is reworded off the word entirely."
+        },
+        {
+          "surface": "src/CLI/Install.jl:1,6,14,38-51 (module comment, shim_source/shim_target)",
+          "swept": true,
+          "evidence": "Install.jl is included (src/GBGCodingTools.jl:89) after CLI/Main.jl (line 79), so these mentions fall after running_dev's definition in source order and were never a leak."
+        }
+      ]
+    }
+  ]
+}

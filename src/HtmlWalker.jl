@@ -4,9 +4,12 @@
 """
     HtmlWalker
 
-The one HTML reader of the tool: Gumbo parses a built page, and these helpers walk it — the article
-element Documenter renders into, the text of a node, the elements matching a predicate. Both the
-consolidator and the built-HTML scans go through here, so the rendered site is read one way.
+The one HTML reader of the tool: Gumbo parses a built page ([`HtmlWalker.parse_page`](@ref)), and these
+helpers walk it — the article element Documenter renders into ([`HtmlWalker.article_of`](@ref)), the
+text of a node ([`HtmlWalker.text_of`](@ref)), the elements matching a predicate
+([`HtmlWalker.elements`](@ref)), and a node's tag, classes and attributes ([`HtmlWalker.tagname`](@ref),
+[`HtmlWalker.classes`](@ref), [`HtmlWalker.attr`](@ref)). Both the consolidator and the built-HTML scans
+go through here, so the rendered site is read one way.
 """
 module HtmlWalker
 

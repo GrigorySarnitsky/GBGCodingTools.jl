@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "9de67d165024a05ae2bfe7c01a899dbc",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/src#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/GBGCodingTools.jl:39 (diff hunk) adds '[`demote`](@ref) is the one demotion rule the grade applies to an act verdict.' to the Preflight/Rounds/Passes bullet. Verified against src/CLI/Passes.jl:665 (`a2, dm = demote(a)` inside `grade`) — matches. Demote.jl was the sole one of the 29 include-list files with no map mention pre-diff; every other name the finding lists was already covered before this diff (fix pass 1), and none was removed.",
+      "class_surfaces": [
+        {
+          "surface": "src/GBGCodingTools.jl:37",
+          "swept": true,
+          "evidence": "Preflight, Rounds, Passes all linked."
+        },
+        {
+          "surface": "src/GBGCodingTools.jl:39",
+          "swept": true,
+          "evidence": "demote added by this diff: '[`demote`](@ref) is the one demotion rule the grade applies to an act verdict.'"
+        },
+        {
+          "surface": "src/GBGCodingTools.jl:40",
+          "swept": true,
+          "evidence": "Seeds, Recall linked (pre-existing, pass 1)."
+        },
+        {
+          "surface": "src/GBGCodingTools.jl:42",
+          "swept": true,
+          "evidence": "RoundFiles, Git linked (pre-existing, pass 1)."
+        },
+        {
+          "surface": "src/GBGCodingTools.jl:47",
+          "swept": true,
+          "evidence": "Sync, Init linked (pre-existing, pass 1)."
+        },
+        {
+          "surface": "src/GBGCodingTools.jl:49",
+          "swept": true,
+          "evidence": "Ledger, Doctor linked (pre-existing, pass 1)."
+        },
+        {
+          "surface": "src/GBGCodingTools.jl:51-53",
+          "swept": true,
+          "evidence": "Hunt.jl, Audit.jl, Fleet.jl, Bump.jl, Release.jl, Install.jl, Self.jl, Selftest.jl, Schema.jl all named (pre-existing, pass 1)."
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/src#3",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "`git diff c8ef916..22119aa -- src/TestHarness.jl` is empty — the assigned fix-pass-2 diff makes zero changes to this file. The docstring at c8ef916 (the state pass 2 started from) already reads '([`TestHarness.counting`](@ref), [`TestHarness.CountingArray`](@ref), ...)', identical to current HEAD; comparing to the pre-diff banked text at 2d5bcae ('([`TestHarness.CountingArray`](@ref), ...)', counting absent) shows the fix landed in fix pass 1's commit, not in pass 2's act.",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:12",
+          "swept": false,
+          "evidence": "Untouched by c8ef916..22119aa; the correct text present there predates this diff (added in the pass-1 commit c8ef916 itself, outside the range under audit)."
+        }
+      ]
+    }
+  ]
+}

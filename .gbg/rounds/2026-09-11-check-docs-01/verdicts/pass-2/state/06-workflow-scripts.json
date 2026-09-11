@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "9de67d165024a05ae2bfe7c01a899dbc",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#1",
+      "verdict": "PRESENT",
+      "evidence": "src/CLI/Preflight.jl:579 `main_script(instrument) = Dict(\"check-consistency\" => \"panel.js\", \"check-docs\" => \"lanes.js\", \"bug-hunt\" => \"hunt.js\", \"audit-changes\" => \"audit.js\")[instrument]` — still 4 entries. grep of all `.js` literals in src/ext lists only audit/dismissals/severity-recheck/verify-act/verify-architecture/verify-state/hunt/lanes/panel; 'attack-design' and 'rubric-audit' appear nowhere in src or ext."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#2",
+      "verdict": "PRESENT",
+      "evidence": "dismissals.js:22 and verify-architecture.js:23 both still `id: { type: 'string' }` with no description; neither prompt instructs the agent to return the id (dismissals.js only shows `id: ${d.id}` as a label). Contrast severity-recheck.js:43 `Return {id: \"${it.id}\", ...}` and verify-act.js:35 description 'the finding id EXACTLY as given' — unchanged."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#3",
+      "verdict": "PRESENT",
+      "evidence": "severity-recheck.js:14 required list `['out','items','items_path','subject','models','schema_version']` omits 'round' yet line 44 writes `round: A.round`. attack-design.js:14 required list `['repo','design_path','subject','out','models','schema_version']` omits 'round' yet line 78 writes `round: A.round`. Both unguarded exactly as described."
+    }
+  ]
+}

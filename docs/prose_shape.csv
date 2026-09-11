@@ -117,7 +117,7 @@ unit,words,longest_paragraph,admonitions
 "Git.jl :: Git.log(root, range) -> String",9,5,0
 "Git.jl :: Git.porcelain(root; untracked = true) -> Vector{Tuple{String",103,46,0
 "Git.jl :: Git.run(root, args...) -> Union{String,Nothing}",25,21,0
-"HtmlWalker.jl :: HtmlWalker",53,52,0
+"HtmlWalker.jl :: HtmlWalker",67,66,0
 "HtmlWalker.jl :: article_of(doc) -> Union{HTMLElement,Nothing}",27,24,0
 "HtmlWalker.jl :: attr(el, name, default = '') -> String",64,42,0
 "HtmlWalker.jl :: classes(el) -> Vector{String}",20,17,0
@@ -165,13 +165,13 @@ unit,words,longest_paragraph,admonitions
 "Passes.jl :: carry_deferrals(cfg, dir, round; io = stdout) -> Int",140,92,0
 "Passes.jl :: carry_ledger(cfg) -> Dict",109,77,0
 "Passes.jl :: carry_outstanding(cfg, instrument) -> Vector{Dict}",45,41,0
-"Passes.jl :: class_candidates(cfg, finding; cap = 24) -> Vector{String}",152,110,0
+"Passes.jl :: class_candidates(cfg, finding; cap = 24) -> Vector{String}",155,113,0
 "Passes.jl :: close(cfg, round; carry = String[], io = stdout) -> Int",333,97,0
 "Passes.jl :: finding_files(root, finding) -> Vector{String}",65,34,0
 "Passes.jl :: grade(cfg, round; io = stdout) -> Int",211,98,0
 "Passes.jl :: last_graded(dir, k) -> Int",108,68,0
 "Passes.jl :: pass_budget(cfg, dir, rec, k) -> (used, cap)",146,85,0
-"Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, ful",297,105,0
+"Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, ful",304,107,0
 "Passes.jl :: pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects,",210,84,0
 "Passes.jl :: quote_probe(root, finding) -> Vector{String}",177,104,0
 "Passes.jl :: save_carry(cfg, led)",25,23,0
@@ -346,7 +346,7 @@ unit,words,longest_paragraph,admonitions
 "TreeHash.jl :: blob_hash(path) -> String",35,32,0
 "TreeHash.jl :: tree_hash(dir; skip = ('.git',)) -> String",96,42,0
 "Witnesses.jl :: WitnessResult",123,113,0
-"Witnesses.jl :: Witnesses",95,94,0
+"Witnesses.jl :: Witnesses",101,100,0
 "Witnesses.jl :: blocked_reason(path) -> Union{String,Nothing}",26,23,0
 "Witnesses.jl :: refusal(path, package) -> Union{String,Nothing}",54,50,0
 "Witnesses.jl :: run(dir; expect, package, project, names = String[], io = st",184,76,0
