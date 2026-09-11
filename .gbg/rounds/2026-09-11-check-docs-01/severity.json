@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-11-check-docs-01",
+  "ratings": [
+    {
+      "id": "2026-09-11-check-docs-01/cold-reader#1",
+      "severity": "major",
+      "reason": "Verified (grep-confirmed) absence of any in-source definition for load-bearing vocabulary central to demote's mechanism (act/state verifier, class_surfaces, the HONORED/LINE-ONLY/... verdict set) is a missing load-bearing statement, not a false claim — a reader plausibly hits confusion via ?name lookup, but nothing in the text is itself wrong or asserts a false fact, so it falls short of blocker."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/rationale#1",
+      "severity": "nit",
+      "reason": "The claim is false: the finding cites line 981 (actually the 'Rounds.jl' line inside CLI/), but the real 'Scan.jl' line is 988 and is indented 4 spaces — the same level as 'GBGCodingTools.jl' and 'CLI/' themselves — not 6 spaces like the CLI/-nested files (Main.jl, Gate.jl, etc.); the diagram already places Scan.jl as a sibling of CLI/, matching src/Scan.jl and include(\"Scan.jl\") exactly, so there is no discrepancy for a reader to hit."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#1",
+      "severity": "minor",
+      "reason": "The literal facts check out (rubric-audit.js/attack-design.js are the only two of eleven workflow scripts absent from every *.js literal in src/ and ext/, and absent from both instruments' schema.json), but the framing that this contradicts \"delivered v1.0.0\" documentation is not supported: docs/ARCHITECTURE.md's own D17 section (which the finding quotes) explicitly and repeatedly states \"no verb builds the args of attack-design.js or rubric-audit.js... wiring them is deferred\" and \"no verb launches it, so it runs by hand\" — so a reader of the architecture doc gets the correct belief, not a wrong one. What remains is a narrower, real gap (no schema.json stanza for two scripts whose wiring is openly deferred), which is a documentation-completeness nit rather than a misleading or contradictory claim."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#2",
+      "severity": "major",
+      "reason": "Confirmed in source: dismissals.js and verify-architecture.js embed the id once in the prompt but give the schema's id field no description and no explicit 'echo this id back' instruction, unlike severity-recheck.js and verify-act.js which do both — and since these scripts' own liveness check silently reclassifies a mismatched-id verdict as an unaudited 'DIED' finding, a paraphrase would silently invalidate an already-completed audit rather than error, a load-bearing gap the codebase's own contrasting scripts show the authors treat as a real, guarded-against risk."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#3",
+      "severity": "major",
+      "reason": "Documented Args (`round`) is not enforced by the required-arg guard in two scripts unlike every sibling script that writes round, so an omitted `round` silently drops the property via JSON.stringify instead of throwing the standard clear error — a real, plausibly-hit contradiction between documented interface and enforced behavior, not a misleading factual/API claim rising to blocker."
+    }
+  ]
+}
