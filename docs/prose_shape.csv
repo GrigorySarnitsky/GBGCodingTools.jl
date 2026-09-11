@@ -6,7 +6,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D13 — Managed files: one sidecar `.gbg/managed.json` as a ca",533,474,0
 "ARCHITECTURE.md § D14 — Doctor: read-only, stable check ids, one exemptions le",482,375,0
 "ARCHITECTURE.md § D15 — Self-test: a fixture consumer at a path with a space, ",782,361,0
-"ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",788,720,0
+"ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",813,745,0
 "ARCHITECTURE.md § D17 — Migration: PF → IT → SS → CP, doctor-verified steps, n",364,279,0
 "ARCHITECTURE.md § D18 — Cost policy: economy default, anchors in the catalogue",174,107,0
 "ARCHITECTURE.md § D19 — Name: `GBGCodingTools`",128,127,0
@@ -189,6 +189,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: config_sha(cfg) -> String",13,10,0
 "Preflight.jl :: copy_scripts(cfg, instrument, round) -> String",59,33,0
 "Preflight.jl :: covered_paths(cfg) -> Vector{String}",16,13,0
+"Preflight.jl :: data_since_tag(dir) -> Union{Nothing,String}",106,55,0
 "Preflight.jl :: dev_round(cfg, instrument, st) -> Union{Nothing,String}",173,83,0
 "Preflight.jl :: install_script(src, dst) -> String",93,89,0
 "Preflight.jl :: next_round_id(cfg, instrument) -> String",21,17,0

@@ -90,6 +90,25 @@ tag. The tree a tag names is what a round stamped with that version was measured
 tag_tree(dir::AbstractString, ver::AbstractString) = Git.run(dir, "rev-parse", "-q", "--verify", "refs/tags/v$ver^{tree}")
 
 """
+    data_since_tag(dir) -> Union{Nothing,String}
+
+The released version a clean checkout past its latest tag still runs, or `nothing`. The argument `dir`
+is the tool's checkout. Every commit since the latest `vX.Y.Z[-rc.N]` tag must touch only `.gbg/` —
+the package's own records, never the tool's behaviour — and the tree must be clean.
+
+`gbg release` writes the carry ledger's history line after it tags, and that commit put `HEAD` one
+past the tag: while any finding was carried, the documentation round a release exists to open could
+never open at it. The stamps then name the tag, its commit and its tree, exactly as on the tag itself.
+"""
+function data_since_tag(dir::AbstractString)
+    Git.porcelain(dir) |> isempty || return nothing
+    tag = Git.run(dir, "describe", "--tags", "--abbrev=0")
+    (tag === nothing || !occursin(r"^v\d+\.\d+\.\d+(-rc\.\d+)?$", tag)) && return nothing
+    moved = Git.run(dir, "diff", "--name-only", "$tag..HEAD", "--", ".", ":(exclude).gbg")
+    return moved !== nothing && isempty(moved) ? tag[2:end] : nothing
+end
+
+"""
     stamps(cfg; record = nothing) -> Dict
 
 The tool and config stamps every `ROUND.toml` and `pass.toml` of the consumer `cfg` records:
@@ -113,7 +132,7 @@ function stamps(cfg::AbstractDict; record = nothing)
             ver = rv
         else
             tag = Git.run(dir, "describe", "--exact-match", "--tags", "--dirty")
-            tag !== nothing && occursin(r"^v\d+\.\d+\.\d+(-rc\.\d+)?$", tag) && (ver = tag[2:end])
+            ver = tag !== nothing && occursin(r"^v\d+\.\d+\.\d+(-rc\.\d+)?$", tag) ? tag[2:end] : data_since_tag(dir)
         end
     end
     Dict{String,Any}(

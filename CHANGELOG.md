@@ -3,6 +3,19 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
+## 1.0.0-rc.9 — 2026-09-11
+
+PATCH on rc.8. Instruments affected: check-docs and check-consistency (where their rounds may open).
+Rates comparable: yes.
+
+**A documentation round opens after the release that exists to open it.** `gbg release` appends the
+carry ledger's history line after it tags, and while any finding is carried that write is a change the
+session must commit, one commit past the tag. Preflight stamped every HEAD not exactly on a tag as
+`dev+<sha>` and refused the round, so rc.7 and rc.8 each tagged a round that could not open.
+`Preflight.data_since_tag` now stamps a clean checkout with its latest tag when every commit since
+touched only `.gbg/`, the package's own records; its commit and tree are the tag's, as on the tag itself.
+A commit anywhere else, or a dirty tree, is `dev` as before.
+
 ## 1.0.0-rc.8 — 2026-09-11
 
 PATCH on rc.7. Instruments affected: none (the `gbg attack` verb). Rates comparable: yes.

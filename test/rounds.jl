@@ -79,6 +79,21 @@ end
     @test G.Preflight.dev_round(tcfg, "audit-changes", dev) === nothing        # off-tag by construction
     @test G.Preflight.dev_round(tcfg, "bug-hunt", dev) === nothing
     @test G.Preflight.dev_round(G.Config.read(FIXTURE), "check-docs", dev) === nothing   # not the tool root
+    # `gbg release` writes the carry ledger after it tags, so the commit of that write puts HEAD one past
+    # the tag (rc.8 could not open its own round): a HEAD past the latest tag by `.gbg/` commits alone still
+    # runs the released instrument; one past it by anything else, or a dirty tree, does not
+    dir = joinpath(TMP, "data-since-tag"); mkpath(joinpath(dir, "src")); mkpath(joinpath(dir, ".gbg"))
+    git(args...) = strip(read(setenv(`git -C $dir $args`, "GIT_AUTHOR_NAME" => "t", "GIT_AUTHOR_EMAIL" => "t@t", "GIT_COMMITTER_NAME" => "t", "GIT_COMMITTER_EMAIL" => "t@t", "HOME" => dir, "PATH" => ENV["PATH"]), String))
+    write(joinpath(dir, "src", "a.jl"), "a\n"); git("init", "-q"); git("add", "-A"); git("commit", "-q", "-m", "one")
+    @test G.Preflight.data_since_tag(dir) === nothing                                  # no tag at all
+    git("tag", "-a", "v1.0.0-rc.1", "-m", "rc.1")
+    write(joinpath(dir, ".gbg", "carried.toml"), "history = []\n"); git("add", "-A"); git("commit", "-q", "-m", "ledger")
+    @test G.Preflight.data_since_tag(dir) == "1.0.0-rc.1"                              # only the package's records moved
+    write(joinpath(dir, ".gbg", "carried.toml"), "history = [1]\n")
+    @test G.Preflight.data_since_tag(dir) === nothing                                  # a dirty tree
+    git("add", "-A"); git("commit", "-q", "-m", "ledger again")
+    write(joinpath(dir, "src", "a.jl"), "b\n"); git("add", "-A"); git("commit", "-q", "-m", "code")
+    @test G.Preflight.data_since_tag(dir) === nothing                                  # the tool itself moved
 end
 
 # `gbg release` leans on ONE round: the closed /check-docs round stamped with the latest rc tag, every

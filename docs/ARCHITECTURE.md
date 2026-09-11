@@ -876,7 +876,8 @@ held the string only to exempt a dev round from the tag-moved refusal — and th
 frozen record that resulted stopped `Pkg.test()` and every docs build. A refusal belongs where the
 answer is still cheap. The earlier form of the rule admitted a round opened at a clean tag: a round whose `tool_version` equals a released tag — a prerelease
 `vX.Y.Z-rc.<n>` included — AND whose tree was clean at open (`git describe --exact-match --dirty`
-naming that tag with no `-dirty` suffix) is stamped with the tag, not `dev+…`, and is a normal
+naming that tag with no `-dirty` suffix — or a clean tree past its latest tag by commits to `.gbg/` alone,
+`Preflight.data_since_tag`, since `gbg release` writes the carry ledger after it tags) is stamped with the tag, not `dev+…`, and is a normal
 closable round; this is the tool's own way to run its instruments on a release, and at an rc tag on
 the release candidate — the stamp names the rc tag as the instrument that measured the round, which
 is what a stamp is for. For such a round at the tool root `tool_tree_sha` is the tree the tag names
