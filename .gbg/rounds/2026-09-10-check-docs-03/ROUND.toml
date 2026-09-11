@@ -88,3 +88,7 @@ templates = "b70d86c38591c0fd5709d63ce3284b1222bf81cd76912c8bbc3c27da3e17f866"
 operational-claims = "28f328109b99963ac7a937bf8da4829e216b92470ab952141af87447c3f31024"
 catalogues = "e2408484b63c173f37d3584a30c3783668af58d68b5b00703abb0530e87923fa"
 schemas = "5c6cb471d83226c9a3ef8731214671b834ac6076da0024a6e8a28a4237268db2"
+
+[abandoned]
+open_ids = []
+reason = "superseded by rc.6: the closure rules it was graded under changed (re-checks, pass budget, audit coverage); every fix is in master and the round is re-run at v1.0.0-rc.6"
