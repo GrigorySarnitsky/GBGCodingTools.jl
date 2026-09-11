@@ -11,7 +11,7 @@ The verification half of a round. Each pass has two verifiers, both agents the s
   other surface carrying the same class with whether the diff swept it), `LINE-ONLY` (the instance
   is fixed, the class is alive), `ADJACENT`, `INSERTED`, `NEW-DEFECT`, `SCOPE-CREEP`, `UNDONE`
   (nothing in the diff addresses it) and `LAUNDERED` (closed by declaring it acceptable);
-- the **state verifier**, also called the blind verifier, never sees the diff and grades whether the
+- the **state verifier** never sees the diff and grades whether the
   defect is in the tree now: `PRESENT` (its default), `PARTIAL`, `REGRESSED`, `ABSENT`,
   `NOT-A-DEFECT` or `UNCLEAR`.
 
@@ -308,9 +308,9 @@ where its own evidence lives, and the diff says whether anything went near it �
 names no location at all, which is re-verified every pass rather than never, silence about where a
 defect lives being no evidence that it is gone.
 
-An id the previous pass left `pending_state` — graded by the act verifier, never read by the blind one,
+An id the previous pass left `pending_state` — graded by the act verifier, never read by the state verifier,
 the two verifiers [`GBGCodingTools.Passes`](@ref) binds — is a suspect too, or nothing would read it again. The suspects are re-checks, which `pass_open` sends to
-the blind verifier alone. Returns the scope, the previously open ids, the suspects and the fix pass's
+the state verifier alone. Returns the scope, the previously open ids, the suspects and the fix pass's
 commit range; `scope === nothing` means every id.
 """
 function pass_scope(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, k::Int)
@@ -324,7 +324,7 @@ function pass_scope(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, k
     from = isfile(prevpass) ? get(TOML.parsefile(prevpass), "head", rec["head"]) : rec["head"]
     range = "$from..$head"
     prev_open = String.(tally["open_ids"])
-    # an id the act verifier closed with no blind reading is neither open nor closed; unless it is re-read
+    # an id the act verifier closed with no state reading is neither open nor closed; unless it is re-read
     # here it is never read again (2026-09-10-check-docs-03 left two such ids out of scope for seven passes)
     pending = String.(get(tally, "pending_state", String[]))
     touched = Set(Git.changed_paths(root, range, Preflight.covered_paths(cfg)))
@@ -390,8 +390,8 @@ end
 
 - `cfg` — the validated config.
 - `round` — the round id.
-- `full_state` — kept for the command line; it changes nothing, since the blind verifier (the state
-  verifier; [`GBGCodingTools.Passes`](@ref) binds both verifiers) reads every id in scope on every pass.
+- `full_state` — kept for the command line; it changes nothing, since the state verifier
+  ([`GBGCodingTools.Passes`](@ref) binds both verifiers) reads every id in scope on every pass.
 - `regrade` — accept a changed stamp (`config_sha`, or the tool stamps) and re-stamp it; the round is
   re-graded from here, and the pass records `regrade = true`.
 - `sweep_ok` — open even though an open finding names a file the fix pass did not touch
@@ -403,7 +403,7 @@ while an open finding's own named locations are untouched by every fix pass sinc
 spent discovering that a fix stopped at the line it quoted is a pass wasted.
 
 The act verifier grades the OPEN ids against this fix
-pass's diff; a closed id back in scope is a re-check, read by the blind verifier alone, because the
+pass's diff; a closed id back in scope is a re-check, read by the state verifier alone, because the
 question is whether it regressed and its fix is not in this diff. It refuses, too, once the pass budget
 is spent (`pass_budget`): the round then closes by carrying what is still open.
 
@@ -440,7 +440,7 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
         println(io, "pass open: refused — the pass budget is spent ($used of $cap). gbg round close $round carries every id still open into the next $inst round.")
         return 2
     end
-    # A CLOSED id back in scope is asked whether it REGRESSED, and only the blind verifier can answer:
+    # A CLOSED id back in scope is asked whether it REGRESSED, and only the state verifier can answer:
     # the act verifier reads this fix pass's diff, where a fix made in an earlier pass is not, so all it
     # could say is UNDONE — 22 of 2026-09-10-check-docs-03's 40 ids closed by adjudication for that alone.
     rechecked = scope === nothing ? String[] : suspects
@@ -468,7 +468,7 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
         expected_state[f["lane"]] = get(expected_state, f["lane"], 0) + 1
         (get(f, "seeded", false) || f["id"] in rechecked) || (expected_act[f["lane"]] = get(expected_act, f["lane"], 0) + 1)
     end
-    # The blind verifier reads the whole scope every pass: the open ids, and the closed ones back in scope,
+    # The state verifier reads the whole scope every pass: the open ids, and the closed ones back in scope,
     # which only it can answer for (above). An id it does not read is `pending_state` at grade and is
     # re-read next pass; `close` refuses while one remains. `full_state` is kept for the command line and
     # changes nothing: the scope is already everything this pass owes a reading.
@@ -551,8 +551,8 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
         Preflight.save_args(cfg, round, "pass-$k-act", act); Preflight.save_args(cfg, round, "pass-$k-state", state)
         nact = length(act["findings"])
         last_pass && println(io, "\nThis is pass $(used + 1) of $cap: whatever is still open after it is carried into the next $inst round at close.")
-        println(io, nact > 0 ? "\nLaunch BOTH verifiers exactly as printed — the act verifier grades the $nact open id(s) against this fix pass's diff; the blind verifier reads all $(length(state_findings)) in scope, the $(length(rechecked)) re-checked closed id(s) among them — then gbg round grade $round:\n" :
-                              "\nNo id is open, so the act verifier has nothing to grade. Launch the blind verifier exactly as printed — it reads the $(length(rechecked)) re-checked closed id(s) for regression — then gbg round grade $round:\n")
+        println(io, nact > 0 ? "\nLaunch BOTH verifiers exactly as printed — the act verifier grades the $nact open id(s) against this fix pass's diff; the state verifier reads all $(length(state_findings)) in scope, the $(length(rechecked)) re-checked closed id(s) among them — then gbg round grade $round:\n" :
+                              "\nNo id is open, so the act verifier has nothing to grade. Launch the state verifier exactly as printed — it reads the $(length(rechecked)) re-checked closed id(s) for regression — then gbg round grade $round:\n")
         nact > 0 && println(io, Preflight.workflow_call(joinpath(wdir, "verify-act.js"), act), "\n")
         println(io, Preflight.workflow_call(joinpath(wdir, "verify-state.js"), state))
         println(io, "\n(lane 00-scans is closed by rescan at grade, never by a verdict)")
@@ -630,10 +630,10 @@ re-run; for an audit the disposition gate after the severity re-check — and wr
 `tally.md` with the pass series and the plateau signal.
 
 A re-checked id — closed earlier, back in scope — keeps the act verdict that closed it: it stays closed
-while the blind verifier still reads it absent, and reopens when that reading finds it back.
+while the state verifier still reads it absent, and reopens when that reading finds it back.
 
 Exit 1 while `open_ids` is non-empty, and equally while any id is `pending_state` — read by the act
-verifier and not by the blind one, the two verifiers [`GBGCodingTools.Passes`](@ref) binds — 0 only
+verifier and not by the state verifier, the two verifiers [`GBGCodingTools.Passes`](@ref) binds — 0 only
 when every id is closed.
 """
 function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
@@ -656,7 +656,7 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         j == 0 || (carried = Dict{String,Any}(String(i) => e for (i, e) in read_json(joinpath(pass_dir(dir, j), "tally.json"))["per_id"] if !(String(i) in scope)))
     end
     findings = scope === nothing ? all_findings : [f for f in all_findings if f["id"] in scope || f["lane"] == "scans"]
-    # a closed id back in scope keeps the act verdict that closed it; only its blind reading is fresh
+    # a closed id back in scope keeps the act verdict that closed it; only its state reading is fresh
     rechecked = Set(String.(get(pass, "rechecked", String[])))
     jp = last_graded(dir, k)
     prevper = jp == 0 ? Dict{String,Any}() : Dict{String,Any}(read_json(joinpath(pass_dir(dir, jp), "tally.json"))["per_id"])
@@ -717,7 +717,7 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
                 end
                 per_id[id] = entry; continue
             end
-            # the blind verifier judges the open ids mid-round (`pass.toml`'s `state_ids`); an id the act
+            # the state verifier judges the open ids mid-round (`pass.toml`'s `state_ids`); an id the act
             # verifier closed without one is PENDING — it drives no fix pass and closes no round, and
             # `close` refuses while one stands, so the last pass is always a full blind sweep
             # `per_id.state` is a closed vocabulary (§6.3) and holds what a verifier SAID; an id nobody
@@ -818,7 +818,7 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     println(io, "grade: $series")
     flat >= 2 && println(io, "grade: PLATEAU — the open count has not moved for $flat passes; adjudicate what is not a defect, or gbg round abandon")
     isempty(open_ids) || (println(io, "grade: $(length(open_ids)) open id(s): ", join(open_ids, ", ")); return 1)
-    isempty(pending_state) || (println(io, "grade: 0 open, $(length(pending_state)) awaiting a blind reading — gbg round pass open $round (the next pass sweeps them; nothing closes on the act verifier alone)"); return 1)
+    isempty(pending_state) || (println(io, "grade: 0 open, $(length(pending_state)) awaiting a state reading — gbg round pass open $round (the next pass sweeps them; nothing closes on the act verifier alone)"); return 1)
     println(io, "grade: every id closed — gbg round close $round"); return 0
 end
 
@@ -1095,7 +1095,7 @@ function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector =
         stillopen = [id for id in t["open_ids"] if !(id in carry)]
         isempty(stillopen) || push!(fails, "$(length(stillopen)) open id(s) in pass $k" * (isempty(carry) ? "" : " beyond the $(length(carry)) carried"))
         unread = [p for p in pend if !(p in carry)]
-        isempty(unread) || push!(fails, "$(length(unread)) id(s) the blind verifier never read at this head — gbg round pass open $round, which sweeps them")
+        isempty(unread) || push!(fails, "$(length(unread)) id(s) the state verifier never read at this head — gbg round pass open $round, which sweeps them")
         isempty(t["dead_lanes"]) || push!(fails, "dead lane(s) in pass $k: " * join(t["dead_lanes"], ", "))
     end
     isempty(rec["dead_lanes"]) || push!(fails, "dead lanes at bank: " * join(rec["dead_lanes"], ", "))

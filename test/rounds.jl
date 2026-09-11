@@ -357,7 +357,7 @@ end
     @test isempty(prev3) && scope3 == ["r/x#1"]                            # pass 1's tally, not pass 2's absence
     rm(joinpath(pd, "tally.json"))
     @test G.Passes.pass_scope(cfg, dir, rec, 3)[1] === nothing             # nothing graded yet: verify everything
-    # an id the blind verifier never read is re-read next pass whether or not the fix went near it, or it
+    # an id the state verifier never read is re-read next pass whether or not the fix went near it, or it
     # is read never: 2026-09-10-check-docs-03 left two such ids out of every scope for seven passes
     quietf = Dict{String,Any}("id" => "r/z#1", "lane" => "src", "n" => 1, "title" => "t", "locations" => ["Project.toml:1 — untouched"])
     write(joinpath(dir, "findings.json"), JSON3.write(Dict("schema_version" => 1, "round" => "r", "findings" => [quietf])))
@@ -498,10 +498,10 @@ end
 end
 
 # A closed id back in scope — the fix pass touched a file it names — is asked whether it REGRESSED, and by
-# the blind verifier alone: its fix is not in this pass's diff, so the act verifier could only ever say
+# the state verifier alone: its fix is not in this pass's diff, so the act verifier could only ever say
 # UNDONE, and in 2026-09-10-check-docs-03 that closed 22 of 40 ids by adjudication instead of by their
 # fixes. The act verdict that closed it stands. All three outcomes: still absent, back, and unread.
-@testset "a re-checked id is asked whether it regressed, by the blind verifier alone" begin
+@testset "a re-checked id is asked whether it regressed, by the state verifier alone" begin
     root = fixture_copy("recheck")
     cfg = G.Config.read(root)
     name = "2026-01-01-check-docs-01"
@@ -534,7 +534,7 @@ end
     end
     stamp(p1, Dict("pass" => 1))
     stamp(p2, Dict("pass" => 2, "nonce" => "d"^32, "scope" => ids, "rechecked" => ids, "state_ids" => ids))
-    # no act file at all: none is owed for a re-check. The blind verifier: one absent, one back, one unread.
+    # no act file at all: none is owed for a re-check. The state verifier: one absent, one back, one unread.
     write(joinpath(p2, "state", "01-src.json"), JSON3.write(Dict("schema_version" => 1, "lane" => "src",
         "graded_sha256" => rec["findings_sha"], "pass_nonce" => "d"^32,
         "verdicts" => [Dict("id" => ids[1], "verdict" => "ABSENT", "evidence" => "searched the corpus"),
@@ -613,7 +613,7 @@ end
     @test isempty(G.carry_release_fails(led("minor")))
 end
 
-# Nothing closes on one reading. An id the act verifier closes with no blind reading is PENDING — not
+# Nothing closes on one reading. An id the act verifier closes with no state reading is PENDING — not
 # closed, not open, driving no fix — and `close` refuses while one stands; `pass_scope` re-reads it next
 # pass. Both directions here: the id that was read closes, the id that was not goes pending and blocks
 # the close until it is read.
@@ -636,7 +636,7 @@ end
         "banked" => "2026-01-01T00:00:01", "findings_sha" => G.RoundFiles.sha256_file(fj)))
     write_round(dir, rec)
     nonce = "a"^32
-    # the blind verifier was asked for #1 alone; #2 is a suspect the act verifier re-confirmed
+    # the state verifier was asked for #1 alone; #2 is a suspect the act verifier re-confirmed
     open(joinpath(pd, "pass.toml"), "w") do f
         TOML.print(f, Dict("pass" => 1, "nonce" => nonce, "opened" => "2026-01-01T00:00:02", "head" => rec["head"],
                            "range" => "$(rec["head"])..$(rec["head"])", "fix_range" => "$(rec["head"])..$(rec["head"])",
@@ -659,7 +659,7 @@ end
     @test tal["per_id"]["2026-01-01-check-docs-01/src#2"]["state"] === nothing   # nobody was asked
     @test tal["open_ids"] == String[] && tal["pending_state"] == ["2026-01-01-check-docs-01/src#2"]     # pending is not open
     io3 = IOBuffer(); @test G.Passes.close(cfg, "2026-01-01-check-docs-01"; io = io3) == 1
-    @test occursin("blind verifier never read", String(take!(io3)))
+    @test occursin("state verifier never read", String(take!(io3)))
     # read it, and the round closes
     write(joinpath(pd, "state", "01-$lane.json"), JSON3.write(Dict("schema_version" => 1, "lane" => lane,
         "graded_sha256" => rec["findings_sha"], "pass_nonce" => nonce,

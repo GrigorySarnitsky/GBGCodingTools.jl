@@ -57,7 +57,7 @@ Every hat is forbidden `.gbg/` and `~/.gbg/`. The panel is COLLECT-ONLY: it neve
 6. **Verify.** `gbg round pass open <round>` refuses while an open finding names a file the fix pass
    left untouched (`--sweep-ok` overrides) or once the round's `max_passes` budget (3 by default) is
    spent; verifies only the ids still open, any closed one the fix pass has touched again, and any closed
-   one that names no location at all — the act verifier the open ids, the blind verifier all of them, a
+   one that names no location at all — the act verifier the open ids, the state verifier all of them, a
    closed id back in scope being a re-check it alone reads; records the fix range and a nonce, regenerates the
    manuscripts after a fresh build, and prints two `Workflow` calls: the act verifier (sees the diff;
    grades `HONORED` / `ADJACENT` / `INSERTED` / `LINE-ONLY` / `NEW-DEFECT` / `SCOPE-CREEP` / `UNDONE` /
@@ -69,7 +69,7 @@ Every hat is forbidden `.gbg/` and `~/.gbg/`. The panel is COLLECT-ONLY: it neve
    mechanically, when `class_surfaces[]` is empty and equally when any entry in it is `swept: false`),
    the closure channels (`honored`, `adjudicated`, `seeded`, `rescan`, `carried`) and prints the pass
    series and the plateau signal; exit 1 while any id is open, and equally while any id is
-   `pending_state` — closed by the act verifier with no blind reading to confirm it.
+   `pending_state` — closed by the act verifier with no state reading to confirm it.
    Loop 5–7 over the SAME `findings.json`: the denominator is fixed, so it converges. Re-running the
    panel over a just-edited corpus is a new search, not the closure loop; do it after closure if at all.
 8. **Adjudicate.** A finding that is not a defect is closed by a ledger entry in `.gbg/exemptions.toml`

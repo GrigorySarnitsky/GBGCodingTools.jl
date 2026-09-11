@@ -55,7 +55,7 @@ economy by default; the fix pass is never economised.
    the finding names, or re-open with `--sweep-ok` when the fix rightly lives elsewhere. A pass after
    the first verifies only the ids still open, any closed one the fix pass has touched again, and any
    closed one that names no location at all; everything else keeps the entry that closed it. The act
-   verifier grades only the open ids; a closed id back in scope is a re-check, read by the blind verifier
+   verifier grades only the open ids; a closed id back in scope is a re-check, read by the state verifier
    alone, and it stays closed while that reading is still `ABSENT`. The round has a budget of
    `max_passes` passes (3 by default); past it `pass open` refuses. A dismissal is a
    verdict the verifier grades like any other: it must name the rule or recorded decision that licenses
