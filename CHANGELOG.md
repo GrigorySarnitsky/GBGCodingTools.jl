@@ -3,6 +3,15 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
+## Unreleased
+
+PATCH on rc.7. Instruments affected: none (the `gbg attack` verb). Rates comparable: yes.
+
+**`gbg attack <instrument>` runs.** In rc.7 its verb read the option fields `pos` and `vals`, which the
+parsed options do not have (`positional`, `values`), so every invocation crashed with exit 3; the tests
+called `attack` as a function and never through the dispatch. `test/coverage.jl` now drives all four
+design-check verbs through `main`.
+
 ## 1.0.0-rc.7 — 2026-09-11
 
 MAJOR on rc.6. Instruments affected: bug-hunt (the reproduction record), audit-changes (its bank),

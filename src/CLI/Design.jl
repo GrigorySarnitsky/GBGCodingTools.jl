@@ -207,7 +207,7 @@ end
 
 design_verb(f) = args -> (try f(args) catch err; err isa Config.ConfigError || rethrow(); println(stderr, sprint(showerror, err)); 2 end)
 VERBS["attack"] = design_verb(args -> (o = parse_options(args; valued = ["subject"]);
-    length(o.pos) == 1 ? attack(Config.read(), o.pos[1]; subject = get(o.vals, "subject", nothing)) :
+    length(o.positional) == 1 ? attack(Config.read(), o.positional[1]; subject = get(o.values, "subject", nothing)) :
                          (println(stderr, "usage: gbg attack <instrument> [--subject <file>]"); 2)))
 VERBS["attack read"] = design_verb(args -> length(args) == 1 ? attack_read(Config.read(), args[1]) :
                                            (println(stderr, "usage: gbg attack read <id>"); 2))

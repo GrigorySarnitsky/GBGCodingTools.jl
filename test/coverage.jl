@@ -16,6 +16,14 @@ include("helpers.jl")
         @test G.main(["scan"]) == 2                                    # a verb missing its noun
         @test G.main(["doctor", "--only", "CFG.VALID"]) == 0
         @test G.main(["gate"]) == 0                                    # no open round
+        # the design-check verbs through the dispatch, not only as functions: rc.7 shipped `gbg attack`
+        # reading option fields that do not exist, and its first real invocation crashed (exit 3)
+        @test G.main(["attack"]) == 2                                  # usage
+        @test G.main(["attack", "audit-changes"]) == 0                 # the positional
+        @test G.main(["attack", "audit-changes", "--subject", "no-such-subject.toml"]) == 2   # the valued option
+        @test G.main(["attack", "read"]) == 2
+        @test G.main(["calibrate", "extra"]) == 2
+        @test G.main(["calibrate", "read"]) == 2
     end
     @test Set(keys(G.VERBS)) == Set(k for k in keys(G.VERBS))          # the table is a table, not a closure
     @test length(G.VERBS) >= 20
