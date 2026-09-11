@@ -1,6 +1,7 @@
 # ROUND.toml — written by the gbg round verbs; never edited by hand (ARCHITECTURE §6.1)
 tool_tree_sha = "98c1cb1fb018b1e5ea20e67c25218f174cec57ee"
 findings_sha = "8d350a163e253aac46fe5fc6e8ecd1a9228b6d0e62bbfb1d2237373ed36136fd"
+closed = "2026-09-12T00:01:36"
 strength = "economy"
 round = "2026-09-11-check-docs-02"
 opened = "2026-09-11T22:26:28"
@@ -17,8 +18,14 @@ dead_lanes = []
 cost = "economy"
 tool_rev = "efd9b35fafd87d96fd33309780e646b4878e92d4"
 instrument = "check-docs"
+closed_head = "f8b370516f68ca614d821bea37d233b1cb7827a7"
 catalog_sha = "97ed6dd4088cc2aca03d8ceb8be51c3e5c12e99d3e350b53949afa8384252f87"
 schema_version = 1
+
+[closed_by]
+tally_sha = "3abb2234716d95f07ef53239eb997046ea0e599cac212b059b6a023eebfedf00"
+carried = ["2026-09-11-check-docs-01/rationale#1", "2026-09-11-check-docs-01/workflow-scripts#1", "2026-09-11-check-docs-01/workflow-scripts#2", "2026-09-11-check-docs-01/workflow-scripts#3", "2026-09-11-check-docs-02/ext#1", "2026-09-11-check-docs-02/rulebook#1", "2026-09-11-check-docs-02/rulebook#2", "2026-09-11-check-docs-02/workflow-scripts#1", "2026-09-11-check-docs-02/workflow-scripts#2"]
+adjudicated = []
 
 [[roster]]
 key = "rationale"

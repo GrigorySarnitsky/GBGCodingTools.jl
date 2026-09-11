@@ -17,30 +17,16 @@ version = "1.0.0-rc.9"
 
 [[carried]]
 confidence = "high"
-locations = ["src/CLI/Demote.jl:6-9: \"The one demotion rule over an act verdict — the act verifier's grade of what the fix pass DID to one finding, from the diff (the state verifier grades, blind to the diff, whether the defect is still there). `class_surfaces` is the list the verifier fills…\"", "src/CLI/Demote.jl:11-12: \"An act verdict `HONORED` becomes `LINE-ONLY` when that list is empty…\"", "src/CLI/Passes.jl:283-285 (pass_scope): \"An id the previous pass left `pending_state` — graded by the act verifier, never read by the blind one — is a suspect too…\"", "src/CLI/Passes.jl:587-591 (grade): \"applies the demotion to the rest, then the closure channels per id — `honored`, `adjudicated`, `seeded`, `rescan`… A re-checked id — closed earlier, back in scope — keeps the act verdict that closed it…\""]
-id = "2026-09-11-check-docs-01/cold-reader#1"
-round = "2026-09-11-check-docs-01"
-description = "A cold reader meets `?GBGCodingTools.demote` (Demote.jl is included right after Doctor.jl, well before Passes.jl) and is immediately handed four unglossed terms of art at once: \"act verdict\", \"the act verifier\" (vs. \"the state verifier\", elsewhere called \"the blind verifier\" — three names for what turn out to be two roles), \"class_surfaces\", and \"swept\". None is a plain-English read: an \"act verifier\" does not mean a verifier that acts, and \"swept\" here means specifically \"a location a finding names that the fix pass's diff touched\" (RULE.DOC.CLASS_SWEEP's sense), not the ordinary sense used two lines earlier in Reflection.jl (\"whose `src` surface names the files swept\", meaning merely \"read\"). The closed verdict vocabulary itself — `HONORED`, `LINE-ONLY`, and later `PHANTOM`/`UNFIXED`/`ABSENT`/`NOT-A-DEFECT` (Witnesses.jl, Passes.jl) — is never enumerated or explained as a vocabulary anywhere a `?name` lookup would land; each docstring just uses the members as already-known constants. I verified this is not merely a link I missed: I grepped the whole `src/` and `ext/` tree for \"act verifier\", \"state verifier\", \"blind verifier\", \"class_surfaces\", \"HONORED\", \"LINE-ONLY\" and every occurrence is inside a docstring or comment that USES the term, none DEFINES it (the closest thing to a definition, RULE.INST.SELF_REPORT's \"the act verifier sees the diff, the state verifier is blind\", lives only in the policy rulebook, which a `?name` REPL read never surfaces). By contrast, every other overloaded-but-central term in this package (`consumer`, `instrument`, `round`, `lane`, `hat`, `gate`, the three senses of `anchor`, `surface`, `managed file`, DEAD/REJECTED/EMPTY/TRUNCATED lane statuses) gets exactly this kind of module-docstring or first-use definition elsewhere in the same corpus, which is what makes its absence here conspicuous rather than a house style."
-first_carried = "2026-09-11T17:52:03"
-severity = "major"
-lane = "cold-reader"
-last_carried = "2026-09-11T17:52:03"
-instrument = "check-docs"
-carries = 1
-title = "\"act verifier\" / \"state verifier\" and the HONORED/LINE-ONLY verdict vocabulary are used with no definition anywhere in the source"
-type = "self-containment"
-[[carried]]
-confidence = "high"
 locations = ["docs/ARCHITECTURE.md:981 — \"      Scan.jl                   `gbg scan docs|html` — the tiered engine over catalog/scans.toml\" (6-space indent, nested under `CLI/`)", "src/GBGCodingTools.jl:65 — `include(\"Scan.jl\")` (listed among the top-level src/ includes, between Reflection.jl/TestHarness.jl and CLI/Ledger.jl, not among the `CLI/*.jl` includes)"]
 id = "2026-09-11-check-docs-01/rationale#1"
 round = "2026-09-11-check-docs-01"
 description = "§3's repository-layout diagram indents `Scan.jl` at the same 6-space level as `Gate.jl`, `Demote.jl`, `Seed.jl`, `Recall.jl`, `Consolidate.jl`, `Audit.jl`, `Hunt.jl`, `Selftest.jl` — all of which the diagram correctly places under `CLI/` and which the module does `include(\"CLI/<name>.jl\")`. But the actual file is `src/Scan.jl` (confirmed by `find src -type f`, which lists it as a sibling of `TreeHash.jl`, `HtmlWalker.jl`, `Reflection.jl`, `Witnesses.jl`, `TestHarness.jl`, `DocLints.jl`) and the module includes it as `include(\"Scan.jl\")`, not `include(\"CLI/Scan.jl\")`. A reader locating the scan engine by this diagram would look in the wrong directory."
 first_carried = "2026-09-11T17:52:03"
-severity = "nit"
+severity = "major"
 lane = "rationale"
-last_carried = "2026-09-11T17:52:03"
+last_carried = "2026-09-12T00:01:36"
 instrument = "check-docs"
-carries = 1
+carries = 2
 title = "§3's tree places `Scan.jl` under `src/CLI/`, but it lives at `src/Scan.jl`"
 type = "self-containment"
 [[carried]]
@@ -50,11 +36,11 @@ id = "2026-09-11-check-docs-01/workflow-scripts#1"
 round = "2026-09-11-check-docs-01"
 description = "Of the eleven workflow scripts, nine are wired into a gbg verb that builds their args and prints their launch line (every \"*.js\" literal in src/ and ext/ is only: audit.js, dismissals.js, hunt.js, lanes.js, panel.js, severity-recheck.js, verify-act.js, verify-architecture.js, verify-state.js). rubric-audit.js and attack-design.js never appear anywhere in src/ or ext/. Neither script's args/output shape is documented in its instrument's schema.json, and no schema/*.json exists for either output, unlike every other script. docs/ARCHITECTURE.md documents both as delivered v1.0.0 contributions (D17, §6.8: \"attack-design.js ... is the instrument every lens list must survive\"), but no gbg command can actually launch either."
 first_carried = "2026-09-11T17:52:03"
-severity = "minor"
+severity = "major"
 lane = "workflow-scripts"
-last_carried = "2026-09-11T17:52:03"
+last_carried = "2026-09-12T00:01:36"
 instrument = "check-docs"
-carries = 1
+carries = 2
 title = "rubric-audit.js and attack-design.js are never invoked by any CLI verb"
 type = "structure"
 [[carried]]
@@ -66,9 +52,9 @@ description = "dismissals.js and verify-architecture.js ask one agent per findin
 first_carried = "2026-09-11T17:52:03"
 severity = "major"
 lane = "workflow-scripts"
-last_carried = "2026-09-11T17:52:03"
+last_carried = "2026-09-12T00:01:36"
 instrument = "check-docs"
-carries = 1
+carries = 2
 title = "dismissals.js and verify-architecture.js never instruct the agent to echo the finding id"
 type = "operational"
 [[carried]]
@@ -78,10 +64,80 @@ id = "2026-09-11-check-docs-01/workflow-scripts#3"
 round = "2026-09-11-check-docs-01"
 description = "Both scripts document 'round' as part of Args and write it into their output, but neither's required-arg guard (`for (const k of [...]) if (A[k]===undefined) throw`) includes 'round', unlike every sibling script that writes round (lanes.js, panel.js, audit.js, hunt.js, dismissals.js all validate it). If round were omitted, JSON.stringify silently drops the undefined property instead of throwing the clear 'args.round is required' error every other script gives."
 first_carried = "2026-09-11T17:52:03"
-severity = "major"
+severity = "minor"
 lane = "workflow-scripts"
-last_carried = "2026-09-11T17:52:03"
+last_carried = "2026-09-12T00:01:36"
 instrument = "check-docs"
-carries = 1
+carries = 2
 title = "severity-recheck.js and attack-design.js write A.round without validating it was supplied"
 type = "operational"
+[[carried]]
+first_carried = "2026-09-12T00:01:36"
+severity = "minor"
+lane = "ext"
+confidence = "high"
+last_carried = "2026-09-12T00:01:36"
+locations = ["ext/GBGCodingToolsDocumenterExt.jl:22 — \"gate_or_skip(cfg, what) -> Bool\"", "ext/GBGCodingToolsDocumenterExt.jl:31 — \"function gate_or_skip(cfg, what::AbstractString)\""]
+instrument = "check-docs"
+carries = 1
+id = "2026-09-11-check-docs-02/ext#1"
+title = "gate_or_skip's printed signature omits the type the method actually declares"
+round = "2026-09-11-check-docs-02"
+type = "structure"
+description = "RULE.DOC.SIGNATURE_MIRROR requires that an argument typed in the method is typed in the docstring's signature line. The method types `what::AbstractString`, but the docstring's code-block signature shows bare `what`. The sibling docstring in the same file (`check(verb::AbstractString, code::Integer)`, line 14) gets this right, showing the mismatch is a slip rather than a house convention."
+[[carried]]
+first_carried = "2026-09-12T00:01:36"
+severity = "major"
+lane = "rulebook"
+confidence = "high"
+last_carried = "2026-09-12T00:01:36"
+locations = ["policy/RULES.toml:432-437 — check = [\"weakness\"]", "src/Scans/doi_crosscheck.jl:1 — \"SCAN.DOI_CROSSCHECK — RULE.CIT.FULL_INLINE, RULE.CIT.DOI.\"", "src/Scans/doi_crosscheck.jl:61-67 — the `require_doi` loop flagging \"a reference without a DOI or Open Library link on its title\"", ".gbg/config.toml:71 — require_doi = true; catalog/scans.toml SCAN.DOI_CROSSCHECK tier = \"hard\""]
+instrument = "check-docs"
+carries = 1
+id = "2026-09-11-check-docs-02/rulebook#1"
+title = "RULE.CIT.DOI's check field says \"weakness\" but a hard-tier scan already enforces it"
+round = "2026-09-11-check-docs-02"
+type = "structure"
+description = "RULE.TEST.RULE_WITH_CHECK defines `weakness` as \"a check is possible and none is built.\" For RULE.CIT.DOI (\"Every reference carries a clickable DOI... identical in every copy\") a check IS built: SCAN.DOI_CROSSCHECK's own header comment names RULE.CIT.DOI as one of the two rules it enforces, and its `require_doi` block (live in this package, tier hard, config flag true) is exactly that enforcement. RULES.toml nonetheless records RULE.CIT.DOI as an unpaid-check weakness — the rulebook misreporting its own coverage, the one thing RULE.TEST.RULE_WITH_CHECK exists to keep honest. Failure scenario: a reader (or `gbgdev rules`/doctor tooling) trusts RULES.toml's `check` column to know what still needs a scan; taking RULE.CIT.DOI at its word, they either build a redundant second check or treat the rule as unenforced and stop trusting SCAN.DOI_CROSSCHECK's DOI-presence hits as authoritative."
+[[carried]]
+first_carried = "2026-09-12T00:01:36"
+severity = "major"
+lane = "rulebook"
+confidence = "medium"
+last_carried = "2026-09-12T00:01:36"
+locations = ["policy/docs-rubric.md:219 — \"`# Arguments` precedes any column-0 admonition, and `# Fields` is last.\"", "policy/docs-rubric.md:47-48 (RULE.DOC.ARGS_FORM) — \"uses the bulleted form led by `The arguments are:`\" (a prose lead-in, never a heading)", "src/Scans/prose_shape.jl:118 — `findfirst(l -> occursin(r\"^# Arguments\\b\", l), lines)`"]
+instrument = "check-docs"
+carries = 1
+id = "2026-09-11-check-docs-02/rulebook#2"
+title = "RULE.DOC.SHAPE's \"`# Arguments` precedes any column-0 admonition\" clause names a heading form no other rule in this package's rubric ever produces"
+round = "2026-09-11-check-docs-02"
+type = "structure"
+description = "docs-rubric.md's only rule governing how a docstring's arguments are documented, RULE.DOC.ARGS_FORM, mandates the prose lead-in `The arguments are:` and never a `# Arguments` Markdown heading; this package's own docstrings confirm it (0 uses of a `# Arguments` heading vs 30 uses of `The arguments are:`). Yet RULE.DOC.SHAPE's ordering clause, and the scan enforcing it, test specifically for a `# Arguments` heading — a structural element no other rule in this file ever sanctions the corpus to produce. (docs/ARCHITECTURE.md shows this heading is a different fleet consumer's (IT's) argument-doc style, so the clause is a deliberate cross-consumer accommodation, but that provenance is not disclosed anywhere in the rendered docs-rubric.md itself.) Failure scenario: a reader of docs-rubric.md in isolation — exactly how it is meant to be read, rendered whole into every consumer's session — hits this clause with no antecedent, and either concludes the rulebook is self-contradictory (ARGS_FORM bans the heading it implies) or hunts for a heading form that, for this package, never legitimately exists."
+[[carried]]
+first_carried = "2026-09-12T00:01:36"
+severity = "minor"
+lane = "workflow-scripts"
+confidence = "high"
+last_carried = "2026-09-12T00:01:36"
+locations = ["instruments/check-consistency/workflow/verify-act.js:21 (`const MODE = A.mode === 'batches' ? 'batches' : 'lanes'`)", "instruments/check-consistency/workflow/verify-act.js:99-121 (the whole `if (MODE === 'batches') {...}` block, including its own coverage-gap validation of a `batches` array)", "src/CLI/Passes.jl:542 (`act = merge(base, Dict(\"range\" => fixrange, \"mode\" => \"lanes\", ...`) — the ONLY call site in the codebase that builds args for verify-act.js, and it always hard-codes `\"mode\" => \"lanes\"`, never `batches`"]
+instrument = "check-docs"
+carries = 1
+id = "2026-09-11-check-docs-02/workflow-scripts#1"
+title = "verify-act.js's `mode: 'batches'` branch is dead code — no caller ever sets it"
+round = "2026-09-11-check-docs-02"
+type = "structure"
+description = "verify-act.js declares and carefully validates a second operating mode (`mode: 'batches'`, with its own gap/overlap/duplicate-coverage checks over an `A.batches` array of [from,to] ranges), but grepping the whole Julia source and test suite shows exactly one call site ever constructs this script's args (Passes.jl:542), and it always passes `mode: 'lanes'` and never supplies a `batches` array; no test in test/rounds.jl, test/coverage.jl or test/schemas.jl exercises `mode: 'batches'` either. The batches branch, including its coverage-gap detection, is unreachable in the shipped tool: a bug there would never be caught by anything that runs, and the header comment tells a reader a capability exists that the CLI never uses."
+[[carried]]
+first_carried = "2026-09-12T00:01:36"
+severity = "minor"
+lane = "workflow-scripts"
+confidence = "medium"
+last_carried = "2026-09-12T00:01:36"
+locations = ["instruments/bug-hunt/workflow/dismissals.js:21 (`if (!A.items.length) throw ...`)", "instruments/check-consistency/workflow/severity-recheck.js:17 (`if (!A.items.length) throw ...`)", "instruments/check-consistency/workflow/rubric-audit.js:16 (`if (!A.hats.length || !A.items.length) throw ...`)", "instruments/bug-hunt/workflow/verify-architecture.js:18 (`if (!A.findings.length) throw ...`)", "instruments/check-docs/workflow/lanes.js (no such guard on `A.lanes`)", "instruments/check-consistency/workflow/panel.js (no such guard on `A.hats`)", "instruments/bug-hunt/workflow/hunt.js (no such guard on `A.lanes`)", "instruments/audit-changes/workflow/audit.js (no such guard on `A.lanes`)", "instruments/check-consistency/workflow/verify-state.js (no such guard on `A.lanes`/`A.findings`)", "instruments/check-consistency/workflow/verify-act.js (no such guard in the default `mode: 'lanes'` path)"]
+instrument = "check-docs"
+carries = 1
+id = "2026-09-11-check-docs-02/workflow-scripts#2"
+title = "Inconsistent 'refuse on an empty item list' guard across the eleven scripts"
+round = "2026-09-11-check-docs-02"
+type = "structure"
+description = "Four of the eleven scripts explicitly refuse to run when their driving item list is empty, each echoing RULE.TEST.MISSING_IS_FAILING ('a zero count is a dead lane rather than a clean one'). The other seven — including the three main per-instrument entry points lanes.js, panel.js, hunt.js and audit.js — have no equivalent guard on their own `A.lanes`/`A.hats` array: invoked with an empty roster, each would iterate zero times and return a quiet `{written: [], dead: [], empty: [], truncated: []}`, indistinguishable from 'nothing to check' rather than a loud failure. Under the current CLI (Preflight's lane/hat resolution) this looks unreachable in practice, so it is reported as a design-consistency gap, not a demonstrated failure."
