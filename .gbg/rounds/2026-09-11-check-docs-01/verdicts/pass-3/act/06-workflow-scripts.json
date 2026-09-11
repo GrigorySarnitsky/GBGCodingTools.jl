@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "lane": "workflow-scripts",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "648dfa765fb5901bdc8d4a6fe56007ab",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "git diff 22119aaf..c452982 touches only src/CLI/Passes.jl (docstring @ref links), src/HtmlWalker.jl, src/Witnesses.jl and docs/prose_shape.csv, plus .gbg round bookkeeping. No hunk touches instruments/, src/CLI/Preflight.jl, or Passes.jl launch-line logic. grep -rn 'rubric-audit.js|attack-design.js' src/ ext/ still returns nothing. The commit message itself says 'workflow-scripts#1, #2, #3 carry as planned.'",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/rubric-audit.js:1",
+          "swept": false,
+          "evidence": "script unchanged in the diff; still never referenced by any .jl file"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/attack-design.js:1",
+          "swept": false,
+          "evidence": "script unchanged in the diff; still never referenced by any .jl file"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:579",
+          "swept": false,
+          "evidence": "main_script dict not touched by the diff; still lacks entries for either script"
+        },
+        {
+          "surface": "src/CLI/Passes.jl (launch lines)",
+          "swept": false,
+          "evidence": "the 7-line hunk in Passes.jl only edits two docstrings (verifier @ref links); no verb/launch-line code was added for either script"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#2",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "instruments/bug-hunt/workflow/dismissals.js and verify-architecture.js are absent from the diff entirely. Current source confirms the flagged state is unchanged: dismissals.js:22 still `id: { type: 'string' }` with no description, and the agent prompt never instructs 'return id=...'; only an unlabeled `id: ${d.id}` line appears, not the explicit Return{id:...} pattern severity-recheck.js/verify-act.js use.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/dismissals.js:19-28",
+          "swept": false,
+          "evidence": "id schema property still bare `{ type: 'string' }`, no description added"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/dismissals.js:31-51",
+          "swept": false,
+          "evidence": "prompt still has no explicit 'Return {id: ...}' instruction"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/verify-architecture.js:20-29",
+          "swept": false,
+          "evidence": "file not touched by the diff at all"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/verify-architecture.js:32-47",
+          "swept": false,
+          "evidence": "file not touched by the diff at all"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#3",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "instruments/check-consistency/workflow/severity-recheck.js and instruments/audit-changes/workflow/attack-design.js are absent from the diff. Current source confirms: severity-recheck.js:15 required-arg list is still ['out','items','items_path','subject','models','schema_version'] (no 'round') while line 48 still writes round: A.round; attack-design.js:14 list is still ['repo','design_path','subject','out','models','schema_version'] (no 'round') while line 71 still writes round: A.round.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/severity-recheck.js:15",
+          "swept": false,
+          "evidence": "required-arg guard still omits 'round'"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/attack-design.js:14",
+          "swept": false,
+          "evidence": "required-arg guard still omits 'round'"
+        }
+      ]
+    }
+  ]
+}

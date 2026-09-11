@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "648dfa765fb5901bdc8d4a6fe56007ab",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "Passes.jl:4-16 module docstring now defines both roles inline: '**act verifier** sees the fix pass's diff and grades... HONORED/LINE-ONLY/ADJACENT/INSERTED/NEW-DEFECT/SCOPE-CREEP/UNDONE/LAUNDERED' and '**state verifier**, also called the blind verifier... PRESENT/PARTIAL/REGRESSED/ABSENT/NOT-A-DEFECT/UNCLEAR'. Demote.jl:8 @ref-links '[`GBGCodingTools.Passes`](@ref) binds both verifiers and their verdicts'. Witnesses.jl:202-203 defines PHANTOM/UNFIXED/BROKEN inline. grep for 'act verifier','state verifier','blind verifier' across src/ext confirms a definition now exists at Passes.jl, not just uses."
+    }
+  ]
+}

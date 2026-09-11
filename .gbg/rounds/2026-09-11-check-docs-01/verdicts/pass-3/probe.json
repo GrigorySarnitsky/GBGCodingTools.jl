@@ -1,0 +1,75 @@
+{
+    "class_candidates": {
+        "2026-09-11-check-docs-01/src#3": [
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#1": [
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#3": [
+        ],
+        "2026-09-11-check-docs-01/cold-reader#1": [
+            "docs/ARCHITECTURE.md:2279",
+            "docs/ARCHITECTURE.md:2337",
+            "docs/src/architecture.md:2279",
+            "docs/src/architecture.md:2337",
+            "docs/src/guide/rules.md:155",
+            "docs/src/guide/rules.md:524",
+            "policy/RULES.toml:152",
+            "policy/RULES.toml:154",
+            "policy/RULES.toml:558",
+            "policy/RULES.toml:560",
+            "policy/docs-rubric.md:146",
+            "policy/instruments.md:23"
+        ],
+        "2026-09-11-check-docs-01/rationale#1": [
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#2": [
+        ],
+        "2026-09-11-check-docs-01/operational-claims#3": [
+        ],
+        "2026-09-11-check-docs-01/pages#1": [
+            "catalog/scans.toml:161",
+            "catalog/scans.toml:162",
+            "docs/ARCHITECTURE.md:107",
+            "docs/ARCHITECTURE.md:1173",
+            "docs/ARCHITECTURE.md:1998",
+            "docs/ARCHITECTURE.md:2278",
+            "docs/ARCHITECTURE.md:2385",
+            "docs/ARCHITECTURE.md:2683",
+            "docs/design-record/FIXLOG.md:53",
+            "docs/design-record/REVIEW-verify.md:50",
+            "docs/src/architecture.md:107",
+            "docs/src/architecture.md:1173",
+            "docs/src/architecture.md:1998",
+            "docs/src/architecture.md:2278",
+            "docs/src/architecture.md:2385",
+            "docs/src/architecture.md:2683",
+            "docs/src/guide/rules.md:149",
+            "docs/src/guide/rules.md:290",
+            "fixture/GBG Fixture/defects.toml:114",
+            "fixture/GBG Fixture/defects.toml:292",
+            "policy/RULES.toml:145",
+            "policy/RULES.toml:147",
+            "policy/RULES.toml:150",
+            "policy/docs-rubric.md:140"
+        ]
+    },
+    "quote_still_stands": {
+        "2026-09-11-check-docs-01/src#3": [
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#1": [
+            "src/CLI/Preflight.jl"
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#3": [
+        ],
+        "2026-09-11-check-docs-01/cold-reader#1": [
+        ],
+        "2026-09-11-check-docs-01/rationale#1": [
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#2": [
+        ],
+        "2026-09-11-check-docs-01/operational-claims#3": [
+        ],
+        "2026-09-11-check-docs-01/pages#1": [
+        ]
+    }
+}

@@ -1,0 +1,23 @@
+tool_version = "1.0.0-rc.6"
+head = "c452982224f8d9aea57fbd753e34af8b4fde2eeb"
+fix_range = "22119aaf6ac67c09c3f796bc0dc2ced309624eb8..c452982224f8d9aea57fbd753e34af8b4fde2eeb"
+scope = ["2026-09-11-check-docs-01/cold-reader#1", "2026-09-11-check-docs-01/operational-claims#3", "2026-09-11-check-docs-01/pages#1", "2026-09-11-check-docs-01/rationale#1", "2026-09-11-check-docs-01/src#3", "2026-09-11-check-docs-01/workflow-scripts#1", "2026-09-11-check-docs-01/workflow-scripts#2", "2026-09-11-check-docs-01/workflow-scripts#3"]
+tool_tree_sha = "28bc2240736f49b6dc8c41e1b4ea721b26f2b1ba"
+state_ids = ["2026-09-11-check-docs-01/rationale#1", "2026-09-11-check-docs-01/pages#1", "2026-09-11-check-docs-01/src#3", "2026-09-11-check-docs-01/workflow-scripts#1", "2026-09-11-check-docs-01/workflow-scripts#2", "2026-09-11-check-docs-01/workflow-scripts#3", "2026-09-11-check-docs-01/cold-reader#1", "2026-09-11-check-docs-01/operational-claims#3"]
+config_sha = "f173b70f9e732be3d706d072e763bae67d2f7628558db096d8e23de8321dde8b"
+tool_rev = "ed16027d6d5055280b381df44efb6c7dec0c135b"
+range = "ed16027d6d5055280b381df44efb6c7dec0c135b..c452982224f8d9aea57fbd753e34af8b4fde2eeb"
+counted = true
+rechecked = ["2026-09-11-check-docs-01/pages#1"]
+regrade = false
+pass = 3
+nonce = "648dfa765fb5901bdc8d4a6fe56007ab"
+opened = "2026-09-11T17:28:10"
+
+[expected]
+rationale = 1
+pages = 1
+src = 1
+workflow-scripts = 3
+operational-claims = 1
+cold-reader = 1

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "lane": "src",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "648dfa765fb5901bdc8d4a6fe56007ab",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/src#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "src/TestHarness.jl:12 now reads \"([`TestHarness.counting`](@ref), [`TestHarness.CountingArray`](@ref), [`TestHarness.Traffic`](@ref), [`TestHarness.audit`](@ref))\", matching the hint. Landed in commit c8ef916 (fix pass 1), hunk: -([`TestHarness.CountingArray`](@ref), ...) +([`TestHarness.counting`](@ref), [`TestHarness.CountingArray`](@ref), ...). Stable and unmodified through 22119aaf and c452982 (pass-3 diff touches other files only, none needed here).",
+      "class_surfaces": [
+        {
+          "surface": "src/TestHarness.jl:9-18",
+          "swept": true,
+          "evidence": "All 7 of TestHarness's exports (`@alloc_below, CountingArray, Traffic, counting, audit, run_regressions, gate`, export line 27) now appear in the module docstring's map: @alloc_below and allocation_completeness (line 10-11), counting/CountingArray/Traffic/audit (line 12-13), method_parity, oracle_registry, display_gate, thread_digest, run_regressions (line 17), gate (line 18) — no exported name is left unmapped."
+        }
+      ]
+    }
+  ]
+}

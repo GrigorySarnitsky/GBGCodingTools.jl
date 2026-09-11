@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "c472a639e4eba2366c39d5dd6f9488fde7ff0eb3590dab0082993543794ef636",
+  "pass_nonce": "648dfa765fb5901bdc8d4a6fe56007ab",
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-01/cold-reader#1",
+      "verdict": "LINE-ONLY",
+      "question": "fidelity",
+      "evidence": "The audited diff adds @ref links from class_candidates (Passes.jl:197) and pass_open (Passes.jl:369) to the Passes module docstring, which now defines act/state verifier and the full closed vocabulary. But the hint's explicit second ask — retire the synonym 'blind verifier' — never landed: it stands bare and unlinked in >10 further sites in the same file (comments at Passes.jl:380,414-415,439,671-673,686-688,1044 and user-facing print strings at 522-523,787), none touched by any pass's diff.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Demote.jl:6",
+          "swept": true,
+          "evidence": "act-verdict docstring: '...the state verifier grades, blind to the diff...; [`GBGCodingTools.Passes`](@ref) binds both verifiers and their verdicts'"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:9",
+          "swept": true,
+          "evidence": "module docstring defines act verifier and state verifier/blind verifier together with the full closed vocabulary — the anchor other sites now @ref"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:197",
+          "swept": true,
+          "evidence": "class_candidates docstring: 'the act verifier ([`GBGCodingTools.Passes`](@ref) binds it)' — added in the audited diff"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:296",
+          "swept": true,
+          "evidence": "pass_scope docstring links '...the two verifiers [`GBGCodingTools.Passes`](@ref) binds' (pre-dates this diff, still current)"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:369",
+          "swept": true,
+          "evidence": "pass_open docstring: 'the blind verifier (the state verifier; [`GBGCodingTools.Passes`](@ref) binds both verifiers)' — added in the audited diff"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:601",
+          "swept": true,
+          "evidence": "grade docstring links '...the two verifiers [`GBGCodingTools.Passes`](@ref) binds' (pre-dates this diff, still current)"
+        },
+        {
+          "surface": "src/Witnesses.jl:202-203",
+          "swept": true,
+          "evidence": "run() docstring already glosses PHANTOM/UNFIXED/BROKEN in plain language at first use"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:380",
+          "swept": false,
+          "evidence": "pass_open docstring's closing sentence uses bare 'blind verifier' past the one earlier @ref in the same docstring"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:414-415,439",
+          "swept": false,
+          "evidence": "in-function comments use bare 'the blind verifier', unlinked, untouched by any pass"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:671-673,686-688",
+          "swept": false,
+          "evidence": "comments use bare 'the blind reading'/'the blind verifier', unlinked"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:522-523,787",
+          "swept": false,
+          "evidence": "runtime print strings the CLI user reads directly still say 'blind verifier'/'blind reading' with no gloss at all"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:1044",
+          "swept": false,
+          "evidence": "comment uses bare 'the blind verifier', unlinked"
+        }
+      ]
+    }
+  ]
+}
