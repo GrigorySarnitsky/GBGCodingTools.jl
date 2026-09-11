@@ -94,3 +94,7 @@ Every hat is forbidden `.gbg/` and `~/.gbg/`. The panel is COLLECT-ONLY: it neve
   stated, not closed.
 - Loop to a plateau, not to a good round: three passes flat within noise, with no dead lanes, is
   closure.
+- Seeds measure recall only for the defects someone thought to plant. The panel is measured against a
+  human read as well: `gbg calibrate` runs each hat blind on the passages recorded in
+  `.gbg/human-findings.toml` and names every defect a hat missed and every one no persona's rubric
+  covers — outside any round, whenever the owner has read the site.

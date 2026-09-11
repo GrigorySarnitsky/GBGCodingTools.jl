@@ -87,6 +87,15 @@ rating, so a `major`, a `blocker` or a concern gated by `previously_worked` is g
 re-rating says (23 of those 33; the other 10 would have gone to two agents). A carry still re-rates every candidate, since a carry takes the
 re-rating alone.
 
+**Two checks on the instruments themselves get verbs.** `gbg attack <instrument>` renders an
+instrument's live roster as a design and puts `attack-design.js`'s four attackers against it, the
+subject from `catalog/attack/<instrument>.toml` or `--subject`; `gbg calibrate` scores the
+check-consistency hats against the defects a human read found, recorded by the owner in
+`.gbg/human-findings.toml`, each hat run blind on the passage alone. Records live under `.gbg/attacks/`
+and `.gbg/calibrations/`; `gbg attack read` and `gbg calibrate read` validate what the scripts wrote
+(`schema/attack.schema.json`, `schema/rubric-audit.schema.json`). Before, both scripts shipped with no
+verb and ran only by hand. Four new verbs (25), four new schemas.
+
 The rest is prose: the module map names the round machinery and every module's docstring names its
 exports; Passes binds the act and state verifiers; the skill template says what `/gbg-doctor` runs;
 ARCHITECTURE and IMPLEMENTATION correct `Scan.jl`'s place, the prose-shape file, D18's five audit anchors

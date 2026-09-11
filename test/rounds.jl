@@ -193,6 +193,62 @@ end
     @test isempty(G.recheck_candidates([c("major", "no"), c("minor", "yes")]))
 end
 
+# gbg attack and gbg calibrate check the instruments themselves, outside any round. An attack renders the
+# instrument's live roster as the design and fills its subject's placeholders; a calibration refuses
+# without human findings and hands the blind hats the passage, never the defect. Each `read` exits on
+# what the result says and refuses one that is absent, invalid or incomplete. Both directions throughout.
+@testset "attack and calibrate: the instruments checked from outside a round" begin
+    root = fixture_copy("design-checks")
+    cfg = G.Config.read(root)
+    out = IOBuffer()
+    @test G.attack(cfg, "nonesuch"; io = out) == 2
+    @test G.attack(cfg, "audit-changes"; io = out) == 0
+    s = String(take!(out))
+    id = only(readdir(joinpath(root, ".gbg", "attacks")))
+    rd = joinpath(root, ".gbg", "attacks", id)
+    design = read(joinpath(rd, "design.md"), String)
+    @test all(r -> occursin("## " * r["key"], design), G.Preflight.resolve_roster(cfg, "audit-changes"))
+    subj = TOML.parsefile(joinpath(rd, "subject.toml"))
+    @test occursin(cfg["package"]["name"], subj["object"]) && !any(v -> occursin("{package.", v), values(subj))
+    @test occursin("attack-design.js", s) && occursin("gbg attack read $id", s)
+    @test G.attack_read(cfg, id; io = devnull) == 2                                   # no result yet
+    res(gaps, dead) = write(joinpath(rd, "attack.json"), JSON3.write(Dict("schema_version" => 1, "round" => id,
+        "bySeverity" => Dict(), "gaps" => gaps, "dead" => dead, "complete" => isempty(dead))))
+    gap = Dict("severity" => "fatal", "gap" => "g", "evading_example" => "e", "why_each_lane_misses" => "w",
+               "proposed_lens" => "p", "role" => "logician")
+    res(Any[], String[]);          @test G.attack_read(cfg, id; io = devnull) == 0     # sound
+    res([gap], String[]);          @test G.attack_read(cfg, id; io = devnull) == 1     # a gap is a finding
+    res(Any[], ["measurement"]);   @test G.attack_read(cfg, id; io = devnull) == 2     # a dead attacker: untested
+    res([Dict("severity" => "grave")], String[]); @test G.attack_read(cfg, id; io = devnull) == 2   # invalid
+
+    @test G.calibrate(cfg; io = devnull) == 2                                         # no human findings yet
+    write(joinpath(root, ".gbg", "human-findings.toml"), """
+    [[finding]]
+    id = "h-1"
+    title = "a quantifier the code does not keep"
+    page = "Home"
+    passage = "The spacing h is uniform at every node of the grid."
+    defect = "The grid is uniform only in the interior; the boundary spacing differs."
+    recorded = 2026-09-11
+    """)
+    out = IOBuffer()
+    @test G.calibrate(cfg; io = out) == 0
+    cid = only(readdir(joinpath(root, ".gbg", "calibrations")))
+    a = JSON3.read(read(joinpath(G.Preflight.workflow_dir(cfg, cid), "calibrate.args.json"), String))
+    @test length(a.items) == 1 && !isempty(a.hats) && occursin("rubric-audit.js", String(take!(out)))
+    passage = read(String(a.items[1].substrate_path), String)
+    @test occursin("uniform at every node", passage) && !occursin("boundary spacing", passage)   # blind: never the defect
+    cr = joinpath(root, ".gbg", "calibrations", cid, "rubric-audit.json")
+    cal(v) = write(cr, JSON3.write(Dict("schema_version" => 1, "round" => cid,
+        "tally" => Dict("CAUGHT" => Int(v == "CAUGHT"), "PARTIAL" => 0, "MISSED" => Int(v == "MISSED")),
+        "unassigned" => Any[], "misassigned" => Any[], "orphaned" => String[],
+        "gaps" => v == "CAUGHT" ? Any[] : [Dict("id" => "h-1", "hat" => "doc-policy", "verdict" => v, "evidence" => "nothing reported on this")],
+        "scores" => [Dict("id" => "h-1", "hat" => "doc-policy", "verdict" => v, "evidence" => "e")],
+        "byHat" => Dict("doc-policy" => ["h-1"]))))
+    cal("CAUGHT"); @test G.calibrate_read(cfg, cid; io = devnull) == 0
+    cal("MISSED"); @test G.calibrate_read(cfg, cid; io = devnull) == 1
+end
+
 # RULE.INST.FROZEN_MIDROUND: a deferral written in the round's deferred.md is carried into the work
 # queue at close, where the Stop hook holds the next session to it; a note nothing reads is not a mechanism.
 @testset "a round's deferrals reach the work queue" begin

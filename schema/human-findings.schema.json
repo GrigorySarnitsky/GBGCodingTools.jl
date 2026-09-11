@@ -1,0 +1,54 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": ".gbg/human-findings.toml — the defects a human read of the rendered site found, which `gbg calibrate` scores the check-consistency hats against",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [],
+ "properties": {
+  "finding": {
+   "type": "array",
+   "default": [],
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "title",
+     "page",
+     "passage",
+     "defect",
+     "recorded"
+    ],
+    "properties": {
+     "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "unique in the file; it names the payload files"
+     },
+     "title": {
+      "type": "string",
+      "minLength": 8
+     },
+     "page": {
+      "type": "string",
+      "minLength": 1,
+      "description": "the rendered page the passage is on"
+     },
+     "passage": {
+      "type": "string",
+      "minLength": 20,
+      "description": "the passage verbatim, as the blind hat reads it — never the defect"
+     },
+     "defect": {
+      "type": "string",
+      "minLength": 20,
+      "description": "what is wrong with the passage, as the human found it"
+     },
+     "recorded": {
+      "type": "date"
+     }
+    }
+   }
+  }
+ }
+}

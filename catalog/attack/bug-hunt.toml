@@ -1,0 +1,8 @@
+# catalog/attack/bug-hunt.toml — the subject `gbg attack bug-hunt` hands the attackers
+# (schema/attack-subject.schema.json). The {package.*} placeholders are filled per consumer.
+object = "the code of {package.name}, hunted by territory lanes and two free lanes whose candidates count only once a reproducer has written a witness that fails"
+defects = "runtime defects (wrong values or types, aliasing, mutation of a caller's data, an edge case that errors or silently misbehaves), wrong beliefs about what Base or a dependency does, and architectural defects such as divergent copies of one rule"
+context = "{package.name} — {package.description} Its field is {package.domain}. A static claim is only a hypothesis; the evidence is a program that fails, run by the CLI's witness runner."
+standpoint = "a user calling the public API of {package.name} with valid input its author did not think of"
+source = "the repository's src/, ext/ and test/"
+directions = "a defect no witness can express as a failing assertion; a defect spread across two territories no lane holds together; a harm the test suite's own fixtures are shaped to hide"

@@ -12,7 +12,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['subject', 'hats', 'items', 'personas_path', 'models', 'out', 'schema_version']) if (A[k] === undefined) throw new Error(`rubric-audit.js: args.${k} is required`)
+for (const k of ['subject', 'hats', 'items', 'personas_path', 'models', 'out', 'round', 'schema_version']) if (A[k] === undefined) throw new Error(`rubric-audit.js: args.${k} is required`)
 if (!A.hats.length || !A.items.length) throw new Error('rubric-audit.js: an empty audit is not a clean one')
 const ECONOMY = A.models.economy
 

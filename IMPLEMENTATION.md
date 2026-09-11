@@ -294,6 +294,8 @@ through the `gbgdev` function defined at the top of this plan.
 | — | seeding and recall are NOT verbs: `Seeds.select`/`plant` run inside `prepare` and `Recall.mark!`/`per_class` inside `bank`, and neither is in the `VERBS` table (checked 2026-09-09) |
 | `gbg witnesses fail\|pass <round> [names…]` | wraps `Witnesses.run` | `Hunt.jl` |
 | `gbg audit-changes bank <round>` / `gbg bug-hunt bank <round>` | instrument-specific bank steps (the audit bank runs the executable claims under `GBG_ROUND`) | `Audit.jl`, `Hunt.jl` |
+| `gbg attack <instrument> [--subject <file>]`, `gbg attack read <id>` | outside any round: renders the instrument's live roster into `.gbg/attacks/<id>/design.md`, fills the subject from `catalog/attack/<instrument>.toml` (or `--subject`) and prints `attack-design.js`'s call; `read` validates `attack.json` — 0 sound, 1 a gap, 2 absent, invalid or an attacker dead | `Design.jl` |
+| `gbg calibrate`, `gbg calibrate read <id>` | outside any round: scores the check-consistency hats against `.gbg/human-findings.toml` through `rubric-audit.js`, the blind hat handed the passage and never the defect; `read` validates `rubric-audit.json` — 0 all caught, 1 a miss or a finding no rubric covers, 2 absent or invalid | `Design.jl` |
 | `gbg bump <ver> [--abandon-open-rounds "…"]` | moves the pin, runs `sync`, writes `.gbg/scratch/bump-message.txt`, records the fleet `[sweep]` window | `Bump.jl` |
 | `gbg release <ver>`, `gbg release <ver>-rc.<n>` | dev checkout only, at a clean tree; refuses (exit 2) unless `Pkg.test()` is green, the tool's own docs build exits 0 (`SELF.DOCS`), `gbg doctor --deep` is green at the tool root, no round is open under the tool's `.gbg/rounds/`, the `/check-docs` round opened at the latest `<ver>-rc.<n>` tag is closed (through any of the five closure channels — honored, adjudicated, rescan, seeded, carried — never abandoned), the CHANGELOG entry is present and the tag is absent (§2 D16, §8) → tag + push; never re-tags. The prerelease form (tags `v1.0.0-rc.1`, …) runs the same refusals EXCEPT the open-round refusal and the closed-`/check-docs`-round precondition — the clean tag the tool's own instrument rounds open at (1.10 item 7); an rc tag is never a consumer pin (`PIN.SOURCES` refuses a `-rc.` rev outside the tool root) | `Release.jl` |
 | `gbg selftest [--pinned]` | a thin wrapper: runs the package's own `Pkg.test()` — which IS every arm of §8 — over the copy it runs from, from a temporary environment; `--pinned` copies the fixture to `${TMPDIR:-/tmp}/gbg-pinned-fixture/`, pins it at the released tag, instantiates `docs/`, exercises the pinned-copy behaviours and leaves the copy in place (Phase 3's `install` runs from it) | `Selftest.jl` |
@@ -409,7 +411,7 @@ check-consistency scripts use underscores).
 | `src/Scans/*.jl` | the sources column of §12.B: PF `check-docs/{sentence_openers.py, field_docs.py, link_uniformity.py, doi_crosscheck.py}`, IT `check-docs/{abutting_spans.py, doi_crosscheck.py}`, PF `check-docs/guards.sh` (every `hard`/`soft` line), IT `check-docs.md` deterministic block, PF `docs/make.jl` `lint_inline_math`/`lint_notation_variants`/`lint_swallowed_escapes`/`lint_retired_claims`/`lint_api_page_structure`/`lint_prose_shape`/`lint_ai_banner`/`lint_rendered_markup`, IT `docs/make.jl` `lint_notation_variants` (the five regexes) and `lint_docstring_shape` | one file per scan id, registered in `catalog/scans.toml` with `id, rule, tier, surfaces, runner (julia\|html), fixture`; the four `SCAN.HTML_*` scans share `HtmlWalker.jl` with the consolidator; surfaces from config; `docs.retired_claims` from config; `NO_FIELD_LIST` from the ledger; comment-line filters kept; `references_heading = "absent"` ⇒ whole-file DOI comparison |
 | `src/CLI/Rounds.jl` `close` (hunt) | IT `bug-hunt/finished.py` (nine checks) | delegates to the audit gate; ordering of §6.7; `closure.py` deleted |
 | `templates/queue-guard.sh.tmpl` → rendered as `.claude/hooks/queue-guard.sh` (class G) | PF `.claude/hooks/queue-guard.sh` | PF's script **verbatim**, pure `sh`, rendered by `sync` in EVERY consumer (§A's Stop-hook ruling; no config switch): guards the `- [ ]` items of `.claude/WORK_QUEUE.md`, the `stop_hook_active` loop guard kept; it never reads `.gbg/rounds/` and never starts Julia — the hook guards the work queue, the gate guards the rounds, and the two never overlap (§2 D13). `templates/WORK_QUEUE.md.seed` is the header of PF's file (the contract paragraph, no items), seeded once by `sync` where the file is absent |
-| deleted | IT `bug-hunt/closure.py`, both `manifest.py`/`MANIFEST.txt`, IT `check-consistency/rubric_extract.py`/`rubric_prep.py` (their constants are package-specific; the rubric-audit mechanism ships only as `rubric-audit.js` — no `calibrate` verb, see Phase 8 deferred) | — |
+| deleted | IT `bug-hunt/closure.py`, both `manifest.py`/`MANIFEST.txt`, IT `check-consistency/rubric_extract.py`/`rubric_prep.py` (their constants are package-specific; the rubric-audit mechanism is `rubric-audit.js` behind `gbg calibrate`, its input the owner's `.gbg/human-findings.toml`) | — |
 
 ### 1.7 Catalogues, schemas, templates, policy, fixture
 
@@ -929,9 +931,9 @@ no deletions, only config (§5.4 is the whole delta).
 4. Deferred, recorded in the tool's `CHANGELOG.md` "Unreleased" and `ARCHITECTURE.md` §2 D2: a private
    Julia registry (LocalRegistry) as the upgrade of the pin syntax — also turns PF→IT and SS→CP into
    normal versioned deps; Julia 1.12 workspaces to collapse the sub-environment entries; `.claude/rules/`
-   as an alternative policy placement; IT's rubric-audit calibration
-   triple (`rubric_extract.py`/`rubric_prep.py` + `rubric_audit.js`) as an optional instrument with a
-   verb of its own — not a verb of this plan.
+   as an alternative policy placement. (IT's rubric-audit calibration triple was deferred here too; it
+   landed on 2026-09-11 as `gbg calibrate`, the two Python extractors replaced by the owner's
+   `.gbg/human-findings.toml`.)
 
 **Definition of done.** `gbg fleet --deep` exit 0 on both hosts; every consumer's last commit is pushed;
 the tool at one tag across the fleet; the memory notes written.

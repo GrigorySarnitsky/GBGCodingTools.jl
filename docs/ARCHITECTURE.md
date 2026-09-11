@@ -899,10 +899,10 @@ about measurement. *`--regraded "<account>"` as a rubber stamp*: prose, not a re
 contributions (the panel profile, attack-design, rubric-audit, severity-recheck, the
 `operational-claims` lane, `PARTIAL`/`surviving_class`, `checked[]`/`candidates_found`, required
 `base`) are **part of v1.0.0**, verified against IT's imported rounds in Phase 5.1 before IT migrates;
-a defect that verification finds is fixed and released as a **1.0.x PATCH**. Two of them ship as
-scripts alone: no verb builds the args of `attack-design.js` or `rubric-audit.js`, prints their
-launch line or validates what they write, so a session that wants either assembles its args from the
-script's header and launches it by hand; wiring them is deferred. SS third (a July fork,
+a defect that verification finds is fixed and released as a **1.0.x PATCH**. Two of them run outside
+any round, each behind a verb of its own: `gbg attack <instrument>` launches `attack-design.js` against
+an instrument's live roster, and `gbg calibrate` launches `rubric-audit.js` against the owner's
+`.gbg/human-findings.toml`; each `read` validates what its script wrote. SS third (a July fork,
 replaced wholesale); CP last (greenfield `gbg init`, which also creates its `test/Project.toml`). §9
 names each divergence's disposition. Deletions per consumer are listed in the implementation plan.
 **Effort:** IT's executability review put the whole programme at roughly 17–23 working sessions, with
@@ -1072,6 +1072,9 @@ Legend: **C** config (owned, validated) · **G** generated-managed (hash in `.gb
     exemptions.toml                    C   the one ledger (§7.2)
     hats/<key>.toml                    C   domain hats (anchors or not); schema-validated
     seeds.toml                         C   the seed catalogue (pages + fragments per class; §6.4); schema-validated; sha stamped as seed_catalog_sha
+    human-findings.toml                C   the defects a human read of the site found, which `gbg calibrate` scores the hats against; schema-validated
+    attacks/<id>/                      C   a `gbg attack` record: design.md, subject.toml and the script's attack.json
+    calibrations/<id>/                 C   a `gbg calibrate` record: the human findings it measured and rubric-audit.json
     managed.json                       G   path → template, version, sha256 for every G file (a cache; MANAGED.HASH re-renders)
     policy/00-index.md … deviations.md G   rendered policy copy + rendered deviations
     rounds/.keep                       P   absence ⇒ ROUND.DIR fails
@@ -1681,7 +1684,7 @@ serious concern and every `previously_worked ∈ {yes, unknown}` concern carries
 requires `checked[]` on every lane AND the recorded executable-claim exit codes all zero; staleness
 `git diff <audited>..HEAD -- <covered>` with UNCHECKABLE ≠ clean; `AUDIT.GAP` (doctor, WARN) when
 `base` ≠ the previous closed audit's `head`. `attack-design.js` (four attackers, generic `subject`) is
-the instrument every lens list must survive; no verb launches it, so it runs by hand (D17).
+the instrument every lens list must survive; `gbg attack <instrument>` launches it (D17).
 
 **An audit round is disposed, never corrected inside.** The staleness rule and the frozen bank say so
 together: a correction moves a covered path, `close` then refuses the round, and `bank` will not run

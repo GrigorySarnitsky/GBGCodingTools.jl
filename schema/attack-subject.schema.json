@@ -1,0 +1,45 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "catalog/attack/<instrument>.toml, or a --subject file: what `gbg attack` tells the attackers the instrument is for",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "object",
+  "defects",
+  "context",
+  "standpoint",
+  "source"
+ ],
+ "properties": {
+  "object": {
+   "type": "string",
+   "minLength": 12,
+   "description": "what the instrument examines, and how its lanes divide it"
+  },
+  "defects": {
+   "type": "string",
+   "minLength": 12,
+   "description": "the defects the instrument exists to catch"
+  },
+  "context": {
+   "type": "string",
+   "minLength": 12,
+   "description": "the package and how the instrument runs; {package.*} placeholders are filled"
+  },
+  "standpoint": {
+   "type": "string",
+   "minLength": 12,
+   "description": "the reader whose standpoint decides what counts as harm"
+  },
+  "source": {
+   "type": "string",
+   "minLength": 12,
+   "description": "where the real material is, for concrete evading examples"
+  },
+  "directions": {
+   "type": "string",
+   "minLength": 12,
+   "description": "optional: directions for the counterexample hunter"
+  }
+ }
+}

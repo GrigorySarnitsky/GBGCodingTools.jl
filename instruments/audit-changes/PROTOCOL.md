@@ -92,4 +92,5 @@ The doc instruments carry a state verifier because "is this finding fixed?" is a
 judgements get quietly dropped. This one holds its mechanical anchor — the `executing` lane and the
 CLI's own re-run of the executable claims — and a second adversarial layer auditing the auditor is
 where the regress starts and the grounding stops. What it has instead is the disposition gate above,
-the severity re-check, and the design attacker every lane list has to survive.
+the severity re-check, and the design attacker every lane list has to survive — `gbg attack
+<instrument>`, run whenever a lane or hat list changes.

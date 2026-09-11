@@ -7,7 +7,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D14 — Doctor: read-only, stable check ids, one exemptions le",482,375,0
 "ARCHITECTURE.md § D15 — Self-test: a fixture consumer at a path with a space, ",784,363,0
 "ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",788,720,0
-"ARCHITECTURE.md § D17 — Migration: PF → IT → SS → CP, doctor-verified steps, n",371,286,0
+"ARCHITECTURE.md § D17 — Migration: PF → IT → SS → CP, doctor-verified steps, n",364,279,0
 "ARCHITECTURE.md § D18 — Cost policy: economy default, anchors in the catalogue",174,107,0
 "ARCHITECTURE.md § D19 — Name: `GBGCodingTools`",128,127,0
 "ARCHITECTURE.md § D2 — Delivery: Pkg fetches the pinned copy; a per-machine `s",5,5,0
@@ -67,7 +67,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §6.5 Closure channels (per finding id; PARTIAL never closes)",156,156,0
 "ARCHITECTURE.md § §6.6 Deltas — `/check-docs`",173,173,0
 "ARCHITECTURE.md § §6.7 Deltas — `/bug-hunt`",366,366,0
-"ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",313,221,0
+"ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",309,217,0
 "ARCHITECTURE.md § §7.1 Policy migration map (which consumer sections become wh",290,238,0
 "ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",386,386,0
 "ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1881,1744,0
@@ -92,6 +92,10 @@ unit,words,longest_paragraph,admonitions
 "Consolidate.jl :: discover_pages(build_dir) -> Vector{Tuple{String,String,Stri",82,79,0
 "Consolidate.jl :: page_text(path) -> String",36,33,0
 "Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",192,65,0
+"Design.jl :: attack(cfg, instrument; subject = nothing, io = stdout) -> I",197,78,0
+"Design.jl :: attack_read(cfg, id; io = stdout) -> Int",102,38,0
+"Design.jl :: calibrate(cfg; io = stdout) -> Int",155,89,0
+"Design.jl :: calibrate_read(cfg, id; io = stdout) -> Int",105,45,0
 "DocLints.jl :: docs_build_skipped(cfg, code) -> Vector{String}",66,62,0
 "DocLints.jl :: makedocs(cfg; kwargs...)",318,79,0
 "Doctor.jl :: Check",37,30,0
@@ -104,7 +108,7 @@ unit,words,longest_paragraph,admonitions
 "Fleet.jl :: Fleet.diff(a, b; io = stdout) -> Int",92,37,0
 "Fleet.jl :: Fleet.rows(; deep = false) -> (rows, code)",114,80,0
 "Fleet.jl :: latest_tag(root) -> Union{VersionNumber,Nothing}",17,14,0
-"GBGCodingTools.jl :: GBGCodingTools",589,117,0
+"GBGCodingTools.jl :: GBGCodingTools",600,117,0
 "Gate.jl :: cmd_gate(args) -> Int",27,24,0
 "Gate.jl :: frozen_rounds(cfg, instruments...) -> Vector{String}",115,68,0
 "Gate.jl :: gate(cfg, instruments...; io = stderr) -> Int",185,69,0
@@ -385,4 +389,5 @@ unit,words,longest_paragraph,admonitions
 "rounds.md § item 6",29,29,0
 "rounds.md § item 7",47,47,0
 "rounds.md § item 8",98,98,0
+"verbs.md § Design checks",31,31,0
 "verbs.md § [The verbs](@id verbs)",75,53,1

@@ -69,6 +69,18 @@ GBGCodingTools.cmd_witnesses
 GBGCodingTools.audit_bank
 ```
 
+## Design checks
+
+The two checks on the instruments themselves, run outside any round: an attack on an instrument's lens
+set, and a calibration of the consistency panel against what a human read found.
+
+```@docs
+GBGCodingTools.attack
+GBGCodingTools.attack_read
+GBGCodingTools.calibrate
+GBGCodingTools.calibrate_read
+```
+
 ## Fleet and release
 
 ```@docs

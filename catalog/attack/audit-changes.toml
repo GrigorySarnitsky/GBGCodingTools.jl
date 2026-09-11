@@ -1,0 +1,8 @@
+# catalog/attack/audit-changes.toml — the subject `gbg attack audit-changes` hands the attackers
+# (schema/attack-subject.schema.json). The {package.*} placeholders are filled per consumer.
+object = "a change set to {package.name} — the diff between a base commit and HEAD over the covered paths — read by lanes that differ by lens, with the package's executable claims run by the CLI"
+defects = "edits not justified by the defect they claim to fix, and edits that silently alter behaviour for input that previously worked: a widened scope, a changed default, a removed or weakened guard, a broken contract, a test or prose amended to match changed behaviour"
+context = "{package.name} — {package.description} Its field is {package.domain}. The norm is pinned at the base commit, test/ is inside the audited material, and every serious concern must be disposed fixed, refused or escalated before the round closes."
+standpoint = "the owner reviewing the change set, who must decide from the audit alone whether it is safe to keep"
+source = "the repository at HEAD, and the base commit through git show"
+directions = "a harm only in the combination of two individually innocent hunks; a change whose harm shows only on a device or a thread count the gate never runs; an edit that makes a later, unaudited change easier to get wrong"

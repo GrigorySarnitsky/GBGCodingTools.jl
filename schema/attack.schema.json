@@ -1,0 +1,80 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": ".gbg/attacks/<id>/attack.json — what attack-design.js writes for `gbg attack`",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "schema_version",
+  "round",
+  "bySeverity",
+  "gaps",
+  "dead",
+  "complete"
+ ],
+ "properties": {
+  "schema_version": {
+   "type": "integer",
+   "minimum": 1,
+   "description": "the tool MAJOR this artefact was written under"
+  },
+  "round": {
+   "type": "string",
+   "description": "the attack's id"
+  },
+  "bySeverity": {
+   "type": "object",
+   "description": "gap counts per severity, for the reader"
+  },
+  "gaps": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "severity",
+     "gap",
+     "evading_example",
+     "why_each_lane_misses",
+     "proposed_lens",
+     "role"
+    ],
+    "properties": {
+     "severity": {
+      "type": "string",
+      "enum": [
+       "fatal",
+       "serious",
+       "worth-fixing"
+      ]
+     },
+     "gap": {
+      "type": "string"
+     },
+     "evading_example": {
+      "type": "string"
+     },
+     "why_each_lane_misses": {
+      "type": "string"
+     },
+     "proposed_lens": {
+      "type": "string"
+     },
+     "role": {
+      "type": "string",
+      "description": "the attacker that found it"
+     }
+    }
+   }
+  },
+  "dead": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "description": "attackers that died: their angle is untested, never sound"
+  },
+  "complete": {
+   "type": "boolean"
+  }
+ }
+}

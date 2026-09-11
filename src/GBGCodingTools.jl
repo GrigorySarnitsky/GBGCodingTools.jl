@@ -48,7 +48,8 @@ The upkeep verbs and the rest of `src/CLI/`:
   consumer's `.gbg/`.
 - [`Ledger`](@ref) — the reader of `.gbg/exemptions.toml`; [`Doctor`](@ref) — the read-only health
   check.
-- `Hunt.jl`, `Audit.jl` — the verbs particular to `bug-hunt` and `audit-changes`; `Fleet.jl`,
+- `Hunt.jl`, `Audit.jl` — the verbs particular to `bug-hunt` and `audit-changes`; `Design.jl` —
+  [`attack`](@ref) and [`calibrate`](@ref), the checks on the instruments themselves; `Fleet.jl`,
   `Bump.jl`, `Release.jl`, `Install.jl`, `Self.jl`, `Selftest.jl` — the fleet report, the pin bump,
   the release, the install of the `gbg` command, `gbg self verify` and the self-test; `Schema.jl` — the one validator
   of every artefact against `schema/`.
@@ -101,6 +102,7 @@ include("CLI/Rounds.jl")
 include("CLI/Passes.jl")
 include("CLI/Hunt.jl")
 include("CLI/Audit.jl")
+include("CLI/Design.jl")
 include("CLI/Fleet.jl")
 include("CLI/Bump.jl")
 include("CLI/Release.jl")
