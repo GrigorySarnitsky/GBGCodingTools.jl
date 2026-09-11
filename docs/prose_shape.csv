@@ -91,7 +91,7 @@ unit,words,longest_paragraph,admonitions
 "Consolidate.jl :: consolidate(build_dir, withheld; out_full, out_siteonly) -> ",150,77,0
 "Consolidate.jl :: discover_pages(build_dir) -> Vector{Tuple{String,String,Stri",82,79,0
 "Consolidate.jl :: page_text(path) -> String",36,33,0
-"Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",224,94,0
+"Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)",234,104,0
 "Design.jl :: attack(cfg, instrument; subject = nothing, io = stdout) -> I",197,78,0
 "Design.jl :: attack_read(cfg, id; io = stdout) -> Int",102,38,0
 "Design.jl :: calibrate(cfg; io = stdout) -> Int",154,89,0
@@ -196,7 +196,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: install_script(src, dst) -> String",93,89,0
 "Preflight.jl :: next_round_id(cfg, instrument) -> String",21,17,0
 "Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",219,112,0
-"Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",159,108,0
+"Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",160,109,0
 "Preflight.jl :: repoint_lanes(cfg, round, dest) -> String",88,50,0
 "Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
 "Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",76,73,0
@@ -214,10 +214,10 @@ unit,words,longest_paragraph,admonitions
 "Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0
 "Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
 "Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages; lan",247,93,0
-"Reflection.jl :: ARGS_THRESHOLD",41,40,0
+"Reflection.jl :: ARGS_THRESHOLD",42,41,0
 "Reflection.jl :: ArgcovHit",58,48,0
 "Reflection.jl :: Docstring",70,59,0
-"Reflection.jl :: Reflection",92,91,0
+"Reflection.jl :: Reflection",102,101,0
 "Reflection.jl :: WRAPPER_PHRASE",34,33,0
 "Reflection.jl :: all_package_functions(pkg, modules) -> Set{Symbol}",29,25,0
 "Reflection.jl :: argcov(cfg; exempt = (hit -> false)) -> (hits, population, s",148,43,0

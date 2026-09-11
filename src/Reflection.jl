@@ -11,7 +11,8 @@ coverage ([`Reflection.argcov`](@ref)), the displayed-versus-defined signature t
 ([`Reflection.signature_fidelity`](@ref)), unlinked cross-module first mentions
 ([`Reflection.xlink`](@ref)), a target linked twice in one docstring ([`Reflection.dupref`](@ref)),
 and the ownership-derived public surface ([`Reflection.package_operations`](@ref)) every
-completeness guard covers. Two constants of the docstring rubric bind the argument checks: the count
+completeness guard covers. Two constants of the docstring rubric — `docs-rubric.md` of the shared
+policy, its `RULE.DOC.*` rules — bind the argument checks: the count
 from which a docstring lists its arguments in the bulleted form ([`Reflection.ARGS_THRESHOLD`](@ref)),
 and the phrase that marks a thin allocating wrapper ([`Reflection.WRAPPER_PHRASE`](@ref)). The text
 scans need no loaded package; the two reflective ones load it.
@@ -26,7 +27,8 @@ export argcov, signature_fidelity, xlink, dupref, package_operations
 """
     ARGS_THRESHOLD
 
-The docstring rubric's constant (the `RULE.DOC.*` rules of the shared policy): a docstring with this
+The docstring rubric's constant (`docs-rubric.md` of the shared policy, its `RULE.DOC.*` rules): a
+docstring with this
 many arguments or more, or any keyword, documents them in
 the bulleted `The arguments are:` form; fewer are bound in prose. Not a config key.
 """

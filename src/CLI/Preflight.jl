@@ -528,8 +528,8 @@ payload paths, never a payload. The arguments are:
 - `roster` — the resolved hats or lanes with their payload paths.
 - `paths` — the payload paths [`write_payloads`](@ref) returned.
 - `strength` — `economy` or `full`, which alone decides whether a lane or hat that is not an anchor
-  runs on the economy model; `cost` — the config's `cost.default`, copied into a consistency round's
-  args and read by no script; `opened` — the round's opening timestamp.
+  runs on the economy model (`Preflight.economy_model`); `cost` — the config's `cost.default`, copied
+  into a consistency round's args and read by no script; `opened` — the round's opening timestamp.
 - `base`, `head`, `kind` — the audit's commits and kind (`nothing` elsewhere).
 - `ledger` — the ledger entries (the adjudicated titles come from them).
 
