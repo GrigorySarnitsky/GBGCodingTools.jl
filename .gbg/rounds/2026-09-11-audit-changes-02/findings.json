@@ -1,0 +1,528 @@
+{
+    "schema_version": 1,
+    "round": "2026-09-11-audit-changes-02",
+    "findings": [
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/DocLints.jl:47-51 (docs_build_skipped)",
+                "src/CLI/Gate.jl:83-85 (:committed problem)",
+                "test/gate.jl:55-64 (only :disabled is tested)"
+            ],
+            "id": "2026-09-11-audit-changes-02/executing#1",
+            "description": "The fix switched the skip test from 'any exit-1 refusal while a docs round is open' to 'every gate_problems entry is :open'. That excludes both :disabled (the reported defect) and :committed (never mentioned as a defect). The second exclusion changes the outcome of a previously valid local docs build mid-round.",
+            "after": "(code == 1 && !haskey(ENV, \"GBG_DOCS_NO_SKIP\")) || return String[]\n    all(p -> first(p) == :open, last(gate_problems(cfg, \"check-docs\", \"check-consistency\"))) || return String[]\n    return frozen_rounds(cfg, \"check-docs\", \"check-consistency\")",
+            "severity": "major",
+            "lane": "executing",
+            "justified": "no",
+            "before": "docs_build_skipped(cfg::AbstractDict, code::Integer) =\n    code == 1 && !haskey(ENV, \"GBG_DOCS_NO_SKIP\") ? frozen_rounds(cfg, \"check-docs\", \"check-consistency\") : String[]",
+            "previously_worked": "yes",
+            "why_it_matters": "Reproduced on a git-initialised fixture copy, with CI unset. An open check-docs round is committed at its opening head; a later fix is committed, moving HEAD; the round directory is left untracked. docs_build_skipped(cfg, 1) returns [\"2026-09-09-check-docs-01\"] at base (the build skips, exit 0) and String[] at head (gate_or_skip's check() throws, so the build fails). This is the normal mid-round state. The tool's own repository is in it right now: 2026-09-11-check-docs-02 has ROUND.toml modified and pass-3 untracked at HEAD 249b795. On the repo, gate_problems(cfg, \"check-docs\") returns [:open, :committed] and docs_build_skipped(cfg, 1) = String[]. So `julia --project=docs docs/make.jl` — which the working agreements run unasked to gate commits — goes from a skip to a red build during every docs round, until the round files are committed. Under CI (CI=true) the :committed kind is never produced and base and head agree (scenario C). The defect named in the test comment is ext#4: an open round of a DISABLED instrument swallowed by the skip. That needed only :disabled excluded. The added test exercises :disabled alone, so the :committed direction is an untested behaviour change. The makedocs docstring (DocLints.jl:22-24, unchanged) still promises a skip whenever 'either gate refus[es] only because a docs round is open'.",
+            "title": "docs_build_skipped now fails, instead of skipping, a local docs build during an open docs round whose files are uncommitted after HEAD moved — wider than the :disabled defect it fixed",
+            "evidence": "BASE | B HEAD moved, round untracked, local: docs_build_skipped(cfg,1) => [\"2026-09-09-check-docs-01\"]\nHEAD | B HEAD moved, round untracked, local: docs_build_skipped(cfg,1) => String[]\nHEAD | B gate_problems => (false, [:open => \"...is open (check-docs)...\", :committed => \"...its files are untracked or modified while HEAD moved past the round's opening head...\"])\nRepo at head: docs_build_skipped(cfg, 1) = String[]; frozen_rounds(cfg, docs) = [\"2026-09-11-check-docs-02\"]",
+            "type": "operational",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/prose_shape.csv (whole-file re-baseline)",
+                "src/Scans/prose_shape.jl:122-124 (the GREW ratchet)"
+            ],
+            "id": "2026-09-11-audit-changes-02/executing#2",
+            "description": "The prose-shape ratchet baseline was regenerated in the window that grew the prose. Each silenced row is a place where the ratchet's 'rewrite, do not append' was waived without a per-row record.",
+            "after": "\"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze\",550,379,0\n\"Config.jl :: Config\",227,98,0\n\"Sync.jl :: Sync\",118,117,0\n\"Reflection.jl :: Reflection\",102,101,0",
+            "severity": "minor",
+            "lane": "executing",
+            "justified": "unclear",
+            "before": "\"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze\",504,333,0\n\"Config.jl :: Config\",162,98,0\n\"Sync.jl :: Sync\",87,86,0\n\"Reflection.jl :: Reflection\",58,57,0",
+            "previously_worked": "no",
+            "why_it_matters": "Recomputing prose_units at head and comparing with the BASE CSV gives 25 units that GREW (words, longest paragraph or both). SCAN.PROSE_SHAPE reports each one as 'GREW ... rewrite, do not append; re-baseline deliberately if the growth is new content'. Four are ARCHITECTURE page units, which the 120-word cap does not bind: 'a baselined page section is held by the ratchet alone'. For those, the re-baseline removes the only guard. D10's longest paragraph went 333→379 and §6.4 went 279→294. The re-baseline is faithful: head CSV against recomputed units gives 0 mismatches, 2 keys added and 0 removed. Every docstring stays under the 120-word cap. So this records no false numbers, but the oracle moved with the change it would have flagged. No row states which growth was judged new content rather than appended prose.",
+            "title": "docs/prose_shape.csv, the ratchet's frozen baseline, was re-baselined in the same window as the prose it guards, silencing 25 GREW hits",
+            "evidence": "GREW hits the base baseline would raise on head's text: count 25 — e.g. (\"DocLints.jl :: docs_build_skipped(cfg, code) -> Vector{String}\", (66, 62, 0), (102, 98, 0)); (\"Demote.jl :: demote(verdict) ...\", (192, 65, 0), (234, 104, 0)); (\"ARCHITECTURE.md § D10 ...\", (504, 333, 0), (550, 379, 0)). mismatches head CSV vs recomputed: 0.",
+            "type": "operational",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/Scan.jl:36-37 (ScanResult population field)",
+                "src/Scan.jl:449-452 (report docstring)",
+                "src/Scan.jl:458 (dead(r))"
+            ],
+            "id": "2026-09-11-audit-changes-02/executing#3",
+            "description": "The public DEAD guarantee of ScanResult and report was weakened in prose to admit a code path that contradicts the base contract. The retained next sentence now contradicts it.",
+            "after": "- `population` — ...; zero, with\n  no hit removed by the ledger, means the scan measured nothing and is DEAD.\n...\nA scan whose population is zero and from which the ledger removed no hit measured nothing and is DEAD\nwhatever else it did — that refusal is the point of the counter; a zero-population scan the ledger\nexempted is accounted for by the ledger and is not DEAD.",
+            "severity": "minor",
+            "lane": "executing",
+            "justified": "unclear",
+            "before": "- `population` — ...; zero means\n  the scan measured nothing and is DEAD.\n...\nA scan whose population is zero measured nothing and is DEAD whatever else it did — that refusal is\nthe point of the counter.",
+            "previously_worked": "no",
+            "why_it_matters": "Measured: report([ScanResult(..., hits = [], population = 0, exempted = 1, ...)]) returns 0, and with exempted = 0 it returns 2. The same predicate `dead(r) = r.population == 0 && r.exempted == 0` is at base Scan.jl:457, so behaviour did not change in this window. What changed is the promise. Base said zero population is DEAD 'whatever else it did'; head licenses the exemption escape. The next sentence was kept: 'a scan that measured nothing yet hit something is a scan whose own counter is wrong'. A ledger-exempted hit is still a hit, so head now calls a scan with a demonstrably wrong counter 'accounted for' rather than DEAD. The contract was rewritten to fit the code instead of the reverse.",
+            "title": "ScanResult/report DEAD contract narrowed to match the code: a zero-population scan with a ledger-exempted hit is now declared not DEAD",
+            "evidence": "pop0 exempted1 -> 0; pop0 exempted0 -> 2; base: e21e57f:src/Scan.jl:457:    dead(r) = r.population == 0 && r.exempted == 0",
+            "type": "operational",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/TestHarness.jl:303-305 (resolve_function docstring)"
+            ],
+            "id": "2026-09-11-audit-changes-02/executing#4",
+            "description": "The docstring fix replaced a wrong example with one that is only half-right: the lookup is by bare name, and the first owning module listed wins.",
+            "after": "A package module that OWNS the name is searched before anything else, so `Config.read`, `Git.run` and\n`Ledger.read` denote the package's function and not the `Base` export they collide with",
+            "severity": "nit",
+            "lane": "executing",
+            "justified": "yes",
+            "before": "A package module that OWNS the name is searched before anything else, so `Config.read`, `Git.run` and\n`Scan.report` denote the package's function and not the `Base` export they collide with",
+            "previously_worked": "no",
+            "why_it_matters": "The swap was warranted: isdefined(Base, :report) = false, so `Scan.report` collided with nothing. But resolve_function takes a bare symbol. Measured: resolve_function(:read, G, [G, Config, Ledger]) returns Config.read; Ledger.read comes back only when Config is left out of `modules`. The new example promises a lookup the function cannot perform, since `:read` cannot denote both Config.read and Ledger.read.",
+            "title": "TestHarness.resolve_function docstring's new example `Ledger.read` does not hold when Config is also in `modules`",
+            "evidence": "resolve_function(:read, G, [G, Config, Ledger]) = read owned by GBGCodingTools.Config; resolve_function(:read, G, [G, Ledger]) = read owned by GBGCodingTools.Ledger; isdefined(Base, :report) = false",
+            "type": "citation",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "ext/GBGCodingToolsDocumenterExt.jl:51"
+            ],
+            "id": "2026-09-11-audit-changes-02/executing#5",
+            "description": "A comment-only edit replaced a valid rule citation with a less specific design-section citation.",
+            "after": "# A round of a docs instrument freezes the build (ARCHITECTURE D9). That is not a",
+            "severity": "nit",
+            "lane": "executing",
+            "justified": "no",
+            "before": "# A round of a docs instrument freezes the build (`RULE.INST.FROZEN_MIDROUND`). That is not a",
+            "previously_worked": "no",
+            "why_it_matters": "RULE.INST.FROZEN_MIDROUND exists (policy/RULES.toml:614-616), so the original citation was not dead. ARCHITECTURE.md:478's D9 is 'Julia side: GBGCodingTools with makedocs wrapper, TestHarness, Reflection, Witnesses, Config; julia = \"1.12\"', a packaging decision rather than the freeze rule. The edit replaces a live, precise pointer with a vaguer one.",
+            "title": "ext comment swaps an existing rule id for a design decision about something else",
+            "evidence": "policy/RULES.toml:614: id = \"RULE.INST.FROZEN_MIDROUND\"; docs/ARCHITECTURE.md:478: ### D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, ...",
+            "type": "citation",
+            "n": 5
+        },
+        {
+            "seeded": false,
+            "confidence": "low",
+            "locations": [
+                "src/CLI/Gate.jl:60-64 (gate_problems, the `isdir(RoundFiles.rounds_dir(cfg)) || return (fatal, problems)` early return)",
+                "src/CLI/Gate.jl:28-35 (gate keeps self_verify and ROUND.DIR to itself)",
+                "docs/src/guide/verbs.md:51 (gate_problems added to the public API page)"
+            ],
+            "id": "2026-09-11-audit-changes-02/under-rejection#1",
+            "description": "Moving the loop into gate_problems was justified: docs_build_skipped needs the kinds of the problems to fix the skip that swallowed a :disabled refusal. But the helper's docstring claims to list what gate refuses for, while the function silently returns 'no problems' for two conditions gate refuses (self-verify failure; ROUND.DIR absent while instruments are enabled). Either the docstring should name the two refusals gate_problems leaves out, or it should say that it is only meaningful after gate returned 1.",
+            "after": "`gate_problems(cfg, instruments...; io = devnull)` is documented as \"What [`gate`](@ref) refuses for\" and published on the API page, but it opens with `isdir(RoundFiles.rounds_dir(cfg)) || return (fatal, problems)` -- (false, []) -- and never runs self_verify; those two refusals stay in `gate` only.",
+            "severity": "nit",
+            "lane": "under-rejection",
+            "justified": "yes",
+            "before": "Only `gate` existed: `code = self_verify(root; io = devnull)` ... `return 2`; `if !isdir(RoundFiles.rounds_dir(cfg)) isempty(enabled) && return 0 ... return 2 end`; then the loop and `fatal && return 2` -- one function, all refusals in it.",
+            "previously_worked": "no",
+            "why_it_matters": "No input that worked before behaves differently: gate refuses exactly what it refused, and the one caller (docs_build_skipped) calls gate_problems only after gate returned exit 1, which rules out both missing cases. The risk is latent. A caller that reads the empty problem list as 'the gate would pass' is told nothing refuses for a consumer with instruments enabled and no .gbg/rounds/, which gate itself refuses with exit 2 ('the gate never passes vacuously'), and for a running copy that is not the pinned one. The guard was split off, not deleted, and the new public entry point carries neither piece.",
+            "title": "The new public gate_problems leaves out two of gate's refusals, and returns 'no problem' where gate never passes vacuously",
+            "evidence": "Gate.jl head: `function gate_problems(cfg::AbstractDict, instruments::AbstractString...; io::IO = devnull)` / `problems = Pair{Symbol,String}[]; fatal = false` / `isdir(RoundFiles.rounds_dir(cfg)) || return (fatal, problems)`; docstring: \"What [`gate`](@ref) refuses for, each problem a `kind => message` pair.\"; gate keeps `println(io, \"gate: ROUND.DIR — .gbg/rounds/ is absent while instruments are enabled; the gate never passes vacuously (gbg init writes it)\")` / `return 2`. verbs.md: `+GBGCodingTools.gate_problems`.",
+            "type": "operational",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/DocLints.jl:47-51 (docs_build_skipped)",
+                "src/CLI/Gate.jl:82-85 (the :committed push in gate_problems)",
+                "ext/GBGCodingToolsDocumenterExt.jl:32-44 (gate_or_skip)"
+            ],
+            "id": "2026-09-11-audit-changes-02/behaviour-change#1",
+            "description": "The stated defect (the new test cites ext#4 of 2026-09-11-check-docs-02) is that the skip swallowed an open round of a DISABLED instrument. The fix requires every problem to be `:open`, so it also turns the `:committed` refusal from a skip into a failure. No test covers that case: the added assertions exercise only :open plus :disabled. The base contracts disagree about which behaviour was promised. Base docs_build_skipped said a skip happens \"when the gate refused with exit `1` and `GBG_DOCS_NO_SKIP` is unset\", which was the old behaviour. Base gate_or_skip said \"only because a round of a docs instrument is open\", which reads toward the new one. The new DocLints docstring was rewritten in the same hunk to state the widened rule: \"or a round whose fixes were committed without it, fails the build\". The change may be the intended reading, but it goes beyond the defect cited, it changes the exit of a previously green local build, and no test shows it was considered.",
+            "after": "(code == 1 && !haskey(ENV, \"GBG_DOCS_NO_SKIP\")) || return String[]\n    all(p -> first(p) == :open, last(gate_problems(cfg, \"check-docs\", \"check-consistency\"))) || return String[]\n    return frozen_rounds(cfg, \"check-docs\", \"check-consistency\")",
+            "severity": "minor",
+            "lane": "behaviour-change",
+            "justified": "unclear",
+            "before": "docs_build_skipped(cfg::AbstractDict, code::Integer) =\n    code == 1 && !haskey(ENV, \"GBG_DOCS_NO_SKIP\") ? frozen_rounds(cfg, \"check-docs\", \"check-consistency\") : String[]",
+            "previously_worked": "yes",
+            "why_it_matters": "Concrete input: a working tree with no `CI` variable and an open check-docs round, in the state this repo was in between 47db044 (fix pass 1 committed, so HEAD moved past ROUND.head) and f4f99cd (the pass-1 verdict files under .gbg/rounds/<id>/verdicts/pass-1/ were still untracked). A plain `julia --project=docs docs/make.jl` there used to print `makedocs: SKIPPED` and exit 0. gate_problems now reports [:open, :committed], so gate_or_skip calls check(...,1), which throws `gbg gate check-docs check-consistency returned 1`, and the build goes red. That is the ordinary mid-round state of every docs round, not an edge case. Only local builds are affected: in CI `in_ci` suppresses :committed, and `gbg round build` sets GBG_ROUND, which skips the round before either kind is pushed. The session's pre-commit docs build during a round, which CLAUDE.md requires, now fails where it used to skip. That brings back, locally, the \"a red run that means a round is open\" the skip was introduced to remove.",
+            "title": "The docs-build skip now also fails on a :committed refusal, which is wider than the disabled-instrument defect it fixed",
+            "evidence": "DocLints.jl (head): \"A refusal that also names an open round of a disabled instrument, or a round whose fixes were committed without it, fails the build.\" Gate.jl:82-85: `if !in_ci && head !== nothing && head != r.round[\"head\"] ... push!(problems, :committed => ...)`. test/gate.jl adds only: `@test Set(first.(last(G.gate_problems(off, ...)))) == Set([:open, :disabled])` and `@test isempty(G.docs_build_skipped(off, 1))`, with no :committed case. git log: `47db044 ... fix pass 1` then `f4f99cd ... pass 1 graded` (pass-1 verdict files added in the later commit).",
+            "type": "operational",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "docs/prose_shape.csv (whole-file rewrite, 30+ rows)",
+                "src/Scans/prose_shape.jl:111-114 (the GREW ratchet)",
+                "catalog/scans.toml SCAN.PROSE_SHAPE tier = \"hard\""
+            ],
+            "id": "2026-09-11-audit-changes-02/behaviour-change#2",
+            "description": "The scan does allow a deliberate re-baseline when the growth is new content (\"re-baseline deliberately if the growth is new content\"), and most of the growth is new definitional prose added for cold-reader findings. I record it because the task treats a baseline moved in the same change as a claim: the re-baseline certifies the change set's own prose growth, including the D10 append, and the ratchet no longer compares against pre-change sizes.",
+            "after": "\"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze\",550,379,0\n\"Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)\",234,104,0\n\"Reflection.jl :: Reflection\",102,101,0",
+            "severity": "nit",
+            "lane": "behaviour-change",
+            "justified": "yes",
+            "before": "\"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze\",504,333,0\n\"Demote.jl :: demote(verdict) -> (verdict′, demoted::Bool)\",192,65,0\n\"Reflection.jl :: Reflection\",58,57,0",
+            "previously_worked": "no",
+            "why_it_matters": "Scanned against the base CSV, the head tree would raise hard GREW hits on about twenty units, so `gbg scan docs --hard-only` in makedocs would exit 1. The re-baseline in the same window is what keeps the build green. No previously valid input is now rejected. Instead the ceilings rose: a later edit that grows these units back to the new sizes passes where it would have failed. For D10, a rationale-page section the scan says is \"held by the ratchet alone\", the growth is an appended sentence, which is the pattern the ratchet message forbids (\"rewrite, do not append\").",
+            "title": "The hard SCAN.PROSE_SHAPE ratchet was re-baselined in the same change that grew the units, including an appended design section",
+            "evidence": "prose_shape.jl:113-114: `(u.words > w || u.longest > l || u.admonitions > a) && push!(hits, Hit(file, 0, \"$k GREW: ... — rewrite, do not append; re-baseline deliberately if the growth is new content\"))`; scans.toml: `id = \"SCAN.PROSE_SHAPE\" ... tier = \"hard\"`; ARCHITECTURE.md D10 hunk: `-and never in the tracked round. **Staleness by hash...` / `+and never in the tracked round. A `/check-docs` round's seeded copy is the one exception: ...`",
+            "type": "operational",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/DocLints.jl:47-51 (docs_build_skipped)",
+                "src/CLI/Gate.jl:84-88 (the :committed problem inside gate_problems)",
+                "ext/GBGCodingToolsDocumenterExt.jl:32-44 (gate_or_skip, the caller)"
+            ],
+            "id": "2026-09-11-audit-changes-02/over-rejection#1",
+            "description": "The defect the round names (ext#4, per the test comment 'beside an open round of a disabled instrument the build fails') is the disabled-instrument case, and the only new test covers that case alone. The fix goes wider: it also ends the skip for :committed, a signal that at build time cannot tell 'fixes committed without the round' from 'round files not committed yet'. The commit message says the :committed exclusion is intended. Even so, it converts a known over-approximation of the gate, which the skip used to absorb, into a hard failure of the local docs build, and no test checks it.",
+            "after": "function docs_build_skipped(cfg::AbstractDict, code::Integer)\n    (code == 1 && !haskey(ENV, \"GBG_DOCS_NO_SKIP\")) || return String[]\n    all(p -> first(p) == :open, last(gate_problems(cfg, \"check-docs\", \"check-consistency\"))) || return String[]\n    return frozen_rounds(cfg, \"check-docs\", \"check-consistency\")\nend",
+            "severity": "minor",
+            "lane": "over-rejection",
+            "justified": "unclear",
+            "before": "docs_build_skipped(cfg::AbstractDict, code::Integer) =\n    code == 1 && !haskey(ENV, \"GBG_DOCS_NO_SKIP\") ? frozen_rounds(cfg, \"check-docs\", \"check-consistency\") : String[]",
+            "previously_worked": "yes",
+            "why_it_matters": "The concrete input is a local (no CI variable) `julia --project=docs docs/make.jl` with GBG_DOCS_NO_SKIP unset, during an open check-docs or check-consistency round, after at least one commit since the round opened (ROUND.head is the HEAD at open, so the round-opening commit is already one), while any file under the round directory is untracked or modified. Git.porcelain counts untracked files by default, so lane findings/*.json not yet committed or a pass's verdicts/pass-k files are enough. At base that build printed `makedocs: SKIPPED` and returned `nothing`, exit 0. Now gate_problems adds a :committed problem beside the :open one, the skip is refused, and check() throws `gbg gate check-docs check-consistency returned 1`. That state is the normal one for most of a round, and it does not yet mean the fixes were committed without the round, because the round files are simply not committed yet. A session that follows CLAUDE.md's 'gate every commit on exit codes' with the bare docs build mid-round used to get exit 0 and now gets a failure. Mitigation: both PROTOCOL.md files send a mid-round build through `gbg round build`, which sets GBG_ROUND, makes the gate skip the round and so avoids both :open and :committed. check-consistency's protocol even says a bare make.jl under an open round 'is refused by the gate, by design'. The usage that is newly rejected was therefore already off-protocol, but it was previously an exit-0 no-op.",
+            "title": "A bare local docs build during an open docs round now throws whenever the round's files are uncommitted after HEAD moved, where it used to skip with exit 0",
+            "evidence": "Gate.jl (unchanged logic): `if !in_ci && head !== nothing && head != r.round[\"head\"] ... any(p -> startswith(p, rel * \"/\") || p == rel, dirty) && push!(problems, :committed => ...)`, with `dirty = Set(p for (_, p) in Git.porcelain(root))` and Git.jl `Git.porcelain(root; untracked = true)`. Preflight.jl:723 records `\"head\" => head` at open. test/gate.jl adds only `@test Set(first.(last(G.gate_problems(off, ...)))) == Set([:open, :disabled])` and `@test isempty(G.docs_build_skipped(off, 1))`, and no :committed case. The DocLints docstring now says: 'A refusal that also names an open round of a disabled instrument, or a round whose fixes were committed without it, fails the build.'",
+            "type": "operational",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/DocLints.jl:37-51 (docs_build_skipped)",
+                "test/gate.jl:54-63"
+            ],
+            "id": "2026-09-11-audit-changes-02/public-contract#1",
+            "description": "The exit-1 skip/fail split for makedocs() moved from being keyed purely on the gate's return code to being keyed on the KIND of every problem the gate found; a mixed refusal (open docs round + a disabled-instrument round, or + an uncommitted-round problem) that used to be swallowed as a skip is now a build failure. This is the one behavioural change in an otherwise docstring-only diff, and it is well-tested and well-documented, but it is exactly the shape the lane watches for: a previously-working input (from makedocs' caller's point of view) now takes a different path.",
+            "after": "function docs_build_skipped(cfg::AbstractDict, code::Integer)\n    (code == 1 && !haskey(ENV, \"GBG_DOCS_NO_SKIP\")) || return String[]\n    all(p -> first(p) == :open, last(gate_problems(cfg, \"check-docs\", \"check-consistency\"))) || return String[]\n    return frozen_rounds(cfg, \"check-docs\", \"check-consistency\")\nend",
+            "severity": "minor",
+            "lane": "public-contract",
+            "justified": "yes",
+            "before": "docs_build_skipped(cfg::AbstractDict, code::Integer) =\n    code == 1 && !haskey(ENV, \"GBG_DOCS_NO_SKIP\") ? frozen_rounds(cfg, \"check-docs\", \"check-consistency\") : String[]",
+            "previously_worked": "yes",
+            "why_it_matters": "makedocs() (via ext/GBGCodingToolsDocumenterExt.jl's gate_or_skip) calls this to decide whether an exit-1 gate refusal is a benign skip (build exits 0) or a real failure. Before this diff, ANY exit-1 refusal while a docs round was open was treated as a skip, regardless of what else the gate objected to. After this diff, a refusal is only a skip when every problem the gate lists is :open; if a :disabled-instrument round or a :committed-without-the-round problem is ALSO present, the same gate exit code 1 now falls through to check(), which throws and fails the docs build. A consumer with a stray open round of a disabled instrument sitting alongside a normal frozen docs round — an input that previously built green with a skip line — now gets a hard build failure. The change is deliberate, documented in the updated docstring, and pinned by a new test/gate.jl case (ext#4 of 2026-09-11-check-docs-02; the skip used to swallow it), and the WORK_QUEUE shows it closing an already-known defect from a prior audit round, so it is a corrected contract rather than an unannounced one — but it is still a case where previously-valid input's outcome (skip, exit 0) changed to a different outcome (build failure) for the same gate exit code.",
+            "title": "docs_build_skipped() now fails a build it used to silently skip",
+            "evidence": "test/gate.jl: \"@test isempty(G.docs_build_skipped(off, 1))  # the second refusal fails the build\" and the comment \"a refusal the open docs round does not explain ALONE is never a skip ... the skip used to swallow it\"",
+            "type": "operational",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/CLI/Gate.jl:31-72 (gate, gate_problems)",
+                "docs/src/guide/verbs.md:47-50"
+            ],
+            "id": "2026-09-11-audit-changes-02/public-contract#2",
+            "description": "Recorded only because the lane asks specifically about return-value type changes; this one is additive (a brand-new function) rather than a change to an existing contract, so it does not itself break anything, but it is the shape of change (new element type Pair vs the old ad-hoc String) that would be worth watching if any external tooling starts depending on gate_problems' shape before it stabilizes.",
+            "after": "fatal, problems = gate_problems(cfg, instruments...; io)\n... foreach(p -> println(io, \"  \", last(p)), problems)\n\nfunction gate_problems(cfg::AbstractDict, instruments::AbstractString...; io::IO = devnull)\n    problems = Pair{Symbol,String}[]; fatal = false\n    ... push!(problems, :disabled => \"...\")",
+            "severity": "nit",
+            "lane": "public-contract",
+            "justified": "yes",
+            "before": "problems = String[]; fatal = false\n... push!(problems, \"$(r.name) is an open round of the DISABLED instrument $inst (CFG.VALID)\")\n... foreach(p -> println(io, \"  \", p), problems)",
+            "previously_worked": "unknown",
+            "why_it_matters": "gate(cfg, instruments...; io)'s own signature, return type (Int), exit codes, and printed refusal text are all unchanged — confirmed line-for-line against base — so no existing caller of gate is affected. gate_problems is new in this diff and is now documented in docs/src/guide/verbs.md, so its Pair{Symbol,String} shape is being introduced as public, not retrofitted onto something that already had callers with a different expectation.",
+            "title": "gate_problems' new element type (Pair{Symbol,String}) is a genuinely new surface, not a change to gate()'s contract",
+            "evidence": "docs/src/guide/verbs.md diff: \"+GBGCodingTools.cmd_gate\\n+GBGCodingTools.gate_problems\" added under the same @docs block as the pre-existing GBGCodingTools.gate",
+            "type": "structure",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/CLI/Passes.jl:18-25 (module docstring)"
+            ],
+            "id": "2026-09-11-audit-changes-02/invariants#1",
+            "description": "This is a documentation-only change (no code or schema in the diff touches the four closure channels, Demote.jl's predicate, or any schema file), so it does not itself alter behavior for any previously-valid input. It is reported because it is the one place in the diff that brushes up against the §5.5 closed-vocabulary invariant: it introduces new terminology (\"the fifth channel\") for a mechanism that the design's own §6.5 heading defines as never closing, inside the exact module docstring that is supposed to be the map of the four-channel closed set.",
+            "after": "the demotion and the four closure channels — `honored`, `adjudicated`, `seeded` and `rescan` — and writes the tally; [`Passes.close`](@ref) checks every closing condition of the instrument ([`GBGCodingTools`](@ref) binds the term) in order, carries what a spent pass budget left open (the fifth channel, `carried`) and stamps the round closed.",
+            "severity": "nit",
+            "lane": "invariants",
+            "justified": "no",
+            "before": "the demotion and the four closure channels and writes the tally; [`Passes.close`](@ref) checks every closing condition of the instrument ([`GBGCodingTools`](@ref) binds the term) in order and stamps the round closed.",
+            "why_it_matters": "§5.5 lists \"the closure predicates and the four channels\" as a closed vocabulary whose size is deliberately fixed and MAJOR to change, and ARCHITECTURE §6.5 titles the concept \"Closure channels (per finding id; PARTIAL never closes)\" — a channel is specifically something that CLOSES a finding id. `carried` is the opposite: a carried id is explicitly left OPEN across rounds. No code, schema, or RULES.toml changed in this diff — the four real closure channels and the schema they validate against are untouched — but the docstring now hands a future reader (or a future doc-consistency scan) the label \"the fifth channel\" for a mechanism the design elsewhere insists never closes anything, which is exactly the kind of prose drift that could later be cited to justify treating `carried` as a fifth entry in the closed vocabulary without the MAJOR bump §5.5 requires.",
+            "title": "Passes.jl docstring names a \"fifth channel\" inside a §5.5 closed vocabulary of four",
+            "evidence": "\"the four closure channels — `honored`, `adjudicated`, `seeded` and `rescan` — ... carries what a spent pass budget left open (the fifth channel, `carried`)\" (src/CLI/Passes.jl module docstring, this diff); compare ARCHITECTURE.md's own section title, unedited by this diff: \"§6.5 Closure channels (per finding id; PARTIAL never closes)\".",
+            "type": "structure",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Design.jl:125 (calibrate docstring)",
+                "commit 47db044"
+            ],
+            "id": "2026-09-11-audit-changes-02/claim-versus-edit#1",
+            "description": "The commit message for 47db044 itemizes every other touched file's finding id precisely, but the Design.jl edit to calibrate()'s docstring is present in the diff with no corresponding bullet, deferred item, or code-claim covering it -- a small but real drive-by against an otherwise complete self-report.",
+            "after": "site found — for each defect, which hat's persona should have caught it, and whether that hat, run",
+            "severity": "nit",
+            "lane": "claim-versus-edit",
+            "justified": "yes",
+            "before": "site found — for each defect, which hat's own rubric should have caught it, and whether that hat, run",
+            "why_it_matters": "47db044's message goes to unusual lengths to itemize all 26 findings it claims to address or defer by id (src#1-2, ext#1-4, built-html#1-3, cold-reader#1-4 + carried, op#1-4, rationale#1-2, templates#1-3) plus 6 deferred ids -- a level of precision this audit lane exists to check because the author is finder, fixer and reporter at once. This one-word terminology correction in Design.jl (the only touched file with no bullet naming it, 'rubric' vs the vocabulary's actual term 'persona' used consistently elsewhere in Preflight.jl) has no matching id in either the addressed or the deferred list, so a reader auditing the round against its own commit message cannot account for every line the diff actually touched. The edit itself is correct and harmless -- verified 'persona' is the term this package's config vocabulary actually uses for a hat -- so this is a completeness gap in the self-report, not a behavioural or scope problem.",
+            "title": "Design.jl calibrate() wording fix ('own rubric' -> 'persona') is a drive-by not itemized in the fix-pass-1 commit message",
+            "evidence": "git show 47db044 -- src/CLI/Design.jl shows the sole hunk in that file; the commit message's full bullet list (src#1, src#2, ext#1-3, built-html#1, built-html#2-3, cold-reader#1-4 + carried cold-reader#1, op#1-4, rationale#1-2, templates#1-3, plus the deferred ids) contains no mention of Design.jl, calibrate, rubric, or persona.",
+            "type": "self-containment",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/Scan.jl:36-37 (ScanResult population field)",
+                "src/Scan.jl:449-451 (report docstring)",
+                "src/Scan.jl:458 dead(r)"
+            ],
+            "id": "2026-09-11-audit-changes-02/contract-drift#1",
+            "description": "A guarantee lost a condition so that it matches what the code does. Behaviour is unchanged. What changed is that the documented refusal now covers the one case the counter exists to expose, when the ledger has exempted its hits. Either the code is right and the 192a336 reasoning should be withdrawn explicitly, or the base promise was right and dead(r) should drop `&& r.exempted == 0`. The edit does neither; it quietly settles the question by rewording.",
+            "after": "- `population` — ...; zero, with\n  no hit removed by the ledger, means the scan measured nothing and is DEAD.\n...\nA scan whose population is zero and from which the ledger removed no hit measured nothing and is DEAD\nwhatever else it did — that refusal is the point of the counter; a zero-population scan the ledger\nexempted is accounted for by the ledger and is not DEAD.",
+            "severity": "major",
+            "lane": "contract-drift",
+            "justified": "unclear",
+            "before": "- `population` — what the scan measured (files, docstrings, exports, arguments or pages); zero means\n  the scan measured nothing and is DEAD.\n...\nA scan whose population is zero measured nothing and is DEAD whatever else it did — that refusal is\nthe point of the counter.",
+            "previously_worked": "no",
+            "why_it_matters": "Base promised DEAD for any zero-population scan 'whatever else it did'. 192a336 wrote that promise, and its own reasoning was that a scan that measured nothing yet hit something has a broken counter. The code it shipped, `dead(r) = r.population == 0 && r.exempted == 0`, never kept that promise. This diff fixes the mismatch by weakening the promise, not the code. Case: a scan with population 0 whose hits the ledger exempted in full now reports 'ok (0; N exempted)' and exits 0. The docstring certifies that as 'accounted for by the ledger'. The next sentence still says 'a scan that measured nothing yet hit something is a scan whose own counter is wrong', and it now contradicts the new exception.",
+            "title": "The DEAD-scan guarantee was reworded to match the code, which exempts a scan whose counter is broken if the ledger ate its hits",
+            "evidence": "Scan.jl:458 `dead(r) = r.population == 0 && r.exempted == 0` (identical at base e21e57f:457). 192a336 commit body: 'A scan whose population reads zero is now DEAD whatever it hit'. Rounds.jl:175 repeats the same exempted clause.",
+            "type": "operational",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/prose_shape.csv (27 rows re-baselined)",
+                "src/Scans/prose_shape.jl (the GREW check)"
+            ],
+            "id": "2026-09-11-audit-changes-02/contract-drift#2",
+            "description": "An oracle re-baselined alongside the edits it would have flagged. Some growth is new content (the gate_problems, economy_model and seeded-copy exception paragraphs). The D10 paragraph growth is appending to an already over-cap paragraph, the case the scan message forbids.",
+            "after": "\"ARCHITECTURE.md § D10 — Rounds: ...\",550,379,0\n\"Config.jl :: Config\",227,98,0\n\"Demote.jl :: demote(verdict) ...\",234,104,0\n\"DocLints.jl :: docs_build_skipped(cfg, code) ...\",102,98,0\n\"Reflection.jl :: Reflection\",102,101,0\n\"Preflight.jl :: render_args(...\",160,109,0\n\"Scan.jl :: report(results; io = stdout) -> Int\",132,76,0",
+            "severity": "minor",
+            "lane": "contract-drift",
+            "justified": "unclear",
+            "before": "\"ARCHITECTURE.md § D10 — Rounds: ...\",504,333,0\n\"Config.jl :: Config\",162,98,0\n\"Demote.jl :: demote(verdict) ...\",192,65,0\n\"DocLints.jl :: docs_build_skipped(cfg, code) ...\",66,62,0\n\"Reflection.jl :: Reflection\",58,57,0\n\"Preflight.jl :: render_args(...\",131,80,0\n\"Scan.jl :: report(results; io = stdout) -> Int\",108,52,0",
+            "previously_worked": "no",
+            "why_it_matters": "SCAN.PROSE_SHAPE flags every unit that grew beyond the CSV: 'GREW ... rewrite, do not append; re-baseline deliberately if the growth is new content'. For a page unit already in the baseline, the ratchet is the only bound. D10's longest paragraph was already 333 words against a 120-word cap, and the edit appended to it, taking it to 379. Re-baselining it in the same diff means the scan could not report any of these growths. Several docstrings roughly doubled their longest paragraph (Demote 65 to 104, Reflection 57 to 101, docs_build_skipped 62 to 98), mostly by appending clauses, which is exactly what the ratchet names.",
+            "title": "The prose-shape ratchet baseline was re-baselined in the same change set that grew the units it guards",
+            "evidence": "prose_shape.jl: `(u.words > w || u.longest > l || u.admonitions > a) && push!(hits, Hit(file, 0, \"$k GREW: ... — rewrite, do not append; re-baseline deliberately if the growth is new content\"))`; header: 'a page unit already in the baseline is held by the ratchet alone'.",
+            "type": "operational",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:1612-1614 (section 6.4 Seeds)"
+            ],
+            "id": "2026-09-11-audit-changes-02/contract-drift#3",
+            "description": "A guarantee extended to a case it does not hold for. The same edit left section 11's residue bullet saying 'its residue is unchanged'. For a docs round, though, the answer key is the working tree itself, and diffing against it is easier than diffing against docs/build.",
+            "after": "next round's answer key. A consistency round's seeded manuscripts live under `.gbg/scratch/<round>/` inside the\nproject (gitignored), a docs round's seeded copy of its lane files outside it (D10); during the panel only the seeded copies exist, the unseeded ones being regenerated at\nbank;",
+            "severity": "minor",
+            "lane": "contract-drift",
+            "justified": "no",
+            "before": "next round's answer key. Seeded manuscripts live under `.gbg/scratch/<round>/` inside the project\n(gitignored); during the panel only the seeded copies exist, the unseeded ones being regenerated at\nbank;",
+            "previously_worked": "no",
+            "why_it_matters": "For a /check-docs round, the unseeded originals are the repository's own source files. They exist throughout the panel and are never 'regenerated at bank'. seed_docs_corpus! only copies them to a temporary directory: 'The real tree is never touched'. The edit brought docs rounds into the sentence without carving them out of the guarantee that follows, so the design now asserts a hiding property docs rounds do not have. A lane that reads the real path of a file it was handed sees the unseeded text.",
+            "title": "Section 6.4 now covers docs rounds but still says only the seeded copies exist during the panel",
+            "evidence": "Rounds.jl seed_docs_corpus! docstring: 'every file its lanes list is copied outside the repository, the seeds are planted in the copy ... The real tree is never touched'; `dest = mktempdir(; cleanup = false)`.",
+            "type": "currency",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "docs/ARCHITECTURE.md:599-605 (D10)",
+                "docs/ARCHITECTURE.md:2235-2239 (section 11 residue bullet)"
+            ],
+            "id": "2026-09-11-audit-changes-02/contract-drift#4",
+            "description": "A principle the design states is quietly narrowed to fit the code, and the honest-limits entry that should record the trade-off still claims nothing changed.",
+            "after": "and never in the tracked round. A `/check-docs` round's seeded copy is the one exception: it copies the\nsource files themselves, which its lanes, forbidden `.gbg/**`, could not read under `.gbg/`, so\n`Rounds.seed_docs_corpus!` writes it to a temporary directory outside the repository, repoints each\nlane's `repo` at it, and bank deletes it.\n...\n- A consistency round's seeded copy lives INSIDE the project (...),\n  which is what keeps a Workflow agent's `Read` prompt-free (a docs round's copy lives outside it, D10); ... and its residue is unchanged",
+            "severity": "minor",
+            "lane": "contract-drift",
+            "justified": "unclear",
+            "before": "Manuscripts\nand seeded copies live **inside the project**, under\n`.gbg/scratch/<round>/` (gitignored) — never under `~/.gbg/`, where a Workflow agent's `Read` prompts,\nand never in the tracked round.\n...\n- The seeded copy now lives INSIDE the project (`.gbg/scratch/<round>/`, gitignored), which is what\n  keeps a Workflow agent's `Read` prompt-free; ... and its residue is unchanged",
+            "previously_worked": "no",
+            "why_it_matters": "At base, the design gave one reason for 'inside the project': a Read outside it prompts. The new exception moves the docs-round copy outside the project, into mktempdir, and neither D10 nor the section 11 residue says that the docs lanes' Reads now leave the prompt-free zone. The section 11 bullet keeps 'its residue is unchanged' for both kinds of round. The code is unchanged (seed_docs_corpus! was at base), so this is the design record being edited to describe existing behaviour while keeping a caveat that no longer covers it.",
+            "title": "D10's docs-round exception drops the design's own reason for keeping seeded copies inside the project, and says nothing of what that costs",
+            "evidence": "Rounds.jl:240 `dest = mktempdir(; cleanup = false)`; Rounds.jl:275 `Preflight.repoint_lanes(cfg, round, dest)`; Rounds.jl:565-567 bank `rm(sr; recursive = true, force = true); delete!(rec, \"seed_root\")`.",
+            "type": "currency",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/DocLints.jl:37-51",
+                "src/CLI/Gate.jl:60-89 (gate_problems)",
+                "test/gate.jl:55-64"
+            ],
+            "id": "2026-09-11-audit-changes-02/contract-drift#5",
+            "description": "The fix follows one of two conflicting base promises. It goes beyond the disabled-instrument defect named in the test comment and also fails on a committed-without-the-round state. That may be intended, but it is an untested behaviour change for local builds in the middle of a round.",
+            "after": "function docs_build_skipped(cfg::AbstractDict, code::Integer)\n    (code == 1 && !haskey(ENV, \"GBG_DOCS_NO_SKIP\")) || return String[]\n    all(p -> first(p) == :open, last(gate_problems(cfg, \"check-docs\", \"check-consistency\"))) || return String[]\n    return frozen_rounds(cfg, \"check-docs\", \"check-consistency\")\nend",
+            "severity": "minor",
+            "lane": "contract-drift",
+            "justified": "unclear",
+            "before": "docs_build_skipped(cfg::AbstractDict, code::Integer) =\n    code == 1 && !haskey(ENV, \"GBG_DOCS_NO_SKIP\") ? frozen_rounds(cfg, \"check-docs\", \"check-consistency\") : String[]",
+            "previously_worked": "yes",
+            "why_it_matters": "Input that used to pass: outside CI, a local `julia --project=docs docs/make.jl` while a docs round is open, HEAD has moved past the round's opening head, and the round's directory has untracked or modified files. At base this skipped (exit 0). Now gate_problems reports `:committed` beside `:open`, and makedocs throws 'gbg gate check-docs check-consistency returned 1'. The new test exercises only `:disabled` (ext#4). The `:committed` path changed behaviour with no test. This is consistent with the base ext docstring's 'only because a round of a docs instrument is open', but it contradicts the base DocLints docstring, which skipped on any exit 1.",
+            "title": "docs_build_skipped now fails the build on the ':committed' problem too, which is wider than the disabled-instrument defect it fixed, and no test covers it",
+            "evidence": "Gate.jl: `push!(problems, :committed => \"$(r.name): its files are untracked or modified while HEAD moved past the round's opening head ...\")` under `if !in_ci && head !== nothing && head != r.round[\"head\"]`; test/gate.jl adds only `Set([:open, :disabled])` and `== [:open]` cases.",
+            "type": "operational",
+            "n": 5
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/CLI/Demote.jl:8-15",
+                "src/CLI/Demote.jl demote(): `isempty(cs) || any(c -> !get(c, \"swept\", false), cs)`"
+            ],
+            "id": "2026-09-11-audit-changes-02/contract-drift#6",
+            "description": "The definition was narrowed to match the prompt, but the demotion rule depends on the broader definition and was not reconciled with it.",
+            "after": "`class_surfaces` is\nthe list the act verifier fills: every OTHER surface — a file, a docstring, a page — carrying the same\nclass of defect as the finding, each marked `swept` when the fix pass's diff fixed the class there and\nunswept when the class still lives there.",
+            "severity": "nit",
+            "lane": "contract-drift",
+            "justified": "unclear",
+            "before": "`class_surfaces` is\nthe list the verifier fills: every surface carrying the same class and whether the\ndiff swept it.",
+            "previously_worked": "no",
+            "why_it_matters": "At base the list included the finding's own site, so it was never legitimately empty, and 'a fix graded honoured without the class enumerated being a line fix by construction' followed. Under the new 'OTHER' definition, a class that lived only at the finding's site has a correctly empty list, yet demote() still demotes that HONORED to LINE-ONLY, and the unchanged next sentence still calls it a line fix. The verify-act prompt already says 'every other surface' but also 'A class swept to zero still lists what you checked', which the new docstring omits.",
+            "title": "Demote now defines class_surfaces as 'every OTHER surface', which makes the empty-list demotion contradict its own reasoning",
+            "evidence": "verify-act.js:66 'class_surfaces enumerates every other surface carrying the same class ... A class swept to zero still lists what you checked.'",
+            "type": "currency",
+            "n": 6
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Passes.jl:21-24 (module docstring)",
+                "src/CLI/Passes.jl carry_conditions docstring"
+            ],
+            "id": "2026-09-11-audit-changes-02/contract-drift#7",
+            "description": "New prose that describes only half of the carried channel's contract.",
+            "after": "[`Passes.close`](@ref) checks every closing condition of the instrument\n([`GBGCodingTools`](@ref) binds the term) in order, carries what a spent pass budget left open (the\nfifth channel, `carried`) and stamps the round closed.",
+            "severity": "nit",
+            "lane": "contract-drift",
+            "justified": "no",
+            "before": "[`Passes.close`](@ref) checks every\nclosing condition of the instrument ([`GBGCodingTools`](@ref) binds the term) in order and stamps the round closed.",
+            "previously_worked": "no",
+            "why_it_matters": "carry_conditions allows `--carry` below the budget when the re-rated severity is minor or nit: 'below the pass budget the re-rating must be `minor` or `nit` ... while past it any severity rides'. A reader of the new module map would conclude that a round under budget cannot carry at all.",
+            "title": "The Passes module now says carrying applies only after a spent pass budget, but carry_conditions also allows it below the budget",
+            "evidence": "carry_conditions docstring: 'below the pass budget the re-rating must be `minor` or `nit`, a serious finding being fixed, adjudicated or escalated rather than deferred, while past it any severity rides'.",
+            "type": "currency",
+            "n": 7
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/TestHarness.jl:304 (package_operations docstring)",
+                "test/scans.jl:51,58 (unchanged by this diff)"
+            ],
+            "id": "2026-09-11-audit-changes-02/sweep-completeness#1",
+            "description": "This diff corrected one stated instance of a false claim (that `Scan.report` collides with a `Base` export) inside a docstring, but the identical claim, embedded as the premise of a test loop rather than prose, was left unswept in the same corpus.",
+            "after": "A package module that OWNS the name is searched before anything else, so `Config.read`, `Git.run` and\n`Ledger.read` denote the package's function and not the `Base` export they collide with; ordering the",
+            "severity": "major",
+            "lane": "sweep-completeness",
+            "justified": "yes",
+            "before": "A package module that OWNS the name is searched before anything else, so `Config.read`, `Git.run` and\n`Scan.report` denote the package's function and not the `Base` export they collide with; ordering the",
+            "why_it_matters": "Base does not define `report` or `list` (verified: `isdefined(Base, :report)` and `isdefined(Base, :list)` are both `false`); only `:read` and `:run` are real Base collisions. The docstring's own author has now silently admitted `Scan.report` was never a real example of the phenomenon by swapping it for `Ledger.read`. But test/scans.jl's inline comment ('Config.read, Rounds.list and Scan.report all collide with one') and its actual test loop `for n in (:read, :list, :report)` still assert the same false claim for `:report` (and `:list`) — meaning two-thirds of that RULE.TEST.BOTH_DIRECTIONS test iterate over symbols that trivially pass with no ordering logic exercised at all, since `isdefined(pkg, n)` for a non-Base name never reaches the `Base`-vs-package tie-break the test claims to cover. The test reads as covering three collisions; it covers one.",
+            "title": "TestHarness.jl drops a false Base-collision example the twin test still asserts",
+            "evidence": "src/TestHarness.jl:304 now reads `Ledger.read` where base read `Scan.report`; test/scans.jl:51 still reads '`Config.read`, `Rounds.list` and `Scan.report` all collide with one' and test/scans.jl:58 still loops `for n in (:read, :list, :report)`.",
+            "type": "currency",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:600-604,2232-2237 (edited in this diff)",
+                "policy/instruments.md:95-98 (not touched by this diff)"
+            ],
+            "id": "2026-09-11-audit-changes-02/sweep-completeness#2",
+            "description": "ARCHITECTURE.md's own D10 section and its Residues bullet were updated in this diff to carry the new check-docs seeding exception, but the policy prose stating the identical residue almost verbatim (word for word: 'a hat that opens it... leaves a read/Read in its transcript') was not swept to match.",
+            "after": "and never in the tracked round. A `/check-docs` round's seeded copy is the one exception: it copies the\nsource files themselves, which its lanes, forbidden `.gbg/**`, could not read under `.gbg/`, so\n`Rounds.seed_docs_corpus!` writes it to a temporary directory outside the repository, repoints each\nlane's `repo` at it, and bank deletes it.\n[...]\n- A consistency round's seeded copy lives INSIDE the project (`.gbg/scratch/<round>/`, gitignored),\n  which is what keeps a Workflow agent's `Read` prompt-free (a docs round's copy lives outside it, D10);",
+            "severity": "major",
+            "lane": "sweep-completeness",
+            "justified": "yes",
+            "before": "and never in the tracked round. **Staleness by hash, not mtime**: every verdict file carries\n[...]\n- The seeded copy now lives INSIDE the project (`.gbg/scratch/<round>/`, gitignored), which is what\n  keeps a Workflow agent's `Read` prompt-free;",
+            "why_it_matters": "policy/instruments.md is the single-source rulebook rendered into `.gbg/policy/` of every consumer (including this package's own, per D15) and is what a session actually reads as the current promise. Its 'Honest limits' section states, unqualified: 'The seeded copy lives inside the project, gitignored; a hat that opens it, or diffs its manuscript against the built site, leaves a read in its transcript…'. That statement is now false for a `/check-docs` round, whose seeded copy `Rounds.seed_docs_corpus!` places outside the repository entirely — a materially different transcript/prompt-visibility residue than 'inside the project, gitignored' (a Workflow agent's Read prompt behaves differently for a path outside vs. inside the project tree). Anyone reading the rendered policy — the artefact this rule set exists to keep authoritative fleet-wide — is told the old, now-partial story.",
+            "title": "policy/instruments.md's Honest limits still state the seeded copy lives inside the project unconditionally",
+            "evidence": "policy/instruments.md:96-97 (current, unchanged): 'The seeded copy lives inside the\\nproject, gitignored; a hat that opens it, or diffs its manuscript against the built site, leaves a read in\\nits transcript…' with no docs-round exception.",
+            "type": "currency",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/CLI/Rounds.jl:328-340 (classify_lane docstring, rewritten in this diff)",
+                "docs/ARCHITECTURE.md:608-610 (same paragraph edited in this diff for an unrelated sentence, this sentence untouched)"
+            ],
+            "id": "2026-09-11-audit-changes-02/sweep-completeness#3",
+            "description": "A precision correction to one docstring's account of an existing (unchanged) code path was not carried into the design document's parallel description of the identical classification, edited elsewhere in the same diff hunk's neighborhood.",
+            "after": "The status, decided in this order: `:dead` when the file is absent; `:rejected` when it is present but\nits sha changed since first sight, decided before the file is read, whatever it now holds; `:dead`, the\nfile renamed to `<name>.rejected.json` beside itself, when it is unparsable, fails the instrument's\nschema, [...]\n\nThen `:dead`, the file left in place, when it is well-formed with zero findings AND an empty\n`checked[]` [...]; `:empty` [...], `:truncated` [...], or `:live`.",
+            "severity": "minor",
+            "lane": "sweep-completeness",
+            "justified": "yes",
+            "before": "The status is `:dead` — absent; renamed to `<name>.rejected.json` beside itself when unparsable, when\nit fails the instrument's schema, or when it is schema-valid but its own `lane` field names a different\nlane than the roster entry asked for [...]; or\nwhen its own `verdict` contradicts its findings (`verdict_contradiction`); or well-formed with zero\nfindings AND an empty `checked[]` [...]. Then `:rejected`\n(present but its sha changed since first sight), `:empty` [...], `:truncated` [...], or `:live`.",
+            "why_it_matters": "The rewrite moves REJECTED-by-sha-mismatch to be checked SECOND (right after 'absent'), explicitly before the file is even parsed — a precedence the old docstring's ordering (which listed `:rejected` after all the DEAD/EMPTY variants) did not state and, read literally, contradicted. ARCHITECTURE.md's D10 paragraph — the design record a maintainer or a new session would actually consult for 'how is a lane classified at bank' — was edited in this very diff (word count 504->550, per docs/prose_shape.csv) for the seeded-copy sentence a few lines above, yet its own classification enumeration ('DEAD (...), EMPTY (...), ORPHAN (...), TRUNCATED (...), REJECTED (a live lane whose sha changed after first sight)') still lists REJECTED last, giving no reader reason to suspect a stale/mismatched file is never even opened to check whether it is otherwise DEAD.",
+            "title": "Rounds.jl documents classify_lane's decision ORDER; ARCHITECTURE D10's own enumeration (edited in the same diff) still lists REJECTED last",
+            "evidence": "docs/ARCHITECTURE.md:608 (current, unchanged): 'A lane file is classified at `bank`: **DEAD** (absent; unparsable, schema-invalid, or schema-valid\\nwith a `lane` field naming a lane the roster entry did not ask for [...]), **EMPTY**\\n[...], **ORPHAN** [...], **TRUNCATED** [...],\\n**REJECTED** (a live lane whose sha changed after first sight).'",
+            "type": "currency",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/CLI/Design.jl:125 (calibrate docstring, edited in this diff)",
+                "instruments/check-consistency/workflow/rubric-audit.js:10 (not touched by this diff)"
+            ],
+            "id": "2026-09-11-audit-changes-02/sweep-completeness#4",
+            "description": "A docstring's terminology fix (hat 'rubric' -> hat 'persona', avoiding collision with the package's other, defined sense of 'rubric') was not carried to the instrument script whose name and self-description use the identical retired phrase — though instruments are frozen mid-round and such a change would need its own release, per this package's own rule, so this may be a deliberate deferral rather than an oversight.",
+            "after": "`gbg calibrate`: scores the `check-consistency` hats against the defects a human read of the rendered\nsite found — for each defect, which hat's persona should have caught it, and whether that hat, run\nblind on the passage alone, does.",
+            "severity": "minor",
+            "lane": "sweep-completeness",
+            "justified": "yes",
+            "before": "`gbg calibrate`: scores the `check-consistency` hats against the defects a human read of the rendered\nsite found — for each defect, which hat's own rubric should have caught it, and whether that hat, run\nblind on the passage alone, does.",
+            "why_it_matters": "This package is unusually careful about word overloading (Config.jl's own docstring update in this same diff spells out 'Three unrelated senses, one word' for 'anchor'). 'Rubric' is the shared docs-quality rubric (`docs-rubric.md`, `RULE.DOC.*`) elsewhere in this same diff (Reflection.jl's module docstring: 'Two constants of the docstring rubric... bind the argument checks'); a hat has no rubric of its own; it has a persona. The calibrate() docstring was corrected to say so. But the very script `gbg calibrate` runs, `instruments/check-consistency/workflow/rubric-audit.js`, both is named for and describes itself with the exact phrase just retired: `description: 'Test, blind, whether each panel hat's own rubric produces the findings a human read found'`. A reader of the corrected docstring who then opens the script it invokes meets the overloaded word again.",
+            "title": "calibrate()'s 'persona' correction leaves rubric-audit.js still calling it the hat's 'own rubric'",
+            "evidence": "instruments/check-consistency/workflow/rubric-audit.js:10: \"description: 'Test, blind, whether each panel hat's own rubric produces the findings a human read found'\"",
+            "type": "currency",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "low",
+            "locations": [
+                "src/CLI/Preflight.jl:58 (config_sha docstring, edited in this diff)",
+                "src/CLI/Preflight.jl:87,120 (tag_tree and stamps docstrings, same file, not touched)"
+            ],
+            "id": "2026-09-11-audit-changes-02/sweep-completeness#5",
+            "description": "Low-confidence: this may simply be out of this diff's chosen scope (the D16 citations describe a different, unrelated design point) rather than a left-behind instance of the same edit; flagged because the pattern (drop a D-number citation from a docstring) is otherwise applied consistently across every other touched file.",
+            "after": "The config stamp every round and pass records — [`Sync.config_sha`](@ref), the one definition.",
+            "severity": "minor",
+            "lane": "sweep-completeness",
+            "justified": "unclear",
+            "before": "The config stamp of §6.1 — [`Sync.config_sha`](@ref), the one definition.",
+            "why_it_matters": "This diff removed an ARCHITECTURE-section citation from several public docstrings across the tree (Doctor.jl, Gate.jl, Init.jl, Passes.jl's close(), RoundFiles.jl's reproductions_sha, and this file's own config_sha), consistently leaving the identical citation in each file's non-rendered '#'-comment header — a pattern applied uniformly enough elsewhere to look deliberate. Within this same file, though, two neighbouring exported docstrings (`tag_tree`, `stamps`) still carry the same style of parenthetical D-number citation ('measured against (D16)', 'stamped with that tag (D16)') untouched, so the file is left citing design sections in one rendered docstring's style and not another's, a few lines apart.",
+            "title": "Preflight.jl's own D16 citations in tag_tree/stamps were left when a sibling docstring's D-number/section citation was dropped",
+            "evidence": "src/CLI/Preflight.jl:87: 'The tree a tag names is what a round stamped with that version was measured against (D16); the'; src/CLI/Preflight.jl:120: 'tag keeps reading its tool stamps from that tag while the tag exists (D16), so the fix commits that'",
+            "type": "currency",
+            "n": 5
+        }
+    ]
+}

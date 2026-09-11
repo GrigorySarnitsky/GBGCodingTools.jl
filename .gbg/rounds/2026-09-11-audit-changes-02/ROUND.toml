@@ -1,10 +1,15 @@
-# ROUND.toml — written by gbg preflight; the CLI's marker, never edited by hand (ARCHITECTURE §6.1)
+# ROUND.toml — written by the gbg round verbs; never edited by hand (ARCHITECTURE §6.1)
+tool_tree_sha = "535a480a28f0240af4e083672bb39e56a16bc7ad"
+findings_sha = "dcac86d26b8879b91d680954f24edb94cc5aa83e064e69d3290e3456953c897f"
+strength = "economy"
+round = "2026-09-11-audit-changes-02"
+opened = "2026-09-11T23:26:46"
+banked = "2026-09-11T23:43:16"
 tool_version = "dev+249b795-dirty"
 passes = 0
 head = "249b795c6604c69d62637e85c00bbe84e68d3008"
 model_hint = "sonnet"
 hostname = "Aiporetne"
-tool_tree_sha = "535a480a28f0240af4e083672bb39e56a16bc7ad"
 seed_catalog_sha = "fdd564c6a6a6d1ddb946c10d2922a72d728e45d47585b49fdbcbd5a95efc8ba3"
 config_sha = "3daa040f54a778a95ce45be87ae94de8caa967d0d08aa427b71160f30f8b6255"
 dead_lanes = []
@@ -13,10 +18,7 @@ tool_rev = "249b795c6604c69d62637e85c00bbe84e68d3008"
 instrument = "audit-changes"
 base = "e21e57f916145a3380102026adb27c265af21f48"
 catalog_sha = "97ed6dd4088cc2aca03d8ceb8be51c3e5c12e99d3e350b53949afa8384252f87"
-strength = "economy"
 schema_version = 1
-round = "2026-09-11-audit-changes-02"
-opened = "2026-09-11T23:26:46"
 
 [[roster]]
 key = "free-reader"
@@ -70,3 +72,18 @@ anchor = false
 key = "reader-consequence"
 substrate = "prose"
 anchor = false
+
+[lane_shas]
+reader-consequence = "ab765dd7cdbf6dc9affea00620c361edcd8259c47bfae9d318ffa3a45f4d9009"
+numerics = "b9ea9ff62066b0b6924e4227ec53c5c043dcec2cae8d5623e543fd6bffedb563"
+backend-portability = "71c60453ba449293513b0c7e9b87288fd1372157e25c593c38f9117acc2a4376"
+claim-versus-edit = "0e10e2ae0543e0a366356d9dff55c3aa207709c7ba84901e86ae0995865282f4"
+over-rejection = "7258605c66ca463e2c3b85bb80f0ba831b3605ab834f4ff320b0a08cbe410fc2"
+invariants = "2468c157e2e5da2c0c0da64af2784092bad975a90a68801d1d5c67037490a53f"
+contract-drift = "da73ca2e31b894ad1cba69a2c3159c3a9234a8582e8a418213760bd5ada6cad1"
+sweep-completeness = "8d69fb0a418428bdd7a3acb62bbf89638a91e0d2688e34a78fe100c9133a3dbe"
+behaviour-change = "b8b39653e0537221400a9bc7797267d4be9033de4a2caba562ece7e6cb12ac14"
+executing = "7a2fadd7d282a5e165da019c134f9aeec9e0695efa54f7300101c2010e747ed8"
+under-rejection = "fa4b32eb3cf853479b82e6c079d9fe0ccd90a36c6a68e3d6304bdf15a5e3973e"
+public-contract = "ef663bd05730a3bf294f2dbb44211571fc3c4cd9688cefc2c08b6b1e42938d26"
+free-reader = "fe8b32a1229b31f896631e48ef8525ad2bbbb54e2cce6f39611b0971cc08c5a5"
