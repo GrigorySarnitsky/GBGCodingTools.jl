@@ -463,8 +463,8 @@ sha_files(paths) = sha256hex(join((isfile(p) ? read(p, String) : "" for p in pat
 """
     config_sha(cfg) -> String
 
-sha256 over `config.toml`, `hats/*.toml` (sorted) and `exemptions.toml`, in that order (ARCHITECTURE
-§6.1); the stamp every round records and the render input the sidecar records.
+sha256 over `config.toml`, `hats/*.toml` (sorted) and `exemptions.toml`, in that order; the stamp
+every round records and the render input the sidecar records.
 """
 function config_sha(cfg::AbstractDict)
     g = joinpath(cfg["root"], ".gbg")

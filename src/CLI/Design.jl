@@ -122,7 +122,7 @@ end
     calibrate(cfg; io = stdout) -> Int
 
 `gbg calibrate`: scores the `check-consistency` hats against the defects a human read of the rendered
-site found — for each defect, which hat's own rubric should have caught it, and whether that hat, run
+site found — for each defect, which hat's persona should have caught it, and whether that hat, run
 blind on the passage alone, does. The arguments are:
 
 - `cfg` — the validated config.

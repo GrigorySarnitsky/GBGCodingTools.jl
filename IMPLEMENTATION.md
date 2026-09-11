@@ -432,9 +432,10 @@ check-consistency scripts use underscores).
   `catalog/seeds/fixture.toml` (eight classes anchored to the fixture text — the ONE seed catalogue in
   the tool; a consumer's is its own `.gbg/seeds.toml`, class C, written by `gbg init` at Phases 4 and 5
   from PF `check-consistency/seed_defects.py:39-56` and IT `check-consistency/seed_defects.py:31-48`).
-- `schema/*.schema.json`: the sixteen of §2 D11 — `config, exemptions, hat, round, pass,
+- `schema/*.schema.json`: the twenty-two of §2 D11 — `config, exemptions, hat, round, pass,
   finding, verdict-act, verdict-state, tally, reproduction, dismissal,
-  architecture-fix, audit, ground-truth, import, managed` — closed enums of §6.3; the lane-file wrapper
+  architecture-fix, audit, ground-truth, import, managed, carried, severity, attack-subject, attack,
+  rubric-audit, human-findings` — closed enums of §6.3; the lane-file wrapper
   and bug-hunt's candidate shape live inline in each instrument's own `schema.json`, not here; each instrument's
   `schema.json` = args + lane-file wrapper `$ref`-ing `finding.schema.json`; `exemptions.schema.json`
   admits the optional `[exemption.match]` table on the scopes `scan|lint|policy|harness` only, with
@@ -445,7 +446,7 @@ check-consistency scripts use underscores).
   (a glob) and `symbol` (a regex over the owning binding's name); every engine with a trigger
   population, `Reflection.argcov` included, applies the predicate itself and reports the population,
   which is what `EXEMPT.BROAD` dry-runs over; the `seeds` definition a consumer's `.gbg/seeds.toml`
-  validates against lives in `instruments/check-consistency/schema.json`, not among the sixteen.
+  validates against lives in `instruments/check-consistency/schema.json`, not among them.
 - `templates/`: `SKILL.md.tmpl` (frontmatter `name`, `description` with version, `allowed-tools: Bash(gbg *)`;
   body = the managed header + one `!` block `gbg preflight <instrument> $ARGUMENTS`; for `gbg-doctor`
   the block is `gbg doctor` — it is not an instrument; ≤ 15 lines), `settings.json.tmpl` (hook command

@@ -3,7 +3,8 @@ Adopt GBGCodingTools v{{tool.version}}
 `gbg init --migrate` seeded `.gbg/` (config, hats, seeds, the ledger), the S-class files and the
 `[deps]/[sources]/[compat]` entries of every sub-environment that lists the tool, and converted the
 test baselines to their TOML form; `gbg sync` rendered the managed files. The instruments this
-package carried in `.claude/commands/` are replaced by the tool's, at the pinned version above.
+package carried in `.claude/commands/` are superseded by the tool's skills at the pinned version
+above; `gbg doctor`'s `LEG.COMMANDS` fails until the old files are deleted.
 
 Files written or changed:
 {{files}}

@@ -7,9 +7,11 @@
 
 The loader of a consumer's `.gbg/config.toml`. [`Config.read`](@ref) is the one way the config is
 obtained — by every verb, by the `makedocs` wrapper and by `TestHarness.gate()` — and
-[`Config.ConfigError`](@ref) is what a config that cannot be used raises. The helpers
-[`Config.glob_files`](@ref) and [`Config.resolve_anchor`](@ref) are the two readers of the config's
-path vocabulary (globs and `file#heading` anchors), shared with the doctor and the scans.
+[`Config.ConfigError`](@ref) is what a config that cannot be used raises; [`Config.find_root`](@ref)
+finds the consumer root a directory lies in, and [`Config.check_paths`](@ref) runs every existence check
+the config implies (the doctor's `CFG.SURFACES`). The helpers [`Config.glob_files`](@ref) and
+[`Config.resolve_anchor`](@ref) are the two readers of the config's path vocabulary (globs and
+`file#heading` anchors), shared with the doctor and the scans.
 
 Two words this package overloads, both first met here. A SURFACE is the config's unit of "what gets
 read": a named set of files — `rationale`, `pages`, `src`, `ext`, `literate`, `data`, and the compounds
@@ -17,6 +19,10 @@ read": a named set of files — `rationale`, `pages`, `src`, `ext`, `literate`, 
 `file#heading` reference into a document, and NOTHING else: elsewhere the same word is a hat or lane
 that runs at full strength rather than on the economy model (`Preflight.resolve_hats`), and a regular
 expression marking where a seed is planted (`Seeds.select`). Three unrelated senses, one word.
+
+The ECONOMY MODEL is the cheaper AI model the tool's model catalogue names (`Preflight.economy_model`):
+in an economy round every lane and hat that is not an anchor runs on it, and an anchor runs at full
+strength, on the session's own model.
 """
 module Config
 

@@ -5,14 +5,15 @@
 """
     Doctor
 
-The read-only health check of a consumer's tooling (D14, §7.3). Every check has a stable id, returns
+The read-only health check of a consumer's tooling. Every check has a stable id, returns
 `PASS`, `WARN`, `FAIL` or `NA`, and can be selected by id or prefix; the `QUICK` set is the subset that
 holds on a runner with no shim and a detached HEAD. A `scope = "check"` ledger entry on an exemptable
 id (`LEG.*`, `GIT.*`, `AUDIT.*`) turns its FAIL into a WARN naming the reason; the non-exemptable
 families are the tool's own enforcement.
 
 `anchor` carries three unrelated senses across this package, and the checks below touch two: a hat's
-or lane's `anchor` is whether it runs at full strength rather than on the economy model (`CFG.HATS`);
+or lane's `anchor` is whether it runs at full strength rather than on the economy model that
+[`GBGCodingTools.Config`](@ref) defines (`CFG.HATS`);
 `Config.resolve_anchor`'s is a `file#heading` Markdown reference; a seed class's, in `Seeds.select`,
 is the regular expression marking where the seed is planted. No one of them
 implies another.

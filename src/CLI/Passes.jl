@@ -18,8 +18,10 @@ The verification half of a round. Each pass has two verifiers, both agents the s
 [`GBGCodingTools.demote`](@ref) turns an `HONORED` whose list is empty or names an unswept surface
 into `LINE-ONLY`. [`Passes.pass_open`](@ref) opens a verification pass (nonce, range, expected counts, the regenerated
 manuscripts, the verifiers' Workflow calls); [`Passes.grade`](@ref) validates the verdict files, applies
-the demotion and the four closure channels and writes the tally; [`Passes.close`](@ref) checks every
-closing condition of the instrument ([`GBGCodingTools`](@ref) binds the term) in order and stamps the round closed.
+the demotion and the four closure channels — `honored`, `adjudicated`, `seeded` and `rescan` — and
+writes the tally; [`Passes.close`](@ref) checks every closing condition of the instrument
+([`GBGCodingTools`](@ref) binds the term) in order, carries what a spent pass budget left open (the
+fifth channel, `carried`) and stamps the round closed.
 """
 module Passes
 
@@ -198,7 +200,7 @@ This is the checklist the act verifier ([`GBGCodingTools.Passes`](@ref) binds it
 inventing. A class rarely lives where it was
 quoted: `operational-claims#7` of `2026-09-09-check-docs-02` was one comment overstating what
 `SCAN.SIBLING_LINK` enforces, and it lived in four places — the scan's file header, the docstring above
-its function, the rule's paragraph in `policy/`, and a row of the §12.B catalogue table. The verifier
+its function, the rule's paragraph in `policy/`, and its row in the design's scan catalogue. The verifier
 found one per pass and the round paid three passes to enumerate a set a grep names at once. A site the
 tool cannot name is still the verifier's to add; what changes is that a site nobody looked at is now
 visibly unmarked rather than unthought-of. Returns the sites.
@@ -1052,7 +1054,7 @@ round closed. The arguments are:
 - `round` — the round id.
 - `io` — where the refusals are listed.
 
-The conditions (§6.2 step 9; §6.7 for the hunt; §6.8 for the audit): the latest pass fully closed, no
+The conditions: the latest pass fully closed, no
 dead lane, the round's files committed, the stamps unchanged (tool version and config, else regrade;
 tool tree sha, else abandon-only), the opening head an ancestor of HEAD, the dismissal auditor run over
 every adjudication and refusal with `reopened == []` (its Workflow call is printed when it has not

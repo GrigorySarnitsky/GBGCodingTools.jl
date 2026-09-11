@@ -20,6 +20,7 @@ GBGCodingTools.Options
 ```@docs
 GBGCodingTools.cmd_install
 GBGCodingTools.self_verify
+GBGCodingTools.cmd_self_verify
 GBGCodingTools.cmd_probe
 ```
 
@@ -30,6 +31,7 @@ GBGCodingTools.Init.init
 GBGCodingTools.Init.migrate_baselines
 GBGCodingTools.Init.new
 GBGCodingTools.Sync.sync
+GBGCodingTools.Sync.cmd_sync
 GBGCodingTools.cmd_config
 GBGCodingTools.cmd_schema
 ```
@@ -45,6 +47,8 @@ GBGCodingTools.scan_docs
 GBGCodingTools.scan_html
 GBGCodingTools.write_public_surface
 GBGCodingTools.gate
+GBGCodingTools.cmd_gate
+GBGCodingTools.gate_problems
 GBGCodingTools.frozen_rounds
 ```
 

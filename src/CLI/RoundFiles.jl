@@ -63,7 +63,7 @@ sha256_file(path::AbstractString) = bytes2hex(sha256(read(path)))
 
 The hash that freezes a hunt's disposition records at bank (`reproductions_sha`): every
 `reproductions/<id>.json` with its `disposition` removed and its keys sorted, in file-name order. The
-disposition is the one field recorded after bank (ARCHITECTURE §6.3), so recording one leaves the hash
+disposition is the one field recorded after bank, so recording one leaves the hash
 where it was, while a changed verdict, witness sha or id moves it. The argument is `rdir`, the round's
 `reproductions/` directory; an absent directory hashes to the empty string.
 """

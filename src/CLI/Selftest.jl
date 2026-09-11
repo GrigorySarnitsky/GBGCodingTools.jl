@@ -5,7 +5,7 @@
     selftest(; pinned = false, io = stdout) -> Int
 
 Runs the running copy's own `Pkg.test()` from a temporary environment that develops it by path, so the
-arms of §8 run over the fixture wherever the tool is installed. With `pinned`, additionally copies the
+self-test's arms run over the fixture wherever the tool is installed. With `pinned`, additionally copies the
 fixture to `\${TMPDIR}/gbg-pinned-fixture/`, pins it at the newest released tag (its sub-environment
 sources rewritten to the https url and rev), instantiates its `docs/` environment and runs the QUICK
 doctor there — the pinned-copy behaviours (`PIN.SELF`, `PIN.TREESHA`, `PIN.SOURCES`) — leaving the copy

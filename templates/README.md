@@ -28,7 +28,11 @@ by the consumer thereafter (wiring-checked, never rewritten).
 formats), `<!-- gbg:managed … -->` (Markdown), none for JSON (the sidecar is the record). The header
 is part of the rendered bytes the sidecar hashes. One exception: `queue-guard.sh.tmpl` is copied
 byte-for-byte from PF's Stop hook and carries no header, so the upstream text stays comparable; the
-sidecar hash is what marks it managed.
+sidecar hash is what marks it managed. The two blocks have a shape of their own: `claude-md.block` and
+`gitignore.block` are managed INSIDE a file the package owns, between a `gbg:managed begin v<version>`
+line — in `<!-- … -->` in `CLAUDE.md`, whose opener also carries `sha256:<hash>` of the block's body
+lines, and after `#` in `.gitignore` — and a `gbg:managed end` line; `sync` rewrites only what lies
+between the two.
 
 **Snippet fragments.** A `.snippet` holds three fragments, each opened by a line
 `# gbg:fragment <auth|run|banner>` and closed by the next opener or the end of the file. `sync`

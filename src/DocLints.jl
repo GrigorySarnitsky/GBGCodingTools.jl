@@ -37,9 +37,15 @@ function makedocs end
     docs_build_skipped(cfg, code) -> Vector{String}
 
 The rounds that make a docs-build gate's refusal a skip rather than a failure: the open rounds of the
-two docs instruments ([`GBGCodingTools.frozen_rounds`](@ref)) when the gate refused with exit `1` and
-`GBG_DOCS_NO_SKIP` is unset, and otherwise none. Both of [`makedocs`](@ref)' gates ask it, so they share
-the one exception. The arguments are `cfg`, the validated config, and `code`, the gate's exit code.
+two docs instruments ([`GBGCodingTools.frozen_rounds`](@ref)) when the gate refused with exit `1` for
+those rounds alone — every problem [`GBGCodingTools.gate_problems`](@ref) reports is `:open` — and
+`GBG_DOCS_NO_SKIP` is unset, and otherwise none. A refusal that also names an open round of a disabled
+instrument, or a round whose fixes were committed without it, fails the build. Both of
+[`makedocs`](@ref)' gates ask it, so they share the one exception. The arguments are `cfg`, the
+validated config, and `code`, the gate's exit code.
 """
-docs_build_skipped(cfg::AbstractDict, code::Integer) =
-    code == 1 && !haskey(ENV, "GBG_DOCS_NO_SKIP") ? frozen_rounds(cfg, "check-docs", "check-consistency") : String[]
+function docs_build_skipped(cfg::AbstractDict, code::Integer)
+    (code == 1 && !haskey(ENV, "GBG_DOCS_NO_SKIP")) || return String[]
+    all(p -> first(p) == :open, last(gate_problems(cfg, "check-docs", "check-consistency"))) || return String[]
+    return frozen_rounds(cfg, "check-docs", "check-consistency")
+end

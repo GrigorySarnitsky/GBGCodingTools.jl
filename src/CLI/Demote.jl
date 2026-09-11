@@ -6,8 +6,9 @@
 The one demotion rule over an act verdict — the act verifier's grade of what the fix pass DID to one
 finding, from the diff (the state verifier grades, blind to the diff, whether the defect is still
 there; [`GBGCodingTools.Passes`](@ref) binds both verifiers and their verdicts). `class_surfaces` is
-the list the verifier fills: every surface carrying the same class and whether the
-diff swept it.
+the list the act verifier fills: every OTHER surface — a file, a docstring, a page — carrying the same
+class of defect as the finding, each marked `swept` when the fix pass's diff fixed the class there and
+unswept when the class still lives there.
 
 An act verdict `HONORED` becomes `LINE-ONLY` when that list is empty, a fix graded honoured without the
 class enumerated being a line fix by construction, OR when any entry is `swept: false` — a verdict that
@@ -16,8 +17,8 @@ fix that has said so.
 
 Emptiness alone fired 0 times in the 571 act verdicts of `2026-09-09-check-docs-02`, which never handed
 in an empty list, while admitting 21 closures whose own list named an unswept surface — `templates#3`
-five times, and that contradiction shipped. §12 records the fork, content against emptiness; the data
-settled it. Every other verdict is returned unchanged. Returns the verdict and whether it moved.
+five times, and that contradiction shipped. The design record weighed the two rules, content against
+emptiness; the data settled it. Every other verdict is returned unchanged. Returns the verdict and whether it moved.
 """
 function demote(verdict::AbstractDict)
     cs = get(verdict, "class_surfaces", Any[])

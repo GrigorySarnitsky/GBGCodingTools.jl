@@ -23,7 +23,8 @@ export argcov, signature_fidelity, xlink, dupref, package_operations
 """
     ARGS_THRESHOLD
 
-The rubric's constant: a docstring with this many arguments or more, or any keyword, documents them in
+The docstring rubric's constant (the `RULE.DOC.*` rules of the shared policy): a docstring with this
+many arguments or more, or any keyword, documents them in
 the bulleted `The arguments are:` form; fewer are bound in prose. Not a config key.
 """
 const ARGS_THRESHOLD = 3
@@ -205,7 +206,7 @@ end
 """
     dupref(cfg) -> Vector
 
-The `@ref` targets linked more than once inside one docstring of the `src` surface (the rubric caps a
+The `@ref` targets linked more than once inside one docstring of the `src` surface (the docstring rubric caps a
 target at its first genuine mention; invisible in the rendered text). Returns named tuples
 `(file, line, target, count, signature)`.
 """

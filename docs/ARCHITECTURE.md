@@ -599,7 +599,10 @@ tracked, never the work list); `verdicts/pass-<k>/{pass.toml, act/*.json, state/
 never committed: no consumer carries a pre-tool round, owner ruling 2026-09-08). Manuscripts
 and seeded copies live **inside the project**, under
 `.gbg/scratch/<round>/` (gitignored) — never under `~/.gbg/`, where a Workflow agent's `Read` prompts,
-and never in the tracked round. **Staleness by hash, not mtime**: every verdict file carries
+and never in the tracked round. A `/check-docs` round's seeded copy is the one exception: it copies the
+source files themselves, which its lanes, forbidden `.gbg/**`, could not read under `.gbg/`, so
+`Rounds.seed_docs_corpus!` writes it to a temporary directory outside the repository, repoints each
+lane's `repo` at it, and bank deletes it. **Staleness by hash, not mtime**: every verdict file carries
 `graded_sha256` (= the sha of `findings.json`) and the `pass_nonce` from `pass.toml`; mismatch →
 REJECTED; absent → DEAD. Roster and denominator come from `ROUND.toml` and `findings.json`, counted
 by the CLI. A lane file is classified at `bank`: **DEAD** (absent; unparsable, schema-invalid, or schema-valid
@@ -633,9 +636,10 @@ the unseeded manuscript beside the seeded one is a one-line `diff` (attack 3.4).
 
 ### D11 — Schemas: one JSON Schema per artefact kind in `schema/`; closed union vocabularies; `schema_version` on every artefact
 
-**Choice.** Eighteen schemas: `schema/{config,exemptions,hat,round,pass,finding,verdict-act,
+**Choice.** Twenty-two schemas: `schema/{config,exemptions,hat,round,pass,finding,verdict-act,
 verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import,managed,carried,
-severity}.schema.json`. An instrument's `instruments/<name>/schema.json` is its `args` object plus its
+severity,attack-subject,attack,rubric-audit,human-findings}.schema.json`, the last four those of the
+design checks (`gbg attack`, `gbg calibrate`). An instrument's `instruments/<name>/schema.json` is its `args` object plus its
 lane-file wrapper and `$ref`s `finding.schema.json` for the findings array; the lane-file wrapper and
 `bug-hunt`'s candidate-file shape live inline in each instrument's own `schema.json`, not as files
 under `schema/`.
@@ -988,6 +992,7 @@ GBGCodingTools.jl/
       Gate.jl                   THE closure gate for every instrument (honours GBG_ROUND); called in-process by makedocs and TestHarness.gate()
       Demote.jl                 THE demotion predicate (class_surfaces[] empty, or any entry unswept)
       Seed.jl Recall.jl Consolidate.jl Audit.jl Hunt.jl Selftest.jl
+      Design.jl                 `gbg attack` and `gbg calibrate`, the design checks on the instruments, outside any round
     Scan.jl                     `gbg scan docs|html` — the tiered engine over catalog/scans.toml
     Scans/<ScanId>.jl           the scan catalogue's implementations, one file per scan id (§12.B)
     TreeHash.jl                 git blob/tree hashing on the SHA stdlib; `gbg self verify`, PIN.SELF, PIN.TREESHA
@@ -1018,13 +1023,14 @@ GBGCodingTools.jl/
     lanes/{check-docs,bug-hunt,audit-changes}.toml   engine lanes (constants, anchors marked); free hunt lanes; audit lanes by kind
     scans.toml                  every deterministic scan: id, rule id, tier hard|triage, surfaces key, runner julia|html, fixture pair (§12.B)
     models.toml                 economy = "sonnet"
+    attack/<instrument>.toml    the subject `gbg attack` puts to an instrument's attackers (schema/attack-subject.schema.json)
     seeds/fixture.toml          the fixture's seed catalogue — the ONE seed catalogue in the tool; a consumer's is its own
                                 .gbg/seeds.toml (§6.4)
   policy/                       the single-source rubric, rule-numbered
     00-index.md docs-rubric.md latex-idiom.md citations.md testing-protocol.md instruments.md git-conventions.md glossary.md
     RULES.toml                  every `RULE.*` id → file, section, statement, sentinel, enforcement class (§12.A; the ledger
                                 validates against it; `LEG.SENTINELS` reads the sentinels)
-  schema/*.schema.json          the sixteen of D11
+  schema/*.schema.json          the twenty-two of D11
   templates/                    SKILL.md.tmpl settings.json.tmpl queue-guard.sh.tmpl WORK_QUEUE.md.seed CLAUDE.md.skeleton make.jl.seed
                                 runtests.jl.seed test-Project.toml.seed
                                 CI.yml.snippet docs.yml.snippet (three fragments each, inserted by `sync` at fixed points:
@@ -1603,8 +1609,8 @@ copies of consumer configs inside the tool" and the tool's CI running with no co
 both require it. The seed MECHANISM (below) is the tool's, and a change to it is MAJOR. Selection is
 **salted per round**: the round id salts the nth-occurrence offset of every
 class, so no two rounds plant the same set and a closed round's tracked `ground_truth.json` is not the
-next round's answer key. Seeded manuscripts live under `.gbg/scratch/<round>/` inside the project
-(gitignored); during the panel only the seeded copies exist, the unseeded ones being regenerated at
+next round's answer key. A consistency round's seeded manuscripts live under `.gbg/scratch/<round>/` inside the
+project (gitignored), a docs round's seeded copy of its lane files outside it (D10); during the panel only the seeded copies exist, the unseeded ones being regenerated at
 bank; `ground_truth.json` is written at bank, not open; hats never receive it and, like the verifiers,
 are forbidden `.gbg/**` and `~/.gbg/**`; the adjudication channel refuses a seeded id; consolidation
 subtracts seeded hits before the summary; a hat with ≥ 2 seeds on its substrate and zero matches is
@@ -2226,8 +2232,8 @@ targets the `docs/` environment, the one that always carries a manifest (D2).
 **Residues this design states rather than closes** (each is transcript- or diff-visible, none
 gate-visible):
 
-- The seeded copy now lives INSIDE the project (`.gbg/scratch/<round>/`, gitignored), which is what
-  keeps a Workflow agent's `Read` prompt-free; the second bullet above therefore reads "inside the
+- A consistency round's seeded copy lives INSIDE the project (`.gbg/scratch/<round>/`, gitignored),
+  which is what keeps a Workflow agent's `Read` prompt-free (a docs round's copy lives outside it, D10); the second bullet above therefore reads "inside the
   project, gitignored" for this design, and its residue is unchanged — a hat that opens the copy, or
   that **diffs the seeded manuscript it was handed against `docs/build`**, leaves a `Read`/`Bash` in its
   transcript and nothing in the tally except, sometimes, a SUSPECT flag on the hats that did not.

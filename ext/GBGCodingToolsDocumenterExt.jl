@@ -19,10 +19,11 @@ Turns the exit code `code` of the verb `verb` into a build failure: returns `not
 check(verb::AbstractString, code::Integer) = code == 0 ? nothing : error("gbg $verb returned $code")
 
 """
-    gate_or_skip(cfg, what) -> Bool
+    gate_or_skip(cfg, what::AbstractString) -> Bool
 
-Runs the closure gate over the two docs instruments and says whether the build is skipped: `true` when
-the gate refuses only because a round of a docs instrument is open and `GBG_DOCS_NO_SKIP` is unset,
+Runs [`GBGCodingTools.gate`](@ref), the closure gate that refuses a build while a round is open, over
+the two docs instruments and says whether the build is skipped: `true` when the gate refuses only
+because a round of a docs instrument is open and `GBG_DOCS_NO_SKIP` is unset,
 after printing the skip line with `what` (the state the build is left in); otherwise the gate's own
 report goes to `stderr` and its exit code through [`check`](@ref), which throws on any refusal, and the
 result is `false`. The arguments are `cfg`, the validated config, and `what`, the sentence the skip line
@@ -47,7 +48,7 @@ function makedocs(cfg; kwargs...)
     root = cfg["root"]
     check("doctor --only QUICK", GBGCodingTools.doctor(cfg, :QUICK))
     check("scan docs --hard-only", last(GBGCodingTools.scan_docs(cfg; hard_only = true)))
-    # A round of a docs instrument freezes the build (`RULE.INST.FROZEN_MIDROUND`). That is not a
+    # A round of a docs instrument freezes the build (ARCHITECTURE D9). That is not a
     # breakage, and failing on it turned every push during a round red — 25 in a row, and a red run
     # that means "a round is open" is a red run nobody reads. It prints the skip and exits 0 instead;
     # `GBG_DOCS_NO_SKIP` restores the refusal, and `gbg release` and the deep doctor set it, so no

@@ -89,11 +89,11 @@ end
 """
     derive_config(root) -> Dict
 
-The best config the package tree supports (ARCHITECTURE §5): name and description from
+The best config the package tree supports: name and description from
 `Project.toml`, modules from the `module` declarations under `src/`, the surfaces that exist, the
 history and references anchors found by heading, the executable claims and guard symbols present,
-one bug-hunt territory per source file, the eight generic hats. The tool root gets its own delta
-(§5.6); a tree inside the tool repository is pinned `dev`. The result validates against the schema
+one bug-hunt territory per source file, the eight generic hats. The tool root gets its own delta,
+and a tree inside the tool repository is pinned `dev`. The result validates against the schema
 with defaults materialised; a value the tree cannot supply is written with a `TODO` the doctor will
 flag, never invented. Returns the config (without `root`).
 """

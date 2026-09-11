@@ -10,7 +10,7 @@
 The engines behind a consumer's `test/`: the allocation audit ([`@alloc_below`](@ref) and
 [`TestHarness.allocation_completeness`](@ref)), the element-traffic audit
 ([`TestHarness.counting`](@ref), [`TestHarness.CountingArray`](@ref), [`TestHarness.Traffic`](@ref),
-[`TestHarness.audit`](@ref)), the
+[`TestHarness.audit`](@ref), [`TestHarness.traffic_completeness`](@ref)), the
 method-parity baselines ([`TestHarness.method_parity`](@ref)), the oracle registry
 ([`TestHarness.oracle_registry`](@ref)), the display gate ([`TestHarness.display_gate`](@ref)), the
 cross-thread-count digest ([`TestHarness.thread_digest`](@ref)), the promoted-witness loop
@@ -299,7 +299,7 @@ The function object a surface name denotes. The arguments are:
 - `externals` — the external modules whose generics the package extends, searched last.
 
 A package module that OWNS the name is searched before anything else, so `Config.read`, `Git.run` and
-`Scan.report` denote the package's function and not the `Base` export they collide with; ordering the
+`Ledger.read` denote the package's function and not the `Base` export they collide with; ordering the
 externals last does not achieve that on its own, because `isdefined(pkg, :read)` is already true through
 the implicit `using Base`.
 

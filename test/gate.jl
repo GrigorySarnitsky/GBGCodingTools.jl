@@ -52,6 +52,16 @@ end
     open(joinpath(rd, "ROUND.toml"), "w") do f; TOML.print(f, rec); end
     @test G.docs_build_skipped(cfg, 1) == [id]                                      # frozen: a skip
     @test isempty(G.docs_build_skipped(cfg, 0)) && isempty(G.docs_build_skipped(cfg, 2))   # passed, or cannot evaluate
+    # a refusal the open docs round does not explain ALONE is never a skip: beside an open round of a
+    # disabled instrument the build fails (ext#4 of 2026-09-11-check-docs-02; the skip used to swallow it)
+    cid = "2026-09-09-check-consistency-01"; crd = joinpath(root, ".gbg", "rounds", cid); mkpath(crd)
+    open(joinpath(crd, "ROUND.toml"), "w") do f; TOML.print(f, merge(rec, Dict{String,Any}("round" => cid, "instrument" => "check-consistency"))); end
+    off = deepcopy(cfg); off["instruments"]["enabled"] = ["check-docs"]
+    @test Set(first.(last(G.gate_problems(off, "check-docs", "check-consistency")))) == Set([:open, :disabled])
+    @test !isempty(G.frozen_rounds(off, "check-docs", "check-consistency"))         # the old rule would have skipped
+    @test isempty(G.docs_build_skipped(off, 1))                                     # the second refusal fails the build
+    rm(crd; recursive = true)
+    @test first.(last(G.gate_problems(cfg, "check-docs", "check-consistency"))) == [:open]
     withenv("GBG_DOCS_NO_SKIP" => "1") do
         @test isempty(G.docs_build_skipped(cfg, 1))                                 # release and the deep doctor refuse
     end

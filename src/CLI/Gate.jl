@@ -5,7 +5,7 @@
 """
     gate(cfg, instruments...; io = stderr) -> Int
 
-The closure gate (§6.2 step 10). The arguments are:
+The closure gate: whether an open round blocks a build, a test or a release here. The arguments are:
 
 - `cfg` — the validated config.
 - `instruments...` — the instruments whose open rounds block, an instrument being one of the four
@@ -27,18 +27,46 @@ function gate(cfg::AbstractDict, instruments::AbstractString...; io::IO = stderr
     root = cfg["root"]
     code = self_verify(root; io = devnull)
     code == 0 || (println(io, "gate: gbg self verify failed (exit $code) — the running copy is not the pinned one"); return 2)
-    wanted = isempty(instruments) ? Sync.INSTRUMENTS : instruments
     enabled = cfg["instruments"]["enabled"]
     if !isdir(RoundFiles.rounds_dir(cfg))
         isempty(enabled) && return 0
         println(io, "gate: ROUND.DIR — .gbg/rounds/ is absent while instruments are enabled; the gate never passes vacuously (gbg init writes it)")
         return 2
     end
+    fatal, problems = gate_problems(cfg, instruments...; io)
+    fatal && return 2
+    if !isempty(problems)
+        println(io, "gate: refused —"); foreach(p -> println(io, "  ", last(p)), problems)
+        return 1
+    end
+    return 0
+end
+
+"""
+    gate_problems(cfg, instruments...; io = devnull) -> (fatal, problems)
+
+What [`gate`](@ref) refuses for, each problem a `kind => message` pair. The arguments are:
+
+- `cfg` — the validated config.
+- `instruments...` — the instruments whose open rounds block (all four when none is named).
+- `io` — where a round directory without a valid `ROUND.toml` is announced.
+
+The kinds are `:open`, an open round of a named instrument that `GBG_ROUND` does not admit;
+`:disabled`, an open round of a disabled instrument, whatever was named; and `:committed`, outside CI,
+an open round whose files are untracked or modified while `HEAD` moved past its opening head — the
+fixes were committed without the round. `fatal` is a round directory without a valid `ROUND.toml`,
+which the gate reports as exit 2. Returns the flag and the problems in round order.
+"""
+function gate_problems(cfg::AbstractDict, instruments::AbstractString...; io::IO = devnull)
+    root = cfg["root"]
+    problems = Pair{Symbol,String}[]; fatal = false
+    isdir(RoundFiles.rounds_dir(cfg)) || return (fatal, problems)
+    wanted = isempty(instruments) ? Sync.INSTRUMENTS : instruments
+    enabled = cfg["instruments"]["enabled"]
     ignored = Set(filter(!isempty, split(get(ENV, "GBG_ROUND", ""), ',')))
     in_ci = haskey(ENV, "CI")
     head = Git.head(root)
     dirty = Set(p for (_, p) in Git.porcelain(root))
-    problems = String[]; fatal = false
     for r in RoundFiles.rounds(cfg)
         if r.state in (:nomarker, :invalid)
             println(io, "gate: round directory $(r.name) has no valid ROUND.toml — exit 2"); fatal = true; continue
@@ -46,23 +74,18 @@ function gate(cfg::AbstractDict, instruments::AbstractString...; io::IO = stderr
         r.state == :open || continue
         inst = r.round["instrument"]
         if !(inst in enabled)
-            push!(problems, "$(r.name) is an open round of the DISABLED instrument $inst (CFG.VALID)"); continue
+            push!(problems, :disabled => "$(r.name) is an open round of the DISABLED instrument $inst (CFG.VALID)"); continue
         end
         inst in wanted || continue
         r.name in ignored && continue
-        push!(problems, "$(r.name) is open ($inst) — close or abandon it, or run this build/test through `gbg round build|test $(r.name)`")
+        push!(problems, :open => "$(r.name) is open ($inst) — close or abandon it, or run this build/test through `gbg round build|test $(r.name)`")
         if !in_ci && head !== nothing && head != r.round["head"]
             rel = relpath(r.dir, root)
             any(p -> startswith(p, rel * "/") || p == rel, dirty) &&
-                push!(problems, "$(r.name): its files are untracked or modified while HEAD moved past the round's opening head — the fixes were committed without the round")
+                push!(problems, :committed => "$(r.name): its files are untracked or modified while HEAD moved past the round's opening head — the fixes were committed without the round")
         end
     end
-    fatal && return 2
-    if !isempty(problems)
-        println(io, "gate: refused —"); foreach(p -> println(io, "  ", p), problems)
-        return 1
-    end
-    return 0
+    return (fatal, problems)
 end
 
 """

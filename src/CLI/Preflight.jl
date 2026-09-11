@@ -56,7 +56,7 @@ sha_files(paths) = Sync.sha_files(paths)
 """
     config_sha(cfg) -> String
 
-The config stamp of §6.1 — [`Sync.config_sha`](@ref), the one definition.
+The config stamp every round and pass records — [`Sync.config_sha`](@ref), the one definition.
 """
 config_sha(cfg::AbstractDict) = Sync.config_sha(cfg)
 
@@ -266,7 +266,8 @@ The check-consistency roster. The arguments are:
 - `explicit` — the hat keys an explicit profile names.
 
 A hat — one persona of the `check-consistency` panel, bound in [`GBGCodingTools`](@ref) — carries
-`key`; the persona with its placeholders filled; and the four fields below.
+`key`; the persona with its placeholders filled; the four fields below; and `role`, the one-line
+description from the hat's catalogue file, which nothing downstream of the roster reads.
 
 `substrate` names the view of the corpus the hat works in — the closed set of `schema/hat.schema.json`,
 two values because the panel splits the manuscript once: `full` and `siteonly` (the public pages').
@@ -276,7 +277,8 @@ requirement tags (`html`, `git`, `rulebook`) `not_applicable` is computed from, 
 says the substrate cannot exist here (`html` needs with no built site, `git` with no repository,
 `rulebook` with an empty rulebook, which is the rendered policy and not the consumer's sections alone).
 
-`anchor` is whether the hat runs at full strength rather than on the economy model; a `domain_hats`
+`anchor` is whether the hat runs at full strength rather than on the economy model
+(`Preflight.economy_model`); a `domain_hats`
 entry may anchor any key. It is unrelated to the other two senses of the word: the `file#heading`
 anchors of [`Config.resolve_anchor`](@ref), and the regular expression marking where a seed is planted
 (`Seeds.select`).
@@ -493,6 +495,12 @@ end
 
 package_block(cfg) = Dict("name" => cfg["package"]["name"], "description" => cfg["package"]["description"], "domain" => cfg["package"]["domain"],
                           "terms" => cfg["package"]["terms"], "deliberate_absences" => cfg["package"]["deliberate_absences"])
+"""
+    economy_model() -> String
+
+The economy model: the cheaper AI model the tool's model catalogue names, on which every lane and hat
+that is not an anchor runs in an economy round. Returns the model name.
+"""
 economy_model() = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "catalog", "models.toml"))["economy"]
 finding_types(cfg) = vcat(["math", "notation", "structure", "citation", "style", "operational", "currency", "self-containment"], String.(cfg["schema"]["finding_types_extra"]))
 
@@ -519,8 +527,9 @@ payload paths, never a payload. The arguments are:
 - `round` — the round id.
 - `roster` — the resolved hats or lanes with their payload paths.
 - `paths` — the payload paths [`write_payloads`](@ref) returned.
-- `strength` — `economy` or `full`; `cost` — the config's cost default; `opened` — the round's
-  opening timestamp.
+- `strength` — `economy` or `full`, which alone decides whether a lane or hat that is not an anchor
+  runs on the economy model; `cost` — the config's `cost.default`, copied into a consistency round's
+  args and read by no script; `opened` — the round's opening timestamp.
 - `base`, `head`, `kind` — the audit's commits and kind (`nothing` elsewhere).
 - `ledger` — the ledger entries (the adjudicated titles come from them).
 

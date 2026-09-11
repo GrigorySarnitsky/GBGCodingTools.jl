@@ -328,15 +328,17 @@ Classifies one lane file. The arguments are:
 - `lane` — the roster entry (`nn`, `key`).
 - `first_sha` — the file's sha at first sight, when the bank has seen it before.
 
-The status is `:dead` — absent; renamed to `<name>.rejected.json` beside itself when unparsable, when
-it fails the instrument's schema, or when it is schema-valid but its own `lane` field names a different
-lane than the roster entry asked for (a copied or mistyped lane file answers for a lane nobody ran); or
-when its own `verdict` contradicts its findings (`verdict_contradiction`); or well-formed with zero
-findings AND an empty `checked[]`, which reports nothing about nothing rather than reporting a clean
-lane. Then `:rejected`
-(present but its sha changed since first sight), `:empty` (zero findings, non-empty checked),
-`:truncated` (candidates_found > findings), or `:live`. Returns the status, the parsed object (or
-nothing), the file's sha and a note.
+The status, decided in this order: `:dead` when the file is absent; `:rejected` when it is present but
+its sha changed since first sight, decided before the file is read, whatever it now holds; `:dead`, the
+file renamed to `<name>.rejected.json` beside itself, when it is unparsable, fails the instrument's
+schema, names a different lane in its own `lane` field than the roster entry asked for (a copied or
+mistyped lane file answers for a lane nobody ran), or carries a `verdict` that contradicts its findings
+(`verdict_contradiction`).
+
+Then `:dead`, the file left in place, when it is well-formed with zero findings AND an empty
+`checked[]`, which reports nothing about nothing rather than reporting a clean lane; `:empty` (zero
+findings, non-empty checked), `:truncated` (candidates_found > findings), or `:live`. Returns the
+status, the parsed object (or nothing), the file's sha and a note.
 """
 function classify_lane(dir::AbstractString, inst::AbstractString, lane::AbstractDict; first_sha = nothing)
     p = joinpath(dir, "findings", "$(lane["nn"])-$(lane["key"]).json")
@@ -813,8 +815,8 @@ end
 - `reason` — at least 12 characters (a plateau is the usual one).
 - `io` — where the outcome is printed.
 
-It writes `abandoned = {reason, open_ids}` with every id still open (all banked ids when no pass was
-graded), and carries the round's `deferred.md` into the work queue exactly as `close` does: abandoning
+It writes `abandoned = {reason, open_ids}` with every id still open (every banked id but the seeded
+ones when no pass was graded), and carries the round's `deferred.md` into the work queue exactly as `close` does: abandoning
 drops the round's record, not what it owes. Returns 0.
 
 It takes an open round, and one other: a CLOSED round stamped `dev`, which no release may cite and
