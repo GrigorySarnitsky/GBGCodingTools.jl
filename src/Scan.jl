@@ -33,8 +33,8 @@ The outcome of one scan. The fields are:
 - `rule` — the rule it enforces.
 - `tier` — `hard` or `triage`, the `argcov_policy` tier resolved from config.
 - `hits` — the surviving hits.
-- `population` — what the scan measured (files, docstrings, exports, arguments or pages); zero, with
-  no hit removed by the ledger, means the scan measured nothing and is DEAD.
+- `population` — what the scan measured (files, docstrings, exports, arguments or pages); zero means
+  the scan measured nothing and is DEAD, whatever the ledger removed.
 - `exempted` — the number of hits the ledger removed.
 - `note` — a scan-level message: an error, a reason a lane is dead (a lane being one agent's share of
   a round, bound in [`GBGCodingTools`](@ref)), empty otherwise.
@@ -446,16 +446,15 @@ The arguments are:
 - `results` — the scan results in catalogue order.
 - `io` — where the report goes.
 
-A scan whose population is zero and from which the ledger removed no hit measured nothing and is DEAD
-whatever else it did — that refusal is the point of the counter; a zero-population scan the ledger
-exempted is accounted for by the ledger and is not DEAD. Its hits are still printed: a scan that measured nothing yet hit something is
+A scan whose population is zero measured nothing and is DEAD whatever else it did, the ledger's
+removals included — that refusal is the point of the counter. Its hits are still printed: a scan that measured nothing yet hit something is
 a scan whose own counter is wrong, and dropping the evidence hides which one.
 
 Returns the exit code (2 dead, 1 hard hits, 0 clean).
 """
 function report(results::AbstractVector{ScanResult}; io::IO = stdout)
     code = 0
-    dead(r) = r.population == 0 && r.exempted == 0
+    dead(r) = r.population == 0
     hard = filter(r -> r.tier == "hard", results); triage = filter(r -> r.tier != "hard", results)
     isempty(hard) || println(io, "=== MUST BE EMPTY ===")
     for r in hard

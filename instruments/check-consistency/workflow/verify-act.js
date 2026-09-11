@@ -2,11 +2,11 @@
 // over banked piles, mechanical demotion note), IT verify-fixes.js (eight verdicts, `question`, array
 // class_surfaces, batches). Changes: the verdict object is {id, verdict, question, evidence,
 // class_surfaces[{surface, swept, evidence}]}; output carries graded_sha256 and pass_nonce from args;
-// `range` required; mode ∈ lanes|batches from args; NO demotion here (the CLI applies it); finding text
+// `range` required; one agent per lane; NO demotion here (the CLI applies it); finding text
 // arrives unabridged in a FILE named by args (Revision 9); no census (the CLI knows the denominator).
 //
-// Args: { schema_version, round, round_dir, pass_dir, repo, range, nonce, graded_sha256, mode,
-//         lanes: [{nn, key, expected}], batches?: [[from,to]], findings: [{id, lane, n, title}], findings_path,
+// Args: { schema_version, round, round_dir, pass_dir, repo, range, nonce, graded_sha256,
+//         lanes: [{nn, key, expected}], findings: [{id, lane, n, title}], findings_path,
 //         adjudicated_titles, rulebook_summary?, package, models: {economy}, strength }
 export const meta = {
   name: 'verify-act',
@@ -18,7 +18,7 @@ export const meta = {
 for (const k of ['round', 'pass_dir', 'repo', 'range', 'nonce', 'graded_sha256', 'findings', 'findings_path', 'models', 'schema_version', 'package']) {
   if (A[k] === undefined) throw new Error(`verify-act.js: args.${k} is required — without a range a lane grades edits it cannot see`)
 }
-const MODE = A.mode === 'batches' ? 'batches' : 'lanes'
+if (!A.findings.length) throw new Error('verify-act.js: no open id to grade — the CLI launches the act verifier only when one is open')
 
 const SCHEMA = {
   type: 'object', additionalProperties: false,
@@ -95,33 +95,7 @@ const fmt = (f) => `  ${f.id} (lane ${f.lane}, #${f.n}) — ${f.title}${probe(f.
 const outFile = (name) => `${A.pass_dir}/act/${name}.json`
 
 phase('Verify act')
-let units
-if (MODE === 'batches') {
-  const batches = A.batches || []
-  if (!batches.length) throw new Error('mode=batches needs a non-empty batches array covering EVERY finding')
-  // and it must actually cover them: a gap silently drops findings into no unit at all, and nothing
-  // downstream can see it, because every count downstream is derived from the units themselves
-  // covering 1..N is only half of it: an endpoint outside 1..N makes `slice` return an empty unit that
-  // is __skip-ped and counted nowhere, while the findings it should have carried are in no unit at all
-  const covered = new Set()
-  const N = A.findings.length
-  for (const [from, to] of batches) {
-    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to > N || from > to) {
-      throw new Error(`mode=batches: [${from}, ${to}] is not a range within 1..${N}`)
-    }
-    for (let i = from; i <= to; i++) {
-      if (covered.has(i)) throw new Error(`mode=batches: finding ${i} is in two batches`)
-      covered.add(i)
-    }
-  }
-  for (let i = 1; i <= N; i++) if (!covered.has(i)) throw new Error(`mode=batches: finding ${i} is in no batch`)
-  units = batches.map(([from, to]) => {
-    const items = A.findings.slice(from - 1, to)
-    return { name: `batch-${from}-${to}`, lane: `batch-${from}-${to}`, items }
-  })
-} else {
-  units = A.lanes.map(l => ({ name: `${l.nn}-${l.key}`, lane: l.key, items: A.findings.filter(f => f.lane === l.key), expected: l.expected }))
-}
+const units = A.lanes.map(l => ({ name: `${l.nn}-${l.key}`, lane: l.key, items: A.findings.filter(f => f.lane === l.key), expected: l.expected }))
 
 
 // the scribe and the nonce stamp: instruments/prelude.js

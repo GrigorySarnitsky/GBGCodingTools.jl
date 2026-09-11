@@ -51,5 +51,7 @@ The demotion is mechanical: `HONORED` becomes `LINE-ONLY` when `class_surfaces[]
 `gbg gate [instrument…]` fails on any open round of the named instruments except the one named in
 `GBG_ROUND`, which the CLI exports only while it runs a build, a test or an audit's executable claim on
 that round's behalf. The
-`makedocs` wrapper runs it for the doc instruments and `TestHarness.gate()` for the code instruments,
-so a fix pass cannot be committed around an open round.
+`makedocs` wrapper runs it for the doc instruments and `TestHarness.gate()` for the code instruments.
+For a docs round the build does not fail but skips, printing `makedocs: SKIPPED` and exiting 0, so CI
+stays green while the round is open; it fails when the gate also finds the round's fixes committed
+without the round. `gbg gate` itself refuses either way.

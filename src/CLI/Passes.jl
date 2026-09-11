@@ -20,8 +20,9 @@ into `LINE-ONLY`. [`Passes.pass_open`](@ref) opens a verification pass (nonce, r
 manuscripts, the verifiers' Workflow calls); [`Passes.grade`](@ref) validates the verdict files, applies
 the demotion and the four closure channels — `honored`, `adjudicated`, `seeded` and `rescan` — and
 writes the tally; [`Passes.close`](@ref) checks every closing condition of the instrument
-([`GBGCodingTools`](@ref) binds the term) in order, carries what a spent pass budget left open (the
-fifth channel, `carried`) and stamps the round closed.
+([`GBGCodingTools`](@ref) binds the term) in order, carries into the next round every id still open
+once the pass budget is spent, or below it, on `--carry`, one the severity re-check rates minor or nit
+(the fifth channel, `carried`), and stamps the round closed.
 """
 module Passes
 
@@ -295,6 +296,34 @@ function pass_budget(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, 
 end
 
 """
+    carried_base(cfg, dir, rec) -> String
+
+Where a round's first fix range starts. The arguments are:
+
+- `cfg` — the validated config.
+- `dir` — the round directory.
+- `rec` — the round record.
+
+The round's opening head, or, when the round re-banked findings carried from earlier rounds, the
+earliest head at which those rounds closed. A carried finding is often fixed between the round that
+carried it and this one, and an act verifier reading only this round's range saw nothing of the fix and
+graded it `UNDONE` at every pass. A finding this round banked cannot have been fixed before the round
+opened, since its lane read the defect at the opening head, so the wider range changes nothing for it.
+Returns the commit.
+"""
+function carried_base(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict)
+    root = cfg["root"]; base = String(rec["head"])
+    srcs = unique(first(split(String(f["carried_from"]), " ")) for f in findings_of(dir) if haskey(f, "carried_from"))
+    for s in srcs
+        p = joinpath(RoundFiles.rounds_dir(cfg), s, "ROUND.toml")
+        isfile(p) || continue
+        h = get(TOML.parsefile(p), "closed_head", nothing)
+        h === nothing || (Git.is_ancestor(root, String(h), base) && (base = String(h)))
+    end
+    return base
+end
+
+"""
     pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects, range)
 
 Which finding ids the next pass must verify, and the range of the fix pass it grades. The arguments are:
@@ -304,7 +333,8 @@ Which finding ids the next pass must verify, and the range of the fix pass it gr
 - `rec` — the round record.
 - `k` — the number of the pass about to open.
 
-Pass 1 verifies every id. Later passes verify the ids left open by the previous pass, plus any id that
+Pass 1 verifies every id, over a range that starts at `Passes.carried_base`. Later passes verify the
+ids left open by the previous pass, plus any id that
 pass closed whose named locations the fix pass has touched again — a closed finding can only regress
 where its own evidence lives, and the diff says whether anything went near it — and any it closed that
 names no location at all, which is re-verified every pass rather than never, silence about where a
@@ -317,9 +347,9 @@ commit range; `scope === nothing` means every id.
 """
 function pass_scope(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, k::Int)
     root = cfg["root"]; head = something(Git.head(root), "0"^40)
-    k > 1 || return (nothing, String[], String[], "$(rec["head"])..$head")
+    k > 1 || return (nothing, String[], String[], "$(carried_base(cfg, dir, rec))..$head")
     j = last_graded(dir, k)
-    j == 0 && return (nothing, String[], String[], "$(rec["head"])..$head")
+    j == 0 && return (nothing, String[], String[], "$(carried_base(cfg, dir, rec))..$head")
     prevtally = joinpath(pass_dir(dir, j), "tally.json")
     prevpass = joinpath(pass_dir(dir, j), "pass.toml")
     tally = read_json(prevtally)
@@ -541,7 +571,7 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
         # the act verifier reads the diff of THIS fix pass, not of the round: at pass 15 of
         # 2026-09-09-check-docs-02 `range` was 456 files and 36,559 insertions where the work was 9 files
         # and 499, and every lane agent re-read all of it to grade six ids
-        act = merge(base, Dict("range" => fixrange, "mode" => "lanes",
+        act = merge(base, Dict("range" => fixrange,
                     "lanes" => [Dict("nn" => l["nn"], "key" => l["key"], "expected" => get(expected_act, l["key"], 0)) for l in lanes if l["key"] != "scans" && get(expected_act, l["key"], 0) > 0],
                     "findings" => [Dict("id" => f["id"], "lane" => f["lane"], "n" => f["n"], "title" => f["title"]) for f in findings if !get(f, "seeded", false) && f["lane"] != "scans" && !(f["id"] in rechecked)]))
         expected_blind = Dict{String,Int}()

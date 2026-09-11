@@ -17,6 +17,7 @@ export const meta = {
 for (const k of ['round', 'pass_dir', 'repo', 'nonce', 'graded_sha256', 'lanes', 'findings', 'findings_path', 'models', 'schema_version', 'package']) {
   if (A[k] === undefined) throw new Error(`verify-state.js: args.${k} is required`)
 }
+if (!A.findings.length) throw new Error('verify-state.js: nothing in scope to read — the CLI launches the state verifier only over a non-empty scope')
 const SCOPE = A.source_scope || ['src', 'ext', 'docs/src', 'docs']
 
 const SCHEMA = {

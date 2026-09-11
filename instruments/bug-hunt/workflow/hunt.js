@@ -18,6 +18,7 @@ export const meta = {
 
 // gbg:prelude
 for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'witness_cmd', 'models', 'schema_version', 'package']) if (A[k] === undefined) throw new Error(`hunt.js: args.${k} is required`)
+if (!A.lanes.length) throw new Error('hunt.js: an EMPTY roster is not a clean hunt — the CLI never launches one over nothing')
 const WIT = `${A.round_dir}/witnesses`
 
 const CANDIDATE_SCHEMA = {

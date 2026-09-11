@@ -3,6 +3,54 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
+## Unreleased
+
+MAJOR on rc.9. Instruments affected: check-docs and check-consistency (a carried finding's first fix
+range; the verifier and panel scripts' empty-roster refusals), bug-hunt and audit-changes (the same
+refusal in their scripts), and every consumer's doctor (`BUILD.DOCS`) and scan report (the DEAD rule).
+Rates comparable: **no** for the docs instruments — a carried finding fixed between rounds can now close
+`honored`, where it was graded `UNDONE` for ever; yes otherwise. The fixture recall is unchanged: no
+scan's hit set moved.
+
+The corrections `2026-09-11-audit-changes-02` disposed as `fixed`, the deferrals of
+`2026-09-11-check-docs-02` that were not the owner's to decide, and the live defects the check-docs attack
+named and that round's lanes missed:
+
+**A carried finding can close.** A finding carried from an earlier round is usually fixed after that round
+closes, and the next round's act verifier read only its own range, so it graded the fix `UNDONE` at every
+pass: four ids of 2026-09-11-check-docs-01 were carried twice that way, three of them serious. A round's
+first fix range now starts where the rounds it re-banked from closed (`Passes.carried_base`); a finding
+the round banked itself cannot have been fixed before it opened, so nothing else moves.
+
+**A zero-population scan is DEAD whatever the ledger removed.** `report` spared a scan that measured
+nothing when the ledger had exempted its hits — exactly the broken counter the DEAD rule exists to expose,
+since the ledger never changes a population. The promise is restored and the code keeps it.
+
+**The deep doctor asks for the build itself.** `BUILD.DOCS` sets `GBG_DOCS_NO_SKIP`, as `SELF.DOCS` and
+`gbg release` do, so a docs build skipped for an open round no longer PASSes it; the five places that said
+"the deep doctor" sets it are now true of every deep check. During an open docs round `gbg doctor --deep`
+fails `BUILD.DOCS` in every consumer.
+
+**A docs build fails when a docs round's fixes were committed without it,** where it used to skip
+(2026-09-11-check-docs-02's `ext#4`, `gate_problems`); now tested. A round's own build runs through
+`gbg round build` and CI sets `CI`, so neither meets it.
+
+**Empty rosters refuse.** `lanes.js`, `panel.js`, `hunt.js`, `audit.js`, `verify-state.js` and
+`verify-act.js` throw on an empty roster or scope, as the other four scripts did; `verify-act.js`'s
+`batches` mode, which nothing called, is gone with its `mode` argument.
+
+**The rule register.** `RULE.CIT.DOI` is checked by `SCAN.DOI_CROSSCHECK`, whose `require_doi` loop
+enforces a DOI on every reference; the rc.7 entry above was wrong to say the scan enforces
+`RULE.CIT.FULL_INLINE` alone. `RULE.DOC.SHAPE` orders an `# Arguments` heading only where a consumer uses
+one in place of `RULE.DOC.ARGS_FORM`'s bulleted form (its sentinel changed with it).
+
+The rest is prose: `rounds.md` no longer says a fix pass cannot be committed around an open round,
+`verbs.md` files the gate's refusal under exit 1, `install.md` says which version the shim runs after a
+bump, the doctor is read-only except `--deep`, ARCHITECTURE counts five closure channels and orders the
+lane statuses as `classify_lane` does, the docs-round seeded copy's cost is stated in D10, §6.4, §11 and
+the policy's honest limits, the economy model has one home, `gate_problems` says which refusals it omits,
+and CLAUDE.md defines `gbgdev` and states where the release is.
+
 ## 1.0.0-rc.9 — 2026-09-11
 
 PATCH on rc.8. Instruments affected: check-docs and check-consistency (where their rounds may open).

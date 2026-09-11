@@ -602,16 +602,18 @@ and seeded copies live **inside the project**, under
 and never in the tracked round. A `/check-docs` round's seeded copy is the one exception: it copies the
 source files themselves, which its lanes, forbidden `.gbg/**`, could not read under `.gbg/`, so
 `Rounds.seed_docs_corpus!` writes it to a temporary directory outside the repository, repoints each
-lane's `repo` at it, and bank deletes it. **Staleness by hash, not mtime**: every verdict file carries
+lane's `repo` at it, and bank deletes it; the price is that those lanes read outside the project, where
+a Read may prompt. **Staleness by hash, not mtime**: every verdict file carries
 `graded_sha256` (= the sha of `findings.json`) and the `pass_nonce` from `pass.toml`; mismatch →
 REJECTED; absent → DEAD. Roster and denominator come from `ROUND.toml` and `findings.json`, counted
-by the CLI. A lane file is classified at `bank`: **DEAD** (absent; unparsable, schema-invalid, or schema-valid
-with a `lane` field naming a lane the roster entry did not ask for — those three quarantine the file as
-`NN-<lane>.rejected.json` — or zero findings with an empty `checked[]`), **EMPTY**
-(zero findings, non-empty `checked[]`), **ORPHAN** (a lane file no roster entry expects; reported,
-never counted), **TRUNCATED** (`candidates_found > findings.length`; reported, not fatal),
-**REJECTED** (a live lane whose sha changed after first sight). A DEAD **or REJECTED** lane is **exit 2** — cannot
-evaluate — and nothing is frozen. Closure is per finding id through four channels (§6.5); the
+by the CLI. A lane file is classified at `bank`, in this order: **DEAD** when absent; **REJECTED** when
+its sha changed since first sight, decided before the file is read; **DEAD** when unparsable,
+schema-invalid, schema-valid with a `lane` field naming a lane the roster entry did not ask for, or
+carrying a verdict its findings contradict — those quarantine the file as `NN-<lane>.rejected.json` —
+or with zero findings and an empty `checked[]`, left in place; then **EMPTY** (zero findings, non-empty
+`checked[]`), **TRUNCATED** (`candidates_found > findings.length`; reported, not fatal) or live. An
+**ORPHAN** (a lane file no roster entry expects) is reported, never counted. A DEAD **or REJECTED** lane is **exit 2** — cannot
+evaluate — and nothing is frozen. Closure is per finding id through five channels (§6.5); the
 wholesale escape is `gbg round abandon --reason`, which lists every open id. `.gbg/rounds/` is the
 SOLE closure record: the tool never reads a work-queue file for **closure** — the Stop hook of D13,
 present in every consumer, reads `.claude/WORK_QUEUE.md`, since the hook is not closure (that file is
@@ -1355,7 +1357,7 @@ recorded). This is the whole of CP's migration besides `test/Project.toml` (D17)
 
 ### §5.5 Deliberately NOT configurable (changing any is MAJOR)
 
-Every verdict vocabulary and schema; the demotion predicate; the closure predicates and the four
+Every verdict vocabulary and schema; the demotion predicate; the closure predicates and the five
 channels; the round layout, file names and stamp fields; the exit contract; **scan tiers** (a consumer
 may silence a `hard` scan by a ledger entry, never demote it) — with ONE declared exception,
 `instruments.check-docs.argcov_policy`, which chooses whether the argument-coverage check is `triage`
@@ -1610,7 +1612,8 @@ both require it. The seed MECHANISM (below) is the tool's, and a change to it is
 **salted per round**: the round id salts the nth-occurrence offset of every
 class, so no two rounds plant the same set and a closed round's tracked `ground_truth.json` is not the
 next round's answer key. A consistency round's seeded manuscripts live under `.gbg/scratch/<round>/` inside the
-project (gitignored), a docs round's seeded copy of its lane files outside it (D10); during the panel only the seeded copies exist, the unseeded ones being regenerated at
+project (gitignored), a docs round's seeded copy of its lane files outside it (D10); during a consistency panel only the seeded copies exist (a docs round's originals are the source tree,
+which stays in place), the unseeded ones being regenerated at
 bank; `ground_truth.json` is written at bank, not open; hats never receive it and, like the verifiers,
 are forbidden `.gbg/**` and `~/.gbg/**`; the adjudication channel refuses a seeded id; consolidation
 subtracts seeded hits before the summary; a hat with ≥ 2 seeds on its substrate and zero matches is
@@ -1626,6 +1629,7 @@ hand-invokes a Workflow, and a hat that diffs the seeded copy it was handed agai
 | `adjudicated` | a ledger entry `scope = "finding"`, `target = <id>`, reason ≥ 40 chars, `overturn_when` present; the CLI refuses a seeded id; every such entry recorded after `opened` is audited by `dismissals.js` at close |
 | `seeded` | fragment match AND state ∈ {ABSENT, NOT-A-DEFECT} (a real defect co-quoted with a seed comes back PRESENT and stays open; a seeded id wrongly graded PRESENT needs no fix and no adjudication — the next pass re-grades it) |
 | `rescan` | a deterministic-scan hit (lane `00-scans`) closes when `grade` re-runs the scan and it no longer fires — never by a graded verdict; when the silence coincides with a `scope = "scan"` ledger entry recorded after `opened`, the closure is written `closed_by = adjudicated` naming that entry (`adjudicated_entry`), never `rescan` |
+| `carried` | at `close`: an id still open once the pass budget is spent, or below it, on `--carry`, one the blind severity re-check rates `minor` or `nit`; recorded in `.gbg/carried.toml` and re-banked by the next round of the instrument, whose first fix range starts where the carrying round closed — never closed as fixed |
 
 ### §6.6 Deltas — `/check-docs`
 
@@ -2233,7 +2237,8 @@ targets the `docs/` environment, the one that always carries a manifest (D2).
 gate-visible):
 
 - A consistency round's seeded copy lives INSIDE the project (`.gbg/scratch/<round>/`, gitignored),
-  which is what keeps a Workflow agent's `Read` prompt-free (a docs round's copy lives outside it, D10); the second bullet above therefore reads "inside the
+  which is what keeps a Workflow agent's `Read` prompt-free (a docs round's copy lives outside it, where
+  a Read may prompt, D10); the second bullet above therefore reads "inside the
   project, gitignored" for this design, and its residue is unchanged — a hat that opens the copy, or
   that **diffs the seeded manuscript it was handed against `docs/build`**, leaves a `Read`/`Bash` in its
   transcript and nothing in the tally except, sometimes, a SUSPECT flag on the hats that did not.
@@ -2310,7 +2315,7 @@ the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`), one or more of `scan:<i
 | `RULE.DOC.SIBLING_LINK` | docs-rubric | The first mention of a sibling GBG package in a page, rationale document, Literate example or docstring links to that package's documentation site; a later mention does not link that site again, though it may deep-link a page of it; a package never links its own name. | the owner's home-page review, 2026-09-09 |
 | `RULE.DOC.NO_DEAD_REFS` | docs-rubric | A docstring or error message cites no `§` number, repo path or inaccessible source; it reads complete at the REPL. | "No dead references on the user-facing surface" |
 | `RULE.DOC.AI_BANNER` | docs-rubric | Every AI-written page carries the one provenance banner verbatim (as `# ` comments in a Literate file); the home page never carries it. | `lint_ai_banner`; the home-page clause is the owner's ruling 2026-09-09 |
-| `RULE.DOC.SHAPE` | docs-rubric | A docstring's longest paragraph ≤ 120 words and admonitions ≤ 3, on every docstring and every NEW page unit; no unit grows past its baseline, a baselined page unit held by the ratchet alone; `# Arguments` precedes any column-0 `!!!`; `# Fields` is last. | `lint_prose_shape`; IT `lint_docstring_shape` |
+| `RULE.DOC.SHAPE` | docs-rubric | A docstring's longest paragraph ≤ 120 words and admonitions ≤ 3, on every docstring and every NEW page unit; no unit grows past its baseline, a baselined page unit held by the ratchet alone; an `# Arguments` heading, where a consumer uses one, precedes any column-0 `!!!`; `# Fields` is last. | `lint_prose_shape`; IT `lint_docstring_shape` |
 | `RULE.DOC.MODULE_MAP` | docs-rubric | A module docstring lists one linked one-liner per operation family and no formula. | "Module docstring = map"; IT deviation |
 | `RULE.DOC.ARG_BULLET` | docs-rubric | An argument or field bullet names its argument in a plain code span, never a bold one. | `guards.sh` "argument bullet is not bolded"; SS deviation candidate |
 | `RULE.DOC.SIGNATURE_MIRROR` | docs-rubric | A docstring signature mirrors the code's types; only the docstring wraps, to ≤ 88 columns with a hanging indent. | "A docstring signature mirrors the code's types" |
@@ -2407,7 +2412,7 @@ docstrings except by `SCAN.SWALLOWED_ESCAPE`, which is what that scan is for.
 | `SCAN.SWALLOWED_ESCAPE` | `RULE.TEX.SWALLOWED_ESCAPE` | hard | src, ext | julia | PF `lint_swallowed_escapes` `(?<!\\)\\[abefnrtv0-7xuU]` inside docstrings | `swallowed-escape` |
 | `SCAN.RETIRED_CLAIMS` | `RULE.DOC.CURRENT` | hard | all | julia | PF `lint_retired_claims`; patterns from `docs.retired_claims` (whitespace-normalised over whole files, so a wrapped phrase is caught) | `retired-claim` (fixture config lists one) |
 | `SCAN.API_PAGE_STRUCTURE` | `RULE.DOC.INTERNAL_API`, `RULE.DOC.API_GROUPING` | hard | pages (`docs/src/api/`) | julia | PF `lint_api_page_structure` (`## Internal API` last; no empty `@docs`) | `internal-api-not-last`, `empty-docs-block` |
-| `SCAN.PROSE_SHAPE` | `RULE.DOC.SHAPE` | hard | src (docstrings), rationale, pages | julia | PF `lint_prose_shape` + IT `lint_docstring_shape`: caps 120 words / 3 admonitions on every docstring and every NEW page unit, a baselined page unit held by the ratchet alone; ratchet against `docs/prose_shape.csv` (units: docstring, page, section incl. numbered items and `**(x)**` findings); `# Arguments` before column-0 `!!!`, `# Fields` last; missing CSV = error | `paragraph-over-cap`, `fields-not-last` |
+| `SCAN.PROSE_SHAPE` | `RULE.DOC.SHAPE` | hard | src (docstrings), rationale, pages | julia | PF `lint_prose_shape` + IT `lint_docstring_shape`: caps 120 words / 3 admonitions on every docstring and every NEW page unit, a baselined page unit held by the ratchet alone; ratchet against `docs/prose_shape.csv` (units: docstring, page, section incl. numbered items and `**(x)**` findings); an `# Arguments` heading, where used, before column-0 `!!!`, `# Fields` last; missing CSV = error | `paragraph-over-cap`, `fields-not-last` |
 | `SCAN.AI_BANNER` | `RULE.DOC.AI_BANNER` | hard | rationale, literate, pages | julia | PF `lint_ai_banner`: present on every rationale page and Literate file, and verbatim-identical wherever it appears | `banner-drift` |
 | — | — | — | — | — | the same scan also refuses the banner ON `docs/src/index.md` (the owner's ruling 2026-09-09) | `docs/src/index.md` clean twin |
 | `SCAN.DOI_CROSSCHECK` | `RULE.CIT.FULL_INLINE`, `RULE.CIT.DOI` | hard | src vs `references_heading` (or the whole of `docs/ARCHITECTURE.md` when `"absent"`) | julia | PF `doi_crosscheck.py` (both directions; unused-reference info) ∪ IT `doi_crosscheck.py` (decoded DOI, title check, retired `[doi:…]` label refused, the `Phenomenology` leaf exempt by ledger) | `doi-missing` |

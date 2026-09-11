@@ -32,8 +32,9 @@ julia --startup-file=no --project=docs -e 'using GBGCodingTools; exit(GBGCodingT
 
 [`gbg install`](@ref GBGCodingTools.cmd_install) copies `bin/gbg` to `~/.local/bin/gbg` and, with the
 option, writes `~/.gbg/dev`. The shim is POSIX `sh`: it walks up to the nearest `.gbg/config.toml`,
-reads the pinned version, and executes `julia --project=<root>/docs` on the copy that environment resolved — so
-`gbg` in a consumer always runs that consumer's pinned version. One consumer is routed differently: a
+reads the pin only to tell `dev` from a release, and executes `julia --project=<root>/docs` on the copy
+that environment resolved — so `gbg` in a consumer runs the version its `docs/` environment resolved,
+which is the pinned one once that environment is instantiated after a bump. One consumer is routed differently: a
 consumer pinned at `dev` that is not itself the tool's checkout — the fixture, which sits inside that
 checkout — resolves against the enclosing tool repository's root rather than its own `docs/`. `gbg --dev …`
 runs the registered dev checkout instead; `GBG_DEV=1` marks it.

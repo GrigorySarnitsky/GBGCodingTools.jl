@@ -7,7 +7,7 @@
 //         substrate_path}], personas_path, models: {economy}, out }  (Revision 9: texts are files)
 export const meta = {
   name: 'rubric-audit',
-  description: 'Test, blind, whether each panel hat’s own rubric produces the findings a human read found',
+  description: 'Test, blind, whether each panel hat’s persona produces the findings a human read found',
   phases: [{ title: 'Assign' }, { title: 'Blind run' }, { title: 'Score' }],
 }
 

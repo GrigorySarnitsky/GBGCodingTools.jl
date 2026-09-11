@@ -217,7 +217,8 @@ there would be false. A package that wants the banner on more of its pages says 
 
 ### RULE.DOC.SHAPE
 A docstring's longest paragraph stays within 120 words and it carries at most three admonitions, no unit
-grows past its recorded baseline, `# Arguments` precedes any column-0 admonition, and `# Fields` is last.
+grows past its recorded baseline, an `# Arguments` heading — where a consumer uses one in place of the
+bulleted form of RULE.DOC.ARGS_FORM — precedes any column-0 admonition, and `# Fields` is last.
 The caps bind on every docstring and every page unit that is new; a page unit already in the baseline is
 held by the ratchet alone, which is the one place the baseline is the whole of the check. A paragraph is
 a run of lines between blank ones, so a Markdown table is ONE paragraph however long: that is why the

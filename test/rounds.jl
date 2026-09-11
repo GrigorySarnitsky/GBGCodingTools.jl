@@ -380,6 +380,20 @@ end
                                                                   "per_id" => Dict("r/z#1" => Dict("act" => "HONORED")))))
     pend(String[]);   @test isempty(G.Passes.pass_scope(cfg, dir, rec, 2)[1])      # read, untouched: not in scope
     pend(["r/z#1"]);  @test G.Passes.pass_scope(cfg, dir, rec, 2)[3] == ["r/z#1"]  # never read: re-checked
+    # a finding carried in from an earlier round was often fixed after that round closed and before this one
+    # opened: the first fix range starts where the carrying round closed, or the act verifier grades the fix
+    # UNDONE at every pass (four ids of 2026-09-11-check-docs-01, carried again at rc.9)
+    now = chomp(read(`git -C $root rev-parse HEAD`, String))
+    od = joinpath(root, ".gbg", "rounds", "2025-12-31-check-docs-01"); mkpath(od)
+    open(joinpath(od, "ROUND.toml"), "w") do f; TOML.print(f, Dict("closed_head" => base)); end
+    carried = Dict{String,Any}("id" => "2025-12-31-check-docs-01/src#1", "lane" => "src", "n" => 2, "title" => "t",
+                               "locations" => ["Project.toml:1"], "carried_from" => "2025-12-31-check-docs-01 (carry 1)")
+    write(joinpath(dir, "findings.json"), JSON3.write(Dict("schema_version" => 1, "round" => "r", "findings" => [quietf, carried])))
+    rnow = Dict{String,Any}("head" => now, "passes" => 0)
+    @test G.Passes.carried_base(cfg, dir, rnow) == base                     # where the carrying round closed
+    @test G.Passes.pass_scope(cfg, dir, rnow, 1)[4] == "$base..$now"
+    write(joinpath(dir, "findings.json"), JSON3.write(Dict("schema_version" => 1, "round" => "r", "findings" => [quietf])))
+    @test G.Passes.carried_base(cfg, dir, rnow) == now                      # nothing carried: the opening head
 end
 
 # A tree that moved under an unchanged released version is the tag moving: close refuses the round as

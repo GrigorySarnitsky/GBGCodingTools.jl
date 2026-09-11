@@ -67,7 +67,8 @@ tool's own.
   `Co-Authored-By: Anthropic Claude <noreply@anthropic.com>`; stage with `git add -u` plus new files by
   name, never `-A`.
 - Gate every commit on exit codes (`bash -e -o pipefail`); "should work" is not done; unasked, run only
-  `Pkg.test()`, `gbgdev selftest` and the docs build.
+  `Pkg.test()`, `gbgdev selftest` and the docs build (`gbgdev` is `gbg --dev`, the shim routed to the
+  dev checkout `~/.gbg/dev` names).
 - The four consumers are read for the ports and edited only in their migration phase (4–7), never on
   a peer session's request. Their instruments are frozen until then.
 - Two hosts (`Aiporetne`, `Enteropia`); per-machine state (`~/.local/bin/gbg`, `~/.gbg/dev`, juliaup)
@@ -88,6 +89,6 @@ tool's own.
 
 ## Current state
 
-Phase 1 of `IMPLEMENTATION.md` is being built: the engines, the CLI and the instruments exist; the
-fixture, the self-tests, the tool's own docs site and the first release candidate follow. Live plans are
-in `docs/ROADMAP.md`.
+Phase 1 of `IMPLEMENTATION.md` is built and released as candidates `v1.0.0-rc.1` onward; the final
+`1.0.0` waits on the serious findings `.gbg/carried.toml` holds and on `.claude/WORK_QUEUE.md`. Live
+plans are in `docs/ROADMAP.md`.

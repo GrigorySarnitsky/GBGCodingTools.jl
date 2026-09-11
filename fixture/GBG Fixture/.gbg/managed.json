@@ -1,6 +1,6 @@
 {
     "tool_version": "dev",
-    "inputs_sha": "b2500a142843b2823fd72e97eafbcb646d9f1868585f0e521c2878046e040309",
+    "inputs_sha": "ac4a88b0e0a15ba044f7f4dbce0e214ef79c97d85de0b09bf060cf17a696cb35",
     "files": {
         "CLAUDE.md#gbg:managed": {
             "template": "claude-md.block",
@@ -9,12 +9,12 @@
         },
         ".claude/skills/check-consistency/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "79ad47a938879fdbb5f7ba376879c07479889f95df862f0c66dca0738541c6b5",
+            "sha256": "df214d6609c40a97da17e7640e31ebf26007bbe13f8af8f5f306366cb8fee67b",
             "version": "dev"
         },
         ".claude/skills/gbg-doctor/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "19610bef623c239abb1262fd8a64b2479cdb3c3fde1d6ab5acfff291d9734d6e",
+            "sha256": "1449515c2af887fac3aa86a3502d00c284e5f59c8bd51a5cb97fe08abe04c53b",
             "version": "dev"
         },
         ".gbg/policy/latex-idiom.md": {
@@ -34,12 +34,12 @@
         },
         ".claude/skills/audit-changes/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "a249a1bedf272a7d43390e59170e4b53e9e31004926e53a4aeacfe742d1bcb68",
+            "sha256": "d9d1b4dc6d8fd95f7f167d593588b8781e168c891732e185e7e55f25a4bc4747",
             "version": "dev"
         },
         ".gbg/policy/docs-rubric.md": {
             "template": "policy/docs-rubric.md",
-            "sha256": "40c5de0b06fb18fca313973393f8809655a38ff64faba5058bac3ab5b1c3ee11",
+            "sha256": "8fd1e76cf08eecd072dd2f171551f4caffe4d0f124e2f4391c302eaa7b625f2b",
             "version": "dev"
         },
         ".gbg/policy/00-index.md": {
@@ -54,17 +54,17 @@
         },
         ".claude/skills/check-docs/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "d621106d3250704ac964111b858ccf400f6c6fc622ca0dac7b72bc299818ff32",
+            "sha256": "84c11cc85e068df548148a09ed66cc5e42d416a9ad3caa844a3aba6fc0b529c0",
             "version": "dev"
         },
         ".gbg/policy/instruments.md": {
             "template": "policy/instruments.md",
-            "sha256": "bde4262d83e9b9b97ad6a50da0d17f581babeb25d305d292eb5ee5903df308bb",
+            "sha256": "85f16cdd5bd91b748a2b6bc5b012d0efb37d9c27460e31c8b60dafdbdbace606",
             "version": "dev"
         },
         ".claude/skills/bug-hunt/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "64b4ca0ad52181934bcc9feb42f582448e2f22a36632f1c2bec1c81eba6b7408",
+            "sha256": "fb0a8115a69ca9825a49b43491ef7877fa7559df49a0233ec5bf9dfa809483ef",
             "version": "dev"
         },
         ".gbg/policy/citations.md": {
@@ -99,5 +99,5 @@
         }
     },
     "schema_version": 1,
-    "rendered": "2026-09-11T16:03:11"
+    "rendered": "2026-09-12T00:11:40"
 }

@@ -152,7 +152,7 @@ include("helpers.jl")
         n(re) = (m = match(re, page); m === nothing ? -1 : parse(Int, m.captures[1]))
         @test n(r"There are (\d+)\s*\n?\s*verbs") == length(G.VERBS)
         @test n(r"(\d+) scans over docstrings") == length(G.scan_catalog())
-        @test n(r"(\d+) read-only checks") == length(G.Doctor.CHECKS)
+        @test n(r"(\d+) checks that a package is wired correctly") == length(G.Doctor.CHECKS)
         @test n(r"The policy is (\d+) rules") == length(TOML.parsefile(joinpath(TOOL, "policy", "RULES.toml"))["rule"])
     end
     @testset "the transitional Python is gone (1.6)" begin

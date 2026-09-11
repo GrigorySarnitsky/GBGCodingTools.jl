@@ -84,7 +84,7 @@ const TAG_VERSION = r"^\d+\.\d+\.\d+(-rc\.\d+)?$"
     tag_tree(dir, ver) -> Union{String,Nothing}
 
 The git tree id the tag `v<ver>` of the repository `dir` points at, or `nothing` when there is no such
-tag. The tree a tag names is what a round stamped with that version was measured against (D16); the
+tag. The tree a tag names is what a round stamped with that version was measured against; the
 `TreeHash` of a clean checkout of the tag equals this id.
 """
 tag_tree(dir::AbstractString, ver::AbstractString) = Git.run(dir, "rev-parse", "-q", "--verify", "refs/tags/v$ver^{tree}")
@@ -117,7 +117,7 @@ The tool and config stamps every `ROUND.toml` and `pass.toml` of the consumer `c
 
 - `cfg` — the validated config of the consumer whose rounds record the stamps.
 - `record` — the `ROUND.toml` of a round already open: a dev checkout whose round was stamped with a
-  tag keeps reading its tool stamps from that tag while the tag exists (D16), so the fix commits that
+  tag keeps reading its tool stamps from that tag while the tag exists, so the fix commits that
   move `HEAD` past the tag are not a moved tool; a moved TAG is.
 """
 function stamps(cfg::AbstractDict; record = nothing)
@@ -155,7 +155,7 @@ when it may open. The arguments are:
 - `instrument` — the instrument the round was asked for.
 - `st` — the stamps `Preflight.stamps` computed for it.
 
-A `/check-docs` or `/check-consistency` round is a measurement, and D16 says a `dev`-stamped round is
+A `/check-docs` or `/check-consistency` round is a measurement, and a `dev`-stamped round is
 unclosable: a round graded by an unreleased tool compares with nothing and can be cited by no release.
 That refusal belongs where it can still be acted on — the round is not opened, and nothing is spent —
 rather than after the record is frozen and every verb refuses. An audit or hunt round reads
@@ -498,8 +498,8 @@ package_block(cfg) = Dict("name" => cfg["package"]["name"], "description" => cfg
 """
     economy_model() -> String
 
-The economy model: the cheaper AI model the tool's model catalogue names, on which every lane and hat
-that is not an anchor runs in an economy round. Returns the model name.
+The name of the economy model [`GBGCodingTools.Config`](@ref) defines, read from the tool's model
+catalogue. Returns the model name.
 """
 economy_model() = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "catalog", "models.toml"))["economy"]
 finding_types(cfg) = vcat(["math", "notation", "structure", "citation", "style", "operational", "currency", "self-containment"], String.(cfg["schema"]["finding_types_extra"]))

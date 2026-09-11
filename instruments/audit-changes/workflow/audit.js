@@ -19,6 +19,7 @@ export const meta = {
 
 // gbg:prelude
 for (const k of ['round', 'round_dir', 'repo', 'base', 'head', 'lanes', 'package', 'models', 'diff_path', 'schema_version']) if (A[k] === undefined) throw new Error(`audit.js: args.${k} is required (base is the commit the norm is read at)`)
+if (!A.lanes.length) throw new Error('audit.js: an EMPTY roster is not a clean audit — the CLI never launches one over nothing')
 
 const SCHEMA = {
   type: 'object', additionalProperties: false,

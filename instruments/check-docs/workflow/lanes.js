@@ -17,6 +17,7 @@ export const meta = {
 
 // gbg:prelude
 for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'models', 'policy_path', 'schema_version']) if (A[k] === undefined) throw new Error(`lanes.js: args.${k} is required`)
+if (!A.lanes.length) throw new Error('lanes.js: an EMPTY roster is not a clean round — the CLI never launches one over nothing')
 const TYPES = A.finding_types || ['math', 'notation', 'structure', 'citation', 'style', 'operational', 'currency', 'self-containment']
 
 const SCHEMA = {

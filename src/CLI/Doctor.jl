@@ -5,7 +5,8 @@
 """
     Doctor
 
-The read-only health check of a consumer's tooling. Every check has a stable id, returns
+The health check of a consumer's tooling: every check reads the tree and writes nothing, except the
+`--deep` set, which runs the package's builds and tests. Every check has a stable id, returns
 `PASS`, `WARN`, `FAIL` or `NA`, and can be selected by id or prefix; the `QUICK` set is the subset that
 holds on a runner with no shim and a detached HEAD. A `scope = "check"` ledger entry on an exemptable
 id (`LEG.*`, `GIT.*`, `AUDIT.*`) turns its FAIL into a WARN naming the reason; the non-exemptable
@@ -633,7 +634,8 @@ check!("LOAD.ENVS", ctx -> begin
     isempty(errs) ? pass("LOAD.ENVS", "$n environment(s) load the tool") : fail("LOAD.ENVS", join(errs, "; "))
 end)
 check!("BUILD.DOCS", ctx -> begin
-    ok, log = run_logged(ctx, shell(ctx.cfg["package"]["docs_build"]))
+    # the frozen-build skip is exit 0 with the banner, so without this a skipped build would PASS
+    ok, log = run_logged(ctx, addenv(shell(ctx.cfg["package"]["docs_build"]), "GBG_DOCS_NO_SKIP" => "1"))
     banner = occursin(r"GBGCodingTools v\S+ makedocs", log)
     ok && banner && return pass("BUILD.DOCS", "docs build exit 0 with the makedocs banner")
     fail("BUILD.DOCS", ok ? "exit 0 but no makedocs banner — the wrapper did not run" : "docs build failed: " * last(split(strip(log), '\n')))

@@ -300,8 +300,9 @@ The function object a surface name denotes. The arguments are:
 - `modules` — the package modules.
 - `externals` — the external modules whose generics the package extends, searched last.
 
-A package module that OWNS the name is searched before anything else, so `Config.read`, `Git.run` and
-`Ledger.read` denote the package's function and not the `Base` export they collide with; ordering the
+A package module that OWNS the name is searched before anything else, so `read` and `run` denote
+`Config.read` and `Git.run` and not the `Base` exports they collide with — the first owning module in
+`modules` wins when two own a name, as `Config` and `Ledger` both own `read`; ordering the
 externals last does not achieve that on its own, because `isdefined(pkg, :read)` is already true through
 the implicit `using Base`.
 

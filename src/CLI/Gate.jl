@@ -55,7 +55,9 @@ The kinds are `:open`, an open round of a named instrument that `GBG_ROUND` does
 `:disabled`, an open round of a disabled instrument, whatever was named; and `:committed`, outside CI,
 an open round whose files are untracked or modified while `HEAD` moved past its opening head — the
 fixes were committed without the round. `fatal` is a round directory without a valid `ROUND.toml`,
-which the gate reports as exit 2. Returns the flag and the problems in round order.
+which the gate reports as exit 2. It lists the round-based refusals only: `gate`'s self-verify and
+`ROUND.DIR` refusals come before it and are not problems here, so an empty list is not a passing gate.
+Returns the flag and the problems in round order.
 """
 function gate_problems(cfg::AbstractDict, instruments::AbstractString...; io::IO = devnull)
     root = cfg["root"]

@@ -28,7 +28,7 @@ const SKILL_DESCRIPTION = Dict(
     "check-consistency" => "Fresh-eyed multi-hat panel over the rendered documentation site — consolidate, run the hats, bank, fix, verify and close the round",
     "bug-hunt" => "Static hunt, dynamic confirmation — hunters hypothesise, reproducers write failing witnesses; bank, fix, promote and close the round",
     "audit-changes" => "Were these edits justified, and did they silently change behaviour? Lanes over a diff range, the executable claims run by the CLI",
-    "gbg-doctor" => "The read-only health check of this package's tooling — config, pinned version, managed files, wiring, ledger, rounds",
+    "gbg-doctor" => "The health check of this package's tooling — config, pinned version, managed files, wiring, ledger, rounds; read-only unless run --deep",
 )
 const POLICY_FILES = ("00-index.md", "docs-rubric.md", "latex-idiom.md", "citations.md", "testing-protocol.md",
                       "instruments.md", "git-conventions.md", "glossary.md")

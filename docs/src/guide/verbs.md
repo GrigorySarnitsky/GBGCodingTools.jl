@@ -5,7 +5,8 @@
 
 `gbg <noun> <verb>` is the whole command line; the table is closed, and every verb below is rendered
 from its own docstring so the page cannot drift from the code. The exit contract is one for all: `0`
-clean, `1` a substantive finding, `2` cannot evaluate (refused, missing input, torn file), `3` crash.
+clean, `1` a substantive finding (the gate's refusal over an open round is one), `2` cannot evaluate (a
+precondition not met, missing input, torn file), `3` crash.
 
 ## Entry point
 

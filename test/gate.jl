@@ -68,3 +68,27 @@ end
     rm(rd; recursive = true)
     @test isempty(G.docs_build_skipped(cfg, 1))                                     # a refusal no docs round explains
 end
+
+# A docs round whose fixes were committed without it is the one refusal the skip must never absorb: outside
+# CI, with HEAD past the round's opening head and the round's files uncommitted, the build fails; once the
+# round is committed it skips again (contract-drift#5 of 2026-09-11-audit-changes-02).
+@testset "a docs build fails when a docs round's fixes were committed without it" begin
+    root = fixture_copy("docs-committed")
+    git(args...) = strip(read(setenv(`git -C $root $args`, "GIT_AUTHOR_NAME" => "t", "GIT_AUTHOR_EMAIL" => "t@t", "GIT_COMMITTER_NAME" => "t", "GIT_COMMITTER_EMAIL" => "t@t", "HOME" => root, "PATH" => ENV["PATH"]), String))
+    git("init", "-q", "-b", "master"); git("add", "-A"); git("commit", "-q", "-m", "base")
+    cfg = G.Config.read(root)
+    id = "2026-09-09-check-docs-01"
+    rd = joinpath(root, ".gbg", "rounds", id); mkpath(rd)
+    rec = merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => id, "instrument" => "check-docs", "schema_version" => 1,
+        "head" => G.Git.head(root), "roster" => Any[], "cost" => "economy", "strength" => "economy", "hostname" => "test",
+        "model_hint" => "sonnet", "opened" => "2026-09-09T00:00:00", "dead_lanes" => String[], "passes" => 0))
+    open(joinpath(rd, "ROUND.toml"), "w") do f; TOML.print(f, rec); end
+    withenv("CI" => nothing, "GBG_ROUND" => nothing, "GBG_DOCS_NO_SKIP" => nothing) do
+        @test G.docs_build_skipped(cfg, 1) == [id]                                  # at the opening head: a skip
+        write(joinpath(root, "fix.txt"), "a fix\n"); git("add", "fix.txt"); git("commit", "-q", "-m", "a fix without the round")
+        @test :committed in first.(last(G.gate_problems(cfg, "check-docs", "check-consistency")))
+        @test isempty(G.docs_build_skipped(cfg, 1))                                  # committed around it: fails
+        git("add", "-A"); git("commit", "-q", "-m", "the round, committed")
+        @test G.docs_build_skipped(cfg, 1) == [id]                                  # committed with it: a skip again
+    end
+end

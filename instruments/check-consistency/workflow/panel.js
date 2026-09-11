@@ -22,6 +22,7 @@ export const meta = {
 for (const k of ['round', 'round_dir', 'repo', 'manuscripts', 'hats', 'preamble', 'models', 'package', 'schema_version']) {
   if (A[k] === undefined) throw new Error(`panel.js: args.${k} is required`)
 }
+if (!A.hats.length) throw new Error('panel.js: an EMPTY roster is not a clean round — the CLI never launches one over nothing')
 const TYPES = A.finding_types || ['math', 'notation', 'structure', 'citation', 'style', 'operational', 'currency', 'self-containment']
 
 const SCHEMA = {

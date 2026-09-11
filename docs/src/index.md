@@ -60,7 +60,7 @@ the AI workflow to launch, and then checks what that workflow wrote.
 verbs, listed on [The verbs](@ref verbs), and every one exits with `0` when clean, `1` when it found something, `2` when it could not
 evaluate, `3` when it crashed. The two a person runs most:
 
-- [`gbg doctor`](@ref "The doctor's checks") — 49 read-only checks that a package is wired correctly: the installed version matches
+- [`gbg doctor`](@ref "The doctor's checks") — 49 checks that a package is wired correctly (read-only, except that `--deep` builds and tests it): the installed version matches
   the pinned one, no generated file was hand-edited, the docs build and the tests call this package.
 - [`gbg scan docs`](@ref GBGCodingTools.scan_docs) and [`gbg scan html`](@ref GBGCodingTools.scan_html) — 42 scans over docstrings, pages and the built site: banned
   LaTeX idioms, undocumented arguments, unlinked sibling packages, prose that grew past its baseline.

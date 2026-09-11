@@ -48,7 +48,7 @@ end
     # counts what was COMPARED: an extension-homed binding with no methods loaded is skipped, so it must
     # not be counted, and a package of nothing but those is DEAD rather than clean.
     # RULE.TEST.BOTH_DIRECTIONS. A package function wins its own name against a Base export of the same
-    # name: `Config.read`, `Rounds.list` and `Scan.report` all collide with one. Ordering the externals
+    # name: `Config.read` and `Git.run` collide with `Base.read` and `Base.run`. Ordering the externals
     # last does NOT achieve this — `isdefined(pkg, :read)` is true through the implicit `using Base` — so
     # the module that OWNS the name is searched first, and this test fails if that ordering is undone.
     @testset "a package function wins its own name" begin
@@ -108,6 +108,10 @@ end
         r = G.run_scan(c2, CATALOG["SCAN.AI_BANNER"]; ledger = Dict{String,Any}[])
         @test r.population == 0
         @test G.report([r]; io = devnull) == 2
+        # zero population is DEAD whatever the ledger removed: a scan that measured nothing yet hit something
+        # has a broken counter, and an exemption must not hide it (2026-09-11-audit-changes-02)
+        hid = G.ScanResult("SCAN.X", "RULE.X", "hard", G.Hit[], 0, 1, "")
+        @test G.report([hid]; io = devnull) == 2
     end
     @testset "the ledger disables and refines" begin
         row = CATALOG["SCAN.REGISTER"]

@@ -93,8 +93,8 @@ are anchors and stay at full strength in every mode.
 ## Honest limits
 
 Stated, not claimed closed: grader/graded separation holds for code and prompts, not for files a session
-can forge — the residue is transcript-visible, not gate-visible. The seeded copy lives inside the
-project, gitignored; a hat that opens it, or diffs its manuscript against the built site, leaves a read in
+can forge — the residue is transcript-visible, not gate-visible. A consistency round's seeded copy lives inside
+the project, gitignored, and a docs round's in a temporary directory outside it that bank deletes; a hat that opens it, or diffs its manuscript against the built site, leaves a read in
 its transcript and nothing in the tally except, sometimes, a suspect flag on the hats that did not. A
 `GBG_ROUND` exported by hand outside a CLI invocation makes the gate ignore that round exactly as a
 CLI-run build would; the export is in the transcript, and CI never sets it. A working tree's gate can see
