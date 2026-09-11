@@ -134,6 +134,14 @@ const DONE = { type: 'object', properties: { done: { type: 'boolean' } }, requir
 const scribe = (r, path, label, phase) => !r ? null :
   agent(`Use the Write tool to write EXACTLY this JSON to ${path} and return {done: true}. No other text.\n\n${JSON.stringify(r, null, 2)}`,
         { label, phase, schema: DONE, model: ECONOMY }).then(w => { if (!(w && w.done)) log(`${label}: the scribe did not confirm; the lane's own file stands`); return r })
+// The two binding fields reach the scribe's file from args, never from the model's retyping: a one-
+// character slip (…ec5662 for …ed5662) once REJECTED two lanes. A lane that returned other values is
+// logged, because a copy-forward from an earlier pass shows there too.
+const stamped = (r, lane) => {
+  if (!r) return r
+  if (r.pass_nonce !== A.nonce || r.graded_sha256 !== A.graded_sha256) log(`${lane}: returned a pass_nonce or graded_sha256 other than this pass's — stamped from args; read the lane if a copy-forward is possible`)
+  return { ...r, pass_nonce: A.nonce, graded_sha256: A.graded_sha256 }
+}
 
 const results = await parallel(units.map(u => () => u.items.length === 0 ? Promise.resolve({ __skip: true }) : agent(
 `${PREAMBLE}
@@ -146,7 +154,7 @@ ${u.items.map(fmt).join('\n')}
 FIRST use the Write tool to save the structured object as JSON to ${outFile(u.name)} with schema_version=${A.schema_version}, lane="${u.lane}", graded_sha256="${A.graded_sha256}", pass_nonce="${A.nonce}" (both copied EXACTLY — they bind your verdicts to this pass and this frozen finding set). THEN return the same object.`,
   { label: `verify-act:${u.lane}`, phase: 'Verify act', schema: SCHEMA, agentType: 'general-purpose',
     ...(STRENGTH === 'economy' ? { model: ECONOMY } : {}) })
-  .then(r => scribe(r, outFile(u.name), `scribe:${u.lane}`, 'Verify act'))))
+  .then(r => scribe(stamped(r, u.lane), outFile(u.name), `scribe:${u.lane}`, 'Verify act'))))
 
 const written = [], dead = [], empty = [], truncated = [], mismatched = []
 results.forEach((r, i) => {

@@ -133,6 +133,19 @@ include("helpers.jl")
         rep["disposition"]["state"] = "closed"                             # both directions: the enum still refuses
         @test !isempty(G.validate(schema, rep))
     end
+    @testset "a recorded disposition leaves reproductions_sha where bank froze it" begin
+        # the doctor hashed each record whole, so every hunt round failed it once a disposition was
+        # recorded — the one field recorded after bank. Both directions: a disposition is free, a verdict is not.
+        rdir = mktempdir()
+        rec(v, d) = Dict{String,Any}("id" => "2026-09-09-bug-hunt-01/free#1", "verdict" => v, "disposition" => Dict("state" => d))
+        write(joinpath(rdir, "a.json"), JSON3.write(rec("REPRODUCED", "open")))
+        h = G.RoundFiles.reproductions_sha(rdir)
+        write(joinpath(rdir, "a.json"), JSON3.write(rec("REPRODUCED", "fixed")))
+        @test G.RoundFiles.reproductions_sha(rdir) == h                    # a disposition recorded after bank
+        write(joinpath(rdir, "a.json"), JSON3.write(rec("EVIDENCED", "fixed")))
+        @test G.RoundFiles.reproductions_sha(rdir) != h                    # a verdict moved: the freeze holds
+        @test G.RoundFiles.reproductions_sha(joinpath(rdir, "absent")) == ""
+    end
     @testset "the home page's counts are the real ones" begin
         # every number the home page cites is re-measured here; a cited count nothing asserts drifts
         page = read(joinpath(TOOL, "docs", "src", "index.md"), String)

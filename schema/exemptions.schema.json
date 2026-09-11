@@ -70,6 +70,14 @@
       "minLength": 12,
       "description": "REQUIRED on scope finding; the condition under which the adjudication would be wrong"
      },
+     "ruling": {
+      "type": "string",
+      "enum": [
+       "not-a-defect",
+       "scoped"
+      ],
+      "description": "scope finding only; default not-a-defect. not-a-defect: the owner rules the finding is no defect, and its reason reaches every later panel and verifier as settled. scoped: a real defect the owner puts outside the round's reach; it closes the finding and is never shown as settled"
+     },
      "evidence": {
       "type": "string"
      },

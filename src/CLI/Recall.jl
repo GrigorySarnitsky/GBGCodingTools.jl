@@ -79,8 +79,13 @@ end
 sees_seed(substrate, seed, site_pages) =
     substrate == "siteonly" ? seed["page"] in site_pages : true
 
+# Whether a docs lane reading `files` (files, or directories standing for everything under them) is
+# handed a seed, whose `page` is the file it was planted in; a lane naming no files reads everything.
+lane_sees(files, seed) =
+    isempty(files) || any(f -> seed["page"] == f || startswith(seed["page"], rstrip(f, '/') * "/"), files)
+
 """
-    suspect_hats(findings, ground_truth, roster, site_pages) -> Vector{String}
+    suspect_hats(findings, ground_truth, roster, site_pages; lane_files = nothing) -> Vector{String}
 
 Every hat handed two or more seeds and reporting no seeded finding of its own.
 The arguments are:
@@ -91,23 +96,25 @@ The arguments are:
 - `site_pages` — the page banners the site-only manuscript keeps; a `siteonly` hat sees only seeds on
   those pages, so an EMPTY set means a `siteonly` hat sees none and can never be SUSPECT, while a
   `full` hat is unaffected.
+- `lane_files` — a docs round's view: lane key → the files and directories that lane reads. Given, it
+  replaces the substrate test.
 
 A hat is judged only on the seeds it was actually handed, which follows the delivery. The panel splits
 the corpus once, `siteonly` against `full`: a `siteonly` hat sees only the seeds on a kept page, a
 `full` hat is handed the whole seeded manuscript and is judged on all of them.
 
-That narrowing is the CONSISTENCY panel's, and it is the only one there is. A check-docs round calls
-this with the lane roster, whose `substrate` is the lane's `kind` (`surface` or `cross`, never
-`siteonly`) and with an empty `site_pages`, so on the docs path every lane is judged on every
-planted seed, including seeds in files that lane never opened. A docs lane's real view is its `files`
-list; until this function is given it, a docs SUSPECT means "handed two seeds SOMEWHERE in the round and
-reported none", not "on its own surface". Returns the keys.
+A docs lane reads a file set, not a manuscript view, so a check-docs round passes `lane_files`: a lane
+sees a seed planted in one of its files or under one of its directories, and a lane naming no files — a
+cross lane, which reads the whole corpus — sees every seed. Before, a docs lane was judged on every seed
+in the round, including seeds in files it never opened. Returns the keys.
 """
-function suspect_hats(findings::AbstractVector, ground_truth::AbstractDict, roster::AbstractVector, site_pages::AbstractSet)
+function suspect_hats(findings::AbstractVector, ground_truth::AbstractDict, roster::AbstractVector, site_pages::AbstractSet;
+                      lane_files = nothing)
     out = String[]
     for h in roster
         get(h, "not_applicable", false) && continue
-        seeds = [s for s in get(ground_truth, "seeded", Any[]) if sees_seed(h["substrate"], s, site_pages)]
+        sees(s) = lane_files === nothing ? sees_seed(h["substrate"], s, site_pages) : lane_sees(get(lane_files, h["key"], String[]), s)
+        seeds = [s for s in get(ground_truth, "seeded", Any[]) if sees(s)]
         length(seeds) >= 2 || continue
         any(f -> get(f, "lane", "") == h["key"] && get(f, "seeded", false), findings) || push!(out, h["key"])
     end

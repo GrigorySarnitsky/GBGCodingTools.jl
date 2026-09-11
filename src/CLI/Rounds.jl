@@ -552,10 +552,11 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         open(joinpath(dir, "ground_truth.json"), "w") do f; JSON3.pretty(f, JSON3.write(gt)); println(f); end
         marked = Recall.mark!(findings, Dict("seeded" => plan, "skipped" => skipped))
         recall = Recall.per_class(findings, Dict("seeded" => plan, "skipped" => skipped))
-        suspect = Recall.suspect_hats(findings, Dict("seeded" => plan), rec["roster"], Set{String}())
+        lane_files = Dict(String(l["key"]) => String.(get(l, "files", String[])) for l in Preflight.resolve_checkdocs_lanes(cfg))
+        suspect = Recall.suspect_hats(findings, Dict("seeded" => plan), rec["roster"], Set{String}(); lane_files)
         bankrec["recall"] = recall; bankrec["suspect_hats"] = suspect
         println(io, "bank: recall per class — ", join(("$c: " * (v isa AbstractDict ? "$(v["found"])/$(v["planted"])" : "UNDEFINED") for (c, v) in sort!(collect(recall); by = first)), ", "))
-        isempty(suspect) || println(io, "bank: SUSPECT lanes (≥ 2 seeds planted anywhere in this round, zero matches — a docs lane is not narrowed to its own files; see Recall.suspect_hats): ", join(suspect, ", "))
+        isempty(suspect) || println(io, "bank: SUSPECT lanes (≥ 2 seeds in the files the lane reads, zero matches): ", join(suspect, ", "))
         println(io, "bank: $marked seeded finding(s) marked; they are never fixed in the corpus")
         # the disposable corpus has done its work; a seeded tree left on disk is a tree someone will read
         sr = String(get(rec, "seed_root", ""))
@@ -650,7 +651,7 @@ function hunt_bank!(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, f
         name = replace(f["id"], "/" => "__", "#" => "_")
         open(joinpath(rdir, name * ".json"), "w") do fh; JSON3.pretty(fh, JSON3.write(rep)); println(fh); end
     end
-    rec["reproductions_sha"] = bytes2hex(sha256(join(sort!([read(joinpath(rdir, f), String) for f in readdir(rdir)]), "\n")))
+    rec["reproductions_sha"] = RoundFiles.reproductions_sha(rdir)
     println(io, "bank: $(length(confirmed)) confirmed (REPRODUCED ∪ EVIDENCED) of $(length(findings)) candidates; disposition records frozen (reproductions_sha $(rec["reproductions_sha"][1:12]))")
     empty!(findings); append!(findings, confirmed)
     return 0

@@ -587,9 +587,9 @@ check!("ROUND.FROZEN", ctx -> begin
             isfile(fj) && RoundFiles.sha256_file(fj) == r.round["findings_sha"] || push!(errs, "$(r.name): findings.json ≠ findings_sha")
         end
         if haskey(r.round, "reproductions_sha")
-            rd = joinpath(r.dir, "reproductions")
-            have = isdir(rd) ? bytes2hex(SHA.sha256(join(sort!([read(joinpath(rd, f), String) for f in readdir(rd)]), "\n"))) : ""
-            have == r.round["reproductions_sha"] || push!(errs, "$(r.name): reproductions/ ≠ reproductions_sha")
+            # the disposition is recorded after bank and is excluded; any other field moving is the error
+            RoundFiles.reproductions_sha(joinpath(r.dir, "reproductions")) == r.round["reproductions_sha"] ||
+                push!(errs, "$(r.name): reproductions/ ≠ reproductions_sha (a verdict, witness sha or id changed since bank)")
         end
         cb = get(r.round, "closed_by", Dict())
         if haskey(cb, "tally_sha")

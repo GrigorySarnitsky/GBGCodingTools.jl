@@ -4,8 +4,10 @@
 // bug-hunt/dismissals.js (`complete = dead == 0 && reopened == []`, the third shape). Changes: the
 // package-specific postmortem examples removed; items arrive as text; the result is Written to `out`.
 //
-// Args: { schema_version, round, repo, package, items: [{id, title}], items_sha, items_path, out, models: {economy} }
-//   (the per-id blocks — location, claim, verdict, reasoning — are in items_path, Revision 9)
+// Args: { schema_version, round, repo, package, items: [{id, title}], items_sha, items_path, out, verdicts_dir,
+//         models: {economy} }  (the per-id blocks — location, claim, verdict, reasoning — are in items_path,
+//   Revision 9). Each auditor writes its own verdict under verdicts_dir, a directory the item set's sha
+//   names; when the final write of `out` does not land, `gbg round close` assembles `out` from those files.
 export const meta = {
   name: 'dismissals',
   description: 'Re-examine every candidate a round dismissed or adjudicated, defaulting to "the dismissal is unsafe"',
@@ -13,13 +15,15 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['repo', 'items', 'items_path', 'out', 'package', 'models', 'items_sha', 'round', 'schema_version']) if (A[k] === undefined) throw new Error(`dismissals.js: args.${k} is required`)
+for (const k of ['repo', 'items', 'items_path', 'out', 'verdicts_dir', 'package', 'models', 'items_sha', 'round', 'schema_version']) if (A[k] === undefined) throw new Error(`dismissals.js: args.${k} is required`)
+// the file an auditor writes its own verdict to, named as the CLI reads it back
+const verdictFile = id => `${A.verdicts_dir}/${id.replaceAll('/', '__').replaceAll('#', '_')}.json`
 if (!A.items.length) throw new Error('dismissals.js: an EMPTY audit is not a clean one — the CLI does not invoke this over nothing')
 
 const SCHEMA = {
   type: 'object', additionalProperties: false,
   properties: {
-    id: { type: 'string' },
+    id: { type: 'string', description: 'the finding id EXACTLY as given' },
     verdict: { type: 'string', enum: ['DISMISSAL-SOUND', 'UNSAFE', 'DISMISSAL-WRONG'] },
     evidence: { type: 'string', description: 'quoted lines from the CURRENT tree that settle it, <= 70 words' },
     what_would_bite: { type: 'string', description: 'if UNSAFE or DISMISSAL-WRONG: the concrete call, input or reader path that misbehaves' },
@@ -48,10 +52,13 @@ THREE DISMISSAL SHAPES THAT WERE WRONG BEFORE ON REAL CORPORA:
   * "sanctioned by the contract / deliberate by design." A recorded arrangement is not evidence that it is right. If a sibling operation handles the same situation differently, that asymmetry IS the finding. But the package's recorded DELIBERATE ABSENCES are design: ${(A.package.deliberate_absences || []).join('; ') || '(none recorded)'} — check the docstring before treating an absence as a defect.
   * "the suite would catch it." Only true if a test actually asserts it. Grep for the assertion.
 
-Do not hunt for anything else. Your scope is this one claim.`,
+Do not hunt for anything else. Your scope is this one claim.
+
+FIRST use the Write tool to save your verdict as JSON — {id, verdict, evidence, what_would_bite} — to ${verdictFile(d.id)} (the one file you may write). THEN return {id: "${d.id}", verdict, evidence, what_would_bite}.`,
   { label: `dismissal:${d.id}`.slice(0, 60), phase: 'Audit dismissals', schema: SCHEMA, agentType: 'general-purpose' })))
 
-const verdicts = out.filter(Boolean)
+// the id is the item's, stamped here, never the model's retyping: a paraphrased id once read as a DEAD auditor
+const verdicts = out.map((v, i) => v && { ...v, id: A.items[i].id }).filter(Boolean)
 const dead = A.items.filter(i => !verdicts.some(v => v.id === i.id)).map(i => i.id)
 const tally = {}
 for (const v of verdicts) tally[v.verdict] = (tally[v.verdict] || 0) + 1

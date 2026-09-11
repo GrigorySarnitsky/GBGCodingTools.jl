@@ -229,8 +229,12 @@ end
     write(a, read(a, String) * "\n"); git("add", "-A"); git("commit", "-q", "-m", "one of the two")
     missed = G.Passes.unswept(cfg, dir, ["r/x#1"], "$base..HEAD")
     @test length(missed) == 1 && missed[1][2] == ["docs/src/notation.md"]                    # fires on the half-fix
+    mid = chomp(read(`git -C $root rev-parse HEAD`, String))
     write(b, read(b, String) * "\n"); git("add", "-A"); git("commit", "-q", "-m", "the other")
     @test isempty(G.Passes.unswept(cfg, dir, ["r/x#1"], "$base..HEAD"))                      # silent when swept
+    # the second fix pass's range alone calls the first pass's fix untouched; pass open therefore asks
+    # from the round's opening head, every fix pass since bank
+    @test G.Passes.unswept(cfg, dir, ["r/x#1"], "$mid..HEAD") == ["r/x#1" => ["src/FixtureA.jl"]]
     @test isempty(G.Passes.unswept(cfg, dir, String[], "$base..HEAD"))                       # nothing open, nothing to sweep
 
     rec = Dict{String,Any}("head" => base, "passes" => 0)
@@ -270,6 +274,41 @@ end
     pend(["r/z#1"]);  @test G.Passes.pass_scope(cfg, dir, rec, 2)[3] == ["r/z#1"]  # never read: re-checked
 end
 
+# A tree that moved under an unchanged released version is the tag moving: close refuses the round as
+# abandon-only, and a regrade must not re-stamp that away (refuse, regrade, close once passed a round on
+# a moved tag). Both directions: a moved version, or a dev stamp, re-stamps the tree with the rest.
+@testset "a regrade never re-stamps a moved tag" begin
+    rec = Dict{String,Any}("config_sha" => "c", "tool_version" => "1.0.0-rc.6", "tool_rev" => "r", "tool_tree_sha" => "t")
+    st(; kw...) = merge(rec, Dict{String,Any}(String(k) => v for (k, v) in kw))
+    @test G.Passes.restamped(st(tool_tree_sha = "t2", config_sha = "c2"), rec) == (["config_sha"], true)
+    @test G.Passes.restamped(st(tool_tree_sha = "t2", tool_version = "1.0.0-rc.7", tool_rev = "r2"), rec) ==
+          (["tool_version", "tool_rev", "tool_tree_sha"], false)
+    dev = merge(rec, Dict{String,Any}("tool_version" => "dev+abc1234"))
+    @test G.Passes.restamped(merge(dev, Dict{String,Any}("tool_tree_sha" => "t2")), dev) == (["tool_tree_sha"], false)
+    @test G.Passes.restamped(rec, rec) == (String[], false)
+end
+
+# dismissals.json no longer rests on the script's final writer, which a classifier blocked on two of five
+# runs: each auditor writes its own verdict under a directory the item set's sha names, and close assembles
+# the file from them. The id is the file name's, an out-of-set verdict or a missing file is dead, and an
+# empty directory assembles nothing.
+@testset "close assembles dismissals.json from the auditors' own files" begin
+    vdir = mktempdir(); r = "2026-01-01-check-docs-01"; sha = "a"^64
+    items = [Dict{String,Any}("id" => "$r/src#1", "title" => "t1"), Dict{String,Any}("id" => "$r/src#2", "title" => "t2")]
+    @test G.Passes.assemble_dismissals(items, vdir, r, sha) === nothing                        # nothing written
+    put(id, v) = write(joinpath(vdir, replace(id, "/" => "__", "#" => "_") * ".json"),
+                       JSON3.write(Dict("id" => "a paraphrase", "verdict" => v, "evidence" => "quoted lines settle it")))
+    put("$r/src#1", "DISMISSAL-SOUND")
+    d = G.Passes.assemble_dismissals(items, vdir, r, sha)
+    @test d["verdicts"][1]["id"] == "$r/src#1" && d["dead"] == ["$r/src#2"] && !d["complete"]  # the id is the file's
+    put("$r/src#2", "PROBABLY-FINE")
+    @test G.Passes.assemble_dismissals(items, vdir, r, sha)["dead"] == ["$r/src#2"]             # out of the closed set
+    put("$r/src#2", "DISMISSAL-SOUND")
+    d = G.Passes.assemble_dismissals(items, vdir, r, sha)
+    @test d["complete"] && isempty(d["reopened"]) && d["items_sha"] == sha
+    @test isempty(G.validate(G.load_schema("dismissal"), d))                                    # what close validates
+end
+
 # The class checklist is COMPUTED, not invented: every place the tree writes down a rule or scan id the
 # finding cites, plus the other end of the scan/rule pair, because a finding that names only the scan is
 # about the rule's prose too. This is what makes a class enumerable in one pass instead of one site per
@@ -282,6 +321,7 @@ end
     @test any(s -> startswith(s, "src/Scans/sibling_link.jl:"), sites)      # the scan itself
     @test any(s -> startswith(s, "policy/docs-rubric.md:"), sites)          # the RULE's paragraph, via the pair
     @test any(s -> startswith(s, "docs/ARCHITECTURE.md:"), sites)           # the catalogue and rule tables
+    @test !any(s -> startswith(s, "docs/src/architecture.md:") || startswith(s, "docs/build/"), sites)   # gitignored copies: never swept
     @test !any(s -> startswith(s, ".gbg/"), sites)                          # never a round's own answer key
     @test !any(s -> s == "CHANGELOG.md", sites) && !any(s -> startswith(s, "CHANGELOG.md:"), sites)
     quiet = Dict{String,Any}("id" => "r/y#1", "title" => "a docstring reads badly", "description" => "d"^24,

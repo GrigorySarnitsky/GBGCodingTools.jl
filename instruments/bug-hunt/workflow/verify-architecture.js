@@ -20,7 +20,7 @@ if (!A.findings.length) throw new Error('verify-architecture.js: an empty audit 
 const SCHEMA = {
   type: 'object', additionalProperties: false,
   properties: {
-    id: { type: 'string' },
+    id: { type: 'string', description: 'the finding id EXACTLY as given' },
     verdict: { type: 'string', enum: ['FIXED', 'RELOCATED', 'PARTIAL', 'ABSENT', 'NOT-A-DEFECT'] },
     evidence: { type: 'string', description: 'the decisive quoted lines from the CURRENT tree, <= 70 words' },
     residue: { type: 'string', description: 'if not FIXED: exactly what still stands, with file:line' },
@@ -44,10 +44,13 @@ READ THE CURRENT TREE (nothing else under .gbg/, never ~/.gbg/), not only the di
   ABSENT       — you cannot find evidence the defect was addressed at all. THIS IS YOUR DEFAULT.
   NOT-A-DEFECT — on reading both sites, the original finding was wrong (the two blocks differ for a real reason). Say what the reason is.
 
-Do NOT accept a comment, a docstring, or a decision-log entry as a fix: prose asserting that two copies are intentionally parallel leaves two copies that can drift. The test is what a maintainer would have to edit, and in how many places. Quote from the tree; an assertion with no quoted line is worth ABSENT.`,
+Do NOT accept a comment, a docstring, or a decision-log entry as a fix: prose asserting that two copies are intentionally parallel leaves two copies that can drift. The test is what a maintainer would have to edit, and in how many places. Quote from the tree; an assertion with no quoted line is worth ABSENT.
+
+Return {id: "${f.id}", verdict, evidence, residue}.`,
   { label: `arch:${f.id}`.slice(0, 60), phase: 'Audit', schema: SCHEMA, agentType: 'general-purpose' })))
 
-const verdicts = out.filter(Boolean)
+// the id is the finding's, stamped here, never the model's retyping: a paraphrased id reads as a DEAD auditor
+const verdicts = out.map((v, i) => v && { ...v, id: A.findings[i].id }).filter(Boolean)
 const dead = A.findings.filter(f => !verdicts.some(v => v.id === f.id)).map(f => f.id)
 const tally = {}
 for (const v of verdicts) tally[v.verdict] = (tally[v.verdict] || 0) + 1

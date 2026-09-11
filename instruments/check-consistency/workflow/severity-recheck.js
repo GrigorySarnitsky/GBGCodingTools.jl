@@ -12,7 +12,7 @@ export const meta = {
 }
 
 const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
-for (const k of ['out', 'items', 'items_path', 'subject', 'models', 'schema_version']) if (A[k] === undefined) throw new Error(`severity-recheck.js: args.${k} is required`)
+for (const k of ['out', 'items', 'items_path', 'subject', 'models', 'round', 'schema_version']) if (A[k] === undefined) throw new Error(`severity-recheck.js: args.${k} is required`)
 if (!A.items.length) throw new Error('severity-recheck.js: an EMPTY item list must not report success')
 
 const SCHEMA = {
@@ -43,7 +43,8 @@ THE FINDING: id ${it.id}, its block in the file above.
 Return {id: "${it.id}", severity, reason}.`,
   { label: `rate:${it.id}`.slice(0, 60), phase: 'Re-rate', schema: SCHEMA, model: A.models.economy })))
 
-const ratings = out.filter(Boolean)
+// the id is the item's, stamped here, never the model's retyping
+const ratings = out.map((r, i) => r && { ...r, id: A.items[i].id }).filter(Boolean)
 const dead = A.items.length - ratings.length
 await agent(`Use the Write tool to write EXACTLY this JSON to ${A.out} and return the single word done:\n\n${JSON.stringify({ schema_version: A.schema_version, round: A.round, ratings }, null, 2)}`,
   { label: 'write-ratings', phase: 'Re-rate', model: A.models.economy })

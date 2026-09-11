@@ -477,7 +477,11 @@ package_block(cfg) = Dict("name" => cfg["package"]["name"], "description" => cfg
 economy_model() = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "catalog", "models.toml"))["economy"]
 finding_types(cfg) = vcat(["math", "notation", "structure", "citation", "style", "operational", "currency", "self-containment"], String.(cfg["schema"]["finding_types_extra"]))
 
-adjudicated_titles(cfg, ledger) = String[e["reason"] for e in ledger if e["scope"] == "finding"]
+# The reasons of the finding-scope entries that rule a finding NOT a defect, which every panel and verifier
+# prompt presents as settled. A `scoped` ruling closes a real defect without a fix and is never shown:
+# 26 such reasons once told every later round not to flag defects that were real.
+adjudicated_titles(cfg, ledger) =
+    String[e["reason"] for e in ledger if e["scope"] == "finding" && get(e, "ruling", "not-a-defect") == "not-a-defect"]
 
 const PREAMBLES = Dict(
     "check-consistency" => "You are one hat of a fresh-eyed expert panel auditing the RENDERED documentation of the Julia package {package.name} — {package.description}. The package's field is {package.domain}; its terms of art are {package.terms}.",

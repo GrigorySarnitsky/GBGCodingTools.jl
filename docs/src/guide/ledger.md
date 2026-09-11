@@ -18,7 +18,10 @@ evidence = "IT CLAUDE.md:179-182"
 ```
 
 A `scope = "finding"` entry is the adjudication channel: it carries `overturn_when` instead of
-`expires`, closes exactly one banked finding, and is audited by the dismissal auditor at close. An
+`expires`, closes exactly one banked finding, and is audited by the dismissal auditor at close. Its
+optional `ruling` says which kind of adjudication it is: `not-a-defect` (the default) rules the finding
+no defect, and its reason reaches every later panel and verifier as settled; `scoped` puts a real
+defect outside the round's reach, closes it, and is never shown as settled. An
 optional `[exemption.match]` table (`arg_name`, `arg_type`, `path`, `symbol`, ANDed) **refines** a
 `scan`, `lint`, `policy` or `harness` entry: the engine applies the predicate per trigger and the rule
 stays live elsewhere; `arg_type` is evaluable by the reflection scans only, and a text scan refuses it.

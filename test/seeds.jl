@@ -78,6 +78,14 @@ end
     @test pc["citation-drift"]["found"] == 1 && pc["normalization"]["found"] == 0
     roster = [Dict("key" => "consistency-matrix", "substrate" => "full"), Dict("key" => "cold-reader", "substrate" => "full")]
     @test G.Recall.suspect_hats(findings, gt, roster, Set(["Home", "Notation"])) == ["cold-reader"]
+    # a docs lane reads a file set, so it is judged only on the seeds planted in its own files (a
+    # directory standing for everything under it), and a lane naming no files — a cross lane — on every
+    # seed. Both directions: without `lane_files` every docs lane was judged on every seed in the round.
+    sg = Dict("seeded" => [Dict("page" => p) for p in ("docs/a.md", "docs/a.md", "src/x.jl", "catalog/h/y.toml")])
+    lanes = [Dict("key" => k, "substrate" => "surface") for k in ("pages", "src", "catalogues", "cold-reader")]
+    lf = Dict("pages" => ["docs/a.md"], "src" => ["src/x.jl"], "catalogues" => ["catalog"], "cold-reader" => String[])
+    @test G.Recall.suspect_hats(Dict{String,Any}[], sg, lanes, Set{String}(); lane_files = lf) == ["pages", "cold-reader"]
+    @test length(G.Recall.suspect_hats(Dict{String,Any}[], sg, lanes, Set{String}())) == 4   # the old view
     @testset "demotion" begin
         v, d = G.demote(Dict("verdict" => "HONORED", "class_surfaces" => Any[]))
         @test v["verdict"] == "LINE-ONLY" && d

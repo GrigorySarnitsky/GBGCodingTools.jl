@@ -47,6 +47,7 @@ GBGCodingTools.RoundFiles.round_dirs
 GBGCodingTools.RoundFiles.read_round
 GBGCodingTools.RoundFiles.state
 GBGCodingTools.RoundFiles.sha256_file
+GBGCodingTools.RoundFiles.reproductions_sha
 GBGCodingTools.Git
 GBGCodingTools.Git.run
 GBGCodingTools.Git.head

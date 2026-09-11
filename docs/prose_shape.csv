@@ -4,7 +4,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D11 — Schemas: one JSON Schema per artefact kind in `schema/",112,68,0
 "ARCHITECTURE.md § D12 — Policy prose: single source `policy/*.md` with rule id",339,162,0
 "ARCHITECTURE.md § D13 — Managed files: one sidecar `.gbg/managed.json` as a ca",533,474,0
-"ARCHITECTURE.md § D14 — Doctor: read-only, stable check ids, one exemptions le",473,366,0
+"ARCHITECTURE.md § D14 — Doctor: read-only, stable check ids, one exemptions le",482,375,0
 "ARCHITECTURE.md § D15 — Self-test: a fixture consumer at a path with a space, ",784,363,0
 "ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",788,720,0
 "ARCHITECTURE.md § D17 — Migration: PF → IT → SS → CP, doctor-verified steps, n",371,286,0
@@ -47,7 +47,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §0 The design sentence and the requirements",440,337,0
 "ARCHITECTURE.md § §1 The platform / product model",802,565,0
 "ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",774,333,0
-"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1306,542,0
+"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1272,542,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
 "ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3154,3029,0
 "ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1481,1306,0
@@ -62,14 +62,14 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §5.5 Deliberately NOT configurable (changing any is MAJOR)",202,202,0
 "ARCHITECTURE.md § §5.6 The tool's own delta (the fifth consumer, D15)",485,484,0
 "ARCHITECTURE.md § §6.1 File formats (all instruments)",315,315,0
-"ARCHITECTURE.md § §6.3 Vocabularies (constants)",506,461,0
+"ARCHITECTURE.md § §6.3 Vocabularies (constants)",530,485,0
 "ARCHITECTURE.md § §6.4 Seeds",279,279,0
 "ARCHITECTURE.md § §6.5 Closure channels (per finding id; PARTIAL never closes)",156,156,0
 "ARCHITECTURE.md § §6.6 Deltas — `/check-docs`",173,173,0
 "ARCHITECTURE.md § §6.7 Deltas — `/bug-hunt`",366,366,0
 "ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",300,208,0
 "ARCHITECTURE.md § §7.1 Policy migration map (which consumer sections become wh",290,238,0
-"ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",348,348,0
+"ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",386,386,0
 "ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",1881,1744,0
 "ARCHITECTURE.md § §8 Self-test and versioning",1521,446,0
 "ARCHITECTURE.md § §9 Resolution table",1514,1455,0
@@ -168,12 +168,12 @@ unit,words,longest_paragraph,admonitions
 "Passes.jl :: carry_ledger(cfg) -> Dict",109,77,0
 "Passes.jl :: carry_outstanding(cfg, instrument) -> Vector{Dict}",45,41,0
 "Passes.jl :: class_candidates(cfg, finding; cap = 24) -> Vector{String}",155,113,0
-"Passes.jl :: close(cfg, round; carry = String[], io = stdout) -> Int",333,97,0
+"Passes.jl :: close(cfg, round; carry = String[], io = stdout) -> Int",284,97,0
 "Passes.jl :: finding_files(root, finding) -> Vector{String}",65,34,0
 "Passes.jl :: grade(cfg, round; io = stdout) -> Int",211,98,0
 "Passes.jl :: last_graded(dir, k) -> Int",108,68,0
 "Passes.jl :: pass_budget(cfg, dir, rec, k) -> (used, cap)",146,85,0
-"Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, ful",304,107,0
+"Passes.jl :: pass_open(cfg, round; regrade = false, sweep_ok = false, ful",332,107,0
 "Passes.jl :: pass_scope(cfg, dir, rec, k) -> (scope, prev_open, suspects,",210,84,0
 "Passes.jl :: quote_probe(root, finding) -> Vector{String}",177,104,0
 "Passes.jl :: save_carry(cfg, led)",25,23,0
@@ -205,7 +205,7 @@ unit,words,longest_paragraph,admonitions
 "Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
 "Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0
 "Recall.jl :: per_class(findings, ground_truth) -> Dict{String,Any}",29,25,0
-"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages) -> ",243,97,0
+"Recall.jl :: suspect_hats(findings, ground_truth, roster, site_pages; lan",247,93,0
 "Reflection.jl :: ARGS_THRESHOLD",33,32,0
 "Reflection.jl :: ArgcovHit",58,48,0
 "Reflection.jl :: Docstring",70,59,0
@@ -226,8 +226,9 @@ unit,words,longest_paragraph,admonitions
 "Release.jl :: carry_release_fails(led) -> Vector{String}",100,81,0
 "Release.jl :: cites_round(cfg, tag) -> Bool",131,95,0
 "Release.jl :: release(ver; io = stdout, skip_tests = false) -> Int",178,116,0
-"RoundFiles.jl :: RoundFiles",57,56,0
+"RoundFiles.jl :: RoundFiles",65,64,0
 "RoundFiles.jl :: read_round(dir) -> Union{Dict,Nothing}",25,22,0
+"RoundFiles.jl :: reproductions_sha(rdir) -> String",73,70,0
 "RoundFiles.jl :: round_dirs(cfg) -> Vector{String}",24,21,0
 "RoundFiles.jl :: rounds(cfg) -> Vector{NamedTuple}",25,22,0
 "RoundFiles.jl :: sha256_file(path) -> String",17,14,0
@@ -370,7 +371,7 @@ unit,words,longest_paragraph,admonitions
 "install.md § The pinned version",48,28,0
 "install.md § The shim",101,101,0
 "install.md § [Install](@id install)",53,31,1
-"ledger.md § [The ledger](@id ledger)",164,73,1
+"ledger.md § [The ledger](@id ledger)",210,119,1
 "prose_shape.jl :: prose_units(cfg) -> Dict{String,NamedTuple}",31,28,0
 "prose_shape.jl :: write_prose_shape_baseline(cfg) -> Int",13,10,0
 "rounds.md § Closure channels",142,101,0

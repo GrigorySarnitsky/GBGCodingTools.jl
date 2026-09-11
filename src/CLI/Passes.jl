@@ -213,24 +213,39 @@ function class_candidates(cfg::AbstractDict, finding::AbstractDict; cap::Int = 2
     for row in scan_catalog()
         (row["id"] in ids || row["rule"] in ids) && union!(ids, [String(row["id"]), String(row["rule"])])
     end
-    skipdir = (".git", ".gbg", "build", ".tmp", "node_modules", ".claude")
     out = String[]
-    for (dir, dirs, files) in walkdir(root)
-        filter!(d -> !(d in skipdir), dirs)
-        for f in files
-            endswith(f, ".jl") || endswith(f, ".md") || endswith(f, ".toml") || endswith(f, ".json") || endswith(f, ".js") || continue
-            f == "CHANGELOG.md" && continue                       # history, not a surface the class lives on
-            p = joinpath(dir, f); rel = relpath(p, root)
-            local lines
-            try; lines = readlines(p); catch; continue; end
-            for (n, l) in enumerate(lines)
-                any(id -> occursin(id, l), ids) || continue
-                push!(out, "$rel:$n")
-                length(out) >= cap && return sort!(out)
-            end
+    for rel in candidate_files(root)
+        f = basename(rel)
+        endswith(f, ".jl") || endswith(f, ".md") || endswith(f, ".toml") || endswith(f, ".json") || endswith(f, ".js") || continue
+        f == "CHANGELOG.md" && continue                           # history, not a surface the class lives on
+        local lines
+        try; lines = readlines(joinpath(root, rel)); catch; continue; end
+        for (n, l) in enumerate(lines)
+            any(id -> occursin(id, l), ids) || continue
+            push!(out, "$rel:$n")
+            length(out) >= cap && return sort!(out)
         end
     end
     return sort!(out)
+end
+
+# The files a class can live on: those git would track (`ls-files`), so a gitignored build product —
+# regenerated from its source, never swept by a fix — is never offered to a verifier as a surface to
+# sweep; outside a work tree, every file under the root. Round state and the session's own files are
+# never offered either way. Returns root-relative paths, sorted.
+function candidate_files(root::AbstractString)
+    skip = (".git", ".gbg", "build", ".tmp", "node_modules", ".claude")
+    listed = Git.run(root, "ls-files", "-z", "--cached", "--others", "--exclude-standard")
+    rels = String[]
+    if listed === nothing
+        for (dir, dirs, files) in walkdir(root)
+            filter!(d -> !(d in skip), dirs)
+            append!(rels, [relpath(joinpath(dir, f), root) for f in files])
+        end
+    else
+        append!(rels, String.(split(listed, '\0'; keepempty = false)))
+    end
+    return sort!(filter(r -> !(first(splitpath(r)) in skip), rels))
 end
 
 """
@@ -340,6 +355,15 @@ A finding names where its class lives; a fix that changes one of those files and
 fixed a line, and the verifiers have to spend a whole pass discovering it. Returns each id with the
 files it names that the range left alone, empty when every id was swept.
 """
+# The stamps `pass open --regrade` re-stamps, and whether the tag moved: every stamp that moved, except a
+# `tool_tree_sha` that moved under an unchanged released `tool_version` — the tag itself moving, which
+# `close` refuses as abandon-only; re-stamping it once let refuse, regrade, close pass the round on it.
+function restamped(st::AbstractDict, rec::AbstractDict)
+    moved = [x for x in ("config_sha", "tool_version", "tool_rev", "tool_tree_sha") if st[x] != get(rec, x, nothing)]
+    tag_moved = "tool_tree_sha" in moved && st["tool_version"] == get(rec, "tool_version", nothing) && !startswith(st["tool_version"], "dev")
+    return (tag_moved ? filter(!=("tool_tree_sha"), moved) : moved), tag_moved
+end
+
 function unswept(cfg::AbstractDict, dir::AbstractString, ids::AbstractVector, range::AbstractString)
     root = cfg["root"]
     # the diff is asked for the WHOLE tree: scoping it to the covered paths while the named set is not
@@ -375,13 +399,17 @@ end
 - `io` — where the calls and messages are printed.
 
 A pass after the first verifies only what `Passes.pass_scope` returns, and refuses to open at all
-while an open finding's own named locations are untouched, since a pass spent discovering that a fix
-stopped at the line it quoted is a pass wasted. The act verifier grades the OPEN ids against this fix
+while an open finding's own named locations are untouched by every fix pass since bank, since a pass
+spent discovering that a fix stopped at the line it quoted is a pass wasted.
+
+The act verifier grades the OPEN ids against this fix
 pass's diff; a closed id back in scope is a re-check, read by the blind verifier alone, because the
 question is whether it regressed and its fix is not in this diff. It refuses, too, once the pass budget
 is spent (`pass_budget`): the round then closes by carrying what is still open.
 
-It refuses a changed `config_sha` unless `regrade`; creates `verdicts/pass-<k>/pass.toml` with the
+It refuses a changed `config_sha` unless `regrade`, and a regrade never re-stamps a `tool_tree_sha` that
+moved under an unchanged released `tool_version` — the tag moving, which `close` refuses; it creates
+`verdicts/pass-<k>/pass.toml` with the
 nonce, `head`, `range = <opening head>..HEAD`, the scope, the expected verdict count per lane and the
 stamps; for
 the doc instruments rebuilds under `GBG_ROUND` and regenerates the manuscripts; writes the findings'
@@ -396,7 +424,8 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
     k = rec["passes"] + 1; pd = pass_dir(dir, k); mkpath(joinpath(pd, "act")); mkpath(joinpath(pd, "state"))
     st = Preflight.stamps(cfg; record = rec)
     if regrade
-        moved = [x for x in ("config_sha", "tool_version", "tool_rev", "tool_tree_sha") if st[x] != get(rec, x, nothing)]
+        moved, tag_moved = restamped(st, rec)
+        tag_moved && println(io, "pass open --regrade: the tool's tree hash moved under the same version — the tag moved; not re-stamped, and close will refuse the round as abandon-only")
         for x in moved; rec[x] = st[x]; end
         println(io, "pass open --regrade: re-stamped ", isempty(moved) ? "nothing (the stamps had not moved)" : join(moved, ", "))
     end
@@ -418,9 +447,12 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
     # Never on an audit round: its concerns are disposed and its tree must NOT move, so nothing is ever
     # touched, every concern naming a covered file counts as unswept, and no audit pass could open at all.
     if !sweep_ok && inst != "audit-changes"
-        missed = unswept(cfg, dir, isempty(prev_open) && scope === nothing ? [f["id"] for f in all_findings] : prev_open, fixrange)
+        # every fix pass since bank, not only this one: a location fixed and swept in pass 1 is not
+        # "untouched" at pass 2 (13 ids of 2026-09-10-check-docs-03 needed --sweep-ok for that alone)
+        sincebank = "$(rec["head"])..$head"
+        missed = unswept(cfg, dir, isempty(prev_open) && scope === nothing ? [f["id"] for f in all_findings] : prev_open, sincebank)
         if !isempty(missed)
-            println(io, "pass open: refused — the fix pass over $fixrange left a named location of an open finding untouched:")
+            println(io, "pass open: refused — the fix passes since bank ($sincebank) left a named location of an open finding untouched:")
             for (id, fs) in missed; println(io, "  $id — ", join(fs, ", ")); end
             println(io, "Fix the CLASS at every location the finding names, or re-open with --sweep-ok when the fix rightly lives elsewhere.")
             return 2
@@ -609,7 +641,9 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     k = rec["passes"]; k >= 1 || (println(io, "grade: no pass opened yet — gbg round pass open $round"); return 2)
     pd = pass_dir(dir, k); pass = TOML.parsefile(joinpath(pd, "pass.toml"))
     if !get(pass, "regrade", false) && Preflight.config_sha(cfg) != rec["config_sha"]
-        println(io, "grade: the config changed since the round opened — gbg round pass open $round --regrade"); return 2
+        println(io, "grade: the config stamp moved since the round opened — .gbg/config.toml, .gbg/hats/ or .gbg/exemptions.toml ",
+                "changed, and a new ledger entry moves it too. Pass $k cannot be graded under it: gbg round pass open $round ",
+                "--regrade opens pass $(k + 1), and pass $k's verdicts are set aside ungraded."); return 2
     end
     inst = rec["instrument"]; all_findings = findings_of(dir); ledger = Ledger.read(cfg)
     # A scoped pass verifies the open ids and the closed ones the fix pass touched again; every other
@@ -915,6 +949,29 @@ function dismissal_items(cfg, dir, rec, findings, ledger)
     return items
 end
 
+# `dismissals.json` assembled by the CLI from the auditors' own files, for when the script's final writer
+# did not write it. Each auditor writes its verdict to `vdir`, a directory the item set's sha names, so a
+# file written for another item set is never read; the id is taken from the file name, never from what
+# the model retyped. An item without a valid file is dead. Returns the object, or `nothing` when the
+# directory holds no valid verdict at all.
+function assemble_dismissals(items, vdir::AbstractString, round::AbstractString, sha::AbstractString)
+    isdir(vdir) || return nothing
+    vschema = load_schema("dismissal")["properties"]["verdicts"]["items"]
+    verdicts = Dict{String,Any}[]; dead = String[]
+    for it in items
+        p = joinpath(vdir, replace(it["id"], "/" => "__", "#" => "_") * ".json")
+        raw = isfile(p) ? (try read_json(p) catch; nothing end) : nothing
+        v = raw isa AbstractDict ? Dict{String,Any}(k => raw[k] for k in ("verdict", "evidence", "what_would_bite") if haskey(raw, k)) : nothing
+        v === nothing || (v["id"] = it["id"])
+        v !== nothing && isempty(validate(vschema, v)) ? push!(verdicts, v) : push!(dead, it["id"])
+    end
+    isempty(verdicts) && return nothing
+    tally = Dict{String,Any}(); for v in verdicts; tally[v["verdict"]] = get(tally, v["verdict"], 0) + 1; end
+    reopened = [v["id"] for v in verdicts if v["verdict"] != "DISMISSAL-SOUND"]
+    return Dict{String,Any}("schema_version" => 1, "round" => round, "items_sha" => sha, "tally" => tally, "verdicts" => verdicts,
+                            "reopened" => reopened, "dead" => dead, "complete" => isempty(dead) && isempty(reopened))
+end
+
 function items_file(path, items)
     io = IOBuffer()
     for d in items
@@ -1012,12 +1069,9 @@ Returns 0 when closed, 1 when a condition is unmet — a moved `config_sha` or `
 since a regrade answers those — and 2 for a `tool_tree_sha` that moved under an unchanged
 `tool_version`, which is the tag itself moving.
 
-That last one is meant to leave the round abandon-only, and today it does not: `pass open --regrade`
-re-stamps every moved stamp, `tool_tree_sha` included, so a regrade after the refusal makes `close`
-find the stamps equal and return 0. The round then closes on a moved tag, having recorded the moved
-one. ARCHITECTURE section 11 carries this; the fix — `--regrade` re-stamps `config_sha`, `tool_version`
-and `tool_rev`, never `tool_tree_sha` under an unchanged non-dev `tool_version` — is an instrument
-change and a deferral of 2026-09-10-check-docs-03.
+That last one leaves the round abandon-only: `pass open --regrade` re-stamps `config_sha`,
+`tool_version` and `tool_rev`, and never `tool_tree_sha` under an unchanged non-dev `tool_version`, so
+no regrade can make a moved tag read as unmoved.
 """
 function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector = String[], io::IO = stdout)
     dir, rec = Rounds.guard(cfg, round; io, allow_config_change = true)
@@ -1063,20 +1117,28 @@ function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector =
     dj = joinpath(dir, "dismissals.json")
     if !isempty(items)
         want_sha = bytes2hex(sha256(JSON3.write(items)))
+        vdir = joinpath(dir, "dismissals", first(want_sha, 12))
         # validated, not just read: the script, this gate and dismissal.schema.json disagreed on the file's
         # shape for as long as no round had an adjudication to close (found 2026-09-09)
-        ok = false
-        if isfile(dj)
-            d = try read_json(dj) catch; nothing end
-            errs = d === nothing ? ["unparsable"] : validate(load_schema("dismissal"), d)
-            isempty(errs) || push!(fails, "dismissals.json is invalid: " * first(errs))
-            ok = d !== nothing && isempty(errs) && get(d, "items_sha", "") == want_sha && d["complete"] && isempty(d["reopened"])
+        d = isfile(dj) ? (try read_json(dj) catch; nothing end) : nothing
+        errs = d === nothing ? ["absent or unparsable"] : validate(load_schema("dismissal"), d)
+        if !(isempty(errs) && get(d, "items_sha", "") == want_sha)
+            # the script's own final write is missing, stale or invalid (a classifier blocked it on two of
+            # five runs): the CLI assembles the file from the auditors' own verdict files instead
+            assembled = assemble_dismissals(items, vdir, round, want_sha)
+            if assembled !== nothing
+                write_json(dj, assembled); d = assembled; errs = String[]
+                println(io, "close: dismissals.json assembled from the auditors' own files ($(length(assembled["verdicts"])) of $(length(items)))")
+            end
         end
+        isfile(dj) && !isempty(errs) && errs != ["absent or unparsable"] && push!(fails, "dismissals.json is invalid: " * first(errs))
+        ok = d !== nothing && isempty(errs) && get(d, "items_sha", "") == want_sha && d["complete"] && isempty(d["reopened"])
         if !ok
+            mkpath(vdir)
             payload = joinpath(Preflight.payload_dir(cfg, round), "dismissals"); ip = items_file(joinpath(payload, "items.md"), items)
             a = Dict{String,Any}("schema_version" => 1, "round" => round, "repo" => root, "package" => Preflight.package_block(cfg),
                                  "items" => [Dict("id" => d["id"], "title" => d["title"]) for d in items], "items_path" => ip, "out" => dj,
-                                 "models" => Dict("economy" => Preflight.economy_model()), "items_sha" => want_sha)
+                                 "verdicts_dir" => vdir, "models" => Dict("economy" => Preflight.economy_model()), "items_sha" => want_sha)
             Preflight.save_args(cfg, round, "dismissals", a)
             push!(fails, "the dismissal audit over $(length(items)) dismissal(s)/adjudication(s) has not run (or does not hold) — launch:\n    " *
                          Preflight.workflow_call(joinpath(Preflight.workflow_dir(cfg, round), "dismissals.js"), a) *
@@ -1145,8 +1207,9 @@ function hunt_close_conditions(cfg, dir, rec, findings; io)
     rdir = joinpath(dir, "reproductions")
     reps = isdir(rdir) ? [read_json(joinpath(rdir, f)) for f in readdir(rdir)] : Dict{String,Any}[]
     confirmed = [r for r in reps if r["verdict"] in ("REPRODUCED", "EVIDENCED")]
-    have_sha = isdir(rdir) ? bytes2hex(sha256(join(sort!([read(joinpath(rdir, f), String) for f in readdir(rdir)]), "\n"))) : ""
     # dispositions may change (they are the record of the fix pass), but verdicts, witness shas and ids may not
+    haskey(rec, "reproductions_sha") && RoundFiles.reproductions_sha(rdir) != rec["reproductions_sha"] &&
+        push!(fails, "reproductions/ changed since bank in a field other than a disposition — verdicts, witness shas and ids are frozen there")
     for r in reps
         d = get(r, "disposition", Dict("state" => "open")); s = d["state"]
         r["verdict"] in ("REPRODUCED", "EVIDENCED") || continue

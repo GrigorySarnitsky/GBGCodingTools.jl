@@ -42,6 +42,42 @@ and RULE.CIT.DOI stay `weakness` (a check could exist and none is built; SCAN.DO
 RULE.CIT.FULL_INLINE, not CIT.DOI), and RULE.TEX.IMAGINARY is `panel`. The five RULE.TEST rules a panel
 was said to read — no instrument reads a test suite's construction against them — are `weakness`.
 
+From the instrument changes 2026-09-10-check-docs-03 and 2026-09-11-check-docs-01 deferred, each frozen
+while a round of its instrument ran:
+
+**A pass is refused only for what no fix pass touched.** `pass open`'s unswept refusal compared a
+finding's named locations with this fix pass's diff alone, so a location fixed and verified in pass 1 was
+"untouched" at every later pass; it now reads every fix pass since bank.
+
+**A regrade cannot walk a moved tag.** `pass open --regrade` re-stamped every moved stamp, so refuse,
+regrade, close passed a round on a force-moved tag; it never re-stamps `tool_tree_sha` under an unchanged
+released version (`Passes.restamped`). `grade` says plainly when the config stamp moved and which pass's
+verdicts a regrade sets aside.
+
+**The verifiers' binding fields come from args.** `verify-act.js` and `verify-state.js` stamp
+`pass_nonce` and `graded_sha256` into the scribe's file from their args, logging a lane that returned
+other values; `dismissals.js`, `verify-architecture.js` and `severity-recheck.js` take each id from the
+item, so a paraphrase can no longer read as a dead auditor; `severity-recheck.js` and `attack-design.js`
+require `round`.
+
+**`dismissals.json` no longer rests on one agent.** Each dismissal auditor writes its own verdict under
+`dismissals/<items_sha[1:12]>/`, and `close` assembles the file from them when the script's final write
+is missing or stale.
+
+**What reaches a verifier as settled is the owner's not-a-defect rulings.** A finding-scope ledger entry
+gains `ruling = "not-a-defect" | "scoped"` (default `not-a-defect`); only the first reaches the panel and
+verifier prompts, so an adjudication that closed a real defect no longer tells every later round not to
+flag it. (MAJOR: a new key in the ledger schema's closed set.)
+
+**The class checklist offers only files a fix can reach.** `class_candidates` reads what git would
+track, never a gitignored build product. **A docs lane is SUSPECT on its own files**: `suspect_hats` takes
+each lane's file list, so a lane handed no seed in its files is not flagged for missing one. **The
+doctor passes a disposed hunt round**: `reproductions_sha` hashes the records with their disposition
+removed — the one field recorded after bank — in bank, the doctor and close alike, and close now compares it.
+
+Rates comparable: the unswept, class and SUSPECT changes alter what a round reports about itself, never
+what a lane sees.
+
 The rest is prose: the module map names the round machinery and every module's docstring names its
 exports; Passes binds the act and state verifiers; the skill template says what `/gbg-doctor` runs;
 ARCHITECTURE and IMPLEMENTATION correct `Scan.jl`'s place, the prose-shape file, D18's five audit anchors

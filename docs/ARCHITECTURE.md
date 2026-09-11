@@ -746,7 +746,8 @@ inside `TestHarness.gate()`, so it is regular. The doctor is **read-only**: wher
 `id`, `scope ∈ policy|scan|lint|check|finding|harness`, `target`, `reason ≥ 40 chars`, `recorded`,
 `expires` (REQUIRED for every scope except `finding`; `expires ≤ recorded + 365 d`; expired → FAIL,
 ≤ 30 days → WARN), `overturn_when` (REQUIRED for scope `finding` instead of `expires` — the condition
-under which the adjudication would be wrong), `evidence`, and an optional `[exemption.match]` table on
+under which the adjudication would be wrong), `ruling` (scope `finding` only, `not-a-defect | scoped`,
+default `not-a-defect`), `evidence`, and an optional `[exemption.match]` table on
 the scopes `scan|lint|policy|harness` — ANDed sub-keys `arg_name` (a regex over the argument name),
 `arg_type` (the declared type of the matched argument, tested by `<:`; evaluable by the reflection
 scans only — a text scan refuses an entry carrying it, exit 2 at `CFG.EXEMPTIONS`, never ignores it),
@@ -1572,7 +1573,7 @@ at the tool root, which must work when the dev checkout IS the consumer.
 | reproduction | `REPRODUCED \| EVIDENCED \| NOT-REPRODUCED \| WITNESS-WRONG \| NO-WITNESS-POSSIBLE \| BLOCKED \| ALREADY-COVERED \| NOT-A-DEFECT` | default NOT-REPRODUCED; confirmed = REPRODUCED ∪ EVIDENCED; REPRODUCED ⇒ `witness_path` in the bank-time fail set; EVIDENCED ⇒ `kind = architecture`; ALREADY-COVERED ⇒ `evidence = <file:line of the assertion>`; BLOCKED ⇒ `reason = environment`, assignable only at bank to a witness that ERRORED and was never observed FAILS |
 | candidate `kind` | `runtime \| architecture \| api-semantics` | |
 | disposition record (`reproductions/<id>.json`) | `open \| fixed \| refused(reason ≥ 24 chars) \| escalated(overturn_when)` | `open` is the state bank writes for every confirmed finding before any disposition, and close refuses it; terminator `fixed + refused + escalated == confirmed`; a refutation happens at reproduction and never enters a disposition; the verdict, witness sha and id are frozen at bank (`reproductions_sha`), the disposition being the one field recorded after it; widened from three values to four, which is MAJOR under §5.5 |
-| dismissal audit | `DISMISSAL-SOUND \| UNSAFE \| DISMISSAL-WRONG` | default UNSAFE; `complete = dead == 0 && reopened == []` |
+| dismissal audit | `DISMISSAL-SOUND \| UNSAFE \| DISMISSAL-WRONG` | default UNSAFE; `complete = dead == 0 && reopened == []`; each auditor writes its own verdict under `dismissals/<items_sha[1:12]>/`, and `close` assembles `dismissals.json` from those files when the script's final write is missing or stale |
 | tally `per_id.state` | the state verdicts above, plus `PASS \| FAIL \| BROKEN \| BLOCKED \| REFUSED` | a bug-hunt finding whose witness was re-run records that witness's status, not a verifier's verdict; widened from six values to eleven, which is MAJOR under §5.5 |
 | rule `check` (`policy/RULES.toml`) | `scan:<id> \| doctor:<id> \| test:<path> \| harness:<binding> \| panel \| weakness` | what catches the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`); `panel` only where a running instrument decides it |
 | architecture fix | `FIXED \| RELOCATED \| PARTIAL \| ABSENT \| NOT-A-DEFECT` | default ABSENT |
@@ -1747,8 +1748,10 @@ It replaces `doc-review-adjudicated.md` (scope `finding`, keyed by id — for ro
 the pre-tool adjudication lists are NOT carried over, owner ruling 2026-09-08, and a finding a later
 round raises again is adjudicated afresh), the do-not-re-flag lists in
 `CLAUDE.md`, `field_docs.py`'s `NO_FIELD_LIST` (scope `scan`, target the type), the allocation audit's
-exemption list (scope `harness`), and `CLOSED.md` (replaced by `abandon`). `finding`-scope entries are
-injected into hats as titles only; a closed round's tally is frozen, so nothing ever reopens it — which
+exemption list (scope `harness`), and `CLOSED.md` (replaced by `abandon`). `finding`-scope entries
+ruling `not-a-defect` are injected into hats and verifiers as titles only, as settled; a `scoped` one
+closes a real defect without a fix and is never shown as settled, since 26 such reasons once told every
+later round not to flag defects that were real. A closed round's tally is frozen, so nothing ever reopens it — which
 is why a finding-scope entry carries `overturn_when` (the condition under which the adjudication would
 be wrong, for a reader) and no `expires`. Every other scope's `expires` is bounded by
 `recorded + 365 d`, so a waiver is renewed on purpose or lapses. An entry carrying an
@@ -2136,14 +2139,12 @@ lives at `.gbg/policy/` behind the explicit block (not `.claude/rules/`).
 - ground_truth is on disk after bank; the seeded copy lives outside the repo; a hat that opens it
   leaves a Read in its transcript.
 - Outside-project Workflow scriptPath is unverified until day 1.
-- **The abandon-only rule for a moved tag is walkable.** `gbg round close` returns 2 and says the round
-  is abandon-only when `tool_tree_sha` moved under an unchanged `tool_version` — the tag itself having
-  been force-moved. But `pass open --regrade` re-stamps every moved stamp, `tool_tree_sha` among them,
-  so a regrade after that refusal makes the next `close` find the stamps equal and return 0. The round
-  closes, stamped with the moved tag, and its record says nothing happened. The fix is one line of
-  `pass_open`'s regrade branch — never re-stamp `tool_tree_sha` under an unchanged non-dev
-  `tool_version` — and is a deferral of 2026-09-10-check-docs-03. Until it ships, "a tag is never moved
-  or re-issued" is enforced by the release verb and by discipline, not by the round record.
+- **A moved tag leaves a round abandon-only, and a regrade cannot walk around it.** `gbg round close`
+  returns 2 when `tool_tree_sha` moved under an unchanged `tool_version` — the tag itself force-moved —
+  and `pass open --regrade` never re-stamps `tool_tree_sha` under an unchanged non-dev `tool_version`
+  (`Passes.restamped`), so the refusal stands after any number of regrades. Until 2026-09-11 it
+  re-stamped every moved stamp, and refuse, regrade, close passed a round on the moved tag; the residue
+  now is only what a stamp cannot see, a tag moved before any round opened on it.
 - **A re-checked id rests on one fresh reading.** An id closed in pass *k* and back in scope later is
   kept closed on pass *k*'s act verdict and a fresh blind reading; no act verifier looks at it again. A
   regression the blind verifier misses therefore stays closed — it defaults to `PRESENT`, which makes a

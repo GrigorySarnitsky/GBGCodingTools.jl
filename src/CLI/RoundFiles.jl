@@ -7,12 +7,12 @@
 Readers over `.gbg/rounds/`, the round store: a round is one run of one instrument ([`GBGCodingTools`](@ref) binds the term) over one consumer,
 recorded as a tracked directory there. [`RoundFiles.round_dirs`](@ref) lists the round directories,
 [`RoundFiles.read_round`](@ref) parses a `ROUND.toml`, [`RoundFiles.state`](@ref) classifies a round as
-`:open`, `:closed` or `:abandoned`, and [`RoundFiles.sha256_file`](@ref) hashes a round artefact the way
-the stamps expect.
+`:open`, `:closed` or `:abandoned`, [`RoundFiles.sha256_file`](@ref) hashes a round artefact the way
+the stamps expect, and [`RoundFiles.reproductions_sha`](@ref) freezes a hunt's disposition records at bank.
 """
 module RoundFiles
 
-using TOML, SHA
+using TOML, SHA, JSON3
 using ..GBGCodingTools: load_schema, validate
 
 rounds_dir(cfg::AbstractDict) = joinpath(cfg["root"], ".gbg", "rounds")
@@ -57,6 +57,25 @@ state(round::AbstractDict) = haskey(round, "abandoned") ? :abandoned : haskey(ro
 The lowercase hex sha256 of a file's bytes, the form every `*_sha` stamp records.
 """
 sha256_file(path::AbstractString) = bytes2hex(sha256(read(path)))
+
+"""
+    reproductions_sha(rdir) -> String
+
+The hash that freezes a hunt's disposition records at bank (`reproductions_sha`): every
+`reproductions/<id>.json` with its `disposition` removed and its keys sorted, in file-name order. The
+disposition is the one field recorded after bank (ARCHITECTURE §6.3), so recording one leaves the hash
+where it was, while a changed verdict, witness sha or id moves it. The argument is `rdir`, the round's
+`reproductions/` directory; an absent directory hashes to the empty string.
+"""
+function reproductions_sha(rdir::AbstractString)
+    isdir(rdir) || return ""
+    recs = String[]
+    for f in sort!(readdir(rdir))
+        r = JSON3.read(read(joinpath(rdir, f), String), Dict{String,Any}); delete!(r, "disposition")
+        push!(recs, f * "\n" * join((k * "=" * JSON3.write(r[k]) for k in sort!(collect(keys(r)))), "\n"))
+    end
+    return bytes2hex(sha256(join(recs, "\n\n")))
+end
 
 """
     rounds(cfg) -> Vector{NamedTuple}
