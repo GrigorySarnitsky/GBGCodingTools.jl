@@ -79,6 +79,38 @@ The `[[scan]]` rows of `catalog/scans.toml` in the running copy, in file order. 
 """
 scan_catalog() = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "catalog", "scans.toml"))["scan"]
 
+const RULES_REGISTER = Ref{Any}(nothing)
+
+"""
+    rules_register() -> Vector{Dict}
+
+The `[[rule]]` rows of `policy/RULES.toml` in the running copy, parsed once and held. Returns the rows.
+
+Held rather than re-read because [`apply_ledger`](@ref) asks for them once per scan, and a bare
+`TOML.parsefile` there would put a file read in the hot path of every `gbg scan docs`. One home, too:
+the register was parsed in two places in `Doctor.jl` and nowhere else, and resolving a waiver needed a
+third.
+"""
+function rules_register()
+    RULES_REGISTER[] === nothing &&
+        (RULES_REGISTER[] = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "policy", "RULES.toml"))["rule"])
+    return RULES_REGISTER[]
+end
+
+"""
+    rules_for_scan(id) -> Vector{String}
+
+Every rule `id` enforces: the rules whose `check` array in `policy/RULES.toml` names `scan:<id>`.
+Returns the rule ids, empty when none does.
+
+The catalogue's `rule` column is ONE canonical rule per scan — what the doctor and a `scan`-scope ledger
+entry resolve against — and three scans enforce two apiece (`SCAN.API_PAGE_STRUCTURE`, `SCAN.DEAD_REF`,
+`SCAN.DOI_CROSSCHECK`). `catalog/scans.toml`'s own header says to read the `check` arrays for the full
+list and never that column, which is exactly what this does.
+"""
+rules_for_scan(id::AbstractString) =
+    [String(r["id"]) for r in rules_register() if ("scan:" * id) in String.(get(r, "check", String[]))]
+
 """
     AI_BANNER
 
@@ -341,15 +373,29 @@ Applies the ledger to one scan's hits. The arguments are:
 - `row` — the scan's catalogue row (`id`, `rule`).
 - `hits` — the scan's hits before the ledger.
 
-An entry `scope = "policy"` on the scan's rule with target `*`, or `scope = "scan"` on the scan id
-with target `*` and no `match` table, disables the scan (every hit exempted, `disabled = true`); any
-other live `scan`-scope entry on the id — a target-`*` one carrying `match` among them — drops the
+An entry `scope = "policy"` with target `*` on ANY rule the scan enforces, or `scope = "scan"` on the
+scan id with target `*` and no `match` table, disables the scan (every hit exempted, `disabled = true`);
+any other live `scan`-scope entry on the id — a target-`*` one carrying `match` among them — drops the
 hits it [`Ledger.matches`](@ref). A text scan meets an `arg_type` predicate as an error. Returns the
 kept hits, the exempted count and the flag.
+
+Any rule it enforces, not just the catalogue's canonical column ([`rules_for_scan`](@ref)). Resolving
+the column alone made a documented waiver SILENTLY VOID: a consumer writing `RULE.CIT.DOI`,
+`scope = "policy"`, `target = "*"` had it accepted by `CFG.EXEMPTIONS`, kept by `EXEMPT.STALE` and
+rendered into `deviations.md` by `gbg sync` as a granted deviation, while this function looked only
+under `RULE.CIT.FULL_INLINE` and the DOI half of the hard scan kept failing the gate — on the rule whose
+ONLY declared check is that scan (2026-09-12-check-docs-01 catalogues#1, whose dismissal I wrote and the
+audit's dismissal auditor overturned).
+
+The mirror case is NOT fixed and is a known limit: a waiver on either rule still disables the WHOLE
+scan, so it withdraws enforcement of a sibling rule the consumer never exempted. A `Hit` carries no rule
+id, so the engine cannot drop one rule's hits and keep the other's; doing it properly means teaching
+every scan to attribute its hits.
 """
 function apply_ledger(cfg::AbstractDict, ledger, row, hits::Vector{Hit})
-    id = row["id"]; rule = row["rule"]
-    for e in Ledger.entries(ledger, rule; scope = "policy")
+    id = row["id"]
+    enforced = unique!(vcat(String(row["rule"]), rules_for_scan(id)))
+    for rule in enforced, e in Ledger.entries(ledger, rule; scope = "policy")
         e["target"] == "*" && return (Hit[], length(hits), true)
     end
     scan_entries = Ledger.entries(ledger, id; scope = "scan")

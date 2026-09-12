@@ -163,6 +163,24 @@ end
         led3 = [Dict{String,Any}("id" => "SCAN.REGISTER", "scope" => "scan", "target" => "*", "reason" => "x"^40, "recorded" => Dates.today(), "match" => Dict("arg_type" => "Integer"))]
         @test_throws G.Ledger.LedgerError G.run_scan(cfg, row; ledger = led3)   # a text scan refuses arg_type
     end
+    # A policy waiver is resolved against EVERY rule a scan enforces, not just the catalogue's canonical
+    # column. Resolving the column alone made a documented waiver SILENTLY VOID: RULE.CIT.DOI,
+    # scope = "policy", target = "*" was accepted by CFG.EXEMPTIONS, kept by EXEMPT.STALE and rendered into
+    # deviations.md by `gbg sync` as a granted deviation, while this scan looked only under
+    # RULE.CIT.FULL_INLINE and its DOI half kept failing the gate — on the rule whose ONLY declared check
+    # is this scan (2026-09-12-check-docs-01 catalogues#1, whose dismissal the audit's auditor overturned).
+    # Four assertions, because "disabled" and "had no hits anyway" look identical from the outside.
+    @testset "a policy waiver on any rule a scan enforces disables it" begin
+        @test Set(G.rules_for_scan("SCAN.DOI_CROSSCHECK")) == Set(["RULE.CIT.FULL_INLINE", "RULE.CIT.DOI"])
+        d = defects_config(); row = CATALOG["SCAN.DOI_CROSSCHECK"]
+        @test !isempty(G.run_scan(d, row; ledger = Dict{String,Any}[]).hits)      # it hits at all: not vacuous
+        pol(rule) = [Dict{String,Any}("id" => rule, "scope" => "policy", "target" => "*",
+                                      "reason" => "x"^40, "recorded" => Dates.today())]
+        r = G.run_scan(d, row; ledger = pol("RULE.CIT.DOI"))
+        @test isempty(r.hits) && r.exempted > 0                                   # the waiver that was void
+        @test isempty(G.run_scan(d, row; ledger = pol("RULE.CIT.FULL_INLINE")).hits)   # the column still works
+        @test !isempty(G.run_scan(d, row; ledger = pol("RULE.DOC.NO_DEAD_REFS")).hits) # an unrelated rule waives nothing
+    end
     @testset "the home page never carries the AI banner" begin
         root = fixture_copy("home-banner")
         c = G.Config.read(root)
