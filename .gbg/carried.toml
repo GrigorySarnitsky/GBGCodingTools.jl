@@ -14,6 +14,10 @@ version = "1.0.0-rc.8"
 backlog = 5
 date = "2026-09-11"
 version = "1.0.0-rc.9"
+[[history]]
+backlog = 9
+date = "2026-09-12"
+version = "1.0.0-rc.10"
 
 [[carried]]
 confidence = "high"
@@ -72,72 +76,72 @@ carries = 2
 title = "severity-recheck.js and attack-design.js write A.round without validating it was supplied"
 type = "operational"
 [[carried]]
+confidence = "high"
+locations = ["ext/GBGCodingToolsDocumenterExt.jl:22 — \"gate_or_skip(cfg, what) -> Bool\"", "ext/GBGCodingToolsDocumenterExt.jl:31 — \"function gate_or_skip(cfg, what::AbstractString)\""]
+id = "2026-09-11-check-docs-02/ext#1"
+round = "2026-09-11-check-docs-02"
+description = "RULE.DOC.SIGNATURE_MIRROR requires that an argument typed in the method is typed in the docstring's signature line. The method types `what::AbstractString`, but the docstring's code-block signature shows bare `what`. The sibling docstring in the same file (`check(verb::AbstractString, code::Integer)`, line 14) gets this right, showing the mismatch is a slip rather than a house convention."
 first_carried = "2026-09-12T00:01:36"
 severity = "minor"
 lane = "ext"
-confidence = "high"
 last_carried = "2026-09-12T00:01:36"
-locations = ["ext/GBGCodingToolsDocumenterExt.jl:22 — \"gate_or_skip(cfg, what) -> Bool\"", "ext/GBGCodingToolsDocumenterExt.jl:31 — \"function gate_or_skip(cfg, what::AbstractString)\""]
 instrument = "check-docs"
 carries = 1
-id = "2026-09-11-check-docs-02/ext#1"
 title = "gate_or_skip's printed signature omits the type the method actually declares"
-round = "2026-09-11-check-docs-02"
 type = "structure"
-description = "RULE.DOC.SIGNATURE_MIRROR requires that an argument typed in the method is typed in the docstring's signature line. The method types `what::AbstractString`, but the docstring's code-block signature shows bare `what`. The sibling docstring in the same file (`check(verb::AbstractString, code::Integer)`, line 14) gets this right, showing the mismatch is a slip rather than a house convention."
 [[carried]]
-first_carried = "2026-09-12T00:01:36"
-severity = "major"
-lane = "rulebook"
 confidence = "high"
-last_carried = "2026-09-12T00:01:36"
 locations = ["policy/RULES.toml:432-437 — check = [\"weakness\"]", "src/Scans/doi_crosscheck.jl:1 — \"SCAN.DOI_CROSSCHECK — RULE.CIT.FULL_INLINE, RULE.CIT.DOI.\"", "src/Scans/doi_crosscheck.jl:61-67 — the `require_doi` loop flagging \"a reference without a DOI or Open Library link on its title\"", ".gbg/config.toml:71 — require_doi = true; catalog/scans.toml SCAN.DOI_CROSSCHECK tier = \"hard\""]
-instrument = "check-docs"
-carries = 1
 id = "2026-09-11-check-docs-02/rulebook#1"
-title = "RULE.CIT.DOI's check field says \"weakness\" but a hard-tier scan already enforces it"
 round = "2026-09-11-check-docs-02"
-type = "structure"
 description = "RULE.TEST.RULE_WITH_CHECK defines `weakness` as \"a check is possible and none is built.\" For RULE.CIT.DOI (\"Every reference carries a clickable DOI... identical in every copy\") a check IS built: SCAN.DOI_CROSSCHECK's own header comment names RULE.CIT.DOI as one of the two rules it enforces, and its `require_doi` block (live in this package, tier hard, config flag true) is exactly that enforcement. RULES.toml nonetheless records RULE.CIT.DOI as an unpaid-check weakness — the rulebook misreporting its own coverage, the one thing RULE.TEST.RULE_WITH_CHECK exists to keep honest. Failure scenario: a reader (or `gbgdev rules`/doctor tooling) trusts RULES.toml's `check` column to know what still needs a scan; taking RULE.CIT.DOI at its word, they either build a redundant second check or treat the rule as unenforced and stop trusting SCAN.DOI_CROSSCHECK's DOI-presence hits as authoritative."
-[[carried]]
 first_carried = "2026-09-12T00:01:36"
 severity = "major"
 lane = "rulebook"
-confidence = "medium"
 last_carried = "2026-09-12T00:01:36"
+instrument = "check-docs"
+carries = 1
+title = "RULE.CIT.DOI's check field says \"weakness\" but a hard-tier scan already enforces it"
+type = "structure"
+[[carried]]
+confidence = "medium"
 locations = ["policy/docs-rubric.md:219 — \"`# Arguments` precedes any column-0 admonition, and `# Fields` is last.\"", "policy/docs-rubric.md:47-48 (RULE.DOC.ARGS_FORM) — \"uses the bulleted form led by `The arguments are:`\" (a prose lead-in, never a heading)", "src/Scans/prose_shape.jl:118 — `findfirst(l -> occursin(r\"^# Arguments\\b\", l), lines)`"]
-instrument = "check-docs"
-carries = 1
 id = "2026-09-11-check-docs-02/rulebook#2"
-title = "RULE.DOC.SHAPE's \"`# Arguments` precedes any column-0 admonition\" clause names a heading form no other rule in this package's rubric ever produces"
 round = "2026-09-11-check-docs-02"
-type = "structure"
 description = "docs-rubric.md's only rule governing how a docstring's arguments are documented, RULE.DOC.ARGS_FORM, mandates the prose lead-in `The arguments are:` and never a `# Arguments` Markdown heading; this package's own docstrings confirm it (0 uses of a `# Arguments` heading vs 30 uses of `The arguments are:`). Yet RULE.DOC.SHAPE's ordering clause, and the scan enforcing it, test specifically for a `# Arguments` heading — a structural element no other rule in this file ever sanctions the corpus to produce. (docs/ARCHITECTURE.md shows this heading is a different fleet consumer's (IT's) argument-doc style, so the clause is a deliberate cross-consumer accommodation, but that provenance is not disclosed anywhere in the rendered docs-rubric.md itself.) Failure scenario: a reader of docs-rubric.md in isolation — exactly how it is meant to be read, rendered whole into every consumer's session — hits this clause with no antecedent, and either concludes the rulebook is self-contradictory (ARGS_FORM bans the heading it implies) or hunts for a heading form that, for this package, never legitimately exists."
-[[carried]]
 first_carried = "2026-09-12T00:01:36"
-severity = "minor"
-lane = "workflow-scripts"
+severity = "major"
+lane = "rulebook"
+last_carried = "2026-09-12T00:01:36"
+instrument = "check-docs"
+carries = 1
+title = "RULE.DOC.SHAPE's \"`# Arguments` precedes any column-0 admonition\" clause names a heading form no other rule in this package's rubric ever produces"
+type = "structure"
+[[carried]]
 confidence = "high"
-last_carried = "2026-09-12T00:01:36"
 locations = ["instruments/check-consistency/workflow/verify-act.js:21 (`const MODE = A.mode === 'batches' ? 'batches' : 'lanes'`)", "instruments/check-consistency/workflow/verify-act.js:99-121 (the whole `if (MODE === 'batches') {...}` block, including its own coverage-gap validation of a `batches` array)", "src/CLI/Passes.jl:542 (`act = merge(base, Dict(\"range\" => fixrange, \"mode\" => \"lanes\", ...`) — the ONLY call site in the codebase that builds args for verify-act.js, and it always hard-codes `\"mode\" => \"lanes\"`, never `batches`"]
-instrument = "check-docs"
-carries = 1
 id = "2026-09-11-check-docs-02/workflow-scripts#1"
-title = "verify-act.js's `mode: 'batches'` branch is dead code — no caller ever sets it"
 round = "2026-09-11-check-docs-02"
-type = "structure"
 description = "verify-act.js declares and carefully validates a second operating mode (`mode: 'batches'`, with its own gap/overlap/duplicate-coverage checks over an `A.batches` array of [from,to] ranges), but grepping the whole Julia source and test suite shows exactly one call site ever constructs this script's args (Passes.jl:542), and it always passes `mode: 'lanes'` and never supplies a `batches` array; no test in test/rounds.jl, test/coverage.jl or test/schemas.jl exercises `mode: 'batches'` either. The batches branch, including its coverage-gap detection, is unreachable in the shipped tool: a bug there would never be caught by anything that runs, and the header comment tells a reader a capability exists that the CLI never uses."
-[[carried]]
 first_carried = "2026-09-12T00:01:36"
 severity = "minor"
 lane = "workflow-scripts"
-confidence = "medium"
 last_carried = "2026-09-12T00:01:36"
-locations = ["instruments/bug-hunt/workflow/dismissals.js:21 (`if (!A.items.length) throw ...`)", "instruments/check-consistency/workflow/severity-recheck.js:17 (`if (!A.items.length) throw ...`)", "instruments/check-consistency/workflow/rubric-audit.js:16 (`if (!A.hats.length || !A.items.length) throw ...`)", "instruments/bug-hunt/workflow/verify-architecture.js:18 (`if (!A.findings.length) throw ...`)", "instruments/check-docs/workflow/lanes.js (no such guard on `A.lanes`)", "instruments/check-consistency/workflow/panel.js (no such guard on `A.hats`)", "instruments/bug-hunt/workflow/hunt.js (no such guard on `A.lanes`)", "instruments/audit-changes/workflow/audit.js (no such guard on `A.lanes`)", "instruments/check-consistency/workflow/verify-state.js (no such guard on `A.lanes`/`A.findings`)", "instruments/check-consistency/workflow/verify-act.js (no such guard in the default `mode: 'lanes'` path)"]
 instrument = "check-docs"
 carries = 1
-id = "2026-09-11-check-docs-02/workflow-scripts#2"
-title = "Inconsistent 'refuse on an empty item list' guard across the eleven scripts"
-round = "2026-09-11-check-docs-02"
+title = "verify-act.js's `mode: 'batches'` branch is dead code — no caller ever sets it"
 type = "structure"
+[[carried]]
+confidence = "medium"
+locations = ["instruments/bug-hunt/workflow/dismissals.js:21 (`if (!A.items.length) throw ...`)", "instruments/check-consistency/workflow/severity-recheck.js:17 (`if (!A.items.length) throw ...`)", "instruments/check-consistency/workflow/rubric-audit.js:16 (`if (!A.hats.length || !A.items.length) throw ...`)", "instruments/bug-hunt/workflow/verify-architecture.js:18 (`if (!A.findings.length) throw ...`)", "instruments/check-docs/workflow/lanes.js (no such guard on `A.lanes`)", "instruments/check-consistency/workflow/panel.js (no such guard on `A.hats`)", "instruments/bug-hunt/workflow/hunt.js (no such guard on `A.lanes`)", "instruments/audit-changes/workflow/audit.js (no such guard on `A.lanes`)", "instruments/check-consistency/workflow/verify-state.js (no such guard on `A.lanes`/`A.findings`)", "instruments/check-consistency/workflow/verify-act.js (no such guard in the default `mode: 'lanes'` path)"]
+id = "2026-09-11-check-docs-02/workflow-scripts#2"
+round = "2026-09-11-check-docs-02"
 description = "Four of the eleven scripts explicitly refuse to run when their driving item list is empty, each echoing RULE.TEST.MISSING_IS_FAILING ('a zero count is a dead lane rather than a clean one'). The other seven — including the three main per-instrument entry points lanes.js, panel.js, hunt.js and audit.js — have no equivalent guard on their own `A.lanes`/`A.hats` array: invoked with an empty roster, each would iterate zero times and return a quiet `{written: [], dead: [], empty: [], truncated: []}`, indistinguishable from 'nothing to check' rather than a loud failure. Under the current CLI (Preflight's lane/hat resolution) this looks unreachable in practice, so it is reported as a design-consistency gap, not a demonstrated failure."
+first_carried = "2026-09-12T00:01:36"
+severity = "minor"
+lane = "workflow-scripts"
+last_carried = "2026-09-12T00:01:36"
+instrument = "check-docs"
+carries = 1
+title = "Inconsistent 'refuse on an empty item list' guard across the eleven scripts"
+type = "structure"
