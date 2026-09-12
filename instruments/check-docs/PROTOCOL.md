@@ -16,8 +16,9 @@ claims of each docstring against its body, which no other instrument holds toget
 The deterministic half runs first, in the CLI; the judgment half is a fan-out of lanes, one per surface
 plus three cross-cutting lanes (`one-home`, `cold-reader`, `operational-claims`). A rationale surface
 that is one document is cut into `rationale_lanes` slices on its own headings, the first keeping the key
-`rationale`. Every surface lane is handed a computed CLAIM CHECKLIST — each cited number and each
-exit-code claim on its own surface — and owes a verdict per item in `claims_checked[]`. A lane reports
+`rationale`. Every surface lane is handed a computed CLAIM CHECKLIST — each cited number, each
+exit-code claim and each quantifier claim on its own surface — and owes a verdict per item in
+`claims_checked[]`. A lane reports
 CLASSES, never sites: a recurring defect is ONE finding whose `locations` name every site, and
 `finding_cap` bounds those findings, so a class with forty sites costs one. The lanes run at economy by
 default; the fix pass is never economised.

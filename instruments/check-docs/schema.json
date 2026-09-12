@@ -57,7 +57,7 @@
               },
               "claims_path": {
                 "type": "string",
-                "description": "an absolute path under the round's scratch, written by preflight: this lane's computed claim checklist, every cited number and exit-code claim found on its own surface. Absent when the surface yielded none, which is why it is not required"
+                "description": "an absolute path under the round's scratch, written by preflight: this lane's computed claim checklist, every cited number, exit-code claim and quantifier claim found on its own surface. Absent when the surface yielded none, which is why it is not required"
               }
             },
             "type": "object"
