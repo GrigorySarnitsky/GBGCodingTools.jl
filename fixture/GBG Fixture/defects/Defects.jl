@@ -334,4 +334,20 @@ The double [`twice`](@ref) of a field, and again [`twice`](@ref). The argument `
 """
 double_link(u) = u
 
+"""
+    dead_rule_id(u)
+
+The rule behind this one is `RULE.DOC.NOSUCHRULE`, which no rulebook holds. The argument `u` is the field.
+"""
+dead_rule_id(u) = u
+
+"""
+    live_rule_id(u)
+
+The rule behind this one is `RULE.DOC.CURRENT`, which the rulebook does hold, and the family `RULE.DOC`
+names no single rule: both are controls for the dead id above, since a scan that hits every citation
+alike is not a check. The argument `u` is the field.
+"""
+live_rule_id(u) = u
+
 end # module FixtureDefects

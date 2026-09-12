@@ -147,7 +147,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.CURRENT"
 statement = "No stale claim; a summary naming a subset of what the code provides is stale; retired phrasings are listed per package (docs.retired_claims)."
 sentinel = "Every claim matches the code's present state, and a summary that names only a subset of what the code now provides is stale even if every sentence is literally true."
-check = ["scan:SCAN.RETIRED_CLAIMS"]
+check = ["scan:SCAN.RETIRED_CLAIMS", "scan:SCAN.ID_RESOLVES"]
 [[rule]]
 id = "RULE.DOC.CLASS_SWEEP"
 file = "docs-rubric.md"

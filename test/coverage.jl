@@ -50,6 +50,24 @@ end
     @test occursin("label: `bank:", read(joinpath(TOOL, "instruments", "bug-hunt", "workflow", "hunt.js"), String))
 end
 
+# A lane is told what to report by three files that must agree: the catalogue brief (the procedure), the
+# script (the schema the agent is held to) and the instrument schema (what bank will accept). Changing one
+# alone leaves the lane instructed to return something the next stage refuses, which is silent until a round
+# is paid for.
+@testset "the brief, the script and the schema agree about classes and claims" begin
+    brief = read(joinpath(TOOL, "catalog", "lanes", "check-docs.toml"), String)
+    @test occursin("ONE DEFECT PER CLASS", brief)                        # classes, not sites
+    @test occursin("{lane.cap}", brief)                                  # the budget is a slot, not a literal
+    @test occursin("START WITH YOUR CLAIM CHECKLIST", brief)
+    @test occursin("key = \"one-home\"", brief) && !occursin("key = \"family\"", brief)
+    lanes = read(joinpath(TOOL, "instruments", "check-docs", "workflow", "lanes.js"), String)
+    @test occursin("claims_checked", lanes) && occursin("l.claims_path", lanes)
+    schema = read(joinpath(TOOL, "instruments", "check-docs", "schema.json"), String)
+    @test occursin("claims_checked", schema) && occursin("claims_path", schema)
+    # the cap reaches the brief only through substitute's slot pattern, which had no `lane.` prefix before
+    @test occursin("lane\\.[a-z_]+", read(joinpath(TOOL, "src", "CLI", "Preflight.jl"), String))
+end
+
 @testset "every doctor check runs without crashing" begin
     root = fixture_copy("doctor-all")
     cfg = G.Config.read(root)

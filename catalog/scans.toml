@@ -348,3 +348,11 @@ tier = "triage"
 surfaces = ["src"]
 runner = "julia"
 fixture = ["double-link"]
+
+[[scan]]
+id = "SCAN.ID_RESOLVES"
+rule = "RULE.DOC.CURRENT"
+tier = "triage"
+surfaces = ["all", "data"]
+runner = "julia"
+fixture = ["dead-rule-id"]

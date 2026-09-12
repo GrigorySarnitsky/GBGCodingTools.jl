@@ -118,6 +118,23 @@ end
         names_hits = G.run_scan(defects_config(), CATALOG["SCAN.SIGNATURE_TYPED"]; ledger = Dict{String,Any}[]).hits
         @test Set(h.text for h in names_hits) != Set(h.text for h in r.hits)
     end
+    # SCAN.ID_RESOLVES. Its three false-positive shapes were MEASURED over the tool's own corpus before it
+    # was built (964 references, 11 unresolved, all 11 artefacts), and each is a direction here: a dead id
+    # is the hit, a LIVE id is not, and a bare family PREFIX is not. RULE.TEST.BOTH_DIRECTIONS — a scan
+    # hitting every citation alike would pass the must-hit and be worthless.
+    @testset "a dead tool id, and the live id and family prefix that are not" begin
+        r = G.run_scan(cfg, CATALOG["SCAN.ID_RESOLVES"]; ledger = Dict{String,Any}[])
+        @test r.population > 0
+        @test any(h -> occursin("RULE.DOC.NOSUCHRULE", h.text), r.hits)
+        @test !any(h -> occursin("`RULE.DOC.CURRENT` resolves", h.text), r.hits)   # a rule that exists
+        @test !any(h -> occursin("`RULE.DOC` resolves", h.text), r.hits)           # a family, not an id
+        # The clean direction is the TOOL's own corpus, which cites its registers constantly: every id in it
+        # resolves, so the scan is silent. This is the assertion that fails when a rule or check is renamed
+        # and the prose citing it is not, which is the whole reason the scan exists.
+        rt = G.run_scan(G.Config.read(TOOL), CATALOG["SCAN.ID_RESOLVES"]; ledger = Dict{String,Any}[])
+        @test rt.population > 0
+        @test isempty(rt.hits)
+    end
     @testset "the clean fixture passes every hard scan" begin
         results, code = G.scan_docs(G.Config.read(FIXTURE); hard_only = true, io = devnull)
         @test code == 0

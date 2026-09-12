@@ -54,6 +54,10 @@
               "brief_path": {
                 "type": "string",
                 "description": "an absolute path under the round's scratch (.gbg/scratch/<round>/workflow/payload/), written by preflight; the agent may Read it and nothing else under .gbg/"
+              },
+              "claims_path": {
+                "type": "string",
+                "description": "an absolute path under the round's scratch, written by preflight: this lane's computed claim checklist, every cited number and exit-code claim found on its own surface. Absent when the surface yielded none, which is why it is not required"
               }
             },
             "type": "object"
@@ -162,7 +166,39 @@
         },
         "candidates_found": {
           "minimum": 0,
-          "type": "integer"
+          "type": "integer",
+          "description": "the distinct CLASSES weighed before the finding budget bound the lane, never the number of sites"
+        },
+        "claims_checked": {
+          "type": "array",
+          "description": "one entry per item of this lane's claim checklist; absent when preflight gave it none, and an item left out reads as an item not checked",
+          "items": {
+            "additionalProperties": false,
+            "required": [
+              "claim",
+              "verdict",
+              "evidence"
+            ],
+            "properties": {
+              "claim": {
+                "type": "string",
+                "description": "the checklist item verbatim, its file and line included"
+              },
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "TRUE",
+                  "FALSE",
+                  "UNVERIFIABLE"
+                ]
+              },
+              "evidence": {
+                "type": "string",
+                "description": "what settled it: the line of code, the register, or the measurement"
+              }
+            },
+            "type": "object"
+          }
         },
         "lane": {
           "pattern": "^[a-z0-9][a-z0-9-]*$",

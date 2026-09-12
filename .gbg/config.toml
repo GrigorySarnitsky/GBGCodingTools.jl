@@ -137,6 +137,15 @@ enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
 
     [instruments.check-docs]
     argcov_policy = "gate"
+    # A lane reports CLASSES, so the cap bounds distinct defects and not the sites they name: 20 is the
+    # budget at which a lane's output stays readable and its ranking still means something, and under the
+    # class rule a lane reaches it only by finding twenty different defects. `candidates_found` records
+    # what it weighed, so a cap that ever binds is visible as TRUNCATED at bank rather than silent.
+    finding_cap = 20
+    # docs/ARCHITECTURE.md is ~2700 lines: one lane over all of it reads none of it closely, and the round
+    # of 2026-09-11 returned two majors from it while its seeded defects went unfound. Three slices, cut on
+    # the document's own `## ` headings; the first keeps the key `rationale`, which the carried findings name.
+    rationale_lanes = 3
     # The lanes are seeded like the hats: the catalogue is planted into a disposable copy of the lane
     # surfaces, so a lane that reports nothing on a surface carrying a planted defect is SUSPECT and
     # recall per class is a number rather than a hope. The tree itself is never mutated. All six classes
@@ -168,6 +177,13 @@ enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
         key = "schemas"
         files = ["schema", "instruments/check-docs/schema.json", "instruments/check-consistency/schema.json", "instruments/bug-hunt/schema.json", "instruments/audit-changes/schema.json"]
         brief = "the schemas every artefact is validated against. For each: is it within the validator's documented keyword subset (src/CLI/Schema.jl states it); is every `$ref` local; is it loaded by any code path at all, or is it dead; does it describe the artefact that is actually written, field for field"
+        # The prose no lane read. Measured 2026-09-12 against every surface and every lane: these files sit
+        # in none of them, and the four PROTOCOL.md are the instruments' own specifications — the text the
+        # CLI and the scripts are supposed to obey.
+        [[instruments.check-docs.lanes_extra]]
+        key = "ambient"
+        files = ["CLAUDE.md", "README.md", "instruments/*/PROTOCOL.md", "docs/make.jl", "install.sh"]
+        brief = "the prose that governs this package and that no other lane reads: the session contract (CLAUDE.md), the repository's front door (README.md), the four instrument PROTOCOL.md files, the docs build (docs/make.jl, whose page titles and section blurbs are prose no page file holds) and the installer. Read each against what the code actually DOES, `src/` being ground truth: does a PROTOCOL step name a verb that exists, and describe what that verb really does with the exit codes it really returns; does CLAUDE.md state a rule the rulebook does not, or contradict one it does; does README describe the tool as shipped rather than as planned; does make.jl's page text match the pages it builds. CHANGELOG.md and IMPLEMENTATION.md are deliberately NOT your surface: both are append-only records of what was once true, and judging them against the present state would report history as staleness"
 
 [cost]
 default = "economy"

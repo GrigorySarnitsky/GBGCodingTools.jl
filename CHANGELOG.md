@@ -35,6 +35,40 @@ fails `BUILD.DOCS` in every consumer.
 (2026-09-11-check-docs-02's `ext#4`, `gate_problems`); now tested. A round's own build runs through
 `gbg round build` and CI sets `CI`, so neither meets it.
 
+**The check-docs lane set, rebuilt — and one option dropped because it was measured first.** The round of
+2026-09-11 returned 0/6 seeded recall with five lanes SUSPECT, and the design attack named eighteen gaps.
+Five changes follow, and a sixth was refused by its own measurement. A lane now reports CLASSES, never
+sites: a recurring defect is ONE finding whose `locations` name every site, which is `RULE.DOC.CLASS_SWEEP`
+applied where the finding is WRITTEN rather than only where it is fixed — the rulebook always said it and
+the lane brief never did, so a class split across five findings spent five of the budget and let a sweep
+close four while the fifth survived. `finding_cap` (20) is now a config value reaching the brief as a slot,
+and it bounds findings, so a class with forty sites costs one. `rationale_lanes` (3 here) cuts a
+single-document rationale surface on its own `## ` headings, the first slice keeping the key `rationale` so
+a carried finding still names a lane the round runs. `one-home` replaces `family`, which enumerated f/f!
+pairs this package does not have and returned nothing: it works claim-outward — pick a claim, search for
+its other homes — because a second home in a file the lane never opened is exactly what a per-surface lane
+cannot see. A new `ambient` lane reads the prose that no lane read, measured file by file against every
+surface and every lane: `CLAUDE.md`, `README.md`, the four instrument `PROTOCOL.md` — the instruments' own
+specifications — `docs/make.jl` and `install.sh`; `CHANGELOG.md` and `IMPLEMENTATION.md` are deliberately
+excluded, being append-only records whose past truth would read as staleness. A glob in `lanes_extra.files`
+is now expanded, so a refinement written as a pattern both reaches its lane as real paths and is subtracted
+from the engine's lanes, which it silently was not before.
+
+**Each lane is handed a computed claim checklist, and only one mechanical class became a scan.** Three
+classes were proposed for the deterministic half; all three were measured over this package's own surfaces
+before any was built, and one survived. `SCAN.ID_RESOLVES` (triage, `RULE.DOC.CURRENT`) is it: a
+`RULE.`/`SCAN.`/doctor id in prose that resolves to no row of the running copy's registers, so an id
+renamed in the tool lights up every consumer sentence still citing the old one — 964 references here, 11
+unresolved, all 11 artefacts of the pattern, which is why a family prefix, a wildcard stem and the
+`history_exempt` section are not hits. The other two were refused: a cited COUNT names a contextual subset
+rather than an inventory in 17 of 24 in-surface cases ("two rules", "three verbs"), with no lexical signal
+separating the readings, so that scan would have shipped 17 false positives and no true one; and an
+unresolved PATH is usually a consumer's file the rationale describes on purpose, 143 of 1705. Both now
+reach the lane as a computed CHECKLIST instead (`claims/<key>.md`, `claims_path` in args): every cited
+number and exit-code claim on that lane's own surface, each discharged in `claims_checked[]` with a verdict
+and the evidence that settled it. A claim that reads as true and is checked by nothing is the class these
+rounds kept returning; enumerating it is what turns reading into a procedure.
+
 **A verification pass batches its lanes.** Each verifier ran one agent per lane, and every act agent read
 the whole fix-pass diff: in 2026-09-11-check-docs-02's first pass that was 255KB bought nine times, about
 half of the pass's 1.17M tokens. Lanes are now grouped into units of at most six findings (`batch` in the

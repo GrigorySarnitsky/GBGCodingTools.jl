@@ -215,8 +215,8 @@ end
 
 Fills the catalogue placeholders in `text` from `cfg`: `{package.name}`, `{package.description}`,
 `{package.domain}`, `{package.terms}`, `{package.deliberate_absences}`, `{package.rulebook_sections}`,
-`{policy.<file>}`, `{audit.guard_symbols}`, `{audit.invariants}`, `{hunt.entry_point}`, and any key of
-`extra`. The arguments are:
+`{policy.<file>}`, `{audit.guard_symbols}`, `{audit.invariants}`, `{hunt.entry_point}`, `{lane.<name>}`
+(a per-lane value the resolver passes, never a config key), and any key of `extra`. The arguments are:
 
 - `text` — the persona or brief.
 - `cfg` — the validated config.
@@ -236,7 +236,7 @@ function substitute(text::AbstractString, cfg::AbstractDict; extra = Dict{String
         "audit.invariants" => haskey(cfg["instruments"]["audit-changes"], "invariants_section") ? section_text(root, cfg["instruments"]["audit-changes"]["invariants_section"]) : "(no invariants section recorded)",
         "hunt.entry_point" => "src/$(pk["name"]).jl")
     merge!(vals, extra)
-    return String(replace(text, r"\{(package\.[a-z_]+|policy\.[a-z0-9-]+|audit\.[a-z_]+|hunt\.[a-z_]+)\}" => function (m)
+    return String(replace(text, r"\{(package\.[a-z_]+|policy\.[a-z0-9-]+|audit\.[a-z_]+|hunt\.[a-z_]+|lane\.[a-z_]+)\}" => function (m)
         key = m[2:end-1]
         haskey(vals, key) && return vals[key]
         if startswith(key, "policy.")
@@ -313,6 +313,103 @@ end
 
 lane_catalog(instrument) = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "catalog", "lanes", instrument * ".toml"))
 
+# A cited COUNT ("the four closure channels", "eighteen schemas") and an EXIT-CODE claim ("refuses, exit
+# 2"). Both read as true and are checked by nothing: the count was right when it was written, the exit code
+# was the verb's before a branch moved. They are the two mechanical classes that did NOT survive being
+# measured as scans (see src/Scans/id_resolves.jl for the measurement and the third class, which did), so
+# they are handed to the lane as an enumerated checklist instead of being guessed at on a read-through.
+const CLAIM_NUMBER = r"\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|hundred)[\s-]+[a-z]{3,}s\b"i
+const CLAIM_EXIT = r"\bexits?\s+(?:with\s+)?(?:code\s+)?[0-3]\b|\bexit\s+code\s+[0-3]\b"i
+const CLAIM_TEXT = (".jl", ".md", ".toml", ".json", ".js", ".tmpl", ".sh", ".csv", ".seed", ".snippet", ".block", ".skeleton")
+
+# A lane's `files` may name a directory (`catalog`, `policy`) or a build tree; the checklist is over the
+# text files under them. A very large file is skipped rather than truncated: the checklist is a floor under
+# the lane's reading, and a silently halved one would read as a complete list.
+function checklist_files(root::AbstractString, files)
+    out = String[]
+    for f in files
+        p = joinpath(root, f)
+        if isdir(p)
+            for (r, _, fs) in walkdir(p), fn in fs
+                q = joinpath(r, fn)
+                any(e -> endswith(fn, e), CLAIM_TEXT) && filesize(q) <= 524288 && push!(out, relpath(q, root))
+            end
+        elseif isfile(p) && any(e -> endswith(f, e), CLAIM_TEXT) && filesize(p) <= 524288
+            push!(out, String(f))
+        end
+    end
+    return unique!(out)
+end
+
+"""
+    claim_checklist(cfg, files; range = nothing) -> Vector{String}
+
+The mechanical floor under one check-docs lane: every cited NUMBER and every EXIT-CODE claim found on
+`files`, one Markdown bullet each, tagged `count` or `exit` and carrying the file, the line and the line's
+text. The arguments are:
+
+- `cfg` — the validated config.
+- `files` — the lane's own surface.
+- `range` — a `(first, last)` line range, for a lane holding a SLICE of one document: only the claims
+  inside it are the lane's. Without it a slice lane would be handed the whole document's checklist, which
+  is the payload the slicing exists to divide.
+
+The lane discharges each item in `claims_checked[]` with a verdict and its evidence, which is what turns a
+claim that reads as true into a claim someone measured. Returns the bullets, empty when the surface
+carries none — a lane with an empty checklist is given no checklist file at all.
+"""
+function claim_checklist(cfg::AbstractDict, files; range = nothing)
+    root = cfg["root"]; out = String[]
+    for f in checklist_files(root, files)
+        lines = try readlines(joinpath(root, f)) catch; continue end
+        for (n, l) in enumerate(lines)
+            range === nothing || (first(range) <= n <= last(range)) || continue
+            s = strip(l)
+            (isempty(s) || length(s) > 400) && continue
+            ex = occursin(CLAIM_EXIT, s)
+            (ex || occursin(CLAIM_NUMBER, s)) || continue
+            push!(out, "- [" * (ex ? "exit" : "count") * "] `$f:$n` — " * first(s, 220))
+        end
+    end
+    return out
+end
+
+"""
+    rationale_slices(cfg, file, n) -> Vector{Tuple{Int,Int,String}}
+
+`file` cut into `n` contiguous slices on its own top-level (`## `) headings, balanced by line count, as
+`(first_line, last_line, heading_range)`. The arguments are `cfg`, the validated config; `file`, the
+rationale document; and `n`, the number of slices.
+
+One design document of several thousand lines is one lane's surface only in name: the lane that must hold
+all of it holds none of it closely. Cutting on headings rather than on line counts alone keeps a slice a
+readable unit, and the first slice keeps the lane key `rationale`, so a finding carried from an earlier
+round still names a lane this round runs. Returns one slice when `n` is 1 or the document has too few
+headings to cut.
+"""
+function rationale_slices(cfg::AbstractDict, file::AbstractString, n::Integer)
+    lines = readlines(joinpath(cfg["root"], file)); total = length(lines)
+    idx = [i for (i, l) in enumerate(lines) if startswith(l, "## ")]
+    (n <= 1 || length(idx) < n) && return [(1, total, "the whole document")]
+    idx[1] == 1 || pushfirst!(idx, 1)
+    secs = [(idx[k], k == length(idx) ? total : idx[k + 1] - 1, strip(replace(lines[idx[k]], r"^#+\s*" => ""))) for k in eachindex(idx)]
+    out = Tuple{Int,Int,String}[]; i = 1
+    for k in 1:n
+        i > length(secs) && break
+        j = i
+        if k == n
+            j = length(secs)
+        else
+            target = round(Int, total * k / n)
+            while j < length(secs) && secs[j][2] < target; j += 1; end
+        end
+        title = i == j ? secs[i][3] : secs[i][3] * " … " * secs[j][3]
+        push!(out, (secs[i][1], secs[j][2], title))
+        i = j + 1
+    end
+    return out
+end
+
 """
     resolve_checkdocs_lanes(cfg) -> Vector{Dict}
 
@@ -320,27 +417,50 @@ The check-docs lanes, a lane being one agent's share of the round — here one s
 with the brief for reading it. One surface lane per non-empty surface key (`rationale`, `pages`, `src`,
 `ext`, `literate`, `built-html`) carrying the catalogue's surface brief and its files, refined by
 `lanes_extra` (a file named there leaves the engine's lane and joins the extra lane), then the
-catalogue's cross lanes (`family`, `cold-reader`, `operational-claims`). Returns the list.
+catalogue's cross lanes (`one-home`, `cold-reader`, `operational-claims`).
+
+Two config values shape the roster rather than the briefs. `rationale_lanes` cuts the rationale surface
+into that many lanes by [`rationale_slices`](@ref), the first keeping the key `rationale`; the rest are
+`rationale-2`, `rationale-3`, and so on. `finding_cap` fills the surface brief's `{lane.cap}`: it bounds
+a lane's FINDINGS, which are classes, never the sites a class names.
+
+A glob in `lanes_extra.files` is expanded here, so a refinement written as `instruments/*/PROTOCOL.md`
+both reaches its lane as real paths and is subtracted from the engine's lanes. Returns the list.
 """
 function resolve_checkdocs_lanes(cfg::AbstractDict)
     cat = lane_catalog("check-docs"); sb = cat["surface"]
-    extra = cfg["instruments"]["check-docs"]["lanes_extra"]
-    taken = Set(f for e in extra for f in e["files"])
+    cd = cfg["instruments"]["check-docs"]
+    extra = cd["lanes_extra"]
+    cap = string(get(cd, "finding_cap", 20))
+    brief(text) = substitute(text, cfg; extra = Dict("lane.cap" => cap))
+    # a glob reaches the lane as the files it names; `taken` then subtracts the same strings the engine's
+    # own surfaces hold, which a raw glob never matched
+    expand(fs) = unique!(reduce(vcat, (isempty(Config.glob_files(cfg["root"], String(g))) ? [String(g)] : Config.glob_files(cfg["root"], String(g)) for g in fs); init = String[]))
+    extra_files = Dict(e["key"] => expand(e["files"]) for e in extra)
+    taken = Set(f for fs in values(extra_files) for f in fs)
     out = Dict{String,Any}[]
     for key in ("rationale", "pages", "src", "ext", "literate")
         files = filter(f -> !(f in taken), Config.surface_files(cfg, key))
         isempty(files) && continue
+        if key == "rationale" && length(files) == 1 && get(cd, "rationale_lanes", 1) > 1
+            slices = rationale_slices(cfg, first(files), get(cd, "rationale_lanes", 1))
+            for (k, (a, b, title)) in enumerate(slices)
+                push!(out, Dict("key" => k == 1 ? "rationale" : "rationale-$k", "kind" => "surface", "anchor" => sb["anchor"], "files" => files, "lines" => (a, b),
+                                "brief" => brief(sb["brief"]) * "\n\nYOUR SURFACE IS ONE SLICE of `$(first(files))`: LINES $(a)–$(b), which are $title. Read exactly that range (`Read` with an offset and a limit) and audit only it. The rest of the document belongs to the sibling `rationale` lanes of this same round and is theirs to report — but you may READ outside your slice whenever your own sections depend on it, since a claim is judged against the whole document."))
+            end
+            continue
+        end
         push!(out, Dict("key" => key, "kind" => "surface", "anchor" => sb["anchor"], "files" => files,
-                        "brief" => substitute(sb["brief"], cfg) * "\n\nYOUR SURFACE IS THE `$key` SURFACE: the files listed in your prompt, every one read fully."))
+                        "brief" => brief(sb["brief"]) * "\n\nYOUR SURFACE IS THE `$key` SURFACE: the files listed in your prompt, every one read fully."))
     end
     isempty(cfg["surfaces"]["built_html"]) || push!(out, Dict("key" => "built-html", "kind" => "surface", "anchor" => sb["anchor"], "files" => [cfg["surfaces"]["built_html"]],
-        "brief" => substitute(sb["brief"], cfg) * "\n\nYOUR SURFACE IS THE BUILT HTML under `$(cfg["surfaces"]["built_html"])`: what each `@docs`/`@autodocs` block actually collected is visible only here — read every API page's rendered content, and check each page blurb against what its block holds."))
+        "brief" => brief(sb["brief"]) * "\n\nYOUR SURFACE IS THE BUILT HTML under `$(cfg["surfaces"]["built_html"])`: what each `@docs`/`@autodocs` block actually collected is visible only here — read every API page's rendered content, and check each page blurb against what its block holds."))
     for e in extra
-        push!(out, Dict("key" => e["key"], "kind" => "surface", "anchor" => sb["anchor"], "files" => String.(e["files"]),
-                        "brief" => substitute(sb["brief"], cfg) * "\n\nYOUR SURFACE (a refinement of the engine's lanes): " * e["brief"] * "."))
+        push!(out, Dict("key" => e["key"], "kind" => "surface", "anchor" => sb["anchor"], "files" => extra_files[e["key"]],
+                        "brief" => brief(sb["brief"]) * "\n\nYOUR SURFACE (a refinement of the engine's lanes): " * e["brief"] * "."))
     end
     for l in cat["lane"]
-        push!(out, Dict("key" => l["key"], "kind" => l["kind"], "anchor" => l["anchor"], "files" => String[], "brief" => substitute(l["brief"], cfg)))
+        push!(out, Dict("key" => l["key"], "kind" => l["kind"], "anchor" => l["anchor"], "files" => String[], "brief" => brief(l["brief"])))
     end
     return out
 end
@@ -426,13 +546,15 @@ arguments are:
 - `cfg` — the validated config.
 - `instrument` — the instrument name.
 - `round` — the round id.
-- `roster` — the resolved hats or lanes; each gains its `persona_path` or `brief_path`.
+- `roster` — the resolved hats or lanes; each gains its `persona_path` or `brief_path`, and a check-docs
+  lane whose surface carries any gains its `claims_path`.
 - `base` — the audit's base commit (required for `audit-changes`).
 
 The files: personas (`hats/<key>.md`), the rulebook (`rulebook.md`), the policy (`policy.md`), briefs
-(`lanes/<key>.md`), the invariants (`invariants.md`), and for the audit the diff, diffstat and claims
-of `base..HEAD` over the covered paths. The manuscripts are written by `gbg round prepare`; their paths
-are returned here so the args can name them. Returns the paths.
+(`lanes/<key>.md`), check-docs' claim checklists (`claims/<key>.md`), the invariants
+(`invariants.md`), and for the audit the diff, diffstat and claims of `base..HEAD` over the covered
+paths. The manuscripts are written by `gbg round prepare`; their paths are returned here so the args
+can name them. Returns the paths.
 """
 function write_payloads(cfg::AbstractDict, instrument::AbstractString, round::AbstractString, roster; base = nothing)
     pd = payload_dir(cfg, round); mkpath(pd)
@@ -452,6 +574,22 @@ function write_payloads(cfg::AbstractDict, instrument::AbstractString, round::Ab
     end
     if instrument == "check-docs"
         write(joinpath(pd, "policy.md"), rulebook_text(cfg)); paths["policy_path"] = joinpath(pd, "policy.md")
+        # A lane whose surface carries no cited number and no exit-code claim is given NO checklist file:
+        # an empty one would ask for an empty `claims_checked[]`, which reads the same as a lane that
+        # skipped the step.
+        mkpath(joinpath(pd, "claims"))
+        for l in roster
+            # the built-HTML lane's surface is GENERATED: a claim rendered there belongs to the source that
+            # rendered it, and the lane owning that source already carries it
+            l["key"] == "built-html" && continue
+            items = claim_checklist(cfg, l["files"]; range = get(l, "lines", nothing))
+            isempty(items) && continue
+            p = joinpath(pd, "claims", l["key"] * ".md")
+            write(p, "### claim checklist — lane " * l["key"] * " (" * string(length(items)) * " items)\n\n" *
+                     "Every line below is a claim the CLI found on your surface and cannot settle. Discharge each in `claims_checked[]`.\n\n" *
+                     join(items, "\n") * "\n")
+            l["claims_path"] = p
+        end
     end
     if instrument in ("bug-hunt", "audit-changes")
         inv = substitute("{audit.invariants}", cfg)
@@ -548,7 +686,8 @@ function render_args(cfg::AbstractDict, instrument::AbstractString, round::Abstr
         a["adjudicated_titles"] = adjudicated_titles(cfg, ledger); a["finding_types"] = finding_types(cfg); a["cost"] = cost; a["opened"] = opened
     elseif instrument == "check-docs"
         a["preamble"] = substitute(PREAMBLES[instrument], cfg); a["policy_path"] = paths["policy_path"]; a["finding_types"] = finding_types(cfg)
-        a["lanes"] = [Dict("nn" => l["nn"], "key" => l["key"], "kind" => l["kind"], "brief_path" => l["brief_path"], "files" => l["files"], "anchor" => l["anchor"]) for l in roster]
+        a["lanes"] = [merge(Dict{String,Any}("nn" => l["nn"], "key" => l["key"], "kind" => l["kind"], "brief_path" => l["brief_path"], "files" => l["files"], "anchor" => l["anchor"]),
+                            haskey(l, "claims_path") ? Dict{String,Any}("claims_path" => l["claims_path"]) : Dict{String,Any}()) for l in roster]
     elseif instrument == "bug-hunt"
         bh = cfg["instruments"]["bug-hunt"]
         a["preamble"] = substitute(PREAMBLES[instrument], cfg)

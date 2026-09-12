@@ -208,6 +208,42 @@ end
     @test isempty(G.recheck_candidates([c("major", "no"), c("minor", "yes")]))
 end
 
+# The check-docs roster is data-driven in three ways a round pays for on every lane, and each has a
+# direction that fails SILENTLY: a slice that quietly spans the whole document, a glob handed to the agent
+# as the literal string `instruments/*/PROTOCOL.md`, and a finding budget baked into the brief where no
+# config can move it. None of the three raises an error when it is wrong; the round just costs the same and
+# reads less.
+@testset "the check-docs roster: slices, globs and the budget" begin
+    d = mktempdir()
+    write(joinpath(d, "R.md"), join([join(vcat(["## §$i"], fill("body line", 40)), "\n") for i in 1:6], "\n"))
+    cfgd = Dict{String,Any}("root" => d)
+    total = length(readlines(joinpath(d, "R.md")))
+    s3 = G.Preflight.rationale_slices(cfgd, "R.md", 3)
+    @test length(s3) == 3
+    @test first(s3)[1] == 1 && last(s3)[2] == total                  # the slices COVER the document
+    for k in 2:3; @test s3[k][1] == s3[k - 1][2] + 1; end            # contiguous: no gap, no overlap
+    @test all(sl -> startswith(sl[3], "§"), s3)                      # each named by its own headings
+    @test G.Preflight.rationale_slices(cfgd, "R.md", 1) == [(1, total, "the whole document")]
+    # fewer headings than slices is ONE lane, never n lanes over a document that cannot be cut
+    write(joinpath(d, "S.md"), "## only\nx\ny\n")
+    @test length(G.Preflight.rationale_slices(cfgd, "S.md", 3)) == 1
+
+    tcfg = G.Config.read(TOOL)                                       # the tool takes three rationale lanes
+    roster = G.Preflight.resolve_checkdocs_lanes(tcfg)
+    @test count(l -> startswith(l["key"], "rationale"), roster) == 3
+    @test any(l -> l["key"] == "rationale", roster)                  # the key the carried findings name
+    @test any(l -> l["key"] == "one-home", roster) && !any(l -> l["key"] == "family", roster)
+    amb = only([l for l in roster if l["key"] == "ambient"])
+    @test all(f -> isfile(joinpath(TOOL, f)), amb["files"])          # the glob reached it as real files
+    @test count(f -> endswith(f, "PROTOCOL.md"), amb["files"]) == 4
+    brief = first(roster)["brief"]
+    @test occursin("budget is 20 FINDINGS", brief) && !occursin("{lane.cap}", brief)
+    @test occursin("ONE DEFECT PER CLASS", brief)
+    # a lane with a surface has a checklist; the cross lanes, which have no files, have none
+    @test !isempty(G.Preflight.claim_checklist(tcfg, ["docs/ARCHITECTURE.md"]))
+    @test isempty(G.Preflight.claim_checklist(tcfg, String[]))
+end
+
 # gbg attack and gbg calibrate check the instruments themselves, outside any round. An attack renders the
 # instrument's live roster as the design and fills its subject's placeholders; a calibration refuses
 # without human findings and hands the blind hats the passage, never the defect. Each `read` exits on

@@ -363,6 +363,18 @@
        },
        "default": []
       },
+      "finding_cap": {
+       "description": "the budget one check-docs lane reports under, counted in FINDINGS, which are classes: a recurring defect is ONE finding whose locations list every site, so this bounds distinct defects and never the sites they name (RULE.DOC.CLASS_SWEEP). It bounds a lane's OUTPUT, not its reading — candidates_found records the classes it weighed before the budget bound it.",
+       "type": "integer",
+       "minimum": 1,
+       "default": 20
+      },
+      "rationale_lanes": {
+       "description": "how many lanes the rationale surface is cut into, on its own top-level headings, when that surface is a single document. 1 is one lane over the whole of it. A design document of several thousand lines is one lane's surface only in name: the lane that must hold all of it holds none of it closely. The first slice keeps the key `rationale`, so a finding carried from an earlier round still names a lane this round runs.",
+       "type": "integer",
+       "minimum": 1,
+       "default": 1
+      },
       "seed_rounds": {
        "description": "plant the seed catalogue into a DISPOSABLE copy of the lane surfaces before the lanes read them, so the round measures what they miss and not only what they report. Default false: a consumer opts in.",
        "type": "boolean",

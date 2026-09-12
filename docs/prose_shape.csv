@@ -50,7 +50,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1300,556,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
 "ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3209,3084,0
-"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1555,1380,0
+"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1686,1511,0
 "ARCHITECTURE.md § §12.C Doctor ids",135,134,0
 "ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
 "ARCHITECTURE.md § §3 Repository layout",1,1,0
@@ -65,7 +65,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §6.3 Vocabularies (constants)",574,529,0
 "ARCHITECTURE.md § §6.4 Seeds",307,307,0
 "ARCHITECTURE.md § §6.5 Closure channels (per finding id; PARTIAL never closes)",213,213,0
-"ARCHITECTURE.md § §6.6 Deltas — `/check-docs`",173,173,0
+"ARCHITECTURE.md § §6.6 Deltas — `/check-docs`",333,333,0
 "ARCHITECTURE.md § §6.7 Deltas — `/bug-hunt`",480,367,0
 "ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",309,217,0
 "ARCHITECTURE.md § §7.1 Policy migration map (which consumer sections become wh",290,238,0
@@ -188,6 +188,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: Preflight",72,71,0
 "Preflight.jl :: audit_kind(cfg, base) -> String",56,52,0
 "Preflight.jl :: catalog_sha() -> String",14,11,0
+"Preflight.jl :: claim_checklist(cfg, files; range = nothing) -> Vector{Strin",155,59,0
 "Preflight.jl :: config_sha(cfg) -> String",16,13,0
 "Preflight.jl :: copy_scripts(cfg, instrument, round) -> String",59,33,0
 "Preflight.jl :: covered_paths(cfg) -> Vector{String}",16,13,0
@@ -197,19 +198,20 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: install_script(src, dst) -> String",93,89,0
 "Preflight.jl :: next_round_id(cfg, instrument) -> String",21,17,0
 "Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",219,112,0
+"Preflight.jl :: rationale_slices(cfg, file, n) -> Vector{Tuple{Int,Int,Strin",125,82,0
 "Preflight.jl :: render_args(cfg, instrument, round, roster, paths; strength,",160,109,0
 "Preflight.jl :: repoint_lanes(cfg, round, dest) -> String",88,50,0
 "Preflight.jl :: resolve_audit_lanes(cfg, kind) -> Vector{Dict}",25,21,0
-"Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",76,73,0
+"Preflight.jl :: resolve_checkdocs_lanes(cfg) -> Vector{Dict}",158,70,0
 "Preflight.jl :: resolve_hats(cfg; profile = nothing, explicit = String[]) ->",244,103,0
 "Preflight.jl :: resolve_hunt_lanes(cfg) -> Vector{Dict}",22,19,0
 "Preflight.jl :: resolve_roster(cfg, instrument; kw...) -> Vector{Dict}",65,40,0
 "Preflight.jl :: stamps(cfg; record = nothing) -> Dict",103,65,0
-"Preflight.jl :: substitute(text, cfg; extra = Dict()) -> String",74,26,0
+"Preflight.jl :: substitute(text, cfg; extra = Dict()) -> String",85,37,0
 "Preflight.jl :: tag_tree(dir, ver) -> Union{String,Nothing}",53,49,0
 "Preflight.jl :: torn_check(cfg; io = stderr) -> Bool",43,15,0
 "Preflight.jl :: workflow_call(script, a) -> String",14,10,0
-"Preflight.jl :: write_payloads(cfg, instrument, round, roster; base = nothin",115,52,0
+"Preflight.jl :: write_payloads(cfg, instrument, round, roster; base = nothin",130,56,0
 "Recall.jl :: Recall",80,79,0
 "Recall.jl :: mark!(findings, ground_truth) -> Int",27,23,0
 "Recall.jl :: matches_seed(finding, seed) -> Bool",64,60,0

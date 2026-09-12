@@ -1649,8 +1649,18 @@ questions: no docstring rendered on two pages, every derived public operation on
 unexpected `Base.` leak into the internal sections — `docs.unexported_base_expected` is the allowance
 — and, as a read rather than a scan, each page blurb against its `@docs` contents). Fan-out `lanes.js`
 with the surfaces and lanes from config: the engine lanes — one per non-empty surface key, refined by
-`lanes_extra`, plus `family`, `cold-reader` with the `?name` substrate rule, and `operational-claims`
-on the docstring surface — surface lanes at economy. Banking, verification (the same act verifier with
+`lanes_extra` (whose globs are expanded here, so a refinement written as a pattern still subtracts from
+the engine's own lanes), with a single-document rationale surface cut into `rationale_lanes` slices on
+its own `## ` headings, the first keeping the key `rationale` so a carried finding still names a lane the
+round runs — plus `one-home`, `cold-reader` with the `?name` substrate rule, and `operational-claims`
+on the docstring surface; surface lanes at economy. Each lane is also handed a computed CLAIM CHECKLIST
+(`claims/<key>.md`): every cited number and every exit-code claim on its own surface, each to be
+discharged in `claims_checked[]` with a verdict and the evidence that settled it. Those are the two
+mechanical classes that did NOT survive being measured as scans, where `SCAN.ID_RESOLVES` is the one
+that did (§12.B records all three measurements). A lane reports CLASSES, never sites: a recurring defect
+is ONE finding whose `locations` name every site, which is `RULE.DOC.CLASS_SWEEP` applied where the
+finding is written rather than only where it is fixed, and `finding_cap` bounds those findings — so a
+class with forty sites costs one. Banking, verification (the same act verifier with
 `lanes` as the roster; the state verifier blind), grading and closure are identical — which closes
 the finding that IT's check-docs banks nothing (`survey-checkdocs.md:29`).
 
@@ -2419,6 +2429,7 @@ docstrings except by `SCAN.SWALLOWED_ESCAPE`, which is what that scan is for.
 | `SCAN.INLINE_MATH_SPLIT` | `RULE.TEX.INLINE_ONE_LINE` | hard | all | julia | PF/IT/SS `lint_inline_math` (fence- and docstring-aware; list-leader continuation inside an open double-backtick span) | `inline-math-split` |
 | `SCAN.SWALLOWED_ESCAPE` | `RULE.TEX.SWALLOWED_ESCAPE` | hard | src, ext | julia | PF `lint_swallowed_escapes` `(?<!\\)\\[abefnrtv0-7xuU]` inside docstrings | `swallowed-escape` |
 | `SCAN.RETIRED_CLAIMS` | `RULE.DOC.CURRENT` | hard | all | julia | PF `lint_retired_claims`; patterns from `docs.retired_claims` (whitespace-normalised over whole files, so a wrapped phrase is caught) | `retired-claim` (fixture config lists one) |
+| `SCAN.ID_RESOLVES` | `RULE.DOC.CURRENT` | triage | all, data | julia | new 2026-09-12: a `RULE.`/`SCAN.`/doctor id in prose resolving to no row of the RUNNING COPY's registers, so an id renamed in the tool lights up every consumer sentence still citing the old one. A family prefix (`RULE.DOC`), a wildcard stem (`SCAN.HTML_`) and anything under `history_exempt` are not hits. Measured before it was built: 964 references here, 11 unresolved, all 11 artefacts of the pattern. Its two proposed siblings failed the same measurement and became the lanes' claim checklist instead — a cited COUNT names a subset rather than an inventory in 17 of 24 cases ("two rules", "three verbs"), and an unresolved PATH is usually a consumer's file the rationale describes on purpose (143 of 1705) | `dead-rule-id` |
 | `SCAN.API_PAGE_STRUCTURE` | `RULE.DOC.INTERNAL_API`, `RULE.DOC.API_GROUPING` | hard | pages (`docs/src/api/`) | julia | PF `lint_api_page_structure` (`## Internal API` last; no empty `@docs`) | `internal-api-not-last`, `empty-docs-block` |
 | `SCAN.PROSE_SHAPE` | `RULE.DOC.SHAPE` | hard | src (docstrings), rationale, pages | julia | PF `lint_prose_shape` + IT `lint_docstring_shape`: caps 120 words / 3 admonitions on every docstring and every NEW page unit, a baselined page unit held by the ratchet alone; ratchet against `docs/prose_shape.csv` (units: docstring, page, section incl. numbered items and `**(x)**` findings); an `# Arguments` heading, where used, before column-0 `!!!`, `# Fields` last; missing CSV = error | `paragraph-over-cap`, `fields-not-last` |
 | `SCAN.AI_BANNER` | `RULE.DOC.AI_BANNER` | hard | rationale, literate, pages | julia | PF `lint_ai_banner`: present on every rationale page and Literate file, and verbatim-identical wherever it appears | `banner-drift` |

@@ -14,8 +14,13 @@ notation, formatted, current and complete, cited, consistent across variant pair
 claims of each docstring against its body, which no other instrument holds together.
 
 The deterministic half runs first, in the CLI; the judgment half is a fan-out of lanes, one per surface
-plus three cross-cutting lanes (`family`, `cold-reader`, `operational-claims`). The lanes run at
-economy by default; the fix pass is never economised.
+plus three cross-cutting lanes (`one-home`, `cold-reader`, `operational-claims`). A rationale surface
+that is one document is cut into `rationale_lanes` slices on its own headings, the first keeping the key
+`rationale`. Every surface lane is handed a computed CLAIM CHECKLIST — each cited number and each
+exit-code claim on its own surface — and owes a verdict per item in `claims_checked[]`. A lane reports
+CLASSES, never sites: a recurring defect is ONE finding whose `locations` name every site, and
+`finding_cap` bounds those findings, so a class with forty sites costs one. The lanes run at economy by
+default; the fix pass is never economised.
 
 ## The round, step by step
 
@@ -32,10 +37,10 @@ economy by default; the fix pass is never economised.
    never before; do not open the seeded copy yourself. One question
    is a read, not a scan: each API page's blurb against what its `@docs` block holds — read it from the
    build.
-2. **Lanes.** Launch the `Workflow` call preflight printed, exactly as printed. Each lane runs the six
-   checks as POSITIVE procedures on its surface — enumerate, then verify each item, with `src/` as ground
-   truth and the decisive line quoted — and `Write`s `findings/NN-<lane>.json` FIRST, then returns the
-   same object. The cold-reader lane reads the `?name` view: the module docstring and EVERY method
+2. **Lanes.** Launch the `Workflow` call preflight printed, exactly as printed. Each lane first discharges
+   its claim checklist, then runs the six checks as POSITIVE procedures on its surface — enumerate, then
+   verify each item, with `src/` as ground truth and the decisive line quoted — and `Write`s
+   `findings/NN-<lane>.json` FIRST, then returns the same object. The cold-reader lane reads the `?name` view: the module docstring and EVERY method
    docstring of a generic; verify each of its findings against source before fixing, since a term may be
    defined on a sibling method it did not open. Every lane is forbidden `.gbg/` and `~/.gbg/`.
 3. **Bank.** `gbg round bank <round>`: schema-validates each lane file, quarantines an invalid one,

@@ -332,3 +332,11 @@ file = "defects/html/clean"
 [[clean]]
 scan = "SCAN.HTML_BASE_LEAK"
 file = "defects/html/clean"
+[[defect]]
+class = "dead-rule-id"
+scan = "SCAN.ID_RESOLVES"
+file = "defects/Defects.jl"
+fragment = "RULE.DOC.NOSUCHRULE"
+[[clean]]
+scan = "SCAN.ID_RESOLVES"
+file = "src/FixtureB.jl"
