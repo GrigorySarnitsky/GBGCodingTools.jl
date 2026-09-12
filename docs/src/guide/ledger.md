@@ -3,8 +3,8 @@
 !!! info "Written by AI, not regularly reviewed"
     This page is written by AI and is not reviewed regularly by a human.
 
-`.gbg/exemptions.toml` is the one place a consumer records a waiver or an adjudication. One
-`[[exemption]]` per entry:
+`.gbg/exemptions.toml` is the one place a [consumer](@ref install) — a package that pins this tool and is
+reviewed by it — records a waiver or an adjudication. One `[[exemption]]` per entry:
 
 ```toml
 [[exemption]]
