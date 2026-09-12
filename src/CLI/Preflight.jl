@@ -166,7 +166,7 @@ The limit: this is the tool's own root, where the stamp is the working tree's. A
 round afterwards.
 """
 function dev_round(cfg::AbstractDict, instrument::AbstractString, st::AbstractDict)
-    instrument in ("check-docs", "check-consistency") || return nothing
+    instrument in Sync.DOCS_INSTRUMENTS || return nothing
     here(x) = normpath(joinpath(abspath(String(x)), "."))       # a config root carries a trailing slash
     here(cfg["root"]) == here(pkgdir(GBGCodingTools)) || return nothing
     v = String(get(st, "tool_version", ""))

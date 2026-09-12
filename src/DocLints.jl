@@ -46,6 +46,6 @@ validated config, and `code`, the gate's exit code.
 """
 function docs_build_skipped(cfg::AbstractDict, code::Integer)
     (code == 1 && !haskey(ENV, "GBG_DOCS_NO_SKIP")) || return String[]
-    all(p -> first(p) == :open, last(gate_problems(cfg, "check-docs", "check-consistency"))) || return String[]
-    return frozen_rounds(cfg, "check-docs", "check-consistency")
+    all(p -> first(p) == :open, last(gate_problems(cfg, Sync.DOCS_INSTRUMENTS...))) || return String[]
+    return frozen_rounds(cfg, Sync.DOCS_INSTRUMENTS...)
 end

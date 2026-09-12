@@ -587,7 +587,7 @@ end)
 # cites. An audit or hunt round at the tool root is off-tag by construction — it reads `base..HEAD` — so
 # a dev stamp there is the normal case and never named here.
 check!("ROUND.DEV", ctx -> begin
-    docs = ("check-docs", "check-consistency")
+    docs = Sync.DOCS_INSTRUMENTS
     bad = [r.name for r in RoundFiles.rounds(ctx.cfg)
            if r.state == :closed && String(r.round["instrument"]) in docs && startswith(String(r.round["tool_version"]), "dev")]
     isempty(bad) ? pass("ROUND.DEV") :

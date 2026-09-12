@@ -1157,7 +1157,7 @@ function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector =
     # again until pass 3 ran `gbg round build` by hand. `build` records {code, head}; this reads it back.
     # The staleness test is the one `audit_after_code` uses, so a green build from before the round's last
     # fix is not taken for a current one. Only the two instruments that build docs are asked.
-    if inst in ("check-docs", "check-consistency")
+    if inst in Sync.DOCS_INSTRUMENTS
         b = get(rec, "build", nothing)
         if b === nothing
             push!(fails, "no docs build is recorded for this round — gbg round build $round")
