@@ -6,8 +6,10 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 ## 1.0.0-rc.11 — 2026-09-12
 
 PATCH on rc.10. Instruments affected: all four — `verify-act.js` and `verify-state.js` are copied into
-every round's workflow directory, so the break reached each of them. Rates comparable: **yes** — no
-lane's or verifier's judgement changed, because the two scripts could not run at all.
+every round's workflow directory, so the break reached each of them; bug-hunt additionally gains schema
+floors on three of its own fields. Rates comparable: **yes** — no lane's or verifier's judgement changed,
+because the two scripts could not run at all, and the bug-hunt floors reject only degenerate output (a
+one-word title, a mechanism too short to be the `description` that banking already requires).
 
 **A blocker rc.10 shipped, found by the round rc.10 was cut for.** `verify-act.js:126` and
 `verify-state.js:113` carried a BARE backtick pair around `lane_files` inside the prompt template
@@ -23,6 +25,27 @@ exemption meant for the operator, so the suite stayed green through every run of
 unparseable file. Both exemptions are gone and the two prose forms are pinned as must-catch cases;
 neither operator is followed by a template literal anywhere in the scripts or the prelude, so the
 exemption protected nothing and hid the one class the guard exists for.
+
+**bug-hunt's own schemas were looser than the shape `bank` enforces.** `CANDIDATE_SCHEMA.candidates.title`
+and `VERDICT_SCHEMA.title` in `hunt.js` took a bare string, and so did `mechanism`, which `hunt.js:155`
+copies verbatim into the banked finding's `description` — while `schema/finding.schema.json` requires a
+`title` of 8 characters and a `description` of 20 at bank. A lane could therefore return schema-valid
+output that fails banking. The three fields now carry the floors the core schema already demanded. Found
+by `2026-09-12-check-docs-01`'s `workflow-scripts#5`, which graded LINE-ONLY when the first fix reached
+only the two titles and left `mechanism` bare.
+
+**Documentation corrections from the same round.** `CFG.TORN`'s pass message, ARCHITECTURE's preflight
+step 2 and its §7.3 row now separate a PINNED file (consumer-owned, never rendered) from a MANAGED file
+(`gbg sync` renders and hash-checks it), one word having carried both. `IMPLEMENTATION.md` drops `ORPHAN`
+from D10's class list: `bank` iterates the roster, so a lane file no roster entry expects is never
+classified at all. `Passes`' module docstring splits its verifier paragraph to come under
+`RULE.DOC.SHAPE`'s 120-word cap while keeping the inline gloss of SWEPT, which a cold reader meets one
+module before `Demote` defines it.
+
+**`docs/prose_shape.csv` was re-baselined twice, deliberately.** A fix pass that adds the glosses its
+findings demand will always trip the ratchet, so a reset with a stated reason is a normal end-of-round
+step rather than a workaround; each is its own commit. The second corrects the first, which had frozen
+that docstring with a required gloss missing.
 
 ## 1.0.0-rc.10 — 2026-09-12
 
