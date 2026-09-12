@@ -35,6 +35,15 @@ fails `BUILD.DOCS` in every consumer.
 (2026-09-11-check-docs-02's `ext#4`, `gate_problems`); now tested. A round's own build runs through
 `gbg round build` and CI sets `CI`, so neither meets it.
 
+**A verification pass batches its lanes.** Each verifier ran one agent per lane, and every act agent read
+the whole fix-pass diff: in 2026-09-11-check-docs-02's first pass that was 255KB bought nine times, about
+half of the pass's 1.17M tokens. Lanes are now grouped into units of at most six findings (`batch` in the
+scripts' args, 6 by default), one agent per unit, each writing one file per lane — `grade`, the lane
+files and their schema are untouched — and the state verifier groups only lanes that read the same
+substrate. The act verifier still reads the whole diff, which is what lets it see a fix made outside the
+files a finding names. One scribe per unit replaces one per lane (`scribeAll`), and a unit's lanes come
+back in `lane_files`, each found by its own `lane` field.
+
 **Empty rosters refuse.** `lanes.js`, `panel.js`, `hunt.js`, `audit.js`, `verify-state.js` and
 `verify-act.js` throw on an empty roster or scope, as the other four scripts did; `verify-act.js`'s
 `batches` mode, which nothing called, is gone with its `mode` argument.

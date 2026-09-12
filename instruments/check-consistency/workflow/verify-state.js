@@ -20,7 +20,7 @@ for (const k of ['round', 'pass_dir', 'repo', 'nonce', 'graded_sha256', 'lanes',
 if (!A.findings.length) throw new Error('verify-state.js: nothing in scope to read — the CLI launches the state verifier only over a non-empty scope')
 const SCOPE = A.source_scope || ['src', 'ext', 'docs/src', 'docs']
 
-const SCHEMA = {
+const LANE_SCHEMA = {
   type: 'object', additionalProperties: false,
   properties: {
     schema_version: { type: 'integer' },
@@ -39,6 +39,14 @@ const SCHEMA = {
     } },
   },
   required: ['schema_version', 'lane', 'graded_sha256', 'pass_nonce', 'verdicts'],
+}
+
+// One agent reads SEVERAL lanes of the same substrate, so a shared file is read once per unit rather than
+// once per lane; each lane still gets its own file, which is what `grade` reads, and its own object here.
+const SCHEMA = {
+  type: 'object', additionalProperties: false,
+  properties: { lane_files: { type: 'array', items: LANE_SCHEMA, description: 'one object per lane of your unit, in the order the prompt lists them' } },
+  required: ['lane_files'],
 }
 
 const ADJ = (A.adjudicated_titles && A.adjudicated_titles.length)
@@ -81,45 +89,61 @@ const probe = (id) => {
 const fmt = (f) => `  ${f.id} (lane ${f.lane}, #${f.n}) — ${f.title}${probe(f.id)}`
 
 phase('Verify state')
-const units = A.lanes.map(l => ({ lane: l, items: A.findings.filter(f => f.lane === l.key) }))
+// Lanes are grouped into units of at most `batch` findings (6 by default), and only lanes that read the
+// same substrate are grouped, since the substrate is what a unit's prompt names once.
+const BATCH = Math.max(1, A.batch || 6)
+const units = []
+for (const l of A.lanes) {
+  const items = A.findings.filter(f => f.lane === l.key)
+  if (!items.length) { log(`${l.key}: no findings — skipped`); continue }
+  const last = units[units.length - 1]
+  const sameSubstrate = last && (last.lanes[0].l.substrate || '') === (l.substrate || '')
+  if (sameSubstrate && last.n + items.length <= BATCH) { last.lanes.push({ l, items }); last.n += items.length }
+  else units.push({ lanes: [{ l, items }], n: items.length })
+}
+const unitName = (u) => u.lanes.map(x => x.l.key).join('+')
 
 // the scribe and the nonce stamp: instruments/prelude.js
 
-const results = await parallel(units.map(u => () => u.items.length === 0 ? Promise.resolve({ __skip: true }) : agent(
+const stateFile = (l) => `${A.pass_dir}/state/${l.nn}-${l.key}.json`
+
+const results = await parallel(units.map(u => () => agent(
 `${PREAMBLE}
 
-YOUR LANE: ${u.lane.key} — ${u.items.length} finding(s); return exactly ${u.items.length} verdicts.
+YOUR UNIT: ${u.lanes.length} lane(s), ${u.n} finding(s) in all. Return one object per lane in `lane_files`, in the order below, each carrying exactly its own lane's verdicts and no others.
 
 YOUR SUBSTRATE:
-${substrateFor(u.lane)}
+${substrateFor(u.lanes[0].l)}
 
-YOUR FINDING IDS (their full text is in ${A.findings_path}):
-${u.items.map(fmt).join('\n')}
+${u.lanes.map(x => `LANE ${x.l.key} — ${x.items.length} finding(s), write to ${stateFile(x.l)}:\n${x.items.map(fmt).join('\n')}`).join('\n\n')}
 
-FIRST use the Write tool to save the structured object as JSON to ${A.pass_dir}/state/${u.lane.nn}-${u.lane.key}.json with schema_version=${A.schema_version}, lane="${u.lane.key}", graded_sha256="${A.graded_sha256}", pass_nonce="${A.nonce}" (copied EXACTLY). THEN return the same object.`,
-  { label: `verify-state:${u.lane.key}`, phase: 'Verify state', schema: SCHEMA, agentType: 'general-purpose',
+FIRST use the Write tool to save each lane's object as JSON to the path named above it, with schema_version=${A.schema_version}, lane=<that lane's key>, graded_sha256="${A.graded_sha256}", pass_nonce="${A.nonce}" (copied EXACTLY). THEN return {lane_files: [...]} in the same order.`,
+  { label: `verify-state:${unitName(u)}`, phase: 'Verify state', schema: SCHEMA, agentType: 'general-purpose',
     ...(STRENGTH === 'economy' ? { model: ECONOMY } : {}) })
-  .then(r => scribe(stamped(r, u.lane.key), `${A.pass_dir}/state/${u.lane.nn}-${u.lane.key}.json`, `scribe:${u.lane.key}`, 'Verify state'))))
+  .then(r => scribeAll(u.lanes.map((x, j) => {
+    const obj = laneFile(r, x.l.key, j)
+    return obj && { obj: stamped(obj, x.l.key), path: stateFile(x.l) }
+  }).filter(Boolean), `scribe:${unitName(u)}`, 'Verify state').then(() => r))))
 
 const written = [], dead = [], empty = [], truncated = [], mismatched = []
-results.forEach((r, i) => {
-  const u = units[i]
-  if (r && r.__skip) { log(`${u.lane.key}: no findings — skipped`); return }
-  if (!r) { dead.push(u.lane.key); log(`${u.lane.key}: DEAD — no result`); return }
-  written.push(u.lane.key)
-  const got = (r.verdicts || []).length
-  if (got === 0) empty.push(u.lane.key)
-  // the CLI's own count where it gave one, not the unit's: comparing got with u.items.length checks the
-  // input against itself, and a duplicated or invented verdict then reads as extra coverage
-  const want = u.lane.expected === undefined ? u.items.length : u.lane.expected
-  if (u.lane.expected !== undefined && u.lane.expected !== u.items.length) {
-    mismatched.push(u.lane.key)
-    log(`${u.lane.key}: PARTITION MISMATCH — the CLI expected ${u.lane.expected} verdict(s), this unit carries ${u.items.length} finding(s)`)
+units.forEach((u, i) => u.lanes.forEach((x, j) => {
+  const key = x.l.key
+  const obj = laneFile(results[i], key, j)
+  if (!obj) { dead.push(key); log(`${key}: DEAD — no object for this lane in its unit's return`); return }
+  written.push(key)
+  const got = (obj.verdicts || []).length
+  if (got === 0) empty.push(key)
+  // the CLI's own count where it gave one, not the unit's: comparing got with the unit's own list checks
+  // the input against itself, and a duplicated or invented verdict then reads as extra coverage
+  const want = x.l.expected === undefined ? x.items.length : x.l.expected
+  if (x.l.expected !== undefined && x.l.expected !== x.items.length) {
+    mismatched.push(key)
+    log(`${key}: PARTITION MISMATCH — the CLI expected ${x.l.expected} verdict(s), this unit carries ${x.items.length} finding(s)`)
   }
-  if (got < want) { truncated.push(u.lane.key); log(`${u.lane.key}: UNDER-GRADED ${got}/${want} — the missing are UNREAD, not clean`) }
-  else if (got > want) { mismatched.push(u.lane.key); log(`${u.lane.key}: OVER-GRADED ${got}/${want} — a duplicate or invented verdict, not extra coverage`) }
-  else log(`${u.lane.key}: ${got}/${want} adjudicated`)
-})
+  if (got < want) { truncated.push(key); log(`${key}: UNDER-GRADED ${got}/${want} — the missing are UNREAD, not clean`) }
+  else if (got > want) { mismatched.push(key); log(`${key}: OVER-GRADED ${got}/${want} — a duplicate or invented verdict, not extra coverage`) }
+  else log(`${key}: ${got}/${want} adjudicated`)
+}))
 if (dead.length) log(`!! ${dead.length} DEAD lane(s): ${dead.join(', ')} — the pass is incomplete`)
 if (mismatched.length) log(`!! ${mismatched.length} lane(s) whose verdict count does not match the CLI's: ${mismatched.join(', ')} — read them before grading`)
 return { written, dead, empty, truncated, mismatched }

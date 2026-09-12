@@ -8,7 +8,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D15 — Self-test: a fixture consumer at a path with a space, ",782,361,0
 "ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",813,745,0
 "ARCHITECTURE.md § D17 — Migration: PF → IT → SS → CP, doctor-verified steps, n",364,279,0
-"ARCHITECTURE.md § D18 — Cost policy: economy default, anchors in the catalogue",174,107,0
+"ARCHITECTURE.md § D18 — Cost policy: economy default, anchors in the catalogue",261,194,0
 "ARCHITECTURE.md § D19 — Name: `GBGCodingTools`",128,127,0
 "ARCHITECTURE.md § D2 — Delivery: Pkg fetches the pinned copy; a per-machine `s",5,5,0
 "ARCHITECTURE.md § D3 — Binding: `[sources] url + rev` (https) rendered from on",405,199,0

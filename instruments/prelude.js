@@ -27,6 +27,19 @@ const stamped = (r, lane) => {
   return { ...r, pass_nonce: A.nonce, graded_sha256: A.graded_sha256 }
 }
 
+// The scribe over a whole unit: one agent writes every file the unit produced, so a pass costs one scribe
+// per unit rather than one per lane. The lanes' own Writes stay as the durable fallback.
+const scribeAll = (pairs, label, phase) => !pairs.length ? Promise.resolve(null) :
+  agent(`Use the Write tool to write each JSON below to the path named above it, EXACTLY as given, and return {done: true}. No other text.\n\n${pairs.map(p => `PATH: ${p.path}\n${JSON.stringify(p.obj, null, 2)}`).join('\n\n')}`,
+        { label, phase, schema: DONE, model: ECONOMY }).then(w => { if (!(w && w.done)) log(`${label}: the scribe did not confirm; the lanes' own files stand`) })
+
+// A unit's lanes come back in `lane_files`; a lane is found by its own `lane` field, by position only when
+// the model left the field out, so a reordered return is not read as another lane's verdicts.
+const laneFile = (r, key, j) => {
+  const fs = (r && r.lane_files) || []
+  return fs.find(o => o && o.lane === key) || (fs[j] && !fs[j].lane ? fs[j] : null)
+}
+
 // One agent per item, its result given the item's own id by position — never the model's retyping, since
 // a paraphrased id once read as a DEAD auditor. A dead agent stays dead (dropped).
 const stampIds = (out, items) => out.map((v, i) => v && { ...v, id: items[i].id }).filter(Boolean)

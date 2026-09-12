@@ -29,6 +29,27 @@ include("helpers.jl")
     @test length(G.VERBS) >= 20
 end
 
+# The verifiers batch: one agent grades or reads several lanes and writes one file per lane, so a pass
+# buys the diff and the corpus once per unit instead of once per lane. The files stay one per lane, which
+# is what grade reads, so nothing downstream moves. Checked as text: there is no JS runtime here.
+@testset "the verifiers batch lanes into units" begin
+    for s in ("verify-act.js", "verify-state.js")
+        text = read(joinpath(TOOL, "instruments", "check-consistency", "workflow", s), String)
+        @test occursin("A.batch || 6", text)                             # the unit size, overridable from args
+        @test occursin("lane_files", text)                               # one object per lane in one return
+        @test occursin("scribeAll(", text) && !occursin("scribe(stamped(", text)   # one scribe per unit
+        @test occursin("laneFile(", text)                                # a lane found by its own key, not by order
+    end
+    prelude = read(joinpath(TOOL, "instruments", "prelude.js"), String)
+    @test occursin("const scribeAll", prelude) && occursin("const laneFile", prelude)
+    # the lane runs are NOT batched: a lane is one agent over one surface, and each banks its own file —
+    # three through the prelude's scribe, the hunt through the banking agent its pipeline already carries
+    for (inst, s) in (("check-docs", "lanes.js"), ("check-consistency", "panel.js"), ("audit-changes", "audit.js"))
+        @test occursin("scribe(", read(joinpath(TOOL, "instruments", inst, "workflow", s), String))
+    end
+    @test occursin("label: `bank:", read(joinpath(TOOL, "instruments", "bug-hunt", "workflow", "hunt.js"), String))
+end
+
 @testset "every doctor check runs without crashing" begin
     root = fixture_copy("doctor-all")
     cfg = G.Config.read(root)

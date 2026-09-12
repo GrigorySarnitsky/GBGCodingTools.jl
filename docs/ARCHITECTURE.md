@@ -940,7 +940,12 @@ auditor and the severity re-check are `anchor = true` there); domain hats carry 
 config (default anchor); generic hats default economy. `catalog/models.toml` holds
 `economy = "sonnet"` (the only place the model name appears; a bump is PATCH). **Never economised, not
 configurable — exactly the record's five phases:** adjudication, reproduction, verification,
-consolidation, the fix pass. `strength = "full"` is a run flag, stamped into `ROUND.toml`.
+consolidation, the fix pass. `strength = "full"` is a run flag, stamped into `ROUND.toml`. A
+verification pass BATCHES: its lanes are grouped into units of at most six findings, one agent per unit,
+each writing one file per lane, so the fix-pass diff and the corpus are read once per unit rather than
+once per lane. Never economising is about which MODEL grades; batching is about how many times the same
+evidence is bought, and the two are independent. The lanes themselves are never batched: a lane is one
+agent over one surface, and that is where a round's cost belongs.
 
 **Forced by.** R12; PF's cost paragraph is already ported verbatim (`survey-checkdocs.md:24`); IT
 ignores `strength` where PF honours it (`survey-bughunt-auditchanges.md:91`).
