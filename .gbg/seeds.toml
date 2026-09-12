@@ -11,11 +11,16 @@ anchor = '2 cannot evaluate'
 replacement = '2 a second finding'
 occurrence = 1
 
+# Re-anchored 2026-09-12: `49 read-only checks` had rotted out of the corpus entirely (0 occurrences), so
+# this class was SKIPPED every round and recall was measured out of five classes, not six — silently, and
+# on exactly the class the claim checklist was built to catch. The new anchor names a CLOSED set (there
+# are four instruments, and a fifth would be a design change), so it does not drift with a count that
+# merely grows.
 [[class]]
 name = "count-drift"
-description = "a stated count moved away from the table it cites"
-anchor = '49 read-only checks'
-replacement = '47 read-only checks'
+description = "a stated count moved away from the set it cites"
+anchor = 'four instruments'
+replacement = 'three instruments'
 occurrence = 1
 
 [[class]]

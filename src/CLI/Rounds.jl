@@ -158,6 +158,15 @@ function prepare(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
             cat = Seeds.read_catalog(joinpath(root, cfg["instruments"]["check-consistency"]["seed_catalog"]))
             f = read(full, String); s = read(site, String)
             plan, skipped = Seeds.select(cat, f, rec["seed_salt"])
+            # the same refusal the docs path makes: a class that cannot plant leaves recall UNDEFINED for
+            # it and quietly narrows the denominator, which reads as a smaller catalogue rather than a
+            # broken one
+            if !isempty(skipped)
+                println(io, "prepare: refused — $(length(skipped)) seed class(es) have no anchor in the manuscript: ", join(skipped, ", "))
+                println(io, "         a skipped class is UNDEFINED in recall, so the denominator shrinks in silence;")
+                println(io, "         re-anchor it in $(cfg["instruments"]["check-consistency"]["seed_catalog"]), or preflight with --no-seed")
+                return 2
+            end
             f2, s2 = Seeds.plant(f, s, plan)
             write(full, f2); write(site, s2)
             println(io, "prepare: $(length(plan)) seed(s) planted (salt $(rec["seed_salt"]))", isempty(skipped) ? "" : "; skipped classes (anchor absent): " * join(skipped, ", "))
@@ -234,6 +243,16 @@ function seed_docs_corpus!(cfg::AbstractDict, round::AbstractString, dir::Abstra
     if isempty(plan)
         println(io, "prepare: refused — the seed catalogue matched nothing in the lane surfaces", isempty(skipped) ? "" : " (skipped: " * join(skipped, ", ") * ")")
         println(io, "         a round that plants nothing measures nothing; fix .gbg/seeds.toml or preflight with --no-seed")
+        return 2
+    end
+    # A class whose anchor has rotted out of the corpus is UNDEFINED in recall (Recall.per_class), which
+    # keeps it named but takes it OUT of the denominator: the round then reports recall over the classes
+    # that still plant and says nothing about the one that cannot. 2026-09-12-check-docs-01 measured 5 of 6
+    # that way, and the missing class was count-drift — the very class the claim checklist was built for.
+    if !isempty(skipped)
+        println(io, "prepare: refused — $(length(skipped)) seed class(es) have no anchor in the lane surfaces: ", join(skipped, ", "))
+        println(io, "         a skipped class is UNDEFINED in recall, so the denominator shrinks in silence;")
+        println(io, "         re-anchor it in $(get(cfg["instruments"]["check-docs"], "seed_catalog", ".gbg/seeds.toml")), or preflight with --no-seed")
         return 2
     end
     old = String(get(rec, "seed_root", ""))
