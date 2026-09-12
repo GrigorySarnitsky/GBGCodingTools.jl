@@ -855,6 +855,43 @@ end
     @test occursin("the tree is not clean", String(take!(io2)))
 end
 
+# The conditions a test of `release` itself can NEVER reach: past the refusal list the verb runs
+# `git tag` and `git push`, so every case above refuses on purpose and the rc-versus-final split stayed
+# unexercised — which is exactly where the unreachable branch lived until 2026-09-12. `release_fails` is
+# the refusal list lifted out, reading the tree and writing nothing, so each condition can be asked
+# directly. Both directions on the split: a CANDIDATE tolerates an open round, a FINAL release does not.
+@testset "release_fails: the conditions past the refusals, and the rc split" begin
+    root = fixture_copy("release-fails")
+    cfg = G.Config.read(root)
+    git(args...) = run(pipeline(setenv(`git -C $root -c user.email=t@t -c user.name=t $args`,
+                                       "HOME" => root, "PATH" => ENV["PATH"]); stdout = devnull, stderr = devnull))
+    # BOTH headings: the changelog check matches the FULL version, so a candidate needs its own entry and
+    # does not inherit the base version's — `## 0.1.0 —` does not satisfy a release of `0.1.0-rc.1`
+    write(joinpath(root, "CHANGELOG.md"), "## 0.1.0-rc.1 — 2026-01-01\n\n## 0.1.0 — 2026-01-01\n")
+    git("init", "-q", "-b", "master"); git("add", "-A"); git("commit", "-q", "-m", "base")
+    clean(rc) = G.release_fails(cfg, root, rc ? "0.1.0-rc.1" : "0.1.0", "0.1.0", rc)
+    # a candidate over a clean tree with a matching changelog and version: nothing refuses it
+    @test isempty(clean(true))
+    # a FINAL release asks more, and says so: no rc tag to lean on
+    @test any(f -> occursin("no v0.1.0-rc.N tag", f), clean(false))
+    # an OPEN round refuses a final release and NOT a candidate — the split that was unreachable
+    rd = joinpath(root, ".gbg", "rounds", "2026-01-01-check-docs-01"); mkpath(rd)
+    write_round(rd, merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => "2026-01-01-check-docs-01",
+        "instrument" => "check-docs", "schema_version" => 1, "head" => something(G.Git.head(root), "0"^40),
+        "roster" => Any[], "cost" => "economy", "strength" => "economy", "hostname" => "t",
+        "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00", "dead_lanes" => String[], "passes" => 0)))
+    @test any(f -> occursin("open round(s)", f), clean(false))
+    @test !any(f -> occursin("open round(s)", f), clean(true))     # a candidate may be cut mid-round
+    # and the carry ledger is consulted for a final release: a serious carried finding holds it back
+    led = Dict("schema_version" => 1, "history" => Any[], "carried" => [Dict("id" => "r/x#1",
+        "instrument" => "check-docs", "round" => "r", "severity" => "major", "lane" => "src",
+        "title" => "t", "locations" => ["src/FixtureA.jl:1 — \"q\""], "description" => "d"^24,
+        "carries" => 1, "first_carried" => "2026-01-01T00:00:00")])
+    open(joinpath(root, ".gbg", "carried.toml"), "w") do fh; TOML.print(fh, led); end
+    git("tag", "-a", "v0.1.0-rc.1", "-m", "rc.1")
+    @test any(f -> occursin("a serious finding is carried", f), clean(false))
+end
+
 @testset "round lifecycle" begin
     root = fixture_copy("round")
     cfg = G.Config.read(root)

@@ -67,39 +67,25 @@ anger. Admitting them restores the permission without weakening the guarantee, s
 `GBG_DOCS_NO_SKIP` stays set and a build that did not happen still cannot pass. Returns the value, empty
 when no docs round is open.
 """
-admitted_rounds(cfg::AbstractDict) = join(frozen_rounds(cfg, "check-docs", "check-consistency"), ",")
+admitted_rounds(cfg::AbstractDict) = join(frozen_rounds(cfg, Sync.DOCS_INSTRUMENTS...), ",")
 
 """
-    release(ver; io = stdout, skip_tests = false, root = pkgdir(GBGCodingTools)) -> Int
+    release_fails(cfg, root, ver, base, rc) -> Vector{String}
 
-Tags and pushes `v<ver>` from the dev checkout. The arguments are:
+Every reason `v<ver>` may not be tagged from `root`, in the order they are checked; empty when there is
+none. The arguments are `cfg`, the config read at `root`; `root`, the checkout; `ver`, the version;
+`base`, its `X.Y.Z` part; and `rc`, whether it is a candidate.
 
-- `ver` — the version to tag, `X.Y.Z` or `X.Y.Z-rc.N`.
-- `io` — where the checks are reported.
-- `skip_tests` — skips `Pkg.test()`, the docs build and the deep doctor; for the self-tests of this
-  verb only, never set by the CLI.
-
-- `root` — the checkout to release, the running package directory by default; the CLI never passes it.
-  A keyword because the verb read `pkgdir(GBGCodingTools)` directly and could only ever act on the real
-  checkout, which left it with no test at all — and that is how its `if !rc` branch stayed unreachable
-  until 2026-09-12. Every refusal below is a function of `root`.
-
-Refused (exit 2) unless: the tree is clean and on the configured branch; the tag is absent; `CHANGELOG.md`
-carries `## <ver> — `; `Project.toml`'s version equals the release version (the base version for a
-prerelease); `Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`); `gbg doctor --deep`
-is green at the root; and, for a final release only, no round is open under `.gbg/rounds/` and the
-`/check-docs` round opened at the latest `<ver>-rc.<n>` tag is closed — every id through `honored`,
-`adjudicated`, `rescan` or `seeded`, or carried into the next round ([`cites_round`](@ref)) — and
-nothing in the carry ledger holds it back (`carry_release_fails`). A tag is never moved or re-issued.
-Returns the exit code.
+It reads the tree, the tags, `CHANGELOG.md`, `Project.toml` and the rounds, and writes NOTHING — which
+is the point of it being separate. A test of [`release`](@ref) can only ever reach the refusals, because
+past them the verb runs `git tag` and `git push` and a test must never cut a tag; so the conditions
+beyond the refusal list were untestable, and they are exactly where the defect lived. `if !rc` lets a
+CANDIDATE be cut while a round is open, and that permission was unusable for nine releases. Lifted out
+so `cites_round`, `carry_release_fails` and the rc-versus-final split can each be exercised over a
+temporary repository (2026-09-12 work queue).
 """
-function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
-                 root::AbstractString = pkgdir(GBGCodingTools))
-    m = match(r"^(\d+\.\d+\.\d+)(-rc\.(\d+))?$", ver)
-    m === nothing && (println(io, "release: $ver is neither X.Y.Z nor X.Y.Z-rc.N"); return 2)
-    base = m.captures[1]; rc = m.captures[2] !== nothing
-    running_dev() || (println(io, "release: the dev checkout only"); return 2)
-    cfg = Config.read(root)
+function release_fails(cfg::AbstractDict, root::AbstractString, ver::AbstractString,
+                       base::AbstractString, rc::Bool)
     fails = String[]
     isempty(Git.porcelain(root)) || push!(fails, "the tree is not clean")
     branch = Git.run(root, "rev-parse", "--abbrev-ref", "HEAD")
@@ -132,6 +118,41 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
             append!(fails, carry_release_fails(Passes.carry_ledger(cfg)))
         end
     end
+    return fails
+end
+
+"""
+    release(ver; io = stdout, skip_tests = false, root = pkgdir(GBGCodingTools)) -> Int
+
+Tags and pushes `v<ver>` from the dev checkout. The arguments are:
+
+- `ver` — the version to tag, `X.Y.Z` or `X.Y.Z-rc.N`.
+- `io` — where the checks are reported.
+- `skip_tests` — skips `Pkg.test()`, the docs build and the deep doctor; for the self-tests of this
+  verb only, never set by the CLI.
+
+- `root` — the checkout to release, the running package directory by default; the CLI never passes it.
+  A keyword because the verb read `pkgdir(GBGCodingTools)` directly and could only ever act on the real
+  checkout, which left it with no test at all — and that is how its `if !rc` branch stayed unreachable
+  until 2026-09-12. Every refusal below is a function of `root`.
+
+Refused (exit 2) unless: the tree is clean and on the configured branch; the tag is absent; `CHANGELOG.md`
+carries `## <ver> — `; `Project.toml`'s version equals the release version (the base version for a
+prerelease); `Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`); `gbg doctor --deep`
+is green at the root; and, for a final release only, no round is open under `.gbg/rounds/` and the
+`/check-docs` round opened at the latest `<ver>-rc.<n>` tag is closed — every id through `honored`,
+`adjudicated`, `rescan` or `seeded`, or carried into the next round ([`cites_round`](@ref)) — and
+nothing in the carry ledger holds it back (`carry_release_fails`). A tag is never moved or re-issued.
+Returns the exit code.
+"""
+function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
+                 root::AbstractString = pkgdir(GBGCodingTools))
+    m = match(r"^(\d+\.\d+\.\d+)(-rc\.(\d+))?$", ver)
+    m === nothing && (println(io, "release: $ver is neither X.Y.Z nor X.Y.Z-rc.N"); return 2)
+    base = m.captures[1]; rc = m.captures[2] !== nothing
+    running_dev() || (println(io, "release: the dev checkout only"); return 2)
+    cfg = Config.read(root)
+    fails = release_fails(cfg, root, ver, base, rc)
     if !isempty(fails)
         println(io, "release: refused —"); foreach(f -> println(io, "  - ", f), fails); return 2
     end
