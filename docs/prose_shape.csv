@@ -166,7 +166,7 @@ unit,words,longest_paragraph,admonitions
 "Main.jl :: tool_version() -> String",38,35,0
 "Main.jl :: usage(io = stderr)",16,13,0
 "Passes.jl :: CARRY_LIMIT",47,46,0
-"Passes.jl :: Passes",292,109,0
+"Passes.jl :: Passes",303,114,0
 "Passes.jl :: audit_after_code(cfg, rec) -> Vector{String}",87,83,0
 "Passes.jl :: audit_coverage(cfg, head, dirs) -> (exists, covers)",112,49,0
 "Passes.jl :: carried_base(cfg, dir, rec) -> String",125,92,0
