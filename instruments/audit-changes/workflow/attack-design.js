@@ -40,7 +40,7 @@ const PREAMBLE = `You are attacking the DESIGN of an automated review instrument
 
 CONTEXT. ${S.context}
 
-WHY THIS ATTACK EXISTS. A hand-written list of lenses is a hypothesis about where defects live: on a real corpus eight hand-specified lanes reported themselves COMPLETE while missing an entire class, and two unconstrained readers then found nine defects the eight could not see. This lens set was written by the same author as the thing it audits. Assume it is inadequate and find out how.
+WHY THIS ATTACK EXISTS. A hand-written list of lenses is a hypothesis about where defects live: on a real corpus eight hand-specified lanes reported themselves COMPLETE while missing an entire class, and two unconstrained readers then caught four regressions the eight could not see. This lens set was written by the same author as the thing it audits. Assume it is inadequate and find out how.
 
 THE DESIGN UNDER ATTACK: read it in full from ${A.design_path} — the ONLY file under .gbg/ you may open.
 

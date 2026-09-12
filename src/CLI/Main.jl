@@ -144,6 +144,11 @@ function main(args::AbstractVector{<:AbstractString})::Int
     try
         return Int(VERBS[key](rest))
     catch err
+        # A structurally bad config is the documented exit 2 — "cannot evaluate" — and not a crash: an
+        # unknown key, a missing required key, an unknown enum member or a path that does not exist.
+        # `Config.read` throws it, and only three verbs caught it themselves, so every other verb
+        # reported a hand-edited config.toml as exit 3. Catching the class once here fixes it for all.
+        err isa Config.ConfigError && (println(stderr, "gbg ", key, ": ", sprint(showerror, err)); return 2)
         println(stderr, "gbg ", key, ": crashed — ", sprint(showerror, err))
         Base.show_backtrace(stderr, catch_backtrace()); println(stderr)
         return 3

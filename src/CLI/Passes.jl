@@ -8,12 +8,16 @@ The verification half of a round. Each pass has two verifiers, both agents the s
 
 - the **act verifier** sees the fix pass's diff and grades what it did to each open finding, in a
   closed vocabulary: `HONORED` (the ask landed by the right means, and `class_surfaces` lists every
-  other surface carrying the same class with whether the diff swept it), `LINE-ONLY` (the instance
-  is fixed, the class is alive), `ADJACENT`, `INSERTED`, `NEW-DEFECT`, `SCOPE-CREEP`, `UNDONE`
+  other surface carrying the same class with whether the diff SWEPT it — fixed the class at that
+  surface too, not only at the site the finding named), `LINE-ONLY` (the instance is fixed, the class
+  is alive), `ADJACENT` (something was done, but not what was asked), `INSERTED` (repaired by
+  appending, so the flagged text survives beside the correction), `NEW-DEFECT` (the fix introduced a
+  fresh one), `SCOPE-CREEP` (unasked changes, or a flagged term carried through a rewrite), `UNDONE`
   (nothing in the diff addresses it) and `LAUNDERED` (closed by declaring it acceptable);
 - the **state verifier** never sees the diff and grades whether the
-  defect is in the tree now: `PRESENT` (its default), `PARTIAL`, `REGRESSED`, `ABSENT`,
-  `NOT-A-DEFECT` or `UNCLEAR`.
+  defect is in the tree now: `PRESENT` (its default), `PARTIAL` (some of the class survives, named in
+  `surviving_class`), `REGRESSED`, `ABSENT`, `NOT-A-DEFECT` or `UNCLEAR` — of which only `ABSENT` and
+  `NOT-A-DEFECT` are favourable.
 
 [`GBGCodingTools.demote`](@ref) turns an `HONORED` whose list is empty or names an unswept surface
 into `LINE-ONLY`. [`Passes.pass_open`](@ref) opens a verification pass (nonce, range, expected counts, the regenerated
@@ -1090,6 +1094,8 @@ round closed. The arguments are:
 
 - `cfg` — the validated config.
 - `round` — the round id.
+- `carry` — the ids this round closes by carrying them into the next round of its instrument, gated by
+  `carry_conditions`; empty means "whatever the budget forces", as below.
 - `io` — where the refusals are listed.
 
 The conditions: the latest pass fully closed, no

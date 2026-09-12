@@ -26,9 +26,11 @@ by the consumer thereafter (wiring-checked, never rewritten).
 **Managed headers.** A G file carries a first-line header where its format allows a comment:
 `# gbg:managed <template> v<version> — rewritten by \`gbg sync\`; do not edit` (`#`-commented
 formats), `<!-- gbg:managed … -->` (Markdown), none for JSON (the sidecar is the record). The header
-is part of the rendered bytes the sidecar hashes. One exception: `queue-guard.sh.tmpl` is copied
-byte-for-byte from PF's Stop hook and carries no header, so the upstream text stays comparable; the
-sidecar hash is what marks it managed. The two blocks have a shape of their own: `claude-md.block` and
+is part of the rendered bytes the sidecar hashes. Two exceptions: `queue-guard.sh.tmpl` is copied
+byte-for-byte from PF's Stop hook and carries no header at all, so the upstream text stays comparable,
+and the sidecar hash is what marks it managed; and `SKILL.md.tmpl` carries the ordinary Markdown header
+but NOT on the first line — it follows the mandatory YAML frontmatter, so the rendered file still parses
+as a Claude skill. The two blocks have a shape of their own: `claude-md.block` and
 `gitignore.block` are managed INSIDE a file the package owns, between a `gbg:managed begin v<version>`
 line — in `<!-- … -->` in `CLAUDE.md`, whose opener also carries `sha256:<hash>` of the block's body
 lines, and after `#` in `.gitignore` — and a `gbg:managed end` line; `sync` rewrites only what lies

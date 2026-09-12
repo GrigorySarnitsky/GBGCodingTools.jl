@@ -801,7 +801,11 @@ main_script(instrument) = Dict("check-consistency" => "panel.js", "check-docs" =
 - `cfg` — the validated config.
 - `io` — where a torn file is named.
 
-Returns true when no pinned or managed file is modified.
+A MANAGED file is one the tool renders into the consumer and hash-checks thereafter, edited only by
+`gbg sync` ([`GBGCodingTools.Sync`](@ref)); a PINNED file is one the consumer itself owns and the tool
+never renders — the config, the ledger, the seed catalogue, the sync sidecar, the hat personas, the
+sub-environment manifests — but which must still never drift outside its own write path
+([`Doctor.pinned_and_managed`](@ref) is the list). Returns true when neither kind is modified.
 """
 function torn_check(cfg::AbstractDict; io::IO = stderr)
     checks, code = Doctor.run(cfg; only = ["CFG.TORN"], io = devnull)

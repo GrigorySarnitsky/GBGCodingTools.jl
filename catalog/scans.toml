@@ -4,6 +4,11 @@
 # · runner (julia = a function under src/Scans/ or Reflection; html = over the built site) · fixture
 # (the defect classes in fixture/GBG Fixture/defects.toml; a must-hit and a clean twin each).
 # `gbg selftest` fails when a scan function is unregistered here or a registered scan has no fixture pair.
+# `rule` is ONE canonical rule per scan, which is what the ledger and the doctor resolve against. A scan
+# may enforce more than one — SCAN.API_PAGE_STRUCTURE, SCAN.DEAD_REF and SCAN.DOI_CROSSCHECK each enforce
+# two — and the full list per scan is §12.B's table; the other direction, every scan enforcing a given
+# rule, is that rule's `check` array in policy/RULES.toml. Read either of those, never this column, for
+# "which rules does this scan carry".
 
 [[scan]]
 id = "SCAN.TABLE_INDENTED"

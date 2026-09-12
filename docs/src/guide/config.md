@@ -14,7 +14,8 @@ references anchors, the glossary file, and any data or script surface whose comm
 `[rubric]`, `[notation]`, `[citations]`, `[instruments]` with one table per instrument, `[cost]`,
 `[schema]`, `[[scans.custom]]`.
 
-Five values vary by package and are substituted into the rendered policy: `rubric.leading_identity`,
+Six values vary by package and are substituted into the rendered policy: `rubric.leading_identity`,
+`rubric.signature_types` (`names` or `mirror` — how much of the method a docstring signature repeats),
 `notation.vectors`, `docs.admonition_titles`, `notation.mathbf_allowed` (which never forbids
 `\mathbf{1}`, the indicator and identity every package is granted) and
 `instruments.check-docs.argcov_policy`, the tier `RULE.DOC.ARGCOV` binds at. Everything else about the instruments is a constant

@@ -99,7 +99,7 @@ record explicitly.
 | package paths: `[paths]` (further directories the audit covers — `examples`, `benchmark`) | relative directories | config (may only ADD to the covered constants) | PF's `examples/` demos are shipped code |
 | doc surfaces: rationale docs, pages, generated copies (`optional = true`, tolerated absent on a fresh clone), src, ext, literate examples, built HTML, history-exempt section, references heading (or `"absent"`), glossary | globs / `file#heading` anchors | config | PF 6 surfaces, IT 4, SS 4 (`survey-checkdocs.md:51`) |
 | ★ `rubric.leading_identity` | `physical-meaning` \| `estimand` | config enum | SS's estimand-first slot (`survey-checkdocs.md:139`) |
-| ★ `rubric.signature_types` | `names` \| `mirror` | config enum | 451 arguments over 247 docstrings here take `names` and 4 took `mirror` (2026-09-12); PF asks for the stricter form, where a device kernel's argument types are the contract |
+| ★ `rubric.signature_types` | `names` \| `mirror` | config enum | this package takes `names`, the form all but a handful of its docstrings already used; PF asks for the stricter form, where a device kernel's argument types are the contract. `SCAN.SIGNATURE_TYPED` re-measures it on every run, so no count is carried here to go stale |
 | ★ `notation.vectors` | `component` \| `boldsymbol` \| `none` | config enum | IT bold-italic vectors vs PF components (`survey-check-consistency.md:160`) |
 | ★ `notation.mathbf_allowed` | list of strings | config | `\mathbf{1}` prescribed (PF/SS) vs banned (IT), undispositioned (`survey-buildlints-hooks-policy.md:37`) |
 | ★ `docs.admonition_titles` | `always` \| `load-bearing` | config enum | PF always / IT bare `!!! note` (`survey-buildlints-hooks-policy.md:95`) |
@@ -613,7 +613,7 @@ schema-invalid, schema-valid with a `lane` field naming a lane the roster entry 
 carrying a verdict its findings contradict — those quarantine the file as `NN-<lane>.rejected.json` —
 or with zero findings and an empty `checked[]`, left in place; then **EMPTY** (zero findings, non-empty
 `checked[]`), **TRUNCATED** (`candidates_found > findings.length`; reported, not fatal) or live. An
-**ORPHAN** (a lane file no roster entry expects) is reported, never counted. A DEAD **or REJECTED** lane is **exit 2** — cannot
+A lane file no roster entry expects is not classified at all: `bank` iterates the roster, so a stray file in `findings/` is neither read nor reported. A DEAD **or REJECTED** lane is **exit 2** — cannot
 evaluate — and nothing is frozen. Closure is per finding id through five channels (§6.5); the
 wholesale escape is `gbg round abandon --reason`, which lists every open id. `.gbg/rounds/` is the
 SOLE closure record: the tool never reads a work-queue file for **closure** — the Stop hook of D13,
@@ -643,7 +643,7 @@ the unseeded manuscript beside the seeded one is a one-line `diff` (attack 3.4).
 verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import,managed,carried,
 severity,attack-subject,attack,rubric-audit,human-findings}.schema.json`, the last four those of the
 design checks (`gbg attack`, `gbg calibrate`). An instrument's `instruments/<name>/schema.json` is its `args` object plus its
-lane-file wrapper and `$ref`s `finding.schema.json` for the findings array; the lane-file wrapper and
+lane-file wrapper, whose findings array `$ref`s a REDUCED `$defs.finding` local to that file — the fields a lane itself writes, without the `id`, `lane`, `n`, `carried_from`, `seeded` and `seed_class` the CLI attaches at bank; `schema/finding.schema.json` is the fuller shape `bank` validates the finished finding against, which is why the instrument file cannot simply `$ref` it. The lane-file wrapper and
 `bug-hunt`'s candidate-file shape live inline in each instrument's own `schema.json`, not as files
 under `schema/`.
 Vocabularies (constants, §6.3). `finding.type` = core enum + `domain_type` from
@@ -1886,14 +1886,14 @@ implementation plan refers to it and adds no id of its own.
 | `POL.SENTINEL` | the policy copy's version stamp == the pin | otherwise |
 | `POL.COLLAPSED` | collapsed artefacts absent: model-versioned trailer, "knob"/"tweak" in prose (quoted words and code spans ignored), the June `lint_inline_math` | present |
 | `GIT.BRANCH` | current branch == `git.branch`; `origin` set | otherwise |
-| `GIT.TRAILER` | last 20 commits carry the versionless trailer | otherwise (WARN) |
+| `GIT.TRAILER` | last 20 commits carry the versionless trailer, and none carries a model-versioned one | otherwise |
 | `ROUND.DIR` | `.gbg/rounds/` exists while any instrument is enabled | absent |
 | `ROUND.MARKER` | every round directory has `ROUND.toml` | one without |
 | `ROUND.OPEN` | lists open rounds (WARN; never FAIL — a fix pass may span sessions) | — |
 | `ROUND.ABANDONED` | lists abandoned rounds with their carried `open_ids` (WARN) | — |
 | `ROUND.DEV` | lists closed `/check-docs` and `/check-consistency` rounds stamped `dev+` or `dev` — recorded, not comparable, and citable by no release (WARN; the refusal is at `preflight`, where the round can still not be opened, and in `gbg release`, on the round it cites). An audit or hunt round reads `base..HEAD` and is off-tag by construction, so it is never named | — |
 | `ROUND.FROZEN` | every closed round's stored tally sha matches `ROUND.toml`; every closed round's `findings.json` sha matches `findings_sha`; `reproductions_sha` where present; and every stamp names its own revision — `dev+<sha>` begins `tool_rev`, a pinned `vX.Y.Z` equals it, a tag stamp resolves to it where the tool repository is in reach (the shas cover the evidence, not the stamps, so a re-stamped record passed unseen) | tampered |
-| `AUDIT.GAP` | every closed audit round's `base` equals the previous closed audit's `head` | otherwise (WARN) |
+| `AUDIT.GAP` | every closed audit round's `base` equals the previous closed audit's `closed_head` (falling back to `head` where the earlier round records none) — the head the audit CLOSED at, not the head it opened at, so a round with fix passes between the two is compared against what it actually left behind | otherwise (WARN) |
 | `LOAD.ENVS` (`--deep`) | `using GBGCodingTools` loads in every sub-env that lists it (resolve/instantiate/LOAD are not interchangeable; `Pkg.gc()` can remove a copy referenced only by a test sandbox — instantiate restores it) | error |
 | `BUILD.DOCS` (`--deep`) | `docs_build` exits 0 and the build log carries the `GBGCodingTools v<ver> makedocs` banner | otherwise |
 | `SELF.DOCS` (`--deep`) | at the tool root only (not applicable in a consumer): the tool's own docs build — `julia --project=docs docs/make.jl` in the dev checkout — exits 0, its log carries the `GBGCodingTools v<ver> makedocs` banner, and its docs environment resolved `GBGCodingTools` by path (`Pkg.dependencies()[uuid].is_tracking_path` — the working tree, D2's bootstrap circularity made checkable); what `gbg release` and the fleet's fifth row run; a release precondition, never a selftest arm (§8); non-exemptable | otherwise |
@@ -1958,7 +1958,12 @@ dependency and double the suite's time for a check the release verb and `docs.ym
 tool's own rounds (D15) are recorded under its `.gbg/rounds/`; the first is the `/check-docs` round the
 implementation plan's Phase 1.10 opens at the clean `v1.0.0-rc.1` tag and closes before `v1.0.0`.
 
-**Step-0 instrument-equivalence test.** Runs on the LIVE working trees, not scratch clones — PF's
+**Step-0 instrument-equivalence test. NOT YET BUILT** — the legacy pile readers are Phase 2's scratch
+tools (IMPLEMENTATION Phase 2 step 1), and the CLI says so itself: a non-`--empty` `gbg round import`
+and every `gbg round compare` refuse with exit 2 today. Only `gbg round import --empty` exists. What
+follows is the design those verbs are to be built to, not a description of what the tool now does.
+
+It runs on the LIVE working trees, not scratch clones — PF's
 largest round is the UNTRACKED `.claude/doc-review/` on `Aiporetne`'s working tree, and a clone does
 not contain it; IT on `Enteropia` or the Dropbox copy. Three verbs carry it, and they are defined here:
 
@@ -1972,8 +1977,10 @@ not contain it; IT on `Enteropia` or the Dropbox copy. Three verbs carry it, and
   `opened`/`closed` = the record's dates where it carries them, else the import time;
   `abandoned = {reason, open_ids}` from the record's own open list), `findings.json` (ids from the
   title → id map), the verdict passes the pile lets it reconstruct, the witnesses where the pile has
-  them, and `import.json` (§6.1). It needs no `.gbg/config.toml` — the one `round` verb that runs
-  before `init`; `self verify` still precedes it — and refuses (exit 2) an existing target round, so
+  them, and `import.json` (§6.1). It is to run before `init`, on a tree with no `.gbg/config.toml` —
+  which the CLI does not yet allow, since `cmd_round` reads the config before dispatching any round
+  verb, and the implemented `--empty` path calls neither `guard` nor `self verify`, unlike every other
+  round verb. It refuses (exit 2) an existing target round, so
   an import repeated on the same tree cannot double up. `gbg round import --empty <round> --reason
   "…"` writes a round holding only `ROUND.toml` (`abandoned = {reason, open_ids = []}`) and
   `import.json` (`source = "none"`), for a record that has witnesses but no round entry (IT's round 4).
@@ -2359,7 +2366,7 @@ the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`), one or more of `scan:<i
 | `RULE.DOC.SHAPE` | docs-rubric | A docstring's longest paragraph ≤ 120 words and admonitions ≤ 3, on every docstring and every NEW page unit; no unit grows past its baseline, a baselined page unit held by the ratchet alone; an `# Arguments` heading, where a consumer uses one, precedes any column-0 `!!!`; `# Fields` is last. | `lint_prose_shape`; IT `lint_docstring_shape` |
 | `RULE.DOC.MODULE_MAP` | docs-rubric | A module docstring lists one linked one-liner per operation family and no formula. | "Module docstring = map"; IT deviation |
 | `RULE.DOC.ARG_BULLET` | docs-rubric | An argument or field bullet names its argument in a plain code span, never a bold one. | `guards.sh` "argument bullet is not bolded"; SS deviation candidate |
-| `RULE.DOC.SIGNATURE_MIRROR` | docs-rubric | A docstring signature names the method's arguments in its order; how much it repeats is ★ `rubric.signature_types` — `names` (the default: names and defaults, types in the bullets) or `mirror` (every type the method declares). Only the docstring wraps, to ≤ 88 columns with a hanging indent. Narrowed to `names` 2026-09-12, the form 247 of 251 docstrings here already took; PF takes `mirror`. | "A docstring signature names the method's arguments in the method's order" |
+| `RULE.DOC.SIGNATURE_MIRROR` | docs-rubric | A docstring signature names the method's arguments in its order; how much it repeats is ★ `rubric.signature_types` — `names` (the default: names and defaults, types in the bullets) or `mirror` (every type the method declares). Only the docstring wraps, to ≤ 88 columns with a hanging indent. Narrowed to `names` on 2026-09-12, the form all but four of this package's docstrings already took at that date; PF takes `mirror`. | "A docstring signature names the method's arguments in the method's order" |
 | `RULE.DOC.SIGNATURE_FIDELITY` | docs-rubric | The displayed signature set and the defined method table agree per exported binding (symmetric difference reported). | IT `signature_fidelity.jl` |
 | `RULE.DOC.XLINK` | docs-rubric | A cross-module name is `@ref`-linked at its first mention, qualified so the link resolves. | IT `xlink.jl`; PF "cross-module @ref is qualified" |
 | `RULE.DOC.ARGCOV` | docs-rubric | Every argument in a docstring signature, positional and keyword, is documented in its body; run from the signature. (★ `argcov_policy` chooses triage or gate.) | "Argument coverage (signature-driven)" |
@@ -2452,7 +2459,7 @@ docstrings except by `SCAN.SWALLOWED_ESCAPE`, which is what that scan is for.
 | `SCAN.INLINE_MATH_SPLIT` | `RULE.TEX.INLINE_ONE_LINE` | hard | all | julia | PF/IT/SS `lint_inline_math` (fence- and docstring-aware; list-leader continuation inside an open double-backtick span) | `inline-math-split` |
 | `SCAN.SWALLOWED_ESCAPE` | `RULE.TEX.SWALLOWED_ESCAPE` | hard | src, ext | julia | PF `lint_swallowed_escapes` `(?<!\\)\\[abefnrtv0-7xuU]` inside docstrings | `swallowed-escape` |
 | `SCAN.RETIRED_CLAIMS` | `RULE.DOC.CURRENT` | hard | all | julia | PF `lint_retired_claims`; patterns from `docs.retired_claims` (whitespace-normalised over whole files, so a wrapped phrase is caught) | `retired-claim` (fixture config lists one) |
-| `SCAN.ID_RESOLVES` | `RULE.DOC.CURRENT` | triage | all, data | julia | new 2026-09-12: a `RULE.`/`SCAN.`/doctor id in prose resolving to no row of the RUNNING COPY's registers, so an id renamed in the tool lights up every consumer sentence still citing the old one. A family prefix (`RULE.DOC`), a wildcard stem (`SCAN.HTML_`) and anything under `history_exempt` are not hits. Measured before it was built: 964 references here, 11 unresolved, all 11 artefacts of the pattern. Its two proposed siblings failed the same measurement and became the lanes' claim checklist instead — a cited COUNT names a subset rather than an inventory in 17 of 24 cases ("two rules", "three verbs"), and an unresolved PATH is usually a consumer's file the rationale describes on purpose (143 of 1705) | `dead-rule-id` |
+| `SCAN.ID_RESOLVES` | `RULE.DOC.CURRENT` | triage | all, data | julia | new 2026-09-12: a `RULE.`/`SCAN.`/doctor id in prose resolving to no row of the RUNNING COPY's registers, so an id renamed in the tool lights up every consumer sentence still citing the old one. A family prefix (`RULE.DOC`), a wildcard stem (`SCAN.HTML_`) and anything under `history_exempt` are not hits. Measured over this package on 2026-09-12, before it was built: 964 references, 11 unresolved, all 11 artefacts of the pattern. Its two proposed siblings failed that same measurement and became the lanes' claim checklist instead — a cited COUNT named a subset rather than an inventory in 17 of the 24 cases then in surface ("two rules", "three verbs"), and an unresolved PATH was usually a consumer's file the rationale describes on purpose (143 of 1705). Those figures are that day's snapshot; the scan re-measures on every run | `dead-rule-id` |
 | `SCAN.API_PAGE_STRUCTURE` | `RULE.DOC.INTERNAL_API`, `RULE.DOC.API_GROUPING` | hard | pages (`docs/src/api/`) | julia | PF `lint_api_page_structure` (`## Internal API` last; no empty `@docs`) | `internal-api-not-last`, `empty-docs-block` |
 | `SCAN.PROSE_SHAPE` | `RULE.DOC.SHAPE` | hard | src (docstrings), rationale, pages | julia | PF `lint_prose_shape` + IT `lint_docstring_shape`: caps 120 words / 3 admonitions on every docstring and every NEW page unit, a baselined page unit held by the ratchet alone; ratchet against `docs/prose_shape.csv` (units: docstring, page, section incl. numbered items and `**(x)**` findings); an `# Arguments` heading, where used, before column-0 `!!!`, `# Fields` last; missing CSV = error | `paragraph-over-cap`, `fields-not-last` |
 | `SCAN.AI_BANNER` | `RULE.DOC.AI_BANNER` | hard | rationale, literate, pages | julia | PF `lint_ai_banner`: present on every rationale page and Literate file, and verbatim-identical wherever it appears | `banner-drift` |

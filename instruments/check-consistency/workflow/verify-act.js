@@ -5,9 +5,9 @@
 // `range` required; one agent per lane; NO demotion here (the CLI applies it); finding text
 // arrives unabridged in a FILE named by args (Revision 9); no census (the CLI knows the denominator).
 //
-// Args: { schema_version, round, round_dir, pass_dir, repo, range, nonce, graded_sha256,
+// Args: { schema_version, round, pass_dir, repo, range, nonce, graded_sha256,
 //         lanes: [{nn, key, expected}], findings: [{id, lane, n, title}], findings_path,
-//         adjudicated_titles, rulebook_summary?, package, models: {economy}, strength }
+//         quote_probe, class_candidates, adjudicated_titles, batch?, package, models: {economy}, strength }
 export const meta = {
   name: 'verify-act',
   description: 'Grade a fix pass finding by finding, SEEING the diff: HONORED / ADJACENT / INSERTED / LINE-ONLY / NEW-DEFECT / SCOPE-CREEP / UNDONE / LAUNDERED',

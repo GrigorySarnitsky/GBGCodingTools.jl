@@ -10,7 +10,7 @@
 //
 // Args (instruments/audit-changes/schema.json): { schema_version, round, round_dir, repo, package,
 //   base, head, covered, diff_path, diffstat_path, claims_path, lanes: [{nn, key, kind,
-//   brief_path, anchor}], models: {economy}, strength }
+//   brief_path, anchor}], finding_cap, models: {economy}, strength }
 export const meta = {
   name: 'audit-changes',
   description: 'Audit a change set: was each edit justified, and did it silently alter behaviour that worked before?',
@@ -36,14 +36,14 @@ const SCHEMA = {
         type: { type: 'string', enum: ['operational', 'math', 'structure', 'currency', 'style', 'notation', 'citation', 'self-containment'], description: 'operational for a behaviour, contract or guard concern; math for a numerical one; currency for a stale-prose one' },
         severity: { type: 'string', enum: ['blocker', 'major', 'minor', 'nit'] },
         confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
-        title: { type: 'string' },
-        locations: { type: 'array', items: { type: 'string' }, description: 'file:line and the hunk' },
+        title: { type: 'string', minLength: 8 },
+        locations: { type: 'array', minItems: 1, items: { type: 'string' }, description: 'file:line and the hunk' },
         before: { type: 'string', description: 'what the code did BEFORE, quoted from the diff' },
         after: { type: 'string', description: 'what it does NOW, quoted' },
         why_it_matters: { type: 'string', description: 'who is affected and how — concrete' },
         justified: { type: 'string', enum: ['yes', 'no', 'unclear'], description: 'was this change warranted by a defect, or wider than the defect required?' },
         previously_worked: { type: 'string', enum: ['yes', 'no', 'unknown'], description: 'REQUIRED on the behaviour-change lane: did a concrete input that was valid BEFORE now behave differently? Name it in why_it_matters. unknown is gated like yes.' },
-        description: { type: 'string' },
+        description: { type: 'string', minLength: 20 },
         evidence: { type: 'string', description: 'quoted from the diff or the tree — an assertion with no quotation is not a concern' },
       },
       required: ['type', 'severity', 'confidence', 'previously_worked', 'title', 'locations', 'before', 'after', 'why_it_matters', 'justified', 'description', 'evidence'],

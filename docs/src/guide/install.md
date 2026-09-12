@@ -5,6 +5,8 @@
 
 The tool reaches a machine in two ways, both per machine and never synced: the **pinned copy** Pkg
 fetches into the consumer's `docs/` environment, and the **shim** `~/.local/bin/gbg` that executes it.
+A **consumer** is a package that pins this tool and is reviewed by it — one of the four GBG science
+packages, or the tool itself, which is its own fifth consumer.
 
 ## The pinned version
 

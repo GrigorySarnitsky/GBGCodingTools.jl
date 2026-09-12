@@ -1,6 +1,6 @@
 {
     "tool_version": "dev",
-    "inputs_sha": "63242e5684be41108672d98123a4993d13b41ea3b7d462e0d23df536338cb616",
+    "inputs_sha": "fee14d0bcbc2f83dab927b708441df6cd9b105cafdc3c80138cbb015ebdfff37",
     "files": {
         "CLAUDE.md#gbg:managed": {
             "template": "claude-md.block",
@@ -99,5 +99,5 @@
         }
     },
     "schema_version": 1,
-    "rendered": "2026-09-12T13:27:03"
+    "rendered": "2026-09-12T15:04:00"
 }

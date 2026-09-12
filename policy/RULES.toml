@@ -98,7 +98,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.API_GROUPING"
 statement = "API pages are math-grouped under hand-written headers via @docs; each object once; f/f! together, ! first; no @index; no empty @docs block; every public operation on a public page."
 sentinel = "API pages are math-grouped under hand-written headers via explicit `@docs` blocks, each object once, an `f`/`f!` pair together with the `!` home first, no `@index`, and no empty block."
-check = ["scan:SCAN.HTML_DOCSTRING_ONCE", "scan:SCAN.HTML_PUBLIC_HOME", "scan:SCAN.HTML_BASE_LEAK"]
+check = ["scan:SCAN.API_PAGE_STRUCTURE", "scan:SCAN.HTML_DOCSTRING_ONCE", "scan:SCAN.HTML_PUBLIC_HOME", "scan:SCAN.HTML_BASE_LEAK"]
 [[rule]]
 id = "RULE.DOC.COVERAGE_BASES"
 file = "docs-rubric.md"
@@ -448,7 +448,7 @@ file = "citations.md"
 section = "### RULE.CIT.NO_INACCESSIBLE"
 statement = "Never cite an inaccessible source (inspiration/, an accompanying thesis, an appendix the reader cannot open) on any user-facing surface."
 sentinel = "Never cite an inaccessible source on any user-facing surface: not a gitignored monograph, an accompanying thesis, an appendix or figure the reader cannot open, nor working notes."
-check = ["panel"]
+check = ["scan:SCAN.DEAD_REF", "panel"]
 [[rule]]
 id = "RULE.TEST.GATE_VS_SURVEY"
 file = "testing-protocol.md"
@@ -572,7 +572,7 @@ check = ["harness:Passes.grade"]
 id = "RULE.INST.CARRY"
 file = "instruments.md"
 section = "### RULE.INST.CARRY"
-statement = "A round may close by carrying a finding into the next round of its instrument — a minor or nit at will, anything still open once its pass budget is spent — on a re-rated severity; it is re-banked there, never rediscovered, and a final release refuses while a carried blocker or major stands or the backlog is not draining."
+statement = "A round may close by carrying a finding into the next round of its instrument — a minor or nit at will, anything still open once its pass budget is spent — on a re-rated severity; it is re-banked there, never rediscovered, and a final release refuses while a carried blocker or major stands, while anything has been carried CARRY_LIMIT (3) times, or while the backlog is not draining."
 sentinel = "A round may close by CARRYING a finding into the next round of its instrument: a `minor` or a `nit` whenever the owner chooses, and every finding still open once the round has spent its pass budget, a `blocker` or a `major` among them."
 check = ["test:test/rounds.jl"]
 [[rule]]

@@ -11,7 +11,7 @@
 //   { schema_version, round, round_dir, repo, rawhtml, package: {name, description, domain, terms,
 //     deliberate_absences}, preamble, manuscripts: {full: path, siteonly: path}, rulebook_path,
 //     hats: [{nn, key, persona_path, substrate, needs, anchor}], adjudicated_titles, finding_types,
-//     strength, models: {economy} }
+//     finding_cap, strength, models: {economy} }
 export const meta = {
   name: 'check-consistency-panel',
   description: 'Fresh-eyed panel auditing the RENDERED docs for consistency, mathematics, typesetting, structure and design (concurrent, collect-only)',
@@ -39,10 +39,10 @@ const SCHEMA = {
         type: { type: 'string', enum: TYPES, description: 'the core axis; a contradiction is filed under the axis it concerns, a design or API gap under operational, wording under style, organisation under structure' },
         severity: { type: 'string', enum: ['blocker', 'major', 'minor', 'nit'] },
         confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
-        title: { type: 'string' },
-        locations: { type: 'array', items: { type: 'string' }, description: 'page (its PAGE banner) + section + the exact quoted rendered text, <= 20 words per quote' },
+        title: { type: 'string', minLength: 8 },
+        locations: { type: 'array', minItems: 1, items: { type: 'string' }, description: 'page (its PAGE banner) + section + the exact quoted rendered text, <= 20 words per quote' },
         contradicts: { type: 'string', description: 'for a contradiction: the OTHER location + its quote + the axis; else empty' },
-        description: { type: 'string', description: '<= 90 words' },
+        description: { type: 'string', minLength: 20, description: '<= 90 words' },
         resolution_hint: { type: 'string', description: 'advisory only' },
       },
       required: ['type', 'severity', 'confidence', 'title', 'locations', 'description'],

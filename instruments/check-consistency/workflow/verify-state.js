@@ -78,8 +78,8 @@ const substrateFor = (lane) => {
 }
 // The CLI already grepped each finding's own quoted text in the files that finding names, so no verifier
 // spends a tool call on it. It is EVIDENCE, never a verdict: the quote is the site's identifying text as
-// often as the defect's, so a surviving one does not settle STRATEGY and a vanished one does not settle
-// the class. Absent (an older CLI), the line is simply omitted.
+// often as the defect's, so a surviving quote does not settle that the defect is still there and a
+// vanished one does not settle that the class is gone. Absent (an older CLI), the line is simply omitted.
 const probe = (id) => {
   const p = A.quote_probe && A.quote_probe[id]
   if (!p) return ''

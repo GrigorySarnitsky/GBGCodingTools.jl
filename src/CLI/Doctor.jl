@@ -225,6 +225,17 @@ check!("CFG.VALID", ctx -> begin
     end
     pass("CFG.VALID", "config parses, validates, paths resolve")
 end)
+"""
+    pinned_and_managed(ctx) -> Vector{String}
+
+The files `CFG.TORN` watches, in two kinds the word "pinned" alone does not separate. A MANAGED file is
+one the tool renders and hash-checks thereafter, edited only by `gbg sync`, and comes from the sidecar.
+A PINNED file the tool never renders: the consumer writes it once and the tool must never see it drift
+outside its own write path — `.gbg/config.toml`, `.gbg/exemptions.toml`, `.gbg/seeds.toml`, the sync
+sidecar itself, every hat persona, and every sub-environment `Project.toml` naming the tool. This is a
+third sense of "pinned", distinct from a pinned VERSION and from a pinned tree hash. The argument is
+`ctx`, the doctor's context. Returns the paths, relative to the root.
+"""
 function pinned_and_managed(ctx)
     files = [".gbg/config.toml", ".gbg/exemptions.toml", ".gbg/seeds.toml", ".gbg/managed.json"]
     d = joinpath(ctx.root, ".gbg", "hats"); isdir(d) && append!(files, [".gbg/hats/" * f for f in readdir(d)])

@@ -8,7 +8,7 @@
 // invariants text are files preflight wrote; args name their paths.
 //
 // Args (instruments/bug-hunt/schema.json): { schema_version, round, round_dir, repo, package, preamble,
-//   lanes: [{nn, key, kind, brief_path, files, anchor}], oracles, witness_cmd,
+//   lanes: [{nn, key, kind, brief_path, files, anchor}], oracles, witness_cmd, finding_cap,
 //   invariants_path?, models: {economy}, strength }
 export const meta = {
   name: 'bug-hunt',
@@ -142,7 +142,7 @@ NEVER read anything under .gbg/ other than writing your own witness file; never 
 
     // Bank the lane file FIRST through an agent's Write (a workflow script has no filesystem), then
     // return liveness. The file is the durable record the CLI banks from.
-    const laneFile = {
+    const bankedLane = {
       schema_version: A.schema_version, round: A.round, lane: lane.key,
       files_read: (found && found.files_read) || [],
       candidates_found: (found && found.candidates_found) || candidates.length,
@@ -155,7 +155,7 @@ NEVER read anything under .gbg/ other than writing your own witness file; never 
         type: 'operational', confidence: 'high', locations: [`${v.candidate.file}:${v.candidate.line}`], description: v.candidate.mechanism,
       })),
     }
-    const w = found ? await agent(`Use the Write tool to write EXACTLY this JSON to ${A.round_dir}/findings/${lane.nn}-${lane.key}.json and return {done: true}. No other text.\n\n${JSON.stringify(laneFile, null, 2)}`,
+    const w = found ? await agent(`Use the Write tool to write EXACTLY this JSON to ${A.round_dir}/findings/${lane.nn}-${lane.key}.json and return {done: true}. No other text.\n\n${JSON.stringify(bankedLane, null, 2)}`,
       { label: `bank:${lane.key}`, phase: 'Reproduce', schema: LANE_FILE_SCHEMA, model: ECONOMY }) : null
     return { lane: lane.key, dead: !found, written: !!(w && w.done), n: verdicts.length,
              confirmed: verdicts.filter(v => v.verdict === 'REPRODUCED' || v.verdict === 'EVIDENCED').length }
