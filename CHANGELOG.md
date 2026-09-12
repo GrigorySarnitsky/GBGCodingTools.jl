@@ -3,6 +3,27 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
+## 1.0.0-rc.11 — 2026-09-12
+
+PATCH on rc.10. Instruments affected: all four — `verify-act.js` and `verify-state.js` are copied into
+every round's workflow directory, so the break reached each of them. Rates comparable: **yes** — no
+lane's or verifier's judgement changed, because the two scripts could not run at all.
+
+**A blocker rc.10 shipped, found by the round rc.10 was cut for.** `verify-act.js:126` and
+`verify-state.js:113` carried a BARE backtick pair around `lane_files` inside the prompt template
+literal, closing the literal early: neither file parsed. The verifier batching introduced it, no
+verification pass had run since, and `gbg round pass open` on the very next round — the one open now —
+would have launched two scripts that cannot parse. The escape is restored, matching every other
+backticked term in those files.
+
+**The guard that should have caught it was keyed on a word rather than on syntax.** `SPAN_IN_PROSE`
+flags a Markdown code span in prompt prose and is swept over all eleven scripts on every test run, but it
+exempted `in ` and `of `, written for the JavaScript operators. The English preposition matched the
+exemption meant for the operator, so the suite stayed green through every run of rc.10 over an
+unparseable file. Both exemptions are gone and the two prose forms are pinned as must-catch cases;
+neither operator is followed by a template literal anywhere in the scripts or the prelude, so the
+exemption protected nothing and hid the one class the guard exists for.
+
 ## 1.0.0-rc.10 — 2026-09-12
 
 MAJOR on rc.9. Instruments affected: check-docs and check-consistency (a carried finding's first fix

@@ -123,7 +123,7 @@ const unitName = (u) => u.lanes.map(x => x.l.key).join('+')
 const results = await parallel(units.map(u => () => agent(
 `${PREAMBLE}
 
-YOUR UNIT: ${u.lanes.length} lane(s), ${u.n} finding(s) in all. Return one object per lane in `lane_files`, in the order below, each carrying exactly its own lane's verdicts and no others.
+YOUR UNIT: ${u.lanes.length} lane(s), ${u.n} finding(s) in all. Return one object per lane in \`lane_files\`, in the order below, each carrying exactly its own lane's verdicts and no others.
 
 ${u.lanes.map(x => `LANE ${x.l.key} — ${x.items.length} finding(s), write to ${outFile(`${x.l.nn}-${x.l.key}`)}:\n${x.items.map(fmt).join('\n')}`).join('\n\n')}
 

@@ -113,7 +113,15 @@ end
 # `f(a, `b`)` are ordinary JavaScript, and so is a literal after `return`, `case`, `await` and the rest
 # of the keywords excluded here — a guard that flags six ordinary forms to catch one defect is a guard
 # nobody can leave switched on.
-const SPAN_IN_PROSE = r"(?<=[a-z.] )(?<!return )(?<!yield )(?<!throw )(?<!typeof )(?<!await )(?<!case )(?<!else )(?<!new )(?<!in )(?<!of )(?<!do )(?<!delete )(?<!instanceof )(?<!\\)`[^`\n\$,)}]{1,60}(?<!\\)`"
+#
+# `in` and `of` were among those keywords until 2026-09-12, and exempting them cost a BLOCKER. The prose
+# "Return one object per lane in `lane_files`" sat unescaped in verify-act.js and verify-state.js through
+# a whole release: unparseable, and green on every run, because the English PREPOSITION matched an
+# exemption written for the JavaScript OPERATOR. Neither operator is ever followed by a template literal
+# in these scripts — the forms are `x in obj` and `for (const x of [...])` — so the exemption protected
+# nothing and hid the one defect this guard exists to catch. An exemption keyed on a word, not on syntax,
+# costs whatever English also spells that way.
+const SPAN_IN_PROSE = r"(?<=[a-z.] )(?<!return )(?<!yield )(?<!throw )(?<!typeof )(?<!await )(?<!case )(?<!else )(?<!new )(?<!do )(?<!delete )(?<!instanceof )(?<!\\)`[^`\n\$,)}]{1,60}(?<!\\)`"
 
 @testset "every Workflow script is well formed" begin
     scripts = [joinpath(r, f) for i in ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
@@ -175,6 +183,16 @@ end
     code = replace(broken, r"//[^\n]*" => "", r"/\*.*?\*/"s => "")
     @test occursin(SPAN_IN_PROSE, code)
     for prose in ("scope every search with `--glob '!.gbg/**'`.", "Nothing under `.gbg/` is yours to open")
+        @test occursin(SPAN_IN_PROSE, prose)
+    end
+    # The two forms that cost a BLOCKER in rc.10: an exemption written for the JavaScript operators `in`
+    # and `of` also spared the English preposition, so an unescaped span after one of them sat in
+    # verify-act.js and verify-state.js unparseable — and GREEN on every run — for a whole release. A
+    # template literal placed directly after either operator is now flagged; no such form occurs in the
+    # eleven scripts or the prelude (checked 2026-09-12), and a guard forced to choose should keep the
+    # defect that has actually happened over the one that has not.
+    for prose in ("Return one object per lane in `lane_files`, in the order below",
+                  "each of `verdicts` is graded exactly once")
         @test occursin(SPAN_IN_PROSE, prose)
     end
     for js in ("const banner = `ready`", "log(`ok`)", "x = `a b c`", "const q = `\${x}/y`", "x = `Audit`;",

@@ -110,7 +110,7 @@ const stateFile = (l) => `${A.pass_dir}/state/${l.nn}-${l.key}.json`
 const results = await parallel(units.map(u => () => agent(
 `${PREAMBLE}
 
-YOUR UNIT: ${u.lanes.length} lane(s), ${u.n} finding(s) in all. Return one object per lane in `lane_files`, in the order below, each carrying exactly its own lane's verdicts and no others.
+YOUR UNIT: ${u.lanes.length} lane(s), ${u.n} finding(s) in all. Return one object per lane in \`lane_files\`, in the order below, each carrying exactly its own lane's verdicts and no others.
 
 YOUR SUBSTRATE:
 ${substrateFor(u.lanes[0].l)}
