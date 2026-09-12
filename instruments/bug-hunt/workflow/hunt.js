@@ -35,7 +35,7 @@ const CANDIDATE_SCHEMA = {
         title: { type: 'string', minLength: 8, description: 'one line, the defect not the location' },
         file: { type: 'string' },
         line: { type: 'integer' },
-        mechanism: { type: 'string', description: 'WHY it is wrong — the causal chain, not a restatement' },
+        mechanism: { type: 'string', minLength: 20, description: 'WHY it is wrong — the causal chain, not a restatement' },
         witness_plan: { type: 'string', description: 'runtime/api-semantics: the concrete call and the assertion that should hold but will not. architecture: the second location to diff against and the maintenance consequence.' },
         second_location: { type: 'string', description: 'architecture only: file:line of the divergent copy' },
       },
