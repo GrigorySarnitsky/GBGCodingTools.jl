@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-check-docs-01",
+  "lane": "catalogues",
+  "candidates_found": 9,
+  "checked": [
+    "catalog/attack/audit-changes.toml",
+    "catalog/attack/bug-hunt.toml",
+    "catalog/attack/check-consistency.toml",
+    "catalog/attack/check-docs.toml",
+    "catalog/hats/README.md",
+    "catalog/hats/*.toml (all 22 generic hats)",
+    "catalog/lanes/README.md",
+    "catalog/lanes/audit-changes.toml",
+    "catalog/lanes/bug-hunt.toml",
+    "catalog/lanes/check-docs.toml",
+    "catalog/models.toml",
+    "catalog/scans.toml (all 44 rows)",
+    "catalog/seeds/fixture.toml",
+    "policy/RULES.toml (cross-reference: every rule id a scan names)",
+    "fixture/GBG Fixture/defects.toml (cross-reference: every fixture class a scan names)",
+    "fixture/GBG Fixture/ source and docs (cross-reference: seed anchors)",
+    "schema/config.schema.json (cross-reference: every surface key a scan names)",
+    "schema/hat.schema.json (cross-reference: hat field shape and needs vocabulary)",
+    "schema/attack-subject.schema.json (cross-reference: attack-subject field shape)",
+    "src/Scan.jl (registry mechanism, tier resolution, surface aggregation)",
+    "src/Scans/*.jl (rule-attribution header comments vs scans.toml)",
+    "src/CLI/Preflight.jl (placeholder substitution, roster resolution, anchor/not_applicable logic)",
+    "src/CLI/Config.jl (surface_files aggregation)",
+    "test/scans.jl (existing registry/fixture-pair self-test)",
+    "docs/ARCHITECTURE.md (D18 cost-policy anchors; §12.B scan catalogue; hats file map)"
+  ],
+  "claims_checked": [
+    {
+      "claim": "catalog/attack/bug-hunt.toml:8 — directions = \"a defect no witness can express as a failing assertion; a defect spread across two territories no lane holds together; a harm the test suite's own fixtures are shaped to hide\"",
+      "verdict": "TRUE",
+      "evidence": "Line 8 matches verbatim; validates against schema/attack-subject.schema.json's optional directions field."
+    },
+    {
+      "claim": "catalog/attack/check-consistency.toml:8 — directions = \"a contradiction between two pages no single hat reads together; a term that drifts gradually across pages; a defect visible only in rendered math or layout\"",
+      "verdict": "TRUE",
+      "evidence": "Line 8 matches verbatim."
+    },
+    {
+      "claim": "catalog/attack/check-docs.toml:3 — object = \"the SOURCE documentation of {package.name}: ... read one surface per lane plus three cross-cutting lanes (family, cold-reader, operational-claims)\"",
+      "verdict": "TRUE",
+      "evidence": "Line 3 matches verbatim; the three named cross lanes exactly match the three kind=\"cross\" entries in catalog/lanes/check-docs.toml."
+    },
+    {
+      "claim": "catalog/attack/check-docs.toml:4 — defects = \"documentation defects: a statement false against the code, a stale count or claim, notation or formatting drift, a missing or dead reference, a contradiction between two surfaces, and an operational claim ...\"",
+      "verdict": "TRUE",
+      "evidence": "Line 4 matches verbatim."
+    },
+    {
+      "claim": "catalog/attack/check-docs.toml:8 — directions = \"two statements each true alone and false together; a claim right in the docstring and wrong on the built page; a harm in what a page leaves out rather than in what it says\"",
+      "verdict": "TRUE",
+      "evidence": "Line 8 matches verbatim."
+    },
+    {
+      "claim": "catalog/lanes/audit-changes.toml:23 — brief = 'THE STRICT DUAL OF over-rejection. ... Nobody else owns guards the diff REMOVES OR WEAKENS ...'",
+      "verdict": "TRUE",
+      "evidence": "Confirmed at real line 23 via grep -n; matches verbatim and correctly stands opposite the 'over-rejection' lane with no third lane duplicating the territory."
+    },
+    {
+      "claim": "catalog/lanes/check-docs.toml:5 — \"# the three CROSS lanes below are constants. Every lane runs at economy unless anchor = true.\"",
+      "verdict": "TRUE",
+      "evidence": "Matches verbatim at line 5; all three cross lanes and the [surface] template carry anchor=false, consistent with ARCHITECTURE D18 naming no check-docs engine-lane anchor."
+    },
+    {
+      "claim": "catalog/lanes/check-docs.toml:22 — \"OUTPUT: report only GENUINE findings ... the package's deliberate absences are {package.deliberate_absences}.\"",
+      "verdict": "TRUE",
+      "evidence": "Confirmed at real line 22 via grep -n, matches verbatim; {package.deliberate_absences} is a placeholder Preflight.substitute recognizes."
+    },
+    {
+      "claim": "catalog/seeds/fixture.toml:1 — \"# catalog/seeds/fixture.toml — the ONE seed catalogue in the tool (ARCHITECTURE §6.4): eight classes\"",
+      "verdict": "TRUE",
+      "evidence": "Line 1 matches verbatim; file has exactly 8 [[class]] entries; each anchor regex verified to match real fixture text (e.g. 'Tukey (1965)' in FixtureC.jl:33, 'exact at every node' in ARCHITECTURE.md:9)."
+    }
+  ],
+  "findings": [
+    {
+      "type": "structure",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "SCAN.DOI_CROSSCHECK's catalogued rule omits RULE.CIT.DOI, which RULES.toml and the scan's own comment attribute to it",
+      "locations": [
+        "catalog/scans.toml:201-206 — id = \"SCAN.DOI_CROSSCHECK\" ... rule = \"RULE.CIT.FULL_INLINE\"",
+        "policy/RULES.toml (RULE.CIT.DOI row) — check = [\"scan:SCAN.DOI_CROSSCHECK\"]",
+        "src/Scans/doi_crosscheck.jl:1 — # SCAN.DOI_CROSSCHECK — RULE.CIT.FULL_INLINE, RULE.CIT.DOI."
+      ],
+      "description": "catalog/scans.toml's single-valued rule column for SCAN.DOI_CROSSCHECK names only RULE.CIT.FULL_INLINE. But policy/RULES.toml independently records RULE.CIT.DOI's check as this same scan id, and the scan's own file-header comment agrees it enforces both rules — confirmed by reading the implementation, which both cross-checks DOIs against the canonical reference list (RULE.CIT.DOI's concern) and flags a full reference in a docstring's running prose (RULE.CIT.FULL_INLINE's concern). SCAN.API_PAGE_STRUCTURE and SCAN.DEAD_REF also carry two-rule header comments, but for those RULES.toml's check registry agrees with the single-rule catalogue attribution; only here does RULES.toml name the scan as a rule's check that scans.toml's own row omits.",
+      "resolution_hint": "Widen catalog/scans.toml's rule column to a list and record both RULE.CIT.FULL_INLINE and RULE.CIT.DOI for SCAN.DOI_CROSSCHECK, so scans.toml and RULES.toml agree on which rules the scan is catalogued as enforcing."
+    }
+  ]
+}

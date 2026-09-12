@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-check-docs-01",
+  "lane": "templates",
+  "candidates_found": 3,
+  "checked": [
+    "templates/README.md",
+    "templates/bump-message.tmpl",
+    "templates/CI.yml.snippet",
+    "templates/claude-md.block",
+    "templates/CLAUDE.md.skeleton",
+    "templates/commit-message.tmpl",
+    "templates/docs.yml.snippet",
+    "templates/gitignore.block",
+    "templates/make.jl.seed",
+    "templates/queue-guard.sh.tmpl",
+    "templates/regressions-README.md",
+    "templates/runtests.jl.seed",
+    "templates/settings.json.tmpl",
+    "templates/SKILL.md.tmpl",
+    "templates/test-Project.toml.seed",
+    "templates/WORK_QUEUE.md.seed",
+    "src/CLI/Sync.jl (render, plan, managed_header, BLOCKS, slots, WORKFLOWS, insert_fragments)",
+    "src/CLI/Init.jl (cmd_init, cmd_new, migrate paths)",
+    "src/CLI/Bump.jl",
+    "src/CLI/Doctor.jl (WIRE.MAKEDOCS, WIRE.RUNTESTS, WIRE.CI_AUTH, WIRE.GITIGNORE, WIRE.CLAUDE_MD)",
+    "src/CLI/Preflight.jl (rulebook_sections slot, preflight())",
+    "src/CLI/Audit.jl (executable_claims, --project=test)",
+    "src/TestHarness.jl (run_regressions, gate signatures)",
+    "ext/GBGCodingToolsDocumenterExt.jl (makedocs, gate_or_skip)",
+    "docs/ARCHITECTURE.md #D12, #§0, #§5.5",
+    ".github/workflows/CI.yml and docs.yml (actual rendered output, cross-checked against the snippets)",
+    "test/Project.toml and Project.toml (Test stdlib UUID cross-check)"
+  ],
+  "claims_checked": [
+    {
+      "claim": "templates/README.md:21 — `CI.yml.snippet`, `docs.yml.snippet` render three fragments each into `.github/workflows/{CI,docs}.yml`, class S, checked by `WIRE.CI_AUTH`, slot `{{tool.banner}}`",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Doctor.jl:421-431 defines check!(\"WIRE.CI_AUTH\", ...) which calls Sync.insert_fragments/Sync.fragments exactly on these two snippets; Sync.jl slots() defines \"tool.banner\" => \"GBGCodingTools v\", used only in the banner fragment (`{{tool.banner}}` — no spaces, matches the render regex; the GH-Actions `${{ secrets.X }}` tokens in the same files contain spaces/uppercase so the regex never touches them)."
+    },
+    {
+      "claim": "templates/README.md:31 — queue-guard.sh.tmpl carries no header; \"the sidecar hash is what marks it managed\"",
+      "verdict": "TRUE",
+      "evidence": "Sync.jl classify()/classify_block() compare file content against sha256hex(cur)/rec[\"sha256\"] recorded in managed.json, never scanning for a header line; templates/queue-guard.sh.tmpl (read in full) has no gbg:managed header of any kind, confirming detection is purely hash-based for this file."
+    },
+    {
+      "claim": "templates/README.md:37 — a `.snippet` holds three fragments, each opened by a line `# gbg:fragment <kind>`",
+      "verdict": "TRUE",
+      "evidence": "Sync.jl:374-388 fragments() splits on r\"^# gbg:fragment (\\w+)\" and requires auth/run/banner; templates/CI.yml.snippet and docs.yml.snippet each literally open three blocks with `# gbg:fragment auth`, `# gbg:fragment run`, `# gbg:fragment banner`."
+    },
+    {
+      "claim": "templates/README.md:42 — a workflow with no `actions/checkout` step is refused, exit 2; no fragment runs Python",
+      "verdict": "TRUE",
+      "evidence": "Sync.jl:408-409 insert_fragments throws SyncError(\"no `actions/checkout` step...\"); Sync.jl:677-689 cmd_sync catches SyncError and returns 2. Neither CI.yml.snippet nor docs.yml.snippet contains a python invocation (both read in full)."
+    },
+    {
+      "claim": "templates/make.jl.seed:5 — the wrapper returns nothing (exit 0, not a failure) when a round froze the build, and a build that ran returns a non-nothing value (`true` or Documenter's document under `debug=true`)",
+      "verdict": "TRUE",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl: gate_or_skip returns true (causing makedocs to return nothing) exactly when a docs-instrument round is open; on a completed build makedocs ends with `return something(result, true)`, i.e. Documenter's own result or the literal true."
+    },
+    {
+      "claim": "templates/queue-guard.sh.tmpl:12 — \"this exits 2, which Claude Code treats as 'do not stop', feeding stderr back as the reason\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "This describes the Claude Code host platform's own Stop-hook contract, not this package's src/ext; nothing under src/ or ext/ encodes or exercises that platform behaviour, so it cannot be settled against this package's ground truth."
+    },
+    {
+      "claim": "templates/queue-guard.sh.tmpl:21 — the stop_hook_active loop guard exits 0",
+      "verdict": "TRUE",
+      "evidence": "Line 21 of the file itself reads `exit 0`, immediately following the stop_hook_active grep check — a direct quote of the surface under audit."
+    },
+    {
+      "claim": "templates/queue-guard.sh.tmpl:25 — `[[ -f \"$queue\" ]] || exit 0`",
+      "verdict": "TRUE",
+      "evidence": "Direct quote from the file at that line; internally consistent with the script's fail-open-when-absent design stated in its own header comment."
+    },
+    {
+      "claim": "templates/queue-guard.sh.tmpl:28 — `[[ -z \"$open_items\" ]] && exit 0`",
+      "verdict": "TRUE",
+      "evidence": "Direct quote from the file at that line."
+    },
+    {
+      "claim": "templates/queue-guard.sh.tmpl:40 — `exit 2`",
+      "verdict": "TRUE",
+      "evidence": "Direct quote from the file's final line, the branch taken when open_items is non-empty; matches the header comment's contract description exactly."
+    }
+  ],
+  "findings": [
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "README's \"Managed headers\" rule (first-line header, one exception) is false for SKILL.md.tmpl",
+      "locations": [
+        "templates/README.md:26-30 — \"A G file carries a first-line header where its format allows a comment... One exception: `queue-guard.sh.tmpl` is copied byte-for-byte... and carries no header\"",
+        "templates/SKILL.md.tmpl:1-6 — the `<!-- gbg:managed SKILL.md.tmpl ... -->` header sits on line 6, after the five-line YAML frontmatter (`---`/name/description/allowed-tools/`---`), not on line 1"
+      ],
+      "description": "The README states the managed-header rule as universal for every G file except one (queue-guard.sh.tmpl, which carries no header at all): 'A G file carries a first-line header where its format allows a comment... One exception: queue-guard.sh.tmpl... carries no header.' But SKILL.md.tmpl — also class G per the same table — does carry the standard Markdown gbg:managed header, just not on the first line: it necessarily follows the YAML frontmatter block (lines 1-5) so the file still parses as a valid Claude Skill. This is a second, undocumented exception to the 'first-line' claim; a reader trusting the README's 'first-line, one exception' statement would misdescribe or mis-implement a check against SKILL.md.tmpl.",
+      "resolution_hint": "Reword the \"Managed headers\" paragraph to state two exceptions: queue-guard.sh.tmpl (no header at all) and SKILL.md.tmpl (header present but placed after the mandatory YAML frontmatter, not on line 1)."
+    }
+  ]
+}

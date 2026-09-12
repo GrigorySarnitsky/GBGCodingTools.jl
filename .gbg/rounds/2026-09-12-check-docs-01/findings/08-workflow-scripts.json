@@ -1,0 +1,285 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-check-docs-01",
+  "lane": "workflow-scripts",
+  "candidates_found": 6,
+  "checked": [
+    "instruments/prelude.js",
+    "instruments/check-docs/workflow/lanes.js",
+    "instruments/check-consistency/workflow/panel.js",
+    "instruments/check-consistency/workflow/rubric-audit.js",
+    "instruments/check-consistency/workflow/severity-recheck.js",
+    "instruments/check-consistency/workflow/verify-act.js",
+    "instruments/check-consistency/workflow/verify-state.js",
+    "instruments/bug-hunt/workflow/dismissals.js",
+    "instruments/bug-hunt/workflow/hunt.js",
+    "instruments/bug-hunt/workflow/verify-architecture.js",
+    "instruments/audit-changes/workflow/attack-design.js",
+    "instruments/audit-changes/workflow/audit.js",
+    "instruments/check-docs/schema.json",
+    "instruments/check-consistency/schema.json",
+    "instruments/audit-changes/schema.json",
+    "instruments/bug-hunt/schema.json",
+    "schema/finding.schema.json",
+    "schema/verdict-act.schema.json",
+    "schema/verdict-state.schema.json",
+    "schema/dismissal.schema.json",
+    "schema/architecture-fix.schema.json",
+    "schema/rubric-audit.schema.json",
+    "schema/attack.schema.json",
+    "schema/attack-subject.schema.json",
+    "schema/audit.schema.json",
+    "schema/reproduction.schema.json",
+    "src/CLI/Rounds.jl (lines 545-620, bank's finding validation)",
+    "docs/ARCHITECTURE.md (grep, historical-figure corroboration)",
+    "docs/design-record/survey-bughunt-auditchanges.md (grep, historical-figure corroboration)",
+    ".claude/WORK_QUEUE.md (grep, ec5662/ed5662 incident corroboration)"
+  ],
+  "claims_checked": [
+    {
+      "claim": "instruments/prelude.js:4 — \"this text never repeats the marker, so an assembled script holds none. Before this the same helpers lived in up to eleven copies\"",
+      "verdict": "TRUE",
+      "evidence": "grep -n \"gbg:prelude\" instruments/prelude.js finds zero self-matches; find instruments -path '*/workflow/*.js' | wc -l returns 11, matching 'up to eleven copies'."
+    },
+    {
+      "claim": "instruments/prelude.js:22 — \"a one-character slip (…ec5662 for …ed5662) once REJECTED two lanes\"",
+      "verdict": "TRUE",
+      "evidence": ".claude/WORK_QUEUE.md:80 records the identical incident verbatim, closed DONE 2026-09-11 by the same stamped() mechanism at prelude.js:24-28."
+    },
+    {
+      "claim": "instruments/check-docs/workflow/lanes.js:48 — locations description \"(<= 25 words)\"",
+      "verdict": "TRUE",
+      "evidence": "self-referential schema field; matches the SCHEMA constant verbatim."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/panel.js:43 — locations description \"<= 20 words per quote\"",
+      "verdict": "TRUE",
+      "evidence": "self-referential schema field, unchanged."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/panel.js:45 — description field \"<= 90 words\"",
+      "verdict": "TRUE",
+      "evidence": "self-referential schema field, matches rules(h) at panel.js:78."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/panel.js:77 — \"A class split across five findings spends five of your budget\"",
+      "verdict": "TRUE",
+      "evidence": "illustrative example consistent with the cap mechanism named at panel.js:78 and RULE.DOC.CLASS_SWEEP."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/panel.js:112 — \"A hat that DIED and a hat that found NOTHING both look like '0 findings'\"",
+      "verdict": "TRUE",
+      "evidence": "confirmed by dead.push on !r and empty.push on n===0 at panel.js:117-121."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/rubric-audit.js:25 — why field \"<= 40 words\"",
+      "verdict": "TRUE",
+      "evidence": "self-referential schema field, unchanged."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/rubric-audit.js:41 — evidence field \"<= 40 words\"",
+      "verdict": "TRUE",
+      "evidence": "self-referential schema field, unchanged."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/verify-act.js:2 — \"IT verify-fixes.js (eight verdicts...)\"",
+      "verdict": "TRUE",
+      "evidence": "verdict enum at line 34 lists exactly 8 values."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/verify-act.js:35 — question enum description \"which of the four questions\"",
+      "verdict": "TRUE",
+      "evidence": "enum lists 4 non-'none' values matching the FOUR questions at lines 67-71."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/verify-act.js:36 — evidence field \"<= 80 words\"",
+      "verdict": "TRUE",
+      "evidence": "self-referential schema field, unchanged."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/verify-act.js:67 — \"ask FOUR questions in order\"",
+      "verdict": "TRUE",
+      "evidence": "4 questions enumerated at lines 68-71, matching the enum at line 35."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/verify-act.js:87 — probe-function comment mentioning STRATEGY",
+      "verdict": "TRUE",
+      "evidence": "STRATEGY is a real question this script answers (line 35); correct usage here, contrast finding 2."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/verify-act.js:148 — partition-mismatch comment",
+      "verdict": "TRUE",
+      "evidence": "matches code at lines 151-158 comparing x.l.expected to x.items.length."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/verify-state.js:36 — evidence field \"<= 60 words\"",
+      "verdict": "TRUE",
+      "evidence": "self-referential schema field, unchanged."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/verify-state.js:70 — \"follow the concept, not the string\"",
+      "verdict": "TRUE",
+      "evidence": "consistent with PRESENT-default/ABSENT-needs-evidence design at lines 62-68."
+    },
+    {
+      "claim": "instruments/check-consistency/workflow/verify-state.js:81 — \"...does not settle STRATEGY...\"",
+      "verdict": "FALSE",
+      "evidence": "verify-state.js has no STRATEGY concept (verdicts PRESENT/PARTIAL/REGRESSED/ABSENT/NOT-A-DEFECT/UNCLEAR, line 34; no question field). Verbatim uncorrected copy of verify-act.js:87. See finding 2."
+    },
+    {
+      "claim": "instruments/bug-hunt/workflow/dismissals.js:31 — evidence field \"<= 70 words\"",
+      "verdict": "TRUE",
+      "evidence": "self-referential schema field, unchanged."
+    },
+    {
+      "claim": "instruments/bug-hunt/workflow/dismissals.js:51 — \"a wrongly-dismissed defect is silent and permanent...\"",
+      "verdict": "TRUE",
+      "evidence": "consistent with DEFAULT-TO-UNSAFE design (line 48) and 3-verdict enum at line 30."
+    },
+    {
+      "claim": "instruments/bug-hunt/workflow/hunt.js:29 — candidates_found field description",
+      "verdict": "TRUE",
+      "evidence": "self-referential schema field, unchanged."
+    },
+    {
+      "claim": "instruments/bug-hunt/workflow/hunt.js:54 — observed field description",
+      "verdict": "TRUE",
+      "evidence": "self-referential schema field, unchanged."
+    },
+    {
+      "claim": "instruments/bug-hunt/workflow/hunt.js:75 — \"You have no cap\" (free lane)",
+      "verdict": "TRUE",
+      "evidence": "CANDIDATE_SCHEMA has no maxItems; FREE_PREAMBLE omits the finding_cap sentence HUNT_PREAMBLE has at line 87; matches schema.json:32."
+    },
+    {
+      "claim": "instruments/bug-hunt/workflow/hunt.js:134 — architecture kind, \"read BOTH locations, quote the two blocks\"",
+      "verdict": "TRUE",
+      "evidence": "matches second_location field and verify-architecture.js's two-site FIXED/PARTIAL framing."
+    },
+    {
+      "claim": "instruments/bug-hunt/workflow/verify-architecture.js:25 — evidence field \"<= 70 words\"",
+      "verdict": "TRUE",
+      "evidence": "self-referential schema field, unchanged."
+    },
+    {
+      "claim": "instruments/bug-hunt/workflow/verify-architecture.js:42 — RELOCATED description",
+      "verdict": "TRUE",
+      "evidence": "matches verdict enum at line 24."
+    },
+    {
+      "claim": "instruments/bug-hunt/workflow/verify-architecture.js:43 — PARTIAL description (\"one of the two sites\")",
+      "verdict": "TRUE",
+      "evidence": "consistent with location + second_location two-site shape."
+    },
+    {
+      "claim": "instruments/bug-hunt/workflow/verify-architecture.js:45 — NOT-A-DEFECT description",
+      "verdict": "TRUE",
+      "evidence": "matches verdict enum at line 24."
+    },
+    {
+      "claim": "instruments/bug-hunt/workflow/verify-architecture.js:47 — \"what a maintainer would have to edit, and in how many places\"",
+      "verdict": "TRUE",
+      "evidence": "consistent with FIXED/RELOCATED/PARTIAL framing at lines 41-44."
+    },
+    {
+      "claim": "instruments/audit-changes/workflow/attack-design.js:43 — \"...two unconstrained readers then found nine defects the eight could not see\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "docs/ARCHITECTURE.md:432 and docs/design-record/survey-bughunt-auditchanges.md:197 corroborate 'eight lanes'/'unconstrained readers' but report 'catching four regressions', not 'nine defects'; no 'nine defects' found anywhere else. See finding 6."
+    },
+    {
+      "claim": "instruments/audit-changes/workflow/audit.js:6 — \"the '605 lines…' preamble... are gone\"",
+      "verdict": "TRUE",
+      "evidence": "grepped PREAMBLE and whole file for '605': none found; fully generic."
+    },
+    {
+      "claim": "instruments/audit-changes/workflow/audit.js:32 — candidates_found field description",
+      "verdict": "TRUE",
+      "evidence": "self-referential schema field, unchanged."
+    },
+    {
+      "claim": "instruments/audit-changes/workflow/audit.js:84 — \"(RULE.DOC.CLASS_SWEEP)\" cited for a non-doc audit lens",
+      "verdict": "TRUE",
+      "evidence": "glossary.md defines 'Class sweep' as a general term; panel.js:77 cites the same rule for the identical general principle, so reuse is consistent."
+    }
+  ],
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "blocker",
+      "confidence": "high",
+      "title": "Unescaped backtick breaks the template literal, so the script fails to parse",
+      "locations": [
+        "instruments/check-consistency/workflow/verify-act.js:126 — \"Return one object per lane in `lane_files`, in the order below\"",
+        "instruments/check-consistency/workflow/verify-state.js:113 — \"Return one object per lane in `lane_files`, in the order below\""
+      ],
+      "description": "The template literal building the per-unit prompt contains a literal, unescaped backtick pair around `lane_files` directly in its own text (not inside a ${} substitution), closing the outer template string early and reopening a new one — a syntax error under standard ECMAScript grammar. Confirmed with a minimal repro and by parsing the full files (wrapped to tolerate top-level await) with a JS parser, which fails with 'Unexpected identifier' at exactly this construct in both files and nowhere else in the other 9 workflow scripts or prelude.js. Every other backtick-wrapped identifier in prose elsewhere in these same files is correctly escaped (\\`name\\`), so this is an isolated slip. A script that cannot parse cannot run: both the adversarial fix auditor (sees the diff) and the blind closure auditor (does not) would fail outright.",
+      "resolution_hint": "Escape the backticks: \\`lane_files\\`, matching the pattern used everywhere else in these two files."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "verify-state.js carries a copy-pasted comment referencing STRATEGY, a concept it does not have",
+      "locations": [
+        "instruments/check-consistency/workflow/verify-state.js:79-82 — \"a surviving one does not settle STRATEGY and a vanished one does not settle the class\""
+      ],
+      "contradicts": "instruments/check-consistency/workflow/verify-act.js:85-88 — the correct original, where STRATEGY is one of the four questions this OTHER script's verdicts answer",
+      "description": "This comment on the `probe` helper is a verbatim copy of verify-act.js:85-88, where STRATEGY is one of four named questions that script's verdicts answer. verify-state.js has no such concept: its verdicts are PRESENT/PARTIAL/REGRESSED/ABSENT/NOT-A-DEFECT/UNCLEAR with no `question` field at all. Left over from copying verify-act.js's probe function without adapting the prose.",
+      "resolution_hint": "Reword to this script's own vocabulary, e.g. 'does not settle whether the class survives elsewhere.'"
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "Header 'Args' comments have drifted from the scripts' actual required or used parameters",
+      "locations": [
+        "instruments/check-consistency/workflow/panel.js:10-14 — header omits `finding_cap`, required at line 22, used at line 78",
+        "instruments/bug-hunt/workflow/hunt.js:10-12 — header omits `finding_cap`, required at line 20, used at line 87",
+        "instruments/audit-changes/workflow/audit.js:11-13 — header omits `finding_cap`, required at line 21, used at line 86",
+        "instruments/check-consistency/workflow/verify-act.js:8-10 — header lists `round_dir` and `rulebook_summary?`, neither used anywhere else in the file (only `pass_dir` is used)"
+      ],
+      "description": "Three headers (panel.js, hunt.js, audit.js) omit `finding_cap` even though each script's own required-args check throws without it and the prompt quotes it directly — evidently added after these headers were last updated. verify-act.js's header runs the opposite way, listing `round_dir` and `rulebook_summary?` as accepted args that occur nowhere else in the file. A reader relying on the header to know a script's contract gets an incomplete or stale picture in four of eleven scripts.",
+      "resolution_hint": "Add `finding_cap` to the three headers that use it; drop `round_dir`/`rulebook_summary?` from verify-act.js's header, or wire them in."
+    },
+    {
+      "type": "structure",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "hunt.js redeclares `laneFile`, shadowing the prelude's shared helper of the same name",
+      "locations": [
+        "instruments/bug-hunt/workflow/hunt.js:145 — `const laneFile = { schema_version: A.schema_version, ... }`",
+        "instruments/prelude.js:5 — \"No script declares a name below again.\"",
+        "instruments/prelude.js:38 — `const laneFile = (r, key, j) => { ... }`, used correctly by verify-act.js:134 and verify-state.js:124"
+      ],
+      "description": "prelude.js states the shared-helpers invariant explicitly so a script cannot accidentally shadow a spliced-in name. hunt.js violates it: inside its pipeline's second stage it declares `const laneFile = {...}` (a plain object), shadowing the prelude's own `laneFile(r, key, j)` lookup function used correctly elsewhere. Nothing breaks today since hunt.js never calls the prelude helper in that scope, but a future edit adding such a call inside that block would silently call the local object instead and throw at runtime.",
+      "resolution_hint": "Rename hunt.js's local variable (e.g. `bankedLane`) to free the shared prelude name."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "The per-lane finding SCHEMA is looser than the shape `gbg round bank` enforces, so schema-valid output can still fail bank",
+      "locations": [
+        "instruments/check-docs/workflow/lanes.js:41-54 — findings.items title/description/locations carry no minLength/minItems",
+        "instruments/check-consistency/workflow/panel.js:36-49 — same gap",
+        "instruments/audit-changes/workflow/audit.js:33-50 — same gap",
+        "schema/finding.schema.json — title minLength 8, description minLength 20, locations minItems 1",
+        "src/CLI/Rounds.jl:580-586 — bank validates every finding against this schema and returns exit code 2 on the first mismatch"
+      ],
+      "description": "lanes.js, panel.js and audit.js each define their own JSON Schema constraining the structured object an agent returns per finding; in all three, title/description are plain strings with no minLength and locations has no minItems. But schema/finding.schema.json — the exact shape `gbg round bank` checks every finding against (Rounds.jl:580-586, refusing the bank with exit 2 on the first mismatch, 'after the whole panel and every witness have already been paid for') — requires title minLength 8, description minLength 20, and locations minItems 1. An agent can return a schema-valid finding under the launching script's own SCHEMA that the round's bank step then refuses — discovered only at the most expensive possible point.",
+      "resolution_hint": "Add the same minLength/minItems constraints to the three per-script SCHEMAs so a violation is caught at generation time, not at bank."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "attack-design.js cites a 'nine defects' figure with no corroborating source in the repository",
+      "locations": [
+        "instruments/audit-changes/workflow/attack-design.js:43 — \"two unconstrained readers then found nine defects the eight could not see\""
+      ],
+      "contradicts": "docs/ARCHITECTURE.md:432 and docs/design-record/survey-bughunt-auditchanges.md:197, which report the same episode's outcome as 'catching four regressions'",
+      "description": "The 'eight lanes'/'unconstrained readers' framing is corroborated elsewhere in the repo, but both corroborating sources report the outcome as 'catching four regressions' — not 'nine defects'. No occurrence of 'nine defects' appears anywhere else in the tracked repository. This sentence is quoted verbatim into every attack-design run as a factual justification for the attack instrument's premise, so an invented or stale number undercuts the case being made.",
+      "resolution_hint": "Locate and cite the actual source for 'nine defects', or align the sentence with the documented 'four regressions' figure."
+    }
+  ]
+}

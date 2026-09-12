@@ -1,0 +1,482 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-check-docs-01",
+  "lane": "rationale",
+  "candidates_found": 3,
+  "checked": [
+    "docs/ARCHITECTURE.md lines 1-970 (Vocabulary, §0, §1, §2 D1-D19) read in full",
+    "src/CLI/Main.jl (exit-code contract, VERBS dispatch, cmd_probe)",
+    "bin/gbg (the shim: line count, exit-2 paths, dev/fixture/ordinary routing)",
+    "src/CLI/Install.jl (shim_source/shim_target)",
+    "src/CLI/Self.jl (self_verify: PIN.SELF exit codes and WARN cases)",
+    "src/CLI/Fleet.jl (status vocabulary, exit contract, --diff refusal)",
+    "src/CLI/Bump.jl (open-round refusal, exit 2)",
+    "src/CLI/Release.jl (release preconditions, exit 2 paths, tag/CHANGELOG checks)",
+    "src/CLI/Passes.jl (close exit 1 vs tag-moved exit 2, batch/verify logic)",
+    "src/CLI/Rounds.jl (bank/classify_lane: DEAD/REJECTED/EMPTY/TRUNCATED classification; grep for ORPHAN)",
+    "src/CLI/Sync.jl (managed.json sidecar, inputs_sha, MODIFIED/STALE/ORPHAN states)",
+    "src/CLI/Doctor.jl (NON_EXEMPTABLE/EXEMPTABLE constants, EXEMPT.EXPIRING 30-day window, check id list)",
+    "src/CLI/Config.jl (resolve_anchor)",
+    "src/CLI/Preflight.jl (dev_round refusal for check-docs/check-consistency)",
+    "src/Reflection.jl (ARGS_THRESHOLD constant, argcov population definition, package_operations)",
+    "src/Scan.jl (scan_docs/report exit-code and dead/triage/hard logic, write_public_surface)",
+    "src/Scans/args_form.jl, src/Scans/signature_typed.jl, src/Scans/argcov.jl (source read)",
+    "ext/GBGCodingToolsDocumenterExt.jl (makedocs wrapper: gate_or_skip, SKIPPED/exit-0 behaviour)",
+    "Project.toml (deps/weakdeps/compat: TOML, SHA, Dates, Pkg, Random, Test, JSON3, Gumbo, AbstractTrees, Documenter weakdep, julia=1.12)",
+    "schema/ directory listing (22 *.schema.json files) against the D11 enumeration",
+    "instruments/{bug-hunt,check-docs,check-consistency,audit-changes}/schema.json ($ref targets: #/$defs/finding vs external finding.schema.json)",
+    "test/schemas.jl (bank's validation against schema/finding.schema.json; the bug-hunt/core-schema regression test)",
+    "test/runtests.jl (selftest == Pkg.test(), TestHarness.gate/run_regressions wiring)",
+    "catalog/lanes/audit-changes.toml, catalog/lanes/bug-hunt.toml (anchor=true lane names)",
+    "catalog/hats/ directory listing (rulebook hats' one home)",
+    "fixture/GBG Fixture/test/Project.toml, fixture/GBG Fixture/docs/Project.toml ([sources] path=../../..)",
+    ".claude/settings.json, templates/settings.json.tmpl, templates/queue-guard.sh.tmpl (CLAUDE_PROJECT_DIR quoting)",
+    "docs/design-record/04-decision-record.md (never-economised five-phase list cross-check)",
+    "live run: julia --project=docs invoking GBGCodingTools.scan_docs for SCAN.ARGCOV, SCAN.SIGNATURE_TYPED, SCAN.ARGS_FORM on the tool's own source today",
+    "whole-repo search for '*.py' files (consolidate.py deletion claim)",
+    "whole-repo search for the term 'ORPHAN' across src/ and ext/",
+    "instruments/check-consistency/workflow/verify-act.js, verify-state.js, severity-recheck.js (BATCH=6 default)"
+  ],
+  "findings": [
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "Cited docstring/argument counts are stale against the current source",
+      "locations": [
+        "docs/ARCHITECTURE.md:102 — \"451 arguments over 247 docstrings here take `names` and 4 took `mirror` (2026-09-12)\""
+      ],
+      "description": "The §1 variation-point table cites, dated today (2026-09-12), that this package's own docstrings show '451 arguments over 247 docstrings ... take names and 4 took mirror'. Running the package's own registered scans over its current source today gives different figures: SCAN.ARGCOV (src only, the scan whose population is explicitly 'the argument count') reports population=386, not 451; SCAN.SIGNATURE_TYPED (src+ext, population = docstrings with a parsed argument list) reports population=243 docstrings with 0 hits, not '247 docstrings ... 4 took mirror'. RULE.DOC.CURRENT and RULE.TEST.COUNTS_REMEASURED both bear directly on this kind of claim, and the cited numbers do not match a live re-measurement on the date they carry.",
+      "resolution_hint": "Re-run `gbg scan docs` (SCAN.ARGCOV and SCAN.SIGNATURE_TYPED) against the tool's own source and either update the cited figures to the freshly measured ones or drop the exact numbers in favour of a qualitative statement that does not go stale silently."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "Instrument schema.json does not $ref schema/finding.schema.json as described",
+      "locations": [
+        "docs/ARCHITECTURE.md:645 — \"lane-file wrapper and `$ref`s `finding.schema.json` for the findings array\""
+      ],
+      "description": "D11 states an instrument's `instruments/<name>/schema.json` '$ref's finding.schema.json for the findings array'. In the actual files, check-docs/schema.json, check-consistency/schema.json and audit-changes/schema.json all point their findings array at a purely LOCAL definition, \"$ref\": \"#/$defs/finding\" (bug-hunt uses #/$defs/hunt_finding), and that local $defs.finding is a hand-duplicated, reduced copy of schema/finding.schema.json (it omits id, lane, n, carried_from, seeded, seed_class, which the CLI adds only once a lane's output is banked). No instrument schema.json contains a $ref naming the external schema/finding.schema.json file. test/schemas.jl and src/CLI/Rounds.jl's bank confirm the CORE schema/finding.schema.json validates a finding only AFTER banking — a different validation point from the lane file's own schema.json, which is exactly why it cannot simply be a $ref to the external file, contrary to what the sentence says.",
+      "resolution_hint": "Rewrite the sentence to say each instrument's schema.json defines its own reduced, inline $defs.finding (or $defs.hunt_finding) for the lane-file shape, and that the CLI separately validates the banked finding against the external schema/finding.schema.json once id/lane/n are attached."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "D10's round-lane 'ORPHAN' classification has no implementation",
+      "locations": [
+        "docs/ARCHITECTURE.md:616 — \"An **ORPHAN** (a lane file no roster entry expects) is reported, never counted.\""
+      ],
+      "description": "D10 lists ORPHAN as one of the lane-file states the closure engine produces, alongside DEAD/REJECTED/EMPTY/TRUNCATED — all of which ARE implemented (confirmed against src/CLI/Rounds.jl's bank/classify_lane, which returns exactly :dead, :rejected, :truncated, or a live/empty classification). bank only iterates expected_lanes(rec) — the round's roster — and classifies each expected file; it contains no code that lists the findings directory and reports a file present on disk that no roster entry names. A repo-wide search for the literal term 'ORPHAN' across src/ and ext/ finds it used only inside src/CLI/Sync.jl, for the entirely unrelated MANAGED-FILE sidecar (.gbg/managed.json) classification. Rounds.jl does have a variable literally named orphan (in bank, ~line 505), but it names a different concept: a CARRIED finding whose lane field names a key absent from the CURRENT round's roster, which causes bank to REFUSE with exit 2 — the opposite of 'reported, never counted'.",
+      "resolution_hint": "Either implement the described detection (scan the round's findings directory for files the roster does not expect, and report them without affecting the tally), or correct D10 to describe only the classification states the code actually produces (DEAD, REJECTED, EMPTY, TRUNCATED) and drop or rename the ORPHAN sentence so it does not claim a mechanism that does not exist."
+    }
+  ],
+  "claims_checked": [
+    {
+      "claim": "docs/ARCHITECTURE.md:14 — \"decision record; where this document extends it, §10 says so explicitly.\"",
+      "verdict": "TRUE",
+      "evidence": "docs/ARCHITECTURE.md:2106 carries '## §10 Entailments, extensions of the record, and residual judgment calls'; docs/design-record/04-decision-record.md exists on disk."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:18 — \"Consumer — one of the four packages, as a client of the tool; and the tool repository itself\"",
+      "verdict": "TRUE",
+      "evidence": "Matches the rendered glossary.md's Consumer definition; D15 confirms the tool is its own fifth consumer."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:30 — \"the word has two others that are always qualified\"",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Config.jl:137 defines resolve_anchor (file#heading anchor); Preflight.jl:283/Doctor.jl:18 reference the seed-class anchor regex."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:52 — \"A consumer carries one config file, one exemptions ledger, its domain hats...\"",
+      "verdict": "TRUE",
+      "evidence": "Config.jl reads a single .gbg/config.toml; Ledger reads a single .gbg/exemptions.toml."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:57 — \"Requirements (the frame every decision in §2 answers)\"",
+      "verdict": "TRUE",
+      "evidence": "Every D1-D19 'Forced by' paragraph cites one or more R-numbers from this table."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:61 — R1 Uniformity",
+      "verdict": "TRUE",
+      "evidence": "Fleet.jl's RED/BEHIND/NOT-INITIALISED rows and Doctor.jl's checks implement this."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:62 — R2 Transparency",
+      "verdict": "TRUE",
+      "evidence": "Preflight.jl stamps tool_version/tool_rev/tool_tree_sha into ROUND.toml; Sync.jl renders deviations.md from the ledger."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:89 — \"the ≥ 3-arguments-or-a-keyword threshold — none of them a config key\"",
+      "verdict": "TRUE",
+      "evidence": "src/Reflection.jl:35 'const ARGS_THRESHOLD = 3', hardcoded, not config-read."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:93 — \"record's 'Keep as config' clause admits ... §10 records this extension\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "References internal clauses of the design record and §10, outside src/ ground truth."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:100 — doc-surfaces row citing PF/IT/SS surface counts",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Sibling-package facts not present in this repository's source."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:102 — \"451 arguments over 247 docstrings here take names and 4 took mirror (2026-09-12)\"",
+      "verdict": "FALSE",
+      "evidence": "Live scan today: SCAN.ARGCOV population=386, SCAN.SIGNATURE_TYPED population=243/hits=0. See finding."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:106 — \"PF triage, IT exit 1\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Sibling-package config fact, not in this repository's source."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:108 — \"PF's lint_retired_claims bans decision-60 phrasings that IT and SS never had\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Sibling-package fact."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:110 — \"PF 12 hats / 2 anchors, IT 27 / 4\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Sibling-package fact."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:126 — \"## §2 Decisions D1–D19\"",
+      "verdict": "TRUE",
+      "evidence": "D1-D19 headings all present and read in full (lines 130-967)."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:130 — \"### D1 — Unit of distribution\"",
+      "verdict": "TRUE",
+      "evidence": "Heading present; content matches (single Project.toml version, single git repo)."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:150 — \"Dominated. Julia package + separate Claude plugin repo...\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Historical rejected-alternative narrative."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:157 — \"Choice. Three roles, three locations:\"",
+      "verdict": "TRUE",
+      "evidence": "Three roles (Dev checkout, Pinned copy, Shim) enumerated immediately following."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:168 — \"Shim — ~/.local/bin/gbg, POSIX sh, ~30 lines, versionless\"",
+      "verdict": "TRUE",
+      "evidence": "bin/gbg is 29 lines, POSIX sh, no version string, no depot-slug glob expansion."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:173 — \"'package not instantiated' → exit 2 with the hint\"",
+      "verdict": "TRUE",
+      "evidence": "bin/gbg greps Manifest.toml and exits 2 with the instantiate hint when absent."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:176 — \"no ~/.gbg/dev → exit 2 'no dev checkout registered'\"",
+      "verdict": "TRUE",
+      "evidence": "bin/gbg devpath() prints exactly this and exits 2."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:182 — \"dev pin legal in exactly two places (D15)\"",
+      "verdict": "TRUE",
+      "evidence": "bin/gbg's fixture branch and the tool root are the only two dev-pin routes coded."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:185 — \"execed as its --project, else exit 2\"",
+      "verdict": "TRUE",
+      "evidence": "bin/gbg's fixture-routing branch exits 2 when no enclosing GBGCodingTools Project.toml is found."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:216 — \"docs environment not instantiated is exit 2, never a silent fall-through\"",
+      "verdict": "TRUE",
+      "evidence": "bin/gbg ordinary route exits 2 with no dev-checkout fallback."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:226 — \"three copies of one tag per machine...\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Historical rejected-alternative narrative."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:230 — \"Julia 1.12 workspaces: deferred\"",
+      "verdict": "TRUE",
+      "evidence": "Root Project.toml has no [workspace] table."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:234 — \"first draft: a weaker match than Pkg's own resolution\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Historical rejected first-draft narrative."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:266 — \"edited copy exit 2; no manifest WARN; dev pin WARN\"",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Self.jl self_verify() implements exactly this."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:289 — \"a path that does not exist is exit 2\"",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Fleet.jl docstring: 'A missing path is exit 2.'"
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:294 — \"records the window start in fleet.toml [sweep]\"",
+      "verdict": "TRUE",
+      "evidence": "Fleet.jl reads [sweep].started; Bump.jl records the window start."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:296 — \"gbg bump refuses (exit 2) while a round is open unless --abandon-open-rounds\"",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Bump.jl:26 returns 2 unless abandon is given."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:305 — \"within window ... window closed ... after 7 days\"",
+      "verdict": "TRUE",
+      "evidence": "Fleet.jl:66 implements exactly this window logic."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:307 — \"RED — its doctor fails ... Exit 0 when every row is OK\"",
+      "verdict": "TRUE",
+      "evidence": "Fleet.jl status vocabulary and code=max(code,1) logic confirm this."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:309 — \"WARN row keeps exit 0; 2 for missing path\"",
+      "verdict": "TRUE",
+      "evidence": "Fleet.jl: BEHIND-in-window does not raise code; missing path/fleet.toml returns 2."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:316 — \"refuses (exit 2) when tool_versions differ in MAJOR.MINOR\"",
+      "verdict": "TRUE",
+      "evidence": "Fleet.jl:129 exact refusal and return 2."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:322 — \"a sweep is sequential...\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Hypothetical sibling-package release-timing scenario."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:323 — \"two versions must coexist briefly and visibly\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Narrative continuation of the same hypothetical scenario."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:334 — \"unknown enum member, a path that does not exist → exit 2\"",
+      "verdict": "TRUE",
+      "evidence": "Consistent with Schema.jl's closed-enum validator and the uniform exit-2 pattern for config failures."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:348 — \"Four copies of one surface list inside PF alone\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Sibling-package (PF) historical fact."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:350 — \"Two validators is the twin class\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Historical rationale citation describing a past state."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:352 — \"IT at 5 and PF at 3 under one rule id\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Sibling-package fact."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:357 — \"two implementations of one schema; JSONSchema.jl a dependency to trust\"",
+      "verdict": "TRUE",
+      "evidence": "No JSONSchema.jl dependency in Project.toml; Schema.jl is the sole validator."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:376 — \"no PackageCompiler sysimage\"",
+      "verdict": "TRUE",
+      "evidence": "No PackageCompiler dependency anywhere in the source tree."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:429 — \"'605 lines inserted' on every run\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Sibling-package (IT) historical fact."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:432 — \"unconstrained readers beat eight class lanes\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Sibling-package (IT) measurement citation."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:433 — \"A rulebook hat with two homes ... it has one.\"",
+      "verdict": "TRUE",
+      "evidence": "The three rulebook hats live only under catalog/hats/, no duplicate found."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:441 — \"one Julia CLI; exit 0/1/2/3; one text-scan engine\"",
+      "verdict": "TRUE",
+      "evidence": "Main.jl returns 0/2/3; verbs return 1 (e.g. Gate.jl:40); one scan engine, 46 files under src/Scans/."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:450 — \"tier hard/triage; exit 2 if it scanned nothing\"",
+      "verdict": "TRUE",
+      "evidence": "src/Scan.jl report(): population==0 is dead regardless of tier."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:454 — \"the Python file was consolidate.py\"",
+      "verdict": "TRUE",
+      "evidence": "No .py files exist anywhere outside .gbg/."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:459 — \"passed on 2026-09-09 on 18 PF pages and 22 IT pages\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "One-time historical sibling-package event, not reproducible here."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:464 — \"exit 2 is the missing case, exit 3 keeps a crash from reading as a finding\"",
+      "verdict": "TRUE",
+      "evidence": "Main.jl's try/catch returns 3 on any uncaught exception."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:466 — \"nine filenames... two gate.py\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Historical/sibling citations from a pre-Julia state no longer present."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:493 — \"returns nothing, exit 0\"",
+      "verdict": "TRUE",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl makedocs()'s gate_or_skip path returns nothing on a frozen round."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:524 — \"owner ruling 2026-09-08, Q14\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Historical owner-ruling citation, not a src/ fact."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:536 — \"IT's always-binding caps (120 words / 3 admonitions)\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Package-fact half confirmed (prose_shape.jl/SCAN.PROSE_SHAPE), sibling-specific figures not checkable."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:580 — \"nine lints in PF, four in IT, one in SS, none in CP\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Sibling-package facts."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:616 — \"An ORPHAN (a lane file no roster entry expects) is reported, never counted.\"",
+      "verdict": "FALSE",
+      "evidence": "No such state in Rounds.jl's bank/classify_lane; ORPHAN only exists for Sync's unrelated managed-file mechanism. See finding."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:617 — \"Closure is per finding id through five channels (§6.5)\"",
+      "verdict": "TRUE",
+      "evidence": "Passes.jl's grade()/close() operate on individual finding ids."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:642 — \"Twenty-two schemas\"",
+      "verdict": "TRUE",
+      "evidence": "ls schema/*.schema.json lists exactly the 22 named files."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:688 — \"PF's 1500 lines ... SS's 246\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Sibling-package facts."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:704 — \"one sidecar .gbg/managed.json as a cache, four classes\"",
+      "verdict": "TRUE",
+      "evidence": "Sync.jl sidecar_path = .gbg/managed.json; state machine matches described classes."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:715 — \"MODIFIED. Without the inputs hash the two cases are indistinguishable\"",
+      "verdict": "TRUE",
+      "evidence": "Sync.jl's inputs_sha() distinguishes STALE from MODIFIED."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:724 — \"$CLAUDE_PROJECT_DIR quotes it\"",
+      "verdict": "TRUE",
+      "evidence": ".claude/settings.json and templates/settings.json.tmpl both quote the variable."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:748 — \"read-only, stable check ids ... no consumer copies in the tool\"",
+      "verdict": "TRUE",
+      "evidence": "Doctor check ids are stable constants; no contracts/ or per-consumer config copy found."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:754 — ledger field list",
+      "verdict": "TRUE",
+      "evidence": "schema/exemptions.schema.json comment cites the 40-char bound; Doctor.jl NON_EXEMPTABLE/EXEMPTABLE match."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:756 — \"≤ 30 days → WARN\"",
+      "verdict": "TRUE",
+      "evidence": "Doctor.jl:357 EXEMPT.EXPIRING uses today()+Day(30)."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:761 — \"exit 2 at CFG.EXEMPTIONS\"",
+      "verdict": "TRUE",
+      "evidence": "Consistent with CFG.EXEMPTIONS's existence and the documented reflection-only restriction."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:785 — \"Several ledgers by kind: three formats, three readers\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Historical dominated-alternative narrative."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:795 — \"from the fixture root that is ../..\"",
+      "verdict": "TRUE",
+      "evidence": "fixture sub-environment Project.tomls declare path=\"../../..\", consistent with two levels from fixture root."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:810 — \"an edited pinned copy → exit 2\"",
+      "verdict": "TRUE",
+      "evidence": "Self.jl self_verify() sets code=2 on tree-hash mismatch or non-repo-tracking entry."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:842 — \"a tag that does not exist yet cannot build ... (dry-run BLOCKER 2)\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Historical dry-run finding citation."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:857 — \"close ... lists it among its conditions and exits 1\"",
+      "verdict": "TRUE",
+      "evidence": "Passes.jl:1226 close-refusal returns 1; line 1150's tag-moved case returns 2."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:864 — \"gbg release runs in the dev checkout only and refuses (exit 2)\"",
+      "verdict": "TRUE",
+      "evidence": "Release.jl:79 running_dev() check returns 2 otherwise."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:865 — \"Pkg.test() is green; docs build exits 0 (SELF.DOCS)\"",
+      "verdict": "TRUE",
+      "evidence": "Release.jl precondition checks include a doctor --deep gate; SELF.DOCS exists in Doctor.jl."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:869 — \"the tag is absent — it never re-tags\"",
+      "verdict": "TRUE",
+      "evidence": "Release.jl only tags after all precondition checks pass; no re-tag path exists."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:876 — \"the two instruments whose rounds are measurements compared across versions\"",
+      "verdict": "TRUE",
+      "evidence": "Preflight.jl's dev_round() refuses check-docs and check-consistency specifically."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:919 — \"Step 0 runs on the live trees, on scratch imports that it deletes\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "One-time migration-time procedure documented only in historical design-record/round files."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:933 — \"the two documents contradicted each other on what 1.0.0 held (dry-run 11)\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Historical dry-run citation."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:943 — \"exactly the record's five phases\"",
+      "verdict": "TRUE",
+      "evidence": "docs/design-record/04-decision-record.md:74 lists the identical five phases verbatim."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:945 — \"grouped into units of at most six findings\"",
+      "verdict": "TRUE",
+      "evidence": "verify-act.js:109 / verify-state.js:94: BATCH = A.batch || 6."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:955 — \"four places for one value; extending the never-economised list with lanes\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Historical dominated-alternative design rationale."
+    }
+  ]
+}

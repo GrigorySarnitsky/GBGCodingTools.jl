@@ -1,0 +1,169 @@
+{
+  "candidates_found": 6,
+  "checked": [
+    "CLAUDE.md — full file, against src/CLI/Main.jl (exit codes, VERBS), src/GBGCodingTools.jl (module list, engines), src/TestHarness.jl (gate()), src/Reflection.jl (argcov/signature_fidelity/xlink/dupref/package_operations), src/CLI/Config.jl, src/CLI/Schema.jl, src/CLI/Ledger.jl, IMPLEMENTATION.md (migration phase numbering)",
+    "README.md — full file, against src/CLI/Main.jl (exit contract, usage()), src/CLI/Install.jl (cmd_install), install.sh, docs/make.jl (pages list)",
+    "instruments/audit-changes/PROTOCOL.md — full file, against catalog/lanes/audit-changes.toml (13-lane count and anchor marks), src/CLI/Rounds.jl and src/CLI/Audit.jl (bank/DEAD/REJECTED exit 2), src/CLI/Passes.jl (24-character refusal reason), docs/design-record/survey-bughunt-auditchanges.md (eleven fatal gaps / three-of-four attackers)",
+    "instruments/bug-hunt/PROTOCOL.md — full file, against catalog/lanes/bug-hunt.toml (two free lanes), src/CLI/Rounds.jl (bank DEAD/REJECTED exit 2), src/CLI/Passes.jl (24-character refusal reason), docs/design-record/survey-bughunt-auditchanges.md (two live regressions / NEWLY BROKEN=0; the 20,9,17,21,17 measurement)",
+    "instruments/check-consistency/PROTOCOL.md — full file, against src/CLI/Rounds.jl (prepare's exit-0-required docs build), src/CLI/Passes.jl (grade's exit 1 on open/pending_state ids; the flat>=2 plateau signal), src/CLI/Doctor.jl and src/CLI/Passes.jl (40-character adjudication reason)",
+    "instruments/check-docs/PROTOCOL.md — full file, against catalog/lanes/check-docs.toml (three cross-cutting lanes one-home/cold-reader/operational-claims), src/CLI/Rounds.jl (00-scans lane, rescan closure, exit-0-required build, html_docstring_once.jl's two-page docstring check), src/CLI/Preflight.jl and .gbg/config.toml (finding_cap)",
+    "docs/make.jl — full file, against ext/GBGCodingToolsDocumenterExt.jl (the doctor-QUICK/hard-scan/gate/Documenter/html-scan/gate sequence, WIRE.MAKEDOCS), docs/ARCHITECTURE.md (D9, D15 references), src/GBGCodingTools.jl (no top-level export, explaining checkdocs warnonly)",
+    "install.sh — full file, against src/CLI/Install.jl (cmd_install's --dev-checkout validation) and README.md's bootstrap sequence"
+  ],
+  "claims_checked": [
+    {
+      "claim": "CLAUDE.md:28 — the CLI returns exit code 0 clean, 1 finding, 2 cannot evaluate, 3 crash",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Main.jl main(): catch returns 3, unknown verb returns 2, docstring states '0 clean, 1 substantive finding, 2 cannot evaluate, 3 crash'"
+    },
+    {
+      "claim": "CLAUDE.md:72 — the four consumers are edited only in their migration phase (4–7)",
+      "verdict": "TRUE",
+      "evidence": "IMPLEMENTATION.md headings: 'Phase 4 — Migrate PF', 'Phase 5 — IT', 'Phase 6 — SS', 'Phase 7 — CP'"
+    },
+    {
+      "claim": "CLAUDE.md:74 — two hosts, Aiporetne and Enteropia",
+      "verdict": "TRUE",
+      "evidence": "matches the user's machine-identity CLAUDE.md naming exactly these two hosts"
+    },
+    {
+      "claim": "CLAUDE.md:80 — `julia --project=docs docs/make.jl` exits 0 (SELF.DOCS)",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Doctor.jl:659-667 defines check!(\"SELF.DOCS\", ...) running the tool's own docs build and checking exit/banner; Release.jl:67 names it the same way"
+    },
+    {
+      "claim": "audit-changes/PROTOCOL.md:13 — /check-docs and /check-consistency audit prose; /bug-hunt audits code",
+      "verdict": "TRUE",
+      "evidence": "policy instruments.md RULE.INST.FOUR_OBJECTS states the identical split"
+    },
+    {
+      "claim": "audit-changes/PROTOCOL.md:34 — thirteen lanes: ten code + three prose, with the listed anchors",
+      "verdict": "TRUE",
+      "evidence": "catalog/lanes/audit-changes.toml has exactly these 13 [[lane]] entries with kind and anchor matching the listed † marks"
+    },
+    {
+      "claim": "audit-changes/PROTOCOL.md:40 — eleven fatal gaps, three of four attackers converging on one gap",
+      "verdict": "TRUE",
+      "evidence": "docs/design-record/survey-bughunt-auditchanges.md:82: 'eleven fatal gaps against a seven-lane version, three attackers converging on not a single lane ran anything'"
+    },
+    {
+      "claim": "audit-changes/PROTOCOL.md:69 — a DEAD or REJECTED lane is exit 2 at bank",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:455 'Five things make it exit 2: ...any DEAD or REJECTED lane...'; Audit.jl reuses this generic bank"
+    },
+    {
+      "claim": "audit-changes/PROTOCOL.md:73 — a refusal reason of at least 24 characters",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:781,813,1297 all gate on length(reason) >= 24"
+    },
+    {
+      "claim": "audit-changes/PROTOCOL.md:92 — the executing lane is the audit's mechanical anchor",
+      "verdict": "TRUE",
+      "evidence": "catalog/lanes/audit-changes.toml key=executing has anchor=true; design record confirms"
+    },
+    {
+      "claim": "bug-hunt/PROTOCOL.md:30 — two classes escape the witness rule",
+      "verdict": "TRUE",
+      "evidence": "text enumerates exactly ARCHITECTURE and API-SEMANTICS as the two classes"
+    },
+    {
+      "claim": "bug-hunt/PROTOCOL.md:58 — a DEAD or REJECTED lane is exit 2, nothing frozen",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:455-487 shared bank routine"
+    },
+    {
+      "claim": "bug-hunt/PROTOCOL.md:62 — every confirmed finding ends in one of three disposition states",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:813 checks disp state against exactly fixed/refused/escalated"
+    },
+    {
+      "claim": "bug-hunt/PROTOCOL.md:63 — refused needs reason of at least 24 characters",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:1297 length(reason) < 24 check"
+    },
+    {
+      "claim": "bug-hunt/PROTOCOL.md:80 — NEWLY BROKEN = 0 while two regressions were live",
+      "verdict": "TRUE",
+      "evidence": "docs/design-record/survey-bughunt-auditchanges.md:285: 'measured: NEWLY BROKEN = 0 with two live regressions'"
+    },
+    {
+      "claim": "bug-hunt/PROTOCOL.md:99 — measured across five rounds: 20, 9, 17, 21, 17",
+      "verdict": "TRUE",
+      "evidence": "docs/design-record/survey-bughunt-auditchanges.md:56,283 and round1-measurement.md:726 all cite this sequence"
+    },
+    {
+      "claim": "check-consistency/PROTOCOL.md:13 — the panel collects internal-consistency/expert-instinct defects",
+      "verdict": "TRUE",
+      "evidence": "matches the panel's stated scope, uncontradicted by code"
+    },
+    {
+      "claim": "check-consistency/PROTOCOL.md:28 — prepare builds the docs (exit 0 required)",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:150-152 check-consistency branch returns 2 on nonzero build exit"
+    },
+    {
+      "claim": "check-consistency/PROTOCOL.md:44 — DEAD/REJECTED lane is exit 2, nothing frozen",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:455-487 shared bank routine"
+    },
+    {
+      "claim": "check-consistency/PROTOCOL.md:71 — grade exits 1 while any id open or pending_state",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:852-853 two separate return-1 branches"
+    },
+    {
+      "claim": "check-consistency/PROTOCOL.md:76 — adjudication reason of at least 40 characters",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Doctor.jl:331 and Passes.jl:642 both check length(reason) >= 40"
+    },
+    {
+      "claim": "check-consistency/PROTOCOL.md:95 — plateau at three passes flat within noise",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:827-851 flat>=2 triggers plateau (three consecutive equal-open-count passes)"
+    },
+    {
+      "claim": "check-docs/PROTOCOL.md:17 — three cross-cutting lanes: one-home, cold-reader, operational-claims",
+      "verdict": "TRUE",
+      "evidence": "catalog/lanes/check-docs.toml has exactly three kind=cross lanes with these keys"
+    },
+    {
+      "claim": "check-docs/PROTOCOL.md:22 — finding_cap bounds findings per class",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Preflight.jl:439-449 and .gbg/config.toml finding_cap entries"
+    },
+    {
+      "claim": "check-docs/PROTOCOL.md:28 — hard scan hits banked as lane 00-scans, closed by rescan",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:198-199 writes 00-scans.json; Passes.jl:590,726 close via rescan"
+    },
+    {
+      "claim": "check-docs/PROTOCOL.md:31 — prepare builds docs under GBG_ROUND, exit 0 required",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:187-189 check-docs branch returns 2 on nonzero build exit"
+    },
+    {
+      "claim": "check-docs/PROTOCOL.md:32 — no docstring rendered on two pages (built-HTML scan)",
+      "verdict": "TRUE",
+      "evidence": "src/Scans/html_docstring_once.jl:2 comment describes exactly this check"
+    },
+    {
+      "claim": "check-docs/PROTOCOL.md:41 — each lane runs six checks as positive procedures",
+      "verdict": "TRUE",
+      "evidence": "catalog/lanes/check-docs.toml [surface] brief lists the identical six checks in the same order"
+    },
+    {
+      "claim": "check-docs/PROTOCOL.md:47 — DEAD/REJECTED lane is exit 2, nothing frozen",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:455-487 shared bank routine"
+    },
+    {
+      "claim": "docs/make.jl:26 — the four instruments' protocols render as pages",
+      "verdict": "TRUE",
+      "evidence": "docs/make.jl:35 iterates exactly the four instrument names, reading each PROTOCOL.md"
+    }
+  ],
+  "findings": [],
+  "lane": "ambient",
+  "round": "2026-09-12-check-docs-01",
+  "schema_version": 1
+}

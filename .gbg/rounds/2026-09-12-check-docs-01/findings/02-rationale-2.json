@@ -1,0 +1,350 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-check-docs-01",
+  "lane": "rationale-2",
+  "candidates_found": 6,
+  "checked": [
+    "docs/ARCHITECTURE.md lines 971-1904 (§3 Repository layout … §7 Policy, managed files, ledger, doctor), read in full",
+    "src/GBGCodingTools.jl (module, includes order, main/makedocs wiring)",
+    "src/CLI/Sync.jl (SyncError, actions/checkout refusal, cmd_sync exit code)",
+    "templates/CI.yml.snippet, templates/docs.yml.snippet, .github/workflows/CI.yml (fragments, matrix, banners)",
+    ".claude/skills/ (5 stub directories)",
+    "src/CLI/Config.jl (resolve_anchor, schema-driven ConfigError, exit 2 paths)",
+    "src/CLI/Schema.jl (enum/required/additionalProperties checks)",
+    "src/CLI/Rounds.jl (bank, prepare, guard, rerun, import, abandon — exit codes and DEAD/REJECTED handling)",
+    "src/CLI/Passes.jl (pass_open, grade, close — config_sha refusal, exit 1/2 paths, dismissal ≥24-char reason, disposition gating)",
+    "src/CLI/Doctor.jl (QUICK set definition, every check! block for CFG.*, PIN.*, EXEMPT.*, WIRE.*, GIT.*, ROUND.*, AUDIT.GAP, LEG.SENTINELS, MANAGED.STALE, cmd_doctor exit codes)",
+    "src/CLI/Ledger.jl (LedgerError, arg_type refusal, reason-length semantics)",
+    "src/Scan.jl (cmd_scan, text-scan arg_type refusal, triage/hard report format)",
+    "src/CLI/Preflight.jl (QUICK doctor wrapper, CFG.TORN, exit 2 paths)",
+    "src/CLI/Seed.jl (salt_offset, per-round salted selection)",
+    "src/Scans/html_docstring_once.jl (SCAN.HTML_DOCSTRING_ONCE cross-page duplicate binding check)",
+    "src/TestHarness.jl (exported bindings, gate() banner text)",
+    "ext/GBGCodingToolsDocumenterExt.jl / src/DocLints.jl (makedocs banner text, function makedocs end)",
+    "src/Reflection.jl (argcov, dupref, signature_fidelity, xlink)",
+    "schema/*.schema.json listing (count = 22) and schema/tally.schema.json, schema/reproduction.schema.json enum values",
+    "catalog/hats/*.toml, catalog/lanes/*.toml, catalog/attack/*.toml, catalog/seeds/fixture.toml directory listings",
+    "instruments/audit-changes/workflow/attack-design.js (attacker roster)",
+    "instruments/bug-hunt/workflow/hunt.js (FREE_PREAMBLE / HUNT_PREAMBLE, free-lane file selection)",
+    "IMPLEMENTATION.md Phase 1 §1.10 (cross-checking the 'Phase 1.10' references in the slice)",
+    "docs/ARCHITECTURE.md §5.5, §5.6, §6.1-§6.8, §7.1-§7.3 self-consistency (residue counts, vocabulary widenings)"
+  ],
+  "claims_checked": [
+    {
+      "claim": "docs/ARCHITECTURE.md:1044 — CI.yml.snippet and docs.yml.snippet each carry three fragments (auth/run/banner), inserted by sync at fixed points",
+      "verdict": "TRUE",
+      "evidence": "templates/CI.yml.snippet and templates/docs.yml.snippet each contain exactly '# gbg:fragment auth', 'run', 'banner' (3 each); src/CLI/Sync.jl:386 requires all three keys present."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1048 — a workflow without an actions/checkout step is refused, exit 2",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Sync.jl:409 throws SyncError('no actions/checkout step...'); cmd_sync (Sync.jl:684-688) catches SyncError and returns 2."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1068 — the five stubs rendered by `gbg --dev sync` at the root",
+      "verdict": "TRUE",
+      "evidence": ".claude/skills/ has exactly 5 subdirectories: audit-changes, bug-hunt, check-consistency, check-docs, gbg-doctor; src/CLI/Sync.jl:225 renders SKILL.md per skill."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1071 — CI.yml: manual + tags, julia 1.12 lanes (1 and 4 threads) × Pkg.test(), AND the tool's own docs build, no consumer checked out",
+      "verdict": "TRUE",
+      "evidence": ".github/workflows/CI.yml: workflow_dispatch + push tags:'*'; matrix version 1.12 with threads '1' and '4'; separate docs-build job with no consumer checkout."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1139 — path#text matches the ONE heading whose text starts with text; zero or two matches is CFG.SURFACES FAIL",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Config.jl:134 'Returns ... the number of headings that matched — 0 or 2+ is a config error'; Doctor.jl:249 n==1 required, feeding CFG.SURFACES."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1148 — an unknown key, missing required key, unknown enum member, or nonexistent path is exit 2",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Config.jl:258-297 throws ConfigError for each case; Config.jl:319 catches ConfigError and returns 2; Schema.jl:107-138 implements enum/required/additionalProperties checks."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1208 — the ≥3-arguments-or-a-keyword threshold is a platform constant, not a config key",
+      "verdict": "TRUE",
+      "evidence": "policy/docs-rubric.md RULE.DOC.ARGS_FORM states 'three or more arguments, or any keyword argument'; no such key exists in schema/config.schema.json."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1223 — finding_cap = 20, a lane's budget counted in CLASSES",
+      "verdict": "TRUE",
+      "evidence": "Illustrative example config value for instruments.check-docs.finding_cap, consistent with the finding_cap key used throughout the round machinery."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1224 — rationale_lanes = 1, >1 cuts a rationale surface into that many slices on its own ## headings",
+      "verdict": "TRUE",
+      "evidence": "§6.6 of the same document describes 'a single-document rationale surface cut into rationale_lanes slices on its own ## headings', consistent example."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1232 — finding_cap = 25, a hat's budget counted in CLASSES",
+      "verdict": "TRUE",
+      "evidence": "Illustrative example for instruments.check-consistency.finding_cap; consistent with panel.js cap usage described in §6.2."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1271 — finding_cap = 8, a lane's budget counted in CLASSES",
+      "verdict": "TRUE",
+      "evidence": "Illustrative example for instruments.audit-changes.finding_cap; consistent with §6.8's 'finding_cap (config, not a literal in audit.js)'."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1386 — the rubric's idiom strings and the ≥3-arguments threshold are NOT configurable",
+      "verdict": "TRUE",
+      "evidence": "No config.schema.json key exposes the ARGS_FORM threshold or the idiom strings; matches policy/docs-rubric.md's fixed wording."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1392 — tool's own config: extensions=['ext/GBGCodingToolsDocumenterExt.jl']; deliberate_absences as listed; terms = the glossary vocabulary",
+      "verdict": "TRUE",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl exists and is the package's only extension file; the terms list matches the glossary heads."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1405 — the implementation plan's Phase 1.10 gathers this document's revision notes; the anchor needs exactly one match",
+      "verdict": "TRUE",
+      "evidence": "IMPLEMENTATION.md:515 '### 1.10 The tool as its own consumer'; line 533-534 'Gather this document's revision notes under one ## Revision history heading'; Config.jl resolve_anchor requires exactly one match."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1430 — tool's own surfaces need a ledger reason only when a hard scan needs one (Phase 1.10 runs the scans)",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Descriptive/planning statement about a historical build step; no current source artifact records whether Phase 1.10 'ran' the scans as a discrete event."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1450 — findings.json (with its findings_sha) is written ONLY when bank exits 0",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:588-599: findings.json written at 588, findings_sha set at 591, function returns 0 unconditionally afterward with no failure path in between."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1469 — recorded.toml holds the four counts gbg round compare --recorded checks",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "src/CLI/Rounds.jl:880 currently refuses round compare: 'written with Phase 2's scratch imports' (return 2) — the feature is not yet implemented, so the count cannot be checked against running code."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1479 — Preflight: exit 2 aborts the skill",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Preflight.jl:843-844,876 all return 2 on QUICK-doctor failure, CFG.TORN failure, or missing seed catalogue."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1480 — CFG.TORN guard: exit 2 when git status --porcelain shows a pinned/managed file modified",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Doctor.jl:236-242 implements CFG.TORN as a FAIL on any modified pinned/managed file; Preflight.jl:844 turns that into preflight's return 2."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1496 — docs_build must exit 0; a failed build is exit 2 with the log path",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:152 'the docs build failed (exit $code) — see $log'; return 2."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1500 — the round id salts the nth-occurrence offset of every class, so two rounds never plant the same set",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Seed.jl:22 salt_offset(round, class) hashes round+class; distinct round ids give distinct offsets used in Seed.jl:62."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1512 — bank refuses a changed config_sha, exit 2 (pointing to pass open --regrade)",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:469 guard() defaults allow_config_change=false; Rounds.jl:71-73 throws RoundError on config_sha mismatch naming pass open --regrade; outer catch (Rounds.jl:884) returns 2."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1520 — flags SUSPECT every hat with ≥2 seeds on its substrate and zero matches",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:542 prints 'SUSPECT hats (≥ 2 seeds on their substrate, zero matches)' verbatim."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1523 — any DEAD or REJECTED lane at bank ⇒ exit 2 and nothing is frozen",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:483-489: dead/rejected lanes collected, only lane_shas saved, then return 2 before findings.json is ever written."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1548 — the rc.1 round verified 56 findings ten times over",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Historical narrative about a past round's numbers; no rc.1 round data is among the files this lane may open, and no code artifact records this count."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1549 — 90 verifications were owed for that round",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Same historical narrative as above; not checkable against current source."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1552 — grade refuses a changed config_sha, exit 2",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:675-678: config_sha mismatch (unless regrade) prints refusal and returns 2."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1554 — DEAD lane at grade ⇒ exit 2",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:819-822: dead/rejected lines printed; isempty(dead) || return 2."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1557 — grade exits 1 while open_ids is non-empty, and equally while any id is pending_state",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:852-853: both conditions independently return 1."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1562 — close: config/tool_version changed since open without regrade ⇒ refusal line and exit 1",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:1147-1148 push changed messages into fails; line 1226 returns 1 when fails is non-empty."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1563 — every other round verb exits 2 → pass open --regrade, where close instead folds it into its own exit-1 condition list",
+      "verdict": "TRUE",
+      "evidence": "Contrast confirmed: bank/grade return 2 directly on config_sha mismatch, while close accumulates the condition into fails and returns 1."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1595 — section heading '§6.3 Vocabularies (constants)'",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "A section heading, not a discrete factual claim to check against code."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1608 — tally per_id.state is widened from six values to eleven",
+      "verdict": "TRUE",
+      "evidence": "schema/tally.schema.json lines 183-193 enumerate exactly 11 values: PRESENT, PARTIAL, REGRESSED, ABSENT, NOT-A-DEFECT, UNCLEAR, PASS, FAIL, BROKEN, BLOCKED, REFUSED."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1618 — section heading '§6.4 Seeds'",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "A section heading, not a discrete factual claim to check against code."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1630 — salted-per-round selection means no two rounds plant the same set",
+      "verdict": "TRUE",
+      "evidence": "Same salt_offset mechanism as the 1500 claim (src/CLI/Seed.jl:22,62)."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1636 — a hat with ≥2 seeds on its substrate and zero matches is flagged SUSPECT (duplicate of the 1520 claim)",
+      "verdict": "TRUE",
+      "evidence": "Same as the 1520 claim: src/CLI/Rounds.jl:542."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1637 — exactly two residues are STATED as limits (not claimed closed)",
+      "verdict": "TRUE",
+      "evidence": "The document's own text lists exactly two residues in the sentence following this line."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1646 — adjudicated channel requires a ledger reason ≥40 characters",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Doctor.jl:331 length(e['reason']) >= 40 || push!(errs, 'reason shorter than 40 characters')."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1648 — rescan channel: a hard-scan hit banked as lane 00-scans closes when grade re-runs the scan and it no longer fires",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:121 'banked by the CLI as lane 00-scans and closed by rescan when the scan no longer fires — never by a graded verdict'."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1651 — section heading '§6.6 Deltas — /check-docs'",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "A section heading, not a discrete factual claim to check against code."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1654 — every hard hit banked as lane 00-scans; every triage scan printed in full",
+      "verdict": "TRUE",
+      "evidence": "src/Scan.jl:416 'prints the full report: every hard hit and every triage hit, never truncated'; Scan.jl:475-476 prints the TRIAGE section."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1656 — the docs build (exit 0, under GBG_ROUND) precedes gbg scan html",
+      "verdict": "TRUE",
+      "evidence": "Same docs_build exit-0-or-2 pattern verified for the 1496 claim; GBG_ROUND export pattern confirmed via run_under_round used across prepare/build/test."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1657 — the built-HTML questions include 'no docstring rendered on two pages'",
+      "verdict": "TRUE",
+      "evidence": "src/Scans/html_docstring_once.jl:33 fires as soon as a binding appears on more than one page."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1669 — §12.B records all three measurements",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "§12.B lies outside this lane's assigned slice (lines 971-1904); cannot be read or verified under this lane's scope restriction."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1672 — illustrative: a class with forty sites costs one (finding_cap counted in CLASSES)",
+      "verdict": "TRUE",
+      "evidence": "Illustrative number consistent with the CLASSES-not-sites design confirmed throughout (RULE.DOC.CLASS_SWEEP)."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1676 — section heading '§6.7 Deltas — /bug-hunt'",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "A section heading, not a discrete factual claim to check against code."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1723 — the two FREE bug-hunt lanes stay uncapped, choosing two or three files themselves",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "instruments/bug-hunt/workflow/hunt.js's FREE_PREAMBLE confirms 'no cap' but names no specific file count; the number is not encoded anywhere in the script or config."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1727 — section heading '§6.8 Deltas — /audit-changes'",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "A section heading, not a discrete factual claim to check against code."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1735 — illustrative: one unjustified edit pattern across five hunks is ONE concern (CLASSES not sites)",
+      "verdict": "TRUE",
+      "evidence": "Illustrative number; consistent with the audit-changes concern schema's locations-based CLASSES design."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1744 — a refused disposition requires a reason ≥24 characters",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:813 disp['state']=='refused' && length(reason) >= 24."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1747 — attack-design.js runs four attackers with a generic subject",
+      "verdict": "TRUE",
+      "evidence": "instruments/audit-changes/workflow/attack-design.js:50-53 defines exactly four roles: logician, philosopher, counterexample, measurement; line 16 validates a generic subject object."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1754 — the rc.1 audit: 49 concerns were corrected inside the round",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "Historical narrative about a past round; no rc.1 audit round data is among the files this lane may open."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1768 — instruments.md sources cover 'four instruments'",
+      "verdict": "TRUE",
+      "evidence": "policy/instruments.md RULE.INST.FOUR_OBJECTS and glossary.md both name exactly four instruments — check-docs, check-consistency, bug-hunt, audit-changes."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1826 — a text scan refuses (exit 2) an exemption entry carrying arg_type, via CFG.EXEMPTIONS",
+      "verdict": "TRUE",
+      "evidence": "src/Scan.jl:362-364 throws LedgerError on a text scan meeting arg_type; Doctor.jl:345-346 makes it a CFG.EXEMPTIONS FAIL; Preflight.jl:842-843 turns any QUICK-doctor FAIL into preflight's own return 2."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1839 — the doctor check table: exit 1 on any FAIL, 2 if the repo is not a consumer",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Doctor.jl:791-797 cmd_doctor: on ConfigError, prints 'not a consumer — exit 2' and returns 2; Doctor.run's docstring states '1 on any FAIL, else 0'."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1889 — GIT.TRAILER: last 20 commits carry the versionless trailer, otherwise WARN",
+      "verdict": "FALSE",
+      "evidence": "src/CLI/Doctor.jl:549-554 implements GIT.TRAILER as a FAIL, not WARN, with an explicit comment: '# a FAIL, not a WARN: RULE.GIT.TRAILER is a rule, and a check that cannot fail is not a check'."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1898 — BUILD.DOCS (--deep): docs_build exits 0 and the log carries the GBGCodingTools v<ver> makedocs banner",
+      "verdict": "TRUE",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:47 prints exactly 'GBGCodingTools v<ver> makedocs'."
+    },
+    {
+      "claim": "docs/ARCHITECTURE.md:1900 — TEST.PKG (--deep): julia_test exits 0 and the log carries the GBGCodingTools v<ver> gate banner printed by TestHarness.gate()",
+      "verdict": "TRUE",
+      "evidence": "src/TestHarness.jl:605 prints exactly 'GBGCodingTools v<ver> gate' inside the function documented as TestHarness.gate()."
+    }
+  ],
+  "findings": [
+    {
+      "type": "currency",
+      "severity": "major",
+      "confidence": "high",
+      "title": "GIT.TRAILER's doctor-table severity contradicts the deliberately-implemented code",
+      "locations": [
+        "docs/ARCHITECTURE.md:1889",
+        "src/CLI/Doctor.jl:549-554"
+      ],
+      "description": "The doctor check table documents GIT.TRAILER as failing with severity WARN ('last 20 commits carry the versionless trailer | otherwise (WARN)'), but src/CLI/Doctor.jl implements it as a hard FAIL and says so on purpose: line 553 carries the comment '# a FAIL, not a WARN: RULE.GIT.TRAILER is a rule, and a check that cannot fail is not a check', and line 554 calls fail(...), never warn(...), when a commit lacks the trailer. Every other genuinely-WARN row in the same table (ROUND.OPEN, ROUND.ABANDONED, ROUND.DEV, CFG.TERRITORIES, LEG.SENTINELS's fuzzy-match case) matches its check function's warn(...) call exactly; only GIT.TRAILER's table entry disagrees with its check function, against an explicit design comment — meaning the documentation, not the code, has drifted.",
+      "resolution_hint": "Change the doctor-table row for GIT.TRAILER in docs/ARCHITECTURE.md:1889 to drop the '(WARN)' annotation (or state FAIL, matching the undecorated rows in the table), so it agrees with Doctor.jl:549-554's deliberate FAIL."
+    },
+    {
+      "type": "currency",
+      "severity": "major",
+      "confidence": "high",
+      "title": "AUDIT.GAP's doctor-table description names the wrong field (head instead of closed_head)",
+      "locations": [
+        "docs/ARCHITECTURE.md:1896",
+        "src/CLI/Doctor.jl:620-625"
+      ],
+      "description": "The doctor check table states AUDIT.GAP fails when 'every closed audit round's base equals the previous closed audit's head' does not hold. But src/CLI/Doctor.jl:624 actually compares the next round's base against the PREVIOUS round's closed_head field, falling back to head only when closed_head is absent: get(audits[i-1].round, \"closed_head\", audits[i-1].round[\"head\"]). Per the ROUND.toml field list given earlier in this same document (line 1441-1442), head is the round's OPENING head and closed_head is a distinct field recorded at close — so for any round with fix passes between open and close, head and closed_head differ, and the doc's stated comparison target is the wrong one for the code's actual (and more correct) continuity check.",
+      "resolution_hint": "Update the AUDIT.GAP row to say the comparison is against the previous closed audit's closed_head (falling back to head when closed_head is absent), matching src/CLI/Doctor.jl:624."
+    }
+  ]
+}

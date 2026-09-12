@@ -1,0 +1,13 @@
+{
+    "checked": [
+        "scan docs",
+        "scan html",
+        "reflection checks"
+    ],
+    "candidates_found": 0,
+    "lane": "scans",
+    "schema_version": 1,
+    "round": "2026-09-12-check-docs-01",
+    "findings": [
+    ]
+}

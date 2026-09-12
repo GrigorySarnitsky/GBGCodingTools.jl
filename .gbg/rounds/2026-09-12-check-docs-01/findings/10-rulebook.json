@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-check-docs-01",
+  "lane": "rulebook",
+  "candidates_found": 6,
+  "checked": [
+    "policy/00-index.md (full)",
+    "policy/docs-rubric.md (full, 28 rules)",
+    "policy/latex-idiom.md (full, 17 rules)",
+    "policy/citations.md (full, 4 rules)",
+    "policy/testing-protocol.md (full, 10 rules)",
+    "policy/instruments.md (full, 13 rules + honest limits)",
+    "policy/git-conventions.md (full, 6 rules)",
+    "policy/glossary.md (full)",
+    "policy/RULES.toml (all 95 [[rule]] entries: id/file/section/statement/sentinel/check)",
+    "programmatic cross-check: every sentinel is a verbatim prefix of its rule's paragraph in the corresponding .md file (95/95 pass)",
+    "every scan: id in RULES.toml resolves in catalog/scans.toml (43/43 present)",
+    "every doctor:/harness:/test: id in RULES.toml resolves to a real binding (Doctor.jl checks, TestHarness.jl, Preflight.jl, Passes.jl, Witnesses.jl, ext/GBGCodingToolsDocumenterExt.jl, test/rounds.jl, test/schemas.jl)",
+    "numeric constants cross-checked against src/: ARGS_THRESHOLD=3 (src/Reflection.jl), SIGNATURE_WIDTH=88 (src/Scans/signature_wide.jl), PROSE_PARAGRAPH_CAP=120 / PROSE_ADMONITION_CAP=3 (src/Scans/prose_shape.jl), CARRY_LIMIT=3 (src/CLI/Passes.jl), plateau flat>=2 = 3 flat passes (src/CLI/Passes.jl:851)",
+    "six {{...}} variation points in policy/*.md cross-checked against schema/config.schema.json — all six keys present, argcov_policy enum is exactly [triage, gate]",
+    "RULE.DOC.SIBLING_LINK's fleet.toml / URL-pattern claim cross-checked against fleet.toml and src/Scans/sibling_link.jl",
+    "RULE.INST.FOUR_OBJECTS / glossary Instrument entry cross-checked against the four shipped instruments/ directories",
+    "RULE.INST.CONSENT vs RULE.DOC.BATTERY cross-reference (\"check the docs\" => /check-docs) for contradiction",
+    "RULE.INST.ECONOMY's five-phase claim spot-checked against instruments/*/PROTOCOL.md",
+    "deviations.md's 5 declared exemptions cross-checked against RULES.toml check fields for internal consistency"
+  ],
+  "claims_checked": [
+    {
+      "claim": "policy/00-index.md:7 — \"Six values vary by package and are substituted at render time\"",
+      "verdict": "TRUE",
+      "evidence": "grep of {{...}} placeholders across policy/*.md finds exactly 6 distinct keys (rubric.leading_identity, rubric.signature_types, docs.admonition_titles, notation.mathbf_allowed, notation.vectors, instruments.check-docs.argcov_policy), all present in schema/config.schema.json."
+    },
+    {
+      "claim": "policy/00-index.md:28 — \"the four instruments\" (instruments.md summary line)",
+      "verdict": "TRUE",
+      "evidence": "instruments/ ships exactly 4 directories (audit-changes, bug-hunt, check-consistency, check-docs), matching glossary.md's Instrument entry and RULE.INST.FOUR_OBJECTS."
+    },
+    {
+      "claim": "policy/RULES.toml:15 — TWO_TIER statement matches its rule paragraph",
+      "verdict": "TRUE",
+      "evidence": "docs-rubric.md RULE.DOC.TWO_TIER paragraph opens \"A module docstring is a map and a function docstring is a home.\" — statement/sentinel both accurate."
+    },
+    {
+      "claim": "policy/RULES.toml:51 — ARGS_FORM sentinel is the verbatim first sentence of its paragraph",
+      "verdict": "TRUE",
+      "evidence": "docs-rubric.md:46-48 paragraph begins with exactly the sentinel text; ARGS_THRESHOLD=3 confirmed in src/Reflection.jl:35."
+    },
+    {
+      "claim": "policy/RULES.toml:155 — CLASS_SWEEP statement accurately compresses the rule",
+      "verdict": "TRUE",
+      "evidence": "docs-rubric.md:146-150 paragraph matches; check=panel is consistent (no scan enumerates 'classes' of docs defects)."
+    },
+    {
+      "claim": "policy/RULES.toml:156 — CLASS_SWEEP sentinel is the verbatim first sentence",
+      "verdict": "TRUE",
+      "evidence": "docs-rubric.md:146-148 first sentence matches sentinel character-for-character (confirmed by prefix-match script)."
+    },
+    {
+      "claim": "policy/RULES.toml:232 — SHAPE statement's numeric caps (120 words, 3 admonitions) match code",
+      "verdict": "TRUE",
+      "evidence": "src/Scans/prose_shape.jl: `const PROSE_PARAGRAPH_CAP = 120` and `const PROSE_ADMONITION_CAP = 3`."
+    },
+    {
+      "claim": "policy/RULES.toml:233 — SHAPE sentinel is the verbatim first sentence",
+      "verdict": "TRUE",
+      "evidence": "docs-rubric.md:217-220 first sentence matches sentinel exactly (prefix-match confirmed)."
+    },
+    {
+      "claim": "policy/RULES.toml:253 — SIGNATURE_MIRROR statement's 88-column cap matches code",
+      "verdict": "TRUE",
+      "evidence": "src/Scans/signature_wide.jl:4 `const SIGNATURE_WIDTH = 88`."
+    },
+    {
+      "claim": "policy/RULES.toml:254 — SIGNATURE_MIRROR sentinel is the verbatim first sentence",
+      "verdict": "TRUE",
+      "evidence": "docs-rubric.md:236-239 first sentence matches sentinel exactly through \"...left exactly as written.\""
+    },
+    {
+      "claim": "policy/RULES.toml:421 — CIT.STYLE statement (\"up to 3 authors\", \"First et al. for four or more\")",
+      "verdict": "TRUE",
+      "evidence": "citations.md:3-7 paragraph states the identical rule; check=panel is appropriate since no scan counts author names in prose."
+    },
+    {
+      "claim": "policy/RULES.toml:422 — CIT.STYLE sentinel is the verbatim first sentence",
+      "verdict": "TRUE",
+      "evidence": "citations.md:4-5 first sentence matches sentinel exactly."
+    },
+    {
+      "claim": "policy/RULES.toml:547 — FOUR_OBJECTS statement compresses the rule correctly",
+      "verdict": "TRUE",
+      "evidence": "instruments.md:10-12 names exactly audit-changes/check-docs/check-consistency/bug-hunt against changes/source-prose/rendered-prose/code, matching the 4 shipped instruments/ directories."
+    },
+    {
+      "claim": "policy/RULES.toml:548 — FOUR_OBJECTS sentinel is the verbatim first sentence",
+      "verdict": "TRUE",
+      "evidence": "instruments.md:10-12 first sentence matches sentinel exactly."
+    },
+    {
+      "claim": "policy/RULES.toml:625 — ECONOMY sentinel is the verbatim first sentence, and the max_passes default (3) matches code",
+      "verdict": "TRUE",
+      "evidence": "instruments.md:87-89 first sentence matches sentinel exactly; CARRY_LIMIT=3 (Passes.jl:92) backs the related 'no finding rides more than three rounds' claim in instruments.md:46."
+    },
+    {
+      "claim": "policy/citations.md:5-6 — \"at most three authors named ... Keep enough surnames to disambiguate\"",
+      "verdict": "TRUE",
+      "evidence": "Matches RULES.toml RULE.CIT.STYLE statement/sentinel verbatim; check=panel, no code contradiction found."
+    },
+    {
+      "claim": "policy/docs-rubric.md:3 — \"Two audiences, one rule each\" (module=map, function=home)",
+      "verdict": "TRUE",
+      "evidence": "Matches TWO_TIER (RULE.DOC.TWO_TIER) and glossary.md's Home/map entry exactly; internally consistent."
+    },
+    {
+      "claim": "policy/docs-rubric.md:19 — \"Three rules each used to claim the end of a docstring\"",
+      "verdict": "TRUE",
+      "evidence": "The three are RULE.CIT.FULL_INLINE (# References position), RULE.DOC.FIELDS (fields list demoted to the bottom), and RULE.DOC.SHAPE (\"# Fields is last\") — HOME_ORDER settles their relative order; three distinct rule ids each bear on docstring-end placement."
+    },
+    {
+      "claim": "policy/docs-rubric.md:48 — ARGS_FORM's threshold/prose-vs-bulleted split matches SCAN.ARGS_FORM",
+      "verdict": "TRUE",
+      "evidence": "src/Scans/args_form.jl implements exactly this split (ARGS_BULLET/ARGS_PROSE regexes, ARGS_THRESHOLD=3, `_`-prefix and thin-wrapper exemptions) matching the rule prose line for line."
+    },
+    {
+      "claim": "policy/docs-rubric.md:148 — CLASS_SWEEP's \"fix all occurrences in one pass, reporting the class and the count\" phrasing",
+      "verdict": "TRUE",
+      "evidence": "Matches RULES.toml sentinel/statement verbatim; no contradicting instrument-protocol text found."
+    },
+    {
+      "claim": "policy/docs-rubric.md:209 — \"the banner is the two lines\" (AI_BANNER)",
+      "verdict": "TRUE",
+      "evidence": "docs-rubric.md:210-211 gives exactly two banner lines (the `!!! info` line and the indented body line)."
+    },
+    {
+      "claim": "policy/docs-rubric.md:218 — SHAPE's 120-word / 3-admonition caps",
+      "verdict": "TRUE",
+      "evidence": "Duplicate of RULES.toml:232 claim; same code evidence (prose_shape.jl constants)."
+    },
+    {
+      "claim": "policy/docs-rubric.md:238 — SIGNATURE_MIRROR's 88-column wrap",
+      "verdict": "TRUE",
+      "evidence": "Duplicate of RULES.toml:253 claim; src/Scans/signature_wide.jl SIGNATURE_WIDTH=88 and signature_typed.jl:5 cross-reference to the same constant."
+    },
+    {
+      "claim": "policy/glossary.md:20 — Home/map glossary entry (\"is a map (linked one-liners, no formulas)\")",
+      "verdict": "TRUE",
+      "evidence": "Matches RULE.DOC.TWO_TIER and RULE.DOC.MODULE_MAP verbatim in substance; no drift between the glossary's compressed definition and the full rules."
+    },
+    {
+      "claim": "policy/instruments.md:11 — FOUR_OBJECTS's instrument-name list",
+      "verdict": "TRUE",
+      "evidence": "Duplicate of RULES.toml:547-548 claim; instrument names verified against instruments/ directory listing (audit-changes, bug-hunt, check-consistency, check-docs)."
+    },
+    {
+      "claim": "policy/instruments.md:33 — CLOSURE_LOOP's \"three passes flat within noise\" plateau signal",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:851 `flat >= 2 && ... PLATEAU`, where `flat` counts prior passes matching the current pass's open-id count — flat=2 means the current pass plus 2 predecessors (3 total) share the same open count, i.e. exactly '3 passes flat'."
+    },
+    {
+      "claim": "policy/instruments.md:46 — CARRY's \"no finding rides more than three rounds\"",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:92 `const CARRY_LIMIT = 3`, enforced at Passes.jl:1079-1080 (`e[\"carries\"] < CARRY_LIMIT`) and read by Release.jl:46 to block a final release."
+    },
+    {
+      "claim": "policy/instruments.md:53 — AUDIT_AFTER_CODE's \"the two verifiers grade each finding\"",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl per-pass grading builds exactly two verdict fields per id, `act` and `state` (Passes.jl:807, 825), matching RULE.INST.SELF_REPORT's act-verifier/state-verifier pair."
+    },
+    {
+      "claim": "policy/instruments.md:85 — FROZEN_MIDROUND's \"unless re-graded; a rate sequence means something only at a fixed instrument\"",
+      "verdict": "TRUE",
+      "evidence": "Consistent with RULE.INST.FROZEN_MIDROUND's stated mechanism (round records instrument version); no contradicting code found."
+    },
+    {
+      "claim": "policy/instruments.md:88 — ECONOMY's \"the five phases ... are never economised\"",
+      "verdict": "UNVERIFIABLE",
+      "evidence": "instruments/bug-hunt/PROTOCOL.md:44,59 and instruments/check-consistency/PROTOCOL.md:51 explicitly confirm 'reproduction is never economised' and the fix pass runs 'at session strength, never economised'; no equally explicit per-phase strength language found for 'adjudication', 'verification' or 'consolidation' in any instrument PROTOCOL.md — plausible but not textually confirmed within this lane's surface."
+    },
+    {
+      "claim": "policy/testing-protocol.md:21 — [exit] \"a step is done when its verification command exits 0 and the exit code was observed\"",
+      "verdict": "TRUE",
+      "evidence": "Matches the package's stated exit-code contract (CLAUDE.md 'Exit codes are the contract') and RULE.TEST.RULE_WITH_CHECK's own self-application; no rule or protocol claims a different definition of done."
+    }
+  ],
+  "findings": []
+}

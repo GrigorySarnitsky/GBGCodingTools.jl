@@ -1,0 +1,648 @@
+{
+    "schema_version": 1,
+    "round": "2026-09-12-check-docs-01",
+    "findings": [
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:102 — \"451 arguments over 247 docstrings here take `names` and 4 took `mirror` (2026-09-12)\""
+            ],
+            "id": "2026-09-12-check-docs-01/rationale#1",
+            "resolution_hint": "Re-run `gbg scan docs` (SCAN.ARGCOV and SCAN.SIGNATURE_TYPED) against the tool's own source and either update the cited figures to the freshly measured ones or drop the exact numbers in favour of a qualitative statement that does not go stale silently.",
+            "description": "The §1 variation-point table cites, dated today (2026-09-12), that this package's own docstrings show '451 arguments over 247 docstrings ... take names and 4 took mirror'. Running the package's own registered scans over its current source today gives different figures: SCAN.ARGCOV (src only, the scan whose population is explicitly 'the argument count') reports population=386, not 451; SCAN.SIGNATURE_TYPED (src+ext, population = docstrings with a parsed argument list) reports population=243 docstrings with 0 hits, not '247 docstrings ... 4 took mirror'. RULE.DOC.CURRENT and RULE.TEST.COUNTS_REMEASURED both bear directly on this kind of claim, and the cited numbers do not match a live re-measurement on the date they carry.",
+            "severity": "minor",
+            "lane": "rationale",
+            "title": "Cited docstring/argument counts are stale against the current source",
+            "type": "currency",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:645 — \"lane-file wrapper and `$ref`s `finding.schema.json` for the findings array\""
+            ],
+            "id": "2026-09-12-check-docs-01/rationale#2",
+            "resolution_hint": "Rewrite the sentence to say each instrument's schema.json defines its own reduced, inline $defs.finding (or $defs.hunt_finding) for the lane-file shape, and that the CLI separately validates the banked finding against the external schema/finding.schema.json once id/lane/n are attached.",
+            "description": "D11 states an instrument's `instruments/<name>/schema.json` '$ref's finding.schema.json for the findings array'. In the actual files, check-docs/schema.json, check-consistency/schema.json and audit-changes/schema.json all point their findings array at a purely LOCAL definition, \"$ref\": \"#/$defs/finding\" (bug-hunt uses #/$defs/hunt_finding), and that local $defs.finding is a hand-duplicated, reduced copy of schema/finding.schema.json (it omits id, lane, n, carried_from, seeded, seed_class, which the CLI adds only once a lane's output is banked). No instrument schema.json contains a $ref naming the external schema/finding.schema.json file. test/schemas.jl and src/CLI/Rounds.jl's bank confirm the CORE schema/finding.schema.json validates a finding only AFTER banking — a different validation point from the lane file's own schema.json, which is exactly why it cannot simply be a $ref to the external file, contrary to what the sentence says.",
+            "severity": "minor",
+            "lane": "rationale",
+            "title": "Instrument schema.json does not $ref schema/finding.schema.json as described",
+            "type": "operational",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:616 — \"An **ORPHAN** (a lane file no roster entry expects) is reported, never counted.\""
+            ],
+            "id": "2026-09-12-check-docs-01/rationale#3",
+            "resolution_hint": "Either implement the described detection (scan the round's findings directory for files the roster does not expect, and report them without affecting the tally), or correct D10 to describe only the classification states the code actually produces (DEAD, REJECTED, EMPTY, TRUNCATED) and drop or rename the ORPHAN sentence so it does not claim a mechanism that does not exist.",
+            "description": "D10 lists ORPHAN as one of the lane-file states the closure engine produces, alongside DEAD/REJECTED/EMPTY/TRUNCATED — all of which ARE implemented (confirmed against src/CLI/Rounds.jl's bank/classify_lane, which returns exactly :dead, :rejected, :truncated, or a live/empty classification). bank only iterates expected_lanes(rec) — the round's roster — and classifies each expected file; it contains no code that lists the findings directory and reports a file present on disk that no roster entry names. A repo-wide search for the literal term 'ORPHAN' across src/ and ext/ finds it used only inside src/CLI/Sync.jl, for the entirely unrelated MANAGED-FILE sidecar (.gbg/managed.json) classification. Rounds.jl does have a variable literally named orphan (in bank, ~line 505), but it names a different concept: a CARRIED finding whose lane field names a key absent from the CURRENT round's roster, which causes bank to REFUSE with exit 2 — the opposite of 'reported, never counted'.",
+            "severity": "major",
+            "lane": "rationale",
+            "title": "D10's round-lane 'ORPHAN' classification has no implementation",
+            "type": "operational",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:1889",
+                "src/CLI/Doctor.jl:549-554"
+            ],
+            "id": "2026-09-12-check-docs-01/rationale-2#1",
+            "resolution_hint": "Change the doctor-table row for GIT.TRAILER in docs/ARCHITECTURE.md:1889 to drop the '(WARN)' annotation (or state FAIL, matching the undecorated rows in the table), so it agrees with Doctor.jl:549-554's deliberate FAIL.",
+            "description": "The doctor check table documents GIT.TRAILER as failing with severity WARN ('last 20 commits carry the versionless trailer | otherwise (WARN)'), but src/CLI/Doctor.jl implements it as a hard FAIL and says so on purpose: line 553 carries the comment '# a FAIL, not a WARN: RULE.GIT.TRAILER is a rule, and a check that cannot fail is not a check', and line 554 calls fail(...), never warn(...), when a commit lacks the trailer. Every other genuinely-WARN row in the same table (ROUND.OPEN, ROUND.ABANDONED, ROUND.DEV, CFG.TERRITORIES, LEG.SENTINELS's fuzzy-match case) matches its check function's warn(...) call exactly; only GIT.TRAILER's table entry disagrees with its check function, against an explicit design comment — meaning the documentation, not the code, has drifted.",
+            "severity": "major",
+            "lane": "rationale-2",
+            "title": "GIT.TRAILER's doctor-table severity contradicts the deliberately-implemented code",
+            "type": "currency",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:1896",
+                "src/CLI/Doctor.jl:620-625"
+            ],
+            "id": "2026-09-12-check-docs-01/rationale-2#2",
+            "resolution_hint": "Update the AUDIT.GAP row to say the comparison is against the previous closed audit's closed_head (falling back to head when closed_head is absent), matching src/CLI/Doctor.jl:624.",
+            "description": "The doctor check table states AUDIT.GAP fails when 'every closed audit round's base equals the previous closed audit's head' does not hold. But src/CLI/Doctor.jl:624 actually compares the next round's base against the PREVIOUS round's closed_head field, falling back to head only when closed_head is absent: get(audits[i-1].round, \"closed_head\", audits[i-1].round[\"head\"]). Per the ROUND.toml field list given earlier in this same document (line 1441-1442), head is the round's OPENING head and closed_head is a distinct field recorded at close — so for any round with fix passes between open and close, head and closed_head differ, and the doc's stated comparison target is the wrong one for the code's actual (and more correct) continuity check.",
+            "severity": "major",
+            "lane": "rationale-2",
+            "title": "AUDIT.GAP's doctor-table description names the wrong field (head instead of closed_head)",
+            "type": "currency",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:1961-1963 — 'Three verbs carry it, and they are defined here'",
+                "docs/ARCHITECTURE.md:1965-1979 — 'gbg round import <pile…> writes into the consumer's .gbg/rounds/<round>/ ... It writes ROUND.toml ..., findings.json ..., import.json'",
+                "docs/ARCHITECTURE.md:1980-1981 — 'gbg round grade <round> ... re-computes the tally from the imported verdict files'",
+                "docs/ARCHITECTURE.md:1982-1999 — 'gbg round compare --recorded <recorded.toml> <round> compares that re-graded tally ... The four count keys are the only ones compared ...'",
+                "docs/ARCHITECTURE.md:2001-2019 — the per-consumer 'Recorded target' table presented as ported/verified data"
+            ],
+            "id": "2026-09-12-check-docs-01/rationale-3#1",
+            "resolution_hint": "Mark the whole Step-0 subsection as a planned design (e.g. a leading 'Not yet built (IMPLEMENTATION Phase 2 step 1):' clause, matching the phrasing the CLI itself already uses), or move it to a forward-looking roadmap section, until the pile importer and `round compare` actually exist.",
+            "description": "This section presents `gbg round import <pile…>` and `gbg round compare --recorded` as operative CLI verbs with a precise, detailed contract (ROUND.toml field population from the pile, findings.json built from a title→id map, a four-key comparison with a 0/1/2 exit contract). The actual implementation in src/CLI/Rounds.jl (cmd_round, lines 876-880) explicitly refuses both: a non-`--empty` `round import` prints 'the legacy pile readers are Phase 2's scratch tools (IMPLEMENTATION Phase 2 step 1); only `--empty` exists yet' and returns 2, and `round compare` unconditionally prints 'round compare --recorded: written with Phase 2's scratch imports' and returns 2. Only the degenerate `gbg round import --empty` path (import_empty, Rounds.jl:735-756) exists. The document gives no signal that this is a planned-but-unbuilt feature — it reads as a completed, tested mechanism (down to the exact recorded-target counts per consumer pile), which misleads a reader trying to use ARCHITECTURE.md as ground truth for the tool's current behaviour (RULE.DOC.CURRENT).",
+            "severity": "major",
+            "lane": "rationale-3",
+            "title": "The Step-0 instrument-equivalence section describes gbg round import <pile> / round compare as built, but the CLI refuses both",
+            "type": "operational",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:1975-1976 — 'It needs no `.gbg/config.toml` — the one `round` verb that runs before `init`; `self verify` still precedes it'"
+            ],
+            "id": "2026-09-12-check-docs-01/rationale-3#2",
+            "resolution_hint": "Either special-case `gbg round import` (both variants) in cmd_round to skip Config.read() before init, or correct the prose to state that `.gbg/config.toml` is in fact required and that self-verify is not run before import.",
+            "description": "cmd_round (src/CLI/Rounds.jl:855) calls `cfg = Config.read()` unconditionally before dispatching to any round verb, including import; Config.read() (src/CLI/Config.jl:257-261) throws a ConfigError when `.gbg/config.toml` does not exist. That error is not caught by cmd_round's own try/catch (which only catches RoundError) and instead surfaces at Main.jl's top-level handler (Main.jl:144-150) as an exit-3 crash — not the config-free success the text describes. Separately, the one import path that IS implemented, import_empty (Rounds.jl:735-756), never calls guard()/self_verify() at all, unlike every other round verb (prepare, build, test, bank, rerun, abandon all call guard(), which runs self_verify — Rounds.jl:66,147,295,313,469,701,830), so 'self verify still precedes it' does not hold for the code as written.",
+            "severity": "major",
+            "lane": "rationale-3",
+            "title": "gbg round import is claimed to need no .gbg/config.toml and to run self verify first, but cmd_round requires the config unconditionally and import_empty never calls self_verify",
+            "type": "operational",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "docs/ARCHITECTURE.md:2455 — 'Measured before it was built: 964 references here, 11 unresolved, all 11 artefacts of the pattern'",
+                "docs/ARCHITECTURE.md:2362 — 'Narrowed to `names` 2026-09-12, the form 247 of 251 docstrings here already took'"
+            ],
+            "id": "2026-09-12-check-docs-01/rationale-3#3",
+            "resolution_hint": "Date-stamp both counts explicitly (e.g. 'measured 2026-09-12') so they read unambiguously as historical snapshots rather than current live counts, consistent with how nearby Revision-history entries already date their measurements.",
+            "description": "Both counts are historical point-in-time measurements folded into otherwise-present-tense rule/scan descriptions, with no note of how a reader would reproduce or re-check them today (a live run of SCAN.ID_RESOLVES against the current tree returns 0 hits, which is consistent but not obviously so without re-running it; docstring_blocks() over src+ext currently returns 298 total blocks, a different and not directly comparable denominator to the claimed 251). This is a self-containment/verifiability gap rather than an outright falsehood — RULE.DOC.SELF_CONTAINED asks that a rationale document read complete without depending on unstated context, and 'here' in both sentences is ambiguous between 'at measurement time' and 'now'.",
+            "severity": "minor",
+            "lane": "rationale-3",
+            "title": "Historical measurement lines (e.g. SCAN.ID_RESOLVES's 964/11, SIGNATURE_MIRROR's 247/251) are stated as bare current-reading facts with no reproducible current-tree pointer",
+            "type": "self-containment",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/src/guide/config.md:17 — \"Five values vary by package and are substituted into the rendered policy: `rubric.leading_identity`, `notation.vectors`, `docs.admonition_titles`, `notation.mathbf_allowed` ... and `instruments.check-docs.argcov_policy`\""
+            ],
+            "id": "2026-09-12-check-docs-01/pages#1",
+            "resolution_hint": "Change \"Five values\" to \"Six values\" and add `rubric.signature_types` (with its `names`/`mirror` enum) to the list in docs/src/guide/config.md:17-21, in the same position 00-index.md gives it (second, after leading_identity).",
+            "description": "The page lists five per-package config values, omitting `rubric.signature_types` (RULE.DOC.SIGNATURE_MIRROR's variation point: `names` vs `mirror`, schema/config.schema.json:288-296). The rendered policy this same package ships (.gbg/policy/00-index.md, imported into every consumer's CLAUDE.md) states there are SIX: \"the leading identity of a docstring, how much of the method a signature repeats, the vector notation, the admonition-title rule, the admitted `\\mathbf` strings and the tier RULE.DOC.ARGCOV binds at.\" config.md's own count and list are stale against both the schema and the tool's own policy text — a RULE.DOC.CURRENT violation (a summary naming only a subset of the current set is stale even where each item named is literally true).",
+            "severity": "minor",
+            "lane": "pages",
+            "title": "config.md undercounts the package-specific config values by one",
+            "type": "currency",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "docs/src/guide/install.md:6 — \"fetches into the consumer's `docs/` environment\" (first use in the site's own nav order: Home → Install → …)",
+                "docs/src/guide/install.md:11,36,37,38,44",
+                "docs/src/guide/config.md:6 — \"`.gbg/config.toml` is the one config file of a consumer\"",
+                "docs/src/guide/ledger.md:6 — \"the one place a consumer records a waiver\"",
+                "docs/src/guide/rounds.md:6 — \"one run of one instrument over one consumer\""
+            ],
+            "id": "2026-09-12-check-docs-01/pages#2",
+            "resolution_hint": "Either add a one-clause gloss at install.md's first use (\"the consumer — the package that pins the tool —\"), or give the term an @id anchor at its first mention and @ref-link every later bare use across install.md/config.md/ledger.md/rounds.md, the way \"ledger\" and \"round\" already are.",
+            "description": "\"Consumer\" is one of this package's own named terms of art (consumer; instrument; round; lane; hat; anchor; gate; pin; managed file; ledger), and RULE.DOC.TERMS_DEFINED requires a term of art be defined in a clause or @ref-linked at its first use, cold-read tested. Contrast with \"ledger\", \"round\", \"lane\" and \"instrument\", each of which the pages surface either defines in a clause at first use or @ref-links (e.g. index.md:16 `[ledger](@ref ledger)`) before using it bare elsewhere. \"Consumer\" gets neither: docs/src/index.md never uses the word at all (it describes the concept without naming it), and install.md — the first guide page in the site's own nav order (docs/make.jl:70) — introduces the bare word with no gloss and no link to a page that defines it (there is no dedicated \"consumer\" page or @id anchor on the pages surface). A reader who has not already absorbed index.md's unlabelled paraphrase has no way to resolve the term from the pages surface alone.",
+            "severity": "minor",
+            "lane": "pages",
+            "title": "\"consumer\" is used repeatedly across the pages surface without ever being defined or @ref-linked",
+            "type": "self-containment",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Init.jl:190 — CONFIG_HEADER text: \"an unknown key, a missing required key, an unknown enum member or a path that does not exist is exit 2\"",
+                "src/CLI/Bump.jl:69 — `return bump(Config.read(), o.positional[1]; ...)`, Config.read() not wrapped",
+                "src/CLI/Gate.jl:121 — `cfg = Config.read()`, not wrapped",
+                "src/CLI/Preflight.jl:924 — `cfg = Config.read()`, not wrapped",
+                "src/CLI/Rounds.jl:855 — `cfg = Config.read()`, outside the try that only catches RoundError",
+                "src/CLI/Sync.jl:679 — `cfg = Config.read()`, outside the try that only catches SyncError",
+                "src/Scan.jl:579 — `cfg = Config.read()` in cmd_scan, not wrapped",
+                "src/CLI/Hunt.jl:13 — `cfg = Config.read()` in cmd_witnesses, not wrapped",
+                "src/CLI/Release.jl:80 — `cfg = Config.read(root)` inside release(), called by cmd_release with no wrapping",
+                "src/CLI/Audit.jl:116 — `try audit_bank(Config.read(), args[1]) catch err; err isa Rounds.RoundError || rethrow(); ...` — a ConfigError is rethrown, not converted to 2",
+                "src/CLI/Main.jl:144-150 — main()'s only catch-all: any exception escaping a verb is printed as \"crashed\" and returns 3"
+            ],
+            "id": "2026-09-12-check-docs-01/src#1",
+            "resolution_hint": "Either wrap each listed Config.read() call the same way cmd_doctor/cmd_config already do (catch Config.ConfigError, print, return 2), or — better, to fix the whole class at once — catch Config.ConfigError once in Main.main alongside the generic catch and return 2 for it there, the way the design_verb wrapper in Design.jl already generalizes the pattern for its own four verbs.",
+            "description": "The exit contract documented throughout the package (Main.jl's `main` docstring, and the CONFIG_HEADER written into every consumer's own .gbg/config.toml) says a structurally bad config — an unknown key, a missing required key, an unknown enum member, or a path that does not resolve — is exit 2 (\"cannot evaluate\"), distinct from exit 3 (\"crash\", reserved for an escaping exception). Config.read()/Config.parse() do throw Config.ConfigError for exactly these problems, and three call sites correctly catch it and return 2: Config.jl's cmd_config, Doctor.jl's cmd_doctor, and Design.jl's design_verb wrapper (used by attack/attack read/calibrate/calibrate read). But at least nine other CLI entry points call Config.read() without catching Config.ConfigError at all (bump, gate, preflight, every `gbg round <verb>`, sync, scan, witnesses, release) or catch only a different exception type and rethrow anything else (audit-changes bank, which only catches Rounds.RoundError). For all of these, a bad config.toml reaches Main.main's single generic `catch err` clause, which prints a backtrace and returns 3 — a crash, not the documented \"cannot evaluate\". Since a config.toml is user-editable and routinely gets edited by hand or by ledger changes, this is the ordinary failure mode the exit-code contract exists to distinguish from an actual tool bug, and it is currently misreported for the large majority of verbs.",
+            "severity": "major",
+            "lane": "src",
+            "title": "A malformed or unreadable .gbg/config.toml crashes most verbs (exit 3) instead of exit 2",
+            "type": "operational",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/CLI/Passes.jl:1086-1115 — close(cfg, round; carry = String[], io = stdout) docstring"
+            ],
+            "id": "2026-09-12-check-docs-01/src#2",
+            "resolution_hint": "Add a `- `carry` — ...` bullet to close()'s \"The arguments are:\" list (the existing explanatory paragraph can stay as additional prose afterward, or be folded into the bullet).",
+            "description": "RULE.DOC.ARGS_FORM requires a docstring with any keyword argument to use the bulleted \"The arguments are:\" form for its arguments, each getting its own entry, and forbids mixing that form with running prose in one docstring. close()'s docstring bullets only `cfg`, `round` and `io`; its fourth argument, the keyword `carry`, is instead explained in a separate prose paragraph (\"`carry` names the ids this round closes by carrying them into the next round of its instrument, which `carry_conditions` gates...\") placed after the bulleted list and after the \"The conditions:\" paragraph. Every other multi-keyword function checked in the same module (pass_open, grade, carry_conditions itself) bullets every one of its keyword arguments.",
+            "severity": "minor",
+            "lane": "src",
+            "title": "close()'s docstring documents `carry` outside its own bulleted \"The arguments are:\" list, mixing forms",
+            "type": "self-containment",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "instruments/check-consistency/workflow/verify-act.js:126 — \"Return one object per lane in `lane_files`, in the order below\"",
+                "instruments/check-consistency/workflow/verify-state.js:113 — \"Return one object per lane in `lane_files`, in the order below\""
+            ],
+            "id": "2026-09-12-check-docs-01/workflow-scripts#1",
+            "resolution_hint": "Escape the backticks: \\`lane_files\\`, matching the pattern used everywhere else in these two files.",
+            "description": "The template literal building the per-unit prompt contains a literal, unescaped backtick pair around `lane_files` directly in its own text (not inside a ${} substitution), closing the outer template string early and reopening a new one — a syntax error under standard ECMAScript grammar. Confirmed with a minimal repro and by parsing the full files (wrapped to tolerate top-level await) with a JS parser, which fails with 'Unexpected identifier' at exactly this construct in both files and nowhere else in the other 9 workflow scripts or prelude.js. Every other backtick-wrapped identifier in prose elsewhere in these same files is correctly escaped (\\`name\\`), so this is an isolated slip. A script that cannot parse cannot run: both the adversarial fix auditor (sees the diff) and the blind closure auditor (does not) would fail outright.",
+            "severity": "blocker",
+            "lane": "workflow-scripts",
+            "title": "Unescaped backtick breaks the template literal, so the script fails to parse",
+            "type": "operational",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "instruments/check-consistency/workflow/verify-state.js:79-82 — \"a surviving one does not settle STRATEGY and a vanished one does not settle the class\""
+            ],
+            "id": "2026-09-12-check-docs-01/workflow-scripts#2",
+            "resolution_hint": "Reword to this script's own vocabulary, e.g. 'does not settle whether the class survives elsewhere.'",
+            "description": "This comment on the `probe` helper is a verbatim copy of verify-act.js:85-88, where STRATEGY is one of four named questions that script's verdicts answer. verify-state.js has no such concept: its verdicts are PRESENT/PARTIAL/REGRESSED/ABSENT/NOT-A-DEFECT/UNCLEAR with no `question` field at all. Left over from copying verify-act.js's probe function without adapting the prose.",
+            "severity": "minor",
+            "lane": "workflow-scripts",
+            "contradicts": "instruments/check-consistency/workflow/verify-act.js:85-88 — the correct original, where STRATEGY is one of the four questions this OTHER script's verdicts answer",
+            "title": "verify-state.js carries a copy-pasted comment referencing STRATEGY, a concept it does not have",
+            "type": "currency",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "instruments/check-consistency/workflow/panel.js:10-14 — header omits `finding_cap`, required at line 22, used at line 78",
+                "instruments/bug-hunt/workflow/hunt.js:10-12 — header omits `finding_cap`, required at line 20, used at line 87",
+                "instruments/audit-changes/workflow/audit.js:11-13 — header omits `finding_cap`, required at line 21, used at line 86",
+                "instruments/check-consistency/workflow/verify-act.js:8-10 — header lists `round_dir` and `rulebook_summary?`, neither used anywhere else in the file (only `pass_dir` is used)"
+            ],
+            "id": "2026-09-12-check-docs-01/workflow-scripts#3",
+            "resolution_hint": "Add `finding_cap` to the three headers that use it; drop `round_dir`/`rulebook_summary?` from verify-act.js's header, or wire them in.",
+            "description": "Three headers (panel.js, hunt.js, audit.js) omit `finding_cap` even though each script's own required-args check throws without it and the prompt quotes it directly — evidently added after these headers were last updated. verify-act.js's header runs the opposite way, listing `round_dir` and `rulebook_summary?` as accepted args that occur nowhere else in the file. A reader relying on the header to know a script's contract gets an incomplete or stale picture in four of eleven scripts.",
+            "severity": "minor",
+            "lane": "workflow-scripts",
+            "title": "Header 'Args' comments have drifted from the scripts' actual required or used parameters",
+            "type": "self-containment",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "instruments/bug-hunt/workflow/hunt.js:145 — `const laneFile = { schema_version: A.schema_version, ... }`",
+                "instruments/prelude.js:5 — \"No script declares a name below again.\"",
+                "instruments/prelude.js:38 — `const laneFile = (r, key, j) => { ... }`, used correctly by verify-act.js:134 and verify-state.js:124"
+            ],
+            "id": "2026-09-12-check-docs-01/workflow-scripts#4",
+            "resolution_hint": "Rename hunt.js's local variable (e.g. `bankedLane`) to free the shared prelude name.",
+            "description": "prelude.js states the shared-helpers invariant explicitly so a script cannot accidentally shadow a spliced-in name. hunt.js violates it: inside its pipeline's second stage it declares `const laneFile = {...}` (a plain object), shadowing the prelude's own `laneFile(r, key, j)` lookup function used correctly elsewhere. Nothing breaks today since hunt.js never calls the prelude helper in that scope, but a future edit adding such a call inside that block would silently call the local object instead and throw at runtime.",
+            "severity": "minor",
+            "lane": "workflow-scripts",
+            "title": "hunt.js redeclares `laneFile`, shadowing the prelude's shared helper of the same name",
+            "type": "structure",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "instruments/check-docs/workflow/lanes.js:41-54 — findings.items title/description/locations carry no minLength/minItems",
+                "instruments/check-consistency/workflow/panel.js:36-49 — same gap",
+                "instruments/audit-changes/workflow/audit.js:33-50 — same gap",
+                "schema/finding.schema.json — title minLength 8, description minLength 20, locations minItems 1",
+                "src/CLI/Rounds.jl:580-586 — bank validates every finding against this schema and returns exit code 2 on the first mismatch"
+            ],
+            "id": "2026-09-12-check-docs-01/workflow-scripts#5",
+            "resolution_hint": "Add the same minLength/minItems constraints to the three per-script SCHEMAs so a violation is caught at generation time, not at bank.",
+            "description": "lanes.js, panel.js and audit.js each define their own JSON Schema constraining the structured object an agent returns per finding; in all three, title/description are plain strings with no minLength and locations has no minItems. But schema/finding.schema.json — the exact shape `gbg round bank` checks every finding against (Rounds.jl:580-586, refusing the bank with exit 2 on the first mismatch, 'after the whole panel and every witness have already been paid for') — requires title minLength 8, description minLength 20, and locations minItems 1. An agent can return a schema-valid finding under the launching script's own SCHEMA that the round's bank step then refuses — discovered only at the most expensive possible point.",
+            "severity": "major",
+            "lane": "workflow-scripts",
+            "title": "The per-lane finding SCHEMA is looser than the shape `gbg round bank` enforces, so schema-valid output can still fail bank",
+            "type": "operational",
+            "n": 5
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "instruments/audit-changes/workflow/attack-design.js:43 — \"two unconstrained readers then found nine defects the eight could not see\""
+            ],
+            "id": "2026-09-12-check-docs-01/workflow-scripts#6",
+            "resolution_hint": "Locate and cite the actual source for 'nine defects', or align the sentence with the documented 'four regressions' figure.",
+            "description": "The 'eight lanes'/'unconstrained readers' framing is corroborated elsewhere in the repo, but both corroborating sources report the outcome as 'catching four regressions' — not 'nine defects'. No occurrence of 'nine defects' appears anywhere else in the tracked repository. This sentence is quoted verbatim into every attack-design run as a factual justification for the attack instrument's premise, so an invented or stale number undercuts the case being made.",
+            "severity": "minor",
+            "lane": "workflow-scripts",
+            "contradicts": "docs/ARCHITECTURE.md:432 and docs/design-record/survey-bughunt-auditchanges.md:197, which report the same episode's outcome as 'catching four regressions'",
+            "title": "attack-design.js cites a 'nine defects' figure with no corroborating source in the repository",
+            "type": "currency",
+            "n": 6
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "catalog/scans.toml:201-206 — id = \"SCAN.DOI_CROSSCHECK\" ... rule = \"RULE.CIT.FULL_INLINE\"",
+                "policy/RULES.toml (RULE.CIT.DOI row) — check = [\"scan:SCAN.DOI_CROSSCHECK\"]",
+                "src/Scans/doi_crosscheck.jl:1 — # SCAN.DOI_CROSSCHECK — RULE.CIT.FULL_INLINE, RULE.CIT.DOI."
+            ],
+            "id": "2026-09-12-check-docs-01/catalogues#1",
+            "resolution_hint": "Widen catalog/scans.toml's rule column to a list and record both RULE.CIT.FULL_INLINE and RULE.CIT.DOI for SCAN.DOI_CROSSCHECK, so scans.toml and RULES.toml agree on which rules the scan is catalogued as enforcing.",
+            "description": "catalog/scans.toml's single-valued rule column for SCAN.DOI_CROSSCHECK names only RULE.CIT.FULL_INLINE. But policy/RULES.toml independently records RULE.CIT.DOI's check as this same scan id, and the scan's own file-header comment agrees it enforces both rules — confirmed by reading the implementation, which both cross-checks DOIs against the canonical reference list (RULE.CIT.DOI's concern) and flags a full reference in a docstring's running prose (RULE.CIT.FULL_INLINE's concern). SCAN.API_PAGE_STRUCTURE and SCAN.DEAD_REF also carry two-rule header comments, but for those RULES.toml's check registry agrees with the single-rule catalogue attribution; only here does RULES.toml name the scan as a rule's check that scans.toml's own row omits.",
+            "severity": "minor",
+            "lane": "catalogues",
+            "title": "SCAN.DOI_CROSSCHECK's catalogued rule omits RULE.CIT.DOI, which RULES.toml and the scan's own comment attribute to it",
+            "type": "structure",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "templates/README.md:26-30 — \"A G file carries a first-line header where its format allows a comment... One exception: `queue-guard.sh.tmpl` is copied byte-for-byte... and carries no header\"",
+                "templates/SKILL.md.tmpl:1-6 — the `<!-- gbg:managed SKILL.md.tmpl ... -->` header sits on line 6, after the five-line YAML frontmatter (`---`/name/description/allowed-tools/`---`), not on line 1"
+            ],
+            "id": "2026-09-12-check-docs-01/templates#1",
+            "resolution_hint": "Reword the \"Managed headers\" paragraph to state two exceptions: queue-guard.sh.tmpl (no header at all) and SKILL.md.tmpl (header present but placed after the mandatory YAML frontmatter, not on line 1).",
+            "description": "The README states the managed-header rule as universal for every G file except one (queue-guard.sh.tmpl, which carries no header at all): 'A G file carries a first-line header where its format allows a comment... One exception: queue-guard.sh.tmpl... carries no header.' But SKILL.md.tmpl — also class G per the same table — does carry the standard Markdown gbg:managed header, just not on the first line: it necessarily follows the YAML frontmatter block (lines 1-5) so the file still parses as a valid Claude Skill. This is a second, undocumented exception to the 'first-line' claim; a reader trusting the README's 'first-line, one exception' statement would misdescribe or mis-implement a check against SKILL.md.tmpl.",
+            "severity": "minor",
+            "lane": "templates",
+            "title": "README's \"Managed headers\" rule (first-line header, one exception) is false for SKILL.md.tmpl",
+            "type": "self-containment",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "schema/config.schema.json:236-239 (docs.doctest, default true)",
+                "schema/config.schema.json:441-444 (instruments.check-consistency.latex_source_globs, default [])"
+            ],
+            "id": "2026-09-12-check-docs-01/schemas#1",
+            "resolution_hint": "Either wire docs.doctest into the makedocs wrapper (pass it as the doctest kwarg unless the consumer's own docs/make.jl overrides it) and wire latex_source_globs into whatever latex-notation scan or hat substrate it was designed for, or drop both keys from config.schema.json (and Init.jl's generated default) and record the removal as a MAJOR per docs/ARCHITECTURE.md §5.5's closed-vocabulary rule.",
+            "description": "Both fields validate, both get an initial value written by gbg init (src/CLI/Init.jl:149-163), and both are documented in docs/ARCHITECTURE.md as real per-package settings (ARCHITECTURE.md:1241,1353,1418,2145 for latex_source_globs), but neither is read by any engine, scan, doctor check, or Workflow-args builder. docs.doctest appears nowhere outside schema/config.schema.json and Init.jl; ext/GBGCodingToolsDocumenterExt.jl's makedocs wrapper forwards only the consumer's own kwargs... straight to Documenter.makedocs, never consulting cfg[\"docs\"][\"doctest\"]. latex_source_globs is likewise absent from every .jl file except Init.jl's default-writer — Preflight.jl's render_args check-consistency branch (lines 697-703) has no such field, and no catalog/ or instruments/*/workflow/*.js file reads it either. A schema that admits and documents a field nobody consumes misdescribes the tool's actual configurable surface.",
+            "severity": "minor",
+            "lane": "schemas",
+            "title": "config.schema.json permits two consumer knobs no engine ever reads",
+            "type": "structure",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:2456 — `| \\`SCAN.API_PAGE_STRUCTURE\\` | \\`RULE.DOC.INTERNAL_API\\`, \\`RULE.DOC.API_GROUPING\\` | ...`",
+                "src/Scans/api_page_structure.jl:1-3 — `# SCAN.API_PAGE_STRUCTURE — RULE.DOC.INTERNAL_API, RULE.DOC.API_GROUPING` ... `no empty \\`@docs\\` block ... no \\`@index\\` block`",
+                "src/Scans/api_page_structure.jl:12-19 — the code that actually hits an empty `@docs` block and an `@index` block, both `RULE.DOC.API_GROUPING` clauses ('no `@index`, and no empty block')",
+                "catalog/scans.toml:177-182 — `rule = \"RULE.DOC.INTERNAL_API\"` only, no second rule field",
+                "policy/RULES.toml:96-101 — `RULE.DOC.API_GROUPING` `check = [\"scan:SCAN.HTML_DOCSTRING_ONCE\", \"scan:SCAN.HTML_PUBLIC_HOME\", \"scan:SCAN.HTML_BASE_LEAK\"]`, omitting `scan:SCAN.API_PAGE_STRUCTURE`",
+                "docs/ARCHITECTURE.md:2473 — `| \\`SCAN.DEAD_REF\\` | \\`RULE.DOC.NO_DEAD_REFS\\`, \\`RULE.CIT.NO_INACCESSIBLE\\` | ...`",
+                "src/Scans/dead_ref.jl:1,6 — header names both rules; the regex `r\"§\\s?[0-9]|docs/(src|[A-Z]+\\.md)|[A-Z]{4,}\\.md|inspiration/\"` includes `inspiration/`, the exact example `RULE.CIT.NO_INACCESSIBLE` and its own ARCHITECTURE row cite",
+                "catalog/scans.toml:297-302 — `rule = \"RULE.DOC.NO_DEAD_REFS\"` only",
+                "policy/RULES.toml:446-451 — `RULE.CIT.NO_INACCESSIBLE` `check = [\"panel\"]`, never citing `scan:SCAN.DEAD_REF` even though a triage scan does catch its `inspiration/` case",
+                "docs/ARCHITECTURE.md:2460 — `| \\`SCAN.DOI_CROSSCHECK\\` | \\`RULE.CIT.FULL_INLINE\\`, \\`RULE.CIT.DOI\\` | ...`",
+                "catalog/scans.toml:201-206 — `rule = \"RULE.CIT.FULL_INLINE\"` only",
+                "policy/RULES.toml:432-437 and :425-430 — here `RULE.CIT.DOI` and `RULE.CIT.FULL_INLINE` both correctly cite `scan:SCAN.DOI_CROSSCHECK` (this pair is NOT drifted)"
+            ],
+            "id": "2026-09-12-check-docs-01/one-home#1",
+            "resolution_hint": "Either widen catalog/scans.toml's `rule` column to a list (matching the two-rule §12.B rows) and regenerate policy/RULES.toml's `check` fields from it, or, if the schema intentionally admits one canonical rule per scan, add the missing scan reference by hand to RULE.DOC.API_GROUPING's and RULE.CIT.NO_INACCESSIBLE's `check` arrays in policy/RULES.toml so RULE_WITH_CHECK's own audit doesn't undercount them as `panel`/incomplete.",
+            "description": "The claim 'which RULE.* id(s) does scan X enforce' has four homes: the scan file's own header comment (src/Scans/*.jl), the scan's actual code, docs/ARCHITECTURE.md §12.B (the table catalog/scans.toml's own header comment calls its 'verbatim' source), and catalog/scans.toml's `rule` column, which policy/RULES.toml's `check` field is checked against. Three scans genuinely enforce two rules apiece (confirmed by reading their code, not just their comments: SCAN.API_PAGE_STRUCTURE's empty-`@docs`/`@index` checks are RULE.DOC.API_GROUPING clauses; SCAN.DEAD_REF's `inspiration/` pattern is RULE.CIT.NO_INACCESSIBLE's own example of an inaccessible source). ARCHITECTURE.md §12.B lists both rules for all three. catalog/scans.toml's single `rule` field keeps only the first rule in every one of the three cases — the second is dropped in 3 of 3 multi-rule rows, which is a class, not one slip. For SCAN.API_PAGE_STRUCTURE and SCAN.DEAD_REF the drop propagates: policy/RULES.toml's `check` field for RULE.DOC.API_GROUPING and RULE.CIT.NO_INACCESSIBLE also fails to cite the scan that does catch part of the violation, so RULE.CIT.NO_INACCESSIBLE reads as `check = [\"panel\"]` (no automated check) when a triage scan in fact has a live regex for it. Only the DOI_CROSSCHECK pair escaped the propagation — RULES.toml is correct there, so only catalog/scans.toml is stale for that one. Ground truth (the scan code) sides with ARCHITECTURE.md §12.B and the scan headers; catalog/scans.toml and (for two rules) policy/RULES.toml are the drifted copies.",
+            "severity": "major",
+            "lane": "one-home",
+            "contradicts": "docs/ARCHITECTURE.md:2456,2460,2473 (§12.B) and the header comments of src/Scans/api_page_structure.jl, src/Scans/doi_crosscheck.jl and src/Scans/dead_ref.jl",
+            "title": "Three scans that enforce two rules each have their second rule silently dropped from catalog/scans.toml and, for two of the three, from policy/RULES.toml's `check` field too",
+            "type": "structure",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Release.jl:33-45 — `carry_release_fails`: \"Three things do. A carried `blocker` or `major`... A finding carried `Passes.CARRY_LIMIT` times... And a backlog that has not fallen since the last release\" — the docstring and the code (`serious`, `over`, backlog-vs-`hist` checks) implement exactly three conditions",
+                "src/CLI/Passes.jl:92 — `const CARRY_LIMIT = 3`",
+                "docs/ARCHITECTURE.md:2409 — §12.A row: \"...a final release refuses while a carried blocker or major stands, the backlog is not draining, or anything has been carried three times\" (three conditions, matching the code)",
+                "policy/RULES.toml:575-576 — `RULE.INST.CARRY` `statement`: \"...a final release refuses while a carried blocker or major stands or the backlog is not draining\" (only two conditions — the CARRY_LIMIT/'carried three times' clause is missing)"
+            ],
+            "id": "2026-09-12-check-docs-01/one-home#2",
+            "resolution_hint": "Regenerate policy/RULES.toml's `statement` for RULE.INST.CARRY (via `gbgdev rules`, per the file's own header instruction) so it names all three refusal conditions actually implemented by `carry_release_fails`, matching docs/ARCHITECTURE.md §12.A.",
+            "description": "docs/ARCHITECTURE.md §12.A states of its own table (§12.A intro, 'policy/RULES.toml records per id the file, the section, the one-line statement below') that this is the source of RULES.toml's `statement` field, so the same claim — what makes a final release refuse under RULE.INST.CARRY — has (at least) three homes: the actual gate `src/CLI/Release.jl:carry_release_fails`, the ARCHITECTURE.md §12.A summary, and policy/RULES.toml's regenerated `statement`. The code implements three refusal conditions (a carried blocker/major; a finding carried `CARRY_LIMIT` (3) times, which is 'no longer a deferral' and needs an owner ruling; a rising carry backlog), and ARCHITECTURE.md's row names all three. policy/RULES.toml's `statement` field names only two, omitting the CARRY_LIMIT/'carried three times' escalation path entirely — a reader of RULES.toml alone (which is what `LEG.SENTINELS`-adjacent tooling and any consumer skimming the rule register would read) would believe a minor/nit finding can be carried indefinitely as long as it isn't a blocker/major and the backlog is falling, which is false: `carry_release_fails` refuses release the moment any single id's carry count reaches 3, independent of severity or backlog trend. This is exactly the drift the lane looks for — a stale copy that lost a whole clause, not a rewording.",
+            "severity": "major",
+            "lane": "one-home",
+            "contradicts": "docs/ARCHITECTURE.md:2409 and src/CLI/Release.jl:33-45 (carry_release_fails)",
+            "title": "policy/RULES.toml's one-line statement for RULE.INST.CARRY drops one of the three real release-blocking conditions",
+            "type": "structure",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Preflight.jl:804: \"Returns true when no pinned or managed file is modified.\" (torn_check docstring)",
+                "src/CLI/Preflight.jl:844: \"a pinned or managed file is modified in the working tree (CFG.TORN)\"",
+                "src/CLI/Rounds.jl:68: \"CFG.TORN — a pinned or managed file is modified in the working tree\"",
+                "contrast: src/CLI/Sync.jl:8: \"a managed file is one the tool renders into the consumer and hash-checks thereafter, edited only by `gbg sync`, never by hand\" (the only definition in the whole source)"
+            ],
+            "id": "2026-09-12-check-docs-01/cold-reader#1",
+            "resolution_hint": "Either move a one-clause gloss of \"managed file\" into `torn_check`'s own docstring (or `@ref`-link `Sync`'s module docstring there), or reorder the module map so `Sync` is introduced before any docstring uses the bare phrase \"managed file\".",
+            "description": "The package's own module map (`?GBGCodingTools`) walks the reader through the modules in a fixed narrative order — main/Config/makedocs, then Preflight, Rounds, Passes, demote, Seeds, Recall, RoundFiles, Git, then only later Sync, Init, Ledger, Doctor. `Preflight.torn_check` (bulleted 4th) uses the phrase \"a pinned or managed file\" as if the reader already knows what a 'managed file' is, but the only place that ordinary English word is ever given a package-specific meaning is `Sync`'s module docstring (bulleted 8th, much later in the map). A cold reader who does `?GBGCodingTools.torn_check` or `?GBGCodingTools.preflight` at the point the map hands it to them has no way to know whether 'managed' means 'tracked by the tool', 'tool-owned', 'rendered', or something else — the very distinction Sync later goes out of its way to make precise (managed = tool-rendered and hash-checked, versus a file that is merely hand-written and must not drift). RULE.DOC.TERMS_DEFINED requires a term of art to be defined or linked at its first mention; here it is neither.",
+            "severity": "major",
+            "lane": "cold-reader",
+            "title": "\"managed file\" is used as a settled term of art well before it is ever defined",
+            "type": "self-containment",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Doctor.jl:228-234: `function pinned_and_managed(ctx)` — no docstring; builds the watched-file list (`.gbg/config.toml`, `.gbg/exemptions.toml`, `.gbg/seeds.toml`, `.gbg/managed.json`, `.gbg/hats/*.toml`, every sub-environment `Project.toml`) with zero surrounding prose",
+                "src/CLI/Doctor.jl:242: pass(\"CFG.TORN\", \"no pinned or managed file modified\")",
+                "src/CLI/Preflight.jl:804, 844",
+                "src/CLI/Rounds.jl:68"
+            ],
+            "id": "2026-09-12-check-docs-01/cold-reader#2",
+            "resolution_hint": "Give `pinned_and_managed` a docstring naming the category explicitly (e.g. 'the files a consumer writes by hand once and the tool must never see drift on, as opposed to a managed file the tool itself renders'), and reference it from `torn_check`'s and CFG.TORN's prose.",
+            "description": "\"pinned\" is first grounded, very early, as \"a consumer pins the tool to one exact version\" (GBGCodingTools.jl module docstring). \"a pinned or managed file\" reuses the same ordinary adjective for an entirely different, third concept: a fixed list of consumer-owned files (config, ledger, seed catalogue, the sync sidecar, hat personas, sub-environment manifests) that the tool never renders (so they are not 'managed' in Sync's sense) but that must still never be hand-edited outside their own write path. This category exists ONLY inside the private, undocumented helper `pinned_and_managed` — there is no docstring anywhere in src/ or ext/ that states what makes a file 'pinned' in this sense, or that this is a third sense of the word distinct from 'pinned version'. A cold reader can eventually reconstruct 'managed' from Sync's docstring, but has no textual source at all for 'pinned' (file-sense) — they would have to read the private function's code to learn the category exists.",
+            "severity": "major",
+            "lane": "cold-reader",
+            "title": "\"pinned file\" (as opposed to \"managed file\") is never defined in any docstring at all",
+            "type": "self-containment",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "confidence": "high",
+            "locations": [
+                "src/CLI/Passes.jl:9-13: \"...in a closed vocabulary: `HONORED` (the ask landed by the right means...), `LINE-ONLY` (the instance is fixed, the class is alive), `ADJACENT`, `INSERTED`, `NEW-DEFECT`, `SCOPE-CREEP`, `UNDONE` (nothing in the diff addresses it) and `LAUNDERED` (closed by declaring it acceptable);\"",
+                "src/CLI/Passes.jl:14-16: \"...grades whether the defect is in the tree now: `PRESENT` (its default), `PARTIAL`, `REGRESSED`, `ABSENT`, `NOT-A-DEFECT` or `UNCLEAR`.\""
+            ],
+            "id": "2026-09-12-check-docs-01/cold-reader#3",
+            "resolution_hint": "Give each of the seven bare tokens the same one-clause parenthetical treatment their siblings already have in the same docstring.",
+            "description": "In the very same sentence, `HONORED`, `LINE-ONLY`, `UNDONE`, `LAUNDERED` (act) and `PRESENT`, `ABSENT`, `NOT-A-DEFECT` (state) each get a parenthetical gloss, but `ADJACENT`, `INSERTED`, `NEW-DEFECT`, `SCOPE-CREEP` (act) and `PARTIAL`, `REGRESSED`, `UNCLEAR` (state) get none anywhere in src/ or ext/ (confirmed by grep — these seven tokens appear nowhere else with explanatory prose). These are exactly the ordinary-English-word case the lane is built to catch: 'adjacent', 'inserted', 'scope-creep' and 'partial' all read as self-evident, but the whole point of a closed verdict vocabulary is that a reader must be able to tell them apart from their neighbours (e.g. what distinguishes an `ADJACENT` fix from an `INSERTED` one, or a `PARTIAL` state from `UNCLEAR`) — and nothing in the Julia source says. A cold reader is left to guess at exactly the half of the vocabulary that determines whether a finding closes, regresses, or is scope-creep.",
+            "severity": "major",
+            "lane": "cold-reader",
+            "title": "Half the act/state verdict vocabulary is glossed, half is bare, in the same enumeration",
+            "type": "self-containment",
+            "n": 3
+        },
+        {
+            "seeded": false,
+            "confidence": "medium",
+            "locations": [
+                "src/CLI/Passes.jl:10: \"...whether the diff swept it)...\" (inside the `class_surfaces` gloss)",
+                "src/CLI/Demote.jl:11: \"...each marked `swept` when the fix pass's diff fixed the class there.\" (the only definition)"
+            ],
+            "id": "2026-09-12-check-docs-01/cold-reader#4",
+            "resolution_hint": "Either gloss 'swept' inline in Passes' module docstring, or move its definition into Passes rather than Demote.",
+            "description": "The module map bullets Passes immediately before demote, so a cold reader following the map meets the technical sense of 'swept' (an ordinary word for 'this class of defect was fixed at this surface too') in Passes' own docstring one step before demote's docstring spells it out. The gap is small and the meaning is largely recoverable from context ('whether the diff swept it'), so this is a minor instance of the same pattern as the two managed/pinned-file findings above, not a blocking one.",
+            "severity": "nit",
+            "lane": "cold-reader",
+            "title": "\"swept\" is used in Passes' docstring one module before it is defined in Demote's",
+            "type": "self-containment",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "confidence": "low",
+            "locations": [
+                "src/CLI/Rounds.jl:11: \"[`Rounds.rerun`](@ref) re-launches dead lanes\"",
+                "src/CLI/Rounds.jl:686-717: `rerun` docstring says \"prints the call to the instrument's Workflow ... restricted to the lanes the last bank could not evaluate\", and the body only writes args and `println`s `Preflight.workflow_call(...)` — it never invokes the Workflow itself"
+            ],
+            "id": "2026-09-12-check-docs-01/operational-claims#1",
+            "resolution_hint": "Reword the module docstring's `rerun` bullet to something like \"prints the relaunch call for dead lanes\" so the map agrees with the function's own docstring.",
+            "description": "The `Rounds` module docstring's one-liner for `rerun` says it \"re-launches dead lanes\", but `rerun`'s own docstring and body only regenerate the saved args and print the exact Workflow call for the session to launch by hand; the function performs no launch. The function's own docstring is accurate — only the module-level map overstates it.",
+            "severity": "nit",
+            "lane": "operational-claims",
+            "title": "Rounds module docstring says rerun \"re-launches\" dead lanes; it only prints the call",
+            "type": "operational",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "severity": "major",
+            "lane": "rationale",
+            "confidence": "high",
+            "locations": [
+                "docs/ARCHITECTURE.md:981 — \"      Scan.jl                   `gbg scan docs|html` — the tiered engine over catalog/scans.toml\" (6-space indent, nested under `CLI/`)",
+                "src/GBGCodingTools.jl:65 — `include(\"Scan.jl\")` (listed among the top-level src/ includes, between Reflection.jl/TestHarness.jl and CLI/Ledger.jl, not among the `CLI/*.jl` includes)"
+            ],
+            "id": "2026-09-11-check-docs-01/rationale#1",
+            "carried_from": "2026-09-11-check-docs-01 (carry 2)",
+            "title": "§3's tree places `Scan.jl` under `src/CLI/`, but it lives at `src/Scan.jl`",
+            "type": "self-containment",
+            "description": "§3's repository-layout diagram indents `Scan.jl` at the same 6-space level as `Gate.jl`, `Demote.jl`, `Seed.jl`, `Recall.jl`, `Consolidate.jl`, `Audit.jl`, `Hunt.jl`, `Selftest.jl` — all of which the diagram correctly places under `CLI/` and which the module does `include(\"CLI/<name>.jl\")`. But the actual file is `src/Scan.jl` (confirmed by `find src -type f`, which lists it as a sibling of `TreeHash.jl`, `HtmlWalker.jl`, `Reflection.jl`, `Witnesses.jl`, `TestHarness.jl`, `DocLints.jl`) and the module includes it as `include(\"Scan.jl\")`, not `include(\"CLI/Scan.jl\")`. A reader locating the scan engine by this diagram would look in the wrong directory.",
+            "n": 4
+        },
+        {
+            "seeded": false,
+            "severity": "major",
+            "lane": "workflow-scripts",
+            "confidence": "high",
+            "locations": [
+                "instruments/check-consistency/workflow/rubric-audit.js:1",
+                "instruments/audit-changes/workflow/attack-design.js:1",
+                "src/CLI/Preflight.jl:579 — `main_script(instrument) = Dict(\"check-consistency\" => \"panel.js\", ... )[instrument]`",
+                "src/CLI/Passes.jl:528, :958, :1068 — launch lines exist for verify-architecture.js/severity-recheck.js/dismissals.js, none for these two"
+            ],
+            "id": "2026-09-11-check-docs-01/workflow-scripts#1",
+            "carried_from": "2026-09-11-check-docs-01 (carry 2)",
+            "title": "rubric-audit.js and attack-design.js are never invoked by any CLI verb",
+            "type": "structure",
+            "description": "Of the eleven workflow scripts, nine are wired into a gbg verb that builds their args and prints their launch line (every \"*.js\" literal in src/ and ext/ is only: audit.js, dismissals.js, hunt.js, lanes.js, panel.js, severity-recheck.js, verify-act.js, verify-architecture.js, verify-state.js). rubric-audit.js and attack-design.js never appear anywhere in src/ or ext/. Neither script's args/output shape is documented in its instrument's schema.json, and no schema/*.json exists for either output, unlike every other script. docs/ARCHITECTURE.md documents both as delivered v1.0.0 contributions (D17, §6.8: \"attack-design.js ... is the instrument every lens list must survive\"), but no gbg command can actually launch either.",
+            "n": 7
+        },
+        {
+            "seeded": false,
+            "severity": "major",
+            "lane": "workflow-scripts",
+            "confidence": "high",
+            "locations": [
+                "instruments/bug-hunt/workflow/dismissals.js:19-28 (SCHEMA `id: { type: 'string' }`, no description) and :31-51 (prompt never says \"return id=...\")",
+                "instruments/bug-hunt/workflow/verify-architecture.js:20-29 and :32-47 (same pattern)",
+                "instruments/check-consistency/workflow/severity-recheck.js:43 — `Return {id: \"${it.id}\", severity, reason}.` (contrast)",
+                "instruments/check-consistency/workflow/verify-act.js:35 — `id: { type: 'string', description: 'the finding id EXACTLY as given' }` (contrast)"
+            ],
+            "id": "2026-09-11-check-docs-01/workflow-scripts#2",
+            "carried_from": "2026-09-11-check-docs-01 (carry 2)",
+            "title": "dismissals.js and verify-architecture.js never instruct the agent to echo the finding id",
+            "type": "operational",
+            "description": "dismissals.js and verify-architecture.js ask one agent per finding to return {id, verdict, evidence,...} but never tell it what to put in id — no schema description, no explicit \"return id=\" instruction — unlike severity-recheck.js and verify-act.js which do this explicitly. schema/dismissal.schema.json and schema/architecture-fix.schema.json both require id to match a strict `round/lane#n` pattern, and each script's own liveness check (`A.items.filter(i => !verdicts.some(v => v.id === i.id))`) silently reclassifies a correctly-audited finding as \"auditor DIED\" if the model paraphrases the id.",
+            "n": 8
+        },
+        {
+            "seeded": false,
+            "severity": "minor",
+            "lane": "workflow-scripts",
+            "confidence": "high",
+            "locations": [
+                "instruments/check-consistency/workflow/severity-recheck.js:15 (required list omits 'round') vs :48 (`round: A.round` written)",
+                "instruments/audit-changes/workflow/attack-design.js:14 (required list omits 'round') vs :71 (`round: A.round` written)"
+            ],
+            "id": "2026-09-11-check-docs-01/workflow-scripts#3",
+            "carried_from": "2026-09-11-check-docs-01 (carry 2)",
+            "title": "severity-recheck.js and attack-design.js write A.round without validating it was supplied",
+            "type": "operational",
+            "description": "Both scripts document 'round' as part of Args and write it into their output, but neither's required-arg guard (`for (const k of [...]) if (A[k]===undefined) throw`) includes 'round', unlike every sibling script that writes round (lanes.js, panel.js, audit.js, hunt.js, dismissals.js all validate it). If round were omitted, JSON.stringify silently drops the undefined property instead of throwing the clear 'args.round is required' error every other script gives.",
+            "n": 9
+        },
+        {
+            "seeded": false,
+            "severity": "minor",
+            "lane": "ext",
+            "confidence": "high",
+            "locations": [
+                "ext/GBGCodingToolsDocumenterExt.jl:22 — \"gate_or_skip(cfg, what) -> Bool\"",
+                "ext/GBGCodingToolsDocumenterExt.jl:31 — \"function gate_or_skip(cfg, what::AbstractString)\""
+            ],
+            "id": "2026-09-11-check-docs-02/ext#1",
+            "carried_from": "2026-09-11-check-docs-02 (carry 1)",
+            "title": "gate_or_skip's printed signature omits the type the method actually declares",
+            "type": "structure",
+            "description": "RULE.DOC.SIGNATURE_MIRROR requires that an argument typed in the method is typed in the docstring's signature line. The method types `what::AbstractString`, but the docstring's code-block signature shows bare `what`. The sibling docstring in the same file (`check(verb::AbstractString, code::Integer)`, line 14) gets this right, showing the mismatch is a slip rather than a house convention.",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "severity": "major",
+            "lane": "rulebook",
+            "confidence": "high",
+            "locations": [
+                "policy/RULES.toml:432-437 — check = [\"weakness\"]",
+                "src/Scans/doi_crosscheck.jl:1 — \"SCAN.DOI_CROSSCHECK — RULE.CIT.FULL_INLINE, RULE.CIT.DOI.\"",
+                "src/Scans/doi_crosscheck.jl:61-67 — the `require_doi` loop flagging \"a reference without a DOI or Open Library link on its title\"",
+                ".gbg/config.toml:71 — require_doi = true; catalog/scans.toml SCAN.DOI_CROSSCHECK tier = \"hard\""
+            ],
+            "id": "2026-09-11-check-docs-02/rulebook#1",
+            "carried_from": "2026-09-11-check-docs-02 (carry 1)",
+            "title": "RULE.CIT.DOI's check field says \"weakness\" but a hard-tier scan already enforces it",
+            "type": "structure",
+            "description": "RULE.TEST.RULE_WITH_CHECK defines `weakness` as \"a check is possible and none is built.\" For RULE.CIT.DOI (\"Every reference carries a clickable DOI... identical in every copy\") a check IS built: SCAN.DOI_CROSSCHECK's own header comment names RULE.CIT.DOI as one of the two rules it enforces, and its `require_doi` block (live in this package, tier hard, config flag true) is exactly that enforcement. RULES.toml nonetheless records RULE.CIT.DOI as an unpaid-check weakness — the rulebook misreporting its own coverage, the one thing RULE.TEST.RULE_WITH_CHECK exists to keep honest. Failure scenario: a reader (or `gbgdev rules`/doctor tooling) trusts RULES.toml's `check` column to know what still needs a scan; taking RULE.CIT.DOI at its word, they either build a redundant second check or treat the rule as unenforced and stop trusting SCAN.DOI_CROSSCHECK's DOI-presence hits as authoritative.",
+            "n": 1
+        },
+        {
+            "seeded": false,
+            "severity": "major",
+            "lane": "rulebook",
+            "confidence": "medium",
+            "locations": [
+                "policy/docs-rubric.md:219 — \"`# Arguments` precedes any column-0 admonition, and `# Fields` is last.\"",
+                "policy/docs-rubric.md:47-48 (RULE.DOC.ARGS_FORM) — \"uses the bulleted form led by `The arguments are:`\" (a prose lead-in, never a heading)",
+                "src/Scans/prose_shape.jl:118 — `findfirst(l -> occursin(r\"^# Arguments\\b\", l), lines)`"
+            ],
+            "id": "2026-09-11-check-docs-02/rulebook#2",
+            "carried_from": "2026-09-11-check-docs-02 (carry 1)",
+            "title": "RULE.DOC.SHAPE's \"`# Arguments` precedes any column-0 admonition\" clause names a heading form no other rule in this package's rubric ever produces",
+            "type": "structure",
+            "description": "docs-rubric.md's only rule governing how a docstring's arguments are documented, RULE.DOC.ARGS_FORM, mandates the prose lead-in `The arguments are:` and never a `# Arguments` Markdown heading; this package's own docstrings confirm it (0 uses of a `# Arguments` heading vs 30 uses of `The arguments are:`). Yet RULE.DOC.SHAPE's ordering clause, and the scan enforcing it, test specifically for a `# Arguments` heading — a structural element no other rule in this file ever sanctions the corpus to produce. (docs/ARCHITECTURE.md shows this heading is a different fleet consumer's (IT's) argument-doc style, so the clause is a deliberate cross-consumer accommodation, but that provenance is not disclosed anywhere in the rendered docs-rubric.md itself.) Failure scenario: a reader of docs-rubric.md in isolation — exactly how it is meant to be read, rendered whole into every consumer's session — hits this clause with no antecedent, and either concludes the rulebook is self-contradictory (ARGS_FORM bans the heading it implies) or hunts for a heading form that, for this package, never legitimately exists.",
+            "n": 2
+        },
+        {
+            "seeded": false,
+            "severity": "minor",
+            "lane": "workflow-scripts",
+            "confidence": "high",
+            "locations": [
+                "instruments/check-consistency/workflow/verify-act.js:21 (`const MODE = A.mode === 'batches' ? 'batches' : 'lanes'`)",
+                "instruments/check-consistency/workflow/verify-act.js:99-121 (the whole `if (MODE === 'batches') {...}` block, including its own coverage-gap validation of a `batches` array)",
+                "src/CLI/Passes.jl:542 (`act = merge(base, Dict(\"range\" => fixrange, \"mode\" => \"lanes\", ...`) — the ONLY call site in the codebase that builds args for verify-act.js, and it always hard-codes `\"mode\" => \"lanes\"`, never `batches`"
+            ],
+            "id": "2026-09-11-check-docs-02/workflow-scripts#1",
+            "carried_from": "2026-09-11-check-docs-02 (carry 1)",
+            "title": "verify-act.js's `mode: 'batches'` branch is dead code — no caller ever sets it",
+            "type": "structure",
+            "description": "verify-act.js declares and carefully validates a second operating mode (`mode: 'batches'`, with its own gap/overlap/duplicate-coverage checks over an `A.batches` array of [from,to] ranges), but grepping the whole Julia source and test suite shows exactly one call site ever constructs this script's args (Passes.jl:542), and it always passes `mode: 'lanes'` and never supplies a `batches` array; no test in test/rounds.jl, test/coverage.jl or test/schemas.jl exercises `mode: 'batches'` either. The batches branch, including its coverage-gap detection, is unreachable in the shipped tool: a bug there would never be caught by anything that runs, and the header comment tells a reader a capability exists that the CLI never uses.",
+            "n": 10
+        },
+        {
+            "seeded": false,
+            "severity": "minor",
+            "lane": "workflow-scripts",
+            "confidence": "medium",
+            "locations": [
+                "instruments/bug-hunt/workflow/dismissals.js:21 (`if (!A.items.length) throw ...`)",
+                "instruments/check-consistency/workflow/severity-recheck.js:17 (`if (!A.items.length) throw ...`)",
+                "instruments/check-consistency/workflow/rubric-audit.js:16 (`if (!A.hats.length || !A.items.length) throw ...`)",
+                "instruments/bug-hunt/workflow/verify-architecture.js:18 (`if (!A.findings.length) throw ...`)",
+                "instruments/check-docs/workflow/lanes.js (no such guard on `A.lanes`)",
+                "instruments/check-consistency/workflow/panel.js (no such guard on `A.hats`)",
+                "instruments/bug-hunt/workflow/hunt.js (no such guard on `A.lanes`)",
+                "instruments/audit-changes/workflow/audit.js (no such guard on `A.lanes`)",
+                "instruments/check-consistency/workflow/verify-state.js (no such guard on `A.lanes`/`A.findings`)",
+                "instruments/check-consistency/workflow/verify-act.js (no such guard in the default `mode: 'lanes'` path)"
+            ],
+            "id": "2026-09-11-check-docs-02/workflow-scripts#2",
+            "carried_from": "2026-09-11-check-docs-02 (carry 1)",
+            "title": "Inconsistent 'refuse on an empty item list' guard across the eleven scripts",
+            "type": "structure",
+            "description": "Four of the eleven scripts explicitly refuse to run when their driving item list is empty, each echoing RULE.TEST.MISSING_IS_FAILING ('a zero count is a dead lane rather than a clean one'). The other seven — including the three main per-instrument entry points lanes.js, panel.js, hunt.js and audit.js — have no equivalent guard on their own `A.lanes`/`A.hats` array: invoked with an empty roster, each would iterate zero times and return a quiet `{written: [], dead: [], empty: [], truncated: []}`, indistinguishable from 'nothing to check' rather than a loud failure. Under the current CLI (Preflight's lane/hat resolution) this looks unreachable in practice, so it is reported as a design-consistency gap, not a demonstrated failure.",
+            "n": 11
+        }
+    ]
+}

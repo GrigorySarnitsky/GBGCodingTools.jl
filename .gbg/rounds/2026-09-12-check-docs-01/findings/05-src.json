@@ -1,0 +1,822 @@
+{
+ "schema_version": 1,
+ "round": "2026-09-12-check-docs-01",
+ "lane": "src",
+ "candidates_found": 4,
+ "checked": [
+  "src/CLI/Audit.jl",
+  "src/CLI/Bump.jl",
+  "src/CLI/Config.jl",
+  "src/CLI/Consolidate.jl",
+  "src/CLI/Demote.jl",
+  "src/CLI/Design.jl",
+  "src/CLI/Doctor.jl",
+  "src/CLI/Fleet.jl",
+  "src/CLI/Gate.jl",
+  "src/CLI/Git.jl",
+  "src/CLI/Hunt.jl",
+  "src/CLI/Init.jl",
+  "src/CLI/Install.jl",
+  "src/CLI/Ledger.jl",
+  "src/CLI/Main.jl",
+  "src/CLI/Passes.jl",
+  "src/CLI/Preflight.jl",
+  "src/CLI/Recall.jl",
+  "src/CLI/Release.jl",
+  "src/CLI/RoundFiles.jl",
+  "src/CLI/Rounds.jl",
+  "src/CLI/Schema.jl",
+  "src/CLI/Seed.jl",
+  "src/CLI/Self.jl",
+  "src/CLI/Selftest.jl",
+  "src/CLI/Sync.jl",
+  "src/DocLints.jl",
+  "src/GBGCodingTools.jl",
+  "src/HtmlWalker.jl",
+  "src/Reflection.jl",
+  "src/Scan.jl",
+  "src/Scans/*.jl (all 44 scan files)",
+  "src/TestHarness.jl",
+  "src/TreeHash.jl",
+  "src/Witnesses.jl",
+  "schema/config.schema.json (spot-checked to settle Init.jl:124's 20-character claim)",
+  "schema/exemptions.schema.json (spot-checked to settle Init.jl:215's scope-enum claim)",
+  "instruments/**/workflow/*.js (counted to settle Preflight.jl:761's \"eleven scripts\" claim)"
+ ],
+ "findings": [
+  {
+   "type": "operational",
+   "severity": "major",
+   "confidence": "high",
+   "title": "A malformed or unreadable .gbg/config.toml crashes most verbs (exit 3) instead of exit 2",
+   "locations": [
+    "src/CLI/Init.jl:190 — CONFIG_HEADER text: \"an unknown key, a missing required key, an unknown enum member or a path that does not exist is exit 2\"",
+    "src/CLI/Bump.jl:69 — `return bump(Config.read(), o.positional[1]; ...)`, Config.read() not wrapped",
+    "src/CLI/Gate.jl:121 — `cfg = Config.read()`, not wrapped",
+    "src/CLI/Preflight.jl:924 — `cfg = Config.read()`, not wrapped",
+    "src/CLI/Rounds.jl:855 — `cfg = Config.read()`, outside the try that only catches RoundError",
+    "src/CLI/Sync.jl:679 — `cfg = Config.read()`, outside the try that only catches SyncError",
+    "src/Scan.jl:579 — `cfg = Config.read()` in cmd_scan, not wrapped",
+    "src/CLI/Hunt.jl:13 — `cfg = Config.read()` in cmd_witnesses, not wrapped",
+    "src/CLI/Release.jl:80 — `cfg = Config.read(root)` inside release(), called by cmd_release with no wrapping",
+    "src/CLI/Audit.jl:116 — `try audit_bank(Config.read(), args[1]) catch err; err isa Rounds.RoundError || rethrow(); ...` — a ConfigError is rethrown, not converted to 2",
+    "src/CLI/Main.jl:144-150 — main()'s only catch-all: any exception escaping a verb is printed as \"crashed\" and returns 3"
+   ],
+   "description": "The exit contract documented throughout the package (Main.jl's `main` docstring, and the CONFIG_HEADER written into every consumer's own .gbg/config.toml) says a structurally bad config — an unknown key, a missing required key, an unknown enum member, or a path that does not resolve — is exit 2 (\"cannot evaluate\"), distinct from exit 3 (\"crash\", reserved for an escaping exception). Config.read()/Config.parse() do throw Config.ConfigError for exactly these problems, and three call sites correctly catch it and return 2: Config.jl's cmd_config, Doctor.jl's cmd_doctor, and Design.jl's design_verb wrapper (used by attack/attack read/calibrate/calibrate read). But at least nine other CLI entry points call Config.read() without catching Config.ConfigError at all (bump, gate, preflight, every `gbg round <verb>`, sync, scan, witnesses, release) or catch only a different exception type and rethrow anything else (audit-changes bank, which only catches Rounds.RoundError). For all of these, a bad config.toml reaches Main.main's single generic `catch err` clause, which prints a backtrace and returns 3 — a crash, not the documented \"cannot evaluate\". Since a config.toml is user-editable and routinely gets edited by hand or by ledger changes, this is the ordinary failure mode the exit-code contract exists to distinguish from an actual tool bug, and it is currently misreported for the large majority of verbs.",
+   "resolution_hint": "Either wrap each listed Config.read() call the same way cmd_doctor/cmd_config already do (catch Config.ConfigError, print, return 2), or — better, to fix the whole class at once — catch Config.ConfigError once in Main.main alongside the generic catch and return 2 for it there, the way the design_verb wrapper in Design.jl already generalizes the pattern for its own four verbs."
+  },
+  {
+   "type": "self-containment",
+   "severity": "minor",
+   "confidence": "medium",
+   "title": "close()'s docstring documents `carry` outside its own bulleted \"The arguments are:\" list, mixing forms",
+   "locations": [
+    "src/CLI/Passes.jl:1086-1115 — close(cfg, round; carry = String[], io = stdout) docstring"
+   ],
+   "description": "RULE.DOC.ARGS_FORM requires a docstring with any keyword argument to use the bulleted \"The arguments are:\" form for its arguments, each getting its own entry, and forbids mixing that form with running prose in one docstring. close()'s docstring bullets only `cfg`, `round` and `io`; its fourth argument, the keyword `carry`, is instead explained in a separate prose paragraph (\"`carry` names the ids this round closes by carrying them into the next round of its instrument, which `carry_conditions` gates...\") placed after the bulleted list and after the \"The conditions:\" paragraph. Every other multi-keyword function checked in the same module (pass_open, grade, carry_conditions itself) bullets every one of its keyword arguments.",
+   "resolution_hint": "Add a `- `carry` — ...` bullet to close()'s \"The arguments are:\" list (the existing explanatory paragraph can stay as additional prose afterward, or be folded into the bullet)."
+  }
+ ],
+ "claims_checked": [
+  {
+   "claim": "src/CLI/Audit.jl:23 — # re-rating says; re-rating it bought nothing (23 of the 33 concerns of 2026-09-11-audit-changes-01).",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Historical measurement about a specific past round (2026-09-11-audit-changes-01); round data not in this lane's surface and not re-derivable from src/ alone."
+  },
+  {
+   "claim": "src/CLI/Audit.jl:112 — println(io, \"audit-changes bank: no concern banked; verdict_all_clean = $(audit[\"verdict_all_clean\"]) (checked[] on every lane and every claim exit 0)\")",
+   "verdict": "TRUE",
+   "evidence": "Matches audit_bank(): verdict_all_clean = isempty(findings) && all(c -> c[\"exit\"] == 0, claims) (line 85), computed exactly from every claim's exit code and the bank's findings."
+  },
+  {
+   "claim": "src/CLI/Bump.jl:7 — Moves the pinned version of the consumer at `cfg[\"root\"]` to `ver` (a released `X.Y.Z`), refusing (exit 2) while a",
+   "verdict": "TRUE",
+   "evidence": "Matches bump(): open_rounds check at lines 24-26 returns 2 when abandon===nothing and open rounds exist."
+  },
+  {
+   "claim": "src/CLI/Bump.jl:11 — `[sweep]` window in the dev checkout's `fleet.toml` when the bump leaves the fleet at two versions.",
+   "verdict": "TRUE",
+   "evidence": "Matches the [sweep] window logic at lines 44-60, keyed on pins collected from every consumer's config.toml."
+  },
+  {
+   "claim": "src/CLI/Bump.jl:43 — # the sweep window: the dev checkout's fleet.toml, when the fleet is now at two versions",
+   "verdict": "TRUE",
+   "evidence": "Comment matches the code immediately below it (fp = Fleet.fleet_path(); pins computed from every consumer)."
+  },
+  {
+   "claim": "src/CLI/Bump.jl:56 — write(fp, ftext); println(io, \"bump: fleet at two versions — [sweep] window started today in fleet.toml (7 days)\")",
+   "verdict": "TRUE",
+   "evidence": "\"7 days\" matches Fleet.jl's `const WINDOW = Day(7)`."
+  },
+  {
+   "claim": "src/CLI/Config.jl:13 — [`Config.glob_to_regex`](@ref), and [`Config.resolve_anchor`](@ref) are the two readers of the config's path vocabulary (globs and",
+   "verdict": "TRUE",
+   "evidence": "glob_to_regex is used by Ledger.matches (called from Scan.jl's apply_ledger, i.e. the scans) and resolve_anchor is called throughout Doctor.jl (CFG.SURFACES, CFG.HATS) — both shared as claimed."
+  },
+  {
+   "claim": "src/CLI/Config.jl:16 — Two words this package overloads, both first met here. A SURFACE is the config's unit of \"what gets",
+   "verdict": "TRUE",
+   "evidence": "The module docstring overloads exactly two words, SURFACE and ANCHOR, each introduced right after this sentence."
+  },
+  {
+   "claim": "src/CLI/Consolidate.jl:3 — # byte-equal output to the Python on a real PF build (18 pages) and a real IT build (22 pages), all four",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Historical acceptance-test claim (byte-equal against a deleted Python script on external PF/IT builds); not checkable from this repository's current src/."
+  },
+  {
+   "claim": "src/CLI/Consolidate.jl:14 — complete when pages are added. Writes two manuscripts. The arguments are:",
+   "verdict": "TRUE",
+   "evidence": "consolidate() writes exactly out_full and out_siteonly — two manuscripts — as its own code shows."
+  },
+  {
+   "claim": "src/CLI/Demote.jl:17 — Emptiness alone fired 0 times in the 571 act verdicts of `2026-09-09-check-docs-02`, which never handed",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Historical measurement over a specific past round (2026-09-09-check-docs-02); not re-derivable from src/."
+  },
+  {
+   "claim": "src/CLI/Demote.jl:18 — in an empty list, while admitting 21 closures whose own list named an unswept surface — `templates#3`",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Historical measurement (21 closures, templates#3 five times) from a past round; not accessible from src/."
+  },
+  {
+   "claim": "src/CLI/Demote.jl:19 — five times, and that contradiction shipped. The design record weighed the two rules, content against",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "References the design record's own deliberation; docs/design-record/ is outside this lane's surface."
+  },
+  {
+   "claim": "src/CLI/Design.jl:1 — # Design.jl — the two checks on the instruments themselves, run outside any round: `gbg attack <instrument>`",
+   "verdict": "TRUE",
+   "evidence": "Design.jl defines exactly attack() and calibrate(), matching \"the two checks\"; attack() copies attack-design.js as claimed."
+  },
+  {
+   "claim": "src/CLI/Design.jl:2 — # puts four adversaries against an instrument's lens set (`attack-design.js`), and `gbg calibrate` scores",
+   "verdict": "TRUE",
+   "evidence": "attack()'s own docstring (line 41) confirms \"four adversaries\"; calibrate() scores hats against human findings as described."
+  },
+  {
+   "claim": "src/CLI/Design.jl:41 — `gbg attack <instrument> [--subject <file>]`: puts four adversaries — a logician, a philosopher, a",
+   "verdict": "TRUE",
+   "evidence": "Matches the function's own behaviour: it renders the roster and prints the attack-design.js Workflow call."
+  },
+  {
+   "claim": "src/CLI/Design.jl:84 — println(io, \"attack $id: the $(length(roster)) lens(es) of /$instrument against four attackers; the record is .gbg/attacks/$id/\")",
+   "verdict": "TRUE",
+   "evidence": "\"four attackers\" is consistent with the docstring's own \"four adversaries\" claim at line 41 of the same file."
+  },
+  {
+   "claim": "src/CLI/Doctor.jl:2 — # table of ARCHITECTURE §7.3, read-only, stable ids, exit 1 on any FAIL, 2 when the tree is not a",
+   "verdict": "TRUE",
+   "evidence": "Doctor.run returns exit 1 on any FAIL; cmd_doctor returns 2 when Config.read() throws ConfigError (not a consumer)."
+  },
+  {
+   "claim": "src/CLI/Doctor.jl:331 — length(e[\"reason\"]) >= 40 || push!(errs, \"$tag: reason shorter than 40 characters\")",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: this is the literal code enforcing the 40-character minimum, consistent with LEDGER_HEADER (Init.jl:215) and schema/exemptions.schema.json."
+  },
+  {
+   "claim": "src/CLI/Doctor.jl:406 — # the wrapper returns nothing when a round froze the build; a deploy at column 0 runs anyway and",
+   "verdict": "TRUE",
+   "evidence": "Matches DocLints.jl's makedocs docstring: the wrapper returns `nothing` when a round froze the build."
+  },
+  {
+   "claim": "src/CLI/Doctor.jl:534 — log !== nothing && occursin(r\"Co-Authored-By:\\s*Claude\\s+(Opus|Sonnet|Haiku|Fable|Mythos|Code|\\d)\"i, log) && push!(errs, \"a model-versioned trailer in the last 20 commits\")",
+   "verdict": "TRUE",
+   "evidence": "Self-referential code line (the regex and \"last 20 commits\" match the `git log -20` call two lines above in POL.COLLAPSED)."
+  },
+  {
+   "claim": "src/CLI/Doctor.jl:626 — # a gap between two audits is a WARN; NO audit at all is not contiguity, it is a repository whose",
+   "verdict": "TRUE",
+   "evidence": "Comment matches the AUDIT.GAP check's logic immediately below it (warn on a gap, warn — not fail — when no audit exists at all)."
+  },
+  {
+   "claim": "src/CLI/Doctor.jl:653 — # the frozen-build skip is exit 0 with the banner, so without this a skipped build would PASS",
+   "verdict": "TRUE",
+   "evidence": "Comment matches the BUILD.DOCS check below it, which sets GBG_DOCS_NO_SKIP so a frozen-build skip does not read as a pass."
+  },
+  {
+   "claim": "src/CLI/Doctor.jl:656 — ok && banner && return pass(\"BUILD.DOCS\", \"docs build exit 0 with the makedocs banner\")",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact code of the BUILD.DOCS check."
+  },
+  {
+   "claim": "src/CLI/Doctor.jl:657 — fail(\"BUILD.DOCS\", ok ? \"exit 0 but no makedocs banner — the wrapper did not run\" : \"docs build failed: \" * last(split(strip(log), '\\n')))",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact code of the BUILD.DOCS check's fail branch."
+  },
+  {
+   "claim": "src/CLI/Doctor.jl:672 — ok && banner && return pass(\"TEST.PKG\", \"Pkg.test() exit 0 with the gate banner\")",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact code of the TEST.PKG check."
+  },
+  {
+   "claim": "src/CLI/Doctor.jl:673 — fail(\"TEST.PKG\", ok ? \"exit 0 but no gate banner — TestHarness.gate() did not run\" : \"tests failed: \" * last(split(strip(log), '\\n')))",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact code of the TEST.PKG check's fail branch."
+  },
+  {
+   "claim": "src/CLI/Doctor.jl:779 — println(io, \"doctor: $(length(out)) checks, $nf FAIL, $nw WARN\", nf == 0 ? \".\" : \" — exit 1.\")",
+   "verdict": "TRUE",
+   "evidence": "Self-referential println; \"exit 1\" matches run()'s return `any(c -> c.status == :FAIL, out) ? 1 : 0`."
+  },
+  {
+   "claim": "src/CLI/Doctor.jl:788 — `gbg doctor [--deep] [--json] [--effective] [--only <id-or-prefix>[,…]|QUICK]`: exit 2 when the",
+   "verdict": "TRUE",
+   "evidence": "Matches cmd_doctor: catches Config.ConfigError and returns 2 when the working directory is not a consumer."
+  },
+  {
+   "claim": "src/CLI/Doctor.jl:797 — println(\"  FAIL  CFG.VALID              \", sprint(showerror, err)); println(\"doctor: not a consumer — exit 2.\"); return 2",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact code of cmd_doctor's ConfigError branch, returning 2."
+  },
+  {
+   "claim": "src/CLI/Fleet.jl:44 — `OK`/`RED` by its own doctor and never `BEHIND`. A missing path is exit 2. The arguments are:",
+   "verdict": "TRUE",
+   "evidence": "rows(): the tool's own row (path==\".\") only ever sets status to \"OK\" or \"RED\", never \"BEHIND\"; a missing path sets code=2."
+  },
+  {
+   "claim": "src/CLI/Fleet.jl:108 — - `a`, `b` — the two rounds, each `<consumer>:<round>` naming a consumer of `fleet.toml` and a closed",
+   "verdict": "TRUE",
+   "evidence": "Matches diff()'s own parameters `a`, `b`, each split as \"<consumer>:<round>\"."
+  },
+  {
+   "claim": "src/CLI/Fleet.jl:113 — Rounds whose tool versions differ in `MAJOR.MINOR` are refused (exit 2), since their rates are not",
+   "verdict": "TRUE",
+   "evidence": "Matches diff(): `mm(A[2][\"tool_version\"]) == mm(B[2][\"tool_version\"]) || (...; return 2)`."
+  },
+  {
+   "claim": "src/CLI/Gate.jl:15 — It scans EVERY round directory under `.gbg/rounds/`. An open round of a named instrument is exit 1,",
+   "verdict": "TRUE",
+   "evidence": "Matches gate(): iterates every round in RoundFiles.rounds(cfg); an open round of a named instrument becomes a :open problem, and gate() returns 1 when problems is non-empty."
+  },
+  {
+   "claim": "src/CLI/Gate.jl:18 — instrument is exit 1 (`CFG.VALID`).",
+   "verdict": "TRUE",
+   "evidence": "Matches gate_problems(): a disabled instrument's open round becomes a :disabled problem citing CFG.VALID, and gate() returns 1 for any non-empty problems."
+  },
+  {
+   "claim": "src/CLI/Gate.jl:21 — `HEAD ≠ ROUND.head` is exit 1: the fixes were committed without the round. A round directory without",
+   "verdict": "TRUE",
+   "evidence": "Matches gate_problems()'s :committed problem (HEAD moved past the round's opening head while its files are dirty), which also yields exit 1 via gate()."
+  },
+  {
+   "claim": "src/CLI/Gate.jl:22 — `ROUND.toml` is exit 2; `.gbg/rounds/` absent while instruments are enabled is exit 2 (`ROUND.DIR`).",
+   "verdict": "TRUE",
+   "evidence": "Matches gate(): a missing ROUND.toml (:nomarker/:invalid) sets fatal=true -> return 2; an absent .gbg/rounds/ with instruments enabled also returns 2, printing 'ROUND.DIR'."
+  },
+  {
+   "claim": "src/CLI/Gate.jl:23 — `gbg self verify` runs first and its exit 2 is the gate's. Closed rounds are never re-graded here.",
+   "verdict": "TRUE",
+   "evidence": "Matches gate(): `code = self_verify(...); code == 0 || (...; return 2)`; gate_problems() only inspects `r.state == :open` rounds, skipping closed ones."
+  },
+  {
+   "claim": "src/CLI/Gate.jl:58 — which the gate reports as exit 2. It lists the round-based refusals only: `gate`'s self-verify and",
+   "verdict": "TRUE",
+   "evidence": "Matches gate_problems()'s docstring/code: it only reports :open/:disabled/:committed problems, not the self-verify or ROUND.DIR refusals which happen earlier in gate()."
+  },
+  {
+   "claim": "src/CLI/Gate.jl:74 — println(io, \"gate: round directory $(r.name) has no valid ROUND.toml — exit 2\"); fatal = true; continue",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact code printing this line and setting fatal=true."
+  },
+  {
+   "claim": "src/CLI/Gate.jl:100 — A build refused ONLY for these is frozen, not broken: the docs wrapper prints a skip line and exits 0,",
+   "verdict": "TRUE",
+   "evidence": "Matches frozen_rounds()'s docstring and DocLints.jl's makedocs description: the wrapper skips (returns nothing, exit 0) rather than erroring for a frozen build, unless GBG_DOCS_NO_SKIP is set."
+  },
+  {
+   "claim": "src/CLI/Git.jl:47 — - `root` — the repository the two commits are read in.",
+   "verdict": "TRUE",
+   "evidence": "Matches is_ancestor(root, a, b)'s own parameter list."
+  },
+  {
+   "claim": "src/CLI/Init.jl:124 — \"TODO: one-sentence description of $name (at least 20 characters; written at migration)\",",
+   "verdict": "TRUE",
+   "evidence": "schema/config.schema.json sets `\"minLength\": 20` on package.description (confirmed by direct inspection), matching \"at least 20 characters\"."
+  },
+  {
+   "claim": "src/CLI/Init.jl:190 — # unknown key, a missing required key, an unknown enum member or a path that does not exist is exit 2).",
+   "verdict": "FALSE",
+   "evidence": "FALSE as a general contract claim: Config.read()/Config.parse() do throw ConfigError for these problems, but most verbs never catch Config.ConfigError, so the exception reaches Main.main's generic catch-all and returns exit 3 (\"crashed\"), not exit 2. Confirmed uncaught Config.read() calls in Bump.jl:69, Gate.jl:121, Preflight.jl:924, Rounds.jl:855, Sync.jl:679, Scan.jl:579, Hunt.jl:13, Release.jl:80, and Audit.jl:116 (which rethrows anything but Rounds.RoundError). Only Config.jl's cmd_config, Doctor.jl's cmd_doctor, and Design.jl's design_verb wrapper actually catch Config.ConfigError and return 2."
+  },
+  {
+   "claim": "src/CLI/Init.jl:215 — # scope (policy | scan | lint | check | finding | harness), target, reason (≥ 40 characters), recorded,",
+   "verdict": "TRUE",
+   "evidence": "Matches schema/exemptions.schema.json's scope enum (policy|scan|lint|check|finding|harness) and Doctor.jl's CFG.EXEMPTIONS reason-length check (>= 40)."
+  },
+  {
+   "claim": "src/CLI/Init.jl:249 — an existing `.gbg/config.toml` (exit 2) unless `dry_run`, which previews over one rather than refusing,",
+   "verdict": "TRUE",
+   "evidence": "Matches init(): `isfile(cfgpath) && !dry_run && (...; return 2)`."
+  },
+  {
+   "claim": "src/CLI/Init.jl:298 — persona = '''TODO: the persona, at least 80 characters — who this reader is, what they hold the text to, and what class of defect only they see.'''",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: the literal placeholder text written by init(), matching its own docstring's TODO description."
+  },
+  {
+   "claim": "src/CLI/Init.jl:472 — (exit 0); a literal that does not parse to its closing paren is exit 2 naming the line; an existing",
+   "verdict": "TRUE",
+   "evidence": "Matches migrate_baselines(): an absent source is skipped (no error, eventual return 0); a balanced_span() parse failure throws InitError naming the line, caught and set to code=2."
+  },
+  {
+   "claim": "src/CLI/Init.jl:473 — TOML is refused (exit 2) unless `dry_run`. Returns the exit code.",
+   "verdict": "TRUE",
+   "evidence": "Matches migrate_baselines(): `elseif isfile(dp) ... code = 2` when the destination TOML already exists and dry_run is false."
+  },
+  {
+   "claim": "src/CLI/Init.jl:515 — An absent source writes nothing, exit 0; an existing `seeds.toml` is left alone. Returns the exit code.",
+   "verdict": "TRUE",
+   "evidence": "Matches migrate_seeds(): absent source prints and `return 0`; existing seeds.toml prints and `return 0` (left alone)."
+  },
+  {
+   "claim": "src/CLI/Main.jl:109 — println(io, \"usage: gbg [--dev] <noun> [<verb>] [options]   (exit 0 clean · 1 finding · 2 cannot evaluate · 3 crash)\")",
+   "verdict": "TRUE",
+   "evidence": "Matches main()'s own documented exit contract and behaviour (0/1/2/3 as described)."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:2 — # §6.2 steps 7–9, §6.5, §6.7, §6.8). The demotion is Demote.jl; the args renderer is Preflight's.",
+   "verdict": "TRUE",
+   "evidence": "Demote.jl defines demote(); Preflight.jl defines render_args() (the args renderer) — matches."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:7 — The verification half of a round. Each pass has two verifiers, both agents the session launches:",
+   "verdict": "TRUE",
+   "evidence": "Matches the module docstring's own following bullets describing the act and state verifiers."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:89 — limit `close` refuses the carry and the owner decides: a finding that has survived three batteries is",
+   "verdict": "TRUE",
+   "evidence": "CARRY_LIMIT = 3, matching \"three batteries\"."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:170 — the 56 findings of `2026-09-09-check-docs-02`, a round that closed every id honestly, 19 quotes still",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Historical measurement about a specific past round (2026-09-09-check-docs-02); not re-derivable from src/."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:203 — `SCAN.SIBLING_LINK` enforces, and it lived in four places — the scan's file header, the docstring above",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Historical account of a specific past finding (operational-claims#7); the current sibling_link.jl file's own structure cannot confirm a past duplication across policy/docstring/catalogue that has presumably since been fixed."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:205 — found one per pass and the round paid three passes to enumerate a set a grep names at once. A site the",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Historical measurement about pass counts spent on a past round; not re-derivable from src/."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:214 — # a scan and the rule it enforces are two ends of one thing: a finding that cites only the scan is",
+   "verdict": "TRUE",
+   "evidence": "Matches class_candidates(): it unions a cited SCAN.* id with its enforced RULE.* id (and vice versa) via scan_catalog(), exactly the \"two ends of one thing\" behaviour described."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:336 — Pass 1 verifies every id, over a range that starts at `Passes.carried_base`. Later passes verify the",
+   "verdict": "TRUE",
+   "evidence": "Matches pass_scope(): `k > 1 || return (nothing, ..., \"$(carried_base(cfg, dir, rec))..$head\")`."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:344 — the two verifiers [`GBGCodingTools.Passes`](@ref) binds — is a suspect too, or nothing would read it again. The suspects are re-checks, which `pass_open` sends to",
+   "verdict": "TRUE",
+   "evidence": "Matches pass_scope()'s `suspects` construction and pass_open()'s routing of `rechecked`/suspects to the state verifier only."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:360 — # here it is never read again (2026-09-10-check-docs-03 left two such ids out of scope for seven passes)",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Historical measurement about a specific past round (2026-09-10-check-docs-03); not re-derivable from src/."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:505 — # re-read next pass; `close` refuses while one remains. `full_state` is kept for the command line and",
+   "verdict": "TRUE",
+   "evidence": "Matches close(): `unread = [p for p in pend if !(p in carry)]; isempty(unread) || push!(fails, ...)`."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:547 — # as the last one rebuilds the site and re-consolidates it to produce the same bytes; a regrade",
+   "verdict": "TRUE",
+   "evidence": "Matches pass_open()'s build-reuse logic (`reuse = k > 1 && isempty(Git.porcelain(root)) && ...`)."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:572 — # 2026-09-09-check-docs-02 `range` was 456 files and 36,559 insertions where the work was 9 files",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Historical measurement about a specific past round's diff size; not re-derivable from src/."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:590 — println(io, \"\\n(lane 00-scans is closed by rescan at grade, never by a verdict)\")",
+   "verdict": "TRUE",
+   "evidence": "Self-referential println; matches grade()'s handling of `f[\"lane\"] == \"scans\"` via rescan_alive(), never a graded act/state verdict."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:626 — # the first 40 characters (never bytes: a hit's text carries Greek and math glyphs) of a hit's quoted line",
+   "verdict": "TRUE",
+   "evidence": "Julia's `first(s, n)` iterates a String by character (codepoint), not by byte, so it correctly handles multi-byte Greek/math glyphs as claimed."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:657 — non-zero expectation is DEAD ⇒ exit 2), carries forward the entry of every id outside the pass's",
+   "verdict": "TRUE",
+   "evidence": "Matches read_verdicts()/grade(): an absent verdict file with non-zero expectation is classified :dead, and `isempty(dead) || return 2`."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:667 — Exit 1 while `open_ids` is non-empty, and equally while any id is `pending_state` — read by the act",
+   "verdict": "TRUE",
+   "evidence": "Matches grade()'s final lines: `isempty(open_ids) || (...; return 1)` and `isempty(pending_state) || (...; return 1)`."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:668 — verifier and not by the state verifier, the two verifiers [`GBGCodingTools.Passes`](@ref) binds — 0 only",
+   "verdict": "TRUE",
+   "evidence": "Continuation of the same accurate docstring passage."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:754 — # `close` refuses while one stands, so the last pass is always a full blind sweep",
+   "verdict": "TRUE",
+   "evidence": "Matches the pending_state/suspects mechanism: pass_scope() re-includes every pending id in `suspects` each subsequent pass, and close() refuses while any is unread, so repeated pass-opens eventually re-verify every remaining id."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:898 — later change to miss, so any based audit covers. Returns the two flags.",
+   "verdict": "TRUE",
+   "evidence": "Matches audit_coverage()'s own two return values (exists, covers)."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:987 — # instead, as it was until 2026-09-12, one changed reason re-bought all of them: three runs over ten, seven",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Historical usage/cost measurement; not derivable from src/ alone."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:988 — # and six refusals cost 1.48M tokens where the changed items alone were worth 0.15M.",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Historical token-cost measurement; not derivable from src/ alone."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:1031 — Three conditions. The id must be OPEN, or `pending_state` — a closed one is not carried, it is done. Its",
+   "verdict": "TRUE",
+   "evidence": "Matches carry_conditions()'s docstring and code: exactly three gating conditions (open/pending_state, re-rated severity, carry-limit)."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:1105 — id still open or never blind-read, and a serious one rides too: its severity then decides whether a",
+   "verdict": "TRUE",
+   "evidence": "Matches close()'s own carry-at-cap semantics described two lines above and implemented via the `carry` computation when `at_cap`."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:1112 — That last one leaves the round abandon-only: `pass open --regrade` re-stamps `config_sha`,",
+   "verdict": "TRUE",
+   "evidence": "Matches restamped()'s logic: regrade re-stamps config_sha/tool_version/tool_rev but never tool_tree_sha under an unchanged non-dev tool_version."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:1169 — # five runs): the CLI assembles the file from the auditors' own verdict files instead",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Historical reliability measurement (\"blocked ... on two of five runs\"); not derivable from src/."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:1296 — s in (\"fixed\", \"refused\", \"escalated\") || push!(fails, \"$(r[\"id\"]) has no disposition (fixed | refused ≥ 24 chars | escalated with overturn_when) — a dropped finding\")",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact code of hunt_disposition_fails()'s disposition-state check."
+  },
+  {
+   "claim": "src/CLI/Passes.jl:1297 — s == \"refused\" && length(get(d, \"reason\", \"\")) < 24 && push!(fails, \"$(r[\"id\"]): refusal reason shorter than 24 characters\")",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact code of the refusal-reason-length check (24 chars), consistent with the same threshold used in grade() for hunt dispositions."
+  },
+  {
+   "claim": "src/CLI/Preflight.jl:269 — `key`; the persona with its placeholders filled; the four fields below; and `role`, the one-line",
+   "verdict": "TRUE",
+   "evidence": "resolve_hats()'s docstring lists exactly four further fields after persona/role: substrate, needs, anchor, not_applicable."
+  },
+  {
+   "claim": "src/CLI/Preflight.jl:273 — two values because the panel splits the manuscript once: `full` and `siteonly` (the public pages').",
+   "verdict": "TRUE",
+   "evidence": "Matches schema/hat.schema.json's substrate values (full/siteonly) as used throughout Recall.jl and Preflight.resolve_hats."
+  },
+  {
+   "claim": "src/CLI/Preflight.jl:282 — entry may anchor any key. It is unrelated to the other two senses of the word: the `file#heading`",
+   "verdict": "TRUE",
+   "evidence": "Matches the surrounding docstring distinguishing this `anchor` (full-strength) sense from Config.resolve_anchor's file#heading sense and Seeds.select's regex sense."
+  },
+  {
+   "claim": "src/CLI/Preflight.jl:331 — # A cited COUNT (\"the four closure channels\", \"eighteen schemas\") and an EXIT-CODE claim (\"refuses, exit",
+   "verdict": "TRUE",
+   "evidence": "Illustrative example text describing what a \"cited COUNT\"/\"EXIT-CODE\" claim looks like (the quoted phrases are examples of the pattern, not factual assertions to verify)."
+  },
+  {
+   "claim": "src/CLI/Preflight.jl:761 — import, so this is how the eleven scripts share their helpers (the args object, the model choice, the",
+   "verdict": "TRUE",
+   "evidence": "Counted the instrument workflow scripts on disk: attack-design.js, audit.js, dismissals.js, hunt.js, verify-architecture.js, panel.js, rubric-audit.js, severity-recheck.js, verify-act.js, verify-state.js, lanes.js = 11 (excluding prelude.js itself)."
+  },
+  {
+   "claim": "src/CLI/Preflight.jl:832 — and `gbg self verify`; refuses (exit 2) an open round of this",
+   "verdict": "TRUE",
+   "evidence": "Matches preflight(): it runs doctor(:QUICK), CFG.TORN and self_verify, each refusing with return 2 on failure, before opening the round."
+  },
+  {
+   "claim": "src/CLI/Preflight.jl:908 — println(io, \"\\nNEXT: gbg round prepare $round      (scans, reflection checks, the build, the built-HTML scans; banks lane 00-scans\", seeding ? \"; plants the seeds into a disposable copy of the lane files, which the lanes",
+   "verdict": "TRUE",
+   "evidence": "Matches preflight()'s check-docs branch println text exactly."
+  },
+  {
+   "claim": "src/CLI/Recall.jl:20 — mutated text: the `replacement` alone when it is distinctive (six characters or more), else the",
+   "verdict": "TRUE",
+   "evidence": "Matches matches_seed(): `length(repl) >= 6 && return occursin(repl, text)`."
+  },
+  {
+   "claim": "src/CLI/Release.jl:36 — Three things do. A carried `blocker` or `major`: a round past its pass budget may carry a serious finding",
+   "verdict": "TRUE",
+   "evidence": "Matches carry_release_fails(): exactly three checks (serious carried finding, carry-limit exceeded, backlog not falling)."
+  },
+  {
+   "claim": "src/CLI/Release.jl:65 — Refused (exit 2) unless: the tree is clean and on the configured branch; the tag is absent; `CHANGELOG.md`",
+   "verdict": "TRUE",
+   "evidence": "Matches release()'s precondition checks, all of which push to `fails` and lead to `return 2`."
+  },
+  {
+   "claim": "src/CLI/Release.jl:67 — prerelease); `Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`); `gbg doctor --deep`",
+   "verdict": "TRUE",
+   "evidence": "Matches release()'s Pkg.test()/docs-build/doctor --deep checks further down the same function."
+  },
+  {
+   "claim": "src/CLI/RoundFiles.jl:66 — disposition is the one field recorded after bank, so recording one leaves the hash",
+   "verdict": "TRUE",
+   "evidence": "Matches reproductions_sha(): `delete!(r, \"disposition\")` before hashing, so recording a disposition alone does not move the hash."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:3 — # `CFG.TORN` first and refuses a changed `config_sha` (exit 2 → `pass open --regrade`).",
+   "verdict": "TRUE",
+   "evidence": "Matches guard(): CFG.TORN check via Preflight.torn_check, and a changed config_sha throws a RoundError naming `pass open --regrade`."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:61 — It runs `gbg self verify` (exit 2 on mismatch) and `CFG.TORN`, loads the round, and checks its",
+   "verdict": "TRUE",
+   "evidence": "Matches guard(): `sv = self_verify(...); sv == 0 || throw(...)` then CFG.TORN then config_sha check."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:62 — `config_sha` (else exit 2 with the `pass open --regrade` hint). Throws a `RoundError` carrying the",
+   "verdict": "TRUE",
+   "evidence": "Continuation of the same accurate guard() description."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:121 — \"description\" => \"Hard scan hit of $(r.id) (rule $(r.rule)); banked by the CLI as lane 00-scans and closed by rescan when the scan no longer fires — never by a graded verdict.\",",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact literal description string written for a hard-scan-hit finding."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:134 — check-consistency: the docs build under `GBG_ROUND` (exit 0 required; the log path is printed",
+   "verdict": "TRUE",
+   "evidence": "Matches prepare()'s check-consistency branch: `code == 0 || (...; return 2)` after the docs build, then consolidate_to() writes the two manuscripts."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:135 — otherwise), the two manuscripts consolidated into the payload directory, and — when the round is",
+   "verdict": "TRUE",
+   "evidence": "Continuation of the same accurate description; consolidate_to() indeed writes two manuscripts into the payload directory."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:138 — check-docs: `scan docs` with every hard hit banked as lane `00-scans`, the reflection checks, the build",
+   "verdict": "TRUE",
+   "evidence": "Matches prepare()'s check-docs branch: scan_docs() hits banked into 00-scans, then the reflection checks, then the docs build."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:198 — open(joinpath(dir, \"findings\", \"00-scans.json\"), \"w\") do f; JSON3.pretty(f, JSON3.write(lane)); println(f); end",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact code writing 00-scans.json."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:199 — println(io, \"prepare: $(length(banked)) hard scan hit(s) banked as lane 00-scans (key `scans`); the full report (every triage line) is $report — read ALL of it\")",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact println text matching the banked count and report path."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:243 — # thirteen lanes reading a corpus that was not there; four said so as a blocker and two reported on",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Historical account of the first seeded round (2026-09-10); the specific counts (thirteen lanes, four blocker, two reported) are not re-derivable from src/."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:455 — Five things make it exit 2: a round already banked; any DEAD or REJECTED lane; a carried finding naming",
+   "verdict": "TRUE",
+   "evidence": "Matches bank(): exactly five ways to exit 2 — already banked, DEAD/REJECTED lane, orphan carried finding, hunt_bank! refusal, and a finding failing core schema validation."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:542 — isempty(suspect) || println(io, \"bank: SUSPECT hats (≥ 2 seeds on their substrate, zero matches): \", join(suspect, \", \"))",
+   "verdict": "TRUE",
+   "evidence": "Matches Recall.suspect_hats(): `length(seeds) >= 2 || continue`."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:562 — isempty(suspect) || println(io, \"bank: SUSPECT lanes (≥ 2 seeds in the files the lane reads, zero matches): \", join(suspect, \", \"))",
+   "verdict": "TRUE",
+   "evidence": "Matches the same suspect_hats() threshold, used here with `lane_files` for a check-docs round."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:583 — # exit 2, never a throw: every other refusal in bank names its reason and leaves a next step,",
+   "verdict": "TRUE",
+   "evidence": "Matches bank(): the finding-schema-validation failure path prints a message and `return 2`, never `throw`, unlike other RoundError-raising refusals in this module."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:584 — # and this one fires after the whole panel and every witness have already been paid for",
+   "verdict": "TRUE",
+   "evidence": "Narrative rationale consistent with bank()'s position in the round lifecycle (after every lane and witness has already run)."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:737 — length(strip(reason)) >= 12 || (println(io, \"import --empty needs --reason (≥ 12 characters)\"); return 2)",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact code of import_empty()'s reason-length check (>= 12 characters)."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:815 — - `reason` — at least 12 characters (a plateau is the usual one).",
+   "verdict": "TRUE",
+   "evidence": "Matches abandon(): `length(strip(reason)) >= 12 || (...)`."
+  },
+  {
+   "claim": "src/CLI/Rounds.jl:829 — length(strip(reason)) >= 12 || (println(io, \"abandon: --reason needs at least 12 characters; a plateau is the usual reason\"); return 2)",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact code of abandon()'s reason-length check."
+  },
+  {
+   "claim": "src/CLI/Seed.jl:20 — so no two rounds plant the same occurrence of a class.",
+   "verdict": "TRUE",
+   "evidence": "Matches salt_offset(): the offset is derived from `round * \"/\" * class`, so different rounds/classes salt differently."
+  },
+  {
+   "claim": "src/CLI/Seed.jl:153 — A seeded round that plants three of six measures against a denominator it does not have, and the",
+   "verdict": "TRUE",
+   "evidence": "Illustrative example consistent with plant_files()'s actual behaviour: it returns only actually-replaced seeds, and seed_docs_corpus! (Rounds.jl) refuses when `length(planted) < length(plan)`."
+  },
+  {
+   "claim": "src/CLI/Sync.jl:271 — (then `before` is the whole text and `after` is empty). Returns the three strings.",
+   "verdict": "TRUE",
+   "evidence": "Matches split_block(): when no block marker is found, `(String(text), nothing, \"\")` is returned — the whole text as `before`, empty `after`."
+  },
+  {
+   "claim": "src/CLI/Sync.jl:371 — The three fragments of a `.snippet` template, keyed `auth`, `run`, `banner`, each a block of lines",
+   "verdict": "TRUE",
+   "evidence": "Matches fragments(): keys checked are exactly `(\"auth\", \"run\", \"banner\")`."
+  },
+  {
+   "claim": "src/CLI/Sync.jl:395 — The workflow text with the three fragments placed at the fixed insertion points. The arguments are:",
+   "verdict": "TRUE",
+   "evidence": "Matches insert_fragments(): it places run/auth/banner at fixed points relative to the checkout step."
+  },
+  {
+   "claim": "src/CLI/Sync.jl:607 — rewrites `.gbg/managed.json`; idempotent. It refuses (exit 2) on a `MODIFIED` or `UNMANAGED` file and",
+   "verdict": "TRUE",
+   "evidence": "Matches sync(): `if !isempty(bad) ... return 2` for any MODIFIED/UNMANAGED entry, and it rewrites managed.json on success."
+  },
+  {
+   "claim": "src/DocLints.jl:19 — surfaces and [`GBGCodingTools.gate`](@ref), the closure gate, over the two docs instruments; after",
+   "verdict": "TRUE",
+   "evidence": "Matches makedocs()'s own docstring, which names check-docs and check-consistency as \"the two docs instruments\"."
+  },
+  {
+   "claim": "src/DocLints.jl:23 — docs round is open, which prints a skip line and returns `nothing`, exit 0, unless `GBG_DOCS_NO_SKIP`",
+   "verdict": "TRUE",
+   "evidence": "Matches docs_build_skipped(): returns the frozen rounds (a skip) only when GBG_DOCS_NO_SKIP is unset."
+  },
+  {
+   "claim": "src/DocLints.jl:30 — ([`GBGCodingTools.frozen_rounds`](@ref)): the skip is exit 0, so a red docs run keeps meaning something",
+   "verdict": "TRUE",
+   "evidence": "Matches makedocs()'s docstring: the skip is exit 0 (returns `nothing` without erroring) so a red run still means something is broken."
+  },
+  {
+   "claim": "src/DocLints.jl:40 — two docs instruments ([`GBGCodingTools.frozen_rounds`](@ref)) when the gate refused with exit `1` for",
+   "verdict": "TRUE",
+   "evidence": "Matches docs_build_skipped()'s own call `frozen_rounds(cfg, \"check-docs\", \"check-consistency\")` — exactly two instruments — and its `code == 1` check."
+  },
+  {
+   "claim": "src/Reflection.jl:14 — completeness guard covers. Two constants of the docstring rubric — `docs-rubric.md` of the shared",
+   "verdict": "TRUE",
+   "evidence": "The module docstring names exactly two constants next: ARGS_THRESHOLD and WRAPPER_PHRASE."
+  },
+  {
+   "claim": "src/Reflection.jl:79 — # the engine's rule: a docstring opens at a line holding the three quotes alone; a triple-quoted",
+   "verdict": "TRUE",
+   "evidence": "Matches docstrings(): `if strip(l) == \"\\\"\\\"\\\"\"` opens a docstring only when the line holds the three quotes alone."
+  },
+  {
+   "claim": "src/Reflection.jl:235 — caller reports exit 2, cannot evaluate.",
+   "verdict": "TRUE",
+   "evidence": "Confirmed by tracing the call path: SCAN.SIGNATURE_FIDELITY calls Reflection.signature_fidelity via run_scan(); a thrown exception there is caught by run_scan's generic catch, yielding a DEAD ScanResult (population 0), and report() sets exit code 2 for any DEAD scan (hard or triage tier)."
+  },
+  {
+   "claim": "src/Reflection.jl:416 — # nothing to compare, and the scan printed clean over 74 files having examined zero bindings.",
+   "verdict": "TRUE",
+   "evidence": "Matches signature_fidelity(): `by_export = length(exported) > 1`; a package exporting nothing (like this one) has `exported` of size 1 (just its own name), so filtering by export would compare zero bindings — the guarded case this comment describes."
+  },
+  {
+   "claim": "src/Reflection.jl:421 — # a name OWNED by two modules is two different functions sharing a bare name (`render` in Sync and",
+   "verdict": "TRUE",
+   "evidence": "Confirmed: `render` is defined as a function in both Sync.jl (`render(text, slots)`) and Rounds.jl (`render(cfg, round; io=stdout)`) — two different functions sharing a bare name, exactly as described."
+  },
+  {
+   "claim": "src/Reflection.jl:423 — # One owner documented in two files is one function documented twice, which is what this compares.",
+   "verdict": "TRUE",
+   "evidence": "Matches the surrounding code's `length(owners_of(name)) > 1 && continue` skip logic and its rationale."
+  },
+  {
+   "claim": "src/Scan.jl:85 — The one AI-provenance banner every AI-written page carries verbatim (`RULE.DOC.AI_BANNER`): two lines",
+   "verdict": "TRUE",
+   "evidence": "AI_BANNER is defined as exactly two Markdown lines."
+  },
+  {
+   "claim": "src/Scan.jl:86 — of Markdown, or the same two lines as `# ` comments in a Literate file.",
+   "verdict": "TRUE",
+   "evidence": "Matches Init.jl's literate_files()/SCAN.AI_BANNER's use of the same two lines prefixed with \"# \" for Literate files."
+  },
+  {
+   "claim": "src/Scan.jl:527 — A missing or empty build is DEAD, exit 2. `SCAN.HTML_PUBLIC_HOME` reads",
+   "verdict": "TRUE",
+   "evidence": "scan_html() sets `pages = String[]` when build_dir is missing, so every html-runner scan measures population 0; report() sets exit code 2 for any DEAD scan."
+  },
+  {
+   "claim": "src/Scan.jl:585 — (println(stderr, \"--rebaseline needs --reason \\\"…\\\" (≥ 12 characters); the reason goes in the commit\"); return 2)",
+   "verdict": "TRUE",
+   "evidence": "Self-referential: exact code of cmd_scan's rebaseline reason-length check (>= 12 characters)."
+  },
+  {
+   "claim": "src/Scans/ai_banner.jl:3 — # words appear on ANY page the two lines are verbatim `AI_BANNER` — a drifted copy is the defect.",
+   "verdict": "TRUE",
+   "evidence": "Matches the scan's own code: `exact = occursin(literate ? commented : banner, text)`, comparing against the verbatim AI_BANNER text."
+  },
+  {
+   "claim": "src/Scans/formula_in_backticks.jl:4 — # Code spans are paired left to right (the grep's pattern also matched the prose BETWEEN two spans).",
+   "verdict": "TRUE",
+   "evidence": "Matches the scan's use of `eachmatch(r\"(?<!`)`([^`\\n]+)`(?!`)\", ...)`, which pairs backtick delimiters left to right in sequence."
+  },
+  {
+   "claim": "src/Scans/html_docstring_once.jl:2 — # on two pages. Documenter marks each rendered docstring with `<a class=\"docstring-binding\" id=…>`; the",
+   "verdict": "TRUE",
+   "evidence": "Matches page_bindings(): it looks for `\"docstring-binding\" in HtmlWalker.classes(n)` on `<a>` elements."
+  },
+  {
+   "claim": "src/Scans/id_resolves.jl:7 — # WHY THIS CLASS IS A SCAN AND ITS TWO SIBLINGS ARE NOT. Three mechanical classes were proposed together;",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Design-time measurement narrative (three mechanical classes measured on 2026-09-12); not re-derivable without re-running the proposed scans over the corpus."
+  },
+  {
+   "claim": "src/Scans/id_resolves.jl:10 — #   * IDS — 964 references, 11 unresolved, and all 11 were artefacts of the pattern rather than defects.",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Specific measured counts (964 references, 11 unresolved) from a one-time design measurement; requires re-running a scan over the corpus, outside a static audit."
+  },
+  {
+   "claim": "src/Scans/id_resolves.jl:13 — #   * COUNTS — 24 references in surface, of which 17 name a SUBSET (\"two rules\", \"three verbs\", \"two",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Specific measured counts (24 references, 17 subset) from the same one-time design measurement; not re-derivable statically."
+  },
+  {
+   "claim": "src/Scans/id_resolves.jl:14 — #     instruments\") rather than an inventory, and nothing lexical separates the two readings. The scan",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Continuation of the same unverifiable measurement narrative."
+  },
+  {
+   "claim": "src/Scans/id_resolves.jl:16 — #   * PATHS — 1705 references, 143 unresolved, and the unresolved ones are overwhelmingly CORRECT: the",
+   "verdict": "UNVERIFIABLE",
+   "evidence": "Specific measured counts (1705 references, 143 unresolved) from the same one-time design measurement; not re-derivable statically."
+  },
+  {
+   "claim": "src/Scans/id_resolves.jl:21 — # Three shapes are deliberately NOT hits, each a false positive that measurement produced:",
+   "verdict": "TRUE",
+   "evidence": "The exemption mechanism this introduces is confirmed in the code below: `mention()` treats a known id's prefix as a family/wildcard mention (not a hit), \"SCAN.CUSTOM\" is pushed into `known` explicitly, and the history_exempt heading is cut via `Config.resolve_anchor` before scanning."
+  },
+  {
+   "claim": "src/Scans/prose_shape.jl:4 — # (longest paragraph ≤ 120 words, ≤ 3 admonitions) bind on every docstring and every NEW page unit; a",
+   "verdict": "TRUE",
+   "evidence": "PROSE_PARAGRAPH_CAP=120 and PROSE_ADMONITION_CAP=3 match \"120 words\"/\"3 admonitions\"; the code binds both caps on every docstring and only on a NEW page unit (`occursin(\" :: \", k) || b === nothing`)."
+  },
+  {
+   "claim": "src/Scans/prose_shape.jl:8 — # `gbg scan docs --rebaseline prose-shape`; a missing CSV is DEAD (exit 2), never a silent pass. In a",
+   "verdict": "TRUE",
+   "evidence": "Matches register_scan!(): `base === nothing && return (Hit[], 0)` — a missing CSV yields population 0, which report() turns into exit code 2 (DEAD)."
+  },
+  {
+   "claim": "src/Scans/signature_wide.jl:2 — # lines: an indented signature line in the header block wider than 88 columns renders with a horizontal",
+   "verdict": "TRUE",
+   "evidence": "SIGNATURE_WIDTH = 88 matches \"wider than 88 columns\"."
+  },
+  {
+   "claim": "src/TestHarness.jl:49 — expression is evaluated twice and an anonymous closure would get two types, the second read as a",
+   "verdict": "TRUE",
+   "evidence": "Matches @alloc_below's macro body: `expr` is spliced twice (once bare, once inside `@allocated`), exactly as described."
+  },
+  {
+   "claim": "src/TestHarness.jl:600 — witness). Never that generic gate over all four instruments: a test run must not fail on an open docs",
+   "verdict": "TRUE",
+   "evidence": "Matches gate(): `GBGCodingTools.gate(cfg, \"bug-hunt\", \"audit-changes\")` — exactly two instruments, not all four."
+  },
+  {
+   "claim": "src/Witnesses.jl:26 — The outcome of one witness file.",
+   "verdict": "TRUE",
+   "evidence": "Matches the WitnessResult struct's own docstring heading."
+  },
+  {
+   "claim": "src/Witnesses.jl:78 — The reason in a `# blocked: <reason>` header on one of the first five lines of `path`, or `nothing`.",
+   "verdict": "TRUE",
+   "evidence": "Matches blocked_reason(): `for (i, line) in enumerate(eachline(path)); i > 5 && break`."
+  },
+  {
+   "claim": "src/Witnesses.jl:144 — Runs one witness file in a fresh Julia process and classifies the outcome. The arguments are:",
+   "verdict": "TRUE",
+   "evidence": "Matches run_one()'s own docstring heading and behaviour."
+  },
+  {
+   "claim": "src/Witnesses.jl:201 — An empty directory is a refusal (nothing was verified), exit 2, as is any REFUSED witness. A witness",
+   "verdict": "TRUE",
+   "evidence": "Matches run(): `isempty(files) && (...; return (2, ...))` and `count(:refused) > 0 && (...; return (2, results))`."
+  },
+  {
+   "claim": "src/Witnesses.jl:203 — a pass was expected is UNFIXED; either is exit 1. A BROKEN witness is exit 1 too — evidence of nothing",
+   "verdict": "TRUE",
+   "evidence": "Matches run()'s final line: `((isempty(wrong) && count(:broken) == 0) ? 0 : 1, results)`."
+  }
+ ]
+}

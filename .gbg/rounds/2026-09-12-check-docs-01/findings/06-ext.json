@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-check-docs-01",
+  "lane": "ext",
+  "candidates_found": 8,
+  "checked": [
+    "ext/GBGCodingToolsDocumenterExt.jl (module docstring)",
+    "ext/GBGCodingToolsDocumenterExt.jl:14-19 (check(verb, code) docstring vs. code)",
+    "ext/GBGCodingToolsDocumenterExt.jl:21-44 (gate_or_skip docstring vs. code, incl. cross-check against src/DocLints.jl:docs_build_skipped and src/CLI/Gate.jl:gate/gate_problems)",
+    "ext/GBGCodingToolsDocumenterExt.jl:46-68 (makedocs body: sequencing, comments, ARCHITECTURE D9 citation, write_public_surface placement)",
+    "docs/ARCHITECTURE.md#D9 (cross-checked against the ext file's implementation and comments)",
+    "CHANGELOG.md (the 'twenty-five in a row' entry, cross-checked against the ext.jl:53 comment)",
+    "src/DocLints.jl (docs_build_skipped and the makedocs stub docstring, used only to verify claims made inside ext.jl, not audited as their own surface)",
+    "src/CLI/Gate.jl (gate, gate_problems, frozen_rounds, used only to verify ext.jl's claims about gate's behaviour)"
+  ],
+  "claims_checked": [
+    {
+      "claim": "ext/GBGCodingToolsDocumenterExt.jl:25 — \"the two docs instruments and says whether the build is skipped: `true` when the gate refuses only\"",
+      "verdict": "TRUE",
+      "evidence": "gate_or_skip calls GBGCodingTools.gate(cfg, \"check-docs\", \"check-consistency\"; io=buf) — exactly the two docs instruments — then GBGCodingTools.docs_build_skipped(cfg, code), which (src/DocLints.jl:47-51) returns non-empty, making gate_or_skip return true, precisely when code==1, GBG_DOCS_NO_SKIP is unset, and every gate_problems entry is :open (src/CLI/Gate.jl:62-91) — i.e. the gate refused only because a docs-instrument round is open, matching the docstring's claim."
+    },
+    {
+      "claim": "ext/GBGCodingToolsDocumenterExt.jl:53 — \"# that means \\\"a round is open\\\" is a red run nobody reads. It prints the skip and exits 0 instead;\"",
+      "verdict": "TRUE",
+      "evidence": "CHANGELOG.md's 'A docs build during a round is SKIPPED, not failed.' entry: 'every push during the second documentation round turned the Docs workflow red — twenty-five in a row — so a red run stopped meaning anything. The wrapper now prints makedocs: SKIPPED ... exit 0.' Matches the comment's '25 in a row' figure and SKIP/exit-0 mechanism verbatim; docs/ARCHITECTURE.md §D9 independently confirms the same design under the comment's own D9 citation."
+    }
+  ],
+  "findings": []
+}

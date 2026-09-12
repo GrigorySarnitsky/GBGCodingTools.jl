@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-check-docs-01",
+  "lane": "operational-claims",
+  "candidates_found": 46,
+  "checked": [
+    "src/CLI/Hunt.jl",
+    "src/CLI/Demote.jl",
+    "src/Scans/html_stray_math.jl",
+    "src/Scans/html_docstring_once.jl",
+    "src/CLI/Selftest.jl",
+    "src/Scans/code_in_math.jl",
+    "src/DocLints.jl",
+    "src/CLI/Install.jl",
+    "ext/GBGCodingToolsDocumenterExt.jl",
+    "src/CLI/Bump.jl",
+    "src/TreeHash.jl",
+    "src/HtmlWalker.jl",
+    "src/CLI/Git.jl",
+    "src/CLI/Rounds.jl",
+    "src/Witnesses.jl",
+    "src/CLI/Schema.jl",
+    "src/CLI/Ledger.jl",
+    "src/CLI/Consolidate.jl",
+    "src/CLI/Gate.jl",
+    "src/CLI/Recall.jl",
+    "src/CLI/Self.jl",
+    "src/CLI/Fleet.jl",
+    "src/CLI/RoundFiles.jl",
+    "src/CLI/Seed.jl",
+    "src/CLI/Design.jl",
+    "src/CLI/Audit.jl",
+    "src/CLI/Release.jl",
+    "src/CLI/Preflight.jl",
+    "src/CLI/Sync.jl",
+    "src/CLI/Doctor.jl",
+    "src/CLI/Config.jl",
+    "src/Reflection.jl",
+    "src/Scans/prose_shape.jl",
+    "src/Scan.jl",
+    "src/TestHarness.jl",
+    "src/GBGCodingTools.jl",
+    "src/CLI/Main.jl",
+    "src/CLI/Passes.jl",
+    "src/CLI/Init.jl"
+  ],
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "nit",
+      "confidence": "low",
+      "title": "Rounds module docstring says rerun \"re-launches\" dead lanes; it only prints the call",
+      "locations": [
+        "src/CLI/Rounds.jl:11: \"[`Rounds.rerun`](@ref) re-launches dead lanes\"",
+        "src/CLI/Rounds.jl:686-717: `rerun` docstring says \"prints the call to the instrument's Workflow ... restricted to the lanes the last bank could not evaluate\", and the body only writes args and `println`s `Preflight.workflow_call(...)` — it never invokes the Workflow itself"
+      ],
+      "description": "The `Rounds` module docstring's one-liner for `rerun` says it \"re-launches dead lanes\", but `rerun`'s own docstring and body only regenerate the saved args and print the exact Workflow call for the session to launch by hand; the function performs no launch. The function's own docstring is accurate — only the module-level map overstates it.",
+      "resolution_hint": "Reword the module docstring's `rerun` bullet to something like \"prints the relaunch call for dead lanes\" so the map agrees with the function's own docstring."
+    }
+  ]
+}

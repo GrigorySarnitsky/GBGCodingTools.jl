@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-check-docs-01",
+  "lane": "pages",
+  "candidates_found": 12,
+  "checked": [
+    "docs/src/api/CLI.md",
+    "docs/src/api/Config.md",
+    "docs/src/api/Reflection.md",
+    "docs/src/api/TestHarness.md",
+    "docs/src/api/Witnesses.md",
+    "docs/src/guide/config.md",
+    "docs/src/guide/install.md",
+    "docs/src/guide/ledger.md",
+    "docs/src/guide/rounds.md",
+    "docs/src/guide/verbs.md",
+    "docs/src/index.md",
+    "schema/config.schema.json (rubric.* keys, ledger char/day bounds, max_passes default)",
+    "src/CLI/Doctor.jl (check! ids, EXEMPT.* day windows)",
+    "src/CLI/Passes.jl (grade/demote/rescan/adjudicated logic)",
+    "src/CLI/Rounds.jl (bank exit codes, 00-scans lane)",
+    "src/CLI/Sync.jl (subenv_entries, three-entry render)",
+    "src/CLI/Main.jl (VERBS table, exit contract)",
+    "src/CLI/Install.jl and bin/gbg (shim routing)",
+    "src/CLI/Ledger.jl",
+    "catalog/scans.toml (scan count)",
+    "policy/RULES.toml (rule count)",
+    "ext/GBGCodingToolsDocumenterExt.jl (makedocs skip/exit behaviour)",
+    "fleet.toml (consumer count)",
+    ".gbg/exemptions.toml (no existing waiver for the findings below)"
+  ],
+  "claims_checked": [
+    {
+      "claim": "docs/src/guide/config.md:17 — \"Five values vary by package\": rubric.leading_identity, notation.vectors, docs.admonition_titles, notation.mathbf_allowed, instruments.check-docs.argcov_policy",
+      "verdict": "FALSE",
+      "evidence": "schema/config.schema.json:288-296 defines a sixth substituted key, `rubric.signature_types` (\"RULE.DOC.SIGNATURE_MIRROR's variation point\"), and the rendered policy 00-index.md itself says \"Six values vary by package ... the leading identity of a docstring, how much of the method a signature repeats, the vector notation, the admonition-title rule, the admitted `\\mathbf` strings and the tier RULE.DOC.ARGCOV binds at.\" config.md's list of five omits `rubric.signature_types` entirely."
+    },
+    {
+      "claim": "docs/src/guide/install.md:6 — \"The tool reaches a machine in two ways, both per machine and never synced: the pinned copy Pkg fetches ... and the shim ~/.local/bin/gbg\"",
+      "verdict": "TRUE",
+      "evidence": "bin/gbg walks up to the nearest .gbg/config.toml and execs against the resolved docs/ environment (per-machine Pkg depot); src/CLI/Install.jl's cmd_install copies bin/gbg to ~/.local/bin/gbg and writes ~/.gbg/dev, both per-machine paths never under Dropbox sync per CLAUDE.md's machine-identity section."
+    },
+    {
+      "claim": "docs/src/guide/install.md:12 — \"same three entries, rendered by gbg sync from the pinned version in .gbg/config.toml\"",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Sync.jl:314-323 subenv_entries returns exactly Dict(\"deps\"=>..., \"sources\"=>..., \"compat\"=>...) — three entries — driven by the config's [tool].version."
+    },
+    {
+      "claim": "docs/src/guide/ledger.md:14 — reason field \"at least 40 characters\"",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Doctor.jl:331 `length(e[\"reason\"]) >= 40 || push!(errs, ...)` inside CFG.EXEMPTIONS."
+    },
+    {
+      "claim": "docs/src/guide/ledger.md:16 — expires \"required for every scope but finding; at most recorded + 365 days\"",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Doctor.jl:333-337: scope=finding requires overturn_when and forbids expires; every other scope requires expires and flags `e[\"expires\"] > e[\"recorded\"] + Day(365)`."
+    },
+    {
+      "claim": "docs/src/guide/ledger.md:30 — \"EXEMPT.EXPIRING warns within 30 days, EXEMPT.STALE on a target that no longer exists\"",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Doctor.jl:356-358 `today() <= e[\"expires\"] <= today() + Day(30)` for EXEMPT.EXPIRING; EXEMPT.STALE at line 376-378 uses `target_exists`."
+    },
+    {
+      "claim": "docs/src/guide/rounds.md:18 — \"the scan battery banked as lane `00-scans`\"",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:198-199 writes `findings/00-scans.json` and logs \"banked as lane 00-scans (key `scans`)\"."
+    },
+    {
+      "claim": "docs/src/guide/rounds.md:20 — Bank: \"a DEAD or REJECTED lane is exit 2 and nothing is frozen\"",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Rounds.jl:487 prints \"bank: N DEAD/REJECTED lane(s) — nothing frozen\", part of the five exit-2 conditions documented at line 455."
+    },
+    {
+      "claim": "docs/src/guide/rounds.md:26 — Grade: \"exit 1 while any id is open, and equally while any id is pending_state\"",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:852-853: `isempty(open_ids) || return 1` and `isempty(pending_state) || return 1`."
+    },
+    {
+      "claim": "docs/src/guide/rounds.md:42 — adjudicated channel: ledger entry scope=finding, reason ≥40 chars, overturn_when present, recorded after the round opened; audited at close",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:725-726 filters ledger entries by `x[\"recorded\"] >= Date(first(opened, 10))`; CFG.EXEMPTIONS enforces the 40-char reason and overturn_when for scope=finding (Doctor.jl:331-334)."
+    },
+    {
+      "claim": "docs/src/guide/rounds.md:44 — rescan channel: a hard-scan hit of lane 00-scans that no longer fires when grade re-runs the scan",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Passes.jl:721-726: for lane==\"scans\", `alive = rescan_alive(cfg, f)`; when not alive and no matching ledger entry, `entry[\"closed_by\"] = \"rescan\"`."
+    },
+    {
+      "claim": "docs/src/guide/verbs.md:79 — an attack on an instrument's lens set, and a calibration of the consistency panel against what a human read found",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Design.jl's `attack` validates a per-instrument subject against the resolved roster; `calibrate` reads `.gbg/human-findings.toml` and routes passages to the resolved consistency hats (`Preflight.resolve_hats`), matching the description."
+    },
+    {
+      "claim": "docs/src/index.md:11-12 — much of the writing/testing/reviewing in the four packages; this package holds the rules and the scans/checks/test engines",
+      "verdict": "TRUE",
+      "evidence": "fleet.toml lists exactly four non-tool consumers (GBGPeriodicFields, GBGIsotropicTurbulence, GBGStreamingStatistics, GBGCloudPhysics); the tool's own scan/doctor/TestHarness engines exist in src/ as described."
+    },
+    {
+      "claim": "docs/src/index.md:15 — each of the four packages keeps only its own data under .gbg/: configuration, reviewer roles, ledger, past-review records",
+      "verdict": "TRUE",
+      "evidence": "Matches ARCHITECTURE.md §0 R6 (minimal consumer footprint) and .gbg/config.toml's own layout (config.toml, exemptions.toml, hats, rounds/) inspected in this checkout."
+    },
+    {
+      "claim": "docs/src/index.md:28 — makedocs: SKIPPED and returns nothing, exit 0; GBG_DOCS_NO_SKIP (set by gbg release and the deep doctor) turns the skip back into a refusal",
+      "verdict": "TRUE",
+      "evidence": "ext/GBGCodingToolsDocumenterExt.jl:32-44 gate_or_skip prints \"makedocs: SKIPPED — ...\" and short-circuits makedocs to `return nothing` exactly when a docs-instrument round is open and GBG_DOCS_NO_SKIP is unset; comment at line 54 confirms gbg release and the deep doctor set that env var."
+    },
+    {
+      "claim": "docs/src/index.md:60 — There are 25 verbs; every one exits 0/1/2/3 per the stated meanings",
+      "verdict": "TRUE",
+      "evidence": "Grep of `VERBS[\"...\"] = ` across src/*.jl, src/CLI/*.jl and ext/*.jl (including src/Scan.jl's VERBS[\"scan\"], easy to miss if only CLI/ is searched) yields exactly 25 distinct top-level entries; src/CLI/Main.jl:main implements the 0/1/2/3 contract verbatim."
+    },
+    {
+      "claim": "docs/src/index.md:63 — gbg doctor — 50 checks that a package is wired correctly",
+      "verdict": "TRUE",
+      "evidence": "`grep -c 'check!(\"' src/CLI/Doctor.jl` = 50 distinct check ids."
+    },
+    {
+      "claim": "docs/src/index.md:65 — gbg scan docs and gbg scan html — 44 scans over docstrings, pages and the built site",
+      "verdict": "TRUE",
+      "evidence": "`grep -c '^\\[\\[scan\\]\\]' catalog/scans.toml` = 44."
+    },
+    {
+      "claim": "docs/src/index.md:82 — The policy is 95 rules of prose",
+      "verdict": "TRUE",
+      "evidence": "`grep -c '^id *= *\"RULE' policy/RULES.toml` = 95."
+    },
+    {
+      "claim": "docs/src/index.md:84 — gbg sync renders the rules into every package; the scans and the doctor enforce the ones a program can check",
+      "verdict": "TRUE",
+      "evidence": "src/CLI/Sync.jl's render_policy/plan writes the rendered .gbg/policy/*.md files and the managed CLAUDE.md import block; catalog/scans.toml and Doctor.jl's checks each name the RULE.* id they enforce."
+    }
+  ],
+  "findings": [
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "config.md undercounts the package-specific config values by one",
+      "locations": [
+        "docs/src/guide/config.md:17 — \"Five values vary by package and are substituted into the rendered policy: `rubric.leading_identity`, `notation.vectors`, `docs.admonition_titles`, `notation.mathbf_allowed` ... and `instruments.check-docs.argcov_policy`\""
+      ],
+      "description": "The page lists five per-package config values, omitting `rubric.signature_types` (RULE.DOC.SIGNATURE_MIRROR's variation point: `names` vs `mirror`, schema/config.schema.json:288-296). The rendered policy this same package ships (.gbg/policy/00-index.md, imported into every consumer's CLAUDE.md) states there are SIX: \"the leading identity of a docstring, how much of the method a signature repeats, the vector notation, the admonition-title rule, the admitted `\\mathbf` strings and the tier RULE.DOC.ARGCOV binds at.\" config.md's own count and list are stale against both the schema and the tool's own policy text — a RULE.DOC.CURRENT violation (a summary naming only a subset of the current set is stale even where each item named is literally true).",
+      "resolution_hint": "Change \"Five values\" to \"Six values\" and add `rubric.signature_types` (with its `names`/`mirror` enum) to the list in docs/src/guide/config.md:17-21, in the same position 00-index.md gives it (second, after leading_identity)."
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "\"consumer\" is used repeatedly across the pages surface without ever being defined or @ref-linked",
+      "locations": [
+        "docs/src/guide/install.md:6 — \"fetches into the consumer's `docs/` environment\" (first use in the site's own nav order: Home → Install → …)",
+        "docs/src/guide/install.md:11,36,37,38,44",
+        "docs/src/guide/config.md:6 — \"`.gbg/config.toml` is the one config file of a consumer\"",
+        "docs/src/guide/ledger.md:6 — \"the one place a consumer records a waiver\"",
+        "docs/src/guide/rounds.md:6 — \"one run of one instrument over one consumer\""
+      ],
+      "description": "\"Consumer\" is one of this package's own named terms of art (consumer; instrument; round; lane; hat; anchor; gate; pin; managed file; ledger), and RULE.DOC.TERMS_DEFINED requires a term of art be defined in a clause or @ref-linked at its first use, cold-read tested. Contrast with \"ledger\", \"round\", \"lane\" and \"instrument\", each of which the pages surface either defines in a clause at first use or @ref-links (e.g. index.md:16 `[ledger](@ref ledger)`) before using it bare elsewhere. \"Consumer\" gets neither: docs/src/index.md never uses the word at all (it describes the concept without naming it), and install.md — the first guide page in the site's own nav order (docs/make.jl:70) — introduces the bare word with no gloss and no link to a page that defines it (there is no dedicated \"consumer\" page or @id anchor on the pages surface). A reader who has not already absorbed index.md's unlabelled paraphrase has no way to resolve the term from the pages surface alone.",
+      "resolution_hint": "Either add a one-clause gloss at install.md's first use (\"the consumer — the package that pins the tool —\"), or give the term an @id anchor at its first mention and @ref-link every later bare use across install.md/config.md/ledger.md/rounds.md, the way \"ledger\" and \"round\" already are."
+    }
+  ]
+}

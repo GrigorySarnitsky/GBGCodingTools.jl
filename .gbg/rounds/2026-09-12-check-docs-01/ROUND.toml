@@ -1,0 +1,105 @@
+# ROUND.toml — written by the gbg round verbs; never edited by hand (ARCHITECTURE §6.1)
+tool_tree_sha = "b50bfe8bac971c47435b426d6c16c9aee0235bf2"
+findings_sha = "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257"
+strength = "economy"
+round = "2026-09-12-check-docs-01"
+opened = "2026-09-12T13:45:19"
+banked = "2026-09-12T14:09:35"
+tool_version = "1.0.0-rc.10"
+passes = 0
+seed_salt = "2026-09-12-check-docs-01"
+head = "af1adec6c6666be0c687ffd32bbc9145fecef580"
+model_hint = "sonnet"
+hostname = "Aiporetne"
+seed_catalog_sha = "fdd564c6a6a6d1ddb946c10d2922a72d728e45d47585b49fdbcbd5a95efc8ba3"
+config_sha = "f167e891ba2c95285a3507cc1bcfa308ecdc4e612c7785f160ec326964da43b8"
+dead_lanes = []
+cost = "economy"
+tool_rev = "d55d742f84b9fb056b652d848ec5185ba3c4c585"
+instrument = "check-docs"
+catalog_sha = "363a4aabe2508f907b60226ead49c99a668ed331b86c4d45959987de041cbf42"
+schema_version = 1
+
+[[roster]]
+key = "rationale"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "rationale-2"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "rationale-3"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "pages"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "src"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "ext"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "built-html"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "workflow-scripts"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "catalogues"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "rulebook"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "templates"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "schemas"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "ambient"
+substrate = "surface"
+anchor = false
+[[roster]]
+key = "one-home"
+substrate = "cross"
+anchor = false
+[[roster]]
+key = "cold-reader"
+substrate = "cross"
+anchor = false
+[[roster]]
+key = "operational-claims"
+substrate = "cross"
+anchor = false
+
+[lane_shas]
+rationale = "d14cbea8a482621572e5a6185b572de275e64fa042168a728ba023e6dc911902"
+pages = "02ddadbb5a0591aaecb9ed139b6a4359dc7329e8d6fd585cd1acf3136b330132"
+workflow-scripts = "3ac4ef106c606b072934896c5eb867b581cad8b1194c8aaa7b2feaa9a490e374"
+rationale-2 = "10a78ede646b7f6b3aae5b9d297a65f2ea34b766a32c7608af58736a462e114b"
+ambient = "bc1e2dc418e42d1e663d2c27a38a69185a2485f412ffa36b8171b9f795605595"
+cold-reader = "2edf4211bdb9a554b06054ac3520f5d70c0690fd3442ce39affae01a9b7071b2"
+rationale-3 = "8f7516251c2b1886be3dc8c8adefd0eb6cb354033e49a4b724ce07a70272f32d"
+scans = "e416bfb73d097e0447cfff4e7f246b03c67943397c001cd5d6562827b016dc39"
+src = "8090b3fb7001a6ae76bb03bf0b29073eea9b29e2fe77e15a0af0025f0ec70514"
+one-home = "6b38289dbdeeb7f345799cd16cdf83c484f1eae1ba11fe6145fb25dad0ea6afa"
+ext = "3c52a1ea0b9eb7ffe6b01b73ffcf91087d5413f8e5c99458748d51c339440d03"
+rulebook = "690cacac74c8e29eef7200a947d4c82dae3cd9cac25a3783c0630e19ca4e3692"
+built-html = "ca892d4b96a5590bb54cfadf960771c2a6f40fe49c3b8e35f019f2d08c661633"
+templates = "2595db286176b48cf79d900de5cd324c188976b1b874adf502e9087b029c5b67"
+operational-claims = "8dc20f5aaa854847e0b47d1c20a89aba9fb0da90d1f6431e668171ba5c1fea42"
+catalogues = "a06bca0e1e371ff5f0ae351e77a715df65f897a56708f1ac7e4a90e5bd029859"
+schemas = "86fb7e18a54eeb8349d52ca5766bcf030151737e8b75bd5eb6f00ac50fa9b3c9"
