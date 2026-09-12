@@ -70,7 +70,7 @@ when no docs round is open.
 admitted_rounds(cfg::AbstractDict) = join(frozen_rounds(cfg, "check-docs", "check-consistency"), ",")
 
 """
-    release(ver; io = stdout, skip_tests = false) -> Int
+    release(ver; io = stdout, skip_tests = false, root = pkgdir(GBGCodingTools)) -> Int
 
 Tags and pushes `v<ver>` from the dev checkout. The arguments are:
 
