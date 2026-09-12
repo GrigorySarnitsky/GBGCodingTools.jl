@@ -3,7 +3,7 @@
 Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
 "rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
 
-## Unreleased
+## 1.0.0-rc.10 — 2026-09-12
 
 MAJOR on rc.9. Instruments affected: check-docs and check-consistency (a carried finding's first fix
 range; the verifier and panel scripts' empty-roster refusals), bug-hunt and audit-changes (the same
