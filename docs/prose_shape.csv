@@ -259,6 +259,7 @@ unit,words,longest_paragraph,admonitions
 "Rounds.jl :: list(cfg; io = stdout) -> Int",42,21,0
 "Rounds.jl :: load(cfg, round) -> (dir, record)",16,11,0
 "Rounds.jl :: prepare(cfg, round; io = stdout) -> Int",160,58,0
+"Rounds.jl :: refresh_scripts(cfg, round; io = stdout) -> Int",155,108,0
 "Rounds.jl :: render(cfg, round; io = stdout) -> Int",51,20,0
 "Rounds.jl :: rerun(cfg, round, lanes; io = stdout) -> Int",98,40,0
 "Rounds.jl :: run_under_round(cfg, round, cmdline; log) -> Int",60,29,0
@@ -269,7 +270,7 @@ unit,words,longest_paragraph,admonitions
 "Scan.jl :: ProseLine",94,82,0
 "Scan.jl :: SCANS",35,34,0
 "Scan.jl :: ScanResult",104,95,0
-"Scan.jl :: apply_ledger(cfg, ledger, row, hits) -> (kept, exempted, dis",134,78,0
+"Scan.jl :: apply_ledger(cfg, ledger, row, hits) -> (kept, exempted, dis",290,92,0
 "Scan.jl :: built_pages(build_dir) -> Vector{String}",37,34,0
 "Scan.jl :: cmd_scan(args) -> Int",37,34,0
 "Scan.jl :: data_prose_lines(kind, lines) -> Vector{ProseLine}",92,88,0
@@ -280,6 +281,8 @@ unit,words,longest_paragraph,admonitions
 "Scan.jl :: regex_scan(cfg, files, re; skip_comments = true, on = :text,",153,101,0
 "Scan.jl :: register_scan!(id, f)",66,64,0
 "Scan.jl :: report(results; io = stdout) -> Int",112,56,0
+"Scan.jl :: rules_for_scan(id) -> Vector{String}",78,54,0
+"Scan.jl :: rules_register() -> Vector{Dict}",72,53,0
 "Scan.jl :: run_scan(cfg, row; ledger = Ledger.read(cfg), files = nothin",122,52,0
 "Scan.jl :: scan_catalog() -> Vector{Dict}",18,15,0
 "Scan.jl :: scan_docs(cfg; hard_only = false, only = nothing, io = stdou",121,39,0
