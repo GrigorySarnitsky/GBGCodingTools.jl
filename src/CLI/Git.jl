@@ -18,11 +18,13 @@ on a non-zero exit or when git is absent.
 Trailing only, never leading. `git status --porcelain` puts the status in the first two columns, so an
 unstaged modification begins with a SPACE (`" M path"`), and a full `strip` deleted it — from the first
 line alone, since only that line touches the start of the output. [`Git.porcelain`](@ref) then read the
-code as `"M "` and the path from column 4 as `gbg/exemptions.toml`, one character short, which matches no
-watched path, so `CFG.TORN` reported a modified pinned file as unmodified whenever that file sorted
-first. It was invisible while any other file sorted ahead of it and the guard fired normally
-(2026-09-12-check-docs-01, work queue). `--stat` output is indented the same way and was losing its
-first line's alignment for the same reason.
+code as `"M "` and the path from column 4 as `gbg/exemptions.toml`, one character short, matching no
+watched path.
+
+So `CFG.TORN` called a modified pinned file unmodified whenever that file sorted first, and sort order is
+what hid it: with any other file ahead of it the pinned one kept its space and the guard fired normally
+(2026-09-12-check-docs-01, work queue). `--stat` output is indented the same way and was losing its first
+line's alignment for the same reason.
 """
 function run(root::AbstractString, args...)
     argv = String[string(a) for a in args]

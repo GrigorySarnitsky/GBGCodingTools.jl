@@ -38,6 +38,42 @@ include("helpers.jl")
     @test isempty(G.frozen_rounds(cfg))                                             # no rounds directory freezes nothing
 end
 
+# `gbg release` may cut a CANDIDATE while a round is open — the open-round refusal is guarded by `if !rc`
+# on purpose — but the permission was unreachable until 2026-09-12: the release build sets
+# GBG_DOCS_NO_SKIP, which turns the docs wrapper's skip back into a refusal, and it named no round, so
+# the build refused for every open round and every rc cut mid-round failed its own build step. What
+# `release` hands that build is `admitted_rounds`, and this is its contract: it names the open DOCS
+# rounds, and under it the build is no longer frozen out. `gbg release` itself has no test at all, which
+# is how the dead branch survived; this pins the part of it that can be checked without cutting a tag.
+@testset "release admits the open docs rounds to its own build" begin
+    root = fixture_copy("release-admits")
+    cfg = G.Config.read(root)
+    @test G.admitted_rounds(cfg) == ""                                              # nothing open: nothing admitted
+    st = G.Preflight.stamps(cfg)
+    mk(name, inst) = begin
+        rd = joinpath(root, ".gbg", "rounds", name); mkpath(rd)
+        rec = merge(st, Dict{String,Any}("round" => name, "instrument" => inst, "schema_version" => 1,
+            "head" => something(G.Git.head(root), "0"^40), "roster" => Any[], "cost" => "economy", "strength" => "economy",
+            "hostname" => "test", "model_hint" => "sonnet", "opened" => "2026-09-09T00:00:00", "dead_lanes" => String[], "passes" => 0))
+        open(joinpath(rd, "ROUND.toml"), "w") do f; TOML.print(f, rec); end
+    end
+    mk("2026-09-09-bug-hunt-01", "bug-hunt")
+    @test G.admitted_rounds(cfg) == ""                          # a hunt round never froze the docs build
+    mk("2026-09-09-check-docs-01", "check-docs")
+    @test G.admitted_rounds(cfg) == "2026-09-09-check-docs-01"
+    @test !isempty(G.frozen_rounds(cfg, "check-docs", "check-consistency"))         # without it, the build is refused
+    withenv("GBG_ROUND" => G.admitted_rounds(cfg)) do
+        @test isempty(G.frozen_rounds(cfg, "check-docs", "check-consistency"))      # with it, the build may run
+    end
+    # two open docs rounds: BOTH are admitted, comma separated, as Gate.jl parses GBG_ROUND
+    mk("2026-09-09-check-consistency-01", "check-consistency")
+    @test Set(split(G.admitted_rounds(cfg), ",")) ==
+          Set(["2026-09-09-check-docs-01", "2026-09-09-check-consistency-01"])
+    withenv("GBG_ROUND" => G.admitted_rounds(cfg)) do
+        @test isempty(G.frozen_rounds(cfg, "check-docs", "check-consistency"))
+    end
+end
+
 # Both of makedocs' gates skip on one condition (docs_build_skipped): a refusal (exit 1) caused by an open
 # round of a docs instrument, with GBG_DOCS_NO_SKIP unset. The gate after Documenter once had no skip, so a
 # round opened while the site built turned the build red for a round being open. Both directions.

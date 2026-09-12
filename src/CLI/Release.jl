@@ -53,6 +53,23 @@ function carry_release_fails(led::AbstractDict)
 end
 
 """
+    admitted_rounds(cfg) -> String
+
+The open docs rounds `gbg release` admits to its OWN docs build, comma separated as
+[`GBGCodingTools.frozen_rounds`](@ref) and the gate parse `GBG_ROUND`. The argument is `cfg`, the
+validated config.
+
+A candidate may be cut while a round is open — the open-round refusal is guarded by `if !rc` on purpose
+— but the release build sets `GBG_DOCS_NO_SKIP`, which turns the docs wrapper's skip back into a
+refusal. Naming no round made that permission unreachable: the build refused for every open round, so
+every rc cut mid-round failed its own build step and the `if !rc` branch could never be reached in
+anger. Admitting them restores the permission without weakening the guarantee, since
+`GBG_DOCS_NO_SKIP` stays set and a build that did not happen still cannot pass. Returns the value, empty
+when no docs round is open.
+"""
+admitted_rounds(cfg::AbstractDict) = join(frozen_rounds(cfg, "check-docs", "check-consistency"), ",")
+
+"""
     release(ver; io = stdout, skip_tests = false) -> Int
 
 Tags and pushes `v<ver>` from the dev checkout. The arguments are:
@@ -104,8 +121,16 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false)
         println(io, "release: refused —"); foreach(f -> println(io, "  - ", f), fails); return 2
     end
     if !skip_tests
+        # A candidate may be cut mid-round — the open-round refusal above is guarded by `if !rc` on
+        # purpose — but the permission was unreachable until 2026-09-12: this build sets
+        # `GBG_DOCS_NO_SKIP`, which turns the docs wrapper's skip back into a refusal, and it named no
+        # round, so `frozen_rounds` saw every open round as one the build must refuse for. Every rc cut
+        # while a round was open failed its own build step. The rounds are admitted the way `gbg round
+        # build` admits them (comma separated, as `Gate.jl` parses them), and `GBG_DOCS_NO_SKIP` stays:
+        # a release still never accepts a build that did not happen, it only stops refusing one that can.
+        admitted = admitted_rounds(cfg)
         for (label, cmd) in (("Pkg.test()", `$(Base.julia_cmd()) --startup-file=no --project=$root -e "using Pkg; Pkg.test()"`),
-                             ("docs build (SELF.DOCS)", addenv(`$(Base.julia_cmd()) --startup-file=no --project=$(joinpath(root, "docs")) $(joinpath(root, "docs", "make.jl"))`, "GBG_DOCS_NO_SKIP" => "1")))
+                             ("docs build (SELF.DOCS)", addenv(`$(Base.julia_cmd()) --startup-file=no --project=$(joinpath(root, "docs")) $(joinpath(root, "docs", "make.jl"))`, "GBG_DOCS_NO_SKIP" => "1", "GBG_ROUND" => admitted)))
             println(io, "release: running $label …"); flush(io)
             ok = success(pipeline(setenv(cmd; dir = root); stdout = devnull, stderr = devnull))
             ok || (println(io, "release: refused — $label failed"); return 2)
