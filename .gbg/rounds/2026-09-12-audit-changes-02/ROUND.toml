@@ -1,12 +1,12 @@
 # ROUND.toml — written by the gbg round verbs; never edited by hand (ARCHITECTURE §6.1)
-tool_tree_sha = "258b9e9003e3c6546c9c1954de0fa577383acfcf"
+tool_tree_sha = "6a3d8d0c09e443f07a08a7ed688e5a5bee630e60"
 findings_sha = "3a5a4cebf4c7a360db314686b16ab207ce59a1f3888eb490d6f13aeb1c1e56f9"
 strength = "economy"
 round = "2026-09-12-audit-changes-02"
 opened = "2026-09-12T20:20:21"
 banked = "2026-09-12T20:41:13"
-tool_version = "dev+ec3e144"
-passes = 1
+tool_version = "dev+6ae25fe"
+passes = 2
 head = "ec3e14472f58743d96c5ae9d50170d07c88d117d"
 model_hint = "sonnet"
 hostname = "Aiporetne"
@@ -14,7 +14,7 @@ seed_catalog_sha = "24dfd0798db50487a5b2e1ee49c81e21e5fad0648154fae91ea044cd6c78
 config_sha = "e0b71456c67447f7354485829d858e9c16003ae1e6e77a88bb2d82d5ada3add8"
 dead_lanes = []
 cost = "economy"
-tool_rev = "ec3e14472f58743d96c5ae9d50170d07c88d117d"
+tool_rev = "6ae25fe974db071b53ac5a1cc7efde01588f52c4"
 instrument = "audit-changes"
 base = "94d4711e77535ee9f86e3a6c698144f765dc1855"
 catalog_sha = "2b11404da2f8593c0f5e77cc6ce4c90d099b91ac6cc3608417e11023d98f72d3"

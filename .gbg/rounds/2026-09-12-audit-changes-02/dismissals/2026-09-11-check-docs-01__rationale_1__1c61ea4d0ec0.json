@@ -1,0 +1,6 @@
+{
+  "id": "2026-09-11-check-docs-01/rationale#1",
+  "verdict": "DISMISSAL-SOUND",
+  "evidence": "ARCHITECTURE.md:985 `  src/`; 988 `    CLI/`; 1004 `    Scan.jl` — cat -A shows four spaces, a sibling of CLI/, Scans/, TreeHash.jl, while CLI children sit at six (`      Preflight.jl`). src/GBGCodingTools.jl:87 `include(\"Scan.jl\")`; src/CLI/ holds no Scan.jl. IMPLEMENTATION.md:205 `src/{…,Scan.jl}`; CLI/Init.jl:167 `\"src/Scan.jl\"`. CHANGELOG.md:351: \"ARCHITECTURE and IMPLEMENTATION correct `Scan.jl`'s place\".",
+  "what_would_bite": ""
+}

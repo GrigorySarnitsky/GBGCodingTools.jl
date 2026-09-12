@@ -1,0 +1,17 @@
+tool_version = "dev+6ae25fe"
+head = "6ae25fe974db071b53ac5a1cc7efde01588f52c4"
+fix_range = "ec3e14472f58743d96c5ae9d50170d07c88d117d..6ae25fe974db071b53ac5a1cc7efde01588f52c4"
+scope = []
+tool_tree_sha = "6a3d8d0c09e443f07a08a7ed688e5a5bee630e60"
+state_ids = []
+config_sha = "e0b71456c67447f7354485829d858e9c16003ae1e6e77a88bb2d82d5ada3add8"
+tool_rev = "6ae25fe974db071b53ac5a1cc7efde01588f52c4"
+range = "ec3e14472f58743d96c5ae9d50170d07c88d117d..6ae25fe974db071b53ac5a1cc7efde01588f52c4"
+counted = false
+rechecked = []
+regrade = true
+pass = 2
+nonce = "479df08f1e9d387ebe3cfc582885febd"
+opened = "2026-09-12T20:47:49"
+
+[expected]

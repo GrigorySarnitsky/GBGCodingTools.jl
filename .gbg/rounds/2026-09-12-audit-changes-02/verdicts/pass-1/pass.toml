@@ -1,17 +1,18 @@
+tool_tree_sha = "44bc1803c943e15eff60097439f1aa1fbcf910e6"
+state_ids = ["2026-09-12-audit-changes-02/free-reader#1", "2026-09-12-audit-changes-02/free-reader#2", "2026-09-12-audit-changes-02/free-reader#3", "2026-09-12-audit-changes-02/executing#1", "2026-09-12-audit-changes-02/executing#2", "2026-09-12-audit-changes-02/executing#3", "2026-09-12-audit-changes-02/executing#4", "2026-09-12-audit-changes-02/executing#5", "2026-09-12-audit-changes-02/executing#6", "2026-09-12-audit-changes-02/executing#7", "2026-09-12-audit-changes-02/under-rejection#1", "2026-09-12-audit-changes-02/under-rejection#2", "2026-09-12-audit-changes-02/under-rejection#3", "2026-09-12-audit-changes-02/under-rejection#4", "2026-09-12-audit-changes-02/under-rejection#5", "2026-09-12-audit-changes-02/behaviour-change#1", "2026-09-12-audit-changes-02/behaviour-change#2", "2026-09-12-audit-changes-02/behaviour-change#3", "2026-09-12-audit-changes-02/behaviour-change#4", "2026-09-12-audit-changes-02/behaviour-change#5", "2026-09-12-audit-changes-02/behaviour-change#6", "2026-09-12-audit-changes-02/behaviour-change#7", "2026-09-12-audit-changes-02/over-rejection#1", "2026-09-12-audit-changes-02/over-rejection#2", "2026-09-12-audit-changes-02/over-rejection#3", "2026-09-12-audit-changes-02/over-rejection#4", "2026-09-12-audit-changes-02/over-rejection#5", "2026-09-12-audit-changes-02/over-rejection#6", "2026-09-12-audit-changes-02/public-contract#1", "2026-09-12-audit-changes-02/public-contract#2", "2026-09-12-audit-changes-02/public-contract#3", "2026-09-12-audit-changes-02/invariants#1", "2026-09-12-audit-changes-02/invariants#2", "2026-09-12-audit-changes-02/invariants#3", "2026-09-12-audit-changes-02/claim-versus-edit#1", "2026-09-12-audit-changes-02/claim-versus-edit#2"]
+range = "ec3e14472f58743d96c5ae9d50170d07c88d117d..ec3e14472f58743d96c5ae9d50170d07c88d117d"
+counted = true
+superseded_by = 2
+pass = 1
+opened = "2026-09-12T20:43:55"
 tool_version = "dev+ec3e144-dirty"
 head = "ec3e14472f58743d96c5ae9d50170d07c88d117d"
 fix_range = "ec3e14472f58743d96c5ae9d50170d07c88d117d..ec3e14472f58743d96c5ae9d50170d07c88d117d"
-tool_tree_sha = "44bc1803c943e15eff60097439f1aa1fbcf910e6"
-state_ids = ["2026-09-12-audit-changes-02/free-reader#1", "2026-09-12-audit-changes-02/free-reader#2", "2026-09-12-audit-changes-02/free-reader#3", "2026-09-12-audit-changes-02/executing#1", "2026-09-12-audit-changes-02/executing#2", "2026-09-12-audit-changes-02/executing#3", "2026-09-12-audit-changes-02/executing#4", "2026-09-12-audit-changes-02/executing#5", "2026-09-12-audit-changes-02/executing#6", "2026-09-12-audit-changes-02/executing#7", "2026-09-12-audit-changes-02/under-rejection#1", "2026-09-12-audit-changes-02/under-rejection#2", "2026-09-12-audit-changes-02/under-rejection#3", "2026-09-12-audit-changes-02/under-rejection#4", "2026-09-12-audit-changes-02/under-rejection#5", "2026-09-12-audit-changes-02/behaviour-change#1", "2026-09-12-audit-changes-02/behaviour-change#2", "2026-09-12-audit-changes-02/behaviour-change#3", "2026-09-12-audit-changes-02/behaviour-change#4", "2026-09-12-audit-changes-02/behaviour-change#5", "2026-09-12-audit-changes-02/behaviour-change#6", "2026-09-12-audit-changes-02/behaviour-change#7", "2026-09-12-audit-changes-02/over-rejection#1", "2026-09-12-audit-changes-02/over-rejection#2", "2026-09-12-audit-changes-02/over-rejection#3", "2026-09-12-audit-changes-02/over-rejection#4", "2026-09-12-audit-changes-02/over-rejection#5", "2026-09-12-audit-changes-02/over-rejection#6", "2026-09-12-audit-changes-02/public-contract#1", "2026-09-12-audit-changes-02/public-contract#2", "2026-09-12-audit-changes-02/public-contract#3", "2026-09-12-audit-changes-02/invariants#1", "2026-09-12-audit-changes-02/invariants#2", "2026-09-12-audit-changes-02/invariants#3", "2026-09-12-audit-changes-02/claim-versus-edit#1", "2026-09-12-audit-changes-02/claim-versus-edit#2"]
 config_sha = "e0b71456c67447f7354485829d858e9c16003ae1e6e77a88bb2d82d5ada3add8"
 tool_rev = "ec3e14472f58743d96c5ae9d50170d07c88d117d"
-range = "ec3e14472f58743d96c5ae9d50170d07c88d117d..ec3e14472f58743d96c5ae9d50170d07c88d117d"
-counted = true
 rechecked = []
 regrade = false
-pass = 1
 nonce = "7a1725c8974953a1000c5437c22769a6"
-opened = "2026-09-12T20:43:55"
 
 [expected]
 invariants = 3
