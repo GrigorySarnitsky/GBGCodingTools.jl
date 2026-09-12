@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-audit-changes-01",
+  "items_sha": "908c9caa90f70a4b8cdb00669ee1902624855d9a27056ab457b3f83e3acb8c01",
+  "tally": {
+    "DISMISSAL-SOUND": 4,
+    "DISMISSAL-WRONG": 2,
+    "UNSAFE": 1
+  },
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/ext#1",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "policy/docs-rubric.md:239 \"How much of the method the signature repeats is this package's to set, and it is {{rubric.signature_types}}\"; rendered for THIS package at docs/src/guide/rules.md:249 \"the names and their defaults, and no types: a type belongs to the argument's own bullet\". ext/GBGCodingToolsDocumenterExt.jl:22 \"gate_or_skip(cfg, what) -> Bool\". src/Scans/signature_typed.jl:63 hits \"types its argument(s) in the signature line\"; catalog/scans.toml:142-147 runs it over src+ext.",
+      "what_would_bite": ""
+    },
+    {
+      "id": "2026-09-11-check-docs-01/rationale#1",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "docs/ARCHITECTURE.md §3 computed indents: 988 indent=4 `CLI/`; 989-1003 indent=6 (Main.jl…Design.jl); 1004 indent=4 `Scan.jl`; 1005 indent=4 `Scans/<ScanId>.jl`; 1006 indent=4 `TreeHash.jl`. src/GBGCodingTools.jl:87 `include(\"Scan.jl\")`, not CLI/. c8ef916 diff: `-      Scan.jl` → `+    Scan.jl`. No `CLI/Scan` reference anywhere outside .gbg."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#1",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "src/CLI/Design.jl:80 `Preflight.install_script(joinpath(Preflight.instrument_dir(\"audit-changes\"),\"workflow\",\"attack-design.js\"), joinpath(wd,\"attack-design.js\"))`; :172 the same for check-consistency/rubric-audit.js; :86/:179 print `Preflight.workflow_call(...)`; `VERBS[\"attack\"]`/`VERBS[\"calibrate\"]` registered at the file's foot; src/GBGCodingTools.jl:105 `include(\"CLI/Design.jl\")`. Ran live: `attack rc=0`, `calibrate rc=0`, installed `attack-design.js` / `rubric-audit.js`, `prelude spliced: true`, dispatch `main([attack, check-docs]) = 0`, `main([calibrate]) = 0`.",
+      "what_would_bite": "Nothing bites. The claim (both scripts launched by no CLI verb) is false on the current tree, and not merely on paper: executing the verbs on the fixture installed each script into the round's workflow dir with the prelude spliced and printed a Workflow call whose args satisfy each script's own required-key guard verbatim (attack-design.js:14 repo/design_path/subject/out/models/round/schema_version, its subject's five fields from schema-validated catalog/attack/<instrument>.toml; rubric-audit.js:15 subject/hats/items/personas_path/models/out/round/schema_version). Preflight.main_script (Preflight.jl:792), the line the finding cited, maps only the four instrument entry points and is not this launch path, so its being unchanged is not evidence the defect survives. Tests assert the launch itself (test/coverage.jl:22 main([\"attack\",\"audit-changes\"])==0; test/rounds.jl:272,297 assert the printed call names each script), and docs match (docs/src/architecture.md:912-913, docs/src/index.md:48-53)."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/catalogues#1",
+      "verdict": "DISMISSAL-WRONG",
+      "evidence": "src/Scan.jl:351-353 — `id = row[\"id\"]; rule = row[\"rule\"]` … `for e in Ledger.entries(ledger, rule; scope = \"policy\")` … `e[\"target\"] == \"*\" && return (Hit[], length(hits), true)`. catalog/scans.toml:206-207 — `id = \"SCAN.DOI_CROSSCHECK\"` / `rule = \"RULE.CIT.FULL_INLINE\"`. policy/RULES.toml:432,437 — `id = \"RULE.CIT.DOI\"` … `check = [\"scan:SCAN.DOI_CROSSCHECK\"]`. ARCHITECTURE §12.A:2327 — \"the ledger's `scope = \"policy\"` entries and the scans' `rule` column cite these\".",
+      "what_would_bite": "A consumer records the documented waiver `id = \"RULE.CIT.DOI\", scope = \"policy\", target = \"*\"`. CFG.EXEMPTIONS accepts it (Doctor.jl:340, the id is in RULES.toml), EXEMPT.STALE passes it (Doctor.jl:380, target `*` returns true), and Sync.deviations (Sync.jl:104) renders it into .gbg/policy/deviations.md as a granted deviation — but Scan.apply_ledger looks policy entries up under the scalar row[\"rule\"] = RULE.CIT.FULL_INLINE only, so nothing matches and the DOI half of the hard scan (doi_crosscheck.jl's `require_doi` branch, \"a reference without a DOI or Open Library link on its title\") keeps failing the gate: a silently void waiver on the rule whose ONLY declared check is that scan. The mirror case over-reaches: a policy waiver on RULE.CIT.FULL_INLINE disables the whole scan and withdraws RULE.CIT.DOI enforcement nobody exempted. Same shape on SCAN.DEAD_REF (column RULE.DOC.NO_DEAD_REFS; RULE.CIT.NO_INACCESSIBLE unwaivable) and SCAN.API_PAGE_STRUCTURE (RULE.DOC.API_GROUPING waivable for its sibling HTML scans but not this one). The accepted remedy — a scans.toml header telling a reader to consult §12.B — never touches the engine that resolves waivers through the column, and the dismissal's mechanism (\"a SCALAR by schema\") is unbacked: schema/ holds no scans schema; scan_catalog() is a bare TOML.parsefile."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/schemas#1",
+      "verdict": "DISMISSAL-WRONG",
+      "evidence": "Only readers of cfg[\"docs\"]: retired_claims.jl:6, html_base_leak.jl:6, html_public_home.jl:11, Sync.jl:136 — never doctest; the ext does \"result = Documenter.makedocs(; kwargs...)\". latex_source_globs occurs only at schema/config.schema.json:441 and Init.jl:163; panel.js:86 hardcodes \"the docstrings under ${A.repo}/src/ and ${A.repo}/ext/, the pages under ${A.repo}/docs/src/\". §5.5's list names neither key.",
+      "what_would_bite": "PF's config (ARCHITECTURE:1241) sets latex_source_globs = [\"src/*.jl\", \"examples/*.jl\"]; `gbg preflight check-consistency` renders args with no source field (instruments/check-consistency/schema.json has no such property), so panel.js hands the latex-typesetter hat only the hardcoded src/, ext/, docs/src/, docs/ — examples/, the Literate surface where display math lives, is silently never read, while the hat is required to quote findings at their source file:line. Symmetrically, IT's docs.doctest = false (ARCHITECTURE:1316) is ignored: the class-S seed templates/make.jl.seed:14 passes doctest = true and the wrapper forwards kwargs verbatim, so doctests run anyway with no warning. The dismissal's rationale only half-holds: docs/make.jl is a consumer-owned seed, so doctest does have a competing home, but latex_source_globs has none — its would-be home is a hardcoded path list inside a Workflow script, which CLAUDE.md's core invariant forbids (\"No package string, path or round datum in a Workflow script\"), so that key is fixable in-round without touching any closed set. And §5.5 (read in full, ARCHITECTURE:1371-1386) names neither key, while ARCHITECTURE:2151-2154 lists both among admitted config keys, so \"dropping them is MAJOR under §5.5's closed non-configurable set\" is not supported by the cited text. Every sibling key of both tables has a reader (retired_claims, unexported_base_expected, admonition_titles, profile/hats/core/domain_hats/seed_catalog, design_docs_withheld at Rounds.jl:111 and Passes.jl:570); these two do not — that asymmetry is the finding, and no test asserts either key."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/over-rejection#3",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "test/coverage.jl:124 defines SPAN_IN_PROSE; grep shows it is read only in test/coverage.jl (147,159,184,186,196,201) — no src/, catalog/ or CLI path consumes it. Re-running the old regex (with `(?<!in )(?<!of )`) and the current one over all eleven scripts plus prelude.js, comments stripped as the test strips them: `new=0 old=0` for every file. All twelve pinned \"valid JavaScript is not a finding\" cases still no-match; the four must-catch prose forms match.",
+      "what_would_bite": "(none) The only legal JS newly flagged is a literal directly after the operators — `for (const c of \\`abc\\`)`, `x in \\`s\\`` — absent from the eleven frozen scripts, and the interpolated form `for (const x of \\`${a}b\\`)` stays exempt because the content class excludes `$`. SPAN_IN_PROSE lives only in the test, so such an edit fails loudly at Pkg.test() rather than shipping."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/claim-versus-edit#1",
+      "verdict": "UNSAFE",
+      "evidence": "c7db4e5 --stat: `templates/README.md | 8 ++++---`, `docs/src/guide/install.md | 2 ++` — neither named in the message, which does itemise \"config.md counts six varying values\". install.md:8 now defines \"A **consumer** is a package that pins this tool ... one of the four GBG science packages, or the tool itself\"; install.md:39: \"One consumer is routed differently ... the fixture\". policy/glossary.md:3 already defines Consumer.",
+      "what_would_bite": "The dismissal rests on \"both unlisted edits are individually sound\". templates/README.md's edit checks out (templates/SKILL.md.tmpl carries `<!-- gbg:managed ... -->` on line 6, after the YAML frontmatter; templates/queue-guard.sh.tmpl carries none). install.md's does not: a site reader meets a definition enumerating exactly five consumers at line 8 and, three paragraphs later at lines 39-41, \"One consumer is routed differently: a consumer pinned at `dev` that is not itself the tool's checkout — the fixture\" — a consumer the new sentence excludes. The same closed-vocabulary claim also gains a third home (policy/glossary.md:3, rendered at docs/src/guide/rules.md:647, now guide/install.md:8) with no link to the home, which is the class catalog/lanes/check-docs.toml's `one-home` lane exists to catch. \"Unfixable in place\" holds only for the pushed commit message; the prose the unmentioned edit put in the tree is editable today, and the dismissal never examined it against the page it landed on."
+    }
+  ],
+  "reopened": [
+    "2026-09-12-check-docs-01/catalogues#1",
+    "2026-09-12-check-docs-01/schemas#1",
+    "2026-09-12-audit-changes-01/claim-versus-edit#1"
+  ],
+  "dead": [],
+  "complete": false
+}
