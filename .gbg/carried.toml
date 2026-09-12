@@ -18,32 +18,36 @@ version = "1.0.0-rc.9"
 backlog = 9
 date = "2026-09-12"
 version = "1.0.0-rc.10"
+[[history]]
+backlog = 2
+date = "2026-09-12"
+version = "1.0.0-rc.11"
 
 [[carried]]
+confidence = "medium"
+locations = ["src/CLI/Passes.jl:10: \"...whether the diff swept it)...\" (inside the `class_surfaces` gloss)", "src/CLI/Demote.jl:11: \"...each marked `swept` when the fix pass's diff fixed the class there.\" (the only definition)"]
+id = "2026-09-12-check-docs-01/cold-reader#4"
+round = "2026-09-12-check-docs-01"
+description = "The module map bullets Passes immediately before demote, so a cold reader following the map meets the technical sense of 'swept' (an ordinary word for 'this class of defect was fixed at this surface too') in Passes' own docstring one step before demote's docstring spells it out. The gap is small and the meaning is largely recoverable from context ('whether the diff swept it'), so this is a minor instance of the same pattern as the two managed/pinned-file findings above, not a blocking one."
 first_carried = "2026-09-12T16:59:57"
 severity = "minor"
 lane = "cold-reader"
-confidence = "medium"
 last_carried = "2026-09-12T16:59:57"
-locations = ["src/CLI/Passes.jl:10: \"...whether the diff swept it)...\" (inside the `class_surfaces` gloss)", "src/CLI/Demote.jl:11: \"...each marked `swept` when the fix pass's diff fixed the class there.\" (the only definition)"]
 instrument = "check-docs"
 carries = 1
-id = "2026-09-12-check-docs-01/cold-reader#4"
 title = "\"swept\" is used in Passes' docstring one module before it is defined in Demote's"
-round = "2026-09-12-check-docs-01"
 type = "self-containment"
-description = "The module map bullets Passes immediately before demote, so a cold reader following the map meets the technical sense of 'swept' (an ordinary word for 'this class of defect was fixed at this surface too') in Passes' own docstring one step before demote's docstring spells it out. The gap is small and the meaning is largely recoverable from context ('whether the diff swept it'), so this is a minor instance of the same pattern as the two managed/pinned-file findings above, not a blocking one."
 [[carried]]
+confidence = "high"
+locations = ["instruments/check-docs/workflow/lanes.js:41-54 — findings.items title/description/locations carry no minLength/minItems", "instruments/check-consistency/workflow/panel.js:36-49 — same gap", "instruments/audit-changes/workflow/audit.js:33-50 — same gap", "schema/finding.schema.json — title minLength 8, description minLength 20, locations minItems 1", "src/CLI/Rounds.jl:580-586 — bank validates every finding against this schema and returns exit code 2 on the first mismatch"]
+id = "2026-09-12-check-docs-01/workflow-scripts#5"
+round = "2026-09-12-check-docs-01"
+description = "lanes.js, panel.js and audit.js each define their own JSON Schema constraining the structured object an agent returns per finding; in all three, title/description are plain strings with no minLength and locations has no minItems. But schema/finding.schema.json — the exact shape `gbg round bank` checks every finding against (Rounds.jl:580-586, refusing the bank with exit 2 on the first mismatch, 'after the whole panel and every witness have already been paid for') — requires title minLength 8, description minLength 20, and locations minItems 1. An agent can return a schema-valid finding under the launching script's own SCHEMA that the round's bank step then refuses — discovered only at the most expensive possible point."
 first_carried = "2026-09-12T16:59:57"
 severity = "major"
 lane = "workflow-scripts"
-confidence = "high"
 last_carried = "2026-09-12T16:59:57"
-locations = ["instruments/check-docs/workflow/lanes.js:41-54 — findings.items title/description/locations carry no minLength/minItems", "instruments/check-consistency/workflow/panel.js:36-49 — same gap", "instruments/audit-changes/workflow/audit.js:33-50 — same gap", "schema/finding.schema.json — title minLength 8, description minLength 20, locations minItems 1", "src/CLI/Rounds.jl:580-586 — bank validates every finding against this schema and returns exit code 2 on the first mismatch"]
 instrument = "check-docs"
 carries = 1
-id = "2026-09-12-check-docs-01/workflow-scripts#5"
 title = "The per-lane finding SCHEMA is looser than the shape `gbg round bank` enforces, so schema-valid output can still fail bank"
-round = "2026-09-12-check-docs-01"
 type = "operational"
-description = "lanes.js, panel.js and audit.js each define their own JSON Schema constraining the structured object an agent returns per finding; in all three, title/description are plain strings with no minLength and locations has no minItems. But schema/finding.schema.json — the exact shape `gbg round bank` checks every finding against (Rounds.jl:580-586, refusing the bank with exit 2 on the first mismatch, 'after the whole panel and every witness have already been paid for') — requires title minLength 8, description minLength 20, and locations minItems 1. An agent can return a schema-valid finding under the launching script's own SCHEMA that the round's bank step then refuses — discovered only at the most expensive possible point."
