@@ -69,6 +69,16 @@ number and exit-code claim on that lane's own surface, each discharged in `claim
 and the evidence that settled it. A claim that reads as true and is checked by nothing is the class these
 rounds kept returning; enumerating it is what turns reading into a procedure.
 
+**A third proposed mechanism was refused the same way, and is recorded so it is not re-proposed.** The
+design attack asked that each lane's `checked[]` be checked against its roster. Measured over all six
+closed check-docs rounds it misfires in both directions: where a roster exists the lanes already list it
+(`src`, 78 files, reported 72–78 path-like entries every round, so the check would mark the best-covered
+lane `:partial` for a 2–8% shortfall), and where coverage actually failed it is blind, since `family` —
+zero findings in all six rounds — is a cross lane carrying no files to compare against. The falsifiable
+version, the files a lane OPENED rather than the files it claims, needs a per-agent tool-call log that
+Workflow does not expose. What the gap did produce is the claim checklist above: the CLI supplies the
+enumeration, so a lane cannot under-enumerate its own denominator, only visibly fail to answer it.
+
 **A verification pass batches its lanes.** Each verifier ran one agent per lane, and every act agent read
 the whole fix-pass diff: in 2026-09-11-check-docs-02's first pass that was 255KB bought nine times, about
 half of the pass's 1.17M tokens. Lanes are now grouped into units of at most six findings (`batch` in the
