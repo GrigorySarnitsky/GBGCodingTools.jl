@@ -79,6 +79,11 @@ Tags and pushes `v<ver>` from the dev checkout. The arguments are:
 - `skip_tests` — skips `Pkg.test()`, the docs build and the deep doctor; for the self-tests of this
   verb only, never set by the CLI.
 
+- `root` — the checkout to release, the running package directory by default; the CLI never passes it.
+  A keyword because the verb read `pkgdir(GBGCodingTools)` directly and could only ever act on the real
+  checkout, which left it with no test at all — and that is how its `if !rc` branch stayed unreachable
+  until 2026-09-12. Every refusal below is a function of `root`.
+
 Refused (exit 2) unless: the tree is clean and on the configured branch; the tag is absent; `CHANGELOG.md`
 carries `## <ver> — `; `Project.toml`'s version equals the release version (the base version for a
 prerelease); `Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`); `gbg doctor --deep`
@@ -88,11 +93,11 @@ is green at the root; and, for a final release only, no round is open under `.gb
 nothing in the carry ledger holds it back (`carry_release_fails`). A tag is never moved or re-issued.
 Returns the exit code.
 """
-function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false)
+function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
+                 root::AbstractString = pkgdir(GBGCodingTools))
     m = match(r"^(\d+\.\d+\.\d+)(-rc\.(\d+))?$", ver)
     m === nothing && (println(io, "release: $ver is neither X.Y.Z nor X.Y.Z-rc.N"); return 2)
     base = m.captures[1]; rc = m.captures[2] !== nothing
-    root = pkgdir(GBGCodingTools)
     running_dev() || (println(io, "release: the dev checkout only"); return 2)
     cfg = Config.read(root)
     fails = String[]
@@ -100,7 +105,17 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false)
     branch = Git.run(root, "rev-parse", "--abbrev-ref", "HEAD")
     branch == cfg["git"]["branch"] || push!(fails, "on branch $branch, not $(cfg["git"]["branch"])")
     Git.run(root, "rev-parse", "-q", "--verify", "refs/tags/v$ver") === nothing || push!(fails, "tag v$ver exists — a tag is never re-issued")
-    occursin("## $ver — ", read(joinpath(root, "CHANGELOG.md"), String)) || push!(fails, "CHANGELOG.md has no `## $ver — <date>` entry")
+    # A NAMED refusal, never a crash. The exit contract is 0 clean, 1 substantive finding, 2 cannot
+    # evaluate, 3 crash; a bare `read` threw SystemError out of the verb — exit 3, with a backtrace — for
+    # a consumer that has simply not written a changelog yet, while every sibling condition here is a
+    # line in `fails` and exit 2. Found by giving this verb its first test (2026-09-12 work queue), and
+    # the same shape as src#1, where four audit lanes converged on a condition surfacing as a crash.
+    chlog = joinpath(root, "CHANGELOG.md")
+    if !isfile(chlog)
+        push!(fails, "CHANGELOG.md is absent")
+    else
+        occursin("## $ver — ", read(chlog, String)) || push!(fails, "CHANGELOG.md has no `## $ver — <date>` entry")
+    end
     pv = String(TOML.parsefile(joinpath(root, "Project.toml"))["version"])
     pv == base || push!(fails, "Project.toml version is $pv, the release is $base")
     if !rc

@@ -826,6 +826,35 @@ end
     @test length(G.RoundFiles.read_round(dir)["scripts_refreshed"]) == 2  # APPENDED, never overwritten
 end
 
+# `gbg release` had NO test at all, and that is how a branch which could never succeed survived nine
+# releases: it was UNTESTABLE as written, reading pkgdir(GBGCodingTools) directly, so it could only ever
+# act on the real checkout. It takes a `root` now, defaulting to the same thing. Every case here REFUSES
+# on purpose — the accepting path tags and pushes, and a test must never cut a tag — and each asserts on
+# the refusal's own MESSAGE, because `fails` accumulates and a bare exit 2 would pass for any reason at
+# all, which is the vacuity this item exists to end.
+@testset "gbg release refuses, and says which condition failed" begin
+    @test G.release("not-a-version"; io = devnull, skip_tests = true) == 2   # before any root is read
+    root = fixture_copy("release")
+    git(args...) = run(pipeline(setenv(`git -C $root -c user.email=t@t -c user.name=t $args`,
+                                       "HOME" => root, "PATH" => ENV["PATH"]); stdout = devnull, stderr = devnull))
+    git("init", "-q", "-b", "master"); git("add", "-A"); git("commit", "-q", "-m", "base")
+    # an ABSENT changelog is a named refusal, not a crash: a bare read threw SystemError out of the verb
+    # — exit 3 — where every sibling condition is a line in `fails` and exit 2. This test found that.
+    io0 = IOBuffer(); @test G.release("9.9.9"; io = io0, skip_tests = true, root) == 2
+    @test occursin("CHANGELOG.md is absent", String(take!(io0)))
+    write(joinpath(root, "CHANGELOG.md"), "# Changelog\n")
+    git("add", "-A"); git("commit", "-q", "-m", "changelog")
+    io = IOBuffer()
+    @test G.release("9.9.9"; io, skip_tests = true, root) == 2
+    out = String(take!(io))
+    @test occursin("CHANGELOG.md has no", out)          # present, but carries no 9.9.9 entry
+    @test occursin("Project.toml version is", out)      # nor is its version 9.9.9
+    # a dirty tree is its own refusal, named separately
+    write(joinpath(root, "CHANGELOG.md"), "## 9.9.9 — 2026-01-01\n")
+    io2 = IOBuffer(); @test G.release("9.9.9"; io = io2, skip_tests = true, root) == 2
+    @test occursin("the tree is not clean", String(take!(io2)))
+end
+
 @testset "round lifecycle" begin
     root = fixture_copy("round")
     cfg = G.Config.read(root)
