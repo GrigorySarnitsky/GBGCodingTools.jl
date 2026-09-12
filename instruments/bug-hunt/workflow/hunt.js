@@ -32,7 +32,7 @@ const CANDIDATE_SCHEMA = {
       properties: {
         kind: { type: 'string', enum: ['runtime', 'architecture', 'api-semantics'] },
         severity: { type: 'string', enum: ['blocker', 'major', 'minor'] },
-        title: { type: 'string', description: 'one line, the defect not the location' },
+        title: { type: 'string', minLength: 8, description: 'one line, the defect not the location' },
         file: { type: 'string' },
         line: { type: 'integer' },
         mechanism: { type: 'string', description: 'WHY it is wrong — the causal chain, not a restatement' },
@@ -48,7 +48,7 @@ const CANDIDATE_SCHEMA = {
 const VERDICT_SCHEMA = {
   type: 'object', additionalProperties: false,
   properties: {
-    title: { type: 'string' },
+    title: { type: 'string', minLength: 8 },
     verdict: { type: 'string', enum: ['REPRODUCED', 'NOT-REPRODUCED', 'WITNESS-WRONG', 'NO-WITNESS-POSSIBLE', 'EVIDENCED', 'NOT-A-DEFECT', 'ALREADY-COVERED', 'BLOCKED'] },
     witness_path: { type: 'string', description: 'the banked .jl witness (REPRODUCED and BLOCKED); empty otherwise' },
     observed: { type: 'string', description: 'the ACTUAL evidence — the failing @test line as printed, or the two quoted divergent blocks; <= 60 words' },
