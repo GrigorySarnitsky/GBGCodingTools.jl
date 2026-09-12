@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-audit-changes-02",
+  "lane": "executing",
+  "verdict": "CONCERNS",
+  "checked": [
+    "RE-RAN every measurement claim the new comments assert. `src/GBGCodingTools.jl contributed ZERO checklist items until it was added` (Preflight.jl:339) REPRODUCES exactly: old regexes 0 items, new regexes 1, the new-only hit being src/GBGCodingTools.jl:28 'the exit contract is 0 clean'.",
+    "`three scans enforce two apiece (SCAN.API_PAGE_STRUCTURE, SCAN.DEAD_REF, SCAN.DOI_CROSSCHECK)` (Scan.jl rules_for_scan docstring) REPRODUCES exactly: ran rules_for_scan over all 44 catalogue rows — 3 multi-rule scans, exactly those three; 0 scans whose catalogue column is absent from its own check array; rules_register() = 95 rows.",
+    "`exit contract alone occurs on 12 lines corpus-wide` (Preflight.jl:341): measured 13 on the lane-surface corpus at HEAD (201 files, 22799 eligible lines) and 30 repo-wide; this diff itself adds 3 of them (Preflight.jl:337, :341, Release.jl:94), so the pre-diff figure is 10, not 12.",
+    "`a quantifier alone matches 2526 lines of this corpus` (Preflight.jl:342): measured 2268 filtered / 2354 unfiltered over the lane corpus, 5000 repo-wide. No filter variant I tried yields 2526.",
+    "MEASURED the narrowing ratio the same comment rests on: quantifier AND tool-id = 267 of 2268 lane-corpus lines (11.8%) — `it is a fraction of that` is TRUE.",
+    "MEASURED the per-lane claim-checklist burden the quantifier class creates, using the real slicing preflight passes (`range = get(l, \"lines\", nothing)`, Preflight.jl:621): total 531 -> 776 items (1.46x); rationale-3 83 -> 171, rationale-2 58 -> 103, src 167 -> 227, schemas 3 -> 7.",
+    "RAN the new CLAIM_EXIT third alternative over the corpus: 355 -> 364 matching lines, 9 new-only, all of them genuine `exit contract is 0 …` phrasings (IMPLEMENTATION.md:267, verbs.md:7, GBGCodingTools.jl:28, Fleet.jl:9 …) — no false-positive padding.",
+    "RAN Git.run's strip -> rstrip over 12 command shapes the tool actually issues (status --porcelain both ways, rev-parse x4, log, diff --stat, diff --name-only, describe, tag --list, rev-list --count): exactly ONE output changes, `diff --stat` (leading \" \" now kept), plus the porcelain case the fix targets. The widening is real but narrow, and no caller parses by leading position. No finding.",
+    "RAN SCAN.PROSE_SHAPE against the re-baselined docs/prose_shape.csv at HEAD: 0 hits over 407 units — the CSV matches the tree, and the ratchet's own message sanctions a deliberate re-baseline for new content. The four raised ceilings (Git.run 25->158, release 178->242, apply_ledger 134->290, claim_checklist 155->159) are all under the 120-word paragraph cap. No finding.",
+    "RAN every new entry point as its own documentation describes: G.admitted_rounds(cfg) returns a String (0 entries here); G.release(\"not-a-version\"; skip_tests=true) = 2; release_fails(cfg, root, ver, base, rc) and release(ver; io, skip_tests, root) resolve with the documented signatures; rules_for_scan, rules_register, Rounds.refresh_scripts all defined and callable. None throws on its documented call.",
+    "RAN the apply_ledger widening against the defects fixture: SCAN.DOI_CROSSCHECK 2 hits -> 0 (exempted 2) on a RULE.CIT.DOI waiver, SCAN.DEAD_REF 2 -> 0 on RULE.CIT.NO_INACCESSIBLE, SCAN.API_PAGE_STRUCTURE 3 -> 0 on RULE.DOC.API_GROUPING; 41 of 44 scans unchanged.",
+    "PROBED close's new staleness test with an unreachable recorded head: changed_paths(root, \"000…0..HEAD\", covered) = String[] and cat-file -e = nothing, so close reads it as NOT stale.",
+    "RESOLVED source_globs through the real renderer for three config shapes: [] -> [\"src\",\"ext\",\"docs/src\",\"docs\"]; [\"src/*.jl\"] -> [\"src/*.jl\"]; [\"src/*.jl\",\"examples/*.jl\"] -> unchanged.",
+    "GREPPED the writers of rec[\"build\"]: exactly one, Rounds.jl:323 in `build`. prepare's own builds (Rounds.jl:152 consistency, :198 docs) call run_under_round directly and record nothing.",
+    "READ the norm at base for each edited contract: base Rounds.jl:150-166 (prepare proceeded past skipped seed classes), base Passes.close (no build condition), base panel.js:86 (the four literal surfaces), base apply_ledger (`for e in Ledger.entries(ledger, rule; …)` over the column alone), base git grep of the docs-instrument pair (4 literal sites, not 6).",
+    "CHECKED whether the prepare refusal's own advice is actionable: Sync.config_sha hashes config.toml, hats/*.toml and exemptions.toml only — not .gbg/seeds.toml — and seed_catalog_sha is stamped (Preflight.jl:145) but compared nowhere, so re-anchoring and re-preparing is not blocked by guard."
+  ],
+  "candidates_found": 12,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "close gained a build precondition no documented procedure satisfies; the tests were amended to supply it instead",
+      "locations": [
+        "src/CLI/Passes.jl:1159-1176 — the new `if inst in Sync.DOCS_INSTRUMENTS` block in close",
+        "src/CLI/Rounds.jl:323 — the only writer of rec[\"build\"]",
+        "src/CLI/Rounds.jl:152 and :198 — prepare's own builds, which record nothing",
+        "test/rounds.jl:546, :659, :723 — \"build\" spliced into three existing round records",
+        "test/rounds.jl:1018-1022 — the lifecycle testset writes the record by hand",
+        "instruments/check-docs/PROTOCOL.md:51-62 — step 7 (close), unchanged by this diff",
+        "docs/src/guide/rounds.md:24 and :39 — the lifecycle, unchanged"
+      ],
+      "before": "close's conditions ran straight from `isempty(dirty) || push!(fails, \"the round's files are not committed: …\")` to `st = Preflight.stamps(cfg; record = rec)` — no build was consulted, and no round record carried a `build` key.",
+      "after": "`if inst in Sync.DOCS_INSTRUMENTS` … `b === nothing` → `push!(fails, \"no docs build is recorded for this round — gbg round build $round\")`, where rec[\"build\"] is written by `Rounds.build` and by nothing else.",
+      "why_it_matters": "Every check-docs and check-consistency round now refuses to close unless `gbg round build <round>` was run as a separate verb. prepare's build does not count — it calls run_under_round directly and records nothing — and neither PROTOCOL.md nor the rounds guide was updated to name the step, while instruments are frozen mid-round by the core invariant. A round already open at this upgrade, and any round run by the book afterwards, hits a refusal at close that its own protocol never told it to prevent. The oracle was moved instead: four existing test round records gained `\"build\" => Dict{String,Any}(\"code\" => 0, …)` in this same commit, one with the comment \"The record is written here rather than by calling `Rounds.build`\", so the suite is green over a precondition no operator procedure produces.",
+      "justified": "no",
+      "previously_worked": "yes",
+      "description": "The underlying defect is real — a red docs build rode through two graded passes of 2026-09-12-check-docs-01 — but the fix puts the new obligation on a verb the protocol treats as optional (\"Builds and tests during the pass go through `gbg round build|test <round>`\") and leaves the mandatory path silent. Either prepare and pass open should record the build they already run, or the frozen protocol and rounds guide owe the new step. As it stands the only artefacts that know about the requirement are close itself and the tests this commit edited.",
+      "evidence": "grep for writers of rec[\"build\"] returns exactly one site: `rec[\"build\"] = Dict{String,Any}(\"code\" => code, \"head\" => something(Git.head(cfg[\"root\"]), \"0\"^40), \"at\" => timestamp())` (Rounds.jl:323). PROTOCOL.md step 7 reads \"`gbg round close <round>` when no id is open, no lane is dead, the files are committed and the stamps are unchanged\" — no build. The diffstat shows instruments/check-docs/PROTOCOL.md changed by 5 lines, all of them the claim-checklist sentence."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "latex_source_globs repurposed as the hat's whole source surface: a consumer that set it loses three of the four surfaces it used to read",
+      "locations": [
+        "src/CLI/Preflight.jl:730-731 — `globs = String.(get(…, \"latex_source_globs\", String[]))`; `a[\"source_globs\"] = isempty(globs) ? [\"src\", \"ext\", \"docs/src\", \"docs\"] : globs`",
+        "instruments/check-consistency/workflow/panel.js:86",
+        "instruments/check-consistency/schema.json:169-176",
+        "test/coverage.jl:106-126 — the new testset",
+        "schema/config.schema.json:441-443 — the key's whole declared contract"
+      ],
+      "before": "`if (needs.includes('source')) parts.push(`ALSO the AUTHORED SOURCE …: the docstrings under ${A.repo}/src/ and ${A.repo}/ext/, the pages under ${A.repo}/docs/src/, and the rationale documents under ${A.repo}/docs/.`)`",
+      "after": "`… under: ${A.source_globs.map(g => A.repo + '/' + g).join(', ')}`, fed by `isempty(globs) ? [\"src\", \"ext\", \"docs/src\", \"docs\"] : globs`.",
+      "why_it_matters": "Resolved through the real renderer: `latex_source_globs = [\"src/*.jl\"]` yields `source_globs = [\"src/*.jl\"]` — ext/, docs/src/ and docs/ are gone. ARCHITECTURE at BASE documents the fleet's consumers configured exactly that way (§ line 1241 `latex_source_globs = [\"src/*.jl\", \"examples/*.jl\"]`, line 1353 `latex_source_globs = [\"src/*.jl\"]`), so for those packages a `needs: source` hat silently stops seeing the API pages and the rationale documents it is still required to quote at file:line. The rendered instruction also becomes a literal glob where a directory used to be (`<repo>/src/*.jl`), which no Read/Grep call the hat makes will open as written.",
+      "justified": "no",
+      "previously_worked": "yes",
+      "description": "The defect was a path list hardcoded in a Workflow script, which the core invariant forbids. Lifting it into the CLI is the fix. Adopting a differently-named key — whose entire declared contract in schema/config.schema.json is `\"$ref\": \"#/$defs/strlist\", \"default\": []`, and whose name says LaTeX sources — as the definition of the hat's complete authored-source surface is wider than the defect, and it changes behaviour for every consumer that already set the key for the purpose its name states. The tool's own config is `[]`, which takes the default branch, so its own rounds see nothing of this.",
+      "evidence": "Measured: `latex_source_globs=String[] -> source_globs=[\"src\",\"ext\",\"docs/src\",\"docs\"]`; `[\"src/*.jl\"] -> [\"src/*.jl\"]`; `[\"src/*.jl\",\"examples/*.jl\"] -> [\"src/*.jl\",\"examples/*.jl\"]`. The new test asserts only `@test !isempty(a[\"source_globs\"]) && a[\"source_globs\"] isa AbstractVector` against `fixture_config()`, which takes the default branch — the configured branch, where the surface shrinks, is never exercised."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "a policy waiver now silences two scans it was inert on, and the docstring books that hazard as inherited",
+      "locations": [
+        "src/Scan.jl:405-407 — `enforced = unique!(vcat(String(row[\"rule\"]), rules_for_scan(id)))`, `for rule in enforced, e in Ledger.entries(ledger, rule; scope = \"policy\")`",
+        "src/Scan.jl:383-395 — the docstring's \"known limit\" paragraph",
+        "test/scans.jl:166-180 — the new testset, DOI only"
+      ],
+      "before": "`id = row[\"id\"]; rule = row[\"rule\"]` / `for e in Ledger.entries(ledger, rule; scope = \"policy\")` — the loop ran over the catalogue's one canonical rule.",
+      "after": "`enforced = unique!(vcat(String(row[\"rule\"]), rules_for_scan(id)))` / `for rule in enforced, e in Ledger.entries(ledger, rule; scope = \"policy\")` — a target-`*` waiver on ANY enforced rule returns `(Hit[], length(hits), true)`.",
+      "why_it_matters": "Measured against the defects fixture: a `scope = \"policy\"`, `target = \"*\"` waiver on RULE.CIT.NO_INACCESSIBLE now takes SCAN.DEAD_REF from 2 hits to 0, and one on RULE.DOC.API_GROUPING takes SCAN.API_PAGE_STRUCTURE from 3 to 0. Both were inert before. A consumer whose exemptions.toml already carries either waiver — accepted by CFG.EXEMPTIONS, kept by EXEMPT.STALE, rendered into deviations.md as granted — silently loses all dead-link or all API-page enforcement at its next scan, including the rule it never waived. Nothing announces it: `disabled = true` reads as a granted deviation.",
+      "justified": "unclear",
+      "previously_worked": "yes",
+      "description": "The reported defect was one rule: RULE.CIT.DOI, whose only declared check is SCAN.DOI_CROSSCHECK, so its documented waiver was void. Fixing that case is right. Applying the same resolution to all 44 scans hands two further rules a power they did not have, and those are exactly the mirror case the docstring calls \"NOT fixed and a known limit\" — written as though the hazard pre-existed, when for RULE.CIT.NO_INACCESSIBLE and RULE.DOC.API_GROUPING this change creates it. The new test pins the DOI case and the negative case (an unrelated rule waives nothing); neither of the two newly-empowered siblings is asserted on.",
+      "evidence": "Ran: `SCAN.DEAD_REF hits bare = 2 | waiver on SIBLING RULE.CIT.NO_INACCESSIBLE -> hits 0, exempted 2`; `SCAN.API_PAGE_STRUCTURE hits bare = 3 | waiver on SIBLING RULE.DOC.API_GROUPING -> hits 0, exempted 3`. Docstring: \"The mirror case is NOT fixed and is a known limit: a waiver on either rule still disables the WHOLE scan, so it withdraws enforcement of a sibling rule the consumer never exempted.\" 41 of 44 scans are unaffected."
+    },
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "close's new staleness test reads an unreachable build head as fresh — the sibling it cites guards that exact case",
+      "locations": [
+        "src/CLI/Passes.jl:1163-1170 — `moved = Git.changed_paths(root, \"$(b[\"head\"])..HEAD\", Preflight.covered_paths(cfg))`",
+        "src/CLI/Passes.jl:1157-1158 — the comment claiming parity with audit_after_code",
+        "src/CLI/Passes.jl:1240-1241 — the sibling, with the guard",
+        "src/CLI/Rounds.jl:323 — `something(Git.head(cfg[\"root\"]), \"0\"^40)`"
+      ],
+      "before": "No staleness test existed on a build, because no build verdict was recorded. The cited sibling reads: `Git.run(root, \"cat-file\", \"-e\", a[\"head\"] * \"^{commit}\") === nothing ? push!(fails, \"staleness UNCHECKABLE: the audited head $(first(a[\"head\"], 8)) is unreachable\") : (isempty(stale) || push!(fails, …))`.",
+      "after": "`moved = Git.changed_paths(root, \"$(b[\"head\"])..HEAD\", Preflight.covered_paths(cfg))` with no reachability check, under the comment \"The staleness test is the one `audit_after_code` uses, so a green build from before the round's last fix is not taken for a current one.\"",
+      "why_it_matters": "Measured: `changed_paths(root, \"000…0..HEAD\", covered)` returns `String[]` and `cat-file -e` on that sha returns `nothing`, so an unverifiable head passes as not stale — the failure mode the sibling explicitly names as UNCHECKABLE. The hole is reachable by construction, not hypothetically: `build` itself writes `something(Git.head(cfg[\"root\"]), \"0\"^40)`, so a consumer outside a repository records the all-zero sha, and an amended or rebased round commit makes a real recorded head unreachable too. In both cases close accepts a build whose currency it could not establish, which is the exact thing this guard was added to stop.",
+      "justified": "yes",
+      "previously_worked": "no",
+      "description": "The guard is new and warranted; the defect is that it is narrower than its own comment claims. Git.changed_paths swallows a failed git invocation (`something(run(…), \"\")`), so an unresolvable range is indistinguishable from a clean one. The sibling four hundred lines down already models the right shape — check reachability, and refuse with a named UNCHECKABLE fail — and the comment asserts parity with it that the code does not have.",
+      "evidence": "Ran against the live repository: `changed_paths(root, \"000…0..HEAD\", covered_paths) = String[]`, `cat-file -e on it = nothing`, `=> close reads that as NOT stale: true`. Git.jl:147: `changed_paths(root, range, paths) = String.(filter(!isempty, split(something(run(root, \"diff\", \"--name-only\", range, \"--\", paths...), \"\"), '\\n')))`."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "the quantifier class enlarges every lane's mandatory checklist by 46%, a burden the affordability comment never measures",
+      "locations": [
+        "src/CLI/Preflight.jl:342-347 — CLAIM_QUANTIFIER, CLAIM_TOOL_ID and the affordability comment",
+        "src/CLI/Preflight.jl:401-406 — the tagging in claim_checklist",
+        "catalog/lanes/check-docs.toml:12 — the brief that makes each item compulsory",
+        "instruments/check-docs/PROTOCOL.md:19-21"
+      ],
+      "before": "\"every CITED NUMBER and every EXIT-CODE CLAIM it found … Each one is a claim you MUST discharge … An item you leave out of `claims_checked[]` reads as an item you did not check.\"",
+      "after": "\"every CITED NUMBER, every EXIT-CODE CLAIM and every QUANTIFIER CLAIM it found, with its file and line, tagged `[count]`, `[exit]` or `[quantifier]`\" — same compulsory discharge, unchanged finding_cap and unchanged economy default.",
+      "why_it_matters": "Measured with the slicing preflight actually passes: the thirteen check-docs lanes go from 531 compulsory verdicts to 776 (1.46x). rationale-3 doubles, 83 -> 171; rationale-2 58 -> 103; src 167 -> 227. The lanes run at economy by default, and an item omitted from claims_checked[] is read as unchecked, so the change raises the floor under every lane without raising a budget anywhere — the plausible failure is a lane that discharges the checklist thinly or truncates it, which is indistinguishable in the record from a lane that checked everything.",
+      "justified": "yes",
+      "previously_worked": "yes",
+      "description": "The class itself is well motivated — two of five planted seeds were quantifier mutations and both were missed — and the narrowing does work: 267 of 2268 quantifier-bearing lines survive the tool-identifier conjunction, so the comment's \"it is a fraction of that\" is true as a ratio. But the ratio is not the cost. The number that governs whether the class is affordable is the per-lane discharge count, and it is nowhere measured in the change set; I report it here because nothing else in the round will.",
+      "evidence": "Ran claim_checklist's own predicate per lane with `range = get(l, \"lines\", nothing)` as Preflight.jl:621 passes it — old 531 / new 776, factor 1.46; rationale-3 old 83 new 171 (+88 quantifier). Narrowing measured separately: 2268 quantifier-alone lines on the lane corpus, 267 after the AND with CLAIM_TOOL_ID."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "prepare turns a printed warning into a hard refusal and leaves its own now-dead skipped-classes branch standing",
+      "locations": [
+        "src/CLI/Rounds.jl:161-168 — the new refusal in the check-consistency path",
+        "src/CLI/Rounds.jl:170 — the surviving unreachable ternary",
+        "src/CLI/Rounds.jl:248-257 — the same refusal in seed_docs_corpus!"
+      ],
+      "before": "`plan, skipped = Seeds.select(cat, f, rec[\"seed_salt\"])` / `f2, s2 = Seeds.plant(f, s, plan)` / `println(io, \"prepare: $(length(plan)) seed(s) planted (salt …)\", isempty(skipped) ? \"\" : \"; skipped classes (anchor absent): \" * join(skipped, \", \"))` — prepare reported the skipped classes and proceeded.",
+      "after": "`if !isempty(skipped)` … `return 2`, with the same println still carrying `isempty(skipped) ? \"\" : \"; skipped classes (anchor absent): \" * join(skipped, \", \")` on the line below, now unreachable.",
+      "why_it_matters": "A seeded round whose catalogue has one rotted anchor can no longer be prepared at all, where before it prepared and said so. The refusal fires after the docs build has run and the manuscripts have been consolidated (consistency) or after 00-scans has been banked (docs), so the work is done and discarded. It is recoverable — I checked that re-anchoring is not blocked, since Sync.config_sha covers config.toml, hats and exemptions.toml but not .gbg/seeds.toml, and seed_catalog_sha is stamped but compared nowhere — so the cost is a re-prepare, not a dead round.",
+      "justified": "unclear",
+      "previously_worked": "yes",
+      "description": "The reasoning is sound: a skipped class is UNDEFINED in recall and narrows the denominator silently, and 2026-09-12-check-docs-01 measured 5 of 6 that way. But the defect is the silence, and the change set had a cheaper answer available — record the skipped classes in ROUND.toml the way this same diff records builds and script refreshes — instead of refusing a round that can still measure five of six classes honestly. The ternary left dangling one line below the new refusal is the evidence the edit stopped at the first branch that made the symptom go away.",
+      "evidence": "Base Rounds.jl:158-164 shows the old flow with no refusal. At HEAD the refusal returns 2 above a println whose `isempty(skipped)` arm can now only ever be the empty string. In seed_docs_corpus! the earlier `isempty(plan)` message's `(skipped: …)` suffix remains reachable, which is why only the one branch is called dead."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "three of the new comments' cited measurements do not reproduce, and one counts two homes this diff created",
+      "locations": [
+        "src/CLI/Preflight.jl:341 — \"`exit contract` alone occurs on 12 lines corpus-wide\"",
+        "src/CLI/Preflight.jl:342 — \"A quantifier alone matches 2526 lines of this corpus\"",
+        "src/CLI/Sync.jl:26-30 — \"The pair was written out at SIX sites (DocLints twice, Doctor, Preflight, Release, Passes)\"",
+        "src/CLI/Sync.jl:31 — const DOCS_INSTRUMENTS"
+      ],
+      "before": "No such claims existed; CLAIM_EXIT had two alternatives and no comment, and the docs-instrument pair was written literally at four sites in src/ at base.",
+      "after": "\"`exit contract` alone occurs on 12 lines corpus-wide, most of them bare mentions\"; \"A quantifier alone matches 2526 lines of this corpus\"; \"The pair was written out at SIX sites (DocLints twice, Doctor, Preflight, Release, Passes), which is the one-concept-many-homes shape the `one-home` lane exists to catch\".",
+      "why_it_matters": "Each of these is a number a later reader will take as measured. `exit contract` measures 13 on the lane corpus at HEAD and 30 repo-wide, and this diff adds three of those lines itself, so the figure the comment justifies its regex with is 10, not 12. The quantifier figure measures 2268 (filtered) or 2354 (unfiltered) on the lane corpus and 5000 repo-wide — no variant gives 2526. And the SIX sites include Release.jl:70 and Passes.jl:1160, both of which are code this same change set wrote, so the duplication a reader is told the one-home lane should have caught was two-thirds pre-existing and one-third self-inflicted.",
+      "justified": "unclear",
+      "previously_worked": "no",
+      "description": "None of this moves behaviour; the constant is right and the regex is right. It matters because this lane exists precisely because a measurement written in a comment gets certified by readers. Two of the four measurements in these comments do reproduce exactly — the ZERO checklist items from src/GBGCodingTools.jl, and the three multi-rule scans — which is what makes the other three worth naming rather than dismissing as rounding.",
+      "evidence": "git grep at base 94d4711 for '\"check-docs\", \"check-consistency\"' over src ext test: DocLints.jl:49, :50, Doctor.jl:590, Preflight.jl:169 — four sites; Release.jl and Passes.jl do not appear, because admitted_rounds and the close build gate are added by this diff. Measured counts: exit-contract 13 lane corpus / 30 repo; quantifier 2268 filtered / 2354 unfiltered / 5000 repo."
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+# ROUND.toml — written by the gbg round verbs; never edited by hand (ARCHITECTURE §6.1)
+tool_tree_sha = "258b9e9003e3c6546c9c1954de0fa577383acfcf"
+findings_sha = "3a5a4cebf4c7a360db314686b16ab207ce59a1f3888eb490d6f13aeb1c1e56f9"
+strength = "economy"
+round = "2026-09-12-audit-changes-02"
+opened = "2026-09-12T20:20:21"
+banked = "2026-09-12T20:41:13"
+tool_version = "dev+ec3e144"
+passes = 1
+head = "ec3e14472f58743d96c5ae9d50170d07c88d117d"
+model_hint = "sonnet"
+hostname = "Aiporetne"
+seed_catalog_sha = "24dfd0798db50487a5b2e1ee49c81e21e5fad0648154fae91ea044cd6c78392a"
+config_sha = "e0b71456c67447f7354485829d858e9c16003ae1e6e77a88bb2d82d5ada3add8"
+dead_lanes = []
+cost = "economy"
+tool_rev = "ec3e14472f58743d96c5ae9d50170d07c88d117d"
+instrument = "audit-changes"
+base = "94d4711e77535ee9f86e3a6c698144f765dc1855"
+catalog_sha = "2b11404da2f8593c0f5e77cc6ce4c90d099b91ac6cc3608417e11023d98f72d3"
+schema_version = 1
+
+[[roster]]
+key = "free-reader"
+substrate = "code"
+anchor = false
+[[roster]]
+key = "executing"
+substrate = "code"
+anchor = true
+[[roster]]
+key = "under-rejection"
+substrate = "code"
+anchor = true
+[[roster]]
+key = "backend-portability"
+substrate = "code"
+anchor = false
+[[roster]]
+key = "behaviour-change"
+substrate = "code"
+anchor = true
+[[roster]]
+key = "over-rejection"
+substrate = "code"
+anchor = true
+[[roster]]
+key = "public-contract"
+substrate = "code"
+anchor = false
+[[roster]]
+key = "numerics"
+substrate = "code"
+anchor = false
+[[roster]]
+key = "invariants"
+substrate = "code"
+anchor = false
+[[roster]]
+key = "claim-versus-edit"
+substrate = "code"
+anchor = false
+
+[lane_shas]
+invariants = "023d2b52cabab657e2581152b24a08ef878d77c5dbd3a7b44086207cce6a9f9e"
+behaviour-change = "a5c4637637f6d8790c7bc11b88c3e8935254d7d70646569b812b83e865db27d0"
+executing = "d50315100db00b0484e0b0b57dca34bb254e8fb47dbb6c6be23b071c457a4e19"
+numerics = "71e56a8eb5cd61245c2abcfe8ec257e5e627d5393d1aeffabfc35a15d30f0504"
+backend-portability = "7f279ca74d9a65f35d4456effb8f16a950e766d9519daff20545119f000da03e"
+public-contract = "702482f7cf14e758e0a70a864f473325a6e08191ed0986286055beb9eaa7483c"
+claim-versus-edit = "b3edfc0ec7cccb878a31fec52deef3145f8b695704014b8a680089963d3d949a"
+under-rejection = "31a3429591d515ba933db30fed6caf0b3e72ae04ef1c684f83f33d6f2ec56284"
+over-rejection = "0514d08f5b2066e257e90cee71363ba504e6a2f28331068b31305a39ab039644"
+free-reader = "8e36d9720e37d1bde2f5eb8c00951c31747663567c62f6f4177f01f1ccc61325"

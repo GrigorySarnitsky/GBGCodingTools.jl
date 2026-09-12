@@ -1,0 +1,18 @@
+{
+    "statuses": {
+        "invariants": "truncated",
+        "behaviour-change": "truncated",
+        "executing": "truncated",
+        "numerics": "empty",
+        "backend-portability": "empty",
+        "public-contract": "live",
+        "claim-versus-edit": "truncated",
+        "under-rejection": "truncated",
+        "over-rejection": "truncated",
+        "free-reader": "live"
+    },
+    "suspect_hats": [
+    ],
+    "recall": {
+    }
+}

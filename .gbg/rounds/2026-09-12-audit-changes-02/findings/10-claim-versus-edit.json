@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-audit-changes-02",
+  "lane": "claim-versus-edit",
+  "verdict": "CONCERNS",
+  "checked": [
+    "Every commit in claims.txt matched against its corresponding hunk(s) in diff.patch, file by file: catalog/lanes/check-docs.toml, docs/prose_shape.csv, instruments/check-consistency/{schema.json,workflow/panel.js}, instruments/check-docs/{PROTOCOL.md,schema.json}, schema/round.schema.json, src/CLI/{Doctor,Git,Passes,Preflight,Release,Rounds,Sync}.jl, src/DocLints.jl, src/Scan.jl, and the five touched test/ files",
+    "13cd1e2 'Sync.DOCS_INSTRUMENTS names the docs-instrument pair once, for all six sites' — grepped the current tree for the literal tuple ('check-docs','check-consistency') in both orders to confirm whether all six pre-existing sites were actually migrated",
+    "1028b7d 'A policy waiver now covers every rule a scan enforces' — read apply_ledger/rules_for_scan/rules_register in full and cross-checked the new rules_register()'s own docstring claim ('One home, too: the register was parsed in two places in Doctor.jl') against Doctor.jl's current source",
+    "f64b542 'A seed class whose anchor has rotted now refuses the round instead of shrinking the denominator' — traced control flow in both Rounds.prepare (check-consistency branch) and Rounds.seed_docs_corpus! (check-docs) to check the guard is reached and nothing downstream still depends on the old behaviour",
+    "52ddd98 Git.run strip→rstrip — enumerated every Git.run call site in src/ to check the widened (generic, not porcelain-only) fix doesn't change behaviour for any other caller",
+    "eda6a44 / 6bf4571 build-recording and scripts-refresh additions to schema/round.schema.json, Rounds.jl, Passes.jl — checked every existing test/rounds.jl fixture that reaches Passes.close for a check-docs/check-consistency round now carries the new required 'build' key, so the new close() refusal doesn't silently break a previously-passing fixture",
+    "9483368 / ec3e144 the release() / release_fails() split and the CHANGELOG.md crash-to-refusal fix — diffed the full pre-change release() body against the post-change release_fails()+release() pair line by line to confirm no other refusal condition moved, reordered or dropped",
+    "17e1a25 / 5bd0038 source_globs — confirmed the new default fallback list ['src','ext','docs/src','docs'] is byte-for-byte the same corpus the old hardcoded panel.js string named, so no default-consumer behaviour changed",
+    "a325489 / 22cb671 / 48371c2 CLAIM_EXIT / CLAIM_QUANTIFIER / CLAIM_TOOL_ID and the quantifier-claim documentation — checked catalog/lanes/check-docs.toml, PROTOCOL.md and schema.json all describe the same three claim kinds the code now emits, and that test/coverage.jl's new assertions test the brief/schema/protocol text rather than only the code",
+    "docs/prose_shape.csv re-baselines (a3b72d0, 957e671, d84a1c0) — matched every changed row to a docstring actually grown by this diff (Git.run, Preflight.claim_checklist, Release.release/admitted_rounds, Rounds.refresh_scripts, Scan.apply_ledger/rules_for_scan/rules_register); no row changed without a corresponding docstring edit in the same diff"
+  ],
+  "candidates_found": 4,
+  "findings": [
+    {
+      "type": "structure",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Two 'one home' consolidation claims are only partly done; the old duplicate sites survive untouched",
+      "locations": [
+        "src/CLI/Sync.jl:26-31 (DOCS_INSTRUMENTS definition and its own comment)",
+        "src/CLI/Passes.jl:549 (unconverted)",
+        "src/CLI/Passes.jl:711 (unconverted)",
+        "src/Scan.jl:88-98 (rules_register() docstring claim)",
+        "src/CLI/Doctor.jl:333 (unconverted)",
+        "src/CLI/Doctor.jl:503 (unconverted)"
+      ],
+      "before": "Sync.jl's new comment on DOCS_INSTRUMENTS: 'The pair was written out at SIX sites (DocLints twice, Doctor, Preflight, Release, Passes), which is the one-concept-many-homes shape the `one-home` lane exists to catch: adding a docs instrument, or retiring one, meant finding all six.' Scan.jl's new rules_register() docstring: 'One home, too: the register was parsed in two places in `Doctor.jl` and nowhere else, and resolving a waiver needed a third.'",
+      "after": "src/CLI/Passes.jl:549 and :711 still read `if inst in (\"check-consistency\", \"check-docs\")` — the exact literal pair Sync.DOCS_INSTRUMENTS was introduced to replace — unchanged by this diff. src/CLI/Doctor.jl:333 (`known_rule_ids() = Set(r[\"id\"] for r in TOML.parsefile(joinpath(pkgdir(GBGCodingTools), \"policy\", \"RULES.toml\"))[\"rule\"])`) and :503 (`rules = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), \"policy\", \"RULES.toml\"))[\"rule\"]`) are byte-identical to base — neither was converted to call the new Scan.rules_register().",
+      "why_it_matters": "Both fixes are framed as ending a real one-concept-many-homes defect (the same class RULE.DOC docs already flag), but each leaves exactly the failure mode it names unrepaired: adding or retiring a docs-building instrument still means editing Passes.jl:549 and :711 by hand (missing either silently changes pass-open's build-reuse gate or grade's lane-exclusion for exactly the two instruments this whole change set is about), and a RULES.toml waiver-resolution bug of the same shape as the one 1028b7d just fixed (Ledger vs. catalogue column) could now recur in Doctor.jl's two independent parses without rules_for_scan seeing it, because the docstring's 'one home' is aspirational, not actual. A future reader trusts the comment ('all six', 'and nowhere else') and will not find the two survivors without grepping past what the fix already told them was consolidated.",
+      "justified": "yes",
+      "description": "13cd1e2 and 1028b7d each add a shared source of truth (Sync.DOCS_INSTRUMENTS; Scan.rules_register/rules_for_scan) and each commit message/docstring frames the fix as a completed consolidation of every existing hardcoded copy. Neither migration is complete: Passes.jl's two `inst in (\"check-consistency\",\"check-docs\")` checks and Doctor.jl's two inline RULES.toml parses were never touched by this diff, so the claim ('for all six sites', 'One home, too... and nowhere else') is wider than what the edit actually did.",
+      "evidence": "grep -rn '\"check-docs\", \"check-consistency\"\\|\"check-consistency\", \"check-docs\"' src --include=*.jl at HEAD returns Sync.jl's own definition plus Passes.jl:549 and Passes.jl:711 still on the literal tuple; git show <base>:src/CLI/Doctor.jl and git show <head>:src/CLI/Doctor.jl both contain the identical two RULES.toml TOML.parsefile lines at 333 and 503, confirming this diff did not touch them despite Scan.jl's new docstring claiming they were reduced to zero ('and nowhere else')."
+    },
+    {
+      "type": "structure",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The seed-anchor refusal (f64b542) leaves two now-unreachable 'skipped classes' branches behind it",
+      "locations": [
+        "src/CLI/Rounds.jl:160-173 (prepare, check-consistency branch)",
+        "src/CLI/Rounds.jl:242-297 (seed_docs_corpus!, check-docs)"
+      ],
+      "before": "Before this diff, `plan, skipped = Seeds.select(...)` was followed directly by planting, and the trailing message `isempty(skipped) ? \"\" : \"; skipped classes (anchor absent): \" * join(skipped, \", \")` reported a real, reachable case: a round could plant with some classes silently skipped.",
+      "after": "The new guard `if !isempty(skipped) ... return 2 end` (added by this same commit) now returns before either function can reach its planting/printing code with a non-empty `skipped`. The old trailing lines — `println(io, \"prepare: $(length(plan)) seed(s) planted (salt $(rec[\"seed_salt\"]))\", isempty(skipped) ? \"\" : \"; skipped classes (anchor absent): \" * join(skipped, \", \"))` (prepare, line 172) and `println(io, \"prepare: $(length(planted)) seed(s) planted...\", isempty(skipped) ? \"\" : \"; skipped classes (anchor absent): \" * join(skipped, \", \"))` (seed_docs_corpus!, line 296-297) — were left untouched, so their `else` branch is now dead: `skipped` is provably empty by the time either line executes.",
+      "why_it_matters": "No behaviour changes (the branch cannot fire), but the surviving conditional text tells a future reader that a round can still plant while reporting some classes skipped — the exact scenario the new refusal was written to make impossible. Anyone reading only the success-path message, without noticing the earlier guard now always intercepts a non-empty `skipped`, will believe the denominator can still quietly shrink, which is precisely the false impression f64b542's own commit message says it eliminated.",
+      "justified": "yes",
+      "description": "The refusal added by f64b542 is a correct, narrowly-scoped fix in both call sites it touches, but the commit did not remove the two now-dead conditional message fragments it made unreachable, leaving stale text that describes a state the code can no longer enter.",
+      "evidence": "Rounds.jl:164-169 `if !isempty(skipped) ... return 2 end` immediately precedes Rounds.jl:172's `isempty(skipped) ? \"\" : \"...skipped classes...\"`, so the ternary's false branch can never execute; the same pattern repeats at Rounds.jl:252-257 (refusal) followed by Rounds.jl:296-297 (dead ternary)."
+    }
+  ]
+}

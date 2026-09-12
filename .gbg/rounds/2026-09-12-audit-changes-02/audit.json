@@ -1,0 +1,203 @@
+{
+  "kind": "code",
+  "base": "94d4711e77535ee9f86e3a6c698144f765dc1855",
+  "verdict_all_clean": false,
+  "head": "ec3e14472f58743d96c5ae9d50170d07c88d117d",
+  "dispositions": {
+    "2026-09-12-audit-changes-02/free-reader#1": {
+      "state": "fixed",
+      "reason": "The build gate is right and its implementation is not. Four corrections in the next change set: the staleness branch gains the cat-file -e reachability half it claims parity with, so an unreachable head REFUSES as UNCHECKABLE instead of reading as fresh; Rounds.build refuses rather than recording the 0x40 sentinel when Git.head returns nothing; prepare and pass open record the builds they already run, so the documented lifecycle can satisfy the precondition and rounds in flight are not refused; and the three new close branches get tests, since the diff satisfied the guard in four places and asserted it in none. The contract moves with the code: close's docstring, ARCHITECTURE 6.2 step 9 and the guide's close sections all still enumerate the old preconditions, and 5.5 names closure predicates MAJOR to change."
+    },
+    "2026-09-12-audit-changes-02/executing#1": {
+      "state": "fixed",
+      "reason": "The build gate is right and its implementation is not. Four corrections in the next change set: the staleness branch gains the cat-file -e reachability half it claims parity with, so an unreachable head REFUSES as UNCHECKABLE instead of reading as fresh; Rounds.build refuses rather than recording the 0x40 sentinel when Git.head returns nothing; prepare and pass open record the builds they already run, so the documented lifecycle can satisfy the precondition and rounds in flight are not refused; and the three new close branches get tests, since the diff satisfied the guard in four places and asserted it in none. The contract moves with the code: close's docstring, ARCHITECTURE 6.2 step 9 and the guide's close sections all still enumerate the old preconditions, and 5.5 names closure predicates MAJOR to change."
+    },
+    "2026-09-12-audit-changes-02/executing#4": {
+      "state": "fixed",
+      "reason": "The build gate is right and its implementation is not. Four corrections in the next change set: the staleness branch gains the cat-file -e reachability half it claims parity with, so an unreachable head REFUSES as UNCHECKABLE instead of reading as fresh; Rounds.build refuses rather than recording the 0x40 sentinel when Git.head returns nothing; prepare and pass open record the builds they already run, so the documented lifecycle can satisfy the precondition and rounds in flight are not refused; and the three new close branches get tests, since the diff satisfied the guard in four places and asserted it in none. The contract moves with the code: close's docstring, ARCHITECTURE 6.2 step 9 and the guide's close sections all still enumerate the old preconditions, and 5.5 names closure predicates MAJOR to change."
+    },
+    "2026-09-12-audit-changes-02/under-rejection#2": {
+      "state": "fixed",
+      "reason": "The build gate is right and its implementation is not. Four corrections in the next change set: the staleness branch gains the cat-file -e reachability half it claims parity with, so an unreachable head REFUSES as UNCHECKABLE instead of reading as fresh; Rounds.build refuses rather than recording the 0x40 sentinel when Git.head returns nothing; prepare and pass open record the builds they already run, so the documented lifecycle can satisfy the precondition and rounds in flight are not refused; and the three new close branches get tests, since the diff satisfied the guard in four places and asserted it in none. The contract moves with the code: close's docstring, ARCHITECTURE 6.2 step 9 and the guide's close sections all still enumerate the old preconditions, and 5.5 names closure predicates MAJOR to change."
+    },
+    "2026-09-12-audit-changes-02/behaviour-change#2": {
+      "state": "fixed",
+      "reason": "The build gate is right and its implementation is not. Four corrections in the next change set: the staleness branch gains the cat-file -e reachability half it claims parity with, so an unreachable head REFUSES as UNCHECKABLE instead of reading as fresh; Rounds.build refuses rather than recording the 0x40 sentinel when Git.head returns nothing; prepare and pass open record the builds they already run, so the documented lifecycle can satisfy the precondition and rounds in flight are not refused; and the three new close branches get tests, since the diff satisfied the guard in four places and asserted it in none. The contract moves with the code: close's docstring, ARCHITECTURE 6.2 step 9 and the guide's close sections all still enumerate the old preconditions, and 5.5 names closure predicates MAJOR to change."
+    },
+    "2026-09-12-audit-changes-02/over-rejection#2": {
+      "state": "fixed",
+      "reason": "The build gate is right and its implementation is not. Four corrections in the next change set: the staleness branch gains the cat-file -e reachability half it claims parity with, so an unreachable head REFUSES as UNCHECKABLE instead of reading as fresh; Rounds.build refuses rather than recording the 0x40 sentinel when Git.head returns nothing; prepare and pass open record the builds they already run, so the documented lifecycle can satisfy the precondition and rounds in flight are not refused; and the three new close branches get tests, since the diff satisfied the guard in four places and asserted it in none. The contract moves with the code: close's docstring, ARCHITECTURE 6.2 step 9 and the guide's close sections all still enumerate the old preconditions, and 5.5 names closure predicates MAJOR to change."
+    },
+    "2026-09-12-audit-changes-02/invariants#1": {
+      "state": "fixed",
+      "reason": "The build gate is right and its implementation is not. Four corrections in the next change set: the staleness branch gains the cat-file -e reachability half it claims parity with, so an unreachable head REFUSES as UNCHECKABLE instead of reading as fresh; Rounds.build refuses rather than recording the 0x40 sentinel when Git.head returns nothing; prepare and pass open record the builds they already run, so the documented lifecycle can satisfy the precondition and rounds in flight are not refused; and the three new close branches get tests, since the diff satisfied the guard in four places and asserted it in none. The contract moves with the code: close's docstring, ARCHITECTURE 6.2 step 9 and the guide's close sections all still enumerate the old preconditions, and 5.5 names closure predicates MAJOR to change."
+    },
+    "2026-09-12-audit-changes-02/executing#3": {
+      "state": "fixed",
+      "reason": "Narrow it. A policy waiver resolves for the scan's CANONICAL rule as before; a waiver naming a rule the scan enforces but cannot attribute is REFUSED loudly (LedgerError, the direction apply_ledger already takes when a text scan meets an arg_type predicate) rather than silently disabling the whole scan. And the docstring's known-limit paragraph is rewritten: it books the sibling withdrawal as pre-existing when this change CREATED it - before it, a waiver on the non-canonical rule did nothing, so nothing could be withdrawn. That is the laundering shape, in my own prose, and correcting the text is part of the fix, not a footnote to it."
+    },
+    "2026-09-12-audit-changes-02/under-rejection#1": {
+      "state": "fixed",
+      "reason": "Narrow it. A policy waiver resolves for the scan's CANONICAL rule as before; a waiver naming a rule the scan enforces but cannot attribute is REFUSED loudly (LedgerError, the direction apply_ledger already takes when a text scan meets an arg_type predicate) rather than silently disabling the whole scan. And the docstring's known-limit paragraph is rewritten: it books the sibling withdrawal as pre-existing when this change CREATED it - before it, a waiver on the non-canonical rule did nothing, so nothing could be withdrawn. That is the laundering shape, in my own prose, and correcting the text is part of the fix, not a footnote to it."
+    },
+    "2026-09-12-audit-changes-02/behaviour-change#1": {
+      "state": "fixed",
+      "reason": "Narrow it. A policy waiver resolves for the scan's CANONICAL rule as before; a waiver naming a rule the scan enforces but cannot attribute is REFUSED loudly (LedgerError, the direction apply_ledger already takes when a text scan meets an arg_type predicate) rather than silently disabling the whole scan. And the docstring's known-limit paragraph is rewritten: it books the sibling withdrawal as pre-existing when this change CREATED it - before it, a waiver on the non-canonical rule did nothing, so nothing could be withdrawn. That is the laundering shape, in my own prose, and correcting the text is part of the fix, not a footnote to it."
+    },
+    "2026-09-12-audit-changes-02/over-rejection#4": {
+      "state": "fixed",
+      "reason": "Narrow it. A policy waiver resolves for the scan's CANONICAL rule as before; a waiver naming a rule the scan enforces but cannot attribute is REFUSED loudly (LedgerError, the direction apply_ledger already takes when a text scan meets an arg_type predicate) rather than silently disabling the whole scan. And the docstring's known-limit paragraph is rewritten: it books the sibling withdrawal as pre-existing when this change CREATED it - before it, a waiver on the non-canonical rule did nothing, so nothing could be withdrawn. That is the laundering shape, in my own prose, and correcting the text is part of the fix, not a footnote to it."
+    },
+    "2026-09-12-audit-changes-02/public-contract#1": {
+      "state": "fixed",
+      "reason": "Narrow it. A policy waiver resolves for the scan's CANONICAL rule as before; a waiver naming a rule the scan enforces but cannot attribute is REFUSED loudly (LedgerError, the direction apply_ledger already takes when a text scan meets an arg_type predicate) rather than silently disabling the whole scan. And the docstring's known-limit paragraph is rewritten: it books the sibling withdrawal as pre-existing when this change CREATED it - before it, a waiver on the non-canonical rule did nothing, so nothing could be withdrawn. That is the laundering shape, in my own prose, and correcting the text is part of the fix, not a footnote to it."
+    },
+    "2026-09-12-audit-changes-02/invariants#3": {
+      "state": "fixed",
+      "reason": "Narrow it. A policy waiver resolves for the scan's CANONICAL rule as before; a waiver naming a rule the scan enforces but cannot attribute is REFUSED loudly (LedgerError, the direction apply_ledger already takes when a text scan meets an arg_type predicate) rather than silently disabling the whole scan. And the docstring's known-limit paragraph is rewritten: it books the sibling withdrawal as pre-existing when this change CREATED it - before it, a waiver on the non-canonical rule did nothing, so nothing could be withdrawn. That is the laundering shape, in my own prose, and correcting the text is part of the fix, not a footnote to it."
+    },
+    "2026-09-12-audit-changes-02/executing#2": {
+      "state": "fixed",
+      "reason": "Union, not replacement. latex_source_globs gains a reader by ADDING the consumer's globs to the four default surfaces instead of defining them, so the Literate surface that was never read gets read without ext/, docs/src/ and docs/ being taken away from a consumer that set the key for the purpose its name states. The sweep is completed too: Passes.jl:588 and verify-state.js still carry the same hardcoded list, so after this diff a consumer's panel hats and its state verifier read different corpora on one round. The test exercises only the empty-key default branch; the narrowing direction needs an oracle."
+    },
+    "2026-09-12-audit-changes-02/under-rejection#3": {
+      "state": "fixed",
+      "reason": "Union, not replacement. latex_source_globs gains a reader by ADDING the consumer's globs to the four default surfaces instead of defining them, so the Literate surface that was never read gets read without ext/, docs/src/ and docs/ being taken away from a consumer that set the key for the purpose its name states. The sweep is completed too: Passes.jl:588 and verify-state.js still carry the same hardcoded list, so after this diff a consumer's panel hats and its state verifier read different corpora on one round. The test exercises only the empty-key default branch; the narrowing direction needs an oracle."
+    },
+    "2026-09-12-audit-changes-02/behaviour-change#4": {
+      "state": "fixed",
+      "reason": "Union, not replacement. latex_source_globs gains a reader by ADDING the consumer's globs to the four default surfaces instead of defining them, so the Literate surface that was never read gets read without ext/, docs/src/ and docs/ being taken away from a consumer that set the key for the purpose its name states. The sweep is completed too: Passes.jl:588 and verify-state.js still carry the same hardcoded list, so after this diff a consumer's panel hats and its state verifier read different corpora on one round. The test exercises only the empty-key default branch; the narrowing direction needs an oracle."
+    },
+    "2026-09-12-audit-changes-02/over-rejection#3": {
+      "state": "fixed",
+      "reason": "Union, not replacement. latex_source_globs gains a reader by ADDING the consumer's globs to the four default surfaces instead of defining them, so the Literate surface that was never read gets read without ext/, docs/src/ and docs/ being taken away from a consumer that set the key for the purpose its name states. The sweep is completed too: Passes.jl:588 and verify-state.js still carry the same hardcoded list, so after this diff a consumer's panel hats and its state verifier read different corpora on one round. The test exercises only the empty-key default branch; the narrowing direction needs an oracle."
+    },
+    "2026-09-12-audit-changes-02/executing#6": {
+      "state": "fixed",
+      "reason": "The defect is the SILENCE, not the partial plan, so the remedy is the reporting one the lanes name and that this same diff already uses for builds and script refreshes: record the skipped classes in ROUND.toml and make them loud at grade, rather than refusing a round that can still measure five of six classes honestly. The two now-unreachable skipped-classes branches at Rounds.jl:172 and :297 go with it - they are the evidence the refusal was bolted in front of the reporting instead of replacing it."
+    },
+    "2026-09-12-audit-changes-02/behaviour-change#3": {
+      "state": "fixed",
+      "reason": "The defect is the SILENCE, not the partial plan, so the remedy is the reporting one the lanes name and that this same diff already uses for builds and script refreshes: record the skipped classes in ROUND.toml and make them loud at grade, rather than refusing a round that can still measure five of six classes honestly. The two now-unreachable skipped-classes branches at Rounds.jl:172 and :297 go with it - they are the evidence the refusal was bolted in front of the reporting instead of replacing it."
+    },
+    "2026-09-12-audit-changes-02/over-rejection#1": {
+      "state": "fixed",
+      "reason": "The defect is the SILENCE, not the partial plan, so the remedy is the reporting one the lanes name and that this same diff already uses for builds and script refreshes: record the skipped classes in ROUND.toml and make them loud at grade, rather than refusing a round that can still measure five of six classes honestly. The two now-unreachable skipped-classes branches at Rounds.jl:172 and :297 go with it - they are the evidence the refusal was bolted in front of the reporting instead of replacing it."
+    },
+    "2026-09-12-audit-changes-02/invariants#2": {
+      "state": "fixed",
+      "reason": "The defect is the SILENCE, not the partial plan, so the remedy is the reporting one the lanes name and that this same diff already uses for builds and script refreshes: record the skipped classes in ROUND.toml and make them loud at grade, rather than refusing a round that can still measure five of six classes honestly. The two now-unreachable skipped-classes branches at Rounds.jl:172 and :297 go with it - they are the evidence the refusal was bolted in front of the reporting instead of replacing it."
+    },
+    "2026-09-12-audit-changes-02/executing#5": {
+      "state": "fixed",
+      "reason": "Tighten and measure. CLAIM_TOOL_ID admits a bare gbg <word> and CLAIM_QUANTIFIER admits all, any and only, so ordinary prose that merely mentions a verb is swept in; the conjunction moves to the same clause, or to a universal governing a named rule or verb. The new CLAIM_EXIT alternative matches any digit 0-3 within 60 characters of the phrase, including the trailing digit of a larger number, and is anchored accordingly. And the number that decides affordability is the per-lane discharge count, which the change set never measured - only the corpus-wide ratio."
+    },
+    "2026-09-12-audit-changes-02/behaviour-change#5": {
+      "state": "fixed",
+      "reason": "Tighten and measure. CLAIM_TOOL_ID admits a bare gbg <word> and CLAIM_QUANTIFIER admits all, any and only, so ordinary prose that merely mentions a verb is swept in; the conjunction moves to the same clause, or to a universal governing a named rule or verb. The new CLAIM_EXIT alternative matches any digit 0-3 within 60 characters of the phrase, including the trailing digit of a larger number, and is anchored accordingly. And the number that decides affordability is the per-lane discharge count, which the change set never measured - only the corpus-wide ratio."
+    },
+    "2026-09-12-audit-changes-02/over-rejection#5": {
+      "state": "fixed",
+      "reason": "Tighten and measure. CLAIM_TOOL_ID admits a bare gbg <word> and CLAIM_QUANTIFIER admits all, any and only, so ordinary prose that merely mentions a verb is swept in; the conjunction moves to the same clause, or to a universal governing a named rule or verb. The new CLAIM_EXIT alternative matches any digit 0-3 within 60 characters of the phrase, including the trailing digit of a larger number, and is anchored accordingly. And the number that decides affordability is the per-lane discharge count, which the change set never measured - only the corpus-wide ratio."
+    },
+    "2026-09-12-audit-changes-02/under-rejection#4": {
+      "state": "fixed",
+      "reason": "Admit narrowly. GBG_ROUND excuses a round from EVERY per-round refusal the gate makes, including :committed, where the rc permission needs only the :open kind tolerated. The admission also runs for a final release, where it is harmless only because release_fails refuses on an open round first - relying on another guard's ordering is not the guarantee the comment claims. Next change set: admit only on the rc path, and only the refusal kind the permission is for."
+    },
+    "2026-09-12-audit-changes-02/behaviour-change#6": {
+      "state": "fixed",
+      "reason": "Admit narrowly. GBG_ROUND excuses a round from EVERY per-round refusal the gate makes, including :committed, where the rc permission needs only the :open kind tolerated. The admission also runs for a final release, where it is harmless only because release_fails refuses on an open round first - relying on another guard's ordering is not the guarantee the comment claims. Next change set: admit only on the rc path, and only the refusal kind the permission is for."
+    },
+    "2026-09-12-audit-changes-02/under-rejection#5": {
+      "state": "fixed",
+      "reason": "Make the guard name the object the verb acts on. running_dev() tests the RUNNING copy while root is what gets tagged and pushed, so after this change the check and the action can refer to different checkouts. Either re-derive it from the argument (ispath(joinpath(root, .git))) or give only release_fails the root keyword, which is what all but one of the new tests actually exercise. The docstring's defence that the CLI never passes it is a statement about one caller, not a guard."
+    },
+    "2026-09-12-audit-changes-02/behaviour-change#7": {
+      "state": "fixed",
+      "reason": "The blocker, and it leads. gbg round scripts grants a general mid-round unfreeze for any round at any point, where the motivating case was narrow: a round whose own finding is an unparseable verifier cannot verify itself. Next change set scopes it to that case and records the relaxation where the invariant is documented - the protocols and ARCHITECTURE still describe preflight as the moment the scripts are fixed. The new docstring is itself false on this point: it asserts copy_scripts runs there and nowhere else, in the body of the second function that runs it."
+    },
+    "2026-09-12-audit-changes-02/executing#7": {
+      "state": "fixed",
+      "reason": "Correct or remove the figures. Three of four measurements cited in the new comments do not reproduce, and one counts homes this diff created. This lane exists because a measurement written into a comment is certified by every later reader, and I have spent this round being convicted of exactly that - a written account of a thing being less reliable than re-measuring it."
+    },
+    "2026-09-12-audit-changes-02/claim-versus-edit#1": {
+      "state": "fixed",
+      "reason": "Complete both migrations and correct both claims. Passes.jl:549 and :711 still test the instrument pair inline, and Doctor.jl:333 and :503 still parse RULES.toml directly, while the commit message says all six sites and the rules_register docstring says one home and nowhere else. A consolidation claim wider than the edit is worse than no claim, because it tells the next reader the sweep is done."
+    },
+    "2026-09-12-audit-changes-02/over-rejection#6": {
+      "state": "fixed",
+      "reason": "Recording the verdict is the right mechanism, and the verb's contract did not move with it. Rounds.build is documented as run, log, return the code; it now persists {code, head, at} into ROUND.toml and re-validates the WHOLE record through save, so a record the current schema rejects makes a previously working verb throw a RoundError instead of building - which is exactly the migration case for any round open across this change. Next change set: the docstring says what the verb now writes and what it validates, the guide's three mentions follow it, and a test exercises build over a record that fails validation, since the new testset pins only the fresh, valid one."
+    }
+  },
+  "diffstat": " catalog/lanes/check-docs.toml                   |   2 +-\n docs/prose_shape.csv                            |  12 ++-\n instruments/check-consistency/schema.json       |  11 ++-\n instruments/check-consistency/workflow/panel.js |   2 +-\n instruments/check-docs/PROTOCOL.md              |   5 +-\n instruments/check-docs/schema.json              |   2 +-\n schema/round.schema.json                        |  48 +++++++++\n src/CLI/Doctor.jl                               |   2 +-\n src/CLI/Git.jl                                  |  17 +++-\n src/CLI/Passes.jl                               |  18 ++++\n src/CLI/Preflight.jl                            |  42 ++++++--\n src/CLI/Release.jl                              | 107 +++++++++++++++-----\n src/CLI/Rounds.jl                               |  60 +++++++++++-\n src/CLI/Sync.jl                                 |   6 ++\n src/DocLints.jl                                 |   4 +-\n src/Scan.jl                                     |  56 ++++++++++-\n test/coverage.jl                                |  31 ++++++\n test/gate.jl                                    |  36 +++++++\n test/rounds.jl                                  | 125 ++++++++++++++++++++++++\n test/scans.jl                                   |  18 ++++\n test/sync_doctor.jl                             |  25 +++++\n 21 files changed, 576 insertions(+), 53 deletions(-)",
+  "executable_claims": [
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-12-audit-changes-02/claim-gate.log",
+      "command": "julia --project -e 'using Pkg; Pkg.test()'"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-12-audit-changes-02/claim-the tree hash equals git's own.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/treehash.jl\"",
+      "file": "test/treehash.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-12-audit-changes-02/claim-the ledger disables and refines.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/ledger.jl\"",
+      "file": "test/ledger.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-12-audit-changes-02/claim-the scans hit their planted defects and spare the clean twins.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/scans.jl\"",
+      "file": "test/scans.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-12-audit-changes-02/claim-the witness runner classifies pass, fail, broken, blocked and refused.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/witnesses.jl\"",
+      "file": "test/witnesses.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-12-audit-changes-02/claim-a round closes only through its channels.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/rounds.jl\"",
+      "file": "test/rounds.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-12-audit-changes-02/claim-the managed files are exactly what sync renders.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/sync_doctor.jl\"",
+      "file": "test/sync_doctor.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-12-audit-changes-02/claim-every artefact matches its schema.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/schemas.jl\"",
+      "file": "test/schemas.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-12-audit-changes-02/claim-the gate refuses a build around an open round.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/gate.jl\"",
+      "file": "test/gate.jl"
+    }
+  ],
+  "schema_version": 1,
+  "round": "2026-09-12-audit-changes-02",
+  "covered": [
+    "src",
+    "test",
+    "ext",
+    "docs",
+    "Project.toml",
+    "fixture",
+    "policy",
+    "instruments",
+    "templates",
+    "catalog",
+    "schema"
+  ]
+}

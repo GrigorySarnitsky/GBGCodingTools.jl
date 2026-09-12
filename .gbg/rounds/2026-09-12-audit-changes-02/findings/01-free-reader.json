@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-audit-changes-02",
+  "lane": "free-reader",
+  "verdict": "CONCERNS",
+  "checked": [
+    "Git.run: strip → rstrip, and every call site of Git.run/porcelain/diffstat/log/changed_paths for a caller that depended on leading-whitespace stripping",
+    "Scan.jl apply_ledger's widened rule set (rules_for_scan) against the single-rule-scan case and the three multi-rule scans, plus its own documented 'mirror case not fixed' limit",
+    "Preflight.jl's new CLAIM_QUANTIFIER/CLAIM_TOOL_ID/expanded CLAIM_EXIT regexes against the existing count/exit priority and the volume of newly-tagged lines",
+    "Release.jl's release_fails extraction against the original inline release() body, line by line, for dropped or reordered conditions",
+    "Release.jl admitted_rounds / GBG_ROUND wiring into the release's own docs-build invocation",
+    "Passes.close()'s new docs-build gate (rec['build']) against Rounds.build's recording, and against the sibling staleness pattern in audit_after_code/audit_coverage",
+    "Rounds.jl's two new seed-skip refusals (prepare's check-consistency branch, seed_docs_corpus!) against the prior partial-match behaviour",
+    "Rounds.jl refresh_scripts and its schema.round.schema.json 'scripts_refreshed'/'build' additions against the top-level 'required' array (confirmed neither is required, so existing rounds without them stay schema-valid)",
+    "Sync.jl's new DOCS_INSTRUMENTS constant against every call site it replaced (Doctor.jl, Preflight.jl, DocLints.jl) for value equality and module-scope resolution",
+    "instruments/check-consistency/panel.js's needs:'source' branch and schema.json's new required source_globs against the file's own args-contract comment and its own gbg:prelude required-key guard",
+    "test/rounds.jl, test/gate.jl, test/scans.jl, test/sync_doctor.jl, test/coverage.jl additions for whether they exercise real new behaviour or merely restate it"
+  ],
+  "candidates_found": 3,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "medium",
+      "title": "close()'s new docs-build staleness check trusts an unreachable recorded head as 'not stale' instead of refusing",
+      "locations": [
+        "src/CLI/Passes.jl:1158-1169 (the new build-record gate in close())",
+        "src/CLI/Passes.jl:907-916 (audit_coverage, the sibling pattern this claims to reuse)",
+        "src/CLI/Git.jl:147 (changed_paths, the shared primitive)"
+      ],
+      "before": "Before this diff nothing recorded a build's verdict at all, so close() had no staleness question to answer.",
+      "after": "close() now does: `moved = Git.changed_paths(root, \"$(b[\"head\"])..HEAD\", Preflight.covered_paths(cfg)); isempty(moved) || push!(fails, \"the recorded docs build is stale — ...\")`. `Git.changed_paths` is `String.(filter(!isempty, split(something(run(root, \"diff\", \"--name-only\", range, \"--\", paths...), \"\"), '\\n')))`, and `Git.run` catches every exception (a bad revision included) and returns `nothing`, which `changed_paths` turns into `String[]`. I confirmed empirically that `git diff <bad-ref>..HEAD` throws `ProcessFailedException` in Julia, so a `b[\"head\"]` that is no longer a valid commit makes `moved` come back empty — the gate reads that as 'nothing changed since the build ran' and lets the round close on it.",
+      "why_it_matters": "The docstring on this new code claims parity with an existing, hardened pattern: \"The staleness test is the one `audit_after_code` uses.\" But `audit_after_code`'s own helper, `audit_coverage`, explicitly guards this exact failure mode — it checks `Git.run(root, \"cat-file\", \"-e\", ah * \"^{commit}\") !== nothing` before trusting a `changed_paths` diff against a recorded head, precisely because (its own docstring says) \"an audit whose head is unreachable proves nothing either way\" and treats that as NOT covering. The new build-staleness check omits that guard, so it fails open rather than closed in exactly the scenario its sibling was written to fail closed in. This is the same class of incident the whole feature exists to prevent (a round closing on a build verdict that no longer reflects the tree) — it just needs the build's own recorded head, not the round's opening head, to have gone bad, e.g. from a hand-edited ROUND.toml (which this same diff's own scripts_refreshed feature shows already happens in this project) or a rewritten local commit.",
+      "justified": "unclear",
+      "description": "The new build-staleness gate in Passes.close() reuses the raw `Git.changed_paths` diffing primitive but not the reachability guard (`cat-file -e`) that makes the same primitive safe in `audit_coverage`, so an unreachable or invalid `b[\"head\"]` is silently read as 'the build is still fresh' instead of refusing.",
+      "evidence": "`moved = Git.changed_paths(root, \"$(b[\"head\"])..HEAD\", Preflight.covered_paths(cfg))` (src/CLI/Passes.jl:1167) vs. `!isempty(ah) && Git.run(root, \"cat-file\", \"-e\", ah * \"^{commit}\") !== nothing && isempty(Git.changed_paths(root, \"$ah..HEAD\", dirs))` (src/CLI/Passes.jl:914-915)."
+    },
+    {
+      "type": "self-containment",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The new required arg source_globs was added to the schema and to the message it feeds, but not to panel.js's own contract comment or its own required-key guard",
+      "locations": [
+        "instruments/check-consistency/workflow/panel.js:10-13 (the 'Args (...)' contract comment)",
+        "instruments/check-consistency/workflow/panel.js:20 (the gbg:prelude required-key loop)",
+        "instruments/check-consistency/workflow/panel.js:86 (the new A.source_globs use)",
+        "instruments/check-consistency/schema.json (source_globs added to required and properties)"
+      ],
+      "before": "panel.js's needs:'source' line read the hardcoded literal path list directly, so there was no args field for the required-key loop or the contract comment to omit.",
+      "after": "The line now reads `${A.source_globs.map(g => A.repo + '/' + g).join(', ')}`, and schema.json puts `source_globs` in `required`. But the file's own header comment enumerating the args shape (`// Args (instruments/check-consistency/schema.json, rendered by \\`gbg preflight\\`): { schema_version, round, round_dir, repo, rawhtml, package: {...}, preamble, manuscripts: {...}, rulebook_path, hats: [...], adjudicated_titles, finding_types, finding_cap, strength, models: {economy} }`) still does not mention it, and the `gbg:prelude` loop — `for (const k of ['round', 'round_dir', 'repo', 'manuscripts', 'hats', 'preamble', 'models', 'package', 'schema_version', 'finding_cap']) { if (A[k] === undefined) throw ... }` — still does not check it either.",
+      "why_it_matters": "The schema.json description added for this key argues the point of making it required is precisely that \"an absent one is loud rather than a silent fallback.\" On the CLI side that is true (Schema validation would refuse a malformed args.json). But panel.js is the file this codebase's own core invariant treats as untrusted regarding hardcoded surfaces, and it is also where a reader would look for the args contract; a hat that reaches `needs.includes('source')` with an args payload missing `source_globs` (a stale frozen script paired with a rebuilt args.json, or any other args-construction bug) now fails as an unguarded `undefined.map is not a function` deep in `substrateText`, instead of the clear, front-loaded `panel.js: args.source_globs is required` the same file's own pattern produces for every other required field. The loudness the schema docstring promises is not actually backed by this file.",
+      "justified": "unclear",
+      "description": "panel.js's own enumerated args contract (a header comment) and its own defensive required-args check were not updated for the new `source_globs` field the diff makes both the schema and the code depend on, so the 'loud, never silent' guarantee claimed for this field is only enforced upstream, not in the script that actually consumes it.",
+      "evidence": "`// Args (instruments/check-consistency/schema.json, rendered by \\`gbg preflight\\`): { schema_version, round, round_dir, repo, rawhtml, package: ..., finding_cap, strength, models: {economy} }` (no source_globs) alongside `${A.source_globs.map(g => A.repo + '/' + g).join(', ')}` three lines away, and the required-check loop that still lists only the pre-existing ten keys."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "A seed catalogue with any class that cannot anchor now hard-refuses prepare, where it previously proceeded on the classes that did plant",
+      "locations": [
+        "src/CLI/Rounds.jl:161-167 (prepare, check-consistency branch)",
+        "src/CLI/Rounds.jl:248-254 (seed_docs_corpus!, check-docs)"
+      ],
+      "before": "`plan, skipped = Seeds.select(cat, f, rec[\"seed_salt\"]); f2, s2 = Seeds.plant(f, s, plan); ...; println(io, \"prepare: $(length(plan)) seed(s) planted ...\", isempty(skipped) ? \"\" : \"; skipped classes (anchor absent): \" * join(skipped, \", \"))` — a round with SOME classes unable to anchor still prepared successfully (exit 0), reporting the skip as an informational suffix; only a catalogue that matched NOTHING at all (`isempty(plan)`) refused.",
+      "after": "`if !isempty(skipped) ... return 2 end` runs before planting: any single unanchored class now refuses the whole `prepare`/`seed_docs_corpus!` call, even when every other class in the catalogue plants fine.",
+      "why_it_matters": "This is the one change in the diff that most squarely rejects input that previously worked: a config/catalogue combination that used to prepare a round successfully (with a printed warning) now exits 2 and blocks the round from being prepared at all, until the catalogue is edited or `--no-seed` is passed. The rationale given (a rotted anchor silently narrows the recall denominator, and this is exactly the class 2026-09-12-check-docs-01 missed) is concrete and the change is well tested and symmetric across both call sites, so it reads as a deliberate, evidence-based tightening rather than an accidental widening — but it is still a hard behavioural break for any currently-working seed catalogue that has even one class without an anchor in a given round's corpus, which the panel should confirm is the intended tradeoff (versus, say, keeping the class named-but-excluded and only refusing when its rot is new).",
+      "justified": "yes",
+      "description": "prepare (check-consistency) and seed_docs_corpus! (check-docs) turned a previously-tolerated partial seed-class match into a hard refusal, so a seed catalogue that used to prepare successfully with a warning now blocks round preparation outright.",
+      "evidence": "New: `if !isempty(skipped) println(io, \"prepare: refused — $(length(skipped)) seed class(es) have no anchor in the manuscript: \", join(skipped, \", \")); ...; return 2 end` immediately followed by the now-dead `isempty(skipped) ? \"\" : \"; skipped classes (anchor absent): \" * join(skipped, \", \")` in the success message below it, which can no longer fire since `skipped` is guaranteed empty by the time it is reached."
+    }
+  ]
+}

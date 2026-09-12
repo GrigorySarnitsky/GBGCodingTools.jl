@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-audit-changes-02",
+  "lane": "numerics",
+  "verdict": "CLEAN",
+  "checked": [
+    "Preflight.jl CLAIM_EXIT third alternative `\\bexit\\s+contract\\b[^.]{0,60}?[0-3]\\b`: derived the match against src/GBGCodingTools.jl:28 ('the exit contract is 0 clean,') by running claim_checklist live against the current tree — the digit '0' sits 4 characters after the phrase, well inside the 60-char lazy window, and the line is now correctly tagged [exit] where the base regex missed it entirely.",
+    "Preflight.jl CLAIM_QUANTIFIER `\\b(?:every|never|always|all|none|any|only)\\b`i and CLAIM_TOOL_ID AND-gate: checked the seven words against the check-docs.toml brief's own list for an exact match, verified \\b boundaries correctly exclude substrings ('many' vs \\bany\\b, 'nonetheless' vs \\bnone\\b), and ran claim_checklist over docs/ARCHITECTURE.md + Passes.jl + Scan.jl to confirm the AND-gate fires on tool-identifier lines, not ordinary prose.",
+    "claim_checklist's tag-priority (`ex ? \"exit\" : num ? \"count\" : \"quantifier\"`): checked for double-tagging/undercounting on the exit-contract sentence — its number tokens ('0 clean', '3 crash') don't satisfy CLAIM_NUMBER's own trailing-s requirement, so no claim is silently dropped by the priority order.",
+    "Git.jl Git.run: `strip`->`rstrip` on the whole command output, checked against Git.porcelain's fixed-column slicing (`l[1:2]` code, `l[4:end]` path): traced the described defect character-by-character and confirmed `rstrip` cannot touch a leading character on any line, so the fix is exactly scoped and leaves the pre-existing per-line `strip(l[4:end])` untouched.",
+    "Rounds.jl build()/refresh_scripts() head placeholder `something(Git.head(root), \"0\"^40)`: confirmed Julia string-repetition yields exactly 40 chars, matching schema/round.schema.json's `^[0-9a-f]{40}$` pattern for both build.head and scripts_refreshed[].head.",
+    "Passes.jl close()'s new build-staleness gate `Git.changed_paths(root, \"$(b[\"head\"])..HEAD\", Preflight.covered_paths(cfg))`: checked range direction/argument order against three pre-existing identical call shapes in Passes.jl (audit_after_code and friends); same head on both sides yields an empty range, so a current build never falsely reads stale.",
+    "Release.jl admitted_rounds(cfg) = join(frozen_rounds(...), \",\") against Gate.jl's `split(ENV[\"GBG_ROUND\"], ',')`: same delimiter on both ends of the new GBG_DOCS_NO_SKIP/GBG_ROUND handoff; the two-open-round test exercises the comma join/split round-trip directly.",
+    "Scan.jl apply_ledger's new `enforced = unique!(vcat(row[\"rule\"], rules_for_scan(id)))` union and the untouched exemption-count arithmetic `length(hits)-length(kept)`: checked against the new SCAN.DOI_CROSSCHECK test (rules_for_scan == {RULE.CIT.FULL_INLINE, RULE.CIT.DOI}); the union only widens which rule-ids gate the scan, it doesn't touch how a hit is counted.",
+    "Release.jl release_fails' changelog check `occursin(\"## $ver — \", ...)` under the new rc-vs-final split: checked for false cross-match between '## 0.1.0-rc.1 — ' and '## 0.1.0 — ' — the character right after the shared '0.1.0' ('-' vs space) prevents either probe from satisfying the other.",
+    "docs/prose_shape.csv word/paragraph-count deltas: confirmed every changed row corresponds to a docstring actually rewritten in this diff, with no row moved for a unit untouched by it."
+  ],
+  "candidates_found": 8,
+  "findings": []
+}
