@@ -99,6 +99,7 @@ record explicitly.
 | package paths: `[paths]` (further directories the audit covers — `examples`, `benchmark`) | relative directories | config (may only ADD to the covered constants) | PF's `examples/` demos are shipped code |
 | doc surfaces: rationale docs, pages, generated copies (`optional = true`, tolerated absent on a fresh clone), src, ext, literate examples, built HTML, history-exempt section, references heading (or `"absent"`), glossary | globs / `file#heading` anchors | config | PF 6 surfaces, IT 4, SS 4 (`survey-checkdocs.md:51`) |
 | ★ `rubric.leading_identity` | `physical-meaning` \| `estimand` | config enum | SS's estimand-first slot (`survey-checkdocs.md:139`) |
+| ★ `rubric.signature_types` | `names` \| `mirror` | config enum | 451 arguments over 247 docstrings here take `names` and 4 took `mirror` (2026-09-12); PF asks for the stricter form, where a device kernel's argument types are the contract |
 | ★ `notation.vectors` | `component` \| `boldsymbol` \| `none` | config enum | IT bold-italic vectors vs PF components (`survey-check-consistency.md:160`) |
 | ★ `notation.mathbf_allowed` | list of strings | config | `\mathbf{1}` prescribed (PF/SS) vs banned (IT), undispositioned (`survey-buildlints-hooks-policy.md:37`) |
 | ★ `docs.admonition_titles` | `always` \| `load-bearing` | config enum | PF always / IT bare `!!! note` (`survey-buildlints-hooks-policy.md:95`) |
@@ -664,8 +665,8 @@ any vocabulary is MAJOR.
 in the `RULE.` namespace (the full table is §12.A — `RULE.DOC.*`, `RULE.TEX.*`, `RULE.CIT.*`,
 `RULE.API.*`, `RULE.TEST.*`, `RULE.INST.*`, `RULE.GIT.*` — so no rule id can collide with a doctor
 check id such as `GIT.BRANCH`), recorded in `policy/RULES.toml`. `gbg sync` renders them to `.gbg/policy/*.md` (hash-managed): the enumerated
-variation points (`rubric.leading_identity`, `notation.vectors`, `docs.admonition_titles`,
-`notation.mathbf_allowed`, `instruments.check-docs.argcov_policy`) are substituted so a hat reads ONE statement; everything else is verbatim;
+variation points (`rubric.leading_identity`, `rubric.signature_types`, `notation.vectors`,
+`docs.admonition_titles`, `notation.mathbf_allowed`, `instruments.check-docs.argcov_policy`) are substituted so a hat reads ONE statement; everything else is verbatim;
 `deviations.md` is rendered from the ledger. `CLAUDE.md` carries one managed block:
 
 ```markdown
@@ -1202,6 +1203,8 @@ retired_claims    = [                  # phrases the hard scan SCAN.RETIRED_CLAI
 
 [rubric]
 leading_identity = "physical-meaning"  # enum: physical-meaning | estimand  (variation point; item 1 of the docstring home)
+signature_types  = "mirror"            # enum: names | mirror  (variation point); PF takes the stricter form:
+                                       # a signature repeats every type its method declares
 # No other key: the "Allocating form of" and "The fields are" phrases, the ≥ 3-arguments-or-a-keyword
 # threshold, the upright \mathrm{i} and \partial_{x_i} are platform constants (D5).
 
@@ -2323,7 +2326,7 @@ the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`), one or more of `scan:<i
 | `RULE.DOC.SHAPE` | docs-rubric | A docstring's longest paragraph ≤ 120 words and admonitions ≤ 3, on every docstring and every NEW page unit; no unit grows past its baseline, a baselined page unit held by the ratchet alone; an `# Arguments` heading, where a consumer uses one, precedes any column-0 `!!!`; `# Fields` is last. | `lint_prose_shape`; IT `lint_docstring_shape` |
 | `RULE.DOC.MODULE_MAP` | docs-rubric | A module docstring lists one linked one-liner per operation family and no formula. | "Module docstring = map"; IT deviation |
 | `RULE.DOC.ARG_BULLET` | docs-rubric | An argument or field bullet names its argument in a plain code span, never a bold one. | `guards.sh` "argument bullet is not bolded"; SS deviation candidate |
-| `RULE.DOC.SIGNATURE_MIRROR` | docs-rubric | A docstring signature shows the argument names and defaults, never their types (a type belongs to the argument's bullet); only the docstring wraps, to ≤ 88 columns with a hanging indent. Narrowed 2026-09-12 to the form the corpus keeps: 451 arguments over 247 docstrings read the old way and 4 the other. | "A docstring signature shows the argument names and defaults the method declares" |
+| `RULE.DOC.SIGNATURE_MIRROR` | docs-rubric | A docstring signature names the method's arguments in its order; how much it repeats is ★ `rubric.signature_types` — `names` (the default: names and defaults, types in the bullets) or `mirror` (every type the method declares). Only the docstring wraps, to ≤ 88 columns with a hanging indent. Narrowed to `names` 2026-09-12, the form 247 of 251 docstrings here already took; PF takes `mirror`. | "A docstring signature names the method's arguments in the method's order" |
 | `RULE.DOC.SIGNATURE_FIDELITY` | docs-rubric | The displayed signature set and the defined method table agree per exported binding (symmetric difference reported). | IT `signature_fidelity.jl` |
 | `RULE.DOC.XLINK` | docs-rubric | A cross-module name is `@ref`-linked at its first mention, qualified so the link resolves. | IT `xlink.jl`; PF "cross-module @ref is qualified" |
 | `RULE.DOC.ARGCOV` | docs-rubric | Every argument in a docstring signature, positional and keyword, is documented in its body; run from the signature. (★ `argcov_policy` chooses triage or gate.) | "Argument coverage (signature-driven)" |
@@ -2435,7 +2438,7 @@ docstrings except by `SCAN.SWALLOWED_ESCAPE`, which is what that scan is for.
 | `SCAN.CITATION_CRAMMED` | `RULE.CIT.BLOCK_LIST` | triage | src | julia | PF/IT `References?:[^"]*;` | `crammed-citation` |
 | `SCAN.DEAD_REF` | `RULE.DOC.NO_DEAD_REFS`, `RULE.CIT.NO_INACCESSIBLE` | triage | src | julia | PF/IT `§[0-9]`, `docs/(src\|ARCHITECTURE\|…)`, `inspiration/` in a docstring | `dead-section-ref` |
 | `SCAN.SENTENCE_OPENER` | `RULE.DOC.SENTENCE_OPENER` | triage | all | julia | PF `sentence_openers.py` (computed sentence starts: after `. `, after a line ending a sentence, after a blank line; the link form; exemptions as the rule's; zero surfaces ⇒ exit 2) | `lowercase-opener` |
-| `SCAN.SIGNATURE_TYPED` | `RULE.DOC.SIGNATURE_MIRROR` | triage | src, ext | julia | new 2026-09-12 with the narrowed rule: a docstring signature whose parenthesised argument list carries a `::`; a `-> …` return annotation lies outside that list and is never a hit | `typed-signature` |
+| `SCAN.SIGNATURE_TYPED` | `RULE.DOC.SIGNATURE_MIRROR` | triage | src, ext | julia | new 2026-09-12, and it reads `rubric.signature_types`: under `names` a docstring signature whose parenthesised argument list carries a `::`, under `mirror` an argument the method types and the signature leaves bare (the definition that follows the docstring is the comparison). A `-> …` return annotation lies outside the list and is never a hit either way | `typed-signature` |
 | `SCAN.SIGNATURE_WIDE` | `RULE.DOC.SIGNATURE_MIRROR` | triage | src | julia | PF/IT awk (docstring signature line > 88 columns, per-file `FNR`) | `wide-signature` |
 | `SCAN.ABUTTING_SPANS` | `RULE.TEX.ONE_SPAN` | triage | src, rationale, pages | julia | IT `abutting_spans.py` (bare or linked code span beside a double-backtick span, either order) | `abutting-span` |
 | `SCAN.SIGNATURE_FIDELITY` | `RULE.DOC.SIGNATURE_FIDELITY` | triage | src | julia | IT `signature_fidelity.jl` (displayed vs defined, accent-normalised spectral pairs) | `stale-keyword` |

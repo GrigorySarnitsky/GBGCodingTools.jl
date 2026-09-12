@@ -5,8 +5,9 @@ This directory is rendered into every consumer as `.gbg/policy/` by `gbg sync` a
 consumer's `CLAUDE.md` through its managed block. It is ONE text for the whole fleet, at the version the
 consumer pins; a package-specific rule lives in the package's own `CLAUDE.md`, outside the managed block,
 and a rule a package deviates from is a ledger entry in `.gbg/exemptions.toml` with a reason, never an
-edit here. Five values vary by package and are substituted at render time: the leading identity of a
-docstring, the vector notation, the admonition-title rule, the admitted `\mathbf` strings and the tier
+edit here. Six values vary by package and are substituted at render time: the leading identity of a
+docstring, how much of the method a signature repeats, the vector notation, the admonition-title rule,
+the admitted `\mathbf` strings and the tier
 `RULE.DOC.ARGCOV` binds at (`gate`, filled by the same renderer);
 the rendered `deviations.md` lists this package's declared deviations.
 

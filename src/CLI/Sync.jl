@@ -82,6 +82,10 @@ const IDENTITY_TEXT = Dict(
     "physical-meaning" => "the physical meaning — what the operation does to its object, before how it is computed",
     "estimand" => "the estimand — the quantity the operation estimates, before the estimator that computes it")
 const IDENTITY_SHORT = Dict("physical-meaning" => "physical meaning", "estimand" => "estimand")
+const SIGNATURE_TEXT = Dict(
+    "names" => "the names and their defaults, and no types: a type belongs to the argument's own bullet under `The arguments are:`, where there is room to say what it constrains, and repeating it in the signature line costs a second place to keep in step",
+    "mirror" => "every type the method declares, mirrored: an argument the method types is typed in the signature, one it leaves untyped stays untyped, and the bullet says what the type means rather than repeating it")
+const SIGNATURE_SHORT = Dict("names" => "names and defaults", "mirror" => "the method's types mirrored")
 const VECTORS_TEXT = Dict(
     "component" => "component notation with index letters",
     "boldsymbol" => "bold italic `\\boldsymbol{u}`",
@@ -124,6 +128,8 @@ function slots(cfg::AbstractDict; ledger = Ledger.read(cfg))
         "package.uuid" => package_uuid(root),
         "rubric.leading_identity" => IDENTITY_TEXT[cfg["rubric"]["leading_identity"]],
         "rubric.leading_identity.short" => IDENTITY_SHORT[cfg["rubric"]["leading_identity"]],
+        "rubric.signature_types" => SIGNATURE_TEXT[cfg["rubric"]["signature_types"]],
+        "rubric.signature_types.short" => SIGNATURE_SHORT[cfg["rubric"]["signature_types"]],
         "notation.vectors" => VECTORS_TEXT[cfg["notation"]["vectors"]],
         "notation.vectors.short" => VECTORS_SHORT[cfg["notation"]["vectors"]],
         "notation.mathbf_allowed" => isempty(allowed) ? "none" : join(("`" * a * "`" for a in allowed), ", "),

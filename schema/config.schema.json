@@ -284,6 +284,15 @@
       "estimand"
      ],
      "default": "physical-meaning"
+    },
+    "signature_types": {
+     "type": "string",
+     "enum": [
+      "names",
+      "mirror"
+     ],
+     "default": "names",
+     "description": "RULE.DOC.SIGNATURE_MIRROR's variation point. names: the signature shows the argument names and defaults, the types living in the bullets. mirror: the signature repeats every type the method declares, the stricter form"
     }
    }
   },

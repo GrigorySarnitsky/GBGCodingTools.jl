@@ -235,11 +235,11 @@ An argument or field bullet names its argument in a plain code span, never a bol
 list item holding the backticked name, an em dash and what it is, one bullet per argument.
 
 ### RULE.DOC.SIGNATURE_MIRROR
-A docstring signature shows the argument names and defaults the method declares, in that order and
-without their types, and only the docstring wraps, to at most 88 columns with a hanging indent under the
-first argument. A type belongs to the argument's own bullet under `The arguments are:`, where there is
-room to say what it constrains; repeating it in the signature line buys a reader of the bullets nothing
-and costs a second place to keep in step. The source definition is left exactly as written.
+A docstring signature names the method's arguments in the method's order, and only the docstring wraps,
+to at most 88 columns with a hanging indent under the first argument; the source definition is left
+exactly as written. How much of the method the signature repeats is this package's to set, and it is
+the names and their defaults, and no types: a type belongs to the argument's own bullet under `The arguments are:`, where there is room to say what it constrains, and repeating it in the signature line costs a second place to keep in step. Whichever form a package takes, the two never drift: the signature is checked
+against the method it documents, not against a reader's memory of it.
 
 ### RULE.DOC.SIGNATURE_FIDELITY
 The displayed signature set and the defined method table agree per exported binding, and the symmetric

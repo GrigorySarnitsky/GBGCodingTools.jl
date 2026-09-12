@@ -51,6 +51,17 @@ four — that cost 1.48M tokens where the changed items alone were worth about 0
 `dismissals/<id>__<sha of the text audited>.json`, keyed by the item's own claim, verdict and reasoning, and
 `close` sends the auditor only the items whose file is missing or invalid, saying how many it kept.
 
+**How much of a method a signature repeats is a variation point, `rubric.signature_types`.** The narrowed
+form is the default (`names`), and a package that wants the stricter one sets `mirror`: an argument the
+method types is typed in the signature, one it leaves untyped stays untyped. PF takes `mirror` — its
+config in ARCHITECTURE §5.1, written when PF migrates — where a kernel's argument types are the contract a
+caller reads; this package, SS, IT and CP take the default. The rule's sentinel is now its invariant half
+(the method's argument order, the 88-column wrap, the source definition untouched) with the choice in a
+substituted sentence, as `RULE.DOC.LEADING_IDENTITY` already does, so a rendered policy still reads as one
+statement. `SCAN.SIGNATURE_TYPED` checks whichever form the package took: under `names` a type in the
+signature's argument list, under `mirror` an argument the method types and the signature leaves bare, read
+from the definition the docstring documents. Six values now vary by package, not five.
+
 **`RULE.DOC.SIGNATURE_MIRROR` is narrowed to the house form, on the owner's ruling.** It required every
 type the method declares to be repeated in the docstring's signature line, and nothing checked that half:
 its register entry named only `SCAN.SIGNATURE_WIDE`, which measures width. Measured over `src/` and `ext/`,

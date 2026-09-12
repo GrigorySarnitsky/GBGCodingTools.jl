@@ -97,14 +97,26 @@ end
         @test occursin("makedocs", r.note) && occursin("not compared", r.note)
         @test r.population > 0 && all(h -> !occursin("EXTENSION-HOMED", h.text), r.hits)
     end
-    # The narrowed RULE.DOC.SIGNATURE_MIRROR: a signature shows names and defaults, and a type in the
-    # parenthesised list is the hit. A return annotation after `->` is not an argument and never a hit,
-    # which is the half a `::`-anywhere pattern would get wrong.
+    # RULE.DOC.SIGNATURE_MIRROR's variation point, `rubric.signature_types`, in BOTH its forms over the
+    # same corpus: under `names` a type in the signature's argument list is the hit, under `mirror` an
+    # argument the method types and the signature leaves bare. A return annotation after `->` is not an
+    # argument and is never a hit either way, which is the half a `::`-anywhere pattern would get wrong.
     @testset "a typed argument in a signature, and a typed return that is not one" begin
         r = G.run_scan(cfg, CATALOG["SCAN.SIGNATURE_TYPED"]; ledger = Dict{String,Any}[])
         @test r.population > 0
         @test any(h -> occursin("typed_signature", h.text), r.hits)
         @test !any(h -> occursin("returns_typed", h.text), r.hits)      # `-> Bool` is a return, not an argument
+    end
+    @testset "the stricter form, which PF takes: a bare argument the method types" begin
+        strict = defects_config(); strict["rubric"]["signature_types"] = "mirror"
+        r = G.run_scan(strict, CATALOG["SCAN.SIGNATURE_TYPED"]; ledger = Dict{String,Any}[])
+        @test r.population > 0
+        @test any(h -> occursin("mirrored_bare", h.text) && occursin("`v`", h.text), r.hits)  # the method types it
+        @test !any(h -> occursin("typed_signature", h.text), r.hits)    # it mirrors already: no hit under mirror
+        @test !any(h -> occursin("returns_typed", h.text), r.hits)      # its method leaves `x` untyped too
+        # and the two forms disagree about the same corpus, which is what a variation point means
+        names_hits = G.run_scan(defects_config(), CATALOG["SCAN.SIGNATURE_TYPED"]; ledger = Dict{String,Any}[]).hits
+        @test Set(h.text for h in names_hits) != Set(h.text for h in r.hits)
     end
     @testset "the clean fixture passes every hard scan" begin
         results, code = G.scan_docs(G.Config.read(FIXTURE); hard_only = true, io = devnull)

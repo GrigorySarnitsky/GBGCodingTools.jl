@@ -186,6 +186,19 @@ struct FieldsNotLastRecord
 end
 
 """
+    mirrored_bare(v; tol = 1e-8) -> Float64
+
+An argument the METHOD types and the signature leaves bare: right under `rubric.signature_types = "names"`
+and the hit under `mirror`, which is the whole of the variation point. The arguments are:
+
+- `v` — the values summed, a vector of reals.
+- `tol` — the floor below which a value is dropped, a real.
+
+Returns the sum.
+"""
+mirrored_bare(v::AbstractVector{<:Real}; tol::Real = 1e-8) = sum(x for x in v if abs(x) > tol; init = 0.0)
+
+"""
     returns_typed(x) -> Union{Nothing,Bool}
 
 A typed RETURN annotation, which is not a typed argument: the scan that reads the parenthesised list must
