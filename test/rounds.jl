@@ -543,6 +543,9 @@ end
         "head" => something(G.Git.head(root), "0"^40), "roster" => Any[Dict("key" => "src", "substrate" => "full", "anchor" => false)],
         "cost" => "economy", "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00",
         "dead_lanes" => String[], "passes" => 1, "banked" => "2026-01-01T00:00:01",
+        # a docs round closes only over a RECORDED green build (`gbg round build` writes this), so the
+        # red build that rode through two graded passes of 2026-09-12-check-docs-01 cannot reach close
+        "build" => Dict{String,Any}("code" => 0, "head" => something(G.Git.head(root), "0"^40), "at" => "2026-01-01T00:00:03"),
         "findings_sha" => G.RoundFiles.sha256_file(joinpath(rd, "findings.json"))))
     write_round(rd, rec)
     per = Dict(ids[1] => Dict("act" => "HONORED", "act_demoted" => false, "state" => "ABSENT", "closed_by" => "honored"),
@@ -653,6 +656,7 @@ end
         "head" => head, "roster" => Any[Dict("key" => "src", "substrate" => "full", "anchor" => false)],
         "cost" => "economy", "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet",
         "opened" => "2026-01-01T00:00:00", "dead_lanes" => String[], "passes" => 3,
+        "build" => Dict{String,Any}("code" => 0, "head" => head, "at" => "2026-01-01T00:00:02"),
         "banked" => "2026-01-01T00:00:01", "findings_sha" => G.RoundFiles.sha256_file(fj)))
     write_round(dir, rec)
     per = Dict(ids[1] => Dict("act" => "LINE-ONLY", "act_demoted" => false, "state" => "PRESENT", "closed_by" => nothing),
@@ -716,6 +720,7 @@ end
         "head" => something(G.Git.head(root), "0"^40), "roster" => Any[Dict("key" => lane, "substrate" => "full", "anchor" => false)],
         "cost" => "economy", "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet",
         "opened" => "2026-01-01T00:00:00", "dead_lanes" => String[], "passes" => 1,
+        "build" => Dict{String,Any}("code" => 0, "head" => something(G.Git.head(root), "0"^40), "at" => "2026-01-01T00:00:02"),
         "banked" => "2026-01-01T00:00:01", "findings_sha" => G.RoundFiles.sha256_file(fj)))
     write_round(dir, rec)
     nonce = "a"^32
@@ -773,6 +778,30 @@ end
     # changelog entry describing the fix would report its own defect for ever
     write(joinpath(root, "CHANGELOG.md"), "fixed: \"the offending sentence stands here\"\n")
     @test isempty(G.Passes.quote_probe(root, f))
+end
+
+# `gbg round build` RECORDS its verdict into ROUND.toml, and `close` reads it back. Nothing recorded a
+# build before 2026-09-12, so 2026-09-12-check-docs-01 graded two passes against a corpus whose docs
+# build did not pass: prepare built green at open, a fix pass's prose edits moved SCAN.PROSE_SHAPE's
+# ratchet, and no verb looked again until pass 3 ran the build by hand. Both directions, and cheaply —
+# `docs_build` is swapped for a shell one-liner, because what is under test is the RECORDING, not
+# Documenter. A red build is recorded as red: it is not forgotten, and close refuses on it.
+@testset "round build records its verdict for close to read" begin
+    root = fixture_copy("buildrec")
+    cfg = G.Config.read(root)
+    name = "2026-01-01-check-docs-01"
+    dir = joinpath(root, ".gbg", "rounds", name); mkpath(joinpath(dir, "findings"))
+    write_round(dir, merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => name, "instrument" => "check-docs",
+        "schema_version" => 1, "head" => something(G.Git.head(root), "0"^40), "roster" => Any[], "cost" => "economy",
+        "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00",
+        "dead_lanes" => String[], "passes" => 0)))
+    cfg["package"]["docs_build"] = "true"
+    @test G.Rounds.build(cfg, name; io = devnull) == 0
+    b = G.RoundFiles.read_round(dir)["build"]
+    @test b["code"] == 0 && !isempty(b["head"]) && haskey(b, "at")
+    cfg["package"]["docs_build"] = "exit 1"
+    @test G.Rounds.build(cfg, name; io = devnull) == 1
+    @test G.RoundFiles.read_round(dir)["build"]["code"] == 1            # red is RECORDED, never forgotten
 end
 
 @testset "round lifecycle" begin
@@ -898,6 +927,14 @@ end
         @test t["per_id"][id]["closed_by"] == "honored" && isempty(t["open_ids"]) && isempty(t["pending_state"])
         # close: the copy is untracked in the tool's repository, so "committed" holds vacuously; the
         # closing head is the tool's HEAD and the opening head is an ancestor of it
+        # A docs round closes only over a recorded green build. The record is written here rather than by
+        # calling `Rounds.build`, which would run the fixture's real Documenter build inside the unit
+        # suite; the verb's own recording is pinned directly by the testset above, so the behaviour is
+        # exercised somewhere rather than stubbed everywhere.
+        let r = G.RoundFiles.read_round(dir)
+            r["build"] = Dict{String,Any}("code" => 0, "head" => something(G.Git.head(root), "0"^40), "at" => "2026-01-01T00:00:09")
+            G.Rounds.save(dir, r)
+        end
         @test G.Passes.close(cfg, round; io = devnull) == 0
         rec = G.RoundFiles.read_round(dir)
         @test G.RoundFiles.state(rec) == :closed && haskey(rec["closed_by"], "tally_sha")

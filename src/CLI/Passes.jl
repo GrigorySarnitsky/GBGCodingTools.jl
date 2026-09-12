@@ -1151,6 +1151,24 @@ function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector =
     rel = relpath(dir, root)
     dirty = [p for (_, p) in Git.porcelain(root) if startswith(p, rel * "/") || p == rel]
     isempty(dirty) || push!(fails, "the round's files are not committed: " * join(first(dirty, 5), ", ") * (length(dirty) > 5 ? " …" : ""))
+    # A RED build must not reach close. Nothing recorded a build's verdict before 2026-09-12, and
+    # 2026-09-12-check-docs-01 graded two passes against a corpus whose docs build did not pass: `prepare`
+    # builds green at open, a fix pass's prose edits move SCAN.PROSE_SHAPE's ratchet, and no verb looked
+    # again until pass 3 ran `gbg round build` by hand. `build` records {code, head}; this reads it back.
+    # The staleness test is the one `audit_after_code` uses, so a green build from before the round's last
+    # fix is not taken for a current one. Only the two instruments that build docs are asked.
+    if inst in ("check-docs", "check-consistency")
+        b = get(rec, "build", nothing)
+        if b === nothing
+            push!(fails, "no docs build is recorded for this round — gbg round build $round")
+        elseif b["code"] != 0
+            push!(fails, "the recorded docs build exited $(b["code"]) — fix it, then gbg round build $round")
+        else
+            moved = Git.changed_paths(root, "$(b["head"])..HEAD", Preflight.covered_paths(cfg))
+            isempty(moved) || push!(fails, "the recorded docs build is stale — " * join(first(moved, 3), ", ") *
+                                           (length(moved) > 3 ? ", …" : "") * " changed after it ran; gbg round build $round")
+        end
+    end
     st = Preflight.stamps(cfg; record = rec)
     latest_regrade = k >= 1 && isfile(joinpath(pass_dir(dir, k), "pass.toml")) && get(TOML.parsefile(joinpath(pass_dir(dir, k), "pass.toml")), "regrade", false)
     (st["config_sha"] == rec["config_sha"] || latest_regrade) || push!(fails, "config changed since open — gbg round pass open $round --regrade")

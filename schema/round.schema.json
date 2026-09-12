@@ -211,6 +211,30 @@
    "type": "integer",
    "description": "the tool MAJOR this artefact was written under"
   },
+  "build": {
+   "additionalProperties": false,
+   "required": [
+    "code",
+    "head"
+   ],
+   "properties": {
+    "code": {
+     "type": "integer",
+     "description": "the exit code of the last `gbg round build <round>`; 0 is the only value `close` accepts"
+    },
+    "head": {
+     "pattern": "^[0-9a-f]{40}$",
+     "type": "string",
+     "description": "the HEAD it ran at, so a build older than the round's last code change is not read as a current one"
+    },
+    "at": {
+     "type": "string",
+     "description": "when it ran, for the reader of a closed round"
+    }
+   },
+   "type": "object",
+   "description": "the last docs build this round ran through `gbg round build`. Nothing recorded a build's verdict before 2026-09-12, so a round could carry a RED build through graded passes and close on it: `prepare` builds green at open, a fix pass's prose edits move SCAN.PROSE_SHAPE's ratchet, and neither `pass open` nor `grade` looks at a build again."
+  },
   "seed_root": {
    "description": "the disposable corpus a seeded documentation round's lanes read: the lane surfaces copied outside the repository and mutated. Written at prepare, destroyed at bank; the repository itself is never seeded.",
    "type": "string"

@@ -312,9 +312,16 @@ scratch. The arguments are:
 Returns the command's exit code; [`test`](@ref) is its twin for `julia_test`.
 """
 function build(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
-    guard(cfg, round; io)
+    dir, rec = guard(cfg, round; io)
     log = joinpath(Preflight.scratch_dir(cfg, round), "build.log")
     code = run_under_round(cfg, round, cfg["package"]["docs_build"]; log)
+    # RECORDED, not merely returned. Nothing persisted a build's verdict before 2026-09-12, so a round
+    # could carry a RED build through graded passes and close on it: `prepare` builds green at open, a
+    # fix pass's prose edits move SCAN.PROSE_SHAPE's ratchet, and neither `pass open` nor `grade` looks
+    # at a build again. `close` reads this back, and the head is here so a green build from before the
+    # round's last code change cannot pass for a current one.
+    rec["build"] = Dict{String,Any}("code" => code, "head" => something(Git.head(cfg["root"]), "0"^40), "at" => timestamp())
+    save(dir, rec)
     println(io, "build: exit $code — $log"); return code
 end
 """
