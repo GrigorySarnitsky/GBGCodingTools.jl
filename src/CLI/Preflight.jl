@@ -334,7 +334,14 @@ expand_globs(root::AbstractString, files) =
 # measured as scans (see src/Scans/id_resolves.jl for the measurement and the third class, which did), so
 # they are handed to the lane as an enumerated checklist instead of being guessed at on a read-through.
 const CLAIM_NUMBER = r"\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|hundred)[\s-]+[a-z]{3,}s\b"i
-const CLAIM_EXIT = r"\bexits?\s+(?:with\s+)?(?:code\s+)?[0-3]\b|\bexit\s+code\s+[0-3]\b"i
+# The third alternative is this house's OWN phrasing of the contract — "the exit contract is 0 clean, 1
+# substantive finding, 2 cannot evaluate, 3 crash" — which the first two miss, because they want a digit
+# within two words of `exit`. src/GBGCodingTools.jl contributed ZERO checklist items until it was added,
+# and the seeded `exit-code-drift` mutation was planted in exactly that line, invisible to the checklist
+# built to catch it (2026-09-12-check-docs-01). The digit is REQUIRED near the phrase: `exit contract`
+# alone occurs on 12 lines corpus-wide, most of them bare mentions in a list of topics, and a checklist
+# padded with unverifiable items is the shape that got the quantifier class dropped as unaffordable.
+const CLAIM_EXIT = r"\bexits?\s+(?:with\s+)?(?:code\s+)?[0-3]\b|\bexit\s+code\s+[0-3]\b|\bexit\s+contract\b[^.]{0,60}?[0-3]\b"i
 const CLAIM_TEXT = (".jl", ".md", ".toml", ".json", ".js", ".tmpl", ".sh", ".csv", ".seed", ".snippet", ".block", ".skeleton")
 
 # A lane's `files` may name a directory (`catalog`, `policy`) or a build tree; the checklist is over the
