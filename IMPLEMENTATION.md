@@ -437,7 +437,9 @@ check-consistency scripts use underscores).
   architecture-fix, audit, ground-truth, import, managed, carried, severity, attack-subject, attack,
   rubric-audit, human-findings` — closed enums of §6.3; the lane-file wrapper
   and bug-hunt's candidate shape live inline in each instrument's own `schema.json`, not here; each instrument's
-  `schema.json` = args + lane-file wrapper `$ref`-ing `finding.schema.json`; `exemptions.schema.json`
+  `schema.json` = args + lane-file wrapper, whose findings array `$ref`s a REDUCED `$defs.finding` local
+  to that file (`schema/finding.schema.json` is the fuller shape `bank` validates against, once it has
+  attached `id`/`lane`/`n`); `exemptions.schema.json`
   admits the optional `[exemption.match]` table on the scopes `scan|lint|policy|harness` only, with
   the ANDed sub-keys `arg_name` (a regex over the argument name), `arg_type` (the declared type of the
   matched argument, tested by `<:` — evaluable by the reflection scans `SCAN.ARGCOV`,

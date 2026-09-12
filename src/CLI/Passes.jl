@@ -16,7 +16,8 @@ The verification half of a round. Each pass has two verifiers, both agents the s
   (nothing in the diff addresses it) and `LAUNDERED` (closed by declaring it acceptable);
 - the **state verifier** never sees the diff and grades whether the
   defect is in the tree now: `PRESENT` (its default), `PARTIAL` (some of the class survives, named in
-  `surviving_class`), `REGRESSED`, `ABSENT`, `NOT-A-DEFECT` or `UNCLEAR` — of which only `ABSENT` and
+  `surviving_class`), `REGRESSED` (fixed once and back again), `ABSENT`, `NOT-A-DEFECT` or `UNCLEAR`
+  (the blind read cannot settle it either way, which closes nothing) — of which only `ABSENT` and
   `NOT-A-DEFECT` are favourable.
 
 [`GBGCodingTools.demote`](@ref) turns an `HONORED` whose list is empty or names an unswept surface

@@ -3,7 +3,8 @@
 !!! info "Written by AI, not regularly reviewed"
     This page is written by AI and is not reviewed regularly by a human.
 
-`.gbg/config.toml` is the one config file of a consumer: one layer, closed keys, validated by
+`.gbg/config.toml` is the one config file of a [consumer](@ref install) — a package that pins this tool
+and is reviewed by it: one layer, closed keys, validated by
 `schema/config.schema.json` through the tool's own validator. `gbg init` writes it from the package tree;
 `gbg config --toml` prints it with every default materialised; `gbg schema config` prints the schema.
 

@@ -845,7 +845,7 @@ function preflight(cfg::AbstractDict, instrument::AbstractString; profile = noth
     root = cfg["root"]
     code = doctor(cfg, :QUICK; io)
     code == 0 || (println(io, "preflight: the quick doctor set (QUICK) failed — fix the FAIL lines above (or exempt an exemptable one)"); return 2)
-    torn_check(cfg; io) || (println(io, "preflight: refused — a pinned or managed file is modified in the working tree (CFG.TORN)"); return 2)
+    torn_check(cfg; io) || (println(io, "preflight: refused — a pinned file (one the consumer owns and the tool never renders) or a managed file (one `gbg sync` renders and hash-checks) is modified in the working tree (CFG.TORN)"); return 2)
     sv = self_verify(root; io = devnull)
     sv == 0 || (println(io, "preflight: gbg self verify exit $sv — the running copy is not the pinned one"); return 2)
     rounds = RoundFiles.rounds(cfg)

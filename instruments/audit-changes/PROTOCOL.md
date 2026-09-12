@@ -84,7 +84,8 @@ the config; config can only add.
    with an unreachable audited commit read as `UNCHECKABLE`, never as clean (empty output from a
    rebased-away commit is indistinguishable from "nothing changed", and that inversion once passed a
    stale audit); the dismissal auditor run with `reopened == []`; the files committed and pushed. The
-   doctor warns (`AUDIT.GAP`) when this round's `base` is not the previous closed audit's `head`.
+   doctor warns (`AUDIT.GAP`) when this round's `base` is not the previous closed audit's `closed_head`
+   — the head it CLOSED at, falling back to `head` where the earlier round records none.
 
 ## Why it has no adversarial verifier
 

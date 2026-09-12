@@ -66,7 +66,7 @@ message; the CLI prints it and returns 2. Returns the directory and the record.
 function guard(cfg::AbstractDict, round::AbstractString; io::IO = stderr, allow_config_change::Bool = false, need_open::Bool = true)
     sv = self_verify(cfg["root"]; io = devnull)
     sv == 0 || throw(RoundError("gbg self verify exit $sv — the running copy is not the pinned one"))
-    Preflight.torn_check(cfg; io) || throw(RoundError("CFG.TORN — a pinned or managed file is modified in the working tree; wait for the sync or commit"))
+    Preflight.torn_check(cfg; io) || throw(RoundError("CFG.TORN — a pinned file (consumer-owned, never rendered) or a managed file (`gbg sync` renders and hash-checks it) is modified in the working tree; wait for the sync or commit"))
     dir, rec = load(cfg, round)
     need_open && RoundFiles.state(rec) != :open && throw(RoundError("$round is $(RoundFiles.state(rec)); the verb needs an open round"))
     if !allow_config_change && Preflight.config_sha(cfg) != rec["config_sha"]

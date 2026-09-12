@@ -97,3 +97,49 @@ reason        = "the schema's floor and the doctor's are different instruments, 
 recorded      = 2026-09-10
 overturn_when = "Ledger.read stops throwing on a schema failure and names the entry instead, which would make one floor able to do both jobs"
 evidence      = "src/CLI/Ledger.jl:35-36 throws LedgerError on validation failure; src/CLI/Doctor.jl:308 enforces >= 40 per entry and reports it as a check"
+
+# Adjudicated 2026-09-12 at pass 1 of round 2026-09-12-check-docs-01. Four ids the fix pass could not
+# close by editing. Two are STALE CARRIES whose quoted evidence no longer describes the tree — the act
+# verifier read the quote, the blind state verifier read the corpus, and they disagree because the corpus
+# moved. One is a design statement the act verifier fairly calls LAUNDERED. One is a deferral whose
+# remedy is the owner's. None is closed by a prose edit; each is recorded with what would overturn it.
+
+[[exemption]]
+id            = "2026-09-11-check-docs-01/rationale#1"
+scope         = "finding"
+target        = "2026-09-11-check-docs-01/rationale#1"
+ruling        = "not-a-defect"
+reason        = "the finding quotes §3's tree as indenting `Scan.jl` six spaces under `CLI/`; the row now sits at the four-space top-level `src/` indent, a sibling of Scans/, TreeHash.jl and HtmlWalker.jl, matching src/GBGCodingTools.jl's `include(\"Scan.jl\")` outside the CLI block. The blind state verifier read the corpus and returned ABSENT; the act verifier returned LAUNDERED because no hunk touched the row in this range, which is true and is the point — there was nothing left to touch. A carried finding's quoted evidence ages with the corpus, and this one aged out"
+recorded      = 2026-09-12
+overturn_when = "the §3 tree indents Scan.jl under CLI/ again, or the module moves the include into CLI/"
+evidence      = "docs/ARCHITECTURE.md §3 tree, Scan.jl at four spaces; src/GBGCodingTools.jl include(\"Scan.jl\"); state verdict ABSENT at pass 1"
+
+[[exemption]]
+id            = "2026-09-11-check-docs-01/workflow-scripts#1"
+scope         = "finding"
+target        = "2026-09-11-check-docs-01/workflow-scripts#1"
+ruling        = "not-a-defect"
+reason        = "the finding says rubric-audit.js and attack-design.js are launched by no CLI verb. src/CLI/Design.jl now launches both — VERBS[\"attack\"] renders attack-design.js and VERBS[\"calibrate\"] renders rubric-audit.js, each through Preflight.install_script, and Design.jl is included by the module. The act verifier graded UNDONE on the finding's own cited line, Preflight's main_script dict, which maps the four INSTRUMENT entry points and never listed these two; the blind state verifier read the tree and returned ABSENT. The finding was answered by a verb that did not exist when it was written"
+recorded      = 2026-09-12
+overturn_when = "gbg attack or gbg calibrate stops launching its script, or Design.jl is removed without another verb taking them over"
+evidence      = "src/CLI/Design.jl launches both scripts; src/GBGCodingTools.jl includes CLI/Design.jl; state verdict ABSENT at pass 1"
+
+[[exemption]]
+id            = "2026-09-12-check-docs-01/catalogues#1"
+scope         = "finding"
+target        = "2026-09-12-check-docs-01/catalogues#1"
+ruling        = "not-a-defect"
+reason        = "the finding asks catalog/scans.toml's `rule` column to carry both rules SCAN.DOI_CROSSCHECK enforces. That column is a SCALAR by schema and is what the ledger and the doctor resolve a scan's rule against; widening it to a list is a code change to the scan engine, not a catalogue edit, and belongs to its own release. The second rule is recorded where the question is actually asked: RULE.CIT.DOI's `check` array already names this scan, §12.B lists both rules, and scans.toml now says in its own header that the column is one canonical rule and points at both. The act verifier calls this LAUNDERED and is right that the column did not move; the blind state verifier read it as NOT-A-DEFECT"
+recorded      = 2026-09-12
+overturn_when = "the scan engine admits a list in scans.toml's rule column, at which point the catalogue should carry both rules directly"
+evidence      = "catalog/scans.toml header; policy/RULES.toml RULE.CIT.DOI check = scan:SCAN.DOI_CROSSCHECK; state verdict NOT-A-DEFECT at pass 1"
+
+[[exemption]]
+id            = "2026-09-12-check-docs-01/schemas#1"
+scope         = "finding"
+target        = "2026-09-12-check-docs-01/schemas#1"
+ruling        = "scoped"
+reason        = "the finding is CORRECT and is deliberately not fixed in this round: docs.doctest and instruments.check-consistency.latex_source_globs validate, are written by gbg init and are documented, and no engine reads either. Both remedies are the owner's, not a fix pass's. Wiring docs.doctest into the makedocs wrapper would give one setting two homes — the wrapper already forwards the consumer's own doctest kwarg to Documenter.makedocs, so the config key would silently compete with docs/make.jl, which is the one-claim-many-homes defect this round's own one-home lane exists to catch. Dropping both keys is the honest alternative and is MAJOR under §5.5's closed non-configurable set. Carried in the round's deferred.md"
+recorded      = 2026-09-12
+overturn_when = "either key gains a reader in an engine, scan, doctor check or args builder, or the owner rules on dropping them"
+evidence      = "schema/config.schema.json docs.doctest and latex_source_globs; ext/GBGCodingToolsDocumenterExt.jl forwards kwargs only; .gbg/rounds/2026-09-12-check-docs-01/deferred.md"

@@ -1445,7 +1445,8 @@ at the tool root, which must work when the dev checkout IS the consumer.
 - `findings/NN-<lane>.json` (lane agent, FIRST, before returning): `{schema_version, round, lane,
   candidates_found, checked[], findings[{type, domain_type?, severity, confidence, title,
   locations[], contradicts?, description, resolution_hint?}]}`. Classified at bank per D10 (DEAD,
-  EMPTY, ORPHAN, TRUNCATED, REJECTED).
+  EMPTY, TRUNCATED, REJECTED — a file no roster entry expects is not classified at all, since bank
+  iterates the roster).
 - `findings.json` (CLI at bank): each finding gains `id = "<round>/<lane>#<n>"`, `seeded: bool`,
   `seed_class?`; the file's sha256 is `ROUND.toml.findings_sha`. Written ONLY when `bank` exits 0;
   frozen from that moment.
@@ -1744,7 +1745,7 @@ serious concern and every `previously_worked ∈ {yes, unknown}` concern carries
 `fixed|refused|escalated` (refusal ≥ 24 chars); no dead lane; an empty audit's `verdict_all_clean`
 requires `checked[]` on every lane AND the recorded executable-claim exit codes all zero; staleness
 `git diff <audited>..HEAD -- <covered>` with UNCHECKABLE ≠ clean; `AUDIT.GAP` (doctor, WARN) when
-`base` ≠ the previous closed audit's `head`. `attack-design.js` (four attackers, generic `subject`) is
+`base` ≠ the previous closed audit's `closed_head` (its `head` where the earlier round records none). `attack-design.js` (four attackers, generic `subject`) is
 the instrument every lens list must survive; `gbg attack <instrument>` launches it (D17).
 
 **An audit round is disposed, never corrected inside.** The staleness rule and the frozen bank say so
@@ -1886,7 +1887,7 @@ implementation plan refers to it and adds no id of its own.
 | `POL.SENTINEL` | the policy copy's version stamp == the pin | otherwise |
 | `POL.COLLAPSED` | collapsed artefacts absent: model-versioned trailer, "knob"/"tweak" in prose (quoted words and code spans ignored), the June `lint_inline_math` | present |
 | `GIT.BRANCH` | current branch == `git.branch`; `origin` set | otherwise |
-| `GIT.TRAILER` | last 20 commits carry the versionless trailer, and none carries a model-versioned one | otherwise |
+| `GIT.TRAILER` | last 20 commits carry the versionless trailer | otherwise |
 | `ROUND.DIR` | `.gbg/rounds/` exists while any instrument is enabled | absent |
 | `ROUND.MARKER` | every round directory has `ROUND.toml` | one without |
 | `ROUND.OPEN` | lists open rounds (WARN; never FAIL — a fix pass may span sessions) | — |
@@ -2366,7 +2367,7 @@ the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`), one or more of `scan:<i
 | `RULE.DOC.SHAPE` | docs-rubric | A docstring's longest paragraph ≤ 120 words and admonitions ≤ 3, on every docstring and every NEW page unit; no unit grows past its baseline, a baselined page unit held by the ratchet alone; an `# Arguments` heading, where a consumer uses one, precedes any column-0 `!!!`; `# Fields` is last. | `lint_prose_shape`; IT `lint_docstring_shape` |
 | `RULE.DOC.MODULE_MAP` | docs-rubric | A module docstring lists one linked one-liner per operation family and no formula. | "Module docstring = map"; IT deviation |
 | `RULE.DOC.ARG_BULLET` | docs-rubric | An argument or field bullet names its argument in a plain code span, never a bold one. | `guards.sh` "argument bullet is not bolded"; SS deviation candidate |
-| `RULE.DOC.SIGNATURE_MIRROR` | docs-rubric | A docstring signature names the method's arguments in its order; how much it repeats is ★ `rubric.signature_types` — `names` (the default: names and defaults, types in the bullets) or `mirror` (every type the method declares). Only the docstring wraps, to ≤ 88 columns with a hanging indent. Narrowed to `names` on 2026-09-12, the form all but four of this package's docstrings already took at that date; PF takes `mirror`. | "A docstring signature names the method's arguments in the method's order" |
+| `RULE.DOC.SIGNATURE_MIRROR` | docs-rubric | A docstring signature names the method's arguments in its order; how much it repeats is ★ `rubric.signature_types` — `names` (the default: names and defaults, types in the bullets) or `mirror` (every type the method declares). Only the docstring wraps, to ≤ 88 columns with a hanging indent. Narrowed to `names` on 2026-09-12, the form this package's docstrings had almost entirely taken already; `SCAN.SIGNATURE_TYPED` re-measures it, so no count is carried here. PF takes `mirror`. | "A docstring signature names the method's arguments in the method's order" |
 | `RULE.DOC.SIGNATURE_FIDELITY` | docs-rubric | The displayed signature set and the defined method table agree per exported binding (symmetric difference reported). | IT `signature_fidelity.jl` |
 | `RULE.DOC.XLINK` | docs-rubric | A cross-module name is `@ref`-linked at its first mention, qualified so the link resolves. | IT `xlink.jl`; PF "cross-module @ref is qualified" |
 | `RULE.DOC.ARGCOV` | docs-rubric | Every argument in a docstring signature, positional and keyword, is documented in its body; run from the signature. (★ `argcov_policy` chooses triage or gate.) | "Argument coverage (signature-driven)" |
