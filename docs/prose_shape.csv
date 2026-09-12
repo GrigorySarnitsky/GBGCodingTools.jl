@@ -239,7 +239,7 @@ unit,words,longest_paragraph,admonitions
 "Release.jl :: admitted_rounds(cfg) -> String",137,106,0
 "Release.jl :: carry_release_fails(led) -> Vector{String}",100,81,0
 "Release.jl :: cites_round(cfg, tag) -> Bool",131,95,0
-"Release.jl :: release(ver; io = stdout, skip_tests = false) -> Int",178,116,0
+"Release.jl :: release(ver; io = stdout, skip_tests = false) -> Int",242,116,0
 "RoundFiles.jl :: RoundFiles",65,64,0
 "RoundFiles.jl :: read_round(dir) -> Union{Dict,Nothing}",25,22,0
 "RoundFiles.jl :: reproductions_sha(rdir) -> String",71,68,0
