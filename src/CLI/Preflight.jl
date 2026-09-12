@@ -342,6 +342,15 @@ const CLAIM_NUMBER = r"\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten
 # alone occurs on 12 lines corpus-wide, most of them bare mentions in a list of topics, and a checklist
 # padded with unverifiable items is the shape that got the quantifier class dropped as unaffordable.
 const CLAIM_EXIT = r"\bexits?\s+(?:with\s+)?(?:code\s+)?[0-3]\b|\bexit\s+code\s+[0-3]\b|\bexit\s+contract\b[^.]{0,60}?[0-3]\b"i
+# The QUANTIFIER class, narrowed until it was affordable. A quantifier alone matches 2526 lines of this
+# corpus and was dropped as unaffordable when the checklist was built; two of the five planted seeds were
+# quantifier mutations ("every" → "almost every", a deleted "never") and BOTH were missed, so the class
+# that cost too much to check was also the class the round could not catch. Narrowed to a quantifier in a
+# line that also names a tool identifier — where a universal is a claim ABOUT this tool and not ordinary
+# prose — it is a fraction of that. The conjunction is spelled in code rather than as one regex with
+# stacked lookaheads so the reader can see it is an AND.
+const CLAIM_QUANTIFIER = r"\b(?:every|never|always|all|none|any|only)\b"i
+const CLAIM_TOOL_ID = r"\b(?:RULE|SCAN|CFG|SELF|PIN|ROUND|EXEMPT|WIRE|MANAGED|LEG|POL|GIT|AUDIT|BUILD)\.[A-Z_]+\b|\bgbg\s+[a-z]+\b"
 const CLAIM_TEXT = (".jl", ".md", ".toml", ".json", ".js", ".tmpl", ".sh", ".csv", ".seed", ".snippet", ".block", ".skeleton")
 
 # A lane's `files` may name a directory (`catalog`, `policy`) or a build tree; the checklist is over the
@@ -366,9 +375,9 @@ end
 """
     claim_checklist(cfg, files; range = nothing) -> Vector{String}
 
-The mechanical floor under one check-docs lane: every cited NUMBER and every EXIT-CODE claim found on
-`files`, one Markdown bullet each, tagged `count` or `exit` and carrying the file, the line and the line's
-text. The arguments are:
+The mechanical floor under one check-docs lane: every cited NUMBER, every EXIT-CODE claim and every
+QUANTIFIER claim found on `files`, one Markdown bullet each, tagged `count`, `exit` or `quantifier` and
+carrying the file, the line and the line's text. The arguments are:
 
 - `cfg` — the validated config.
 - `files` — the lane's own surface.
@@ -389,8 +398,12 @@ function claim_checklist(cfg::AbstractDict, files; range = nothing)
             s = strip(l)
             (isempty(s) || length(s) > 400) && continue
             ex = occursin(CLAIM_EXIT, s)
-            (ex || occursin(CLAIM_NUMBER, s)) || continue
-            push!(out, "- [" * (ex ? "exit" : "count") * "] `$f:$n` — " * first(s, 220))
+            num = occursin(CLAIM_NUMBER, s)
+            # a line carrying both a cited number and a universal is tagged by the number: it is the more
+            # mechanically checkable of the two, and the lane owes a verdict either way
+            qu = occursin(CLAIM_QUANTIFIER, s) && occursin(CLAIM_TOOL_ID, s)
+            (ex || num || qu) || continue
+            push!(out, "- [" * (ex ? "exit" : num ? "count" : "quantifier") * "] `$f:$n` — " * first(s, 220))
         end
     end
     return out

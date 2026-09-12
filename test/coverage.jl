@@ -64,6 +64,16 @@ end
     @test occursin("claims_checked", lanes) && occursin("l.claims_path", lanes)
     schema = read(joinpath(TOOL, "instruments", "check-docs", "schema.json"), String)
     @test occursin("claims_checked", schema) && occursin("claims_path", schema)
+    # The three surfaces must enumerate the SAME claim kinds, and until 2026-09-12 nothing held them to
+    # it: this testset asserted only that the plumbing words occurred, so a `quantifier` tag was added to
+    # claim_checklist and every assertion here still passed while the brief, the schema and the protocol
+    # all still told a lane the checklist carried two kinds. A lane would have been handed `[quantifier]`
+    # items from a brief that said no such kind exists — the brief-versus-script disagreement this
+    # testset is named for.
+    protocol = read(joinpath(TOOL, "instruments", "check-docs", "PROTOCOL.md"), String)
+    for text in (lowercase(brief), lowercase(schema), lowercase(protocol)), kind in ("cited number", "exit-code", "quantifier")
+        @test occursin(kind, text)
+    end
     # the cap reaches the brief only through substitute's slot pattern, which had no `lane.` prefix before
     @test occursin("lane\\.[a-z_]+", read(joinpath(TOOL, "src", "CLI", "Preflight.jl"), String))
 end
