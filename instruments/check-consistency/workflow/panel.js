@@ -83,7 +83,7 @@ const substrateText = (h) => {
   else parts.push(`THE WHOLE RENDERED SITE incl. the design docs. Read it IN FULL, first, from:\n    ${A.manuscripts.full}\n(one reader-text manuscript; each page is delimited by a "===== PAGE: <name> =====" banner; math is its TeX). It is long — read it in successive chunks until the end.`)
   const needs = h.needs || []
   if (needs.includes('html')) parts.push(`ALSO inspect the RAW built HTML under: ${A.rawhtml}`)
-  if (needs.includes('source')) parts.push(`ALSO the AUTHORED SOURCE (read it with Read/Grep; quote findings at file:line): the docstrings under ${A.repo}/src/ and ${A.repo}/ext/, the pages under ${A.repo}/docs/src/, and the rationale documents under ${A.repo}/docs/.`)
+  if (needs.includes('source')) parts.push(`ALSO the AUTHORED SOURCE — docstrings, pages and rationale documents (read it with Read/Grep; quote findings at file:line), under: ${A.source_globs.map(g => A.repo + '/' + g).join(', ')}`)
   if (needs.includes('rulebook')) parts.push(`THE RULEBOOK (AUTHORITATIVE — read it first, in full): ${A.rulebook_path}`)
   if (needs.includes('git')) parts.push(`HISTORY: you may use Bash with git (log, diff, show, grep) and Read inside ${A.repo}; scope every search with \`--glob '!.gbg/**'\`. Never open anything under .gbg/ beyond the files named above, and never ~/.gbg/.`)
   return parts.join('\n\n')
