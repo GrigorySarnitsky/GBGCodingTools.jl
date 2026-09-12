@@ -804,6 +804,28 @@ end
     @test G.RoundFiles.read_round(dir)["build"]["code"] == 1            # red is RECORDED, never forgotten
 end
 
+# A round's scripts are frozen at preflight, so a script defect the round ITSELF finds cannot be repaired
+# for that round's own verifiers: 2026-09-12-check-docs-01 left two verifiers unparseable in its scratch
+# copy and refreshed them by hand, which left no trace that the frozen scripts had moved. The verb records
+# every refresh, and APPENDS — a record keeping only the last one would hide exactly what it exists to show.
+@testset "refreshing a round's frozen scripts is recorded" begin
+    root = fixture_copy("refresh")
+    cfg = G.Config.read(root)
+    name = "2026-01-01-check-docs-01"
+    dir = joinpath(root, ".gbg", "rounds", name); mkpath(joinpath(dir, "findings"))
+    write_round(dir, merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => name, "instrument" => "check-docs",
+        "schema_version" => 1, "head" => something(G.Git.head(root), "0"^40), "roster" => Any[], "cost" => "economy",
+        "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00",
+        "dead_lanes" => String[], "passes" => 0)))
+    @test !haskey(G.RoundFiles.read_round(dir), "scripts_refreshed")     # nothing recorded before one runs
+    @test G.Rounds.refresh_scripts(cfg, name; io = devnull) == 0
+    @test isfile(joinpath(G.Preflight.workflow_dir(cfg, name), "lanes.js"))
+    r = G.RoundFiles.read_round(dir)
+    @test length(r["scripts_refreshed"]) == 1 && haskey(r["scripts_refreshed"][1], "at")
+    @test G.Rounds.refresh_scripts(cfg, name; io = devnull) == 0
+    @test length(G.RoundFiles.read_round(dir)["scripts_refreshed"]) == 2  # APPENDED, never overwritten
+end
+
 @testset "round lifecycle" begin
     root = fixture_copy("round")
     cfg = G.Config.read(root)

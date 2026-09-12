@@ -235,6 +235,30 @@
    "type": "object",
    "description": "the last docs build this round ran through `gbg round build`. Nothing recorded a build's verdict before 2026-09-12, so a round could carry a RED build through graded passes and close on it: `prepare` builds green at open, a fix pass's prose edits move SCAN.PROSE_SHAPE's ratchet, and neither `pass open` nor `grade` looks at a build again."
   },
+  "scripts_refreshed": {
+   "items": {
+    "additionalProperties": false,
+    "required": [
+     "at",
+     "head"
+    ],
+    "properties": {
+     "at": {
+      "type": "string",
+      "description": "when the refresh ran"
+     },
+     "head": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string",
+      "description": "the HEAD the scripts were re-copied from"
+     }
+    },
+    "type": "object"
+   },
+   "type": "array",
+   "description": "each time `gbg round scripts <round>` re-copied this round's Workflow scripts from the instrument. They are frozen at preflight — `copy_scripts` runs there and nowhere else — so a script defect the round itself finds cannot be repaired for that round's own verifiers; 2026-09-12-check-docs-01 hit exactly that, and the copies were refreshed by hand. A refresh is legitimate and must stay VISIBLE, so every one is appended here rather than leaving the freeze quietly worked around.",
+   "minItems": 1
+  },
   "seed_root": {
    "description": "the disposable corpus a seeded documentation round's lanes read: the lane surfaces copied outside the repository and mutated. Written at prepare, destroyed at bank; the repository itself is never seeded.",
    "type": "string"

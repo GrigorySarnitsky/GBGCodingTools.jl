@@ -324,6 +324,35 @@ function build(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     save(dir, rec)
     println(io, "build: exit $code — $log"); return code
 end
+
+"""
+    refresh_scripts(cfg, round; io = stdout) -> Int
+
+`gbg round scripts <round>`: re-copies this round's Workflow scripts from the instrument, and records
+that it happened. The arguments are:
+
+- `cfg` — the validated config.
+- `round` — the round id.
+- `io` — where the refresh is reported.
+
+A round's scripts are FROZEN at preflight — [`Preflight.copy_scripts`](@ref) runs there and nowhere else
+— so a script defect the round ITSELF finds cannot be repaired for that round's own verifiers.
+2026-09-12-check-docs-01 hit exactly that: a blocker left `verify-act.js` and `verify-state.js`
+unparseable in the round's scratch copy, and they had to be refreshed by hand. The refresh is
+legitimate, since refusing it leaves a round that cannot verify at all; doing it by hand is what is
+not, because it leaves no trace that the frozen scripts moved. Every refresh is APPENDED to
+`scripts_refreshed`, never overwritten, so a reader of the closed round sees each one. Returns 0.
+"""
+function refresh_scripts(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
+    dir, rec = guard(cfg, round; io)
+    dst = Preflight.copy_scripts(cfg, String(rec["instrument"]), round)
+    entry = Dict{String,Any}("at" => timestamp(), "head" => something(Git.head(cfg["root"]), "0"^40))
+    rec["scripts_refreshed"] = push!(Vector{Any}(get(rec, "scripts_refreshed", Any[])), entry)
+    save(dir, rec)
+    println(io, "scripts: re-copied into $dst — refresh $(length(rec["scripts_refreshed"])) of this round, recorded")
+    return 0
+end
+
 """
     test(cfg, round; io = stdout) -> Int
 
@@ -877,7 +906,7 @@ end
 
 function cmd_round(args)
     o = parse_options(args; valued = ["lanes", "reason"])
-    isempty(o.positional) && (println(stderr, "usage: gbg round prepare|build|test|bank|rerun|grade|close|abandon|list|render <round> | gbg round pass open <round> [--regrade] [--sweep-ok] [--full-state]"); return 2)
+    isempty(o.positional) && (println(stderr, "usage: gbg round prepare|build|test|scripts|bank|rerun|grade|close|abandon|list|render <round> | gbg round pass open <round> [--regrade] [--sweep-ok] [--full-state]"); return 2)
     verb = o.positional[1]
     cfg = Config.read()
     try
@@ -892,6 +921,7 @@ function cmd_round(args)
         verb == "import" && "empty" in o.flags && (round = o.positional[2])
         verb == "prepare" && return prepare(cfg, round)
         verb == "build" && return build(cfg, round)
+        verb == "scripts" && return refresh_scripts(cfg, round)
         verb == "test" && return test(cfg, round)
         verb == "bank" && return bank(cfg, round)
         verb == "rerun" && return rerun(cfg, round, String.(split(get(o.values, "lanes", ""), ','; keepempty = false)))
