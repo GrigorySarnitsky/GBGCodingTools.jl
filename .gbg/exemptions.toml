@@ -11,6 +11,19 @@
 # them makes the gap visible in `gbg doctor` and in the rendered deviations page, instead of showing as
 # engines that are simply never called. Each is reviewed at expiry, not renewed silently.
 
+# The owner narrowed RULE.DOC.SIGNATURE_MIRROR on 2026-09-12 (451 arguments over 247 docstrings read the
+# house way, 4 the other), which settles the finding carried for it: the docstring form ext#1 asked for is
+# now the one the rule forbids.
+[[exemption]]
+id       = "2026-09-11-check-docs-02/ext#1"
+scope    = "finding"
+target   = "2026-09-11-check-docs-02/ext#1"
+ruling   = "not-a-defect"
+reason   = "the finding asked gate_or_skip's docstring to repeat `what::AbstractString` from the method, under the rule as it then read; the owner narrowed RULE.DOC.SIGNATURE_MIRROR on 2026-09-12 so a signature shows names and defaults and never types, and the docstring is now correct without it"
+recorded = 2026-09-12
+overturn_when = "RULE.DOC.SIGNATURE_MIRROR is widened again to require the method's types in the signature line"
+evidence = "policy/docs-rubric.md RULE.DOC.SIGNATURE_MIRROR; SCAN.SIGNATURE_TYPED enforces the narrowed form"
+
 [[exemption]]
 id       = "RULE.TEST.ALLOC_ZERO"
 scope    = "policy"

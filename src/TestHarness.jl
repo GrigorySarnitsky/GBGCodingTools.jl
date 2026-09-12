@@ -133,7 +133,7 @@ struct CountingArray{T,N} <: AbstractArray{T,N}
 end
 
 """
-    counting(data::Array) -> CountingArray
+    counting(data) -> CountingArray
 
 Wraps `data` with zeroed counters. Returns the wrapper.
 """
@@ -183,7 +183,7 @@ The operations [`audit`](@ref) has measured, taken from the leading token of eac
 const AUDITED_TRAFFIC_OPS = Set{Symbol}()
 
 """
-    audit(operation!, name, rows::Traffic...; print = false)
+    audit(operation!, name, rows...; print = false)
 
 One row of the traffic audit (the per-operation table of array reads and writes). The arguments are:
 

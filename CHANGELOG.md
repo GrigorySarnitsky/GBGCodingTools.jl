@@ -51,6 +51,17 @@ four — that cost 1.48M tokens where the changed items alone were worth about 0
 `dismissals/<id>__<sha of the text audited>.json`, keyed by the item's own claim, verdict and reasoning, and
 `close` sends the auditor only the items whose file is missing or invalid, saying how many it kept.
 
+**`RULE.DOC.SIGNATURE_MIRROR` is narrowed to the house form, on the owner's ruling.** It required every
+type the method declares to be repeated in the docstring's signature line, and nothing checked that half:
+its register entry named only `SCAN.SIGNATURE_WIDE`, which measures width. Measured over `src/` and `ext/`,
+451 arguments across 247 docstrings omitted a type the method declares, and 4 signatures carried one — so
+the rule described almost nothing that was written. It now reads: the signature shows the argument names
+and defaults, in the method's order and without types, and a type belongs to that argument's bullet under
+`The arguments are:`. `SCAN.SIGNATURE_TYPED` (triage, src and ext) enforces it, with a fixture pair; the
+four typed signatures (`counting`, `audit`, the extension's `check` and `gate_or_skip`) are corrected. The
+88-column half and `SCAN.SIGNATURE_WIDE` are unchanged. `2026-09-11-check-docs-02/ext#1`, carried for the
+old form, is adjudicated `not-a-defect` in the ledger: what it asked for is what the rule now forbids.
+
 **Empty rosters refuse.** `lanes.js`, `panel.js`, `hunt.js`, `audit.js`, `verify-state.js` and
 `verify-act.js` throw on an empty roster or scope, as the other four scripts did; `verify-act.js`'s
 `batches` mode, which nothing called, is gone with its `mode` argument.

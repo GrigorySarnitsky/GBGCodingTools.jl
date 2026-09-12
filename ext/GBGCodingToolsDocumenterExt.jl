@@ -11,7 +11,7 @@ using GBGCodingTools, Documenter
 import GBGCodingTools: makedocs
 
 """
-    check(verb::AbstractString, code::Integer)
+    check(verb, code)
 
 Turns the exit code `code` of the verb `verb` into a build failure: returns `nothing` when `code == 0`, else throws
 `ErrorException("gbg <verb> returned <code>")`.
@@ -19,7 +19,7 @@ Turns the exit code `code` of the verb `verb` into a build failure: returns `not
 check(verb::AbstractString, code::Integer) = code == 0 ? nothing : error("gbg $verb returned $code")
 
 """
-    gate_or_skip(cfg, what::AbstractString) -> Bool
+    gate_or_skip(cfg, what) -> Bool
 
 Runs [`GBGCodingTools.gate`](@ref), the closure gate that refuses a build while a round is open, over
 the two docs instruments and says whether the build is skipped: `true` when the gate refuses only

@@ -186,6 +186,27 @@ struct FieldsNotLastRecord
 end
 
 """
+    returns_typed(x) -> Union{Nothing,Bool}
+
+A typed RETURN annotation, which is not a typed argument: the scan that reads the parenthesised list must
+leave this one alone. The argument is `x`, the value tested. Returns the flag, or nothing.
+"""
+returns_typed(x) = x > 0 ? true : nothing
+
+"""
+    typed_signature(x::Real; scale::Real = 1.0) -> Real
+
+A signature that types its arguments where the rule asks for names and defaults alone, the types
+belonging to the bullets. The arguments are:
+
+- `x` — the value, a real.
+- `scale` — what it is multiplied by, a real.
+
+Returns the product.
+"""
+typed_signature(x::Real; scale::Real = 1.0) = x * scale
+
+"""
     wrong_args_form(a, b, c)
 
 Three arguments bound in running prose where the rule asks for the bulleted form. The arguments are `a`,

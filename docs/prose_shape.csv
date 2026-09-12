@@ -49,8 +49,8 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",774,333,0
 "ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1300,556,0
 "ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
-"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3161,3036,0
-"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1485,1310,0
+"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3199,3074,0
+"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1530,1355,0
 "ARCHITECTURE.md § §12.C Doctor ids",135,134,0
 "ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
 "ARCHITECTURE.md § §3 Repository layout",1,1,0
@@ -336,9 +336,9 @@ unit,words,longest_paragraph,admonitions
 "TestHarness.jl :: TestHarness",84,83,0
 "TestHarness.jl :: Traffic",67,56,0
 "TestHarness.jl :: allocation_completeness(pkg, modules; exempt = Dict{Symbol,S",94,46,0
-"TestHarness.jl :: audit(operation!, name, rows::Traffic...; print = false)",117,56,0
+"TestHarness.jl :: audit(operation!, name, rows...; print = false)",117,56,0
 "TestHarness.jl :: count_expression(text, symbols) -> Int",53,49,0
-"TestHarness.jl :: counting(data::Array) -> CountingArray",11,8,0
+"TestHarness.jl :: counting(data) -> CountingArray",11,8,0
 "TestHarness.jl :: display_gate(modules; no_display = Dict{Symbol,String}(), mi",137,97,0
 "TestHarness.jl :: field_threshold(field_bytes; fraction = 16, per_thread = 409",92,65,0
 "TestHarness.jl :: gate(; root = GBGCodingTools.Config.find_root())",127,95,0

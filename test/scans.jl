@@ -97,6 +97,15 @@ end
         @test occursin("makedocs", r.note) && occursin("not compared", r.note)
         @test r.population > 0 && all(h -> !occursin("EXTENSION-HOMED", h.text), r.hits)
     end
+    # The narrowed RULE.DOC.SIGNATURE_MIRROR: a signature shows names and defaults, and a type in the
+    # parenthesised list is the hit. A return annotation after `->` is not an argument and never a hit,
+    # which is the half a `::`-anywhere pattern would get wrong.
+    @testset "a typed argument in a signature, and a typed return that is not one" begin
+        r = G.run_scan(cfg, CATALOG["SCAN.SIGNATURE_TYPED"]; ledger = Dict{String,Any}[])
+        @test r.population > 0
+        @test any(h -> occursin("typed_signature", h.text), r.hits)
+        @test !any(h -> occursin("returns_typed", h.text), r.hits)      # `-> Bool` is a return, not an argument
+    end
     @testset "the clean fixture passes every hard scan" begin
         results, code = G.scan_docs(G.Config.read(FIXTURE); hard_only = true, io = devnull)
         @test code == 0
