@@ -1,0 +1,56 @@
+{
+  "lane": "pages",
+  "schema_version": 1,
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "3e7a502082c092d8ca593516e9124d8e",
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/pages#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "install.md:6-9 defines 'A **consumer** is a package that pins this tool and is reviewed by it' immediately after the page's own first bare use; config.md:6 (this pass's hunk) now reads '...is the one config file of a [consumer](@ref install) — a package that pins this tool...'; ledger.md:6 and rounds.md:6 already carry the same @ref install gloss.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/install.md:7-9",
+          "swept": true,
+          "evidence": "bare first use immediately followed, same paragraph, by the bold clause definition"
+        },
+        {
+          "surface": "docs/src/guide/config.md:6",
+          "swept": true,
+          "evidence": "this diff's hunk adds the @ref install gloss"
+        },
+        {
+          "surface": "docs/src/guide/ledger.md:6",
+          "swept": true,
+          "evidence": "already carries @ref install gloss"
+        },
+        {
+          "surface": "docs/src/guide/rounds.md:6",
+          "swept": true,
+          "evidence": "already carries @ref install gloss"
+        },
+        {
+          "surface": "docs/src/guide/instruments.md:43,134,242",
+          "swept": true,
+          "evidence": "bare use, but page follows install.md in nav order, matching the site's established define-once pattern"
+        },
+        {
+          "surface": "docs/src/guide/rules.md:7,228,585",
+          "swept": true,
+          "evidence": "bare use, page follows install.md in nav order"
+        },
+        {
+          "surface": "docs/src/guide/verbs.md:28",
+          "swept": true,
+          "evidence": "heading referencing the already-defined term"
+        },
+        {
+          "surface": "docs/src/index.md",
+          "swept": true,
+          "evidence": "never uses 'consumer' at all"
+        }
+      ]
+    }
+  ]
+}

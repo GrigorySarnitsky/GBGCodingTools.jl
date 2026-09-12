@@ -400,7 +400,7 @@ check-consistency scripts use underscores).
 | Target | Sources | Changes |
 |---|---|---|
 | `src/CLI/Gate.jl` | PF `audit-changes/gate.py` (staleness `git diff <audited>..HEAD -- covered`, UNCHECKABLE, refusal ≥ 24), IT `audit-changes/gate.py` (empty-audit rule, capped-lane report), PF `make.jl` `lint_review_closure` (per-finding), IT `make.jl` `lint_review_closure` (marker rule) | one gate over `.gbg/rounds/`; per-finding by id; §6.2 step 10 incl. `GBG_ROUND`, every round directory, the untracked-round rule |
-| `src/CLI/Rounds.jl` `bank` | PF/IT `check-consistency/coverage.py` | roster from `ROUND.toml`; classes DEAD/EMPTY/ORPHAN/TRUNCATED/REJECTED (D10); JSON lane files; DEAD ⇒ exit 2, nothing frozen; `lane_shas`; SUSPECT flag; `reproductions_sha` for hunts |
+| `src/CLI/Rounds.jl` `bank` | PF/IT `check-consistency/coverage.py` | roster from `ROUND.toml`; classes DEAD/EMPTY/TRUNCATED/REJECTED (D10 — bank iterates the roster, so a lane file no roster entry expects is not classified at all); JSON lane files; DEAD ⇒ exit 2, nothing frozen; `lane_shas`; SUSPECT flag; `reproductions_sha` for hunts |
 | `src/CLI/Demote.jl` | IT `check-consistency/verify-fixes.js:196-210` (emptiness rule) | the ONE predicate; share reported |
 | `src/CLI/Recall.jl` | PF `check-consistency/recall.py` (unverifiable seeds kept, UNDEFINED), PF `check-consistency/recall_selftest.py` (arms A–D) | arms built in the test; SUSPECT computed here |
 | `src/CLI/Seed.jl` | PF/IT `check-consistency/seed_defects.py` | mechanism only; catalogue from the consumer's `.gbg/seeds.toml` (`config.seed_catalog`; the fixture's is `catalog/seeds/fixture.toml`); per-round salt; writes to `.gbg/scratch/<round>/` |

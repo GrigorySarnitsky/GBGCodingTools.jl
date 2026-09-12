@@ -250,7 +250,7 @@ check!("CFG.TORN", ctx -> begin
     watched = Set(pinned_and_managed(ctx))
     open_rounds = [r.name for r in RoundFiles.rounds(ctx.cfg) if r.state == :open]
     torn = [f for f in modified if f in watched && !any(o -> startswith(f, ".gbg/rounds/$o/"), open_rounds)]
-    isempty(torn) ? pass("CFG.TORN", "no pinned or managed file modified") : fail("CFG.TORN", "modified in the working tree: " * join(sort!(torn), ", ") * " — wait for the sync, or commit")
+    isempty(torn) ? pass("CFG.TORN", "no pinned file (consumer-owned, never rendered) or managed file (`gbg sync` renders and hash-checks it) modified") : fail("CFG.TORN", "modified in the working tree: " * join(sort!(torn), ", ") * " — wait for the sync, or commit")
 end)
 check!("CFG.SURFACES", ctx -> begin
     errs = Config.check_paths(ctx.cfg)

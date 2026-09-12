@@ -1,0 +1,23 @@
+{
+  "lane": "workflow-scripts",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "3e7a502082c092d8ca593516e9124d8e",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#5",
+      "verdict": "ABSENT",
+      "evidence": "lanes.js:44 `title: { type: 'string', minLength: 8 }`, `locations: {..., minItems: 1, ...}`, `description: {..., minLength: 20, ...}`; identical additions in panel.js and audit.js — all three now match schema/finding.schema.json's minLength 8/20 and minItems 1 exactly."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Design.jl:209 `VERBS[\"attack\"]` launches attack-design.js (line 80, Preflight.install_script), and `VERBS[\"calibrate\"]` (line 214) launches rubric-audit.js (line 172) — both wired through design_verb, and Design.jl is included by GBGCodingTools.jl:105."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "verify-act.js no longer declares any 'batches' mode at all (grep for 'mode'/'batches' across src, ext, instruments returns nothing); its args are now `batch?` (singular, a lane-grouping size, verify-act.js:109 `BATCH = Math.max(1, A.batch || 6)`). Passes.jl:579's `act` dict builds no `mode` key. The dead branch was removed, not wired up."
+    }
+  ]
+}

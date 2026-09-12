@@ -1,0 +1,74 @@
+{
+  "lane": "rationale-2",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "3e7a502082c092d8ca593516e9124d8e",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/rationale-2#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "ARCHITECTURE.md:1890 row now plain 'otherwise |' (no WARN), matching Doctor.jl's deliberate fail(). This diff also reverts a prior pass's own erroneous addition attributing POL.COLLAPSED's model-versioned-trailer check to GIT.TRAILER.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:1890",
+          "swept": true,
+          "evidence": "undecorated FAIL row, matches code"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:559-564",
+          "swept": true,
+          "evidence": "code checks only versionless trailer, fail() on miss"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:542-551 POL.COLLAPSED",
+          "swept": true,
+          "evidence": "confirms model-versioned check lives there, not in GIT.TRAILER"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2425; policy/RULES.toml:635-637; policy/git-conventions.md:9; fixture git-conventions.md:10",
+          "swept": true,
+          "evidence": "state rule text only, no severity claim"
+        },
+        {
+          "surface": "docs/design-record/FIXLOG.md:185",
+          "swept": true,
+          "evidence": "historical provenance, not a live claim"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-12-check-docs-01/rationale-2#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "ARCHITECTURE.md:1897 and :1748, plus PROTOCOL.md:86-88, all now say closed_head (falling back to head), matching Doctor.jl:635's get(...,'closed_head', ...['head']) exactly.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:1897",
+          "swept": true,
+          "evidence": "doctor-table row corrected"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1748",
+          "swept": true,
+          "evidence": "this pass's hunk corrects prose"
+        },
+        {
+          "surface": "instruments/audit-changes/PROTOCOL.md:86-88",
+          "swept": true,
+          "evidence": "this pass's hunk corrects protocol text"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:631-640",
+          "swept": true,
+          "evidence": "code matches corrected text exactly"
+        },
+        {
+          "surface": "docs/design-record/REVIEW-attack.md:190",
+          "swept": true,
+          "evidence": "historical review-record, provenance not live claim"
+        }
+      ]
+    }
+  ]
+}

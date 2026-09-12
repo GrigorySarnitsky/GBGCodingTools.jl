@@ -7,13 +7,14 @@
 The verification half of a round. Each pass has two verifiers, both agents the session launches:
 
 - the **act verifier** sees the fix pass's diff and grades what it did to each open finding, in a
-  closed vocabulary: `HONORED` (the ask landed by the right means, and `class_surfaces` lists every
-  other surface carrying the same class with whether the diff SWEPT it — fixed the class at that
-  surface too, not only at the site the finding named), `LINE-ONLY` (the instance is fixed, the class
-  is alive), `ADJACENT` (something was done, but not what was asked), `INSERTED` (repaired by
-  appending, so the flagged text survives beside the correction), `NEW-DEFECT` (the fix introduced a
-  fresh one), `SCOPE-CREEP` (unasked changes, or a flagged term carried through a rewrite), `UNDONE`
-  (nothing in the diff addresses it) and `LAUNDERED` (closed by declaring it acceptable);
+  closed vocabulary: `HONORED` (the ask landed by the right means, with `class_surfaces` naming every
+  other surface that carries the class and whether the diff SWEPT it there), `LINE-ONLY` (the instance
+  is fixed, the class is alive), `ADJACENT` (something was done, but not what was asked), `INSERTED`
+  (repaired by appending, so the flagged text survives beside the correction), `NEW-DEFECT` (the fix
+  introduced a fresh one), `SCOPE-CREEP` (unasked changes, or a flagged term carried through a
+  rewrite), `UNDONE` (nothing in the diff addresses it) and `LAUNDERED` (closed by declaring it
+  acceptable);
+
 - the **state verifier** never sees the diff and grades whether the
   defect is in the tree now: `PRESENT` (its default), `PARTIAL` (some of the class survives, named in
   `surviving_class`), `REGRESSED` (fixed once and back again), `ABSENT`, `NOT-A-DEFECT` or `UNCLEAR`

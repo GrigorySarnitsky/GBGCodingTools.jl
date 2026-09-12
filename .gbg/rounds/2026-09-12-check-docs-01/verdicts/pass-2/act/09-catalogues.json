@@ -1,0 +1,36 @@
+{
+  "lane": "catalogues",
+  "schema_version": 1,
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "3e7a502082c092d8ca593516e9124d8e",
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/catalogues#1",
+      "verdict": "LAUNDERED",
+      "question": "strategy",
+      "evidence": "catalog/scans.toml's SCAN.DOI_CROSSCHECK row is unchanged (`rule = \"RULE.CIT.FULL_INLINE\"`, RULE.CIT.DOI still absent). The only edit is a new header comment declaring the column deliberately one-canonical-rule-per-scan and pointing readers elsewhere — closing the finding by declaration, not by widening the column or recording an owner ledger exemption.",
+      "class_surfaces": [
+        {
+          "surface": "catalog/scans.toml:201-206",
+          "swept": false,
+          "evidence": "rule value unchanged"
+        },
+        {
+          "surface": "catalog/scans.toml:7-10 (new header comment)",
+          "swept": false,
+          "evidence": "declares the design as intentional rather than fixing the omission"
+        },
+        {
+          "surface": "policy/RULES.toml RULE.CIT.DOI check array",
+          "swept": true,
+          "evidence": "already correct before and after, never drifted"
+        },
+        {
+          "surface": "src/Scans/doi_crosscheck.jl:1",
+          "swept": true,
+          "evidence": "header already named both rules, never drifted"
+        }
+      ]
+    }
+  ]
+}

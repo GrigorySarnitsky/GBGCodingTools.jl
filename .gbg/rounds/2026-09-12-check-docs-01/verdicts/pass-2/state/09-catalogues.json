@@ -1,0 +1,13 @@
+{
+  "lane": "catalogues",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "3e7a502082c092d8ca593516e9124d8e",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/catalogues#1",
+      "verdict": "NOT-A-DEFECT",
+      "evidence": "catalog/scans.toml:206-207 still lists only `rule = \"RULE.CIT.FULL_INLINE\"` for SCAN.DOI_CROSSCHECK, but the file's own header (lines 6-10) now states `rule` is ONE canonical rule per scan by design, names SCAN.DOI_CROSSCHECK among the scans that enforce two, and points readers to §12.B and RULES.toml's `check` array instead. RULES.toml:432-437 (RULE.CIT.DOI) already lists `check = [\"scan:SCAN.DOI_CROSSCHECK\"]`, so both rules are recorded — just not in this scalar column, which the header now explains is intentional."
+    }
+  ]
+}
