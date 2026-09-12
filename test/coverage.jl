@@ -103,6 +103,27 @@ end
     end
 end
 
+# The same core invariant for PATHS, not just for numbers: no package path lives in a Workflow script.
+# panel.js sent a `needs: source` hat to src/, ext/, docs/src/ and docs/ as LITERALS, so
+# instruments.check-consistency.latex_source_globs — validated, written by `gbg init`, documented — had no
+# reader anywhere: a consumer naming examples/*.jl had its Literate surface silently never read while the
+# hat was still required to quote findings at their source file:line (2026-09-12-check-docs-01 schemas#1,
+# whose dismissal the audit's own auditor overturned).
+@testset "no instrument hard-codes the corpus paths it reads" begin
+    panel = read(joinpath(TOOL, "instruments", "check-consistency", "workflow", "panel.js"), String)
+    @test occursin("A.source_globs", panel)
+    @test !occursin("the pages under", panel)                       # the literal path list is gone
+    s = JSON3.read(read(joinpath(TOOL, "instruments", "check-consistency", "schema.json"), String), Dict{String,Any})
+    @test "source_globs" in s["properties"]["args"]["required"]
+    # and preflight actually EMITS it — asserting only on the script's text would pass even if the CLI
+    # never sent the key, which is the half of this defect that was invisible
+    cfg = fixture_config()
+    a = G.Preflight.render_args(cfg, "check-consistency", "2026-01-01-check-consistency-01", Any[],
+                                Dict{String,Any}("manuscripts" => Dict("full" => "f", "siteonly" => "s"),
+                                                 "rulebook_path" => "r"); opened = "2026-01-01T00:00:00")
+    @test !isempty(a["source_globs"]) && a["source_globs"] isa AbstractVector
+end
+
 @testset "every doctor check runs without crashing" begin
     root = fixture_copy("doctor-all")
     cfg = G.Config.read(root)

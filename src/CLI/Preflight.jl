@@ -721,6 +721,14 @@ function render_args(cfg::AbstractDict, instrument::AbstractString, round::Abstr
         a["hats"] = [Dict("nn" => h["nn"], "key" => h["key"], "persona_path" => h["persona_path"], "substrate" => h["substrate"], "needs" => h["needs"], "anchor" => h["anchor"]) for h in roster if !h["not_applicable"]]
         a["adjudicated_titles"] = adjudicated_titles(cfg, ledger); a["finding_types"] = finding_types(cfg); a["cost"] = cost; a["opened"] = opened
         a["finding_cap"] = get(cfg["instruments"]["check-consistency"], "finding_cap", 25)
+        # The AUTHORED SOURCE a `needs: source` hat is sent to. Resolved HERE and never in the script:
+        # panel.js carried `src/`, `ext/`, `docs/src/` and `docs/` as literals, which the core invariant
+        # forbids, while `latex_source_globs` — validated, written by `gbg init`, documented in §5 — had
+        # no reader anywhere, so a consumer naming `examples/*.jl` had its Literate surface silently never
+        # read, and the hat was still required to quote findings at their source file:line
+        # (2026-09-12-check-docs-01 schemas#1, and its dismissal overturned by the audit's auditor).
+        globs = String.(get(cfg["instruments"]["check-consistency"], "latex_source_globs", String[]))
+        a["source_globs"] = isempty(globs) ? ["src", "ext", "docs/src", "docs"] : globs
     elseif instrument == "check-docs"
         a["preamble"] = substitute(PREAMBLES[instrument], cfg); a["policy_path"] = paths["policy_path"]; a["finding_types"] = finding_types(cfg)
         a["lanes"] = [merge(Dict{String,Any}("nn" => l["nn"], "key" => l["key"], "kind" => l["kind"], "brief_path" => l["brief_path"], "files" => l["files"], "anchor" => l["anchor"]),
