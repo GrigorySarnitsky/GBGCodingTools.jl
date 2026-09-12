@@ -119,3 +119,28 @@ end
     mkpath(joinpath(root, "test")); touch(joinpath(root, "test", "Project.toml"))
     @test !G.Init.seeded_test_rewritten(c("Foo", "dev"), root)                   # nothing was seeded
 end
+
+# CFG.TORN had NO test, and a work-queue item of 2026-09-12-check-docs-01 doubted it: one doctor run
+# reported `CFG.EXEMPTIONS 10 entries` — a count only the edited ledger yields — while CFG.TORN in the
+# same run reported nothing modified. By hand the guard could not be made to miss, so the doubt is pinned
+# here in BOTH directions rather than left standing on one unexplained reading.
+# The root needs its OWN repository. `fixture_copy` is a plain copy under fixture/.tmp/, which the tool's
+# .gitignore excludes, so its .gbg/ files are untracked, `git status --untracked-files=no` reports nothing,
+# and a test written against it would PASS while asserting nothing at all — the vacuous shape that lets a
+# guard rot unnoticed. `git init` inside the copy makes `rev-parse --show-toplevel` equal the root, so
+# porcelain's prefix is empty and a tracked file behaves as it does in a real consumer.
+@testset "CFG.TORN fails on a modified pinned file, and only while it is modified" begin
+    root = fixture_copy("torn")
+    git(args...) = run(pipeline(setenv(`git -C $root -c user.email=t@t -c user.name=t $args`,
+                                       "HOME" => root, "PATH" => ENV["PATH"]); stdout = devnull, stderr = devnull))
+    git("init", "-q", "-b", "master"); git("add", "-A"); git("commit", "-q", "-m", "base")
+    cfg = G.Config.read(root)
+    torn() = Dict(c.id => c for c in first(G.Doctor.run(cfg; only = ["CFG.TORN"], io = devnull)))["CFG.TORN"]
+    @test torn().status == :PASS                                                 # committed: nothing is torn
+    led = joinpath(root, ".gbg", "exemptions.toml"); keep = read(led, String)
+    open(led, "a") do io; println(io, "\n# a half-synced edit, the case this guard exists for"); end
+    t = torn()
+    @test t.status == :FAIL && occursin("exemptions.toml", t.detail)             # the ledger, named
+    write(led, keep)
+    @test torn().status == :PASS                                                 # restored: torn no more
+end
