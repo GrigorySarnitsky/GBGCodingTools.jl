@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-audit-changes-01",
+  "lane": "contract-drift",
+  "verdict": "CONCERNS",
+  "candidates_found": 14,
+  "checked": [
+    "docs/ARCHITECTURE.md D10: the ORPHAN class removed from the bank classification list, against src/CLI/Rounds.jl:bank at HEAD (`lanes = expected_lanes(rec)`, classify per roster entry, no readdir of findings/) — the code never classified a stray file, so the base promise 'An ORPHAN ... is reported, never counted' was the wrong half; the correction is warranted, but it left the sentence broken (finding 1)",
+    "docs/ARCHITECTURE.md §7.3 AUDIT.GAP row and instruments/audit-changes/PROTOCOL.md step: `head` -> `closed_head` with a `head` fallback, against src/CLI/Doctor.jl:635 `get(audits[i].round, \"base\", \"\") == get(audits[i-1].round, \"closed_head\", audits[i-1].round[\"head\"])` — the new prose matches the code exactly, and both sites (table row and §6.8 line) plus the PROTOCOL were swept together; ROUND.toml does record closed_head (Passes.jl:1265)",
+    "docs/ARCHITECTURE.md §7.3 GIT.TRAILER row: '(WARN)' deleted, against Doctor.jl:560-565, which calls `fail(...)` with the comment 'a FAIL, not a WARN: RULE.GIT.TRAILER is a rule, and a check that cannot fail is not a check' — the row was wrong at base and the code did not move in this window",
+    "CFG.TORN's two-kind rewrite (ARCHITECTURE §7.3 row and preflight step 2, Doctor.pinned_and_managed's new docstring, Preflight.torn_check's docstring, and the pass/refusal strings in Doctor.jl, Preflight.jl and Rounds.guard) against Doctor.pinned_and_managed's body — config/exemptions/seeds/managed.json + .gbg/hats/* + sub-env Project.toml + sidecar keys without '#'; the block-managed entries (CLAUDE.md#gbg:managed, .gitignore#gbg:managed) are excluded and no prose claims them (finding 2)",
+    "docs/ARCHITECTURE.md §6.1's new claim that an instrument's schema.json `$ref`s a REDUCED local `$defs.finding`: verified against instruments/{check-docs,check-consistency,audit-changes}/schema.json (15 properties, no id/lane/n/seeded/seed_class/carried_from) and schema/finding.schema.json (those six present) — accurate, including that bank validates the finished finding against the core file",
+    "docs/ARCHITECTURE.md's new 'Step-0 ... NOT YET BUILT' admission against src/CLI/Rounds.jl:877-881 (`round import <pile>` exit 2, `round compare --recorded` exit 2), cmd_round:856 `cfg = Config.read()` before every dispatch, and import_empty (lines 736-755) calling neither `guard` nor `self_verify` — every clause of the admission holds",
+    "src/CLI/Rounds.jl module docstring: `rerun` 're-launches dead lanes' -> 'prints the Workflow call ... and launches nothing itself', against rerun's body (Rounds.jl:715-716 prints `Preflight.workflow_call`) — the new wording is the true one",
+    "src/CLI/Passes.jl module docstring's expanded verifier vocabulary against the instruments: FAVOURABLE = (\"ABSENT\", \"NOT-A-DEFECT\") at Passes.jl:41, `surviving_class` at verify-state.js:35/64, and the INSERTED/SCOPE-CREEP/LAUNDERED glosses word-for-word from verify-act.js:74-81 — no gloss overstates what the scripts say",
+    "policy/RULES.toml RULE.INST.CARRY's widened statement against policy/instruments.md:46 ('no finding rides more than three rounds'), docs/ARCHITECTURE.md §12.A (which already carried the three-times clause at base, line 2409), Release.carry_release_fails (`carries >= Passes.CARRY_LIMIT`) and its declared check test:test/rounds.jl (lines 577-578, 695-696 exercise both) — the statement caught up with code and prose that already agreed",
+    "policy/RULES.toml's two `check`-array additions cross-checked programmatically against catalog/scans.toml and ARCHITECTURE §12.B: after the edit every catalogued scan appears in its canonical rule's check array, and all three two-rule scans (API_PAGE_STRUCTURE, DOI_CROSSCHECK, DEAD_REF) appear in both of their rules' arrays — the class was swept whole, though the DEAD_REF entry carries the caveat in finding 3",
+    "catalog/scans.toml's new 'ONE canonical rule per scan, which is what the ledger and the doctor resolve against' against Scan.apply_ledger (Scan.jl:351, `Ledger.entries(ledger, rule; scope = \"policy\")` on `row[\"rule\"]`) and Doctor.jl:333/503 — the claim about resolution is true",
+    "test/coverage.jl's SPAN_IN_PROSE widening: the `in `/`of ` exemptions removed. Verified the comment's factual claim by grepping all eleven workflow scripts and instruments/prelude.js for `\\b(in|of) \\``: the single hit is a `//` comment in dismissals.js:12, which coverage.jl:139 strips before applying the regex, so no live form is newly flagged; CHANGELOG rc.11 (unchanged in this window) records the blocker the exemption hid",
+    "src/CLI/Main.jl's new `Config.ConfigError` catch: verified the class exists (Config.jl:43) and that at base only Config.jl:318, Design.jl:208 and Doctor.jl:796 caught it, so the comment's 'only three verbs' is exact; ARCHITECTURE:464 and :2123 define exit 2 as the first-class 'cannot evaluate' and exit 3 as a crash, so the code moved toward the documented contract rather than away from it",
+    "docs/src/guide/config.md 'Five values' -> 'Six values' against Sync.jl:131-135's substitution map and the {{...}} slots actually present in policy/ (rubric.leading_identity, rubric.signature_types, notation.vectors, notation.mathbf_allowed, docs.admonition_titles, instruments.check-docs.argcov_policy) — six is right, and policy/00-index.md already said six",
+    "templates/README.md's 'Two exceptions' against templates/SKILL.md.tmpl (the `<!-- gbg:managed ... -->` header sits on line 6, after the mandatory YAML frontmatter) and templates/queue-guard.sh.tmpl (no header at all) — both halves accurate; Sync.managed_header supplies the :html form",
+    "The workflow schema floors (title minLength 8, description/mechanism minLength 20, locations minItems 1) in audit.js, hunt.js, panel.js, lanes.js against schema/finding.schema.json and instruments/*/schema.json's $defs.finding, both of which already carried the same floors at base — the JS was raised to the banked contract, not above it",
+    "docs/prose_shape.csv: every changed row belongs to a unit this window actually edited (ARCHITECTURE D10/D11/item 2/§1/§6.1/§7.3/§8/§12.A/§12.B, the four guide pages, the four touched docstrings plus the new Doctor.pinned_and_managed); no unrelated row was quietly relaxed; the two re-baselines are their own commits (7253cef, 94d4711), the practice CHANGELOG rc.11 states, and the new docstrings sit under the 120-word cap (110, 74, 114)",
+    "instruments/audit-changes/workflow/attack-design.js: 'found nine defects' -> 'caught four regressions' against docs/design-record/survey-bughunt-auditchanges.md:197, which quotes IT's postmortem as 'unconstrained readers beating eight defect-class lanes at a third of the cost, and catching four regressions' — the edit corrected an unsupported number to the recorded one"
+  ],
+  "findings": [
+    {
+      "type": "structure",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "Removing ORPHAN from D10 left a dangling article: the paragraph now reads \"or live. An A lane file no roster entry expects...\"",
+      "locations": [
+        "docs/ARCHITECTURE.md:615-616 (D10, the bank classification paragraph)",
+        "diff.patch hunk docs/ARCHITECTURE.md @@ -613,7 +613,7 @@"
+      ],
+      "before": "… **TRUNCATED** (`candidates_found > findings.length`; reported, not fatal) or live. An\n**ORPHAN** (a lane file no roster entry expects) is reported, never counted. A DEAD **or REJECTED** lane is **exit 2** …",
+      "after": "… **TRUNCATED** (`candidates_found > findings.length`; reported, not fatal) or live. An\nA lane file no roster entry expects is not classified at all: `bank` iterates the roster, so a stray file in `findings/` is neither read nor reported. A DEAD **or REJECTED** lane is **exit 2** …",
+      "why_it_matters": "The replacement line was written for the sentence body, but the article \"An\" that introduced **ORPHAN** sits at the end of the previous source line and was not deleted. Markdown joins the two lines into one paragraph, so the design record — the document D10's vocabulary is read from, and the text §6.1 cross-refers to — now reads \"…or live. An A lane file no roster entry expects is not classified at all\". The sibling edit at ARCHITECTURE.md:1449 (§6.1's class list) is clean, so only the D10 site is broken; a reader hitting the fragment cannot tell whether a class name was dropped by accident.",
+      "justified": "yes",
+      "previously_worked": "no",
+      "description": "The correction itself is right: `bank` iterates the roster (src/CLI/Rounds.jl `lanes = expected_lanes(rec)`, then `classify_lane` per roster entry, with no `readdir` of `findings/`), so nothing ever reported an ORPHAN and the base sentence promised a classification the tool does not perform. What is wrong is the mechanics of the removal — the deleted text began mid-sentence after \"or live. An\" on the preceding context line, and the replacement opens a new sentence without removing that article.",
+      "evidence": "HEAD docs/ARCHITECTURE.md:615 ends `… TRUNCATED (`candidates_found > findings.length`; reported, not fatal) or live. An` and :616 begins `A lane file no roster entry expects is not classified at all:`; the diff's `-` line is `**ORPHAN** (a lane file no roster entry expects) is reported, never counted.`, i.e. the continuation of that article."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The new PINNED/MANAGED taxonomy files the sync sidecar `.gbg/managed.json` under \"the tool never renders\", which `gbg sync` rewrites on every run",
+      "locations": [
+        "docs/ARCHITECTURE.md:1867 (§7.3 CFG.TORN row)",
+        "docs/ARCHITECTURE.md:1481-1482 (preflight step 2)",
+        "src/CLI/Doctor.jl:228-236 (new `pinned_and_managed` docstring)",
+        "src/CLI/Preflight.jl:804-807 (`torn_check` docstring)",
+        "src/CLI/Doctor.jl:253, src/CLI/Preflight.jl:848, src/CLI/Rounds.jl:69 (the rendered pass/refusal strings)"
+      ],
+      "before": "`git status --porcelain` shows none of the pinned or managed files modified — `.gbg/config.toml`, `exemptions.toml`, `hats/*.toml`, `seeds.toml`, `managed.json`, every sub-environment `Project.toml` listing the tool, the SKILL stubs, the rendered policy",
+      "after": "`git status --porcelain` shows none of them modified, in two kinds the one word does not separate — a PINNED file the consumer owns and the tool never renders (`.gbg/config.toml`, `exemptions.toml`, `hats/*.toml`, `seeds.toml`, `managed.json`, every sub-environment `Project.toml` listing the tool) and a MANAGED file `gbg sync` renders and hash-checks thereafter (the SKILL stubs, the rendered policy)",
+      "why_it_matters": "`.gbg/managed.json` is the sync sidecar: `Sync.sync` \"rewrites `.gbg/managed.json`; idempotent\" (src/CLI/Sync.jl:607) and the record writer adds an entry per managed file (Sync.jl:652). Placing it on the side defined as \"the consumer owns and the tool never renders\" — and, in the docstring, \"the consumer writes it once\" — teaches the opposite of what the tool does with the one file that defines the other kind. The same two-kind wording is now the text a user sees when `CFG.TORN` passes and when `preflight` and every `gbg round` verb refuse, so the misfiling is the CLI's own explanation of why it stopped, and a consumer reading it would conclude a sidecar modified in the working tree could not have come from `gbg sync`.",
+      "justified": "unclear",
+      "previously_worked": "no",
+      "description": "The base text used one word, \"pinned or managed\", for a set that genuinely holds two kinds, and splitting it was warranted. But the split as written misclassifies its own pivot: the sidecar the MANAGED kind is read from is listed under the PINNED kind whose defining property is that the tool never renders it. `Doctor.pinned_and_managed` builds exactly this list — the four `.gbg/` files, the hats, the sub-env manifests, then `Sync.read_sidecar` keys — so the code draws no such line and the distinction exists only in the prose that now claims to explain it. Either `managed.json` belongs to the MANAGED kind, or the PINNED kind needs a definition that admits a file the tool writes but never re-renders from a template.",
+      "evidence": "src/CLI/Doctor.jl:231-234 (new docstring) — \"A PINNED file the tool never renders: the consumer writes it once and the tool must never see it drift outside its own write path — `.gbg/config.toml`, `.gbg/exemptions.toml`, `.gbg/seeds.toml`, the sync sidecar itself, …\" against src/CLI/Sync.jl:607 — \"rewrites `.gbg/managed.json`; idempotent\" and Sync.jl:652 `files[file * \"#gbg:managed\"] = Dict(\"template\" => …, \"sha256\" => sha256hex(block))`."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "RULE.CIT.NO_INACCESSIBLE's check now names a src-only scan whose canonical rule is a different one, so a policy waiver of either rule misses",
+      "locations": [
+        "policy/RULES.toml:448-452 (RULE.CIT.NO_INACCESSIBLE `check`)",
+        "diff.patch hunk policy/RULES.toml @@ -448,7 +448,7 @@",
+        "catalog/scans.toml:302-307 (SCAN.DEAD_REF row)",
+        "src/Scans/dead_ref.jl:4-7"
+      ],
+      "before": "check = [\"panel\"]",
+      "after": "check = [\"scan:SCAN.DEAD_REF\", \"panel\"]",
+      "why_it_matters": "`check` is defined as what catches the rule's next violation, and the rule binds \"on any user-facing surface\". SCAN.DEAD_REF is registered with `surfaces = [\"src\"]` and its body filters to `surface_kind(cfg, f) == :julia`, so an inaccessible citation on a rationale page, a guide page or a README is not covered by the scan now standing in front of the panel. Worse for a consumer: `Scan.apply_ledger` resolves a `scope = \"policy\"` exemption against the scan's CANONICAL rule only (`rule = row[\"rule\"]`, here RULE.DOC.NO_DEAD_REFS), so waiving RULE.CIT.NO_INACCESSIBLE leaves the named scan running under another rule's name, while waiving RULE.DOC.NO_DEAD_REFS silently removes the check this rule now claims to have.",
+      "justified": "unclear",
+      "previously_worked": "no",
+      "description": "The addition is defensible bookkeeping — ARCHITECTURE §12.B has always listed RULE.CIT.NO_INACCESSIBLE as SCAN.DEAD_REF's second rule, and the scan's own header names both — and `panel` is retained, so the debt is not erased. What drifts is the strength of the promise: a rule whose check was a declared reading-panel debt now reads as program-checked, on one surface of many and through a scan the ledger indexes under a different rule. The same shape applies to the sibling edit at RULE.DOC.API_GROUPING (SCAN.API_PAGE_STRUCTURE's canonical rule is RULE.DOC.INTERNAL_API), though there the surfaces do match the rule's scope.",
+      "evidence": "catalog/scans.toml:302-306 — `id = \"SCAN.DEAD_REF\"` / `rule = \"RULE.DOC.NO_DEAD_REFS\"` / `surfaces = [\"src\"]`; src/Scan.jl:351-353 — `id = row[\"id\"]; rule = row[\"rule\"]` then `for e in Ledger.entries(ledger, rule; scope = \"policy\")`; policy/RULES.toml:449 statement — \"Never cite an inaccessible source … on any user-facing surface.\""
+    },
+    {
+      "type": "structure",
+      "severity": "nit",
+      "confidence": "high",
+      "title": "verify-act.js's rewritten args header drops `round_dir`, which the CLI always sends, and adds `batch?`, which no CLI path ever sends",
+      "locations": [
+        "instruments/check-consistency/workflow/verify-act.js:8-10 (the Args comment)",
+        "diff.patch hunk instruments/check-consistency/workflow/verify-act.js @@ -5,9 +5,9 @@",
+        "src/CLI/Passes.jl:543-546 (the `base` args dict), :581 (`act = merge(base, …)`), :609 (the only `delete!(a, \"round_dir\")`)"
+      ],
+      "before": "// Args: { schema_version, round, round_dir, pass_dir, repo, range, nonce, graded_sha256,\n//         lanes: […], findings: […], findings_path,\n//         adjudicated_titles, rulebook_summary?, package, models: {economy}, strength }",
+      "after": "// Args: { schema_version, round, pass_dir, repo, range, nonce, graded_sha256,\n//         lanes: […], findings: […], findings_path,\n//         quote_probe, class_candidates, adjudicated_titles, batch?, package, models: {economy}, strength }",
+      "why_it_matters": "These headers are the only written contract between `Passes.pass_open`, which builds the args, and the frozen script that consumes them; the audit-changes and bug-hunt scripts even cite their schema file beside the list. After the edit the header understates what arrives (`round_dir` is in `base` and survives into `act`; only the bug-hunt architecture verifier deletes it) and overstates what may arrive (`batch` appears nowhere in src/ — `const BATCH = Math.max(1, A.batch || 6)` is served only by its own default). A maintainer trimming the CLI to the documented list would remove a key that is sent, or wire a `batch` knob the CLI has no place to set.",
+      "justified": "unclear",
+      "previously_worked": "no",
+      "description": "Two of the three header changes are real corrections — `quote_probe` and `class_candidates` are sent (Passes.jl:544) and `rulebook_summary` is sent nowhere, so removing it was right. The third pair goes the other way: the one key present in every act-verifier args file was dropped from the list, and an optional key the CLI never writes was added to it. This is the smallest kind of contract drift, but it is drift introduced by an edit whose stated point was to make the header match the args.",
+      "evidence": "src/CLI/Passes.jl:543 — `base = Dict{String,Any}(\"schema_version\" => 1, \"round\" => round, \"round_dir\" => dir, \"pass_dir\" => pd, …)`; :581 — `act = merge(base, Dict(\"range\" => fixrange, …))`; the only removal is :609 `delete!(a, \"adjudicated_titles\"); delete!(a, \"strength\"); delete!(a, \"round_dir\")`, in the bug-hunt branch. `grep -rn batch src/` returns nothing; verify-act.js:109 `const BATCH = Math.max(1, A.batch || 6)`."
+    },
+    {
+      "type": "currency",
+      "severity": "nit",
+      "confidence": "medium",
+      "title": "The signature-types measurement was replaced by \"a handful\" while the ID_RESOLVES counts beside it were kept as a dated snapshot",
+      "locations": [
+        "docs/ARCHITECTURE.md:102 (§1 variation-point table, `rubric.signature_types`)",
+        "docs/ARCHITECTURE.md:2371 (§12.A, RULE.DOC.SIGNATURE_MIRROR)",
+        "docs/ARCHITECTURE.md:2484 (§12.B SCAN.ID_RESOLVES row, edited in the same diff)"
+      ],
+      "before": "451 arguments over 247 docstrings here take `names` and 4 took `mirror` (2026-09-12) … Narrowed to `names` 2026-09-12, the form 247 of 251 docstrings here already took",
+      "after": "this package takes `names`, the form all but a handful of its docstrings already used … Narrowed to `names` on 2026-09-12, the form this package's docstrings had almost entirely taken already; `SCAN.SIGNATURE_TYPED` re-measures it, so no count is carried here",
+      "why_it_matters": "Dropping a cited count is what RULE.TEST.COUNTS_REMEASURED asks for (\"A count nothing asserts is re-measured, never cited\"), and SCAN.SIGNATURE_TYPED does exist and does re-measure (catalog/scans.toml:142, src/Scans/signature_typed.jl:49). But the same diff kept the other cited-count site in the same document — SCAN.ID_RESOLVES' \"964 references, 11 unresolved … 17 of the 24 cases … 143 of 1705\" — and merely dated it. A reader of §12 now meets two conventions for the same class of claim with no rule stated between them, and the evidence for the 2026-09-12 narrowing (how many docstrings it actually had to change: four) survives only in the exemption ledger and the work queue, not in the design record that records the decision.",
+      "justified": "unclear",
+      "previously_worked": "no",
+      "description": "This is the lens's classic direction — an exact quantifier weakened to a vague one — with a real justification attached, so I report it at nit rather than pressing it as a defect. The concern is the inconsistency within one edit: if a measured figure goes stale the moment it is written, the ID_RESOLVES figures are as stale as the signature figures were; if a dated snapshot is acceptable, the signature figures could have been dated too. One of the two treatments should be the house convention.",
+      "evidence": "policy/RULES.toml:533 — `statement = \"A count nothing asserts is re-measured, never cited; a drop is a finding.\"`; the surviving §12.B text at docs/ARCHITECTURE.md:2484 — \"Measured over this package on 2026-09-12, before it was built: 964 references, 11 unresolved … Those figures are that day's snapshot; the scan re-measures on every run\"."
+    }
+  ]
+}

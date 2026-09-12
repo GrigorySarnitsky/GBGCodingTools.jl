@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-audit-changes-01",
+  "ratings": [
+    {
+      "id": "2026-09-12-audit-changes-01/under-rejection#2",
+      "severity": "major",
+      "reason": "The edit doesn't just fix stale prose to match code — it also drops the design's `self verify` guarantee for the one round verb that writes into .gbg/rounds/ with no ledger/WORK_QUEUE entry recording the debt, per the package's own RULE.TEST.RULE_WITH_CHECK, so a real protective guarantee is quietly abandoned rather than flagged as owed."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/under-rejection#3",
+      "severity": "minor",
+      "reason": "A single ARCHITECTURE.md paragraph now exceeds the rule's stated 120-word cap with no future check able to catch it, but the cap's own gate logic appears to intentionally exempt already-baselined narrative units, the deliberate-rebaseline itself is policy-sanctioned, and every raised row is confirmed to map to a real edit — a narrow, confined process gap rather than a live misleading claim."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/behaviour-change#2",
+      "severity": "nit",
+      "reason": "The finding itself verifies all sixteen raised rows correspond to genuine edits in this diff and states 'nothing here is illegitimate' — it flags a structural (self-certifying baseline writer) risk for the future rather than a realized defect in this change."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/over-rejection#1",
+      "severity": "minor",
+      "reason": "The rewritten text is itself accurate and transparent about the gap ('which the CLI does not yet allow'), so it doesn't mislead a reader; the substance of the complaint is a process/engineering judgment that the CLI should have been fixed rather than the design narrowed."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/over-rejection#2",
+      "severity": "major",
+      "reason": "The rendered fleet policy statement is technically true but omits the earlier, unconditional close-time refusal, so an owner following it will plan a close that the CLI actually refuses — a real contradiction between the stated policy and the code path its own test suite exercises."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/public-contract#1",
+      "severity": "blocker",
+      "reason": "main()'s docstring makes an unconditional, now-false factual claim ('returns 3... with its backtrace') about the package's explicitly declared exit-code contract, actively contradicted by the new ConfigError branch — exactly a wrong belief about the API that an external script or hook could act on."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/claim-versus-edit#1",
+      "severity": "minor",
+      "reason": "The commit's own itemized accounting omits two real, narrow, and individually-sound edits — a real gap in self-reported scope, but both edits are correct on their merits and the omission is later traceable in a different commit's message, so no reader of the docs or API is misled, only trust in the commit message's completeness is dented."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/contract-drift#1",
+      "severity": "minor",
+      "reason": "A dangling article merges two sentences into a garbled fragment at the D10 site in ARCHITECTURE.md, but the parallel §6.1 site states the same correction cleanly, so a reader who pauses at the glitch can resolve it nearby rather than walking away with a wrong belief."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/contract-drift#2",
+      "severity": "blocker",
+      "reason": "The new docstring flatly states managed.json is a PINNED file 'the tool never renders,' directly contradicted by Sync.jl rewriting it every run, and this wrong claim is echoed into the actual CLI messages consumers read on CFG.TORN pass and on every round-verb refusal — a verified, load-bearing wrong belief about the API's own behavior."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/contract-drift#3",
+      "severity": "major",
+      "reason": "The new check line overstates enforcement coverage (src-only vs. 'any user-facing surface') and, because the ledger resolves policy-scope exemptions against a scan's canonical rule rather than the citing rule, a maintainer waiving either named rule will plausibly get a mismatch between what they think they exempted and what the ledger actually suppresses."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/contract-drift#4",
+      "severity": "major",
+      "reason": "The rewritten Args header — the stated sole written contract between the CLI and the frozen script — drops a key that is always sent and adds one that is never sent, a real contradiction between two surfaces that a maintainer relying on the comment would plausibly act on incorrectly."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/contract-drift#5",
+      "severity": "nit",
+      "reason": "The finding itself frames this as a stylistic inconsistency with a real justification, not a defect — the author explicitly reports it at nit level, and the underlying rule (counts must be re-measured, not cited) is honored, just applied unevenly to a sibling count in the same document."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/sweep-completeness#1",
+      "severity": "minor",
+      "reason": "Verified: rules.md:7 and instruments.md:43 use the identical unglossed 'consumer' term while three sibling guide pages were swept to link it via @ref install, but the omission is stylistic inconsistency that leaves readers without a convenience cross-reference rather than causing a wrong belief about the tool's behavior."
+    },
+    {
+      "id": "2026-09-12-audit-changes-01/sweep-completeness#2",
+      "severity": "major",
+      "reason": "Verified: ARCHITECTURE.md was corrected to say round-import-before-init is not yet allowed (cmd_round calls Config.read() unconditionally, and import_empty calls neither guard nor self_verify), while IMPLEMENTATION.md:290 and its Phase 2 Step-0 walkthrough still assert the old false claim that import needs no config — a load-bearing contradiction between the two authoritative design/build-plan surfaces that a future session executing Phase 2 verbatim will plausibly hit."
+    }
+  ]
+}

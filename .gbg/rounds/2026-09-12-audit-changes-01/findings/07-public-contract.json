@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-audit-changes-01",
+  "lane": "public-contract",
+  "verdict": "CONCERNS",
+  "checked": [
+    "src/CLI/Main.jl :: main(args) -> Int — the new err isa Config.ConfigError branch in the catch block, and whether main()'s own docstring above it was updated to match",
+    "src/CLI/Config.jl :: every throw(ConfigError(...)) site, to confirm the type is raised only for genuinely bad/missing/unparsable/invalid config, never for an unrelated failure",
+    "src/CLI/Design.jl:208 and src/CLI/Doctor.jl:807 — the pre-existing per-verb ConfigError catches, to see whether the new blanket catch in Main.jl duplicates or conflicts with them",
+    "src/CLI/Doctor.jl :: pinned_and_managed(ctx) and check!(\"CFG.TORN\", ...) — confirmed the function body and the pass/fail boolean logic are byte-identical to base; only a docstring was added and the pass-message string was reworded",
+    "src/CLI/Passes.jl, Preflight.jl, Rounds.jl — confirmed every hunk in the diff for these three files is a docstring edit; no function body, signature, default or return type changed",
+    "policy/RULES.toml :: RULE.DOC.API_GROUPING and RULE.CIT.NO_INACCESSIBLE check-array additions, cross-checked against catalog/scans.toml's (unchanged, singular) `rule` field for SCAN.API_PAGE_STRUCTURE and SCAN.DEAD_REF — additive metadata only, no scan/rule removed or renamed",
+    "policy/RULES.toml :: RULE.INST.CARRY statement addition (CARRY_LIMIT clause) cross-checked against src/CLI/Release.jl and src/CLI/Passes.jl — the CARRY_LIMIT=3 release-refusal logic already existed unchanged at base; the statement was catching up to existing code",
+    "docs/ARCHITECTURE.md :: the ORPHAN-classification rewrite (D10) — grepped Rounds.jl (base and head) and found no ORPHAN handling in the round-bank path in either revision; the doc was correcting a pre-existing misdescription, not describing a code change",
+    "docs/ARCHITECTURE.md :: the AUDIT.GAP / closed_head rewrite — grepped src/CLI/Doctor.jl and Passes.jl and found the closed_head fallback already implemented and unchanged in this diff",
+    "docs/ARCHITECTURE.md :: the GIT.TRAILER '(WARN)' removal — diffed src/CLI/Doctor.jl's GIT.TRAILER check between base and head: byte-identical, already a fail(); the table was correcting a stale WARN/FAIL mislabel",
+    "docs/src/guide/config.md :: 'Five values' -> 'Six values' (rubric.signature_types) — grepped schema/config.schema.json, src/CLI/Sync.jl and src/Scans/signature_typed.jl and found the option already implemented at base; the guide page was filling a pre-existing documentation gap, not describing a new option",
+    "templates/README.md :: the new SKILL.md.tmpl header-placement exception — read templates/SKILL.md.tmpl and found the header already after the YAML frontmatter, unchanged; the README was correcting its own prior claim, not the template",
+    "grep across the full diff for added/removed export statements and for changed function/struct/const signatures outside docstrings — none found besides the Main.jl catch clause",
+    "instruments/*/workflow/*.js SCHEMA constants (minLength/minItems additions) and test/coverage.jl's SPAN_IN_PROSE regex edit — internal workflow/agent-output validation and the test oracle itself, not a Julia struct/function/export surface, so left to the workflow-integrity and test-oracle lenses"
+  ],
+  "candidates_found": 1,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "main()'s exit-code behavior changed but its own docstring still claims exit 3 unconditionally",
+      "locations": [
+        "src/CLI/Main.jl:147-154 (the new `err isa Config.ConfigError && (...); return 2` branch)",
+        "src/CLI/Main.jl:115-124 (the unmodified `main(args) -> Int` docstring, both at base and head)"
+      ],
+      "before": "catch err\n    println(stderr, \"gbg \", key, \": crashed — \", sprint(showerror, err))\n    Base.show_backtrace(stderr, catch_backtrace()); println(stderr)\n    return 3\nend",
+      "after": "catch err\n    # A structurally bad config is the documented exit 2 — \"cannot evaluate\" — and not a crash: ...\n    err isa Config.ConfigError && (println(stderr, \"gbg \", key, \": \", sprint(showerror, err)); return 2)\n    println(stderr, \"gbg \", key, \": crashed — \", sprint(showerror, err))\n    Base.show_backtrace(stderr, catch_backtrace()); println(stderr)\n    return 3\nend",
+      "why_it_matters": "Every `gbg <noun> <verb>` invocation not already wrapped by `design_verb` or `Doctor`'s own local catch now returns exit 2 instead of exit 3 for a hand-edited/invalid `.gbg/config.toml`. Exit codes are this package's stated contract (CLAUDE.md: \"Exit codes are the contract; a log is never grepped for a verdict\"), and any external script, hook or CI step that branches on 3 = crash vs 2 = cannot-evaluate for one of the many verbs that used to hit the generic catch will now see a different code for the same failure. The fix is well-scoped (only `Config.ConfigError`, which Config.jl raises exclusively for absent/unparsable/schema-invalid/path-invalid config) and it corrects behavior to match what `main()`'s docstring already promised (\"2 cannot evaluate ... 3 crash\") — but that same docstring, two lines below, still says unconditionally \"An exception escaping a verb is printed with its backtrace to stderr and returns 3\", which the code no longer does for this class. The docstring is the reader-visible statement of the contract, and it was left saying the old thing while the code now does the new thing.",
+      "justified": "yes",
+      "description": "The change itself is a justified, narrowly-scoped bug fix — it makes every verb's exit code match the pre-existing documented contract instead of only the three verbs that special-cased `ConfigError` themselves — but the diff does not update `main()`'s own docstring, which still states unconditionally that an escaping exception returns 3 with a backtrace. That statement is now false for `Config.ConfigError`. No test in this diff exercises the new branch either (test/coverage.jl is the only test file touched, and it is unrelated). A reader who consults the one docstring that documents this exit-code contract would not learn that this class of failure now returns 2 without a backtrace.",
+      "evidence": "Base main() docstring (git show af1adec6c6666be0c687ffd32bbc9145fecef580:src/CLI/Main.jl): \"An exception escaping a verb is printed with its backtrace to `stderr` and returns 3, so a crash is never read as a finding\" — unchanged at head, while the code added: \"err isa Config.ConfigError && (println(stderr, \"gbg \", key, \": \", sprint(showerror, err)); return 2)\" before the unconditional `return 3` path."
+    }
+  ]
+}

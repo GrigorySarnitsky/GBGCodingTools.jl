@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-audit-changes-01",
+  "lane": "numerics",
+  "verdict": "CLEAN",
+  "checked": [
+    "docs/prose_shape.csv: recomputed the word-count deltas by hand against the actual prose added in the corresponding hunks for every changed row (D10, D11, item 2, §1, §6.1, §6.8, §7.3, §8, install.md, ledger.md, config.md, rounds.md, §12.A, §12.B) — each row keeps words >= longest_paragraph, and every delta in words is accounted for by the quoted inserted text. No row shows an unexplained or backwards-inconsistent delta.",
+    "src/Scans/prose_shape.jl: read the ratchet algorithm (register_scan! \"SCAN.PROSE_SHAPE\") to confirm re-baselining docs/prose_shape.csv alongside deliberate prose growth is the DESIGNED workflow ('re-baseline deliberately if the growth is new content'), not a self-certifying bypass of the growth cap.",
+    "policy/RULES.toml RULE.INST.CARRY statement addition ('carried CARRY_LIMIT (3) times') against src/CLI/Passes.jl: CARRY_LIMIT = 3 and its `< CARRY_LIMIT` comparison already existed at base (af1adec6) unchanged by this diff — the policy prose is catching up to already-implemented, already-correct code.",
+    "docs/ARCHITECTURE.md AUDIT.GAP / closed_head wording against src/CLI/Doctor.jl:631-640 and src/CLI/Passes.jl: the closed_head fallback to head already existed at base, unmodified by this diff — a documentation catch-up, correctly derived.",
+    "JSON-schema minLength/minItems additions (title>=8, description/mechanism>=20, locations>=1) across audit.js, hunt.js (CANDIDATE_SCHEMA and VERDICT_SCHEMA), panel.js, lanes.js: the three numeric bounds are identical everywhere they appear, applied only to finding/candidate-producing schemas, never to the act/state verdict-grading schemas — no inconsistency in the constant across the fleet.",
+    "test/coverage.jl SPAN_IN_PROSE regex: the numeric span bound {1,60} is byte-identical before and after; only two word-keyed negative lookbehinds were removed, a lexical change, not a bound/cutoff/index-range change.",
+    "src/CLI/Main.jl new err isa Config.ConfigError branch: maps exactly to the pre-existing exit-code contract (0/1/2/3), narrows only on exception type, not a numeric comparison or threshold.",
+    "Grepped the full restricted diff (23 files in diffstat.txt) for every added/removed line containing a digit to confirm no other numeric literal, bound, or index was altered."
+  ],
+  "candidates_found": 0,
+  "findings": []
+}

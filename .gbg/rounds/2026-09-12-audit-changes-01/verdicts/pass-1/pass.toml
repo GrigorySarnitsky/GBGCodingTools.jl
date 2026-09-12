@@ -1,0 +1,24 @@
+tool_version = "dev+d5a1b46-dirty"
+head = "d5a1b466e3683d9ac0f94a94c83ca3f14eae0604"
+fix_range = "94d4711e77535ee9f86e3a6c698144f765dc1855..d5a1b466e3683d9ac0f94a94c83ca3f14eae0604"
+tool_tree_sha = "5c39cdaa905ea3334761730d09b22881a6f8c5ed"
+state_ids = ["2026-09-12-audit-changes-01/free-reader#1", "2026-09-12-audit-changes-01/under-rejection#1", "2026-09-12-audit-changes-01/under-rejection#2", "2026-09-12-audit-changes-01/under-rejection#3", "2026-09-12-audit-changes-01/behaviour-change#1", "2026-09-12-audit-changes-01/behaviour-change#2", "2026-09-12-audit-changes-01/over-rejection#1", "2026-09-12-audit-changes-01/over-rejection#2", "2026-09-12-audit-changes-01/over-rejection#3", "2026-09-12-audit-changes-01/public-contract#1", "2026-09-12-audit-changes-01/claim-versus-edit#1", "2026-09-12-audit-changes-01/contract-drift#1", "2026-09-12-audit-changes-01/contract-drift#2", "2026-09-12-audit-changes-01/contract-drift#3", "2026-09-12-audit-changes-01/contract-drift#4", "2026-09-12-audit-changes-01/contract-drift#5", "2026-09-12-audit-changes-01/sweep-completeness#1", "2026-09-12-audit-changes-01/sweep-completeness#2"]
+config_sha = "1838d667144b0300e9af667bfc59f0d6f750884af2e729cd485204cc5275abaf"
+tool_rev = "d5a1b466e3683d9ac0f94a94c83ca3f14eae0604"
+range = "94d4711e77535ee9f86e3a6c698144f765dc1855..d5a1b466e3683d9ac0f94a94c83ca3f14eae0604"
+counted = true
+rechecked = []
+regrade = false
+pass = 1
+nonce = "ad7913cc72f9142630c512a17bc025f7"
+opened = "2026-09-12T16:40:39"
+
+[expected]
+contract-drift = 5
+behaviour-change = 2
+sweep-completeness = 2
+public-contract = 1
+claim-versus-edit = 1
+under-rejection = 3
+over-rejection = 3
+free-reader = 1

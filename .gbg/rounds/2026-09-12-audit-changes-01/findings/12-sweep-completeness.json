@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-audit-changes-01",
+  "lane": "sweep-completeness",
+  "verdict": "CONCERNS",
+  "checked": [
+    "The 'consumer' definitional gloss ([consumer](@ref install)) added to docs/src/guide/config.md, ledger.md, rounds.md and defined in install.md — grepped every docs/src/guide/*.md for other unglossed first-mentions of 'consumer'",
+    "The CFG.TORN 'pinned or managed' -> distinct PINNED/MANAGED wording, across docs/ARCHITECTURE.md, src/CLI/Doctor.jl, src/CLI/Preflight.jl, src/CLI/Rounds.jl — grepped the whole corpus (excluding .gbg) for the retired phrase 'pinned or managed'",
+    "The ORPHAN lane-classification correction in docs/ARCHITECTURE.md (both instances) against src/CLI/Rounds.jl's bank docstring and schema/, docs/src/ for a stray classification named ORPHAN",
+    "The rubric.signature_types hardcoded count (451/247, 247/251) removed from docs/ARCHITECTURE.md and policy/RULES.toml — grepped for the retired counts and for 'Five/Six values vary by package' across docs/ and policy/00-index.md",
+    "The GIT.TRAILER WARN->FAIL wording fix in docs/ARCHITECTURE.md against src/CLI/Doctor.jl's actual check (fail(), unchanged at base) and the generated docs/src/guide/doctor.md, docs/src/architecture.md copies",
+    "The AUDIT.GAP / closed_head correction across docs/ARCHITECTURE.md (two instances) and instruments/audit-changes/PROTOCOL.md",
+    "The RULE.DOC.API_GROUPING / RULE.CIT.NO_INACCESSIBLE check-array additions in policy/RULES.toml against catalog/scans.toml's per-scan rule column and docs/ARCHITECTURE.md §12.B's scan table (SCAN.API_PAGE_STRUCTURE, SCAN.DEAD_REF, SCAN.DOI_CROSSCHECK)",
+    "The RULE.INST.CARRY statement's added CARRY_LIMIT clause in policy/RULES.toml against policy/instruments.md's prose paragraph, docs/ARCHITECTURE.md §12.A's existing row, and src/CLI/Release.jl's actual release check",
+    "The Step-0 instrument-equivalence 'NOT YET BUILT' correction in docs/ARCHITECTURE.md against IMPLEMENTATION.md's Phase 2 plan text and src/CLI/Rounds.jl's cmd_round/import_empty for the same claim (round import needing no config, calling no guard/self-verify)",
+    "The templates/README.md SKILL.md.tmpl header-placement exception against docs/ARCHITECTURE.md's D13 managed-files narrative"
+  ],
+  "candidates_found": 2,
+  "findings": [
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The new 'consumer' glossary link was swept to three guide pages but not to the two others that use the same unglossed term",
+      "locations": [
+        "docs/src/guide/config.md:6 (hunk, fixed)",
+        "docs/src/guide/ledger.md:6 (hunk, fixed)",
+        "docs/src/guide/rounds.md:6 (hunk, fixed)",
+        "docs/src/guide/install.md:8 (hunk, defines the term)",
+        "docs/src/guide/instruments.md:43 (left behind)",
+        "docs/src/guide/rules.md:7 (left behind)"
+      ],
+      "before": "`.gbg/exemptions.toml` is the one place a consumer records a waiver or an adjudication.",
+      "after": "`.gbg/exemptions.toml` is the one place a [consumer](@ref install) — a package that pins this tool and is reviewed by it — records a waiver or an adjudication.",
+      "why_it_matters": "The diff establishes a new house style — the first mention of 'consumer' on a guide page links/glosses it via @ref install — and applies it to config.md, ledger.md and rounds.md (plus install.md's own definition). docs/src/guide/rules.md:7 ('every consumer imports') and docs/src/guide/instruments.md:43 ('the consumer's seed catalogue') are two more guide pages that use the identical unglossed term on first mention, in the same prose style, and were not touched. A reader who lands on rules.md or instruments.md first gets the undefined term the other four pages just stopped using.",
+      "justified": "no",
+      "description": "This is exactly the incomplete-sweep shape the lens is built to catch: one instance of a term-definition edit applied to a sample of the sites that state the same fact (four guide pages) while two siblings using the identical phrase and needing the identical fix (rules.md, instruments.md) were left as they were. Grepping the whole corpus for '@ref install' confirms only three of the five guide pages carrying the word 'consumer' actually link it.",
+      "evidence": "docs/src/guide/rules.md:7 reads '...the shared rulebook every consumer imports, with this package's parameters substituted.' with no link; docs/src/guide/instruments.md:43 reads '...it also plants the labelled defects of the consumer's seed' with no link; `grep -rn \"@ref install\" docs/src/` returns only config.md:6, ledger.md:6, rounds.md:6 and the index.md cross-reference — never rules.md or instruments.md."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "ARCHITECTURE.md now says round import needs a config the CLI does not yet allow skipping, but IMPLEMENTATION.md's Phase 2 plan still asserts the old, false claim",
+      "locations": [
+        "docs/ARCHITECTURE.md:1979-1988 (hunk, corrected)",
+        "IMPLEMENTATION.md:290 (left stating the retired claim)",
+        "IMPLEMENTATION.md:644-653 (Phase 2 procedure that depends on the retired claim)",
+        "src/CLI/Rounds.jl:856-880 (cmd_round: Config.read() runs before every verb dispatch, import --empty included)"
+      ],
+      "before": "It needs no `.gbg/config.toml` — the one `round` verb that runs before `init`; `self verify` still precedes it",
+      "after": "It is to run before `init`, on a tree with no `.gbg/config.toml` — which the CLI does not yet allow, since `cmd_round` reads the config before dispatching any round verb, and the implemented `--empty` path calls neither `guard` nor `self verify`, unlike every other round verb.",
+      "why_it_matters": "IMPLEMENTATION.md is the build plan CLAUDE.md names as authoritative for Phase 2 work, and its own Step-0 procedure (lines 644-653) runs `gbgdev init --migrate --dry-run` (which 'writes no .gbg/', line 644) and then `gbgdev round import ...` on the same tree — a sequence that only works if round import needs no config, exactly the claim this diff just retracted in ARCHITECTURE.md. Anyone executing Phase 2 from IMPLEMENTATION.md's row 290 and the Step-0 walkthrough as written will hit `cmd_round`'s unconditional `Config.read()` and fail before the CLI does anything the plan describes.",
+      "justified": "no",
+      "description": "The diff corrects one restatement of this fact (ARCHITECTURE.md's Step-0 section, explicitly flagging the gap between the design and the built CLI) but leaves a second, load-bearing restatement of the exact same fact uncorrected in the build plan that a future session will follow verbatim. This is not a design absence the package accepts — the new ARCHITECTURE.md text itself calls it out as a gap ('which the CLI does not yet allow') — so the sibling site is a real leftover, not a deliberate omission.",
+      "evidence": "IMPLEMENTATION.md:290 — '`gbg round import <pile…>`, ... needs no `.gbg/config.toml` (the one `round` verb that runs before `init`)'; src/CLI/Rounds.jl:856 — `cfg = Config.read()` executes unconditionally before the `verb ==` dispatch chain that includes `import`, and `import_empty` (Rounds.jl:736-757) calls neither `guard(...)` nor `self_verify(...)`."
+    }
+  ]
+}
