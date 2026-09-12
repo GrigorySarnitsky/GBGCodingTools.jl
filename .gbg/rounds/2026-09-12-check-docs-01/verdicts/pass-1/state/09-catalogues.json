@@ -1,0 +1,13 @@
+{
+  "lane": "catalogues",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "921bec0168a2155c900419761d6b35cd",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/catalogues#1",
+      "verdict": "NOT-A-DEFECT",
+      "evidence": "scans.toml:6-11 now states the rule column holds ONE canonical rule per scan, names SCAN.DOI_CROSSCHECK among scans enforcing two, and directs readers to §12.B/RULES.toml's check array, never this column, for the full list — matching ARCHITECTURE.md:2467 and RULES.toml's check=scan:SCAN.DOI_CROSSCHECK entries. The apparent omission is disclosed design, not a silent gap."
+    }
+  ]
+}

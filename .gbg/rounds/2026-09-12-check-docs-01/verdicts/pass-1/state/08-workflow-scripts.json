@@ -1,0 +1,64 @@
+{
+  "lane": "workflow-scripts",
+  "schema_version": 1,
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "921bec0168a2155c900419761d6b35cd",
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "verify-act.js:126 and verify-state.js:113 now read \\`lane_files\\` (escaped). A backtick-balance scan of all 11 scripts + prelude.js shows every file has an even count of unescaped backticks — no dangling literal remains."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#2",
+      "verdict": "ABSENT",
+      "evidence": "verify-state.js:80-82 now reads 'a surviving quote does not settle that the defect is still there and a vanished one does not settle that the class is gone' — STRATEGY is gone, reworded to this script's own PRESENT/ABSENT vocabulary."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#3",
+      "verdict": "ABSENT",
+      "evidence": "panel.js, hunt.js and audit.js headers all now list finding_cap (matches their required-arg checks and usage). verify-act.js's header Args list no longer names round_dir or rulebook_summary — matches its actual required list exactly."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#4",
+      "verdict": "ABSENT",
+      "evidence": "hunt.js:145 renamed to `const bankedLane = {...}`; grep for `laneFile` across all 11 scripts finds it only in prelude.js's own definition. Grepped every prelude-shared name (laneModel, DONE, scribe, stamped, scribeAll, stampIds, STRENGTH, ECONOMY) for redeclaration: none found."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#5",
+      "verdict": "PARTIAL",
+      "evidence": "lanes.js, panel.js, audit.js SCHEMAs now carry title minLength:8, description minLength:20, locations minItems:1, matching finding.schema.json exactly.",
+      "surviving_class": "instruments/bug-hunt/workflow/hunt.js:35 CANDIDATE_SCHEMA.title has no minLength (vs schema's 8), and the banked finding's description (built from `mechanism` at hunt.js:155) has no minLength:20 either — bank (Rounds.jl:580-586) validates hunt.js's findings against the same core schema, so a short title/mechanism there fails bank exactly as described."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#6",
+      "verdict": "ABSENT",
+      "evidence": "attack-design.js:43 now reads 'two unconstrained readers then caught four regressions the eight could not see' — matches ARCHITECTURE.md and design-record's 'four regressions'. Repo-wide grep (excluding .gbg) for 'nine defect' returns nothing."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "A new src/CLI/Design.jl now wires both: VERBS[\"attack\"] launches attack-design.js (Design.jl:80-86) and VERBS[\"calibrate\"] launches rubric-audit.js (Design.jl:172-179), both included via GBGCodingTools.jl:105. The quoted main_script dict in Preflight.jl is unrelated to this new path."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#2",
+      "verdict": "ABSENT",
+      "evidence": "Both scripts now give id a schema description ('the finding id EXACTLY as given') and their prompts explicitly say 'Return {id: \"${d.id}/${f.id}\", ...}'; both also now pipe output through prelude's `stampIds`, which overwrites id positionally regardless of what the model returns."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#3",
+      "verdict": "ABSENT",
+      "evidence": "severity-recheck.js:16 and attack-design.js:14 required-arg lists now both include 'round', matching every sibling script that writes A.round into its output."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/workflow-scripts#1",
+      "verdict": "ABSENT",
+      "evidence": "verify-act.js no longer declares any MODE/'batches' concept at all — grep for 'mode'/'batches' in the file returns nothing besides comments/`batch` (a count). Passes.jl:577-578's `act` dict builds only range/lanes/findings, no 'mode' key."
+    },
+    {
+      "id": "2026-09-11-check-docs-02/workflow-scripts#2",
+      "verdict": "ABSENT",
+      "evidence": "All previously-bare scripts now guard: lanes.js:21, panel.js:23, hunt.js:19, audit.js:21, verify-state.js:20, verify-act.js:21 each throw on an empty driving list; the four that already had guards (dismissals.js, severity-recheck.js, rubric-audit.js, verify-architecture.js) still do."
+    }
+  ]
+}

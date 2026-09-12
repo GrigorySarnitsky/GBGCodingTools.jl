@@ -1,0 +1,18 @@
+{
+  "lane": "rationale-2",
+  "schema_version": 1,
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "921bec0168a2155c900419761d6b35cd",
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/rationale-2#1",
+      "verdict": "REGRESSED",
+      "evidence": "ARCHITECTURE.md:1889 now drops the '(WARN)' tag, matching Doctor.jl:565's fail(...) call — the original defect is gone. But the fix also added 'and none carries a model-versioned one' to GIT.TRAILER's row; Doctor.jl:560-566 only checks for the correct trailer's presence — the model-versioned-trailer check belongs to POL.COLLAPSED (line 1884: 'model-versioned trailer'), not GIT.TRAILER, so the row now misattributes a check."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/rationale-2#2",
+      "verdict": "ABSENT",
+      "evidence": "ARCHITECTURE.md:1896 now reads 'every closed audit round's base equals the previous closed audit's closed_head (falling back to head where the earlier round records none)', matching Doctor.jl:635's `get(audits[i-1].round, \"closed_head\", audits[i-1].round[\"head\"])` exactly. No remaining row states the comparison against plain head."
+    }
+  ]
+}

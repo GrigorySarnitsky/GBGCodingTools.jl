@@ -1,0 +1,52 @@
+{
+  "lane": "rationale-3",
+  "schema_version": 1,
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "921bec0168a2155c900419761d6b35cd",
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/rationale-3#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "ARCHITECTURE.md:1961 now opens 'Step-0 instrument-equivalence test. NOT YET BUILT — the legacy pile readers are Phase 2's scratch tools ... a non-`--empty` `gbg round import` and every `gbg round compare` refuse with exit 2 today. Only `gbg round import --empty` exists.' Matches src/CLI/Rounds.jl:876-880.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:1961-2019",
+          "swept": true,
+          "evidence": "the disclaimer opens the whole Step-0 block, covering import/grade/compare/table"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-12-check-docs-01/rationale-3#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "ARCHITECTURE.md:1975-1979 rewritten to state cmd_round reads config unconditionally and import_empty calls neither guard nor self_verify, matching Rounds.jl:855 and 735-756.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:1975-1979",
+          "swept": true,
+          "evidence": "the one paragraph making both claims is corrected together"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-12-check-docs-01/rationale-3#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "Both counts now date-anchored: SCAN.ID_RESOLVES row (2461) adds 'on 2026-09-12' + 'that day's snapshot; re-measures on every run'; SIGNATURE_MIRROR row (2362) drops 'here' and adds 'at that date', count rephrased as all-but-four matching original 247/251.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:2461 (SCAN.ID_RESOLVES row)",
+          "swept": true,
+          "evidence": "date + reproducibility note added, 'here' removed"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:2362 (SIGNATURE_MIRROR row)",
+          "swept": true,
+          "evidence": "'here' removed, 'at that date' added"
+        }
+      ]
+    }
+  ]
+}

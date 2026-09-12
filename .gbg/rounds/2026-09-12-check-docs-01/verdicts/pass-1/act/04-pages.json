@@ -1,0 +1,64 @@
+{
+  "lane": "pages",
+  "schema_version": 1,
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "921bec0168a2155c900419761d6b35cd",
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/pages#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "config.md:17-18 changed 'Five' to 'Six values' and added rubric.signature_types in 00-index.md's order, matching schema/config.schema.json:288-293. ARCHITECTURE.md:668's parallel list also gained the key.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/config.md:17-18",
+          "swept": true,
+          "evidence": "count corrected 5→6, item added in right position"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:668",
+          "swept": true,
+          "evidence": "sibling variation-points list also gained rubric.signature_types"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-12-check-docs-01/pages#2",
+      "verdict": "LINE-ONLY",
+      "question": "strategy",
+      "evidence": "install.md:7-9 glossed, ledger.md:6/rounds.md:6 now @ref-link 'consumer'. But config.md:6, a location the finding names, remains fully bare/unglossed/unlinked — the sweep commit's own message names only ledger.md and rounds.md as fixed, omitting config.md.",
+      "class_surfaces": [
+        {
+          "surface": "docs/src/guide/install.md:7-9",
+          "swept": true,
+          "evidence": "first bare use immediately followed by defining clause"
+        },
+        {
+          "surface": "docs/src/guide/install.md:13,38-40,46",
+          "swept": true,
+          "evidence": "later bare reuse on same page after its own definition"
+        },
+        {
+          "surface": "docs/src/guide/ledger.md:6",
+          "swept": true,
+          "evidence": "@ref-link + clause added"
+        },
+        {
+          "surface": "docs/src/guide/rounds.md:6",
+          "swept": true,
+          "evidence": "@ref-link + clause added"
+        },
+        {
+          "surface": "docs/src/guide/config.md:6",
+          "swept": false,
+          "evidence": "'the one config file of a consumer:' still bare, unlinked, untouched by the fix pass"
+        },
+        {
+          "surface": "docs/src/guide/instruments.md:43,134,242",
+          "swept": true,
+          "evidence": "bare reuse after site-order-first definition, consistent with round/lane/instrument pattern"
+        }
+      ]
+    }
+  ]
+}

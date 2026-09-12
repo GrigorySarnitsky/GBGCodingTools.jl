@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "921bec0168a2155c900419761d6b35cd",
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Preflight.jl:804-808 torn_check's own docstring now defines both terms inline before first use: 'A MANAGED file is one the tool renders into the consumer and hash-checks thereafter... a PINNED file is one the consumer itself owns and the tool never renders...' No later-module dependency remains."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Doctor.jl:228-238 pinned_and_managed now has a full docstring naming the third sense of 'pinned' explicitly ('This is a third sense of \"pinned\", distinct from a pinned VERSION and from a pinned tree hash'), and is @ref-linked from Preflight.torn_check's docstring."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/cold-reader#3",
+      "verdict": "PARTIAL",
+      "evidence": "src/CLI/Passes.jl:9-20: all act-verdict tokens now glossed (ADJACENT, INSERTED, NEW-DEFECT, SCOPE-CREEP added), and state's PARTIAL now glossed too. But REGRESSED and UNCLEAR remain bare in the same enumeration (line 19): '`REGRESSED`, `ABSENT`, `NOT-A-DEFECT` or `UNCLEAR`' — no parenthetical.",
+      "surviving_class": "src/CLI/Passes.jl:17-19 — REGRESSED and UNCLEAR still carry no parenthetical gloss in the state-verifier enumeration (ABSENT/NOT-A-DEFECT get only the trailing 'favourable' note, not a distinguishing gloss)."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/cold-reader#4",
+      "verdict": "ABSENT",
+      "evidence": "src/CLI/Passes.jl:10-12 now glosses 'swept' inline at first use in the module docstring: 'class_surfaces lists every other surface carrying the same class with whether the diff SWEPT it — fixed the class at that surface too, not only at the site the finding named'. No forward dependency on Demote.jl remains."
+    }
+  ]
+}

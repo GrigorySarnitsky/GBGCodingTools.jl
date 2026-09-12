@@ -1,0 +1,44 @@
+{
+  "lane": "rationale-2",
+  "schema_version": 1,
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "921bec0168a2155c900419761d6b35cd",
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/rationale-2#1",
+      "verdict": "NEW-DEFECT",
+      "question": "implementation",
+      "evidence": "docs/ARCHITECTURE.md:1889's GIT.TRAILER row was changed from 'last 20 commits carry the versionless trailer | otherwise (WARN)' to 'last 20 commits carry the versionless trailer, and none carries a model-versioned one | otherwise' — the '(WARN)' removal is correct and matches Doctor.jl:549-554's deliberate FAIL. But the added clause 'and none carries a model-versioned one' is false: GIT.TRAILER's check (src/CLI/Doctor.jl:561-566, untouched by this diff) only counts commits missing the versionless trailer string; the model-versioned-trailer check is a different check, POL.COLLAPSED (Doctor.jl:545: 'a model-versioned trailer in the last 20 commits'). RULE.GIT.TRAILER's own statement (policy/git-conventions.md:10-11, policy/RULES.toml:638) says nothing about barring a model-versioned trailer either. The fix introduced a fresh false claim while correcting the one it was asked to correct.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:1889",
+          "swept": false,
+          "evidence": "carries the newly-introduced false claim that GIT.TRAILER's own check verifies the absence of a model-versioned trailer, which src/CLI/Doctor.jl:561-566 does not do"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-12-check-docs-01/rationale-2#2",
+      "verdict": "LINE-ONLY",
+      "question": "strategy",
+      "evidence": "docs/ARCHITECTURE.md:1896's AUDIT.GAP row was rewritten to 'every closed audit round's `base` equals the previous closed audit's `closed_head` (falling back to `head` where the earlier round records none)...', which matches src/CLI/Doctor.jl:635 exactly: `get(audits[i].round, \"base\", \"\") == get(audits[i-1].round, \"closed_head\", audits[i-1].round[\"head\"])`. But the same wrong claim survives verbatim elsewhere in the live corpus, untouched by the diff: docs/ARCHITECTURE.md:1746 (§6.8 Deltas — /audit-changes) still reads 'AUDIT.GAP (doctor, WARN) when `base` ≠ the previous closed audit's `head`', and instruments/audit-changes/PROTOCOL.md:87 — the instrument's own live operating protocol — still reads 'The doctor warns (`AUDIT.GAP`) when this round's `base` is not the previous closed audit's `head`'.",
+      "class_surfaces": [
+        {
+          "surface": "docs/ARCHITECTURE.md:1896",
+          "swept": true,
+          "evidence": "rewritten to name `closed_head` with the `head` fallback, matching Doctor.jl:635"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1746",
+          "swept": false,
+          "evidence": "same document, §6.8, still says 'the previous closed audit's `head`' with no mention of `closed_head`, untouched by the diff"
+        },
+        {
+          "surface": "instruments/audit-changes/PROTOCOL.md:87",
+          "swept": false,
+          "evidence": "the instrument's own live PROTOCOL.md still tells the round 'the doctor warns (AUDIT.GAP) when this round's base is not the previous closed audit's head' — the same wrong field, untouched by the diff"
+        }
+      ]
+    }
+  ]
+}

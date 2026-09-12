@@ -1,0 +1,30 @@
+{
+  "lane": "rationale",
+  "schema_version": 1,
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "921bec0168a2155c900419761d6b35cd",
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/rationale#1",
+      "verdict": "PARTIAL",
+      "evidence": "ARCHITECTURE.md:102 now reads 'this package takes `names`... SCAN.SIGNATURE_TYPED re-measures it on every run, so no count is carried here' — no stale numbers. But line 2369 still says 'all but four ... already took [names]'; a live `gbg scan docs` run today shows SCAN.SIGNATURE_TYPED = 0 hits, not 4.",
+      "surviving_class": "docs/ARCHITECTURE.md:2369 (RULE.DOC.SIGNATURE_MIRROR row): 'the form all but four of this package's docstrings already took at that date' — contradicted by a fresh SCAN.SIGNATURE_TYPED run (0 hits under the default `names` config), the same stale-count defect at a new site."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/rationale#2",
+      "verdict": "ABSENT",
+      "evidence": "ARCHITECTURE.md:646 now says the findings array `$ref`s a REDUCED `$defs.finding` LOCAL to the instrument's own schema.json, and that schema/finding.schema.json is validated only at bank. Confirmed against instruments/check-docs|check-consistency|audit-changes/schema.json (local $defs.finding, no id/lane/n/carried_from/seeded/seed_class) and bug-hunt's $defs.hunt_finding. No remaining $ref to schema/finding.schema.json anywhere in ARCHITECTURE.md (grepped)."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/rationale#3",
+      "verdict": "PARTIAL",
+      "evidence": "D10 (line 615-616) now reads 'A lane file no roster entry expects is not classified at all: bank iterates the roster, so a stray file in findings/ is neither read nor reported' — matches Rounds.jl (bank iterates expected_lanes(rec) only; no orphan-scan code). But line 1447-1448 still says findings/NN-<lane>.json is 'Classified at bank per D10 (DEAD, EMPTY, ORPHAN, TRUNCATED, REJECTED)', restating ORPHAN as an implemented class.",
+      "surviving_class": "docs/ARCHITECTURE.md:1447-1448 (the artefact-schema list): 'Classified at bank per D10 (DEAD, EMPTY, ORPHAN, TRUNCATED, REJECTED)' still names ORPHAN as a bank classification, contradicting both the code and the now-corrected D10 passage itself."
+    },
+    {
+      "id": "2026-09-11-check-docs-01/rationale#1",
+      "verdict": "ABSENT",
+      "evidence": "docs/ARCHITECTURE.md:1004's tree now indents `Scan.jl` at the 4-space src/ top level (sibling of TreeHash.jl/HtmlWalker.jl/TestHarness.jl), not the 6-space CLI/ level. Matches src/GBGCodingTools.jl:87 `include(\"Scan.jl\")` (top-level, not `CLI/Scan.jl`) and the actual file at src/Scan.jl (src/CLI/Scan.jl does not exist). No other doc mentions the old placement."
+    }
+  ]
+}

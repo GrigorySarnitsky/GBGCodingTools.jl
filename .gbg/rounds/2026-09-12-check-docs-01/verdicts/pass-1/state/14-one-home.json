@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "one-home",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "921bec0168a2155c900419761d6b35cd",
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/one-home#1",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:87 RULE.DOC.API_GROUPING check now lists scan:SCAN.API_PAGE_STRUCTURE; :451 RULE.CIT.NO_INACCESSIBLE check now lists scan:SCAN.DEAD_REF. catalog/scans.toml:7-10 header now explains the single-rule column by design, pointing to §12.B and RULES.toml's check array. Grepped all three scans; only these three ARCHITECTURE.md rows are multi-rule, all now consistent."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/one-home#2",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:575 RULE.INST.CARRY statement now reads '...a carried blocker or major stands, while anything has been carried CARRY_LIMIT (3) times, or while the backlog is not draining' — all three conditions present, matching ARCHITECTURE.md:2416 and Release.jl's carry_release_fails."
+    }
+  ]
+}

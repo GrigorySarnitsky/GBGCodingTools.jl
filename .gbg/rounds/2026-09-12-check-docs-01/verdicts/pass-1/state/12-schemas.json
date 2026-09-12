@@ -1,0 +1,13 @@
+{
+  "lane": "schemas",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "921bec0168a2155c900419761d6b35cd",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/schemas#1",
+      "verdict": "PRESENT",
+      "evidence": "schema/config.schema.json:236-239,441-444 still define docs.doctest and latex_source_globs; Init.jl:148,163 still write both defaults; ARCHITECTURE.md:1241,1353,1418 still document them. GBGCodingToolsDocumenterExt.jl's makedocs never reads cfg[\"docs\"][\"doctest\"]; docs/make.jl:62 and templates/make.jl.seed:14 hardcode doctest=true instead. No .jl/.js file reads latex_source_globs."
+    }
+  ]
+}

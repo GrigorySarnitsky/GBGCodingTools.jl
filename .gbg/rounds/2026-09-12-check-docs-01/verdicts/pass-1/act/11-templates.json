@@ -1,0 +1,31 @@
+{
+  "lane": "templates",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "921bec0168a2155c900419761d6b35cd",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/templates#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "templates/README.md:26-31 now states two exceptions, adding SKILL.md.tmpl's header-after-frontmatter case exactly as the hint asked; verified against SKILL.md.tmpl:1-6 (5-line YAML frontmatter, header on line 6).",
+      "class_surfaces": [
+        {
+          "surface": "templates/settings.json.tmpl (G, JSON)",
+          "swept": true,
+          "evidence": "already covered by the rule's \"none for JSON\" clause"
+        },
+        {
+          "surface": "templates/regressions-README.md (G)",
+          "swept": true,
+          "evidence": "header correctly on line 1"
+        },
+        {
+          "surface": "templates/claude-md.block, gitignore.block (G)",
+          "swept": true,
+          "evidence": "same paragraph now separately describes their begin/end-block shape"
+        }
+      ]
+    }
+  ]
+}

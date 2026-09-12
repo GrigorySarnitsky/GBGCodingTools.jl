@@ -1,0 +1,301 @@
+{
+  "lane": "workflow-scripts",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "921bec0168a2155c900419761d6b35cd",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "verify-act.js:126 and verify-state.js:113 now read `Return one object per lane in \\`lane_files\\`, in the order below` — the backtick pair around lane_files is escaped, matching every other backticked term; SPAN_IN_PROSE sweep (17/17) confirms no bare span survives.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:126",
+          "swept": true,
+          "evidence": "backslash-escaped backticks"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-state.js:113",
+          "swept": true,
+          "evidence": "backslash-escaped backticks"
+        },
+        {
+          "surface": "instruments/prelude.js",
+          "swept": true,
+          "evidence": "no bare backtick-pair in template-literal prose"
+        },
+        {
+          "surface": "other 9 workflow scripts",
+          "swept": true,
+          "evidence": "SPAN_IN_PROSE scan sweeps all eleven scripts and reports green"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "verify-state.js:79-82 reworded to own vocabulary ('does not settle that the defect is still there'/'the class is gone'); STRATEGY reference gone; verify-act.js:85-88 (correct original) untouched.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/verify-state.js:79-82",
+          "swept": true,
+          "evidence": "STRATEGY replaced"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:85-88",
+          "swept": true,
+          "evidence": "unchanged correct original"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "panel.js:14, hunt.js:11, audit.js:13 headers now list finding_cap; verify-act.js header dropped round_dir/rulebook_summary?.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js:14",
+          "swept": true,
+          "evidence": "finding_cap added"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:11",
+          "swept": true,
+          "evidence": "finding_cap added"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:13",
+          "swept": true,
+          "evidence": "finding_cap added"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:8-10",
+          "swept": true,
+          "evidence": "round_dir/rulebook_summary? removed"
+        },
+        {
+          "surface": "instruments/check-docs/workflow/lanes.js header",
+          "swept": true,
+          "evidence": "no finding_cap concept, not part of class, checked no drift"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#4",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "hunt.js:145 renamed local to bankedLane; prelude.js:38 laneFile helper unchanged and correctly used by verify-act.js/verify-state.js.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:145",
+          "swept": true,
+          "evidence": "renamed to bankedLane"
+        },
+        {
+          "surface": "instruments/prelude.js:38",
+          "swept": true,
+          "evidence": "shared helper untouched"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:134,141",
+          "swept": true,
+          "evidence": "calls prelude laneFile correctly"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-state.js:124,131",
+          "swept": true,
+          "evidence": "calls prelude laneFile correctly"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#5",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "lanes.js, panel.js, audit.js SCHEMAs now set title minLength 8, description minLength 20, locations minItems 1, matching schema/finding.schema.json exactly.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-docs/workflow/lanes.js:41-54",
+          "swept": true,
+          "evidence": "constraints added"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js:36-49",
+          "swept": true,
+          "evidence": "constraints added"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:33-50",
+          "swept": true,
+          "evidence": "constraints added"
+        },
+        {
+          "surface": "schema/finding.schema.json:63,87,111",
+          "swept": true,
+          "evidence": "canonical values unchanged, now matched"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#6",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "attack-design.js:43 now says 'caught four regressions the eight could not see', matching both corroborating sources; no 'nine defects' remains anywhere.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/audit-changes/workflow/attack-design.js:43",
+          "swept": true,
+          "evidence": "four regressions"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:432",
+          "swept": true,
+          "evidence": "already consistent"
+        },
+        {
+          "surface": "docs/design-record/survey-bughunt-auditchanges.md:197",
+          "swept": true,
+          "evidence": "already consistent"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#1",
+      "verdict": "UNDONE",
+      "question": "fidelity",
+      "evidence": "src/CLI/Preflight.jl:792 main_script dict still maps only 4 instruments; neither rubric-audit.js nor attack-design.js appears anywhere in src/ or ext/.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Preflight.jl:792",
+          "swept": false,
+          "evidence": "still 4-entry dict, neither script named"
+        },
+        {
+          "surface": "instruments/check-consistency/schema.json / instruments/audit-changes/schema.json",
+          "swept": false,
+          "evidence": "still no schema for either script's output"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "dismissals.js and verify-architecture.js both gained id description 'the finding id EXACTLY as given' plus an explicit 'Return {id: \"${...}\", ...}' instruction, matching severity-recheck.js/verify-act.js's existing pattern.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/bug-hunt/workflow/dismissals.js:19-28,59",
+          "swept": true,
+          "evidence": "id description + explicit return added"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/verify-architecture.js:20-29,47-49",
+          "swept": true,
+          "evidence": "id description + explicit return added"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/severity-recheck.js:43",
+          "swept": true,
+          "evidence": "already correct, unchanged"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:35",
+          "swept": true,
+          "evidence": "already correct, unchanged"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#3",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "severity-recheck.js:16 and attack-design.js:14 now include 'round' in their required-arg guard, matching the sibling scripts.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/severity-recheck.js:16,67",
+          "swept": true,
+          "evidence": "'round' now required"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/attack-design.js:14,71",
+          "swept": true,
+          "evidence": "'round' now required"
+        },
+        {
+          "surface": "lanes.js, panel.js, audit.js, hunt.js, dismissals.js",
+          "swept": true,
+          "evidence": "already validated round, unchanged"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-02/workflow-scripts#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "The mode/batches mechanism was removed entirely: verify-act.js has no MODE variable or 'batches' branch, and Passes.jl's act args dict (the sole call site) no longer sets a 'mode' key at all, replaced by a lane-grouping 'batch' parameter.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js (formerly :21,:99-121)",
+          "swept": true,
+          "evidence": "no MODE/batches concept remains"
+        },
+        {
+          "surface": "src/CLI/Passes.jl:578 (act dict, formerly :542)",
+          "swept": true,
+          "evidence": "no 'mode' key constructed"
+        }
+      ]
+    },
+    {
+      "id": "2026-09-11-check-docs-02/workflow-scripts#2",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "All previously-unguarded scripts now refuse on an empty driving list (lanes.js:21, panel.js:25, hunt.js:21, audit.js:22, verify-state.js:20, verify-act.js:21); the four that already had it are unchanged; attack-design.js's fixed ROLES literal legitimately needs none.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-docs/workflow/lanes.js:21",
+          "swept": true,
+          "evidence": "guard added"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js:25",
+          "swept": true,
+          "evidence": "guard added"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:21",
+          "swept": true,
+          "evidence": "guard added"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:22",
+          "swept": true,
+          "evidence": "guard added"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-state.js:20",
+          "swept": true,
+          "evidence": "guard added"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/verify-act.js:21",
+          "swept": true,
+          "evidence": "guard added"
+        },
+        {
+          "surface": "dismissals.js:24, severity-recheck.js:17, rubric-audit.js:16, verify-architecture.js:18",
+          "swept": true,
+          "evidence": "already guarded, contrast cases"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/attack-design.js",
+          "swept": true,
+          "evidence": "fixed ROLES literal, no external item-list guard needed"
+        }
+      ]
+    }
+  ]
+}

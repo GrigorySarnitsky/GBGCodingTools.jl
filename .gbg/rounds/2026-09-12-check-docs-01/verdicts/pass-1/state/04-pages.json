@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "lane": "pages",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "921bec0168a2155c900419761d6b35cd",
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/pages#1",
+      "verdict": "ABSENT",
+      "evidence": "config.md:17 now reads 'Six values vary by package ... rubric.leading_identity, rubric.signature_types (names or mirror ...), notation.vectors, docs.admonition_titles, notation.mathbf_allowed ... and instruments.check-docs.argcov_policy' — matches 00-index.md's six-item count and order. Grepped for 'Five values' repo-wide: none found."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/pages#2",
+      "verdict": "PARTIAL",
+      "evidence": "install.md now defines it right after first use ('A **consumer** is a package that pins this tool...'); ledger.md/rounds.md now use '[consumer](@ref install)'. But config.md:6 still has the sole, bare 'consumer' with no gloss or link, unaddressed.",
+      "surviving_class": "docs/src/guide/config.md:6 — bare 'consumer', the page's only use, no @ref link and no inline gloss"
+    }
+  ]
+}
