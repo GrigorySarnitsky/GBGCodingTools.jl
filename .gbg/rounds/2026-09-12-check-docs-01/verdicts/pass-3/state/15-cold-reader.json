@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "lane": "cold-reader",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "e0528be8b46bb34b190725ceb976f978",
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/cold-reader#1",
+      "verdict": "ABSENT",
+      "evidence": "torn_check's own docstring (Preflight.jl:803-808) now defines MANAGED and PINNED inline before use; Rounds.jl:69 and Preflight.jl:848 gloss both terms in the error text itself; Doctor.jl:253 and architecture.md:1867 do the same. No remaining bare first-use found by grep."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/cold-reader#2",
+      "verdict": "ABSENT",
+      "evidence": "Doctor.jl:228-238 pinned_and_managed now carries a full docstring: 'A PINNED file the tool never renders... a third sense of \"pinned\", distinct from a pinned VERSION and from a pinned tree hash.' Cross-referenced from torn_check and Rounds.guard. grep for 'pinned file' finds only glossed occurrences."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/cold-reader#3",
+      "verdict": "ABSENT",
+      "evidence": "Passes.jl:9-19 now glosses all seven previously-bare tokens: ADJACENT, INSERTED, NEW-DEFECT, SCOPE-CREEP (act) and PARTIAL, REGRESSED, UNCLEAR (state) each carry a parenthetical, matching HONORED/LINE-ONLY/UNDONE/LAUNDERED/PRESENT/ABSENT/NOT-A-DEFECT's existing treatment."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/cold-reader#4",
+      "verdict": "PRESENT",
+      "evidence": "Passes.jl:11 still says 'whether the diff SWEPT it there' with no inline gloss; grep of Passes.jl finds no definition of 'swept'. Demote.jl:10 ('each marked `swept` when the fix pass's diff fixed the class there') remains the only definition, still read after Passes' usage."
+    }
+  ]
+}

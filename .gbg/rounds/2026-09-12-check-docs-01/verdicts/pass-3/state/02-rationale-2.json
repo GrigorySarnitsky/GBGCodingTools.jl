@@ -1,0 +1,18 @@
+{
+  "lane": "rationale-2",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "e0528be8b46bb34b190725ceb976f978",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/rationale-2#1",
+      "verdict": "ABSENT",
+      "evidence": "docs/ARCHITECTURE.md:1891 now reads '| `GIT.TRAILER` | last 20 commits carry the versionless trailer | otherwise |' — no '(WARN)' annotation, matching the undecorated-row convention for FAIL. src/CLI/Doctor.jl:565 calls fail(...) on a missing trailer, so doc and code now agree."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/rationale-2#2",
+      "verdict": "ABSENT",
+      "evidence": "docs/ARCHITECTURE.md:1898 now states the comparison is against 'the previous closed audit's closed_head (falling back to head where the earlier round records none)', matching src/CLI/Doctor.jl:635's get(audits[i-1].round, \"closed_head\", audits[i-1].round[\"head\"])."
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "lane": "workflow-scripts",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "e0528be8b46bb34b190725ceb976f978",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/workflow-scripts#5",
+      "verdict": "LINE-ONLY",
+      "question": "strategy",
+      "evidence": "The finding names lanes.js/panel.js/audit.js; none of the three is touched by this diff (they already carried title minLength 8 / description minLength 20 / locations minItems 1 before this diff started). The diff's only change is instruments/bug-hunt/workflow/hunt.js:35 and :51, adding `minLength: 8` to CANDIDATE_SCHEMA.candidates.title and VERDICT_SCHEMA.title. hunt.js's own `mechanism` field (line 38) feeds `description` in the banked finding (hunt.js:155 `description: v.candidate.mechanism`) and is validated by the same core schema (Rounds.jl: `core = load_schema(\"finding\")`, applied to every instrument including bug-hunt) requiring description minLength 20 — but `mechanism` still carries no minLength. The exact class the finding names (an agent-shaped SCHEMA looser than the core schema bank enforces) survives at this site.",
+      "class_surfaces": [
+        {
+          "surface": "instruments/check-docs/workflow/lanes.js:47-49",
+          "swept": true,
+          "evidence": "title minLength 8, locations minItems 1, description minLength 20 already present, unchanged by this diff"
+        },
+        {
+          "surface": "instruments/check-consistency/workflow/panel.js:42-45",
+          "swept": true,
+          "evidence": "same three constraints already present, unchanged by this diff"
+        },
+        {
+          "surface": "instruments/audit-changes/workflow/audit.js:39-42",
+          "swept": true,
+          "evidence": "same three constraints already present, unchanged by this diff"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:35 (CANDIDATE_SCHEMA.candidates.title)",
+          "swept": true,
+          "evidence": "diff adds `minLength: 8`"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:51 (VERDICT_SCHEMA.title)",
+          "swept": true,
+          "evidence": "diff adds `minLength: 8`"
+        },
+        {
+          "surface": "instruments/bug-hunt/workflow/hunt.js:38 (CANDIDATE_SCHEMA.candidates.mechanism, mapped to `description` at hunt.js:155)",
+          "swept": false,
+          "evidence": "no minLength added; `mechanism` is a free string with only a `description` (schema-doc) field, yet it is copied verbatim into the banked finding's `description`, which the same core schema.finding.schema.json (minLength 20) checks at bank — the finding's exact failure mode is still reachable here"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,242 @@
+{
+    "class_candidates": {
+        "2026-09-12-check-docs-01/rationale#3": [
+        ],
+        "2026-09-12-check-docs-01/one-home#1": [
+            "catalog/scans.toml:182",
+            "catalog/scans.toml:183",
+            "catalog/scans.toml:206",
+            "catalog/scans.toml:207",
+            "catalog/scans.toml:230",
+            "catalog/scans.toml:231",
+            "catalog/scans.toml:238",
+            "catalog/scans.toml:239",
+            "catalog/scans.toml:246",
+            "catalog/scans.toml:247",
+            "catalog/scans.toml:302",
+            "catalog/scans.toml:303",
+            "catalog/scans.toml:8",
+            "docs/ARCHITECTURE.md:1409",
+            "docs/ARCHITECTURE.md:2347",
+            "docs/ARCHITECTURE.md:2349",
+            "docs/ARCHITECTURE.md:2366",
+            "docs/ARCHITECTURE.md:2395",
+            "docs/ARCHITECTURE.md:2396",
+            "docs/ARCHITECTURE.md:2398",
+            "docs/ARCHITECTURE.md:2465",
+            "docs/ARCHITECTURE.md:2469",
+            "docs/ARCHITECTURE.md:2472",
+            "docs/ARCHITECTURE.md:2473"
+        ],
+        "2026-09-11-check-docs-02/workflow-scripts#2": [
+            "docs/ARCHITECTURE.md:2408",
+            "fixture/GBG Fixture/.gbg/policy/testing-protocol.md:52",
+            "policy/RULES.toml:509",
+            "policy/RULES.toml:511",
+            "policy/testing-protocol.md:51"
+        ],
+        "2026-09-12-check-docs-01/rationale#2": [
+        ],
+        "2026-09-12-check-docs-01/rationale-2#2": [
+        ],
+        "2026-09-12-check-docs-01/one-home#2": [
+            "docs/ARCHITECTURE.md:2418",
+            "docs/src/guide/rounds.md:32",
+            "fixture/GBG Fixture/.gbg/policy/instruments.md:36",
+            "policy/RULES.toml:572",
+            "policy/RULES.toml:574",
+            "policy/instruments.md:35"
+        ],
+        "2026-09-12-check-docs-01/workflow-scripts#4": [
+        ],
+        "2026-09-12-check-docs-01/rationale-2#1": [
+            "docs/ARCHITECTURE.md:2426",
+            "docs/design-record/FIXLOG.md:185",
+            "fixture/GBG Fixture/.gbg/policy/git-conventions.md:10",
+            "policy/RULES.toml:635",
+            "policy/RULES.toml:637",
+            "policy/git-conventions.md:9",
+            "src/CLI/Doctor.jl:564"
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#1": [
+        ],
+        "2026-09-12-check-docs-01/cold-reader#4": [
+        ],
+        "2026-09-12-check-docs-01/cold-reader#1": [
+            "docs/ARCHITECTURE.md:2355",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:135",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:282",
+            "policy/RULES.toml:138",
+            "policy/RULES.toml:140",
+            "policy/docs-rubric.md:134",
+            "policy/docs-rubric.md:281"
+        ],
+        "2026-09-12-check-docs-01/rationale-3#3": [
+            "catalog/scans.toml:175",
+            "catalog/scans.toml:358",
+            "catalog/scans.toml:359",
+            "docs/ARCHITECTURE.md:1670",
+            "docs/ARCHITECTURE.md:2354",
+            "docs/ARCHITECTURE.md:2356",
+            "docs/ARCHITECTURE.md:2463",
+            "docs/ARCHITECTURE.md:2464",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:130",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:141",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:282",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:285",
+            "fixture/GBG Fixture/defects.toml:337",
+            "fixture/GBG Fixture/defects.toml:341",
+            "fixture/GBG Fixture/defects/Defects.jl:347",
+            "policy/RULES.toml:131",
+            "policy/RULES.toml:133",
+            "policy/RULES.toml:145",
+            "policy/RULES.toml:147",
+            "policy/RULES.toml:150",
+            "policy/docs-rubric.md:129",
+            "policy/docs-rubric.md:140",
+            "policy/docs-rubric.md:281",
+            "policy/docs-rubric.md:284"
+        ],
+        "2026-09-12-check-docs-01/rationale-3#2": [
+        ],
+        "2026-09-12-check-docs-01/rationale-3#1": [
+            "catalog/scans.toml:174",
+            "catalog/scans.toml:175",
+            "catalog/scans.toml:358",
+            "catalog/scans.toml:359",
+            "docs/ARCHITECTURE.md:108",
+            "docs/ARCHITECTURE.md:1194",
+            "docs/ARCHITECTURE.md:1670",
+            "docs/ARCHITECTURE.md:2076",
+            "docs/ARCHITECTURE.md:2356",
+            "docs/ARCHITECTURE.md:2463",
+            "docs/ARCHITECTURE.md:2464",
+            "docs/ARCHITECTURE.md:2763",
+            "docs/design-record/FIXLOG.md:53",
+            "docs/design-record/REVIEW-verify.md:50",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:141",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:285",
+            "fixture/GBG Fixture/defects.toml:114",
+            "fixture/GBG Fixture/defects.toml:300",
+            "fixture/GBG Fixture/defects.toml:337",
+            "fixture/GBG Fixture/defects.toml:341",
+            "fixture/GBG Fixture/defects/Defects.jl:347",
+            "policy/RULES.toml:145",
+            "policy/RULES.toml:147",
+            "policy/RULES.toml:150"
+        ],
+        "2026-09-12-check-docs-01/cold-reader#3": [
+        ],
+        "2026-09-12-check-docs-01/cold-reader#2": [
+        ],
+        "2026-09-12-check-docs-01/workflow-scripts#3": [
+        ],
+        "2026-09-12-check-docs-01/rationale#1": [
+            "IMPLEMENTATION.md:445",
+            "catalog/scans.toml:142",
+            "catalog/scans.toml:143",
+            "catalog/scans.toml:174",
+            "catalog/scans.toml:175",
+            "catalog/scans.toml:254",
+            "catalog/scans.toml:255",
+            "catalog/scans.toml:318",
+            "catalog/scans.toml:319",
+            "catalog/scans.toml:358",
+            "catalog/scans.toml:359",
+            "docs/ARCHITECTURE.md:102",
+            "docs/ARCHITECTURE.md:108",
+            "docs/ARCHITECTURE.md:1194",
+            "docs/ARCHITECTURE.md:1670",
+            "docs/ARCHITECTURE.md:1801",
+            "docs/ARCHITECTURE.md:1827",
+            "docs/ARCHITECTURE.md:1832",
+            "docs/ARCHITECTURE.md:1833",
+            "docs/ARCHITECTURE.md:2076",
+            "docs/ARCHITECTURE.md:2356",
+            "docs/ARCHITECTURE.md:2371",
+            "docs/ARCHITECTURE.md:2374",
+            "docs/ARCHITECTURE.md:2411"
+        ],
+        "2026-09-12-check-docs-01/workflow-scripts#5": [
+        ],
+        "2026-09-11-check-docs-01/rationale#1": [
+        ],
+        "2026-09-11-check-docs-02/workflow-scripts#1": [
+        ],
+        "2026-09-12-check-docs-01/src#2": [
+            "catalog/scans.toml:134",
+            "catalog/scans.toml:135",
+            "docs/ARCHITECTURE.md:2342",
+            "docs/ARCHITECTURE.md:2476",
+            "docs/ROADMAP.md:7",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:221",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:47",
+            "fixture/GBG Fixture/defects.toml:149",
+            "fixture/GBG Fixture/defects.toml:270",
+            "fixture/GBG Fixture/src/FixtureC.jl:47",
+            "fixture/GBG Fixture/src/FixtureC.jl:48",
+            "policy/RULES.toml:233",
+            "policy/RULES.toml:47",
+            "policy/RULES.toml:49",
+            "policy/RULES.toml:52",
+            "policy/docs-rubric.md:220",
+            "policy/docs-rubric.md:46",
+            "src/Scans/args_form.jl:1",
+            "src/Scans/args_form.jl:10",
+            "src/Scans/args_form.jl:53",
+            "src/Scans/signature_typed.jl:7"
+        ]
+    },
+    "quote_still_stands": {
+        "2026-09-12-check-docs-01/rationale#3": [
+        ],
+        "2026-09-12-check-docs-01/one-home#1": [
+            "catalog/scans.toml",
+            "policy/RULES.toml",
+            "src/Scans/dead_ref.jl"
+        ],
+        "2026-09-11-check-docs-02/workflow-scripts#2": [
+        ],
+        "2026-09-12-check-docs-01/rationale#2": [
+        ],
+        "2026-09-12-check-docs-01/rationale-2#2": [
+        ],
+        "2026-09-12-check-docs-01/one-home#2": [
+        ],
+        "2026-09-12-check-docs-01/workflow-scripts#4": [
+            "instruments/prelude.js"
+        ],
+        "2026-09-12-check-docs-01/rationale-2#1": [
+        ],
+        "2026-09-11-check-docs-01/workflow-scripts#1": [
+            "src/CLI/Preflight.jl"
+        ],
+        "2026-09-12-check-docs-01/cold-reader#4": [
+        ],
+        "2026-09-12-check-docs-01/cold-reader#1": [
+        ],
+        "2026-09-12-check-docs-01/rationale-3#3": [
+        ],
+        "2026-09-12-check-docs-01/rationale-3#2": [
+        ],
+        "2026-09-12-check-docs-01/rationale-3#1": [
+        ],
+        "2026-09-12-check-docs-01/cold-reader#3": [
+        ],
+        "2026-09-12-check-docs-01/cold-reader#2": [
+        ],
+        "2026-09-12-check-docs-01/workflow-scripts#3": [
+        ],
+        "2026-09-12-check-docs-01/rationale#1": [
+        ],
+        "2026-09-12-check-docs-01/workflow-scripts#5": [
+        ],
+        "2026-09-11-check-docs-01/rationale#1": [
+        ],
+        "2026-09-11-check-docs-02/workflow-scripts#1": [
+            "src/CLI/Passes.jl"
+        ],
+        "2026-09-12-check-docs-01/src#2": [
+        ]
+    }
+}

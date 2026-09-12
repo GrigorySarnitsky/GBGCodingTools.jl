@@ -1,0 +1,56 @@
+{
+  "lane": "cold-reader",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "e0528be8b46bb34b190725ceb976f978",
+  "schema_version": 1,
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/cold-reader#1",
+      "verdict": "HONORED",
+      "question": "none",
+      "evidence": "torn_check's own docstring (src/CLI/Preflight.jl:804-808, already present before this diff) now defines both terms at first use: 'A MANAGED file is one the tool renders into the consumer and hash-checks thereafter, edited only by `gbg sync` ([`GBGCodingTools.Sync`](@ref)); a PINNED file is one the consumer itself owns and the tool never renders ... ([`Doctor.pinned_and_managed`](@ref) is the list).' This diff closes the two remaining bare sites the class survived at: src/CLI/Doctor.jl:253 and docs/ARCHITECTURE.md's step-2 pipeline line and its §7.3 CFG.TORN row, both now spelling out PINNED vs MANAGED inline. A repo-wide grep (excluding .gbg) for the bare phrase now returns only docs/design-record/ entries, which are provenance quoting the original decision text verbatim and are not rewritten for current terminology.",
+      "class_surfaces": [
+        {
+          "surface": "src/CLI/Preflight.jl:804-808 (torn_check docstring)",
+          "swept": true,
+          "evidence": "defines MANAGED and PINNED in full, with @ref links to Sync and Doctor.pinned_and_managed"
+        },
+        {
+          "surface": "src/CLI/Preflight.jl:848 (preflight refusal message)",
+          "swept": true,
+          "evidence": "'a pinned file (one the consumer owns and the tool never renders) or a managed file (one `gbg sync` renders and hash-checks) is modified'"
+        },
+        {
+          "surface": "src/CLI/Rounds.jl:69 (RoundError message)",
+          "swept": true,
+          "evidence": "'a pinned file (consumer-owned, never rendered) or a managed file (`gbg sync` renders and hash-checks it) is modified'"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:253 (CFG.TORN pass message)",
+          "swept": true,
+          "evidence": "diff: 'no pinned or managed file modified' -> 'no pinned file (consumer-owned, never rendered) or managed file (`gbg sync` renders and hash-checks it) modified'"
+        },
+        {
+          "surface": "src/CLI/Doctor.jl:227-234 (pinned_and_managed docstring)",
+          "swept": true,
+          "evidence": "the canonical definition @ref'd from torn_check: 'A MANAGED file is one the tool renders and hash-checks thereafter... A PINNED file the tool never renders: the consumer writes it once...'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1481 (step 2, Preflight pipeline description)",
+          "swept": true,
+          "evidence": "diff: 'any pinned or managed file modified' -> 'any PINNED file (one the consumer owns and the tool never renders) or MANAGED file (one `gbg sync` renders and hash-checks) modified'"
+        },
+        {
+          "surface": "docs/ARCHITECTURE.md:1867 (§7.3 CFG.TORN row)",
+          "swept": true,
+          "evidence": "diff rewrites the row to name 'a PINNED file the consumer owns and the tool never renders (...)' and 'a MANAGED file `gbg sync` renders and hash-checks thereafter (...)' as two kinds the one word previously did not separate"
+        },
+        {
+          "surface": "docs/design-record/07-IT-amendments.md:27, docs/design-record/08-IT-corrections.md:9",
+          "swept": true,
+          "evidence": "still read the bare 'pinned or managed file', but docs/design-record/ is provenance (per this package's own CLAUDE.md) quoting the original 2026 decision text verbatim — not a live definition surface a cold reader consults as current ground truth, and not rewritten by design"
+        }
+      ]
+    }
+  ]
+}

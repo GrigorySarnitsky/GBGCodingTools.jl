@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "lane": "one-home",
+  "graded_sha256": "8ac12038a92f2e24939230fff642d1513464be2a2ecbe5be014e99b15362f257",
+  "pass_nonce": "e0528be8b46bb34b190725ceb976f978",
+  "verdicts": [
+    {
+      "id": "2026-09-12-check-docs-01/one-home#1",
+      "verdict": "ABSENT",
+      "evidence": "catalog/scans.toml:6-11 now documents in the header that `rule` is one canonical rule by design and points to §12.B and RULES.toml `check`. RULE.DOC.API_GROUPING (line 101) now checks scan:SCAN.API_PAGE_STRUCTURE; RULE.CIT.NO_INACCESSIBLE (line 451) now checks scan:SCAN.DEAD_REF. ARCHITECTURE.md §12.B still lists both rules for all three scans."
+    },
+    {
+      "id": "2026-09-12-check-docs-01/one-home#2",
+      "verdict": "ABSENT",
+      "evidence": "policy/RULES.toml:575 RULE.INST.CARRY statement now reads '...a final release refuses while a carried blocker or major stands, while anything has been carried CARRY_LIMIT (3) times, or while the backlog is not draining' — all three conditions, matching ARCHITECTURE.md:2418 and Release.jl's carry_release_fails."
+    }
+  ]
+}

@@ -1,18 +1,19 @@
+tool_tree_sha = "b50bfe8bac971c47435b426d6c16c9aee0235bf2"
+state_ids = ["2026-09-12-check-docs-01/rationale#1", "2026-09-12-check-docs-01/rationale#2", "2026-09-12-check-docs-01/rationale#3", "2026-09-12-check-docs-01/rationale-2#1", "2026-09-12-check-docs-01/rationale-2#2", "2026-09-12-check-docs-01/rationale-3#1", "2026-09-12-check-docs-01/rationale-3#2", "2026-09-12-check-docs-01/rationale-3#3", "2026-09-12-check-docs-01/pages#1", "2026-09-12-check-docs-01/pages#2", "2026-09-12-check-docs-01/src#1", "2026-09-12-check-docs-01/src#2", "2026-09-12-check-docs-01/workflow-scripts#5", "2026-09-12-check-docs-01/catalogues#1", "2026-09-12-check-docs-01/schemas#1", "2026-09-12-check-docs-01/one-home#1", "2026-09-12-check-docs-01/one-home#2", "2026-09-12-check-docs-01/cold-reader#1", "2026-09-12-check-docs-01/cold-reader#2", "2026-09-12-check-docs-01/cold-reader#3", "2026-09-12-check-docs-01/cold-reader#4", "2026-09-12-check-docs-01/operational-claims#1", "2026-09-11-check-docs-01/rationale#1", "2026-09-11-check-docs-01/workflow-scripts#1", "2026-09-11-check-docs-02/workflow-scripts#1"]
+range = "af1adec6c6666be0c687ffd32bbc9145fecef580..87eea6687774ba3be8825bc4fec8d9634aca43b1"
+counted = true
+superseded_by = 3
+pass = 2
+opened = "2026-09-12T15:26:30"
 tool_version = "1.0.0-rc.10"
 head = "87eea6687774ba3be8825bc4fec8d9634aca43b1"
 fix_range = "36788aa660858554cd551a4903fc7a8eb827cf05..87eea6687774ba3be8825bc4fec8d9634aca43b1"
 scope = ["2026-09-11-check-docs-01/rationale#1", "2026-09-11-check-docs-01/workflow-scripts#1", "2026-09-11-check-docs-02/workflow-scripts#1", "2026-09-12-check-docs-01/catalogues#1", "2026-09-12-check-docs-01/cold-reader#1", "2026-09-12-check-docs-01/cold-reader#2", "2026-09-12-check-docs-01/cold-reader#3", "2026-09-12-check-docs-01/cold-reader#4", "2026-09-12-check-docs-01/one-home#1", "2026-09-12-check-docs-01/one-home#2", "2026-09-12-check-docs-01/operational-claims#1", "2026-09-12-check-docs-01/pages#1", "2026-09-12-check-docs-01/pages#2", "2026-09-12-check-docs-01/rationale#1", "2026-09-12-check-docs-01/rationale#2", "2026-09-12-check-docs-01/rationale#3", "2026-09-12-check-docs-01/rationale-2#1", "2026-09-12-check-docs-01/rationale-2#2", "2026-09-12-check-docs-01/rationale-3#1", "2026-09-12-check-docs-01/rationale-3#2", "2026-09-12-check-docs-01/rationale-3#3", "2026-09-12-check-docs-01/schemas#1", "2026-09-12-check-docs-01/src#1", "2026-09-12-check-docs-01/src#2", "2026-09-12-check-docs-01/workflow-scripts#5"]
-tool_tree_sha = "b50bfe8bac971c47435b426d6c16c9aee0235bf2"
-state_ids = ["2026-09-12-check-docs-01/rationale#1", "2026-09-12-check-docs-01/rationale#2", "2026-09-12-check-docs-01/rationale#3", "2026-09-12-check-docs-01/rationale-2#1", "2026-09-12-check-docs-01/rationale-2#2", "2026-09-12-check-docs-01/rationale-3#1", "2026-09-12-check-docs-01/rationale-3#2", "2026-09-12-check-docs-01/rationale-3#3", "2026-09-12-check-docs-01/pages#1", "2026-09-12-check-docs-01/pages#2", "2026-09-12-check-docs-01/src#1", "2026-09-12-check-docs-01/src#2", "2026-09-12-check-docs-01/workflow-scripts#5", "2026-09-12-check-docs-01/catalogues#1", "2026-09-12-check-docs-01/schemas#1", "2026-09-12-check-docs-01/one-home#1", "2026-09-12-check-docs-01/one-home#2", "2026-09-12-check-docs-01/cold-reader#1", "2026-09-12-check-docs-01/cold-reader#2", "2026-09-12-check-docs-01/cold-reader#3", "2026-09-12-check-docs-01/cold-reader#4", "2026-09-12-check-docs-01/operational-claims#1", "2026-09-11-check-docs-01/rationale#1", "2026-09-11-check-docs-01/workflow-scripts#1", "2026-09-11-check-docs-02/workflow-scripts#1"]
 config_sha = "1838d667144b0300e9af667bfc59f0d6f750884af2e729cd485204cc5275abaf"
 tool_rev = "d55d742f84b9fb056b652d848ec5185ba3c4c585"
-range = "af1adec6c6666be0c687ffd32bbc9145fecef580..87eea6687774ba3be8825bc4fec8d9634aca43b1"
-counted = true
 rechecked = ["2026-09-12-check-docs-01/rationale-3#1", "2026-09-12-check-docs-01/rationale-3#2", "2026-09-12-check-docs-01/rationale-3#3", "2026-09-12-check-docs-01/pages#1", "2026-09-12-check-docs-01/src#1", "2026-09-12-check-docs-01/src#2", "2026-09-12-check-docs-01/one-home#1", "2026-09-12-check-docs-01/one-home#2", "2026-09-12-check-docs-01/cold-reader#2", "2026-09-12-check-docs-01/cold-reader#4", "2026-09-12-check-docs-01/operational-claims#1", "2026-09-11-check-docs-02/workflow-scripts#1"]
 regrade = true
-pass = 2
 nonce = "3e7a502082c092d8ca593516e9124d8e"
-opened = "2026-09-12T15:26:30"
 
 [expected]
 rationale = 4
