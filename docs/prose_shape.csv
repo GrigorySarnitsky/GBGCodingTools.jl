@@ -123,7 +123,7 @@ unit,words,longest_paragraph,admonitions
 "Git.jl :: Git.is_repo(root) -> Bool",3,3,0
 "Git.jl :: Git.log(root, range) -> String",9,5,0
 "Git.jl :: Git.porcelain(root; untracked = true) -> Vector{Tuple{String",103,46,0
-"Git.jl :: Git.run(root, args...) -> Union{String,Nothing}",25,21,0
+"Git.jl :: Git.run(root, args...) -> Union{String,Nothing}",158,71,0
 "HtmlWalker.jl :: HtmlWalker",67,66,0
 "HtmlWalker.jl :: article_of(doc) -> Union{HTMLElement,Nothing}",27,24,0
 "HtmlWalker.jl :: attr(el, name, default = '') -> String",64,42,0
@@ -189,7 +189,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: Preflight",72,71,0
 "Preflight.jl :: audit_kind(cfg, base) -> String",56,52,0
 "Preflight.jl :: catalog_sha() -> String",14,11,0
-"Preflight.jl :: claim_checklist(cfg, files; range = nothing) -> Vector{Strin",155,59,0
+"Preflight.jl :: claim_checklist(cfg, files; range = nothing) -> Vector{Strin",159,59,0
 "Preflight.jl :: config_sha(cfg) -> String",16,13,0
 "Preflight.jl :: copy_scripts(cfg, instrument, round) -> String",59,33,0
 "Preflight.jl :: covered_paths(cfg) -> Vector{String}",16,13,0
@@ -236,6 +236,7 @@ unit,words,longest_paragraph,admonitions
 "Reflection.jl :: signature_types(inside) -> Dict{String,String}",21,18,0
 "Reflection.jl :: xlink(cfg; pkg = load_package(cfg), apply = false) -> Vector",81,37,0
 "Reflection.md § Reflection",22,22,1
+"Release.jl :: admitted_rounds(cfg) -> String",137,106,0
 "Release.jl :: carry_release_fails(led) -> Vector{String}",100,81,0
 "Release.jl :: cites_round(cfg, tag) -> Bool",131,95,0
 "Release.jl :: release(ver; io = stdout, skip_tests = false) -> Int",178,116,0
