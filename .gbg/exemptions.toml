@@ -124,22 +124,3 @@ recorded      = 2026-09-12
 overturn_when = "gbg attack or gbg calibrate stops launching its script, or Design.jl is removed without another verb taking them over"
 evidence      = "src/CLI/Design.jl launches both scripts; src/GBGCodingTools.jl includes CLI/Design.jl; state verdict ABSENT at pass 1"
 
-[[exemption]]
-id            = "2026-09-12-check-docs-01/catalogues#1"
-scope         = "finding"
-target        = "2026-09-12-check-docs-01/catalogues#1"
-ruling        = "not-a-defect"
-reason        = "the finding asks catalog/scans.toml's `rule` column to carry both rules SCAN.DOI_CROSSCHECK enforces. That column is a SCALAR by schema and is what the ledger and the doctor resolve a scan's rule against; widening it to a list is a code change to the scan engine, not a catalogue edit, and belongs to its own release. The second rule is recorded where the question is actually asked: RULE.CIT.DOI's `check` array already names this scan, §12.B lists both rules, and scans.toml now says in its own header that the column is one canonical rule and points at both. The act verifier calls this LAUNDERED and is right that the column did not move; the blind state verifier read it as NOT-A-DEFECT"
-recorded      = 2026-09-12
-overturn_when = "the scan engine admits a list in scans.toml's rule column, at which point the catalogue should carry both rules directly"
-evidence      = "catalog/scans.toml header; policy/RULES.toml RULE.CIT.DOI check = scan:SCAN.DOI_CROSSCHECK; state verdict NOT-A-DEFECT at pass 1"
-
-[[exemption]]
-id            = "2026-09-12-check-docs-01/schemas#1"
-scope         = "finding"
-target        = "2026-09-12-check-docs-01/schemas#1"
-ruling        = "scoped"
-reason        = "the finding is CORRECT and is deliberately not fixed in this round: docs.doctest and instruments.check-consistency.latex_source_globs validate, are written by gbg init and are documented, and no engine reads either. Both remedies are the owner's, not a fix pass's. Wiring docs.doctest into the makedocs wrapper would give one setting two homes — the wrapper already forwards the consumer's own doctest kwarg to Documenter.makedocs, so the config key would silently compete with docs/make.jl, which is the one-claim-many-homes defect this round's own one-home lane exists to catch. Dropping both keys is the honest alternative and is MAJOR under §5.5's closed non-configurable set. Carried in the round's deferred.md"
-recorded      = 2026-09-12
-overturn_when = "either key gains a reader in an engine, scan, doctor check or args builder, or the owner rules on dropping them"
-evidence      = "schema/config.schema.json docs.doctest and latex_source_globs; ext/GBGCodingToolsDocumenterExt.jl forwards kwargs only; .gbg/rounds/2026-09-12-check-docs-01/deferred.md"

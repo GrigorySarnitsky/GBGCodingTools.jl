@@ -45,8 +45,8 @@
       "reason": "Correct, and the blocker re-rating is fair: main's docstring is the one home of the exit contract, and it now makes an unconditional claim that is false for the whole ConfigError class. The next change set updates it alongside narrowing the catch, so the contract and the code are corrected together rather than the prose being amended to match a widened behaviour."
     },
     "2026-09-12-audit-changes-01/claim-versus-edit#1": {
-      "state": "refused",
-      "reason": "Refused as unfixable in place rather than disputed. c7db4e5 is pushed, and this package does not rewrite or re-issue published history, so the commit's inventory cannot be corrected where it lives. Both unlisted edits, templates/README.md and docs/src/guide/install.md, are individually sound, and this audit's findings.md is now the durable record that the itemisation was incomplete. The lesson binds forward: a fix-pass commit that presents a categorised inventory lists every file it touches."
+      "state": "fixed",
+      "reason": "Withdrawn, and the dismissal auditor is right: I refused on a premise I never checked. The refusal rested on both unlisted edits being individually sound, which holds for templates/README.md and does not hold for docs/src/guide/install.md. Its new line 8 defines a consumer as exactly five things, while lines 39-41 three paragraphs later describe the fixture as a consumer that sentence excludes; and it gives a closed-vocabulary term a third home with no link to the one at policy/glossary.md:3, which is the class the one-home lane exists to find. Unfixable in place was true only of the pushed commit message, never of the prose the unmentioned edit put in the tree. The next change set corrects install.md:8 so the definition admits the fixture and links the glossary home instead of restating it."
     },
     "2026-09-12-audit-changes-01/contract-drift#1": {
       "state": "fixed",
