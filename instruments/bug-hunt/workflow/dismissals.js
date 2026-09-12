@@ -4,10 +4,12 @@
 // bug-hunt/dismissals.js (`complete = dead == 0 && reopened == []`, the third shape). Changes: the
 // package-specific postmortem examples removed; items arrive as text; the result is Written to `out`.
 //
-// Args: { schema_version, round, repo, package, items: [{id, title}], items_sha, items_path, out, verdicts_dir,
-//         models: {economy} }  (the per-id blocks — location, claim, verdict, reasoning — are in items_path,
-//   Revision 9). Each auditor writes its own verdict under verdicts_dir, a directory the item set's sha
-//   names; when the final write of `out` does not land, `gbg round close` assembles `out` from those files.
+// Args: { schema_version, round, repo, package, items: [{id, title, key}], items_sha, items_path, out,
+//         verdicts_dir, models: {economy} }  (the per-id blocks — location, claim, verdict, reasoning — are
+//   in items_path, Revision 9). Each auditor writes its own verdict to verdicts_dir/<item.key>.json, the
+//   key the CLI computed from the item's own audited text, so a re-run after one disposition changed buys
+//   that item alone and `gbg round close` keeps every verdict whose text still stands. When the final write
+//   of `out` does not land, close assembles `out` from those files. The CLI sends only the items it needs.
 export const meta = {
   name: 'dismissals',
   description: 'Re-examine every candidate a round dismissed or adjudicated, defaulting to "the dismissal is unsafe"',
@@ -16,8 +18,9 @@ export const meta = {
 
 // gbg:prelude
 for (const k of ['repo', 'items', 'items_path', 'out', 'verdicts_dir', 'package', 'models', 'items_sha', 'round', 'schema_version']) if (A[k] === undefined) throw new Error(`dismissals.js: args.${k} is required`)
-// the file an auditor writes its own verdict to, named as the CLI reads it back
-const verdictFile = id => `${A.verdicts_dir}/${id.replaceAll('/', '__').replaceAll('#', '_')}.json`
+// the file an auditor writes its own verdict to, named as the CLI reads it back: the key is the CLI's,
+// computed from the item's own audited text, never recomputed here
+const verdictFile = d => `${A.verdicts_dir}/${d.key || d.id.replaceAll('/', '__').replaceAll('#', '_')}.json`
 if (!A.items.length) throw new Error('dismissals.js: an EMPTY audit is not a clean one — the CLI does not invoke this over nothing')
 
 const SCHEMA = {
@@ -54,7 +57,7 @@ THREE DISMISSAL SHAPES THAT WERE WRONG BEFORE ON REAL CORPORA:
 
 Do not hunt for anything else. Your scope is this one claim.
 
-FIRST use the Write tool to save your verdict as JSON — {id, verdict, evidence, what_would_bite} — to ${verdictFile(d.id)} (the one file you may write). THEN return {id: "${d.id}", verdict, evidence, what_would_bite}.`,
+FIRST use the Write tool to save your verdict as JSON — {id, verdict, evidence, what_would_bite} — to ${verdictFile(d)} (the one file you may write). THEN return {id: "${d.id}", verdict, evidence, what_would_bite}.`,
   { label: `dismissal:${d.id}`.slice(0, 60), phase: 'Audit dismissals', schema: SCHEMA, agentType: 'general-purpose' })))
 
 const verdicts = stampIds(out, A.items)

@@ -44,6 +44,13 @@ substrate. The act verifier still reads the whole diff, which is what lets it se
 files a finding names. One scribe per unit replaces one per lane (`scribeAll`), and a unit's lanes come
 back in `lane_files`, each found by its own `lane` field.
 
+**A re-run of the dismissal audit buys only what changed.** Each auditor's verdict was filed under a
+directory the whole item set's sha named, so changing one disposition invalidated every verdict: over
+2026-09-11-audit-changes-02's three runs — ten refusals, then seven, then six, after the auditor overturned
+four — that cost 1.48M tokens where the changed items alone were worth about 0.15M. A verdict now lives at
+`dismissals/<id>__<sha of the text audited>.json`, keyed by the item's own claim, verdict and reasoning, and
+`close` sends the auditor only the items whose file is missing or invalid, saying how many it kept.
+
 **Empty rosters refuse.** `lanes.js`, `panel.js`, `hunt.js`, `audit.js`, `verify-state.js` and
 `verify-act.js` throw on an empty roster or scope, as the other four scripts did; `verify-act.js`'s
 `batches` mode, which nothing called, is gone with its `mode` argument.

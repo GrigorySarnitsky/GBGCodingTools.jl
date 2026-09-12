@@ -981,17 +981,25 @@ function dismissal_items(cfg, dir, rec, findings, ledger)
     return items
 end
 
+# What one dismissal's verdict is bought against: the item's id and the TEXT that was audited — its claim,
+# its verdict and the reasoning given for it. A re-run after one disposition changed re-buys that item
+# alone, because every other item's key, and so its verdict file, is what it was. Keyed by the set's sha
+# instead, as it was until 2026-09-12, one changed reason re-bought all of them: three runs over ten, seven
+# and six refusals cost 1.48M tokens where the changed items alone were worth 0.15M.
+item_key(it) = replace(String(it["id"]), "/" => "__", "#" => "_") * "__" *
+               first(bytes2hex(sha256(join((String(get(it, k, "")) for k in ("title", "location", "claim", "verdict", "reasoning")), "\0"))), 12)
+
 # `dismissals.json` assembled by the CLI from the auditors' own files, for when the script's final writer
-# did not write it. Each auditor writes its verdict to `vdir`, a directory the item set's sha names, so a
-# file written for another item set is never read; the id is taken from the file name, never from what
-# the model retyped. An item without a valid file is dead. Returns the object, or `nothing` when the
+# did not write it. Each auditor writes its verdict to `vdir/<item_key>.json`, so a file written for an
+# item whose text has since changed is never read; the id is taken from the item, never from what the
+# model retyped. An item without a valid file is dead. Returns the object, or `nothing` when the
 # directory holds no valid verdict at all.
 function assemble_dismissals(items, vdir::AbstractString, round::AbstractString, sha::AbstractString)
     isdir(vdir) || return nothing
     vschema = load_schema("dismissal")["properties"]["verdicts"]["items"]
     verdicts = Dict{String,Any}[]; dead = String[]
     for it in items
-        p = joinpath(vdir, replace(it["id"], "/" => "__", "#" => "_") * ".json")
+        p = joinpath(vdir, item_key(it) * ".json")
         raw = isfile(p) ? (try read_json(p) catch; nothing end) : nothing
         v = raw isa AbstractDict ? Dict{String,Any}(k => raw[k] for k in ("verdict", "evidence", "what_would_bite") if haskey(raw, k)) : nothing
         v === nothing || (v["id"] = it["id"])
@@ -1149,7 +1157,9 @@ function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector =
     dj = joinpath(dir, "dismissals.json")
     if !isempty(items)
         want_sha = bytes2hex(sha256(JSON3.write(items)))
-        vdir = joinpath(dir, "dismissals", first(want_sha, 12))
+        # one directory, one file per item keyed by its own text: what a re-run must buy is the items that
+        # changed, never the set
+        vdir = joinpath(dir, "dismissals")
         # validated, not just read: the script, this gate and dismissal.schema.json disagreed on the file's
         # shape for as long as no round had an adjudication to close (found 2026-09-09)
         d = isfile(dj) ? (try read_json(dj) catch; nothing end) : nothing
@@ -1167,12 +1177,25 @@ function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector =
         ok = d !== nothing && isempty(errs) && get(d, "items_sha", "") == want_sha && d["complete"] && isempty(d["reopened"])
         if !ok
             mkpath(vdir)
+            # only the items whose own verdict file is missing or invalid: a refusal whose text did not
+            # change keeps the verdict it was already given, and the auditor is not paid for it twice
+            vschema = load_schema("dismissal")["properties"]["verdicts"]["items"]
+            stale(it) = begin
+                p = joinpath(vdir, item_key(it) * ".json")
+                raw = isfile(p) ? (try read_json(p) catch; nothing end) : nothing
+                raw isa AbstractDict || return true
+                v = Dict{String,Any}(k => raw[k] for k in ("verdict", "evidence", "what_would_bite") if haskey(raw, k)); v["id"] = it["id"]
+                !isempty(validate(vschema, v))
+            end
+            todo = filter(stale, items)
             payload = joinpath(Preflight.payload_dir(cfg, round), "dismissals"); ip = items_file(joinpath(payload, "items.md"), items)
             a = Dict{String,Any}("schema_version" => 1, "round" => round, "repo" => root, "package" => Preflight.package_block(cfg),
-                                 "items" => [Dict("id" => d["id"], "title" => d["title"]) for d in items], "items_path" => ip, "out" => dj,
+                                 "items" => [Dict("id" => d["id"], "title" => d["title"], "key" => item_key(d)) for d in todo], "items_path" => ip, "out" => dj,
                                  "verdicts_dir" => vdir, "models" => Dict("economy" => Preflight.economy_model()), "items_sha" => want_sha)
             Preflight.save_args(cfg, round, "dismissals", a)
-            push!(fails, "the dismissal audit over $(length(items)) dismissal(s)/adjudication(s) has not run (or does not hold) — launch:\n    " *
+            reused = length(items) - length(todo)
+            push!(fails, "the dismissal audit over $(length(todo)) dismissal(s)/adjudication(s) has not run (or does not hold)" *
+                         (reused > 0 ? " — $reused already audited under unchanged text and kept" : "") * "; launch:\n    " *
                          Preflight.workflow_call(joinpath(Preflight.workflow_dir(cfg, round), "dismissals.js"), a) *
                          "\n  then close again (the script writes $dj; items_sha $want_sha is copied from its args)")
         end

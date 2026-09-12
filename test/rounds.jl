@@ -411,24 +411,34 @@ end
 end
 
 # dismissals.json no longer rests on the script's final writer, which a classifier blocked on two of five
-# runs: each auditor writes its own verdict under a directory the item set's sha names, and close assembles
-# the file from them. The id is the file name's, an out-of-set verdict or a missing file is dead, and an
-# empty directory assembles nothing.
+# runs: each auditor writes its own verdict to a file its ITEM names — the id and a hash of the text audited
+# — and close assembles the file from them. The id is the item's, an out-of-set verdict or a missing file is
+# dead, and an empty directory assembles nothing.
 @testset "close assembles dismissals.json from the auditors' own files" begin
     vdir = mktempdir(); r = "2026-01-01-check-docs-01"; sha = "a"^64
-    items = [Dict{String,Any}("id" => "$r/src#1", "title" => "t1"), Dict{String,Any}("id" => "$r/src#2", "title" => "t2")]
+    items = [Dict{String,Any}("id" => "$r/src#1", "title" => "t1", "reasoning" => "because"),
+             Dict{String,Any}("id" => "$r/src#2", "title" => "t2", "reasoning" => "because")]
     @test G.Passes.assemble_dismissals(items, vdir, r, sha) === nothing                        # nothing written
-    put(id, v) = write(joinpath(vdir, replace(id, "/" => "__", "#" => "_") * ".json"),
+    put(it, v) = write(joinpath(vdir, G.Passes.item_key(it) * ".json"),
                        JSON3.write(Dict("id" => "a paraphrase", "verdict" => v, "evidence" => "quoted lines settle it")))
-    put("$r/src#1", "DISMISSAL-SOUND")
+    put(items[1], "DISMISSAL-SOUND")
     d = G.Passes.assemble_dismissals(items, vdir, r, sha)
-    @test d["verdicts"][1]["id"] == "$r/src#1" && d["dead"] == ["$r/src#2"] && !d["complete"]  # the id is the file's
-    put("$r/src#2", "PROBABLY-FINE")
+    @test d["verdicts"][1]["id"] == "$r/src#1" && d["dead"] == ["$r/src#2"] && !d["complete"]  # the id is the item's
+    put(items[2], "PROBABLY-FINE")
     @test G.Passes.assemble_dismissals(items, vdir, r, sha)["dead"] == ["$r/src#2"]             # out of the closed set
-    put("$r/src#2", "DISMISSAL-SOUND")
+    put(items[2], "DISMISSAL-SOUND")
     d = G.Passes.assemble_dismissals(items, vdir, r, sha)
     @test d["complete"] && isempty(d["reopened"]) && d["items_sha"] == sha
     @test isempty(G.validate(G.load_schema("dismissal"), d))                                    # what close validates
+
+    # A verdict is bought against the TEXT it audited. Re-running after one disposition changed re-buys that
+    # item and keeps the rest: keyed by the set's sha instead, three runs over ten, seven and six refusals
+    # cost 1.48M tokens where the changed items alone were worth 0.15M (2026-09-11-audit-changes-02).
+    moved = [items[1], merge(items[2], Dict{String,Any}("reasoning" => "a different reason entirely"))]
+    @test G.Passes.item_key(moved[1]) == G.Passes.item_key(items[1])                            # untouched: same file
+    @test G.Passes.item_key(moved[2]) != G.Passes.item_key(items[2])                            # its text moved
+    d = G.Passes.assemble_dismissals(moved, vdir, r, sha)
+    @test [v["id"] for v in d["verdicts"]] == ["$r/src#1"] && d["dead"] == ["$r/src#2"]         # one kept, one to re-buy
 end
 
 # The class checklist is COMPUTED, not invented: every place the tree writes down a rule or scan id the
