@@ -19,7 +19,7 @@ export const meta = {
 }
 
 // gbg:prelude
-for (const k of ['round', 'round_dir', 'repo', 'manuscripts', 'hats', 'preamble', 'models', 'package', 'schema_version']) {
+for (const k of ['round', 'round_dir', 'repo', 'manuscripts', 'hats', 'preamble', 'models', 'package', 'schema_version', 'finding_cap']) {
   if (A[k] === undefined) throw new Error(`panel.js: args.${k} is required`)
 }
 if (!A.hats.length) throw new Error('panel.js: an EMPTY roster is not a clean round — the CLI never launches one over nothing')
@@ -31,7 +31,7 @@ const SCHEMA = {
     schema_version: { type: 'integer' },
     round: { type: 'string' },
     lane: { type: 'string' },
-    candidates_found: { type: 'integer', description: 'distinct candidates weighed BEFORE the 25-finding cap — the truncation signal' },
+    candidates_found: { type: 'integer', description: 'distinct CLASSES weighed BEFORE the cap, never the number of pages a class appears on — the truncation signal' },
     checked: { type: 'array', items: { type: 'string' }, description: 'the pages you actually read, by their PAGE banner; REQUIRED and non-empty even with zero findings' },
     findings: { type: 'array', items: {
       type: 'object', additionalProperties: false,
@@ -74,7 +74,8 @@ ${permitted(h).map(p => `    ${p}`).join('\n')}
 - resolution_hint is optional and advisory only.${ADJ}
 - The package's DELIBERATE ABSENCES are design, not gaps — do not flag them: ${(A.package.deliberate_absences || []).join('; ') || '(none recorded)'}.
 - Report what you actually see NOW in the document, not what you might expect from a prior version.
-- OUTPUT DISCIPLINE (HARD LIMIT): at most your 25 MOST SIGNIFICANT findings, ranked most-severe first; each description <= 90 words; quote only the DECISIVE phrase (<= 20 words) on each side. Report candidates_found — the count you weighed BEFORE the cap; a capped hat that reports its denominator can be re-run narrowed, a capped hat that stays silent reads as complete. Report checked[] — the PAGE banners you actually read — even when you found nothing: a zero-finding file with an empty checked[] is a DEAD lane, not a clean one.`
+- ONE FINDING PER CLASS, NEVER ONE PER PAGE: where the same mistake recurs across pages, report it ONCE and name every page and quote in \`locations\`. A class split across five findings spends five of your budget, tells the fix pass nothing the class did not, and lets a sweep close four pages while the fifth survives (RULE.DOC.CLASS_SWEEP).
+- OUTPUT DISCIPLINE (HARD LIMIT): at most your ${A.finding_cap} MOST SIGNIFICANT findings, counted in CLASSES and ranked most-severe first — \`locations\` is unbounded, so a class on forty pages costs one; each description <= 90 words; quote only the DECISIVE phrase (<= 20 words) on each side. Report candidates_found — the CLASSES you weighed BEFORE the cap; a capped hat that reports its denominator can be re-run narrowed, a capped hat that stays silent reads as complete. Report checked[] — the PAGE banners you actually read — even when you found nothing: a zero-finding file with an empty checked[] is a DEAD lane, not a clean one.`
 
 const substrateText = (h) => {
   const parts = []

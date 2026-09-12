@@ -17,7 +17,7 @@ export const meta = {
 }
 
 // gbg:prelude
-for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'witness_cmd', 'models', 'schema_version', 'package']) if (A[k] === undefined) throw new Error(`hunt.js: args.${k} is required`)
+for (const k of ['round', 'round_dir', 'repo', 'lanes', 'preamble', 'witness_cmd', 'models', 'schema_version', 'package', 'finding_cap']) if (A[k] === undefined) throw new Error(`hunt.js: args.${k} is required`)
 if (!A.lanes.length) throw new Error('hunt.js: an EMPTY roster is not a clean hunt — the CLI never launches one over nothing')
 const WIT = `${A.round_dir}/witnesses`
 
@@ -26,7 +26,7 @@ const CANDIDATE_SCHEMA = {
   properties: {
     lane: { type: 'string' },
     files_read: { type: 'array', items: { type: 'string' }, description: 'every source file you actually opened — coverage is measured, not asserted' },
-    candidates_found: { type: 'integer' },
+    candidates_found: { type: 'integer', description: 'distinct MECHANISMS you weighed before the cap, never the number of sites: one mechanism wrong in five places is one candidate' },
     candidates: { type: 'array', items: {
       type: 'object', additionalProperties: false,
       properties: {
@@ -82,7 +82,9 @@ THREE KINDS, and the kind decides the evidence: "runtime" — wrong values, wron
 
 The ORACLES available in this package, independent of the code: ${(A.oracles || []).join('; ') || '(none recorded — derive from documented contracts)'}.
 ${A.invariants_path ? `\nTHE PACKAGE'S RECORDED INVARIANTS: read them first from ${A.invariants_path}.\n` : ''}
-Report files_read honestly: it is cross-checked against the tree. FILES UNDER .gbg/ YOU MAY OPEN: your brief and the invariants file named in this prompt, and nothing else under .gbg/ or ~/.gbg/. Cap: your 6 most substantial candidates, ranked by what would actually go wrong; report candidates_found, the number you weighed before the cap.`
+ONE CANDIDATE PER MECHANISM, NEVER ONE PER SITE. Where one mechanism is wrong in five places, raise ONE candidate, name the other sites inside \`mechanism\`, and give a witness plan that demonstrates the MECHANISM rather than one of its sites. Split it only where the sites need DIFFERENT witnesses: a witness is what makes a hunt candidate real, so a class no single program can demonstrate is genuinely several candidates, and that is the one place splitting is right.
+
+Report files_read honestly: it is cross-checked against the tree. FILES UNDER .gbg/ YOU MAY OPEN: your brief and the invariants file named in this prompt, and nothing else under .gbg/ or ~/.gbg/. Cap: your ${A.finding_cap} most substantial candidates, ranked by what would actually go wrong; report candidates_found, the MECHANISMS you weighed before the cap.`
 
 phase('Hunt')
 

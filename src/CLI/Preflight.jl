@@ -313,6 +313,21 @@ end
 
 lane_catalog(instrument) = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "catalog", "lanes", instrument * ".toml"))
 
+"""
+    expand_globs(root, files) -> Vector{String}
+
+`files` with every glob replaced by the files it names, in order and deduplicated. The arguments are
+`root`, the consumer root, and `files`, a lane's or a territory's list.
+
+A pattern matching nothing is KEPT as written: a directory a lane names (`catalog`, `policy`) is not a
+glob, and dropping it would silently empty that lane. Both roster resolvers share this one home, because
+a lane receives its files VERBATIM in its prompt — an unexpanded `src/Scans/*.jl` reaches the agent as a
+pattern rather than as the files it names, and the same unexpanded string never matches the engine's own
+surface list when a refinement is subtracted from it. Returns the expanded list.
+"""
+expand_globs(root::AbstractString, files) =
+    unique!(reduce(vcat, (isempty(Config.glob_files(root, String(g))) ? [String(g)] : Config.glob_files(root, String(g)) for g in files); init = String[]))
+
 # A cited COUNT ("the four closure channels", "eighteen schemas") and an EXIT-CODE claim ("refuses, exit
 # 2"). Both read as true and are checked by nothing: the count was right when it was written, the exit code
 # was the verb's before a branch moved. They are the two mechanical classes that did NOT survive being
@@ -433,10 +448,9 @@ function resolve_checkdocs_lanes(cfg::AbstractDict)
     extra = cd["lanes_extra"]
     cap = string(get(cd, "finding_cap", 20))
     brief(text) = substitute(text, cfg; extra = Dict("lane.cap" => cap))
-    # a glob reaches the lane as the files it names; `taken` then subtracts the same strings the engine's
-    # own surfaces hold, which a raw glob never matched
-    expand(fs) = unique!(reduce(vcat, (isempty(Config.glob_files(cfg["root"], String(g))) ? [String(g)] : Config.glob_files(cfg["root"], String(g)) for g in fs); init = String[]))
-    extra_files = Dict(e["key"] => expand(e["files"]) for e in extra)
+    # a glob reaches the lane as the files it names ([`expand_globs`](@ref)); `taken` then subtracts the
+    # same strings the engine's own surfaces hold, which a raw glob never matched
+    extra_files = Dict(e["key"] => expand_globs(cfg["root"], e["files"]) for e in extra)
     taken = Set(f for fs in values(extra_files) for f in fs)
     out = Dict{String,Any}[]
     for key in ("rationale", "pages", "src", "ext", "literate")
@@ -469,12 +483,14 @@ end
     resolve_hunt_lanes(cfg) -> Vector{Dict}
 
 The bug-hunt lanes: the config's `territories` (kind `territory`) followed by the catalogue's two free
-lanes (anchored). Returns the list.
+lanes (anchored). A territory's globs are expanded ([`expand_globs`](@ref)) — a hunter is handed its
+files verbatim, so `src/Scans/*.jl` must arrive as the files it names and not as the pattern. Returns
+the list.
 """
 function resolve_hunt_lanes(cfg::AbstractDict)
     out = Dict{String,Any}[]
     for t in cfg["instruments"]["bug-hunt"]["territories"]
-        push!(out, Dict("key" => t["key"], "kind" => "territory", "anchor" => false, "files" => String.(t["files"]), "brief" => substitute(t["brief"], cfg)))
+        push!(out, Dict("key" => t["key"], "kind" => "territory", "anchor" => false, "files" => expand_globs(cfg["root"], t["files"]), "brief" => substitute(t["brief"], cfg)))
     end
     for l in lane_catalog("bug-hunt")["lane"]
         push!(out, Dict("key" => l["key"], "kind" => l["kind"], "anchor" => l["anchor"], "files" => String[], "brief" => substitute(l["brief"], cfg)))
@@ -684,6 +700,7 @@ function render_args(cfg::AbstractDict, instrument::AbstractString, round::Abstr
         a["manuscripts"] = paths["manuscripts"]; a["rulebook_path"] = paths["rulebook_path"]
         a["hats"] = [Dict("nn" => h["nn"], "key" => h["key"], "persona_path" => h["persona_path"], "substrate" => h["substrate"], "needs" => h["needs"], "anchor" => h["anchor"]) for h in roster if !h["not_applicable"]]
         a["adjudicated_titles"] = adjudicated_titles(cfg, ledger); a["finding_types"] = finding_types(cfg); a["cost"] = cost; a["opened"] = opened
+        a["finding_cap"] = get(cfg["instruments"]["check-consistency"], "finding_cap", 25)
     elseif instrument == "check-docs"
         a["preamble"] = substitute(PREAMBLES[instrument], cfg); a["policy_path"] = paths["policy_path"]; a["finding_types"] = finding_types(cfg)
         a["lanes"] = [merge(Dict{String,Any}("nn" => l["nn"], "key" => l["key"], "kind" => l["kind"], "brief_path" => l["brief_path"], "files" => l["files"], "anchor" => l["anchor"]),
@@ -695,10 +712,12 @@ function render_args(cfg::AbstractDict, instrument::AbstractString, round::Abstr
         a["oracles"] = bh["oracles"]; a["witness_env"] = bh["witness_env"]
         a["witness_cmd"] = "julia --project=\"$(Witnesses.witness_project(root, bh["witness_env"], cfg["package"]["name"]))\" --startup-file=no"
         a["invariants_path"] = paths["invariants_path"]
+        a["finding_cap"] = get(bh, "finding_cap", 6)
     else
         a["base"] = base; a["head"] = head; a["kind"] = kind; a["covered"] = covered_paths(cfg)
         a["diff_path"] = paths["diff_path"]; a["diffstat_path"] = paths["diffstat_path"]; a["claims_path"] = paths["claims_path"]
         a["lanes"] = [Dict("nn" => l["nn"], "key" => l["key"], "kind" => l["kind"], "brief_path" => l["brief_path"], "anchor" => l["anchor"]) for l in roster]
+        a["finding_cap"] = get(cfg["instruments"]["audit-changes"], "finding_cap", 8)
     end
     schema = GBGCodingTools.instrument_schema(instrument)
     errs = validate(schema["properties"]["args"], a; root = schema)

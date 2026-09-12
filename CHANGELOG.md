@@ -8,9 +8,10 @@ Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments a
 MAJOR on rc.9. Instruments affected: check-docs and check-consistency (a carried finding's first fix
 range; the verifier and panel scripts' empty-roster refusals), bug-hunt and audit-changes (the same
 refusal in their scripts), and every consumer's doctor (`BUILD.DOCS`) and scan report (the DEAD rule).
-Rates comparable: **no** for the docs instruments — a carried finding fixed between rounds can now close
-`honored`, where it was graded `UNDONE` for ever; yes otherwise. The fixture recall is unchanged: no
-scan's hit set moved.
+Rates comparable: **no**, for all four — every instrument's reporting UNIT moved from sites to classes, so
+a finding count either side of this release is not the same measurement; and for the docs instruments a
+carried finding fixed between rounds can now close `honored`, where it was graded `UNDONE` for ever. The
+fixture recall is unchanged: no scan's hit set moved.
 
 The corrections `2026-09-11-audit-changes-02` disposed as `fixed`, the deferrals of
 `2026-09-11-check-docs-02` that were not the owner's to decide, and the live defects the check-docs attack
@@ -78,6 +79,37 @@ zero findings in all six rounds — is a cross lane carrying no files to compare
 version, the files a lane OPENED rather than the files it claims, needs a per-agent tool-call log that
 Workflow does not expose. What the gap did produce is the claim checklist above: the CLI supplies the
 enumeration, so a lane cannot under-enumerate its own denominator, only visibly fail to answer it.
+
+**What check-docs learned, applied to the other three instruments.** Tuning one instrument is a proxy for
+tuning all of them, so the same questions were put to the hats, the hunt and the audit — and three of the
+findings were defects rather than improvements.
+
+**Three instruments carried their cap INSIDE a Workflow script.** `hunt.js` said "your 6 most substantial
+candidates", `audit.js` "your 8 most substantial findings", `panel.js` "at most your 25 MOST SIGNIFICANT
+findings" — package policy numbers sitting in the files whose one rule is that no package datum lives in
+them. Each is now `instruments.<name>.finding_cap`, rendered into args and REQUIRED by that instrument's
+args schema, so a missing cap is loud rather than a silent fall back to a literal. The defaults are the
+three numbers as they stood, so no round's behaviour changes by this alone.
+
+**None of the three told its agents to report classes.** `RULE.DOC.CLASS_SWEEP` is fleet-wide and was
+stated in no brief but check-docs'. A hat now reports ONE finding per class whose `locations` name every
+page; an audit lane ONE concern per class naming every hunk; a hunter ONE candidate per MECHANISM — with
+the caveat the transfer needed, since a witness is what makes a hunt candidate real, so a class no single
+program can demonstrate is genuinely several and is split exactly there. `candidates_found` moves with it
+in all three: it counts classes now, not sites, or TRUNCATED would stop meaning anything.
+
+**A bug-hunt territory handed its globs to the agent AS globs.** `resolve_hunt_lanes` passed
+`src/Scans/*.jl` to the hunter verbatim — forty-five files arriving as one pattern — the same defect fixed
+in check-docs' `lanes_extra` one commit earlier and missed next door. Both resolvers now share one
+`expand_globs`, which keeps a pattern that matches nothing (a directory a lane names) rather than dropping
+it and silently emptying that lane.
+
+**Three `src` files were in no territory at all.** `src/CLI/Design.jl`, `src/CLI/Consolidate.jl` and the
+module entry point `src/GBGCodingTools.jl` were named by no hunt lane. Design.jl holds `attack` and
+`calibrate`, whose option parsing shipped broken in rc.7 and crashed on every invocation; the entry point
+is the file `{hunt.entry_point}` points the free lanes at. All three are covered now, and a new doctor
+check `CFG.TERRITORIES` (WARN, in `QUICK`, NA where no territory is configured) reports any `src` file a
+territory list misses, so the gap cannot quietly return. The doctor has 50 checks.
 
 **A verification pass batches its lanes.** Each verifier ran one agent per lane, and every act agent read
 the whole fix-pass diff: in 2026-09-11-check-docs-02's first pass that was 255KB bought nine times, about

@@ -21,7 +21,8 @@
         "adjudicated_titles",
         "finding_types",
         "strength",
-        "models"
+        "models",
+        "finding_cap"
       ],
       "properties": {
         "adjudicated_titles": {
@@ -29,6 +30,11 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "finding_cap": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "instruments.check-consistency.finding_cap: the budget one hat reports under, counted in CLASSES — a mistake recurring across pages is one finding whose locations name every page"
         },
         "models": {
           "additionalProperties": false,

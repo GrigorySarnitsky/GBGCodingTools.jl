@@ -68,6 +68,31 @@ end
     @test occursin("lane\\.[a-z_]+", read(joinpath(TOOL, "src", "CLI", "Preflight.jl"), String))
 end
 
+# A cap is a policy number, and the core invariant is that no package datum lives in a Workflow script:
+# three of the four instruments carried theirs as a literal (6, 8, 25) until 2026-09-12. Each now takes it
+# from args — check-docs through its brief's `{lane.cap}` slot, the other three through `A.finding_cap` —
+# and each tells its agents to report CLASSES, which RULE.DOC.CLASS_SWEEP always required and no lane
+# brief said.
+@testset "no instrument hard-codes its cap, and every one reports classes" begin
+    for (inst, script, slot) in (("check-docs", "lanes.js", "{lane.cap}"), ("check-consistency", "panel.js", "A.finding_cap"),
+                                 ("bug-hunt", "hunt.js", "A.finding_cap"), ("audit-changes", "audit.js", "A.finding_cap"))
+        text = read(joinpath(TOOL, "instruments", inst, "workflow", script), String)
+        inst == "check-docs" || @test occursin(slot, text)
+        @test !occursin(r"Cap: your \d+|at most your \d+|\d+-finding cap", text)   # no literal cap survives
+    end
+    @test occursin("{lane.cap}", read(joinpath(TOOL, "catalog", "lanes", "check-docs.toml"), String))
+    for (inst, script, phrase) in (("check-consistency", "panel.js", "ONE FINDING PER CLASS"),
+                                   ("bug-hunt", "hunt.js", "ONE CANDIDATE PER MECHANISM"),
+                                   ("audit-changes", "audit.js", "ONE CONCERN PER CLASS"))
+        @test occursin(phrase, read(joinpath(TOOL, "instruments", inst, "workflow", script), String))
+    end
+    # and each instrument's args schema REQUIRES the cap, so a missing one is loud rather than a fallback
+    for inst in ("check-consistency", "bug-hunt", "audit-changes")
+        s = JSON3.read(read(joinpath(TOOL, "instruments", inst, "schema.json"), String), Dict{String,Any})
+        @test "finding_cap" in s["properties"]["args"]["required"]
+    end
+end
+
 @testset "every doctor check runs without crashing" begin
     root = fixture_copy("doctor-all")
     cfg = G.Config.read(root)

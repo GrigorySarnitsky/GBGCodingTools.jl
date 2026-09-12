@@ -19,11 +19,17 @@
         "oracles",
         "witness_cmd",
         "models",
-        "strength"
+        "strength",
+        "finding_cap"
       ],
       "properties": {
         "witness_cmd": {
           "type": "string"
+        },
+        "finding_cap": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "instruments.bug-hunt.finding_cap: the budget a territory hunter reports under, counted in MECHANISMS. It arrives here because a cap is a policy number and no package datum belongs in a Workflow script; the two FREE lanes are uncapped by design"
         },
         "lanes": {
           "items": {

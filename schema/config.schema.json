@@ -397,6 +397,12 @@
      "additionalProperties": false,
      "default": {},
      "properties": {
+      "finding_cap": {
+       "description": "the budget one hat reports under, counted in FINDINGS, which are classes: a mistake recurring across pages is ONE finding whose locations name every page (RULE.DOC.CLASS_SWEEP). It bounds a hat's OUTPUT, not its reading — candidates_found records the classes it weighed. It lives here rather than in panel.js because a cap is a policy number, and no package datum belongs in a Workflow script.",
+       "type": "integer",
+       "minimum": 1,
+       "default": 25
+      },
       "profile": {
        "type": "string",
        "enum": [
@@ -479,6 +485,12 @@
        },
        "default": []
       },
+      "finding_cap": {
+       "description": "the budget one hunter reports under, counted in MECHANISMS: one mechanism wrong in five places is ONE candidate whose other sites its mechanism names, split only where the sites need different witnesses — a witness is what makes a hunt candidate real, so a class no single program can demonstrate is genuinely several. The two FREE lanes are uncapped by design: they choose two or three files themselves.",
+       "type": "integer",
+       "minimum": 1,
+       "default": 6
+      },
       "oracles": {
        "$ref": "#/$defs/strlist",
        "default": []
@@ -506,6 +518,12 @@
         "type": "string"
        },
        "default": {}
+      },
+      "finding_cap": {
+       "description": "the budget one audit lane reports under, counted in CLASSES: an unjustified edit pattern recurring across hunks is ONE concern whose locations name every hunk (RULE.DOC.CLASS_SWEEP), so a class spanning forty hunks costs one.",
+       "type": "integer",
+       "minimum": 1,
+       "default": 8
       },
       "guard_symbols": {
        "$ref": "#/$defs/strlist",

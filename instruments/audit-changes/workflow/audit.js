@@ -18,7 +18,7 @@ export const meta = {
 }
 
 // gbg:prelude
-for (const k of ['round', 'round_dir', 'repo', 'base', 'head', 'lanes', 'package', 'models', 'diff_path', 'schema_version']) if (A[k] === undefined) throw new Error(`audit.js: args.${k} is required (base is the commit the norm is read at)`)
+for (const k of ['round', 'round_dir', 'repo', 'base', 'head', 'lanes', 'package', 'models', 'diff_path', 'schema_version', 'finding_cap']) if (A[k] === undefined) throw new Error(`audit.js: args.${k} is required (base is the commit the norm is read at)`)
 if (!A.lanes.length) throw new Error('audit.js: an EMPTY roster is not a clean audit — the CLI never launches one over nothing')
 
 const SCHEMA = {
@@ -29,7 +29,7 @@ const SCHEMA = {
     lane: { type: 'string' },
     verdict: { type: 'string', enum: ['CLEAN', 'CONCERNS'], description: 'CLEAN only if you found nothing in your lens worth the owner reading' },
     checked: { type: 'array', items: { type: 'string' }, description: 'REQUIRED, especially when CLEAN: what you actually examined, item by item (the specific hunks, names, guards or calls). CLEAN with an empty or vague list is indistinguishable from a lane that did nothing, and is read as such.' },
-    candidates_found: { type: 'integer', description: 'how many candidates you found BEFORE the reporting cap' },
+    candidates_found: { type: 'integer', description: 'distinct CLASSES you weighed BEFORE the reporting cap, never the number of hunks: one edit pattern repeated across five hunks is one concern' },
     findings: { type: 'array', items: {
       type: 'object', additionalProperties: false,
       properties: {
@@ -81,7 +81,9 @@ YOUR QUESTION IS NOT "what is wrong with this code". It is: WAS EACH CHANGE JUST
 
 READ THE CODE FIRST AND FORM YOUR VERDICT BEFORE reading any commit message. The author's commit messages are CLAIMS about these edits, not evidence about them (only the claim-versus-edit lane reads them first). The package's deliberate absences are design, not defects: ${(A.package.deliberate_absences || []).join('; ') || '(none recorded)'}.
 
-AUDIT ONLY. Do not edit, create or delete any file. Quote the before and after from the diff for every finding. Return CLEAN honestly if your lens turns up nothing — with a non-empty checked[]. A lane returning CONCERNS with an empty findings array is a contradiction and is read as dead. Cap: your 8 most substantial findings; report candidates_found.`
+ONE CONCERN PER CLASS, NEVER ONE PER HUNK. Where the same unjustified pattern recurs across hunks, report it ONCE, list every hunk in \`locations\`, and quote the most decisive before/after pair — a class split across five findings spends five of your budget and tells the owner nothing the class did not (RULE.DOC.CLASS_SWEEP).
+
+AUDIT ONLY. Do not edit, create or delete any file. Quote the before and after from the diff for every finding. Return CLEAN honestly if your lens turns up nothing — with a non-empty checked[]. A lane returning CONCERNS with an empty findings array is a contradiction and is read as dead. Cap: your ${A.finding_cap} most substantial findings, counted in CLASSES — \`locations\` is unbounded, so a class spanning forty hunks costs one; report candidates_found.`
 
 const CLAIMS = A.claims_path ? `\n\nTHE CLAIMS (the commit messages of the audited range) are in ${A.claims_path} — your lens reads them, after the code.` : ''
 

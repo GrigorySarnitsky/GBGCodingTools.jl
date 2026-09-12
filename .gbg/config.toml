@@ -74,6 +74,9 @@ require_doi = true
 enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
 
     [instruments.audit-changes]
+    # Counted in CLASSES: one unjustified edit pattern across five hunks is ONE concern whose locations name
+    # every hunk. 8 is what audit.js hard-coded until 2026-09-12.
+    finding_cap = 8
     # what this package REFUSES with: the under-rejection lane reads these to see a guard removed or weakened
     guard_symbols = ["ConfigError", "SchemaError", "LedgerError", "RoundError", "PreflightError", "SyncError",
                      "refusal", "torn_check", "guard", "assert_valid", "validate", "fail(", "push!(fails",
@@ -93,12 +96,18 @@ enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
         "the gate refuses a build around an open round" = "test/gate.jl"
 
     [instruments.bug-hunt]
+    # Counted in MECHANISMS, not sites: one mechanism wrong in five places is one candidate, split only
+    # where the sites need different witnesses. 6 is what hunt.js hard-coded until 2026-09-12, kept as the
+    # default and moved here because a cap is a policy number and no package datum belongs in a script.
+    finding_cap = 6
     oracles = ["the fixture's defects.toml", "the exit contract", "git's own tree hash", "the documented definition over raw files"]
     witness_env = "test"
 
         [[instruments.bug-hunt.territories]]
         brief = "the entry point, the option parser, the config reader and the schema validator — everything a verb passes through before it acts"
-        files = ["src/CLI/Main.jl", "src/CLI/Config.jl", "src/CLI/Schema.jl", "src/CLI/Ledger.jl"]
+        # src/GBGCodingTools.jl is the module itself, and `{hunt.entry_point}` names it to the free lanes;
+        # until 2026-09-12 no territory did, so the file the hunt starts from was hunted by nobody.
+        files = ["src/GBGCodingTools.jl", "src/CLI/Main.jl", "src/CLI/Config.jl", "src/CLI/Schema.jl", "src/CLI/Ledger.jl"]
         key = "entry"
         [[instruments.bug-hunt.territories]]
         brief = "the round machinery: preflight, prepare, bank, the passes, grade and close, and the closure channels they compute"
@@ -106,7 +115,9 @@ enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
         key = "rounds"
         [[instruments.bug-hunt.territories]]
         brief = "the renderers and the read-only checks: sync, init, the doctor, the fleet verbs and git"
-        files = ["src/CLI/Sync.jl", "src/CLI/Init.jl", "src/CLI/Doctor.jl", "src/CLI/Fleet.jl", "src/CLI/Bump.jl", "src/CLI/Release.jl", "src/CLI/Git.jl", "src/CLI/Install.jl", "src/CLI/Self.jl", "src/CLI/Selftest.jl", "src/CLI/Gate.jl", "src/CLI/Hunt.jl", "src/CLI/Audit.jl"]
+        # Design.jl (attack, calibrate) was in no territory until 2026-09-12 — and it is the file whose
+        # option parsing shipped broken in rc.7, crashing every `gbg attack` invocation with a FieldError.
+        files = ["src/CLI/Sync.jl", "src/CLI/Init.jl", "src/CLI/Doctor.jl", "src/CLI/Fleet.jl", "src/CLI/Bump.jl", "src/CLI/Release.jl", "src/CLI/Git.jl", "src/CLI/Install.jl", "src/CLI/Self.jl", "src/CLI/Selftest.jl", "src/CLI/Gate.jl", "src/CLI/Hunt.jl", "src/CLI/Audit.jl", "src/CLI/Design.jl"]
         key = "renderers"
         [[instruments.bug-hunt.territories]]
         brief = "the scan engine and its scans"
@@ -118,10 +129,14 @@ enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
         key = "harness"
         [[instruments.bug-hunt.territories]]
         brief = "hashing, the HTML walker, the wrapper"
-        files = ["src/TreeHash.jl", "src/HtmlWalker.jl", "src/DocLints.jl", "ext/GBGCodingToolsDocumenterExt.jl"]
+        files = ["src/TreeHash.jl", "src/HtmlWalker.jl", "src/CLI/Consolidate.jl", "src/DocLints.jl", "ext/GBGCodingToolsDocumenterExt.jl"]
         key = "core"
 
     [instruments.check-consistency]
+    # Counted in CLASSES: a mistake recurring across pages is ONE finding whose locations name every page.
+    # 25 is what panel.js hard-coded until 2026-09-12; the panel reads the whole site, so its budget is the
+    # widest of the four.
+    finding_cap = 25
     core = ["consistency-matrix", "cold-reader", "tooling-maintainer"]
     design_docs_withheld = ["architecture"]
     hats = ["consistency-matrix", "software-architect", "structure-consistency", "latex-typesetter", "api-user", "citations-integrity", "style-editor", "cold-reader", "tooling-maintainer"]

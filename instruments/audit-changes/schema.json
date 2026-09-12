@@ -22,12 +22,18 @@
         "claims_path",
         "lanes",
         "models",
-        "strength"
+        "strength",
+        "finding_cap"
       ],
       "properties": {
         "head": {
           "pattern": "^[0-9a-f]{40}$",
           "type": "string"
+        },
+        "finding_cap": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "instruments.audit-changes.finding_cap: the budget one lane reports under, counted in CLASSES — an edit pattern recurring across hunks is one concern whose locations name every hunk"
         },
         "lanes": {
           "items": {

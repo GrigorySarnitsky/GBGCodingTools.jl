@@ -242,6 +242,14 @@ end
     # a lane with a surface has a checklist; the cross lanes, which have no files, have none
     @test !isempty(G.Preflight.claim_checklist(tcfg, ["docs/ARCHITECTURE.md"]))
     @test isempty(G.Preflight.claim_checklist(tcfg, String[]))
+
+    # ONE home for the expansion, and the hunt uses it too: `src/Scans/*.jl` reached the agent as the
+    # literal pattern until 2026-09-12, so a territory of forty-five files was one string in its prompt.
+    hl = G.Preflight.resolve_hunt_lanes(tcfg)
+    @test !any(l -> any(f -> occursin("*", f), l["files"]), hl)
+    @test length(only([l for l in hl if l["key"] == "scans"])["files"]) > 10
+    @test G.Preflight.expand_globs(TOOL, ["catalog"]) == ["catalog"]   # a directory is not a glob: kept
+    @test G.Preflight.expand_globs(TOOL, ["nosuch/*.jl"]) == ["nosuch/*.jl"]   # matching nothing: kept, not dropped
 end
 
 # gbg attack and gbg calibrate check the instruments themselves, outside any round. An attack renders the

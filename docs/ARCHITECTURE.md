@@ -1220,13 +1220,16 @@ enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
 
 [instruments.check-docs]
 argcov_policy = "triage"               # enum: triage | gate   (variation point — the ONE configurable tier, §5.5)
+finding_cap     = 20                   # a lane's budget, counted in CLASSES: a class with forty sites costs one
+rationale_lanes = 1                     # > 1 cuts a single-document rationale surface into that many slices, on its own `## ` headings
 lanes_extra   = [                      # refinements of the engine's lanes; a file named here leaves the engine's surface lane
   {key = "src-core", files = ["src/FiberSections.jl", "src/Fields.jl", "src/FieldAlgebra.jl"], brief = "types, layout, algebra"},
   {key = "src-ops",  files = ["src/DifferentialOperators.jl", "src/Convolution.jl", "src/Points.jl", "src/Interpolation.jl", "src/Reductions.jl"], brief = "operators, transfer, reductions"} ]
 # The engine lanes are constants and cannot be dropped: one lane per non-empty surface key
-# (rationale, pages, src, ext, literate, built-html) plus family, cold-reader, operational-claims.
+# (rationale, pages, src, ext, literate, built-html) plus one-home, cold-reader, operational-claims.
 
 [instruments.check-consistency]
+finding_cap = 25                       # a hat's budget, counted in CLASSES (a mistake on forty pages is one finding)
 profile     = "all"                    # enum: all | core | explicit
 hats        = ["consistency-matrix", "software-architect", "gpu-kernel-practitioner", "structure-consistency",
                "latex-typesetter", "api-user", "normalization-convention-auditor", "citations-integrity",
@@ -1260,10 +1263,12 @@ territories = [
   {key = "operators",  files = ["src/DifferentialOperators.jl", "src/Convolution.jl"], brief = "Nyquist split, kernels, projector"},
   {key = "transfer",   files = ["src/Interpolation.jl"],                               brief = "adjoint pair, traversal order, NUFFT"},
   {key = "reductions", files = ["src/Reductions.jl"],                                  brief = "measure, Parseval, shell binning"} ]
+finding_cap = 6                        # a territory hunter's budget, counted in MECHANISMS; the two FREE lanes are uncapped
 oracles     = ["adjointness", "Parseval", "div(curl)=0", "curl(grad)=0", "the documented definition over raw arrays"]
 witness_env = "test"                   # the --project a witness runs under
 
 [instruments.audit-changes]
+finding_cap         = 8                # a lane's budget, counted in CLASSES (one edit pattern across forty hunks is one concern)
 # covered paths: the constants src, test, ext, docs, Project.toml, plus every [paths] entry — nothing here can remove one
 executable_claims   = { allocation = "test/allocations.jl", traffic = "test/pass_audit.jl", method_set = "test/method_parity.jl" }
                                        # existing files under test/; the gate claim IS package.julia_test (no separate key)
@@ -1481,8 +1486,12 @@ at the tool root, which must work when the dev checkout IS the consumer.
    expected; stamps incl. `config_sha` and `tool_tree_sha`; `opened` from the CLI clock — a Workflow
    script cannot call `Date.now()`); prints the protocol text, the Workflow call (args:
    `{round_dir, scratch_dir, manuscripts, hats[{key, persona, anchor, substrate, siteonly}], preamble,
-   deliberate_absences, adjudicated_titles[], cost, strength, finding_types, opened}`), and the
-   next-step line. Hats receive the adjudicated list as titles only, never ids, never seeds.
+   deliberate_absences, adjudicated_titles[], cost, strength, finding_types, finding_cap, opened}`), and
+   the next-step line. Hats receive the adjudicated list as titles only, never ids, never seeds. A hat
+   reports CLASSES, never sites — a mistake recurring across pages is ONE finding whose `locations` name
+   every page (`RULE.DOC.CLASS_SWEEP`), and `candidates_found` counts classes — with `finding_cap`
+   bounding those findings. The cap is config, never a literal in `panel.js`: a cap is a policy number,
+   and no package datum belongs in a Workflow script.
 3. **Prepare.** `gbg round prepare <round>` (the session runs it per the protocol): exports
    `GBG_ROUND=<round>` and runs `docs_build`, requiring exit 0 (a failed build is exit 2 with the log
    path) — the wrapper's `gbg gate` inside that build ignores exactly this round; consolidates
@@ -1702,6 +1711,17 @@ verdict it was confirmed with and its witness (`Passes.hunt_carry_fields`), and 
 copies that witness in under a name of its own and re-runs it (`Rounds.rebank_hunt_carried!`). A
 defect that still fails is confirmed again; one whose witness now passes is not re-banked, and the close
 of that round removes it from `carried.toml`.
+**Territories, mechanisms and the cap.** A territory's globs are EXPANDED by the CLI, so a hunter is
+handed the files a pattern names rather than the pattern: `src/Scans/*.jl` reached the agent verbatim
+until 2026-09-12, and the same unexpanded string never matched anything the coverage arithmetic compared
+it to. `CFG.TERRITORIES` (doctor, WARN, in `QUICK`) reports every `src` file no territory names — a
+territory list is a guess about where bugs live, and a file outside every guess is read by no hunter
+while the hunt still reports success. A hunter reports MECHANISMS, not sites: one mechanism wrong in five
+places is ONE candidate naming its other sites, split only where the sites need DIFFERENT witnesses,
+since a witness is what makes a hunt candidate real and a class no single program can demonstrate is
+genuinely several. `finding_cap` (config, not a literal in `hunt.js`) bounds a territory lane; the two
+FREE lanes stay uncapped, choosing two or three files themselves.
+
 `closure.py`'s follow-up-hunt rule is deleted (`survey-bughunt-auditchanges.md:50-52`).
 
 ### §6.8 Deltas — `/audit-changes`
@@ -1711,7 +1731,9 @@ the diff's paths; lanes from `catalog/lanes/audit-changes.toml` (code: free-read
 under-rejection†, backend-portability, behaviour-change†, over-rejection†, public-contract, numerics,
 invariants, claim-versus-edit; prose: contract-drift†, sweep-completeness, reader-consequence; † =
 anchor); `strength` honoured. Concern schema: `{severity, title, file, before, after, why_it_matters,
-justified, previously_worked, evidence}` + per lane `checked[]`, `candidates_found`;
+justified, previously_worked, evidence}` + per lane `checked[]`, `candidates_found` — both counted in
+CLASSES, since one unjustified edit pattern across five hunks is ONE concern whose `locations` name every
+hunk, with `finding_cap` (config, not a literal in `audit.js`) bounding them;
 `severity-recheck.js` (anchor) runs before "serious" is counted, over the concerns a re-rating can
 move across the gate, several per agent. **Covered paths** are the constants
 `src`, `test`, `ext`, `docs`, `Project.toml` plus every `[paths]` entry — config can only ADD.
@@ -1844,6 +1866,7 @@ implementation plan refers to it and adds no id of its own.
 | `CFG.SURFACES` | every non-optional surface glob matches ≥ 1 file; every `file#heading` anchor resolves to exactly one heading; every module exists; every `[paths]` entry is a directory; the `glossary` file exists and a non-empty `built_html` has a `docs/` directory beside it; `docs/make.jl` exists (the config schema is what pins `docs_build` to name it); `julia_test` contains `Pkg.test()`; every `executable_claims` file exists under `test/` | otherwise |
 | `CFG.HATS` | every hat key resolves (catalogue or `.gbg/hats/`); anchors ⊆ hats; ≥ 1 anchor; no persona names another fleet package; a hat with empty substrate is marked, not expected; every `rulebook_sections` anchor resolves | otherwise |
 | `CFG.SEEDS` | `seed_rounds = true` ⇒ the file `seed_catalog` names (default `.gbg/seeds.toml`) exists and validates against the `seeds` definition of `instruments/check-consistency/schema.json` | missing or invalid |
+| `CFG.TERRITORIES` | every file of the `src` surface is named by some bug-hunt territory (globs expanded). A territory list is a guess about where bugs live, so a file in none of them is read by no hunter while the round still reports success — `src/CLI/Design.jl` sat outside every territory through the release whose `gbg attack` crashed on its first invocation, and the entry point `{hunt.entry_point}` names to the free lanes was itself unhunted. In `QUICK` | a file in no territory (WARN — a consumer may exclude one deliberately); NA where no territory is configured |
 | `CFG.EXEMPTIONS` | every entry: known id by its prefix (`RULE.` in `policy/RULES.toml`, `SCAN.` in the catalogue, a doctor check, a finding id, a harness op), reason ≥ 40, `expires` present and ≤ `recorded + 365 d` (or `overturn_when` on scope `finding`), no non-exemptable id, no `target = "*"` on scope `check`; a `match` table only on scope `scan\|lint\|policy\|harness` and only with the four sub-keys; no `arg_type` sub-key on an entry a text scan would apply — only the reflection scans can evaluate it, and such an entry is refused (exit 2), never ignored | otherwise |
 | `EXEMPT.EXPIRED` / `EXEMPT.EXPIRING` | expiry passed / within 30 d (finding scope skipped) | FAIL / WARN |
 | `EXEMPT.STALE` | the target still exists (a symbol, a file, a finding id) | gone |

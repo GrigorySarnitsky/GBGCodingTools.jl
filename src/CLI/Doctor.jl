@@ -47,7 +47,7 @@ na(id, d) = Check(id, :NA, d)
 
 const NON_EXEMPTABLE = ("PIN.", "CFG.", "EXEMPT.", "WIRE.", "MANAGED.", "SHIM.", "POL.", "ROUND.", "SELF.")
 const EXEMPTABLE = ("LEG.", "GIT.", "AUDIT.")
-const QUICK = ["CFG.VALID", "CFG.SURFACES", "CFG.HATS", "CFG.SEEDS", "CFG.EXEMPTIONS", "PIN.CONFIG", "PIN.SOURCES", "PIN.NOT_DEV",
+const QUICK = ["CFG.VALID", "CFG.SURFACES", "CFG.HATS", "CFG.SEEDS", "CFG.TERRITORIES", "CFG.EXEMPTIONS", "PIN.CONFIG", "PIN.SOURCES", "PIN.NOT_DEV",
                "EXEMPT.EXPIRED", "EXEMPT.EXPIRING", "EXEMPT.STALE", "EXEMPT.BROAD", "WIRE.MAKEDOCS", "WIRE.RUNTESTS", "WIRE.CI_AUTH",
                "WIRE.GITIGNORE", "WIRE.CLAUDE_MD", "MANAGED.HASH", "ROUND.DIR", "ROUND.MARKER", "ROUND.OPEN", "ROUND.ABANDONED",
                "ROUND.DEV", "ROUND.FROZEN", "POL.SENTINEL", "SELF.CONSUMER", "AUDIT.GAP"]
@@ -302,6 +302,22 @@ check!("CFG.SEEDS", ctx -> begin
     inst = instrument_schema("check-consistency")
     errs = validate(inst["\$defs"]["seeds"], TOML.parsefile(p); root = inst)
     isempty(errs) ? pass("CFG.SEEDS", "$(length(TOML.parsefile(p)["class"])) classes") : fail("CFG.SEEDS", join(errs, "; "))
+end)
+# Every file of the `src` surface is named by some bug-hunt territory. A territory list is a guess about
+# where bugs live, and a file in none of them is read by no hunter while the round still reports success —
+# which is how `src/CLI/Design.jl` sat outside every territory through the release whose `gbg attack`
+# crashed on its first invocation, and how the module entry point the free lanes are pointed at was itself
+# unhunted. WARN, not FAIL: a consumer may exclude a file deliberately, and a coverage gap is a thing to
+# see rather than a broken config. NA where no territory is configured.
+check!("CFG.TERRITORIES", ctx -> begin
+    ts = get(get(ctx.cfg["instruments"], "bug-hunt", Dict{String,Any}()), "territories", Any[])
+    isempty(ts) && return na("CFG.TERRITORIES", "no bug-hunt territories configured")
+    covered = Set{String}()
+    for t in ts; union!(covered, GBGCodingTools.Preflight.expand_globs(ctx.root, t["files"])); end
+    src = Config.surface_files(ctx.cfg, "src")
+    miss = [f for f in src if !(f in covered)]
+    isempty(miss) ? pass("CFG.TERRITORIES", "$(length(src)) src file(s), every one in a territory") :
+        warn("CFG.TERRITORIES", "$(length(miss)) src file(s) in NO territory — no hunter reads them: " * join(miss, ", "))
 end)
 known_rule_ids() = Set(r["id"] for r in TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "policy", "RULES.toml"))["rule"])
 check!("CFG.EXEMPTIONS", ctx -> begin
