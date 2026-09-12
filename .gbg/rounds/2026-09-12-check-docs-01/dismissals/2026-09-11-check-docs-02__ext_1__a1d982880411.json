@@ -1,0 +1,6 @@
+{
+  "id": "2026-09-11-check-docs-02/ext#1",
+  "verdict": "DISMISSAL-SOUND",
+  "evidence": "policy/docs-rubric.md:239 — \"How much of the method the signature repeats is this package's to set, and it is {{rubric.signature_types}}.\" src/CLI/Sync.jl:86 names => \"the names and their defaults, and no types\". Config.read(root) returns signature_types = names. ext/GBGCodingToolsDocumenterExt.jl:22 — \"gate_or_skip(cfg, what) -> Bool\". SCAN.SIGNATURE_TYPED over src+ext: population 244, hits 0.",
+  "what_would_bite": ""
+}

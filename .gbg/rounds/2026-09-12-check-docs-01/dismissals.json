@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-12-check-docs-01",
+  "items_sha": "2bded60f1bab83007ac806dbb8686ca9ee07a1a85912eea1cf8cb8d3688f4eec",
+  "tally": {
+    "DISMISSAL-SOUND": 3
+  },
+  "verdicts": [
+    {
+      "id": "2026-09-11-check-docs-02/ext#1",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "policy/docs-rubric.md:239 \"How much of the method the signature repeats is this package's to set, and it is {{rubric.signature_types}}.\" src/CLI/Sync.jl:86 \"names\" => \"the names and their defaults, and no types\". Config.read(root) prints signature_types = names. ext/GBGCodingToolsDocumenterExt.jl:22 \"gate_or_skip(cfg, what) -> Bool\". SCAN.SIGNATURE_TYPED over src+ext: population 244, hits 0.",
+      "what_would_bite": ""
+    },
+    {
+      "id": "2026-09-11-check-docs-01/rationale#1",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "docs/ARCHITECTURE.md §3 fence: \"  src/\", \"    CLI/\", its children at six (\"      Design.jl\"), then at four spaces \"    Scan.jl   `gbg scan docs|html` — the tiered engine over catalog/scans.toml\", sibling of \"    Scans/<ScanId>.jl\" and \"    TreeHash.jl\". src/Scan.jl is top level (src/CLI/ has no Scan.jl); src/GBGCodingTools.jl:87 `include(\"Scan.jl\")`. grep \"CLI/Scan\" outside .gbg: no hits.",
+      "what_would_bite": ""
+    },
+    {
+      "id": "2026-09-11-check-docs-01/workflow-scripts#1",
+      "verdict": "DISMISSAL-SOUND",
+      "evidence": "src/GBGCodingTools.jl:105 `include(\"CLI/Design.jl\")`. Design.jl:209 `VERBS[\"attack\"]`, :214 `VERBS[\"calibrate\"]`; :80 `install_script(... \"attack-design.js\")` then :86 `workflow_call(joinpath(wd,\"attack-design.js\"), a)`; :172/:179 the same for `rubric-audit.js`. Loading the module lists attack/calibrate in VERBS; running `attack(cfg,\"check-docs\")` returned rc=0 and printed the Workflow call for attack-design.js.",
+      "what_would_bite": ""
+    }
+  ],
+  "reopened": [],
+  "dead": [],
+  "complete": true
+}
