@@ -121,6 +121,14 @@
    "items": {
     "type": "string"
    }
+  },
+  "seed_skipped": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "minItems": 1,
+   "description": "the seed classes the round never planted, copied from ROUND.toml: each is UNDEFINED in recall, so this tally's recall covers fewer classes than the catalogue"
   }
  },
  "title": "verdicts/pass-<k>/tally.json \u2014 written by `gbg round grade`",

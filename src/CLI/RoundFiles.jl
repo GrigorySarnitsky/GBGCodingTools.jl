@@ -33,7 +33,9 @@ end
     read_round(dir) -> Union{Dict,Nothing}
 
 The parsed `ROUND.toml` of a round directory, schema-validated; `nothing` when the marker is absent.
-An invalid marker throws with the validation messages.
+An invalid marker throws with the validation messages. An empty `config_sha` is valid only for the
+record `gbg round import --empty` writes before `init` — abandoned, with `import.json` beside it —
+and invalid on every other round, where a blank stamp would pass unnoticed.
 """
 function read_round(dir::AbstractString)
     p = joinpath(dir, "ROUND.toml")
@@ -41,6 +43,8 @@ function read_round(dir::AbstractString)
     r = TOML.parsefile(p)
     errs = validate(load_schema("round"), r)
     isempty(errs) || error("$(p) is invalid:\n  " * join(errs, "\n  "))
+    get(r, "config_sha", nothing) == "" && !(haskey(r, "abandoned") && isfile(joinpath(dir, "import.json"))) &&
+        error("$(p) is invalid:\n  \$.config_sha is empty, which only an abandoned Step-0 import (with import.json) may record")
     return r
 end
 

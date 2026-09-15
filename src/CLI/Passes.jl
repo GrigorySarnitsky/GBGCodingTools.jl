@@ -587,7 +587,9 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
         for f in state_findings; f["lane"] == "scans" || (expected_blind[f["lane"]] = get(expected_blind, f["lane"], 0) + 1); end
         state = merge(base, Dict("lanes" => [Dict("nn" => l["nn"], "key" => l["key"], "substrate" => l["substrate"], "expected" => get(expected_blind, l["key"], 0)) for l in lanes if l["key"] != "scans" && get(expected_blind, l["key"], 0) > 0],
                       "findings" => [Dict("id" => f["id"], "lane" => f["lane"], "n" => f["n"], "title" => f["title"], "seeded" => get(f, "seeded", false)) for f in state_findings if f["lane"] != "scans"],
-                      "source_scope" => Preflight.source_globs(cfg)))
+                      # latex_source_globs is check-consistency's key: its panel's source and its verifier's
+                      # scope follow it, and a check-docs pass keeps the four surfaces
+                      "source_scope" => inst == "check-consistency" ? Preflight.source_globs(cfg) : Preflight.SOURCE_SURFACES))
         manuscripts === nothing || (state["manuscripts"] = manuscripts)
         Preflight.save_args(cfg, round, "pass-$k-act", act); Preflight.save_args(cfg, round, "pass-$k-state", state)
         nact = length(act["findings"])
@@ -848,6 +850,7 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         "suspect_hats" => get(bank, "suspect_hats", String[]), "dead_lanes" => dead, "rejected_files" => rejected, "open_ids" => open_ids,
         "pending_state" => pending_state,
         "plateau" => Dict("passes_flat" => flat), "recall" => get(bank, "recall", Dict()))
+    isempty(sk) || (tally["seed_skipped"] = sk)          # recall over fewer classes than the catalogue says so where it is compared
     errs = validate(load_schema("tally"), tally); isempty(errs) || throw(RoundError("tally.json would not validate: " * join(errs, "; ")))
     write_json(joinpath(pd, "tally.json"), tally)
     md = IOBuffer()
@@ -1298,6 +1301,8 @@ function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector =
     isempty(carry) || (rec["closed_by"]["carried"] = sort!(collect(String.(carry))))
     Rounds.save(dir, rec)
     isempty(carry) || println(io, "close: carried $(length(carry)) finding(s) into the next $inst round — they are re-banked there, never rediscovered: ", join(carry, ", "))
+    sk = String.(get(rec, "seed_skipped", String[]))
+    isempty(sk) || println(io, "close: this round's recall is over fewer classes than its catalogue — never planted, UNDEFINED: ", join(sk, ", "))
     println(io, "close: $round CLOSED at $(first(head, 8)) — commit ⇒ push the round (ROUND.toml changed); cite the closure per lane and id in the message")
     return 0
 end

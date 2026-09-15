@@ -341,22 +341,24 @@ const CLAIM_NUMBER = r"\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten
 # substantive finding, 2 cannot evaluate, 3 crash" — which the first two miss, because they want a digit
 # within two words of `exit`. src/GBGCodingTools.jl contributed ZERO checklist items until it was added,
 # and the seeded `exit-code-drift` mutation was planted in exactly that line, invisible to the checklist
-# built to catch it (2026-09-12-check-docs-01). A CODE is required near the phrase — a lone digit 0–3
-# followed by the word naming it, `2 cannot` — since the bare phrase is mostly a topic mention, and a
-# looser digit matched the `1` of a version string. Every alternative refuses a digit that continues into
-# a number (`2.5`, `30`).
-const CLAIM_EXIT = r"\bexits?\s+(?:with\s+)?(?:code\s+)?[0-3]\b(?!\.\d)|\bexit\s+code\s+[0-3]\b(?!\.\d)|\bexit\s+contract\b[^.]{0,60}?(?<![\w.])[0-3]\s+[a-z]"i
+# built to catch it (2026-09-12-check-docs-01). A code is required near the phrase, since the bare phrase
+# is mostly a topic mention: a lone digit 0–3, bare, backticked or bold (`0` clean), never one inside a
+# version string or a larger number (the `1` of v1.0.0, 2.5, 30). A following word was once required
+# too, and it dropped the verbs page's own backticked statement of the contract.
+const CLAIM_EXIT = r"\bexits?\s+(?:with\s+)?(?:code\s+)?[`*]*[0-3]\b(?![.\d]*\d)|\bexit\s+code\s+[`*]*[0-3]\b(?![.\d]*\d)|\bexit\s+contract\b[^.]{0,60}?(?<![\w.])[`*]*[0-3](?![\w.]*\d)[`*]*(?![\w.])"i
 # The QUANTIFIER class, narrowed until it was affordable. A bare quantifier matches thousands of lines of
 # this corpus and was dropped as unaffordable when the checklist was built; two of the five planted seeds
 # were quantifier mutations ("every" → "almost every", a deleted "never") and BOTH were missed, so the
 # class that cost too much to check was also the class the round could not catch. Narrowed to a strong
-# universal (`every`, `never`, `always`, `none` — not `all`, `any` or `only`, which ordinary prose is full
-# of) in the same CLAUSE as a register id or a backticked `gbg` verb, where it is a claim about the tool.
-# The per-lane counts before and after that narrowing are in the commit that made it (2026-09-15).
-const CLAIM_QUANTIFIER = r"\b(?:every|never|always|none)\b"i
-const CLAIM_TOOL_ID = r"\b(?:RULE|SCAN|CFG|SELF|PIN|ROUND|EXEMPT|WIRE|MANAGED|LEG|POL|GIT|AUDIT|BUILD)\.[A-Z_]+\b|`gbg\s+[a-z]+"
-# a clause ends at a sentence stop, a semicolon or a spaced dash; the dot inside `RULE.DOC` is not one
-const CLAIM_CLAUSE = r"(?<=[.;!?])\s+|\s+—\s+"
+# universal — `every`, `never`, `always`, `none`, `only`; not `all` or `any`, which ordinary prose is full
+# of — in the same SENTENCE as a register id or a `gbg` verb, where it is a claim about the tool. Only a
+# sentence stop ends the span: a spaced dash or a table's semicolon cut subjects from their predicates.
+# The per-lane counts, and the lines that left or joined each lane's list, are in the commits that set
+# this (2026-09-15 twice: the first narrowing overshot and was walked back).
+const CLAIM_QUANTIFIER = r"\b(?:every|never|always|none|only)\b"i
+const CLAIM_TOOL_ID = r"\b(?:RULE|SCAN|CFG|SELF|PIN|ROUND|EXEMPT|WIRE|MANAGED|LEG|POL|GIT|AUDIT|BUILD)\.[A-Z_]+\b|\bgbg\s+[a-z]+\b"
+# a sentence ends at `.`, `!` or `?` followed by white space; the dot inside `RULE.DOC` is not one
+const CLAIM_CLAUSE = r"(?<=[.!?])\s+"
 const CLAIM_TEXT = (".jl", ".md", ".toml", ".json", ".js", ".tmpl", ".sh", ".csv", ".seed", ".snippet", ".block", ".skeleton")
 
 # A lane's `files` may name a directory (`catalog`, `policy`) or a build tree; the checklist is over the
@@ -763,9 +765,10 @@ const SOURCE_SURFACES = ["src", "ext", "docs/src", "docs"]
 """
     source_globs(cfg) -> Vector{String}
 
-The AUTHORED SOURCE a `needs: source` panel hat and a pass's state verifier read: [`SOURCE_SURFACES`](@ref)
-together with every `instruments.check-consistency.latex_source_globs` entry the consumer names,
-repo-relative, in that order and without repeats. The argument is `cfg`, the validated config.
+The AUTHORED SOURCE a `needs: source` panel hat and a check-consistency pass's state verifier read:
+[`SOURCE_SURFACES`](@ref) together with every `instruments.check-consistency.latex_source_globs` entry
+the consumer names, repo-relative, in that order and without repeats. A check-docs pass is not given it:
+the key is check-consistency's. The argument is `cfg`, the validated config.
 
 Resolved in the CLI, never in a script, since a script holding the paths breaks the core invariant; and
 a UNION, never a replacement. The key had no reader until 2026-09-12, so a consumer naming
@@ -796,12 +799,21 @@ function copy_scripts(cfg::AbstractDict, instrument::AbstractString, round::Abst
 end
 
 """
+    REFRESHABLE_SCRIPTS
+
+The Workflow scripts `gbg round scripts` may replace in an open round: the verifiers and auditors a round
+grades and closes with. Never a lens — `lanes.js`, `panel.js`, `hunt.js`, `audit.js` — nor a design
+check's script: a changed lens is a new round (`RULE.INST.FROZEN_MIDROUND`).
+"""
+const REFRESHABLE_SCRIPTS = ("verify-act.js", "verify-state.js", "verify-architecture.js", "severity-recheck.js", "dismissals.js")
+
+"""
     script_sources(instrument) -> Vector{Tuple{String,String}}
 
 Every Workflow script a round of `instrument` is given, as `(name, source path)` in the running copy:
 the instrument's own `workflow/*.js`, then the verifiers and auditors of other instruments a round may
-need (dismissals, severity, verifiers), a later name replacing none already taken. The argument is
-`instrument`, the instrument name. Returns the pairs.
+need (dismissals, severity, verifiers). A later name replaces an earlier one of the same name, as the
+copies always have. The argument is `instrument`, the instrument name. Returns the pairs.
 """
 function script_sources(instrument::AbstractString)
     src = joinpath(instrument_dir(instrument), "workflow")
@@ -914,7 +926,7 @@ function preflight(cfg::AbstractDict, instrument::AbstractString; profile = noth
     root = cfg["root"]
     code = doctor(cfg, :QUICK; io)
     code == 0 || (println(io, "preflight: the quick doctor set (QUICK) failed — fix the FAIL lines above (or exempt an exemptable one)"); return 2)
-    torn_check(cfg; io) || (println(io, "preflight: refused — a pinned file (one the consumer owns and the tool never renders) or a managed file (one `gbg sync` renders and hash-checks) is modified in the working tree (CFG.TORN)"); return 2)
+    torn_check(cfg; io) || (println(io, "preflight: refused — a pinned file (one the consumer owns and the tool never renders) or a managed file (one `gbg sync` writes and hash-checks) is modified in the working tree (CFG.TORN)"); return 2)
     sv = self_verify(root; io = devnull)
     sv == 0 || (println(io, "preflight: gbg self verify exit $sv — the running copy is not the pinned one"); return 2)
     rounds = RoundFiles.rounds(cfg)
@@ -956,6 +968,8 @@ function preflight(cfg::AbstractDict, instrument::AbstractString; profile = noth
         "model_hint" => economy_model(), "opened" => opened, "dead_lanes" => String[], "passes" => 0))
     instrument == "audit-changes" && (rec["base"] = something(Git.run(root, "rev-parse", base), base); rec["kind"] = kind)
     seeding && (rec["seed_salt"] = round)
+    # what the frozen copies will hold, so a copy altered outside the verbs is detectable later
+    rec["script_shas"] = Dict{String,Any}(name => bytes2hex(SHA.sha256(render_script(src))) for (name, src) in script_sources(instrument))
     rec_errs = validate(load_schema("round"), rec)
     if !isempty(rec_errs)
         # `kind` is not a ROUND.toml field; keep it out of the marker and in args

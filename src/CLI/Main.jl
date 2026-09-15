@@ -124,9 +124,9 @@ finding, 2 cannot evaluate, 3 crash. A `--dev` first argument sets `GBG_DEV=1` s
 Output is never truncated.
 
 An exception escaping a verb is printed with its backtrace to `stderr` and returns 3, so a crash is
-never read as a finding. The one exception is a [`Config.ConfigError`](@ref), the consumer's config
-failing to read or validate: the documented exit 2, printed without a backtrace. A config the verb has
-itself just written failing to read back is not that case; it raises
+never read as a finding. The exceptions are the consumer's own files failing to read or validate — a
+[`Config.ConfigError`](@ref) or a `Ledger.LedgerError` — the documented exit 2, printed without a
+backtrace. A config the verb has itself just written failing to read back is not that case; it raises
 [`Config.ConfigWrittenError`](@ref) and returns 3.
 """
 function main(args::AbstractVector{<:AbstractString})::Int
@@ -157,6 +157,8 @@ function main(args::AbstractVector{<:AbstractString})::Int
         # below. Without that, this arm reported the tool's own defect as the consumer's bad config and
         # dropped its backtrace (2026-09-12-audit-changes-01, four lanes).
         err isa Config.ConfigError && (println(stderr, "gbg ", key, ": ", sprint(showerror, err)); return 2)
+        # the same for the consumer's ledger: an unparsable, invalid or unevaluable `.gbg/exemptions.toml`
+        err isa Ledger.LedgerError && (println(stderr, "gbg ", key, ": ", sprint(showerror, err)); return 2)
         println(stderr, "gbg ", key, ": crashed — ", sprint(showerror, err))
         Base.show_backtrace(stderr, catch_backtrace()); println(stderr)
         return 3

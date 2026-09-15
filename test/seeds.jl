@@ -119,4 +119,21 @@ end
     @test G.RoundFiles.read_round(dir)["seed_skipped"] == sort(skipped)       # recorded, and schema-valid
     G.Rounds.note_seed_skips!(dir, rec, String[], ".gbg/seeds.toml"; io = devnull)
     @test !haskey(G.RoundFiles.read_round(dir), "seed_skipped")               # re-anchored: the record clears
+    # but a plan that plants NOTHING is refused, by both documentation instruments' prepare
+    # (the consistency path lost this with the partial refusal: 2026-09-15-audit-changes-01)
+    nothing_at_all, all_skipped = G.Seeds.select(cat, "no anchor of any class occurs in this text", name)
+    @test isempty(nothing_at_all)
+    out = IOBuffer()
+    @test G.Rounds.plants_nothing(nothing_at_all, all_skipped, ".gbg/seeds.toml", "the manuscript"; io = out)
+    @test occursin("plants nothing measures nothing", String(take!(out)))
+    @test !G.Rounds.plants_nothing([Dict{String,Any}("id" => "one planted seed")], all_skipped, ".gbg/seeds.toml", "the manuscript"; io = devnull)
+    src = read(joinpath(TOOL, "src", "CLI", "Rounds.jl"), String)
+    @test count(r"plants_nothing\(plan, skipped, .*\) && return 2", src) == 2   # both prepare paths ask it
+    # the skip reaches the tally beside recall, which is where a narrowed measurement is compared
+    t = Dict{String,Any}("schema_version" => 1, "round" => name, "pass" => 1, "per_id" => Dict{String,Any}(),
+        "totals" => Dict("findings" => 0, "seeded" => 0, "closed" => 0, "open" => 0), "demoted_by_rule" => 0,
+        "adjudicated_share" => 0.0, "suspect_hats" => String[], "dead_lanes" => String[], "rejected_files" => String[],
+        "open_ids" => String[], "pending_state" => String[], "plateau" => Dict("passes_flat" => 0), "seed_skipped" => sort(skipped))
+    @test isempty(G.validate(G.load_schema("tally"), t))
+    @test occursin("tally[\"seed_skipped\"] = sk", read(joinpath(TOOL, "src", "CLI", "Passes.jl"), String))
 end

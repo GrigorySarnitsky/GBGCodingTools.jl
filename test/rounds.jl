@@ -251,8 +251,18 @@ end
     qu(s) = any(c -> occursin(P.CLAIM_QUANTIFIER, c) && occursin(P.CLAIM_TOOL_ID, c), split(s, P.CLAIM_CLAUSE))
     @test qu("`gbg round close` refuses every open id")
     @test qu("RULE.INST.CARRY never lets a blocker ride")
-    @test !qu("Run `gbg round close`. Every lane then reads the diff")          # a different clause
+    @test !qu("Run `gbg round close`. Every lane then reads the diff")          # a different sentence
     @test !qu("`gbg round close` refuses any open id")                         # `any` is ordinary prose
+    # the first narrowing overshot, and these are the claims it dropped (2026-09-15-audit-changes-01)
+    @test occursin(P.CLAIM_EXIT, "from its own docstring. The exit contract is one for all: `0`")   # a backticked code
+    @test !occursin(P.CLAIM_EXIT, "the exit contract was settled 30 days ago")
+    @test qu("| `ROUND.OPEN` | lists open rounds (WARN; never FAIL")          # a table semicolon is no stop
+    @test qu("`CFG.EXEMPTIONS` — and never ignores it")                         # nor is a spaced dash
+    @test qu("gbg round close \$round carries every id still open")            # a bare verb
+    @test qu("`gbg round rerun <round> --lanes …` accepts only lanes `bank` classified DEAD")
+    for (f, n) in (("docs/src/guide/verbs.md", 7), ("src/CLI/Passes.jl", 479))
+        @test any(i -> occursin("`$f:$n`", i), G.Preflight.claim_checklist(tcfg, [f]))
+    end
 
     # ONE home for the expansion, and the hunt uses it too: `src/Scans/*.jl` reached the agent as the
     # literal pattern until 2026-09-12, so a territory of forty-five files was one string in its prompt.
@@ -828,6 +838,11 @@ end
     @test G.Rounds.build(cfg, name; io = devnull) == 0
     git("add", "-A"); git("commit", "-q", "-m", "the round's record")
     src = joinpath(root, "src", "FixtureA.jl"); write(src, read(src, String) * "\n")
+    # an uncommitted edit under a covered path: the build runs, but is NOT recorded — HEAD is not what it built
+    before = rec()["build"]
+    out = IOBuffer()
+    @test G.Rounds.build(cfg, name; io = out) == 0
+    @test occursin("NOT RECORDED", String(take!(out))) && rec()["build"] == before
     git("add", "-A"); git("commit", "-q", "-m", "a fix after the build")
     @test occursin("stale", only(G.Passes.build_fails(cfg, rec(), name)))             # a change under a covered path
     gone = merge(rec(), Dict{String,Any}("build" => Dict{String,Any}("code" => 0, "head" => "f"^40, "at" => "x")))
@@ -851,29 +866,49 @@ end
     cfg = G.Config.read(root)
     name = "2026-01-01-check-docs-01"
     dir = joinpath(root, ".gbg", "rounds", name); mkpath(joinpath(dir, "findings"))
+    # the frozen copies exactly as preflight leaves them: copied, with their shas recorded
+    wdir = G.Preflight.copy_scripts(cfg, "check-docs", name)
+    sha(p) = G.RoundFiles.sha256_file(p)
+    shas = Dict{String,Any}(n => sha(joinpath(wdir, n)) for (n, _) in G.Preflight.script_sources("check-docs"))
     write_round(dir, merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => name, "instrument" => "check-docs",
         "schema_version" => 1, "head" => something(G.Git.head(root), "0"^40), "roster" => Any[], "cost" => "economy",
         "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00",
-        "dead_lanes" => String[], "passes" => 0)))
-    @test !haskey(G.RoundFiles.read_round(dir), "scripts_refreshed")     # nothing recorded before one runs
+        "dead_lanes" => String[], "passes" => 1, "script_shas" => shas)))
     why = "the round's own verifier is unparseable in its frozen copy"
     @test G.Rounds.refresh_scripts(cfg, name, "because"; io = devnull) == 2     # a reason is required
-    @test !isfile(joinpath(G.Preflight.workflow_dir(cfg, name), "lanes.js"))
+    @test G.Rounds.refresh_scripts(cfg, name, why; io = devnull) == 0           # nothing differs: a no-op
+    @test !haskey(G.RoundFiles.read_round(dir), "scripts_refreshed")
+    # a LENS script that differs is never replaced: a changed lens is a new round
+    lanes = joinpath(wdir, "lanes.js"); write(lanes, "a lens edited mid-round")
+    out = IOBuffer()
+    @test G.Rounds.refresh_scripts(cfg, name, why; io = out) == 2
+    @test occursin("NOT replaced — lanes.js", String(take!(out))) && read(lanes, String) == "a lens edited mid-round"
+    @test !haskey(G.RoundFiles.read_round(dir), "scripts_refreshed")
+    G.Preflight.install_script(joinpath(TOOL, "instruments", "check-docs", "workflow", "lanes.js"), lanes)   # restored as preflight wrote it
+    # a broken VERIFIER is replaced, recorded with its shas, the pass count and the reason, and warned after a pass
+    va = joinpath(wdir, "verify-act.js"); write(va, "syntax error (")
+    out = IOBuffer()
+    @test G.Rounds.refresh_scripts(cfg, name, why; io = out) == 0
+    o = String(take!(out))
+    @test occursin("verify-act.js (altered by hand since preflight)", o) && occursin("WARNING", o)
+    e = only(G.RoundFiles.read_round(dir)["scripts_refreshed"])
+    @test e["reason"] == why && e["after_pass"] == 1 && [m["name"] for m in e["scripts"]] == ["verify-act.js"] && e["scripts"][1]["by_hand"]
+    @test read(va, String) == G.Preflight.render_script(joinpath(TOOL, "instruments", "check-consistency", "workflow", "verify-act.js"))
+    @test G.RoundFiles.read_round(dir)["script_shas"]["verify-act.js"] == sha(va)
+    # the same bytes written again are no alteration: nothing moves and nothing more is recorded
+    write(va, read(va, String))
     @test G.Rounds.refresh_scripts(cfg, name, why; io = devnull) == 0
-    lanes = joinpath(G.Preflight.workflow_dir(cfg, name), "lanes.js")
-    @test isfile(lanes)
-    r = G.RoundFiles.read_round(dir)
-    e = only(r["scripts_refreshed"])
-    @test e["reason"] == why && e["after_pass"] == 0 && any(m -> m["name"] == "lanes.js" && m["from"] == "absent", e["scripts"])
-    # nothing differs now: a no-op, and nothing recorded
-    @test G.Rounds.refresh_scripts(cfg, name, why; io = devnull) == 0
-    @test length(G.RoundFiles.read_round(dir)["scripts_refreshed"]) == 1
-    # one frozen copy broken: only THAT script is replaced, and the refresh is APPENDED, never overwritten
-    write(lanes, "syntax error (")
-    @test G.Rounds.refresh_scripts(cfg, name, why; io = devnull) == 0
-    r2 = G.RoundFiles.read_round(dir)["scripts_refreshed"]
-    @test length(r2) == 2 && [m["name"] for m in r2[2]["scripts"]] == ["lanes.js"]
-    @test read(lanes, String) == G.Preflight.render_script(joinpath(TOOL, "instruments", "check-docs", "workflow", "lanes.js"))
+    @test length(G.RoundFiles.read_round(dir)["scripts_refreshed"]) == 1          # APPENDED only when something moved
+    # the shape the verb wrote before it recorded more still validates
+    r = G.RoundFiles.read_round(dir); r["scripts_refreshed"] = [Dict{String,Any}("at" => "2026-01-01T00:00:00", "head" => "a"^40)]
+    @test isempty(G.validate(G.load_schema("round"), r))
+    # no HEAD to record against: refused BEFORE any frozen copy is touched
+    git(args...) = run(pipeline(setenv(`git -C $root -c user.email=t@t -c user.name=t $args`,
+                                       "HOME" => root, "PATH" => ENV["PATH"]); stdout = devnull, stderr = devnull))
+    git("init", "-q", "-b", "master")
+    write(va, "broken again (")
+    @test G.Rounds.refresh_scripts(cfg, name, why; io = devnull) == 2
+    @test read(va, String) == "broken again ("
 end
 
 # `gbg release` had NO test at all, and that is how a branch which could never succeed survived nine
@@ -949,13 +984,26 @@ end
 # the Step-0 import runs before `init`: dispatched ahead of the config read, self verify still first,
 # `config_sha` empty where there is no config; an existing round is refused
 @testset "round import --empty runs on a tree with no config" begin
-    bare = mktempdir()
+    plain = mktempdir()                  # neither a config nor a package repository: refused, as before
+    cd(plain) do
+        @test redirect_stderr(() -> G.main(["round", "import", "--empty", "2026-01-01-check-docs-01", "--reason", "a legacy pile that yields nothing"]), devnull) == 2
+        @test !isdir(joinpath(plain, ".gbg"))
+    end
+    bare = mktempdir()                   # a package repository before `init`: the Step-0 case
+    write(joinpath(bare, "Project.toml"), "name = \"Pile\"\n")
+    run(pipeline(`git -C $bare init -q -b master`; stdout = devnull, stderr = devnull))
     cd(bare) do
         id = "2026-01-01-check-docs-01"; why = "a legacy pile that yields nothing"
         @test G.main(["round", "import", "--empty", id, "--reason", why]) == 0
         rec = TOML.parsefile(joinpath(bare, ".gbg", "rounds", id, "ROUND.toml"))
         @test rec["config_sha"] == "" && rec["seed_catalog_sha"] == "none" && rec["abandoned"]["reason"] == why
         @test isfile(joinpath(bare, ".gbg", "rounds", id, "import.json"))
+        # the empty stamp is valid ONLY beside import.json on an abandoned record
+        rd = joinpath(bare, ".gbg", "rounds", id)
+        @test G.RoundFiles.read_round(rd)["config_sha"] == ""
+        mv(joinpath(rd, "import.json"), joinpath(bare, "import.json.aside"))
+        @test_throws ErrorException G.RoundFiles.read_round(rd)
+        mv(joinpath(bare, "import.json.aside"), joinpath(rd, "import.json"))
         quiet(args) = redirect_stdout(() -> G.main(args), devnull)
         @test quiet(["round", "import", "--empty", id, "--reason", why]) == 2                        # never overwritten
         @test quiet(["round", "import", "--empty", "2026-01-01-check-docs-02", "--reason", "short"]) == 2
@@ -980,6 +1028,8 @@ end
         round = rounds[1].name; dir = rounds[1].dir
         rec = rounds[1].round
         @test rec["instrument"] == "check-docs" && rec["config_sha"] == G.Preflight.config_sha(cfg)
+        # every frozen copy's sha is recorded as preflight wrote it, so a copy altered later is detectable
+        @test !isempty(rec["script_shas"]) && all(((n, h),) -> G.RoundFiles.sha256_file(joinpath(G.Preflight.workflow_dir(cfg, round), n)) == h, collect(rec["script_shas"]))
         @test isfile(joinpath(G.Preflight.workflow_dir(cfg, round), "lanes.js"))
         @test isfile(joinpath(G.Preflight.payload_dir(cfg, round), "policy.md"))
         args = JSON3.read(read(joinpath(G.Preflight.workflow_dir(cfg, round), "main.args.json"), String), Dict{String,Any})

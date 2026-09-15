@@ -99,7 +99,7 @@ record explicitly.
 | package paths: `[paths]` (further directories the audit covers — `examples`, `benchmark`) | relative directories | config (may only ADD to the covered constants) | PF's `examples/` demos are shipped code |
 | doc surfaces: rationale docs, pages, generated copies (`optional = true`, tolerated absent on a fresh clone), src, ext, literate examples, built HTML, history-exempt section, references heading (or `"absent"`), glossary | globs / `file#heading` anchors | config | PF 6 surfaces, IT 4, SS 4 (`survey-checkdocs.md:51`) |
 | ★ `rubric.leading_identity` | `physical-meaning` \| `estimand` | config enum | SS's estimand-first slot (`survey-checkdocs.md:139`) |
-| ★ `rubric.signature_types` | `names` \| `mirror` | config enum | this package takes `names`, the form its docstrings already used — measured on 2026-09-12, 247 of 251, the other four corrected when the rule was narrowed; PF asks for the stricter form, where a device kernel's argument types are the contract. Those figures are that day's snapshot, as every count in this document is dated; `SCAN.SIGNATURE_TYPED` re-measures it on every run |
+| ★ `rubric.signature_types` | `names` \| `mirror` | config enum | this package takes `names`, the form its docstrings already used — measured on 2026-09-12, 247 of 251, the other four corrected when the rule was narrowed; PF asks for the stricter form, where a device kernel's argument types are the contract. Those figures are that day's snapshot; `SCAN.SIGNATURE_TYPED` re-measures it on every run |
 | ★ `notation.vectors` | `component` \| `boldsymbol` \| `none` | config enum | IT bold-italic vectors vs PF components (`survey-check-consistency.md:160`) |
 | ★ `notation.mathbf_allowed` | list of strings | config | `\mathbf{1}` prescribed (PF/SS) vs banned (IT), undispositioned (`survey-buildlints-hooks-policy.md:37`) |
 | ★ `docs.admonition_titles` | `always` \| `load-bearing` | config enum | PF always / IT bare `!!! note` (`survey-buildlints-hooks-policy.md:95`) |
@@ -399,8 +399,8 @@ docs" in prose hand-rolls the battery (`round2-consumer.md:15-21`, F1).
 **Choice.** `instruments/<name>/workflow/*.js` live in the tool only. They are invoked through a
 COPY that `gbg preflight` writes into the project when the round opens, `.gbg/scratch/<round>/workflow/`
 (gitignored), and names as `scriptPath` — frozen for the round, except that `gbg round scripts
---reason` replaces the copies that differ from the running copy's when the round's own scripts cannot
-run, and records each replacement in `ROUND.toml`; the pinned copy under `~/.julia/packages/` is never named
+--reason` replaces the verifier and auditor copies that differ from the running copy's when the round's
+own verifiers cannot run, never a lens, and records each replacement in `ROUND.toml`; the pinned copy under `~/.julia/packages/` is never named
 directly. V1 (2026-09-09, `Aiporetne`, §11) is why: the Workflow tool accepts an outside-project
 `scriptPath` only for a file the session may already read — a session scratchpad, or a file it has
 `Read` — and refuses a fresh absolute path elsewhere ("scriptPath must be a script path this tool
@@ -1485,7 +1485,7 @@ at the tool root, which must work when the dev checkout IS the consumer.
    prints what would be run.
 2. **Preflight** (exit 2 aborts the skill): validates config; quick doctor (`QUICK`); the torn-file
    guard `CFG.TORN` — exit 2 when `git status --porcelain` shows any PINNED file (one the consumer owns
-   and the tool never renders) or MANAGED file (one `gbg sync` renders and hash-checks) modified,
+   and the tool never writes) or MANAGED file (one `gbg sync` writes and hash-checks, its sidecar included) modified,
    round files under an open round excepted — which `preflight` and every `gbg round` verb run and
    which `QUICK` does not carry (a file that fails to parse is `CFG.VALID`); `gbg self
    verify`; refuses on an open check-consistency round, pin ≠ resolved, an uncommitted change under a
@@ -1574,7 +1574,8 @@ at the tool root, which must work when the dev checkout IS the consumer.
    (`git merge-base --is-ancestor`; else `pass open --regrade`), the round's existing files committed,
    and — for both documentation instruments — a docs build recorded in `ROUND.toml.build` that exited 0
    at a head still reachable and with no covered path changed since (`prepare`, `pass open` and
-   `gbg round build` record the builds they run; an unreachable head is UNCHECKABLE and refuses);
+   `gbg round build` record the builds they run, and only over a tree whose covered paths are
+   unmodified; an unreachable head is UNCHECKABLE and refuses);
    runs `dismissals.js` over every `scope = "finding"` ledger entry recorded after `opened` and
    requires `reopened == []` — for EVERY instrument, not the hunt alone; snapshots the adjudicated ids
    used into `ROUND.toml.closed_by`; writes `closed`, `closed_head`, the tally sha (its own writes are
@@ -1991,8 +1992,10 @@ not contain it; IT on `Enteropia` or the Dropbox copy. Three verbs carry it, and
   `abandoned = {reason, open_ids}` from the record's own open list), `findings.json` (ids from the
   title → id map), the verdict passes the pile lets it reconstruct, the witnesses where the pile has
   them, and `import.json` (§6.1). It runs before `init`, on a tree with no `.gbg/config.toml`: `cmd_round`
-  dispatches the import before the config read every other round verb needs, and `gbg self verify`
-  still precedes it — plus `CFG.TORN` where a config exists. It refuses (exit 2) an existing target round, so
+  dispatches the import before the config read every other round verb needs, and takes as its root the
+  top of the package repository it is run in (a git top level holding `Project.toml`; anywhere else it
+  refuses); `gbg self verify` still precedes it — plus `CFG.TORN` where a config exists. The empty
+  `config_sha` is valid only on such an abandoned record beside its `import.json`. It refuses (exit 2) an existing target round, so
   an import repeated on the same tree cannot double up. `gbg round import --empty <round> --reason
   "…"` writes a round holding only `ROUND.toml` (`abandoned = {reason, open_ids = []}`) and
   `import.json` (`source = "none"`), for a record that has witnesses but no round entry (IT's round 4).
@@ -2425,7 +2428,7 @@ the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`), one or more of `scan:<i
 | `RULE.INST.SELF_REPORT` | instruments | Self-reported closure is not closure; the act verifier sees the diff, the state verifier is blind; the demotion is mechanical. | "Self-reported closure is not closure." |
 | `RULE.INST.AUDIT_AFTER_CODE` | instruments | A fix pass that changed code is audited before its round closes — always for a hunt, and for a check-docs round whose pass touched `src` or `ext` — by an audit that read the round's last code change. | the owner's ruling 2026-09-09, on the rc.1 round, whose documentation pass changed three code behaviours unaudited |
 | `RULE.INST.CLOSURE_LOOP` | instruments | The closure loop runs over the banked findings by id, never by re-running the battery; abandon is the only wholesale exit and names every open id. | "The closure loop is BUILD-ENFORCED" |
-| `RULE.INST.CARRY` | instruments | A round may close by carrying a finding into the next round of its instrument — a minor or nit at will, anything still open once its pass budget (`max_passes`, 3) is spent — on a severity re-rated by someone other than the lane that reported it; it is re-banked there after the lanes run, never rediscovered, and a final release refuses while a carried blocker or major stands, the backlog is not draining, or anything has been carried three times. | the owner's rulings 2026-09-10 and 2026-09-11 |
+| `RULE.INST.CARRY` | instruments | A round may close by carrying a finding into the next round of its instrument — a minor or nit at will, anything still open once its pass budget (`max_passes`, 3) is spent — on a severity re-rated by someone other than the lane that reported it; it is re-banked there after the lanes run, never rediscovered. A round refuses to close by carrying a finding already carried three times — the owner rules on it instead — and a final release refuses while a carried blocker or major stands, the backlog is not draining, or anything has been carried three times. | the owner's rulings 2026-09-10 and 2026-09-11 |
 | `RULE.INST.AUDIT_DISPOSED` | instruments | An audit round is closed by disposing its concerns, never by correcting them inside it; a correction moves the tree, the staleness check refuses the close, and there is no re-bank, so the correction rides the next change set. | the abandoned `2026-09-09-audit-changes-01`, 2026-09-10 |
 | `RULE.INST.FIX_FROM_LANES` | instruments | A fix pass is driven from the per-lane findings by id, never from the consolidated summary. | "a fix pass is driven from the banked per-hat reports" |
 | `RULE.INST.SEEDS` | instruments | A seeded finding is never fixed in the corpus and never enters the ledger. | "The seeded calibration and the closure gate" |

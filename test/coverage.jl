@@ -42,6 +42,14 @@ include("helpers.jl")
         @test !(G.Config.ConfigWrittenError <: G.Config.ConfigError)       # a subtype would be caught as exit 2
         write(cp_, good)
         @test G.main(["round", "list"]) == 0
+        # the consumer's LEDGER is its own file too: one that does not parse is exit 2, not a crash with a
+        # backtrace (2026-09-15-audit-changes-01)
+        lp = joinpath(root, ".gbg", "exemptions.toml"); keep = read(lp, String)
+        write(lp, keep * "\n[[exemption]\nthis is not toml\n")
+        redirect_stdout(devnull) do; redirect_stderr(devnull) do
+            @test G.main(["scan", "docs", "--only", "SCAN.REGISTER"]) == 2
+        end; end
+        write(lp, keep)
     end
     @test Set(keys(G.VERBS)) == Set(k for k in keys(G.VERBS))          # the table is a table, not a closure
     @test length(G.VERBS) >= 20
@@ -148,6 +156,9 @@ end
                                  Dict{String,Any}("manuscripts" => Dict("full" => "f", "siteonly" => "s"),
                                                   "rulebook_path" => "r"); opened = "2026-01-01T00:00:00")
     @test a2["source_globs"] == G.Preflight.source_globs(cfg)
+    # a check-docs pass keeps the four surfaces: the key is check-consistency's (2026-09-15-audit-changes-01)
+    @test occursin("\"source_scope\" => inst == \"check-consistency\" ? Preflight.source_globs(cfg) : Preflight.SOURCE_SURFACES",
+                   read(joinpath(TOOL, "src", "CLI", "Passes.jl"), String))
     vs = read(joinpath(TOOL, "instruments", "check-consistency", "workflow", "verify-state.js"), String)
     @test !occursin("'docs/src'", vs)                                     # the state verifier's copy is gone too
 end

@@ -200,8 +200,10 @@ function render_policy(cfg::AbstractDict, s::AbstractDict; ledger)
         for e in devs
             m = get(e, "match", nothing)
             refine = m === nothing ? "" : " — refined by " * join(("$k = `$(m[k])`" for k in sort!(collect(keys(m)))), ", ")
+            far = e["scope"] == "policy" ? GBGCodingTools.unreachable_waiver_scans(String(e["id"])) : String[]
+            reach = isempty(far) ? "" : " It does not reach " * join(("`$s`" for s in far), ", ") * ", which enforces the rule under another and keeps running."
             println(io, "- `$(e["id"])` (scope $(e["scope"]), target `$(e["target"])`)$refine: $(e["reason"]) [recorded $(e["recorded"])",
-                    haskey(e, "expires") ? ", expires $(e["expires"])]" : "]")
+                    haskey(e, "expires") ? ", expires $(e["expires"])]" : "]", reach)
         end
     end
     push!(out, ManagedFile(joinpath(".gbg", "policy", "deviations.md"), "policy/deviations.md", String(take!(io)), 0o644))

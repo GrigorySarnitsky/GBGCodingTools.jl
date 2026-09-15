@@ -145,8 +145,9 @@ end
     @test torn().status == :PASS                                                 # restored: torn no more
 end
 
-# a policy waiver of the second rule of a two-rule scan is refused by the scan; the doctor names it first,
-# before a build meets the error (2026-09-12-audit-changes-02), and a waiver of the canonical rule passes
+# a policy waiver of the second rule of a two-rule scan does not reach that scan, which keeps running: the
+# doctor WARNs and names the scan (a FAIL here broke every gate over a deviation that was legitimate —
+# 2026-09-15-audit-changes-01), deviations.md says the same, and a waiver of the canonical rule passes
 @testset "CFG.EXEMPTIONS names a policy waiver the scan cannot honour" begin
     root = fixture_copy("unreachable-waiver")
     led = joinpath(root, ".gbg", "exemptions.toml")
@@ -159,7 +160,10 @@ end
     @test exemptions().status == :PASS
     write(led, keep * entry("RULE.CIT.DOI"))
     c = exemptions()
-    @test c.status == :FAIL && occursin("RULE.CIT.DOI", c.detail) && occursin("SCAN.DOI_CROSSCHECK", c.detail)
+    @test c.status == :WARN && occursin("RULE.CIT.DOI", c.detail) && occursin("SCAN.DOI_CROSSCHECK", c.detail)
+    cfg = G.Config.read(root)
+    dev = only(f for f in G.Sync.plan(cfg) if endswith(f.path, "deviations.md"))
+    @test occursin("does not reach `SCAN.DOI_CROSSCHECK`", dev.content)
 end
 
 # AUDIT.GAP asks whether commits went unaudited between two closed audits: a later base AT or BEFORE the
@@ -188,4 +192,10 @@ end
         audit("2026-01-02-audit-changes-01", b, shas[4], "2026-01-02T00:00:00")
         @test gap().status == want
     end
+    # an exact match whose commit this checkout does not have (a shallow clone, a rewritten history) is
+    # still contiguous: the strings say so, and no git object is needed (2026-09-15-audit-changes-01)
+    gone = "e"^40
+    audit("2026-01-01-audit-changes-01", shas[1], gone, "2026-01-01T00:00:00")
+    audit("2026-01-02-audit-changes-01", gone, shas[4], "2026-01-02T00:00:00")
+    @test gap().status == :PASS
 end

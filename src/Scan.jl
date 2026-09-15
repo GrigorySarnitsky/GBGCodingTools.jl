@@ -115,8 +115,9 @@ rules_for_scan(id::AbstractString) =
 
 The catalogued scans that enforce `rule` without it being their canonical rule: the scans whose id the
 rule's `check` array names ([`rules_for_scan`](@ref)) but whose catalogue `rule` column is another rule.
-A policy waiver of `rule` cannot reach them — [`apply_ledger`](@ref) refuses it — and `CFG.EXEMPTIONS`
-names the entry. The argument is `rule`, a rule id. Returns the scan ids, empty for most rules.
+A policy waiver of `rule` does not reach them: [`apply_ledger`](@ref) leaves them running, the scan's
+report line, `CFG.EXEMPTIONS` (a WARN) and the rendered `deviations.md` each say so. The argument is
+`rule`, a rule id. Returns the scan ids, empty for most rules.
 """
 unreachable_waiver_scans(rule::AbstractString) =
     [String(r["id"]) for r in scan_catalog() if String(r["rule"]) != rule && rule in rules_for_scan(String(r["id"]))]
@@ -389,23 +390,19 @@ exempted, `disabled = true`); any other live `scan`-scope entry on the id — a 
 `match` among them — drops the hits it [`Ledger.matches`](@ref). Returns the kept hits, the exempted
 count and the flag.
 
-Two ledger entries are errors (`Ledger.LedgerError`), never silently void and never silently wide: an
-`arg_type` predicate on a text scan, and a `policy` entry on a rule the scan enforces that is NOT its
-canonical rule ([`unreachable_waiver_scans`](@ref)). Three scans carry two rules apiece, and a `Hit`
-carries no rule id, so a waiver of the second rule could only disable the whole scan — withdrawing the
-canonical rule, which the consumer never waived — or do nothing while `deviations.md` renders it as
-granted. Both were shipped in turn, the second as the fix for the first; the refusal ends both, and an
-entry meant for the whole scan is written `scope = "scan"`.
+A `policy` entry on a rule the scan enforces that is NOT its canonical rule ([`unreachable_waiver_scans`](@ref))
+has no effect here, and is never silent about it. Three scans carry two rules apiece and a `Hit` carries
+no rule id, so such a waiver could only disable the whole scan — withdrawing the canonical rule, which
+the consumer never waived — or leave it running. It leaves it running.
+
+`run_scan` notes that waiver on the scan's report line, `CFG.EXEMPTIONS` WARNs, and `deviations.md`
+says which scan the deviation does not reach. The waiver keeps its effect wherever the rule is canonical,
+and on the panel. A refusal was tried and withdrawn: it crashed every scan and made three rules
+undeclarable as deviations. An `arg_type` predicate on a text scan is an error (`Ledger.LedgerError`),
+which the command line reports as exit 2.
 """
 function apply_ledger(cfg::AbstractDict, ledger, row, hits::Vector{Hit})
     id = row["id"]; canonical = String(row["rule"])
-    for rule in rules_for_scan(id)
-        rule == canonical && continue
-        e = first(Ledger.entries(ledger, rule; scope = "policy"), 1)
-        isempty(e) || throw(Ledger.LedgerError("$rule on $(e[1]["target"]) is a policy waiver of a rule $id enforces but " *
-            "does not own (its rule is $canonical): it cannot waive this rule's hits alone, and will not waive $canonical's — " *
-            "waive the scan with scope = \"scan\", or drop the entry"))
-    end
     for e in Ledger.entries(ledger, canonical; scope = "policy")
         e["target"] == "*" && return (Hit[], length(hits), true)
     end
@@ -453,7 +450,27 @@ function run_scan(cfg::AbstractDict, row::AbstractDict; ledger = Ledger.read(cfg
     end
     kept, exempted, disabled = apply_ledger(cfg, ledger, row, hits)
     disabled && (note = isempty(note) ? "disabled by the ledger" : note)
+    far = unreached_waivers(ledger, row)
+    isempty(far) || (note = join(filter(!isempty, [note; far]), "; "))
     return ScanResult(id, row["rule"], tier, kept, population, exempted, note)
+end
+
+"""
+    unreached_waivers(ledger, row) -> Vector{String}
+
+One line per live `policy` entry in `ledger` that names a rule the scan `row` enforces without owning it
+— the waivers [`apply_ledger`](@ref) leaves this scan running under. The arguments are `ledger`, the
+ledger entries, and `row`, the scan's catalogue row. Returns the lines, empty for most scans.
+"""
+function unreached_waivers(ledger, row)
+    canonical = String(row["rule"]); out = String[]
+    for rule in rules_for_scan(String(row["id"]))
+        rule == canonical && continue
+        for e in Ledger.entries(ledger, rule; scope = "policy")
+            push!(out, "the policy waiver of $rule on `$(e["target"])` does not reach this scan, whose rule is $canonical")
+        end
+    end
+    return out
 end
 
 function custom_rows(cfg::AbstractDict)
@@ -521,7 +538,8 @@ function report(results::AbstractVector{ScanResult}; io::IO = stdout)
             for h in r.hits; println(io, "          ", format_hit(h)); end
             code = 2
         elseif !isempty(r.hits)
-            println(io, "  FAIL  ", rpad(r.id, 30), " ", length(r.hits), " hit(s)", r.exempted > 0 ? " ($(r.exempted) exempted)" : "")
+            println(io, "  FAIL  ", rpad(r.id, 30), " ", length(r.hits), " hit(s)", r.exempted > 0 ? " ($(r.exempted) exempted)" : "",
+                    isempty(r.note) ? "" : " — " * r.note)
             for h in r.hits; println(io, "          ", format_hit(h)); end
             code = max(code, 1)
         else
@@ -538,7 +556,8 @@ function report(results::AbstractVector{ScanResult}; io::IO = stdout)
             code = 2
             continue
         end
-        println(io, "  ", lpad(length(r.hits), 4), "  ", r.id, r.exempted > 0 ? " ($(r.exempted) exempted)" : "")
+        println(io, "  ", lpad(length(r.hits), 4), "  ", r.id, r.exempted > 0 ? " ($(r.exempted) exempted)" : "",
+                isempty(r.note) ? "" : " — " * r.note)
         for h in r.hits; println(io, "          ", format_hit(h)); end
     end
     return code

@@ -1,6 +1,6 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
- "title": ".gbg/config.toml \u2014 a consumer's one config file (docs/ARCHITECTURE.md \u00a75)",
+ "title": ".gbg/config.toml — a consumer's one config file (docs/ARCHITECTURE.md §5)",
  "type": "object",
  "additionalProperties": false,
  "required": [
@@ -440,7 +440,8 @@
       },
       "latex_source_globs": {
        "$ref": "#/$defs/strlist",
-       "default": []
+       "default": [],
+       "description": "repo-relative globs of authored source a check-consistency panel hat whose needs include `source`, and that instrument's pass verifier, read IN ADDITION to src, ext, docs/src and docs — a Literate surface such as examples/*.jl. It adds to those four surfaces and never replaces them."
       },
       "domain_hats": {
        "type": "array",

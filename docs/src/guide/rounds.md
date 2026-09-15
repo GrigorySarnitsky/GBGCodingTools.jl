@@ -22,7 +22,8 @@ grade, the CLI closes. Nothing is done by hand that a verb does.
    nothing is frozen), ids `<round>/<lane>#<n>` assigned, seeds marked, `findings.json` frozen.
 5. **Fix** — on the owner's word, from `findings.md` by id; builds and tests through
    `gbg round build|test <round>`. A build's verdict is recorded in `ROUND.toml`, as `prepare` and
-   `pass open` record theirs, so the round directory needs committing after it.
+   `pass open` record theirs — only over a tree whose covered paths are committed, so commit the fix,
+   build, then commit the round directory.
 6. **Verify** — `gbg round pass open <round>`: a nonce, the range, the regenerated manuscripts; the act
    verifier (sees the diff) and the state verifier (blind) launched as printed.
 7. **Grade** — `gbg round grade <round>`: the demotion, the closure channels, the tally; exit 1 while

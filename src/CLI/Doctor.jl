@@ -251,7 +251,7 @@ check!("CFG.TORN", ctx -> begin
     watched = Set(pinned_and_managed(ctx))
     open_rounds = [r.name for r in RoundFiles.rounds(ctx.cfg) if r.state == :open]
     torn = [f for f in modified if f in watched && !any(o -> startswith(f, ".gbg/rounds/$o/"), open_rounds)]
-    isempty(torn) ? pass("CFG.TORN", "no pinned file (consumer-owned, never rendered) or managed file (`gbg sync` renders and hash-checks it) modified") : fail("CFG.TORN", "modified in the working tree: " * join(sort!(torn), ", ") * " — wait for the sync, or commit")
+    isempty(torn) ? pass("CFG.TORN", "no pinned file (consumer-owned, never rendered) or managed file (`gbg sync` writes and hash-checks it) modified") : fail("CFG.TORN", "modified in the working tree: " * join(sort!(torn), ", ") * " — wait for the sync, or commit")
 end)
 check!("CFG.SURFACES", ctx -> begin
     errs = Config.check_paths(ctx.cfg)
@@ -334,7 +334,7 @@ end)
 known_rule_ids() = Set(r["id"] for r in rules_register())
 check!("CFG.EXEMPTIONS", ctx -> begin
     isempty(ctx.ledger_error) || return fail("CFG.EXEMPTIONS", ctx.ledger_error)
-    errs = String[]; rules = known_rule_ids(); scans = Set(r["id"] for r in scan_catalog()); checks = Set(first.(CHECKS))
+    errs = String[]; notes = String[]; rules = known_rule_ids(); scans = Set(r["id"] for r in scan_catalog()); checks = Set(first.(CHECKS))
     for e in ctx.ledger
         id = e["id"]; tag = "$(id)@$(e["target"])"
         known = startswith(id, "RULE.") ? id in rules : startswith(id, "SCAN.") ? (id in scans || startswith(id, "SCAN.CUSTOM.")) :
@@ -342,7 +342,7 @@ check!("CFG.EXEMPTIONS", ctx -> begin
         known || push!(errs, "$tag: unknown id")
         if e["scope"] == "policy" && startswith(id, "RULE.")
             far = unreachable_waiver_scans(id)
-            isempty(far) || push!(errs, "$tag: a policy waiver of a rule $(join(far, ", ")) enforces without owning it — the scan refuses it; waive the scan with scope = \"scan\"")
+            isempty(far) || push!(notes, "$tag does not reach $(join(far, ", ")), which enforce$(length(far) == 1 ? "s" : "") $id under another rule and keep$(length(far) == 1 ? "s" : "") running")
         end
         length(e["reason"]) >= 40 || push!(errs, "$tag: reason shorter than 40 characters")
         if e["scope"] == "finding"
@@ -363,7 +363,8 @@ check!("CFG.EXEMPTIONS", ctx -> begin
             end
         end
     end
-    isempty(errs) ? pass("CFG.EXEMPTIONS", "$(length(ctx.ledger)) entries") : fail("CFG.EXEMPTIONS", join(errs, "; "))
+    isempty(errs) || return fail("CFG.EXEMPTIONS", join(vcat(errs, notes), "; "))
+    isempty(notes) ? pass("CFG.EXEMPTIONS", "$(length(ctx.ledger)) entries") : warn("CFG.EXEMPTIONS", join(notes, "; "))
 end)
 check!("EXEMPT.EXPIRED", ctx -> begin
     ex = [e for e in ctx.ledger if e["scope"] != "finding" && haskey(e, "expires") && e["expires"] < today()]
@@ -638,11 +639,12 @@ check!("AUDIT.GAP", ctx -> begin
     gaps = String[]
     # contiguous when the later audit's base is the earlier one's closed head OR AN ANCESTOR of it: an audit
     # that re-reads commits the previous one already read overlaps, and leaves nothing unread; only a base
-    # PAST that head (or unrelated to it, or unreachable) leaves commits no audit read
+    # PAST that head (or unrelated to it) leaves commits no audit read. An exact match needs no git
+    # object, so it is compared first: a shallow or rewritten checkout cannot turn it into a gap.
     for i in 2:length(audits)
         prev = String(get(audits[i-1].round, "closed_head", audits[i-1].round["head"]))
         base = String(get(audits[i].round, "base", ""))
-        (!isempty(base) && Git.is_ancestor(ctx.root, base, prev)) ||
+        (!isempty(base) && (base == prev || Git.is_ancestor(ctx.root, base, prev))) ||
             push!(gaps, "$(audits[i].name) base $(first(base, 8)) is not $(audits[i-1].name)'s closed head $(first(prev, 8)) or an ancestor of it — the commits between were never audited")
     end
     # a gap between two audits is a WARN; NO audit at all is not contiguity, it is a repository whose

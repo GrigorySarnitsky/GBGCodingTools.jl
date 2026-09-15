@@ -73,7 +73,7 @@ message; the CLI prints it and returns 2. Returns the directory and the record.
 function guard(cfg::AbstractDict, round::AbstractString; io::IO = stderr, allow_config_change::Bool = false, need_open::Bool = true)
     sv = self_verify(cfg["root"]; io = devnull)
     sv == 0 || throw(RoundError("gbg self verify exit $sv — the running copy is not the pinned one"))
-    Preflight.torn_check(cfg; io) || throw(RoundError("CFG.TORN — a pinned file (consumer-owned, never rendered) or a managed file (`gbg sync` renders and hash-checks it) is modified in the working tree; wait for the sync or commit"))
+    Preflight.torn_check(cfg; io) || throw(RoundError("CFG.TORN — a pinned file (consumer-owned, never rendered) or a managed file (`gbg sync` writes and hash-checks it) is modified in the working tree; wait for the sync or commit"))
     dir, rec = load(cfg, round)
     need_open && RoundFiles.state(rec) != :open && throw(RoundError("$round is $(RoundFiles.state(rec)); the verb needs an open round"))
     if !allow_config_change && Preflight.config_sha(cfg) != rec["config_sha"]
@@ -167,6 +167,7 @@ function prepare(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
             cat = Seeds.read_catalog(joinpath(root, cfg["instruments"]["check-consistency"]["seed_catalog"]))
             f = read(full, String); s = read(site, String)
             plan, skipped = Seeds.select(cat, f, rec["seed_salt"])
+            plants_nothing(plan, skipped, cfg["instruments"]["check-consistency"]["seed_catalog"], "the manuscript"; io) && return 2
             note_seed_skips!(dir, rec, skipped, cfg["instruments"]["check-consistency"]["seed_catalog"]; io)
             f2, s2 = Seeds.plant(f, s, plan)
             write(full, f2); write(site, s2)
@@ -223,6 +224,21 @@ function prepare(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
 end
 
 """
+    plants_nothing(plan, skipped, catalog, corpus; io = stdout) -> Bool
+
+Whether a seeded round's plan is empty, and so must be refused: a round that plants nothing measures
+nothing. Both documentation instruments ask it before planting. The arguments are `plan` and `skipped`,
+what `Seeds.select` returned; `catalog`, the seed catalogue's path for the remedy; `corpus`, what the
+anchors were sought in; and `io`, where a refusal is printed. Returns `true` when it refused.
+"""
+function plants_nothing(plan, skipped, catalog::AbstractString, corpus::AbstractString; io::IO = stdout)
+    isempty(plan) || return false
+    println(io, "prepare: refused — the seed catalogue matched nothing in $corpus", isempty(skipped) ? "" : " (skipped: " * join(skipped, ", ") * ")")
+    println(io, "         a round that plants nothing measures nothing; fix $catalog or preflight with --no-seed")
+    return true
+end
+
+"""
     note_seed_skips!(dir, rec, skipped, catalog; io = stdout)
 
 Records the seed classes a round could not plant — their anchor occurs nowhere in its corpus — as
@@ -232,9 +248,10 @@ path for the remedy; and `io`, where the warning goes. Returns `nothing`.
 
 A skipped class is UNDEFINED in recall (`Recall.per_class`): named, and out of the denominator. The round
 still measures the classes that plant, so it is not refused — refusing it traded a narrowed measurement
-for none (2026-09-12-audit-changes-02). What must not happen is SILENCE, the state
-2026-09-12-check-docs-01 closed in, measuring 5 of 6 classes without saying the sixth was count-drift;
-so the skip is written into the record here and `grade` repeats it on every pass.
+for none (2026-09-12-audit-changes-02); a round that plants NOTHING is refused by both documentation
+instruments. What must not happen is SILENCE, the state 2026-09-12-check-docs-01 closed in, measuring 5
+of 6 classes without saying the sixth was count-drift; so the skip is written into the record here, and
+`grade` repeats it on every pass, writes it into the tally beside recall, and `close` names it.
 """
 function note_seed_skips!(dir::AbstractString, rec::AbstractDict, skipped::AbstractVector, catalog::AbstractString; io::IO = stdout)
     if isempty(skipped)                          # a re-prepared round whose anchors now all resolve
@@ -270,11 +287,7 @@ function seed_docs_corpus!(cfg::AbstractDict, round::AbstractString, dir::Abstra
     files = unique(vcat([String.(l["files"]) for l in Preflight.resolve_checkdocs_lanes(cfg) if !isempty(get(l, "files", String[]))]...))
     manuscript = Seeds.file_manuscript(root, files)
     plan, skipped = Seeds.select(cat, manuscript, rec["seed_salt"])
-    if isempty(plan)
-        println(io, "prepare: refused — the seed catalogue matched nothing in the lane surfaces", isempty(skipped) ? "" : " (skipped: " * join(skipped, ", ") * ")")
-        println(io, "         a round that plants nothing measures nothing; fix .gbg/seeds.toml or preflight with --no-seed")
-        return 2
-    end
+    plants_nothing(plan, skipped, get(cfg["instruments"]["check-docs"], "seed_catalog", ".gbg/seeds.toml"), "the lane surfaces"; io) && return 2
     note_seed_skips!(dir, rec, skipped, get(cfg["instruments"]["check-docs"], "seed_catalog", ".gbg/seeds.toml"); io)
     old = String(get(rec, "seed_root", ""))
     isempty(old) || !isdir(old) || rm(old; recursive = true, force = true)   # a re-prepared round leaves no copy behind
@@ -329,23 +342,23 @@ directory and record; and `code`, the build's exit code. A red build is recorded
 
 Every verb that runs the consumer's `docs_build` for a round records it — `prepare`, `pass open` and
 `gbg round build` — so the lifecycle the protocols describe satisfies `close` without an extra verb.
-Nothing persisted a build before 2026-09-12, and a round carried a red build through graded passes. The
-head is the real `HEAD`, never a placeholder: a build with no commit to name cannot be shown current.
-Returns `nothing` when recorded, or the reason it was not — no `HEAD`, or a record the save refuses, in
-which case `rec` is left as it was.
+Nothing persisted a build before 2026-09-12, and a round carried a red build through graded passes.
+
+A build is recorded against a commit only when it built that commit: never with no `HEAD`, and never
+while a covered path is modified or untracked in the working tree, where `HEAD` names nothing about what
+was built. Returns `nothing` when recorded, or the reason it was not. A record the save refuses is the
+tool's own failure and propagates as the `RoundError` it is.
 """
 function record_build!(cfg::AbstractDict, dir::AbstractString, rec::AbstractDict, code::Integer)
-    head = Git.head(cfg["root"])
+    root = cfg["root"]
+    head = Git.head(root)
     head === nothing && return "there is no git HEAD to record it against"
-    had = get(rec, "build", nothing)
+    covered = Preflight.covered_paths(cfg)
+    dirty = [p for (_, p) in Git.porcelain(root) if any(c -> p == c || startswith(p, rstrip(c, '/') * "/"), covered)]
+    isempty(dirty) || return "covered paths are modified in the working tree (" * join(first(dirty, 3), ", ") *
+                             (length(dirty) > 3 ? ", …" : "") * "), so HEAD is not what was built — commit, then build"
     rec["build"] = Dict{String,Any}("code" => Int(code), "head" => head, "at" => timestamp())
-    try
-        save(dir, rec)
-    catch err
-        err isa RoundError || rethrow()
-        had === nothing ? delete!(rec, "build") : (rec["build"] = had)
-        return sprint(showerror, err)
-    end
+    save(dir, rec)
     return nothing
 end
 
@@ -362,8 +375,8 @@ The arguments are:
 
 The verb writes the round record, so the round directory needs a commit afterwards, as after any round
 verb. It builds nothing, and exits 2, where the root has no git `HEAD` or the existing record fails the
-schema (read like every round verb's, before anything runs). A build that ran and still could not be
-recorded says so loudly: `close` will not see it. Returns the command's exit code; [`test`](@ref) is its twin
+schema (read like every round verb's, before anything runs). A build over a modified covered path runs
+and reports its code, and says loudly that it was not recorded: `close` will not see it. Returns the command's exit code; [`test`](@ref) is its twin
 for `julia_test`, and records nothing.
 """
 function build(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
@@ -379,47 +392,63 @@ end
 """
     refresh_scripts(cfg, round, reason; io = stdout) -> Int
 
-`gbg round scripts <round> --reason "…"`: replaces the frozen copies of this round's Workflow scripts
-that differ from the running copy's, and records which, why and when. The arguments are:
+`gbg round scripts <round> --reason "…"`: replaces the frozen copies of this round's verifier and auditor
+scripts that differ from the running copy's, and records which, why and when. The arguments are:
 
 - `cfg` — the validated config.
 - `round` — the round id.
-- `reason` — why the frozen scripts cannot serve this round (at least 24 characters), recorded.
+- `reason` — why the frozen verifiers or auditors cannot serve this round (at least 24 characters).
 - `io` — where the refresh is reported.
 
 A round's scripts are FROZEN when it opens (`RULE.INST.FROZEN_MIDROUND`): [`Preflight.copy_scripts`](@ref)
-runs at preflight, and otherwise only here. This verb is the one exception, and it is narrow. It exists
-for a round whose OWN frozen scripts cannot run — 2026-09-12-check-docs-01 found a blocker that left
-`verify-act.js` and `verify-state.js` unparseable in its scratch copy, and a round that cannot verify
-cannot close — and it touches only the scripts whose text differs; one already current is left alone.
+runs at preflight, and otherwise only here. This verb is the one exception, and it is narrow: a round
+whose own verifiers or auditors cannot run — 2026-09-12-check-docs-01 found `verify-act.js` and
+`verify-state.js` unparseable in its scratch copy — can never verify or close. Only
+`Preflight.REFRESHABLE_SCRIPTS` are replaced. A lens script that differs (`lanes.js`, `panel.js`,
+`hunt.js`, `audit.js`) is named and left frozen, since a changed lens is a new round.
 
-Refused (exit 2) without a reason, and a no-op (exit 0, nothing recorded) when no script differs. Each
-refresh is APPENDED to `scripts_refreshed` with its reason, the pass count at the time and every
-replaced script's sha before and after, and a refresh after a pass has opened warns: the passes before
-and after it were verified by different scripts, which a reader of the closed round must weigh.
-Returns the exit code.
+Refused (exit 2), before anything is touched, without a reason or where the root has no git `HEAD` to
+record against. A no-op (exit 0, nothing recorded) when no refreshable script differs and none was
+altered by hand. A frozen copy that no longer matches the sha preflight recorded in `script_shas` was
+changed outside the verbs; it is replaced and recorded `by_hand`, even when it already equals the running
+copy. Each refresh is APPENDED to `scripts_refreshed` with its reason, the pass count and each script's
+sha before and after, and one after a pass has opened warns that the passes around it ran on different
+scripts. Returns the exit code.
 """
 function refresh_scripts(cfg::AbstractDict, round::AbstractString, reason::AbstractString; io::IO = stdout)
-    length(strip(reason)) >= 24 || (println(io, "scripts: refused — --reason \"…\" (≥ 24 characters) must say why this round's frozen scripts cannot serve it"); return 2)
+    length(strip(reason)) >= 24 || (println(io, "scripts: refused — --reason \"…\" (≥ 24 characters) must say why this round's frozen verifiers or auditors cannot serve it"); return 2)
     dir, rec = guard(cfg, round; io)
+    head = Git.head(cfg["root"])
+    head === nothing && (println(io, "scripts: refused — the root has no git HEAD to record a refresh against; nothing was replaced"); return 2)
     wdir = Preflight.workflow_dir(cfg, round)
     sha(t) = bytes2hex(SHA.sha256(t))
-    moved = Dict{String,Any}[]
+    recorded = Dict{String,Any}(get(rec, "script_shas", Dict{String,Any}()))
+    moved = Dict{String,Any}[]; lens = String[]; plans = Tuple{String,String}[]
     for (name, src) in Preflight.script_sources(String(rec["instrument"]))
-        dst = joinpath(wdir, name); new = Preflight.render_script(src)
+        dst = joinpath(wdir, name); new = sha(Preflight.render_script(src))
         old = isfile(dst) ? sha(read(dst)) : "absent"
-        old == sha(new) && continue
-        push!(moved, Dict{String,Any}("name" => name, "from" => old, "to" => sha(new)))
-        Preflight.install_script(src, dst)
+        by_hand = haskey(recorded, name) && recorded[name] != old
+        (old == new && !by_hand) && continue
+        if !(name in Preflight.REFRESHABLE_SCRIPTS)
+            push!(lens, name); continue
+        end
+        push!(moved, Dict{String,Any}("name" => name, "from" => old, "to" => new, "by_hand" => by_hand))
+        push!(plans, (src, dst))
     end
-    isempty(moved) && (println(io, "scripts: every frozen script of $round already equals the running copy's — nothing refreshed, nothing recorded"); return 0)
-    head = Git.head(cfg["root"])
-    head === nothing && throw(RoundError("scripts: the root has no git HEAD to record the refresh against"))
+    isempty(lens) || println(io, "scripts: NOT replaced — ", join(lens, ", "), " differ from the running copy, but a lens is frozen for the round; a changed lens is a new round")
+    if isempty(moved)
+        println(io, "scripts: no verifier or auditor script of $round differs from the running copy — nothing refreshed, nothing recorded")
+        return isempty(lens) ? 0 : 2
+    end
+    for (src, dst) in plans; Preflight.install_script(src, dst); end
+    for m in moved; recorded[m["name"]] = m["to"]; end
     entry = Dict{String,Any}("at" => timestamp(), "head" => head, "reason" => String(strip(reason)),
                              "after_pass" => rec["passes"], "scripts" => moved)
     rec["scripts_refreshed"] = push!(Vector{Any}(get(rec, "scripts_refreshed", Any[])), entry)
+    rec["script_shas"] = recorded
     save(dir, rec)
-    println(io, "scripts: replaced ", join((m["name"] for m in moved), ", "), " in $wdir — refresh $(length(rec["scripts_refreshed"])) of this round, recorded")
+    println(io, "scripts: replaced ", join((m["name"] * (m["by_hand"] ? " (altered by hand since preflight)" : "") for m in moved), ", "),
+            " in $wdir — refresh $(length(rec["scripts_refreshed"])) of this round, recorded")
     rec["passes"] > 0 && println(io, "scripts: WARNING — $(rec["passes"]) pass(es) of this round ran on the scripts just replaced; passes before and after this refresh were verified by different scripts")
     return 0
 end
@@ -871,8 +900,8 @@ nothing. It is the one `round` verb that runs before `init`: on a tree with no `
 records `config_sha = ""`; where a config exists it is read and validated, and `CFG.TORN` runs as for
 every round verb. `gbg self verify` runs first either way (exit 2 on a mismatch). The arguments are:
 
-- `root` — the consumer's root: the nearest directory holding `.gbg/config.toml`, else the git
-  top level of the working directory, else the working directory itself.
+- `root` — the consumer's root: the nearest directory holding `.gbg/config.toml`, else the git top level
+  of the working directory when it holds a `Project.toml` (the command line refuses anywhere else).
 - `round` — the round id to create (refused when it exists).
 - `reason` — the abandon reason.
 - `io` — where the outcome is printed.
@@ -890,20 +919,21 @@ function import_empty(root::AbstractString, round::AbstractString, reason::Abstr
     cfg === nothing || Preflight.torn_check(cfg; io) || (println(io, "import: CFG.TORN — a pinned or managed file is modified in the working tree; wait for the sync or commit"); return 2)
     dir = joinpath(root, ".gbg", "rounds", round)
     isdir(dir) && (println(io, "import: $round exists; an existing round is never overwritten"); return 2)
-    mkpath(dir)
     inst = match(r"-(check-docs|check-consistency|bug-hunt|audit-changes)-", round).captures[1]
     st = Preflight.stamps(cfg)
     rec = merge(st, Dict{String,Any}("round" => round, "instrument" => inst, "schema_version" => 1, "head" => something(Git.head(root), "0"^40),
         "roster" => Any[], "cost" => "economy", "strength" => "economy", "hostname" => gethostname(), "model_hint" => Preflight.economy_model(),
         "opened" => timestamp(), "dead_lanes" => String[], "passes" => 0, "abandoned" => Dict("reason" => reason, "open_ids" => String[])))
-    save(dir, rec)
     imp = Dict{String,Any}("schema_version" => 1, "source" => "none", "format" => "none", "title_to_id" => Dict{String,Any}(),
                            "imported" => timestamp(), "reason" => reason)
     errs = validate(load_schema("import"), imp)                  # the schema existed and nothing validated against it
     isempty(errs) || throw(RoundError("import.json would not validate: " * first(errs)))
+    mkpath(dir)
+    # import.json first: an empty config_sha is valid only beside it
     open(joinpath(dir, "import.json"), "w") do f
         JSON3.pretty(f, JSON3.write(imp)); println(f)
     end
+    save(dir, rec)
     println(io, "import --empty: $round written (abandoned, source none) — a Step-0 scratch round; never commit it (ARCHITECTURE Revision 8)")
     return 0
 end
@@ -1003,13 +1033,21 @@ end
 
 function cmd_round(args)
     o = parse_options(args; valued = ["lanes", "reason"])
-    isempty(o.positional) && (println(stderr, "usage: gbg round prepare|build|test|scripts|bank|rerun|grade|close|abandon|list|render <round> | gbg round pass open <round> [--regrade] [--sweep-ok] [--full-state]"); return 2)
+    isempty(o.positional) && (println(stderr, "usage: gbg round prepare|build|test|bank|rerun|grade|close|abandon|list|render <round> | gbg round scripts <round> --reason \"…\" | gbg round pass open <round> [--regrade] [--sweep-ok] [--full-state]"); return 2)
     verb = o.positional[1]
     # `import --empty` is the one round verb that runs before `init`, so it is dispatched before the
     # config read that every other verb needs
     if verb == "import" && "empty" in o.flags
         length(o.positional) >= 2 || (println(stderr, "usage: gbg round import --empty <round> --reason \"…\""); return 2)
-        root = something(Config.find_root(), Git.run(pwd(), "rev-parse", "--show-toplevel"), pwd())
+        # with no config above, only the top of a package repository may take the import: a plain directory
+        # or a repository that is not a package is refused, as the config read refused it before
+        root = Config.find_root()
+        if root === nothing
+            top = Git.run(pwd(), "rev-parse", "--show-toplevel")
+            (top !== nothing && isfile(joinpath(top, "Project.toml"))) ||
+                (println(stderr, "round import --empty: no .gbg/config.toml above $(pwd()), and it is not inside a package repository (a git top level holding Project.toml)"); return 2)
+            root = top
+        end
         try
             return import_empty(root, o.positional[2], get(o.values, "reason", ""))
         catch err

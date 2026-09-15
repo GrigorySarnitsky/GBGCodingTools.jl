@@ -233,17 +233,14 @@
     }
    },
    "type": "object",
-   "description": "the last docs build this round ran through `gbg round build`. Nothing recorded a build's verdict before 2026-09-12, so a round could carry a RED build through graded passes and close on it: `prepare` builds green at open, a fix pass's prose edits move SCAN.PROSE_SHAPE's ratchet, and neither `pass open` nor `grade` looks at a build again."
+   "description": "the last docs build this round ran \u2014 by `prepare`, `pass open` or `gbg round build`, recorded only over a tree whose covered paths are unmodified. Nothing recorded a build's verdict before 2026-09-12, so a round could carry a RED build through graded passes and close on it: `prepare` built green at open, a fix pass's prose edits moved SCAN.PROSE_SHAPE's ratchet, and nothing looked at a build again."
   },
   "scripts_refreshed": {
    "items": {
     "additionalProperties": false,
     "required": [
      "at",
-     "head",
-     "reason",
-     "after_pass",
-     "scripts"
+     "head"
     ],
     "properties": {
      "at": {
@@ -288,6 +285,10 @@
         "to": {
          "type": "string",
          "pattern": "^[0-9a-f]{64}$"
+        },
+        "by_hand": {
+         "type": "boolean",
+         "description": "true when the frozen copy no longer matched the sha preflight recorded: it had been altered outside this verb"
         }
        }
       }
@@ -296,7 +297,7 @@
     "type": "object"
    },
    "type": "array",
-   "description": "each time `gbg round scripts <round> --reason` replaced frozen scripts of this round. The scripts are frozen when the round opens (RULE.INST.FROZEN_MIDROUND); the verb is the one exception, for a round whose own frozen scripts cannot run (2026-09-12-check-docs-01 found its verifiers unparseable), and it replaces only the scripts that differ. Every refresh is appended, never overwritten, with why, when and which, so a reader of the closed round sees that the passes around it ran on different scripts.",
+   "description": "each time `gbg round scripts <round> --reason` replaced frozen verifier or auditor scripts of this round. The scripts are frozen when the round opens (RULE.INST.FROZEN_MIDROUND); the verb is the one exception, for a round whose own verifiers or auditors cannot run (2026-09-12-check-docs-01 found its verifiers unparseable), and it never touches a lens script. Every refresh is appended with why, when, after how many passes, and which scripts with their shas, so a reader of the closed round sees that the passes around it ran on different scripts. Only `at` and `head` are required, the shape the verb wrote before it recorded more.",
    "minItems": 1
   },
   "seed_skipped": {
@@ -310,6 +311,14 @@
   "seed_root": {
    "description": "the disposable corpus a seeded documentation round's lanes read: the lane surfaces copied outside the repository and mutated. Written at prepare, destroyed at bank; the repository itself is never seeded.",
    "type": "string"
+  },
+  "script_shas": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string",
+    "pattern": "^[0-9a-f]{64}$"
+   },
+   "description": "script name \u2192 sha256 of the frozen copy preflight wrote into the round's workflow directory, updated by `gbg round scripts` for what it replaces: a copy that no longer matches was altered outside the verbs, and the next refresh records it as such."
   }
  },
  "title": "ROUND.toml \u2014 written by the CLI only (ARCHITECTURE \u00a76.1); the field list is complete",

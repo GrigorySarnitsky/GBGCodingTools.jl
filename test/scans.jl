@@ -181,9 +181,10 @@ end
     # A policy waiver resolves against the scan's CANONICAL rule only. A waiver of the SECOND rule of a
     # two-rule scan was first silently void (RULE.CIT.DOI rendered into deviations.md as granted while the
     # scan kept failing: 2026-09-12-check-docs-01 catalogues#1), then silently wide (it disabled the whole
-    # scan, the canonical rule with it: 2026-09-12-audit-changes-02). It is refused now, on all three
-    # two-rule scans, and the canonical waiver still works. Each case asserts the scan hits at all, since
-    # "disabled" and "had no hits anyway" look identical from the outside.
+    # scan, the canonical rule with it: 2026-09-12-audit-changes-02), then an error that crashed every scan
+    # (2026-09-15-audit-changes-01). Now the scan keeps running and SAYS the waiver does not reach it, for
+    # every target shape, on all three two-rule scans, and the canonical waiver still works. Each case
+    # asserts the scan hits at all, since "disabled" and "had no hits anyway" look identical from outside.
     @testset "a policy waiver reaches a scan through its canonical rule, and no other" begin
         pol(rule) = [Dict{String,Any}("id" => rule, "scope" => "policy", "target" => "*",
                                       "reason" => "x"^40, "recorded" => Dates.today())]
@@ -197,7 +198,13 @@ end
             @test !isempty(G.run_scan(d, row; ledger = Dict{String,Any}[]).hits)          # it hits at all
             r = G.run_scan(d, row; ledger = pol(canonical))
             @test isempty(r.hits) && r.exempted > 0                                       # the canonical waiver works
-            @test_throws G.Ledger.LedgerError G.run_scan(d, row; ledger = pol(second))     # the second rule's is refused
+            for target in ("*", "src/FixtureA.jl")                                         # neither refused nor a disable
+                led = [merge(pol(second)[1], Dict{String,Any}("target" => target))]
+                r2 = G.run_scan(d, row; ledger = led)
+                @test length(r2.hits) == length(G.run_scan(d, row; ledger = Dict{String,Any}[]).hits) && r2.exempted == 0
+                @test occursin("does not reach this scan", r2.note) && occursin(second, r2.note)
+            end
+            @test isempty(G.unreached_waivers(pol(canonical), row))
         end
         @test !isempty(G.run_scan(d, CATALOG["SCAN.DOI_CROSSCHECK"]; ledger = pol("RULE.TEX.MATHBF")).hits)  # an unrelated rule waives nothing
     end
