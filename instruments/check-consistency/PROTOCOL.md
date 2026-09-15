@@ -79,8 +79,8 @@ Every hat is forbidden `.gbg/` and `~/.gbg/`. The panel is COLLECT-ONLY: it neve
 9. **Close.** `gbg round close <round>` when the latest pass has no open id, no lane is dead, the round's
    files are committed, the stamps are unchanged (a changed config or a moved pinned version means
    `gbg round pass open --regrade` first) and the last recorded docs build is green with nothing under the
-   covered paths changed since — `prepare`, `pass open` and `gbg round build` record theirs, so after a
-   last fix `gbg round build <round>` and commit the round. Once the pass budget is spent it carries every id still open
+   covered paths changed since — `prepare`, `pass open` and `gbg round build` record theirs, over committed
+   covered paths only, so after a last fix: commit it, `gbg round build <round>`, commit the round. Once the pass budget is spent it carries every id still open
    into the next round on a blind severity re-check, a serious one included, which then holds a final
    release back. Commit ⇒ push the round; cite the closure per lane and id in the commit message. `gbg round abandon <round> --reason "…"` is the only wholesale exit and lists
    every open id — a plateau is the usual reason.

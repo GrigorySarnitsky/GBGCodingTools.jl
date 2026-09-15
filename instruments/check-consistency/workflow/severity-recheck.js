@@ -2,8 +2,8 @@
 // Changes: generic `subject` from args; items arrive as TEXT (a Workflow agent must not read .gbg/);
 // also invoked by the audit-changes round before "serious" is counted; the result is Written to `out`.
 //
-// Args: { schema_version, round, out, subject, items: [{id}], items_path, models: {economy}, batch? }
-//   batch — findings per agent, default 6.
+// Args: { schema_version, round, out, subject, items: [{id}], items_path, models: {economy} }
+//   Findings are rated BATCH (6) per agent: a constant, not an arg, since no CLI path sends one.
 //   The per-id blocks in items_path carry NO severity or confidence line — the CLI strips them; this
 //   script trusts the caller's blinding (Revision 9: the texts are a file, not args). The comparison against the self-ratings happens in the CLI, which knows them.
 export const meta = {
@@ -39,7 +39,7 @@ Rate what the EVIDENCE supports, not what the prose's tone suggests.`
 // Several findings per agent. One agent per finding spent about 45k tokens a rating — 1.52M for the 33
 // concerns of 2026-09-11-audit-changes-01, near what the audit lanes that found them cost. Each finding
 // is still rated from its own block alone; only the reading of the scale is shared.
-const BATCH = Math.max(1, A.batch || 6)
+const BATCH = 6
 const chunks = []
 for (let i = 0; i < A.items.length; i += BATCH) chunks.push(A.items.slice(i, i + BATCH))
 
