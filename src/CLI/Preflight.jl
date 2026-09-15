@@ -115,12 +115,14 @@ The tool and config stamps every `ROUND.toml` and `pass.toml` of the consumer `c
 `tool_version` (the pinned version, or `dev+<sha>[-dirty]` from the working tree), `tool_rev`, `tool_tree_sha`,
 `config_sha`, `catalog_sha`, `seed_catalog_sha`. The arguments are:
 
-- `cfg` — the validated config of the consumer whose rounds record the stamps.
+- `cfg` — the validated config of the consumer whose rounds record the stamps, or `nothing` on a tree
+  that has no `.gbg/config.toml` yet (the Step-0 import, which runs before `init`): the pinned version
+  is then the running copy's own, `config_sha` the empty string and `seed_catalog_sha` `none`.
 - `record` — the `ROUND.toml` of a round already open: a dev checkout whose round was stamped with a
   tag keeps reading its tool stamps from that tag while the tag exists, so the fix commits that
   move `HEAD` past the tag are not a moved tool; a moved TAG is.
 """
-function stamps(cfg::AbstractDict; record = nothing)
+function stamps(cfg::Union{AbstractDict,Nothing}; record = nothing)
     dir = pkgdir(GBGCodingTools)
     dev = running_dev()
     # a dev checkout sitting cleanly on a released or prerelease tag is stamped with that tag (D16): the
@@ -135,14 +137,15 @@ function stamps(cfg::AbstractDict; record = nothing)
             ver = tag !== nothing && occursin(r"^v\d+\.\d+\.\d+(-rc\.\d+)?$", tag) ? tag[2:end] : data_since_tag(dir)
         end
     end
+    pinned = cfg === nothing ? string(pkgversion(GBGCodingTools)) : String(cfg["tool"]["version"])
     Dict{String,Any}(
-        "tool_version" => dev ? (ver === nothing ? git_stamp(dir) : ver) : String(cfg["tool"]["version"]),
+        "tool_version" => dev ? (ver === nothing ? git_stamp(dir) : ver) : pinned,
         "tool_rev" => dev ? (ver === nothing ? something(Git.head(dir), "unknown") : something(Git.run(dir, "rev-parse", "-q", "--verify", "refs/tags/v$ver^{commit}"), "unknown")) :
-                            "v" * String(cfg["tool"]["version"]),
+                            "v" * pinned,
         "tool_tree_sha" => (dev && ver !== nothing) ? tag_tree(dir, ver) : TreeHash.tree_hash(dir),   # the tag's tree, not the working tree's
-        "config_sha" => config_sha(cfg),
+        "config_sha" => cfg === nothing ? "" : config_sha(cfg),
         "catalog_sha" => catalog_sha(),
-        "seed_catalog_sha" => seed_catalog_sha(cfg))
+        "seed_catalog_sha" => cfg === nothing ? "none" : seed_catalog_sha(cfg))
 end
 
 """
@@ -829,10 +832,11 @@ main_script(instrument) = Dict("check-consistency" => "panel.js", "check-docs" =
 - `cfg` — the validated config.
 - `io` — where a torn file is named.
 
-A MANAGED file is one the tool renders into the consumer and hash-checks thereafter, edited only by
-`gbg sync` ([`GBGCodingTools.Sync`](@ref)); a PINNED file is one the consumer itself owns and the tool
-never renders — the config, the ledger, the seed catalogue, the sync sidecar, the hat personas, the
-sub-environment manifests — but which must still never drift outside its own write path
+A MANAGED file is one `gbg sync` ([`GBGCodingTools.Sync`](@ref)) writes into the consumer and
+hash-checks thereafter — the rendered files and the sidecar recording their hashes; a PINNED file is
+one the consumer itself owns and the tool never writes — the config, the ledger, the seed catalogue,
+the hat personas, the sub-environment manifests — but which must still never drift outside its own
+write path
 ([`Doctor.pinned_and_managed`](@ref) is the list). Returns true when neither kind is modified.
 """
 function torn_check(cfg::AbstractDict; io::IO = stderr)

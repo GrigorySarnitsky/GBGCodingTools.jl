@@ -80,6 +80,32 @@ function write_prose_shape_baseline(cfg::AbstractDict)
     return length(units)
 end
 
+"""
+    prose_shape_changes(cfg) -> Vector{String}
+
+What a `--rebaseline prose-shape` would change, one line per row, printed before it writes: `RAISED`
+for a unit whose words, longest paragraph or admonitions would go up, `NEW` for a unit not in the
+current baseline, `DROPPED` for a row no unit carries any more. A row that only goes down is not listed
+— a lowered ceiling constrains more, never less. The argument is `cfg`, the validated config. Returns
+the lines, sorted by unit.
+"""
+function prose_shape_changes(cfg::AbstractDict)
+    base = something(read_prose_shape_baseline(cfg), Dict{String,NTuple{3,Int}}())
+    units = prose_units(cfg); out = String[]
+    for k in sort!(collect(keys(units)))
+        u = units[k]; now = (u.words, u.longest, u.admonitions); key = csvkey(k)
+        b = get(base, key, nothing)
+        if b === nothing
+            push!(out, "NEW      $key: words $(now[1]), longest paragraph $(now[2]), admonitions $(now[3])")
+        elseif any(now .> b)
+            push!(out, "RAISED   $key: words $(b[1])→$(now[1]), longest paragraph $(b[2])→$(now[2]), admonitions $(b[3])→$(now[3])")
+        end
+    end
+    kept = Set(csvkey.(keys(units)))
+    append!(out, ["DROPPED  $k" for k in sort!([k for k in keys(base) if !(k in kept)])])
+    return out
+end
+
 function read_prose_shape_baseline(cfg::AbstractDict)
     path = joinpath(cfg["root"], PROSE_SHAPE_BASELINE)
     isfile(path) || return nothing

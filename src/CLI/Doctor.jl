@@ -229,10 +229,11 @@ end)
     pinned_and_managed(ctx) -> Vector{String}
 
 The files `CFG.TORN` watches, in two kinds the word "pinned" alone does not separate. A MANAGED file is
-one the tool renders and hash-checks thereafter, edited only by `gbg sync`, and comes from the sidecar.
-A PINNED file the tool never renders: the consumer writes it once and the tool must never see it drift
-outside its own write path — `.gbg/config.toml`, `.gbg/exemptions.toml`, `.gbg/seeds.toml`, the sync
-sidecar itself, every hat persona, and every sub-environment `Project.toml` naming the tool. This is a
+one `gbg sync` writes and hash-checks thereafter: every file the sync sidecar `.gbg/managed.json` lists,
+and the sidecar itself, which `sync` rewrites with those hashes. A PINNED file the tool never writes: the
+consumer owns it and it must never drift outside its own write path — `.gbg/config.toml`,
+`.gbg/exemptions.toml`, `.gbg/seeds.toml`, every hat persona, and every sub-environment `Project.toml`
+naming the tool. This is a
 third sense of "pinned", distinct from a pinned VERSION and from a pinned tree hash. The argument is
 `ctx`, the doctor's context. Returns the paths, relative to the root.
 """

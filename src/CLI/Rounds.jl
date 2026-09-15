@@ -432,6 +432,20 @@ function verdict_contradiction(data::AbstractDict)
     return "verdict $v with $n finding(s) contradicts its own findings"
 end
 
+"""
+    orphan_lane_files(dir, lanes) -> Vector{String}
+
+The lane files under `dir/findings/` that no entry of `lanes` expects: every `*.json` whose name is not
+some roster entry's `NN-<key>.json`, a quarantined `*.rejected.json` excepted. `bank` names them and
+reads none. The arguments are `dir`, the round directory, and `lanes`, the roster as
+`expected_lanes` returns it. Returns the file names, sorted.
+"""
+function orphan_lane_files(dir::AbstractString, lanes)
+    d = joinpath(dir, "findings"); isdir(d) || return String[]
+    expected = Set("$(l["nn"])-$(l["key"]).json" for l in lanes)
+    return sort!([f for f in readdir(d) if endswith(f, ".json") && !endswith(f, ".rejected.json") && !(f in expected)])
+end
+
 expected_lanes(rec) = vcat(rec["instrument"] == "check-docs" ? [Dict("nn" => "00", "key" => "scans")] : Dict{String,Any}[],
                            [Dict("nn" => lpad(i, 2, '0'), "key" => r["key"]) for (i, r) in enumerate(rec["roster"]) if !get(r, "not_applicable", false)])
 
@@ -534,6 +548,11 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         st in (:rejected, :dead) || sha === nothing || haskey(shas, l["key"]) || (shas[l["key"]] = sha)
         statuses[l["key"]] = st; datas[l["key"]] = data
         println(io, "  ", rpad(uppercase(String(st)), 10), l["nn"], "-", l["key"], isempty(note) ? "" : "  — " * note)
+    end
+    # a lane file no roster entry expects is never read — its findings answer for no lane — but it is
+    # named, since a lane that wrote under the wrong number is otherwise seen only as a DEAD roster entry
+    for f in orphan_lane_files(dir, lanes)
+        println(io, "  ", rpad("ORPHAN", 10), f, "  — no roster entry expects this file; not read")
     end
     rec["lane_shas"] = shas
     dead = [k for (k, s) in statuses if s in (:dead, :rejected)]
@@ -773,13 +792,16 @@ function rerun(cfg::AbstractDict, round::AbstractString, lanes::AbstractVector{<
 end
 
 """
-    import_empty(cfg, round, reason; io = stdout) -> Int
+    import_empty(root, round, reason; io = stdout) -> Int
 
 `gbg round import --empty <round> --reason "…"`: writes a round holding only an abandoned `ROUND.toml`
 and an `import.json` with `source = "none"` — the Step-0 scratch form for a legacy pile that yields
-nothing. The arguments are:
+nothing. It is the one `round` verb that runs before `init`: on a tree with no `.gbg/config.toml` it
+records `config_sha = ""`; where a config exists it is read and validated, and `CFG.TORN` runs as for
+every round verb. `gbg self verify` runs first either way (exit 2 on a mismatch). The arguments are:
 
-- `cfg` — the validated config.
+- `root` — the consumer's root: the nearest directory holding `.gbg/config.toml`, else the git
+  top level of the working directory, else the working directory itself.
 - `round` — the round id to create (refused when it exists).
 - `reason` — the abandon reason.
 - `io` — where the outcome is printed.
@@ -788,15 +810,19 @@ The six legacy pile readers (`pf-doc-review`, `pf-check-docs`, `pf-findings-json
 `it-audit-latest`, `it-rounds-json`) are Phase 2's scratch tools and are written when those imports
 run; until then `gbg round import <pile>` refuses, naming this. Returns the exit code.
 """
-function import_empty(cfg::AbstractDict, round::AbstractString, reason::AbstractString; io::IO = stdout)
+function import_empty(root::AbstractString, round::AbstractString, reason::AbstractString; io::IO = stdout)
     occursin(r"^\d{4}-\d{2}-\d{2}-(check-docs|check-consistency|bug-hunt|audit-changes)-\d{2}$", round) || (println(io, "import: $round is not a round id <date>-<instrument>-<NN>"); return 2)
     length(strip(reason)) >= 12 || (println(io, "import --empty needs --reason (≥ 12 characters)"); return 2)
-    dir = Preflight.round_dir(cfg, round)
+    sv = self_verify(root; io = devnull)
+    sv == 0 || (println(io, "import: gbg self verify exit $sv — the running copy is not the pinned one"); return 2)
+    cfg = isfile(joinpath(root, ".gbg", "config.toml")) ? Config.read(root) : nothing
+    cfg === nothing || Preflight.torn_check(cfg; io) || (println(io, "import: CFG.TORN — a pinned or managed file is modified in the working tree; wait for the sync or commit"); return 2)
+    dir = joinpath(root, ".gbg", "rounds", round)
     isdir(dir) && (println(io, "import: $round exists; an existing round is never overwritten"); return 2)
     mkpath(dir)
     inst = match(r"-(check-docs|check-consistency|bug-hunt|audit-changes)-", round).captures[1]
     st = Preflight.stamps(cfg)
-    rec = merge(st, Dict{String,Any}("round" => round, "instrument" => inst, "schema_version" => 1, "head" => something(Git.head(cfg["root"]), "0"^40),
+    rec = merge(st, Dict{String,Any}("round" => round, "instrument" => inst, "schema_version" => 1, "head" => something(Git.head(root), "0"^40),
         "roster" => Any[], "cost" => "economy", "strength" => "economy", "hostname" => gethostname(), "model_hint" => Preflight.economy_model(),
         "opened" => timestamp(), "dead_lanes" => String[], "passes" => 0, "abandoned" => Dict("reason" => reason, "open_ids" => String[])))
     save(dir, rec)
@@ -908,6 +934,18 @@ function cmd_round(args)
     o = parse_options(args; valued = ["lanes", "reason"])
     isempty(o.positional) && (println(stderr, "usage: gbg round prepare|build|test|scripts|bank|rerun|grade|close|abandon|list|render <round> | gbg round pass open <round> [--regrade] [--sweep-ok] [--full-state]"); return 2)
     verb = o.positional[1]
+    # `import --empty` is the one round verb that runs before `init`, so it is dispatched before the
+    # config read that every other verb needs
+    if verb == "import" && "empty" in o.flags
+        length(o.positional) >= 2 || (println(stderr, "usage: gbg round import --empty <round> --reason \"…\""); return 2)
+        root = something(Config.find_root(), Git.run(pwd(), "rev-parse", "--show-toplevel"), pwd())
+        try
+            return import_empty(root, o.positional[2], get(o.values, "reason", ""))
+        catch err
+            err isa RoundError || rethrow()
+            println(stderr, sprint(showerror, err)); return 2
+        end
+    end
     cfg = Config.read()
     try
         verb == "list" && return list(cfg)
@@ -918,7 +956,6 @@ function cmd_round(args)
         end
         length(o.positional) >= 2 || (println(stderr, "round $verb needs <round>"); return 2)
         round = o.positional[2]
-        verb == "import" && "empty" in o.flags && (round = o.positional[2])
         verb == "prepare" && return prepare(cfg, round)
         verb == "build" && return build(cfg, round)
         verb == "scripts" && return refresh_scripts(cfg, round)
@@ -931,7 +968,6 @@ function cmd_round(args)
         verb == "close" && return GBGCodingTools.Passes.close(cfg, round;
             carry = filter(!isempty, split(get(o.values, "carry", ""), ',')))
         if verb == "import"
-            "empty" in o.flags && return import_empty(cfg, round, get(o.values, "reason", ""))
             println(stderr, "round import <pile>: the legacy pile readers are Phase 2's scratch tools (IMPLEMENTATION Phase 2 step 1); only `--empty` exists yet"); return 2
         end
         verb == "compare" && (println(stderr, "round compare --recorded: written with Phase 2's scratch imports"); return 2)

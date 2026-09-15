@@ -617,7 +617,8 @@ end
 
 `gbg scan docs [--hard-only] [--only id,…] [--rebaseline prose-shape --reason "…"]` and
 `gbg scan html <build_dir>`: the CLI face of [`scan_docs`](@ref) and [`scan_html`](@ref). Returns the
-scan exit code; a rebaseline writes `docs/prose_shape.csv` and returns 0.
+scan exit code; a rebaseline first prints every row it raises, adds or drops
+(`prose_shape_changes`), then writes `docs/prose_shape.csv` and returns 0.
 """
 function cmd_scan(args)
     o = parse_options(args; valued = ["only", "rebaseline", "reason"])
@@ -629,6 +630,9 @@ function cmd_scan(args)
             o.values["rebaseline"] == "prose-shape" || (println(stderr, "only --rebaseline prose-shape exists"); return 2)
             haskey(o.values, "reason") && length(o.values["reason"]) >= 12 ||
                 (println(stderr, "--rebaseline needs --reason \"…\" (≥ 12 characters); the reason goes in the commit"); return 2)
+            # every ceiling this write raises is named: the whole CSV is regenerated from the tree, so a
+            # rebaseline taken for one growth would otherwise absorb every other one unseen
+            for line in prose_shape_changes(cfg); println("  ", line); end
             n = write_prose_shape_baseline(cfg)
             println("prose-shape baseline WRITTEN: $n units → $(PROSE_SHAPE_BASELINE) (reason: $(o.values["reason"]))")
             return 0

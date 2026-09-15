@@ -7,6 +7,21 @@ module ExtensionHomed
     function ghost end
 end
 
+# a rebaseline names every ceiling it raises before it writes (2026-09-12-audit-changes-01)
+@testset "a prose-shape rebaseline lists what it raises" begin
+    root = fixture_copy("rebaseline")
+    cfg = G.Config.read(root)
+    G.write_prose_shape_baseline(cfg)
+    @test isempty(G.prose_shape_changes(cfg))
+    page = joinpath(root, "docs", "src", "notation.md")
+    write(page, read(page, String) * "\n" * "one more word "^10 * "\n\n## A section no baseline row has\n\nnew text here\n")
+    ch = G.prose_shape_changes(cfg)
+    @test any(l -> startswith(l, "RAISED") && occursin("notation.md", l), ch)
+    @test any(l -> startswith(l, "NEW") && occursin("A section no baseline row has", l), ch)
+    G.write_prose_shape_baseline(cfg)
+    @test isempty(G.prose_shape_changes(cfg))
+end
+
 @testset "scans" begin
     @testset "registry ≡ catalogue, every scan has a fixture pair" begin
         ids = Set(keys(CATALOG)); reg = Set(keys(G.SCANS))

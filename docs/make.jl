@@ -31,7 +31,8 @@ open(joinpath(@__DIR__, "src", "guide", "instruments.md"), "w") do io
     println(io, "# [The instruments](@id instruments)\n")
     println(io, "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human.\n")
     println(io, "Generated at build time from `instruments/<name>/PROTOCOL.md`: the text `gbg preflight <name>` injects into the")
-    println(io, "session that runs the instrument, verbatim. Each protocol assumes the round its preflight opened.\n")
+    println(io, "session that runs the instrument, verbatim. Each protocol assumes the round its preflight opened, and")
+    println(io, "\"the consumer\" in each is the [consumer](@ref install) — the package that pins this tool — the round runs in.\n")
     for name in ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
         lines = readlines(joinpath(ROOT, "instruments", name, "PROTOCOL.md"))
         println(io, "## [`/", name, "`](@id ", name, ")\n")
@@ -43,13 +44,15 @@ open(joinpath(@__DIR__, "src", "guide", "rules.md"), "w") do io
     println(io, "# [The rules](@id rules)\n")
     println(io, "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human.\n")
     println(io, "Generated at build time from this package's rendered policy copy under `.gbg/policy/`: the shared rulebook")
-    println(io, "every consumer imports, with this package's parameters substituted. A rule's id is stable; the scans and the")
+    println(io, "every [consumer](@ref install) imports, with this package's parameters substituted. A rule's id is stable; the scans and the")
     println(io, "doctor cite it.\n")
     for f in ("docs-rubric.md", "latex-idiom.md", "citations.md", "testing-protocol.md", "instruments.md", "git-conventions.md", "glossary.md", "deviations.md")
         for l in readlines(joinpath(ROOT, ".gbg", "policy", f))
             startswith(l, "<!-- gbg:managed") && continue
             m = match(r"^### (RULE\.[A-Z]+\.[A-Z_]+)\s*$", l)
-            println(io, m !== nothing ? "#### [`$(m.captures[1])`](@id $(m.captures[1]))" : demote(l))
+            g = match(r"^# (Glossary\b.*)$", l)                  # the terms, given an id the guide pages link to
+            println(io, m !== nothing ? "#### [`$(m.captures[1])`](@id $(m.captures[1]))" :
+                        g !== nothing ? "## [$(g.captures[1])](@id glossary)" : demote(l))
         end
         println(io)
     end

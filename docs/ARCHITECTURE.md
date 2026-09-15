@@ -99,7 +99,7 @@ record explicitly.
 | package paths: `[paths]` (further directories the audit covers — `examples`, `benchmark`) | relative directories | config (may only ADD to the covered constants) | PF's `examples/` demos are shipped code |
 | doc surfaces: rationale docs, pages, generated copies (`optional = true`, tolerated absent on a fresh clone), src, ext, literate examples, built HTML, history-exempt section, references heading (or `"absent"`), glossary | globs / `file#heading` anchors | config | PF 6 surfaces, IT 4, SS 4 (`survey-checkdocs.md:51`) |
 | ★ `rubric.leading_identity` | `physical-meaning` \| `estimand` | config enum | SS's estimand-first slot (`survey-checkdocs.md:139`) |
-| ★ `rubric.signature_types` | `names` \| `mirror` | config enum | this package takes `names`, the form all but a handful of its docstrings already used; PF asks for the stricter form, where a device kernel's argument types are the contract. `SCAN.SIGNATURE_TYPED` re-measures it on every run, so no count is carried here to go stale |
+| ★ `rubric.signature_types` | `names` \| `mirror` | config enum | this package takes `names`, the form its docstrings already used — measured on 2026-09-12, 247 of 251, the other four corrected when the rule was narrowed; PF asks for the stricter form, where a device kernel's argument types are the contract. Those figures are that day's snapshot, as every count in this document is dated; `SCAN.SIGNATURE_TYPED` re-measures it on every run |
 | ★ `notation.vectors` | `component` \| `boldsymbol` \| `none` | config enum | IT bold-italic vectors vs PF components (`survey-check-consistency.md:160`) |
 | ★ `notation.mathbf_allowed` | list of strings | config | `\mathbf{1}` prescribed (PF/SS) vs banned (IT), undispositioned (`survey-buildlints-hooks-policy.md:37`) |
 | ★ `docs.admonition_titles` | `always` \| `load-bearing` | config enum | PF always / IT bare `!!! note` (`survey-buildlints-hooks-policy.md:95`) |
@@ -612,8 +612,9 @@ its sha changed since first sight, decided before the file is read; **DEAD** whe
 schema-invalid, schema-valid with a `lane` field naming a lane the roster entry did not ask for, or
 carrying a verdict its findings contradict — those quarantine the file as `NN-<lane>.rejected.json` —
 or with zero findings and an empty `checked[]`, left in place; then **EMPTY** (zero findings, non-empty
-`checked[]`), **TRUNCATED** (`candidates_found > findings.length`; reported, not fatal) or live. An
-A lane file no roster entry expects is not classified at all: `bank` iterates the roster, so a stray file in `findings/` is neither read nor reported. A DEAD **or REJECTED** lane is **exit 2** — cannot
+`checked[]`), **TRUNCATED** (`candidates_found > findings.length`; reported, not fatal) or live.
+A lane file no roster entry expects is not classified: `bank` iterates the roster, so a stray file in
+`findings/` is never read, but it is reported — one `ORPHAN` line naming it, which is not fatal. A DEAD **or REJECTED** lane is **exit 2** — cannot
 evaluate — and nothing is frozen. Closure is per finding id through five channels (§6.5); the
 wholesale escape is `gbg round abandon --reason`, which lists every open id. `.gbg/rounds/` is the
 SOLE closure record: the tool never reads a work-queue file for **closure** — the Stop hook of D13,
@@ -642,10 +643,13 @@ the unseeded manuscript beside the seeded one is a one-line `diff` (attack 3.4).
 **Choice.** Twenty-two schemas: `schema/{config,exemptions,hat,round,pass,finding,verdict-act,
 verdict-state,tally,reproduction,dismissal,architecture-fix,audit,ground-truth,import,managed,carried,
 severity,attack-subject,attack,rubric-audit,human-findings}.schema.json`, the last four those of the
-design checks (`gbg attack`, `gbg calibrate`). An instrument's `instruments/<name>/schema.json` is its `args` object plus its
-lane-file wrapper, whose findings array `$ref`s a REDUCED `$defs.finding` local to that file — the fields a lane itself writes, without the `id`, `lane`, `n`, `carried_from`, `seeded` and `seed_class` the CLI attaches at bank; `schema/finding.schema.json` is the fuller shape `bank` validates the finished finding against, which is why the instrument file cannot simply `$ref` it. The lane-file wrapper and
-`bug-hunt`'s candidate-file shape live inline in each instrument's own `schema.json`, not as files
-under `schema/`.
+design checks (`gbg attack`, `gbg calibrate`).
+
+An instrument's `instruments/<name>/schema.json` holds its `args` object and its lane-file wrapper (with
+`bug-hunt`'s candidate-file shape, inline, not under `schema/`). The wrapper's findings array `$ref`s a
+REDUCED `$defs.finding` local to that file: the fields a lane writes, without the `id`, `lane`, `n`,
+`carried_from`, `seeded` and `seed_class` the CLI attaches at bank. `schema/finding.schema.json` is the
+fuller shape `bank` validates the finished finding against, so the instrument file cannot `$ref` it.
 Vocabularies (constants, §6.3). `finding.type` = core enum + `domain_type` from
 `[schema] finding_types_extra`. Every artefact carries `schema_version` (= the tool's MAJOR). Changing
 any vocabulary is MAJOR.
@@ -1864,7 +1868,7 @@ implementation plan refers to it and adds no id of its own.
 | `PIN.NOT_DEV` | no `dev`'d GBGCodingTools in any manifest | found; WARN "dev pin" |
 | `SELF.CONSUMER` | the tool repository — the current root when that root IS the tool, the enclosing repository for the fixture, the registered dev checkout under `--dev` — carries a valid `.gbg/config.toml` with `[tool] version = "dev"` and `[package] name = "GBGCodingTools"` (D15); the literal `dev` is carried by the tool root and the fixture and by nothing else (`PIN.CONFIG` refuses it where the doctor runs; this check is the tool root's own); in an ordinary consumer with no tool repository in reach it is reported not applicable, never as a pass; in `QUICK`, non-exemptable | no config at the tool root, a pin there other than `dev`, a `[package] name` other than `GBGCodingTools`, or a `dev` pin anywhere but the root and the fixture |
 | `CFG.VALID` | config parses, schema-valid, closed keys, required present, every path exists; no open round of a disabled instrument | otherwise |
-| `CFG.TORN` | the torn-file guard (non-exemptable; **not in `QUICK`** — run by `gbg preflight` and by every `gbg round` verb, and by nothing the `makedocs` wrapper or `TestHarness.gate()` runs): `git status --porcelain` shows none of them modified, in two kinds the one word does not separate — a PINNED file the consumer owns and the tool never renders (`.gbg/config.toml`, `exemptions.toml`, `hats/*.toml`, `seeds.toml`, `managed.json`, every sub-environment `Project.toml` listing the tool) and a MANAGED file `gbg sync` renders and hash-checks thereafter (the SKILL stubs, the rendered policy); round files under an open round are exempt, which keeps this distinct from the "uncommitted change under a closed round" refusal (both machines edit Dropbox-synced checkouts, and a half-synced config would grade a round under a config nobody wrote); whether a file parses is `CFG.VALID`, not this check | a modified pinned/managed file (exit 2 from `preflight` and every `round` verb) |
+| `CFG.TORN` | the torn-file guard (non-exemptable; **not in `QUICK`** — run by `gbg preflight` and by every `gbg round` verb, and by nothing the `makedocs` wrapper or `TestHarness.gate()` runs): `git status --porcelain` shows none of them modified, in two kinds the one word does not separate — a PINNED file the consumer owns and the tool never renders (`.gbg/config.toml`, `exemptions.toml`, `hats/*.toml`, `seeds.toml`, every sub-environment `Project.toml` listing the tool) and a MANAGED file `gbg sync` writes and hash-checks thereafter (the SKILL stubs, the rendered policy, and the sidecar `managed.json` that records those hashes); round files under an open round are exempt, which keeps this distinct from the "uncommitted change under a closed round" refusal (both machines edit Dropbox-synced checkouts, and a half-synced config would grade a round under a config nobody wrote); whether a file parses is `CFG.VALID`, not this check | a modified pinned/managed file (exit 2 from `preflight` and every `round` verb) |
 | `CFG.SURFACES` | every non-optional surface glob matches ≥ 1 file; every `file#heading` anchor resolves to exactly one heading; every module exists; every `[paths]` entry is a directory; the `glossary` file exists and a non-empty `built_html` has a `docs/` directory beside it; `docs/make.jl` exists (the config schema is what pins `docs_build` to name it); `julia_test` contains `Pkg.test()`; every `executable_claims` file exists under `test/` | otherwise |
 | `CFG.HATS` | every hat key resolves (catalogue or `.gbg/hats/`); anchors ⊆ hats; ≥ 1 anchor; no persona names another fleet package; a hat with empty substrate is marked, not expected; every `rulebook_sections` anchor resolves | otherwise |
 | `CFG.SEEDS` | `seed_rounds = true` ⇒ the file `seed_catalog` names (default `.gbg/seeds.toml`) exists and validates against the `seeds` definition of `instruments/check-consistency/schema.json` | missing or invalid |
@@ -1979,10 +1983,9 @@ not contain it; IT on `Enteropia` or the Dropbox copy. Three verbs carry it, and
   `opened`/`closed` = the record's dates where it carries them, else the import time;
   `abandoned = {reason, open_ids}` from the record's own open list), `findings.json` (ids from the
   title → id map), the verdict passes the pile lets it reconstruct, the witnesses where the pile has
-  them, and `import.json` (§6.1). It is to run before `init`, on a tree with no `.gbg/config.toml` —
-  which the CLI does not yet allow, since `cmd_round` reads the config before dispatching any round
-  verb, and the implemented `--empty` path calls neither `guard` nor `self verify`, unlike every other
-  round verb. It refuses (exit 2) an existing target round, so
+  them, and `import.json` (§6.1). It runs before `init`, on a tree with no `.gbg/config.toml`: `cmd_round`
+  dispatches the import before the config read every other round verb needs, and `gbg self verify`
+  still precedes it — plus `CFG.TORN` where a config exists. It refuses (exit 2) an existing target round, so
   an import repeated on the same tree cannot double up. `gbg round import --empty <round> --reason
   "…"` writes a round holding only `ROUND.toml` (`abandoned = {reason, open_ids = []}`) and
   `import.json` (`source = "none"`), for a record that has witnesses but no round entry (IT's round 4).
@@ -2368,7 +2371,7 @@ the rule's next violation (`RULE.TEST.RULE_WITH_CHECK`), one or more of `scan:<i
 | `RULE.DOC.SHAPE` | docs-rubric | A docstring's longest paragraph ≤ 120 words and admonitions ≤ 3, on every docstring and every NEW page unit; no unit grows past its baseline, a baselined page unit held by the ratchet alone; an `# Arguments` heading, where a consumer uses one, precedes any column-0 `!!!`; `# Fields` is last. | `lint_prose_shape`; IT `lint_docstring_shape` |
 | `RULE.DOC.MODULE_MAP` | docs-rubric | A module docstring lists one linked one-liner per operation family and no formula. | "Module docstring = map"; IT deviation |
 | `RULE.DOC.ARG_BULLET` | docs-rubric | An argument or field bullet names its argument in a plain code span, never a bold one. | `guards.sh` "argument bullet is not bolded"; SS deviation candidate |
-| `RULE.DOC.SIGNATURE_MIRROR` | docs-rubric | A docstring signature names the method's arguments in its order; how much it repeats is ★ `rubric.signature_types` — `names` (the default: names and defaults, types in the bullets) or `mirror` (every type the method declares). Only the docstring wraps, to ≤ 88 columns with a hanging indent. Narrowed to `names` on 2026-09-12, the form this package's docstrings had almost entirely taken already; `SCAN.SIGNATURE_TYPED` re-measures it, so no count is carried here. PF takes `mirror`. | "A docstring signature names the method's arguments in the method's order" |
+| `RULE.DOC.SIGNATURE_MIRROR` | docs-rubric | A docstring signature names the method's arguments in its order; how much it repeats is ★ `rubric.signature_types` — `names` (the default: names and defaults, types in the bullets) or `mirror` (every type the method declares). Only the docstring wraps, to ≤ 88 columns with a hanging indent. Narrowed to `names` on 2026-09-12, when 247 of this package's 251 docstrings already took that form (that day's measurement); `SCAN.SIGNATURE_TYPED` re-measures it on every run. PF takes `mirror`. | "A docstring signature names the method's arguments in the method's order" |
 | `RULE.DOC.SIGNATURE_FIDELITY` | docs-rubric | The displayed signature set and the defined method table agree per exported binding (symmetric difference reported). | IT `signature_fidelity.jl` |
 | `RULE.DOC.XLINK` | docs-rubric | A cross-module name is `@ref`-linked at its first mention, qualified so the link resolves. | IT `xlink.jl`; PF "cross-module @ref is qualified" |
 | `RULE.DOC.ARGCOV` | docs-rubric | Every argument in a docstring signature, positional and keyword, is documented in its body; run from the signature. (★ `argcov_policy` chooses triage or gate.) | "Argument coverage (signature-driven)" |

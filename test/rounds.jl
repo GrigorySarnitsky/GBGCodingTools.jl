@@ -892,6 +892,22 @@ end
     @test any(f -> occursin("a serious finding is carried", f), clean(false))
 end
 
+# the Step-0 import runs before `init`: dispatched ahead of the config read, self verify still first,
+# `config_sha` empty where there is no config; an existing round is refused
+@testset "round import --empty runs on a tree with no config" begin
+    bare = mktempdir()
+    cd(bare) do
+        id = "2026-01-01-check-docs-01"; why = "a legacy pile that yields nothing"
+        @test G.main(["round", "import", "--empty", id, "--reason", why]) == 0
+        rec = TOML.parsefile(joinpath(bare, ".gbg", "rounds", id, "ROUND.toml"))
+        @test rec["config_sha"] == "" && rec["seed_catalog_sha"] == "none" && rec["abandoned"]["reason"] == why
+        @test isfile(joinpath(bare, ".gbg", "rounds", id, "import.json"))
+        quiet(args) = redirect_stdout(() -> G.main(args), devnull)
+        @test quiet(["round", "import", "--empty", id, "--reason", why]) == 2                        # never overwritten
+        @test quiet(["round", "import", "--empty", "2026-01-01-check-docs-02", "--reason", "short"]) == 2
+    end
+end
+
 @testset "round lifecycle" begin
     root = fixture_copy("round")
     cfg = G.Config.read(root)
@@ -937,7 +953,13 @@ end
         end
         # a DEAD lane first: remove one file, bank must refuse and freeze nothing
         victim = joinpath(dir, "findings", "$(lanes[end]["nn"])-$(lanes[end]["key"]).json"); vtext = read(victim, String); rm(victim)
-        @test G.Rounds.bank(cfg, round; io = devnull) == 2
+        # and the file that lane wrote under a number nobody asked for: named ORPHAN, never read
+        stray = joinpath(dir, "findings", "99-$(lanes[end]["key"]).json"); write(stray, vtext)
+        bio = IOBuffer()
+        @test G.Rounds.bank(cfg, round; io = bio) == 2
+        @test occursin(r"ORPHAN\s+99-" * lanes[end]["key"] * r"\.json", String(take!(bio)))
+        @test G.Rounds.orphan_lane_files(dir, vcat([Dict("nn" => "00", "key" => "scans")], lanes)) == ["99-$(lanes[end]["key"]).json"]
+        rm(stray)
         @test !isfile(joinpath(dir, "findings.json"))
         # an INVALID lane file next (a type outside the closed set): quarantined, no first-sight sha kept,
         # rerun forgets the lane, and the replacement the re-run writes banks (the rc.1 round hit this)
