@@ -53,7 +53,7 @@ end
 @testset "the verifiers batch lanes into units" begin
     for s in ("verify-act.js", "verify-state.js")
         text = read(joinpath(TOOL, "instruments", "check-consistency", "workflow", s), String)
-        @test occursin("A.batch || 6", text)                             # the unit size, overridable from args
+        @test occursin("const BATCH = 6", text) && !occursin("A.batch", text)   # the unit size: a constant, since no CLI path sends one
         @test occursin("lane_files", text)                               # one object per lane in one return
         @test occursin("scribeAll(", text) && !occursin("scribe(stamped(", text)   # one scribe per unit
         @test occursin("laneFile(", text)                                # a lane found by its own key, not by order
@@ -139,7 +139,17 @@ end
     a = G.Preflight.render_args(cfg, "check-consistency", "2026-01-01-check-consistency-01", Any[],
                                 Dict{String,Any}("manuscripts" => Dict("full" => "f", "siteonly" => "s"),
                                                  "rulebook_path" => "r"); opened = "2026-01-01T00:00:00")
-    @test !isempty(a["source_globs"]) && a["source_globs"] isa AbstractVector
+    @test a["source_globs"] == G.Preflight.SOURCE_SURFACES                  # the key unset: the four surfaces
+    # the key set: ADDED to the four, never in place of them — a consumer naming only `src/*.jl` kept
+    # nothing but that under the first reader of the key (2026-09-12-audit-changes-02)
+    cfg["instruments"]["check-consistency"]["latex_source_globs"] = ["src/*.jl", "examples/*.jl"]
+    @test G.Preflight.source_globs(cfg) == ["src", "ext", "docs/src", "docs", "src/*.jl", "examples/*.jl"]
+    a2 = G.Preflight.render_args(cfg, "check-consistency", "2026-01-01-check-consistency-01", Any[],
+                                 Dict{String,Any}("manuscripts" => Dict("full" => "f", "siteonly" => "s"),
+                                                  "rulebook_path" => "r"); opened = "2026-01-01T00:00:00")
+    @test a2["source_globs"] == G.Preflight.source_globs(cfg)
+    vs = read(joinpath(TOOL, "instruments", "check-consistency", "workflow", "verify-state.js"), String)
+    @test !occursin("'docs/src'", vs)                                     # the state verifier's copy is gone too
 end
 
 @testset "every doctor check runs without crashing" begin

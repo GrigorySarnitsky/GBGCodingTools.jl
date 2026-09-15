@@ -21,13 +21,15 @@ grade, the CLI closes. Nothing is done by hand that a verb does.
 4. **Bank** — `gbg round bank <round>`: lane files validated and classified (a DEAD or REJECTED lane is exit 2 and
    nothing is frozen), ids `<round>/<lane>#<n>` assigned, seeds marked, `findings.json` frozen.
 5. **Fix** — on the owner's word, from `findings.md` by id; builds and tests through
-   `gbg round build|test <round>`.
+   `gbg round build|test <round>`. A build's verdict is recorded in `ROUND.toml`, as `prepare` and
+   `pass open` record theirs, so the round directory needs committing after it.
 6. **Verify** — `gbg round pass open <round>`: a nonce, the range, the regenerated manuscripts; the act
    verifier (sees the diff) and the state verifier (blind) launched as printed.
 7. **Grade** — `gbg round grade <round>`: the demotion, the closure channels, the tally; exit 1 while
    any id is open, and equally while any id is `pending_state` — closed by the act verifier with no
    blind reading to confirm it. Loop 5–7 over the same `findings.json`.
-8. **Close** — `gbg round close <round>` when every condition holds. `--carry <id>,<id>` closes over a
+8. **Close** — `gbg round close <round>` when every condition holds; for a documentation round one of
+   them is a recorded green docs build that nothing under the covered paths has changed since. `--carry <id>,<id>` closes over a
    `minor` or `nit` finding by carrying it into the next round of that instrument, on a severity re-rated
    by `severity-recheck.js` rather than by the lane that reported it (`RULE.INST.CARRY`); it is re-banked
    there and never rediscovered. A round has a budget of `max_passes` verification passes, 3 by default;

@@ -48,7 +48,7 @@ end
 @testset "release admits the open docs rounds to its own build" begin
     root = fixture_copy("release-admits")
     cfg = G.Config.read(root)
-    @test G.admitted_rounds(cfg) == ""                                              # nothing open: nothing admitted
+    @test G.admitted_rounds(cfg, true) == ""                                              # nothing open: nothing admitted
     st = G.Preflight.stamps(cfg)
     mk(name, inst) = begin
         rd = joinpath(root, ".gbg", "rounds", name); mkpath(rd)
@@ -58,19 +58,47 @@ end
         open(joinpath(rd, "ROUND.toml"), "w") do f; TOML.print(f, rec); end
     end
     mk("2026-09-09-bug-hunt-01", "bug-hunt")
-    @test G.admitted_rounds(cfg) == ""                          # a hunt round never froze the docs build
+    @test G.admitted_rounds(cfg, true) == ""                          # a hunt round never froze the docs build
     mk("2026-09-09-check-docs-01", "check-docs")
-    @test G.admitted_rounds(cfg) == "2026-09-09-check-docs-01"
+    @test G.admitted_rounds(cfg, true) == "2026-09-09-check-docs-01"
     @test !isempty(G.frozen_rounds(cfg, "check-docs", "check-consistency"))         # without it, the build is refused
-    withenv("GBG_ROUND" => G.admitted_rounds(cfg)) do
+    withenv("GBG_ROUND" => G.admitted_rounds(cfg, true)) do
         @test isempty(G.frozen_rounds(cfg, "check-docs", "check-consistency"))      # with it, the build may run
     end
     # two open docs rounds: BOTH are admitted, comma separated, as Gate.jl parses GBG_ROUND
     mk("2026-09-09-check-consistency-01", "check-consistency")
-    @test Set(split(G.admitted_rounds(cfg), ",")) ==
+    @test Set(split(G.admitted_rounds(cfg, true), ",")) ==
           Set(["2026-09-09-check-docs-01", "2026-09-09-check-consistency-01"])
-    withenv("GBG_ROUND" => G.admitted_rounds(cfg)) do
+    withenv("GBG_ROUND" => G.admitted_rounds(cfg, true)) do
         @test isempty(G.frozen_rounds(cfg, "check-docs", "check-consistency"))
+    end
+    @test G.admitted_rounds(cfg, false) == ""                   # a final release admits nothing: it refuses an open round
+end
+
+# Admitting a round lifts every refusal the gate makes for it, and a candidate's permission is for ONE:
+# the round being open. A round whose fixes were committed without it (`:committed`) is not admitted, so
+# the release's own build still refuses (2026-09-12-audit-changes-02). Its own repository, since
+# `:committed` reads the working tree's status.
+@testset "release admits a round only for being open" begin
+    root = fixture_copy("release-committed")
+    git(args...) = run(pipeline(setenv(`git -C $root -c user.email=t@t -c user.name=t $args`,
+                                       "HOME" => root, "PATH" => ENV["PATH"]); stdout = devnull, stderr = devnull))
+    git("init", "-q", "-b", "master"); git("add", "-A"); git("commit", "-q", "-m", "base")
+    cfg = G.Config.read(root)
+    opening = G.Git.head(root)
+    rd = joinpath(root, ".gbg", "rounds", "2026-09-09-check-docs-01"); mkpath(rd)
+    rec = merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => "2026-09-09-check-docs-01", "instrument" => "check-docs",
+        "schema_version" => 1, "head" => opening, "roster" => Any[], "cost" => "economy", "strength" => "economy",
+        "hostname" => "test", "model_hint" => "sonnet", "opened" => "2026-09-09T00:00:00", "dead_lanes" => String[], "passes" => 0))
+    open(joinpath(rd, "ROUND.toml"), "w") do f; TOML.print(f, rec); end
+    git("add", "-A"); git("commit", "-q", "-m", "the round opens")
+    withenv("CI" => nothing, "GBG_ROUND" => nothing) do
+        @test G.admitted_rounds(cfg, true) == "2026-09-09-check-docs-01"          # open, and only open
+        # a fix committed while the round's own files sit modified: HEAD moved past the opening head
+        write(joinpath(root, "src", "FixtureA.jl"), read(joinpath(root, "src", "FixtureA.jl"), String) * "\n")
+        git("add", "src"); git("commit", "-q", "-m", "a fix without the round")
+        write(joinpath(rd, "notes.md"), "uncommitted\n")
+        @test G.admitted_rounds(cfg, true) == ""                                  # :committed as well — not admitted
     end
 end
 

@@ -53,21 +53,27 @@ function carry_release_fails(led::AbstractDict)
 end
 
 """
-    admitted_rounds(cfg) -> String
+    admitted_rounds(cfg, rc) -> String
 
 The open docs rounds `gbg release` admits to its OWN docs build, comma separated as
-[`GBGCodingTools.frozen_rounds`](@ref) and the gate parse `GBG_ROUND`. The argument is `cfg`, the
-validated config.
+[`GBGCodingTools.frozen_rounds`](@ref) and the gate parse `GBG_ROUND`. The arguments are `cfg`, the
+validated config, and `rc`, whether the release is a candidate.
 
 A candidate may be cut while a round is open — the open-round refusal is guarded by `if !rc` on purpose
 — but the release build sets `GBG_DOCS_NO_SKIP`, which turns the docs wrapper's skip back into a
-refusal. Naming no round made that permission unreachable: the build refused for every open round, so
-every rc cut mid-round failed its own build step and the `if !rc` branch could never be reached in
-anger. Admitting them restores the permission without weakening the guarantee, since
-`GBG_DOCS_NO_SKIP` stays set and a build that did not happen still cannot pass. Returns the value, empty
-when no docs round is open.
+refusal, so naming no round left that permission unreachable. Admitting a round, though, lifts EVERY
+refusal the gate makes for it, and the permission is for one: the round being open. So only a candidate
+admits, and only a round whose sole gate problem is that it is open; one whose fixes were committed
+without the round (`:committed`) still refuses the build. Returns the value, empty for a final release
+or when no round qualifies.
 """
-admitted_rounds(cfg::AbstractDict) = join(frozen_rounds(cfg, Sync.DOCS_INSTRUMENTS...), ",")
+function admitted_rounds(cfg::AbstractDict, rc::Bool)
+    rc || return ""
+    _, problems = withenv(() -> gate_problems(cfg, Sync.DOCS_INSTRUMENTS...), "GBG_ROUND" => nothing)
+    committed = [p for (kind, p) in problems if kind == :committed]
+    ok = [r for r in frozen_rounds(cfg, Sync.DOCS_INSTRUMENTS...) if !any(p -> startswith(p, r * ":"), committed)]
+    return join(ok, ",")
+end
 
 """
     release_fails(cfg, root, ver, base, rc) -> Vector{String}
@@ -132,9 +138,9 @@ Tags and pushes `v<ver>` from the dev checkout. The arguments are:
   verb only, never set by the CLI.
 
 - `root` — the checkout to release, the running package directory by default; the CLI never passes it.
-  A keyword because the verb read `pkgdir(GBGCodingTools)` directly and could only ever act on the real
-  checkout, which left it with no test at all — and that is how its `if !rc` branch stayed unreachable
-  until 2026-09-12. Every refusal below is a function of `root`.
+  A keyword because the verb read `pkgdir(GBGCodingTools)` directly and so had no test at all. Every
+  refusal below reads `root`, the dev-checkout guard included: `root` must be a git working tree, since
+  it is what gets tagged and pushed.
 
 Refused (exit 2) unless: the tree is clean and on the configured branch; the tag is absent; `CHANGELOG.md`
 carries `## <ver> — `; `Project.toml`'s version equals the release version (the base version for a
@@ -150,7 +156,7 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
     m = match(r"^(\d+\.\d+\.\d+)(-rc\.(\d+))?$", ver)
     m === nothing && (println(io, "release: $ver is neither X.Y.Z nor X.Y.Z-rc.N"); return 2)
     base = m.captures[1]; rc = m.captures[2] !== nothing
-    running_dev() || (println(io, "release: the dev checkout only"); return 2)
+    ispath(joinpath(root, ".git")) || (println(io, "release: the dev checkout only — $root is not a git working tree"); return 2)
     cfg = Config.read(root)
     fails = release_fails(cfg, root, ver, base, rc)
     if !isempty(fails)
@@ -161,10 +167,10 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
         # purpose — but the permission was unreachable until 2026-09-12: this build sets
         # `GBG_DOCS_NO_SKIP`, which turns the docs wrapper's skip back into a refusal, and it named no
         # round, so `frozen_rounds` saw every open round as one the build must refuse for. Every rc cut
-        # while a round was open failed its own build step. The rounds are admitted the way `gbg round
-        # build` admits them (comma separated, as `Gate.jl` parses them), and `GBG_DOCS_NO_SKIP` stays:
-        # a release still never accepts a build that did not happen, it only stops refusing one that can.
-        admitted = admitted_rounds(cfg)
+        # while a round was open failed its own build step. A candidate admits the rounds whose only
+        # refusal is being open, the way `gbg round build` admits its own (comma separated, as `Gate.jl`
+        # parses them), and `GBG_DOCS_NO_SKIP` stays: a build that did not happen still cannot pass.
+        admitted = admitted_rounds(cfg, rc)
         for (label, cmd) in (("Pkg.test()", `$(Base.julia_cmd()) --startup-file=no --project=$root -e "using Pkg; Pkg.test()"`),
                              ("docs build (SELF.DOCS)", addenv(`$(Base.julia_cmd()) --startup-file=no --project=$(joinpath(root, "docs")) $(joinpath(root, "docs", "make.jl"))`, "GBG_DOCS_NO_SKIP" => "1", "GBG_ROUND" => admitted)))
             println(io, "release: running $label …"); flush(io)

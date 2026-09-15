@@ -87,9 +87,8 @@ const RULES_REGISTER = Ref{Any}(nothing)
 The `[[rule]]` rows of `policy/RULES.toml` in the running copy, parsed once and held. Returns the rows.
 
 Held rather than re-read because [`apply_ledger`](@ref) asks for them once per scan, and a bare
-`TOML.parsefile` there would put a file read in the hot path of every `gbg scan docs`. One home, too:
-the register was parsed in two places in `Doctor.jl` and nowhere else, and resolving a waiver needed a
-third.
+`TOML.parsefile` there would put a file read in the hot path of every `gbg scan docs`. It is the one
+reader of the register: `CFG.EXEMPTIONS`, `LEG.SENTINELS` and `SCAN.ID_RESOLVES` read through it too.
 """
 function rules_register()
     RULES_REGISTER[] === nothing &&
@@ -110,6 +109,17 @@ list and never that column, which is exactly what this does.
 """
 rules_for_scan(id::AbstractString) =
     [String(r["id"]) for r in rules_register() if ("scan:" * id) in String.(get(r, "check", String[]))]
+
+"""
+    unreachable_waiver_scans(rule) -> Vector{String}
+
+The catalogued scans that enforce `rule` without it being their canonical rule: the scans whose id the
+rule's `check` array names ([`rules_for_scan`](@ref)) but whose catalogue `rule` column is another rule.
+A policy waiver of `rule` cannot reach them — [`apply_ledger`](@ref) refuses it — and `CFG.EXEMPTIONS`
+names the entry. The argument is `rule`, a rule id. Returns the scan ids, empty for most rules.
+"""
+unreachable_waiver_scans(rule::AbstractString) =
+    [String(r["id"]) for r in scan_catalog() if String(r["rule"]) != rule && rule in rules_for_scan(String(r["id"]))]
 
 """
     AI_BANNER
@@ -373,29 +383,30 @@ Applies the ledger to one scan's hits. The arguments are:
 - `row` — the scan's catalogue row (`id`, `rule`).
 - `hits` — the scan's hits before the ledger.
 
-An entry `scope = "policy"` with target `*` on ANY rule the scan enforces, or `scope = "scan"` on the
-scan id with target `*` and no `match` table, disables the scan (every hit exempted, `disabled = true`);
-any other live `scan`-scope entry on the id — a target-`*` one carrying `match` among them — drops the
-hits it [`Ledger.matches`](@ref). A text scan meets an `arg_type` predicate as an error. Returns the
-kept hits, the exempted count and the flag.
+An entry `scope = "policy"` with target `*` on the scan's CANONICAL rule (its catalogue `rule` column),
+or `scope = "scan"` on the scan id with target `*` and no `match` table, disables the scan (every hit
+exempted, `disabled = true`); any other live `scan`-scope entry on the id — a target-`*` one carrying
+`match` among them — drops the hits it [`Ledger.matches`](@ref). Returns the kept hits, the exempted
+count and the flag.
 
-Any rule it enforces, not just the catalogue's canonical column ([`rules_for_scan`](@ref)). Resolving
-the column alone made a documented waiver SILENTLY VOID: a consumer writing `RULE.CIT.DOI`,
-`scope = "policy"`, `target = "*"` had it accepted by `CFG.EXEMPTIONS`, kept by `EXEMPT.STALE` and
-rendered into `deviations.md` by `gbg sync` as a granted deviation, while this function looked only
-under `RULE.CIT.FULL_INLINE` and the DOI half of the hard scan kept failing the gate — on the rule whose
-ONLY declared check is that scan (2026-09-12-check-docs-01 catalogues#1, whose dismissal I wrote and the
-audit's dismissal auditor overturned).
-
-The mirror case is NOT fixed and is a known limit: a waiver on either rule still disables the WHOLE
-scan, so it withdraws enforcement of a sibling rule the consumer never exempted. A `Hit` carries no rule
-id, so the engine cannot drop one rule's hits and keep the other's; doing it properly means teaching
-every scan to attribute its hits.
+Two ledger entries are errors (`Ledger.LedgerError`), never silently void and never silently wide: an
+`arg_type` predicate on a text scan, and a `policy` entry on a rule the scan enforces that is NOT its
+canonical rule ([`unreachable_waiver_scans`](@ref)). Three scans carry two rules apiece, and a `Hit`
+carries no rule id, so a waiver of the second rule could only disable the whole scan — withdrawing the
+canonical rule, which the consumer never waived — or do nothing while `deviations.md` renders it as
+granted. Both were shipped in turn, the second as the fix for the first; the refusal ends both, and an
+entry meant for the whole scan is written `scope = "scan"`.
 """
 function apply_ledger(cfg::AbstractDict, ledger, row, hits::Vector{Hit})
-    id = row["id"]
-    enforced = unique!(vcat(String(row["rule"]), rules_for_scan(id)))
-    for rule in enforced, e in Ledger.entries(ledger, rule; scope = "policy")
+    id = row["id"]; canonical = String(row["rule"])
+    for rule in rules_for_scan(id)
+        rule == canonical && continue
+        e = first(Ledger.entries(ledger, rule; scope = "policy"), 1)
+        isempty(e) || throw(Ledger.LedgerError("$rule on $(e[1]["target"]) is a policy waiver of a rule $id enforces but " *
+            "does not own (its rule is $canonical): it cannot waive this rule's hits alone, and will not waive $canonical's — " *
+            "waive the scan with scope = \"scan\", or drop the entry"))
+    end
+    for e in Ledger.entries(ledger, canonical; scope = "policy")
         e["target"] == "*" && return (Hit[], length(hits), true)
     end
     scan_entries = Ledger.entries(ledger, id; scope = "scan")

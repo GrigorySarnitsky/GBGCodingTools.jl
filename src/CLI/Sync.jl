@@ -24,10 +24,10 @@ using ..GBGCodingTools: GBGCodingTools, PKG_NAME, PKG_UUID, Config, Ledger, tool
 const TOOL_URL = "https://github.com/GrigorySarnitsky/GBGCodingTools.jl.git"
 const INSTRUMENTS = ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
 # The two that BUILD DOCS — so the two a docs build is frozen for, a `dev` stamp is named for, and a
-# release admits to its own build. The pair was written out at SIX sites (DocLints twice, Doctor,
-# Preflight, Release, Passes), which is the one-concept-many-homes shape the `one-home` lane exists to
-# catch: adding a docs instrument, or retiring one, meant finding all six. Recorded as a work queue item
-# on 2026-09-12 — where the item itself said four, and only a grep found the other two.
+# release admits to its own build. Every site meaning this pair reads it from here: DocLints twice,
+# Doctor, Preflight, Release, Passes three times and the Documenter extension's gate. The pair was once
+# written out at each; the first sweep to this constant missed three of them, found only by an audit and
+# a second grep over both spellings of the order.
 const DOCS_INSTRUMENTS = ("check-docs", "check-consistency")
 const SKILL_DESCRIPTION = Dict(
     "check-docs" => "Run the COMPLETE documentation-quality battery over every surface — scans, reflection checks, the build, the judgment lanes — then bank, fix, verify and close the round",

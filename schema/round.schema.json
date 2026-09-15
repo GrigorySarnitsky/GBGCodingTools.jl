@@ -47,7 +47,7 @@
      "type": "array"
     },
     "carried": {
-     "description": "the ids this round closed by carrying them into the next round of its instrument. Real, unfixed, on a re-rated severity — minor or nit, or any severity once the round has spent its pass budget — and re-banked next time.",
+     "description": "the ids this round closed by carrying them into the next round of its instrument. Real, unfixed, on a re-rated severity \u2014 minor or nit, or any severity once the round has spent its pass budget \u2014 and re-banked next time.",
      "type": "array",
      "items": {
       "type": "string"
@@ -220,7 +220,7 @@
    "properties": {
     "code": {
      "type": "integer",
-     "description": "the exit code of the last `gbg round build <round>`; 0 is the only value `close` accepts"
+     "description": "the exit code of the round's last docs build \u2014 by `prepare`, `pass open` or `gbg round build <round>`; 0 is the only value `close` accepts"
     },
     "head": {
      "pattern": "^[0-9a-f]{40}$",
@@ -240,7 +240,10 @@
     "additionalProperties": false,
     "required": [
      "at",
-     "head"
+     "head",
+     "reason",
+     "after_pass",
+     "scripts"
     ],
     "properties": {
      "at": {
@@ -251,13 +254,58 @@
       "pattern": "^[0-9a-f]{40}$",
       "type": "string",
       "description": "the HEAD the scripts were re-copied from"
+     },
+     "reason": {
+      "type": "string",
+      "minLength": 24,
+      "description": "why the frozen scripts could not serve the round"
+     },
+     "after_pass": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "the passes the round had opened when the scripts moved: passes up to it ran on the old scripts"
+     },
+     "scripts": {
+      "type": "array",
+      "minItems": 1,
+      "description": "every script replaced, with the sha256 of the frozen copy (or `absent`) and of its replacement",
+      "items": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "name",
+        "from",
+        "to"
+       ],
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "from": {
+         "type": "string",
+         "pattern": "^([0-9a-f]{64}|absent)$"
+        },
+        "to": {
+         "type": "string",
+         "pattern": "^[0-9a-f]{64}$"
+        }
+       }
+      }
      }
     },
     "type": "object"
    },
    "type": "array",
-   "description": "each time `gbg round scripts <round>` re-copied this round's Workflow scripts from the instrument. They are frozen at preflight — `copy_scripts` runs there and nowhere else — so a script defect the round itself finds cannot be repaired for that round's own verifiers; 2026-09-12-check-docs-01 hit exactly that, and the copies were refreshed by hand. A refresh is legitimate and must stay VISIBLE, so every one is appended here rather than leaving the freeze quietly worked around.",
+   "description": "each time `gbg round scripts <round> --reason` replaced frozen scripts of this round. The scripts are frozen when the round opens (RULE.INST.FROZEN_MIDROUND); the verb is the one exception, for a round whose own frozen scripts cannot run (2026-09-12-check-docs-01 found its verifiers unparseable), and it replaces only the scripts that differ. Every refresh is appended, never overwritten, with why, when and which, so a reader of the closed round sees that the passes around it ran on different scripts.",
    "minItems": 1
+  },
+  "seed_skipped": {
+   "description": "the seed classes this round could not plant, their anchor absent from its corpus: each is UNDEFINED in recall. Written at prepare and repeated by grade, so a narrowed measurement is never a silent one.",
+   "items": {
+    "type": "string"
+   },
+   "minItems": 1,
+   "type": "array"
   },
   "seed_root": {
    "description": "the disposable corpus a seeded documentation round's lanes read: the lane surfaces copied outside the repository and mutated. Written at prepare, destroyed at bank; the repository itself is never seeded.",

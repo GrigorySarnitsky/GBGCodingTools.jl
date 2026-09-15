@@ -546,7 +546,7 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
                             "strength" => rec["strength"], "adjudicated_titles" => Preflight.adjudicated_titles(cfg, ledger), "findings_path" => fpath)
     wdir = Preflight.workflow_dir(cfg, round)
     println(io, "pass $k opened for $round — nonce $nonce, range $(pass["range"])")
-    if inst in ("check-consistency", "check-docs")
+    if inst in Sync.DOCS_INSTRUMENTS
         manuscripts = nothing
         if inst == "check-consistency"
             full = joinpath(payload, "manuscript-full.md"); site = joinpath(payload, "manuscript-siteonly.md")
@@ -565,6 +565,8 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
             else
                 log = joinpath(Preflight.scratch_dir(cfg, round), "pass-$k-build.log")
                 code = Rounds.run_under_round(cfg, round, cfg["package"]["docs_build"]; log)
+                why = Rounds.record_build!(cfg, dir, rec, code)
+                why === nothing || println(io, "pass open: the build is NOT RECORDED — $why")
                 code == 0 || (println(io, "pass open: the docs build failed (exit $code) — see $log; the pass stays open, fix and re-run pass open"); return 2)
                 build = joinpath(root, cfg["surfaces"]["built_html"])
                 consolidate(build, String.(cfg["instruments"]["check-consistency"]["design_docs_withheld"]); out_full = full, out_siteonly = site)
@@ -585,7 +587,7 @@ function pass_open(cfg::AbstractDict, round::AbstractString; regrade::Bool = fal
         for f in state_findings; f["lane"] == "scans" || (expected_blind[f["lane"]] = get(expected_blind, f["lane"], 0) + 1); end
         state = merge(base, Dict("lanes" => [Dict("nn" => l["nn"], "key" => l["key"], "substrate" => l["substrate"], "expected" => get(expected_blind, l["key"], 0)) for l in lanes if l["key"] != "scans" && get(expected_blind, l["key"], 0) > 0],
                       "findings" => [Dict("id" => f["id"], "lane" => f["lane"], "n" => f["n"], "title" => f["title"], "seeded" => get(f, "seeded", false)) for f in state_findings if f["lane"] != "scans"],
-                      "source_scope" => ["src", "ext", "docs/src", "docs"]))
+                      "source_scope" => Preflight.source_globs(cfg)))
         manuscripts === nothing || (state["manuscripts"] = manuscripts)
         Preflight.save_args(cfg, round, "pass-$k-act", act); Preflight.save_args(cfg, round, "pass-$k-state", state)
         nact = length(act["findings"])
@@ -685,6 +687,8 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
                 "--regrade opens pass $(k + 1), and pass $k's verdicts are set aside ungraded."); return 2
     end
     inst = rec["instrument"]; all_findings = findings_of(dir); ledger = Ledger.read(cfg)
+    sk = String.(get(rec, "seed_skipped", String[]))
+    isempty(sk) || println(io, "grade: WARNING — seed class(es) never planted in this round, UNDEFINED in its recall: ", join(sk, ", "))
     # A scoped pass verifies the open ids and the closed ones the fix pass touched again; every other
     # id keeps the entry the pass that closed it wrote, so a closed finding does not reopen for want of
     # a verdict nobody was asked for.
@@ -708,7 +712,7 @@ function grade(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         get(e, "closed_by", nothing) == "adjudicated" && (adjudicated += 1)
     end
     opened = rec["opened"]
-    if inst in ("check-consistency", "check-docs")
+    if inst in Sync.DOCS_INSTRUMENTS
         lanes = unique(f["lane"] for f in findings if f["lane"] != "scans")
         acts = Dict{String,Any}(); states = Dict{String,Any}()
         for lane in lanes
@@ -1090,6 +1094,31 @@ function carry_conditions(cfg::AbstractDict, dir::AbstractString, rec::AbstractD
 end
 
 """
+    build_fails(cfg, rec, round) -> Vector{String}
+
+`close`'s docs-build condition, for the two instruments that build docs (empty for the others): the
+round record carries a build (`Rounds.record_build!`, written by `prepare`, `pass open` and
+`gbg round build`), it exited 0, its head is a commit this repository still has, and nothing under the
+covered paths changed between that head and `HEAD`. The arguments are `cfg`, the validated config;
+`rec`, the round record; and `round`, the round id the remedies name. Returns the refusals.
+
+An unreachable head is UNCHECKABLE and refuses: `git diff` over a missing commit fails, and a failed
+diff reads as "nothing changed", which is the inversion `audit_coverage` already guards against.
+"""
+function build_fails(cfg::AbstractDict, rec::AbstractDict, round::AbstractString)
+    rec["instrument"] in Sync.DOCS_INSTRUMENTS || return String[]
+    root = cfg["root"]; b = get(rec, "build", nothing)
+    b === nothing && return ["no docs build is recorded for this round — gbg round build $round"]
+    b["code"] != 0 && return ["the recorded docs build exited $(b["code"]) — fix it, then gbg round build $round"]
+    Git.run(root, "cat-file", "-e", String(b["head"]) * "^{commit}") === nothing &&
+        return ["the recorded docs build ran at $(first(String(b["head"]), 8)), a commit this repository no longer has — UNCHECKABLE, never read as current; gbg round build $round"]
+    moved = Git.changed_paths(root, "$(b["head"])..HEAD", Preflight.covered_paths(cfg))
+    isempty(moved) && return String[]
+    return ["the recorded docs build is stale — " * join(first(moved, 3), ", ") * (length(moved) > 3 ? ", …" : "") *
+            " changed after it ran; gbg round build $round"]
+end
+
+"""
     close(cfg, round; carry = String[], io = stdout) -> Int
 
 `gbg round close <round>`: checks every closing condition in the instrument's order and stamps the
@@ -1105,9 +1134,9 @@ The conditions: the latest pass fully closed, no
 dead lane, the round's files committed, the stamps unchanged (tool version and config, else regrade;
 tool tree sha, else abandon-only), the opening head an ancestor of HEAD, the dismissal auditor run over
 every adjudication and refusal with `reopened == []` (its Workflow call is printed when it has not
-run), the hunt's witness, promotion, test and audit conditions, and for a check-docs round whose fix
-pass changed code, [`Passes.audit_after_code`](@ref). Then `closed`, `closed_head` and the
-tally sha are stamped.
+run), the hunt's witness, promotion, test and audit conditions, for a check-docs round whose fix pass
+changed code [`Passes.audit_after_code`](@ref), and for both documentation instruments a recorded green
+docs build current at `HEAD` (`build_fails`). Then `closed`, `closed_head` and the tally sha are stamped.
 
 `carry` names the ids this round closes by carrying them into the next round of its instrument, which
 `carry_conditions` gates. Once the pass budget is spent (`pass_budget`) an empty `carry` means every
@@ -1151,24 +1180,7 @@ function close(cfg::AbstractDict, round::AbstractString; carry::AbstractVector =
     rel = relpath(dir, root)
     dirty = [p for (_, p) in Git.porcelain(root) if startswith(p, rel * "/") || p == rel]
     isempty(dirty) || push!(fails, "the round's files are not committed: " * join(first(dirty, 5), ", ") * (length(dirty) > 5 ? " …" : ""))
-    # A RED build must not reach close. Nothing recorded a build's verdict before 2026-09-12, and
-    # 2026-09-12-check-docs-01 graded two passes against a corpus whose docs build did not pass: `prepare`
-    # builds green at open, a fix pass's prose edits move SCAN.PROSE_SHAPE's ratchet, and no verb looked
-    # again until pass 3 ran `gbg round build` by hand. `build` records {code, head}; this reads it back.
-    # The staleness test is the one `audit_after_code` uses, so a green build from before the round's last
-    # fix is not taken for a current one. Only the two instruments that build docs are asked.
-    if inst in Sync.DOCS_INSTRUMENTS
-        b = get(rec, "build", nothing)
-        if b === nothing
-            push!(fails, "no docs build is recorded for this round — gbg round build $round")
-        elseif b["code"] != 0
-            push!(fails, "the recorded docs build exited $(b["code"]) — fix it, then gbg round build $round")
-        else
-            moved = Git.changed_paths(root, "$(b["head"])..HEAD", Preflight.covered_paths(cfg))
-            isempty(moved) || push!(fails, "the recorded docs build is stale — " * join(first(moved, 3), ", ") *
-                                           (length(moved) > 3 ? ", …" : "") * " changed after it ran; gbg round build $round")
-        end
-    end
+    append!(fails, build_fails(cfg, rec, round))
     st = Preflight.stamps(cfg; record = rec)
     latest_regrade = k >= 1 && isfile(joinpath(pass_dir(dir, k), "pass.toml")) && get(TOML.parsefile(joinpath(pass_dir(dir, k), "pass.toml")), "regrade", false)
     (st["config_sha"] == rec["config_sha"] || latest_regrade) || push!(fails, "config changed since open — gbg round pass open $round --regrade")

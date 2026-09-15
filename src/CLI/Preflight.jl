@@ -341,19 +341,22 @@ const CLAIM_NUMBER = r"\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten
 # substantive finding, 2 cannot evaluate, 3 crash" — which the first two miss, because they want a digit
 # within two words of `exit`. src/GBGCodingTools.jl contributed ZERO checklist items until it was added,
 # and the seeded `exit-code-drift` mutation was planted in exactly that line, invisible to the checklist
-# built to catch it (2026-09-12-check-docs-01). The digit is REQUIRED near the phrase: `exit contract`
-# alone occurs on 12 lines corpus-wide, most of them bare mentions in a list of topics, and a checklist
-# padded with unverifiable items is the shape that got the quantifier class dropped as unaffordable.
-const CLAIM_EXIT = r"\bexits?\s+(?:with\s+)?(?:code\s+)?[0-3]\b|\bexit\s+code\s+[0-3]\b|\bexit\s+contract\b[^.]{0,60}?[0-3]\b"i
-# The QUANTIFIER class, narrowed until it was affordable. A quantifier alone matches 2526 lines of this
-# corpus and was dropped as unaffordable when the checklist was built; two of the five planted seeds were
-# quantifier mutations ("every" → "almost every", a deleted "never") and BOTH were missed, so the class
-# that cost too much to check was also the class the round could not catch. Narrowed to a quantifier in a
-# line that also names a tool identifier — where a universal is a claim ABOUT this tool and not ordinary
-# prose — it is a fraction of that. The conjunction is spelled in code rather than as one regex with
-# stacked lookaheads so the reader can see it is an AND.
-const CLAIM_QUANTIFIER = r"\b(?:every|never|always|all|none|any|only)\b"i
-const CLAIM_TOOL_ID = r"\b(?:RULE|SCAN|CFG|SELF|PIN|ROUND|EXEMPT|WIRE|MANAGED|LEG|POL|GIT|AUDIT|BUILD)\.[A-Z_]+\b|\bgbg\s+[a-z]+\b"
+# built to catch it (2026-09-12-check-docs-01). A CODE is required near the phrase — a lone digit 0–3
+# followed by the word naming it, `2 cannot` — since the bare phrase is mostly a topic mention, and a
+# looser digit matched the `1` of a version string. Every alternative refuses a digit that continues into
+# a number (`2.5`, `30`).
+const CLAIM_EXIT = r"\bexits?\s+(?:with\s+)?(?:code\s+)?[0-3]\b(?!\.\d)|\bexit\s+code\s+[0-3]\b(?!\.\d)|\bexit\s+contract\b[^.]{0,60}?(?<![\w.])[0-3]\s+[a-z]"i
+# The QUANTIFIER class, narrowed until it was affordable. A bare quantifier matches thousands of lines of
+# this corpus and was dropped as unaffordable when the checklist was built; two of the five planted seeds
+# were quantifier mutations ("every" → "almost every", a deleted "never") and BOTH were missed, so the
+# class that cost too much to check was also the class the round could not catch. Narrowed to a strong
+# universal (`every`, `never`, `always`, `none` — not `all`, `any` or `only`, which ordinary prose is full
+# of) in the same CLAUSE as a register id or a backticked `gbg` verb, where it is a claim about the tool.
+# The per-lane counts before and after that narrowing are in the commit that made it (2026-09-15).
+const CLAIM_QUANTIFIER = r"\b(?:every|never|always|none)\b"i
+const CLAIM_TOOL_ID = r"\b(?:RULE|SCAN|CFG|SELF|PIN|ROUND|EXEMPT|WIRE|MANAGED|LEG|POL|GIT|AUDIT|BUILD)\.[A-Z_]+\b|`gbg\s+[a-z]+"
+# a clause ends at a sentence stop, a semicolon or a spaced dash; the dot inside `RULE.DOC` is not one
+const CLAIM_CLAUSE = r"(?<=[.;!?])\s+|\s+—\s+"
 const CLAIM_TEXT = (".jl", ".md", ".toml", ".json", ".js", ".tmpl", ".sh", ".csv", ".seed", ".snippet", ".block", ".skeleton")
 
 # A lane's `files` may name a directory (`catalog`, `policy`) or a build tree; the checklist is over the
@@ -404,7 +407,7 @@ function claim_checklist(cfg::AbstractDict, files; range = nothing)
             num = occursin(CLAIM_NUMBER, s)
             # a line carrying both a cited number and a universal is tagged by the number: it is the more
             # mechanically checkable of the two, and the lane owes a verdict either way
-            qu = occursin(CLAIM_QUANTIFIER, s) && occursin(CLAIM_TOOL_ID, s)
+            qu = any(c -> occursin(CLAIM_QUANTIFIER, c) && occursin(CLAIM_TOOL_ID, c), split(s, CLAIM_CLAUSE))
             (ex || num || qu) || continue
             push!(out, "- [" * (ex ? "exit" : num ? "count" : "quantifier") * "] `$f:$n` — " * first(s, 220))
         end
@@ -724,14 +727,7 @@ function render_args(cfg::AbstractDict, instrument::AbstractString, round::Abstr
         a["hats"] = [Dict("nn" => h["nn"], "key" => h["key"], "persona_path" => h["persona_path"], "substrate" => h["substrate"], "needs" => h["needs"], "anchor" => h["anchor"]) for h in roster if !h["not_applicable"]]
         a["adjudicated_titles"] = adjudicated_titles(cfg, ledger); a["finding_types"] = finding_types(cfg); a["cost"] = cost; a["opened"] = opened
         a["finding_cap"] = get(cfg["instruments"]["check-consistency"], "finding_cap", 25)
-        # The AUTHORED SOURCE a `needs: source` hat is sent to. Resolved HERE and never in the script:
-        # panel.js carried `src/`, `ext/`, `docs/src/` and `docs/` as literals, which the core invariant
-        # forbids, while `latex_source_globs` — validated, written by `gbg init`, documented in §5 — had
-        # no reader anywhere, so a consumer naming `examples/*.jl` had its Literate surface silently never
-        # read, and the hat was still required to quote findings at their source file:line
-        # (2026-09-12-check-docs-01 schemas#1, and its dismissal overturned by the audit's auditor).
-        globs = String.(get(cfg["instruments"]["check-consistency"], "latex_source_globs", String[]))
-        a["source_globs"] = isempty(globs) ? ["src", "ext", "docs/src", "docs"] : globs
+        a["source_globs"] = source_globs(cfg)
     elseif instrument == "check-docs"
         a["preamble"] = substitute(PREAMBLES[instrument], cfg); a["policy_path"] = paths["policy_path"]; a["finding_types"] = finding_types(cfg)
         a["lanes"] = [merge(Dict{String,Any}("nn" => l["nn"], "key" => l["key"], "kind" => l["kind"], "brief_path" => l["brief_path"], "files" => l["files"], "anchor" => l["anchor"]),
@@ -757,6 +753,30 @@ function render_args(cfg::AbstractDict, instrument::AbstractString, round::Abstr
 end
 
 """
+    SOURCE_SURFACES
+
+The four authored-source surfaces every reader of "the source" is sent to — `src`, `ext`, `docs/src`
+and `docs` — before a consumer's own globs are added ([`source_globs`](@ref)).
+"""
+const SOURCE_SURFACES = ["src", "ext", "docs/src", "docs"]
+
+"""
+    source_globs(cfg) -> Vector{String}
+
+The AUTHORED SOURCE a `needs: source` panel hat and a pass's state verifier read: [`SOURCE_SURFACES`](@ref)
+together with every `instruments.check-consistency.latex_source_globs` entry the consumer names,
+repo-relative, in that order and without repeats. The argument is `cfg`, the validated config.
+
+Resolved in the CLI, never in a script, since a script holding the paths breaks the core invariant; and
+a UNION, never a replacement. The key had no reader until 2026-09-12, so a consumer naming
+`examples/*.jl` had its Literate surface never read (2026-09-12-check-docs-01 schemas#1); the first
+reader then REPLACED the four surfaces with the key, cutting `ext`, `docs/src` and `docs` from a
+consumer that named only `src/*.jl` (2026-09-12-audit-changes-02). Returns the list.
+"""
+source_globs(cfg::AbstractDict) =
+    unique!(vcat(SOURCE_SURFACES, String.(get(cfg["instruments"]["check-consistency"], "latex_source_globs", String[]))))
+
+"""
     copy_scripts(cfg, instrument, round) -> String
 
 Copies `instruments/<instrument>/workflow/*.js` of the running copy (and the verifiers and auditors a
@@ -770,18 +790,31 @@ must lie inside the project. The arguments are:
 Returns the directory.
 """
 function copy_scripts(cfg::AbstractDict, instrument::AbstractString, round::AbstractString)
-    src = joinpath(instrument_dir(instrument), "workflow"); dst = workflow_dir(cfg, round); mkpath(dst)
-    for f in readdir(src)
-        endswith(f, ".js") && install_script(joinpath(src, f), joinpath(dst, f))
-    end
-    # the verifiers and auditors of other instruments a round may need (dismissals, severity, verifiers)
+    dst = workflow_dir(cfg, round); mkpath(dst)
+    for (name, src) in script_sources(instrument); install_script(src, joinpath(dst, name)); end
+    return dst
+end
+
+"""
+    script_sources(instrument) -> Vector{Tuple{String,String}}
+
+Every Workflow script a round of `instrument` is given, as `(name, source path)` in the running copy:
+the instrument's own `workflow/*.js`, then the verifiers and auditors of other instruments a round may
+need (dismissals, severity, verifiers), a later name replacing none already taken. The argument is
+`instrument`, the instrument name. Returns the pairs.
+"""
+function script_sources(instrument::AbstractString)
+    src = joinpath(instrument_dir(instrument), "workflow")
+    out = [(f, joinpath(src, f)) for f in readdir(src) if endswith(f, ".js")]
     for other in ("check-consistency", "bug-hunt")
         other == instrument && continue
         for f in ("verify-act.js", "verify-state.js", "severity-recheck.js", "dismissals.js")
-            p = joinpath(instrument_dir(other), "workflow", f); isfile(p) && install_script(p, joinpath(dst, f))
+            p = joinpath(instrument_dir(other), "workflow", f)
+            isfile(p) || continue
+            filter!(x -> x[1] != f, out); push!(out, (f, p))
         end
     end
-    return dst
+    return out
 end
 
 """
@@ -795,16 +828,20 @@ a round or a design-check record goes through here. Throws when the marker appea
 Returns `dst`.
 """
 function install_script(src::AbstractString, dst::AbstractString)
+    text = render_script(src)
+    mkpath(dirname(dst)); write(dst, text)
+    return dst
+end
+
+# the text `install_script` writes for `src`: the script with the prelude spliced in at its marker
+function render_script(src::AbstractString)
     text = read(src, String)
     marker = "// gbg:prelude"
     n = length(findall(marker, text))
     n > 1 && throw(PreflightError("$src carries the prelude marker $n times"))
-    if n == 1
-        prelude = read(joinpath(pkgdir(GBGCodingTools), "instruments", "prelude.js"), String)
-        text = replace(text, marker => rstrip(prelude); count = 1)
-    end
-    mkpath(dirname(dst)); write(dst, text)
-    return dst
+    n == 1 || return text
+    prelude = read(joinpath(pkgdir(GBGCodingTools), "instruments", "prelude.js"), String)
+    return replace(text, marker => rstrip(prelude); count = 1)
 end
 
 """

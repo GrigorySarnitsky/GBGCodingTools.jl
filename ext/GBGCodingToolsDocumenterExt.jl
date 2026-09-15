@@ -31,7 +31,7 @@ ends with. Both of `makedocs`' gates go through here, so they share the one exce
 """
 function gate_or_skip(cfg, what::AbstractString)
     buf = IOBuffer()                                   # held back: a frozen build prints the skip, not a refusal
-    code = GBGCodingTools.gate(cfg, "check-docs", "check-consistency"; io = buf)
+    code = GBGCodingTools.gate(cfg, GBGCodingTools.Sync.DOCS_INSTRUMENTS...; io = buf)
     frozen = GBGCodingTools.docs_build_skipped(cfg, code)
     if !isempty(frozen)
         println("makedocs: SKIPPED — ", join(frozen, ", "), " open; the instruments are frozen mid-round. ", what,

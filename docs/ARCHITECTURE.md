@@ -397,8 +397,10 @@ docs" in prose hand-rolls the battery (`round2-consumer.md:15-21`, F1).
 ### D7 — Workflow scripts: one generic engine per instrument, args-driven, catalogues as data, liveness only
 
 **Choice.** `instruments/<name>/workflow/*.js` live in the tool only. They are invoked through a
-COPY that `gbg preflight` (and `pass open`) writes into the project, `.gbg/scratch/<round>/workflow/`
-(gitignored), and names as `scriptPath`; the pinned copy under `~/.julia/packages/` is never named
+COPY that `gbg preflight` writes into the project when the round opens, `.gbg/scratch/<round>/workflow/`
+(gitignored), and names as `scriptPath` — frozen for the round, except that `gbg round scripts
+--reason` replaces the copies that differ from the running copy's when the round's own scripts cannot
+run, and records each replacement in `ROUND.toml`; the pinned copy under `~/.julia/packages/` is never named
 directly. V1 (2026-09-09, `Aiporetne`, §11) is why: the Workflow tool accepts an outside-project
 `scriptPath` only for a file the session may already read — a session scratchpad, or a file it has
 `Read` — and refuses a fresh absolute path elsewhere ("scriptPath must be a script path this tool
@@ -1531,7 +1533,8 @@ at the tool root, which must work when the dev checkout IS the consumer.
    classified DEAD; a live lane whose sha changed since first sight is REJECTED.
 6. **Fix pass** — on the owner's word, at session strength, driven from `findings.md` by finding id,
    never from `SUMMARY.md`. A build or test run during the pass is `gbg round build <round>` /
-   `gbg round test <round>`, which export `GBG_ROUND` around `docs_build` / `julia_test`; a bare
+   `gbg round test <round>`, which export `GBG_ROUND` around `docs_build` / `julia_test` (the build's
+   verdict is recorded in `ROUND.toml`, which `close` reads); a bare
    `julia --project=docs docs/make.jl` under an open round is refused by the gate, by design.
 7. **Verify.** `gbg round pass open <round>` refuses a changed `config_sha` unless `--regrade`, and
    refuses outright — `--sweep-ok` overrides — while an open finding names a file the fix pass did not
@@ -1568,7 +1571,10 @@ at the tool root, which must work when the dev checkout IS the consumer.
    re-graded (else a refusal line and **exit 1** — `close` reports it as one condition among the rest,
    where every other round verb exits 2 → `pass open --regrade`), `tool_tree_sha` unchanged under the same
    `tool_version` (else "tag moved" → abandon-only), `ROUND.toml.head` an ancestor of `HEAD`
-   (`git merge-base --is-ancestor`; else `pass open --regrade`), the round's existing files committed;
+   (`git merge-base --is-ancestor`; else `pass open --regrade`), the round's existing files committed,
+   and — for both documentation instruments — a docs build recorded in `ROUND.toml.build` that exited 0
+   at a head still reachable and with no covered path changed since (`prepare`, `pass open` and
+   `gbg round build` record the builds they run; an unreachable head is UNCHECKABLE and refuses);
    runs `dismissals.js` over every `scope = "finding"` ledger entry recorded after `opened` and
    requires `reopened == []` — for EVERY instrument, not the hunt alone; snapshots the adjudicated ids
    used into `ROUND.toml.closed_by`; writes `closed`, `closed_head`, the tally sha (its own writes are
@@ -1750,7 +1756,8 @@ serious concern and every `previously_worked ∈ {yes, unknown}` concern carries
 `fixed|refused|escalated` (refusal ≥ 24 chars); no dead lane; an empty audit's `verdict_all_clean`
 requires `checked[]` on every lane AND the recorded executable-claim exit codes all zero; staleness
 `git diff <audited>..HEAD -- <covered>` with UNCHECKABLE ≠ clean; `AUDIT.GAP` (doctor, WARN) when
-`base` ≠ the previous closed audit's `closed_head` (its `head` where the earlier round records none). `attack-design.js` (four attackers, generic `subject`) is
+`base` is neither the previous closed audit's `closed_head` (its `head` where the earlier round records
+none) nor an ancestor of it — an overlap re-reads commits, a base past that head leaves some unread. `attack-design.js` (four attackers, generic `subject`) is
 the instrument every lens list must survive; `gbg attack <instrument>` launches it (D17).
 
 **An audit round is disposed, never corrected inside.** The staleness rule and the frozen bank say so
@@ -1899,7 +1906,7 @@ implementation plan refers to it and adds no id of its own.
 | `ROUND.ABANDONED` | lists abandoned rounds with their carried `open_ids` (WARN) | — |
 | `ROUND.DEV` | lists closed `/check-docs` and `/check-consistency` rounds stamped `dev+` or `dev` — recorded, not comparable, and citable by no release (WARN; the refusal is at `preflight`, where the round can still not be opened, and in `gbg release`, on the round it cites). An audit or hunt round reads `base..HEAD` and is off-tag by construction, so it is never named | — |
 | `ROUND.FROZEN` | every closed round's stored tally sha matches `ROUND.toml`; every closed round's `findings.json` sha matches `findings_sha`; `reproductions_sha` where present; and every stamp names its own revision — `dev+<sha>` begins `tool_rev`, a pinned `vX.Y.Z` equals it, a tag stamp resolves to it where the tool repository is in reach (the shas cover the evidence, not the stamps, so a re-stamped record passed unseen) | tampered |
-| `AUDIT.GAP` | every closed audit round's `base` equals the previous closed audit's `closed_head` (falling back to `head` where the earlier round records none) — the head the audit CLOSED at, not the head it opened at, so a round with fix passes between the two is compared against what it actually left behind | otherwise (WARN) |
+| `AUDIT.GAP` | every closed audit round's `base` is the previous closed audit's `closed_head` (falling back to `head` where the earlier round records none) or an ancestor of it — the head the audit CLOSED at, not the head it opened at, so a round with fix passes between the two is compared against what it actually left behind; an overlapping audit re-reads commits and leaves none unread | otherwise, or unreachable (WARN) |
 | `LOAD.ENVS` (`--deep`) | `using GBGCodingTools` loads in every sub-env that lists it (resolve/instantiate/LOAD are not interchangeable; `Pkg.gc()` can remove a copy referenced only by a test sandbox — instantiate restores it) | error |
 | `BUILD.DOCS` (`--deep`) | `docs_build` exits 0 and the build log carries the `GBGCodingTools v<ver> makedocs` banner | otherwise |
 | `SELF.DOCS` (`--deep`) | at the tool root only (not applicable in a consumer): the tool's own docs build — `julia --project=docs docs/make.jl` in the dev checkout — exits 0, its log carries the `GBGCodingTools v<ver> makedocs` banner, and its docs environment resolved `GBGCodingTools` by path (`Pkg.dependencies()[uuid].is_tracking_path` — the working tree, D2's bootstrap circularity made checkable); what `gbg release` and the fleet's fifth row run; a release precondition, never a selftest arm (§8); non-exemptable | otherwise |

@@ -24,7 +24,7 @@ module Doctor
 using TOML, Dates, JSON3, Pkg
 using ..GBGCodingTools: GBGCodingTools, PKG_NAME, PKG_UUID, JULIA_FLOOR, Config, Ledger, Sync, RoundFiles, Git, Witnesses, Reflection,
       load_schema, instrument_schema, validate, parse_options, VERBS, tool_version, running_dev, tool_sub_envs, manifest_tree_sha, self_verify,
-      scan_catalog, run_scan, SCANS, prose_lines, surface_kind
+      scan_catalog, run_scan, SCANS, prose_lines, surface_kind, rules_register, unreachable_waiver_scans
 
 """
     Check
@@ -331,7 +331,7 @@ check!("CFG.TERRITORIES", ctx -> begin
     isempty(miss) ? pass("CFG.TERRITORIES", "$(length(src)) src file(s), every one in a territory") :
         warn("CFG.TERRITORIES", "$(length(miss)) src file(s) in NO territory — no hunter reads them: " * join(miss, ", "))
 end)
-known_rule_ids() = Set(r["id"] for r in TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "policy", "RULES.toml"))["rule"])
+known_rule_ids() = Set(r["id"] for r in rules_register())
 check!("CFG.EXEMPTIONS", ctx -> begin
     isempty(ctx.ledger_error) || return fail("CFG.EXEMPTIONS", ctx.ledger_error)
     errs = String[]; rules = known_rule_ids(); scans = Set(r["id"] for r in scan_catalog()); checks = Set(first.(CHECKS))
@@ -340,6 +340,10 @@ check!("CFG.EXEMPTIONS", ctx -> begin
         known = startswith(id, "RULE.") ? id in rules : startswith(id, "SCAN.") ? (id in scans || startswith(id, "SCAN.CUSTOM.")) :
                 occursin('/', id) && occursin('#', id) ? true : id in checks || e["scope"] == "harness"
         known || push!(errs, "$tag: unknown id")
+        if e["scope"] == "policy" && startswith(id, "RULE.")
+            far = unreachable_waiver_scans(id)
+            isempty(far) || push!(errs, "$tag: a policy waiver of a rule $(join(far, ", ")) enforces without owning it — the scan refuses it; waive the scan with scope = \"scan\"")
+        end
         length(e["reason"]) >= 40 || push!(errs, "$tag: reason shorter than 40 characters")
         if e["scope"] == "finding"
             haskey(e, "overturn_when") || push!(errs, "$tag: finding scope needs overturn_when")
@@ -501,7 +505,7 @@ function claude_sentences(ctx)
     return [normalize_ws(s) for s in split(text, r"(?<=[.!?])\s+") if !isempty(strip(s))]
 end
 check!("LEG.SENTINELS", ctx -> begin
-    rules = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "policy", "RULES.toml"))["rule"]
+    rules = rules_register()
     sentences = claude_sentences(ctx)
     isempty(sentences) && return pass("LEG.SENTINELS", "no CLAUDE.md prose outside the block")
     exact = String[]; runs = String[]
@@ -632,8 +636,14 @@ end)
 check!("AUDIT.GAP", ctx -> begin
     audits = sort!([r for r in RoundFiles.rounds(ctx.cfg) if r.state == :closed && r.round["instrument"] == "audit-changes"]; by = r -> r.round["opened"])
     gaps = String[]
+    # contiguous when the later audit's base is the earlier one's closed head OR AN ANCESTOR of it: an audit
+    # that re-reads commits the previous one already read overlaps, and leaves nothing unread; only a base
+    # PAST that head (or unrelated to it, or unreachable) leaves commits no audit read
     for i in 2:length(audits)
-        get(audits[i].round, "base", "") == get(audits[i-1].round, "closed_head", audits[i-1].round["head"]) || push!(gaps, "$(audits[i].name) base ≠ $(audits[i-1].name) head")
+        prev = String(get(audits[i-1].round, "closed_head", audits[i-1].round["head"]))
+        base = String(get(audits[i].round, "base", ""))
+        (!isempty(base) && Git.is_ancestor(ctx.root, base, prev)) ||
+            push!(gaps, "$(audits[i].name) base $(first(base, 8)) is not $(audits[i-1].name)'s closed head $(first(prev, 8)) or an ancestor of it — the commits between were never audited")
     end
     # a gap between two audits is a WARN; NO audit at all is not contiguity, it is a repository whose
     # changes have never been audited, and the check said `pass` for it (found by the self-application sweep)

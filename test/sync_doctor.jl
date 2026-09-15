@@ -144,3 +144,48 @@ end
     write(led, keep)
     @test torn().status == :PASS                                                 # restored: torn no more
 end
+
+# a policy waiver of the second rule of a two-rule scan is refused by the scan; the doctor names it first,
+# before a build meets the error (2026-09-12-audit-changes-02), and a waiver of the canonical rule passes
+@testset "CFG.EXEMPTIONS names a policy waiver the scan cannot honour" begin
+    root = fixture_copy("unreachable-waiver")
+    led = joinpath(root, ".gbg", "exemptions.toml")
+    entry(rule) = "\n[[exemption]]\nid = \"$rule\"\nscope = \"policy\"\ntarget = \"*\"\n" *
+                  "reason = \"a deviation recorded for the test of the doctor's waiver check\"\n" *
+                  "recorded = 2026-01-01\nexpires = 2026-12-31\n"
+    exemptions() = Dict(c.id => c for c in first(G.Doctor.run(G.Config.read(root); only = ["CFG.EXEMPTIONS"], io = devnull)))["CFG.EXEMPTIONS"]
+    keep = read(led, String)
+    write(led, keep * entry("RULE.CIT.FULL_INLINE"))
+    @test exemptions().status == :PASS
+    write(led, keep * entry("RULE.CIT.DOI"))
+    c = exemptions()
+    @test c.status == :FAIL && occursin("RULE.CIT.DOI", c.detail) && occursin("SCAN.DOI_CROSSCHECK", c.detail)
+end
+
+# AUDIT.GAP asks whether commits went unaudited between two closed audits: a later base AT or BEFORE the
+# earlier audit's closed head leaves none (an overlap re-reads some), a base PAST it leaves some. It
+# compared for equality, and warned on an overlap that left nothing unread.
+@testset "AUDIT.GAP warns on a base past the previous audit, never on an overlap" begin
+    root = fixture_copy("audit-gap")
+    git(args...) = run(pipeline(setenv(`git -C $root -c user.email=t@t -c user.name=t $args`,
+                                       "HOME" => root, "PATH" => ENV["PATH"]); stdout = devnull, stderr = devnull))
+    git("init", "-q", "-b", "master"); git("add", "-A"); git("commit", "-q", "-m", "c0")
+    shas = [G.Git.head(root)]
+    for n in 1:3
+        write(joinpath(root, "note$n.txt"), "$n\n"); git("add", "-A"); git("commit", "-q", "-m", "c$n"); push!(shas, G.Git.head(root))
+    end
+    cfg = G.Config.read(root)
+    audit(name, base, closed, opened) = begin
+        d = joinpath(root, ".gbg", "rounds", name); mkpath(d)
+        write_round(d, merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => name, "instrument" => "audit-changes",
+            "schema_version" => 1, "head" => closed, "base" => base, "closed_head" => closed, "roster" => Any[],
+            "cost" => "economy", "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet",
+            "opened" => opened, "dead_lanes" => String[], "passes" => 0, "closed" => opened)))
+    end
+    gap() = Dict(c.id => c for c in first(G.Doctor.run(G.Config.read(root); only = ["AUDIT.GAP"], io = devnull)))["AUDIT.GAP"]
+    audit("2026-01-01-audit-changes-01", shas[1], shas[3], "2026-01-01T00:00:00")     # audited c0..c2
+    for (b, want) in ((shas[2], :PASS), (shas[3], :PASS), (shas[4], :WARN))            # overlap, contiguous, past it
+        audit("2026-01-02-audit-changes-01", b, shas[4], "2026-01-02T00:00:00")
+        @test gap().status == want
+    end
+end

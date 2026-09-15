@@ -242,6 +242,17 @@ end
     # a lane with a surface has a checklist; the cross lanes, which have no files, have none
     @test !isempty(G.Preflight.claim_checklist(tcfg, ["docs/ARCHITECTURE.md"]))
     @test isempty(G.Preflight.claim_checklist(tcfg, String[]))
+    # what each class admits, both directions (2026-09-12-audit-changes-02: the exit alternative took the
+    # `1` of a version string, and a quantifier anywhere on a line naming any verb was a claim)
+    P = G.Preflight
+    @test occursin(P.CLAIM_EXIT, "the exit contract: 0 clean, 1 finding, 2 cannot evaluate")
+    @test !occursin(P.CLAIM_EXIT, "the exit contract of v1.0.0 is unchanged")
+    @test occursin(P.CLAIM_EXIT, "it exits 2.") && !occursin(P.CLAIM_EXIT, "it exits 2.5 times")
+    qu(s) = any(c -> occursin(P.CLAIM_QUANTIFIER, c) && occursin(P.CLAIM_TOOL_ID, c), split(s, P.CLAIM_CLAUSE))
+    @test qu("`gbg round close` refuses every open id")
+    @test qu("RULE.INST.CARRY never lets a blocker ride")
+    @test !qu("Run `gbg round close`. Every lane then reads the diff")          # a different clause
+    @test !qu("`gbg round close` refuses any open id")                         # `any` is ordinary prose
 
     # ONE home for the expansion, and the hunt uses it too: `src/Scans/*.jl` reached the agent as the
     # literal pattern until 2026-09-12, so a territory of forty-five files was one string in its prompt.
@@ -788,20 +799,47 @@ end
 # Documenter. A red build is recorded as red: it is not forgotten, and close refuses on it.
 @testset "round build records its verdict for close to read" begin
     root = fixture_copy("buildrec")
+    git(args...) = run(pipeline(setenv(`git -C $root -c user.email=t@t -c user.name=t $args`,
+                                       "HOME" => root, "PATH" => ENV["PATH"]); stdout = devnull, stderr = devnull))
+    git("init", "-q", "-b", "master")
     cfg = G.Config.read(root)
     name = "2026-01-01-check-docs-01"
     dir = joinpath(root, ".gbg", "rounds", name); mkpath(joinpath(dir, "findings"))
-    write_round(dir, merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => name, "instrument" => "check-docs",
-        "schema_version" => 1, "head" => something(G.Git.head(root), "0"^40), "roster" => Any[], "cost" => "economy",
+    base = merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => name, "instrument" => "check-docs",
+        "schema_version" => 1, "head" => "0"^40, "roster" => Any[], "cost" => "economy",
         "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00",
-        "dead_lanes" => String[], "passes" => 0)))
+        "dead_lanes" => String[], "passes" => 0))
+    write_round(dir, base)
     cfg["package"]["docs_build"] = "true"
+    # a repository with no commit: no HEAD to name, so the build is refused rather than recorded against a placeholder
+    @test G.Rounds.build(cfg, name; io = devnull) == 2 && !haskey(G.RoundFiles.read_round(dir), "build")
+    git("add", "-A"); git("commit", "-q", "-m", "base")
+    rec() = G.RoundFiles.read_round(dir)
+    @test G.Passes.build_fails(cfg, rec(), name) == ["no docs build is recorded for this round — gbg round build $name"]
     @test G.Rounds.build(cfg, name; io = devnull) == 0
-    b = G.RoundFiles.read_round(dir)["build"]
-    @test b["code"] == 0 && !isempty(b["head"]) && haskey(b, "at")
+    b = rec()["build"]
+    @test b["code"] == 0 && b["head"] == G.Git.head(root) && haskey(b, "at")
+    @test isempty(G.Passes.build_fails(cfg, rec(), name))                                  # green and current
     cfg["package"]["docs_build"] = "exit 1"
     @test G.Rounds.build(cfg, name; io = devnull) == 1
-    @test G.RoundFiles.read_round(dir)["build"]["code"] == 1            # red is RECORDED, never forgotten
+    @test rec()["build"]["code"] == 1                                    # red is RECORDED, never forgotten
+    @test occursin("exited 1", only(G.Passes.build_fails(cfg, rec(), name)))
+    cfg["package"]["docs_build"] = "true"
+    @test G.Rounds.build(cfg, name; io = devnull) == 0
+    git("add", "-A"); git("commit", "-q", "-m", "the round's record")
+    src = joinpath(root, "src", "FixtureA.jl"); write(src, read(src, String) * "\n")
+    git("add", "-A"); git("commit", "-q", "-m", "a fix after the build")
+    @test occursin("stale", only(G.Passes.build_fails(cfg, rec(), name)))             # a change under a covered path
+    gone = merge(rec(), Dict{String,Any}("build" => Dict{String,Any}("code" => 0, "head" => "f"^40, "at" => "x")))
+    @test occursin("UNCHECKABLE", only(G.Passes.build_fails(cfg, gone, name)))        # unreachable is never current
+    @test isempty(G.Passes.build_fails(cfg, merge(rec(), Dict{String,Any}("instrument" => "bug-hunt")), name))
+    # a record an earlier tool wrote that the schema now refuses: refused as "cannot evaluate" before
+    # anything is built, the record untouched — not a crash, and not a build that silently goes unrecorded
+    keep = read(joinpath(dir, "ROUND.toml"), String)
+    write(joinpath(dir, "ROUND.toml"), keep * "a_key_no_schema_knows = 1\n")
+    cfg["package"]["docs_build"] = "touch built-anyway"
+    @test_throws G.Rounds.RoundError G.Rounds.build(cfg, name; io = devnull)
+    @test !isfile(joinpath(root, "built-anyway")) && endswith(read(joinpath(dir, "ROUND.toml"), String), "a_key_no_schema_knows = 1\n")
 end
 
 # A round's scripts are frozen at preflight, so a script defect the round ITSELF finds cannot be repaired
@@ -818,12 +856,24 @@ end
         "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00",
         "dead_lanes" => String[], "passes" => 0)))
     @test !haskey(G.RoundFiles.read_round(dir), "scripts_refreshed")     # nothing recorded before one runs
-    @test G.Rounds.refresh_scripts(cfg, name; io = devnull) == 0
-    @test isfile(joinpath(G.Preflight.workflow_dir(cfg, name), "lanes.js"))
+    why = "the round's own verifier is unparseable in its frozen copy"
+    @test G.Rounds.refresh_scripts(cfg, name, "because"; io = devnull) == 2     # a reason is required
+    @test !isfile(joinpath(G.Preflight.workflow_dir(cfg, name), "lanes.js"))
+    @test G.Rounds.refresh_scripts(cfg, name, why; io = devnull) == 0
+    lanes = joinpath(G.Preflight.workflow_dir(cfg, name), "lanes.js")
+    @test isfile(lanes)
     r = G.RoundFiles.read_round(dir)
-    @test length(r["scripts_refreshed"]) == 1 && haskey(r["scripts_refreshed"][1], "at")
-    @test G.Rounds.refresh_scripts(cfg, name; io = devnull) == 0
-    @test length(G.RoundFiles.read_round(dir)["scripts_refreshed"]) == 2  # APPENDED, never overwritten
+    e = only(r["scripts_refreshed"])
+    @test e["reason"] == why && e["after_pass"] == 0 && any(m -> m["name"] == "lanes.js" && m["from"] == "absent", e["scripts"])
+    # nothing differs now: a no-op, and nothing recorded
+    @test G.Rounds.refresh_scripts(cfg, name, why; io = devnull) == 0
+    @test length(G.RoundFiles.read_round(dir)["scripts_refreshed"]) == 1
+    # one frozen copy broken: only THAT script is replaced, and the refresh is APPENDED, never overwritten
+    write(lanes, "syntax error (")
+    @test G.Rounds.refresh_scripts(cfg, name, why; io = devnull) == 0
+    r2 = G.RoundFiles.read_round(dir)["scripts_refreshed"]
+    @test length(r2) == 2 && [m["name"] for m in r2[2]["scripts"]] == ["lanes.js"]
+    @test read(lanes, String) == G.Preflight.render_script(joinpath(TOOL, "instruments", "check-docs", "workflow", "lanes.js"))
 end
 
 # `gbg release` had NO test at all, and that is how a branch which could never succeed survived nine
@@ -835,6 +885,10 @@ end
 @testset "gbg release refuses, and says which condition failed" begin
     @test G.release("not-a-version"; io = devnull, skip_tests = true) == 2   # before any root is read
     root = fixture_copy("release")
+    # the dev-checkout guard reads the ROOT being tagged, not the running copy: a root that is no git
+    # working tree is refused even though the tool running the test is one (2026-09-12-audit-changes-02)
+    ion = IOBuffer(); @test G.release("9.9.9"; io = ion, skip_tests = true, root) == 2
+    @test occursin("not a git working tree", String(take!(ion)))
     git(args...) = run(pipeline(setenv(`git -C $root -c user.email=t@t -c user.name=t $args`,
                                        "HOME" => root, "PATH" => ENV["PATH"]); stdout = devnull, stderr = devnull))
     git("init", "-q", "-b", "master"); git("add", "-A"); git("commit", "-q", "-m", "base")

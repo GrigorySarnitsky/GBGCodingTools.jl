@@ -31,9 +31,8 @@
 # consumer whose docstrings simply do not name the tool's registers.
 
 register_scan!("SCAN.ID_RESOLVES", function (cfg, files)
-    tool = pkgdir(GBGCodingTools)
     known = Set{String}()
-    for r in TOML.parsefile(joinpath(tool, "policy", "RULES.toml"))["rule"]; push!(known, String(r["id"])); end
+    for r in rules_register(); push!(known, String(r["id"])); end
     for r in scan_catalog(); push!(known, String(r["id"])); end
     for (id, _) in Doctor.CHECKS; push!(known, String(id)); end
     push!(known, "SCAN.CUSTOM")                                     # the declared consumer namespace, and

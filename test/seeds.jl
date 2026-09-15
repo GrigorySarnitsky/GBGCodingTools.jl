@@ -95,3 +95,28 @@ end
         @test v["verdict"] == "ADJACENT" && !d
     end
 end
+
+# A class whose anchor rotted out of the corpus is not planted. The round is NOT refused for it — it still
+# measures the classes that plant — but the skip is recorded in ROUND.toml and named, never silent
+# (2026-09-12-audit-changes-02, where a refusal had replaced the silence with no measurement at all).
+@testset "a seed class that cannot plant is recorded, not refused" begin
+    root = fixture_copy("seed-skip")
+    cfg = G.Config.read(root)
+    name = "2026-01-01-check-docs-01"
+    dir = joinpath(root, ".gbg", "rounds", name); mkpath(dir)
+    rec = merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => name, "instrument" => "check-docs",
+        "schema_version" => 1, "head" => "0"^40, "roster" => Any[], "cost" => "economy", "strength" => "economy",
+        "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00", "dead_lanes" => String[],
+        "passes" => 0, "seed_salt" => name))
+    write_round(dir, rec)
+    cat = G.Seeds.read_catalog(joinpath(TOOL, ".gbg", "seeds.toml"))
+    m = G.Seeds.file_manuscript(root, ["docs/src/notation.md"])
+    plan, skipped = G.Seeds.select(cat, m, name)
+    @test !isempty(skipped)                                  # the fixture page carries few of the tool's anchors
+    out = IOBuffer()
+    G.Rounds.note_seed_skips!(dir, rec, skipped, ".gbg/seeds.toml"; io = out)
+    @test occursin("NOT planted", String(take!(out)))
+    @test G.RoundFiles.read_round(dir)["seed_skipped"] == sort(skipped)       # recorded, and schema-valid
+    G.Rounds.note_seed_skips!(dir, rec, String[], ".gbg/seeds.toml"; io = devnull)
+    @test !haskey(G.RoundFiles.read_round(dir), "seed_skipped")               # re-anchored: the record clears
+end
