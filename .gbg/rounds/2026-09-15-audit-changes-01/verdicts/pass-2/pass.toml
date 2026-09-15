@@ -1,0 +1,17 @@
+tool_version = "dev+ef4a0a2-dirty"
+head = "ef4a0a2b8bb37d0b7c7d4197af123bc41512532a"
+fix_range = "54cd7f2fca64a44894df4194b6e067782cc3972b..ef4a0a2b8bb37d0b7c7d4197af123bc41512532a"
+scope = []
+tool_tree_sha = "599163a30fb6f3b43156cca5c79c15aa6fa1296f"
+state_ids = []
+config_sha = "e0b71456c67447f7354485829d858e9c16003ae1e6e77a88bb2d82d5ada3add8"
+tool_rev = "ef4a0a2b8bb37d0b7c7d4197af123bc41512532a"
+range = "54cd7f2fca64a44894df4194b6e067782cc3972b..ef4a0a2b8bb37d0b7c7d4197af123bc41512532a"
+counted = false
+rechecked = []
+regrade = true
+pass = 2
+nonce = "a559d515fa09a68e6f415b5fedb73c23"
+opened = "2026-09-15T12:56:52"
+
+[expected]

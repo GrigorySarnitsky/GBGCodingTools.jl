@@ -1,17 +1,18 @@
+tool_tree_sha = "be29e67c351870d85dbb5ce6df6e270543b10ef7"
+state_ids = ["2026-09-15-audit-changes-01/free-reader#1", "2026-09-15-audit-changes-01/free-reader#2", "2026-09-15-audit-changes-01/free-reader#3", "2026-09-15-audit-changes-01/executing#1", "2026-09-15-audit-changes-01/executing#2", "2026-09-15-audit-changes-01/executing#3", "2026-09-15-audit-changes-01/executing#4", "2026-09-15-audit-changes-01/executing#5", "2026-09-15-audit-changes-01/under-rejection#1", "2026-09-15-audit-changes-01/under-rejection#2", "2026-09-15-audit-changes-01/under-rejection#3", "2026-09-15-audit-changes-01/under-rejection#4", "2026-09-15-audit-changes-01/under-rejection#5", "2026-09-15-audit-changes-01/under-rejection#6", "2026-09-15-audit-changes-01/under-rejection#7", "2026-09-15-audit-changes-01/behaviour-change#1", "2026-09-15-audit-changes-01/behaviour-change#2", "2026-09-15-audit-changes-01/behaviour-change#3", "2026-09-15-audit-changes-01/behaviour-change#4", "2026-09-15-audit-changes-01/behaviour-change#5", "2026-09-15-audit-changes-01/behaviour-change#6", "2026-09-15-audit-changes-01/over-rejection#1", "2026-09-15-audit-changes-01/over-rejection#2", "2026-09-15-audit-changes-01/over-rejection#3", "2026-09-15-audit-changes-01/over-rejection#4", "2026-09-15-audit-changes-01/over-rejection#5", "2026-09-15-audit-changes-01/public-contract#1", "2026-09-15-audit-changes-01/public-contract#2", "2026-09-15-audit-changes-01/numerics#1", "2026-09-15-audit-changes-01/numerics#2", "2026-09-15-audit-changes-01/invariants#1", "2026-09-15-audit-changes-01/contract-drift#1", "2026-09-15-audit-changes-01/contract-drift#2", "2026-09-15-audit-changes-01/contract-drift#3", "2026-09-15-audit-changes-01/contract-drift#4", "2026-09-15-audit-changes-01/contract-drift#5", "2026-09-15-audit-changes-01/contract-drift#6", "2026-09-15-audit-changes-01/sweep-completeness#1", "2026-09-15-audit-changes-01/sweep-completeness#2", "2026-09-15-audit-changes-01/sweep-completeness#3", "2026-09-15-audit-changes-01/sweep-completeness#4", "2026-09-15-audit-changes-01/reader-consequence#1"]
+range = "54cd7f2fca64a44894df4194b6e067782cc3972b..54cd7f2fca64a44894df4194b6e067782cc3972b"
+counted = true
+superseded_by = 2
+pass = 1
+opened = "2026-09-15T12:53:18"
 tool_version = "dev+54cd7f2-dirty"
 head = "54cd7f2fca64a44894df4194b6e067782cc3972b"
 fix_range = "54cd7f2fca64a44894df4194b6e067782cc3972b..54cd7f2fca64a44894df4194b6e067782cc3972b"
-tool_tree_sha = "be29e67c351870d85dbb5ce6df6e270543b10ef7"
-state_ids = ["2026-09-15-audit-changes-01/free-reader#1", "2026-09-15-audit-changes-01/free-reader#2", "2026-09-15-audit-changes-01/free-reader#3", "2026-09-15-audit-changes-01/executing#1", "2026-09-15-audit-changes-01/executing#2", "2026-09-15-audit-changes-01/executing#3", "2026-09-15-audit-changes-01/executing#4", "2026-09-15-audit-changes-01/executing#5", "2026-09-15-audit-changes-01/under-rejection#1", "2026-09-15-audit-changes-01/under-rejection#2", "2026-09-15-audit-changes-01/under-rejection#3", "2026-09-15-audit-changes-01/under-rejection#4", "2026-09-15-audit-changes-01/under-rejection#5", "2026-09-15-audit-changes-01/under-rejection#6", "2026-09-15-audit-changes-01/under-rejection#7", "2026-09-15-audit-changes-01/behaviour-change#1", "2026-09-15-audit-changes-01/behaviour-change#2", "2026-09-15-audit-changes-01/behaviour-change#3", "2026-09-15-audit-changes-01/behaviour-change#4", "2026-09-15-audit-changes-01/behaviour-change#5", "2026-09-15-audit-changes-01/behaviour-change#6", "2026-09-15-audit-changes-01/over-rejection#1", "2026-09-15-audit-changes-01/over-rejection#2", "2026-09-15-audit-changes-01/over-rejection#3", "2026-09-15-audit-changes-01/over-rejection#4", "2026-09-15-audit-changes-01/over-rejection#5", "2026-09-15-audit-changes-01/public-contract#1", "2026-09-15-audit-changes-01/public-contract#2", "2026-09-15-audit-changes-01/numerics#1", "2026-09-15-audit-changes-01/numerics#2", "2026-09-15-audit-changes-01/invariants#1", "2026-09-15-audit-changes-01/contract-drift#1", "2026-09-15-audit-changes-01/contract-drift#2", "2026-09-15-audit-changes-01/contract-drift#3", "2026-09-15-audit-changes-01/contract-drift#4", "2026-09-15-audit-changes-01/contract-drift#5", "2026-09-15-audit-changes-01/contract-drift#6", "2026-09-15-audit-changes-01/sweep-completeness#1", "2026-09-15-audit-changes-01/sweep-completeness#2", "2026-09-15-audit-changes-01/sweep-completeness#3", "2026-09-15-audit-changes-01/sweep-completeness#4", "2026-09-15-audit-changes-01/reader-consequence#1"]
 config_sha = "e0b71456c67447f7354485829d858e9c16003ae1e6e77a88bb2d82d5ada3add8"
 tool_rev = "54cd7f2fca64a44894df4194b6e067782cc3972b"
-range = "54cd7f2fca64a44894df4194b6e067782cc3972b..54cd7f2fca64a44894df4194b6e067782cc3972b"
-counted = true
 rechecked = []
 regrade = false
-pass = 1
 nonce = "c32ef4b2b0c538b3678a36e5ddf7bf0c"
-opened = "2026-09-15T12:53:18"
 
 [expected]
 reader-consequence = 1
