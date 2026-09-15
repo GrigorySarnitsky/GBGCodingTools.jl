@@ -1,6 +1,6 @@
 unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § D1 — Unit of distribution: one repository, one version, two ",247,111,0
-"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze",613,442,0
+"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze",634,463,0
 "ARCHITECTURE.md § D11 — Schemas: one JSON Schema per artefact kind in `schema/",155,93,0
 "ARCHITECTURE.md § D12 — Policy prose: single source `policy/*.md` with rule id",340,162,0
 "ARCHITECTURE.md § D13 — Managed files: one sidecar `.gbg/managed.json` as a ca",533,474,0
@@ -203,6 +203,7 @@ unit,words,longest_paragraph,admonitions
 "Preflight.jl :: economy_model() -> String",21,18,0
 "Preflight.jl :: expand_globs(root, files) -> Vector{String}",117,84,0
 "Preflight.jl :: install_script(src, dst) -> String",93,89,0
+"Preflight.jl :: lanes_call(cfg, round) -> String",66,62,0
 "Preflight.jl :: next_round_id(cfg, instrument) -> String",21,17,0
 "Preflight.jl :: preflight(cfg, instrument; profile = nothing, hats = String[",219,112,0
 "Preflight.jl :: rationale_slices(cfg, file, n) -> Vector{Tuple{Int,Int,Strin",125,82,0
@@ -276,6 +277,7 @@ unit,words,longest_paragraph,admonitions
 "Rounds.jl :: rerun(cfg, round, lanes; io = stdout) -> Int",98,40,0
 "Rounds.jl :: run_under_round(cfg, round, cmdline; log) -> Int",60,29,0
 "Rounds.jl :: seed_docs_corpus!(cfg, round, dir, rec; io = stdout) -> Int",191,84,0
+"Rounds.jl :: seeded_corpus_check(rec, lane, status, data, note) -> (statu",147,97,0
 "Rounds.jl :: test(cfg, round; io = stdout) -> Int",54,24,0
 "Scan.jl :: AI_BANNER",28,27,0
 "Scan.jl :: Hit(file, line, text; symbol = '')",83,59,0
