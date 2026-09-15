@@ -562,7 +562,7 @@ function new(pkgname::AbstractString; parent::AbstractString = pwd(), io::IO = s
     isfile(joinpath(root, "Project.toml")) || (println(io, "new: $root has no Project.toml — create the package first (Pkg.generate)"); return 2)
     code = init(root; io)
     code == 0 || return code
-    cfg = Config.read(root; check = false)
+    cfg = Config.read_written(root; check = false)    # init just wrote it: failing to read back is our crash
     s = Sync.slots(cfg)
     for (path, tmpl) in (("CLAUDE.md", "CLAUDE.md.skeleton"),)
         p = joinpath(root, path)

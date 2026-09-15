@@ -24,6 +24,24 @@ include("helpers.jl")
         @test G.main(["attack", "read"]) == 2
         @test G.main(["calibrate", "extra"]) == 2
         @test G.main(["calibrate", "read"]) == 2
+        # The ConfigError arm, both directions. A consumer's bad config is exit 2 for ANY verb — the arm
+        # had no test at all, and before it only three verbs caught the class. A config the verb itself
+        # has just written failing to read back is the tool's crash, exit 3, which the arm used to swallow.
+        cp_ = joinpath(root, ".gbg", "config.toml"); good = read(cp_, String)
+        write(cp_, good * "\n[no_such_section]\nx = 1\n")
+        redirect_stderr(devnull) do
+            @test G.main(["round", "list"]) == 2                           # the consumer's mistake: cannot evaluate
+            G.VERBS["__reads_what_it_wrote"] = args -> (G.Config.read_written(root); 0)
+            try
+                @test G.main(["__reads_what_it_wrote"]) == 3               # the tool's own write: a crash
+            finally
+                delete!(G.VERBS, "__reads_what_it_wrote")
+            end
+        end
+        @test_throws G.Config.ConfigWrittenError G.Config.read_written(root)
+        @test !(G.Config.ConfigWrittenError <: G.Config.ConfigError)       # a subtype would be caught as exit 2
+        write(cp_, good)
+        @test G.main(["round", "list"]) == 0
     end
     @test Set(keys(G.VERBS)) == Set(k for k in keys(G.VERBS))          # the table is a table, not a closure
     @test length(G.VERBS) >= 20

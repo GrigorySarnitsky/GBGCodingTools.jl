@@ -120,9 +120,14 @@ The one entry point of the command line: the shim execs `julia -e 'using GBGCodi
 exit(GBGCodingTools.main(ARGS))'`, and every test of a verb calls it directly. Dispatches `<noun> <verb>`
 (or a lone noun) through [`VERBS`](@ref) and returns that function's exit code: 0 clean, 1 substantive
 finding, 2 cannot evaluate, 3 crash. A `--dev` first argument sets `GBG_DEV=1` so the stamps read
-`dev+<sha>`, exactly as the shim's `--dev` route does. An exception escaping a verb is printed with its
-backtrace to `stderr` and returns 3, so a crash is never read as a finding; an unknown verb prints the
-table and returns 2. Output is never truncated.
+`dev+<sha>`, exactly as the shim's `--dev` route does. An unknown verb prints the table and returns 2.
+Output is never truncated.
+
+An exception escaping a verb is printed with its backtrace to `stderr` and returns 3, so a crash is
+never read as a finding. The one exception is a [`Config.ConfigError`](@ref), the consumer's config
+failing to read or validate: the documented exit 2, printed without a backtrace. A config the verb has
+itself just written failing to read back is not that case; it raises
+[`Config.ConfigWrittenError`](@ref) and returns 3.
 """
 function main(args::AbstractVector{<:AbstractString})::Int
     args = String.(args)
@@ -144,10 +149,13 @@ function main(args::AbstractVector{<:AbstractString})::Int
     try
         return Int(VERBS[key](rest))
     catch err
-        # A structurally bad config is the documented exit 2 — "cannot evaluate" — and not a crash: an
-        # unknown key, a missing required key, an unknown enum member or a path that does not exist.
-        # `Config.read` throws it, and only three verbs caught it themselves, so every other verb
-        # reported a hand-edited config.toml as exit 3. Catching the class once here fixes it for all.
+        # A structurally bad consumer config is the documented exit 2 — "cannot evaluate" — and not a
+        # crash: an unknown key, a missing required key, an unknown enum member or a path that does not
+        # exist. Only three verbs caught it themselves. Caught once here, it is caught for every verb — but
+        # only because the two places a verb re-reads a config it has JUST WRITTEN (bump, new) read through
+        # Config.read_written, whose ConfigWrittenError is not a ConfigError and so reaches the crash path
+        # below. Without that, this arm reported the tool's own defect as the consumer's bad config and
+        # dropped its backtrace (2026-09-12-audit-changes-01, four lanes).
         err isa Config.ConfigError && (println(stderr, "gbg ", key, ": ", sprint(showerror, err)); return 2)
         println(stderr, "gbg ", key, ": crashed — ", sprint(showerror, err))
         Base.show_backtrace(stderr, catch_backtrace()); println(stderr)

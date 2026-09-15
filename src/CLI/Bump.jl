@@ -33,7 +33,7 @@ function bump(cfg::AbstractDict, ver::AbstractString; abandon = nothing, io::IO 
     new = replace(text, r"^(version\s*=\s*)\"[^\"]*\""m => SubstitutionString("\\1\"$ver\""); count = 1)
     new == text && (println(io, "bump: could not find the [tool] version line in .gbg/config.toml"); return 2)
     write(p, new)
-    cfg2 = Config.read(root)
+    cfg2 = Config.read_written(root)                  # we just wrote it: failing to read back is our crash
     code = Sync.sync(cfg2; io)
     code == 0 || return code
     files = [e.path for e in Sync.status(cfg2) if e.state == :OK]

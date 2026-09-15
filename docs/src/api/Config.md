@@ -6,6 +6,7 @@
 ```@docs
 GBGCodingTools.Config
 GBGCodingTools.Config.ConfigError
+GBGCodingTools.Config.ConfigWrittenError
 GBGCodingTools.Config.find_root
 GBGCodingTools.Config.glob_files
 GBGCodingTools.Config.glob_to_regex

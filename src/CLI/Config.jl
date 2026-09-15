@@ -46,6 +46,44 @@ end
 Base.showerror(io::IO, e::ConfigError) = print(io, "config error: ", e.msg)
 
 """
+    ConfigWrittenError <: Exception
+
+A config the running verb wrote ITSELF did not read back. The fields are:
+
+- `msg` — the underlying [`ConfigError`](@ref)'s message.
+
+Deliberately not a subtype of `ConfigError`. The command line reports a `ConfigError` as exit 2, "cannot
+evaluate": the consumer's config is bad and the consumer can fix it. A config this tool has just written
+failing to validate is a defect of the tool, not of the consumer, so it must reach the crash path — exit 3
+with its backtrace — and a subtype would be caught as the consumer's mistake.
+"""
+struct ConfigWrittenError <: Exception
+    msg::String
+end
+Base.showerror(io::IO, e::ConfigWrittenError) =
+    print(io, "a config this verb just wrote does not read back (a tool defect, not the consumer's): ", e.msg)
+
+"""
+    read_written(root; check = true) -> Dict
+
+[`read`](@ref) for a config the calling verb has itself just written. The arguments are:
+
+- `root` — the consumer root.
+- `check` — whether to run the path check, as for `read`.
+
+Returns what `read` returns; throws a [`ConfigWrittenError`](@ref) where `read` would throw a
+`ConfigError`, so the failure is reported as the tool's crash rather than as the consumer's bad config.
+"""
+function read_written(root::AbstractString; check::Bool = true)
+    try
+        return read(root; check)
+    catch err
+        err isa ConfigError || rethrow()
+        throw(ConfigWrittenError(err.msg))
+    end
+end
+
+"""
     find_root(start = pwd()) -> Union{String,Nothing}
 
 Walks up from `start` to the first directory holding `.gbg/config.toml` — the consumer root, the same
