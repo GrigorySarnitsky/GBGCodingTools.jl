@@ -14,11 +14,11 @@ export const meta = {
 }
 
 // gbg:prelude
-for (const k of ['round', 'pass_dir', 'repo', 'nonce', 'graded_sha256', 'lanes', 'findings', 'findings_path', 'models', 'schema_version', 'package']) {
+for (const k of ['round', 'pass_dir', 'repo', 'nonce', 'graded_sha256', 'lanes', 'findings', 'findings_path', 'models', 'schema_version', 'package', 'source_scope']) {
   if (A[k] === undefined) throw new Error(`verify-state.js: args.${k} is required`)
 }
 if (!A.findings.length) throw new Error('verify-state.js: nothing in scope to read — the CLI launches the state verifier only over a non-empty scope')
-const SCOPE = A.source_scope || ['src', 'ext', 'docs/src', 'docs']
+const SCOPE = A.source_scope          // resolved by the CLI (Preflight.source_globs); required above
 
 const LANE_SCHEMA = {
   type: 'object', additionalProperties: false,
@@ -89,9 +89,9 @@ const probe = (id) => {
 const fmt = (f) => `  ${f.id} (lane ${f.lane}, #${f.n}) — ${f.title}${probe(f.id)}`
 
 phase('Verify state')
-// Lanes are grouped into units of at most `batch` findings (6 by default), and only lanes that read the
-// same substrate are grouped, since the substrate is what a unit's prompt names once.
-const BATCH = Math.max(1, A.batch || 6)
+// Lanes are grouped into units of at most BATCH findings, and only lanes that read the same substrate are
+// grouped, since the substrate is what a unit's prompt names once. A constant, not an arg: no CLI path sends one.
+const BATCH = 6
 const units = []
 for (const l of A.lanes) {
   const items = A.findings.filter(f => f.lane === l.key)

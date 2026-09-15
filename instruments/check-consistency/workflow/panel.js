@@ -11,7 +11,7 @@
 //   { schema_version, round, round_dir, repo, rawhtml, package: {name, description, domain, terms,
 //     deliberate_absences}, preamble, manuscripts: {full: path, siteonly: path}, rulebook_path,
 //     hats: [{nn, key, persona_path, substrate, needs, anchor}], adjudicated_titles, finding_types,
-//     finding_cap, strength, models: {economy} }
+//     finding_cap, source_globs: [repo-relative globs], strength, models: {economy} }
 export const meta = {
   name: 'check-consistency-panel',
   description: 'Fresh-eyed panel auditing the RENDERED docs for consistency, mathematics, typesetting, structure and design (concurrent, collect-only)',
@@ -19,7 +19,7 @@ export const meta = {
 }
 
 // gbg:prelude
-for (const k of ['round', 'round_dir', 'repo', 'manuscripts', 'hats', 'preamble', 'models', 'package', 'schema_version', 'finding_cap']) {
+for (const k of ['round', 'round_dir', 'repo', 'manuscripts', 'hats', 'preamble', 'models', 'package', 'schema_version', 'finding_cap', 'source_globs']) {
   if (A[k] === undefined) throw new Error(`panel.js: args.${k} is required`)
 }
 if (!A.hats.length) throw new Error('panel.js: an EMPTY roster is not a clean round — the CLI never launches one over nothing')

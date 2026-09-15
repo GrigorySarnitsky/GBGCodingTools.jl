@@ -172,7 +172,7 @@
           },
           "minItems": 1,
           "type": "array",
-          "description": "instruments.check-consistency.latex_source_globs, resolved by preflight: the AUTHORED SOURCE a hat whose needs include `source` is sent to, repo-relative — the consumer's globs when it set any, the four default surfaces otherwise. Resolved in the CLI rather than in the script because panel.js carried src/, ext/, docs/src/ and docs/ as literals, which the core invariant forbids, while latex_source_globs had no reader anywhere: a consumer naming examples/*.jl had its Literate surface silently never read, and the hat was still required to quote findings at their source file:line. REQUIRED, so an absent one is loud rather than a silent fallback to the hardcoded list this key exists to end."
+          "description": "instruments.check-consistency.latex_source_globs, resolved by preflight: the AUTHORED SOURCE a hat whose needs include `source` is sent to, repo-relative — the four default surfaces (src, ext, docs/src, docs) followed by every glob the consumer names — added to them, never in place of them. Resolved in the CLI (Preflight.source_globs) rather than in the script because panel.js carried the four as literals, which the core invariant forbids, while latex_source_globs had no reader anywhere: a consumer naming examples/*.jl had its Literate surface silently never read, and the hat was still required to quote findings at their source file:line. REQUIRED, so an absent one is loud rather than a silent fallback to the hardcoded list this key exists to end."
         },
         "schema_version": {
           "minimum": 1,

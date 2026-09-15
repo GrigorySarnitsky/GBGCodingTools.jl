@@ -5,9 +5,9 @@
 // `range` required; one agent per lane; NO demotion here (the CLI applies it); finding text
 // arrives unabridged in a FILE named by args (Revision 9); no census (the CLI knows the denominator).
 //
-// Args: { schema_version, round, pass_dir, repo, range, nonce, graded_sha256,
+// Args: { schema_version, round, round_dir, pass_dir, repo, range, nonce, graded_sha256,
 //         lanes: [{nn, key, expected}], findings: [{id, lane, n, title}], findings_path,
-//         quote_probe, class_candidates, adjudicated_titles, batch?, package, models: {economy}, strength }
+//         quote_probe, class_candidates, adjudicated_titles, package, models: {economy}, strength }
 export const meta = {
   name: 'verify-act',
   description: 'Grade a fix pass finding by finding, SEEING the diff: HONORED / ADJACENT / INSERTED / LINE-ONLY / NEW-DEFECT / SCOPE-CREEP / UNDONE / LAUNDERED',
@@ -103,10 +103,10 @@ const fmt = (f) => `  ${f.id} (lane ${f.lane}, #${f.n}) — ${f.title}${probe(f.
 const outFile = (name) => `${A.pass_dir}/act/${name}.json`
 
 phase('Verify act')
-// Lanes are grouped into units of at most `batch` findings (6 by default): the whole diff, which every
-// act agent must read, is then bought once per unit instead of once per lane. A lane with more findings
-// than the batch is a unit of its own; nothing is split across agents.
-const BATCH = Math.max(1, A.batch || 6)
+// Lanes are grouped into units of at most BATCH findings: the whole diff, which every act agent must read,
+// is then bought once per unit instead of once per lane. A lane with more findings than the batch is a
+// unit of its own; nothing is split across agents. A constant, not an arg: no CLI path sends one.
+const BATCH = 6
 const units = []
 for (const l of A.lanes) {
   const items = A.findings.filter(f => f.lane === l.key)

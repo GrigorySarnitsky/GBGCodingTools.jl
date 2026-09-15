@@ -71,8 +71,9 @@ default; the fix pass is never economised.
    `findings.json`; do NOT re-run the lanes to check the work — a fresh battery over an edited corpus
    always returns new findings, so it has no termination condition.
 7. **Adjudicate and close.** Ledger entries with `scope = "finding"` and `overturn_when` for what is not
-   a defect; `gbg round close <round>` when no id is open, no lane is dead, the files are committed and the
-   stamps are unchanged — or, once the pass budget is spent, with every id still open carried into the
+   a defect; `gbg round close <round>` when no id is open, no lane is dead, the files are committed, the
+   stamps are unchanged and the last recorded docs build is green with nothing under the covered paths
+   changed since (`prepare` and `gbg round build` record theirs: after a last fix, build and commit) — or, once the pass budget is spent, with every id still open carried into the
    next round on a blind severity re-check, a serious one included, which then holds a final release back. If the fix pass touched `src/` or `ext/` — an operational finding fixed in the
    code, not in the prose — closing refuses until `/audit-changes --base <this round's opening head>` is
    itself closed and has read the round's LAST code change, so it runs after the final fix pass
