@@ -94,7 +94,8 @@ sentinel = "A `@ref` never abuts a second code span, because two adjacent monosp
 check = ["scan:SCAN.REF_ABUT_CODE"]
 # SCAN.API_PAGE_STRUCTURE's canonical rule is RULE.DOC.INTERNAL_API; it carries this rule's `@index` and
 # empty-block halves and reads the `pages` surface only. A policy waiver resolves against a scan's
-# canonical rule alone, so a waiver of THIS rule does not reach that scan and is refused (Scan.apply_ledger).
+# canonical rule alone, so a waiver of THIS rule does not reach that scan, which keeps running and says so
+# on its report line, in CFG.EXEMPTIONS (a WARN) and in deviations.md (Scan.apply_ledger).
 [[rule]]
 id = "RULE.DOC.API_GROUPING"
 file = "docs-rubric.md"
@@ -432,8 +433,8 @@ statement = "A docstring cites author–year in its prose and carries the full r
 sentinel = "A docstring cites author–year in its prose and carries the full reference in a `# References` section after the home's prose, before any `# Fields`: one bullet per work, `Authors, [*Title*](https://doi.org/…), Journal Volume (Year)`, verbatim-identical to the canonical entry under the package's references heading, title and DOI compared."
 check = ["scan:SCAN.DOI_CROSSCHECK"]
 # SCAN.DOI_CROSSCHECK's canonical rule is RULE.CIT.FULL_INLINE; this rule is its DOI half. A policy
-# waiver resolves against a scan's canonical rule alone, so a waiver of THIS rule is refused
-# (Scan.apply_ledger) — waive the scan itself, `scope = "scan"`, where the DOI half is what is meant.
+# waiver resolves against a scan's canonical rule alone, so a waiver of THIS rule leaves that scan
+# running and says so (Scan.apply_ledger); `scope = "scan"` on the scan waives both halves.
 [[rule]]
 id = "RULE.CIT.DOI"
 file = "citations.md"
@@ -450,7 +451,8 @@ sentinel = "Two or more citations form a bullet list under a `References:` label
 check = ["scan:SCAN.CITATION_CRAMMED"]
 # SCAN.DEAD_REF reads the `src` surface only — an inaccessible source cited in a docstring or an error
 # message — and its canonical rule is RULE.DOC.NO_DEAD_REFS; every other user-facing surface is the
-# panel's. A policy waiver of THIS rule does not reach that scan and is refused (Scan.apply_ledger).
+# panel's. A policy waiver of THIS rule reaches the panel but not that scan, which keeps running and says
+# so on its report line, in CFG.EXEMPTIONS (a WARN) and in deviations.md (Scan.apply_ledger).
 [[rule]]
 id = "RULE.CIT.NO_INACCESSIBLE"
 file = "citations.md"
@@ -623,7 +625,7 @@ check = ["harness:report"]
 id = "RULE.INST.FROZEN_MIDROUND"
 file = "instruments.md"
 section = "### RULE.INST.FROZEN_MIDROUND"
-statement = "An instrument is never changed mid-round; a change is its own commit and release; a deferral is written in the round's deferred.md and carried into the work queue at close; a round whose own frozen scripts cannot run has the differing copies replaced by gbg round scripts --reason, recorded in ROUND.toml."
+statement = "An instrument is never changed mid-round; a change is its own commit and release; a deferral is written in the round's deferred.md and carried into the work queue at close; a round whose own frozen verifiers or auditors cannot run has those differing copies replaced by gbg round scripts --reason, never a lens, recorded in ROUND.toml."
 sentinel = "An instrument is never changed mid-round; a change is its own commit and release, and reaches a consumer by a bump."
 check = ["test:test/rounds.jl"]
 [[rule]]

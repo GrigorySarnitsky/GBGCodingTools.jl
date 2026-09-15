@@ -1,7 +1,8 @@
 <!-- gbg:managed policy/glossary.md vdev — rewritten by `gbg sync`; do not edit -->
 # Glossary — the terms the rules use
 
-- **Consumer** — a package that pins the tool: the four GBG packages, and the tool repository itself.
+- **Consumer** — a package that pins the tool: the four GBG packages, the tool repository itself, and the
+  toy fixture its tests run over.
 - **Instrument** — one of the four review procedures: `/check-docs`, `/check-consistency`, `/bug-hunt`,
   `/audit-changes`. The word keeps its house meaning of a measuring device.
 - **Round** — one run of an instrument, recorded as a tracked directory under `.gbg/rounds/`.

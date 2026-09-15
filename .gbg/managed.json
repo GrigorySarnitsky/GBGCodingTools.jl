@@ -1,6 +1,6 @@
 {
     "tool_version": "dev",
-    "inputs_sha": "0657e8e08a264e26495522cf6175b866daf2d3b411725932d4fb96271ef3472d",
+    "inputs_sha": "698fb12c68ab0e0c3b45a3aa5dff3414735d906ca39c9bdeded120be667a8e40",
     "files": {
         "CLAUDE.md#gbg:managed": {
             "template": "claude-md.block",
@@ -24,7 +24,7 @@
         },
         ".gbg/policy/glossary.md": {
             "template": "policy/glossary.md",
-            "sha256": "062af067a24b488e7ae6f74f10830ec294337c5e410902ae96d958d621aea472",
+            "sha256": "4b5a86f8210bb86b9360fb3199ea30bb01243766f0a196adb19c33b38354ee1d",
             "version": "dev"
         },
         ".gbg/policy/testing-protocol.md": {
@@ -59,7 +59,7 @@
         },
         ".gbg/policy/instruments.md": {
             "template": "policy/instruments.md",
-            "sha256": "0adc8216b1260ab43b207f88d486763538fa447666760d3edffd33fc1c9972ea",
+            "sha256": "5dc90921f9740f331736c94796547ee12b46775d11b10a253534546fbced6e00",
             "version": "dev"
         },
         ".claude/skills/bug-hunt/SKILL.md": {
@@ -99,5 +99,5 @@
         }
     },
     "schema_version": 1,
-    "rendered": "2026-09-15T12:08:13"
+    "rendered": "2026-09-15T13:14:36"
 }
