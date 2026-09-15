@@ -212,6 +212,10 @@ function prepare(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
         open(joinpath(dir, "findings", "00-scans.json"), "w") do f; JSON3.pretty(f, JSON3.write(lane)); println(f); end
         println(io, "prepare: $(length(banked)) hard scan hit(s) banked as lane 00-scans (key `scans`); the full report (every triage line) is $report — read ALL of it")
         haskey(rec, "seed_salt") && (seed_docs_corpus!(cfg, round, dir, rec; io) == 0 || return 2)
+        # the one place the lanes call is printed: after the seeding has pointed the args at the copy
+        println(io, "\nNEXT: launch the lanes exactly as printed here", haskey(rec, "seed_salt") ? " (they read the seeded copy; a call from any earlier output reads the repository and measures nothing):\n" : ":\n")
+        println(io, Preflight.lanes_call(cfg, round))
+        println(io, "\nAFTER the Workflow returns: gbg round bank $round")
         return 0
     elseif inst == "audit-changes"
         roster = [Dict{String,Any}(r) for r in rec["roster"]]
@@ -533,6 +537,32 @@ function verdict_contradiction(data::AbstractDict)
 end
 
 """
+    seeded_corpus_check(rec, lane, status, data, note) -> (status, note)
+
+Whether a lane of a SEEDED check-docs round read the seeded copy. The arguments are `rec`, the round
+record; `lane`, the roster entry; and `status`, `data` and `note`, what [`classify_lane`](@ref)
+returned for its file. Returns them unchanged, or `:dead` with the reason.
+
+Each check-docs lane file records the corpus it was launched on as `corpus` (`lanes.js` stamps it from
+its args). In a round with a `seed_salt`, a lane whose `corpus` is not the round's `seed_root` read the
+real repository, where no seed exists, and its silence would be banked as a miss. It is DEAD instead,
+so nothing is frozen and `gbg round rerun` relaunches it from the args `prepare` repointed. Two seeded
+rounds were banked that way before this check, and their 0/6 and 0/5 recall measured nothing
+(2026-09-11-check-docs-02, 2026-09-12-check-docs-01). Lane `00-scans`, which `prepare` writes, is exempt.
+"""
+function seeded_corpus_check(rec::AbstractDict, lane::AbstractDict, status::Symbol, data, note::AbstractString)
+    (rec["instrument"] == "check-docs" && haskey(rec, "seed_salt")) || return (status, note)
+    (lane["key"] == "scans" || data === nothing || status in (:dead, :rejected)) && return (status, note)
+    norm(p) = rstrip(normpath(String(p)), '/')
+    root = String(get(rec, "seed_root", ""))
+    got = get(data, "corpus", nothing)
+    (!isempty(root) && got isa AbstractString && norm(got) == norm(root)) && return (status, note)
+    why = isempty(root) ? "the round has no seeded copy (gbg round prepare did not seed it)" :
+          got isa AbstractString ? "it read $got, not the seeded copy $root" : "its file names no corpus, so nothing shows it read the seeded copy $root"
+    return (:dead, why * " — its silence is no measurement; relaunch it from the call gbg round prepare printed")
+end
+
+"""
     orphan_lane_files(dir, lanes) -> Vector{String}
 
 The lane files under `dir/findings/` that no entry of `lanes` expects: every `*.json` whose name is not
@@ -644,6 +674,7 @@ function bank(cfg::AbstractDict, round::AbstractString; io::IO = stdout)
     statuses = Dict{String,Symbol}(); datas = Dict{String,Any}(); notes = String[]
     for l in lanes
         st, data, sha, note = classify_lane(dir, inst, l; first_sha = get(shas, l["key"], nothing))
+        st, note = seeded_corpus_check(rec, l, st, data, note)      # before first sight: a DEAD lane's sha is never kept
         # first sight is recorded for a file that classified (a quarantined one is gone; its re-run replaces it)
         st in (:rejected, :dead) || sha === nothing || haskey(shas, l["key"]) || (shas[l["key"]] = sha)
         statuses[l["key"]] = st; datas[l["key"]] = data

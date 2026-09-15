@@ -606,7 +606,8 @@ and never in the tracked round. A `/check-docs` round's seeded copy is the one e
 source files themselves, which its lanes, forbidden `.gbg/**`, could not read under `.gbg/`, so
 `Rounds.seed_docs_corpus!` writes it to a temporary directory outside the repository, repoints each
 lane's `repo` at it, and bank deletes it; the price is that those lanes read outside the project, where
-a Read may prompt. **Staleness by hash, not mtime**: every verdict file carries
+a Read may prompt. Hence `prepare`, not preflight, prints the lanes call, and bank marks DEAD a lane
+whose recorded `corpus` is not the copy. **Staleness by hash, not mtime**: every verdict file carries
 `graded_sha256` (= the sha of `findings.json`) and the `pass_nonce` from `pass.toml`; mismatch →
 REJECTED; absent → DEAD. Roster and denominator come from `ROUND.toml` and `findings.json`, counted
 by the CLI. A lane file is classified at `bank`, in this order: **DEAD** when absent; **REJECTED** when

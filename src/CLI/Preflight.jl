@@ -857,6 +857,19 @@ function render_script(src::AbstractString)
 end
 
 """
+    lanes_call(cfg, round) -> String
+
+The `Workflow` call that launches a check-docs round's lanes, built from the args saved in the round's
+`main.args.json` as they stand now: after `prepare`, whose seeding repoints `repo` at the disposable
+copy ([`repoint_lanes`](@ref)). `prepare` prints it, and it is the only place the lanes call is printed.
+The arguments are `cfg`, the validated config, and `round`, the round id. Returns the call.
+"""
+function lanes_call(cfg::AbstractDict, round::AbstractString)
+    a = JSON3.read(read(joinpath(workflow_dir(cfg, round), "main.args.json"), String), Dict{String,Any})
+    return workflow_call(joinpath(workflow_dir(cfg, round), main_script("check-docs")), a)
+end
+
+"""
     workflow_call(script, a) -> String
 
 The exact text the session launches: `Workflow({scriptPath: "<script>", args: <json>})`.
@@ -992,8 +1005,12 @@ function preflight(cfg::AbstractDict, instrument::AbstractString; profile = noth
         println(io, "\nNEXT: gbg round prepare $round      (builds the docs under GBG_ROUND, consolidates the manuscripts", seeding ? ", plants the seeds)" : ")")
         println(io, "THEN launch the panel exactly as printed here:\n")
     elseif instrument == "check-docs"
+        # NO lanes call is printed here. A seeded round's lanes must read the disposable copy that
+        # `prepare` makes, and a call printed now can only name the repository: two seeded rounds were
+        # launched from it and measured nothing (2026-09-11-check-docs-02, 2026-09-12-check-docs-01).
         println(io, "\nNEXT: gbg round prepare $round      (scans, reflection checks, the build, the built-HTML scans; banks lane 00-scans", seeding ? "; plants the seeds into a disposable copy of the lane files, which the lanes read in place of the working tree)" : ")")
-        println(io, "THEN launch the lanes exactly as printed here:\n")
+        println(io, "THEN launch the lanes exactly as `gbg round prepare` prints them — never from this output, which names no corpus the lanes may read")
+        return 0
     elseif instrument == "bug-hunt"
         println(io, "\nNEXT: launch the hunt exactly as printed here (no prepare step; the witnesses go to $rd/witnesses/):\n")
     else

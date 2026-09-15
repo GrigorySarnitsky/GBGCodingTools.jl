@@ -1010,6 +1010,53 @@ end
     end
 end
 
+# A seeded check-docs round's lanes must read the seeded copy. Preflight prints no lanes call; `prepare`'s
+# is built from the args it repointed; and `bank` marks DEAD a lane whose file names any other corpus, or
+# none — 2026-09-11-check-docs-02 and 2026-09-12-check-docs-01 banked lanes launched on the repository and
+# recorded 0/6 and 0/5 recall that measured nothing.
+@testset "a seeded round's lanes read the seeded copy, or are DEAD" begin
+    root = fixture_copy("seed-delivery")
+    cfg = G.Config.read(root)
+    cd(root) do
+        out = IOBuffer()
+        @test G.Preflight.preflight(cfg, "check-docs"; io = out) == 0
+        @test !occursin("Workflow({scriptPath:", String(take!(out)))
+        r = only(G.RoundFiles.rounds(cfg)); round = r.name; dir = r.dir
+        seedroot = mktempdir()
+        rec = G.RoundFiles.read_round(dir); rec["seed_salt"] = round; rec["seed_root"] = seedroot; write_round(dir, rec)
+        @test !occursin(seedroot, G.Preflight.lanes_call(cfg, round))              # before prepare: the repository
+        G.Preflight.repoint_lanes(cfg, round, seedroot)
+        @test occursin(seedroot, G.Preflight.lanes_call(cfg, round))               # after it: the copy
+        @test occursin("println(io, Preflight.lanes_call(cfg, round))", read(joinpath(TOOL, "src", "CLI", "Rounds.jl"), String))  # prepare prints it
+        lanes = G.Rounds.expected_lanes(rec)
+        write_lane(l, corpus) = open(joinpath(dir, "findings", "$(l["nn"])-$(l["key"]).json"), "w") do fh
+            f = Dict{String,Any}("schema_version" => 1, "round" => round, "lane" => l["key"], "candidates_found" => 0,
+                                 "checked" => ["src/FixtureA.jl"], "findings" => Any[])
+            corpus === nothing || (f["corpus"] = corpus)
+            l["key"] == "scans" && (f["checked"] = ["scan docs"])
+            JSON3.write(fh, f)
+        end
+        target = first(l for l in lanes if l["key"] != "scans")
+        for corpus in (root, nothing)                                 # the repository, or no corpus named at all
+            for l in lanes; write_lane(l, l["key"] == "scans" ? nothing : (l === target ? corpus : seedroot)); end
+            bio = IOBuffer()
+            @test G.Rounds.bank(cfg, round; io = bio) == 2
+            o = String(take!(bio))
+            @test occursin(r"DEAD\s+" * target["nn"] * "-" * target["key"], o) && occursin("relaunch it from the call gbg round prepare printed", o)
+            @test G.RoundFiles.read_round(dir)["dead_lanes"] == [target["key"]] && !isfile(joinpath(dir, "findings.json"))
+        end
+        # the check passes a lane that names the copy (a trailing slash is the same directory), exempts lane
+        # 00-scans, and leaves an unseeded round alone
+        @test G.Rounds.seeded_corpus_check(rec, target, :empty, Dict{String,Any}("corpus" => seedroot * "/"), "") == (:empty, "")
+        @test G.Rounds.seeded_corpus_check(rec, Dict("nn" => "00", "key" => "scans"), :empty, Dict{String,Any}(), "") == (:empty, "")
+        unseeded = delete!(copy(rec), "seed_salt")
+        @test G.Rounds.seeded_corpus_check(unseeded, target, :empty, Dict{String,Any}("corpus" => root), "") == (:empty, "")
+        # and the script stamps the corpus from its args, never from the model's retyping
+        js = read(joinpath(TOOL, "instruments", "check-docs", "workflow", "lanes.js"), String)
+        @test occursin("scribe(r && { ...r, corpus: A.repo }", js)
+    end
+end
+
 @testset "round lifecycle" begin
     root = fixture_copy("round")
     cfg = G.Config.read(root)
@@ -1022,7 +1069,8 @@ end
         @test occursin("would open", dry_out)
         @test G.Preflight.preflight(cfg, "check-docs"; io) == 0
         out = String(take!(io))
-        @test occursin("Workflow({scriptPath:", out) && occursin("lanes.js", out)
+        # preflight prints NO lanes call: only `prepare`'s names the corpus the lanes read (the seeded copy)
+        @test !occursin("Workflow({scriptPath:", out) && occursin("THEN launch the lanes exactly as `gbg round prepare` prints them", out)
         rounds = G.RoundFiles.rounds(cfg)
         @test length(rounds) == 1 && rounds[1].state == :open
         round = rounds[1].name; dir = rounds[1].dir
