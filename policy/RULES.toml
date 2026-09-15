@@ -92,6 +92,9 @@ section = "### RULE.DOC.REF_ABUT"
 statement = "A @ref never abuts a second code span; the whole call is the link text."
 sentinel = "A `@ref` never abuts a second code span, because two adjacent monospace chips render with a visible seam."
 check = ["scan:SCAN.REF_ABUT_CODE"]
+# SCAN.API_PAGE_STRUCTURE's canonical rule is RULE.DOC.INTERNAL_API; it carries this rule's `@index` and
+# empty-block halves and reads the `pages` surface only. A policy waiver resolves against a scan's
+# canonical rule alone, so a waiver of THIS rule does not reach that scan and is refused (Scan.apply_ledger).
 [[rule]]
 id = "RULE.DOC.API_GROUPING"
 file = "docs-rubric.md"
@@ -428,6 +431,9 @@ section = "### RULE.CIT.FULL_INLINE"
 statement = "A docstring cites author–year in its prose and carries the full reference in a `# References` section after the home's prose and before any `# Fields`, verbatim-identical to the canonical entry (title and DOI compared)."
 sentinel = "A docstring cites author–year in its prose and carries the full reference in a `# References` section after the home's prose, before any `# Fields`: one bullet per work, `Authors, [*Title*](https://doi.org/…), Journal Volume (Year)`, verbatim-identical to the canonical entry under the package's references heading, title and DOI compared."
 check = ["scan:SCAN.DOI_CROSSCHECK"]
+# SCAN.DOI_CROSSCHECK's canonical rule is RULE.CIT.FULL_INLINE; this rule is its DOI half. A policy
+# waiver resolves against a scan's canonical rule alone, so a waiver of THIS rule is refused
+# (Scan.apply_ledger) — waive the scan itself, `scope = "scan"`, where the DOI half is what is meant.
 [[rule]]
 id = "RULE.CIT.DOI"
 file = "citations.md"
@@ -442,6 +448,9 @@ section = "### RULE.CIT.BLOCK_LIST"
 statement = "Two or more citations form a bullet list, one per line; a lone citation is 'Reference: …'."
 sentinel = "Two or more citations form a bullet list under a `References:` label, one citation per line, and a lone citation stays inline as `Reference: …`."
 check = ["scan:SCAN.CITATION_CRAMMED"]
+# SCAN.DEAD_REF reads the `src` surface only — an inaccessible source cited in a docstring or an error
+# message — and its canonical rule is RULE.DOC.NO_DEAD_REFS; every other user-facing surface is the
+# panel's. A policy waiver of THIS rule does not reach that scan and is refused (Scan.apply_ledger).
 [[rule]]
 id = "RULE.CIT.NO_INACCESSIBLE"
 file = "citations.md"
@@ -572,7 +581,7 @@ check = ["harness:Passes.grade"]
 id = "RULE.INST.CARRY"
 file = "instruments.md"
 section = "### RULE.INST.CARRY"
-statement = "A round may close by carrying a finding into the next round of its instrument — a minor or nit at will, anything still open once its pass budget is spent — on a re-rated severity; it is re-banked there, never rediscovered, and a final release refuses while a carried blocker or major stands, while anything has been carried CARRY_LIMIT (3) times, or while the backlog is not draining."
+statement = "A round may close by carrying a finding into the next round of its instrument — a minor or nit at will, anything still open once its pass budget is spent — on a re-rated severity; it is re-banked there, never rediscovered. A round refuses to close by carrying a finding already carried CARRY_LIMIT (3) times — the owner rules on it instead — and a final release refuses while a carried blocker or major stands, while anything has been carried CARRY_LIMIT times, or while the backlog is not draining."
 sentinel = "A round may close by CARRYING a finding into the next round of its instrument: a `minor` or a `nit` whenever the owner chooses, and every finding still open once the round has spent its pass budget, a `blocker` or a `major` among them."
 check = ["test:test/rounds.jl"]
 [[rule]]
@@ -614,7 +623,7 @@ check = ["harness:report"]
 id = "RULE.INST.FROZEN_MIDROUND"
 file = "instruments.md"
 section = "### RULE.INST.FROZEN_MIDROUND"
-statement = "An instrument is never changed mid-round; a change is its own commit and release; a deferral is written in the round's deferred.md and carried into the work queue at close."
+statement = "An instrument is never changed mid-round; a change is its own commit and release; a deferral is written in the round's deferred.md and carried into the work queue at close; a round whose own frozen scripts cannot run has the differing copies replaced by gbg round scripts --reason, recorded in ROUND.toml."
 sentinel = "An instrument is never changed mid-round; a change is its own commit and release, and reaches a consumer by a bump."
 check = ["test:test/rounds.jl"]
 [[rule]]

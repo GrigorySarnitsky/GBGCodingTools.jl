@@ -82,7 +82,10 @@ An instrument is never changed mid-round; a change is its own commit and release
 by a bump. A change the round wanted and could not make is written one line per deferral in the round's
 `deferred.md`, and `gbg round close` carries each into `.claude/WORK_QUEUE.md`, where the Stop hook holds
 the next session to it. A deferral recorded anywhere else is a note, and a note is not a mechanism. A round records the instrument version that measured it and cannot close under a different
-one unless re-graded; a rate sequence means something only at a fixed instrument.
+one unless re-graded; a rate sequence means something only at a fixed instrument. One relaxation is
+recorded rather than hidden: a round whose own frozen Workflow scripts cannot run — its verifiers
+unparseable, so it could never verify — has the differing copies replaced by `gbg round scripts
+--reason`, which writes the reason, the pass count and each script's sha into `ROUND.toml`.
 
 ### RULE.INST.ECONOMY
 Economy lanes are the default, the five phases — adjudication, reproduction, verification, consolidation,
