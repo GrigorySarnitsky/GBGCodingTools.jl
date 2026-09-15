@@ -1,0 +1,21 @@
+{
+    "statuses": {
+        "reader-consequence": "truncated",
+        "numerics": "live",
+        "behaviour-change": "truncated",
+        "executing": "truncated",
+        "backend-portability": "empty",
+        "free-reader": "truncated",
+        "claim-versus-edit": "empty",
+        "under-rejection": "truncated",
+        "over-rejection": "truncated",
+        "invariants": "truncated",
+        "contract-drift": "truncated",
+        "public-contract": "truncated",
+        "sweep-completeness": "live"
+    },
+    "suspect_hats": [
+    ],
+    "recall": {
+    }
+}

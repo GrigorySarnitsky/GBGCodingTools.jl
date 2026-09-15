@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-15-audit-changes-01",
+  "lane": "behaviour-change",
+  "verdict": "CONCERNS",
+  "checked": [
+    "src/Scan.jl apply_ledger: base resolved policy waivers over `unique!(vcat(row rule, rules_for_scan(id)))`; head throws LedgerError for any policy entry on a non-canonical rule; traced LedgerError through run_scan (rethrown outside its try), scan_docs, Main.main (only ConfigError caught), ext makedocs gate and TestHarness.gate",
+    "src/Scan.jl unreachable_waiver_scans and src/CLI/Doctor.jl CFG.EXEMPTIONS (a QUICK check, so it runs in preflight, the makedocs wrapper and TestHarness.gate); ran unreachable_waiver_scans(\"RULE.DOC.API_GROUPING\") and apply_ledger on three rows at head",
+    "catalog/scans.toml rows 225-250 and policy/RULES.toml RULE.DOC.API_GROUPING check array: that rule is the canonical rule of SCAN.HTML_DOCSTRING_ONCE, SCAN.HTML_PUBLIC_HOME, SCAN.HTML_BASE_LEAK and the second rule of SCAN.API_PAGE_STRUCTURE",
+    "released v1.0.0-rc.11 apply_ledger (canonical rule only) and AUDIT.GAP (equality) for the released baseline",
+    "src/CLI/Preflight.jl CLAIM_EXIT, CLAIM_QUANTIFIER, CLAIM_TOOL_ID, CLAIM_CLAUSE and claim_checklist: re-ran the base and head regexes over src, ext, docs/src, docs/ARCHITECTURE.md, policy, instruments, catalog, templates",
+    "Preflight.source_globs, render_args (panel source_globs), Passes.pass_open state args source_scope for both docs instruments, verify-state.js SCOPE fallback removal, panel.js prelude, schema/config.schema.json latex_source_globs, ARCHITECTURE config examples",
+    "Rounds.refresh_scripts: reason gate, differing-only replacement, ordering of install_script against the HEAD check; schema/round.schema.json scripts_refreshed required fields; RoundFiles.read_round/rounds (:invalid) and Gate.gate_problems (fatal on :invalid)",
+    "Rounds.build no-HEAD refusal, record_build! in prepare and pass_open, Passes.build_fails UNCHECKABLE branch vs base close's inline build condition and Git.changed_paths returning empty on a failed diff; Preflight preflight head = something(Git.head(root), \"0\"^40)",
+    "Doctor AUDIT.GAP equality -> Git.is_ancestor; Git.is_ancestor returns false on a missing object",
+    "Rounds.note_seed_skips! replacing the prepare refusals (restores rc.11 behaviour plus a record; Recall.per_class already names skipped classes UNDEFINED) - judged justified, not reported",
+    "Release.admitted_rounds(cfg, rc): the :committed exclusion cannot fire inside release because release_fails already refuses a non-clean tree, and a final release is refused on any open round before the build - no reachable change, not reported",
+    "Release dev-checkout guard running_dev() -> ispath(root/.git): with the CLI's root = pkgdir both read the same .git entry; only GBG_DEV=1 on a depot copy differs, which failed later git steps anyway - not reported",
+    "Rounds.load ErrorException -> RoundError (exit 3 -> 2 for a schema-invalid ROUND.toml); Schema.jl throws ArgumentError/SchemaError, so no tool defect is masked - justified",
+    "cmd_round import --empty dispatched before Config.read, stamps(nothing), config_sha pattern admitting \"\", added self_verify and CFG.TORN refusals - matches the base ARCHITECTURE text that named the gap",
+    "Config.read_written in bump and new (exit 2 -> 3 only when a just-written config fails to read back after cmd_bump already validated it)",
+    "verify-act.js / verify-state.js A.batch -> const 6 (no CLI path sent batch; severity-recheck.js keeps A.batch)",
+    "Sync.DOCS_INSTRUMENTS substitutions in ext and Passes (same tuple), script_sources vs base copy_scripts overwrite order (same final set), render_script split of install_script (same bytes)",
+    "Scan.cmd_scan rebaseline now printing prose_shape_changes before writing (stdout only; read_prose_shape_baseline skips malformed lines), docs/make.jl glossary anchor, Doctor/Preflight docstring-only hunks, schema description-only hunks",
+    "test/scans.jl, test/rounds.jl, test/coverage.jl, test/gate.jl, test/seeds.jl, test/sync_doctor.jl edits read as claims: the base waiver test asserting a RULE.CIT.DOI waiver disables the scan was replaced by one asserting a LedgerError; the build test fixture gained git init to meet the new no-HEAD refusal"
+  ],
+  "candidates_found": 16,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "A policy waiver of RULE.DOC.API_GROUPING (or RULE.CIT.DOI / NO_INACCESSIBLE), any target, now crashes scans and fails the QUICK doctor",
+      "locations": [
+        "src/Scan.jl:400 apply_ledger (the new loop over rules_for_scan(id) that throws Ledger.LedgerError)",
+        "src/Scan.jl:121 unreachable_waiver_scans",
+        "src/CLI/Doctor.jl:343 CFG.EXEMPTIONS (the new `e[\"scope\"] == \"policy\"` branch)",
+        "policy/RULES.toml:95,434,451 (the comments declaring the three waivers refused)",
+        "test/scans.jl:187 (the base test that a RULE.CIT.DOI waiver disables the scan, replaced by @test_throws)",
+        "test/sync_doctor.jl:150"
+      ],
+      "before": "enforced = unique!(vcat(String(row[\"rule\"]), rules_for_scan(id)))\n    for rule in enforced, e in Ledger.entries(ledger, rule; scope = \"policy\")\n        e[\"target\"] == \"*\" && return (Hit[], length(hits), true)",
+      "after": "for rule in rules_for_scan(id)\n        rule == canonical && continue\n        e = first(Ledger.entries(ledger, rule; scope = \"policy\"), 1)\n        isempty(e) || throw(Ledger.LedgerError(\"$rule on $(e[1][\"target\"]) is a policy waiver of a rule $id enforces but \" * ...",
+      "why_it_matters": "A consumer ledger entry `id = \"RULE.DOC.API_GROUPING\", scope = \"policy\", target = \"*\"` passed CFG.EXEMPTIONS at base and at the released rc.11, and waived that rule's three HTML scans (SCAN.HTML_DOCSTRING_ONCE, SCAN.HTML_PUBLIC_HOME, SCAN.HTML_BASE_LEAK), all of which have it as their canonical `rule`. At head the same entry (1) FAILs CFG.EXEMPTIONS, a QUICK check, so `gbg preflight` exits 2, the makedocs wrapper refuses and TestHarness.gate() errors inside Pkg.test(); (2) makes run_scan throw LedgerError at SCAN.API_PAGE_STRUCTURE, outside run_scan's try and uncaught by Main (which catches only ConfigError), so `gbg scan docs` exits 3 as a crash and every scan after it is lost. The same happens for an entry with a narrow target (`target = \"docs/src/api/Foo.md\"`, a form docs/src/guide/ledger.md documents), which apply_ledger ignored at base and at rc.11. So the rule can no longer be waived in any form: the suggested remedy, `scope = \"scan\"` on SCAN.API_PAGE_STRUCTURE, turns off its canonical RULE.DOC.INTERNAL_API as well. The same applies to RULE.CIT.NO_INACCESSIBLE, whose other surfaces the RULES.toml comment says belong to the panel.",
+      "justified": "no",
+      "description": "The defect the prior audit named was narrow: a target-`*` waiver of a two-rule scan's second rule turned off the whole scan. The fix is much wider. It refuses every policy-scope entry, whatever its target, on any rule that appears second in any scan's check list, and it refuses by throwing from the scan engine instead of a doctor line. That covers RULE.DOC.API_GROUPING, a rule that three other scans own canonically, so a waiver that used to work correctly for those three scans is now rejected. The schema already warns against this failure shape: schema/exemptions.schema.json says of its reason floor that raising it 'crashes Ledger.read, and with it sync, every scan and the docs build, where the doctor would have named the entry and carried on'. The replaced test pinned the base contract; its replacement asserts only the refusal. No test checks that an API_GROUPING waiver still reaches the three HTML scans.",
+      "evidence": "Ran at head: `unreachable_waiver_scans(\"RULE.DOC.API_GROUPING\") = [\"SCAN.API_PAGE_STRUCTURE\"]`; apply_ledger with pol(\"RULE.DOC.API_GROUPING\", \"*\") on SCAN.HTML_PUBLIC_HOME -> `(Hit[], 0, true)`; on SCAN.API_PAGE_STRUCTURE -> `THROWS GBGCodingTools.Ledger.LedgerError`; with target \"docs/src/api/Foo.md\" -> `THROWS GBGCodingTools.Ledger.LedgerError`. catalog/scans.toml: `id = \"SCAN.HTML_PUBLIC_HOME\"\\nrule = \"RULE.DOC.API_GROUPING\"`. src/Scan.jl run_scan: `err isa Ledger.LedgerError && rethrow()` then `kept, exempted, disabled = apply_ledger(...)` outside the try. src/TestHarness.jl:607 `code = GBGCodingTools.doctor(cfg, :QUICK)`; `code == 0 || error(...)`; Doctor.jl:50 QUICK includes \"CFG.EXEMPTIONS\"."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "Claim checklist narrowed past the version-string defect: about 55% of quantifier items dropped, some genuine claims with them",
+      "locations": [
+        "src/CLI/Preflight.jl:348 CLAIM_EXIT",
+        "src/CLI/Preflight.jl:356 CLAIM_QUANTIFIER",
+        "src/CLI/Preflight.jl:357 CLAIM_TOOL_ID",
+        "src/CLI/Preflight.jl:359 CLAIM_CLAUSE",
+        "src/CLI/Preflight.jl:410 claim_checklist `qu = any(... split(s, CLAIM_CLAUSE))`",
+        "test/rounds.jl:245-255"
+      ],
+      "before": "const CLAIM_QUANTIFIER = r\"\\b(?:every|never|always|all|none|any|only)\\b\"i\nconst CLAIM_TOOL_ID = r\"...\\.[A-Z_]+\\b|\\bgbg\\s+[a-z]+\\b\"\n...\nqu = occursin(CLAIM_QUANTIFIER, s) && occursin(CLAIM_TOOL_ID, s)",
+      "after": "const CLAIM_QUANTIFIER = r\"\\b(?:every|never|always|none)\\b\"i\nconst CLAIM_TOOL_ID = r\"...\\.[A-Z_]+\\b|`gbg\\s+[a-z]+\"\nconst CLAIM_CLAUSE = r\"(?<=[.;!?])\\s+|\\s+—\\s+\"\n...\nqu = any(c -> occursin(CLAIM_QUANTIFIER, c) && occursin(CLAIM_TOOL_ID, c), split(s, CLAIM_CLAUSE))",
+      "why_it_matters": "Every check-docs lane of every consumer gets this checklist as its mechanical floor, and a lane owes a verdict only on the lines it lists. Base and head regexes run over this tree (src, ext, docs/src, docs/ARCHITECTURE.md, policy, instruments, catalog, templates): quantifier-tagged lines fall from 443 to 202. 137 were lost because `all/any/only` were dropped, 96 to the clause split, and 8 because `gbg <verb>` now needs a backtick. Some of the lost lines are real, checkable universal claims about the tool: docs/src/architecture.md \"`gbg scan docs --rebaseline prose-shape --reason …` are the ONLY writers.\", \"`PIN.CONFIG` accepts only `vX.Y.Z`\", \"`gbg round rerun <round> --lanes …` accepts only lanes `bank`\"; src/Scans/ai_banner.jl \"SCAN.AI_BANNER — RULE.DOC.AI_BANNER. ... the banner is present on every\" (split at the dash); src/CLI/Gate.jl \"gate: ROUND.DIR — ... the gate never passes vacuously\". The exit class also drops docs/src/guide/verbs.md \"The exit contract is one for all: `0`\", because `(?<![\\w.])[0-3]\\s+[a-z]` does not match a backticked code. A seeded quantifier mutation planted on one of these lines no longer reaches any checklist, so a lane's recall is not comparable across the change.",
+      "justified": "unclear",
+      "description": "The defects cited in the new comment were two: the exit alternative matching the `1` of a version string, and a quantifier anywhere on a line with any verb counting as a claim. The `(?!\\.\\d)` / `[0-3]\\s+[a-z]` guard and the clause split address them. Dropping `only`, `all` and `any` outright, and requiring a backtick before `gbg`, removes a further class of real claims the defects did not involve. The commit message states the measured per-lane reduction (\"quantifier items 241→110 in all\"), so the change is disclosed rather than silent. It is still an instrument-measurement change wider than the defect that prompted it.",
+      "evidence": "Measurement script (scratchpad) with the verbatim base and head regexes: `exit: old 205 new 204; quantifier(+tool id): old 443 new 202`; `Dict(\"bare gbg (no backtick)\" => 8, \"different clause\" => 96, \"dropped all/any/only\" => 137)`; lost exit sample `docs/src/guide/verbs.md: ... The exit contract is one for all: `0``. Comment at Preflight.jl: \"not `all`, `any` or `only`, which ordinary prose is full of\"."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "A check-docs round's state-verifier scope now follows check-consistency's latex_source_globs, which can only add",
+      "locations": [
+        "src/CLI/Passes.jl:590 pass_open state args (inside `if inst in Sync.DOCS_INSTRUMENTS` at Passes.jl:549, so check-docs too)",
+        "src/CLI/Preflight.jl:776 source_globs",
+        "src/CLI/Preflight.jl:730 render_args `a[\"source_globs\"] = source_globs(cfg)`",
+        "instruments/check-consistency/workflow/verify-state.js:17-21",
+        "instruments/check-consistency/schema.json:175 (description rewritten from replacement to union)",
+        "test/coverage.jl:139-151"
+      ],
+      "before": "\"source_scope\" => [\"src\", \"ext\", \"docs/src\", \"docs\"]))\n...\nglobs = String.(get(cfg[\"instruments\"][\"check-consistency\"], \"latex_source_globs\", String[]))\na[\"source_globs\"] = isempty(globs) ? [\"src\", \"ext\", \"docs/src\", \"docs\"] : globs",
+      "after": "\"source_scope\" => Preflight.source_globs(cfg)))\n...\nsource_globs(cfg::AbstractDict) =\n    unique!(vcat(SOURCE_SURFACES, String.(get(cfg[\"instruments\"][\"check-consistency\"], \"latex_source_globs\", String[]))))",
+      "why_it_matters": "Take the PF-shaped config in docs/ARCHITECTURE.md:1247 (`latex_source_globs = [\"src/*.jl\", \"examples/*.jl\"]`). At base, its check-docs `pass open` sent verify-state `source_scope = [src, ext, docs/src, docs]`. At head it sends six entries, examples/*.jl among them, so every check-docs state verifier prompt and reading scope changes because of a key that belongs to another instrument. Its check-consistency panel went from the two named globs at base to six entries at head. A consumer can no longer narrow the LaTeX-source hat with the key: `latex_source_globs = [\"src/*.jl\"]` (the CP example at ARCHITECTURE:1359) now changes nothing, since `src` is already present.",
+      "justified": "unclear",
+      "description": "The defect was that the panel's first reader of the key replaced the four surfaces. Changing the panel to a union answers that, and it returns an unset key to rc.11 behaviour. The same edit also rewires a check-docs code path, pass_open's state verifier for check-docs rounds, to read a check-consistency key. That path had no reported defect: at base and at rc.11 it always sent the four surfaces. The instrument schema's documented meaning of the key was rewritten in the same commit, from 'the consumer's globs when it set any' to 'added to them, never in place of them'.",
+      "evidence": "diff Passes.jl: `-                      \"source_scope\" => [\"src\", \"ext\", \"docs/src\", \"docs\"]))` / `+                      \"source_scope\" => Preflight.source_globs(cfg)))`; that state Dict is built under `if inst in Sync.DOCS_INSTRUMENTS` (Passes.jl:549). rc.11 verify-state.js:21 `const SCOPE = A.source_scope || ['src', 'ext', 'docs/src', 'docs']`."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "`gbg round scripts` needs --reason, and the schema now rejects records the base verb wrote",
+      "locations": [
+        "src/CLI/Rounds.jl:402 refresh_scripts (reason gate, differing-only loop)",
+        "src/CLI/Rounds.jl cmd_round `verb == \"scripts\" && return refresh_scripts(cfg, round, get(o.values, \"reason\", \"\"))`",
+        "schema/round.schema.json scripts_refreshed items `required` += reason, after_pass, scripts (additionalProperties false)",
+        "test/rounds.jl:856-876"
+      ],
+      "before": "function refresh_scripts(cfg::AbstractDict, round::AbstractString; io::IO = stdout)\n    dir, rec = guard(cfg, round; io)\n    dst = Preflight.copy_scripts(cfg, String(rec[\"instrument\"]), round)\n    entry = Dict{String,Any}(\"at\" => timestamp(), \"head\" => something(Git.head(cfg[\"root\"]), \"0\"^40))\n...\n     \"required\": [\"at\", \"head\"]",
+      "after": "length(strip(reason)) >= 24 || (println(io, \"scripts: refused — --reason \\\"…\\\" (≥ 24 characters) ...\"); return 2)\n...\n     \"required\": [\"at\", \"head\", \"reason\", \"after_pass\", \"scripts\"]",
+      "why_it_matters": "`gbg round scripts <round>` exited 0 at base and exits 2 at head. A ROUND.toml holding a `scripts_refreshed` entry the base verb wrote (`{at, head}` only) no longer validates. RoundFiles.read_round throws, Rounds.load turns that into exit 2 for every round verb on the round, RoundFiles.rounds marks the round `:invalid`, and Gate.gate_problems treats `:invalid` as fatal, so `gbg gate`, the makedocs wrapper and TestHarness.gate stop on it. The base verb was never in a release (it postdates rc.11), so only this repository's own rounds could carry such a record. schema_version was not changed.",
+      "justified": "unclear",
+      "description": "Recording a reason and the replaced shas is a reasonable tightening. But existing records gain three required fields with no migration and no schema_version bump, which breaks reading of any round the previous verb touched. The no-op branch also changes what gets recorded: base appended an entry on every run, head appends nothing when no script differs.",
+      "evidence": "diff schema/round.schema.json: `-     \"head\"` / `+     \"head\",\\n+     \"reason\",\\n+     \"after_pass\",\\n+     \"scripts\"`; RoundFiles.jl read_round `isempty(errs) || error(...)`; rounds() `catch err (nothing, :invalid)`; Gate.jl:73 `if r.state in (:nomarker, :invalid) ... fatal = true`."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "previously_worked": "yes",
+      "title": "On a root with no git HEAD, `round scripts` replaces scripts and then throws before recording anything",
+      "locations": [
+        "src/CLI/Rounds.jl:413-417 refresh_scripts (install_script inside the loop, HEAD check after it)",
+        "src/CLI/Rounds.jl:371 build (new no-HEAD refusal)",
+        "src/CLI/Passes.jl:1108 build_fails (UNCHECKABLE refusal of an unreachable or placeholder head)",
+        "test/rounds.jl:814 (build no-HEAD tested; refresh no-HEAD untested)"
+      ],
+      "before": "dst = Preflight.copy_scripts(cfg, String(rec[\"instrument\"]), round)\n    entry = Dict{String,Any}(\"at\" => timestamp(), \"head\" => something(Git.head(cfg[\"root\"]), \"0\"^40))\n    rec[\"scripts_refreshed\"] = push!(...); save(dir, rec)",
+      "after": "        push!(moved, Dict{String,Any}(\"name\" => name, \"from\" => old, \"to\" => sha(new)))\n        Preflight.install_script(src, dst)\n    end\n    ...\n    head = Git.head(cfg[\"root\"])\n    head === nothing && throw(RoundError(\"scripts: the root has no git HEAD to record the refresh against\"))",
+      "why_it_matters": "Preflight still opens a round without a HEAD (`head = something(Git.head(root), \"0\"^40)`, Preflight.jl:952). On such a root, base `gbg round scripts` copied the scripts and recorded the refresh against the zero head. Head overwrites every differing frozen script and only then throws RoundError (exit 2), leaving no `scripts_refreshed` entry. That is the unrecorded mid-round script change the verb's own docstring says it exists to prevent ('doing it by hand is what is not, because it leaves no trace'). `gbg round build` handles the same case in the safe order: it checks HEAD before running anything.",
+      "justified": "no",
+      "description": "Removing the placeholder head was justified: a zero head read as 'nothing changed' in close's staleness diff, and build_fails now refuses that as UNCHECKABLE. The edit applied that decision in the wrong order in refresh_scripts. The HEAD check runs after the side effect, so the refusal no longer protects anything, and nothing records the replacement.",
+      "evidence": "Current src/CLI/Rounds.jl lines 404 `dir, rec = guard(cfg, round; io)`, 413 `Preflight.install_script(src, dst)`, 417 `head === nothing && throw(RoundError(...))`; guard (Rounds.jl:73-83) checks self verify, CFG.TORN, load and config_sha, never HEAD."
+    },
+    {
+      "type": "operational",
+      "severity": "nit",
+      "confidence": "medium",
+      "previously_worked": "yes",
+      "title": "AUDIT.GAP: equal base/closed-head strings now WARN when the commit is unreachable",
+      "locations": [
+        "src/CLI/Doctor.jl:636 AUDIT.GAP",
+        "docs/ARCHITECTURE.md §7.3 AUDIT.GAP row and §6.8 (contract rewritten from 'equals' to 'or an ancestor of it')",
+        "instruments/audit-changes/PROTOCOL.md:87",
+        "test/sync_doctor.jl:168"
+      ],
+      "before": "get(audits[i].round, \"base\", \"\") == get(audits[i-1].round, \"closed_head\", audits[i-1].round[\"head\"]) || push!(gaps, ...)",
+      "after": "(!isempty(base) && Git.is_ancestor(ctx.root, base, prev)) ||\n            push!(gaps, \"... is not $(audits[i-1].name)'s closed head ... or an ancestor of it — the commits between were never audited\")",
+      "why_it_matters": "Two closed audits whose `base` equals the previous `closed_head` passed AUDIT.GAP at base and at rc.11 by string comparison. At head the check shells out to `git merge-base --is-ancestor`, which fails when the object is missing: a shallow clone, or history rewritten or garbage-collected after the audit. The same records then WARN and claim 'the commits between were never audited', which is false. An overlapping base, which warned before, now passes; that part is the intended relaxation.",
+      "justified": "yes",
+      "description": "The move from equality to an ancestor test is sound, since an overlap leaves no commit unread. The side effect is that a reachability requirement now applies to the equal case too. A cheap string-equality short-circuit before the git call would keep the old verdict for identical shas. This is a WARN only, reported for completeness.",
+      "evidence": "Git.jl is_ancestor: `return success(pipeline(`git -C $root merge-base --is-ancestor $a $b`; ...))` / `catch; return false`; the new predicate has no `base == prev` short-circuit."
+    }
+  ]
+}

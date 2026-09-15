@@ -1,0 +1,313 @@
+{
+    "class_candidates": {
+        "2026-09-15-audit-changes-01/executing#1": [
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#6": [
+        ],
+        "2026-09-15-audit-changes-01/executing#2": [
+        ],
+        "2026-09-15-audit-changes-01/behaviour-change#6": [
+        ],
+        "2026-09-15-audit-changes-01/public-contract#1": [
+        ],
+        "2026-09-15-audit-changes-01/contract-drift#4": [
+        ],
+        "2026-09-15-audit-changes-01/over-rejection#2": [
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#5": [
+            "docs/ARCHITECTURE.md:2433",
+            "docs/ARCHITECTURE.md:2759",
+            "fixture/GBG Fixture/.gbg/policy/instruments.md:81",
+            "policy/RULES.toml:623",
+            "policy/RULES.toml:625",
+            "policy/instruments.md:80",
+            "schema/round.schema.json:299",
+            "src/CLI/Passes.jl:927",
+            "src/CLI/Rounds.jl:390",
+            "test/rounds.jl:349"
+        ],
+        "2026-09-15-audit-changes-01/executing#5": [
+        ],
+        "2026-09-15-audit-changes-01/numerics#2": [
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#2": [
+        ],
+        "2026-09-15-audit-changes-01/behaviour-change#4": [
+        ],
+        "2026-09-15-audit-changes-01/contract-drift#1": [
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#3": [
+        ],
+        "2026-09-15-audit-changes-01/behaviour-change#2": [
+        ],
+        "2026-09-15-audit-changes-01/behaviour-change#3": [
+        ],
+        "2026-09-15-audit-changes-01/over-rejection#5": [
+        ],
+        "2026-09-15-audit-changes-01/sweep-completeness#3": [
+        ],
+        "2026-09-15-audit-changes-01/executing#3": [
+        ],
+        "2026-09-15-audit-changes-01/over-rejection#4": [
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#7": [
+        ],
+        "2026-09-15-audit-changes-01/invariants#1": [
+        ],
+        "2026-09-15-audit-changes-01/behaviour-change#1": [
+            "catalog/scans.toml:230",
+            "catalog/scans.toml:231",
+            "catalog/scans.toml:238",
+            "catalog/scans.toml:239",
+            "catalog/scans.toml:246",
+            "catalog/scans.toml:247",
+            "docs/ARCHITECTURE.md:1415",
+            "docs/ARCHITECTURE.md:2359",
+            "docs/ARCHITECTURE.md:2406",
+            "docs/ARCHITECTURE.md:2475",
+            "docs/ARCHITECTURE.md:2479",
+            "docs/ARCHITECTURE.md:2482",
+            "docs/ARCHITECTURE.md:2483",
+            "docs/ARCHITECTURE.md:2484",
+            "fixture/GBG Fixture/.gbg/policy/citations.md:19",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:98",
+            "fixture/GBG Fixture/defects.toml:239",
+            "fixture/GBG Fixture/defects.toml:244",
+            "fixture/GBG Fixture/defects.toml:249",
+            "fixture/GBG Fixture/defects.toml:327",
+            "fixture/GBG Fixture/defects.toml:330",
+            "fixture/GBG Fixture/defects.toml:333",
+            "policy/RULES.toml:101",
+            "policy/RULES.toml:99"
+        ],
+        "2026-09-15-audit-changes-01/sweep-completeness#1": [
+        ],
+        "2026-09-15-audit-changes-01/executing#4": [
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#1": [
+        ],
+        "2026-09-15-audit-changes-01/sweep-completeness#2": [
+        ],
+        "2026-09-15-audit-changes-01/free-reader#1": [
+        ],
+        "2026-09-15-audit-changes-01/behaviour-change#5": [
+        ],
+        "2026-09-15-audit-changes-01/contract-drift#2": [
+            "docs/ARCHITECTURE.md:2433",
+            "docs/ARCHITECTURE.md:2759",
+            "fixture/GBG Fixture/.gbg/policy/instruments.md:81",
+            "policy/RULES.toml:623",
+            "policy/RULES.toml:625",
+            "policy/instruments.md:80",
+            "schema/round.schema.json:299",
+            "src/CLI/Passes.jl:927",
+            "src/CLI/Rounds.jl:390",
+            "test/rounds.jl:349"
+        ],
+        "2026-09-15-audit-changes-01/contract-drift#3": [
+        ],
+        "2026-09-15-audit-changes-01/free-reader#3": [
+        ],
+        "2026-09-15-audit-changes-01/contract-drift#5": [
+        ],
+        "2026-09-15-audit-changes-01/sweep-completeness#4": [
+            "catalog/scans.toml:142",
+            "catalog/scans.toml:143",
+            "catalog/scans.toml:318",
+            "catalog/scans.toml:319",
+            "docs/ARCHITECTURE.md:102",
+            "docs/ARCHITECTURE.md:2381",
+            "docs/ARCHITECTURE.md:2428",
+            "docs/ARCHITECTURE.md:2433",
+            "docs/ARCHITECTURE.md:2494",
+            "docs/ARCHITECTURE.md:2495",
+            "docs/ARCHITECTURE.md:2759",
+            "docs/src/guide/rounds.md:34",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:237",
+            "fixture/GBG Fixture/.gbg/policy/instruments.md:36",
+            "fixture/GBG Fixture/.gbg/policy/instruments.md:81",
+            "fixture/GBG Fixture/defects.toml:154",
+            "fixture/GBG Fixture/defects.toml:204",
+            "fixture/GBG Fixture/defects.toml:273",
+            "policy/RULES.toml:253",
+            "policy/RULES.toml:255",
+            "policy/RULES.toml:258",
+            "policy/RULES.toml:581",
+            "policy/RULES.toml:583",
+            "policy/RULES.toml:623"
+        ],
+        "2026-09-15-audit-changes-01/reader-consequence#1": [
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#4": [
+        ],
+        "2026-09-15-audit-changes-01/free-reader#2": [
+        ],
+        "2026-09-15-audit-changes-01/public-contract#2": [
+            "docs/ARCHITECTURE.md:2433",
+            "docs/ARCHITECTURE.md:2759",
+            "fixture/GBG Fixture/.gbg/policy/instruments.md:81",
+            "policy/RULES.toml:623",
+            "policy/RULES.toml:625",
+            "policy/instruments.md:80",
+            "schema/round.schema.json:299",
+            "src/CLI/Passes.jl:927",
+            "src/CLI/Rounds.jl:390",
+            "test/rounds.jl:349"
+        ],
+        "2026-09-15-audit-changes-01/over-rejection#1": [
+            "catalog/scans.toml:182",
+            "catalog/scans.toml:183",
+            "catalog/scans.toml:230",
+            "catalog/scans.toml:231",
+            "catalog/scans.toml:238",
+            "catalog/scans.toml:239",
+            "catalog/scans.toml:246",
+            "catalog/scans.toml:247",
+            "catalog/scans.toml:8",
+            "docs/ARCHITECTURE.md:1415",
+            "docs/ARCHITECTURE.md:2357",
+            "docs/ARCHITECTURE.md:2359",
+            "docs/ARCHITECTURE.md:2406",
+            "docs/ARCHITECTURE.md:2475",
+            "docs/ARCHITECTURE.md:2479",
+            "docs/ARCHITECTURE.md:2482",
+            "docs/ARCHITECTURE.md:2483",
+            "docs/ARCHITECTURE.md:2484",
+            "fixture/GBG Fixture/.gbg/policy/citations.md:19",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:88",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:98",
+            "fixture/GBG Fixture/defects.toml:119",
+            "fixture/GBG Fixture/defects.toml:124",
+            "fixture/GBG Fixture/defects.toml:239"
+        ],
+        "2026-09-15-audit-changes-01/numerics#1": [
+        ],
+        "2026-09-15-audit-changes-01/contract-drift#6": [
+            "catalog/scans.toml:142",
+            "catalog/scans.toml:143",
+            "catalog/scans.toml:318",
+            "catalog/scans.toml:319",
+            "docs/ARCHITECTURE.md:102",
+            "docs/ARCHITECTURE.md:2381",
+            "docs/ARCHITECTURE.md:2494",
+            "docs/ARCHITECTURE.md:2495",
+            "fixture/GBG Fixture/.gbg/policy/docs-rubric.md:237",
+            "fixture/GBG Fixture/defects.toml:154",
+            "fixture/GBG Fixture/defects.toml:204",
+            "fixture/GBG Fixture/defects.toml:273",
+            "policy/RULES.toml:253",
+            "policy/RULES.toml:255",
+            "policy/RULES.toml:258",
+            "policy/docs-rubric.md:236",
+            "schema/config.schema.json:295",
+            "src/Scans/signature_typed.jl:1",
+            "src/Scans/signature_typed.jl:47",
+            "src/Scans/signature_typed.jl:5",
+            "src/Scans/signature_wide.jl:1",
+            "src/Scans/signature_wide.jl:5",
+            "test/scans.jl:115",
+            "test/scans.jl:120"
+        ],
+        "2026-09-15-audit-changes-01/over-rejection#3": [
+            "docs/ARCHITECTURE.md:2433",
+            "docs/ARCHITECTURE.md:2759",
+            "fixture/GBG Fixture/.gbg/policy/instruments.md:81",
+            "policy/RULES.toml:623",
+            "policy/RULES.toml:625",
+            "policy/instruments.md:80",
+            "schema/round.schema.json:299",
+            "src/CLI/Passes.jl:927",
+            "src/CLI/Rounds.jl:390",
+            "test/rounds.jl:349"
+        ]
+    },
+    "quote_still_stands": {
+        "2026-09-15-audit-changes-01/executing#1": [
+            "ext/GBGCodingToolsDocumenterExt.jl"
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#6": [
+        ],
+        "2026-09-15-audit-changes-01/executing#2": [
+        ],
+        "2026-09-15-audit-changes-01/behaviour-change#6": [
+        ],
+        "2026-09-15-audit-changes-01/public-contract#1": [
+        ],
+        "2026-09-15-audit-changes-01/contract-drift#4": [
+        ],
+        "2026-09-15-audit-changes-01/over-rejection#2": [
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#5": [
+        ],
+        "2026-09-15-audit-changes-01/executing#5": [
+        ],
+        "2026-09-15-audit-changes-01/numerics#2": [
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#2": [
+        ],
+        "2026-09-15-audit-changes-01/behaviour-change#4": [
+            "src/CLI/Rounds.jl"
+        ],
+        "2026-09-15-audit-changes-01/contract-drift#1": [
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#3": [
+        ],
+        "2026-09-15-audit-changes-01/behaviour-change#2": [
+        ],
+        "2026-09-15-audit-changes-01/behaviour-change#3": [
+            "src/CLI/Preflight.jl"
+        ],
+        "2026-09-15-audit-changes-01/over-rejection#5": [
+        ],
+        "2026-09-15-audit-changes-01/sweep-completeness#3": [
+        ],
+        "2026-09-15-audit-changes-01/executing#3": [
+        ],
+        "2026-09-15-audit-changes-01/over-rejection#4": [
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#7": [
+        ],
+        "2026-09-15-audit-changes-01/invariants#1": [
+        ],
+        "2026-09-15-audit-changes-01/behaviour-change#1": [
+        ],
+        "2026-09-15-audit-changes-01/sweep-completeness#1": [
+        ],
+        "2026-09-15-audit-changes-01/executing#4": [
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#1": [
+        ],
+        "2026-09-15-audit-changes-01/sweep-completeness#2": [
+        ],
+        "2026-09-15-audit-changes-01/free-reader#1": [
+        ],
+        "2026-09-15-audit-changes-01/behaviour-change#5": [
+        ],
+        "2026-09-15-audit-changes-01/contract-drift#2": [
+        ],
+        "2026-09-15-audit-changes-01/contract-drift#3": [
+        ],
+        "2026-09-15-audit-changes-01/free-reader#3": [
+        ],
+        "2026-09-15-audit-changes-01/contract-drift#5": [
+        ],
+        "2026-09-15-audit-changes-01/sweep-completeness#4": [
+        ],
+        "2026-09-15-audit-changes-01/reader-consequence#1": [
+        ],
+        "2026-09-15-audit-changes-01/under-rejection#4": [
+        ],
+        "2026-09-15-audit-changes-01/free-reader#2": [
+        ],
+        "2026-09-15-audit-changes-01/public-contract#2": [
+        ],
+        "2026-09-15-audit-changes-01/over-rejection#1": [
+        ],
+        "2026-09-15-audit-changes-01/numerics#1": [
+        ],
+        "2026-09-15-audit-changes-01/contract-drift#6": [
+        ],
+        "2026-09-15-audit-changes-01/over-rejection#3": [
+        ]
+    }
+}

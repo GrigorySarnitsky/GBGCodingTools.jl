@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-15-audit-changes-01",
+  "lane": "reader-consequence",
+  "verdict": "CONCERNS",
+  "checked": [
+    "docs/ARCHITECTURE.md — every hunk (D7 workflow-scripts freeze/refresh prose, D10/D11 word-count churn, CFG.TORN / AUDIT.GAP / ROUND.toml import table rows, RULE.DOC.SIGNATURE_MIRROR appendix row) against the corresponding current source (Preflight.jl, Doctor.jl, Rounds.jl, schema/round.schema.json)",
+    "docs/make.jl — the new '\"the consumer\" is the [consumer](@ref install)' and 'every [consumer](@ref install) imports' cross-links, and the new Glossary-heading @id-generation branch, against docs/src/guide/install.md and policy/glossary.md",
+    "docs/src/guide/install.md — the rewritten 'A consumer is…' paragraph, against policy/glossary.md's Consumer definition (read at HEAD, confirmed absent from this diff) and against docs/src/guide/rounds.md's own inline restatement of the term",
+    "docs/src/guide/rounds.md — the build-recording and close-condition additions (items 5 and 8) against Passes.build_fails / Rounds.record_build!",
+    "docs/src/api/Config.md — the added ConfigWrittenError doc entry, and whether read_written/ConfigWrittenError are reflected in the Config module docstring ('map')",
+    "ext/GBGCodingToolsDocumenterExt.jl — the DOCS_INSTRUMENTS constant swap against its unchanged docstring",
+    "instruments/audit-changes/PROTOCOL.md, instruments/check-consistency/PROTOCOL.md, instruments/check-docs/PROTOCOL.md — the AUDIT.GAP ancestor wording and the docs-build-recorded closing condition, against Doctor.jl's AUDIT.GAP check and Passes.build_fails",
+    "instruments/check-consistency/schema.json, workflow/panel.js, workflow/verify-act.js, workflow/verify-state.js — the source_globs/round_dir/BATCH comment and required-args changes against Preflight.source_globs, Preflight.render_args and Passes.pass_open",
+    "policy/RULES.toml — the new inline comments on RULE.DOC.REF_ABUT/RULE.CIT.FULL_INLINE/RULE.CIT.BLOCK_LIST and the RULE.INST.CARRY / RULE.INST.FROZEN_MIDROUND statement rewrites against Scan.apply_ledger, Scan.unreachable_waiver_scans and Passes.carry_conditions (git show at base to confirm CARRY_LIMIT refusal pre-existed)",
+    "policy/instruments.md — the RULE.INST.FROZEN_MIDROUND paragraph against Rounds.refresh_scripts' actual recorded fields (reason, after_pass, scripts)",
+    "schema/round.schema.json — config_sha/build/scripts_refreshed/seed_skipped changes against Preflight.stamps, Rounds.record_build!, Rounds.refresh_scripts, Rounds.note_seed_skips!",
+    "src/CLI/Config.jl docstrings for ConfigWrittenError and read_written against their bodies",
+    "src/CLI/Main.jl's main() docstring against the actual catch-arm logic (ConfigError vs ConfigWrittenError)",
+    "src/CLI/Preflight.jl docstrings for stamps, source_globs, SOURCE_SURFACES, script_sources, install_script/render_script, torn_check, and the CLAIM_EXIT/CLAIM_QUANTIFIER/CLAIM_TOOL_ID/CLAIM_CLAUSE regex comments against the corresponding test assertions in test/rounds.jl",
+    "src/CLI/Release.jl docstrings for admitted_rounds and release (root/dev-checkout guard) against Gate.gate_problems/frozen_rounds and the new tests in test/gate.jl and test/rounds.jl",
+    "src/CLI/Rounds.jl docstrings for record_build!, build, refresh_scripts, note_seed_skips!, seed_docs_corpus!, import_empty, orphan_lane_files against their bodies and against test/rounds.jl, test/seeds.jl",
+    "src/CLI/Doctor.jl docstring for pinned_and_managed against its body and against docs/ARCHITECTURE.md's CFG.TORN row",
+    "src/Scan.jl docstrings for rules_register, unreachable_waiver_scans, apply_ledger against Scan.jl's body and test/scans.jl",
+    "src/CLI/Sync.jl's DOCS_INSTRUMENTS comment against actual call sites (grepped) for count accuracy",
+    "docs/prose_shape.csv — scanned for word-count deltas that would flag an unexplained content swing beyond what the corresponding prose hunks account for"
+  ],
+  "candidates_found": 4,
+  "findings": [
+    {
+      "type": "currency",
+      "severity": "major",
+      "confidence": "high",
+      "title": "install.md widens \"consumer\" to include the fixture, then cites the glossary as binding a definition that excludes it",
+      "locations": [
+        "docs/src/guide/install.md hunk (the 'A **consumer** is…' paragraph)",
+        "docs/make.jl hunk (adds two new '[consumer](@ref install)' cross-links from the generated instruments.md and rules.md pages, both now pointing at the contradictory definition)",
+        "policy/glossary.md:3 (unedited by this diff — the definition install.md's new sentence claims is binding)"
+      ],
+      "before": "A **consumer** is a package that pins this tool and is reviewed by it — one of the four GBG science packages, or the tool itself, which is its own fifth consumer.",
+      "after": "A **consumer** is a package that pins this tool and is reviewed by it — one of the four GBG science packages, the tool itself, which is its own fifth consumer, or the toy fixture under `fixture/` the tests run over; the [glossary](@ref glossary) binds the term.",
+      "why_it_matters": "A reader of the install guide is told the toy fixture is a third kind of consumer, and is pointed to the glossary as the place the term is settled. But policy/glossary.md — the ONE shared rulebook text rendered into every consumer, unedited by this diff — still says only '**Consumer** — a package that pins the tool: the four GBG packages, and the tool repository itself,' with no mention of the fixture. The reader who follows the link to confirm what they just read finds the opposite of what install.md just told them, on a term the project itself treats as closed/fleet-wide vocabulary (CLAUDE.md: 'Closed vocabularies… changing either is MAJOR'). docs/make.jl's own new cross-links from the generated instruments.md and rules.md pages ('the consumer\" in each is the [consumer](@ref install)', 'every [consumer](@ref install) imports') now route two more reader paths into the same contradiction. docs/src/guide/rounds.md's own inline restatement of the term ('one run of one instrument over one [consumer](@ref install) — a package that pins this tool and is reviewed by it') was left at the narrower definition, so the three textual definitions of \"consumer\" in the rendered docs (glossary, rounds.md's inline phrase, install.md's new phrase) now disagree with each other after this diff, where before it they agreed.",
+      "justified": "no",
+      "description": "The diff edits only install.md's own prose to fold the fixture into \"consumer\" and to assert the glossary is authoritative for the term, but it does not touch policy/glossary.md (confirmed absent from the diffstat and identical to base via `git show`), so the cited authority contradicts the claim that cites it. This is exactly the shape the lens targets: prose that is locally plausible but leaves the reader with a false belief about a defined, fleet-wide term as soon as they check the source the page itself names.",
+      "evidence": "policy/glossary.md:3 — \"**Consumer** — a package that pins the tool: the four GBG packages, and the tool repository itself.\" — no fixture mention anywhere in the file, confirmed by reading the full file (33 lines) and by the diffstat showing policy/glossary.md untouched in this change set."
+    }
+  ]
+}

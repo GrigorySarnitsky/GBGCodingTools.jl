@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-15-audit-changes-01",
+  "lane": "invariants",
+  "verdict": "CONCERNS",
+  "checked": [
+    "§5.5 'Every verdict vocabulary and schema... changing either is MAJOR' against every schema/*.json hunk in the diff — only schema/round.schema.json changed",
+    "schema/round.schema.json: config_sha pattern widened from `^[0-9a-f]{64}$` to `^([0-9a-f]{64}|)$`",
+    "schema/round.schema.json: scripts_refreshed[] required list widened from [at,head] to [at,head,reason,after_pass,scripts], and three new required sub-fields added",
+    "Project.toml version at base (3e30907) vs head (54cd7f2) via `git show <rev>:Project.toml` — both '1.0.0', no bump accompanying the schema change",
+    "schema_version's own contract in schema/round.schema.json ('the tool MAJOR this artefact was written under') and in docs/ARCHITECTURE.md §6.3 ('Every artefact carries schema_version... Changing any vocabulary is MAJOR')",
+    "src/CLI/RoundFiles.jl:read_round — confirmed it unconditionally schema-validates every ROUND.toml against the CURRENT schema file, with no schema_version-gated branching for older shapes",
+    "src/CLI/Doctor.jl ROUND.MARKER and the RoundFiles.rounds() state machine — confirmed a schema-invalid record surfaces as state=:invalid and ROUND.MARKER FAILs (exit-1-class), which gbg doctor --deep (a release precondition) would refuse on",
+    "docs/ARCHITECTURE.md D7 / round.schema.json's own removed docstring text, both naming round 2026-09-12-check-docs-01 as a round whose frozen scripts were refreshed and recorded in scripts_refreshed under the OLD (pre-diff) two-field shape",
+    "src/CLI/Rounds.jl refresh_scripts base-vs-head entry construction — base wrote only {at, head}; nothing in this diff back-fills reason/after_pass/scripts onto any already-recorded entry",
+    "the seed mechanism (§6.4, salted per-round selection) against Rounds.jl's seed-skip refusal→warning change (note_seed_skips!) — confirmed §6.4 scopes 'the seed MECHANISM' to the salted selection algorithm alone, untouched by this diff; the skip/refusal behavior is not the protected mechanism",
+    "'the zero count = dead lane rule' against the new ORPHAN reporting in Rounds.bank — confirmed DEAD classification of the roster entry is unchanged; ORPHAN is an added visibility line only",
+    "'the audit's executable gate (package.julia_test)', 'the public-surface route (derived)', 'the covered-path constants of /audit-changes', 'the rubric's idiom strings and ≥3-arguments threshold', 'the engine lanes of /check-docs' — none touched by any hunk in this diff",
+    "'the exit contract' against Rounds.load()'s new ErrorException→RoundError translation (exit 3→exit 2 for a schema-invalid ROUND.toml) — this applies the documented exit-2 'cannot evaluate' meaning to a previously-uncovered case rather than relaxing it",
+    "'scan tiers... never demote' against Scan.jl apply_ledger/unreachable_waiver_scans — confirmed the change only narrows which rule a policy-scope waiver may target to silence a scan; no demotion path added",
+    "'the managed-file mechanism and header' against Doctor.jl's pinned_and_managed docstring edit reclassifying managed.json from 'pinned' to 'managed' prose — confirmed the function body (the actual file list) is byte-identical before and after; the edit is a documentation correction, not a behavior change",
+    "RULE.TEST.ALLOC_ZERO deviation (this package's own ledger: no allocation-free element-storage path exists here) against the lens's allocation/hot-loop/device-readback question — confirmed inapplicable by the package's own declared deviation; checked the one plausible per-line-allocation candidate (Preflight.jl's claim_checklist now calling split(s, CLAIM_CLAUSE) on every scanned line) and found no protected allocation-free contract it could violate"
+  ],
+  "candidates_found": 9,
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "round.schema.json's scripts_refreshed shape was tightened with no MAJOR bump, invalidating an already-frozen closed round",
+      "locations": [
+        "schema/round.schema.json (scripts_refreshed.items.required, and the scripts_refreshed.items.properties additions)",
+        "src/CLI/Rounds.jl :: refresh_scripts / record_build! (the new record shape the schema now demands)",
+        "docs/ARCHITECTURE.md D7 and the diff's own removed round.schema.json docstring (both naming round 2026-09-12-check-docs-01 as a round whose scripts_refreshed entry was written under the old two-field shape)",
+        "Project.toml (unchanged at both ends of the diff)"
+      ],
+      "before": "schema/round.schema.json required only `[\"at\", \"head\"]` on every scripts_refreshed entry, matching what `refresh_scripts` (base) wrote: `entry = Dict{String,Any}(\"at\" => timestamp(), \"head\" => something(Git.head(cfg[\"root\"]), \"0\"^40))`. The base docstring of this very schema field states: '...2026-09-12-check-docs-01 hit exactly that, and the copies were refreshed by hand. A refresh is legitimate and must stay VISIBLE, so every one is appended here...' — i.e. that closed, frozen round's ROUND.toml already carries a scripts_refreshed entry in this two-field shape.",
+      "after": "The same field now requires `[\"at\", \"head\", \"reason\", \"after_pass\", \"scripts\"]`, three of them brand new, `additionalProperties: false` on the sub-object. `config_sha`'s pattern was also widened in the same file. `git show 3e30907:Project.toml` and `git show 54cd7f2:Project.toml` both report `version = \"1.0.0\"` — no MAJOR bump accompanies either schema edit, and the round record's own `schema_version` field (\"the tool MAJOR this artefact was written under\", per this same schema file) therefore records the SAME value (1) for a round written under the old shape and one written under the new — nothing distinguishes them at read time. `RoundFiles.read_round` validates every ROUND.toml against the CURRENT schema unconditionally (no schema_version branch), so the pre-existing 2026-09-12-check-docs-01 record now fails validation, is reported by `RoundFiles.rounds()` as `state = :invalid`, and trips the doctor's `ROUND.MARKER` check to FAIL — a check `gbg doctor --deep` runs, which `gbg release` requires green.",
+      "why_it_matters": "§5.5 states plainly that changing any schema is MAJOR — this is the tool's own closed-vocabulary discipline, restated in ARCHITECTURE §6.3 ('Every artefact carries schema_version... Changing any vocabulary is MAJOR'), precisely so that a shape change can be told apart from what came before. Skipping the bump here does not just break the abstract rule: it retroactively invalidates a specific, already-closed, already-frozen round this same commit set (and the base ARCHITECTURE text) names by id, with no migration or exemption offered for it. The developers evidently anticipated a schema-refused record in general (the new `load()` catches it as exit 2, and a new test in test/rounds.jl exercises exactly this path against an artificially-corrupted record) but nothing back-fills or grandfathers the real historical record this diff itself documents as already existing in the old shape, and 'a round is tracked, frozen' (D10) forecloses hand-editing it to add the new fields after the fact. Left as is, the tool's own self-application (Consumer #5) would fail `ROUND.MARKER` and, by extension, its own release gate, until someone works around the very freeze the architecture is built to guarantee.",
+      "justified": "no",
+      "description": "The scripts_refreshed sub-schema and config_sha pattern in schema/round.schema.json were both edited to match the new refresh_scripts/record_build! machinery this diff adds, but the edit widens (config_sha) and tightens (scripts_refreshed, via three new required fields) the same artefact's schema without the MAJOR bump §5.5 requires for any schema change, and without reconciling the tightening against the pre-existing closed round the diff's own prose says already holds an entry in the old, now-noncompliant shape.",
+      "evidence": "Diff hunk: `\"required\": [\\n \"at\",\\n-     \"head\"\\n+     \"head\",\\n+     \"reason\",\\n+     \"after_pass\",\\n+     \"scripts\"\\n     ],` in schema/round.schema.json; removed docstring in the same file: 'each time `gbg round scripts <round>` re-copied this round's Workflow scripts... 2026-09-12-check-docs-01 hit exactly that, and the copies were refreshed by hand... every one is appended here'; `git show 3e30907:Project.toml | grep version` and `git show 54cd7f2:Project.toml | grep version` both return `version = \"1.0.0\"`."
+    }
+  ]
+}

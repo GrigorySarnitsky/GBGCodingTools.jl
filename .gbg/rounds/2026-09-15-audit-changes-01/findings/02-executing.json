@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-15-audit-changes-01",
+  "lane": "executing",
+  "verdict": "CONCERNS",
+  "candidates_found": 10,
+  "checked": [
+    "Two-rule scans (apply_ledger docstring 'Three scans carry two rules apiece'): ran rules_for_scan over the catalogue: exactly 3, SCAN.API_PAGE_STRUCTURE (pages), SCAN.DOI_CROSSCHECK (src), SCAN.DEAD_REF (src). unreachable_waiver_scans over every rule gives exactly RULE.DOC.API_GROUPING, RULE.CIT.DOI and RULE.CIT.NO_INACCESSIBLE. The RULES.toml comments' surface claims match the catalogue rows",
+    "Policy waiver probe, same fixture copy at base (scratch extract of 3e30907) and at head. Waived RULE.CIT.FULL_INLINE, RULE.CIT.DOI (target * and a file target) and RULE.DOC.API_GROUPING, then ran gbg scan docs, --hard-only, CFG.EXEMPTIONS and gate(). Numbers in finding 1",
+    "Main.jl exit contract: ConfigError gives 2 and ConfigWrittenError gives 3, as the test pins. read_written(root) equals Config.read(root) on a valid config. showerror prints as documented. gbg new on a Pkg.generate'd package succeeds identically at base and head, so read_written changes nothing on the happy path",
+    "Rounds.load: a schema-invalid ROUND.toml gives exit 2 through G.main for prepare, build, test, scripts, bank, rerun, grade, close, abandon, render and pass open (11 of 11, no crash); round list gives 0",
+    "record_build!/build_fails: gbg round build records {code 0, head = real HEAD}. build_fails is empty right after the build, and still empty after committing ONLY the round record, because covered_paths excludes .gbg/, so the build -> record -> commit loop terminates. Missing, red, stale and unreachable cases are covered by test/rounds.jl",
+    "gbg round scripts --reason via G.main in a committed fixture: no --reason gives exit 2. With a reason: exit 0, all 5 scripts replaced from absent, 1 entry recorded. Rerun: exit 0, 'nothing refreshed, nothing recorded', still 1 entry",
+    "import --empty via G.main: a bare dir gives 0 with config_sha ''. From a subdirectory of a git repo without config, the round lands at the git top level and head = HEAD. In a consumer, run from src/, config_sha equals stamps(cfg) and read_round validates. Invalid config gives 2; torn config gives 2",
+    "AUDIT.GAP on a real git fixture: contiguous is PASS. An unreachable later base is WARN, and so is an unreachable previous closed_head, as the new table row says",
+    "stamps(nothing) under dev: tool_version dev+54cd7f2-dirty, config_sha '', seed_catalog_sha 'none', schema-valid (via the import run)",
+    "script_sources for all four instruments: no name collision in any instrument. The file set equals what base copy_scripts installed",
+    "source_globs: tool config (key empty) gives exactly SOURCE_SURFACES. No CLI path sends `batch` to either verifier. The only launcher of verify-state.js (Passes.pass_open) sends source_scope. render_args always sets source_globs for panel.js",
+    "Sync.jl DOCS_INSTRUMENTS site count: DocLints 2, Doctor 1, Preflight 1, Release (one function, two uses), Passes 3, ext 1. The claim holds; no literal docs pair is left in src/ext/docs",
+    "Scan.jl 'one reader of the register': rg finds TOML.parsefile of RULES.toml only at Scan.jl:95 in src/ext",
+    "prose-shape rebaseline commit 54cd7f2: ran prose_shape_changes on the head tree against the BASE csv. The RAISED rows are exactly the commit's list. NEW rows are the added docstrings plus release and release_fails. DROPPED: exactly 4. Base tree against base csv already showed release/release_fails NEW, as the commit says. Head tree against head csv: 0 changes. Capped paragraphs now seed_docs_corpus! 84, main 81, D11 93",
+    "Claim-checklist per-lane counts (commit 5b9e76f), old regexes vs new, on the 1a51f75, 5b9e76f and head trees. rationale 98->87, rationale-2 103->79, rationale-3 172->126, pages 29->25 and schemas 7->4 reproduce exactly. src 232->200 (claimed 230->197), rulebook 39->33 (claimed 37->33), ambient 45->35 (claimed 44->35), quantifier total 245->110 (claimed 241->110): tree drift, close. The src/GBGCodingTools.jl:28 exit-contract line stays matched under both. 'The three seed anchors' lines stay' was NOT re-run: the seed catalogue lives under .gbg/, outside this lane's permitted files",
+    "CLAIM_EXIT comment 'every alternative refuses a digit that continues into a number': 'exits 2.5', 'exits 30', 'exit code 2.5', 'exit code 30', 'exit contract is 30 lines' and 'exit contract of 2.5 cases' all fail to match, as claimed",
+    "ARCHITECTURE/RULES dated snapshot '247 of this package's 251 docstrings': ran head's SCAN.SIGNATURE_TYPED on the ed42671^ tree. 295 docstrings; 252 with an argument parenthesis; 240 with a non-empty list; 4 typed. So 248 of 252 by parenthesis, within one of the claim. The population is not 'the package's docstrings' (295), but the gap is small, so it is not raised",
+    "LANE NOTE: my gbg new probe (G.Init.new, run from the dev checkout) appended a ToyPkg [[consumer]] block to the tracked fleet.toml. I restored it at once with `git checkout -- fleet.toml`; git status is back to only the untracked round directory. Every other probe ran on copies under the session scratchpad"
+  ],
+  "findings": [
+    {
+      "type": "operational",
+      "severity": "major",
+      "confidence": "high",
+      "title": "A policy waiver of a two-rule scan's second rule, accepted at base, now crashes gbg scan docs and the makedocs hard-scan gate with exit 3",
+      "locations": [
+        "src/Scan.jl:398-408 (apply_ledger: the new LedgerError throw for a non-canonical policy entry)",
+        "src/CLI/Main.jl:148-151 (only Config.ConfigError is mapped to exit 2; LedgerError reaches the crash arm)",
+        "ext/GBGCodingToolsDocumenterExt.jl:50 (check(\"scan docs --hard-only\", ...) calls scan_docs, which now throws)",
+        "src/CLI/Doctor.jl:343-346 (CFG.EXEMPTIONS names the entry, for any target)",
+        "test/scans.jl:181-203 (the base test asserting the waiver disables the scan, replaced by @test_throws)"
+      ],
+      "before": "enforced = unique!(vcat(String(row[\"rule\"]), rules_for_scan(id)))\n    for rule in enforced, e in Ledger.entries(ledger, rule; scope = \"policy\")",
+      "after": "isempty(e) || throw(Ledger.LedgerError(\"$rule on $(e[1][\"target\"]) is a policy waiver of a rule $id enforces but \" * ...",
+      "why_it_matters": "Probe on the same fixture copy, base vs head. Waiver RULE.CIT.DOI (scope policy, target *): base gives gbg scan docs exit 2, --hard-only exit 0, CFG.EXEMPTIONS PASS. Head gives exit 3 on both, printing 'gbg scan: crashed — ledger: RULE.CIT.DOI on * is a policy waiver…' plus a Julia stacktrace. RULE.DOC.API_GROUPING at target * behaves the same (base 2/0, head 3/3). A waiver with a FILE target (RULE.CIT.DOI on src/FixtureA.jl) also goes from 2/0 to 3/3, though the canonical-rule path never gave a non-* target any effect. A consumer carrying such an entry had it rendered as a granted deviation and working at base. After bumping, every `gbg scan docs` and every docs build through the makedocs wrapper dies on it. The exit contract reads 3 as a crash of the tool, and the diff's own Main.jl arm treats a bad consumer config as exit 2. Refusing the entry is the documented design; a backtrace and exit 3 is not.",
+      "justified": "unclear",
+      "previously_worked": "yes",
+      "description": "The window replaced 'a waiver on any rule the scan enforces disables it' (base behaviour and base test) with a LedgerError for any policy entry on a non-canonical rule. The refusal is deliberate, and the doctor now names such entries. But the error goes out through the generic crash arm: exit 3 with a stacktrace from `gbg scan docs`, `--hard-only` and the docs wrapper. It is not reported as the consumer's cannot-evaluate (2). The refusal is also wider than the silently-wide defect it answers: it fires for a file-scoped target, which under canonical-only resolution would never have disabled anything.",
+      "evidence": "HEAD run: 'RULE.CIT.DOI target=*: gbg scan docs exit 3 / --hard-only exit 3 / CFG.EXEMPTIONS FAIL'; stderr 'gbg scan: crashed — ledger: RULE.CIT.DOI on src/FixtureA.jl is a policy waiver of a rule SCAN.DOI_CROSSCHECK enforces but does not own … Stacktrace: [1] apply_ledger(...) @ GBGCodingTools src/Scan.jl:405'. BASE run (3e30907 extract, same probe): 'RULE.CIT.DOI target=*: gbg scan docs exit 2 / --hard-only exit 0 / CFG.EXEMPTIONS PASS 1 entries'. Base test: '@test isempty(r.hits) && r.exempted > 0   # the waiver that was void'."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "A seeded check-consistency round that plants NO seed now opens (exit 0); base refused it, and the check-docs path still does",
+      "locations": [
+        "src/CLI/Rounds.jl:167-175 (prepare, check-consistency seed branch: refusal replaced by note_seed_skips!, no empty-plan guard)",
+        "src/CLI/Rounds.jl:271-278 (seed_docs_corpus!: the empty-plan refusal kept for check-docs)",
+        "src/CLI/Rounds.jl:225-245 (note_seed_skips! docstring: 'The round still measures the classes that plant, so it is not refused')"
+      ],
+      "before": "if !isempty(skipped)\n                println(io, \"prepare: refused — $(length(skipped)) seed class(es) have no anchor in the manuscript: \", join(skipped, \", \"))\n                ...\n                return 2\n            end",
+      "after": "note_seed_skips!(dir, rec, skipped, cfg[\"instruments\"][\"check-consistency\"][\"seed_catalog\"]; io)\n            f2, s2 = Seeds.plant(f, s, plan)",
+      "why_it_matters": "Ran prepare on a fixture check-consistency round with seed_salt and a built page carrying no anchor. HEAD: exit 0, 'WARNING — 8 seed class(es) … NOT planted', 'prepare: 0 seed(s) planted', and 'the payload directory now holds the SEEDED copies only' (nothing was seeded). BASE: exit 2, 'refused — 8 seed class(es) have no anchor in the manuscript'. The defect cited was a refusal that threw away a PARTIAL measurement. With zero classes planted there is nothing to keep, and check-docs still refuses exactly this ('a round that plants nothing measures nothing'). The two documentation instruments now disagree, and a consistency round whose recall is undefined for every class opens and banks.",
+      "justified": "no",
+      "previously_worked": "yes",
+      "description": "The fix turned 'refuse on any skipped class' into 'record and warn'. That is right for a partial skip, but it dropped the refusal for the all-skipped case too, which check-docs keeps. The change is wider than the defect.",
+      "evidence": "HEAD: 'prepare exit 0 … prepare: 0 seed(s) planted (salt 2026-01-01-check-consistency-01); skipped classes (anchor absent): normalization, citation-drift, quantifier, notation, stale-name, cross-page, weakened-guarantee, false-property'; seed_skipped recorded with all 8. BASE: 'prepare exit 2 … prepare: refused — 8 seed class(es) have no anchor in the manuscript'. check-docs keeps: 'if isempty(plan) … a round that plants nothing measures nothing … return 2'."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "gbg round scripts --reason replaces the frozen scripts BEFORE refusing on a missing HEAD, so the refresh is never recorded",
+      "locations": [
+        "src/CLI/Rounds.jl:400-424 (refresh_scripts: install_script runs in the loop; the HEAD check and RoundError come after)"
+      ],
+      "before": "dst = Preflight.copy_scripts(cfg, String(rec[\"instrument\"]), round)\n    entry = Dict{String,Any}(\"at\" => timestamp(), \"head\" => something(Git.head(cfg[\"root\"]), \"0\"^40))",
+      "after": "push!(moved, ...)\n        Preflight.install_script(src, dst)\n    end\n    ...\n    head = Git.head(cfg[\"root\"])\n    head === nothing && throw(RoundError(\"scripts: the root has no git HEAD to record the refresh against\"))",
+      "why_it_matters": "Fixture round in a git repo with no commit. HEAD: `gbg round scripts <round> --reason \"…\"` exits 2 with 'the root has no git HEAD to record the refresh against', but lanes.js now exists in the round's workflow dir and scripts_refreshed is absent. After a commit the same call exits 0 with 'every frozen script … already equals the running copy's — nothing refreshed, nothing recorded', and scripts_refreshed is still absent. So the frozen scripts moved and no record will ever say so. That is the untraced refresh this verb and RULE.INST.FROZEN_MIDROUND ('recorded in ROUND.toml') exist to prevent. BASE: the same call exits 0, and the refresh is recorded (placeholder head).",
+      "justified": "unclear",
+      "previously_worked": "yes",
+      "description": "The rewrite dropped the placeholder head (a reasonable change), but it checks HEAD after replacing the files instead of before. A refusal that has already done the work, combined with the new 'no-op when nothing differs' rule, leaves the replacement permanently unrecorded.",
+      "evidence": "HEAD run: 'lanes.js before: false / round: scripts: the root has no git HEAD to record the refresh against / exit 2 / lanes.js after: true  scripts_refreshed recorded: false / scripts: every frozen script of 2026-01-01-check-docs-01 already equals the running copy's — nothing refreshed, nothing recorded / after a commit, the same call: exit 0  scripts_refreshed recorded: false'. BASE run: 'scripts: re-copied into … — refresh 1 of this round, recorded / exit 0 / scripts_refreshed recorded: true'."
+    },
+    {
+      "type": "operational",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The claim-checklist narrowing drops claims of the very kinds it targets: backticked exit codes and subject—predicate clauses split at a spaced dash",
+      "locations": [
+        "src/CLI/Preflight.jl:344-352 (CLAIM_EXIT third alternative now needs `[0-3]\\s+[a-z]`; CLAIM_QUANTIFIER drops all/any/only; CLAIM_TOOL_ID needs a backtick before gbg; CLAIM_CLAUSE splits on ' — ')",
+        "src/CLI/Preflight.jl:410 (qu evaluated per clause)",
+        "test/rounds.jl:245-255 (the new tests pin only the intended exclusions)"
+      ],
+      "before": "const CLAIM_EXIT = r\"…|\\bexit\\s+contract\\b[^.]{0,60}?[0-3]\\b\"i\nqu = occursin(CLAIM_QUANTIFIER, s) && occursin(CLAIM_TOOL_ID, s)",
+      "after": "const CLAIM_EXIT = r\"…|\\bexit\\s+contract\\b[^.]{0,60}?(?<![\\w.])[0-3]\\s+[a-z]\"i\nconst CLAIM_CLAUSE = r\"(?<=[.;!?])\\s+|\\s+—\\s+\"\nqu = any(c -> occursin(CLAIM_QUANTIFIER, c) && occursin(CLAIM_TOOL_ID, c), split(s, CLAIM_CLAUSE))",
+      "why_it_matters": "Re-ran the check-docs lanes' checklists on the head tree with the base regexes and the head regexes. 136 lines leave the checklists: 77 through dropping all/any/only, 49 through the clause split, 9 through the backtick requirement, 1 through the exit narrowing. That one is docs/src/guide/verbs.md:7, 'The exit contract is one for all: `0`' — the verbs page's statement of the contract, in exactly the house phrasing the third alternative was added to catch. The page backticks the codes, so `[0-3]\\s+[a-z]` refuses it: 'The exit contract is one for all: `0` clean, `1` a finding' → false at head. The spaced-dash split cuts predicates from their subjects: ARCHITECTURE.md:1840 '`CFG.EXEMPTIONS` — and never ignores it' and ARCHITECTURE.md:1905 '`ROUND.OPEN` | lists open rounds (WARN; never FAIL' both leave the checklist. So do 2 unbackticked universal+verb lines in the same clause (Gate.jl:33, Passes.jl:479). The defects cited were the `1` of a version string and 'any verb anywhere on the line'; the fix is wider. The commit's per-lane totals reproduce (quantifier 245→110), but it does not say which claims went.",
+      "justified": "unclear",
+      "previously_worked": "yes",
+      "description": "The fix was aimed at version-string digits and line-wide conjunction. The narrowing also removes the backticked exit-contract phrasing used on the guide page, and it treats ' — ' as a clause boundary even where the house style uses it parenthetically between subject and predicate. The tests added pin only the intended exclusions, none of these losses.",
+      "evidence": "Classification of lines dropped at head: 'exit-narrowed (1) docs/src/guide/verbs.md:7 | … The exit contract is one for all: `0`'; 'strong+id-different-clause (49) … docs/ARCHITECTURE.md:1840 | `CFG.EXEMPTIONS` — and never ignores it …; docs/ARCHITECTURE.md:1905 | | `ROUND.OPEN` | lists open rounds (WARN; never FAIL — …'; 'strong+unbackticked-gbg-same-clause (2) src/CLI/Gate.jl:33 …; src/CLI/Passes.jl:479 …'; 'weak-quantifier-only(all/any/only) (77)'. Regex probe: \"The exit contract is one for all: `0` clean, `1` a finding\" → false."
+    },
+    {
+      "type": "currency",
+      "severity": "nit",
+      "confidence": "high",
+      "title": "script_sources' docstring says a later name replaces none already taken; the code replaces it",
+      "locations": [
+        "src/CLI/Preflight.jl:797-818 (script_sources docstring vs filter!/push!)"
+      ],
+      "before": "p = joinpath(instrument_dir(other), \"workflow\", f); isfile(p) && install_script(p, joinpath(dst, f))",
+      "after": "the verifiers and auditors of other instruments a round may need …, a later name replacing none already taken.\n…\n            filter!(x -> x[1] != f, out); push!(out, (f, p))",
+      "why_it_matters": "The documented call runs, and no name collides today: script_sources returns no duplicate names for any of the four instruments, and the set equals what base copy_scripts installed. The docstring still states the opposite of the code. A future instrument that ships its own verify-act.js would find its copy silently replaced by check-consistency's (as base did), while the docstring promises it is kept.",
+      "justified": "yes",
+      "previously_worked": "no",
+      "description": "A new entry point's documentation contradicts its implementation on collision order. The behaviour matches base (the later install overwrote), so only the prose is wrong.",
+      "evidence": "Run: 'check-docs: [(\"lanes.js\", …), (\"verify-act.js\", \"instruments/check-consistency/workflow/verify-act.js\"), …, (\"dismissals.js\", \"instruments/bug-hunt/workflow/dismissals.js\")]  dup names: false' (same for check-consistency, bug-hunt, audit-changes)."
+    }
+  ]
+}

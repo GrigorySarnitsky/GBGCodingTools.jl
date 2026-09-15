@@ -1,0 +1,231 @@
+{
+  "kind": "both",
+  "base": "3e30907e61088322b7c4385875f05aaa60876839",
+  "verdict_all_clean": false,
+  "head": "54cd7f2fca64a44894df4194b6e067782cc3972b",
+  "dispositions": {
+    "2026-09-15-audit-changes-01/free-reader#2": {
+      "state": "fixed",
+      "reason": "Accepted: refusing the waiver traded a silently wide disable for a crash and made three rules undeclarable as deviations. The next change set makes a policy waiver of a rule that a scan enforces NON-canonically neither an error nor a disable of that scan: the scan runs in full, its report line says the waiver does not reach it, CFG.EXEMPTIONS WARNs (never FAILs) naming the scan, and the rendered deviations.md says the same beside the deviation. The waiver keeps its whole effect where the rule is canonical (the three HTML scans for RULE.DOC.API_GROUPING) and on the panel. A LedgerError that does reach main (the arg_type case) exits 2 as a consumer-file error, like a ConfigError, not 3. Tests: every target shape, all three two-rule scans, both exit codes."
+    },
+    "2026-09-15-audit-changes-01/executing#1": {
+      "state": "fixed",
+      "reason": "Accepted: refusing the waiver traded a silently wide disable for a crash and made three rules undeclarable as deviations. The next change set makes a policy waiver of a rule that a scan enforces NON-canonically neither an error nor a disable of that scan: the scan runs in full, its report line says the waiver does not reach it, CFG.EXEMPTIONS WARNs (never FAILs) naming the scan, and the rendered deviations.md says the same beside the deviation. The waiver keeps its whole effect where the rule is canonical (the three HTML scans for RULE.DOC.API_GROUPING) and on the panel. A LedgerError that does reach main (the arg_type case) exits 2 as a consumer-file error, like a ConfigError, not 3. Tests: every target shape, all three two-rule scans, both exit codes."
+    },
+    "2026-09-15-audit-changes-01/behaviour-change#1": {
+      "state": "fixed",
+      "reason": "Accepted: refusing the waiver traded a silently wide disable for a crash and made three rules undeclarable as deviations. The next change set makes a policy waiver of a rule that a scan enforces NON-canonically neither an error nor a disable of that scan: the scan runs in full, its report line says the waiver does not reach it, CFG.EXEMPTIONS WARNs (never FAILs) naming the scan, and the rendered deviations.md says the same beside the deviation. The waiver keeps its whole effect where the rule is canonical (the three HTML scans for RULE.DOC.API_GROUPING) and on the panel. A LedgerError that does reach main (the arg_type case) exits 2 as a consumer-file error, like a ConfigError, not 3. Tests: every target shape, all three two-rule scans, both exit codes."
+    },
+    "2026-09-15-audit-changes-01/over-rejection#1": {
+      "state": "fixed",
+      "reason": "Accepted: refusing the waiver traded a silently wide disable for a crash and made three rules undeclarable as deviations. The next change set makes a policy waiver of a rule that a scan enforces NON-canonically neither an error nor a disable of that scan: the scan runs in full, its report line says the waiver does not reach it, CFG.EXEMPTIONS WARNs (never FAILs) naming the scan, and the rendered deviations.md says the same beside the deviation. The waiver keeps its whole effect where the rule is canonical (the three HTML scans for RULE.DOC.API_GROUPING) and on the panel. A LedgerError that does reach main (the arg_type case) exits 2 as a consumer-file error, like a ConfigError, not 3. Tests: every target shape, all three two-rule scans, both exit codes."
+    },
+    "2026-09-15-audit-changes-01/public-contract#1": {
+      "state": "fixed",
+      "reason": "Accepted: refusing the waiver traded a silently wide disable for a crash and made three rules undeclarable as deviations. The next change set makes a policy waiver of a rule that a scan enforces NON-canonically neither an error nor a disable of that scan: the scan runs in full, its report line says the waiver does not reach it, CFG.EXEMPTIONS WARNs (never FAILs) naming the scan, and the rendered deviations.md says the same beside the deviation. The waiver keeps its whole effect where the rule is canonical (the three HTML scans for RULE.DOC.API_GROUPING) and on the panel. A LedgerError that does reach main (the arg_type case) exits 2 as a consumer-file error, like a ConfigError, not 3. Tests: every target shape, all three two-rule scans, both exit codes."
+    },
+    "2026-09-15-audit-changes-01/contract-drift#1": {
+      "state": "fixed",
+      "reason": "Accepted: refusing the waiver traded a silently wide disable for a crash and made three rules undeclarable as deviations. The next change set makes a policy waiver of a rule that a scan enforces NON-canonically neither an error nor a disable of that scan: the scan runs in full, its report line says the waiver does not reach it, CFG.EXEMPTIONS WARNs (never FAILs) naming the scan, and the rendered deviations.md says the same beside the deviation. The waiver keeps its whole effect where the rule is canonical (the three HTML scans for RULE.DOC.API_GROUPING) and on the panel. A LedgerError that does reach main (the arg_type case) exits 2 as a consumer-file error, like a ConfigError, not 3. Tests: every target shape, all three two-rule scans, both exit codes."
+    },
+    "2026-09-15-audit-changes-01/free-reader#1": {
+      "state": "fixed",
+      "reason": "Accepted in substance, though the premise overstates the exposure: 6bf4571 (the base verb) is in no tag, no ROUND.toml in this repository carries scripts_refreshed, and consumers pin only released versions. The fix is still owed because the schema should not refuse a shape this tool wrote: the next change set restores scripts_refreshed[].required to [at, head], keeps reason, after_pass and scripts as optional properties the verb always writes, adds a test that a two-field entry validates, and names --reason in the round usage line."
+    },
+    "2026-09-15-audit-changes-01/invariants#1": {
+      "state": "fixed",
+      "reason": "Accepted in substance, though the premise overstates the exposure: 6bf4571 (the base verb) is in no tag, no ROUND.toml in this repository carries scripts_refreshed, and consumers pin only released versions. The fix is still owed because the schema should not refuse a shape this tool wrote: the next change set restores scripts_refreshed[].required to [at, head], keeps reason, after_pass and scripts as optional properties the verb always writes, adds a test that a two-field entry validates, and names --reason in the round usage line."
+    },
+    "2026-09-15-audit-changes-01/behaviour-change#4": {
+      "state": "fixed",
+      "reason": "Accepted in substance, though the premise overstates the exposure: 6bf4571 (the base verb) is in no tag, no ROUND.toml in this repository carries scripts_refreshed, and consumers pin only released versions. The fix is still owed because the schema should not refuse a shape this tool wrote: the next change set restores scripts_refreshed[].required to [at, head], keeps reason, after_pass and scripts as optional properties the verb always writes, adds a test that a two-field entry validates, and names --reason in the round usage line."
+    },
+    "2026-09-15-audit-changes-01/over-rejection#4": {
+      "state": "fixed",
+      "reason": "Accepted in substance, though the premise overstates the exposure: 6bf4571 (the base verb) is in no tag, no ROUND.toml in this repository carries scripts_refreshed, and consumers pin only released versions. The fix is still owed because the schema should not refuse a shape this tool wrote: the next change set restores scripts_refreshed[].required to [at, head], keeps reason, after_pass and scripts as optional properties the verb always writes, adds a test that a two-field entry validates, and names --reason in the round usage line."
+    },
+    "2026-09-15-audit-changes-01/public-contract#2": {
+      "state": "fixed",
+      "reason": "Accepted in substance, though the premise overstates the exposure: 6bf4571 (the base verb) is in no tag, no ROUND.toml in this repository carries scripts_refreshed, and consumers pin only released versions. The fix is still owed because the schema should not refuse a shape this tool wrote: the next change set restores scripts_refreshed[].required to [at, head], keeps reason, after_pass and scripts as optional properties the verb always writes, adds a test that a two-field entry validates, and names --reason in the round usage line."
+    },
+    "2026-09-15-audit-changes-01/contract-drift#3": {
+      "state": "fixed",
+      "reason": "Accepted in substance, though the premise overstates the exposure: 6bf4571 (the base verb) is in no tag, no ROUND.toml in this repository carries scripts_refreshed, and consumers pin only released versions. The fix is still owed because the schema should not refuse a shape this tool wrote: the next change set restores scripts_refreshed[].required to [at, head], keeps reason, after_pass and scripts as optional properties the verb always writes, adds a test that a two-field entry validates, and names --reason in the round usage line."
+    },
+    "2026-09-15-audit-changes-01/over-rejection#3": {
+      "state": "fixed",
+      "reason": "Accepted on the usage half: the round usage line will name --reason. The requirement itself stays, because a reason is what audit-changes-02's blocker disposition demanded of the verb, and the verb is in no tag, so no released invocation is refused."
+    },
+    "2026-09-15-audit-changes-01/executing#3": {
+      "state": "fixed",
+      "reason": "Accepted: the exception the rule now states is not the exception the code grants, and one path replaces scripts without a record. The next change set (1) checks HEAD before any script is touched; (2) scopes the verb to the scripts a round verifies and audits with (verify-act, verify-state, severity-recheck, dismissals), refusing any lens script (lanes, panel, audit, hunt), since a changed lens is a new round; (3) records every frozen script's sha at preflight, so a hand-altered copy is detected and recorded rather than read as current; the policy sentence and docstring say verifiers and auditors. Tests for each path."
+    },
+    "2026-09-15-audit-changes-01/under-rejection#5": {
+      "state": "fixed",
+      "reason": "Accepted: the exception the rule now states is not the exception the code grants, and one path replaces scripts without a record. The next change set (1) checks HEAD before any script is touched; (2) scopes the verb to the scripts a round verifies and audits with (verify-act, verify-state, severity-recheck, dismissals), refusing any lens script (lanes, panel, audit, hunt), since a changed lens is a new round; (3) records every frozen script's sha at preflight, so a hand-altered copy is detected and recorded rather than read as current; the policy sentence and docstring say verifiers and auditors. Tests for each path."
+    },
+    "2026-09-15-audit-changes-01/behaviour-change#5": {
+      "state": "fixed",
+      "reason": "Accepted: the exception the rule now states is not the exception the code grants, and one path replaces scripts without a record. The next change set (1) checks HEAD before any script is touched; (2) scopes the verb to the scripts a round verifies and audits with (verify-act, verify-state, severity-recheck, dismissals), refusing any lens script (lanes, panel, audit, hunt), since a changed lens is a new round; (3) records every frozen script's sha at preflight, so a hand-altered copy is detected and recorded rather than read as current; the policy sentence and docstring say verifiers and auditors. Tests for each path."
+    },
+    "2026-09-15-audit-changes-01/contract-drift#2": {
+      "state": "fixed",
+      "reason": "Accepted: the exception the rule now states is not the exception the code grants, and one path replaces scripts without a record. The next change set (1) checks HEAD before any script is touched; (2) scopes the verb to the scripts a round verifies and audits with (verify-act, verify-state, severity-recheck, dismissals), refusing any lens script (lanes, panel, audit, hunt), since a changed lens is a new round; (3) records every frozen script's sha at preflight, so a hand-altered copy is detected and recorded rather than read as current; the policy sentence and docstring say verifiers and auditors. Tests for each path."
+    },
+    "2026-09-15-audit-changes-01/over-rejection#2": {
+      "state": "fixed",
+      "reason": "Accepted on the scripts half, which replaces the frozen copies before refusing: the next change set checks HEAD first. The build half stays: a round opened with no commit records head 0x40, which is never an ancestor of HEAD, so close refuses it whatever the build says; refusing to record a build against no commit loses nothing a closable round has."
+    },
+    "2026-09-15-audit-changes-01/executing#4": {
+      "state": "fixed",
+      "reason": "Accepted: the narrowing overshot the defect. The version-string false positive needed only the lookbehind. The next change set lets the exit-contract alternative accept a backticked or bold code with no following-word requirement, keeps `only` beside every, never, always and none, accepts a bare `gbg <verb>` again, and splits clauses at sentence stops only, never at a spaced dash or a table semicolon. It re-measures per lane, dated, lists the lines that leave or join relative to base, and pins verbs.md:7, ARCHITECTURE `ROUND.OPEN` and Passes.jl:479 in a test."
+    },
+    "2026-09-15-audit-changes-01/under-rejection#2": {
+      "state": "fixed",
+      "reason": "Accepted: the narrowing overshot the defect. The version-string false positive needed only the lookbehind. The next change set lets the exit-contract alternative accept a backticked or bold code with no following-word requirement, keeps `only` beside every, never, always and none, accepts a bare `gbg <verb>` again, and splits clauses at sentence stops only, never at a spaced dash or a table semicolon. It re-measures per lane, dated, lists the lines that leave or join relative to base, and pins verbs.md:7, ARCHITECTURE `ROUND.OPEN` and Passes.jl:479 in a test."
+    },
+    "2026-09-15-audit-changes-01/behaviour-change#2": {
+      "state": "fixed",
+      "reason": "Accepted: the narrowing overshot the defect. The version-string false positive needed only the lookbehind. The next change set lets the exit-contract alternative accept a backticked or bold code with no following-word requirement, keeps `only` beside every, never, always and none, accepts a bare `gbg <verb>` again, and splits clauses at sentence stops only, never at a spaced dash or a table semicolon. It re-measures per lane, dated, lists the lines that leave or join relative to base, and pins verbs.md:7, ARCHITECTURE `ROUND.OPEN` and Passes.jl:479 in a test."
+    },
+    "2026-09-15-audit-changes-01/numerics#1": {
+      "state": "fixed",
+      "reason": "Accepted: the narrowing overshot the defect. The version-string false positive needed only the lookbehind. The next change set lets the exit-contract alternative accept a backticked or bold code with no following-word requirement, keeps `only` beside every, never, always and none, accepts a bare `gbg <verb>` again, and splits clauses at sentence stops only, never at a spaced dash or a table semicolon. It re-measures per lane, dated, lists the lines that leave or join relative to base, and pins verbs.md:7, ARCHITECTURE `ROUND.OPEN` and Passes.jl:479 in a test."
+    },
+    "2026-09-15-audit-changes-01/contract-drift#5": {
+      "state": "fixed",
+      "reason": "Accepted: the narrowing overshot the defect. The version-string false positive needed only the lookbehind. The next change set lets the exit-contract alternative accept a backticked or bold code with no following-word requirement, keeps `only` beside every, never, always and none, accepts a bare `gbg <verb>` again, and splits clauses at sentence stops only, never at a spaced dash or a table semicolon. It re-measures per lane, dated, lists the lines that leave or join relative to base, and pins verbs.md:7, ARCHITECTURE `ROUND.OPEN` and Passes.jl:479 in a test."
+    },
+    "2026-09-15-audit-changes-01/executing#2": {
+      "state": "fixed",
+      "reason": "Accepted: a round that plants nothing measures nothing, and the consistency path lost that refusal with the partial one. The next change set refuses a seeded check-consistency prepare whose plan is empty, as check-docs does, and carries seed_skipped beyond prepare and grade: into the pass tally beside recall, and into close's report, so a closed round measured over fewer classes says so where a citing release and fleet --diff read it. Tests for the empty plan and the tally field."
+    },
+    "2026-09-15-audit-changes-01/under-rejection#1": {
+      "state": "fixed",
+      "reason": "Accepted: a round that plants nothing measures nothing, and the consistency path lost that refusal with the partial one. The next change set refuses a seeded check-consistency prepare whose plan is empty, as check-docs does, and carries seed_skipped beyond prepare and grade: into the pass tally beside recall, and into close's report, so a closed round measured over fewer classes says so where a citing release and fleet --diff read it. Tests for the empty plan and the tally field."
+    },
+    "2026-09-15-audit-changes-01/behaviour-change#6": {
+      "state": "fixed",
+      "reason": "Accepted: an exact match needs no git object. The next change set compares the strings first and asks ancestry only when they differ, so two contiguous audits in a shallow or rewritten checkout are not reported as a gap, with a test on an unreachable equal pair."
+    },
+    "2026-09-15-audit-changes-01/over-rejection#5": {
+      "state": "fixed",
+      "reason": "Accepted: an exact match needs no git object. The next change set compares the strings first and asks ancestry only when they differ, so two contiguous audits in a shallow or rewritten checkout are not reported as a gap, with a test on an unreachable equal pair."
+    },
+    "2026-09-15-audit-changes-01/under-rejection#4": {
+      "state": "fixed",
+      "reason": "Accepted: a record the tool composed and cannot save is the tool's failure, and a green exit hides it. The next change set drops the catch in record_build!, so a failing save propagates from build, prepare and pass open as the RoundError it is (exit 2), never a printed line under exit 0; the test asserts the exit code."
+    },
+    "2026-09-15-audit-changes-01/under-rejection#7": {
+      "state": "fixed",
+      "reason": "Accepted: a build of uncommitted edits is not a build of HEAD. The next change set records a build only when no covered path is modified in the working tree; otherwise the verb says the build was not recorded because the tree is dirty, and close's condition stays unmet until a clean build. Tested on a dirty covered path."
+    },
+    "2026-09-15-audit-changes-01/under-rejection#6": {
+      "state": "fixed",
+      "reason": "Accepted: both relaxations were wider than the Step-0 import that needed them. The next change set accepts config_sha = \"\" only on a round that is abandoned and holds import.json (RoundFiles.read_round refuses it anywhere else), and refuses import --empty with no config unless the root is a git top level holding a Project.toml, so a plain directory or a non-package repository is refused as before. Tests for both refusals."
+    },
+    "2026-09-15-audit-changes-01/executing#5": {
+      "state": "fixed",
+      "reason": "Accepted: the docstring states the opposite of the code. The next change set says that a later name replaces an earlier one, which is what base copy_scripts did and what the code does."
+    },
+    "2026-09-15-audit-changes-01/contract-drift#6": {
+      "state": "fixed",
+      "reason": "Accepted: 'as every count in this document is dated' is false (Twenty-two schemas, the §5 surface counts). The next change set removes that clause and states only that the 247-of-251 figure is the 2026-09-12 snapshot."
+    },
+    "2026-09-15-audit-changes-01/sweep-completeness#1": {
+      "state": "fixed",
+      "reason": "Accepted: the three terminal messages (doctor, preflight, round guard) still say a managed file is rendered, and ARCHITECTURE §6.2's narrative predates the reclassification. The next change set says writes and hash-checks in all of them."
+    },
+    "2026-09-15-audit-changes-01/sweep-completeness#2": {
+      "state": "fixed",
+      "reason": "Accepted: install.md now sends the reader to a glossary that contradicts it. The next change set puts the fixture into the glossary's definition of consumer (a policy commit, re-synced) and aligns the inline glosses of rounds.md, ledger.md and config.md, so the rendered definitions agree."
+    },
+    "2026-09-15-audit-changes-01/reader-consequence#1": {
+      "state": "fixed",
+      "reason": "Accepted: install.md now sends the reader to a glossary that contradicts it. The next change set puts the fixture into the glossary's definition of consumer (a policy commit, re-synced) and aligns the inline glosses of rounds.md, ledger.md and config.md, so the rendered definitions agree."
+    },
+    "2026-09-15-audit-changes-01/sweep-completeness#4": {
+      "state": "fixed",
+      "reason": "Accepted: ARCHITECTURE §12.A's RULE.INST.CARRY row still conflates the close refusal with the release one. The next change set carries the register's new sentence into that row."
+    },
+    "2026-09-15-audit-changes-01/behaviour-change#3": {
+      "state": "fixed",
+      "reason": "Accepted on the cross-instrument half: latex_source_globs is check-consistency's key, and a check-docs pass's state verifier should not change scope because of it. The next change set sends a check-docs pass the four surfaces only, and a check-consistency pass the union its panel reads."
+    },
+    "2026-09-15-audit-changes-01/contract-drift#4": {
+      "state": "refused",
+      "reason": "The narrowing this concern says was lost never shipped. At v1.0.0-rc.11, the last release, panel.js named src/, ext/, docs/src/ and docs/ as literals and nothing read latex_source_globs; the replacing reader came in 17e1a25, which no tag contains, and audit-changes-02 disposed that replacement as a defect on four lanes, because it cut ext/, docs/src/ and docs/ from hats still required to quote source at file:line. Relative to every released version the union only adds what a consumer names. The missing description in config.schema.json is real and is added in the next change set."
+    }
+  },
+  "diffstat": " docs/ARCHITECTURE.md                               |  48 +++--\n docs/make.jl                                       |   9 +-\n docs/prose_shape.csv                               |  64 +++---\n docs/src/api/Config.md                             |   1 +\n docs/src/guide/install.md                          |   3 +-\n docs/src/guide/rounds.md                           |   6 +-\n ext/GBGCodingToolsDocumenterExt.jl                 |   2 +-\n instruments/audit-changes/PROTOCOL.md              |   5 +-\n instruments/check-consistency/PROTOCOL.md          |   6 +-\n instruments/check-consistency/schema.json          |   2 +-\n instruments/check-consistency/workflow/panel.js    |   4 +-\n .../check-consistency/workflow/verify-act.js       |  12 +-\n .../check-consistency/workflow/verify-state.js     |  10 +-\n instruments/check-docs/PROTOCOL.md                 |   5 +-\n policy/RULES.toml                                  |  13 +-\n policy/instruments.md                              |   5 +-\n schema/round.schema.json                           |  58 +++++-\n src/CLI/Bump.jl                                    |   2 +-\n src/CLI/Config.jl                                  |  38 ++++\n src/CLI/Doctor.jl                                  |  27 ++-\n src/CLI/Init.jl                                    |   2 +-\n src/CLI/Main.jl                                    |  22 +-\n src/CLI/Passes.jl                                  |  60 +++---\n src/CLI/Preflight.jl                               | 131 +++++++-----\n src/CLI/Release.jl                                 |  40 ++--\n src/CLI/Rounds.jl                                  | 225 +++++++++++++++------\n src/CLI/Sync.jl                                    |   8 +-\n src/Scan.jl                                        |  65 +++---\n src/Scans/id_resolves.jl                           |   3 +-\n src/Scans/prose_shape.jl                           |  26 +++\n test/coverage.jl                                   |  32 ++-\n test/gate.jl                                       |  40 +++-\n test/rounds.jl                                     | 100 +++++++--\n test/scans.jl                                      |  50 +++--\n test/seeds.jl                                      |  25 +++\n test/sync_doctor.jl                                |  45 +++++\n 36 files changed, 886 insertions(+), 308 deletions(-)",
+  "executable_claims": [
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-15-audit-changes-01/claim-gate.log",
+      "command": "julia --project -e 'using Pkg; Pkg.test()'"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-15-audit-changes-01/claim-the tree hash equals git's own.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/treehash.jl\"",
+      "file": "test/treehash.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-15-audit-changes-01/claim-the ledger disables and refines.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/ledger.jl\"",
+      "file": "test/ledger.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-15-audit-changes-01/claim-the scans hit their planted defects and spare the clean twins.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/scans.jl\"",
+      "file": "test/scans.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-15-audit-changes-01/claim-the witness runner classifies pass, fail, broken, blocked and refused.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/witnesses.jl\"",
+      "file": "test/witnesses.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-15-audit-changes-01/claim-a round closes only through its channels.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/rounds.jl\"",
+      "file": "test/rounds.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-15-audit-changes-01/claim-the managed files are exactly what sync renders.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/sync_doctor.jl\"",
+      "file": "test/sync_doctor.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-15-audit-changes-01/claim-every artefact matches its schema.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/schemas.jl\"",
+      "file": "test/schemas.jl"
+    },
+    {
+      "exit": 0,
+      "log": "/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/.gbg/scratch/2026-09-15-audit-changes-01/claim-the gate refuses a build around an open round.log",
+      "command": "julia --project=test --startup-file=no \"/home/grigory/Dropbox/Research and Teach/AI Helpers/GBGCodingTools/test/gate.jl\"",
+      "file": "test/gate.jl"
+    }
+  ],
+  "schema_version": 1,
+  "round": "2026-09-15-audit-changes-01",
+  "covered": [
+    "src",
+    "test",
+    "ext",
+    "docs",
+    "Project.toml",
+    "fixture",
+    "policy",
+    "instruments",
+    "templates",
+    "catalog",
+    "schema"
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "round": "2026-09-15-audit-changes-01",
+  "lane": "sweep-completeness",
+  "verdict": "CONCERNS",
+  "checked": [
+    "ARCHITECTURE.md rubric.signature_types / RULE.DOC.SIGNATURE_MIRROR '247 of 251' figure — both sites updated together (docs/ARCHITECTURE.md line ~102 and the §12.A row) — clean",
+    "D7 workflow-scripts choice (gbg round scripts --reason) sweep across ARCHITECTURE.md D7, RULES.toml RULE.INST.FROZEN_MIDROUND statement, policy/instruments.md, schema/round.schema.json, docs/guide/rounds.md, Rounds.jl docstrings — clean",
+    "AUDIT.GAP equality-to-ancestor rule sweep across ARCHITECTURE.md (§6.8 and §7.3 table), instruments/audit-changes/PROTOCOL.md, src/CLI/Doctor.jl, tests — clean (design-record/*.md left at the old wording deliberately, since design-record is frozen provenance)",
+    "docs-build-recorded-in-ROUND.toml sweep across ARCHITECTURE.md, check-docs/PROTOCOL.md, check-consistency/PROTOCOL.md, docs/guide/rounds.md, schema/round.schema.json — clean",
+    "latex_source_globs / source_globs union-vs-replace fix sweep across schema.json, panel.js, verify-act.js, verify-state.js comment, Preflight.jl — clean",
+    "ConfigWrittenError / read_written sweep across Config.jl, Main.jl docstring, docs/src/api/Config.md, Bump.jl, Init.jl call sites — clean",
+    "Scan.apply_ledger canonical-rule-only waiver fix: RULES.toml comments added for all three two-rule scans (SCAN.DOI_CROSSCHECK, SCAN.DEAD_REF, SCAN.API_PAGE_STRUCTURE), matching test/scans.jl's three-way table — clean",
+    "PINNED-vs-MANAGED reclassification of the sync sidecar ('renders' -> 'writes', managed.json moved from PINNED to MANAGED): grepped every site stating the CFG.TORN pinned/managed distinction",
+    "RULE.INST.CARRY statement addition (round-close refusal at CARRY_LIMIT) against its ARCHITECTURE.md §12.A mirror row",
+    "verify-act.js / verify-state.js BATCH-hardcoding fix against every other Workflow script with the same 'Math.max(1, A.batch || 6)' shape",
+    "docs/src/guide/install.md's broadened 'consumer' definition (adding the fixture) against policy/glossary.md's 'Consumer' entry it now points readers to"
+  ],
+  "candidates_found": 4,
+  "findings": [
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "PINNED/MANAGED reclassification of managed.json swept into 3 docstrings but left stale in 4 user-facing sites",
+      "locations": [
+        "src/CLI/Doctor.jl:254 (CFG.TORN pass/fail message)",
+        "src/CLI/Preflight.jl:917 (preflight refusal message)",
+        "src/CLI/Rounds.jl:76 (round-verb guard refusal message)",
+        "docs/ARCHITECTURE.md:1487-1488 (§6.2 step 2 narrative)",
+        "-- corrected sites, for contrast --",
+        "src/CLI/Doctor.jl:231-236 (pinned_and_managed docstring)",
+        "src/CLI/Preflight.jl:874-882 (torn_check docstring)",
+        "docs/ARCHITECTURE.md:1878 (§7.3 CFG.TORN table row)"
+      ],
+      "before": "Doctor.jl's pinned_and_managed docstring, base: 'A MANAGED file is one the tool renders and hash-checks thereafter, edited only by `gbg sync`, and comes from the sidecar. A PINNED file the tool never renders: ... `.gbg/config.toml`, `.gbg/exemptions.toml`, `.gbg/seeds.toml`, the sync sidecar itself, every hat persona, ...'",
+      "after": "Doctor.jl's docstring, head: 'A MANAGED file is one `gbg sync` writes and hash-checks thereafter: every file the sync sidecar `.gbg/managed.json` lists, and the sidecar itself, which `sync` rewrites with those hashes. A PINNED file the tool never writes: ... `.gbg/config.toml`, `.gbg/exemptions.toml`, `.gbg/seeds.toml`, every hat persona, ...' -- but Doctor.jl:254 still prints 'no pinned file (consumer-owned, never rendered) or managed file (`gbg sync` renders and hash-checks it) modified', Preflight.jl:917 still says 'a pinned file (one the consumer owns and the tool never renders) or a managed file (one `gbg sync` renders and hash-checks)', Rounds.jl:76 says the same, and ARCHITECTURE.md:1487-1488 still says 'any PINNED file (one the consumer owns and the tool never renders) or MANAGED file (one `gbg sync` renders and hash-checks)' -- the exact sentence the docstring/§7.3 fix retired, word for word, in four other places.",
+      "why_it_matters": "The diff deliberately moved `managed.json` from the PINNED list to the MANAGED list and changed the verb from 'renders' to 'writes' (a JSON cache isn't rendered from a template) in three canonical spots (the docstring, torn_check's docstring, and the §7.3 table row), but left the identical old sentence live in the three refusal messages a consumer actually sees at the terminal (`gbg preflight`, any `gbg round` verb, `gbg doctor`) and in the ARCHITECTURE.md narrative that introduces CFG.TORN before the reader ever reaches §7.3. A reader who hits the refusal, or who reads §6.2 before §7.3, gets the pre-fix classification and verb.",
+      "justified": "no",
+      "description": "This is a 'fix the class, not the line' miss: the same descriptive sentence about what CFG.TORN watches is stated at (at least) seven sites in the corpus, and the correction touched three of them while leaving four verbatim, including two live CLI error strings and one architecture narrative paragraph that both point at the exact same fact the docstrings were just corrected to state differently.",
+      "evidence": "diff hunk for src/CLI/Doctor.jl pinned_and_managed docstring and the CFG.TORN §7.3 row in docs/ARCHITECTURE.md changed 'renders'->'writes' and dropped 'the sync sidecar itself' from the PINNED list; `grep -rn \"renders and hash-checks\"` still returns src/CLI/Doctor.jl:254, src/CLI/Preflight.jl:917, src/CLI/Rounds.jl:76 and docs/ARCHITECTURE.md:1488 unchanged."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "install.md's broadened 'consumer' definition points at the glossary entry it contradicts",
+      "locations": [
+        "docs/src/guide/install.md:6-9",
+        "policy/glossary.md:3"
+      ],
+      "before": "install.md, base: 'A **consumer** is a package that pins this tool and is reviewed by it — one of the four GBG science packages, or the tool itself, which is its own fifth consumer.'",
+      "after": "install.md, head: 'A **consumer** is a package that pins this tool and is reviewed by it — one of the four GBG science packages, the tool itself, which is its own fifth consumer, or the toy fixture under `fixture/` the tests run over; the [glossary](@ref glossary) binds the term.' -- but policy/glossary.md:3 still reads: '- **Consumer** — a package that pins the tool: the four GBG packages, and the tool repository itself.' (no fixture)",
+      "why_it_matters": "install.md was edited specifically to add a third consumer category (the toy fixture) and, in the same edit, added a cross-reference telling the reader the glossary is the binding definition of the term. A reader who follows that link lands on a definition that only names two categories, contradicting the sentence that sent them there. Either the glossary's definition of 'consumer' is wrong (has been, independent of this diff) or install.md's new claim is wrong; either way the newly-added self-reference makes the mismatch visible for the first time.",
+      "justified": "no",
+      "description": "The docs/make.jl change in this same diff gave the Glossary section an `@id glossary` anchor specifically so this cross-reference could be made (`## [Glossary](@id glossary)`), and install.md was edited to use it in the same commit window that widened the consumer definition — but the widened definition was not propagated to the glossary entry it now cites as authoritative.",
+      "evidence": "diff hunk for docs/src/guide/install.md adds '... or the toy fixture under `fixture/` the tests run over; the [glossary](@ref glossary) binds the term.'; policy/glossary.md line 3 is untouched by the diff and still reads '- **Consumer** — a package that pins the tool: the four GBG packages, and the tool repository itself.'"
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The 'BATCH is a constant, not an overridable arg' fix applied to verify-act.js/verify-state.js but not to severity-recheck.js's identical pattern",
+      "locations": [
+        "instruments/check-consistency/workflow/verify-act.js:8-11 (fixed)",
+        "instruments/check-consistency/workflow/verify-state.js:16-18 (fixed)",
+        "instruments/check-consistency/workflow/severity-recheck.js:5-6,42 (left unswept)"
+      ],
+      "before": "verify-act.js and verify-state.js, base: 'Lanes are grouped into units of at most `batch` findings (6 by default): ... const BATCH = Math.max(1, A.batch || 6)'",
+      "after": "verify-act.js and verify-state.js, head: 'Lanes are grouped into units of at most BATCH findings: ... A constant, not an arg: no CLI path sends one. const BATCH = 6' -- but severity-recheck.js still reads '// Args: { schema_version, round, out, subject, items: [{id}], items_path, models: {economy}, batch? } //   batch — findings per agent, default 6.' and 'const BATCH = Math.max(1, A.batch || 6)' on line 42, unchanged by this diff.",
+      "why_it_matters": "A future reader of severity-recheck.js is told `batch` is a real, optional argument a caller can set to change grouping size — but grepping every `.jl` call site (`Audit.jl`, `Passes.jl`) for a `\"batch\"` key shows no CLI path ever sends one, exactly the situation verify-act.js and verify-state.js were just fixed for. The stale doc invites someone to 'configure' an argument that silently does nothing, or to trust a docstring that no longer matches its two siblings.",
+      "justified": "no",
+      "description": "Three Workflow scripts share the identical 'group into units of at most `batch` (default 6)' shape (test/coverage.jl's own comment calls this out as one concept, 'the verifiers batch'). This diff hardened two of the three to `const BATCH = 6` with a comment explaining why (no CLI path ever sends `batch`), and updated their Args comments and test/coverage.jl's assertions to match — but left severity-recheck.js's identical `Math.max(1, A.batch || 6)` and its `batch?` Args-doc line untouched, even though the same justification (no `.jl` call site ever sets `\"batch\"`) applies to it verbatim.",
+      "evidence": "diff hunks for verify-act.js and verify-state.js replace 'const BATCH = Math.max(1, A.batch || 6)' with 'const BATCH = 6 ... A constant, not an arg: no CLI path sends one.'; `grep -n \"BATCH\\|batch\"` on severity-recheck.js still shows 'batch?' in its Args comment and 'const BATCH = Math.max(1, A.batch || 6)' on line 42; `grep -rn '\"batch\"' --include='*.jl' .` returns no hits anywhere in the tool's Julia sources."
+    },
+    {
+      "type": "currency",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "RULE.INST.CARRY's new round-close refusal clause reached RULES.toml and policy/instruments.md's substance but not its ARCHITECTURE.md §12.A mirror row",
+      "locations": [
+        "policy/RULES.toml:626-629 (RULE.INST.CARRY statement, updated)",
+        "docs/ARCHITECTURE.md:2428 (§12.A rule-id table row, unchanged)"
+      ],
+      "before": "RULES.toml statement, base: '... it is re-banked there, never rediscovered, and a final release refuses while a carried blocker or major stands, while anything has been carried CARRY_LIMIT (3) times, or while the backlog is not draining.'",
+      "after": "RULES.toml statement, head: '... it is re-banked there, never rediscovered. A round refuses to close by carrying a finding already carried CARRY_LIMIT (3) times — the owner rules on it instead — and a final release refuses while a carried blocker or major stands, while anything has been carried CARRY_LIMIT times, or while the backlog is not draining.' -- ARCHITECTURE.md:2428 still reads only: '... it is re-banked there after the lanes run, never rediscovered, and a final release refuses while a carried blocker or major stands, the backlog is not draining, or anything has been carried three times.' (no round-close refusal at all)",
+      "why_it_matters": "The new sentence names a distinct, already-implemented refusal (`Passes.carry_conditions` refuses `--carry <id>` at `close` once that id has ridden CARRY_LIMIT rounds, separate from the release-time refusal) that the old, single-sentence statement conflated with the release condition. ARCHITECTURE.md's §12.A table — the appendix explicitly titled 'Rule ids (`policy/RULES.toml`)' and the one other rule rows in this same diff (e.g. RULE.DOC.SIGNATURE_MIRROR) were kept word-for-word synchronized with — still carries only the old, conflated sentence, so a reader consulting the rule-id appendix alone would not learn that `close` itself, not only `release`, refuses on a carry-limit finding.",
+      "justified": "no",
+      "description": "RULE.INST.CARRY's ARCHITECTURE.md row is written in close paraphrase of the RULES.toml statement (unlike some other rows, e.g. RULE.INST.FROZEN_MIDROUND, which are deliberately terse); this diff updated the statement to add a clause distinguishing the round-close refusal from the release refusal, and the sibling rule (RULE.DOC.SIGNATURE_MIRROR) got both its RULES.toml-adjacent text and its ARCHITECTURE.md row updated in step, but RULE.INST.CARRY's ARCHITECTURE.md row was not touched.",
+      "evidence": "diff hunk for policy/RULES.toml RULE.INST.CARRY splits the statement into two sentences, adding 'A round refuses to close by carrying a finding already carried CARRY_LIMIT (3) times — the owner rules on it instead —'; docs/ARCHITECTURE.md:2428 is absent from the diff and still contains only the pre-diff single-sentence form."
+    }
+  ]
+}
