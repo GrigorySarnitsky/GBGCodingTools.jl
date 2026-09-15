@@ -1,6 +1,6 @@
 {
     "tool_version": "dev",
-    "inputs_sha": "698fb12c68ab0e0c3b45a3aa5dff3414735d906ca39c9bdeded120be667a8e40",
+    "inputs_sha": "f4cacecb13c049f8e9b26370ff3f6f7f19495820d9b39e7ece45ad7af7a8b6da",
     "files": {
         "CLAUDE.md#gbg:managed": {
             "template": "claude-md.block",
@@ -9,12 +9,12 @@
         },
         ".claude/skills/check-consistency/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "727197030f7a65a32f2ca4776577273c6bbaeef7ac2c3a549cbd8bb41139a8f3",
+            "sha256": "b673818b41eb9f9269a002f3204ac37a8d70d1f6a073d120c73cdcf397152aee",
             "version": "dev"
         },
         ".claude/skills/gbg-doctor/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "4d77b472fde06b8c7bc9ee5f87d62a660dccaa4181b2bd1bfbd3ac963b159274",
+            "sha256": "5e23638f2d3f4926ee4622eb6bbbc7e4f30ed2926ca8c50b221ef27b942d9d46",
             "version": "dev"
         },
         ".gbg/policy/latex-idiom.md": {
@@ -34,7 +34,7 @@
         },
         ".claude/skills/audit-changes/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "61bd6e203b63c988c9ddf76989eff6680a426c506fae8150d23e427aba912041",
+            "sha256": "c874a17ec40d059a451f36c594ff6bc02919de61e7ff1452438ceda3da9c95fd",
             "version": "dev"
         },
         ".gbg/policy/docs-rubric.md": {
@@ -54,7 +54,7 @@
         },
         ".claude/skills/check-docs/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "b0280a523aa1d9e6e613762fa52c09e0230b20157eba8c581f9dbd5228e62007",
+            "sha256": "b0f5071ed48efbcf21e651ff395efc5a3f4f923a5d633df4bbe6a23dea3f46a8",
             "version": "dev"
         },
         ".gbg/policy/instruments.md": {
@@ -64,7 +64,7 @@
         },
         ".claude/skills/bug-hunt/SKILL.md": {
             "template": "SKILL.md.tmpl",
-            "sha256": "920d4bf7ce5d37743ba40cd229eea9b3575114d062d804c50948a9537622ef3a",
+            "sha256": "4d06c2d5f542c754e4003e55a680463ed455721cb80f63aa23ad4fa1651bd322",
             "version": "dev"
         },
         ".gbg/policy/citations.md": {
@@ -99,5 +99,5 @@
         }
     },
     "schema_version": 1,
-    "rendered": "2026-09-15T13:14:36"
+    "rendered": "2026-09-15T14:38:34"
 }

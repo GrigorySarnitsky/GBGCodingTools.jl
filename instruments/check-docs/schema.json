@@ -158,6 +158,10 @@
         "findings"
       ],
       "properties": {
+        "corpus": {
+          "type": "string",
+          "description": "the corpus root the lane was launched on (its args' repo), stamped by lanes.js. In a seeded round bank requires it to be the round's seed_root: a lane that read the repository saw no seed, and its silence is no measurement. Not required here, since lane 00-scans (written by prepare) and unseeded rounds carry none."
+        },
         "checked": {
           "items": {
             "type": "string"

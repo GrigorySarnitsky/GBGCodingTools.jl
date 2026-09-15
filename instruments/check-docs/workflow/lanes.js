@@ -27,6 +27,7 @@ const SCHEMA = {
     schema_version: { type: 'integer' },
     round: { type: 'string' },
     lane: { type: 'string' },
+    corpus: { type: 'string', description: 'the corpus root you read, exactly as given in the prompt' },
     candidates_found: { type: 'integer', description: 'distinct CLASSES weighed BEFORE the budget bound you, never the number of sites' },
     checked: { type: 'array', items: { type: 'string' }, description: 'the files (or pairs, or terms) you actually examined; REQUIRED and non-empty even with zero findings' },
     claims_checked: { type: 'array', description: 'one entry per item of your CLAIM CHECKLIST; an item left out reads as an item you did not check', items: {
@@ -53,7 +54,7 @@ const SCHEMA = {
       required: ['type', 'severity', 'confidence', 'title', 'locations', 'description'],
     } },
   },
-  required: ['schema_version', 'round', 'lane', 'candidates_found', 'checked', 'findings'],
+  required: ['schema_version', 'round', 'lane', 'corpus', 'candidates_found', 'checked', 'findings'],
 }
 
 const prompt = (l) => `${A.preamble}
@@ -73,14 +74,15 @@ ${(l.files && l.files.length) ? l.files.map(f => `  ${A.repo}/${f}`).join('\n') 
 
 When done, FIRST use the Write tool to save the structured object as JSON to:
   ${A.round_dir}/findings/${l.nn}-${l.key}.json
-with schema_version=${A.schema_version}, round="${A.round}", lane="${l.key}". THEN return the same object. Report checked[] even when you found nothing — an empty checked[] reads as a dead lane.${l.claims_path ? ' Report one claims_checked[] entry per checklist item, whatever its verdict.' : ''}`
+with schema_version=${A.schema_version}, round="${A.round}", lane="${l.key}", corpus="${A.repo}". THEN return the same object. Report checked[] even when you found nothing — an empty checked[] reads as a dead lane.${l.claims_path ? ' Report one claims_checked[] entry per checklist item, whatever its verdict.' : ''}`
 
 
 // the scribe, the model choice and the stamps: instruments/prelude.js
 phase('Lanes')
 const outcomes = await parallel(A.lanes.map(l => () => agent(prompt(l),
   { label: l.key, phase: 'Lanes', schema: SCHEMA, agentType: 'general-purpose', ...laneModel(l) })
-  .then(r => scribe(r, `${A.round_dir}/findings/${l.nn}-${l.key}.json`, `scribe:${l.key}`, 'Lanes'))))
+  // the corpus is stamped from args, never the model's retyping: `bank` checks it against a seeded round's copy
+  .then(r => scribe(r && { ...r, corpus: A.repo }, `${A.round_dir}/findings/${l.nn}-${l.key}.json`, `scribe:${l.key}`, 'Lanes'))))
 
 const written = [], dead = [], empty = [], truncated = []
 outcomes.forEach((r, i) => {

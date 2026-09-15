@@ -38,7 +38,9 @@ default; the fix pass is never economised.
    never before; do not open the seeded copy yourself. One question
    is a read, not a scan: each API page's blurb against what its `@docs` block holds — read it from the
    build.
-2. **Lanes.** Launch the `Workflow` call preflight printed, exactly as printed. Each lane first discharges
+2. **Lanes.** Launch the `Workflow` call `gbg round prepare` printed, exactly as printed; preflight prints
+   none, since only after `prepare` do the args name the corpus the lanes read — the seeded copy, in a
+   seeded round. Each lane records that corpus in its file. Each lane first discharges
    its claim checklist, then runs the six checks as POSITIVE procedures on its surface — enumerate, then
    verify each item, with `src/` as ground truth and the decisive line quoted — and `Write`s
    `findings/NN-<lane>.json` FIRST, then returns the same object. The cold-reader lane reads the `?name` view: the module docstring and EVERY method
@@ -46,7 +48,8 @@ default; the fix pass is never economised.
    defined on a sibling method it did not open. Every lane is forbidden `.gbg/` and `~/.gbg/`.
 3. **Bank.** `gbg round bank <round>`: schema-validates each lane file, quarantines an invalid one,
    assigns ids, freezes `findings.json`, renders `findings.md` and `SUMMARY.md`. A DEAD or REJECTED lane is exit 2 and
-   nothing is frozen; `gbg round rerun <round> --lanes …` re-runs only the dead ones. On a seeded round it
+   nothing is frozen; `gbg round rerun <round> --lanes …` re-runs only the dead ones. On a seeded round a
+   lane whose file names any corpus but the seeded copy is DEAD: it saw no seed. On a seeded round it
    also recomputes the ground truth from the untouched tree and the salt, marks the seeded findings (they
    are never fixed in the corpus), prints recall per class and the SUSPECT lanes — those handed two or
    more seeds that reported none — and deletes the seeded copy.
