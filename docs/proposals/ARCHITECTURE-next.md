@@ -1,9 +1,9 @@
 # GBGCodingTools — architecture
 
 This is the target design, and it is normative: code that disagrees with it is wrong, or this document changes
-first. Where a choice belongs to the owner, the body follows the owner's standing ruling (or states the default
-chosen) and §14 asks the question. A term in **bold** is defined where it first appears. The reason for each
-mechanism is given in brackets: a requirement R1–R11 from the owner, or a failure observed in use.
+first. It follows the owner's rulings; no question about it is open. A term in **bold** is defined where it first
+appears. The reason for each mechanism is given in brackets: a requirement R1–R11 from the owner, or a failure
+observed in use.
 
 Not in this document: the migration order (`IMPLEMENTATION.md`); history and evidence, including the replaced
 architecture (`docs/design-record/`).
@@ -14,15 +14,16 @@ GBGCodingTools is a Julia package, on the Julia 1.12 floor. It keeps the owner's
 of rules, and it helps AI sessions find and fix defects in them without breaking how they work. It serves the four
 science packages — GBGPeriodicFields, GBGIsotropicTurbulence, GBGStreamingStatistics, GBGCloudPhysics — and itself.
 Each of the five is a **package** below; the **owner** is the person who owns them; a **session** is one Claude Code
-conversation working in a package.
+conversation working in a package. GBGCodingTools is also called the tooling package here.
 
 It does four things:
 1. It holds the **rulebook**: every rule on how documentation and code are written. Each rule is a Julia value that
-   carries its statement, the check that decides a violation, and examples that break and comply with it [R5, R7].
+   carries its statement, the check that decides a violation and, where a program decides, examples that break and
+   comply with it [R5, R7].
 2. It runs the rules' program checks inside each package's documentation build and test suite, always [R7].
 3. It provides **instruments**: procedures the owner asks a session to run, which find defects. Documentation
    defects are fixed without the owner and the fixes are checked; code defects are put to the owner [R1, R2].
-4. It generates every file that connects a package to the tool, so the five packages carry the same files [R6].
+4. It generates every file that connects a package to GBGCodingTools, so the five carry the same files [R6].
 
 It is not: needed by anyone who only uses a science package (it is a docs and test dependency); a reviewer that runs
 without being asked; a place for plans or history; and not a defence against a session that forges files. It guards
@@ -43,9 +44,10 @@ The owner's three distinctions are used, each with one value per check or instru
   and rationale documents, as §4.2 lists exactly. *Code*: everything else, including stored data that code reads.
   The future leak check alone has a third value, *publication*, because a leaked password is neither [R8].
 - **Decided by** — who says a finding is real. *A program*; *an agent proposes and a program decides* (the agent
-  writes a failing test and the finding exists only if the tool runs it and it fails); *an agent*, quoting the text.
+  writes a failing test, and the finding exists only if GBGCodingTools runs it and it fails); *an agent*, quoting
+  the text it judges.
 - **How found issues are fixed** — *the documentation fixer* (automatic, checked); *the code fixer* (only on the
-  owner's answer, checked); *regenerated* by the tool; *by the owner only*.
+  owner's answer, checked); *regenerated*; *by the owner only*.
 
 No two rows of the table in §3 have the same three values; `test/architecture.jl` reads the three columns and fails
 on a repeat. No further distinction is needed to separate the rows. Every rule an agent checks belongs to exactly
@@ -54,8 +56,8 @@ one agent role (§5), and a test checks this too.
 ## 3. The table
 
 **Always-on checks** are programs run by every build or test; nobody starts them and they have no runs [R7].
-**Instruments** run only when the owner asks, in words or by slash command (standing ruling; §14 Q2). Outside a
-run, a session fixes failures in its own work; the two fixers handle defects the tool finds.
+**Instruments** run only when the owner asks, in words or by slash command (as ruled). Outside a run, a session
+fixes failures in its own work; the two fixers handle the defects the checks and instruments find.
 
 | | Purpose | Intention | Decided by | How found issues are fixed | When it runs | A run ends when |
 |---|---|---|---|---|---|---|
@@ -67,15 +69,17 @@ run, a session fixes failures in its own work; the two fixers handle defects the
 | **Change audit** | A code change is no wider than its reason and still accepts input that worked before; the audit itself changes nothing | Code | An agent | Code fixer | Owner's request | One pass over the change |
 | **Leak check** (future) | Nothing secret or personal is published when a repository is made public; findings never enter a tracked file | Publication | A program | Owner only | Owner's request | One pass over every branch, commit and message |
 
-The standing ruling counts each code fix as a request for one Change audit (§4.4; §14 Q5). Documentation review and
-Bug hunt can meet one disagreement between a docstring and its code from opposite sides: the review reads and
-compares, the hunt reports only what a failing test shows. Either way a possible code defect reaches the owner as a
-question, and an answered question never returns (§8). Reading documentation beside its code and reading the
-rendered site without it differ only in what agents read, so they are one instrument with two groups of agents
-(§5.2). The leak check attaches later by adding its rules, a reader of every branch, commit message and
-`Manifest.toml` path, and one `Instrument` value. One function, `Guard.refuse_publication`, is called by every writer
-of a tracked file — run record, report, question store, settled-rulings file — and exits 2 on text from a
-publication run [a committed record would publish the leak it found].
+Nothing starts a Change audit by itself: after a code fix, the closing output, the report and a note kept with the
+questions remind the owner that one is advisable, and it runs when the owner asks for it (§4.4). Documentation review
+and Bug hunt can meet one disagreement between a docstring and its code from opposite sides: the review compares,
+the hunt reports
+only what a failing test shows. Either way a possible code defect reaches the owner as a question, and an answered
+question never returns (§8). Reading documentation beside its code and reading the rendered site without it differ
+only in what agents read, so they are one instrument with two groups of agents (§5.2). The leak check attaches later
+by adding its rules, a reader of every branch, commit message and `Manifest.toml` path, and one `Instrument` value.
+One function, `Guard.refuse_publication`, is called by every writer of a tracked file — run record, report, question
+store, settled-rulings file — and exits 2 on text from a publication run [a committed record would publish the leak
+it found].
 
 ## 4. Finding and fixing
 
@@ -85,7 +89,7 @@ Documentation review ─┐              ┌─ about documentation ─► DOCUM
 Bug hunt ─────────────┼─► collect ───┤     ─► checks ─► verifier, blind then with the diff ─► closed or open
 Change audit ─────────┘              └─ about code ─► question to the owner ─► answer:
                                           "fix the code" ─► CODE FIXER ─► the failing test now passes,
-                                               tests pass ─► commit ─► Change audit ─► owner keeps or reverts
+                                               tests pass ─► commit ─► a change audit is advised, never started
                                           "fix the documentation instead" ─► DOCUMENTATION FIXER
                                           "not a defect" ─► optionally recorded as settled (§8)
 ```
@@ -109,12 +113,14 @@ mark it as a possible code defect; otherwise it becomes a question. The change g
 ### 4.2 What is documentation, and the change guard
 
 **Documentation** is exactly: docstrings and comments in `.jl` files under `src/` and `ext/`; hand-written Markdown
-under `docs/src/`; the package's `README.md`; and the rationale documents the config names. **Everything else is
-code** [R2]: other `.jl` files, whole (tests, `docs/make.jl`, Literate scripts, whose comment marks decide what runs);
-`Project.toml` and `Manifest.toml`; the config; stored data code reads, in any format; every generated path and
-declared copy (§6); CI, hook and skill files; `CLAUDE.md`; any document the config declares normative, which wins
-over "rationale" (this document, for the tool) [a fix aligning a specification with code would authorise that code];
-and, in this tool, every rule, agent role and instrument value with its text.
+under `docs/src/`; the package's `README.md`; the rationale documents the config names; and, in GBGCodingTools, the
+prose of its rules — the `statement` and `why` of a `Rule`, and nothing else in that value. **Everything else is
+code** [R2]: other `.jl` files, whole (tests,
+`docs/make.jl`, Literate scripts, whose comment marks decide what runs); `Project.toml` and `Manifest.toml`; the
+config; stored data code reads, in any format; every generated path and declared copy (§6); CI, hook and skill
+files; `CLAUDE.md`; any document the config declares normative, which wins over "rationale" (this document, for
+GBGCodingTools) [a fix aligning a specification with code would authorise that code]; and every other part of a
+rule, agent role or instrument value — its id, check, examples, parameters, file sets, strength and lists.
 
 The **change guard** is the program `Guard.classify(cfg, path, before, after)`. It returns documentation only when all
 of these hold, and code otherwise:
@@ -124,33 +130,53 @@ of these hold, and code otherwise:
    target is a definition, leaves the same parsed code. A docstring whose target is a call, or a macro call other
    than a defining one (`@kwdef`, `@enum`), in either version, makes the change code: Julia then documents the call
    instead of running it. A docstring with `$(…)`, or a computed `@doc` argument, is never removed;
-3. no changed comment contains a Literate mark (`#src`, `#md`, `#jl`, `#nb`);
-4. in every removed docstring and every changed page, every fenced block whose info string starts with `jldoctest`
+3. in GBGCodingTools only, differences confined to plain string literals given to the keywords `statement` or `why`
+   of a `Rule(…)` call are documentation — any number of them, in any number of files — with the parsed trees
+   identical at every other node. A moved, added or removed argument, a changed id, check, example or parameter, or
+   an interpolated string in those fields, is code;
+4. no changed comment contains a Literate mark (`#src`, `#md`, `#jl`, `#nb`);
+5. in every removed docstring and every changed page, every fenced block whose info string starts with `jldoctest`
    or `@` is identical, info string included, and in the same order — this covers doctest input and output,
    `@example`, `@eval`, `@setup`, `@meta`, `@raw`, and the signatures and filters of `@docs`, `@autodocs`, `@index`
    and `@contents`, which Documenter evaluates.
 
+Clause 3 is narrower than "the prose of a rule and of an agent role". An agent role's `description`, like the
+`question` of a rule an agent checks, is an instruction handed to an agent: rewording it changes what the instrument
+looks for, and no program compares it with anything, so it stays code. A rule's `statement` is also what agents are
+told to look for, so rewording it can change what agents report, though it can change no program check; every such
+edit is verified as §4.3 step 3 says and listed in the report.
+
 Accepted limit: a longer docstring shifts what `@__LINE__` returns. `test/guard.jl` holds one example per clause, in
 both directions [parsed code alone passed changed doctest output, a `@autodocs` filter, and a docstring that stopped
-a call from running].
+a call from running]. For clause 3 the cases are: two reworded `statement`s and a reworded `why` in one file
+(documentation); and a changed check, a changed example, a renamed id, a reordered argument list, an interpolated
+statement and a reworded agent-role `description` (code).
 
 ### 4.3 The documentation fixer — automatic, with checks
 
-The documentation fixer is the session at full strength, working through `gbg docfix` steps [R1, R2].
+The documentation fixer is the session at full strength, working through `gbg docfix` steps. It starts only inside a
+run the owner asked for, and then fixes and verifies without asking again [R1, R2].
 1. **Other copies.** Before fixing, a program searches every documentation file for the finding's quoted text and
    for each formula in it, and adds every hit as a possible further location [a fourth copy of a corrected formula
    survived a fix].
 2. **Guarded commit.** The fixer edits, then `gbg docfix commit` classifies every changed path in the working tree
-   with the change guard and makes the commit only if all are documentation; otherwise it exits 1 and commits
-   nothing. The session then pushes. This is the one verb that commits, because the guard must run before a commit
-   exists; it replaces the current rule that no verb commits [a code edit committed before the guard ran would be
-   pushed].
-3. **Formula edits.** An edit that changes mathematics — inside a math span: a symbol, a number or a sign; years in
-   citations do not count — is made automatically only when the fixer both quotes an expression from the body of the
-   documented method that agrees with the new text and supplies a numeric check: a few lines of Julia, run by the
-   program in scratch, that evaluate the new formula and the method on one input and pass. Otherwise the finding
-   becomes a question. Formula edits are verified at full strength and listed in the report [a docstring was "fixed"
-   to contradict code that was itself wrong; a fix wrote false mathematics].
+   with the change guard. It then regenerates every generated part whose generator reads the prose that changed — the
+   policy files and the tooling package's block in `CLAUDE.md` — and puts them in the same commit: a generated file
+   equal to its generator's output is not a code change [otherwise a reworded rule would leave the wiring check red].
+   It makes the commit on the current branch only if every remaining path is documentation; otherwise it exits 1 and
+   commits nothing. The session then pushes. This is the one verb that commits, because the guard must run before a
+   commit exists; it replaces the current rule that no verb commits [a code edit committed before the guard ran would
+   be pushed].
+3. **Formula and rule-statement edits.** An edit that changes mathematics — inside a math span: a symbol, a number or
+   a sign; years in citations do not count — is made automatically only when the fixer both quotes an expression from
+   the body of the documented method that agrees with the new text and supplies a numeric check: a few lines of Julia,
+   run by the program in scratch, that evaluate the new formula and the method on several inputs drawn across the
+   documented domain, all of which must agree [one input chosen by the fixer passes at a symmetric or unit value while
+   a sign, a dropped term or a wrong factor survives]. Otherwise the finding becomes a question. A reworded rule
+   statement (§4.2 clause 3) is treated the same way, because no program compares a statement with the check it names.
+   Both kinds are verified blind at full strength — the verifier of a statement is given the rule's check and its
+   examples — and listed in the report [a docstring was "fixed" to contradict code that was itself wrong; a fix wrote
+   false mathematics].
 4. **Checks.** `gbg docfix check` runs the documentation checks, doctests and docs build; a check that passed at the
    run's first commit and fails now is exit 1.
 5. **Verifier, blind first.** `gbg run next` writes the blind stage's arguments. A verifier agent reads, in a copy of
@@ -176,13 +202,16 @@ The code fixer is the session making a code change the owner asked for [R2].
 2. On "fix the code", the session changes the code. A program checks that each failing test fails before the change
    and passes after it, and that `Pkg.test()` and the docs build pass. A change that fails these is not committed and
    its failure becomes a question, rather than further attempts.
-3. The change is committed straight to `master` and pushed (standing ruling; §14 Q1). Failing tests of unanswered
-   questions wait in `test/regressions/escalated/` (standing ruling), which `Pkg.test()` never runs. On "fix the
-   code" and a passing change, the test moves unchanged into `test/regressions/`; on any other answer it is deleted.
-4. Change audit runs once over the change (standing ruling; §14 Q5). The owner is then asked, as a `Question` whose
-   exhibit the program writes (the commits, changed files and definitions, and the audit's concerns), whether to
-   keep or revert. A concern the owner wants fixed is a new change, audited in turn. `gbg release` refuses while a
-   keep-or-revert question about a commit in the release is unanswered.
+3. The change is committed on the current branch and pushed, as ruled: there is no separate branch and no approval
+   step. Failing tests of unanswered questions wait in `test/regressions/escalated/` (as ruled), which `Pkg.test()`
+   never runs. On "fix the code" and a passing change, the test moves unchanged into `test/regressions/`; on any
+   other answer it is deleted.
+4. The program that verified and committed the change records `audit_advised`, with those commits, in
+   `.gbg/questions.json`, and the closing output and the run's report say a Change audit over them is advisable — an
+   audit caught two regressions the failing tests missed in one science package. `gbg run start` and `gbg release`
+   print the outstanding ones, so a fix that landed unaudited stays visible after the terminal is closed. Nothing
+   starts an audit and nothing waits for one: no release, push or run is held back, and the reminder never goes into
+   the work queue, which is for work the owner asked for.
 
 ## 5. The Julia object model
 
@@ -199,8 +228,8 @@ Catalogue      RULES (src/Rules/*.jl, each rule beside its check functions), INS
                and GENERATED, the registry of generated paths, as data
 ConfigIO       the literal-only readers of config.jl and settled.jl; validate; applies
 Engine         Checks, Harness, Guard, Questions.check's programs  ← Pkg.test() uses nothing below this line
-Render         the generators and the wiring check                ← the docs build uses nothing below this line
-Orchestration  Agents (arguments), Runs, Measure
+Render         the generators and the wiring check                 ← the docs build uses nothing below this line
+Orchestration  Agents (arguments), Runs
 CLI            the gbg verbs, each a function returning an exit code
 ```
 
@@ -228,7 +257,6 @@ Base.@kwdef struct FindingDraft
     rule::Union{Symbol,Nothing}; locations::Vector{Location}   # every site of the defect
     claim::String; evidence::String; fix::String               # evidence: a quote, or a failing test's path
     maybe_code::Bool = false                                   # the agent thinks the code, not the text, is wrong
-    serious::Bool = false                                      # holds back this tool's final release while open
 end
 
 "One defect in a run: the draft, its id, and who reported it."
@@ -277,17 +305,18 @@ Base.@kwdef struct Rule
     check::Union{ProgramCheck,AgentCheck,Nothing}
     unchecked_reason::String = ""                # required when check is nothing
     parameters::Vector{Parameter} = Parameter[]
-    examples::Vector{Example}
+    examples::Vector{Example} = Example[]      # a program check needs them; a rule an agent checks needs none
 end
 ```
 
 Program rules whose input is a question run when a question is put (§8); agent-checked rules run only inside
 instruments. `test/rules.jl` materialises every example — a text; a temporary file tree; a source string loaded into
 a fresh module; all site examples in one Documenter build with warnings allowed, each page in its own directory (a
-strict build writes nothing once one example breaks) — and requires the check's locations to equal `expect`. Every
-clause needs a breaking example and a complying text that differs from a breaking one as little as possible [a
-yes/no example passes a check that always fires; about 25 of today's 59 coded rules read file trees, the loaded
-package or the built site]. An agent-checked rule carries at least one breaking `TextExample`, used by measurement.
+strict build writes nothing once one example breaks) — and requires the check's locations to equal `expect`. For a
+program check, every clause of the statement needs a breaking example and a complying text that differs from a
+breaking one as little as possible [a yes/no example passes a check that always fires; about 25 of today's 59 coded
+rules read file trees, the loaded package or the built site]. A rule an agent checks needs no example, because no
+program reads it.
 
 ```julia
 "One kind of agent an instrument launches: what it reads, what it is kept from, and which rules it checks."
@@ -321,9 +350,9 @@ An **open reader** is an agent role with no rule list, looking for what no rule 
 defects at a third of the cost]. Documentation review has two groups of roles: **code readers**, which read each
 docstring or page with the code it describes and own rules such as "the formula matches the code"; and **site
 readers**, which read the built site as text with the code kept from them and own rules such as "the derivation
-is right". Site readers checking mathematics run at full strength in science packages [on planted defects, two
-full-strength readers found 4 each, ten economy readers 2 between them]. A *hat* and a *lane* are both agent roles.
-The `cap` exists because agent output is limited [two readers were cut off at the output limit].
+is right". Site readers checking mathematics run at full strength in science packages [two full-strength readers
+once found 4 planted defects each, where ten economy readers found 2 between them]. A *hat* and a *lane* are both
+agent roles. The `cap` exists because agent output is limited [two readers were cut off at the output limit].
 
 ```julia
 "Turns one rule or agent role off in one package, or in some of its files, with the reason."
@@ -338,9 +367,9 @@ Base.@kwdef struct PatternRule
     examples::Vector{TextExample}
 end
 
-"A package's settings for the tool, written by hand in `.gbg/config.jl`."
+"A package's settings, written by hand in `.gbg/config.jl`."
 Base.@kwdef struct Config
-    package::String; tool::Union{VersionNumber,Symbol}          # :dev only in the tool's own checkout
+    package::String; tool::Union{VersionNumber,Symbol}          # :dev only in GBGCodingTools' own checkout
     docs_build::Vector{String}; test::Vector{String}
     filesets::Dict{FileSet.T,Vector{String}} = Dict{FileSet.T,Vector{String}}()
     normative::Vector{String} = String[]
@@ -386,18 +415,19 @@ a `@doc doc(x) x` call in the source. The rule that source docstrings match the 
 docstrings written as literals, and requires every other docstring in the module to come from such a call, found in
 the source. Each example is fenced with one more backtick than the longest run of backticks inside it, so its own
 fences and doctests stay inert. `doc(x)` also returns which field each docstring line came from, located with Julia's
-own parser (JuliaSyntax, part of Julia 1.12), so a finding points to the field's line in the source. Examples are
-never written into the policy files or agents' arguments, and the rules pages are left out of what site readers get;
-a test checks this [an agent reading the examples would be handed the planted defects].
+own parser (JuliaSyntax, part of Julia 1.12), so a finding points to the field's line in the source. The generated
+pages that show the rules stay outside the file set the site readers get, and the generated policy files carry
+statements without examples, because a rules page is by construction full of text that breaks the rules: a reader
+given it would spend its budget reporting the examples, and the fix would be refused, examples being code.
 
 ### 5.3 What becomes Julia
 
 The rule prose, the rule register and the scan catalogue become `Rule` values beside their checks, and the fixture's
-defects and seeds their `Example`s. Hats, lanes and the model catalogue become `AgentRole` values, the hats' defect
-lists becoming agent-checked rules. Instrument protocols and Workflow scripts become `Instrument` values, `Runs`
-stages and one fixed driver. JSON schemas become Julia constructors, with agents' output schemas generated from the
-types. `config.toml` and the exemptions ledger become `config.jl` (`Switch`, `Setting`) and `settled.jl`; templates
-and `managed.json` become `Render` generators and the `GENERATED` registry.
+defects their `Example`s. Hats, lanes and the model catalogue become `AgentRole` values, the hats' defect lists
+becoming agent-checked rules. Instrument protocols and Workflow scripts become `Instrument` values, `Runs` stages
+and one fixed driver. JSON schemas become Julia constructors, with agents' output schemas generated from the types.
+`config.toml` and the exemptions ledger become `config.jl` (`Switch`, `Setting`) and `settled.jl`; templates and
+`managed.json` become `Render` generators and the `GENERATED` registry.
 
 ## 6. Generation
 
@@ -407,18 +437,21 @@ them by a test, as §3's table is.
 
 | File, or part of a file | Read by | Written by |
 |---|---|---|
-| `.gbg/policy/*.md` (statements, no examples); the tool's block in `CLAUDE.md` | sessions | `Render.policy` |
+| `.gbg/policy/*.md` (statements, no examples); the tooling package's block in `CLAUDE.md` | sessions | `Render.policy` |
 | one `.claude/skills/<instrument>/SKILL.md` per instrument that applies | Claude Code | `Render.skill` |
 | the Workflow driver, agents' arguments and output schemas (scratch) | the Workflow tool, agents | `Agents` |
-| `.gbg/runs/<id>/run.json`, `report.md`; `.gbg/questions.json` | the owner; release | `Runs`, `Render.report` |
-| the tool's entries in `docs/Project.toml` and `test/Project.toml` | Pkg | `Render.pin` |
-| the tool's block in `.gitignore`, CI workflow files | git, GitHub | `Render.gitignore`, `Render.ci` |
+| `.gbg/runs/<id>/run.json`, `report.md`; `.gbg/questions.json` | the owner | `Runs`, `Render.report` |
+| the pin in `docs/Project.toml` and `test/Project.toml` | Pkg | `Render.pin` |
+| the tooling package's block in `.gitignore`, CI workflow files | git, GitHub | `Render.gitignore`, `Render.ci` |
 | the rules, instruments and switches pages of each site | readers | `Render.pages`, called by `docs/make.jl` |
 
 `Catalogue.GENERATED` lists every generated path or part — a whole file, a marked block inside a file, or the entries
 of a TOML table — with its generator; a package's declared copies count as generated. The wiring check regenerates
 each part and compares only that part (TOML entries as parsed values, since Pkg rewrites the files) [a header line
-cannot mark a JSON or skill file, a fixer could delete it, and comparing all of `CLAUDE.md` always fails].
+cannot mark a JSON or skill file, a fixer could delete it, and comparing all of `CLAUDE.md` always fails]. Because a
+generated part equal to its generator's output is not a code change, `gbg docfix commit` may regenerate and commit
+the parts a reworded rule statement feeds — the policy files and the `CLAUDE.md` block — inside the same commit
+(§4.3), so a prose fix never leaves the wiring check red.
 
 The Workflow driver is one fixed script of a few dozen lines: it launches the agents its arguments list and reports
 which wrote their files. Julia cannot launch agents; only the session can call the Workflow tool. So each stage is a
@@ -448,23 +481,24 @@ its first examples, and `test/rules.jl` must pass on them.
 ## 8. Asking the owner
 
 `Question` is the one form for asking a person anything [R9]: the documentation fixer's (a possible code defect; a
-formula edit without agreement and a numeric check), Bug hunt's, Change audit's, the code fixer's (failures;
-keep-or-revert), rule counterexamples, proposed program checks, and §14. The wiring check regenerates, or exits 2 when
-it cannot read the config; the session then asks the owner through a `Question` kept outside a run.
+formula edit without agreement and a numeric check), Bug hunt's, Change audit's, the code fixer's failures, rule
+counterexamples, and proposed program checks. The wiring check regenerates, or exits 2 when it cannot read the
+config; the session then asks the owner through a `Question` kept outside a run.
 
 **How the language rules are applied.** `Questions.check(q, cfg)` runs whenever a question is put, inside a run or
 outside one, never when a record is read [an older record would otherwise fail to load under a newer rule]. It selects,
 at that moment, every program rule in `RULES` whose input is a question, so no rule text is copied and a changed rule
 applies to the next question. These check, for example: a decision of one sentence ending in a question mark; a
 length limit; no rule id, finding id, file path or code name in the decision or context (these go in `items` and
-`exhibit`); no word on the rule's list of the tool's own terms (a `Parameter`). The agent-checked language rules —
-plain, self-contained, no invented jargon — are judged by one agent before questions are shown, over a run's questions
-together or over a single question put outside a run. A failing question is rewritten once; if it still fails, it is
-shown with the failed rule named. `report.md` ends with the rendered questions; `test/questions.jl` checks every
-question form the tool builds and the questions of §14.
+`exhibit`); no word on the rule's list of the tooling package's own terms (a `Parameter`). The agent-checked language
+rules — plain, self-contained, no invented jargon — are judged by one agent before questions are shown, over a run's
+questions together or over a single question put outside a run. A failing question is rewritten once; if it still
+fails, it is shown with the failed rule named. `report.md` ends with the rendered questions; `test/questions.jl`
+checks every question form the tooling package builds.
 
 **Answers.** `gbg answer <question> <option>` records the owner's answer: in the run record for a run's questions,
-otherwise in `.gbg/questions.json`. An answered question never returns: grading and later runs skip any finding
+otherwise in `.gbg/questions.json`, which also holds the `audit_advised` notes of §4.4 — a note, not a question, so
+nothing waits on it. An answered question never returns: grading and later runs skip any finding
 whose question has an answer. An owner's "not a defect, do not ask again" appends a `Settled` value to
 `.gbg/settled.jl`, tied to the question id and quoting the lines it is about. Only `Agents` reads that file, to tell
 agents "do not report", and only while every quoted line still reads as quoted; no build, test or check reads it
@@ -475,8 +509,8 @@ agents "do not report", and only while every quoted line still reads as quoted; 
 A package turns an element off with a `Switch` naming it and giving the reason, and sets a variant with a `Setting`
 [R10]. Every element that is off is listed in the config and shown, with its reason, on the package's documentation
 site; an unknown target or a missing reason is exit 2. Rules that catch text rendering wrongly (a stray `$`, a formula
-in backticks) and the docstring-structure rules stay on everywhere; a test builds a page with such a fault under the
-tool's own switches and requires the build to fail.
+in backticks) and the docstring-structure rules stay on everywhere; a test builds a page with such a fault under
+GBGCodingTools' own switches and requires the build to fail.
 
 Off in GBGCodingTools, with reasons. The second and third items are its declared deviations today; the first and
 fourth are new with this design:
@@ -492,42 +526,49 @@ what it computes); the "written by AI" banner is on every page.
 
 ## 10. How a run starts, works and stops
 
-**Start.** A run starts only on the owner's request, in words or by slash command (standing ruling; §14 Q2), with one
-exception already ruled: Change audit after a code fix (§4.4). No gate, check or other run starts one [8 of 15 rounds
-on this tool were opened by the session or by a gate]. `gbg run start <instrument>` exits 2 when the working tree is
-not clean or another run is open, and records the tool version, the first commit and the budget.
+**Start.** A run starts only on the owner's request, in words or by slash command (as ruled). No gate, check, fix or
+other run starts one [8 of 15 rounds on GBGCodingTools were opened by the session or by a gate]. Once started, the
+run fixes and verifies to its end without asking again. `gbg run start <instrument>` exits 2 when the working tree is
+not clean or another run is open, and records the version of GBGCodingTools, the first commit and the budget.
 
-**Carried findings.** Open findings carry over, as ruled (§14 Q7). A run's record lists them, and the next run of that
-instrument starts from them before its own search. This tool's final release waits while a finding marked serious is
-open. Only `Runs` and `gbg release` read them.
+**Carried findings, and the two places they live.** Open findings carry over, as ruled. The run record keeps them
+with their ids, locations and quotes: the machine's copy, which the next run of that instrument starts from, before
+its own search. At close, every instrument also writes one line per leftover into `.claude/WORK_QUEUE.md`, the
+owner's list — a documentation review's unfixed findings, a Bug hunt's confirmed defects whose question is
+unanswered, a Change audit's concerns — so that everything still owed sits where the owner already looks. Those lines
+go under a heading the end-of-turn guard does not count, so the list never makes a session work on something the
+owner has not asked about [a session held to that list could only edit by hand, without guard or verifier, or open a
+run nobody asked for]. The guard is otherwise unchanged, and holds a session to the items the owner put there. The
+report keeps no second list of leftovers: it names the run record, and says how many lines went to the work queue.
 
 **Work.** `Runs` orders the stages; the session launches each one (§6). Documentation review: start → find → collect →
-up to 4 passes (§4.3) → close. Bug hunt: start → hunt → collect → agents write failing tests → the tool runs them →
+up to 4 passes (§4.3) → close. Bug hunt: start → hunt → collect → agents write failing tests → `gbg run` runs them →
 collect → close. Change audit: start → audit, with the package's named tests run as evidence → collect → close. Close
 writes `run.json` and `report.md`; the session commits and pushes them, shows the report and its questions, and ends.
 
-**End**, decided by a program: `DONE`; `BUDGET_SPENT` (fix passes or agent launches used up; open findings listed);
+**End**, decided by a program: `DONE`; `BUDGET_SPENT` (fix passes or agent launches used up; the open findings go to
+the record and the queue);
 `CANNOT_EVALUATE` (a step exited 2 or 3; the instrument is not repaired inside the run) [three rounds were abandoned
 and scripts were replaced inside a round]; `OWNER_STOPPED`. Close also runs two programs:
 - it classifies every commit since the run's first commit; if any changed code outside `gbg docfix commit`, the run
   ends `CANNOT_EVALUATE` and the owner is asked to keep or revert it, with an exhibit the program writes;
 - it runs `gbg docfix check`; if the build is red, it restores the documentation to the last commit that passed and
-  commits that through `gbg docfix commit` [a red docs build would otherwise stay on `master`].
+  commits that through `gbg docfix commit` [a red docs build would otherwise stay on the branch].
 
 **A run never** searches twice, extends its budget, commits code, starts another run, or changes an instrument
 (instruments are code). Discarded bug-hunt candidates are listed with their passing tests [one was a real blocker].
 
 **Across runs.** No build, test or wiring check reads a run record, the question store or the settled rulings
 [review state turned science tests red]. The work-queue file and the end-of-turn guard that holds a session to it stay
-as ruled (§14 Q3); no `gbg` verb writes to that file.
+as ruled; the close of a run is the only verb that writes to that file, one line per leftover, under the heading the
+guard does not count.
 
-**Release of this tool** follows the standing checklist (§14 Q4). `master` is clean; `Pkg.test()`, the docs build and
-the wiring check pass; `CHANGELOG.md` has its entry. Then a release candidate is tagged, and a Documentation review run
-ends `DONE` or `BUDGET_SPENT`. The run may start at the candidate or at any later commit whose changes since the
-candidate are all documentation by the change guard. Before the final tag, each of its questions has an answer, no
-finding marked serious is open, and no keep-or-revert question is unanswered. A crashed run is restarted at the
-current commit; a new candidate is needed only if code changed since the last one. `gbg release` reads only the
-`stop`, `answer` and open `serious` fields from the raw JSON, so a change to the record's type cannot block it.
+**Release** of GBGCodingTools needs a clean tree on `master`, pushed; a green `Pkg.test()`, a green docs build and a
+green wiring check; and the `CHANGELOG.md` entry; the tag is never moved. `gbg release` prints, and the tag message
+and that entry carry, two lines it does not act on: the commits whose keep-or-revert question is still open, and how
+many confirmed failing tests wait unanswered in `test/regressions/escalated/` [both are real defects that no release
+looked at]. Nothing else holds a release either: no review run, no open finding, no unanswered question, and no audit
+[a release that waited on a review, which waited on fixes, which were audited, is the loop the owner stopped].
 
 **Who stops.** Inside a run, the program, from the budget fixed at start; across runs, the owner, by asking or not.
 
@@ -535,16 +576,17 @@ current commit; a new candidate is needed only if code changed since the last on
 |---|---|---|
 | One search per run; the finding list fixed at collect | Repeated searches never settled | A defect the search missed waits for the next run |
 | At most 4 fix passes | Rounds of 9 and 15 passes | Findings open after 4 passes carry over |
+| Carried findings, in the record and the work queue | A leftover forgotten between reviews | The next review starts with the last one's leftovers |
 | Guarded commit; classification and build check at close | Code changed, or a red build pushed, through a documentation fix | A documentation fix needing code waits for the owner |
 | Code findings end as questions | Audit verdicts drove code changes without review | Owner attention per code change |
-| No build or test reads run records | Review state turned science tests red | Only this tool's release looks at a run |
+| Nothing outside the run machinery reads run records | Review state turned science tests red, and held releases | What is owed is read from the work queue, not enforced |
 | A crashed step ends the run | Abandoned rounds; scripts replaced mid-round | That run's agent launches are lost |
 
-## 11. How the tool plugs into a package
+## 11. How GBGCodingTools plugs into a package
 
-**The pinned version.** `Config.tool` names one released version (standing ruling). `gbg sync` writes it into the
-docs and test environments' `[sources]` and `[compat]`. `gbg bump` runs only on the owner's request; it first runs the
-new version's checks on the package and exits 1, changing nothing, with counts per new rule when any fails; else it
+**The pinned version.** `Config.tool` names one released version (as ruled). `gbg sync` writes it into the docs and
+test environments' `[sources]` and `[compat]`. `gbg bump` runs only on the owner's request; it first runs the new
+version's checks on the package and exits 1, changing nothing, with counts per new rule when any fails; else it
 changes the pin and regenerates every generated part [a new program check would turn the package's build red on text
 that already existed].
 
@@ -562,7 +604,7 @@ deterministic and offline, agree on a fresh clone and on CI, and never read run 
 git state. A used file set that matches no file is exit 2, and literal docstrings in the source must match those the
 loaded module reports [a check with no input reports clean].
 
-**The same files in every package**, including this tool, created by `gbg init`:
+**The same files in every package**, including GBGCodingTools, created by `gbg init`:
 
 ```
 .gbg/config.jl               written by hand
@@ -571,80 +613,33 @@ loaded module reports [a check with no input reports clean].
 .gbg/policy/*.md             generated
 .gbg/runs/<id>/              run.json and report.md
 .claude/skills/*/SKILL.md    generated, one per instrument that applies
-CLAUDE.md                    the tool's block generated; the rest belongs to the package
+.claude/WORK_QUEUE.md        the owner's list: the items he wrote, which the end-of-turn guard holds a session to,
+                             and, under a heading that guard does not count, one line per leftover from each run
+CLAUDE.md                    the tooling package's block generated; the rest belongs to the package
 test/regressions/            accepted failing tests; escalated/ holds those awaiting an answer
 ```
 
-Agent output and the driver live in a scratch directory that git ignores; planted copies live outside the package.
+Agent output and the driver live in a scratch directory that git ignores.
 
-## 12. Showing that an instrument works
+## 12. What is shown to work, and what is not
 
-**Program checks** are shown to work by their examples (§5.2). **The instruments whose findings come from agents** are
-measured only when the owner asks, by `gbg calibrate <instrument>`, the command you asked for (§14 Q8) [R7; the only
-valid measurement on this tool found 4 of 12 planted defects, and two others never delivered their planted defects].
-The breaking examples of the agent-checked rules that apply, and defects the owner found by reading, are planted at
-random positions into a copy of the package in a temporary directory outside it; the positions are recorded only
-after the agents finish. Code readers read docstrings from the copy's source files, and site readers read the copy's
-own built site, never the loaded original; the rules pages are left out. Nothing is fixed.
+**Program checks** are shown to work by their examples (§5.2): every check is run on every example of its rule, and
+its locations must equal what the example expects, in both directions and for every clause.
 
-**The measurement is checked before it is reported** [a zero was nearly reported as a valid result]:
-1. delivery is checked by content: for every agent role that checks a planted rule, the planted text is present in the
-   files that agent is given; otherwise exit 2;
-2. a finding counts only when it names the planted rule, its location is within the planted lines, and its quoted
-   evidence appears there in the copy; one planted example per finding;
-3. the program matching findings to planted defects is tested first: perfect findings score all found; the same
-   findings moved off the planted lines, or none, score none.
-
-The report gives the share of planted examples found and of findings that matched one; measurements are compared only
-with the same examples, roles and model strength.
+**The instruments whose findings come from agents are not measured.** Nothing plants known defects to count how many
+are found. This is a deliberate limit, not a plan: it means that a change to an agent role's wording, to its rule
+list or to its model strength cannot be shown to help or hurt, and that the judgement of whether these instruments
+are worth their cost stays the owner's, from what their reports contain. What is recorded per run is factual and
+cheap: how many findings were reported, how many were verified as fixed, how many carried over, how many agent
+launches were used and, when the platform reports it, how many tokens.
 
 ## 13. Change control and growth
 
-A rule, agent role or instrument is code in this tool: it changes through the code fixer on the owner's answer, is
-released as a tag that is never moved, and reaches a package through `gbg bump` [R2]. It never changes during a run.
-A design review, adversarial or not, proposes and never applies: each proposal becomes a question or is dismissed
-with its reason. `gbg attack` starts such a review.
+A rule, agent role or instrument is code in GBGCodingTools, apart from the prose fields of §4.2: it changes through
+the code fixer on the owner's answer, is released as a tag that is never moved, and reaches a package through
+`gbg bump` [R2]. It never changes during a run. A design review, adversarial or not, proposes and never applies:
+each proposal becomes a question or is dismissed with its reason. `gbg attack` starts such a review.
 
 **Growth limit.** A code change adding a mechanism — a rule, agent role, instrument, run stage, verb or refusal — names,
 in its question to the owner, the requirement or measured failure it answers and what it replaces; without one it is
 not added.
-
-## 14. Questions for the owner
-
-**Q1. Should a code fix wait on a separate branch until you accept it, instead of going straight to the main branch?**
-You ruled that every commit goes straight to the main branch, and the design keeps that. A separate branch keeps a
-change you have not read out of the main branch, at one merge per accepted change. Straight in is simpler, but a
-wrong change is live, with its documentation published, until you read it.
-
-**Q2. Should an instrument start only from a slash command you type, rather than also from a request in words?** You
-ruled that either starts one, and the design keeps that. Slash only means a session cannot start one by misreading
-you; 8 of the 15 review runs on this tool were started by the session or by a gate. Words are more convenient.
-
-**Q3. Should the end-of-turn guard and the work-queue file be removed from every package?** You ruled both into every
-package; the guard keeps a session from ending its turn while the file lists open items. Removing them means nothing
-keeps a session working on items you did not ask for now, and unfinished items survive only as unanswered questions;
-keeping them keeps long jobs going without you.
-
-**Q4. Should a release of this tool still wait on a documentation review started at a trial version, with every
-question it raised answered?** Your release checklist requires it. Keeping it costs one review and your answers per
-release. Dropping it means a release needs only passing tests, documentation build and file checks, and can ship
-with known problems listed in a report; the release waiting on a review was part of the loop you saw.
-
-**Q5. Should every code fix still be audited once before you are asked to keep it?** You ruled that code changed by a
-fix is audited, and the design keeps that; in the turbulence package the audit caught two regressions the failing
-tests missed. The cost is agent time on every change, and each concern you ask to fix leads to another audit.
-
-**Q6. In this tool, should wording fixes to a rule's own text be made automatically, or brought to you?** Agents and
-sessions act on a rule's text, so the design brings each change to you. You do not review this package's prose;
-automatic fixing would save your time, but a reworded rule can change what is enforced.
-
-**Q7. Should unfinished findings stop carrying over from one review to the next, and stop holding back a release of
-this tool?** You ruled that they carry over and that serious ones hold back the final release; the design keeps that.
-Carrying over keeps a known problem from being forgotten. The cost: a review can block a release, and each review
-starts with the last one's leftovers, part of the loop you saw. If you drop it, leftovers are listed in the review's
-report, and you decide whether to start a review that fixes them.
-
-**Q8. Should the instruments whose findings come from AI agents be measured at all, by planting known defects and
-counting how many are found?** The design keeps measurement, only when you ask, and refuses to report a result unless
-the planted defects reached every agent. Dropping it removes a part that has produced one valid result so far;
-keeping it is the only way to tell whether a change to the agents helped.
