@@ -99,6 +99,14 @@ Change audit ─────────┘              └─ about code ─�
 
 An always-on check has no run: a failing build or test goes straight to the fixer named in its §3 row.
 
+**Why only agent findings are rationed.** When a program decides, fixing may repeat until the check passes, with
+no limit on attempts: the check is the same question every time, it answers the same way on the same input, and it
+says itself when the work is done, so the loop ends when the defect is gone. When an agent decides, a fresh reading
+of edited text is a new opinion, not the same question asked again, and nothing guarantees it ever reports
+nothing — hence one search per run, at most four fix passes, and whatever is left carried over for the owner to
+see [reviews that re-read after each fix ran 9 and 15 passes without settling]. Any fix, of either kind, that makes
+a check which passed at the run's first commit fail is refused (§4.3 step 4).
+
 ### 4.1 Finding, and the handoff
 
 The checks and instruments find; none fixes [R1]. Agents write one result file each into a scratch directory and
@@ -574,6 +582,7 @@ looked at]. Nothing else holds a release either: no review run, no open finding,
 [a release that waited on a review, which waited on fixes, which were audited, is the loop the owner stopped].
 
 **Who stops.** Inside a run, the program, from the budget fixed at start; across runs, the owner, by asking or not.
+A program-decided check is the exception that needs no budget: it ends itself by passing (§4).
 
 | Mechanism | The failure it prevents | Its cost |
 |---|---|---|
