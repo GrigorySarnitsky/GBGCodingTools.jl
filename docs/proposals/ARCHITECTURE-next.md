@@ -42,7 +42,7 @@ The owner's three distinctions are used, each with one value per check or instru
 
 - **Intention** — what the defects it looks for are in. *Documentation*: docstrings, comments, hand-written pages
   and rationale documents, as §4.2 lists exactly. *Code*: everything else, including stored data that code reads.
-  The future leak check alone has a third value, *publication*, because a leaked password is neither [R8].
+  The future leak scan alone has a third value, *publication*, because a leaked password is neither [R8].
 - **Decided by** — who says a finding is real. *A program*; *an agent proposes and a program decides* (the agent
   writes a failing test, and the finding exists only if GBGCodingTools runs it and it fails); *an agent*, quoting
   the text it judges.
@@ -59,6 +59,9 @@ one agent role (§5), and a test checks this too.
 **Instruments** run only when the owner asks, in words or by slash command (as ruled). Outside a run, a session
 fixes failures in its own work; the two fixers handle the defects the checks and instruments find.
 
+The names say which is which: a **check** is always on, and a **review**, **hunt**, **audit** or **scan** is an
+instrument the owner starts. A new one is named the same way.
+
 | | Purpose | Intention | Decided by | How found issues are fixed | When it runs | A run ends when |
 |---|---|---|---|---|---|---|
 | **Documentation checks** (always on) | Documentation has the house structure and formatting and renders as written; re-running the check verifies a fix | Documentation | A program | Documentation fixer | Every docs build | — |
@@ -67,7 +70,7 @@ fixes failures in its own work; the two fixers handle the defects the checks and
 | **Documentation review** | Documentation is true to the code, correct, consistent and self-contained; the change guard, the checks and a verifier agent check each fix | Documentation | An agent | Documentation fixer | Owner's request | Nothing is open, or the budget is spent |
 | **Bug hunt** | The code does what its documentation says | Code | An agent proposes, a program decides | Code fixer | Owner's request | Every candidate is confirmed or discarded, once |
 | **Change audit** | A code change is no wider than its reason and still accepts input that worked before; the audit itself changes nothing | Code | An agent | Code fixer | Owner's request | One pass over the change |
-| **Leak check** (future) | Nothing secret or personal is published when a repository is made public; findings never enter a tracked file | Publication | A program | Owner only | Owner's request | One pass over every branch, commit and message |
+| **Leak scan** (future) | Nothing secret or personal is published when a repository is made public; findings never enter a tracked file | Publication | A program | Owner only | Owner's request | One pass over every branch, commit and message |
 
 Nothing starts a Change audit by itself: after a code fix, the closing output, the report and a note kept with the
 questions remind the owner that one is advisable, and it runs when the owner asks for it (§4.4). Documentation review
@@ -75,7 +78,7 @@ and Bug hunt can meet one disagreement between a docstring and its code from opp
 the hunt reports
 only what a failing test shows. Either way a possible code defect reaches the owner as a question, and an answered
 question never returns (§8). Reading documentation beside its code and reading the rendered site without it differ
-only in what agents read, so they are one instrument with two groups of agents (§5.2). The leak check attaches later
+only in what agents read, so they are one instrument with two groups of agents (§5.2). The leak scan attaches later
 by adding its rules, a reader of every branch, commit message and `Manifest.toml` path, and one `Instrument` value.
 One function, `Guard.refuse_publication`, is called by every writer of a tracked file — run record, report, question
 store, settled-rulings file — and exits 2 on text from a publication run [a committed record would publish the leak
@@ -238,7 +241,7 @@ CLI            the gbg verbs, each a function returning an exit code
 Enums are scoped (`module Decider; @enum T …; end`) so values of different enums never share a name.
 
 ```julia
-module Intention; @enum T DOCUMENTATION CODE; end          # PUBLICATION arrives with the leak check
+module Intention; @enum T DOCUMENTATION CODE; end          # PUBLICATION arrives with the leak scan
 module Decider;   @enum T PROGRAM FAILING_TEST AGENT; end
 module Fixer;     @enum T DOCUMENTATION_FIXER CODE_FIXER REGENERATE OWNER_ONLY; end
 module Input;     @enum T SOURCE_TEXT FILE_TREE LOADED_MODULE BUILT_SITE QUESTION; end
