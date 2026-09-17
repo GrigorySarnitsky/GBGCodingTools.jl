@@ -1,616 +1,615 @@
 {
- "$schema": "https://json-schema.org/draft/2020-12/schema",
- "title": ".gbg/config.toml — a consumer's one config file (docs/ARCHITECTURE.md §5)",
- "type": "object",
- "additionalProperties": false,
- "required": [
-  "tool",
-  "package",
-  "surfaces",
-  "instruments"
- ],
- "$defs": {
-  "anchor": {
-   "type": "string",
-   "pattern": "^[^#]+#.+$",
-   "description": "file#heading: the ONE heading in file whose text starts with heading"
-  },
-  "anchor_or_absent": {
-   "type": "string",
-   "pattern": "^([^#]+#.+|absent)$"
-  },
-  "strlist": {
-   "type": "array",
-   "items": {
-    "type": "string"
-   }
-  },
-  "lane": {
-   "type": "object",
-   "additionalProperties": false,
-   "required": [
-    "key",
-    "files",
-    "brief"
-   ],
-   "properties": {
-    "key": {
-     "type": "string",
-     "pattern": "^[a-z0-9][a-z0-9-]*$"
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": ".gbg/config.toml — a consumer's one config file (docs/ARCHITECTURE.md §5)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tool",
+    "package",
+    "surfaces"
+  ],
+  "$defs": {
+    "anchor": {
+      "type": "string",
+      "pattern": "^[^#]+#.+$",
+      "description": "file#heading: the ONE heading in file whose text starts with heading"
     },
-    "files": {
-     "$ref": "#/$defs/strlist"
+    "anchor_or_absent": {
+      "type": "string",
+      "pattern": "^([^#]+#.+|absent)$"
     },
-    "brief": {
-     "type": "string"
-    }
-   }
-  },
-  "instrument": {
-   "type": "string",
-   "enum": [
-    "check-docs",
-    "check-consistency",
-    "bug-hunt",
-    "audit-changes"
-   ]
-  }
- },
- "properties": {
-  "tool": {
-   "type": "object",
-   "additionalProperties": false,
-   "required": [
-    "version"
-   ],
-   "properties": {
-    "version": {
-     "type": "string",
-     "pattern": "^([0-9]+\\.[0-9]+\\.[0-9]+|dev)$",
-     "description": "the pin: a released vX.Y.Z without the v, or the literal dev (tool root and fixture only)"
-    },
-    "schema": {
-     "type": "integer",
-     "minimum": 1,
-     "default": 1
-    }
-   }
-  },
-  "package": {
-   "type": "object",
-   "additionalProperties": false,
-   "required": [
-    "name",
-    "description",
-    "modules",
-    "domain",
-    "rulebook_sections",
-    "julia_test",
-    "docs_build"
-   ],
-   "properties": {
-    "name": {
-     "type": "string",
-     "pattern": "^[A-Z][A-Za-z0-9]*$"
-    },
-    "description": {
-     "type": "string",
-     "minLength": 20
-    },
-    "modules": {
-     "$ref": "#/$defs/strlist",
-     "minItems": 1
-    },
-    "extensions": {
-     "$ref": "#/$defs/strlist",
-     "default": []
-    },
-    "deliberate_absences": {
-     "$ref": "#/$defs/strlist",
-     "default": []
-    },
-    "terms": {
-     "$ref": "#/$defs/strlist",
-     "default": []
-    },
-    "domain": {
-     "type": "string"
-    },
-    "rulebook_sections": {
-     "type": "array",
-     "items": {
-      "$ref": "#/$defs/anchor"
-     }
-    },
-    "julia_test": {
-     "type": "string",
-     "pattern": "Pkg\\.test\\(\\)"
-    },
-    "docs_build": {
-     "type": "string",
-     "pattern": "docs/make\\.jl"
-    },
-    "docs_post": {
-     "$ref": "#/$defs/strlist",
-     "default": []
-    }
-   }
-  },
-  "paths": {
-   "type": "object",
-   "additionalProperties": {
-    "type": "string"
-   },
-   "default": {}
-  },
-  "git": {
-   "type": "object",
-   "additionalProperties": false,
-   "default": {
-    "branch": "master"
-   },
-   "properties": {
-    "branch": {
-     "type": "string",
-     "enum": [
-      "master",
-      "main"
-     ],
-     "default": "master"
-    }
-   }
-  },
-  "surfaces": {
-   "type": "object",
-   "additionalProperties": false,
-   "required": [
-    "rationale",
-    "pages",
-    "src",
-    "history_exempt"
-   ],
-   "properties": {
-    "rationale": {
-     "$ref": "#/$defs/strlist"
-    },
-    "pages": {
-     "$ref": "#/$defs/strlist"
-    },
-    "generated": {
-     "type": "object",
-     "additionalProperties": false,
-     "default": {
-      "globs": [],
-      "optional": true
-     },
-     "properties": {
-      "globs": {
-       "$ref": "#/$defs/strlist",
-       "default": []
-      },
-      "optional": {
-       "type": "boolean",
-       "default": true
+    "strlist": {
+      "type": "array",
+      "items": {
+        "type": "string"
       }
-     }
     },
-    "src": {
-     "$ref": "#/$defs/strlist",
-     "minItems": 1
-    },
-    "ext": {
-     "$ref": "#/$defs/strlist",
-     "default": []
-    },
-    "literate": {
-     "$ref": "#/$defs/strlist",
-     "default": []
-    },
-    "built_html": {
-     "type": "string",
-     "default": "docs/build",
-     "description": "\"\" disables the built-HTML surface"
-    },
-    "history_exempt": {
-     "$ref": "#/$defs/anchor"
-    },
-    "references_heading": {
-     "$ref": "#/$defs/anchor_or_absent",
-     "default": "absent"
-    },
-    "glossary": {
-     "type": "string"
-    },
-    "data": {
-     "$ref": "#/$defs/strlist",
-     "default": [],
-     "description": "OPTIONAL and empty by default: the package's data and script files (TOML, JSON, YAML, JavaScript, sh, templates) whose COMMENTS and description strings are prose the fleet reads. A package with none leaves it empty and nothing changes."
-    }
-   }
-  },
-  "docs": {
-   "type": "object",
-   "additionalProperties": false,
-   "default": {},
-   "properties": {
-    "doctest": {
-     "type": "boolean",
-     "default": true
-    },
-    "admonition_titles": {
-     "type": "string",
-     "enum": [
-      "always",
-      "load-bearing"
-     ],
-     "default": "always"
-    },
-    "unexported_base_expected": {
-     "$ref": "#/$defs/strlist",
-     "default": []
-    },
-    "retired_claims": {
-     "type": "array",
-     "default": [],
-     "items": {
+    "lane": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-       "pattern",
-       "reason"
+        "key",
+        "files",
+        "brief"
       ],
       "properties": {
-       "pattern": {
-        "type": "string"
-       },
-       "reason": {
-        "type": "string",
-        "minLength": 10
-       }
-      }
-     }
-    }
-   }
-  },
-  "rubric": {
-   "type": "object",
-   "additionalProperties": false,
-   "default": {},
-   "properties": {
-    "leading_identity": {
-     "type": "string",
-     "enum": [
-      "physical-meaning",
-      "estimand"
-     ],
-     "default": "physical-meaning"
-    },
-    "signature_types": {
-     "type": "string",
-     "enum": [
-      "names",
-      "mirror"
-     ],
-     "default": "names",
-     "description": "RULE.DOC.SIGNATURE_MIRROR's variation point. names: the signature shows the argument names and defaults, the types living in the bullets. mirror: the signature repeats every type the method declares, the stricter form"
-    }
-   }
-  },
-  "notation": {
-   "type": "object",
-   "additionalProperties": false,
-   "default": {},
-   "properties": {
-    "vectors": {
-     "type": "string",
-     "enum": [
-      "component",
-      "boldsymbol",
-      "none"
-     ],
-     "default": "component"
-    },
-    "mathbf_allowed": {
-     "$ref": "#/$defs/strlist",
-     "default": [
-      "\\mathbf{1}"
-     ],
-     "description": "the `\\mathbf` strings this package admits. `\\mathbf{1}` is RULE.TEX.MATHBF's standing exception and SCAN.MATHBF admits it whatever this list holds, so emptying the list does not forbid it"
-    }
-   }
-  },
-  "citations": {
-   "type": "object",
-   "additionalProperties": false,
-   "default": {},
-   "properties": {
-    "require_doi": {
-     "type": "boolean",
-     "default": true
-    }
-   }
-  },
-  "instruments": {
-   "type": "object",
-   "additionalProperties": false,
-   "required": [
-    "enabled"
-   ],
-   "properties": {
-    "enabled": {
-     "type": "array",
-     "items": {
-      "$ref": "#/$defs/instrument"
-     }
-    },
-    "check-docs": {
-     "type": "object",
-     "additionalProperties": false,
-     "default": {},
-     "properties": {
-      "argcov_policy": {
-       "type": "string",
-       "enum": [
-        "triage",
-        "gate"
-       ],
-       "default": "triage"
-      },
-      "lanes_extra": {
-       "type": "array",
-       "items": {
-        "$ref": "#/$defs/lane"
-       },
-       "default": []
-      },
-      "finding_cap": {
-       "description": "the budget one check-docs lane reports under, counted in FINDINGS, which are classes: a recurring defect is ONE finding whose locations list every site, so this bounds distinct defects and never the sites they name (RULE.DOC.CLASS_SWEEP). It bounds a lane's OUTPUT, not its reading — candidates_found records the classes it weighed before the budget bound it.",
-       "type": "integer",
-       "minimum": 1,
-       "default": 20
-      },
-      "rationale_lanes": {
-       "description": "how many lanes the rationale surface is cut into, on its own top-level headings, when that surface is a single document. 1 is one lane over the whole of it. A design document of several thousand lines is one lane's surface only in name: the lane that must hold all of it holds none of it closely. The first slice keeps the key `rationale`, so a finding carried from an earlier round still names a lane this round runs.",
-       "type": "integer",
-       "minimum": 1,
-       "default": 1
-      },
-      "seed_rounds": {
-       "description": "plant the seed catalogue into a DISPOSABLE copy of the lane surfaces before the lanes read them, so the round measures what they miss and not only what they report. Default false: a consumer opts in.",
-       "type": "boolean",
-       "default": false
-      },
-      "seed_catalog": {
-       "type": "string",
-       "default": ".gbg/seeds.toml"
-      },
-      "max_passes": {
-       "description": "the pass budget: after this many verification passes, what is still open is carried into the next round at close instead of verified again. 0 is no budget. A --regrade that verifies no new fix does not spend it.",
-       "type": "integer",
-       "minimum": 0,
-       "default": 3
-      }
-     }
-    },
-    "check-consistency": {
-     "type": "object",
-     "additionalProperties": false,
-     "default": {},
-     "properties": {
-      "finding_cap": {
-       "description": "the budget one hat reports under, counted in FINDINGS, which are classes: a mistake recurring across pages is ONE finding whose locations name every page (RULE.DOC.CLASS_SWEEP). It bounds a hat's OUTPUT, not its reading — candidates_found records the classes it weighed. It lives here rather than in panel.js because a cap is a policy number, and no package datum belongs in a Workflow script.",
-       "type": "integer",
-       "minimum": 1,
-       "default": 25
-      },
-      "profile": {
-       "type": "string",
-       "enum": [
-        "all",
-        "core",
-        "explicit"
-       ],
-       "default": "all"
-      },
-      "hats": {
-       "$ref": "#/$defs/strlist",
-       "default": []
-      },
-      "core": {
-       "$ref": "#/$defs/strlist",
-       "default": []
-      },
-      "seed_rounds": {
-       "type": "boolean",
-       "default": true
-      },
-      "seed_catalog": {
-       "type": "string",
-       "default": ".gbg/seeds.toml"
-      },
-      "max_passes": {
-       "description": "the pass budget: after this many verification passes, what is still open is carried into the next round at close instead of verified again. 0 is no budget. A --regrade that verifies no new fix does not spend it.",
-       "type": "integer",
-       "minimum": 0,
-       "default": 3
-      },
-      "design_docs_withheld": {
-       "$ref": "#/$defs/strlist",
-       "default": []
-      },
-      "latex_source_globs": {
-       "$ref": "#/$defs/strlist",
-       "default": [],
-       "description": "repo-relative globs of authored source a check-consistency panel hat whose needs include `source`, and that instrument's pass verifier, read IN ADDITION to src, ext, docs/src and docs — a Literate surface such as examples/*.jl. It adds to those four surfaces and never replaces them."
-      },
-      "domain_hats": {
-       "type": "array",
-       "default": [],
-       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-         "key"
-        ],
-        "properties": {
-         "key": {
+        "key": {
           "type": "string",
           "pattern": "^[a-z0-9][a-z0-9-]*$"
-         },
-         "anchor": {
-          "type": "boolean",
-          "default": true
-         },
-         "substrate": {
-          "type": "string",
-          "enum": [
-           "full",
-           "siteonly"
-          ],
-          "default": "full"
-         }
+        },
+        "files": {
+          "$ref": "#/$defs/strlist"
+        },
+        "brief": {
+          "type": "string"
         }
-       }
       }
-     }
     },
-    "bug-hunt": {
-     "type": "object",
-     "additionalProperties": false,
-     "default": {},
-     "properties": {
-      "territories": {
-       "type": "array",
-       "items": {
-        "$ref": "#/$defs/lane"
-       },
-       "default": []
-      },
-      "finding_cap": {
-       "description": "the budget one hunter reports under, counted in MECHANISMS: one mechanism wrong in five places is ONE candidate whose other sites its mechanism names, split only where the sites need different witnesses — a witness is what makes a hunt candidate real, so a class no single program can demonstrate is genuinely several. The two FREE lanes are uncapped by design: they choose two or three files themselves.",
-       "type": "integer",
-       "minimum": 1,
-       "default": 6
-      },
-      "oracles": {
-       "$ref": "#/$defs/strlist",
-       "default": []
-      },
-      "witness_env": {
-       "type": "string",
-       "default": "test"
-      },
-      "max_passes": {
-       "description": "the pass budget: after this many verification passes, what is still open is carried into the next hunt at close — its witness and reproduction record with it — instead of verified again. 0 is no budget. A --regrade that verifies no new fix does not spend it.",
-       "type": "integer",
-       "minimum": 0,
-       "default": 3
-      }
-     }
-    },
-    "audit-changes": {
-     "type": "object",
-     "additionalProperties": false,
-     "default": {},
-     "properties": {
-      "executable_claims": {
-       "type": "object",
-       "additionalProperties": {
-        "type": "string"
-       },
-       "default": {}
-      },
-      "finding_cap": {
-       "description": "the budget one audit lane reports under, counted in CLASSES: an unjustified edit pattern recurring across hunks is ONE concern whose locations name every hunk (RULE.DOC.CLASS_SWEEP), so a class spanning forty hunks costs one.",
-       "type": "integer",
-       "minimum": 1,
-       "default": 8
-      },
-      "guard_symbols": {
-       "$ref": "#/$defs/strlist",
-       "default": []
-      },
-      "invariants_section": {
-       "$ref": "#/$defs/anchor"
-      }
-     }
+    "instrument": {
+      "type": "string",
+      "enum": [
+        "check-docs",
+        "check-consistency",
+        "bug-hunt",
+        "audit-changes"
+      ]
     }
-   }
   },
-  "cost": {
-   "type": "object",
-   "additionalProperties": false,
-   "default": {},
-   "properties": {
-    "default": {
-     "type": "string",
-     "enum": [
-      "economy",
-      "full"
-     ],
-     "default": "economy"
-    }
-   }
-  },
-  "schema": {
-   "type": "object",
-   "additionalProperties": false,
-   "default": {},
-   "properties": {
-    "finding_types_extra": {
-     "$ref": "#/$defs/strlist",
-     "default": []
-    }
-   }
-  },
-  "scans": {
-   "type": "object",
-   "additionalProperties": false,
-   "default": {},
-   "properties": {
-    "custom": {
-     "type": "array",
-     "default": [],
-     "items": {
+  "properties": {
+    "tool": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-       "id",
-       "pattern",
-       "surfaces",
-       "reason"
+        "version"
       ],
       "properties": {
-       "id": {
-        "type": "string",
-        "pattern": "^[A-Z][A-Z0-9_.]*$"
-       },
-       "pattern": {
-        "type": "string"
-       },
-       "surfaces": {
-        "type": "array",
-        "items": {
-         "type": "string",
-         "enum": [
-          "rationale",
-          "pages",
-          "src",
-          "ext",
-          "literate",
-          "docs",
-          "all"
-         ]
+        "version": {
+          "type": "string",
+          "pattern": "^([0-9]+\\.[0-9]+\\.[0-9]+|dev)$",
+          "description": "the pin: a released vX.Y.Z without the v, or the literal dev (tool root and fixture only)"
+        },
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
         }
-       },
-       "reason": {
-        "type": "string",
-        "minLength": 20
-       }
       }
-     }
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description",
+        "modules",
+        "domain",
+        "rulebook_sections",
+        "julia_test",
+        "docs_build"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Za-z0-9]*$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 20
+        },
+        "modules": {
+          "$ref": "#/$defs/strlist",
+          "minItems": 1
+        },
+        "extensions": {
+          "$ref": "#/$defs/strlist",
+          "default": []
+        },
+        "deliberate_absences": {
+          "$ref": "#/$defs/strlist",
+          "default": []
+        },
+        "terms": {
+          "$ref": "#/$defs/strlist",
+          "default": []
+        },
+        "domain": {
+          "type": "string"
+        },
+        "rulebook_sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/anchor"
+          }
+        },
+        "julia_test": {
+          "type": "string",
+          "pattern": "Pkg\\.test\\(\\)"
+        },
+        "docs_build": {
+          "type": "string",
+          "pattern": "docs/make\\.jl"
+        },
+        "docs_post": {
+          "$ref": "#/$defs/strlist",
+          "default": []
+        }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {}
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": {
+        "branch": "master"
+      },
+      "properties": {
+        "branch": {
+          "type": "string",
+          "enum": [
+            "master",
+            "main"
+          ],
+          "default": "master"
+        }
+      }
+    },
+    "surfaces": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rationale",
+        "pages",
+        "src",
+        "history_exempt"
+      ],
+      "properties": {
+        "rationale": {
+          "$ref": "#/$defs/strlist"
+        },
+        "pages": {
+          "$ref": "#/$defs/strlist"
+        },
+        "generated": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": {
+            "globs": [],
+            "optional": true
+          },
+          "properties": {
+            "globs": {
+              "$ref": "#/$defs/strlist",
+              "default": []
+            },
+            "optional": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "src": {
+          "$ref": "#/$defs/strlist",
+          "minItems": 1
+        },
+        "ext": {
+          "$ref": "#/$defs/strlist",
+          "default": []
+        },
+        "literate": {
+          "$ref": "#/$defs/strlist",
+          "default": []
+        },
+        "built_html": {
+          "type": "string",
+          "default": "docs/build",
+          "description": "\"\" disables the built-HTML surface"
+        },
+        "history_exempt": {
+          "$ref": "#/$defs/anchor"
+        },
+        "references_heading": {
+          "$ref": "#/$defs/anchor_or_absent",
+          "default": "absent"
+        },
+        "glossary": {
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/strlist",
+          "default": [],
+          "description": "OPTIONAL and empty by default: the package's data and script files (TOML, JSON, YAML, JavaScript, sh, templates) whose COMMENTS and description strings are prose the fleet reads. A package with none leaves it empty and nothing changes."
+        }
+      }
+    },
+    "docs": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "doctest": {
+          "type": "boolean",
+          "default": true
+        },
+        "admonition_titles": {
+          "type": "string",
+          "enum": [
+            "always",
+            "load-bearing"
+          ],
+          "default": "always"
+        },
+        "unexported_base_expected": {
+          "$ref": "#/$defs/strlist",
+          "default": []
+        },
+        "retired_claims": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "pattern",
+              "reason"
+            ],
+            "properties": {
+              "pattern": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 10
+              }
+            }
+          }
+        }
+      }
+    },
+    "rubric": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "leading_identity": {
+          "type": "string",
+          "enum": [
+            "physical-meaning",
+            "estimand"
+          ],
+          "default": "physical-meaning"
+        },
+        "signature_types": {
+          "type": "string",
+          "enum": [
+            "names",
+            "mirror"
+          ],
+          "default": "names",
+          "description": "RULE.DOC.SIGNATURE_MIRROR's variation point. names: the signature shows the argument names and defaults, the types living in the bullets. mirror: the signature repeats every type the method declares, the stricter form"
+        }
+      }
+    },
+    "notation": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "vectors": {
+          "type": "string",
+          "enum": [
+            "component",
+            "boldsymbol",
+            "none"
+          ],
+          "default": "component"
+        },
+        "mathbf_allowed": {
+          "$ref": "#/$defs/strlist",
+          "default": [
+            "\\mathbf{1}"
+          ],
+          "description": "the `\\mathbf` strings this package admits. `\\mathbf{1}` is RULE.TEX.MATHBF's standing exception and SCAN.MATHBF admits it whatever this list holds, so emptying the list does not forbid it"
+        }
+      }
+    },
+    "citations": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "require_doi": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "instruments": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/instrument"
+          }
+        },
+        "check-docs": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "argcov_policy": {
+              "type": "string",
+              "enum": [
+                "triage",
+                "gate"
+              ],
+              "default": "triage"
+            },
+            "lanes_extra": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/lane"
+              },
+              "default": []
+            },
+            "finding_cap": {
+              "description": "the budget one check-docs lane reports under, counted in FINDINGS, which are classes: a recurring defect is ONE finding whose locations list every site, so this bounds distinct defects and never the sites they name (RULE.DOC.CLASS_SWEEP). It bounds a lane's OUTPUT, not its reading — candidates_found records the classes it weighed before the budget bound it.",
+              "type": "integer",
+              "minimum": 1,
+              "default": 20
+            },
+            "rationale_lanes": {
+              "description": "how many lanes the rationale surface is cut into, on its own top-level headings, when that surface is a single document. 1 is one lane over the whole of it. A design document of several thousand lines is one lane's surface only in name: the lane that must hold all of it holds none of it closely. The first slice keeps the key `rationale`, so a finding carried from an earlier round still names a lane this round runs.",
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "seed_rounds": {
+              "description": "plant the seed catalogue into a DISPOSABLE copy of the lane surfaces before the lanes read them, so the round measures what they miss and not only what they report. Default false: a consumer opts in.",
+              "type": "boolean",
+              "default": false
+            },
+            "seed_catalog": {
+              "type": "string",
+              "default": ".gbg/seeds.toml"
+            },
+            "max_passes": {
+              "description": "the pass budget: after this many verification passes, what is still open is carried into the next round at close instead of verified again. 0 is no budget. A --regrade that verifies no new fix does not spend it.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 3
+            }
+          }
+        },
+        "check-consistency": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "finding_cap": {
+              "description": "the budget one hat reports under, counted in FINDINGS, which are classes: a mistake recurring across pages is ONE finding whose locations name every page (RULE.DOC.CLASS_SWEEP). It bounds a hat's OUTPUT, not its reading — candidates_found records the classes it weighed. It lives here rather than in panel.js because a cap is a policy number, and no package datum belongs in a Workflow script.",
+              "type": "integer",
+              "minimum": 1,
+              "default": 25
+            },
+            "profile": {
+              "type": "string",
+              "enum": [
+                "all",
+                "core",
+                "explicit"
+              ],
+              "default": "all"
+            },
+            "hats": {
+              "$ref": "#/$defs/strlist",
+              "default": []
+            },
+            "core": {
+              "$ref": "#/$defs/strlist",
+              "default": []
+            },
+            "seed_rounds": {
+              "type": "boolean",
+              "default": true
+            },
+            "seed_catalog": {
+              "type": "string",
+              "default": ".gbg/seeds.toml"
+            },
+            "max_passes": {
+              "description": "the pass budget: after this many verification passes, what is still open is carried into the next round at close instead of verified again. 0 is no budget. A --regrade that verifies no new fix does not spend it.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 3
+            },
+            "design_docs_withheld": {
+              "$ref": "#/$defs/strlist",
+              "default": []
+            },
+            "latex_source_globs": {
+              "$ref": "#/$defs/strlist",
+              "default": [],
+              "description": "repo-relative globs of authored source a check-consistency panel hat whose needs include `source`, and that instrument's pass verifier, read IN ADDITION to src, ext, docs/src and docs — a Literate surface such as examples/*.jl. It adds to those four surfaces and never replaces them."
+            },
+            "domain_hats": {
+              "type": "array",
+              "default": [],
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "key"
+                ],
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9-]*$"
+                  },
+                  "anchor": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "substrate": {
+                    "type": "string",
+                    "enum": [
+                      "full",
+                      "siteonly"
+                    ],
+                    "default": "full"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "bug-hunt": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "territories": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/lane"
+              },
+              "default": []
+            },
+            "finding_cap": {
+              "description": "the budget one hunter reports under, counted in MECHANISMS: one mechanism wrong in five places is ONE candidate whose other sites its mechanism names, split only where the sites need different witnesses — a witness is what makes a hunt candidate real, so a class no single program can demonstrate is genuinely several. The two FREE lanes are uncapped by design: they choose two or three files themselves.",
+              "type": "integer",
+              "minimum": 1,
+              "default": 6
+            },
+            "oracles": {
+              "$ref": "#/$defs/strlist",
+              "default": []
+            },
+            "witness_env": {
+              "type": "string",
+              "default": "test"
+            },
+            "max_passes": {
+              "description": "the pass budget: after this many verification passes, what is still open is carried into the next hunt at close — its witness and reproduction record with it — instead of verified again. 0 is no budget. A --regrade that verifies no new fix does not spend it.",
+              "type": "integer",
+              "minimum": 0,
+              "default": 3
+            }
+          }
+        },
+        "audit-changes": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "executable_claims": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "default": {}
+            },
+            "finding_cap": {
+              "description": "the budget one audit lane reports under, counted in CLASSES: an unjustified edit pattern recurring across hunks is ONE concern whose locations name every hunk (RULE.DOC.CLASS_SWEEP), so a class spanning forty hunks costs one.",
+              "type": "integer",
+              "minimum": 1,
+              "default": 8
+            },
+            "guard_symbols": {
+              "$ref": "#/$defs/strlist",
+              "default": []
+            },
+            "invariants_section": {
+              "$ref": "#/$defs/anchor"
+            }
+          }
+        }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "default": {
+          "type": "string",
+          "enum": [
+            "economy",
+            "full"
+          ],
+          "default": "economy"
+        }
+      }
+    },
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "finding_types_extra": {
+          "$ref": "#/$defs/strlist",
+          "default": []
+        }
+      }
+    },
+    "scans": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "custom": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "pattern",
+              "surfaces",
+              "reason"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9_.]*$"
+              },
+              "pattern": {
+                "type": "string"
+              },
+              "surfaces": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "rationale",
+                    "pages",
+                    "src",
+                    "ext",
+                    "literate",
+                    "docs",
+                    "all"
+                  ]
+                }
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 20
+              }
+            }
+          }
+        }
+      }
     }
-   }
   }
- }
 }

@@ -27,19 +27,9 @@ end
 # instruments/<name>/ and the tool's own rendered policy copy under .gbg/policy/, headings demoted one level,
 # each instrument and each rule given an @id the home page links to. Both are generated globs, gitignored.
 demote(line) = startswith(line, "#") ? "#" * line : line
-open(joinpath(@__DIR__, "src", "guide", "instruments.md"), "w") do io
-    println(io, "# [The instruments](@id instruments)\n")
-    println(io, "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human.\n")
-    println(io, "Generated at build time from `instruments/<name>/PROTOCOL.md`: the text `gbg preflight <name>` injects into the")
-    println(io, "session that runs the instrument, verbatim. Each protocol assumes the round its preflight opened, and")
-    println(io, "\"the consumer\" in each is the [consumer](@ref install) — the package that pins this tool — the round runs in.\n")
-    for name in ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
-        lines = readlines(joinpath(ROOT, "instruments", name, "PROTOCOL.md"))
-        println(io, "## [`/", name, "`](@id ", name, ")\n")
-        for l in lines[2:end]; println(io, startswith(l, "#") ? demote(l) : l); end
-        println(io)
-    end
-end
+# The instruments page was generated here from instruments/<name>/PROTOCOL.md until 2026-09-17. The
+# protocols are filed under docs/design-record/instruments-v1/; the new design generates a page per
+# instrument from Instrument values instead (docs/ARCHITECTURE.md §6), in IMPLEMENTATION.md Phase 4.
 open(joinpath(@__DIR__, "src", "guide", "rules.md"), "w") do io
     println(io, "# [The rules](@id rules)\n")
     println(io, "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human.\n")
@@ -70,7 +60,7 @@ result = GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
         "Home" => "index.md",
         # The guide reads as a sequence first (set up, run a review, see what it produces, read what it judges
         # against), then the four reference tables, most consulted first (2026-09-09, the owner's ruling).
-        "Guide" => ["guide/install.md", "guide/instruments.md", "guide/rules.md",
+        "Guide" => ["guide/install.md", "guide/rules.md",
                     "guide/verbs.md", "guide/doctor.md", "guide/config.md", "guide/ledger.md"],
         "API" => ["api/TestHarness.md", "api/Reflection.md", "api/Witnesses.md", "api/Config.md", "api/CLI.md"],
         "Architecture" => "architecture.md",

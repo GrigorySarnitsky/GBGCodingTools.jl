@@ -61,49 +61,7 @@ vectors = "component"
 [citations]
 require_doi = true
 
-[instruments]
-enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
-
-    [instruments.audit-changes]
-    guard_symbols = []
-    invariants_section = "CLAUDE.md#Core invariants"
-
-        [instruments.audit-changes.executable_claims]
-
-    [instruments.bug-hunt]
-    oracles = ["the energy convention", "the documented definition over raw arrays"]
-    witness_env = "test"
-
-        [[instruments.bug-hunt.territories]]
-        brief = "the grid and the scaling loop; aliasing"
-        files = ["src/FixtureA.jl"]
-        key = "grid"
-        [[instruments.bug-hunt.territories]]
-        brief = "the reductions and the options record"
-        files = ["src/FixtureB.jl", "src/FixtureC.jl"]
-        key = "reductions"
-
-    [instruments.check-consistency]
-    core = ["consistency-matrix", "cold-reader", "fixture-physicist"]
-    design_docs_withheld = ["architecture"]
-    hats = ["consistency-matrix", "software-architect", "structure-consistency", "latex-typesetter", "api-user", "citations-integrity", "style-editor", "cold-reader", "fixture-physicist", "fixture-numerics"]
-    latex_source_globs = []
-    profile = "all"
-    seed_catalog = "../../catalog/seeds/fixture.toml"
-    seed_rounds = true
-
-        [[instruments.check-consistency.domain_hats]]
-        anchor = true
-        key = "fixture-physicist"
-        substrate = "full"
-        [[instruments.check-consistency.domain_hats]]
-        anchor = false
-        key = "fixture-numerics"
-        substrate = "siteonly"
-
-    [instruments.check-docs]
-    argcov_policy = "triage"
-    lanes_extra = []
+# The [instruments] section stood here until 2026-09-17 (see the tool's own config).
 
 [cost]
 default = "economy"

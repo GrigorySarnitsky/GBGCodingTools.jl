@@ -363,7 +363,7 @@ end
 # ---- the run --------------------------------------------------------------------------------------------
 
 resolve_tier(cfg, tier) = tier == "argcov_policy" ?
-    (cfg["instruments"]["check-docs"]["argcov_policy"] == "gate" ? "hard" : "triage") : tier
+    (get(get(get(cfg, "instruments", Dict{String,Any}()), "check-docs", Dict{String,Any}()), "argcov_policy", "gate") == "gate" ? "hard" : "triage") : tier
 
 function resolve_surfaces(cfg::AbstractDict, keys_)
     files = String[]

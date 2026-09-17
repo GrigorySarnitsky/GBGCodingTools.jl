@@ -23,7 +23,6 @@ rulebook_sections = ["docs/ARCHITECTURE.md#1. Purpose and scope", "docs/ARCHITEC
 terms = ["consumer", "instrument", "round", "lane", "hat", "anchor", "gate", "pin", "managed file", "ledger"]
 
 [paths]
-instruments = "instruments"
 schema = "schema"
 catalog = "catalog"
 fixture = "fixture"
@@ -39,7 +38,7 @@ built_html = "docs/build"
 # Markdown, and its comment prose was read by nothing. A file's COMMENTS are its prose; a JSON file's
 # `description` strings are. An inline comment after a value is not prose, so a pattern in a value is
 # never a hit.
-data = ["catalog/**/*.toml", "schema/*.json", "instruments/*/schema.json", "instruments/*/workflow/*.js",
+data = ["catalog/**/*.toml", "schema/*.json",
         "templates/*.tmpl", "templates/*.seed", "templates/*.snippet", "templates/*.block", "templates/*.md",
         "templates/*.skeleton", "templates/queue-guard.sh.tmpl", "bin/gbg", ".claude/hooks/queue-guard.sh"]
 ext = ["ext/*.jl"]
@@ -70,133 +69,9 @@ vectors = "none"
 [citations]
 require_doi = true
 
-[instruments]
-enabled = ["check-docs", "check-consistency", "bug-hunt", "audit-changes"]
-
-    [instruments.audit-changes]
-    # Counted in CLASSES: one unjustified edit pattern across five hunks is ONE concern whose locations name
-    # every hunk. 8 is what audit.js hard-coded until 2026-09-12.
-    finding_cap = 8
-    # what this package REFUSES with: the under-rejection lane reads these to see a guard removed or weakened
-    guard_symbols = ["ConfigError", "SchemaError", "LedgerError", "RoundError", "PreflightError", "SyncError",
-                     "refusal", "torn_check", "guard", "assert_valid", "validate", "fail(", "push!(fails",
-                     "return 2", "return 3"]
-    invariants_section = "docs/ARCHITECTURE.md#13. Change control and growth"
-
-        # test files the claim-versus-edit lane RUNS: a claim in a commit message about one of these
-        # subjects is checked by executing the file, never by reading it
-        [instruments.audit-changes.executable_claims]
-        "the scans hit their planted defects and spare the clean twins" = "test/scans.jl"
-        "the managed files are exactly what sync renders" = "test/sync_doctor.jl"
-        "the witness runner classifies pass, fail, broken, blocked and refused" = "test/witnesses.jl"
-        "the tree hash equals git's own" = "test/treehash.jl"
-        "every artefact matches its schema" = "test/schemas.jl"
-        "the ledger disables and refines" = "test/ledger.jl"
-
-    [instruments.bug-hunt]
-    # Counted in MECHANISMS, not sites: one mechanism wrong in five places is one candidate, split only
-    # where the sites need different witnesses. 6 is what hunt.js hard-coded until 2026-09-12, kept as the
-    # default and moved here because a cap is a policy number and no package datum belongs in a script.
-    finding_cap = 6
-    oracles = ["the fixture's defects.toml", "the exit contract", "git's own tree hash", "the documented definition over raw files"]
-    witness_env = "test"
-
-        [[instruments.bug-hunt.territories]]
-        brief = "the entry point, the option parser, the config reader and the schema validator — everything a verb passes through before it acts"
-        # src/GBGCodingTools.jl is the module itself, and `{hunt.entry_point}` names it to the free lanes;
-        # until 2026-09-12 no territory did, so the file the hunt starts from was hunted by nobody.
-        files = ["src/GBGCodingTools.jl", "src/CLI/Main.jl", "src/CLI/Config.jl", "src/CLI/Schema.jl", "src/CLI/Ledger.jl"]
-        key = "entry"
-        [[instruments.bug-hunt.territories]]
-        brief = "the round machinery: preflight, prepare, bank, the passes, grade and close, and the closure channels they compute"
-        files = ["src/CLI/Preflight.jl", "src/CLI/Rounds.jl", "src/CLI/Passes.jl", "src/CLI/RoundFiles.jl", "src/CLI/Demote.jl", "src/CLI/Seed.jl", "src/CLI/Recall.jl"]
-        key = "rounds"
-        [[instruments.bug-hunt.territories]]
-        brief = "the renderers and the read-only checks: sync, init, the doctor, the fleet verbs and git"
-        # Design.jl (attack, calibrate) was in no territory until 2026-09-12 — and it is the file whose
-        # option parsing shipped broken in rc.7, crashing every `gbg attack` invocation with a FieldError.
-        files = ["src/CLI/Sync.jl", "src/CLI/Init.jl", "src/CLI/Doctor.jl", "src/CLI/Fleet.jl", "src/CLI/Bump.jl", "src/CLI/Release.jl", "src/CLI/Git.jl", "src/CLI/Install.jl", "src/CLI/Self.jl", "src/CLI/Selftest.jl", "src/CLI/Gate.jl", "src/CLI/Hunt.jl", "src/CLI/Audit.jl", "src/CLI/Design.jl"]
-        key = "renderers"
-        [[instruments.bug-hunt.territories]]
-        brief = "the scan engine and its scans"
-        files = ["src/Scan.jl", "src/Scans/*.jl"]
-        key = "scans"
-        [[instruments.bug-hunt.territories]]
-        brief = "the Julia-side engines"
-        files = ["src/TestHarness.jl", "src/Reflection.jl", "src/Witnesses.jl"]
-        key = "harness"
-        [[instruments.bug-hunt.territories]]
-        brief = "hashing, the HTML walker, the wrapper"
-        files = ["src/TreeHash.jl", "src/HtmlWalker.jl", "src/CLI/Consolidate.jl", "src/DocLints.jl", "ext/GBGCodingToolsDocumenterExt.jl"]
-        key = "core"
-
-    [instruments.check-consistency]
-    # Counted in CLASSES: a mistake recurring across pages is ONE finding whose locations name every page.
-    # 25 is what panel.js hard-coded until 2026-09-12; the panel reads the whole site, so its budget is the
-    # widest of the four.
-    finding_cap = 25
-    core = ["consistency-matrix", "cold-reader", "tooling-maintainer"]
-    design_docs_withheld = ["architecture"]
-    hats = ["consistency-matrix", "software-architect", "structure-consistency", "latex-typesetter", "api-user", "citations-integrity", "style-editor", "cold-reader", "tooling-maintainer"]
-    latex_source_globs = []
-    profile = "all"
-    seed_catalog = ".gbg/seeds.toml"
-    seed_rounds = true
-
-        [[instruments.check-consistency.domain_hats]]
-        anchor = true
-        key = "tooling-maintainer"
-        substrate = "full"
-
-    [instruments.check-docs]
-    argcov_policy = "gate"
-    # A lane reports CLASSES, so the cap bounds distinct defects and not the sites they name: 20 is the
-    # budget at which a lane's output stays readable and its ranking still means something, and under the
-    # class rule a lane reaches it only by finding twenty different defects. `candidates_found` records
-    # what it weighed, so a cap that ever binds is visible as TRUNCATED at bank rather than silent.
-    finding_cap = 20
-    # docs/ARCHITECTURE.md is ~2700 lines: one lane over all of it reads none of it closely, and the round
-    # of 2026-09-11 returned two majors from it while its seeded defects went unfound. Three slices, cut on
-    # the document's own `## ` headings; the first keeps the key `rationale`, which the carried findings name.
-    rationale_lanes = 3
-    # The lanes are seeded like the hats: the catalogue is planted into a disposable copy of the lane
-    # surfaces, so a lane that reports nothing on a surface carrying a planted defect is SUSPECT and
-    # recall per class is a number rather than a hope. The tree itself is never mutated. All six classes
-    # of .gbg/seeds.toml match the lane surfaces (2026-09-10).
-    seed_rounds = true
-    seed_catalog = ".gbg/seeds.toml"
-
-        # The scan surfaces reach the design record, the pages, src/ and ext/. Most of this package is
-        # none of those: it is catalogues, templates, schemas, rulebook prose and the fan-out scripts.
-        # A lane's `files` are passed to its agent verbatim, so the judgment half reads them even though
-        # no scan can (2026-09-09; widening the surface vocabulary is a separate, MAJOR question).
-        [[instruments.check-docs.lanes_extra]]
-        key = "workflow-scripts"
-        files = ["instruments/prelude.js", "instruments/check-docs/workflow", "instruments/check-consistency/workflow", "instruments/bug-hunt/workflow", "instruments/audit-changes/workflow"]
-        brief = "the eleven Workflow scripts that fan every instrument out, and instruments/prelude.js, the helpers the CLI splices into each at its `// gbg:prelude` line (read a script as it runs: prelude first). Read each as CODE, not prose: does the object it Writes match the schema beside it (instruments/<name>/schema.json and schema/*.json); does it validate the args it requires; can a lane die silently; is any prompt it builds self-contradictory or does it state a rule the CLI does not enforce; is there any package name, path or round datum hard-coded where the design says only `args` may carry it"
-        [[instruments.check-docs.lanes_extra]]
-        key = "catalogues"
-        files = ["catalog"]
-        brief = "the catalogues the engine obeys — hats, lanes, scans, models, seeds. For each row: does its `rule` name a rule that exists in policy/RULES.toml; does its `fixture` class exist in the fixture's defects.toml; do its `surfaces` name real surface keys; is a persona's brief consistent with the substrate it is granted; does any two rows contradict each other"
-        [[instruments.check-docs.lanes_extra]]
-        key = "rulebook"
-        files = ["policy"]
-        brief = "the 95 rules as prose. Judge them as rules: is each one a statement a reader can obey and a program could in principle check; does any rule contradict another; does any rule state a requirement that the instruments' own protocols contradict; is every rule's `sentinel` in RULES.toml still the first sentence of its paragraph; is any rule dead — nothing in catalog/scans.toml, src/CLI/Doctor.jl or test/ enforces it and no instrument cites it"
-        [[instruments.check-docs.lanes_extra]]
-        key = "templates"
-        files = ["templates"]
-        brief = "what `gbg sync` renders into every consumer. Read each template as the file a consumer will receive: is its prose correct about the tool it describes; does every `{{slot}}` correspond to a slot the renderer fills; would the rendered file be valid in its own right (YAML, JSON, sh, Markdown); does any template state a rule that the rulebook does not"
-        [[instruments.check-docs.lanes_extra]]
-        key = "schemas"
-        files = ["schema", "instruments/check-docs/schema.json", "instruments/check-consistency/schema.json", "instruments/bug-hunt/schema.json", "instruments/audit-changes/schema.json"]
-        brief = "the schemas every artefact is validated against. For each: is it within the validator's documented keyword subset (src/CLI/Schema.jl states it); is every `$ref` local; is it loaded by any code path at all, or is it dead; does it describe the artefact that is actually written, field for field"
-        # The prose no lane read. Measured 2026-09-12 against every surface and every lane: these files sit
-        # in none of them, and the four PROTOCOL.md are the instruments' own specifications — the text the
-        # CLI and the scripts are supposed to obey.
-        [[instruments.check-docs.lanes_extra]]
-        key = "ambient"
-        files = ["CLAUDE.md", "README.md", "instruments/*/PROTOCOL.md", "docs/make.jl", "install.sh"]
-        brief = "the prose that governs this package and that no other lane reads: the session contract (CLAUDE.md), the repository's front door (README.md), the four instrument PROTOCOL.md files, the docs build (docs/make.jl, whose page titles and section blurbs are prose no page file holds) and the installer. Read each against what the code actually DOES, `src/` being ground truth: does a PROTOCOL step name a verb that exists, and describe what that verb really does with the exit codes it really returns; does CLAUDE.md state a rule the rulebook does not, or contradict one it does; does README describe the tool as shipped rather than as planned; does make.jl's page text match the pages it builds. CHANGELOG.md and IMPLEMENTATION.md are deliberately NOT your surface: both are append-only records of what was once true, and judging them against the present state would report history as staleness"
+# The [instruments] section stood here until 2026-09-17: the four instruments, their lanes, hats,
+# territories, seeds and caps. The catalogues it named are filed under docs/design-record/; the new
+# design holds an instrument as a Julia value (docs/ARCHITECTURE.md §5.2).
 
 [cost]
 default = "economy"

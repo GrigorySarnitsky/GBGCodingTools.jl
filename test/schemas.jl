@@ -27,9 +27,8 @@ include("helpers.jl")
         base = Dict("key" => "k", "role" => "a role long enough", "persona" => "p"^100, "substrate" => "full")
         @test isempty(G.validate(hat, base))
         @test any(e -> occursin("substrate", e), G.validate(hat, merge(base, Dict("substrate" => "rawhtml"))))
-        for f in readdir(joinpath(TOOL, "catalog", "hats"); join = true)
-            endswith(f, ".toml") && @test isempty(G.validate(hat, TOML.parsefile(f)))
-        end
+        # The 22 shipped hat files moved to docs/design-record/roles-v1/ on 2026-09-17 and are validated
+        # nowhere now; the schema itself, and the closed `substrate` set above, are still held.
     end
     # The instrument scripts' schema testset stood here until 2026-09-17: the eleven Workflow scripts
     # and the four instrument schemas are filed under docs/design-record/, and one fixed driver
@@ -80,8 +79,7 @@ include("helpers.jl")
     end
     @testset "the transitional Python is gone (1.6)" begin
         @test !isfile(joinpath(TOOL, "src", "CLI", "consolidate.py"))
-        @test isempty(filter(f -> endswith(f, ".py"), vcat([joinpath(d, f) for (d, _, fs) in walkdir(joinpath(TOOL, "src")) for f in fs],
-                                                          [joinpath(d, f) for (d, _, fs) in walkdir(joinpath(TOOL, "instruments")) for f in fs])))
+        @test isempty(filter(f -> endswith(f, ".py"), [joinpath(d, f) for (d, _, fs) in walkdir(joinpath(TOOL, "src")) for f in fs]))
     end
     @testset "RULES.toml matches the policy files" begin
         rules = TOML.parsefile(joinpath(TOOL, "policy", "RULES.toml"))["rule"]

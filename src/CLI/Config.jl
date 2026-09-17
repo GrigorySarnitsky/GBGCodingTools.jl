@@ -242,7 +242,7 @@ function check_paths(cfg::AbstractDict)
     for (i, a) in enumerate(cfg["package"]["rulebook_sections"])
         push!(anchors, "package.rulebook_sections[$i]" => a)
     end
-    ac = cfg["instruments"]["audit-changes"]
+    ac = get(get(cfg, "instruments", Dict{String,Any}()), "audit-changes", Dict{String,Any}())
     haskey(ac, "invariants_section") && push!(anchors, "instruments.audit-changes.invariants_section" => ac["invariants_section"])
     for (what, a) in anchors
         file, line, count = resolve_anchor(root, a)
@@ -270,11 +270,11 @@ function check_paths(cfg::AbstractDict)
         re = Regex("^\\s*(baremodule|module)\\s+" * m * "\\b", "m")
         any(f -> occursin(re, Base.read(joinpath(root, f), String)), srcfiles) || push!(errs, "package.modules: no `module $m` block under the src surface")
     end
-    for (k, f) in ac["executable_claims"]
+    for (k, f) in get(ac, "executable_claims", Dict{String,Any}())
         (startswith(f, "test/") && isfile(joinpath(root, f))) || push!(errs, "instruments.audit-changes.executable_claims.$k: $(repr(f)) is not an existing file under test/")
     end
-    cc = cfg["instruments"]["check-consistency"]
-    if cc["seed_rounds"] && !isfile(joinpath(root, cc["seed_catalog"]))
+    cc = get(get(cfg, "instruments", Dict{String,Any}()), "check-consistency", Dict{String,Any}())
+    if get(cc, "seed_rounds", false) && !isfile(joinpath(root, cc["seed_catalog"]))
         push!(errs, "instruments.check-consistency: seed_rounds = true but $(repr(cc["seed_catalog"])) does not exist")
     end
     return errs

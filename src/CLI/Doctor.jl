@@ -252,7 +252,7 @@ check!("CFG.SURFACES", ctx -> begin
         f, line, n = Config.resolve_anchor(ctx.root, anchor)
         n == 1 || push!(errs, "anchor $anchor resolves to $n headings")
     end
-    for (k, f) in ctx.cfg["instruments"]["audit-changes"]["executable_claims"]
+    for (k, f) in get(get(get(ctx.cfg, "instruments", Dict{String,Any}()), "audit-changes", Dict{String,Any}()), "executable_claims", Dict{String,Any}())
         (startswith(f, "test/") && isfile(joinpath(ctx.root, f))) || push!(errs, "executable_claims.$k = $f is not an existing file under test/")
     end
     any(x -> occursin("TODO", x), (ctx.cfg["package"]["description"], ctx.cfg["package"]["domain"])) && push!(errs, "package.description or domain still carries the init TODO")
@@ -272,7 +272,8 @@ end
 # `CFG.HATS` reads a hat's `anchor` — the full-strength sense the `Doctor` docstring binds, not
 # `Config.resolve_anchor`'s Markdown one.
 check!("CFG.HATS", ctx -> begin
-    cc = ctx.cfg["instruments"]["check-consistency"]; errs = String[]
+    cc = get(get(ctx.cfg, "instruments", Dict{String,Any}()), "check-consistency", Dict{String,Any}()); errs = String[]
+    haskey(cc, "hats") || return na("CFG.HATS", "no instrument is configured here")
     hats = String.(cc["hats"]); schema = load_schema("hat")
     others = filter(!=(ctx.cfg["package"]["name"]), fleet_names())
     anchors = 0
@@ -299,7 +300,8 @@ check!("CFG.HATS", ctx -> begin
     isempty(errs) ? pass("CFG.HATS", "$(length(hats)) hats resolve, $anchors anchored") : fail("CFG.HATS", join(errs, "; "))
 end)
 check!("CFG.SEEDS", ctx -> begin
-    cc = ctx.cfg["instruments"]["check-consistency"]
+    cc = get(get(ctx.cfg, "instruments", Dict{String,Any}()), "check-consistency", Dict{String,Any}())
+    haskey(cc, "seed_catalog") || return na("CFG.SEEDS", "no instrument is configured here")
     cc["seed_rounds"] || return pass("CFG.SEEDS", "seed_rounds = false")
     p = joinpath(ctx.root, cc["seed_catalog"])
     isfile(p) || return fail("CFG.SEEDS", "seed_rounds = true but $(cc["seed_catalog"]) is absent")
@@ -314,7 +316,7 @@ end)
 # unhunted. WARN, not FAIL: a consumer may exclude a file deliberately, and a coverage gap is a thing to
 # see rather than a broken config. NA where no territory is configured.
 check!("CFG.TERRITORIES", ctx -> begin
-    ts = get(get(ctx.cfg["instruments"], "bug-hunt", Dict{String,Any}()), "territories", Any[])
+    ts = get(get(get(ctx.cfg, "instruments", Dict{String,Any}()), "bug-hunt", Dict{String,Any}()), "territories", Any[])
     isempty(ts) && return na("CFG.TERRITORIES", "no bug-hunt territories configured")
     covered = Set{String}()
     for t in ts; union!(covered, Config.expand_globs(ctx.root, t["files"])); end

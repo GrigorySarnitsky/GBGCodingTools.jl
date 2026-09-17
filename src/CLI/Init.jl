@@ -260,7 +260,7 @@ function init(root::AbstractString = pwd(); migrate::Bool = false, dry_run::Bool
     note(p) = push!(writes, p)
     note(".gbg/config.toml")
     note(".gbg/exemptions.toml"); note(".gbg/rounds/.keep")
-    for h in cfg["instruments"]["check-consistency"]["domain_hats"]
+    for h in get(get(get(cfg, "instruments", Dict{String,Any}()), "check-consistency", Dict{String,Any}()), "domain_hats", Any[])
         note(".gbg/hats/$(h["key"]).toml (placeholder persona)")
     end
     isfile(joinpath(root, "test", "Project.toml")) || note("test/Project.toml (seed)")
@@ -282,7 +282,7 @@ function init(root::AbstractString = pwd(); migrate::Bool = false, dry_run::Bool
     write(joinpath(root, ".gbg", "exemptions.toml"), LEDGER_HEADER)
     mkpath(joinpath(root, ".gbg", "rounds")); touch(joinpath(root, ".gbg", "rounds", ".keep"))
     mkpath(joinpath(root, ".gbg", "hats"))
-    for h in cfg["instruments"]["check-consistency"]["domain_hats"]
+    for h in get(get(get(cfg, "instruments", Dict{String,Any}()), "check-consistency", Dict{String,Any}()), "domain_hats", Any[])
         p = joinpath(root, ".gbg", "hats", h["key"] * ".toml")
         isfile(p) && continue
         write(p, """

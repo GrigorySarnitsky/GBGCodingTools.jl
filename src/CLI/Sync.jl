@@ -137,7 +137,7 @@ function slots(cfg::AbstractDict; ledger = Ledger.read(cfg))
         "notation.mathbf_allowed" => isempty(allowed) ? "none" : join(("`" * a * "`" for a in allowed), ", "),
         "docs.admonition_titles" => ADMONITION_TEXT[cfg["docs"]["admonition_titles"]],
         "docs.build_dir" => isempty(cfg["surfaces"]["built_html"]) ? "docs/build" : cfg["surfaces"]["built_html"],
-        "instruments.check-docs.argcov_policy" => cfg["instruments"]["check-docs"]["argcov_policy"],
+        "instruments.check-docs.argcov_policy" => get(get(get(cfg, "instruments", Dict{String,Any}()), "check-docs", Dict{String,Any}()), "argcov_policy", "gate"),
         "deviations" => devtext,
         "sha256" => "",                      # filled per block by managed_block
     )
