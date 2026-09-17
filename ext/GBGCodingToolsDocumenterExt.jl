@@ -35,8 +35,19 @@ Returns the exit code: 0 clean, 1 findings.
 function rules_and_wiring(root::AbstractString; site = nothing)
     isfile(joinpath(root, ".gbg", "config.jl")) || return 0
     cfg = GBGCodingTools.ConfigIO.read_config(root)
+    # The package itself, where it can be loaded: a build has it on the path already, and the rules that
+    # compare a docstring with the module it documents need it. A package that cannot be loaded is not a
+    # silent pass — `Checks.not_run` names what went unchecked.
+    pkg = try
+        Base.require(Main, Symbol(cfg.package))
+    catch
+        nothing
+    end
     found = GBGCodingTools.Engine.Checks.run_all(cfg, root;
-                intention = GBGCodingTools.Model.Intention.DOCUMENTATION, site)
+                intention = GBGCodingTools.Model.Intention.DOCUMENTATION, site, pkg)
+    skipped = GBGCodingTools.Engine.Checks.not_run(cfg; pkg, site)
+    isempty(skipped) || println(stderr, "  NOT RUN  ", join(String.(skipped), ", "),
+                                site === nothing ? " (before the site is built)" : "")
     drift = site === nothing ? GBGCodingTools.Render.wiring(cfg, root) : GBGCodingTools.Model.Location[]
     isempty(found) && isempty(drift) && return 0
     for l in found

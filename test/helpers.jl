@@ -54,7 +54,7 @@ end
 
 const DEFECTS = TOML.parsefile(joinpath(FIXTURE, "defects.toml"))
 const CATALOG = Dict(r["id"] => r for r in G.scan_catalog())
-const REFLECTION = ("SCAN.ARGCOV", "SCAN.SIGNATURE_FIDELITY", "SCAN.XLINK", "SCAN.DUPREF")
+const REFLECTION = ("SCAN.SIGNATURE_FIDELITY",)
 
 quiet(f) = f(devnull)
 

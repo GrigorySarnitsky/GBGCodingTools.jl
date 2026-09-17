@@ -270,7 +270,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.XLINK"
 statement = "A cross-module name is @ref-linked at its first mention, qualified so the link resolves."
 sentinel = "A cross-module name is `@ref`-linked at its first mention in a docstring, qualified so the link resolves."
-check = ["scan:SCAN.XLINK"]
+check = ["rule:RULE.DOC.XLINK"]  # converted 2026-09-17: src/Rules/modules.jl
 [[rule]]
 id = "RULE.DOC.ARGCOV"
 file = "docs-rubric.md"

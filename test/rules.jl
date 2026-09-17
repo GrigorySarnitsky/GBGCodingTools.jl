@@ -40,6 +40,24 @@ function materialise(rule, example)
                         filesets = Dict(example.fileset => [path]))
         r = MR.Rule(; id = rule.id, statement = rule.statement, filesets = [example.fileset], check = rule.check)
         return CK.run_rule(r, cfg, dir)
+    elseif example isa MR.ModuleExample
+        # A rule that reads the LOADED package is shown on source loaded into a fresh module: the same
+        # text on disk, so the check sees both halves it compares.
+        dir = mktempdir(; cleanup = true)
+        mkpath(joinpath(dir, "src"))
+        write(joinpath(dir, "src", "Example.jl"), example.source)
+        holder = Module(:ExampleHolder)
+        Base.include_string(holder, "module Holder\n" * example.source * "\nend")
+        # The module is named in the source; fetching it needs `invokelatest`, since it was defined after
+        # this method's world age and is otherwise invisible here.
+        name = Symbol(match(r"^\s*module\s+([A-Za-z_][A-Za-z0-9_]*)"m, example.source).captures[1])
+        inner = Base.invokelatest(getfield, holder, :Holder)
+        pkg = Base.invokelatest(getfield, inner, name)
+        cfg = MR.Config(package = "Example", tool = :dev,
+                        filesets = Dict(MR.FileSet.CODE => ["src/Example.jl"]))
+        # `invokelatest`: the module was defined a moment ago, and a check reading its names cannot see
+        # them from this method's world age.
+        return Base.invokelatest(CK.run_rule, rule, cfg, dir; pkg)
     elseif example isa MR.SiteExample
         # A rule that reads the BUILT site is shown on built pages: the example's pages are the rendered
         # HTML a reader meets, which is what the check is about. Running Documenter to produce them would

@@ -35,7 +35,11 @@ module Decider; @enum T PROGRAM FAILING_TEST AGENT; end
 "Who fixes what was found, from the last column of the instrument table."
 module Fixer; @enum T ORDINARY_WORK DOCUMENTATION_FIXER CODE_FIXER REGENERATE OWNER_ONLY; end
 
-"What a check reads: a source text, a small file tree, the loaded package, the built site, or a question."
+"""
+What a check reads: a source text, a small file tree, the loaded package with its root, the built site,
+or a question. A `LOADED_MODULE` check is handed `(pkg, root)`, since what it compares is nearly always
+the module against the source that documents it.
+"""
 module Input; @enum T SOURCE_TEXT FILE_TREE LOADED_MODULE BUILT_SITE QUESTION; end
 
 "A named set of a package's files, found by default patterns the config may override."

@@ -19,11 +19,6 @@ class = "stale-keyword"
 scan = "SCAN.SIGNATURE_FIDELITY"
 file = "defects/Defects.jl"
 fragment = "stale"
-[[defect]]
-class = "unlinked-cross-module"
-scan = "SCAN.XLINK"
-file = "defects/Defects.jl"
-fragment = "mean_value"
 [[clean]]
 scan = "SCAN.DOI_CROSSCHECK"
 file = "src/FixtureB.jl"

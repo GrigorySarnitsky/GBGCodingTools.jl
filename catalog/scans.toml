@@ -26,11 +26,3 @@ surfaces = ["src"]
 runner = "julia"
 fixture = ["stale-keyword"]
 
-[[scan]]
-id = "SCAN.XLINK"
-rule = "RULE.DOC.XLINK"
-tier = "triage"
-surfaces = ["src"]
-runner = "julia"
-fixture = ["unlinked-cross-module"]
-

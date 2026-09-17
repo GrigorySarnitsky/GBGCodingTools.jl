@@ -143,7 +143,9 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
         # package's own environment — passes nothing, and the rule is NOT silently skipped: it is the
         # caller's business to say so, which `run_all` does by returning the rules it could not run.
         pkg === nothing && return Model.Location[]
-        append!(out, check.run(pkg, cfg))
+        # A check that reads the loaded package nearly always reads the SOURCE too — what a docstring
+        # says against what the module actually holds — so it is handed both.
+        append!(out, check.run((pkg = pkg, root = root), cfg))
     elseif check.input === Model.Input.BUILT_SITE
         site === nothing && return Model.Location[]
         # A built-site check names the page it read by the path it walked; a location is relative to the
