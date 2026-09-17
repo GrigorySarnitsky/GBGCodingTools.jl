@@ -1,0 +1,119 @@
+# test/configio.jl — a package's settings are DATA (docs/ARCHITECTURE.md §5.2).
+#
+# Both directions. Every field type a config can carry round-trips through the reader, and every way of
+# smuggling a program into it is refused with the line and the reason: a function call, an interpolated
+# string, an unknown constructor, an unknown keyword, a second statement. The reason this is a test
+# rather than a convention is that a config is read by every build and every test of the package that
+# owns it — evaluating one makes each of those a place to run code.
+using Test, GBGCodingTools
+include("helpers.jl")
+
+const CIO = G.ConfigIO
+const MM = G.Model
+
+function in_config(body, settled = nothing)
+    dir = mktempdir(; cleanup = true)
+    mkpath(joinpath(dir, ".gbg"))
+    write(joinpath(dir, ".gbg", "config.jl"), body)
+    settled === nothing || write(joinpath(dir, ".gbg", "settled.jl"), settled)
+    return dir
+end
+
+const FULL = """
+Config(
+    package = "GBGFixture",
+    tool = :dev,
+    docs_build = ["julia", "--project=docs", "docs/make.jl"],
+    test = ["julia", "--project", "-e", "using Pkg; Pkg.test()"],
+    normative = ["docs/ARCHITECTURE.md"],
+    filesets = Dict(FileSet.PAGES => ["docs/src/**/*.md"], FileSet.CODE => ["src/**/*.jl"]),
+    copies = ["docs/src/architecture.md" => "docs/ARCHITECTURE.md"],
+    switches = [Switch(target = :RULE_TEX_RENDERED_MATH, reason = "no mathematics in this package's prose")],
+    settings = [Setting(rule = :RULE_DOC_LEADING_IDENTITY, name = :leading, value = "what the operation does")],
+    rules = [PatternRule(id = :NO_TODO, statement = "No TODO is left in shipped prose.",
+                         fileset = FileSet.PAGES, pattern = r"TODO", forbidden = true)],
+    code_areas = [:engine => ["src/Engine/*.jl"]],
+)
+"""
+
+@testset "the config is data" begin
+    @testset "every field type round-trips" begin
+        cfg = CIO.read_config(in_config(FULL))
+        @test cfg isa MM.Config
+        @test cfg.package == "GBGFixture"
+        @test cfg.tool === :dev
+        @test cfg.docs_build == ["julia", "--project=docs", "docs/make.jl"]
+        @test cfg.normative == ["docs/ARCHITECTURE.md"]
+        @test cfg.filesets[MM.FileSet.PAGES] == ["docs/src/**/*.md"]
+        @test first(cfg.copies) == ("docs/src/architecture.md" => "docs/ARCHITECTURE.md")
+        @test cfg.switches[1].target === :RULE_TEX_RENDERED_MATH
+        @test cfg.settings[1].value == "what the operation does"
+        @test cfg.rules[1].pattern == r"TODO" && cfg.rules[1].forbidden
+        @test first(cfg.code_areas) == (:engine => ["src/Engine/*.jl"])
+    end
+
+    @testset "a released pin is a version, not a string" begin
+        cfg = CIO.read_config(in_config("""Config(package = "P", tool = v"2.0.0")"""))
+        @test cfg.tool == v"2.0.0"
+    end
+
+    @testset "an empty typed array is none of those" begin
+        cfg = CIO.read_config(in_config("""Config(package = "P", tool = :dev, switches = Switch[], normative = String[])"""))
+        @test isempty(cfg.switches) && isempty(cfg.normative)
+    end
+
+    @testset "nothing that is a program is accepted" begin
+        for (label, body) in (
+            "a function call"        => """Config(package = "P", tool = getpid())""",
+            "a call that reads"      => """Config(package = "P", tool = read("/etc/passwd", String))""",
+            "an interpolated string" => """Config(package = "\$(ENV["HOME"])", tool = :dev)""",
+            "an unknown constructor" => """Config(package = "P", tool = :dev, switches = [Whatever(x = 1)])""",
+            "an unknown keyword"     => """Config(package = "P", tool = :dev, nonsense = 1)""",
+            "a second statement"     => """Config(package = "P", tool = :dev)\nrm("/tmp/x"; force = true)""",
+            "an unknown enum"        => """Config(package = "P", tool = :dev, filesets = Dict(FileSet.NOWHERE => ["x"]))""",
+            "a bare identifier"      => """Config(package = P, tool = :dev)""",
+        )
+            dir = in_config(body)
+            @test_throws CIO.ConfigError CIO.read_config(dir)
+            err = try; CIO.read_config(dir); nothing; catch e; e; end
+            @test !isempty(err.problems)                       # and it says what was wrong, not just that
+            @test occursin("line", first(err.problems)) || occursin("does not accept", first(err.problems))
+        end
+    end
+
+    @testset "a missing or unparsable file is a refusal, not a crash" begin
+        @test_throws CIO.ConfigError CIO.read_config(mktempdir(; cleanup = true))
+        @test_throws CIO.ConfigError CIO.read_config(in_config("Config(package = \"P\", tool = :dev"))
+    end
+
+    @testset "the settled rulings are data too" begin
+        dir = in_config(FULL, """
+        [
+            Settled(question = "q-2026-09-17-1", text = "Not a defect: the notation is the book's.",
+                    date = "2026-09-17",
+                    locations = [Location(file = "docs/src/index.md", node = "Guide / Notation", text = "we write u for velocity")]),
+        ]
+        """)
+        rulings = CIO.read_settled(dir)
+        @test length(rulings) == 1
+        @test rulings[1].date == "2026-09-17"
+        @test rulings[1].locations[1].node == "Guide / Notation"
+        @test isempty(CIO.read_settled(mktempdir(; cleanup = true)))      # no file is no rulings
+    end
+
+    @testset "validate says what the config claims that the package does not have" begin
+        dir = in_config(FULL)
+        problems = CIO.validate(CIO.read_config(dir), dir)
+        @test any(p -> occursin("docs/make.jl", p), problems)             # the command names no file here
+        @test any(p -> occursin("docs/ARCHITECTURE.md", p), problems)     # nor does the normative document
+        # and with the files in place it says nothing
+        mkpath(joinpath(dir, "docs", "src")); touch(joinpath(dir, "docs", "make.jl"))
+        touch(joinpath(dir, "docs", "ARCHITECTURE.md"))
+        @test isempty(CIO.validate(CIO.read_config(dir), dir))
+    end
+
+    @testset "a switch with no reason is refused by validate, not by the reader" begin
+        dir = in_config("""Config(package = "P", tool = :dev, switches = [Switch(target = :R, reason = "   ")])""")
+        @test any(p -> occursin("gives no reason", p), CIO.validate(CIO.read_config(dir), dir))
+    end
+end
