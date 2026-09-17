@@ -585,21 +585,24 @@ file = "instruments.md"
 section = "### RULE.INST.CARRY"
 statement = "A round may close by carrying a finding into the next round of its instrument — a minor or nit at will, anything still open once its pass budget is spent — on a re-rated severity; it is re-banked there, never rediscovered. A round refuses to close by carrying a finding already carried CARRY_LIMIT (3) times — the owner rules on it instead — and a final release refuses while a carried blocker or major stands, while anything has been carried CARRY_LIMIT times, or while the backlog is not draining."
 sentinel = "A round may close by CARRYING a finding into the next round of its instrument: a `minor` or a `nit` whenever the owner chooses, and every finding still open once the round has spent its pass budget, a `blocker` or a `major` among them."
-check = ["test:test/rounds.jl"]
+check = ["weakness"]  # its checker went with the round machinery, 2026-09-17; batch h of
+# IMPLEMENTATION.md §6 gives this rule a check against the new run machinery or retires it
 [[rule]]
 id = "RULE.INST.AUDIT_AFTER_CODE"
 file = "instruments.md"
 section = "### RULE.INST.AUDIT_AFTER_CODE"
 statement = "A fix pass that changed code is audited before its round closes — always for a hunt, and for a check-docs round whose pass touched src or ext — by an audit that read the round's last code change."
 sentinel = "A fix pass that changed code is audited before its round closes."
-check = ["test:test/rounds.jl"]
+check = ["weakness"]  # its checker went with the round machinery, 2026-09-17; batch h of
+# IMPLEMENTATION.md §6 gives this rule a check against the new run machinery or retires it
 [[rule]]
 id = "RULE.INST.AUDIT_DISPOSED"
 file = "instruments.md"
 section = "### RULE.INST.AUDIT_DISPOSED"
 statement = "An audit round is closed by disposing its concerns, never by correcting them inside it; a correction rides the next change set, which the next audit covers."
 sentinel = "An audit round is closed by disposing its concerns, never by correcting them inside it."
-check = ["test:test/rounds.jl"]
+check = ["weakness"]  # its checker went with the round machinery, 2026-09-17; batch h of
+# IMPLEMENTATION.md §6 gives this rule a check against the new run machinery or retires it
 [[rule]]
 id = "RULE.INST.FIX_FROM_LANES"
 file = "instruments.md"
@@ -627,7 +630,8 @@ file = "instruments.md"
 section = "### RULE.INST.FROZEN_MIDROUND"
 statement = "An instrument is never changed mid-round; a change is its own commit and release; a deferral is written in the round's deferred.md and carried into the work queue at close; a round whose own frozen verifiers or auditors cannot run has those differing copies replaced by gbg round scripts --reason, never a lens, recorded in ROUND.toml."
 sentinel = "An instrument is never changed mid-round; a change is its own commit and release, and reaches a consumer by a bump."
-check = ["test:test/rounds.jl"]
+check = ["weakness"]  # its checker went with the round machinery, 2026-09-17; batch h of
+# IMPLEMENTATION.md §6 gives this rule a check against the new run machinery or retires it
 [[rule]]
 id = "RULE.INST.ECONOMY"
 file = "instruments.md"

@@ -1,78 +1,33 @@
 unit,words,longest_paragraph,admonitions
-"ARCHITECTURE.md § D1 — Unit of distribution: one repository, one version, two ",247,111,0
-"ARCHITECTURE.md § D10 — Rounds: tracked, one layout, CLI-written marker, froze",634,463,0
-"ARCHITECTURE.md § D11 — Schemas: one JSON Schema per artefact kind in `schema/",155,93,0
-"ARCHITECTURE.md § D12 — Policy prose: single source `policy/*.md` with rule id",340,162,0
-"ARCHITECTURE.md § D13 — Managed files: one sidecar `.gbg/managed.json` as a ca",533,474,0
-"ARCHITECTURE.md § D14 — Doctor: read-only, stable check ids, one exemptions le",482,375,0
-"ARCHITECTURE.md § D15 — Self-test: a fixture consumer at a path with a space, ",782,361,0
-"ARCHITECTURE.md § D16 — Change discipline: semver with 'measurement-affecting ",813,745,0
-"ARCHITECTURE.md § D17 — Migration: PF → IT → SS → CP, doctor-verified steps, n",364,279,0
-"ARCHITECTURE.md § D18 — Cost policy: economy default, anchors in the catalogue",261,194,0
-"ARCHITECTURE.md § D19 — Name: `GBGCodingTools`",128,127,0
-"ARCHITECTURE.md § D2 — Delivery: Pkg fetches the pinned copy; a per-machine `s",5,5,0
-"ARCHITECTURE.md § D3 — Binding: `[sources] url + rev` (https) rendered from on",405,199,0
-"ARCHITECTURE.md § D4 — Pinning: fleet-wide one version is the rule; the per-co",593,305,0
-"ARCHITECTURE.md § D5 — Config: one TOML file, one layer, one validator (Julia)",323,205,0
-"ARCHITECTURE.md § D6 — Skills: generated per-consumer stubs, bare names, `!`-b",446,311,0
-"ARCHITECTURE.md § D7 — Workflow scripts: one generic engine per instrument, ar",571,416,0
-"ARCHITECTURE.md § D8 — Deterministic helpers: one Julia CLI `gbg <noun> <verb>",480,306,0
-"ARCHITECTURE.md § D9 — Julia side: `GBGCodingTools` with `makedocs` wrapper, `",1352,1222,0
-"ARCHITECTURE.md § GBGCodingTools — architecture",513,381,1
-"ARCHITECTURE.md § Revision 10 (2026-09-09) — the rc.1 `/check-docs` round",140,95,0
-"ARCHITECTURE.md § Revision 11 (2026-09-09) — the owner's home-page review",136,136,0
-"ARCHITECTURE.md § Revision 12 (2026-09-09) — a documentation round that change",123,123,0
-"ARCHITECTURE.md § Revision 13 (2026-09-09) — the scan the rc.1 round was owed,",138,138,0
-"ARCHITECTURE.md § Revision 14 (2026-09-09) — the optional data surface",191,191,0
-"ARCHITECTURE.md § Revision 2 (2026-09-07)",106,106,0
-"ARCHITECTURE.md § Revision 3 (2026-09-07)",232,232,0
-"ARCHITECTURE.md § Revision 4 (2026-09-08) — IT amendments + Python retirement",361,361,0
-"ARCHITECTURE.md § Revision 5 (2026-09-08) — IT corrections A–D",426,426,0
-"ARCHITECTURE.md § Revision 6 (2026-09-09) — the tool as its own consumer",450,450,0
-"ARCHITECTURE.md § Revision 7 (2026-09-09) — the prerelease tag",202,202,0
-"ARCHITECTURE.md § Revision 8 (2026-09-08) — the owner's rulings",358,243,0
-"ARCHITECTURE.md § Revision 9 (2026-09-09) — payloads are files, args carry pat",243,243,0
-"ARCHITECTURE.md § Revision history",23,23,0
-"ARCHITECTURE.md § item 1",27,27,0
-"ARCHITECTURE.md § item 10",264,264,0
-"ARCHITECTURE.md § item 14",115,85,0
-"ARCHITECTURE.md § item 2",231,231,0
-"ARCHITECTURE.md § item 3",101,101,0
-"ARCHITECTURE.md § item 4",98,98,0
-"ARCHITECTURE.md § item 5",13,13,0
-"ARCHITECTURE.md § item 6",71,71,0
-"ARCHITECTURE.md § item 7",27,27,0
-"ARCHITECTURE.md § item 8",134,134,0
-"ARCHITECTURE.md § item 9",91,91,0
-"ARCHITECTURE.md § §0 The design sentence and the requirements",440,337,0
-"ARCHITECTURE.md § §1 The platform / product model",867,630,0
-"ARCHITECTURE.md § §10 Entailments, extensions of the record, and residual judg",774,333,0
-"ARCHITECTURE.md § §11 Honest limits (verbatim from the decision record, then t",1300,556,0
-"ARCHITECTURE.md § §12 Appendix — the identifier tables",48,48,0
-"ARCHITECTURE.md § §12.A Rule ids (`policy/RULES.toml`)",3242,3117,0
-"ARCHITECTURE.md § §12.B Scan catalogue (`catalog/scans.toml`)",1706,1531,0
-"ARCHITECTURE.md § §12.C Doctor ids",135,134,0
-"ARCHITECTURE.md § §2 Decisions D1–D19",12,12,0
-"ARCHITECTURE.md § §3 Repository layout",1,1,0
-"ARCHITECTURE.md § §4 Consumer footprint",89,67,0
-"ARCHITECTURE.md § §5 Config schema",51,51,0
-"ARCHITECTURE.md § §5.2 SS delta",123,123,0
-"ARCHITECTURE.md § §5.3 IT delta",200,200,0
-"ARCHITECTURE.md § §5.4 CP delta",398,398,0
-"ARCHITECTURE.md § §5.5 Deliberately NOT configurable (changing any is MAJOR)",202,202,0
-"ARCHITECTURE.md § §5.6 The tool's own delta (the fifth consumer, D15)",485,484,0
-"ARCHITECTURE.md § §6.1 File formats (all instruments)",331,331,0
-"ARCHITECTURE.md § §6.3 Vocabularies (constants)",574,529,0
-"ARCHITECTURE.md § §6.4 Seeds",307,307,0
-"ARCHITECTURE.md § §6.5 Closure channels (per finding id; PARTIAL never closes)",213,213,0
-"ARCHITECTURE.md § §6.6 Deltas — `/check-docs`",333,333,0
-"ARCHITECTURE.md § §6.7 Deltas — `/bug-hunt`",639,367,0
-"ARCHITECTURE.md § §6.8 Deltas — `/audit-changes`",367,275,0
-"ARCHITECTURE.md § §7.1 Policy migration map (which consumer sections become wh",290,238,0
-"ARCHITECTURE.md § §7.2 The ledger `.gbg/exemptions.toml`",386,386,0
-"ARCHITECTURE.md § §7.3 The doctor check table (stable ids; exit 1 on any FAIL,",2067,1930,0
-"ARCHITECTURE.md § §8 Self-test and versioning",1644,446,0
-"ARCHITECTURE.md § §9 Resolution table",1520,1461,0
+"ARCHITECTURE.md § 1. Purpose and scope",91,87,0
+"ARCHITECTURE.md § 10. How a run starts, works and stops",1110,300,0
+"ARCHITECTURE.md § 11. How GBGCodingTools plugs into a package",397,116,0
+"ARCHITECTURE.md § 12. What is shown to work, and what is not",224,133,0
+"ARCHITECTURE.md § 13. Change control and growth",272,135,0
+"ARCHITECTURE.md § 2. How the checks and instruments differ",225,126,0
+"ARCHITECTURE.md § 3. The table",669,319,0
+"ARCHITECTURE.md § 4. Finding and fixing",248,129,0
+"ARCHITECTURE.md § 4.1 Finding, and the handoff",192,154,0
+"ARCHITECTURE.md § 4.2 What is documentation, and the change guard",223,137,0
+"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks",34,34,0
+"ARCHITECTURE.md § 4.4 The code fixer — only on the owner's answer",15,15,0
+"ARCHITECTURE.md § 4.5 Where a finding is, while the text moves",272,158,0
+"ARCHITECTURE.md § 5.1 Modules, types first",529,211,0
+"ARCHITECTURE.md § 5.2 Types",573,168,0
+"ARCHITECTURE.md § 5.3 What becomes Julia",96,96,0
+"ARCHITECTURE.md § 6. Generation",428,134,0
+"ARCHITECTURE.md § 7. Deterministic first",260,127,0
+"ARCHITECTURE.md § 8. Asking the owner",408,166,0
+"ARCHITECTURE.md § 9. Applicability",322,111,0
+"ARCHITECTURE.md § GBGCodingTools — architecture",118,96,1
+"ARCHITECTURE.md § item 0",53,53,0
+"ARCHITECTURE.md § item 1",80,80,0
+"ARCHITECTURE.md § item 2",166,166,0
+"ARCHITECTURE.md § item 3",87,87,0
+"ARCHITECTURE.md § item 4",121,121,0
+"ARCHITECTURE.md § item 5",65,65,0
+"ARCHITECTURE.md § item 6",65,65,0
+"ARCHITECTURE.md § item 7",42,42,0
 "Audit.jl :: audit_bank(cfg, round; io = stdout) -> Int",233,74,0
 "Bump.jl :: bump(cfg, ver; abandon = nothing, io = stdout) -> Int",119,78,0
 "CLI.md § CLI internals",31,22,1
