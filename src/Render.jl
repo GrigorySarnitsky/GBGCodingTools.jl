@@ -20,7 +20,7 @@ it. The instrument skills wait for the instruments.
 """
 module Render
 
-using TOML
+using TOML, JSON3
 
 using ..Model
 using ..Catalogue
@@ -122,28 +122,60 @@ function hook(cfg::Model.Config)
 end
 
 """
-    settings(cfg) -> String
+    HOOK_COMMAND
 
-The `.claude/settings.json` that installs the end-of-turn hook in a package. The argument is `cfg`, the
-package's config. Returns the file.
+The one line `.claude/settings.json` must carry for this package: the command that runs the end-of-turn
+hook. It is matched literally, so a package may hold any number of other hooks beside it.
 """
-function settings(cfg::Model.Config)
-    return """
-    {
-      "hooks": {
-        "Stop": [
-          {
-            "hooks": [
-              {
-                "type": "command",
-                "command": "\\"\$CLAUDE_PROJECT_DIR\\"/.claude/hooks/queue-guard.sh"
-              }
-            ]
-          }
-        ]
-      }
-    }
-    """
+const HOOK_COMMAND = "\"\$CLAUDE_PROJECT_DIR\"/.claude/hooks/queue-guard.sh"
+
+"""
+    settings_drift(root) -> Union{String,Nothing}
+
+What `.claude/settings.json` gets wrong about the end-of-turn hook in the package at `root`, or
+`nothing` where it installs it. The argument is `root`, the package root. Returns the fault, in words.
+
+Only this package's own Stop hook is looked for. The file is the PACKAGE's — it may hold its own hooks,
+its own permissions and its own settings — so a whole-file comparison would report every one of them as
+drift, and writing the file whole would delete them.
+"""
+function settings_drift(root::AbstractString)
+    path = joinpath(root, ".claude", "settings.json")
+    isfile(path) || return ".claude/settings.json is absent"
+    doc = try
+        JSON3.read(read(path, String), Dict{String,Any})
+    catch
+        return ".claude/settings.json does not parse"
+    end
+    # The file is read as JSON rather than as text: the command holds quotes, which JSON escapes, so a
+    # substring search over the raw file never matches what was written into it.
+    for entry in get(get(doc, "hooks", Dict{String,Any}()), "Stop", Any[])
+        for h in get(entry, "hooks", Any[])
+            get(h, "command", "") == HOOK_COMMAND && return nothing
+        end
+    end
+    return "no Stop hook runs .claude/hooks/queue-guard.sh"
+end
+
+"""
+    write_settings(root) -> Bool
+
+Adds this package's Stop hook to `.claude/settings.json` in the package at `root`, keeping every other
+hook and setting the file holds. The argument is `root`, the package root. Returns whether it changed.
+
+The entry is added to the `Stop` list rather than replacing it: a package that has its own stop hook
+keeps it and gets this one as well.
+"""
+function write_settings(root::AbstractString)
+    settings_drift(root) === nothing && return false
+    path = joinpath(root, ".claude", "settings.json")
+    doc = isfile(path) ? JSON3.read(read(path, String), Dict{String,Any}) : Dict{String,Any}()
+    hooks = get!(doc, "hooks", Dict{String,Any}())
+    stops = get!(hooks, "Stop", Any[])
+    push!(stops, Dict("hooks" => [Dict("type" => "command", "command" => HOOK_COMMAND)]))
+    mkpath(dirname(path))
+    open(path, "w") do io; JSON3.pretty(io, JSON3.write(doc)); println(io); end
+    return true
 end
 
 """
@@ -543,7 +575,6 @@ the wiring check does not claim to hold them.
 const GENERATED = [
     (path = ".gitignore",                  part = Model.Part.BLOCK,        generator = :gitignore),
     (path = ".claude/hooks/queue-guard.sh", part = Model.Part.WHOLE,       generator = :hook),
-    (path = ".claude/settings.json",       part = Model.Part.WHOLE,        generator = :settings),
     (path = "test/regressions/README.md",  part = Model.Part.WHOLE,        generator = :regressions_note),
     (path = "CLAUDE.md",                   part = Model.Part.BLOCK,        generator = :claude_block),
     (path = ".gbg/policy/00-index.md",     part = Model.Part.WHOLE,        generator = :policy_index),
@@ -561,7 +592,6 @@ and `cfg`, the package's config. Returns the content.
 function produce(name::Symbol, cfg::Model.Config)
     name === :gitignore && return gitignore(cfg)
     name === :hook && return hook(cfg)
-    name === :settings && return settings(cfg)
     name === :regressions_note && return regressions_note(cfg)
     name === :policy_index && return policy_index(cfg)
     name === :glossary && return glossary(cfg)
@@ -612,6 +642,9 @@ function wiring(cfg::Model.Config, root::AbstractString)
         push!(out, Model.Location(; file = g.path, line = first_difference(have, want),
                                    text = "this file is not what `gbg sync` writes now"))
     end
+    # `.claude/settings.json` is the package's own file too: only this package's hook is looked for.
+    why = settings_drift(root)
+    why === nothing || push!(out, Model.Location(; file = ".claude/settings.json", text = why))
     # The pin is entries inside a file Pkg owns and rewrites, so only this package's own entries are
     # compared, and as parsed values: comparing the text would report every `Pkg.add` as drift.
     for envdir in SUBENVS
@@ -642,7 +675,11 @@ function write_all(cfg::Model.Config, root::AbstractString)
         if g.part === Model.Part.BLOCK && isfile(full)
             text = read(full, String)
             have = block_of(text)
-            new = have === nothing ? text * "\n" * want : replace(text, have => want)
+            # A file that has no block yet gets one at its HEAD, not its foot. `CLAUDE.md`'s block
+            # carries the import of the rulebook, and a session reads that file from the top: appended
+            # to a 2,700-line file it is read last or not at all. `.gitignore` does not care, and the
+            # head is right there too.
+            new = have === nothing ? want * "\n" * text : replace(text, have => want)
             new == text && continue
             write(full, new)
         else
@@ -652,6 +689,7 @@ function write_all(cfg::Model.Config, root::AbstractString)
         g.generator === :hook && chmod(full, 0o755)
         push!(changed, g.path)
     end
+    write_settings(root) && push!(changed, ".claude/settings.json")
     for envdir in SUBENVS
         write_pin(cfg, root, envdir) && push!(changed, joinpath(envdir, "Project.toml"))
     end

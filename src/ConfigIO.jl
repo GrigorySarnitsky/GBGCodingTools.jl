@@ -16,6 +16,8 @@ crash of this package.
 """
 module ConfigIO
 
+using TOML
+
 using ..Model
 using ..Texts
 using ..Catalogue
@@ -226,6 +228,16 @@ when there is none.
 function validate(cfg::Model.Config, root::AbstractString)
     problems = String[]
     isempty(cfg.package) && push!(problems, "the package has no name")
+    # The name is what every rule about a package's own name reads — which of its mentions is a sibling's
+    # and which is its own. A config that names the DIRECTORY rather than the package passes every other
+    # check and then reports a package's every mention of itself as an unlinked sibling.
+    let proj = joinpath(root, "Project.toml")
+        if isfile(proj)
+            declared = get(TOML.parsefile(proj), "name", "")
+            isempty(declared) || declared == cfg.package ||
+                push!(problems, "the config names the package `$(cfg.package)`, and Project.toml names it `$declared`")
+        end
+    end
     for (label, cmd) in ("docs_build" => cfg.docs_build, "test" => cfg.test)
         isempty(cmd) && continue
         script = findfirst(a -> endswith(a, ".jl"), cmd)

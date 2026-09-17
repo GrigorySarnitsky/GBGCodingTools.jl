@@ -15,13 +15,15 @@ states out loud — it reports drift on every build so that nothing is lost sile
 """
 module Wire
 
+using TOML
+
 using ..GBGCodingTools: GBGCodingTools, ConfigIO, Model, Render, parse_options, VERBS
 
 """
     CONFIG_SEED
 
-The `.gbg/config.jl` a package receives at `init`: its name, the pin, and the two commands this package
-runs on its behalf. Everything else has a default, and a package writes a line only where the default
+The `.gbg/config.jl` a package receives at `init`: its name (from its `Project.toml`), the pin, and the
+two commands this package runs on its behalf. Everything else has a default, and a package writes a line only where the default
 is wrong for it — a config full of restated defaults is a config nobody reads.
 """
 const CONFIG_SEED = """
@@ -59,7 +61,13 @@ function init(root::AbstractString; io::IO = stdout)
         println(io, "init: ", relpath(path, root), " exists and is kept — this is `gbg sync`.")
     else
         mkpath(dirname(path))
-        write(path, replace(CONFIG_SEED, "{PACKAGE}" => basename(abspath(root))))
+        # The name comes from `Project.toml`, never from the directory: a checkout may sit in a directory
+        # called anything, and a config that names the directory is wrong in a way every later check
+        # inherits — the rules that ask "is this mention the package's own name?" all read this field.
+        proj = joinpath(root, "Project.toml")
+        name = isfile(proj) ? get(TOML.parsefile(proj), "name", "") : ""
+        isempty(name) && (name = basename(abspath(root)))
+        write(path, replace(CONFIG_SEED, "{PACKAGE}" => name))
         println(io, "init: wrote ", relpath(path, root), " — read it, then commit it.")
     end
     return sync(root; io)

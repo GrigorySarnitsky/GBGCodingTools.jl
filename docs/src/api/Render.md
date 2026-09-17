@@ -25,7 +25,9 @@ GBGCodingTools.Render.produce
 GBGCodingTools.Render.regressions_note
 GBGCodingTools.Render.rule_section
 GBGCodingTools.Render.runtests_call
-GBGCodingTools.Render.settings
+GBGCodingTools.Render.HOOK_COMMAND
+GBGCodingTools.Render.settings_drift
+GBGCodingTools.Render.write_settings
 GBGCodingTools.Render.switches
 GBGCodingTools.Render.version_tag
 GBGCodingTools.Render.wiring
