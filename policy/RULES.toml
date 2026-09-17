@@ -91,7 +91,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.REF_ABUT"
 statement = "A @ref never abuts a second code span; the whole call is the link text."
 sentinel = "A `@ref` never abuts a second code span, because two adjacent monospace chips render with a visible seam."
-check = ["scan:SCAN.REF_ABUT_CODE"]
+check = ["rule:RULE.DOC.REF_ABUT"]  # converted 2026-09-17: src/Rules/rendering.jl
 # SCAN.API_PAGE_STRUCTURE's canonical rule is RULE.DOC.INTERNAL_API; it carries this rule's `@index` and
 # empty-block halves and reads the `pages` surface only. A policy waiver resolves against a scan's
 # canonical rule alone, so a waiver of THIS rule does not reach that scan, which keeps running and says so
@@ -319,7 +319,7 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.ONE_SPAN"
 statement = "A formula is one LaTeX span, never split across a math span and an adjacent code span."
 sentinel = "A formula is one LaTeX span, never split across a math span and an adjacent code span."
-check = ["scan:SCAN.ABUTTING_SPANS"]
+check = ["rule:RULE.TEX.ONE_SPAN"]  # converted 2026-09-17: src/Rules/rendering.jl
 [[rule]]
 id = "RULE.TEX.INLINE_ONE_LINE"
 file = "latex-idiom.md"
@@ -403,7 +403,7 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.SWALLOWED_ESCAPE"
 statement = "Inside a Julia docstring every LaTeX backslash is doubled; a single-backslash \\a \\b \\e \\f \\n \\r \\t \\v \\0-7 \\x \\u \\U is swallowed by the parser."
 sentinel = "Inside a Julia docstring every LaTeX backslash is doubled, because a single backslash before `a`, `b`, `e`, `f`, `n`, `r`, `t`, `v`, an octal digit, `x`, `u` or `U` is swallowed by the string parser."
-check = ["scan:SCAN.SWALLOWED_ESCAPE"]
+check = ["rule:RULE.TEX.SWALLOWED_ESCAPE"]  # converted 2026-09-17: src/Rules/rendering.jl
 [[rule]]
 id = "RULE.TEX.RENDERED_MARKUP"
 file = "latex-idiom.md"

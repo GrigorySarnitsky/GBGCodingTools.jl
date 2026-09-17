@@ -91,14 +91,6 @@ runner = "julia"
 fixture = ["left-right"]
 
 [[scan]]
-id = "SCAN.REF_ABUT_CODE"
-rule = "RULE.DOC.REF_ABUT"
-tier = "hard"
-surfaces = ["src", "rationale"]
-runner = "julia"
-fixture = ["ref-abut"]
-
-[[scan]]
 id = "SCAN.FIELD_DOCS"
 rule = "RULE.DOC.FIELDS"
 tier = "hard"
@@ -153,14 +145,6 @@ tier = "hard"
 surfaces = ["all"]
 runner = "julia"
 fixture = ["inline-math-split"]
-
-[[scan]]
-id = "SCAN.SWALLOWED_ESCAPE"
-rule = "RULE.TEX.SWALLOWED_ESCAPE"
-tier = "hard"
-surfaces = ["src", "ext"]
-runner = "julia"
-fixture = ["swallowed-escape"]
 
 [[scan]]
 id = "SCAN.RETIRED_CLAIMS"
@@ -305,14 +289,6 @@ tier = "triage"
 surfaces = ["src"]
 runner = "julia"
 fixture = ["wide-signature"]
-
-[[scan]]
-id = "SCAN.ABUTTING_SPANS"
-rule = "RULE.TEX.ONE_SPAN"
-tier = "triage"
-surfaces = ["src", "rationale", "pages"]
-runner = "julia"
-fixture = ["abutting-span"]
 
 [[scan]]
 id = "SCAN.SIGNATURE_FIDELITY"

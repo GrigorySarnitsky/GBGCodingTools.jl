@@ -70,11 +70,6 @@ scan = "SCAN.LEFTRIGHT"
 file = "defects/Defects.jl"
 fragment = "left(u"
 [[defect]]
-class = "ref-abut"
-scan = "SCAN.REF_ABUT_CODE"
-file = "defects/Defects.jl"
-fragment = "(@ref)`(u)`"
-[[defect]]
 class = "ghost-field"
 scan = "SCAN.FIELD_DOCS"
 file = "defects/Defects.jl"
@@ -99,11 +94,6 @@ class = "inline-math-split"
 scan = "SCAN.INLINE_MATH_SPLIT"
 file = "defects/Defects.jl"
 fragment = "sum_i u_i"
-[[defect]]
-class = "swallowed-escape"
-scan = "SCAN.SWALLOWED_ESCAPE"
-file = "defects/Defects.jl"
-fragment = "nabla"
 [[defect]]
 class = "retired-claim"
 scan = "SCAN.RETIRED_CLAIMS"
@@ -195,11 +185,6 @@ scan = "SCAN.SIGNATURE_WIDE"
 file = "defects/Defects.jl"
 fragment = "wide_signature"
 [[defect]]
-class = "abutting-span"
-scan = "SCAN.ABUTTING_SPANS"
-file = "defects/Defects.jl"
-fragment = '`coefficient` ``= -D'
-[[defect]]
 class = "stale-keyword"
 scan = "SCAN.SIGNATURE_FIDELITY"
 file = "defects/Defects.jl"
@@ -266,9 +251,6 @@ file = "src/FixtureB.jl"
 scan = "SCAN.MATHBF"
 file = "docs/ARCHITECTURE.md"
 [[clean]]
-scan = "SCAN.REF_ABUT_CODE"
-file = "src/FixtureA.jl"
-[[clean]]
 scan = "SCAN.FIELD_DOCS"
 file = "src/FixtureA.jl"
 [[clean]]
@@ -280,9 +262,6 @@ file = "src/FixtureA.jl"
 [[clean]]
 scan = "SCAN.INLINE_MATH_SPLIT"
 file = "src/FixtureB.jl"
-[[clean]]
-scan = "SCAN.SWALLOWED_ESCAPE"
-file = "src/FixtureA.jl"
 [[clean]]
 scan = "SCAN.RETIRED_CLAIMS"
 file = "docs/ARCHITECTURE.md"
@@ -301,9 +280,6 @@ file = "src/FixtureC.jl"
 [[clean]]
 scan = "SCAN.SENTENCE_OPENER"
 file = "src/FixtureA.jl"
-[[clean]]
-scan = "SCAN.ABUTTING_SPANS"
-file = "docs/src/notation.md"
 [[clean]]
 scan = "SCAN.HTML_RENDERED_MARKUP"
 file = "defects/html/clean"

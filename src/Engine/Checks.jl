@@ -43,7 +43,11 @@ function files(cfg::Model.Config, root::AbstractString, fileset::Model.FileSet.T
     for pattern in patterns
         append!(out, expand(root, pattern))
     end
-    return sort!(unique!(out))
+    # A page written at build time is nobody's to fix: the rules page is by construction full of text
+    # that breaks the rules it lists, and a reader would spend its whole budget reporting it
+    # (docs/ARCHITECTURE.md §5.2). Same for a declared copy, whose text belongs to its source.
+    written = Set(vcat(cfg.generated, first.(cfg.copies)))
+    return sort!(unique!(filter(f -> !(f in written), out)))
 end
 
 # `**` matches any run of directories, `*` anything within one name. Written out rather than taken from a

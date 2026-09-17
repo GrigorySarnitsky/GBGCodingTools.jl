@@ -523,13 +523,14 @@ The fields are:
 - `tool` — the version of this package it pins, or `:dev` here.
 - `docs_build` — what builds its documentation.
 - `test` — what runs its tests.
-- `rules` — the pattern rules it adds for itself.
-- `filesets` — its file sets, where the defaults are wrong.
-- `normative` — the documents that bind it; no documentation fix edits one.
+- `rules` — its own pattern rules.
+- `filesets` — its file sets, where the defaults miss.
+- `normative` — the documents that bind it.
 - `copies` — each build-time copy and its tracked source.
-- `switches` — what does not apply here, each with its reason.
+- `generated` — pages written at build time; no rule reads one.
+- `switches` — what is off here, with reasons.
 - `settings` — its values for rule parameters.
-- `roles` — the expert readers it adds for itself.
+- `roles` — its own expert readers.
 - `code_areas` — its code in named areas, one hunter each.
 """
 Base.@kwdef struct Config
@@ -541,6 +542,7 @@ Base.@kwdef struct Config
     filesets::Dict{FileSet.T,Vector{String}} = Dict{FileSet.T,Vector{String}}()
     normative::Vector{String} = String[]
     copies::Vector{Pair{String,String}} = Pair{String,String}[]
+    generated::Vector{String} = String[]
     switches::Vector{Switch} = Switch[]
     settings::Vector{Setting} = Setting[]
     roles::Vector{AgentRole} = AgentRole[]

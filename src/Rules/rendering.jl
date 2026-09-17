@@ -139,11 +139,134 @@ const CODE_IN_MATH = Model.Rule(
             [Model.Location(; file = "docs/src/page.md", line = 3)], "written \\texttt{…} inside a formula"),
     ])
 
+# ─────────────────────────────────────────────────────────── a LaTeX escape the parser swallows
+
+const SWALLOWED = r"(?<!\\)\\[abefnrtv0-7xuU]"
+
+"""
+    swallowed_escape(text, cfg) -> Vector{Model.Location}
+
+Every single-backslash escape inside a Julia docstring that the parser consumes before the documentation
+build ever sees it. The arguments are `text`, the file's prose, and `cfg`, the package's config, which
+this rule does not read. Returns one location per line holding one.
+
+`\\alpha` written with one backslash reaches Documenter as a bell character and a word; the docstring
+renders with the formula silently missing. Doubling the backslash is the whole fix, which is why this
+reads the raw line rather than the parsed string.
+"""
+function swallowed_escape(text::AbstractString, cfg)
+    return [Model.Location(; file = "", line = i, text = strip(String(line)))
+            for (i, line) in pairs(split(text, '\n')) if occursin(SWALLOWED, line)]
+end
+
+"""
+    SWALLOWED_ESCAPE
+
+Inside a Julia docstring every LaTeX backslash is doubled.
+"""
+const SWALLOWED_ESCAPE = Model.Rule(
+    id = Symbol("RULE.TEX.SWALLOWED_ESCAPE"),
+    statement = "Inside a Julia docstring every LaTeX backslash is doubled; a single-backslash escape is swallowed by the parser.",
+    why = "Julia consumes the escape when it reads the string, so the formula never reaches the documentation build at all.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.DOCSTRINGS],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, swallowed_escape, false),
+    examples = [
+        Model.TextExample(Model.FileSet.DOCSTRINGS,
+            "\"\"\"\n    f(x)\n\nThe gradient \\nabla f of the field.\n\"\"\"\nf(x) = x\n",
+            [Model.Location(; file = "src/Example.jl", line = 4)], "every backslash is doubled"),
+        Model.TextExample(Model.FileSet.DOCSTRINGS,
+            "\"\"\"\n    f(x)\n\nThe gradient \\\\nabla f of the field.\n\"\"\"\nf(x) = x\n",
+            Model.Location[], "every backslash is doubled"),
+    ])
+
+# ────────────────────────────────────────────────────────── a link abutting a second code span
+
+const REF_ABUT = r"\]\(@ref[^)]*\)`"
+
+"""
+    ref_abut(text, cfg) -> Vector{Model.Location}
+
+Every cross-reference link immediately followed by a code span. The arguments are `text`, the file's
+prose, and `cfg`, the package's config, which this rule does not read. Returns one location per line.
+
+The two render as adjacent monospace chips with a visible seam down the middle, as though the name had
+been cut in half; the whole call belongs inside the link text.
+"""
+function ref_abut(text::AbstractString, cfg)
+    return [Model.Location(; file = "", line = i, text = strip(String(line)))
+            for (i, line) in pairs(split(text, '\n')) if occursin(REF_ABUT, line)]
+end
+
+"""
+    REF_ABUT
+
+A cross-reference never abuts a second code span; the whole call is the link text.
+"""
+const REF_ABUT_RULE = Model.Rule(
+    id = Symbol("RULE.DOC.REF_ABUT"),
+    statement = "A cross-reference never abuts a second code span; the whole call is the link text.",
+    why = "The two render as adjacent monospace chips with a seam, as though the name had been cut in half.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, ref_abut, false),
+    examples = [
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nCall [`measure`](@ref)`(u)` on the field.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "never abuts a second code span"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nCall [`measure(u)`](@ref measure) on the field.\n",
+            Model.Location[], "never abuts a second code span"),
+    ])
+
+# ──────────────────────────────────────────────────── a formula split across two kinds of span
+
+const ABUT_CODE = raw"(?:\[`[A-Za-z_][A-Za-z0-9_!]*`\]\([^)\n]*\)|`[A-Za-z_][A-Za-z0-9_!]*`)"
+const ABUT_MATH = raw"``[^`\n]{1,60}``"
+const ABUT = Regex("(?:" * ABUT_MATH * raw"\s*" * ABUT_CODE * "|" * ABUT_CODE * raw"\s*" * ABUT_MATH * ")")
+
+"""
+    one_span(text, cfg) -> Vector{Model.Location}
+
+Every place a math span and a code span sit against each other, in either order. The arguments are
+`text`, the file's prose, and `cfg`, the package's config, which this rule does not read. Returns one
+location per line.
+
+Binding a code object to its symbol is ONE span — `\\texttt{name} \\equiv \\varepsilon` — because two
+abutting spans render as two disjoint runs at different sizes. The known false positive is plain
+adjacency of unrelated things, which is why this rule is worth reading before obeying.
+"""
+function one_span(text::AbstractString, cfg)
+    return [Model.Location(; file = "", line = i, text = strip(String(line)))
+            for (i, line) in pairs(split(text, '\n')) if occursin(ABUT, line)]
+end
+
+"""
+    ONE_SPAN
+
+A formula is one LaTeX span, never split across a math span and an adjacent code span.
+"""
+const ONE_SPAN = Model.Rule(
+    id = Symbol("RULE.TEX.ONE_SPAN"),
+    statement = "A formula is one LaTeX span, never split across a math span and an adjacent code span.",
+    why = "Two abutting spans render as two disjoint runs at different sizes, not as one binding.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, one_span, false),
+    examples = [
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe tolerance `atol` ``\\equiv \\varepsilon`` is fixed.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "never split across two spans"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe tolerance ``\\texttt{atol} \\equiv \\varepsilon`` is fixed.\n",
+            Model.Location[], "never split across two spans"),
+    ])
+
 """
     RULES
 
 The rules of this batch, in the order they were converted.
 """
-const RULES = Model.Rule[TABLE_TOP_LEVEL, CODE_IN_MATH]
+const RULES = Model.Rule[TABLE_TOP_LEVEL, CODE_IN_MATH, SWALLOWED_ESCAPE, REF_ABUT_RULE, ONE_SPAN]
 
 end # module Rendering

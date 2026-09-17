@@ -7,4 +7,8 @@ Config(
     package = "GBGCodingTools",
     tool = :dev,
     normative = ["docs/ARCHITECTURE.md", "IMPLEMENTATION.md"],
+    # Written by docs/make.jl at build time. No rule reads one: a page that LISTS the rules necessarily
+    # holds text that breaks them, and a page copied from elsewhere belongs to what it was copied from.
+    generated = ["docs/src/guide/rules.md", "docs/src/guide/doctor.md"],
+    copies = ["docs/src/architecture.md" => "docs/ARCHITECTURE.md"],
 )
