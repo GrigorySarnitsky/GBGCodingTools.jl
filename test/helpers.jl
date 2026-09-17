@@ -52,6 +52,8 @@ function defects_config(root = FIXTURE)
     return cfg
 end
 
+# The planted defect classes went with the scans they were planted for (2026-09-17); the file is kept as
+# the record of what it held, and holds no rows.
 const DEFECTS = TOML.parsefile(joinpath(FIXTURE, "defects.toml"))
 const CATALOG = Dict(r["id"] => r for r in G.scan_catalog())
 # The scans that must load the package. SCAN.SIGNATURE_FIDELITY was the last of them and went on

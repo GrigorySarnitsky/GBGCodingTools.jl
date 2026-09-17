@@ -431,17 +431,14 @@ file = "citations.md"
 section = "### RULE.CIT.FULL_INLINE"
 statement = "A docstring cites author–year in its prose and carries the full reference in a `# References` section after the home's prose and before any `# Fields`, verbatim-identical to the canonical entry (title and DOI compared)."
 sentinel = "A docstring cites author–year in its prose and carries the full reference in a `# References` section after the home's prose, before any `# Fields`: one bullet per work, `Authors, [*Title*](https://doi.org/…), Journal Volume (Year)`, verbatim-identical to the canonical entry under the package's references heading, title and DOI compared."
-check = ["scan:SCAN.DOI_CROSSCHECK"]
-# SCAN.DOI_CROSSCHECK's canonical rule is RULE.CIT.FULL_INLINE; this rule is its DOI half. A policy
-# waiver resolves against a scan's canonical rule alone, so a waiver of THIS rule leaves that scan
-# running and says so (Scan.apply_ledger); `scope = "scan"` on the scan waives both halves.
+check = ["rule:RULE.CIT.FULL_INLINE"]  # converted 2026-09-17: src/Rules/citations.jl
 [[rule]]
 id = "RULE.CIT.DOI"
 file = "citations.md"
 section = "### RULE.CIT.DOI"
 statement = "Every reference carries a clickable DOI (or an Open Library link for a book) on its title, identical in every copy."
 sentinel = "Every reference carries a clickable DOI on its title, `[*Title*](https://doi.org/…)`, or an Open Library link for a book with no DOI, identical in every copy."
-check = ["scan:SCAN.DOI_CROSSCHECK"]
+check = ["rule:RULE.CIT.DOI"]  # converted 2026-09-17: src/Rules/citations.jl
 [[rule]]
 id = "RULE.CIT.BLOCK_LIST"
 file = "citations.md"
@@ -459,7 +456,7 @@ file = "citations.md"
 section = "### RULE.CIT.NO_INACCESSIBLE"
 statement = "Never cite an inaccessible source (inspiration/, an accompanying thesis, an appendix the reader cannot open) on any user-facing surface."
 sentinel = "Never cite an inaccessible source on any user-facing surface: not a gitignored monograph, an accompanying thesis, an appendix or figure the reader cannot open, nor working notes."
-check = ["panel"]
+check = ["rule:RULE.CIT.NO_INACCESSIBLE"]  # converted 2026-09-17: a panel, src/Rules/judgement_cit.jl
 [[rule]]
 id = "RULE.TEST.GATE_VS_SURVEY"
 file = "testing-protocol.md"

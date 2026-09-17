@@ -1,20 +1,9 @@
-# catalog/scans.toml — every deterministic scan (docs/ARCHITECTURE.md §12.B, verbatim). Columns: id ·
-# rule · tier (hard = must be empty; triage = printed in full, never fails; "argcov_policy" = the ONE
-# configurable tier) · surfaces (config keys; docs = rationale + pages + literate; all = docs + src + ext)
-# · runner (julia = a function under src/Scans/ or Reflection; html = over the built site) · fixture
-# (the defect classes in fixture/GBG Fixture/defects.toml; a must-hit and a clean twin each).
-# `gbg selftest` fails when a scan function is unregistered here or a registered scan has no fixture pair.
-# `rule` is ONE canonical rule per scan, which is what the ledger and the doctor resolve against. A scan
-# may enforce more than one — SCAN.DOI_CROSSCHECK enforces
-# two — and the full list per scan is §12.B's table; the other direction, every scan enforcing a given
-# rule, is that rule's `check` array in policy/RULES.toml. Read either of those, never this column, for
-# "which rules does this scan carry".
-
-[[scan]]
-id = "SCAN.DOI_CROSSCHECK"
-rule = "RULE.CIT.FULL_INLINE"
-tier = "hard"
-surfaces = ["src"]
-runner = "julia"
-fixture = ["doi-missing", "prose-reference"]
-
+# catalog/scans.toml — the register of the deterministic text scans.
+#
+# It is EMPTY. Every scan it held was converted into a `Rule` value under src/Rules/, each beside the
+# check that decides it and the examples that show the check matches the statement; the last of them,
+# SCAN.DOI_CROSSCHECK, went on 2026-09-17. A rule's enforcement is no longer a row in a table pointing
+# at a function in another file — it is one value, and `policy/RULES.toml`'s `check` field says which.
+#
+# The file stays because the scan engine still reads it, and reads it as the list of what to run: with
+# no rows there is nothing to run, which is the truth. It goes with the engine in Phase 2.

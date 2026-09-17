@@ -73,7 +73,7 @@ include("helpers.jl")
         page = read(joinpath(TOOL, "docs", "src", "index.md"), String)
         n(re) = (m = match(re, page); m === nothing ? -1 : parse(Int, m.captures[1]))
         @test n(r"There are (\d+)\s*\n?\s*verbs") == length(G.VERBS)
-        @test n(r"(\d+) scans? over docstrings") == length(G.scan_catalog())
+        @test n(r"— (\d+) scans?[:,]") == length(G.scan_catalog())
         @test n(r"(\d+) checks that a package is wired correctly") == length(G.Doctor.CHECKS)
         @test n(r"The policy is (\d+) rules") == length(TOML.parsefile(joinpath(TOOL, "policy", "RULES.toml"))["rule"])
     end
@@ -99,7 +99,7 @@ include("helpers.jl")
     end
     @testset "every rule declares what catches its next violation (RULE.TEST.RULE_WITH_CHECK)" begin
         rules = TOML.parsefile(joinpath(TOOL, "policy", "RULES.toml"))["rule"]
-        scans = Set(s["id"] for s in TOML.parsefile(joinpath(TOOL, "catalog", "scans.toml"))["scan"])
+        scans = Set(s["id"] for s in G.scan_catalog())
         checks = Set(first.(G.Doctor.CHECKS))
         srctext = join(read(joinpath(d, f), String) for (d, _, fs) in walkdir(joinpath(TOOL, "src")) for f in fs if endswith(f, ".jl"))
         for r in rules

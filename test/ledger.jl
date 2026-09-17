@@ -6,8 +6,8 @@ include("helpers.jl")
     cfg = G.Config.read(root)
     write(joinpath(root, ".gbg", "exemptions.toml"), """
     [[exemption]]
-    id = "SCAN.DOI_CROSSCHECK"
-    scope = "scan"
+    id = "RULE.CIT.DOI"
+    scope = "policy"
     target = "src/FixtureA.jl"
     reason = "a forty-character reason for the ledger arm of the self-tests here"
     recorded = $(today())
@@ -22,7 +22,9 @@ include("helpers.jl")
     """)
     led = G.Ledger.read(cfg)
     @test length(led) == 2
-    @test length(G.Ledger.entries(led, "SCAN.DOI_CROSSCHECK"; scope = "scan")) == 1
+    # A `scan` entry stood here until 2026-09-17, when the last scan was retired; the ledger's own
+    # machinery — reading, matching, expiry — is what this exercises, and a policy waiver exercises it.
+    @test length(G.Ledger.entries(led, "RULE.CIT.DOI"; scope = "policy")) == 1
     @test G.Ledger.matches(led[1], root; file = "src/FixtureA.jl")
     @test !G.Ledger.matches(led[1], root; file = "src/FixtureB.jl")
     checks, _ = G.Doctor.run(cfg; only = ["CFG.EXEMPTIONS", "EXEMPT"], io = devnull)

@@ -42,8 +42,8 @@ evaluate, `3` when it crashed. The two a person runs most:
 
 - [`gbg doctor`](@ref "The doctor's checks") — 41 checks that a package is wired correctly (read-only, except that `--deep` builds and tests it): the installed version matches
   the pinned one, no generated file was hand-edited, the docs build and the tests call this package.
-- [`gbg scan docs`](@ref GBGCodingTools.scan_docs) and [`gbg scan html`](@ref GBGCodingTools.scan_html) — 1 scan over docstrings and pages: an author–year
-  citation whose DOI the prose lacks. The rest are `Rule` values run by `gbg check`.
+- [`gbg scan docs`](@ref GBGCodingTools.scan_docs) and [`gbg scan html`](@ref GBGCodingTools.scan_html) — 0 scans: every one is a `Rule` value now,
+  run by `gbg check` beside the rest of the rulebook.
 
 ## What a package's docs build and tests call
 

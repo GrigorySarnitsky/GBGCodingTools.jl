@@ -1,22 +1,8 @@
-# defects.toml — the planted defect classes of the fixture (ARCHITECTURE §8): one [[defect]] per scan of
-# catalog/scans.toml, naming the class, the scan that must hit, the surface file under defects/ (scanned
-# by the self-tests through a derived config) and a fragment the hit's text must contain; and one
-# [[clean]] per class naming a twin in the clean corpus the scan must NOT hit. The HTML classes name a
-# directory under defects/html/ standing in for a built site.
-
-[[defect]]
-class = "doi-missing"
-scan = "SCAN.DOI_CROSSCHECK"
-file = "defects/Defects.jl"
-fragment = "10.9999/never-listed"
-[[defect]]
-class = "prose-reference"
-scan = "SCAN.DOI_CROSSCHECK"
-file = "defects/Defects.jl"
-fragment = "a full reference in the prose"
-[[clean]]
-scan = "SCAN.DOI_CROSSCHECK"
-file = "src/FixtureB.jl"
-[[clean]]
-scan = "SCAN.DOI_CROSSCHECK"
-file = "src/FixtureC.jl"
+# defects.toml — the planted defect classes of the fixture.
+#
+# It held one [[defect]] per scan of catalog/scans.toml, naming the class, the scan that had to hit it,
+# the surface file under defects/ and a fragment of the hit's text, with one [[clean]] per class naming
+# a twin in the clean corpus the scan had to leave alone. The last class went with the last scan on
+# 2026-09-17. What a rule judges is now shown by the examples the RULE carries — one that breaks each
+# clause and one that complies, run by test/rules.jl over text the rule holds rather than over a corpus
+# planted here, so a rule and its evidence move together and neither can be edited without the other.

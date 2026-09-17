@@ -117,23 +117,9 @@ end
 # a policy waiver of the second rule of a two-rule scan does not reach that scan, which keeps running: the
 # doctor WARNs and names the scan (a FAIL here broke every gate over a deviation that was legitimate —
 # 2026-09-15-audit-changes-01), deviations.md says the same, and a waiver of the canonical rule passes
-@testset "CFG.EXEMPTIONS names a policy waiver the scan cannot honour" begin
-    root = fixture_copy("unreachable-waiver")
-    led = joinpath(root, ".gbg", "exemptions.toml")
-    entry(rule) = "\n[[exemption]]\nid = \"$rule\"\nscope = \"policy\"\ntarget = \"*\"\n" *
-                  "reason = \"a deviation recorded for the test of the doctor's waiver check\"\n" *
-                  "recorded = 2026-01-01\nexpires = 2026-12-31\n"
-    exemptions() = Dict(c.id => c for c in first(G.Doctor.run(G.Config.read(root); only = ["CFG.EXEMPTIONS"], io = devnull)))["CFG.EXEMPTIONS"]
-    keep = read(led, String)
-    write(led, keep * entry("RULE.CIT.FULL_INLINE"))
-    @test exemptions().status == :PASS
-    write(led, keep * entry("RULE.CIT.DOI"))
-    c = exemptions()
-    @test c.status == :WARN && occursin("RULE.CIT.DOI", c.detail) && occursin("SCAN.DOI_CROSSCHECK", c.detail)
-    cfg = G.Config.read(root)
-    dev = only(f for f in G.Sync.plan(cfg) if endswith(f.path, "deviations.md"))
-    @test occursin("does not reach `SCAN.DOI_CROSSCHECK`", dev.content)
-end
+# The unreachable-waiver testset stood here until 2026-09-17: CFG.EXEMPTIONS warned when a policy waiver
+# named the second rule of a two-rule scan, which the scan could not honour, and `deviations.md` said so.
+# The last two-rule scan was retired with the rules it carried, so nothing can be unreachable this way.
 
 # The AUDIT.GAP testset stood here until 2026-09-17: it planted two closed audit rounds and checked
 # that a base past the previous audit's closed head warns. The check and the rounds went together.

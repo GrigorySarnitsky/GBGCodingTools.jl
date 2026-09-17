@@ -77,7 +77,9 @@ end
 
 The `[[scan]]` rows of `catalog/scans.toml` in the running copy, in file order. Returns the rows.
 """
-scan_catalog() = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "catalog", "scans.toml"))["scan"]
+# The register is empty since the last scan was converted, and an empty TOML file has no `scan` key at
+# all — which is a catalogue of no scans, not a missing catalogue.
+scan_catalog() = get(TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "catalog", "scans.toml")), "scan", Dict{String,Any}[])
 
 const RULES_REGISTER = Ref{Any}(nothing)
 
