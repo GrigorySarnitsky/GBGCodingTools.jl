@@ -8,7 +8,6 @@ What this package knows, as values.
 ```@docs
 GBGCodingTools.Catalogue
 GBGCodingTools.Catalogue.ALWAYS_ON
-GBGCodingTools.Catalogue.ALWAYS_ON_RULES
 GBGCodingTools.Catalogue.GENERATED
 GBGCodingTools.Catalogue.INSTRUMENTS
 GBGCodingTools.Catalogue.RULES

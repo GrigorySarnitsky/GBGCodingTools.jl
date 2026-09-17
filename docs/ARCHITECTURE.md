@@ -576,15 +576,15 @@ each of those locations still re-anchors (§4.5); no build, test or check reads 
 
 A package turns a rule, an agent role or a whole instrument off with a `Switch` naming it and giving the reason, and
 sets a variant with a `Setting` [R10]. Every element that is off is listed in the config and shown, with its reason, on
-the package's documentation site; an unknown target, a missing reason, or a switch against a rule the rulebook marks as
-always on is exit 2. Those always-on rules are the ones catching text that renders wrongly (a stray `$`, a formula in
-backticks) and the docstring-structure rules; a test builds a page with such a fault under GBGCodingTools' own switches
-and requires a failed build.
+the package's documentation site; an unknown target or a missing reason is exit 2.
 
-That mark is not set from the start. Until two packages have run those rules over their own prose and their counts are
-known, the set ships switchable, so a rule that proves wrong for one package's writing is switched off there with its
-reason while it is fixed or dropped [a rule nobody may escape is settled before anyone has read what it reports]. Setting
-the mark is a MAJOR release; after it the only escape is changing the rule for every package, through §13 [as ruled].
+**Every rule is switchable. There is no set a package may not escape** [as ruled 2026-09-17]. The rulebook is the
+DEFAULT, and a package overrides any part of it by saying so where a reader can see it. An earlier draft marked some
+rules — the ones catching text that renders wrongly, and the docstring-structure rules — as always on, and that mark was
+never set, because the two things it would have bought are already bought by the switch itself. A switch cannot be
+silent: it names the rule, gives the reason, and is rendered into the package's own rulebook and onto its site, so the
+escape is on the record either way. What the mark added was only the refusal — and its cost is a package with a red
+build and no way out but a MAJOR release of this one, which makes this package the obstacle rather than the help.
 
 Off in GBGCodingTools, with reasons — the second and third are its declared deviations today, the first and fourth new:
 - the LaTeX notation and spacing rules, the citation rules, and the site readers checking mathematics, notation,

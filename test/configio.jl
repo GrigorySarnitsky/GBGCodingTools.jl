@@ -133,7 +133,17 @@ end
         switches = [Switch(target = Symbol("RULE.DOC.TABLE_TOP_LEVEL"), reason = "this package ships no tables at all")])""")
     @test isempty(CIO.validate(CIO.read_config(ok), ok))
 
-    @test isempty(G.Catalogue.ALWAYS_ON_RULES)         # the set ships switchable, as ruled (§9)
+    # Every rule is switchable (§9, ruled 2026-09-17): a switch against ANY rule of the rulebook is
+    # accepted, and what makes it answerable is the reason, which is rendered onto the package's site.
+    let dir = mktempdir(; cleanup = true)
+        mkpath(joinpath(dir, ".gbg"))
+        id = String(first(G.Catalogue.RULES).id)
+        write(joinpath(dir, ".gbg", "config.jl"), """
+        Config(package = "P", tool = :dev,
+               switches = [Switch(target = Symbol("$id"), reason = "a reason a reader can weigh")])
+        """)
+        @test isempty(G.ConfigIO.validate(G.ConfigIO.read_config(dir), dir))
+    end
     @test G.Catalogue.doc(G.Catalogue.INSTRUMENTS[1]) isa String
     @test occursin("Owner's request", G.Catalogue.doc(G.Catalogue.INSTRUMENTS[1]))
     @test occursin("nobody starts it", G.Catalogue.doc(G.Catalogue.ALWAYS_ON[1]))

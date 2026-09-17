@@ -138,18 +138,12 @@ identifier. Returns the rule.
 """
 rule(id::Symbol) = findfirst(r -> r.id === id, RULES) === nothing ? nothing : RULES[findfirst(r -> r.id === id, RULES)]
 
-"""
-    ALWAYS_ON_RULES
-
-The rules no package may switch off: the ones catching text that renders wrongly and the ones holding the
-shape of a docstring.
-
-It is EMPTY, and deliberately. The design's own ruling is that the set ships switchable until two packages
-have run those rules over their own prose and their counts are known: a rule nobody may escape, settled
-before anyone has read what it reports, is how a package ends up with a red build and no way out. Filling
-this list is a MAJOR release, and after it the only escape is changing the rule for every package.
-"""
-const ALWAYS_ON_RULES = Symbol[]
+# `ALWAYS_ON_RULES` stood here until 2026-09-17: the rules no package could switch off. The owner ruled
+# the concept away, and the reasoning is in the design's §9 — the rulebook is the DEFAULT, and a package
+# overrides any part of it by saying so where a reader can see it. A switch already names the rule, gives
+# the reason, and is rendered into the package's own rulebook and onto its site, so an escape is on the
+# record whether or not a refusal exists; what the refusal added was a package with a red build and no
+# way out but a MAJOR release of this one.
 
 """
     known_ids() -> Set{Symbol}
