@@ -36,7 +36,7 @@ review state any more.
 
 `gbg` is a program run from a terminal, in the directory of one of the packages. It is invoked as
 `gbg <noun> <verb>`, where the noun names what is acted on and the verb what is done, as in
-`gbg sync status`; a bare verb is allowed where the noun is obvious, as in `gbg doctor`. There are 16
+`gbg sync status`; a bare verb is allowed where the noun is obvious, as in `gbg doctor`. There are 17
 verbs, listed on [The verbs](@ref verbs), and every one exits with `0` when clean, `1` when it found something, `2` when it could not
 evaluate, `3` when it crashed. The two a person runs most:
 

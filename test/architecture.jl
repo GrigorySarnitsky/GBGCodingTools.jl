@@ -14,7 +14,7 @@ include("helpers.jl")
 # Render → Orchestration → CLI. A file lands here in the phase that writes it.
 const LAYERS = Dict("src/Model.jl" => 1, "src/Texts.jl" => 2, "src/ConfigIO.jl" => 4,
                     "src/Engine.jl" => 5, "src/Engine/Guard.jl" => 5,
-                    "src/CLI/Docfix.jl" => 8,
+                    "src/CLI/Docfix.jl" => 8, "src/CLI/Check.jl" => 8,
                     "src/Catalogue.jl" => 3, "src/Engine/Checks.jl" => 5, "src/Render.jl" => 6)
 
 const RANK_OF_MODULE = Dict("Model" => 1, "Texts" => 2, "Catalogue" => 3, "ConfigIO" => 4,
