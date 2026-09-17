@@ -668,7 +668,8 @@ function select(only = nothing; deep::Bool = false)
 end
 
 """
-    run(cfg; only = nothing, deep = false, io = stdout, json = false, effective = false) -> (checks, code)
+    run(cfg; only = nothing, deep = false, io = stdout, json = false,
+        effective = false) -> (checks, code)
 
 Runs the selected checks over a consumer and prints the table. The arguments are:
 

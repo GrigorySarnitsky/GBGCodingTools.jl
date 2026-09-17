@@ -1,14 +1,15 @@
+# The design's §3, §5.3, §6, §9; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Catalogue
 
 What this package knows, as values rather than as files: the always-on checks, the instruments, the
-rulebook, and the register of everything a generator writes (`docs/ARCHITECTURE.md` §3, §5.3, §6).
+rulebook, and the register of everything a generator writes.
 
 It is the third module of the order and holds DATA — a rule sits here beside the check that decides it,
 and nothing here runs anything. What is in it today is the instrument table; the rules arrive with the
-conversion (`IMPLEMENTATION.md` §6) and the agent roles with the instruments that launch them.
+conversion and the agent roles with the instruments that launch them.
 
-The table is the design's §3, and `test/architecture.jl` compares the two cell by cell: a row whose
+The table here and the one in the design are compared cell by cell by `test/architecture.jl`: a row whose
 purpose, intention, decider, fixer, timing or ending drifts from the document fails the suite, so the
 document and the code cannot quietly disagree about what an instrument is for.
 """
@@ -87,6 +88,7 @@ include("Rules/rendering.jl")     # one file per batch of the conversion
 include("Rules/docstrings.jl")
 include("Rules/arguments.jl")
 include("Rules/latex.jl")
+include("Rules/pages.jl")
 include("Rules/judgement_api.jl")
 include("Rules/judgement_cit.jl")
 include("Rules/judgement_doc.jl")
@@ -100,10 +102,10 @@ include("Rules/judgement_tex.jl")
 
 The rulebook: every rule as a value, beside the check that decides it and the examples that show the
 check matches the statement. The ninety-five rules of `policy/RULES.toml` are converted in batches
-(`IMPLEMENTATION.md` §6), one file of `src/Rules/` per batch; `test/conversion.jl` holds the count still
+, one file of `src/Rules/` per batch; `test/conversion.jl` holds the count still
 outstanding, which may only fall.
 """
-const RULES = Model.Rule[Rendering.RULES..., Docstrings.RULES..., Arguments.RULES..., Latex.RULES..., JudgementApi.RULES..., JudgementCit.RULES..., JudgementDoc.RULES..., JudgementGit.RULES..., JudgementInst.RULES..., JudgementTest.RULES..., JudgementTex.RULES...]
+const RULES = Model.Rule[Rendering.RULES..., Docstrings.RULES..., Arguments.RULES..., Latex.RULES..., Pages.RULES..., JudgementApi.RULES..., JudgementCit.RULES..., JudgementDoc.RULES..., JudgementGit.RULES..., JudgementInst.RULES..., JudgementTest.RULES..., JudgementTex.RULES...]
 
 """
     GENERATED
@@ -135,7 +137,7 @@ rule(id::Symbol) = findfirst(r -> r.id === id, RULES) === nothing ? nothing : RU
     ALWAYS_ON_RULES
 
 The rules no package may switch off: the ones catching text that renders wrongly and the ones holding the
-shape of a docstring (`docs/ARCHITECTURE.md` §9).
+shape of a docstring.
 
 It is EMPTY, and deliberately. The design's own ruling is that the set ships switchable until two packages
 have run those rules over their own prose and their counts are known: a rule nobody may escape, settled

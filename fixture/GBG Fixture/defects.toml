@@ -50,20 +50,10 @@ scan = "SCAN.PROSE_SHAPE"
 file = "defects/Defects.jl"
 fragment = "# Fields"
 [[defect]]
-class = "banner-drift"
-scan = "SCAN.AI_BANNER"
-file = "defects/RATIONALE.md"
-fragment = "differs from the fleet text"
-[[defect]]
 class = "doi-missing"
 scan = "SCAN.DOI_CROSSCHECK"
 file = "defects/Defects.jl"
 fragment = "10.9999/never-listed"
-[[defect]]
-class = "typed-signature"
-scan = "SCAN.SIGNATURE_TYPED"
-file = "defects/Defects.jl"
-fragment = "types its argument"
 [[defect]]
 class = "prose-reference"
 scan = "SCAN.DOI_CROSSCHECK"
@@ -74,21 +64,6 @@ class = "undocumented-last-positional"
 scan = "SCAN.ARGCOV"
 file = "defects/Defects.jl"
 fragment = "`factor`"
-[[defect]]
-class = "crammed-citation"
-scan = "SCAN.CITATION_CRAMMED"
-file = "defects/Defects.jl"
-fragment = "References:"
-[[defect]]
-class = "dead-section-ref"
-scan = "SCAN.DEAD_REF"
-file = "defects/Defects.jl"
-fragment = "§4"
-[[defect]]
-class = "wide-signature"
-scan = "SCAN.SIGNATURE_WIDE"
-file = "defects/Defects.jl"
-fragment = "wide_signature"
 [[defect]]
 class = "stale-keyword"
 scan = "SCAN.SIGNATURE_FIDELITY"
@@ -135,12 +110,6 @@ fragment = "Base.copy"
 scan = "SCAN.SIBLING_LINK"
 file = "docs/src/index.md"
 [[clean]]
-scan = "SCAN.AI_BANNER"
-file = "docs/src/index.md"
-[[clean]]
-scan = "SCAN.SIGNATURE_TYPED"
-file = "src/FixtureC.jl"
-[[clean]]
 scan = "SCAN.MATHBF"
 file = "docs/ARCHITECTURE.md"
 [[clean]]
@@ -152,9 +121,6 @@ file = "docs/ARCHITECTURE.md"
 [[clean]]
 scan = "SCAN.API_PAGE_STRUCTURE"
 file = "docs/src/api/FixtureC.md"
-[[clean]]
-scan = "SCAN.AI_BANNER"
-file = "docs/ARCHITECTURE.md"
 [[clean]]
 scan = "SCAN.DOI_CROSSCHECK"
 file = "src/FixtureB.jl"

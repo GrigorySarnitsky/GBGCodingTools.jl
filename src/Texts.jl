@@ -1,3 +1,4 @@
+# The design's §4.5; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Texts
 
@@ -11,7 +12,7 @@ points at whatever now sits there, which is how a fix lands in the wrong paragra
 A [`Model.Location`](@ref) is therefore the file, the NODE (for Julia the binding, method or field of a
 constant documented; for Markdown the heading path), the QUOTE as it read then, and the line as a hint
 only. The function [`reanchor`](@ref) finds the node, then the quote inside it; failing that the quote, nearest
-the old line; failing that it says `OUTDATED` rather than guessing (`docs/ARCHITECTURE.md` §4.5).
+the old line; failing that it says `OUTDATED` rather than guessing.
 
 This module is the second of the order and may name only [`Model`](@ref). It parses Julia with the
 compiler's own parser, so what it calls a definition is what Julia calls one.

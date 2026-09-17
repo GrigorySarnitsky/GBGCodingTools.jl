@@ -1,8 +1,9 @@
+# The design's §5.2; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Model
 
 Every type the rebuilt package is written in, and nothing else: the enums, the structs and the abstract
-types of `docs/ARCHITECTURE.md` §5.2, with no behaviour and no values attached. It is the bottom module
+types of, with no behaviour and no values attached. It is the bottom module
 of the order — `Model` → `Texts` → `Catalogue` → `ConfigIO` → `Engine` → `Render` → `Orchestration` →
 `CLI` — so every later module may name these types and none of them may reach upwards.
 

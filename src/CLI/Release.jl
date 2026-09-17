@@ -1,5 +1,6 @@
 # Release.jl — `gbg release <ver>` and `gbg release <ver>-rc.<n>`: the tag, from the dev checkout at a
 # clean tree, after every precondition of ARCHITECTURE D16 and §8 (IMPLEMENTATION 1.10 item 7).
+# The design's §10; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 
 # `cites_round` and `carry_release_fails` stood here until 2026-09-17: a final release used to be
 # held back by an open round, by a candidate whose /check-docs round was not closed, and by the
@@ -68,7 +69,7 @@ Refused (exit 2) unless: the tree is clean and on the configured branch; the tag
 carries `## <ver> — `; `Project.toml`'s version equals the release version (the base version for a
 prerelease); `Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`); `gbg doctor --deep`
 is green at the root. Nothing else holds a release — no review, no open finding, no unanswered
-question, no audit (docs/ARCHITECTURE.md §10). A tag is never moved or re-issued.
+question, no audit. A tag is never moved or re-issued.
 Returns the exit code.
 """
 function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,

@@ -1,9 +1,10 @@
+# The design's §4.3; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Docfix
 
 `gbg docfix commit`: the one verb that commits. It classifies every changed file in the working tree with
 the change guard and commits only when every one of them came back documentation; otherwise it commits
-nothing and says which file stopped it (`docs/ARCHITECTURE.md` §4.3 step 2).
+nothing and says which file stopped it.
 
 Why a verb commits at all, when no other does: the guard must run BEFORE a commit exists. A session that
 committed first and asked afterwards would already have pushed the code it was not allowed to touch.

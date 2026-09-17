@@ -1,9 +1,10 @@
+# The design's §4.2; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Guard
 
 The change guard: the program that decides whether one changed file is a DOCUMENTATION change, which the
 documentation fixer may commit on its own, or a CODE change, which waits for the owner
-(`docs/ARCHITECTURE.md` §4.2). It is the gate the whole automatic half rests on, so it answers `CODE`
+. It is the gate the whole automatic half rests on, so it answers `CODE`
 whenever it is unsure.
 
 Documentation is exactly: docstrings and comments in `.jl` files under `src/` and `ext/`; hand-written

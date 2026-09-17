@@ -1,7 +1,8 @@
+# The design's §3; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Check
 
-`gbg check`: the always-on checks of `docs/ARCHITECTURE.md` §3, run on demand over a package — the
+`gbg check`: the always-on checks of, run on demand over a package — the
 rulebook's program checks and the wiring check, the same programs a docs build and a test suite run.
 
 It reports and repairs nothing: regenerating a drifted file is `gbg sync`'s, and fixing what a rule found

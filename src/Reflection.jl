@@ -315,7 +315,8 @@ end
 dehat(s::Symbol) = Symbol(replace(Base.Unicode.normalize(String(s), :NFD), r"[̂̄̇]" => ""))
 
 """
-    signature_fidelity(cfg; pkg = load_package(cfg), examined = nothing) -> Vector{String}
+    signature_fidelity(cfg; pkg = load_package(cfg),
+                       examined = nothing) -> Vector{String}
 
 Per exported binding, the displayed docstring signatures against the defined method table (positional
 names accent-normalised, keywords by name): a displayed keyword no method defines (a stale

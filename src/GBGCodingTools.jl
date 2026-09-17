@@ -1,3 +1,4 @@
+# The design's §3; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     GBGCodingTools
 
@@ -11,8 +12,8 @@ released `X.Y.Z`, or `dev` for a checkout), which `gbg sync` renders into the co
 sub-environment compat entries. A consumer holds data; the tool holds behaviour; the only thing
 connecting them is that pinned version.
 
-This package is being rebuilt to the design in `docs/ARCHITECTURE.md`, adopted on 2026-09-17, in the
-order `IMPLEMENTATION.md` sets out. The round machinery — the stage machine, the fix passes and their
+This package is being rebuilt to the design in, adopted on 2026-09-17, in the
+order sets out. The round machinery — the stage machine, the fix passes and their
 grading, the preflight, the seeds and the recall, the closure gate — was deleted on that day and is
 filed under `docs/design-record/machinery-v1/`. What is here now is the deterministic half: the scans,
 the reflection checks, the test harness, the doctor, the generators and the rulebook prose.
@@ -20,7 +21,7 @@ the reflection checks, the test harness, the doctor, the generators and the rule
 The terms the rest of the package uses as settled words, bound once here:
 
 - An **instrument** is a review procedure the owner asks a session to run. The new design names four
-  (`docs/ARCHITECTURE.md` §3); none of them runs from this tree today.
+; none of them runs from this tree today.
 - A **surface** is one named file set of `[surfaces]`: `src`, `rationale`, `pages`, `built_html`, …
 - A **hat** is one persona of a reading panel, reading the corpus from a single standpoint.
 

@@ -221,14 +221,14 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.NO_DEAD_REFS"
 statement = "A docstring or error message cites no § number, repo path or inaccessible source; it reads complete at the REPL."
 sentinel = "A rendered docstring or a thrown error message cites no section number, repo path or inaccessible source, and reads complete at the REPL where links are dead."
-check = ["scan:SCAN.DEAD_REF"]
+check = ["rule:RULE.DOC.NO_DEAD_REFS"]  # converted 2026-09-17: src/Rules/pages.jl
 [[rule]]
 id = "RULE.DOC.AI_BANNER"
 file = "docs-rubric.md"
 section = "### RULE.DOC.AI_BANNER"
 statement = "Every AI-written page carries the one provenance banner verbatim (as # comments in a Literate file); the home page never carries it, the owner reviewing that page in every package."
 sentinel = "Every AI-written rationale page and Literate example carries the one provenance banner verbatim, and the banner is identical wherever it appears."
-check = ["scan:SCAN.AI_BANNER"]
+check = ["rule:RULE.DOC.AI_BANNER"]  # converted 2026-09-17: src/Rules/pages.jl
 [[rule]]
 id = "RULE.DOC.SHAPE"
 file = "docs-rubric.md"
@@ -256,7 +256,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.SIGNATURE_MIRROR"
 statement = "A docstring signature names the method's arguments in its order; how much it repeats is the variation point rubric.signature_types (names | mirror). Only the docstring wraps, to at most 88 columns with a hanging indent."
 sentinel = "A docstring signature names the method's arguments in the method's order, and only the docstring wraps, to at most 88 columns with a hanging indent under the first argument; the source definition is left exactly as written."
-check = ["scan:SCAN.SIGNATURE_WIDE", "scan:SCAN.SIGNATURE_TYPED"]
+check = ["rule:RULE.DOC.SIGNATURE_MIRROR"]  # converted 2026-09-17: src/Rules/pages.jl
 [[rule]]
 id = "RULE.DOC.SIGNATURE_FIDELITY"
 file = "docs-rubric.md"
@@ -448,7 +448,7 @@ file = "citations.md"
 section = "### RULE.CIT.BLOCK_LIST"
 statement = "Two or more citations form a bullet list, one per line; a lone citation is 'Reference: …'."
 sentinel = "Two or more citations form a bullet list under a `References:` label, one citation per line, and a lone citation stays inline as `Reference: …`."
-check = ["scan:SCAN.CITATION_CRAMMED"]
+check = ["rule:RULE.CIT.BLOCK_LIST"]  # converted 2026-09-17: src/Rules/pages.jl
 # SCAN.DEAD_REF reads the `src` surface only — an inaccessible source cited in a docstring or an error
 # message — and its canonical rule is RULE.DOC.NO_DEAD_REFS; every other user-facing surface is the
 # panel's. A policy waiver of THIS rule reaches the panel but not that scan, which keeps running and says
@@ -459,7 +459,7 @@ file = "citations.md"
 section = "### RULE.CIT.NO_INACCESSIBLE"
 statement = "Never cite an inaccessible source (inspiration/, an accompanying thesis, an appendix the reader cannot open) on any user-facing surface."
 sentinel = "Never cite an inaccessible source on any user-facing surface: not a gitignored monograph, an accompanying thesis, an appendix or figure the reader cannot open, nor working notes."
-check = ["scan:SCAN.DEAD_REF", "panel"]
+check = ["panel"]
 [[rule]]
 id = "RULE.TEST.GATE_VS_SURVEY"
 file = "testing-protocol.md"

@@ -1,3 +1,4 @@
+# The design's §5.1, §10; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     makedocs(cfg; kwargs...)
 
@@ -20,7 +21,7 @@ which a consumer's CI greps for.
 
 A build reads no review state and nothing can freeze it: the closure gate that used to refuse a build
 while a round was open went with the round machinery on 2026-09-17, because a check that runs inside a
-consumer's build must give the same answer on a fresh clone and on CI (docs/ARCHITECTURE.md §5.1, §10).
+consumer's build must give the same answer on a fresh clone and on CI.
 
 Returns what `Documenter.makedocs` returns, `true` when that is `nothing` — as it is unless `debug =
 true` is passed.

@@ -1,3 +1,4 @@
+# The design's §7; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Rules.JudgementTest
 
@@ -6,7 +7,7 @@ all. Each carries its statement and the reason it exists, so a reader of the rul
 text whether a program enforces it or a person does.
 
 A rule with no check states why in `unchecked_reason` rather than pretending to one; a rule an agent
-decides says which of the three admitted reasons a program cannot (`docs/ARCHITECTURE.md` §7).
+decides says which of the three admitted reasons a program cannot.
 """
 module JudgementTest
 

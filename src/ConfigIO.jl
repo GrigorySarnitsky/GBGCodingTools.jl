@@ -1,10 +1,11 @@
+# The design's §5.2; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     ConfigIO
 
 Reading a package's own two Julia files — `.gbg/config.jl`, its settings, and `.gbg/settled.jl`, the
 rulings its owner has already given — WITHOUT EVALUATING THEM. Both are parsed, and only literals and
 calls to the constructors of [`Model`](@ref) are accepted: a function call, an interpolation, an unknown
-keyword or an unknown constructor is refused (`docs/ARCHITECTURE.md` §5.2).
+keyword or an unknown constructor is refused.
 
 The reason is not tidiness. A config that is `include`d is a program, and a module holding nothing but a
 configuration type still ran `getpid()` through it when that was tried. A package's settings are read by

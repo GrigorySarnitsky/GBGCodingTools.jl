@@ -1,3 +1,4 @@
+# The design's §6; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Rules.Docstrings
 
@@ -5,7 +6,7 @@ The rules that hold the SHAPE of documentation: how an argument or a field is na
 docstring must list, and the words the house does not use. Each is a rule value carrying its own
 statement, the program that decides it and the examples that show the two agree.
 
-These are the second batch of the conversion (`IMPLEMENTATION.md` §6, batch a). Unlike the rendering
+These are the second batch of the conversion. Unlike the rendering
 rules, what they catch does not look wrong on the page — it reads perfectly and tells the reader
 something untrue, or tells him nothing where the shape promised something.
 """

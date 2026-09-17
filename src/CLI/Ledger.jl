@@ -65,7 +65,8 @@ function entries(ledger::AbstractVector, id::AbstractString; scope = nothing, li
 end
 
 """
-    Ledger.matches(entry, root; file = "", symbol = "", arg_name = nothing, arg_type = nothing) -> Bool
+    Ledger.matches(entry, root; file = "", symbol = "",
+                   arg_name = nothing, arg_type = nothing) -> Bool
 
 Whether `entry` covers a trigger. The arguments are:
 

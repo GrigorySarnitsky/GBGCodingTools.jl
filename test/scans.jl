@@ -118,23 +118,8 @@ end
     # same corpus: under `names` a type in the signature's argument list is the hit, under `mirror` an
     # argument the method types and the signature leaves bare. A return annotation after `->` is not an
     # argument and is never a hit either way, which is the half a `::`-anywhere pattern would get wrong.
-    @testset "a typed argument in a signature, and a typed return that is not one" begin
-        r = G.run_scan(cfg, CATALOG["SCAN.SIGNATURE_TYPED"]; ledger = Dict{String,Any}[])
-        @test r.population > 0
-        @test any(h -> occursin("typed_signature", h.text), r.hits)
-        @test !any(h -> occursin("returns_typed", h.text), r.hits)      # `-> Bool` is a return, not an argument
-    end
-    @testset "the stricter form, which PF takes: a bare argument the method types" begin
-        strict = defects_config(); strict["rubric"]["signature_types"] = "mirror"
-        r = G.run_scan(strict, CATALOG["SCAN.SIGNATURE_TYPED"]; ledger = Dict{String,Any}[])
-        @test r.population > 0
-        @test any(h -> occursin("mirrored_bare", h.text) && occursin("`v`", h.text), r.hits)  # the method types it
-        @test !any(h -> occursin("typed_signature", h.text), r.hits)    # it mirrors already: no hit under mirror
-        @test !any(h -> occursin("returns_typed", h.text), r.hits)      # its method leaves `x` untyped too
-        # and the two forms disagree about the same corpus, which is what a variation point means
-        names_hits = G.run_scan(defects_config(), CATALOG["SCAN.SIGNATURE_TYPED"]; ledger = Dict{String,Any}[]).hits
-        @test Set(h.text for h in names_hits) != Set(h.text for h in r.hits)
-    end
+    # The two SIGNATURE_TYPED testsets stood here until 2026-09-17. That scan's rule is a value now
+    # (RULE.DOC.SIGNATURE_MIRROR), and what it judges is shown by the rule's own examples in test/rules.jl.
     # SCAN.ID_RESOLVES. Its three false-positive shapes were MEASURED over the tool's own corpus before it
     # was built (964 references, 11 unresolved, all 11 artefacts), and each is a direction here: a dead id
     # is the hit, a LIVE id is not, and a bare family PREFIX is not. RULE.TEST.BOTH_DIRECTIONS — a scan
@@ -160,7 +145,8 @@ end
     @testset "a dead scan is exit 2" begin
         c2 = fixture_config()                                            # every surface the scan reads, emptied
         c2["surfaces"]["rationale"] = String[]; c2["surfaces"]["literate"] = String[]; c2["surfaces"]["pages"] = String[]
-        r = G.run_scan(c2, CATALOG["SCAN.AI_BANNER"]; ledger = Dict{String,Any}[])
+        c2["surfaces"]["src"] = String[]; c2["surfaces"]["ext"] = String[]
+        r = G.run_scan(c2, CATALOG["SCAN.LINK_UNIFORMITY"]; ledger = Dict{String,Any}[])
         @test r.population == 0
         @test G.report([r]; io = devnull) == 2
         # zero population is DEAD whatever the ledger removed: a scan that measured nothing yet hit something
@@ -194,8 +180,7 @@ end
                                       "reason" => "x"^40, "recorded" => Dates.today())]
         d = defects_config()
         for (scan, canonical, second) in (("SCAN.DOI_CROSSCHECK", "RULE.CIT.FULL_INLINE", "RULE.CIT.DOI"),
-                                          ("SCAN.DEAD_REF", "RULE.DOC.NO_DEAD_REFS", "RULE.CIT.NO_INACCESSIBLE"),
-                                          ("SCAN.API_PAGE_STRUCTURE", "RULE.DOC.INTERNAL_API", "RULE.DOC.API_GROUPING"))
+                                                                                    ("SCAN.API_PAGE_STRUCTURE", "RULE.DOC.INTERNAL_API", "RULE.DOC.API_GROUPING"))
             row = CATALOG[scan]
             @test Set(G.rules_for_scan(scan)) == Set([canonical, second]) && row["rule"] == canonical
             @test G.unreachable_waiver_scans(second) == [scan] && isempty(G.unreachable_waiver_scans(canonical))
@@ -212,16 +197,8 @@ end
         end
         @test !isempty(G.run_scan(d, CATALOG["SCAN.DOI_CROSSCHECK"]; ledger = pol("RULE.TEX.MATHBF")).hits)  # an unrelated rule waives nothing
     end
-    @testset "the home page never carries the AI banner" begin
-        root = fixture_copy("home-banner")
-        c = G.Config.read(root)
-        idx = joinpath(root, "docs", "src", "index.md")
-        row = CATALOG["SCAN.AI_BANNER"]
-        @test isempty(G.run_scan(c, row; ledger = Dict{String,Any}[]).hits)          # the clean twin
-        write(idx, join(G.AI_BANNER, "\n") * "\n\n" * read(idx, String))
-        hits = G.run_scan(c, row; ledger = Dict{String,Any}[]).hits
-        @test length(hits) == 1 && hits[1].file == "docs/src/index.md" && occursin("never carries", hits[1].text)
-    end
+    # The AI-banner testsets stood here until 2026-09-17: RULE.DOC.AI_BANNER is a value now, and it runs
+    # over the rationale and Literate file sets alone, so the home page is outside it by construction.
     @testset "prose extraction" begin
         pl = G.prose_lines(cfg, "src/FixtureA.jl")
         @test all(p -> p.indocstring, pl)

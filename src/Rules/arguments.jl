@@ -1,9 +1,10 @@
+# The design's §5.2; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Rules.Arguments
 
 The rule that decides how a docstring lists what its operation takes: in bullets or in running prose,
 never both. It is the last of the docstring-shape rules and the one with the most exemptions, each of
-which is the rule's own (`docs/ARCHITECTURE.md` §5.2).
+which is the rule's own.
 """
 module Arguments
 

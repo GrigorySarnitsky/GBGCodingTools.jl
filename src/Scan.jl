@@ -103,7 +103,7 @@ Every rule `id` enforces: the rules whose `check` array in `policy/RULES.toml` n
 Returns the rule ids, empty when none does.
 
 The catalogue's `rule` column is ONE canonical rule per scan — what the doctor and a `scan`-scope ledger
-entry resolve against — and three scans enforce two apiece (`SCAN.API_PAGE_STRUCTURE`, `SCAN.DEAD_REF`,
+entry resolve against — and two scans enforce two apiece (`SCAN.API_PAGE_STRUCTURE`,
 `SCAN.DOI_CROSSCHECK`). `catalog/scans.toml`'s own header says to read the `check` arrays for the full
 list and never that column, which is exactly what this does.
 """
@@ -308,7 +308,8 @@ notation page's command column name `\\left` and `\\,` without typesetting them.
 mask_code_spans(line::AbstractString) = replace(String(line), r"(?<!`)`[^`\n]+`(?!`)" => m -> " "^length(m))
 
 """
-    regex_scan(cfg, files, re; skip_comments = true, on = :text, exclude = nothing, mask_code = false) -> (hits, population)
+    regex_scan(cfg, files, re; skip_comments = true, on =:text, exclude = nothing,
+               mask_code = false) -> (hits, population)
 
 The engine's plain-pattern scan over the prose lines of `files` (the surface files, relative to the
 consumer root) for the pattern `re`. The arguments are:

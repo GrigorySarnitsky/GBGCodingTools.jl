@@ -1,21 +1,21 @@
+# The design's §3, §11, §5.1; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Harness
 
 What a package's `test/runtests.jl` calls: the code half of the always-on checks, run inside the suite so
-that a broken contract is a failing test rather than a report nobody reads (`docs/ARCHITECTURE.md` §3,
-§11).
+that a broken contract is a failing test rather than a report nobody reads.
 
 It runs only programs — the code rules of the rulebook, and the frozen contracts a package pins — and
 reads no review state, starts no child process and never touches the network, because CI and a fresh
 clone must give the same answer.
 
 It does NOT reach the wiring check, though a test suite runs that too. `Render` is above `Engine` in the
-order and the harness reaches no further than its own layer (§5.1), so the wiring check is handed IN, by
+order and the harness reaches no further than its own layer, so the wiring check is handed IN, by
 whoever calls this. That is what `checks` is for, and it is how a consumer's suite gets both without this
 module knowing what a generator is.
 
 The contract engines still live in `TestHarness`, the module of the tree being replaced; a package passes
-its own contract runner as `contracts` until those are harvested (`IMPLEMENTATION.md` batch f).
+its own contract runner as `contracts` until those are harvested.
 """
 module Harness
 

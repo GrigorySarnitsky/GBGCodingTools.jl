@@ -1,7 +1,8 @@
+# The design's §6; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Render
 
-Every file that connects a package to this one, written by a Julia function (`docs/ARCHITECTURE.md` §6).
+Every file that connects a package to this one, written by a Julia function.
 There is no template language and no template directory: a generated file is the return value of a
 function that takes the package's config, so what a package receives is decided in Julia, beside the
 values it is derived from, and can be compared with what is on disk by running the function again.
@@ -14,7 +15,7 @@ reports drift and never repairs it.
 This is the sixth module of the order: it may name `Model`, `Texts`, `Catalogue` and `ConfigIO`, and
 nothing above. What it writes today is the WIRING — the pin, the ignore block, the end-of-turn hook, the
 settings that install it, the CI workflows and the regressions note. The rendered rulebook waits for the
-rules to be Julia, and the skills wait for the instruments (`IMPLEMENTATION.md` Phases 4 and 5), so
+rules to be Julia, and the skills wait for the instruments, so
 `gbg sync` still renders those two from the old templates.
 """
 module Render

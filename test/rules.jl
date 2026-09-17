@@ -20,16 +20,28 @@ const CK = G.Engine.Checks
 const MR = G.Model
 
 """Run one example through its rule's check and return the locations reported."""
+# Where a file set's example is written, and what it is called there. A set with no default patterns —
+# RATIONALE has none, since a package names its own — is DECLARED in the config the example runs under,
+# or the runner would look for it nowhere and the example would pass by finding nothing.
+const EXAMPLE_PATH = Dict(MR.FileSet.PAGES => "docs/src/page.md",
+                          MR.FileSet.RATIONALE => "docs/RATIONALE.md",
+                          MR.FileSet.LITERATE => "examples/example.jl",
+                          MR.FileSet.DOCSTRINGS => "src/Example.jl",
+                          MR.FileSet.CODE => "src/Example.jl",
+                          MR.FileSet.TESTS => "test/example.jl")
+
 function materialise(rule, example)
-    cfg = MR.Config(package = "Example", tool = :dev)
     if example isa MR.TextExample
         dir = mktempdir(; cleanup = true)
-        path = example.fileset === MR.FileSet.PAGES ? joinpath("docs", "src", "page.md") : joinpath("src", "Example.jl")
+        path = get(EXAMPLE_PATH, example.fileset, "src/Example.jl")
         mkpath(joinpath(dir, dirname(path)))
         write(joinpath(dir, path), example.text)
+        cfg = MR.Config(package = "Example", tool = :dev,
+                        filesets = Dict(example.fileset => [path]))
         r = MR.Rule(; id = rule.id, statement = rule.statement, filesets = [example.fileset], check = rule.check)
         return CK.run_rule(r, cfg, dir)
     elseif example isa MR.TreeExample
+        cfg = MR.Config(package = "Example", tool = :dev)
         dir = mktempdir(; cleanup = true)
         for (path, content) in example.files
             mkpath(joinpath(dir, dirname(path)))

@@ -1,12 +1,13 @@
+# The design's §5.2, §7, §6; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Rules.Rendering
 
 The rules that catch text which RENDERS WRONGLY: prose that looks right in the source and comes out as
 something else on the page. Each is a rule value carrying its own statement, the program that decides it,
-and the examples that show the two agree (`docs/ARCHITECTURE.md` §5.2, §7).
+and the examples that show the two agree.
 
 These are documentation rules, so they run in every docs build. They are the first batch of the
-conversion (`IMPLEMENTATION.md` §6, batch a): each arrives here with the scan it replaces deleted in the
+conversion: each arrives here with the scan it replaces deleted in the
 same commit, so nothing is checked twice and nothing stops being checked.
 """
 module Rendering

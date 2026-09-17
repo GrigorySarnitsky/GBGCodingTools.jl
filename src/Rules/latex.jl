@@ -1,3 +1,4 @@
+# The design's §6; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Rules.Latex
 
@@ -5,7 +6,7 @@ The LaTeX idiom: the spellings the house uses inside a formula, and the ones tha
 all. Each rule is a pattern over the prose, with code spans masked first so that a pattern about
 mathematics never matches a code span that merely looks like one.
 
-These are the third batch of the conversion (`IMPLEMENTATION.md` §6, batch c). They are small, and they
+These are the third batch of the conversion. They are small, and they
 are numerous for the same reason: each records one way a formula came out wrong on a page.
 """
 module Latex
@@ -36,7 +37,8 @@ function matching(pattern::Regex; mask::Bool = true)
 end
 
 """
-    pattern_rule(id, statement, why, pattern, breaking, complying, clause; mask = true, filesets = …) -> Model.Rule
+    pattern_rule(id, statement, why, pattern, breaking, complying, clause;
+                 mask = true, filesets = …) -> Model.Rule
 
 One rule of this family: a pattern, the two examples that show the check matches the statement, and the
 prose that says why it exists. The arguments are:

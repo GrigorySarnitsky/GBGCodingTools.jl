@@ -1,8 +1,9 @@
+# The design's §5.2, §9; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Checks
 
 Running the rulebook over a package: which files each file set names here, which rules apply here, and
-what their program checks report (`docs/ARCHITECTURE.md` §5.2, §9).
+what their program checks report.
 
 Everything in this module runs inside a consumer's docs build and test suite, so it is offline, starts no
 child process and reads no review state: a check must give the same answer on a fresh clone and on CI.

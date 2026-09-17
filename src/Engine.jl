@@ -1,9 +1,10 @@
+# The design's §5.1; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Engine
 
 What runs the rules: the checks over a package's texts and loaded module, the test harness a consumer's
 suite calls, the change guard, and the programs that check a question before it is put
-(`docs/ARCHITECTURE.md` §5.1).
+.
 
 It is the fifth module of the order and may name `Model`, `Texts`, `Catalogue` and `ConfigIO` — never
 `Render`, `Orchestration` or anything a run writes, because what executes inside a consumer's build and

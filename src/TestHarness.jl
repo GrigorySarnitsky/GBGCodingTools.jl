@@ -65,7 +65,8 @@ macro alloc_below(bound, expr)
 end
 
 """
-    field_threshold(field_bytes; fraction = 16, per_thread = 4096, components = 1) -> Int
+    field_threshold(field_bytes; fraction = 16, per_thread = 4096,
+                    components = 1) -> Int
 
 The allocation bound for a field-destination operation. The arguments are:
 
@@ -472,7 +473,8 @@ Whether a module in `modules` owns a `Base.show(::IO, ::type)` method. Returns t
 has_display(type, modules::AbstractVector{Module}) = any(m -> m.module in modules, methods(Base.show, Tuple{IO,type}))
 
 """
-    display_gate(modules; no_display = Dict{Symbol,String}(), min_types = 1, falsify = true)
+    display_gate(modules; no_display = Dict{Symbol,String}, min_types = 1,
+                 falsify = true)
 
 The display gate, DERIVED rather than listed: every concrete struct type has a package-owned `show`
 or an exemption with a reason. The arguments are:
