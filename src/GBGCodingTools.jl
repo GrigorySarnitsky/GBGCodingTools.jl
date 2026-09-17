@@ -63,6 +63,7 @@ const JULIA_FLOOR = v"1.12"
 
 include("Model.jl")          # the new tree begins here: types only, no behaviour
 include("Texts.jl")          # reading the texts a rule is about, and finding a place in them again
+include("Catalogue.jl")      # what this package knows, as values: the table, the rulebook, the register
 include("ConfigIO.jl")       # a package's own settings, read as data and never evaluated
 include("Engine.jl")         # what runs the rules; for now, the change guard
 include("TreeHash.jl")
