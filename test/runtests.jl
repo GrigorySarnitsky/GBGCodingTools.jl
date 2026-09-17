@@ -13,6 +13,7 @@ module ArchitectureTests; include("architecture.jl"); end
 module AnchorTests;      include("anchors.jl");      end
 module ConfigIOTests;    include("configio.jl");     end
 module GuardTests;       include("guard.jl");        end
+module DocfixTests;      include("docfix.jl");       end
 module SchemaTests;      include("schemas.jl");      end
 module ConfigTests;      include("config.jl");       end
 module ScanTests;        include("scans.jl");        end

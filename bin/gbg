@@ -11,11 +11,21 @@ devpath() {
 if [ "${1:-}" = "--dev" ]; then                       # (1) explicit dev route
   shift; P=$(devpath) || exit 2; GBG_DEV=1; export GBG_DEV
 else
-  d=$PWD                                             # (2) walk up to the nearest .gbg/config.toml
-  while [ "$d" != "/" ] && [ ! -f "$d/.gbg/config.toml" ]; do d=$(dirname "$d"); done
-  if [ ! -f "$d/.gbg/config.toml" ]; then P=$(devpath) || exit 2
+  d=$PWD                                             # (2) walk up to the nearest .gbg/ with a config
+  while [ "$d" != "/" ] && [ ! -f "$d/.gbg/config.toml" ] && [ ! -f "$d/.gbg/config.jl" ]; do d=$(dirname "$d"); done
+  if [ ! -f "$d/.gbg/config.toml" ] && [ ! -f "$d/.gbg/config.jl" ]; then
+    # No config anywhere above the working directory. This used to fall through to the dev checkout
+    # SILENTLY, so a command typed in the wrong directory ran against a different package's tree and
+    # said nothing. It refuses instead, and says where it looked.
+    echo "gbg: no .gbg/config.jl or .gbg/config.toml in $PWD or any directory above it" >&2
+    echo "     (run it inside a package, or use: gbg --dev <verb> for the dev checkout)" >&2
+    exit 2
   else
-    v=$(awk '/^\[tool\]/{t=1;next} t&&/^version[ \t]*=/{sub(/^[^"]*"/,""); sub(/".*$/,""); print; exit}' "$d/.gbg/config.toml")   # (3)
+    if [ -f "$d/.gbg/config.toml" ]; then             # (3) the pinned version, from whichever file is there
+      v=$(awk '/^\[tool\]/{t=1;next} t&&/^version[ \t]*=/{sub(/^[^"]*"/,""); sub(/".*$/,""); print; exit}' "$d/.gbg/config.toml")
+    else
+      v=$(awk '/tool[ \t]*=[ \t]*:dev/{print "dev"; exit} /tool[ \t]*=[ \t]*v"/{sub(/^.*v"/,""); sub(/".*$/,""); print; exit}' "$d/.gbg/config.jl")
+    fi
     if [ "$v" = "dev" ] && ! grep -q '^name = "GBGCodingTools"' "$d/Project.toml" 2>/dev/null; then   # (4) the fixture: enclosing tool repo
       r=$d; while [ "$r" != "/" ] && ! grep -q '^name = "GBGCodingTools"' "$r/Project.toml" 2>/dev/null; do r=$(dirname "$r"); done
       grep -q '^name = "GBGCodingTools"' "$r/Project.toml" 2>/dev/null || { echo "gbg: pin is dev but no enclosing GBGCodingTools repository" >&2; exit 2; }
