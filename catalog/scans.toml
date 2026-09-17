@@ -83,14 +83,6 @@ runner = "julia"
 fixture = ["left-right"]
 
 [[scan]]
-id = "SCAN.FIELD_DOCS"
-rule = "RULE.DOC.FIELDS"
-tier = "hard"
-surfaces = ["src", "ext"]
-runner = "julia"
-fixture = ["ghost-field", "undoc-field"]
-
-[[scan]]
 id = "SCAN.LINK_UNIFORMITY"
 rule = "RULE.DOC.LINKS"
 tier = "hard"

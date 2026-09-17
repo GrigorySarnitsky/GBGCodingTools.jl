@@ -208,11 +208,20 @@ A docstring whose text is interpolated is returned as written, since what a rule
 The argument is `path`, the file to read. Returns the blocks; a file that does not parse yields none.
 """
 function docstrings(path::AbstractString)
+    isfile(path) || return DocBlock[]
+    return docstrings_of(read(path, String); filename = path)
+end
+
+"""
+    docstrings_of(src; filename = "source.jl") -> Vector{DocBlock}
+
+The docstrings of Julia source held in memory, for a rule handed the text rather than the path. The
+arguments are `src`, the source, and `filename`, the name to parse it under. Returns the blocks.
+"""
+function docstrings_of(src::AbstractString; filename::AbstractString = "source.jl")
     out = DocBlock[]
-    isfile(path) || return out
-    src = read(path, String)
     tree = try
-        JS.parseall(JS.SyntaxNode, src; filename = path, ignore_errors = true)
+        JS.parseall(JS.SyntaxNode, src; filename, ignore_errors = true)
     catch
         return out
     end

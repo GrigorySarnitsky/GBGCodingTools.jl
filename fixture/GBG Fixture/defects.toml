@@ -60,16 +60,6 @@ scan = "SCAN.LEFTRIGHT"
 file = "defects/Defects.jl"
 fragment = "left(u"
 [[defect]]
-class = "ghost-field"
-scan = "SCAN.FIELD_DOCS"
-file = "defects/Defects.jl"
-fragment = "GHOST GhostField"
-[[defect]]
-class = "undoc-field"
-scan = "SCAN.FIELD_DOCS"
-file = "defects/Defects.jl"
-fragment = "UNDOC UndocField"
-[[defect]]
 class = "mixed-link-run"
 scan = "SCAN.LINK_UNIFORMITY"
 file = "defects/Defects.jl"
@@ -229,9 +219,6 @@ file = "src/FixtureB.jl"
 [[clean]]
 scan = "SCAN.MATHBF"
 file = "docs/ARCHITECTURE.md"
-[[clean]]
-scan = "SCAN.FIELD_DOCS"
-file = "src/FixtureA.jl"
 [[clean]]
 scan = "SCAN.LINK_UNIFORMITY"
 file = "src/FixtureA.jl"

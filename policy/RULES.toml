@@ -56,7 +56,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.FIELDS"
 statement = "A type with named, user-readable fields documents them under 'The fields are', one bullet per field, every bullet a real field and every field a bullet."
 sentinel = "A type that stores named, user-readable fields documents them under `The fields are`, one bullet per field, every bullet a real field and every field a bullet; prose is reserved for the one-sentence identity above the list."
-check = ["scan:SCAN.FIELD_DOCS"]
+check = ["rule:RULE.DOC.FIELDS"]  # converted 2026-09-17: src/Rules/docstrings.jl
 [[rule]]
 id = "RULE.DOC.ADMONITION_TITLE"
 file = "docs-rubric.md"

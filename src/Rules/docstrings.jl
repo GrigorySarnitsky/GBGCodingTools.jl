@@ -115,19 +115,18 @@ const FIELD_NAME = r"`([^`:\s,]+)(?:::[^`]*)?`"
     field_docs(path, cfg) -> Vector{Model.Location}
 
 Every documented type whose field list does not match its fields: one that names a field the type does
-not have, one that leaves a field out, and one with fields and no list at all. The arguments are `path`,
-the Julia file, and `cfg`, the package's config, which this rule does not read. Returns one location per
-type, quoting what is wrong.
+not have, one that leaves a field out, and one with fields and no list at all. The arguments are `src`,
+the Julia source, and `cfg`, the package's config, which this rule does not read. Returns one location
+per type, quoting what is wrong.
 
 It reads the parse tree rather than the text, so a keyword-default type — `Base.@kwdef struct` — is the
 same case as any other. Pairing a docstring with the next `struct` by eye is what made an earlier
 version of this check misread every type after one of those.
 """
-function field_docs(path::AbstractString, cfg)
+function field_docs(src::AbstractString, cfg)
     out = Model.Location[]
-    isfile(path) || return out
-    lines = split(read(path, String), '\n')
-    for d in Texts.docstrings(path)
+    lines = split(src, '\n')
+    for d in Texts.docstrings_of(src)
         fields = struct_fields(lines, d.node)
         isempty(fields) && continue
         documented = documented_fields(d.text)
@@ -191,15 +190,34 @@ const FIELDS = Model.Rule(
     statement = "A type with named fields documents them under \"The fields are\", one bullet per field: every bullet a real field, and every field a bullet.",
     why = "A field list that has drifted is worse than none: it names what does not exist and hides what does.",
     intention = Model.Intention.DOCUMENTATION,
-    filesets = [Model.FileSet.DOCSTRINGS],
-    check = Model.ProgramCheck(Model.Input.FILE_TREE, field_docs, false),
-)
+    filesets = [Model.FileSet.CODE],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, field_docs, false),
+    examples = [
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
+            [Model.Location(; file = "src/Example.jl", line = 1)], "every field a bullet"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
+            Model.Location[], "every field a bullet"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n- `c` — no such field.\n\"\"\"\nstruct S\n    a::Int\nend\n",
+            [Model.Location(; file = "src/Example.jl", line = 1)], "every bullet a real field"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",
+            Model.Location[], "every bullet a real field"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing with fields and no list.\n\"\"\"\nstruct S\n    a::Int\nend\n",
+            [Model.Location(; file = "src/Example.jl", line = 1)], "documents them under \"The fields are\""),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",
+            Model.Location[], "documents them under \"The fields are\""),
+    ])
 
 """
     RULES
 
 The rules of this batch, in the order they were converted.
 """
-const RULES = Model.Rule[ARG_BULLET, REGISTER]
+const RULES = Model.Rule[ARG_BULLET, REGISTER, FIELDS]
 
 end # module Docstrings
