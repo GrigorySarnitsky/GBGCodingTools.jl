@@ -15,6 +15,7 @@ include("helpers.jl")
 const LAYERS = Dict("src/Model.jl" => 1, "src/Texts.jl" => 2, "src/ConfigIO.jl" => 4,
                     "src/Rules/rendering.jl" => 3, "src/Rules/docstrings.jl" => 3,
                     "src/Rules/arguments.jl" => 3, "src/Rules/latex.jl" => 3,
+                    "src/Rules/judgement_api.jl" => 3, "src/Rules/judgement_cit.jl" => 3, "src/Rules/judgement_doc.jl" => 3, "src/Rules/judgement_git.jl" => 3, "src/Rules/judgement_inst.jl" => 3, "src/Rules/judgement_test.jl" => 3, "src/Rules/judgement_tex.jl" => 3,
                     "src/Engine.jl" => 5, "src/Engine/Guard.jl" => 5,
                     "src/CLI/Docfix.jl" => 8, "src/CLI/Check.jl" => 8,
                     "src/Catalogue.jl" => 3, "src/Engine/Checks.jl" => 5, "src/Engine/Harness.jl" => 5, "src/Render.jl" => 6)

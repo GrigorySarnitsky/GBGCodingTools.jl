@@ -87,6 +87,13 @@ include("Rules/rendering.jl")     # one file per batch of the conversion
 include("Rules/docstrings.jl")
 include("Rules/arguments.jl")
 include("Rules/latex.jl")
+include("Rules/judgement_api.jl")
+include("Rules/judgement_cit.jl")
+include("Rules/judgement_doc.jl")
+include("Rules/judgement_git.jl")
+include("Rules/judgement_inst.jl")
+include("Rules/judgement_test.jl")
+include("Rules/judgement_tex.jl")
 
 """
     RULES
@@ -96,7 +103,7 @@ check matches the statement. The ninety-five rules of `policy/RULES.toml` are co
 (`IMPLEMENTATION.md` §6), one file of `src/Rules/` per batch; `test/conversion.jl` holds the count still
 outstanding, which may only fall.
 """
-const RULES = Model.Rule[Rendering.RULES..., Docstrings.RULES..., Arguments.RULES..., Latex.RULES...]
+const RULES = Model.Rule[Rendering.RULES..., Docstrings.RULES..., Arguments.RULES..., Latex.RULES..., JudgementApi.RULES..., JudgementCit.RULES..., JudgementDoc.RULES..., JudgementGit.RULES..., JudgementInst.RULES..., JudgementTest.RULES..., JudgementTex.RULES...]
 
 """
     GENERATED

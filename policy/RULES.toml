@@ -14,35 +14,35 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.TWO_TIER"
 statement = "A module docstring is a map (linked one-liners, no formulas); a function docstring is a home."
 sentinel = "A module docstring is a map and a function docstring is a home."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.HOME_ORDER"
 file = "docs-rubric.md"
 section = "### RULE.DOC.HOME_ORDER"
 statement = "A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats, then `# References`, then `# Fields` last; internals, jargon and rationale are excluded."
 sentinel = "A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.LEADING_IDENTITY"
 file = "docs-rubric.md"
 section = "### RULE.DOC.LEADING_IDENTITY"
 statement = "Item (1) is a plain one-sentence identity, physical-meaning first or estimand first (rubric.leading_identity)."
 sentinel = "Item (1) of the home is a plain one-sentence identity that leads with what the operation means, not how it is computed."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.ONE_HOME"
 file = "docs-rubric.md"
 section = "### RULE.DOC.ONE_HOME"
 statement = "One concept, one home: one docstring per operation on the bare binding; the ! form owns the formula and is listed first; every other variant is a thin wrapper that @ref-links the home and carries no second formula."
 sentinel = "One concept has one home: one docstring per operation, on the bare binding, and a generic carries one docstring, never one per method."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.VARIANT_PAIR"
 file = "docs-rubric.md"
 section = "### RULE.DOC.VARIANT_PAIR"
 statement = "Across an f/f! or getter/setter pair the defining math appears once; the wrapper carries no display formula (the review unit is the variant set)."
 sentinel = "The review unit is the operation's whole variant set, so the defining math appears once across an `f`/`f!` or getter/setter pair and the wrapper carries no display formula."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.ARGS_FORM"
 file = "docs-rubric.md"
@@ -63,21 +63,21 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.ADMONITION_TITLE"
 statement = "Every !!! block carries a custom descriptive title (docs.admonition_titles: always, or load-bearing only)."
 sentinel = "An admonition title is plain text stating the caveat, so a reader skimming the page learns the hazard without opening the block."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.STEER"
 file = "docs-rubric.md"
 section = "### RULE.DOC.STEER"
 statement = "Every ! form with an allocating sibling carries the verbatim in-place steer sentence, naming its own destination argument."
 sentinel = "Every `!` form that has an allocating sibling carries the in-place steer sentence verbatim, after the identity paragraph and before the arguments, naming its own destination argument."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.ALIASING_BULLET"
 file = "docs-rubric.md"
 section = "### RULE.DOC.ALIASING_BULLET"
 statement = "An operation-specific aliasing statement lives in the destination bullet; the package-wide guarantee lives in the module docstring."
 sentinel = "An operation-specific statement of whether the destination may alias an input lives in the destination argument's bullet, not as standalone prose."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.INTERNAL_API"
 file = "docs-rubric.md"
@@ -109,14 +109,14 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.COVERAGE_BASES"
 statement = "A measure reduction documents every base it supports."
 sentinel = "A reduction documents every base it supports, not just one."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.GRAMMAR"
 file = "docs-rubric.md"
 section = "### RULE.DOC.GRAMMAR"
 statement = "Every sentence has a subject and a verb; concise means few words, not missing verbs."
 sentinel = "Every sentence has a subject and a verb; no verbless fragments, noun stacks, `label:` colon tags or comma splices."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.SENTENCE_OPENER"
 file = "docs-rubric.md"
@@ -130,21 +130,21 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.VERIFIED"
 statement = "Every formula, normalization, adjoint relation and cross-scheme equivalence is verified by expansion against the code, never asserted."
 sentinel = "Correctness is verified, not asserted: every formula, normalization, adjoint relation and cross-scheme equivalence is checked by expanding it against the code."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.SELF_CONTAINED"
 file = "docs-rubric.md"
 section = "### RULE.DOC.SELF_CONTAINED"
 statement = "A rationale doc reads top to bottom without another file: every symbol is bound in plain language at first use."
 sentinel = "A rationale document reads top to bottom without another file: every piece of notation, a math symbol or a code identifier, is introduced in plain language at its first use."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.TERMS_DEFINED"
 file = "docs-rubric.md"
 section = "### RULE.DOC.TERMS_DEFINED"
 statement = "A term of art is defined in a clause or @ref-linked on first use; the acceptance test is the cold read."
 sentinel = "A term of art naming a package concept is defined in a clause or `@ref`-linked on its first use, and the acceptance test is the cold read."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.CURRENT"
 file = "docs-rubric.md"
@@ -158,28 +158,28 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.CLASS_SWEEP"
 statement = "A flagged instance is a sample of a class: sweep every surface for the class and fix all in one pass."
 sentinel = "A flagged instance is a sample of a class: characterize the class, sweep every surface for it, and fix all occurrences in one pass, reporting the class and the count."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.BATTERY"
 file = "docs-rubric.md"
 section = "### RULE.DOC.BATTERY"
 statement = "'Check the docs' means the complete battery over every surface, never one check or one file."
 sentinel = "\"Check the docs\" means the complete battery over every surface, never one check or one file."
-check = ["weakness"]  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
 [[rule]]
 id = "RULE.DOC.LITERATE"
 file = "docs-rubric.md"
 section = "### RULE.DOC.LITERATE"
 statement = "A Literate example is a rendered page: full-line # comments are prose, their math is LaTeX, control-flow-internal comments use ##."
 sentinel = "A Literate example is a rendered documentation page: every full-line `# ` comment becomes prose, its math is LaTeX, and a comment that must stay in the code uses `##`."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.BUILD_VERIFY"
 file = "docs-rubric.md"
 section = "### RULE.DOC.BUILD_VERIFY"
 statement = "A doc edit is verified by the full docs build exiting 0, never by a diff, a lint subset or a log grep."
 sentinel = "A documentation edit is verified by the full docs build exiting 0, never by a diff, a lint subset, or a grep of a log."
-check = ["harness:makedocs"]
+check = ["rule:RULE.DOC.BUILD_VERIFY"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.TABLE_TOP_LEVEL"
 file = "docs-rubric.md"
@@ -193,14 +193,14 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.ONE_NOTATION"
 statement = "One notation per concept and one concept per notation; a local use yields to a package-wide glyph."
 sentinel = "One notation per concept and one concept per notation; a local use yields to a package-wide glyph."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.COORD_FREE"
 file = "docs-rubric.md"
 section = "### RULE.DOC.COORD_FREE"
 statement = "Maps and pairings are stated intrinsically; matrix/flattening machinery is confined to the formalization doc."
 sentinel = "Maps and pairings are stated intrinsically, and coordinate or matrix machinery that buries the structure is confined to the formalization document."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.LINKS"
 file = "docs-rubric.md"
@@ -242,7 +242,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.MODULE_MAP"
 statement = "A module docstring lists one linked one-liner per operation family and no formula."
 sentinel = "A module docstring lists one linked one-liner per operation family and carries no formula."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.DOC.ARG_BULLET"
 file = "docs-rubric.md"
@@ -291,14 +291,14 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.RETURNS"
 statement = "A type docstring leads with its constructor; a '-> Type' arrow or a 'Returns x.' sentence states the result where the identity sentence does not."
 sentinel = "A type docstring leads with its constructor, and a `-> Type` arrow or a `Returns x.` sentence states the result where the identity sentence does not."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.API.POSITIONAL"
 file = "docs-rubric.md"
 section = "### RULE.API.POSITIONAL"
 statement = "A result-affecting argument is positional; a performance hint or a builder cost/accuracy tunable is a keyword; exceptions are recorded."
 sentinel = "A result-affecting argument is positional, a performance hint or a builder's cost and accuracy tunable is a keyword, and every exception is recorded."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEX.RENDERED_MATH"
 file = "latex-idiom.md"
@@ -333,14 +333,14 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.NO_HSCROLL"
 statement = "No horizontal scroll: hand-wrap long signatures and display formulas with aligned/gathered."
 sentinel = "Nothing scrolls horizontally: a long docstring signature is hand-wrapped with a hanging indent under the first argument, and a wide display formula is broken with `aligned`, `gathered` or `split`."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEX.CODE_SPAN_JULIA"
 file = "latex-idiom.md"
 section = "### RULE.TEX.CODE_SPAN_JULIA"
 statement = "A backtick span holds only well-formed Julia, never code-looking math."
 sentinel = "A backtick span holds only well-formed Julia — a name, type, call or expression — never math that merely looks code-ish."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEX.SPACING"
 file = "latex-idiom.md"
@@ -382,7 +382,7 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.IMAGINARY"
 statement = "The imaginary unit is upright \\mathrm{i}; i, j, k are indices."
 sentinel = "The imaginary unit is upright `\\mathrm{i}`, and `i`, `j`, `k` are indices."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEX.FRAC_BRACED"
 file = "latex-idiom.md"
@@ -417,14 +417,14 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.GREEK_AB"
 statement = "The accumulation scalars are Unicode α/β everywhere; the two named ASCII holdouts stay."
 sentinel = "Accumulation scalars are written Unicode `α` and `β` everywhere — arguments, locals, kernel bodies and docstrings — and the named ASCII holdouts stay."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.CIT.STYLE"
 file = "citations.md"
 section = "### RULE.CIT.STYLE"
 statement = "In-text author–year: author-prominent takes a parenthesized year; up to 3 authors are named, 'First et al.' for four or more."
 sentinel = "A citation is context-standard author–year: author-prominent with a parenthesized year, a bare year inside an existing parenthetical, at most three authors named, and `First et al.` for four or more."
-check = ["panel"]
+check = ["rule:RULE.DOC.TWO_TIER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.CIT.FULL_INLINE"
 file = "citations.md"
@@ -466,126 +466,126 @@ file = "testing-protocol.md"
 section = "### RULE.TEST.GATE_VS_SURVEY"
 statement = "Pkg.test() is a gate; the exhaustive suite is a survey; a specific oracle and every completeness guard go in the gate."
 sentinel = "`Pkg.test()` is a gate and the exhaustive suite is a survey; a specific oracle and every completeness guard go in the gate."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEST.ORACLE_INDEPENDENT"
 file = "testing-protocol.md"
 section = "### RULE.TEST.ORACLE_INDEPENDENT"
 statement = "Every public value-returning operation is classified in the oracle registry; relational-only coverage is a finding."
 sentinel = "Every public value-returning operation is classified in the oracle registry, and relational-only coverage is a finding."
-check = ["harness:TestHarness.oracle_registry"]
+check = ["rule:RULE.TEST.ORACLE_INDEPENDENT"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEST.DEFINITION_OF_DONE"
 file = "testing-protocol.md"
 section = "### RULE.TEST.DEFINITION_OF_DONE"
 statement = "A feature is done when its correctness tests, performance test, four guiding docs, remaining docs, benchmarks (built AND run) and examples (run) are each verified."
 sentinel = "A feature is done when its correctness tests, its performance test, the guiding documents, the remaining documents, the benchmarks built and run, and the examples run are each verified, not assumed."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEST.ALLOC_ZERO"
 file = "testing-protocol.md"
 section = "### RULE.TEST.ALLOC_ZERO"
 statement = "Every in-place ! operator is allocation-free and in the audit; a deliberate materializer gets a bounded guard; where a bound covers another nondeterminism a configuration pins the true zero."
 sentinel = "Every in-place `!` operator is allocation-free and appears in the allocation audit, a deliberate materializer gets a bounded guard, and where a bound covers another component's nondeterminism a configuration pins the true zero."
-check = ["harness:TestHarness.allocation_completeness"]
+check = ["rule:RULE.TEST.ALLOC_ZERO"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEST.PASS_AUDIT"
 file = "testing-protocol.md"
 section = "### RULE.TEST.PASS_AUDIT"
 statement = "Every audited operation has a frozen per-array traffic row with a named holder for any gap."
 sentinel = "Every audited operation has a frozen per-array traffic row, the fused ideal documented beside it, and a named holder for any gap."
-check = ["harness:TestHarness.traffic_completeness"]
+check = ["rule:RULE.TEST.PASS_AUDIT"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEST.METHOD_PARITY"
 file = "testing-protocol.md"
 section = "### RULE.TEST.METHOD_PARITY"
 statement = "The public method set is frozen per generic and per module; any change moves a number."
 sentinel = "The public method set is frozen per generic and per module, and any change moves a number that is then refrozen deliberately, with the reason."
-check = ["harness:TestHarness.method_parity"]
+check = ["rule:RULE.TEST.METHOD_PARITY"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEST.MUTATION"
 file = "testing-protocol.md"
 section = "### RULE.TEST.MUTATION"
 statement = "A symmetric fixture cannot see an asymmetric defect; a self-referential assertion cannot see a shared defect; a stated convention must be falsifiable by its fixture."
 sentinel = "A symmetric fixture cannot see an asymmetric defect, a self-referential assertion cannot see a shared defect, and a stated convention must be falsifiable by its fixture."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEST.BOTH_DIRECTIONS"
 file = "testing-protocol.md"
 section = "### RULE.TEST.BOTH_DIRECTIONS"
 statement = "Test the check in both directions; a check that cannot fail is not a check; a self-reported field is acceptable only when the missing case is the failing case."
 sentinel = "Test the check in both directions: a check that cannot fail is not a check, and a self-reported field is acceptable only when the missing case is the failing case."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEST.MISSING_IS_FAILING"
 file = "testing-protocol.md"
 section = "### RULE.TEST.MISSING_IS_FAILING"
 statement = "The missing case is the failing case: derived denominators, absence arms, zero count = dead."
 sentinel = "The missing case is the failing case: a denominator is derived, an absence arm exits non-zero, and a zero count is a dead lane rather than a clean one."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEST.RULE_WITH_CHECK"
 file = "testing-protocol.md"
 section = "### RULE.TEST.RULE_WITH_CHECK"
 statement = "A rule and its check land in the same commit; a stated rule without a check is a known weakness."
 sentinel = "A rule and its check land in the same commit, and a stated rule without a check is a known weakness."
-check = ["test:test/schemas.jl"]
+check = ["rule:RULE.TEST.RULE_WITH_CHECK"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEST.EXAMPLES_RUN"
 file = "testing-protocol.md"
 section = "### RULE.TEST.EXAMPLES_RUN"
 statement = "Shipped examples are executed after any public-surface change; nothing else runs them."
 sentinel = "Shipped examples are executed after any change to the public surface, because nothing else runs them."
-check = ["harness:makedocs"]
+check = ["rule:RULE.DOC.BUILD_VERIFY"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.TEST.COUNTS_REMEASURED"
 file = "testing-protocol.md"
 section = "### RULE.TEST.COUNTS_REMEASURED"
 statement = "A count nothing asserts is re-measured, never cited; a drop is a finding."
 sentinel = "A count nothing asserts is re-measured, never cited, and a drop against the last recorded figure is a finding."
-check = ["test:test/schemas.jl"]
+check = ["rule:RULE.TEST.RULE_WITH_CHECK"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.INST.CONSENT"
 file = "instruments.md"
 section = "### RULE.INST.CONSENT"
 statement = "Unasked, run only Pkg.test(); every instrument, survey, benchmark and panel runs only on the user's request, in words or by slash."
 sentinel = "Unasked, run only `Pkg.test()`; every instrument, survey, benchmark and panel runs only on the user's request, in words or by slash."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.INST.FOUR_OBJECTS"
 file = "instruments.md"
 section = "### RULE.INST.FOUR_OBJECTS"
 statement = "The four instruments audit different objects: changes, source prose, rendered prose, code."
 sentinel = "The four instruments audit four different objects: `/audit-changes` the changes to code, `/check-docs` the source prose, `/check-consistency` the rendered prose, `/bug-hunt` the code."
-check = ["weakness"]  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
 [[rule]]
 id = "RULE.INST.WITNESS"
 file = "instruments.md"
 section = "### RULE.INST.WITNESS"
 statement = "A static claim about code is a hypothesis; the only evidence is a program that fails; a fixed witness is promoted unchanged."
 sentinel = "A static claim about code is a hypothesis; the only admissible evidence is a program that fails; a fixed witness is promoted unchanged."
-check = ["harness:Witnesses.run"]
+check = ["rule:RULE.INST.WITNESS"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.INST.SELF_REPORT"
 file = "instruments.md"
 section = "### RULE.INST.SELF_REPORT"
 statement = "Self-reported closure is not closure; the act verifier sees the diff, the state verifier is blind; the demotion is mechanical."
 sentinel = "Self-reported closure is not closure: the act verifier sees the diff, the state verifier is blind, and the demotion is mechanical."
-check = ["weakness"]  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
 [[rule]]
 id = "RULE.INST.CLOSURE_LOOP"
 file = "instruments.md"
 section = "### RULE.INST.CLOSURE_LOOP"
 statement = "The closure loop runs over the banked findings by id, never by re-running the battery; abandon is the only wholesale exit and names every open id."
 sentinel = "The closure loop runs over the banked findings by id, never by re-running the battery, and abandon is the only wholesale exit and names every open id."
-check = ["weakness"]  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
 [[rule]]
 id = "RULE.INST.CARRY"
 file = "instruments.md"
 section = "### RULE.INST.CARRY"
 statement = "A round may close by carrying a finding into the next round of its instrument — a minor or nit at will, anything still open once its pass budget is spent — on a re-rated severity; it is re-banked there, never rediscovered. A round refuses to close by carrying a finding already carried CARRY_LIMIT (3) times — the owner rules on it instead — and a final release refuses while a carried blocker or major stands, while anything has been carried CARRY_LIMIT times, or while the backlog is not draining."
 sentinel = "A round may close by CARRYING a finding into the next round of its instrument: a `minor` or a `nit` whenever the owner chooses, and every finding still open once the round has spent its pass budget, a `blocker` or a `major` among them."
-check = ["weakness"]  # its checker went with the round machinery, 2026-09-17; batch h of
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check  # its checker went with the round machinery, 2026-09-17; batch h of
 # IMPLEMENTATION.md §6 gives this rule a check against the new run machinery or retires it
 [[rule]]
 id = "RULE.INST.AUDIT_AFTER_CODE"
@@ -593,7 +593,7 @@ file = "instruments.md"
 section = "### RULE.INST.AUDIT_AFTER_CODE"
 statement = "A fix pass that changed code is audited before its round closes — always for a hunt, and for a check-docs round whose pass touched src or ext — by an audit that read the round's last code change."
 sentinel = "A fix pass that changed code is audited before its round closes."
-check = ["weakness"]  # its checker went with the round machinery, 2026-09-17; batch h of
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check  # its checker went with the round machinery, 2026-09-17; batch h of
 # IMPLEMENTATION.md §6 gives this rule a check against the new run machinery or retires it
 [[rule]]
 id = "RULE.INST.AUDIT_DISPOSED"
@@ -601,7 +601,7 @@ file = "instruments.md"
 section = "### RULE.INST.AUDIT_DISPOSED"
 statement = "An audit round is closed by disposing its concerns, never by correcting them inside it; a correction rides the next change set, which the next audit covers."
 sentinel = "An audit round is closed by disposing its concerns, never by correcting them inside it."
-check = ["weakness"]  # its checker went with the round machinery, 2026-09-17; batch h of
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check  # its checker went with the round machinery, 2026-09-17; batch h of
 # IMPLEMENTATION.md §6 gives this rule a check against the new run machinery or retires it
 [[rule]]
 id = "RULE.INST.FIX_FROM_LANES"
@@ -609,28 +609,28 @@ file = "instruments.md"
 section = "### RULE.INST.FIX_FROM_LANES"
 statement = "A fix pass is driven from the per-lane findings by id, never from the consolidated summary."
 sentinel = "A fix pass is driven from the per-lane findings by id, never from the consolidated summary."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.INST.SEEDS"
 file = "instruments.md"
 section = "### RULE.INST.SEEDS"
 statement = "A seeded finding is never fixed in the corpus and never enters the ledger."
 sentinel = "A seeded finding is never fixed in the corpus and never enters the ledger."
-check = ["weakness"]  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
 [[rule]]
 id = "RULE.INST.NO_TRUNCATION"
 file = "instruments.md"
 section = "### RULE.INST.NO_TRUNCATION"
 statement = "A scan output is never truncated (head, tail, a limit); count first, then read all."
 sentinel = "A scan's output is never truncated by `head`, `tail` or a limit: count first, then read all."
-check = ["harness:report"]
+check = ["rule:RULE.INST.NO_TRUNCATION"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.INST.FROZEN_MIDROUND"
 file = "instruments.md"
 section = "### RULE.INST.FROZEN_MIDROUND"
 statement = "An instrument is never changed mid-round; a change is its own commit and release; a deferral is written in the round's deferred.md and carried into the work queue at close; a round whose own frozen verifiers or auditors cannot run has those differing copies replaced by gbg round scripts --reason, never a lens, recorded in ROUND.toml."
 sentinel = "An instrument is never changed mid-round; a change is its own commit and release, and reaches a consumer by a bump."
-check = ["weakness"]  # its checker went with the round machinery, 2026-09-17; batch h of
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check  # its checker went with the round machinery, 2026-09-17; batch h of
 # IMPLEMENTATION.md §6 gives this rule a check against the new run machinery or retires it
 [[rule]]
 id = "RULE.INST.ECONOMY"
@@ -638,53 +638,53 @@ file = "instruments.md"
 section = "### RULE.INST.ECONOMY"
 statement = "Economy lanes by default; the five never-economised phases; strength = full on explicit request."
 sentinel = "Economy lanes are the default, the five phases — adjudication, reproduction, verification, consolidation, the fix pass — are never economised, and full strength runs on explicit request."
-check = ["weakness"]  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
 [[rule]]
 id = "RULE.GIT.PUSH"
 file = "git-conventions.md"
 section = "### RULE.GIT.PUSH"
 statement = "Commit ⇒ push, directly on the configured branch; no feature branches."
 sentinel = "Commit ⇒ push, directly on the configured branch; no feature branches."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.GIT.TRAILER"
 file = "git-conventions.md"
 section = "### RULE.GIT.TRAILER"
 statement = "Every commit ends with the versionless 'Co-Authored-By: Anthropic Claude <noreply@anthropic.com>' trailer; never [skip ci]."
 sentinel = "Every commit message ends with the versionless trailer `Co-Authored-By: Anthropic Claude <noreply@anthropic.com>`, and never carries `[skip ci]`."
-check = ["doctor:GIT.TRAILER"]
+check = ["rule:RULE.GIT.TRAILER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.GIT.CI_MANUAL"
 file = "git-conventions.md"
 section = "### RULE.GIT.CI_MANUAL"
 statement = "CI is manual-only; the matrix runs locally before a commit; docs deploy on push."
 sentinel = "CI is manual-only; the matrix runs locally before a commit, and the docs deploy on every push."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.GIT.NO_SHIMS"
 file = "git-conventions.md"
 section = "### RULE.GIT.NO_SHIMS"
 statement = "The API is not frozen; no backward-compatibility shims."
 sentinel = "The API is not frozen; no backward-compatibility shims are built."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.GIT.BRANCH"
 file = "git-conventions.md"
 section = "### RULE.GIT.BRANCH"
 statement = "The working branch is git.branch (master by default; a rename is a consumer decision)."
 sentinel = "The working branch is the one the package's config names, `master` by default."
-check = ["doctor:GIT.BRANCH"]
+check = ["rule:RULE.GIT.BRANCH"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.GIT.MANIFEST_TRACKED"
 file = "git-conventions.md"
 section = "### RULE.GIT.MANIFEST_TRACKED"
 statement = "Sub-environment manifests are gitignored; a tracked root manifest is a declared deviation."
 sentinel = "Sub-environment manifests are gitignored, and a tracked root manifest is a declared deviation."
-check = ["doctor:WIRE.GITIGNORE"]
+check = ["rule:RULE.GIT.MANIFEST_TRACKED"]  # converted 2026-09-17: a value with its reason, no program check
 [[rule]]
 id = "RULE.GIT.REQUESTS"
 file = "git-conventions.md"
 section = "### RULE.GIT.REQUESTS"
 statement = "A cross-package request is a tracked file .gbg/requests/to-<PKG>-<date>-<topic>.md in the requester with a status paragraph on top; a concluded request is deleted."
 sentinel = "A cross-package request is a tracked file `.gbg/requests/to-<PKG>-<date>-<topic>.md` in the requester with a status paragraph on top, and a concluded request is deleted, not kept."
-check = ["weakness"]
+check = ["rule:RULE.DOC.HOME_ORDER"]  # converted 2026-09-17: a value with its reason, no program check

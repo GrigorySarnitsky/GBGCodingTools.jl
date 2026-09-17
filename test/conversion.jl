@@ -20,7 +20,7 @@ const REGISTER = joinpath(TOOL, "docs", "design-record", "RULES-v1.toml")
 const RETIRED = Dict{String,String}()
 
 # How many ids are still neither converted nor retired. LOWER THIS AND NEVER RAISE IT.
-const ALLOWANCE = 77
+const ALLOWANCE = 18
 
 @testset "the rulebook conversion" begin
     ids = [String(r["id"]) for r in TOML.parsefile(REGISTER)["rule"]]
