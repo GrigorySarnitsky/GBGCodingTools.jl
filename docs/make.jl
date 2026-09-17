@@ -37,7 +37,10 @@ end
 
 result = GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
     sitename = "GBGCodingTools",
-    modules = [GBGCodingTools, TestHarness, Reflection, Witnesses, Config],
+    modules = [GBGCodingTools, TestHarness, Reflection, Witnesses, Config,
+               GBGCodingTools.Model, GBGCodingTools.Texts, GBGCodingTools.Catalogue,
+               GBGCodingTools.ConfigIO, GBGCodingTools.Render, GBGCodingTools.Engine.Checks,
+               GBGCodingTools.Engine.Guard, GBGCodingTools.Engine.Harness],
     checkdocs = :exports,
     doctest = true,
     warnonly = [:missing_docs],       # explicit @docs blocks, no `export`: :exports checkdocs has nothing to say
@@ -48,7 +51,11 @@ result = GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
         # The guide reads as a sequence first (set up, run a review, see what it produces, read what it judges
         # against), then the four reference tables, most consulted first (2026-09-09, the owner's ruling).
         "Guide" => ["guide/install.md", "guide/rules.md", "guide/verbs.md", "guide/config.md"],
-        "API" => ["api/TestHarness.md", "api/Reflection.md", "api/Witnesses.md", "api/Config.md", "api/CLI.md"],
+        # The new tree in its own order — a module may name only the modules above it — then what is
+        # left of the old one.
+        "API" => ["api/Model.md", "api/Texts.md", "api/Catalogue.md", "api/ConfigIO.md", "api/Engine.md",
+                  "api/Render.md", "api/TestHarness.md", "api/Reflection.md", "api/Witnesses.md",
+                  "api/Config.md", "api/CLI.md"],
         "Architecture" => "architecture.md",
     ],
 )
