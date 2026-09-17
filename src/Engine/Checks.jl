@@ -111,7 +111,8 @@ Everywhere the rule is broken in the package at `root`. The arguments are:
 A rule an agent decides, or one with no check at all, reports nothing here: this is the program half.
 Returns the locations, in file and line order.
 """
-function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; network::Bool = false)
+function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; network::Bool = false,
+                  pkg = nothing, site = nothing)
     check = rule.check
     check isa Model.ProgramCheck || return Model.Location[]
     check.network && !network && return Model.Location[]
@@ -137,8 +138,17 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
         end
     elseif check.input === Model.Input.FILE_TREE
         append!(out, check.run(root, cfg))
+    elseif check.input === Model.Input.LOADED_MODULE
+        # The package itself, loaded. A caller that has not loaded it — `gbg check` run from outside a
+        # package's own environment — passes nothing, and the rule is NOT silently skipped: it is the
+        # caller's business to say so, which `run_all` does by returning the rules it could not run.
+        pkg === nothing && return Model.Location[]
+        append!(out, check.run(pkg, cfg))
+    elseif check.input === Model.Input.BUILT_SITE
+        site === nothing && return Model.Location[]
+        append!(out, check.run(site, cfg))
     else
-        return Model.Location[]      # LOADED_MODULE, BUILT_SITE and QUESTION are run by their own callers
+        return Model.Location[]      # a QUESTION check is run when a question is put, by `Questions`
     end
     return sort!(out; by = l -> (l.file, l.line))
 end
@@ -165,11 +175,39 @@ the documentation rules in a docs build, the code rules in a test suite — or f
 
 Returns the locations, in file and line order.
 """
-function run_all(cfg::Model.Config, root::AbstractString; intention = nothing, network::Bool = false)
+function run_all(cfg::Model.Config, root::AbstractString; intention = nothing, network::Bool = false,
+                 pkg = nothing, site = nothing)
     out = Model.Location[]
     for rule in Catalogue.RULES
         intention === nothing || rule.intention === intention || continue
-        append!(out, run_rule(rule, cfg, root; network))
+        append!(out, run_rule(rule, cfg, root; network, pkg, site))
+    end
+    return out
+end
+
+"""
+    not_run(cfg; pkg = nothing, site = nothing, network = false) -> Vector{Symbol}
+
+The rules a run could not reach, and why it could not: those that read the loaded package where nothing
+loaded it, those that read the built site where none was built, and those that reach the network where
+that was not allowed. The arguments are:
+
+- `cfg` — the package's config.
+- `pkg` — the loaded package, or `nothing`.
+- `site` — the built site's directory, or `nothing`.
+- `network` — whether a check that reaches the network was allowed.
+
+Returns the rule ids, so a caller can say what it did not check rather than reporting clean.
+"""
+function not_run(cfg::Model.Config; pkg = nothing, site = nothing, network::Bool = false)
+    out = Symbol[]
+    for rule in Catalogue.RULES
+        check = rule.check
+        check isa Model.ProgramCheck || continue
+        applies(cfg, rule.id) || continue
+        (check.input === Model.Input.LOADED_MODULE && pkg === nothing) && (push!(out, rule.id); continue)
+        (check.input === Model.Input.BUILT_SITE && site === nothing) && (push!(out, rule.id); continue)
+        (check.network && !network) && push!(out, rule.id)
     end
     return out
 end

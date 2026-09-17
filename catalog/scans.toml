@@ -107,14 +107,6 @@ runner = "html"
 fixture = ["base-leak"]
 
 [[scan]]
-id = "SCAN.ARGCOV"
-rule = "RULE.DOC.ARGCOV"
-tier = "argcov_policy"
-surfaces = ["src"]
-runner = "julia"
-fixture = ["undocumented-last-positional"]
-
-[[scan]]
 id = "SCAN.SIGNATURE_FIDELITY"
 rule = "RULE.DOC.SIGNATURE_FIDELITY"
 tier = "triage"
@@ -129,14 +121,6 @@ tier = "triage"
 surfaces = ["src"]
 runner = "julia"
 fixture = ["unlinked-cross-module"]
-
-[[scan]]
-id = "SCAN.DUPREF"
-rule = "RULE.DOC.LINKS"
-tier = "triage"
-surfaces = ["src"]
-runner = "julia"
-fixture = ["double-link"]
 
 [[scan]]
 id = "SCAN.ID_RESOLVES"

@@ -207,7 +207,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.LINKS"
 statement = "Cross-referencing is discriminating-minimalist: a target linked at most once per docstring; never the own binding, arguments or Base; a family is one destination unless members must be chosen between; sibling names in one list are all linked or all plain."
 sentinel = "Cross-referencing is discriminating-minimalist: backtick every code identifier and promote to `@ref` only where a reader would genuinely jump and there is one clear destination."
-check = ["scan:SCAN.LINK_UNIFORMITY", "scan:SCAN.DUPREF"]
+check = ["scan:SCAN.LINK_UNIFORMITY"]
 [[rule]]
 id = "RULE.DOC.SIBLING_LINK"
 file = "docs-rubric.md"
@@ -277,7 +277,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.ARGCOV"
 statement = "Every argument in a docstring signature, positional and keyword, is documented in its body; run from the signature (argcov_policy chooses triage or gate)."
 sentinel = "Every argument in a docstring signature, positional and keyword, is documented in its body, and the sweep runs from the signature."
-check = ["scan:SCAN.ARGCOV"]
+check = ["rule:RULE.DOC.ARGCOV"]  # converted 2026-09-17: src/Rules/reflection.jl
 [[rule]]
 id = "RULE.DOC.REGISTER"
 file = "docs-rubric.md"

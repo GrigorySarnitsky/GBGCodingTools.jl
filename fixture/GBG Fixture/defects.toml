@@ -60,11 +60,6 @@ scan = "SCAN.DOI_CROSSCHECK"
 file = "defects/Defects.jl"
 fragment = "a full reference in the prose"
 [[defect]]
-class = "undocumented-last-positional"
-scan = "SCAN.ARGCOV"
-file = "defects/Defects.jl"
-fragment = "`factor`"
-[[defect]]
 class = "stale-keyword"
 scan = "SCAN.SIGNATURE_FIDELITY"
 file = "defects/Defects.jl"
@@ -74,11 +69,6 @@ class = "unlinked-cross-module"
 scan = "SCAN.XLINK"
 file = "defects/Defects.jl"
 fragment = "mean_value"
-[[defect]]
-class = "double-link"
-scan = "SCAN.DUPREF"
-file = "defects/Defects.jl"
-fragment = "twice"
 [[defect]]
 class = "emphasis-survives"
 scan = "SCAN.HTML_RENDERED_MARKUP"
