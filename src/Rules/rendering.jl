@@ -242,9 +242,10 @@ Every place a math span and a code span sit against each other, in either order.
 `text`, the file's prose, and `cfg`, the package's config, which this rule does not read. Returns one
 location per line.
 
-Binding a code object to its symbol is ONE span — `\\texttt{name} \\equiv \\varepsilon` — because two
-abutting spans render as two disjoint runs at different sizes. The known false positive is plain
-adjacency of unrelated things, which is why this rule is worth reading before obeying.
+Two abutting spans render as two disjoint runs at different sizes, and the reader is left to guess
+whether the second continues the first, qualifies it, or defines it. Which remedy applies depends on
+what the name is DOING, and the rule's own prose says how to choose. The known false positive is plain
+adjacency of unrelated things — a size beside a type — which is why this is worth reading before obeying.
 """
 function one_span(text::AbstractString, cfg)
     return [Model.Location(; file = "", line = i, text = strip(String(line)))
@@ -254,22 +255,32 @@ end
 """
     ONE_SPAN
 
-A formula is one LaTeX span, never split across a math span and an adjacent code span.
+A code span and a math span are never set against each other; which remedy applies depends on what the
+name is doing in the sentence.
 """
 const ONE_SPAN = Model.Rule(
     id = Symbol("RULE.TEX.ONE_SPAN"),
-    statement = "A formula is one LaTeX span, never split across a math span and an adjacent code span.",
-    why = "Two abutting spans render as two disjoint runs at different sizes, not as one binding.",
+    statement = "A code span and a math span are never set against each other: where the name is an operand of the formula it goes inside it as \\texttt{…}, and where the formula names what the code denotes a connective joins the two.",
+    why = "Abutting spans render as two disjoint runs at different sizes, leaving the reader to guess whether the second continues the first, qualifies it, or defines it. Apposition says which: `atol` (``\\varepsilon``) keeps the name styled as code — clickable, and the same as every other name on the page — while `\\texttt{atol}` is the math renderer's monospace, and a link wrapped round the whole formula makes its every operator a link to the name.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
     check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, one_span, false),
     examples = [
+        # The formula NAMES what the code denotes: two spans, joined. A parenthesis, an em dash, a
+        # comma or a colon all serve; `≡` is not a connective, it is the thing the connective replaces.
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe tolerance `atol` ``\\equiv \\varepsilon`` is fixed.\n",
-            [Model.Location(; file = "docs/src/page.md", line = 3)], "never split across two spans"),
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "a connective joins the two"),
         Model.TextExample(Model.FileSet.PAGES,
-            "# A page\n\nThe tolerance ``\\texttt{atol} \\equiv \\varepsilon`` is fixed.\n",
-            Model.Location[], "never split across two spans"),
+            "# A page\n\nThe tolerance `atol` (``\\varepsilon``) is fixed.\n",
+            Model.Location[], "a connective joins the two"),
+        # The name is an OPERAND of the formula: one span, the name set as text inside it.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe loop runs while `maxiter` ``\\le n`` holds.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "inside it as \\texttt{…}"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe loop runs while ``\\texttt{maxiter} \\le n`` holds.\n",
+            Model.Location[], "inside it as \\texttt{…}"),
     ])
 
 """

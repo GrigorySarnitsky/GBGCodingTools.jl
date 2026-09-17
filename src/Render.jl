@@ -320,7 +320,9 @@ function write_pin(cfg::Model.Config, root::AbstractString, envdir::AbstractStri
         end
         println(io)
     end
-    text = String(take!(io))
+    # One trailing newline, not the blank line each section loop leaves: a generated file that differs
+    # from the package's own only in trailing whitespace is churn in every diff that touches it.
+    text = rstrip(String(take!(io))) * "\n"
     isfile(path) && read(path, String) == text && return false
     mkpath(dirname(path)); write(path, text)
     return true

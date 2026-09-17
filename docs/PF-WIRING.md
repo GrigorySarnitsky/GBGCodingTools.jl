@@ -82,41 +82,37 @@ run inside `docs/make.jl` and `Pkg.test()` once PF calls them.
 | `RULE.CIT.DOI` | 2 | Hockney & Eastwood and Brandt & Lubrecht are cited with no DOI on the title. |
 | `SIBLING_LINK`, `MATHBF`, `BLOCK_LIST`, `SENTENCE_OPENER` | 1 each | One-line fixes, except `MATHBF`, which is a config line: PF must declare which `\mathbf{…}` strings it uses. |
 
-### The largest class, `RULE.TEX.ONE_SPAN` (35), and how to fix it
+### The largest class, `RULE.TEX.ONE_SPAN` (35)
 
-Almost all 35 are one idiom of PF's module maps:
+Thirty-two of the 35 are one construct, with and without a link:
 
     - [`gradient`](@ref) ``\equiv \nabla`` raises the tensor order …
+    Compute the gradient (`gradient` ``\equiv \nabla``) of a field …
 
-**Add a connective. Do not move the name into the formula.**
+PF is doing something the rulebook had no form for: **binding a code name to the mathematical object it
+denotes**, so a module map can be read from either side — by someone who knows ``\nabla`` and wants the
+function, or who knows `gradient` and wants the operator. GBGStreamingStatistics does the same thing in
+its own prose. It is a real and recurring need in a mathematical package, and PF invented `≡` and
+adjacency for it because nothing else was offered.
+
+The rule now states the house form, and it is apposition — the two spans kept apart by a connective:
 
     - [`gradient`](@ref) (``\nabla``) raises the tensor order …
+    Compute the gradient (`gradient`, ``\nabla``) of a field …
 
-The rule matches a code span and a math span separated by nothing but whitespace, so any word or mark
-between them satisfies it: `(``\nabla``)`, `— ``\nabla`` —`, `, which is ``\nabla``,`, `: ``\nabla```.
-All four were run against `ONE_SPAN`, `REF_ABUT`, `CODE_IN_MATH` and `RENDERED_MATH`; none fires. The
-edit is two characters a line.
+A parenthesis, an em dash, a comma or a colon all serve. `≡` is not a connective; it is the thing the
+connective replaces, and dropping it is how mathematical writing has always done this — "the gradient
+operator ∇", not "gradient ≡ ∇".
 
-The other form that satisfies the rule — putting the name inside the formula, which is what
-`RULE.TEX.CODE_IN_MATH` prescribes for a name that is genuinely part of one — is WORSE here, and the
-rendered HTML says why:
+Do NOT move the name into the formula as `` ``\texttt{gradient} \equiv \nabla`` ``. That also satisfies
+the check, and until 2026-09-18 the rule's own example recommended it, but it is worse: it emits no
+`<code>` element, so the name is set in the math renderer's monospace and loses the styling every other
+name on the page has, and a link wrapped round the whole formula makes `≡` and `∇` links to `gradient`.
+`\texttt{…}` is for a name that is an OPERAND of the formula — `` ``\texttt{maxiter} \le n`` `` — which
+is what `RULE.TEX.CODE_IN_MATH` is about.
 
-    [``\texttt{gradient} \equiv \nabla``](@ref gradient)
-      → <a href="#gradient"><span>$\texttt{gradient} \equiv \nabla$</span></a>
-
-    [`gradient`](@ref) (``\nabla``)
-      → <a href="#gradient"><code>gradient</code></a> (<span>$\nabla$</span>)
-
-Two things go wrong in the first. There is no `<code>` element at all: the name is set by the math
-renderer's monospace font, so it loses the code styling every other function name on the page has, and a
-reader scanning a forty-entry map for the things they can click loses the cue. And the whole formula
-sits inside the anchor, so `≡` and `∇` are hyperlinks to `gradient`, which is not true of either.
-
-`CODE_IN_MATH` is about a name that belongs to a formula — `\texttt{maxiter} \le n`, where the name is
-an operand. Here the name is not an operand: the line says "this function IS that operator", which is a
-relation between code and mathematics, not a formula containing both. Saying it with a connective is
-what the sentence meant in the first place, and the rule is really pointing at the missing connective
-rather than at the split formula its `why` describes.
+The remaining three findings are not namings at all, just two adjacent facts (`` ``512^3`` `Float64` ``);
+a connective fixes those too.
 
 ## Step 4 — fix, or switch, and say which
 
