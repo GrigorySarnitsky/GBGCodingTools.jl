@@ -88,22 +88,35 @@ Almost all 35 are one idiom of PF's module maps:
 
     - [`gradient`](@ref) ``\equiv \nabla`` raises the tensor order …
 
-The rule is right about it: a code span and a math span set side by side render in two typographic
-worlds, so the reader sees a monospace chip and then, at a different size and baseline, an operator.
+**Add a connective. Do not move the name into the formula.**
 
-Either of these satisfies every rule and keeps the `@ref` link. Both were checked against a real
-Documenter build, and the link resolves in both:
+    - [`gradient`](@ref) (``\nabla``) raises the tensor order …
 
-    - [``\texttt{gradient} \equiv \nabla``](@ref gradient) raises the tensor order …
-    - [`gradient`](@ref), which is ``\nabla``, raises the tensor order …
+The rule matches a code span and a math span separated by nothing but whitespace, so any word or mark
+between them satisfies it: `(``\nabla``)`, `— ``\nabla`` —`, `, which is ``\nabla``,`, `: ``\nabla```.
+All four were run against `ONE_SPAN`, `REF_ABUT`, `CODE_IN_MATH` and `RENDERED_MATH`; none fires. The
+edit is two characters a line.
 
-The first keeps the idiom exactly — one formula, the name set as text inside it — by giving the link an
-explicit target and a math span as its text. Documenter renders that as
-`<a href="#gradient"><span>$\texttt{gradient} \equiv \nabla$</span></a>`; the rulebook already uses
-explicit-target links elsewhere, in `RULE.DOC.REF_ABUT`'s own example. The second simply puts words
-between the two spans, so they are no longer one formula.
+The other form that satisfies the rule — putting the name inside the formula, which is what
+`RULE.TEX.CODE_IN_MATH` prescribes for a name that is genuinely part of one — is WORSE here, and the
+rendered HTML says why:
 
-This is mechanical, and 35 lines of it is an hour. It is not a reason to switch the rule off.
+    [``\texttt{gradient} \equiv \nabla``](@ref gradient)
+      → <a href="#gradient"><span>$\texttt{gradient} \equiv \nabla$</span></a>
+
+    [`gradient`](@ref) (``\nabla``)
+      → <a href="#gradient"><code>gradient</code></a> (<span>$\nabla$</span>)
+
+Two things go wrong in the first. There is no `<code>` element at all: the name is set by the math
+renderer's monospace font, so it loses the code styling every other function name on the page has, and a
+reader scanning a forty-entry map for the things they can click loses the cue. And the whole formula
+sits inside the anchor, so `≡` and `∇` are hyperlinks to `gradient`, which is not true of either.
+
+`CODE_IN_MATH` is about a name that belongs to a formula — `\texttt{maxiter} \le n`, where the name is
+an operand. Here the name is not an operand: the line says "this function IS that operator", which is a
+relation between code and mathematics, not a formula containing both. Saying it with a connective is
+what the sentence meant in the first place, and the rule is really pointing at the missing connective
+rather than at the split formula its `why` describes.
 
 ## Step 4 — fix, or switch, and say which
 
