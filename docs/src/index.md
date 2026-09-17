@@ -59,11 +59,11 @@ evaluate, `3` when it crashed. The two a person runs most:
 
 ## The written rules
 
-The policy is 95 rules of prose, on [The rules](@ref rules), each with an id like
+The policy is 97 rules, on [The rules](@ref rules), each with an id like
 [`RULE.DOC.ARGCOV`](@ref RULE.DOC.ARGCOV) (every argument of a function appears in its docstring): a documentation rubric, the LaTeX idiom, the citation style, the testing
-protocol, the rules of the four instruments, and git conventions. [`gbg sync`](@ref GBGCodingTools.Sync.sync) renders the rules into
-every package, where the AI sessions read them; the scans and the doctor enforce the ones a program can
-check.
+protocol, the rules of the instruments, and git conventions. Each is a Julia value carrying its own
+check and the examples that show the check matches it; `Render.policy` writes them into every package,
+where the sessions read them.
 
 ## How a package adopts it
 

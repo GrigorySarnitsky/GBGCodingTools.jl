@@ -75,54 +75,26 @@ include("helpers.jl")
         @test n(r"There are (\d+)\s*\n?\s*verbs") == length(G.VERBS)
         @test n(r"— (\d+) scans?[:,]") == length(G.scan_catalog())
         @test n(r"(\d+) checks that a package is wired correctly") == length(G.Doctor.CHECKS)
-        @test n(r"The policy is (\d+) rules") == length(TOML.parsefile(joinpath(TOOL, "policy", "RULES.toml"))["rule"])
+        @test n(r"The policy is (\d+) rules") == length(G.Catalogue.RULES)
     end
     @testset "the transitional Python is gone (1.6)" begin
         @test !isfile(joinpath(TOOL, "src", "CLI", "consolidate.py"))
         @test isempty(filter(f -> endswith(f, ".py"), [joinpath(d, f) for (d, _, fs) in walkdir(joinpath(TOOL, "src")) for f in fs]))
     end
-    @testset "RULES.toml matches the policy files" begin
-        rules = TOML.parsefile(joinpath(TOOL, "policy", "RULES.toml"))["rule"]
-        # the two sets, each derived — a hard-coded count drifts silently (RULE.TEST.COUNTS_REMEASURED),
-        # which it did: two rules were added and this test still asserted the old number
-        headings = Set{String}()
-        for f in readdir(joinpath(TOOL, "policy"); join = true)
-            endswith(f, ".md") || continue
-            for m in eachmatch(r"^### (RULE\.[A-Z]+\.[A-Z_]+)\s*$"m, read(f, String)); push!(headings, m.captures[1]); end
-        end
-        @test Set(r["id"] for r in rules) == headings
-        for r in rules
-            text = replace(read(joinpath(TOOL, "policy", r["file"]), String), r"\s+" => " ")
-            @test occursin(r["sentinel"], text)
-            @test occursin("### " * r["id"], read(joinpath(TOOL, "policy", r["file"]), String))
-        end
-    end
+    # `RULES.toml matches the policy files` and the `check`-column half of RULE.TEST.RULE_WITH_CHECK stood
+    # here until 2026-09-17. Both compared two copies of the rulebook — a TOML register and a directory
+    # of prose — and `policy/` is deleted: a rule is one value, and the rulebook is rendered from it.
+    # What those testsets guaranteed is asserted below against the one home that is left.
     @testset "every rule declares what catches its next violation (RULE.TEST.RULE_WITH_CHECK)" begin
-        rules = TOML.parsefile(joinpath(TOOL, "policy", "RULES.toml"))["rule"]
-        scans = Set(s["id"] for s in G.scan_catalog())
-        checks = Set(first.(G.Doctor.CHECKS))
-        srctext = join(read(joinpath(d, f), String) for (d, _, fs) in walkdir(joinpath(TOOL, "src")) for f in fs if endswith(f, ".jl"))
-        for r in rules
-            cs = get(r, "check", String[])
-            @test !isempty(cs)                                  # a rule with no class is the silence the rule forbids
-            for c in cs
-                if startswith(c, "scan:")
-                    @test c[6:end] in scans
-                elseif startswith(c, "doctor:")
-                    @test c[8:end] in checks
-                elseif startswith(c, "test:")
-                    @test isfile(joinpath(TOOL, c[6:end]))
-                elseif startswith(c, "harness:")
-                    # the binding must be DEFINED in the source, not merely mentioned: `report(` occurs
-                    # in a comment as readily as in the function this rule rests on
-                    @test occursin(Regex("function\\s+" * last(split(c[9:end], '.')) * "\\b"), srctext)
-                elseif startswith(c, "rule:")
-                    # converted: the rule is a value now, and test/rules.jl shows its check matches it
-                    @test Symbol(c[6:end]) in Set(r.id for r in G.Catalogue.RULES)
-                else
-                    @test c in ("panel", "weakness")             # judged by a running panel, or owed
-                end
-            end
+        for r in G.Catalogue.RULES
+            @test r.check !== nothing || !isempty(r.unchecked_reason)   # a check, or why there is none
+            @test !isempty(r.statement) && !isempty(r.why)
+        end
+        # and every one of them reaches the rendered rulebook a session loads: a rule in no file is a
+        # rule nobody reads, which is the same silence the register's empty `check` column was
+        rendered = join(G.Render.produce(e.generator, G.ConfigIO.read_config(TOOL)) for e in G.Render.POLICY_FILES)
+        for r in G.Catalogue.RULES
+            @test occursin("### " * String(r.id) * "\n", rendered)
         end
     end
 end

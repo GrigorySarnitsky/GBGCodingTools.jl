@@ -132,7 +132,7 @@ function derive_config(root::AbstractString)
             "julia_test" => "julia --project -e 'using Pkg; Pkg.test()'",
             "docs_build" => "julia --project=docs docs/make.jl",
             "docs_post" => String[]),
-        "paths" => tool ? Dict("instruments" => "instruments", "catalog" => "catalog", "policy" => "policy", "schema" => "schema", "templates" => "templates", "fixture" => "fixture") :
+        "paths" => tool ? Dict("instruments" => "instruments", "catalog" => "catalog", "schema" => "schema", "templates" => "templates", "fixture" => "fixture") :
                           Dict{String,Any}(k => k for k in ("examples", "benchmark") if isdir(joinpath(root, k))),
         "git" => Dict("branch" => "master"),
         "surfaces" => Dict{String,Any}(

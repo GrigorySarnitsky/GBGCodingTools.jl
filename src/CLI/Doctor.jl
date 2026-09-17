@@ -24,7 +24,7 @@ module Doctor
 using TOML, Dates, JSON3, Pkg
 using ..GBGCodingTools: GBGCodingTools, PKG_NAME, PKG_UUID, JULIA_FLOOR, Config, Ledger, Sync, Git, Witnesses, Reflection,
       load_schema, instrument_schema, validate, parse_options, VERBS, tool_version, running_dev, tool_sub_envs, manifest_tree_sha, self_verify,
-      scan_catalog, run_scan, SCANS, prose_lines, surface_kind, rules_register, unreachable_waiver_scans
+      scan_catalog, run_scan, SCANS, prose_lines, surface_kind, rules_register
 
 """
     Check
@@ -344,7 +344,7 @@ check!("CFG.TERRITORIES", ctx -> begin
     isempty(miss) ? pass("CFG.TERRITORIES", "$(length(src)) src file(s), every one in a territory") :
         warn("CFG.TERRITORIES", "$(length(miss)) src file(s) in NO territory — no hunter reads them: " * join(miss, ", "))
 end)
-known_rule_ids() = Set(r["id"] for r in rules_register())
+known_rule_ids() = Set(String(id) for id in GBGCodingTools.Catalogue.known_ids())
 check!("CFG.EXEMPTIONS", ctx -> begin
     isempty(ctx.ledger_error) || return fail("CFG.EXEMPTIONS", ctx.ledger_error)
     errs = String[]; notes = String[]; rules = known_rule_ids(); scans = Set(r["id"] for r in scan_catalog()); checks = Set(first.(CHECKS))
@@ -353,10 +353,9 @@ check!("CFG.EXEMPTIONS", ctx -> begin
         known = startswith(id, "RULE.") ? id in rules : startswith(id, "SCAN.") ? (id in scans || startswith(id, "SCAN.CUSTOM.")) :
                 occursin('/', id) && occursin('#', id) ? true : id in checks || e["scope"] == "harness"
         known || push!(errs, "$tag: unknown id")
-        if e["scope"] == "policy" && startswith(id, "RULE.")
-            far = unreachable_waiver_scans(id)
-            isempty(far) || push!(notes, "$tag does not reach $(join(far, ", ")), which enforce$(length(far) == 1 ? "s" : "") $id under another rule and keep$(length(far) == 1 ? "s" : "") running")
-        end
+        # A note stood here naming the scans a policy waiver could not reach, which was possible only
+        # while one scan enforced two rules. Every scan is a rule now, with one check: a waiver reaches
+        # what it names, or names nothing that exists.
         length(e["reason"]) >= 40 || push!(errs, "$tag: reason shorter than 40 characters")
         if e["scope"] == "finding"
             haskey(e, "overturn_when") || push!(errs, "$tag: finding scope needs overturn_when")

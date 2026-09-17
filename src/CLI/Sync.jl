@@ -31,8 +31,8 @@ const DOCS_INSTRUMENTS = ("check-docs", "check-consistency")
 const SKILL_DESCRIPTION = Dict(
     "gbg-doctor" => "The health check of this package's tooling — config, pinned version, managed files, wiring, ledger; read-only unless run --deep",
 )
-const POLICY_FILES = ("00-index.md", "docs-rubric.md", "latex-idiom.md", "citations.md", "testing-protocol.md",
-                      "instruments.md", "git-conventions.md", "glossary.md")
+# `POLICY_FILES` and `policy_dir` stood here until 2026-09-17, when `policy/` was deleted: the rulebook
+# is rendered from the `Rule` values by `Render.policy`, and there is no directory of prose to copy.
 
 struct SyncError <: Exception
     msg::String
@@ -40,7 +40,6 @@ end
 Base.showerror(io::IO, e::SyncError) = print(io, "sync: ", e.msg)
 
 templates_dir() = joinpath(pkgdir(GBGCodingTools), "templates")
-policy_dir() = joinpath(pkgdir(GBGCodingTools), "policy")
 template(name::AbstractString) = read(joinpath(templates_dir(), name), String)
 sha256hex(s::AbstractString) = bytes2hex(sha256(codeunits(s)))
 
@@ -437,7 +436,7 @@ when it changed, a file equal to its recorded sha is merely STALE and is re-rend
 """
 function inputs_sha(cfg::AbstractDict)
     files = String[]
-    for d in (templates_dir(), policy_dir()), f in readdir(d)
+    for d in (templates_dir(),), f in readdir(d)
         push!(files, joinpath(d, f))
     end
     return sha256hex(pin(cfg) * "\n" * config_sha(cfg) * "\n" * sha_files(sort!(files)))

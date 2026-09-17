@@ -81,47 +81,22 @@ The `[[scan]]` rows of `catalog/scans.toml` in the running copy, in file order. 
 # all — which is a catalogue of no scans, not a missing catalogue.
 scan_catalog() = get(TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "catalog", "scans.toml")), "scan", Dict{String,Any}[])
 
-const RULES_REGISTER = Ref{Any}(nothing)
-
 """
     rules_register() -> Vector{Dict}
 
-The `[[rule]]` rows of `policy/RULES.toml` in the running copy, parsed once and held. Returns the rows.
+Every rule of the rulebook as a row, for the readers that still want one: `id`, `statement` and
+`sentinel`, which is the statement — a rule has one sentence and one home. Returns the rows.
 
-Held rather than re-read because [`apply_ledger`](@ref) asks for them once per scan, and a bare
-`TOML.parsefile` there would put a file read in the hot path of every `gbg scan docs`. It is the one
-reader of the register: `CFG.EXEMPTIONS`, `LEG.SENTINELS` and `SCAN.ID_RESOLVES` read through it too.
+It read `policy/RULES.toml` until 2026-09-17. That file was the register of ninety-five rules written as
+prose; every one of them is a `Rule` value now, so the register is derived from `Catalogue.RULES` and
+cannot disagree with it.
 """
-function rules_register()
-    RULES_REGISTER[] === nothing &&
-        (RULES_REGISTER[] = TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "policy", "RULES.toml"))["rule"])
-    return RULES_REGISTER[]
-end
+rules_register() = [Dict{String,Any}("id" => String(r.id), "statement" => r.statement, "sentinel" => r.statement)
+                    for r in GBGCodingTools.Catalogue.RULES]
 
-"""
-    rules_for_scan(id) -> Vector{String}
-
-Every rule `id` enforces: the rules whose `check` array in `policy/RULES.toml` names `scan:<id>`.
-Returns the rule ids, empty when none does.
-
-The catalogue's `rule` column is ONE canonical rule per scan — what the doctor and a `scan`-scope ledger
-entry resolve against — and one scan, `SCAN.DOI_CROSSCHECK`, enforces two. `catalog/scans.toml`'s own header says to read the `check` arrays for the full
-list and never that column, which is exactly what this does.
-"""
-rules_for_scan(id::AbstractString) =
-    [String(r["id"]) for r in rules_register() if ("scan:" * id) in String.(get(r, "check", String[]))]
-
-"""
-    unreachable_waiver_scans(rule) -> Vector{String}
-
-The catalogued scans that enforce `rule` without it being their canonical rule: the scans whose id the
-rule's `check` array names ([`rules_for_scan`](@ref)) but whose catalogue `rule` column is another rule.
-A policy waiver of `rule` does not reach them: [`apply_ledger`](@ref) leaves them running, the scan's
-report line, `CFG.EXEMPTIONS` (a WARN) and the rendered `deviations.md` each say so. The argument is
-`rule`, a rule id. Returns the scan ids, empty for most rules.
-"""
-unreachable_waiver_scans(rule::AbstractString) =
-    [String(r["id"]) for r in scan_catalog() if String(r["rule"]) != rule && rule in rules_for_scan(String(r["id"]))]
+# `rules_for_scan` and `unreachable_waiver_scans` stood here until 2026-09-17. Both answered "which rules
+# does this scan enforce, and which of them does a waiver fail to reach" — a question with no subject
+# once every scan was a rule, each with exactly one check.
 
 """
     AI_BANNER
@@ -392,15 +367,7 @@ exempted, `disabled = true`); any other live `scan`-scope entry on the id — a 
 `match` among them — drops the hits it [`Ledger.matches`](@ref). Returns the kept hits, the exempted
 count and the flag.
 
-A `policy` entry on a rule the scan enforces that is NOT its canonical rule ([`unreachable_waiver_scans`](@ref))
-has no effect here, and is never silent about it. Three scans carry two rules apiece and a `Hit` carries
-no rule id, so such a waiver could only disable the whole scan — withdrawing the canonical rule, which
-the consumer never waived — or leave it running. It leaves it running.
-
-Then `run_scan` notes it on the scan's report line, `CFG.EXEMPTIONS` WARNs, and `deviations.md`
-says which scan the deviation does not reach. The waiver keeps its effect wherever the rule is canonical,
-and on the panel. A refusal was tried and withdrawn: it crashed every scan and made three rules
-undeclarable as deviations. An `arg_type` predicate on a text scan is an error (`Ledger.LedgerError`),
+An `arg_type` predicate on a text scan is an error (`Ledger.LedgerError`),
 which the command line reports as exit 2.
 """
 function apply_ledger(cfg::AbstractDict, ledger, row, hits::Vector{Hit})
@@ -454,28 +421,11 @@ function run_scan(cfg::AbstractDict, row::AbstractDict; ledger = Ledger.read(cfg
     end
     kept, exempted, disabled = apply_ledger(cfg, ledger, row, hits)
     disabled && (note = isempty(note) ? "disabled by the ledger" : note)
-    far = unreached_waivers(ledger, row)
-    isempty(far) || (note = join(filter(!isempty, [note; far]), "; "))
     return ScanResult(id, row["rule"], tier, kept, population, exempted, note)
 end
 
-"""
-    unreached_waivers(ledger, row) -> Vector{String}
-
-One line per live `policy` entry in `ledger` that names a rule the scan `row` enforces without owning it
-— the waivers [`apply_ledger`](@ref) leaves this scan running under. The arguments are `ledger`, the
-ledger entries, and `row`, the scan's catalogue row. Returns the lines, empty for most scans.
-"""
-function unreached_waivers(ledger, row)
-    canonical = String(row["rule"]); out = String[]
-    for rule in rules_for_scan(String(row["id"]))
-        rule == canonical && continue
-        for e in Ledger.entries(ledger, rule; scope = "policy")
-            push!(out, "the policy waiver of $rule on `$(e["target"])` does not reach this scan, whose rule is $canonical")
-        end
-    end
-    return out
-end
+# `unreached_waivers` stood here until 2026-09-17, one line per waiver a scan could not honour because
+# the rule waived was the second rule that scan enforced. Every scan is a rule now, with one check.
 
 function custom_rows(cfg::AbstractDict)
     rows = Dict{String,Any}[]

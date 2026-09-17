@@ -53,9 +53,12 @@ include("helpers.jl")
         r = run_only(["WIRE.CLAUDE_MD", "POL.IMPORT"])
         @test r["WIRE.CLAUDE_MD"].status == :FAIL
         write(cm, co)
-        write(cm, co * "\n\nA module docstring is a map and a function docstring is a home.\n")
+        # The sentinel is the rule's own statement, taken from the rulebook rather than written out here:
+        # a literal copy in this test is the very duplication the check exists to refuse.
+        sentinel = first(r.statement for r in G.Catalogue.RULES if endswith(r.statement, "."))
+        write(cm, co * "\n\n" * sentinel * "\n")
         @test run_only(["LEG.SENTINELS"])["LEG.SENTINELS"].status == :FAIL        # a sentinel restated bare
-        write(cm, co * "\n\nThe rule says \"A module docstring is a map and a function docstring is a home.\"\n")
+        write(cm, co * "\n\nThe rule says \"" * sentinel * "\"\n")
         @test run_only(["LEG.SENTINELS"])["LEG.SENTINELS"].status == :PASS        # quoted: not a duplicate
         write(cm, co)
     end

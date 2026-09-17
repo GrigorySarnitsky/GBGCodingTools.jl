@@ -26,7 +26,6 @@ terms = ["consumer", "instrument", "round", "lane", "hat", "anchor", "gate", "pi
 schema = "schema"
 catalog = "catalog"
 fixture = "fixture"
-policy = "policy"
 templates = "templates"
 
 [git]
