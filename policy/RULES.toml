@@ -305,7 +305,7 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.RENDERED_MATH"
 statement = "All math in docstrings and pages is rendered LaTeX in `` / ```math, never Unicode glyphs, backticks or $…$; every code object is bound to its symbol on first mention."
 sentinel = "All mathematics in docstrings and doc pages is rendered LaTeX, never a Unicode-glyph approximation, and every code object is bound to its math symbol on first mention."
-check = ["scan:SCAN.HTML_STRAY_MATH", "scan:SCAN.FORMULA_IN_BACKTICKS", "scan:SCAN.STRAY_TEX_DOLLAR"]
+check = ["scan:SCAN.HTML_STRAY_MATH", "rule:RULE.TEX.RENDERED_MATH"]  # the source half converted 2026-09-17; the built-site half waits for BUILT_SITE input
 [[rule]]
 id = "RULE.TEX.CODE_IN_MATH"
 file = "latex-idiom.md"
@@ -326,7 +326,7 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.INLINE_ONE_LINE"
 statement = "An inline math span stays on one source line (a list-leader continuation drops it out of math mode)."
 sentinel = "An inline math span stays on one source line, because a wrapped continuation that begins with a list or blockquote leader is parsed as a new list item and silently drops the span out of math mode."
-check = ["scan:SCAN.INLINE_MATH_SPLIT"]
+check = ["rule:RULE.TEX.INLINE_ONE_LINE"]  # converted 2026-09-17: src/Rules/latex.jl
 [[rule]]
 id = "RULE.TEX.NO_HSCROLL"
 file = "latex-idiom.md"
@@ -347,14 +347,14 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.SPACING"
 statement = "Never manual \\;/\\:/\\, around a relation or operator, \\! before a \\bigl, \\!\\! before a sum, or \\, except before \\mathrm{d}."
 sentinel = "Never space manually around a relation or binary operator, never put `\\!` before a `\\bigl`, never `\\!\\!` before a sum, and never write `\\,` except before an upright differential."
-check = ["scan:SCAN.THIN_SPACE", "scan:SCAN.NEG_THIN_BIGL", "scan:SCAN.NEG_THIN_DOUBLE", "scan:SCAN.MANUAL_SPACING"]
+check = ["rule:RULE.TEX.SPACING"]  # converted 2026-09-17: src/Rules/latex.jl
 [[rule]]
 id = "RULE.TEX.MATHBB"
 file = "latex-idiom.md"
 section = "### RULE.TEX.MATHBB"
 statement = "\\mathbb only on A–Z or k; the indicator is \\mathbf{1}."
 sentinel = "`\\mathbb` is written only on a capital `A`–`Z` or `k`, and the indicator or identity is `\\mathbf{1}`."
-check = ["scan:SCAN.MATHBB_DIGIT"]
+check = ["rule:RULE.TEX.MATHBB"]  # converted 2026-09-17: src/Rules/latex.jl
 [[rule]]
 id = "RULE.TEX.MATHBF"
 file = "latex-idiom.md"
@@ -368,14 +368,14 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.LEFTRIGHT"
 statement = "\\left/\\right are banned; size by hand with \\bigl/\\Bigl; the sole exception is \\left\\{ … \\right. ."
 sentinel = "`\\left` and `\\right` are banned; every delimiter is sized by hand with `\\bigl`/`\\Bigl` … `\\bigr`/`\\Bigr`."
-check = ["scan:SCAN.LEFTRIGHT"]
+check = ["rule:RULE.TEX.LEFTRIGHT"]  # converted 2026-09-17: src/Rules/latex.jl
 [[rule]]
 id = "RULE.TEX.PARTIAL"
 file = "latex-idiom.md"
 section = "### RULE.TEX.PARTIAL"
 statement = "A partial derivative is \\partial_{x_i}; a bare-index \\partial_i is banned."
 sentinel = "A partial derivative is `\\partial_{x_i}`, subscripting the coordinate, and a bare-index `\\partial_i` is banned."
-check = ["scan:SCAN.PARTIAL_BARE"]
+check = ["rule:RULE.TEX.PARTIAL"]  # converted 2026-09-17: src/Rules/latex.jl
 [[rule]]
 id = "RULE.TEX.IMAGINARY"
 file = "latex-idiom.md"
@@ -389,14 +389,14 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.FRAC_BRACED"
 statement = "Every fraction argument is braced (\\tfrac{1}{2}, never \\tfrac12 or \\tfrac N2)."
 sentinel = "Every fraction argument is braced: `\\tfrac{1}{2}`, never `\\tfrac12` and never `\\tfrac N2`."
-check = ["scan:SCAN.FRAC_UNBRACED"]
+check = ["rule:RULE.TEX.FRAC_BRACED"]  # converted 2026-09-17: src/Rules/latex.jl
 [[rule]]
 id = "RULE.TEX.BOLDSYMBOL_BRACED"
 file = "latex-idiom.md"
 section = "### RULE.TEX.BOLDSYMBOL_BRACED"
 statement = "Every \\boldsymbol argument is braced."
 sentinel = "Every `\\boldsymbol` argument is braced: `\\boldsymbol{u}`, never `\\boldsymbol u`."
-check = ["scan:SCAN.BOLDSYMBOL_UNBRACED"]
+check = ["rule:RULE.TEX.BOLDSYMBOL_BRACED"]  # converted 2026-09-17: src/Rules/latex.jl
 [[rule]]
 id = "RULE.TEX.SWALLOWED_ESCAPE"
 file = "latex-idiom.md"

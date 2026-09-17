@@ -305,6 +305,15 @@ function doc_span(lines, start)
     return start:length(lines)
 end
 
+"""
+    mask_code_spans(line) -> String
+
+The line with every single-backtick code span blanked to spaces of the same length, so that a pattern
+about MATHEMATICS does not match a code span that merely looks like it. The argument is `line`, the line
+to mask. Returns the masked line, whose length and column positions are unchanged.
+"""
+mask_code_spans(line::AbstractString) = replace(String(line), r"(?<!`)`[^`\n]+`(?!`)" => m -> " "^length(m))
+
 # ─────────────────────────────────────────────────────────────────────────── a docstring's signature
 
 # Greek letters are identifiers here: the science packages name parameters ε, Δ and ω.

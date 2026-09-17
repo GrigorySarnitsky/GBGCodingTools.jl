@@ -163,7 +163,7 @@ The fields are:
 - `frozen` — the `(reads, writes)` asserted exactly.
 - `ideal` — the fused ideal documented beside it (each needed input element read once, each output
   written once).
-- `holder` — the named holder REQUIRED whenever `frozen ≠ ideal`.
+- `holder` — the named holder REQUIRED when the two differ.
 """
 struct Traffic
     role::String

@@ -13,8 +13,8 @@ const STRAY_MATH_RE = r"`|\]\(@ref|\]\(http|!!!"
 """
     math_sources(page) -> Vector{String}
 
-The unrendered source of every math span on a built page, delimited as the page carries it (`\$…\$`
-inline, `\\[…\\]` display). Returns the sources in page order, empty for a page with no article.
+The unrendered source of every math span on a built page, as the page delimits it (dollars inline,
+`\\[…\\]` display). Returns the sources in page order, empty for a page with no article.
 """
 function math_sources(page::AbstractString)
     doc = HtmlWalker.parse_page(page)

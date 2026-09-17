@@ -15,60 +15,15 @@ scan = "SCAN.SIBLING_LINK"
 file = "defects/page.md"
 fragment = "later mention of `GBGIsotropicTurbulence`"
 [[defect]]
-class = "bare-partial"
-scan = "SCAN.PARTIAL_BARE"
-file = "defects/Defects.jl"
-fragment = "partial_i"
-[[defect]]
-class = "thin-space"
-scan = "SCAN.THIN_SPACE"
-file = "defects/Defects.jl"
-fragment = 'a\,b'
-[[defect]]
-class = "frac-unbraced"
-scan = "SCAN.FRAC_UNBRACED"
-file = "defects/Defects.jl"
-fragment = "tfrac12"
-[[defect]]
-class = "neg-thin-bigl"
-scan = "SCAN.NEG_THIN_BIGL"
-file = "defects/Defects.jl"
-fragment = "bigl"
-[[defect]]
-class = "neg-thin-double"
-scan = "SCAN.NEG_THIN_DOUBLE"
-file = "defects/Defects.jl"
-fragment = "sum_i"
-[[defect]]
-class = "mathbb-digit"
-scan = "SCAN.MATHBB_DIGIT"
-file = "defects/Defects.jl"
-fragment = "mathbb{1}"
-[[defect]]
 class = "mathbf-banned"
 scan = "SCAN.MATHBF"
 file = "defects/Defects.jl"
 fragment = "mathbf{u}"
 [[defect]]
-class = "boldsymbol-unbraced"
-scan = "SCAN.BOLDSYMBOL_UNBRACED"
-file = "defects/Defects.jl"
-fragment = "boldsymbol u"
-[[defect]]
-class = "left-right"
-scan = "SCAN.LEFTRIGHT"
-file = "defects/Defects.jl"
-fragment = "left(u"
-[[defect]]
 class = "mixed-link-run"
 scan = "SCAN.LINK_UNIFORMITY"
 file = "defects/Defects.jl"
 fragment = "mixed_link_run"
-[[defect]]
-class = "inline-math-split"
-scan = "SCAN.INLINE_MATH_SPLIT"
-file = "defects/Defects.jl"
-fragment = "sum_i u_i"
 [[defect]]
 class = "retired-claim"
 scan = "SCAN.RETIRED_CLAIMS"
@@ -119,21 +74,6 @@ class = "undocumented-last-positional"
 scan = "SCAN.ARGCOV"
 file = "defects/Defects.jl"
 fragment = "`factor`"
-[[defect]]
-class = "formula-backticks"
-scan = "SCAN.FORMULA_IN_BACKTICKS"
-file = "defects/Defects.jl"
-fragment = "u ≤ 1"
-[[defect]]
-class = "stray-dollar"
-scan = "SCAN.STRAY_TEX_DOLLAR"
-file = "defects/page.md"
-fragment = "x_1 + x_2"
-[[defect]]
-class = "manual-spacing"
-scan = "SCAN.MANUAL_SPACING"
-file = "defects/Defects.jl"
-fragment = '\;'
 [[defect]]
 class = "crammed-citation"
 scan = "SCAN.CITATION_CRAMMED"
@@ -201,17 +141,11 @@ file = "docs/src/index.md"
 scan = "SCAN.SIGNATURE_TYPED"
 file = "src/FixtureC.jl"
 [[clean]]
-scan = "SCAN.FRAC_UNBRACED"
-file = "src/FixtureB.jl"
-[[clean]]
 scan = "SCAN.MATHBF"
 file = "docs/ARCHITECTURE.md"
 [[clean]]
 scan = "SCAN.LINK_UNIFORMITY"
 file = "src/FixtureA.jl"
-[[clean]]
-scan = "SCAN.INLINE_MATH_SPLIT"
-file = "src/FixtureB.jl"
 [[clean]]
 scan = "SCAN.RETIRED_CLAIMS"
 file = "docs/ARCHITECTURE.md"

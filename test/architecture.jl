@@ -13,6 +13,8 @@ include("helpers.jl")
 # The new tree, each file with its rank in the order Model → Texts → Catalogue → ConfigIO → Engine →
 # Render → Orchestration → CLI. A file lands here in the phase that writes it.
 const LAYERS = Dict("src/Model.jl" => 1, "src/Texts.jl" => 2, "src/ConfigIO.jl" => 4,
+                    "src/Rules/rendering.jl" => 3, "src/Rules/docstrings.jl" => 3,
+                    "src/Rules/arguments.jl" => 3, "src/Rules/latex.jl" => 3,
                     "src/Engine.jl" => 5, "src/Engine/Guard.jl" => 5,
                     "src/CLI/Docfix.jl" => 8, "src/CLI/Check.jl" => 8,
                     "src/Catalogue.jl" => 3, "src/Engine/Checks.jl" => 5, "src/Engine/Harness.jl" => 5, "src/Render.jl" => 6)
@@ -22,7 +24,7 @@ const RANK_OF_MODULE = Dict("Model" => 1, "Texts" => 2, "Catalogue" => 3, "Confi
 
 # The tree being replaced. This number only falls; a commit that raises it fails here, which is what
 # makes "two machines in one tree" a measured state rather than a feeling.
-const LEGACY_CEILING = 67
+const LEGACY_CEILING = 45
 
 # The table as the document holds it: one named tuple per row, the leading `**name**` and six cells.
 function table_rows(path)
