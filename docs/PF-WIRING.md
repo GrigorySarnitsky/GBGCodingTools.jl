@@ -72,7 +72,7 @@ run inside `docs/make.jl` and `Pkg.test()` once PF calls them.
 
 | Rule | Findings | What it is, and what I think of it |
 |---|---|---|
-| `RULE.TEX.ONE_SPAN` | 35 | **Read this one first — see below.** |
+| `RULE.TEX.ONE_SPAN` | 35 | One idiom of the module maps, mechanically fixable without losing the link — see below. |
 | `RULE.DOC.SHAPE` | 30 | Paragraphs past the house cap: `convolve!` has one of 174 words, `exponential_convolve!` one of 232. Real prose work. |
 | `RULE.DOC.LINKS` | 21 | The same target linked twice in one docstring, mostly in the long module maps. Each finding names both lines. |
 | `RULE.DOC.ARGS_FORM` | 5 | Three-or-more arguments written as prose where the bulleted form is required, and one the other way. |
@@ -82,32 +82,43 @@ run inside `docs/make.jl` and `Pkg.test()` once PF calls them.
 | `RULE.CIT.DOI` | 2 | Hockney & Eastwood and Brandt & Lubrecht are cited with no DOI on the title. |
 | `SIBLING_LINK`, `MATHBF`, `BLOCK_LIST`, `SENTENCE_OPENER` | 1 each | One-line fixes, except `MATHBF`, which is a config line: PF must declare which `\mathbf{…}` strings it uses. |
 
-### The one that needs your judgement: `RULE.TEX.ONE_SPAN` (35)
+### The largest class, `RULE.TEX.ONE_SPAN` (35), and how to fix it
 
-Almost all 35 are one deliberate idiom of PF's:
+Almost all 35 are one idiom of PF's module maps:
 
     - [`gradient`](@ref) ``\equiv \nabla`` raises the tensor order …
 
-The rule says a formula is one LaTeX span and is never split across a math span and an adjacent code
-span, because the two halves render in different typographic worlds. The fleet's own answer, from
-`RULE.TEX.CODE_IN_MATH`, is to write the name inside the formula:
+The rule is right about it: a code span and a math span set side by side render in two typographic
+worlds, so the reader sees a monospace chip and then, at a different size and baseline, an operator.
 
-    ``\texttt{gradient} \equiv \nabla``
+Either of these satisfies every rule and keeps the `@ref` link. Both were checked against a real
+Documenter build, and the link resolves in both:
 
-**That loses the `@ref` link.** PF cannot both link a name and set it inside a formula, and its module
-maps are built on linking every operation it names. This is a genuine conflict between the rulebook and
-a considered house style — not a defect in either. Do not quietly rewrite 35 lines. Either switch the
-rule off for PF with that reason, or raise it with the owner as a rule that needs changing fleet-wide.
+    - [``\texttt{gradient} \equiv \nabla``](@ref gradient) raises the tensor order …
+    - [`gradient`](@ref), which is ``\nabla``, raises the tensor order …
+
+The first keeps the idiom exactly — one formula, the name set as text inside it — by giving the link an
+explicit target and a math span as its text. Documenter renders that as
+`<a href="#gradient"><span>$\texttt{gradient} \equiv \nabla$</span></a>`; the rulebook already uses
+explicit-target links elsewhere, in `RULE.DOC.REF_ABUT`'s own example. The second simply puts words
+between the two spans, so they are no longer one formula.
+
+This is mechanical, and 35 lines of it is an hour. It is not a reason to switch the rule off.
 
 ## Step 4 — fix, or switch, and say which
 
 A switch is a line in `.gbg/config.jl`:
 
     switches = [
-        Switch(target = Symbol("RULE.TEX.ONE_SPAN"),
-               reason = "PF's module maps name each operation as a link and state the operator it equals; \
-                         writing the name inside the formula would drop the link"),
+        Switch(target = Symbol("RULE.DOC.SHAPE"), files = ["docs/PERFORMANCE.md"],
+               reason = "the measurement tables here are one paragraph per run by design; \
+                         splitting them would separate a number from the conditions it was measured under"),
     ]
+
+Write the reason so that a reader who disagrees can argue with it. "Does not apply here" is not a
+reason; it is the claim the reason is supposed to support. And before writing one, check that the rule
+really cannot be satisfied — I claimed `ONE_SPAN` forced PF to drop its `@ref` links, and it does not;
+a switch resting on that would have been a false record on PF's own site.
 
 The reason is not a formality — it is rendered into `.gbg/policy/switches.md` and onto PF's site, and it
 is the only thing a later reader has. Write it for them. A switch may also name files, so a rule can be
