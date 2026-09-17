@@ -331,6 +331,21 @@ to mask. Returns the masked line, whose length and column positions are unchange
 """
 mask_code_spans(line::AbstractString) = replace(String(line), r"(?<!`)`[^`\n]+`(?!`)" => m -> " "^length(m))
 
+"""
+    single_escapes(line) -> String
+
+The line with every doubled LaTeX backslash written singly, so that a rule about LaTeX reads the same
+text whether it came from a Markdown page or from a Julia docstring. The argument is `line`, the line to
+read. Returns it rewritten; its length is NOT preserved, so a rule using this reports the whole line.
+
+The doubling is not a mistake to be reported — `RULE.TEX.SWALLOWED_ESCAPE` REQUIRES it, because Julia
+eats a single backslash in a docstring before LaTeX ever sees it. So a page carries `\\int f \\, g` and the
+docstring saying the same thing carries `\\\\int f \\\\, g`, and a pattern written for one of them silently
+misreads the other. `RULE.TEX.SPACING` reported every correct `\\\\,\\\\mathrm{d}x` in a consumer's
+docstrings because its exception for the differential was written in the page's spelling.
+"""
+single_escapes(line::AbstractString) = replace(String(line), "\\\\" => "\\")
+
 # ─────────────────────────────────────────────────────────────────────────── a docstring's signature
 
 # One name for a whole string, built from the one pattern above so the two cannot disagree. A combining

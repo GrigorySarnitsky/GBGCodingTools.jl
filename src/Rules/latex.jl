@@ -160,7 +160,9 @@ The exception is the one the rule states: a thin space before a differential is 
 function spacing(text::AbstractString, cfg)
     out = Model.Location[]
     for (i, line) in pairs(split(text, '\n'))
-        masked = Texts.mask_code_spans(line)
+        # Read in the page's spelling whichever surface this is: a docstring doubles every LaTeX
+        # backslash, and each pattern below was written against a single one.
+        masked = Texts.single_escapes(Texts.mask_code_spans(line))
         any(p -> occursin(p[1], masked), SPACING_PATTERNS) &&
             push!(out, Model.Location(; file = "", line = i, text = strip(String(line))))
     end
@@ -178,7 +180,16 @@ const SPACING = Model.Rule(
                                         [Model.Location(; file = "docs/src/page.md", line = 3)], clause),
                       Model.TextExample(Model.FileSet.PAGES, "# A page\n\n" * complying * "\n",
                                         Model.Location[], clause)]
-                     for (_, clause, breaking, complying) in SPACING_PATTERNS]...))
+                     for (_, clause, breaking, complying) in SPACING_PATTERNS]...,
+                    # The same rule on the other surface, where every LaTeX backslash is doubled. Both
+                    # directions: a hand-spaced formula in a docstring is still reported, and the
+                    # differential — which a docstring must write `\\\\,\\\\mathrm{d}x` — is not.
+                    [Model.TextExample(Model.FileSet.DOCSTRINGS,
+                        "module M\n\"\"\"\n    f(x)\n\nThe product ``a \\\\; b`` is associative.\n\"\"\"\nf(x) = x\nend\n",
+                        [Model.Location(; file = "src/Example.jl", line = 5)], "a medium or thick space by hand"),
+                     Model.TextExample(Model.FileSet.DOCSTRINGS,
+                        "module M\n\"\"\"\n    f(x)\n\nThe integral ``\\\\int_\\\\Omega f\\\\,\\\\mathrm{d}x`` vanishes.\n\"\"\"\nf(x) = x\nend\n",
+                        Model.Location[], "a medium or thick space by hand")]))
 
 const MATHBB_DIGIT = pattern_rule("RULE.TEX.MATHBB",
     "A blackboard-bold digit is not a set; the identity is written \\mathbb{1} only where it means one.",
