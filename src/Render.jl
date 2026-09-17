@@ -179,6 +179,15 @@ function pin_entries(cfg::Model.Config)
     return Dict{String,Any}("compat" => Dict("GBGCodingTools" => "=" * string(cfg.tool)))
 end
 
+"""
+    runtests_call() -> String
+
+The line a package's `test/runtests.jl` ends with: the harness, handed the wiring check. The harness sits
+below the generators in the module order and so cannot reach that check itself; a consumer gets both by
+being given both, in one line it can read. Returns the line.
+"""
+runtests_call() = "GBGCodingTools.Engine.Harness.test(@__DIR__ |> dirname; checks = (GBGCodingTools.Render.wiring,))"
+
 # ─────────────────────────────────────────────────────────────────────────── the register and the check
 
 """
