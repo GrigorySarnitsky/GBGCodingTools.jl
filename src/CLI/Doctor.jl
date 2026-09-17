@@ -12,7 +12,7 @@ holds on a runner with no shim and a detached HEAD. A `scope = "check"` ledger e
 id (`LEG.*`, `GIT.*`, `AUDIT.*`) turns its FAIL into a WARN naming the reason; the non-exemptable
 families are the tool's own enforcement.
 
-`anchor` carries three unrelated senses across this package, and the checks below touch two: a hat's
+The word `anchor` carries three senses here, and the checks below touch two: a hat's
 or lane's `anchor` is whether it runs at full strength rather than on the economy model that
 [`GBGCodingTools.Config`](@ref) defines (`CFG.HATS`);
 `Config.resolve_anchor`'s is a `file#heading` Markdown reference; a seed class's, in `Seeds.select`,

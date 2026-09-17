@@ -8,7 +8,7 @@ Seeds a consumer: [`Init.derive_config`](@ref) reads the package tree into a con
 [`Init.init`](@ref) writes `.gbg/` and the seeded-once files and renders the tool's entries into every
 sub-environment, [`Init.migrate_baselines`](@ref) converts the three Julia test literals to their TOML
 form textually, [`Init.migrate_seeds`](@ref) converts a former `seed_defects.py` catalogue, and
-[`Init.new`](@ref) adds a fifth package. `init` never renders the generated files (the skill stubs,
+[`Init.new`](@ref) adds a fifth. The verb renders no generated file (the skill stubs,
 the hook, the CI fragments, the managed blocks): that is `gbg sync`, which validates what `init` wrote.
 """
 module Init

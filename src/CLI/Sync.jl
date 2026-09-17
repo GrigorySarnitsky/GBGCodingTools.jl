@@ -295,7 +295,7 @@ end
 """
     with_block(text, file, block) -> String
 
-`text` with its managed block replaced by `block`, or the block inserted at the top when the file has
+The `text` with its managed block replaced by `block`, or inserted at the top when the file has
 none (a blank line separates it from what follows). The arguments are:
 
 - `text` — the file's current text.
@@ -407,7 +407,7 @@ The workflow text with the three fragments placed at the fixed insertion points.
 - `frags` — the fragments keyed `auth`, `run`, `banner`.
 - `run_marker` — the regex that finds the job's build or test step.
 
-`auth` goes first after the `actions/checkout` step, `run` in place of the build or test step (the
+The `auth` fragment goes first after `actions/checkout`, `run` in place of the build or test step (the
 first step matching `run_marker`, or the one a previous sync placed), `banner` last; a fragment already
 present (matched by its `- name:`) is replaced in place, so the operation is idempotent. A workflow
 with no `actions/checkout` step is a `SyncError`. Returns the new text.

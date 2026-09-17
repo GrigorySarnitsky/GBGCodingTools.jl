@@ -300,7 +300,7 @@ end
 """
     mask_code_spans(line) -> String
 
-`line` with every single-backtick code span replaced by spaces of the same length (double-backtick
+The `line` with every single-backtick code span replaced by spaces of equal length (double-backtick
 math spans untouched). A backtick span holds Julia by rule (`RULE.TEX.CODE_SPAN_JULIA`), so a TeX
 command inside one is a MENTION of the idiom, not a use — the design record's rule tables and a
 notation page's command column name `\\left` and `\\,` without typesetting them. Returns the string.
@@ -395,7 +395,7 @@ has no effect here, and is never silent about it. Three scans carry two rules ap
 no rule id, so such a waiver could only disable the whole scan — withdrawing the canonical rule, which
 the consumer never waived — or leave it running. It leaves it running.
 
-`run_scan` notes that waiver on the scan's report line, `CFG.EXEMPTIONS` WARNs, and `deviations.md`
+Then `run_scan` notes it on the scan's report line, `CFG.EXEMPTIONS` WARNs, and `deviations.md`
 says which scan the deviation does not reach. The waiver keeps its effect wherever the rule is canonical,
 and on the panel. A refusal was tried and withdrawn: it crashed every scan and made three rules
 undeclarable as deviations. An `arg_type` predicate on a text scan is an error (`Ledger.LedgerError`),

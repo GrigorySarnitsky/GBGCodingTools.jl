@@ -251,14 +251,6 @@ runner = "julia"
 fixture = ["dead-section-ref"]
 
 [[scan]]
-id = "SCAN.SENTENCE_OPENER"
-rule = "RULE.DOC.SENTENCE_OPENER"
-tier = "triage"
-surfaces = ["all", "data"]
-runner = "julia"
-fixture = ["lowercase-opener"]
-
-[[scan]]
 id = "SCAN.SIGNATURE_WIDE"
 rule = "RULE.DOC.SIGNATURE_MIRROR"
 tier = "triage"

@@ -66,7 +66,7 @@ Base.showerror(io::IO, e::ConfigWrittenError) =
 """
     read_written(root; check = true) -> Dict
 
-[`read`](@ref) for a config the calling verb has itself just written. The arguments are:
+The reader for a config the verb has just written. The arguments are:
 
 - `root` — the consumer root.
 - `check` — whether to run the path check, as for `read`.
@@ -340,7 +340,7 @@ end
 """
     expand_globs(root, files) -> Vector{String}
 
-`files` with every glob replaced by the files it names, in order and deduplicated. The arguments are
+The list `files` with every glob replaced by the files it names, in order and deduplicated. The arguments are
 `root`, the consumer root, and `files`, a lane's or a territory's list.
 
 A pattern matching nothing is KEPT as written: a directory a lane names (`catalog`, `policy`) is not a

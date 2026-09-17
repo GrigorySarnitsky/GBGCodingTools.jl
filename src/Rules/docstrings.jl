@@ -213,11 +213,99 @@ const FIELDS = Model.Rule(
             Model.Location[], "documents them under \"The fields are\""),
     ])
 
+# ───────────────────────────────────────────────────────── how a sentence is allowed to open
+
+const OPENER_LEADER = r"^\s*([-*+>|]|\d+[.)])\s"
+const OPENER_LOWER = r"^(\[?`[a-z_][\w!]*`|``[^`])"
+const ENDS_SENTENCE = r"[.!?]\*{0,2}[\"')]?$"
+const ABBREVIATION = r"(e\.g|i\.e|cf|vs|incl)\.\s*$"i
+const OPENER_INLINE = r"(?<!\.)\.\s+(\[?`[a-z_][\w!]*`|``[^`])"
+
+"""
+    sentence_opener(text, cfg) -> Vector{Model.Location}
+
+Every sentence that opens with a lowercase identifier or a formula rather than an ordinary capitalised
+word. The arguments are `text`, the file's prose, and `cfg`, the package's config, which this rule does
+not read. Returns one location per sentence.
+
+Where a sentence STARTS is computed rather than matched: the beginning of a line whose predecessor ended
+one or was blank, and any point after a full stop within a line. A reader meeting a lowercase name at a
+full stop cannot tell whether a new sentence has begun or the last one is still running.
+
+Exempt, because none of them is prose a reader parses that way: bullets and their wrapped continuations,
+comment lines, headings, indented lines such as signatures and continuations, the abbreviations e.g.,
+i.e., cf., vs. and incl., and the tick marker used as a bullet.
+"""
+function sentence_opener(text::AbstractString, cfg)
+    out = Model.Location[]
+    previous = ""; inlist = false
+    for (n, line) in pairs(split(text, '\n'))
+        if occursin(OPENER_LEADER, line)
+            inlist = true
+        elseif isempty(strip(line)) || !startswith(line, (' ', '\t'))
+            inlist = false
+        end
+        if occursin(r"^\s*#", line) || occursin(OPENER_LEADER, line) || inlist
+            previous = line; continue
+        end
+        stripped = rstrip(line)
+        if !startswith(line, (' ', '\t')) && occursin(OPENER_LOWER, line) && !startswith(line, "``\\checkmark``")
+            if isempty(strip(previous)) || (occursin(ENDS_SENTENCE, rstrip(previous)) && !occursin(ABBREVIATION, rstrip(previous)))
+                push!(out, Model.Location(; file = "", line = n, text = first(String(stripped), 100)))
+                previous = line; continue
+            end
+        end
+        for m in eachmatch(OPENER_INLINE, line)
+            before = rstrip(line[1:m.offset])
+            (occursin(ABBREVIATION, before) || occursin("checkmark", line)) && continue
+            push!(out, Model.Location(; file = "", line = n, text = first(String(stripped), 100)))
+            break
+        end
+        previous = line
+    end
+    return out
+end
+
+"""
+    SENTENCE_OPENER
+
+A sentence opens with a capitalised ordinary word, never a lowercase identifier or a formula.
+"""
+const SENTENCE_OPENER = Model.Rule(
+    id = Symbol("RULE.DOC.SENTENCE_OPENER"),
+    statement = "A sentence opens with a capitalised ordinary word, never a lowercase identifier or a formula; bullets, comments, headings and fenced code are exempt.",
+    why = "At a full stop a reader cannot tell a new sentence beginning with a lowercase name from the old one running on.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, sentence_opener, false),
+    examples = [
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n`measure` returns the mean.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "never a lowercase identifier"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe operation `measure` returns the mean.\n",
+            Model.Location[], "never a lowercase identifier"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nIt is the mean. ``\\varepsilon`` bounds the error.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "never a formula"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nIt is the mean. The tolerance ``\\varepsilon`` bounds the error.\n",
+            Model.Location[], "never a formula"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- `measure` returns the mean.\n",
+            # An EXEMPTION is not a clause: it can have no breaking example, so these two are complying
+            # examples of the clauses they exempt — a bullet, and an abbreviation that ends no sentence.
+            Model.Location[], "never a lowercase identifier"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nSee e.g. `measure` for this.\n",
+            Model.Location[], "never a lowercase identifier"),
+    ])
+
 """
     RULES
 
 The rules of this batch, in the order they were converted.
 """
-const RULES = Model.Rule[ARG_BULLET, REGISTER, FIELDS]
+const RULES = Model.Rule[ARG_BULLET, REGISTER, FIELDS, SENTENCE_OPENER]
 
 end # module Docstrings

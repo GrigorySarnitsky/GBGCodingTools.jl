@@ -150,11 +150,6 @@ scan = "SCAN.DEAD_REF"
 file = "defects/Defects.jl"
 fragment = "§4"
 [[defect]]
-class = "lowercase-opener"
-scan = "SCAN.SENTENCE_OPENER"
-file = "defects/Defects.jl"
-fragment = "`twice` doubles"
-[[defect]]
 class = "wide-signature"
 scan = "SCAN.SIGNATURE_WIDE"
 file = "defects/Defects.jl"
@@ -240,9 +235,6 @@ file = "src/FixtureB.jl"
 [[clean]]
 scan = "SCAN.DOI_CROSSCHECK"
 file = "src/FixtureC.jl"
-[[clean]]
-scan = "SCAN.SENTENCE_OPENER"
-file = "src/FixtureA.jl"
 [[clean]]
 scan = "SCAN.HTML_RENDERED_MARKUP"
 file = "defects/html/clean"

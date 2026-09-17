@@ -123,7 +123,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.SENTENCE_OPENER"
 statement = "A sentence opens with a capitalized ordinary word, never a lowercase identifier or a formula; bullets, comments, headings and fenced code are exempt."
 sentinel = "A sentence opens with a capitalized ordinary word, never a lowercase code identifier or a math formula."
-check = ["scan:SCAN.SENTENCE_OPENER"]
+check = ["rule:RULE.DOC.SENTENCE_OPENER"]  # converted 2026-09-17: src/Rules/docstrings.jl
 [[rule]]
 id = "RULE.DOC.VERIFIED"
 file = "docs-rubric.md"
