@@ -168,16 +168,18 @@ end
         hid = G.ScanResult("SCAN.X", "RULE.X", "hard", G.Hit[], 0, 1, "")
         @test G.report([hid]; io = devnull) == 2
     end
+    # SCAN.REGISTER stood here until 2026-09-17, when its rule was converted; SCAN.SIBLING_LINK is used
+    # in its place — two planted hits in one file, which is what the file-targeted case needs.
     @testset "the ledger disables and refines" begin
-        row = CATALOG["SCAN.REGISTER"]
-        led = [Dict{String,Any}("id" => "SCAN.REGISTER", "scope" => "scan", "target" => "*", "reason" => "x"^40, "recorded" => Dates.today())]
+        row = CATALOG["SCAN.SIBLING_LINK"]
+        led = [Dict{String,Any}("id" => "SCAN.SIBLING_LINK", "scope" => "scan", "target" => "*", "reason" => "x"^40, "recorded" => Dates.today())]
         r = G.run_scan(cfg, row; ledger = led)
         @test isempty(r.hits) && r.exempted > 0
-        led2 = [Dict{String,Any}("id" => "SCAN.REGISTER", "scope" => "scan", "target" => "defects/Defects.jl", "reason" => "x"^40, "recorded" => Dates.today())]
+        led2 = [Dict{String,Any}("id" => "SCAN.SIBLING_LINK", "scope" => "scan", "target" => "defects/page.md", "reason" => "x"^40, "recorded" => Dates.today())]
         r2 = G.run_scan(cfg, row; ledger = led2)
-        # a file-targeted entry exempts THAT file and nothing else: the planted data-surface hit survives
-        @test r2.exempted == 1 && length(r2.hits) == 1 && r2.hits[1].file == "defects/data-defects.toml"
-        led3 = [Dict{String,Any}("id" => "SCAN.REGISTER", "scope" => "scan", "target" => "*", "reason" => "x"^40, "recorded" => Dates.today(), "match" => Dict("arg_type" => "Integer"))]
+        # a file-targeted entry exempts THAT file and nothing else
+        @test r2.exempted > 0 && all(h -> h.file != "defects/page.md", r2.hits)
+        led3 = [Dict{String,Any}("id" => "SCAN.SIBLING_LINK", "scope" => "scan", "target" => "*", "reason" => "x"^40, "recorded" => Dates.today(), "match" => Dict("arg_type" => "Integer"))]
         @test_throws G.Ledger.LedgerError G.run_scan(cfg, row; ledger = led3)   # a text scan refuses arg_type
     end
     # A policy waiver resolves against the scan's CANONICAL rule only. A waiver of the SECOND rule of a

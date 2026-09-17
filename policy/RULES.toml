@@ -249,7 +249,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.ARG_BULLET"
 statement = "An argument or field bullet names its argument in a plain code span, never a bold one."
 sentinel = "An argument or field bullet names its argument in a plain code span, never a bold one."
-check = ["scan:SCAN.ARG_BULLET_BOLD"]
+check = ["rule:RULE.DOC.ARG_BULLET"]  # converted 2026-09-17: src/Rules/docstrings.jl
 [[rule]]
 id = "RULE.DOC.SIGNATURE_MIRROR"
 file = "docs-rubric.md"
@@ -284,7 +284,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.REGISTER"
 statement = "A tunable is an option, setting or keyword argument, never a knob or tweak."
 sentinel = "A tunable is an option, a setting or a keyword argument — never a \"knob\" or a \"tweak\"."
-check = ["scan:SCAN.REGISTER"]
+check = ["rule:RULE.DOC.REGISTER"]  # converted 2026-09-17: src/Rules/docstrings.jl
 [[rule]]
 id = "RULE.DOC.RETURNS"
 file = "docs-rubric.md"

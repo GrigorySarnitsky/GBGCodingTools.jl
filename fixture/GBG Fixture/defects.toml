@@ -15,16 +15,6 @@ scan = "SCAN.SIBLING_LINK"
 file = "defects/page.md"
 fragment = "later mention of `GBGIsotropicTurbulence`"
 [[defect]]
-class = "knob"
-scan = "SCAN.REGISTER"
-file = "defects/Defects.jl"
-fragment = "knob"
-[[defect]]
-class = "data-knob"
-scan = "SCAN.REGISTER"
-file = "defects/data-defects.toml"
-fragment = "knob"
-[[defect]]
 class = "bare-partial"
 scan = "SCAN.PARTIAL_BARE"
 file = "defects/Defects.jl"
@@ -84,11 +74,6 @@ class = "mixed-link-run"
 scan = "SCAN.LINK_UNIFORMITY"
 file = "defects/Defects.jl"
 fragment = "mixed_link_run"
-[[defect]]
-class = "bold-arg-bullet"
-scan = "SCAN.ARG_BULLET_BOLD"
-file = "defects/Defects.jl"
-fragment = "**`u`**"
 [[defect]]
 class = "inline-math-split"
 scan = "SCAN.INLINE_MATH_SPLIT"
@@ -227,12 +212,6 @@ fragment = "Base.copy"
 
 # Clean twins: the scan must report nothing on these (the clean corpus, or the clean HTML site).
 [[clean]]
-scan = "SCAN.REGISTER"
-file = "src/FixtureC.jl"
-[[clean]]
-scan = "SCAN.REGISTER"
-file = "defects/data-clean.toml"
-[[clean]]
 scan = "SCAN.SIBLING_LINK"
 file = "docs/src/index.md"
 [[clean]]
@@ -255,9 +234,6 @@ scan = "SCAN.FIELD_DOCS"
 file = "src/FixtureA.jl"
 [[clean]]
 scan = "SCAN.LINK_UNIFORMITY"
-file = "src/FixtureA.jl"
-[[clean]]
-scan = "SCAN.ARG_BULLET_BOLD"
 file = "src/FixtureA.jl"
 [[clean]]
 scan = "SCAN.INLINE_MATH_SPLIT"

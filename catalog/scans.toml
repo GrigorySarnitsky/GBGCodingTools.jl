@@ -11,14 +11,6 @@
 # "which rules does this scan carry".
 
 [[scan]]
-id = "SCAN.REGISTER"
-rule = "RULE.DOC.REGISTER"
-tier = "hard"
-surfaces = ["all", "data"]
-runner = "julia"
-fixture = ["knob", "data-knob"]
-
-[[scan]]
 id = "SCAN.PARTIAL_BARE"
 rule = "RULE.TEX.PARTIAL"
 tier = "hard"
@@ -129,14 +121,6 @@ tier = "triage"
 surfaces = ["src", "ext"]
 runner = "julia"
 fixture = ["typed-signature"]
-
-[[scan]]
-id = "SCAN.ARG_BULLET_BOLD"
-rule = "RULE.DOC.ARG_BULLET"
-tier = "hard"
-surfaces = ["src", "ext"]
-runner = "julia"
-fixture = ["bold-arg-bullet"]
 
 [[scan]]
 id = "SCAN.INLINE_MATH_SPLIT"

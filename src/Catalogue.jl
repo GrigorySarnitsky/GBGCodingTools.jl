@@ -84,6 +84,7 @@ const INSTRUMENTS = Model.Instrument[
 ]
 
 include("Rules/rendering.jl")     # one file per batch of the conversion
+include("Rules/docstrings.jl")
 
 """
     RULES
@@ -93,7 +94,7 @@ check matches the statement. The ninety-five rules of `policy/RULES.toml` are co
 (`IMPLEMENTATION.md` §6), one file of `src/Rules/` per batch; `test/conversion.jl` holds the count still
 outstanding, which may only fall.
 """
-const RULES = Model.Rule[Rendering.RULES...]
+const RULES = Model.Rule[Rendering.RULES..., Docstrings.RULES...]
 
 """
     GENERATED
