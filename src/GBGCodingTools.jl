@@ -61,6 +61,7 @@ const PKG_UUID = Base.UUID("3aee1de0-bb62-4679-b1c5-a861fbcaaa51")
 const PKG_NAME = "GBGCodingTools"
 const JULIA_FLOOR = v"1.12"
 
+include("Model.jl")          # the new tree begins here: types only, no behaviour
 include("TreeHash.jl")
 include("HtmlWalker.jl")
 include("DocLints.jl")

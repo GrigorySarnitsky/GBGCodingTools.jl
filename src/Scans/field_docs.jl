@@ -6,7 +6,11 @@
 const FIELD_BULLET = r"^\s*[-*]\s"
 const FIELD_NAME_IN_BULLET = r"`([^`:\s,]+)(?:::[^`]*)?`"
 const FIELD_DECL = r"^\s{2,}([^\s:=#]+)\s*::"
-const DOC_THEN_STRUCT = r"\"\"\"\n(.*?)\n\"\"\"\n(?:mutable\s+)?struct\s+([^\s{<]+)"s
+# A docstring may be followed by `struct`, `mutable struct`, or a keyword-default struct written
+# `Base.@kwdef struct` or `@kwdef struct`. Without the macro forms the pairing silently SHIFTS: the
+# docstring of the first plain struct after a run of @kwdef ones is read against the wrong type, and
+# every field of both is then reported as ghost or undocumented (found on src/Model.jl, 2026-09-17).
+const DOC_THEN_STRUCT = r"\"\"\"\n(.*?)\n\"\"\"\n(?:(?:Base\.)?@kwdef\s+)?(?:mutable\s+)?struct\s+([^\s{<]+)"s
 
 function documented_fields(doc::AbstractString)
     k = findfirst("The fields are", doc)

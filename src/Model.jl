@@ -1,0 +1,660 @@
+"""
+    Model
+
+Every type the rebuilt package is written in, and nothing else: the enums, the structs and the abstract
+types of `docs/ARCHITECTURE.md` §5.2, with no behaviour and no values attached. It is the bottom module
+of the order — `Model` → `Texts` → `Catalogue` → `ConfigIO` → `Engine` → `Render` → `Orchestration` →
+`CLI` — so every later module may name these types and none of them may reach upwards.
+
+The enums are scoped, one module each (`Decider.PROGRAM`, `Verdict.FIXED`), so values of different enums
+never share a name and a misplaced one is a method error rather than a silent equality.
+
+- [`Location`](@ref) and [`FindingDraft`](@ref), [`Finding`](@ref) — where a defect is, and what is
+  reported about it.
+- [`Rule`](@ref) with [`ProgramCheck`](@ref), [`AgentCheck`](@ref), [`Example`](@ref) and
+  [`Parameter`](@ref) — the rulebook as values.
+- [`AgentRole`](@ref), [`Instrument`](@ref), [`AlwaysOn`](@ref), [`Budget`](@ref) — who reads, what
+  starts, and what a run may spend.
+- [`Question`](@ref) with [`Option`](@ref) and [`Item`](@ref) — the one form for asking the owner.
+- [`Config`](@ref), [`Switch`](@ref), [`Setting`](@ref), [`PatternRule`](@ref), [`Settled`](@ref) — a
+  package's own settings and the rulings it has already given.
+- [`DocFix`](@ref), [`CodeFix`](@ref), [`Run`](@ref), [`Generated`](@ref) — what a run did and what
+  writes each generated file.
+"""
+module Model
+
+# ───────────────────────────────────────────────────────────────────────────────────────── the enums
+
+"What the defects a check or an instrument looks for are in. `PUBLICATION` arrives with the leak scan."
+module Intention; @enum T DOCUMENTATION CODE; end
+
+"Who says a finding is real: a program, an agent whose failing test a program then runs, or an agent."
+module Decider; @enum T PROGRAM FAILING_TEST AGENT; end
+
+"Who fixes what was found, from the last column of the instrument table."
+module Fixer; @enum T ORDINARY_WORK DOCUMENTATION_FIXER CODE_FIXER REGENERATE OWNER_ONLY; end
+
+"What a check reads: a source text, a small file tree, the loaded package, the built site, or a question."
+module Input; @enum T SOURCE_TEXT FILE_TREE LOADED_MODULE BUILT_SITE QUESTION; end
+
+"A named set of a package's files, found by default patterns the config may override."
+module FileSet; @enum T DOCSTRINGS PAGES RATIONALE LITERATE CODE TESTS; end
+
+"Which model an agent runs on: the cheaper default, or the most capable."
+module Strength; @enum T ECONOMY FULL; end
+
+"How much of a generated path its generator writes: the whole file, a marked block, or TOML entries."
+module Part; @enum T WHOLE BLOCK TOML_ENTRIES; end
+
+"A verifier's answer about one fix. `LINE_ONLY` and `MADE_WORSE` come only from the stage that sees the diff."
+module Verdict; @enum T FIXED NOT_FIXED LINE_ONLY MADE_WORSE HIDES_CODE_DEFECT NOT_A_DEFECT; end
+
+"Why a run ended, decided by a program and recorded in the run."
+module Stop; @enum T DONE BUDGET_SPENT CANNOT_EVALUATE OWNER_STOPPED; end
+
+"""
+The only three reasons an agent may decide a rule rather than a program: the meaning of a sentence, a
+derivation, or a document read in order.
+"""
+module WhyAgent; @enum T MEANING DERIVATION READING_ORDER; end
+
+"How a location was found again when the text around it moved, or `OUTDATED` when it was not."
+module Anchor; @enum T FRESH BY_NODE BY_QUOTE BY_DIFF OUTDATED; end
+
+# ─────────────────────────────────────────────────────────────────────── findings and where they are
+
+"""
+    Location
+
+Where a finding is, held still while the text around it moves: the node and the quote survive edits above
+them, and the line is only a hint. The fields are:
+
+- `file` — the path, relative to the package root.
+- `node` — for a `.jl` file the binding, method or field of a constant documented (`ARGS_FORM.statement`);
+  for Markdown the heading path; empty where the file has neither.
+- `text` — the quote: the decisive text as it read when the finding was made.
+- `line` — the line it was on then, kept as a hint and never taken from an agent.
+- `found` — how it was anchored the last time it was looked for.
+"""
+Base.@kwdef struct Location
+    file::String
+    node::String = ""
+    text::String = ""
+    line::Int = 0
+    found::Anchor.T = Anchor.FRESH
+end
+
+"""
+    FindingDraft
+
+What an agent or a check reports, before a run gives it an id. The fields are:
+
+- `rule` — the rule it breaks, or `nothing` where no rule names it yet.
+- `locations` — every site, each with its own quote.
+- `claim` — what is wrong, in one sentence.
+- `evidence` — a failing test's path, or the reason to believe the claim.
+- `fix` — what would put it right.
+- `maybe_code` — the agent believes the code, not the text, is wrong.
+"""
+Base.@kwdef struct FindingDraft
+    rule::Union{Symbol,Nothing} = nothing
+    locations::Vector{Location} = Location[]
+    claim::String
+    evidence::String = ""
+    fix::String = ""
+    maybe_code::Bool = false
+end
+
+"""
+    Finding
+
+One defect in a run: the draft, the id the run gave it, and who reported it. The fields are:
+
+- `id` — the run's own identifier for it.
+- `source` — the check or the agent role that reported it.
+- `decider` — what decided that it is real.
+- `draft` — what was reported.
+"""
+struct Finding
+    id::String
+    source::Symbol
+    decider::Decider.T
+    draft::FindingDraft
+end
+
+# ──────────────────────────────────────────────────────────────────────────── asking the owner
+
+"""
+    Option
+
+A possible answer to a question, with what happens if it is chosen. The fields are:
+
+- `label` — the answer itself, in a few words.
+- `consequence` — what follows from choosing it, including what it costs.
+- `recommended` — whether this is the answer the session recommends.
+"""
+struct Option
+    label::String
+    consequence::String
+    recommended::Bool
+end
+
+"""
+    Item
+
+One decision inside a question; items share the question's options and each is answered on its own. 
+The fields are:
+
+- `text` — the decision, in one sentence.
+- `recommended` — the label of the option recommended for this item.
+- `sources` — where the reader can see it for himself.
+- `answer` — the label chosen, or `nothing` while it is unanswered.
+- `direction` — how the owner wants it done, where the answer carried that.
+"""
+Base.@kwdef struct Item
+    text::String
+    recommended::String = ""
+    sources::Vector{String} = String[]
+    answer::Union{String,Nothing} = nothing
+    direction::String = ""
+end
+
+"""
+    Question
+
+A decision put to the owner: plain data, checked against the language rules only when it is put. 
+The fields are:
+
+- `id` — its identifier, stable once written.
+- `decision` — the decision itself, one sentence ending in a question mark.
+- `context` — what he needs to know to answer, without jargon.
+- `options` — the answers he may give.
+- `items` — the separate decisions the options apply to, empty for a single question.
+- `exhibit` — commits, changed files and definitions, exempt from the language rules.
+- `answer` — the label chosen, for a question with no items.
+- `direction` — how he wants it done, where the answer carried that.
+"""
+Base.@kwdef struct Question
+    id::String
+    decision::String
+    context::String = ""
+    options::Vector{Option} = Option[]
+    items::Vector{Item} = Item[]
+    exhibit::String = ""
+    answer::Union{String,Nothing} = nothing
+    direction::String = ""
+end
+
+# ─────────────────────────────────────────────────────────────────────────────────── the rulebook
+
+"""
+    Check
+
+What decides whether a rule is broken: a program, or an agent for one of the three reasons a program
+cannot. The two concrete types are [`ProgramCheck`](@ref) and [`AgentCheck`](@ref).
+"""
+abstract type Check end
+
+"""
+    ProgramCheck
+
+A check a program decides, run over one kind of input. The fields are:
+
+- `input` — what it reads.
+- `run` — the function itself, `run(x, cfg)::Vector{Location}`; re-run from scratch, so it never needs
+  re-anchoring.
+- `network` — whether it reaches the network, which keeps it out of every build and test.
+"""
+struct ProgramCheck <: Check
+    input::Input.T
+    run::Function
+    network::Bool
+end
+
+"""
+    AgentCheck
+
+A check an agent decides, because a program cannot. The fields are:
+
+- `question` — what the agent is asked about the text in front of it.
+- `why` — which of the three admitted reasons this needs an agent for.
+"""
+struct AgentCheck <: Check
+    question::String
+    why::WhyAgent.T
+end
+
+"""
+    Example
+
+Something a rule's check must judge a known way, so that the check can be shown to match the rule it
+names. The concrete types differ by what they materialise into: [`TextExample`](@ref),
+[`TreeExample`](@ref), [`ModuleExample`](@ref), [`SiteExample`](@ref) and [`QuestionExample`](@ref).
+"""
+abstract type Example end
+
+"""
+    TextExample
+
+One text, judged by a check that reads a source text. The fields are:
+
+- `fileset` — the file set the text stands for.
+- `text` — the text itself.
+- `expect` — the locations the check must report, empty when the text complies.
+- `clause` — the clause of the rule's statement this example is for.
+"""
+struct TextExample <: Example
+    fileset::FileSet.T
+    text::String
+    expect::Vector{Location}
+    clause::String
+end
+
+"""
+    TreeExample
+
+A small file tree, judged by a check that reads one. The fields are:
+
+- `files` — each path with its content.
+- `expect` — the locations the check must report, empty when the tree complies.
+- `clause` — the clause of the rule's statement this example is for.
+"""
+struct TreeExample <: Example
+    files::Vector{Pair{String,String}}
+    expect::Vector{Location}
+    clause::String
+end
+
+"""
+    ModuleExample
+
+Julia source loaded into a fresh module, judged by a check that reads the loaded package. The fields are:
+
+- `source` — the source to load.
+- `expect` — the locations the check must report, empty when the source complies.
+- `clause` — the clause of the rule's statement this example is for.
+"""
+struct ModuleExample <: Example
+    source::String
+    expect::Vector{Location}
+    clause::String
+end
+
+"""
+    SiteExample
+
+Pages built into a site, judged by a check that reads the built site. The fields are:
+
+- `pages` — each page path with its content.
+- `expect` — the locations the check must report, empty when the pages comply.
+- `clause` — the clause of the rule's statement this example is for.
+"""
+struct SiteExample <: Example
+    pages::Vector{Pair{String,String}}
+    expect::Vector{Location}
+    clause::String
+end
+
+"""
+    QuestionExample
+
+A question, judged by a check that reads one — the language rules every question put to the owner passes.
+The fields are:
+
+- `question` — the question itself.
+- `expect` — the locations the check must report, empty when the question complies.
+- `clause` — the clause of the rule's statement this example is for.
+"""
+struct QuestionExample <: Example
+    question::Question
+    expect::Vector{Location}
+    clause::String
+end
+
+"""
+    Parameter
+
+A value a rule reads that a package may set for itself, such as how a docstring's first sentence leads.
+The fields are:
+
+- `name` — what the rule calls it.
+- `default` — the value where a package sets none.
+"""
+struct Parameter{T}
+    name::Symbol
+    default::T
+end
+
+"""
+    Rule
+
+One rule of the rulebook, carrying its own statement, the check that decides a violation, and the
+examples that show the check matches the statement. The fields are:
+
+- `id` — its stable identifier.
+- `statement` — the rule in plain English; this is its only home.
+- `why` — what goes wrong without it.
+- `intention` — whether its defects are in documentation or in code.
+- `filesets` — the file sets it runs over.
+- `check` — what decides a violation, or `nothing` where nothing does.
+- `unchecked_reason` — why it has no check, required when it has none.
+- `parameters` — the values a package may set.
+- `examples` — texts, trees, sources, pages or questions the check must judge a known way.
+"""
+Base.@kwdef struct Rule
+    id::Symbol
+    statement::String
+    why::String = ""
+    intention::Intention.T = Intention.DOCUMENTATION
+    filesets::Vector{FileSet.T} = FileSet.T[]
+    check::Union{ProgramCheck,AgentCheck,Nothing} = nothing
+    unchecked_reason::String = ""
+    parameters::Vector{Parameter} = Parameter[]
+    examples::Vector{Example} = Example[]
+end
+
+# ────────────────────────────────────────────────────────────────────── who reads, and what runs
+
+"""
+    AgentRole
+
+One kind of agent an instrument launches: what it reads, what it is kept from, and which rules it checks.
+The fields are:
+
+- `id` — its stable identifier.
+- `instrument` — the instrument that launches it.
+- `reads` — the file sets it is given.
+- `site` — whether it reads the built site rather than the source.
+- `kept_from_code` — whether the code is withheld from it.
+- `description` — who the reader is, in two or three sentences.
+- `rules` — the rules it checks; empty makes it an open reader, looking for what no rule names yet.
+- `strength` — which model it runs on.
+- `cap` — how many distinct defects it may report, the agent saying how many it left out.
+"""
+Base.@kwdef struct AgentRole
+    id::Symbol
+    instrument::Symbol
+    reads::Vector{FileSet.T} = FileSet.T[]
+    site::Bool = false
+    kept_from_code::Bool = false
+    description::String
+    rules::Vector{Symbol} = Symbol[]
+    strength::Strength.T = Strength.ECONOMY
+    cap::Int
+end
+
+"""
+    Budget
+
+The ceiling on one run; reaching any part of it ends the run. The fields are:
+
+- `fix_passes` — how many times the open findings may go back to the fixer.
+- `agent_launches` — how many agents the whole run may launch.
+"""
+Base.@kwdef struct Budget
+    fix_passes::Int = 4
+    agent_launches::Int
+end
+
+"""
+    Instrument
+
+A review procedure the owner starts, with the three values that separate it from every other and the two
+sentences the instrument table prints. The fields are:
+
+- `id` — its stable identifier.
+- `purpose` — what it is for, in one sentence.
+- `intention` — whether its defects are in documentation or in code.
+- `decider` — what decides that a finding is real.
+- `fixer` — who fixes what it found.
+- `when` — when it runs.
+- `ends` — when one of its runs ends.
+- `roles` — the agent roles it launches.
+- `budget` — what one run may spend.
+"""
+Base.@kwdef struct Instrument
+    id::Symbol
+    purpose::String
+    intention::Intention.T
+    decider::Decider.T
+    fixer::Fixer.T
+    when::String
+    ends::String
+    roles::Vector{AgentRole} = AgentRole[]
+    budget::Budget
+end
+
+"""
+    AlwaysOn
+
+A program check that every build and test runs; nobody starts it and it has no runs. The fields are:
+
+- `id` — its stable identifier.
+- `purpose` — what it is for, in one sentence.
+- `intention` — whether its defects are in documentation or in code.
+- `fixer` — who fixes what it found.
+- `decider` — what decides that a finding is real, a program by definition.
+- `when` — which builds or tests run it.
+"""
+Base.@kwdef struct AlwaysOn
+    id::Symbol
+    purpose::String
+    intention::Intention.T
+    fixer::Fixer.T
+    decider::Decider.T = Decider.PROGRAM
+    when::String
+end
+
+"""
+    Generated
+
+A file, or a part of a file, that a Julia function writes and the wiring check compares. The fields are:
+
+- `paths` — `paths(cfg)::Vector{String}`, the paths it writes in a given package.
+- `part` — how much of each path it writes.
+- `generator` — the function that writes it, named rather than held, so this value stays below `Render`.
+"""
+struct Generated
+    paths::Function
+    part::Part.T
+    generator::Symbol
+end
+
+# ───────────────────────────────────────────────────────────────── a package's own settings
+
+"""
+    Switch
+
+Turns one rule, agent role or instrument off in one package, or in some of its files. The fields are:
+
+- `target` — what is switched off.
+- `reason` — why it does not apply here, shown on the package's own site.
+- `files` — the files it is off for, empty for the whole package.
+"""
+Base.@kwdef struct Switch
+    target::Symbol
+    reason::String
+    files::Vector{String} = String[]
+end
+
+"""
+    Setting
+
+A package's value for one rule parameter. The fields are:
+
+- `rule` — the rule that reads it.
+- `name` — the parameter's name.
+- `value` — the value itself.
+"""
+Base.@kwdef struct Setting
+    rule::Symbol
+    name::Symbol
+    value::Union{String,Symbol,Bool,Int,Vector{String}}
+end
+
+"""
+    PatternRule
+
+A rule a package adds for itself: a pattern its own files must not, or must, contain. The fields are:
+
+- `id` — its stable identifier within the package.
+- `statement` — the rule in plain English.
+- `fileset` — the file set it runs over.
+- `pattern` — the pattern itself.
+- `forbidden` — whether matching the pattern is the violation, or failing to.
+- `examples` — texts the check must judge a known way.
+"""
+Base.@kwdef struct PatternRule
+    id::Symbol
+    statement::String
+    fileset::FileSet.T
+    pattern::Regex
+    forbidden::Bool = true
+    examples::Vector{TextExample} = TextExample[]
+end
+
+"""
+    Config
+
+A package's settings, written by hand in `.gbg/config.jl` and read by a parser that evaluates nothing.
+The fields are:
+
+- `package` — its name.
+- `tool` — the version of this package it pins, or `:dev` here.
+- `docs_build` — what builds its documentation.
+- `test` — what runs its tests.
+- `rules` — the pattern rules it adds for itself.
+- `filesets` — its file sets, where the defaults are wrong.
+- `normative` — the documents that bind it; no documentation fix edits one.
+- `copies` — each build-time copy and its tracked source.
+- `switches` — what does not apply here, each with its reason.
+- `settings` — its values for rule parameters.
+- `roles` — the expert readers it adds for itself.
+- `code_areas` — its code in named areas, one hunter each.
+"""
+Base.@kwdef struct Config
+    package::String
+    tool::Union{VersionNumber,Symbol}
+    docs_build::Vector{String} = String[]
+    test::Vector{String} = String[]
+    rules::Vector{PatternRule} = PatternRule[]
+    filesets::Dict{FileSet.T,Vector{String}} = Dict{FileSet.T,Vector{String}}()
+    normative::Vector{String} = String[]
+    copies::Vector{Pair{String,String}} = Pair{String,String}[]
+    switches::Vector{Switch} = Switch[]
+    settings::Vector{Setting} = Setting[]
+    roles::Vector{AgentRole} = AgentRole[]
+    code_areas::Vector{Pair{Symbol,Vector{String}}} = Pair{Symbol,Vector{String}}[]
+end
+
+"""
+    Settled
+
+A question the owner settled, kept in `.gbg/settled.jl` and given to agents as "do not report". 
+The fields are:
+
+- `question` — the question it answers.
+- `text` — the ruling, in his own words.
+- `date` — when he gave it, as `YYYY-MM-DD`.
+- `locations` — what the ruling is about, quotes included, re-anchored like any other location.
+"""
+Base.@kwdef struct Settled
+    question::String
+    text::String
+    date::String
+    locations::Vector{Location} = Location[]
+end
+
+# ──────────────────────────────────────────────────────────────────────── what a run did
+
+"""
+    DocFix
+
+One documentation-fixer attempt at one finding, with the program and agent judgements of it. 
+The fields are:
+
+- `finding` — the finding it fixed.
+- `pass` — which fix pass made it.
+- `commit` — the commit it landed in.
+- `formula_edit` — whether it changed mathematics, which needs agreement and a numeric check.
+- `blind` — the verdict of the verifier that did not see the diff.
+- `with_diff` — the verdict of the stage that did, for a fixed finding only.
+- `agreeing_code` — the code the fixer quoted as agreeing with the new text.
+"""
+Base.@kwdef struct DocFix
+    finding::String
+    pass::Int
+    commit::String = ""
+    formula_edit::Bool = false
+    blind::Verdict.T
+    with_diff::Union{Verdict.T,Nothing} = nothing
+    agreeing_code::Union{Location,Nothing} = nothing
+end
+
+"""
+    CodeFix
+
+One approved code fix and the single audit of it, kept with the question that approved it. The fields are:
+
+- `question` — the question whose answer approved it.
+- `direction` — how the owner asked for it to be fixed, where he said.
+- `attempts` — how many attempts it took.
+- `commits` — the commits it landed in.
+- `touched_tests` — whether it changed anything under `test/`, which the audit is told first.
+- `audit` — the one audit run over it.
+- `proportionate` — whether the change was no wider than the defect and the direction.
+- `contract_kept` — whether it left every documented contract and default alone.
+- `old_input_works` — whether input that worked before still works.
+- `concerns` — what the audit raised.
+- `note` — the audit's sentence to the owner.
+"""
+Base.@kwdef struct CodeFix
+    question::String
+    direction::String = ""
+    attempts::Int = 1
+    commits::Vector{String} = String[]
+    touched_tests::Bool = false
+    audit::String = ""
+    proportionate::Bool = true
+    contract_kept::Bool = true
+    old_input_works::Bool = true
+    concerns::Vector{String} = String[]
+    note::String = ""
+end
+
+"""
+    Run
+
+One execution of one instrument on one package, stored beside its report. The fields are:
+
+- `id` — its identifier, which names its directory.
+- `instrument` — the instrument that ran.
+- `tool_version` — the version of this package that ran it.
+- `first_commit` — the commit the package was at when it started.
+- `budget` — what it was allowed to spend.
+- `stage` — the stage it is at.
+- `findings` — what it found.
+- `fixes` — the documentation fixes it made.
+- `questions` — what it asked the owner.
+- `code_fixes` — the code fixes its questions were answered with, added as they land.
+- `agent_launches` — how many agents it launched.
+- `tokens` — what they cost, where the platform reports it.
+- `stop` — why it ended.
+"""
+Base.@kwdef struct Run
+    id::String
+    instrument::Symbol
+    tool_version::String
+    first_commit::String
+    budget::Budget
+    stage::Symbol
+    findings::Vector{Finding} = Finding[]
+    fixes::Vector{DocFix} = DocFix[]
+    questions::Vector{Question} = Question[]
+    code_fixes::Vector{CodeFix} = CodeFix[]
+    agent_launches::Int = 0
+    tokens::Union{Int,Nothing} = nothing
+    stop::Stop.T = Stop.DONE
+end
+
+end # module Model

@@ -9,6 +9,7 @@ const FIXTURE = joinpath(TOOL, "fixture", "GBG Fixture")
 # never inside this repository, which Dropbox syncs (test/helpers.jl says what that cost).
 const TMP = mktempdir(; prefix = "gbg-selftest-", cleanup = true)
 
+module ArchitectureTests; include("architecture.jl"); end
 module SchemaTests;      include("schemas.jl");      end
 module ConfigTests;      include("config.jl");       end
 module ScanTests;        include("scans.jl");        end
