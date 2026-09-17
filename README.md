@@ -1,5 +1,10 @@
 # GBGCodingTools.jl
 
+> **Being rebuilt.** This package is being rebuilt to the design in `docs/ARCHITECTURE.md`, adopted
+> 2026-09-17, in the order `IMPLEMENTATION.md` sets out. The review instruments it once ran do not
+> run today; what remains is the deterministic half — the scans, the reflection checks, the test
+> harness, the doctor and the generators.
+
 **A consumer holds data; the tool holds behaviour; the only thing connecting them is the pinned version.**
 
 The one shared tooling package of the four GBG Julia packages (`GBGPeriodicFields`,

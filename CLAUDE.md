@@ -10,10 +10,21 @@
 # CLAUDE.md — GBGCodingTools
 
 You are in the dev checkout of `GBGCodingTools.jl`, the one shared tooling package of the four GBG Julia
-packages and of itself. The design is `docs/ARCHITECTURE.md` (every decision with its evidence; the
-vocabulary at its head binds the terms); the build plan is `IMPLEMENTATION.md`; `docs/design-record/`
-is provenance. The managed block above imports the shared policy; this file holds only what is the
-tool's own.
+packages and of itself. **It is being rebuilt.** `docs/ARCHITECTURE.md` is the design it is being built
+to — normative, adopted by the owner on 2026-09-17 — and `IMPLEMENTATION.md` is the order of the work,
+phase by phase, each with the gate it must pass. What the package was before is
+`docs/design-record/ARCHITECTURE-v1.md`, and the machinery deleted from it is filed beside that, under
+`machinery-v1/`, `instruments-v1/`, `roles-v1/`, `rounds-v1/` and `seeds-v1/`: history, read by nothing.
+The managed block above imports the shared policy; this file holds only what is the tool's own.
+
+## Where the rebuild stands
+
+Phase 0 of `IMPLEMENTATION.md`. The round machinery, the instruments, their catalogues, the seeding and
+the closure gate are gone; the deterministic half — the scans, the reflection checks, the test harness,
+the doctor, the generators and the rulebook prose — is what remains, and the new tree (`Model`, `Texts`,
+`Catalogue`, `ConfigIO`, `Engine`, `Render`, `Orchestration`) has not been started. **No instrument runs
+here.** A slash command that once opened a round no longer exists; do not look for one, and do not
+re-create one outside its phase.
 
 ## Modules and wiring
 
@@ -22,80 +33,65 @@ tool's own.
   one JSON-Schema-subset validator over `schema/*.schema.json`. `Ledger` reads `.gbg/exemptions.toml`.
 - Engines: `Scan.jl` (the text-scan engine; one file per scan under `src/Scans/`, registered against
   `catalog/scans.toml`), `Reflection` (argcov, signature fidelity, xlink, dupref, the public surface),
-  `TestHarness` (the consumers' test engines and `gate()`), `Witnesses` (the witness runner),
-  `HtmlWalker` and `Consolidate.jl` (the built site to reader text), `TreeHash` (git hashing on `SHA`).
+  `TestHarness` (the consumers' test engines), `Witnesses` (the witness runner), `HtmlWalker` and
+  `Consolidate.jl` (the built site to reader text), `TreeHash` (git hashing on `SHA`).
 - The CLI is `gbg <noun> <verb>`: `Main.jl` dispatches `VERBS`; each `src/CLI/*.jl` file registers its
   verbs and returns the exit code 0 clean, 1 finding, 2 cannot evaluate, 3 crash. `Sync`, `Init`,
-  `Doctor`, `Gate.jl`, `Preflight`, `Rounds`, `Passes`, `Hunt.jl`, `Audit.jl`, `Self.jl`, `Install.jl`.
+  `Doctor`, `Self.jl`, `Install.jl`, `Fleet.jl`, `Bump.jl`, `Release.jl`.
 - `ext/GBGCodingToolsDocumenterExt.jl` defines `makedocs`, the mandatory docs-build wrapper; it loads
-  only where `Documenter` is.
-- Data, never code: `catalog/` (hats, lanes, scans, models), `policy/` (the rule files and
-  `RULES.toml`), `schema/`, `templates/`, `instruments/<name>/` (`PROTOCOL.md`, `schema.json`,
-  `workflow/*.js`). `fixture/GBG Fixture/` is the toy consumer the tests run over.
+  only where `Documenter` is. It reads no review state and nothing can freeze it.
+- Data, never code: `catalog/scans.toml`, `policy/` (the rule files and `RULES.toml`), `schema/`,
+  `templates/`. `fixture/GBG Fixture/` is the toy consumer the tests run over.
 
 ## Core invariants
 
-- A consumer holds data; the tool holds behaviour; the only thing connecting them is a pin. No package
-  string, path or round datum in a Workflow script, a catalogue file or a policy file: they arrive
-  through `args`, the config, or a slot.
-- Instruments are frozen mid-round: a change to a scan, a script, a catalogue or a policy file is its own
-  commit and its own release, never an edit inside a consumer and never folded into a round it scores.
-- Closed vocabularies (ARCHITECTURE §6.3) and the config's non-configurable set (§5.5): changing either
-  is MAJOR. Every artefact carries `schema_version`.
+- A consumer holds data; the tool holds behaviour; the only thing connecting them is a pin.
+- Nothing a consumer's docs build or test suite runs may read review state, git state or the network:
+  both must give the same answer on a fresh clone and on CI (`docs/ARCHITECTURE.md` §5.1, §11).
+- Changing documentation is safe and changing code is not: what counts as documentation is listed in
+  §4.2 of the design, and everything else — tests, stored data, config, generated files, this file — is
+  code, which changes only on the owner's answer.
 - Exit codes are the contract; a log is never grepped for a verdict. A scan output is never truncated.
-- The tool is its own fifth consumer (D15): its `.gbg/`, its rounds, its managed files are rendered by
-  the same verbs, and `Pkg.test()` runs `TestHarness.gate()` on the tool itself.
+- Deterministic first: whatever a program can decide is a program's to decide (§7).
 
 ## Code generation rules
 
-- Julia 1.12 floor; no Python anywhere; no child process except the consumer commands the design names
-  (`docs_build`, `julia_test`, the witnesses, git) and the `--deep` doctor checks.
+- Julia 1.12 floor. Dependencies and external tools are allowed developer-side — in `docs/` and `test/`
+  environments — and never in a science package's own `[deps]` (§5.1).
 - Every public binding carries a docstring written to `policy/docs-rubric.md`; module docstrings are
   maps. `checkdocs = :exports` in the tool's own build verifies them.
 - STRICTER THAN THE FLEET RULE, and this package's alone: `RULE.DOC.AI_BANNER` requires the provenance
-  banner on rationale pages and Literate examples; here EVERY page of the site carries it, the API and
-  generated guide pages included, because the owner reviews the four science packages' API prose but
-  not this one's — AI is this package's main reader. The home page is not an exception of this
-  package's: the rule itself exempts it fleet-wide, the owner reviewing that page in every package.
+  banner on rationale pages and Literate examples; here EVERY page of the site carries it, because the
+  owner reviews the four science packages' API prose but not this one's. The home page is exempt
+  fleet-wide by the rule itself.
 - A verb never `git add`s; the session commits. `sync` refuses a hand-edited managed file and never
   merges. A doctor check is read-only.
 - Paths carry spaces (every consumer path has two): quote them in every rendered command.
 
 ## Working agreements
 
-- Commit ⇒ push, directly on `master`; every commit message ends with
-  `Co-Authored-By: Anthropic Claude <noreply@anthropic.com>`; stage with `git add -u` plus new files by
-  name, never `-A`.
-- Gate every commit on exit codes (`bash -e -o pipefail`); "should work" is not done; unasked, run only
-  `Pkg.test()`, `gbgdev selftest` and the docs build (`gbgdev` is `gbg --dev`, the shim routed to the
-  dev checkout `~/.gbg/dev` names).
-- The four consumers are read for the ports and edited only in their migration phase (4–7), never on
-  a peer session's request. Their instruments are frozen until then.
-- Two hosts (`Aiporetne`, `Enteropia`); per-machine state (`~/.local/bin/gbg`, `~/.gbg/dev`, juliaup)
-  is installed on each and never synced; a torn Dropbox file is waited out (`CFG.TORN`).
+- Commit ⇒ push, directly on `master`; every commit message ends with the trailer the session is given;
+  stage with `git add -u` plus new files by name, never `-A`.
+- Gate every commit on `tools/floor.sh` — `Pkg.test()` and the docs build, each exit 0. "Should work" is
+  not done. Unasked, run only that.
+- Every phase of `IMPLEMENTATION.md` says what it creates, what it deletes, and the gate it ends on. A
+  mechanism added outside its phase names, in its commit, the requirement or failure it answers.
+- The four science packages are read for the ports and edited only in their own phase (3, 5 and 7),
+  never on a peer session's request.
+- Two hosts (`Aiporetne`, `Enteropia`); per-machine state (`~/.local/bin/gbg`, `~/.gbg/dev`, juliaup) is
+  installed on each and never synced; a torn Dropbox file is waited out (`CFG.TORN`).
 - EVERY repository here lives inside Dropbox, so scratch goes to a system temporary directory
-  (`mktempdir()`, `TMPDIR`), never inside the repository. The self-tests break this: `test/helpers.jl`
-  copies the fixture into `fixture/.tmp/<pid>/`, and only `test/runtests.jl` cleans it up — so an
-  interrupted run, or running one test file directly, leaves thousands of directories behind. On
-  2026-09-16 that scratch had grown to 61,057 directories of the 71,136 in the whole Dropbox folder,
-  past the system's inotify watch limit, and Dropbox stopped syncing for everything. After running
-  tests, check `fixture/.tmp` and remove what is left; when the location is fixed, drop this note.
+  (`mktempdir()`, `TMPDIR`), never inside the repository. The self-tests still break this:
+  `test/helpers.jl` copies the fixture into `fixture/.tmp/<pid>/`, and only `test/runtests.jl` cleans it
+  up — so an interrupted run leaves directories behind. On 2026-09-16 that scratch had grown to 61,057
+  directories, past the system's inotify watch limit, and Dropbox stopped syncing for everything. After
+  running tests, check `fixture/.tmp` and remove what is left; Phase 1 moves it, and this note goes then.
 
 ## Release checklist
 
-1. Clean tree on `master`, pushed; `Pkg.test()` green on 1.12; `julia --project=docs
-   docs/make.jl` exits 0 (`SELF.DOCS`); `gbgdev doctor --deep` green at the root.
-2. `CHANGELOG.md` carries the entry `## <ver> — <date>` with MAJOR | MINOR | PATCH, the instruments
-   affected and "rates comparable: yes | no" (a MAJOR states the fixture recall before and after).
-3. For a final release: no round open under `.gbg/rounds/`, and the `/check-docs` round opened at the
-   latest `<ver>-rc.<n>` tag closed by honored, adjudicated, rescan, seeded or carried ids, never
-   abandoned.
-4. `gbgdev release <ver>` (or `<ver>-rc.<n>`) tags and pushes; a tag is never moved or re-issued.
-5. Consumers adopt with `gbg bump <ver>` in their own commits; the fleet is at one version within the
-   `[sweep]` window `gbg fleet` reports.
-
-## Current state
-
-Phase 1 of `IMPLEMENTATION.md` is built and released as candidates `v1.0.0-rc.1` onward; the final
-`1.0.0` waits on the serious findings `.gbg/carried.toml` holds and on `.claude/WORK_QUEUE.md`. Live
-plans are in `docs/ROADMAP.md`.
+1. Clean tree on `master`, pushed; `tools/floor.sh` green; `gbgdev doctor --deep` green at the root.
+2. `CHANGELOG.md` carries the entry `## <ver> — <date>` with MAJOR | MINOR | PATCH.
+3. `gbgdev release <ver>` (or `<ver>-rc.<n>`) tags and pushes; a tag is never moved or re-issued.
+4. Nothing else holds a release: no review, no open finding, no unanswered question, no audit.
+5. The 1.0.0 line is abandoned: the eleven `v1.0.0-rc.*` tags stand, 1.0.0 is never released, and the
+   next release is `2.0.0`, cut where `IMPLEMENTATION.md` §5 says.
