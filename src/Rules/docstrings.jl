@@ -157,7 +157,7 @@ function struct_fields(lines, node::AbstractString)
             continue
         end
         strip(line) == "end" && break
-        m = match(r"^\s{2,}([A-Za-z_][A-Za-z0-9_!]*)\s*::", line)
+        m = match(Regex("^\\s{2,}(" * Texts.NAME * ")\\s*::"), line)
         m === nothing || push!(out, String(m.captures[1]))
     end
     return out

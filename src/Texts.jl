@@ -26,6 +26,20 @@ using AbstractTrees: PreOrderDFS
 const JS = Base.JuliaSyntax
 
 """
+    NAME
+
+What a Julia name looks like, as regex source for a rule to build a larger pattern around.
+
+It is NOT `[A-Za-z_][A-Za-z0-9_!]*`, and it is not that list with Greek appended either. Julia admits
+any Unicode letter in an identifier, and the packages this rulebook serves are full of them — `φ`, `ν`
+and `σ` are ordinary field and argument names in a physics package. An incomplete pattern does not
+merely miss such a name: it REPORTS it. A struct field the pattern cannot see is a field the type does
+not have, so the docstring documenting it is reported as documenting a ghost — which is exactly what
+happened to `_MapValues(φ, orders)` when this was spelled out by hand in four places.
+"""
+const NAME = "[\\p{L}_][\\p{L}\\p{N}_!′]*"
+
+"""
     NodeSpan
 
 One named node of a file, with where it is. The fields are:
@@ -319,8 +333,9 @@ mask_code_spans(line::AbstractString) = replace(String(line), r"(?<!`)`[^`\n]+`(
 
 # ─────────────────────────────────────────────────────────────────────────── a docstring's signature
 
-# Greek letters are identifiers here: the science packages name parameters ε, Δ and ω.
-const IDENTIFIER = r"^[A-Za-zα-ωΑ-Ω_][A-Za-z0-9_!α-ωΑ-Ω̂]*$"
+# One name for a whole string, built from the one pattern above so the two cannot disagree. A combining
+# mark is admitted at the end: `û` is written as `u` plus U+0302 in some sources.
+const IDENTIFIER = Regex("^" * NAME * "[\\p{M}]*\$")
 
 """
     signature_line(doc) -> String
@@ -380,7 +395,7 @@ function parameters(inside::AbstractString)
     keyword_text = semi === nothing ? "" : inside[nextind(inside, semi):end]
     bare(raw) = String(strip(split(split(raw, "::")[1], "=")[1]))
     named(text) = [bare(r) for r in split(text, ',') if occursin(IDENTIFIER, bare(r))]
-    splats(text) = [x for x in bare.(split(text, ',')) if occursin(r"^[A-Za-z_][A-Za-z0-9_]*\.\.\.$", x)]
+    splats(text) = [x for x in bare.(split(text, ',')) if occursin(Regex("^" * NAME * "\\.\\.\\.\$"), x)]
     return (vcat(named(positional_text), splats(positional_text)),
             vcat(named(keyword_text), splats(keyword_text)))
 end

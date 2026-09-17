@@ -13,6 +13,7 @@ same commit, so nothing is checked twice and nothing stops being checked.
 module Rendering
 
 using ...Model
+using ...Texts
 
 # ─────────────────────────────────────────────────────────────────── a table indented into a list
 
@@ -222,7 +223,7 @@ const REF_ABUT_RULE = Model.Rule(
 
 # ──────────────────────────────────────────────────── a formula split across two kinds of span
 
-const ABUT_CODE = raw"(?:\[`[A-Za-z_][A-Za-z0-9_!]*`\]\([^)\n]*\)|`[A-Za-z_][A-Za-z0-9_!]*`)"
+const ABUT_CODE = "(?:\\[`" * Texts.NAME * "`\\]\\([^)\\n]*\\)|`" * Texts.NAME * "`)"
 const ABUT_MATH = raw"``[^`\n]{1,60}``"
 const ABUT = Regex("(?:" * ABUT_MATH * raw"\s*" * ABUT_CODE * "|" * ABUT_CODE * raw"\s*" * ABUT_MATH * ")")
 
