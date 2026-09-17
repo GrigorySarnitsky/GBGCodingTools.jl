@@ -11,15 +11,15 @@ end
 @testset "a prose-shape rebaseline lists what it raises" begin
     root = fixture_copy("rebaseline")
     cfg = G.Config.read(root)
-    G.write_prose_shape_baseline(cfg)
-    @test isempty(G.prose_shape_changes(cfg))
+    G.Catalogue.Shape.write_baseline(root, G.ConfigIO.read_config(root))
+    @test isempty(G.Catalogue.Shape.changes(root, G.ConfigIO.read_config(root)))
     page = joinpath(root, "docs", "src", "notation.md")
     write(page, read(page, String) * "\n" * "one more word "^10 * "\n\n## A section no baseline row has\n\nnew text here\n")
-    ch = G.prose_shape_changes(cfg)
+    ch = G.Catalogue.Shape.changes(root, G.ConfigIO.read_config(root))
     @test any(l -> startswith(l, "RAISED") && occursin("notation.md", l), ch)
     @test any(l -> startswith(l, "NEW") && occursin("A section no baseline row has", l), ch)
-    G.write_prose_shape_baseline(cfg)
-    @test isempty(G.prose_shape_changes(cfg))
+    G.Catalogue.Shape.write_baseline(root, G.ConfigIO.read_config(root))
+    @test isempty(G.Catalogue.Shape.changes(root, G.ConfigIO.read_config(root)))
 end
 
 @testset "scans" begin
@@ -131,22 +131,9 @@ end
         @test code == 0
         @test all(r -> r.population > 0 || r.exempted > 0, results)
     end
-    # The dead-scan testset stood here until 2026-09-17. Every scan it could stand on has been converted
-    # or is about to be; a check that measured nothing is now the caller's business (Checks.not_run).
-    # The scan this stands on changes as rules are converted: SCAN.REGISTER, then SCAN.SIBLING_LINK, now
-    # SCAN.PROSE_SHAPE. What is tested is the LEDGER, not the scan — any live scan with hits will do.
-    @testset "the ledger disables and refines" begin
-        row = CATALOG["SCAN.PROSE_SHAPE"]
-        led = [Dict{String,Any}("id" => "SCAN.PROSE_SHAPE", "scope" => "scan", "target" => "*", "reason" => "x"^40, "recorded" => Dates.today())]
-        r = G.run_scan(defects_config(), row; ledger = led)
-        @test isempty(r.hits) && r.exempted > 0
-        led2 = [Dict{String,Any}("id" => "SCAN.PROSE_SHAPE", "scope" => "scan", "target" => "defects/Defects.jl", "reason" => "x"^40, "recorded" => Dates.today())]
-        r2 = G.run_scan(defects_config(), row; ledger = led2)
-        # a file-targeted entry exempts THAT file and nothing else
-        @test r2.exempted > 0 && all(h -> h.file != "defects/Defects.jl", r2.hits)
-        led3 = [Dict{String,Any}("id" => "SCAN.PROSE_SHAPE", "scope" => "scan", "target" => "*", "reason" => "x"^40, "recorded" => Dates.today(), "match" => Dict("arg_type" => "Integer"))]
-        @test_throws G.Ledger.LedgerError G.run_scan(defects_config(), row; ledger = led3)   # a text scan refuses arg_type
-    end
+    # The ledger testset stood here until 2026-09-17. It had moved from scan to scan as each rule was
+    # converted, which was the sign to stop: what a package turns off is a `Switch` in the new design, and
+    # `Checks.applies` decides it — held by the switch tests in test/rules.jl.
     # A policy waiver resolves against the scan's CANONICAL rule only. A waiver of the SECOND rule of a
     # two-rule scan was first silently void (RULE.CIT.DOI rendered into deviations.md as granted while the
     # scan kept failing: 2026-09-12-check-docs-01 catalogues#1), then silently wide (it disabled the whole

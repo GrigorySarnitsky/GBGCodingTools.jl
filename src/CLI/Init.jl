@@ -15,7 +15,7 @@ module Init
 
 using TOML, Dates
 using ..GBGCodingTools: GBGCodingTools, PKG_NAME, Config, Sync, parse_options, VERBS, load_schema, validate, materialize!
-using ..GBGCodingTools: write_prose_shape_baseline, AI_BANNER
+using ..GBGCodingTools: AI_BANNER
 
 struct InitError <: Exception
     msg::String
@@ -319,7 +319,8 @@ function init(root::AbstractString = pwd(); migrate::Bool = false, dry_run::Bool
         text, changed = Sync.render_project(cfg, e)
         changed && (mkpath(joinpath(root, e)); write(joinpath(root, e, "Project.toml"), text))
     end
-    isfile(joinpath(root, "docs", "prose_shape.csv")) || (n = write_prose_shape_baseline(cfg); println(io, "  prose-shape baseline: $n units"))
+    isfile(joinpath(root, "docs", "prose_shape.csv")) ||
+        (n = GBGCodingTools.Catalogue.Shape.write_baseline(root, GBGCodingTools.ConfigIO.read_config(root)); println(io, "  prose-shape baseline: $n units"))
     if migrate
         migrate_baselines(root; io)
         migrate_seeds(root, cfg; io)

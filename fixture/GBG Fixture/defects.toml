@@ -5,16 +5,6 @@
 # directory under defects/html/ standing in for a built site.
 
 [[defect]]
-class = "paragraph-over-cap"
-scan = "SCAN.PROSE_SHAPE"
-file = "defects/Defects.jl"
-fragment = "paragraph_over_cap"
-[[defect]]
-class = "fields-not-last"
-scan = "SCAN.PROSE_SHAPE"
-file = "defects/Defects.jl"
-fragment = "# Fields"
-[[defect]]
 class = "doi-missing"
 scan = "SCAN.DOI_CROSSCHECK"
 file = "defects/Defects.jl"

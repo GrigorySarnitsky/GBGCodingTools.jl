@@ -235,7 +235,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.SHAPE"
 statement = "A docstring's longest paragraph is at most 120 words and it has at most 3 admonitions; no unit grows past its baseline, and a page unit already baselined is held by that ratchet alone; an '# Arguments' heading, where a consumer uses one, precedes any column-0 !!!; '# Fields' is last."
 sentinel = "A docstring's longest paragraph stays within 120 words and it carries at most three admonitions, no unit grows past its recorded baseline, an `# Arguments` heading — where a consumer uses one in place of the bulleted form of RULE.DOC.ARGS_FORM — precedes any column-0 admonition, and `# Fields` is last."
-check = ["scan:SCAN.PROSE_SHAPE"]
+check = ["rule:RULE.DOC.SHAPE"]  # converted 2026-09-17: src/Rules/shape.jl
 [[rule]]
 id = "RULE.DOC.MODULE_MAP"
 file = "docs-rubric.md"

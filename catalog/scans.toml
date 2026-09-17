@@ -11,14 +11,6 @@
 # "which rules does this scan carry".
 
 [[scan]]
-id = "SCAN.PROSE_SHAPE"
-rule = "RULE.DOC.SHAPE"
-tier = "hard"
-surfaces = ["src", "rationale", "pages"]
-runner = "julia"
-fixture = ["paragraph-over-cap", "fields-not-last"]
-
-[[scan]]
 id = "SCAN.DOI_CROSSCHECK"
 rule = "RULE.CIT.FULL_INLINE"
 tier = "hard"

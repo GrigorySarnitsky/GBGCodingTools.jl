@@ -130,6 +130,27 @@ const NO_BARE_URL = MR.Rule(
         @test isempty(materialise(rule, complying))
     end
 
+    # What a package turns off, and for which files — the mechanism that replaces the ledger.
+    @testset "a switch turns a rule off, wholly or for named files" begin
+        dir = mktempdir(; cleanup = true)
+        mkpath(joinpath(dir, "docs", "src"))
+        write(joinpath(dir, "docs", "src", "page.md"), "# A page\n\nTODO: write this.\n")
+        write(joinpath(dir, "docs", "src", "other.md"), "# Another\n\nTODO: this one too.\n")
+        base = MR.Config(package = "P", tool = :dev,
+                         filesets = Dict(MR.FileSet.PAGES => ["docs/src/page.md", "docs/src/other.md"]))
+        @test length(CK.run_rule(NO_TODO, base, dir)) == 2                      # on, both files
+
+        off = MR.Config(package = "P", tool = :dev, filesets = base.filesets,
+                        switches = [MR.Switch(target = NO_TODO.id, reason = "this package ships no pages at all")])
+        @test isempty(CK.run_rule(NO_TODO, off, dir))                           # off for the package
+
+        partly = MR.Config(package = "P", tool = :dev, filesets = base.filesets,
+                           switches = [MR.Switch(target = NO_TODO.id, reason = "that page is a worked example",
+                                                 files = ["docs/src/other.md"])])
+        hits = CK.run_rule(NO_TODO, partly, dir)
+        @test length(hits) == 1 && first(hits).file == "docs/src/page.md"        # off for one file only
+    end
+
     # ── and then the rulebook itself ─────────────────────────────────────────────────────────────────
     @testset "every converted rule is shown to match its check" begin
         for rule in G.Catalogue.RULES
