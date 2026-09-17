@@ -13,18 +13,21 @@ than a silent divergence. Regenerating is left to `gbg sync`, `gbg bump` and `gb
 reports drift and never repairs it.
 
 This is the sixth module of the order: it may name `Model`, `Texts`, `Catalogue` and `ConfigIO`, and
-nothing above. What it writes today is the WIRING — the pin, the ignore block, the end-of-turn hook, the
-settings that install it, the CI workflows and the regressions note. The rendered rulebook waits for the
-rules to be Julia, and the skills wait for the instruments, so
-`gbg sync` still renders those two from the old templates.
+nothing above. What it writes today is the WIRING — the ignore block, the end-of-turn hook, the settings
+that install it, the regressions note — and the RULEBOOK a session loads, rendered from the rule values
+themselves, so a rule cannot be reworded in the text without being reworded in the program that enforces
+it. The instrument skills wait for the instruments.
 """
 module Render
 
 using ..Model
 using ..Catalogue
 
-const BEGIN_MARK = "# gbg:managed begin"
-const END_MARK = "# gbg:managed end"
+# The marker a generated block carries. It is matched anywhere in the line rather than at its start,
+# because the comment syntax differs by file — `#` in a shell script or a `.gitignore`, `<!-- -->` in
+# Markdown — and one marker the reader recognises in every file is worth more than one parser per format.
+const BEGIN_MARK = "gbg:managed begin"
+const END_MARK = "gbg:managed end"
 
 """
     version_tag(cfg) -> String
@@ -43,7 +46,7 @@ the package's config. Returns the block, marked at both ends so the rest of the 
 """
 function gitignore(cfg::Model.Config)
     return """
-    $BEGIN_MARK $(version_tag(cfg)) — rewritten by `gbg sync`; do not edit
+    # $BEGIN_MARK $(version_tag(cfg)) — rewritten by `gbg sync`; do not edit
     .gbg/scratch/
     docs/build/
     docs/Manifest.toml
@@ -51,7 +54,7 @@ function gitignore(cfg::Model.Config)
     benchmark/Manifest.toml
     .claude/settings.local.json
     *.cov
-    $END_MARK
+    # $END_MARK
     """
 end
 
@@ -189,20 +192,253 @@ being given both, in one line it can read. Returns the line.
 """
 runtests_call() = "GBGCodingTools.Engine.Harness.test(@__DIR__ |> dirname; checks = (GBGCodingTools.Render.wiring,))"
 
+# ──────────────────────────────────────────────────────────────────────────────── the rendered rulebook
+
+"""
+    POLICY_FILES
+
+One rendered rulebook file per family of rule ids, with the families it carries and the sentence that
+opens it. `RULE.API.*` shares a file with `RULE.DOC.*`: an API page and a docstring are one subject, and
+splitting them would put the two halves of "one concept, one home" in two files.
+"""
+const POLICY_FILES = [
+    (generator = :policy_docs, path = ".gbg/policy/docs-rubric.md", families = [:DOC, :API],
+     title = "Documentation and API — `RULE.DOC.*`, `RULE.API.*`",
+     opening = "What a docstring and an API page contain, in what order and in what shape."),
+    (generator = :policy_latex, path = ".gbg/policy/latex-idiom.md", families = [:TEX],
+     title = "LaTeX idiom — `RULE.TEX.*`",
+     opening = "What renders, and how mathematics is written so that it renders the same way everywhere."),
+    (generator = :policy_citations, path = ".gbg/policy/citations.md", families = [:CIT],
+     title = "Citations — `RULE.CIT.*`",
+     opening = "Author–year in the prose, the full reference where the reader can reach it, a DOI on every title."),
+    (generator = :policy_testing, path = ".gbg/policy/testing-protocol.md", families = [:TEST],
+     title = "Testing protocol — `RULE.TEST.*`",
+     opening = "What a test is for, where its oracle comes from, and when a thing is done."),
+    (generator = :policy_instruments, path = ".gbg/policy/instruments.md", families = [:INST],
+     title = "Instruments — `RULE.INST.*`",
+     opening = "How a review runs: consent, witnesses, closure, cost, and the limits it must state."),
+    (generator = :policy_git, path = ".gbg/policy/git-conventions.md", families = [:GIT],
+     title = "Git conventions — `RULE.GIT.*`",
+     opening = "What a commit carries, where it goes, and what is never committed."),
+]
+
+"""
+    family_of(id) -> Symbol
+
+The family an id belongs to: the middle word of `RULE.<FAMILY>.<NAME>`. The argument is `id`, the rule's
+identifier. Returns the family.
+"""
+family_of(id::Symbol) = Symbol(split(String(id), '.')[2])
+
+"""
+    rule_section(rule) -> String
+
+One rule as the rendered rulebook shows it: its heading, its statement, why it exists, what decides a
+violation, and the values a package may set. The argument is `rule`, the rule. Returns the section.
+
+No example is shown. A rulebook page carrying an example of a rule being broken is by construction full
+of text that breaks the rules it states, which a reader spends its budget reporting and no fixer may
+touch; the examples live in the rule value, where `test/rules.jl` runs them.
+"""
+function rule_section(rule::Model.Rule)
+    io = IOBuffer()
+    println(io, "### ", rule.id)
+    println(io, rule.statement)
+    isempty(rule.why) || (println(io); println(io, rule.why))
+    println(io)
+    println(io, "Decided by ", Catalogue.check_words(rule.check), ".",
+            rule.check === nothing ? " Nothing checks it: " * rule.unchecked_reason : "")
+    for p in rule.parameters
+        println(io, "This package may set `", p.name, "`; unset, it is `", p.default, "`.")
+    end
+    return String(take!(io))
+end
+
+"""
+    policy_file(cfg, entry) -> String
+
+One file of the rendered rulebook: its heading, its opening sentence, and every rule of the families it
+carries, in id order. The arguments are `cfg`, the package's config, and `entry`, the row of
+[`POLICY_FILES`](@ref) to render. Returns the file.
+"""
+function policy_file(cfg::Model.Config, entry)
+    rules = sort([r for r in Catalogue.RULES if family_of(r.id) in entry.families], by = r -> String(r.id))
+    io = IOBuffer()
+    println(io, "<!-- gbg:managed begin ", version_tag(cfg), " — rewritten by `gbg sync`; do not edit -->")
+    println(io, "# ", entry.title, "\n")
+    println(io, entry.opening, " ", length(rules), " rules, written from the rule values themselves,")
+    println(io, "so a rule reworded here was reworded in the program that checks it.\n")
+    for r in rules
+        println(io, rule_section(r))
+    end
+    println(io, "<!-- gbg:managed end -->")
+    return String(take!(io))
+end
+
+"""
+    claude_block(cfg) -> String
+
+The block this package owns at the top of a package's `CLAUDE.md`: the import of the rulebook, and the
+two standing instructions a session needs before it has read anything. The argument is `cfg`, the
+package's config. Returns the block, marked at both ends so the rest of the file is the package's own.
+
+It imports and does not restate. A block that listed the rules, or what this package has switched off,
+would be a second copy of the rulebook in the one file every session reads first — and the copy that
+is read is the copy that drifts.
+"""
+function claude_block(cfg::Model.Config)
+    return """
+    <!-- $BEGIN_MARK $(version_tag(cfg)) — rewritten by `gbg sync`; do not edit -->
+    @.gbg/policy/00-index.md
+
+    The rulebook above is the whole of it: the rules, the terms they use, and what $(cfg.package) has
+    switched off with its reason. Nothing restates a rule outside it — a rule quoted in two files is a
+    rule that will be reworded in one.
+
+    Unasked, run `Pkg.test()` and nothing else. What a rule finds is reported, never fixed silently:
+    documentation may be fixed without asking, and anything else waits for an answer.
+    <!-- $END_MARK -->
+    """
+end
+
+"""
+    policy_paths() -> Vector{String}
+
+Every file of the rendered rulebook, in the order a reader meets them: the rule families as
+[`POLICY_FILES`](@ref) lists them, then the glossary, then what this package has switched off. Returns
+the paths, relative to the package root.
+"""
+policy_paths() = vcat([e.path for e in POLICY_FILES], [".gbg/policy/glossary.md", ".gbg/policy/switches.md"])
+
+"""
+    policy_index(cfg) -> String
+
+The rulebook's index: what the rulebook is, how a package escapes a rule, and the import of every other
+file, which is how a session loads the whole of it. The argument is `cfg`, the package's config.
+Returns the file.
+"""
+function policy_index(cfg::Model.Config)
+    io = IOBuffer()
+    println(io, "<!-- gbg:managed begin ", version_tag(cfg), " — rewritten by `gbg sync`; do not edit -->")
+    println(io, "# The rulebook\n")
+    println(io, """
+    One text for every package that pins GBGCodingTools, at the version this package pins. Every rule has
+    a stable id, `RULE.<FAMILY>.<NAME>`, which is never renamed and never reused: a finding, a switch and
+    a report all name a rule by it.
+
+    This directory is WRITTEN, not edited. Each rule is a Julia value carrying its statement, the check
+    that decides a violation, and the examples that show the check matches the statement; these files are
+    rendered from those values by `gbg sync`, so a rule cannot be reworded here without being reworded in
+    the program that enforces it, and the two cannot drift.
+
+    A package that a rule does not fit does not edit it. It declares a `Switch` in its own `.gbg/config.jl`,
+    naming the rule and the reason, for the whole package or for named files; `switches.md` lists what this
+    package has declared, and a session reads a switched rule as the switch states it. A rule a package
+    adds for itself is a `PatternRule` in the same file, and is nobody else's.\n""")
+    println(io, "The files:\n")
+    for e in POLICY_FILES
+        n = count(r -> family_of(r.id) in e.families, Catalogue.RULES)
+        println(io, "- `", basename(e.path), "` — ", e.opening, " (", n, " rules)")
+    end
+    println(io, "- `glossary.md` — the terms the rules use, bound once.")
+    println(io, "- `switches.md` — what this package has switched off, and why.\n")
+    for path in policy_paths()
+        println(io, "@", path)
+    end
+    println(io, "<!-- gbg:managed end -->")
+    return String(take!(io))
+end
+
+"""
+    glossary(cfg) -> String
+
+The terms the rules use, bound once so that every rule may use them without redefining them. The
+argument is `cfg`, the package's config. Returns the file.
+"""
+function glossary(cfg::Model.Config)
+    return """
+    <!-- gbg:managed begin $(version_tag(cfg)) — rewritten by `gbg sync`; do not edit -->
+    # Glossary
+
+    The terms the rules use. A rule may use any of these without defining it; a term not here is defined
+    where it is used, or it is not a term of art.
+
+    - **consumer** — a package that pins this one and receives its wiring.
+    - **rule** — one statement with one check and the examples that show the check matches it. Its id is
+      `RULE.<FAMILY>.<NAME>`, stable for the life of the rule.
+    - **check** — what decides that a rule was broken: a program, or an agent where no program can.
+    - **clause** — one requirement of a statement. A rule with three clauses owes three breaking examples
+      and three complying ones.
+    - **switch** — a package turning a rule off, wholly or for named files, with its reason. It replaces
+      the exemption ledger: there is no expiry and no ceremony, only a reason a reader can weigh.
+    - **file set** — which of a package's files a rule runs over: docstrings, code, pages, rationale,
+      Literate examples, tests.
+    - **finding** — one violation at one location, with the rule that found it.
+    - **location** — where a finding is: the file, the node (a binding, or a heading path), the quote as
+      it read then, and the line as a hint only.
+    - **generated file** — a file written by a Julia function of this package. Editing one by hand is
+      drift, which the wiring check reports and `gbg sync` repairs.
+    - **pin** — the one version of this package a consumer uses, named in its sub-environments.
+    - **intention** — whether a change or a finding is in documentation or in code. Documentation is safe
+      to fix without asking; code is not.
+    <!-- gbg:managed end -->
+    """
+end
+
+"""
+    switches(cfg) -> String
+
+What this package has switched off, and why: one entry per `Switch` in its config, and a rule a package
+adds for itself listed after them. The argument is `cfg`, the package's config. Returns the file.
+
+A switch is read as part of the rulebook: a session that has loaded the rules has loaded what this
+package does not hold itself to, which is the only way a rule can be escaped.
+"""
+function switches(cfg::Model.Config)
+    io = IOBuffer()
+    println(io, "<!-- gbg:managed begin ", version_tag(cfg), " — rewritten by `gbg sync`; do not edit -->")
+    println(io, "# What ", cfg.package, " has switched off\n")
+    if isempty(cfg.switches)
+        println(io, "Nothing. Every rule of the rulebook applies here as written.\n")
+    else
+        println(io, "Each entry names a rule this package does not hold itself to, and why. A rule listed")
+        println(io, "here is read as the entry states it.\n")
+        for s in cfg.switches
+            scope = isempty(s.files) ? "the whole package" : join("`" .* s.files .* "`", ", ")
+            println(io, "- `", s.target, "` — ", s.reason, " (", scope, ")")
+        end
+        println(io)
+    end
+    if !isempty(cfg.rules)
+        println(io, "Rules this package adds for itself, which are nobody else's:\n")
+        for r in cfg.rules
+            println(io, "- `", r.id, "` — ", r.statement)
+        end
+        println(io)
+    end
+    println(io, "<!-- gbg:managed end -->")
+    return String(take!(io))
+end
+
 # ─────────────────────────────────────────────────────────────────────────── the register and the check
 
 """
     GENERATED
 
 Every path this module writes in a package, with how much of it is written. A path is here only when a
-generator writes it today: the rendered rulebook and the instrument skills are still rendered from the old
-templates and are not in the register, so the wiring check does not claim to hold them.
+generator writes it today: the instrument skills wait for the instruments and are not in the register, so
+the wiring check does not claim to hold them.
 """
 const GENERATED = [
     (path = ".gitignore",                  part = Model.Part.BLOCK,        generator = :gitignore),
     (path = ".claude/hooks/queue-guard.sh", part = Model.Part.WHOLE,       generator = :hook),
     (path = ".claude/settings.json",       part = Model.Part.WHOLE,        generator = :settings),
     (path = "test/regressions/README.md",  part = Model.Part.WHOLE,        generator = :regressions_note),
+    (path = "CLAUDE.md",                   part = Model.Part.BLOCK,        generator = :claude_block),
+    (path = ".gbg/policy/00-index.md",     part = Model.Part.WHOLE,        generator = :policy_index),
+    (path = ".gbg/policy/glossary.md",     part = Model.Part.WHOLE,        generator = :glossary),
+    (path = ".gbg/policy/switches.md",     part = Model.Part.WHOLE,        generator = :switches),
+    (map(e -> (path = e.path, part = Model.Part.WHOLE, generator = e.generator), POLICY_FILES))...,
 ]
 
 """
@@ -216,6 +452,13 @@ function produce(name::Symbol, cfg::Model.Config)
     name === :hook && return hook(cfg)
     name === :settings && return settings(cfg)
     name === :regressions_note && return regressions_note(cfg)
+    name === :policy_index && return policy_index(cfg)
+    name === :glossary && return glossary(cfg)
+    name === :switches && return switches(cfg)
+    name === :claude_block && return claude_block(cfg)
+    for e in POLICY_FILES
+        name === e.generator && return policy_file(cfg, e)
+    end
     error("no generator named $name")
 end
 
@@ -227,8 +470,8 @@ file holds none. The argument is `text`, the file's content. Returns the block, 
 """
 function block_of(text::AbstractString)
     lines = split(text, '\n')
-    first_i = findfirst(l -> startswith(l, BEGIN_MARK), lines)
-    last_i = findfirst(l -> startswith(l, END_MARK), lines)
+    first_i = findfirst(l -> occursin(BEGIN_MARK, l), lines)
+    last_i = findfirst(l -> occursin(END_MARK, l), lines)
     (first_i === nothing || last_i === nothing || last_i < first_i) && return nothing
     return join(lines[first_i:last_i], '\n') * "\n"
 end

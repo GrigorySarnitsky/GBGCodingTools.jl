@@ -35,8 +35,10 @@ end
             # sit around it and are none of this package's business
             lines = split(text, '\n')
             inside = if g.part == MW.Part.BLOCK
-                b = findfirst(l -> startswith(l, "# gbg:managed begin"), lines)
-                e = findfirst(l -> startswith(l, "# gbg:managed end"), lines)
+                # the marker is matched anywhere in the line, as `Render.block_of` matches it: the
+                # comment syntax differs by file and the block is the same block
+                b = findfirst(l -> occursin(RN.BEGIN_MARK, l), lines)
+                e = findfirst(l -> occursin(RN.END_MARK, l), lines)
                 findfirst(i -> b < i < e && !isempty(strip(lines[i])), eachindex(lines))
             else
                 findfirst(i -> !isempty(strip(lines[i])), eachindex(lines))

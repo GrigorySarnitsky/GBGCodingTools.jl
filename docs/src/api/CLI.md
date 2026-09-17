@@ -19,7 +19,6 @@ GBGCodingTools.Sync
 GBGCodingTools.Sync.plan
 GBGCodingTools.Sync.status
 GBGCodingTools.Sync.render
-GBGCodingTools.Sync.managed_block
 GBGCodingTools.Sync.subenv_entries
 GBGCodingTools.Init
 GBGCodingTools.Init.derive_config

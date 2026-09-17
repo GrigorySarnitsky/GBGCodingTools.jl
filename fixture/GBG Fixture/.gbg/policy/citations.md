@@ -1,32 +1,43 @@
-<!-- gbg:managed policy/citations.md vdev — rewritten by `gbg sync`; do not edit -->
-# Citations (`RULE.CIT.*`)
+<!-- gbg:managed begin vdev — rewritten by `gbg sync`; do not edit -->
+# Citations — `RULE.CIT.*`
 
-### RULE.CIT.STYLE
-A citation is context-standard author–year: author-prominent with a parenthesized year, a bare year inside
-an existing parenthetical, at most three authors named, and `First et al.` for four or more. Keep enough
-surnames to disambiguate two works that would otherwise collide. An eponymous method name takes no year
-unless the work is actually cited.
-
-### RULE.CIT.FULL_INLINE
-A docstring cites author–year in its prose and carries the full reference in a `# References` section
-after the home's prose, before any `# Fields`: one bullet per work, `Authors, [*Title*](https://doi.org/…), Journal Volume (Year)`,
-verbatim-identical to the canonical entry under the package's references heading, title and DOI compared. Never
-the full reference in the running prose, which the sentence has to carry and the reader has to step over.
-Doc pages cite short and the canonical full reference lives in the rationale document; a REPL reader sees
-the whole reference without opening another file, and drift between the copies is the chosen
-duplication's only risk, so it is the thing checked.
-
-### RULE.CIT.DOI
-Every reference carries a clickable DOI on its title, `[*Title*](https://doi.org/…)`, or an Open Library
-link for a book with no DOI, identical in every copy. A DOI stays REPL-safe; a link target percent-encodes
-`()` and `<>`, and the scan compares DOIs decoded.
+Author–year in the prose, the full reference where the reader can reach it, a DOI on every title. 5 rules, written from the rule values themselves,
+so a rule reworded here was reworded in the program that checks it.
 
 ### RULE.CIT.BLOCK_LIST
-Two or more citations form a bullet list under a `References:` label, one citation per line, and a lone
-citation stays inline as `Reference: …`. A semicolon-joined paragraph is unreadable when rendered.
+References are listed one to a line, never run together with semicolons.
+
+A reader looking for one reference in a semicolon-separated run has to parse the whole paragraph.
+
+Decided by a program.
+
+### RULE.CIT.DOI
+Every reference carries a clickable DOI, or an Open Library link for a book, on its title.
+
+A DOI a reader cannot click is a string to retype; one written as a bare label is indistinguishable from prose.
+
+Decided by a program.
+
+### RULE.CIT.FULL_INLINE
+A docstring cites author–year in its prose and carries the full reference in a `# References` section, identical to the canonical entry in title and DOI.
+
+A full reference mid-sentence takes the reader's eye out of the sentence, and a hand-copied entry drifts from the one the package keeps.
+
+Decided by a program.
+This package may set `references`; unset, it is `docs/ARCHITECTURE.md`.
 
 ### RULE.CIT.NO_INACCESSIBLE
-Never cite an inaccessible source on any user-facing surface: not a gitignored monograph, an accompanying
-thesis, an appendix or figure the reader cannot open, nor working notes. A citation the reader cannot
-follow is dead weight and implies they are missing something they cannot get; present every result on its
-own public terms.
+Never cite an inaccessible source on any user-facing surface: not a gitignored monograph, an accompanying thesis, an appendix or figure the reader cannot open, nor working notes.
+
+A citation the reader cannot follow is the author telling themselves where they got it; the reader is left with an assertion and nowhere to check it.
+
+Decided by an agent, because this needs meaning.
+
+### RULE.CIT.STYLE
+In-text author–year: author-prominent takes a parenthesized year; up to 3 authors are named, 'First et al.' for four or more.
+
+Keep enough surnames to disambiguate two works that would otherwise collide. An eponymous method name takes no year unless the work is actually cited.
+
+Decided by an agent, because this needs meaning.
+
+<!-- gbg:managed end -->

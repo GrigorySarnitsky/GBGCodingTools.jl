@@ -1,10 +1,12 @@
-<!-- gbg:managed begin vdev sha256:a574af179a6b19f85fecd01c044d397b0598ed6406b717147689dade18a967ca — rewritten by `gbg sync`; do not edit -->
+<!-- gbg:managed begin vdev — rewritten by `gbg sync`; do not edit -->
 @.gbg/policy/00-index.md
-## GBGCodingTools — this package's parameters and declared deviations
-- Package `GBGFixture`; leading identity: physical meaning; vectors: component notation.
-- Deviations: (none)
-- "Check the docs" means run `/check-docs`. Instruments run only on the user's request, in words or by
-  slash — never unasked; unasked, run only `Pkg.test()`.
+
+The rulebook above is the whole of it: the rules, the terms they use, and what GBGFixture has
+switched off with its reason. Nothing restates a rule outside it — a rule quoted in two files is a
+rule that will be reworded in one.
+
+Unasked, run `Pkg.test()` and nothing else. What a rule finds is reported, never fixed silently:
+documentation may be fixed without asking, and anything else waits for an answer.
 <!-- gbg:managed end -->
 
 # CLAUDE.md — GBGFixture

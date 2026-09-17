@@ -1,10 +1,12 @@
-<!-- gbg:managed begin vdev sha256:cad586d6ca9739e227392ab71078acead8442e283fcaaa8942189a40490c7837 — rewritten by `gbg sync`; do not edit -->
+<!-- gbg:managed begin vdev — rewritten by `gbg sync`; do not edit -->
 @.gbg/policy/00-index.md
-## GBGCodingTools — this package's parameters and declared deviations
-- Package `GBGCodingTools`; leading identity: physical meaning; vectors: none.
-- Deviations: `RULE.TEST.ALLOC_ZERO` on `*` — no in-place operator over element storage exists here: this package's `!` functions mutate a registry, a dictionary or a string buffer, and an allocation bound on them measures the Julia runtime, not the package; `RULE.TEST.PASS_AUDIT` on `*` — the traffic audit counts reads and writes per array element; this package holds no array whose traffic is a correctness property, so a frozen row would record the runtime's behaviour and nothing of the package's; `RULE.TEST.EXAMPLES_RUN` on `*` — this package ships no Literate examples: its `literate` surface is empty by design, since a worked example of a review instrument is a round, which is recorded under .gbg/rounds/ rather than executed as a script; `RULE.DOC.LEADING_IDENTITY` on `*` — the leading identity of a docstring is the physical meaning of the quantity it computes; this package computes no physical quantity, so its docstrings lead with what the operation does, which the rubric's own parameterisation already admits; `RULE.API.POSITIONAL` on `*` — no program decides whether an argument affects the result: the rule is semantic, so no scan or doctor check can exist for it. Its `check` in RULES.toml is `panel` — decided by a reading panel inside an instrument that runs, which under `RULE.TEST.RULE_WITH_CHECK` is an answer and not the unpaid debt `weakness` names
-- "Check the docs" means run `/check-docs`. Instruments run only on the user's request, in words or by
-  slash — never unasked; unasked, run only `Pkg.test()`.
+
+The rulebook above is the whole of it: the rules, the terms they use, and what GBGCodingTools has
+switched off with its reason. Nothing restates a rule outside it — a rule quoted in two files is a
+rule that will be reworded in one.
+
+Unasked, run `Pkg.test()` and nothing else. What a rule finds is reported, never fixed silently:
+documentation may be fixed without asking, and anything else waits for an answer.
 <!-- gbg:managed end -->
 
 # CLAUDE.md — GBGCodingTools

@@ -472,9 +472,11 @@ check!("WIRE.GITIGNORE", ctx -> begin
     isempty(drift) ? pass("WIRE.GITIGNORE") : fail("WIRE.GITIGNORE", first(drift).text)
 end)
 check!("WIRE.CLAUDE_MD", ctx -> begin
-    st = sync_status(ctx); e = findfirst(x -> x.path == "CLAUDE.md#gbg:managed", st)
-    e === nothing && return fail("WIRE.CLAUDE_MD", "no status")
-    st[e].state == :OK || return fail("WIRE.CLAUDE_MD", "$(st[e].state): $(st[e].detail)")
+    # The block is `Render.claude_block`'s since 2026-09-17, so the wiring check decides this, as it
+    # decides the ignore block: the sidecar no longer records it.
+    cfg = GBGCodingTools.ConfigIO.read_config(ctx.root)
+    drift = [l for l in GBGCodingTools.Render.wiring(cfg, ctx.root) if l.file == "CLAUDE.md"]
+    isempty(drift) || return fail("WIRE.CLAUDE_MD", first(drift).text)
     occursin("@.gbg/policy/00-index.md", read(joinpath(ctx.root, "CLAUDE.md"), String)) || return fail("WIRE.CLAUDE_MD", "the import line is gone")
     pass("WIRE.CLAUDE_MD")
 end)

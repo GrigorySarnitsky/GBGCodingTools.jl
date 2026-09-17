@@ -36,8 +36,8 @@ open(joinpath(@__DIR__, "src", "guide", "rules.md"), "w") do io
     println(io, "Generated at build time from this package's rendered policy copy under `.gbg/policy/`: the shared rulebook")
     println(io, "every [consumer](@ref install) imports, with this package's parameters substituted. A rule's id is stable; the scans and the")
     println(io, "doctor cite it.\n")
-    for f in ("docs-rubric.md", "latex-idiom.md", "citations.md", "testing-protocol.md", "instruments.md", "git-conventions.md", "glossary.md", "deviations.md")
-        for l in readlines(joinpath(ROOT, ".gbg", "policy", f))
+    for f in GBGCodingTools.Render.policy_paths()
+        for l in readlines(joinpath(ROOT, f))
             startswith(l, "<!-- gbg:managed") && continue
             m = match(r"^### (RULE\.[A-Z]+\.[A-Z_]+)\s*$", l)
             g = match(r"^# (Glossary\b.*)$", l)                  # the terms, given an id the guide pages link to

@@ -1,99 +1,134 @@
-<!-- gbg:managed policy/latex-idiom.md vdev — rewritten by `gbg sync`; do not edit -->
-# The LaTeX idiom (`RULE.TEX.*`)
+<!-- gbg:managed begin vdev — rewritten by `gbg sync`; do not edit -->
+# LaTeX idiom — `RULE.TEX.*`
 
-Every rule here is standard LaTeX idiom plus a few documented exceptions, not a matter of taste; when
-unsure, reach for a standard LaTeX reference and KaTeX's published support table, never a
-plausible-sounding typographic argument. Documenter renders KaTeX client-side, so a formula's TeX is the
-page's text.
-
-### RULE.TEX.RENDERED_MATH
-All mathematics in docstrings and doc pages is rendered LaTeX, never a Unicode-glyph approximation, and
-every code object is bound to its math symbol on first mention. Inline math is a double-backtick span,
-display math a fenced block whose language is `math`; inside a `"""` docstring every LaTeX backslash is doubled. Plain `#`
-comments stay Unicode, being unrendered. Write the binding explicitly — `laplacian` ``\equiv \Delta`` —
-so the reader always knows which symbol is which function, and write it as one span inside a rendered
-docstring.
-
-### RULE.TEX.CODE_IN_MATH
-A code identifier never sits inside a math span, because the renderer sets it as the product of italic
-single letters. Backtick it in prose; a code name that must appear inside a formula is `\texttt{…}`.
-
-### RULE.TEX.ONE_SPAN
-A formula is one LaTeX span, never split across a math span and an adjacent code span. Keep it one span,
-a trailing code name in `\texttt{}`.
-
-### RULE.TEX.INLINE_ONE_LINE
-An inline math span stays on one source line, because a wrapped continuation that begins with a list or
-blockquote leader is parsed as a new list item and silently drops the span out of math mode. Break the
-prose around the span, never the span; the docs build fails on the defect.
-
-### RULE.TEX.NO_HSCROLL
-Nothing scrolls horizontally: a long docstring signature is hand-wrapped with a hanging indent under the
-first argument, and a wide display formula is broken with `aligned`, `gathered` or `split`. Neither a
-rendered code block nor display math auto-wraps; inline math reflows and is exempt. Never pack several
-equations on one line behind `\quad`.
-
-### RULE.TEX.CODE_SPAN_JULIA
-A backtick span holds only well-formed Julia — a name, type, call or expression — never math that merely
-looks code-ish. A half-open interval, an inequality, a product, a lone `≤` or `·` glyph is LaTeX; the real
-operators `×`, `⋅` and `≈` backticked are code and stay.
-
-### RULE.TEX.SPACING
-Never space manually around a relation or binary operator, never put `\!` before a `\bigl`, never `\!\!`
-before a sum, and never write `\,` except before an upright differential. Spacing next to `=`, `<`, `\in`,
-`+` or `-` doubles the space TeX already puts there; `\!` before a delimiter that follows an operator or
-name jams the delimiter into it, there being no gap to remove; between multiplied factors juxtaposition
-is standard, and when a gratuitous thin space is removed it becomes a plain space, never nothing.
-Correct and not to be "fixed": `\sim\!`, `\,\mathrm{d}x`, `\quad`/`\qquad` between display equations,
-and `\mathrm{Re}` versus `\operatorname{Re}` before a delimiter.
-
-### RULE.TEX.MATHBB
-`\mathbb` is written only on a capital `A`–`Z` or `k`, and the indicator or identity is `\mathbf{1}`.
-KaTeX's blackboard font covers only those glyphs, so `\mathbb` on a digit falls back to a plain glyph with
-the font silently dropped.
-
-### RULE.TEX.MATHBF
-`\mathbf` is admitted only for an agreed list of strings, and vectors and tensors follow the package's one
-vector notation. For this package the admitted strings are `\mathbf{1}` and the vector
-notation is component notation with index letters: component notation with index letters, or bold italic `\boldsymbol{u}`
-with a braced argument, or no vector notation at all. Never the other, and never an upright `\mathbf`
-outside the admitted list. `\mathbf{1}`, the indicator and identity of `RULE.TEX.MATHBB`, is admitted in
-every package whatever that list holds; it is not a package's to withhold.
-
-### RULE.TEX.LEFTRIGHT
-`\left` and `\right` are banned; every delimiter is sized by hand with `\bigl`/`\Bigl` … `\bigr`/`\Bigr`.
-Manual delimiters are Open and Close atoms with no added gap, where `\left … \right` is an Inner atom that
-adds a spurious gap around the fence. Sole exception: a system or cases written `\left\{ … \right.`; the
-arrow commands are not delimiters and are unaffected.
-
-### RULE.TEX.PARTIAL
-A partial derivative is `\partial_{x_i}`, subscripting the coordinate, and a bare-index `\partial_i` is
-banned. A second-order derivative is `\partial^2_{x_i x_i}`, a repeated index summed.
-
-### RULE.TEX.IMAGINARY
-The imaginary unit is upright `\mathrm{i}`, and `i`, `j`, `k` are indices. Never a bare italic `i`, never
-`\imath` or `\mathbb{i}`; the differential is likewise upright, `\,\mathrm{d}x`.
-
-### RULE.TEX.FRAC_BRACED
-Every fraction argument is braced: `\tfrac{1}{2}`, never `\tfrac12` and never `\tfrac N2`. Both render
-alike; the braces are the house style and the scan is exact.
+What renders, and how mathematics is written so that it renders the same way everywhere. 18 rules, written from the rule values themselves,
+so a rule reworded here was reworded in the program that checks it.
 
 ### RULE.TEX.BOLDSYMBOL_BRACED
-Every `\boldsymbol` argument is braced: `\boldsymbol{u}`, never `\boldsymbol u`. The unbraced form takes
-one token and silently stops at a subscript.
+A bold symbol braces its argument.
 
-### RULE.TEX.SWALLOWED_ESCAPE
-Inside a Julia docstring every LaTeX backslash is doubled, because a single backslash before `a`, `b`,
-`e`, `f`, `n`, `r`, `t`, `v`, an octal digit, `x`, `u` or `U` is swallowed by the string parser. The
-rendered formula then lacks the command with no error anywhere.
+Unbraced, it bolds the next character alone and leaves the rest of the name upright.
 
-### RULE.TEX.RENDERED_MARKUP
-No emphasis marker survives into rendered prose. An emphasis nesting CommonMark cannot resolve, such as
-`*a **b***`, renders as literal asterisks; the built page, not the source, is where it shows, and the docs
-build scans the built HTML for it.
+Decided by a program.
+
+### RULE.TEX.CODE_IN_MATH
+A code identifier never sits inside a math span; inside a formula it is written \texttt{…}.
+
+The renderer sets a run of letters in a math span as a product of italic single letters, not as a name.
+
+Decided by a program.
+
+### RULE.TEX.CODE_SPAN_JULIA
+A backtick span holds only well-formed Julia, never code-looking math.
+
+A half-open interval, an inequality, a product, a lone `≤` or `·` glyph is LaTeX; the real operators `×`, `⋅` and `≈` backticked are code and stay.
+
+Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
+
+### RULE.TEX.FRAC_BRACED
+Both arguments of a fraction are braced.
+
+An unbraced fraction takes one character as its numerator and silently drops the rest.
+
+Decided by a program.
 
 ### RULE.TEX.GREEK_AB
-Accumulation scalars are written Unicode `α` and `β` everywhere — arguments, locals, kernel bodies and
-docstrings — and the named ASCII holdouts stay. A hand-written operation spelling them `alpha`/`beta` is
-drift; a flag naming the α/β variant and an external window-shape `beta` in an English-register block are
-the recorded exceptions.
+The accumulation scalars are Unicode α/β everywhere; the two named ASCII holdouts stay.
+
+A hand-written operation spelling them `alpha`/`beta` is drift; a flag naming the α/β variant and an external window-shape `beta` in an English-register block are the recorded exceptions.
+
+Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
+
+### RULE.TEX.IMAGINARY
+The imaginary unit is upright \mathrm{i}; i, j, k are indices.
+
+Never a bare italic `i`, never `\imath` or `\mathbb{i}`; the differential is likewise upright, `\,\mathrm{d}x`.
+
+Decided by an agent, because this needs derivation.
+
+### RULE.TEX.INLINE_ONE_LINE
+An inline math span opens and closes on one line, never across a list or blockquote marker.
+
+A marker inside an open span lands in the formula, and the prose after it renders as mathematics.
+
+Decided by a program.
+
+### RULE.TEX.LEFTRIGHT
+A sized delimiter names what it sizes: \left( pairs with \right), and neither stands alone.
+
+An unpaired sizing command is a LaTeX error, and the whole formula fails to render.
+
+Decided by a program.
+
+### RULE.TEX.MATHBB
+A blackboard-bold digit is not a set; the identity is written \mathbb{1} only where it means one.
+
+A blackboard digit renders as an outline numeral, which means nothing to a reader of mathematics.
+
+Decided by a program.
+
+### RULE.TEX.MATHBF
+Bold is admitted only for the strings a package lists, plus the identity, which every package is granted.
+
+Bold means one thing in one package and another in the next; unlisted, it is a reader's guess.
+
+Decided by a program.
+This package may set `mathbf_allowed`; unset, it is `String[]`.
+
+### RULE.TEX.NO_HSCROLL
+No horizontal scroll: hand-wrap long signatures and display formulas with aligned/gathered.
+
+Neither a rendered code block nor display math auto-wraps; inline math reflows and is exempt. Never pack several equations on one line behind `\quad`.
+
+Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
+
+### RULE.TEX.ONE_SPAN
+A formula is one LaTeX span, never split across a math span and an adjacent code span.
+
+Two abutting spans render as two disjoint runs at different sizes, not as one binding.
+
+Decided by a program.
+
+### RULE.TEX.PARTIAL
+A partial derivative names its index as a symbol, not as a bare letter subscript.
+
+A bare index reads as a variable named i rather than as the direction differentiated in.
+
+Decided by a program.
+
+### RULE.TEX.RENDERED_MARKUP
+No markup shows on the built page as literal characters.
+
+Asterisks meant to set emphasis, shown as asterisks, are the mark of prose nobody read after building.
+
+Decided by a program.
+
+### RULE.TEX.RENDERED_MATH
+Mathematics is written in a double-backtick span: never between dollar signs, and never inside a code span.
+
+Dollars render as literal text and a code span renders as monospace; neither comes out as mathematics.
+
+Decided by a program.
+
+### RULE.TEX.RENDERED_MATH_SITE
+On the built page, every math span has rendered: none still shows its own markup.
+
+A span that renders as its own source is a formula the reader never sees, and the source looks right.
+
+Decided by a program.
+
+### RULE.TEX.SPACING
+Spacing inside a formula is the renderer's: no thin space, no medium or thick space, no negative thin space before a sized delimiter, and none of them doubled.
+
+Hand spacing is tuned to one renderer at one font size and is wrong in every other setting.
+
+Decided by a program.
+
+### RULE.TEX.SWALLOWED_ESCAPE
+Inside a Julia docstring every LaTeX backslash is doubled; a single-backslash escape is swallowed by the parser.
+
+Julia consumes the escape when it reads the string, so the formula never reaches the documentation build at all.
+
+Decided by a program.
+
+<!-- gbg:managed end -->

@@ -1,6 +1,6 @@
 {
     "tool_version": "dev",
-    "inputs_sha": "a652fdb88b6cb7aa63b0cf01bf39e5a0ef5b577951448222c780046f9c42ff60",
+    "inputs_sha": "f4be24be2817611ac5c2b6f4a4dbcc4355cb0622fd3bf323f4aa3dd7658aedf6",
     "files": {
         "CLAUDE.md#gbg:managed": {
             "template": "claude-md.block",
@@ -11,53 +11,8 @@
             "template": "SKILL.md.tmpl",
             "sha256": "a4ce95c1274b88a592490e25b403e22e968abd455ac2101320a724730008c7cb",
             "version": "dev"
-        },
-        ".gbg/policy/latex-idiom.md": {
-            "template": "policy/latex-idiom.md",
-            "sha256": "fa22e90a9c1fc2740d0f93cb02f8a69d125cc4a635926761f670e64a2aa6d53b",
-            "version": "dev"
-        },
-        ".gbg/policy/glossary.md": {
-            "template": "policy/glossary.md",
-            "sha256": "4b5a86f8210bb86b9360fb3199ea30bb01243766f0a196adb19c33b38354ee1d",
-            "version": "dev"
-        },
-        ".gbg/policy/testing-protocol.md": {
-            "template": "policy/testing-protocol.md",
-            "sha256": "e2e310aa330064445d21bf3aeb5678bbb9b9013fc16ecd51febfba8ff0155ccc",
-            "version": "dev"
-        },
-        ".gbg/policy/docs-rubric.md": {
-            "template": "policy/docs-rubric.md",
-            "sha256": "c3a3201f78630438acfb16a78ef7754365224bc6ff6f5c6b67a61806a4df494d",
-            "version": "dev"
-        },
-        ".gbg/policy/00-index.md": {
-            "template": "policy/00-index.md",
-            "sha256": "40e6712b4f7f31e75fd0267c24e4a6270683cec65d8a148c532dab717e2a63f3",
-            "version": "dev"
-        },
-        ".gbg/policy/instruments.md": {
-            "template": "policy/instruments.md",
-            "sha256": "a0a2541bc081f50de9c4d386fb7e1a213117d0f521a2eb3832d88e675ae58626",
-            "version": "dev"
-        },
-        ".gbg/policy/citations.md": {
-            "template": "policy/citations.md",
-            "sha256": "2cf0431fc2236312cbd5b1684c32d5d31219147af1d78686ce7cc016950037b8",
-            "version": "dev"
-        },
-        ".gbg/policy/git-conventions.md": {
-            "template": "policy/git-conventions.md",
-            "sha256": "21cd037a36f97652e3ad1b413a2f6dc47d4b8a1181bbe51e56f262f46bf5bb5e",
-            "version": "dev"
-        },
-        ".gbg/policy/deviations.md": {
-            "template": "policy/deviations.md",
-            "sha256": "f4b84b8a076f4efd60821e9eded612c84cb72dbc3d9c32efcdbd130cd807ddd8",
-            "version": "dev"
         }
     },
     "schema_version": 1,
-    "rendered": "2026-09-17T14:00:40"
+    "rendered": "2026-09-17T19:17:49"
 }

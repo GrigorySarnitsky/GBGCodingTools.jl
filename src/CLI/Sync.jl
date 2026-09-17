@@ -5,15 +5,14 @@
 """
     Sync
 
-Renders and checks the managed footprint of a consumer — a managed file is one the tool renders into
-the consumer and hash-checks thereafter, edited only by `gbg sync`, never by hand: the skill stubs, the Stop hook and its
-`settings.json`, the policy copy under `.gbg/policy/`, the regressions README, the managed blocks of
-`CLAUDE.md` and `.gitignore`, the tool's entries in every sub-environment `Project.toml`, the CI
-fragments, and the sidecar `.gbg/managed.json`. [`Sync.plan`](@ref) computes what every managed file
-must contain; [`Sync.status`](@ref) compares the tree with it; [`Sync.sync`](@ref) writes. Two of the
-parts it renders are documented on their own: [`Sync.managed_block`](@ref), the managed block of
-`CLAUDE.md` or `.gitignore`, and [`Sync.subenv_entries`](@ref), the tool's `[deps]`, `[sources]` and
-`[compat]` entries in one sub-environment.
+Renders the managed footprint a consumer receives from the templates: the doctor's skill stub, the
+tool's entries in every sub-environment `Project.toml`, the CI fragments, and the sidecar
+`.gbg/managed.json` that hash-checks them. [`Sync.plan`](@ref) computes what each must contain,
+[`Sync.status`](@ref) compares the tree with it, [`Sync.sync`](@ref) writes.
+
+Most of what it rendered is `Render`'s since 2026-09-17: the hook, the settings, the ignore block, the
+regressions note, the rulebook and the managed block of `CLAUDE.md`. Those come from Julia values, not
+templates, and the wiring check compares them. This module goes when the last of them moves.
 """
 module Sync
 
@@ -139,7 +138,6 @@ function slots(cfg::AbstractDict; ledger = Ledger.read(cfg))
         "docs.build_dir" => isempty(cfg["surfaces"]["built_html"]) ? "docs/build" : cfg["surfaces"]["built_html"],
         "instruments.check-docs.argcov_policy" => get(get(get(cfg, "instruments", Dict{String,Any}()), "check-docs", Dict{String,Any}()), "argcov_policy", "gate"),
         "deviations" => devtext,
-        "sha256" => "",                      # filled per block by managed_block
     )
 end
 
@@ -165,59 +163,20 @@ end
 managed_header(fmt::Symbol, name, v) = fmt == :hash ? "# gbg:managed $name v$v — rewritten by `gbg sync`; do not edit\n" :
                                         fmt == :html ? "<!-- gbg:managed $name v$v — rewritten by `gbg sync`; do not edit -->\n" : ""
 
-"""
-    render_policy(cfg, s; ledger) -> Vector{ManagedFile}
-
-The policy copy: every `policy/*.md` with its slots substituted under a managed header, plus
-`deviations.md` rendered from the ledger. The arguments are:
-
-- `cfg` — the validated config.
-- `s` — the slot values.
-- `ledger` — the ledger entries.
-
-Returns the files, paths under `.gbg/policy/`.
-"""
-function render_policy(cfg::AbstractDict, s::AbstractDict; ledger)
-    v = pin(cfg); out = ManagedFile[]
-    for f in POLICY_FILES
-        body = render(read(joinpath(policy_dir(), f), String), s)
-        push!(out, ManagedFile(joinpath(".gbg", "policy", f), "policy/" * f, managed_header(:html, "policy/" * f, v) * body, 0o644))
-    end
-    io = IOBuffer()
-    print(io, managed_header(:html, "policy/deviations.md", v))
-    println(io, "# Declared deviations — $(cfg["package"]["name"])\n")
-    println(io, "Rendered by `gbg sync` from `.gbg/exemptions.toml`: every live entry of scope `policy`, `scan`, `lint`")
-    println(io, "or `harness`. A rule listed here is disabled or refined for this package, with the reason and the date")
-    println(io, "it lapses; a reading model treats the rule as the entry states it.\n")
-    devs = deviations(cfg, ledger)
-    if isempty(devs)
-        println(io, "(none)")
-    else
-        for e in devs
-            m = get(e, "match", nothing)
-            refine = m === nothing ? "" : " — refined by " * join(("$k = `$(m[k])`" for k in sort!(collect(keys(m)))), ", ")
-            far = e["scope"] == "policy" ? GBGCodingTools.unreachable_waiver_scans(String(e["id"])) : String[]
-            reach = isempty(far) ? "" : " It does not reach " * join(("`$s`" for s in far), ", ") * ", which enforces the rule under another and keeps running."
-            println(io, "- `$(e["id"])` (scope $(e["scope"]), target `$(e["target"])`)$refine: $(e["reason"]) [recorded $(e["recorded"])",
-                    haskey(e, "expires") ? ", expires $(e["expires"])]" : "]", reach)
-        end
-    end
-    push!(out, ManagedFile(joinpath(".gbg", "policy", "deviations.md"), "policy/deviations.md", String(take!(io)), 0o644))
-    return out
-end
+# `render_policy` stood here until 2026-09-17. The rendered rulebook is `Render.policy`'s now — written
+# from the `Rule` values rather than from `policy/*.md` with slots substituted — and `deviations.md` is
+# `Render.switches`, written from the config's `Switch` values rather than from the exemptions ledger.
 
 """
     plan(cfg; ledger = Ledger.read(cfg)) -> Vector{ManagedFile}
 
 Every generated-managed file for a consumer: one skill stub per enabled instrument ([`GBGCodingTools`](@ref) binds the term) plus
-`gbg-doctor`, `.claude/settings.json`, `.claude/hooks/queue-guard.sh`, the policy copy and
-`test/regressions/README.md`. The arguments are:
+`gbg-doctor`. Everything else it once planned is `Render`'s. The arguments are:
 
 - `cfg` — the validated config.
 - `ledger` — the ledger entries.
 
-The two managed blocks and the sub-environment entries are planned by [`managed_block`](@ref) and
-[`subenv_entries`](@ref). Returns the list.
+The sub-environment entries are planned by [`subenv_entries`](@ref). Returns the list.
 """
 function plan(cfg::AbstractDict; ledger = Ledger.read(cfg))
     s = slots(cfg; ledger); v = pin(cfg)
@@ -236,7 +195,6 @@ function plan(cfg::AbstractDict; ledger = Ledger.read(cfg))
     # .claude/settings.json, the end-of-turn hook, the .gitignore block and the regressions note left
     # this list on 2026-09-17: `Render` writes them from the config now, and the wiring check compares
     # them. Two generators for one file is how a generated file drifts from the thing that generates it.
-    append!(out, render_policy(cfg, s; ledger))
     return out
 end
 
@@ -247,31 +205,9 @@ const BLOCKS = Dict(
     "CLAUDE.md" => (template = "claude-md.block", begin_re = r"^<!-- gbg:managed begin.*-->\s*$"m, end_line = "<!-- gbg:managed end -->"),
 )
 
-"""
-    managed_block(cfg, file, s) -> String
-
-The rendered managed block for one file. The arguments are:
-
-- `cfg` — the validated config.
-- `file` — `"CLAUDE.md"`.
-- `s` — the slot values.
-
-The header's `sha256` is that of the body lines between the markers, so an edited body no longer matches
-its header. Returns the block text ending in a newline.
-"""
-function managed_block(cfg::AbstractDict, file::AbstractString, s::AbstractDict)
-    b = BLOCKS[file]
-    ss = merge(s, Dict("sha256" => "0"^64))
-    if file == "CLAUDE.md"
-        ss["rubric.leading_identity"] = s["rubric.leading_identity.short"]
-        ss["notation.vectors"] = s["notation.vectors.short"]
-    end
-    text = render(template(b.template), ss)
-    lines = split(text, '\n'; keepempty = true)
-    body = join(lines[2:findlast(==(b.end_line), lines)-1], "\n")
-    ss["sha256"] = sha256hex(body)
-    return render(template(b.template), ss)
-end
+# `managed_block` stood here until 2026-09-17: `Render.claude_block` writes that block now, and the
+# wiring check compares it. `BLOCKS` and the two functions below stay because the doctor still reads the
+# prose OUTSIDE the block, and finding it means knowing where the block ends.
 
 """
     split_block(text, file) -> (before, block, after)
@@ -587,9 +523,6 @@ function status(cfg::AbstractDict; ledger = Ledger.read(cfg))
     for f in plan(cfg; ledger)
         push!(planned, f.path); push!(out, classify(root, sidecar, f.path, f.content, inputs_same))
     end
-    for file in ("CLAUDE.md",)
-        push!(planned, file * "#gbg:managed"); push!(out, classify_block(root, sidecar, file, managed_block(cfg, file, s), inputs_same))
-    end
     for k in sort!(collect(keys(sidecar["files"])))
         k in planned || push!(out, Entry(k, :ORPHAN, "recorded in managed.json but no longer planned by v$(pin(cfg))"))
     end
@@ -651,14 +584,6 @@ function sync(cfg::AbstractDict; check::Bool = false, io::IO = stdout, ledger = 
     for f in plan(cfg; ledger)
         write_managed(root, f)
         files[f.path] = Dict("template" => f.template, "version" => v, "sha256" => sha256hex(f.content))
-    end
-    for file in ("CLAUDE.md",)
-        full = joinpath(root, file)
-        block = managed_block(cfg, file, s)
-        text = isfile(full) ? read(full, String) :
-               (file == "CLAUDE.md" ? render(template("CLAUDE.md.skeleton"), s) : "")
-        write(full, with_block(text, file, block))
-        files[file * "#gbg:managed"] = Dict("template" => BLOCKS[file].template, "version" => v, "sha256" => sha256hex(block))
     end
     for (env, text, changed) in projects
         changed && write(joinpath(root, env, "Project.toml"), text)
