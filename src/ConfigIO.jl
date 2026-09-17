@@ -160,6 +160,15 @@ function build(node, path, problems)
         push!(problems, "line $line: $mod has no value $name"); return nothing
     elseif k === JS.K"call"
         name = node_name(first(cs))
+        if name == "Symbol"
+            # A rule id holds dots — `RULE.DOC.TABLE_TOP_LEVEL` — so `:RULE.DOC…` is not a symbol in
+            # Julia but a field access. `Symbol("…")` is how a config names one, and it converts a
+            # literal rather than running anything.
+            length(cs) == 2 || (push!(problems, "line $line: Symbol takes one string"); return nothing)
+            inner = build(cs[2], path, problems)
+            inner isa AbstractString || (push!(problems, "line $line: Symbol takes a string"); return nothing)
+            return Symbol(inner)
+        end
         if name == "Dict"
             pairs_ = [build(c, path, problems) for c in cs[2:end]]
             all(p -> p isa Pair, pairs_) ||

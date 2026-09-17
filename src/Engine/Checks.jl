@@ -103,7 +103,19 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
     if check.input === Model.Input.SOURCE_TEXT
         for fs in rule.filesets, file in files(cfg, root, fs)
             applies(cfg, rule.id; file) || continue
-            text = read(joinpath(root, file), String)
+            # A documentation rule reads the file's PROSE, not its source: Julia code is full of text
+            # that looks like prose markup, and a rule handed the whole file reports the code as though
+            # it were the prose about it (`Texts.prose_text` keeps the line numbering).
+            # A DOCSTRINGS rule reads the docstrings alone, because a docstring is published and a
+            # comment is not: a rule about how text renders has nothing to say about a comment. A CODE
+            # rule over a `.jl` file reads both, since what a comment claims is still a claim.
+            text = if fs === Model.FileSet.DOCSTRINGS
+                Texts.prose_text(joinpath(root, file); comments = false)
+            elseif fs === Model.FileSet.CODE && endswith(file, ".jl")
+                Texts.prose_text(joinpath(root, file))
+            else
+                read(joinpath(root, file), String)
+            end
             for loc in check.run(text, cfg)
                 push!(out, located(loc, file, root))
             end

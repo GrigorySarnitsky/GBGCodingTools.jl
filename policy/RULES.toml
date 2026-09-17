@@ -186,7 +186,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.TABLE_TOP_LEVEL"
 statement = "A Markdown table is top-level, never indented in a list item; no literal | in a cell."
 sentinel = "A Markdown table is top-level, never indented inside a list item, and no cell holds a literal `|`."
-check = ["scan:SCAN.TABLE_INDENTED"]
+check = ["rule:RULE.DOC.TABLE_TOP_LEVEL"]  # converted 2026-09-17: src/Rules/rendering.jl
 [[rule]]
 id = "RULE.DOC.ONE_NOTATION"
 file = "docs-rubric.md"
@@ -312,7 +312,7 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.CODE_IN_MATH"
 statement = "A code identifier never sits inside a math span; inside a formula it is \\texttt{…}."
 sentinel = "A code identifier never sits inside a math span, because the renderer sets it as the product of italic single letters."
-check = ["scan:SCAN.CODE_IN_MATH"]
+check = ["rule:RULE.TEX.CODE_IN_MATH"]  # converted 2026-09-17: src/Rules/rendering.jl
 [[rule]]
 id = "RULE.TEX.ONE_SPAN"
 file = "latex-idiom.md"

@@ -18,11 +18,39 @@ Turns the exit code `code` of the verb `verb` into a build failure: returns `not
 """
 check(verb::AbstractString, code::Integer) = code == 0 ? nothing : error("gbg $verb returned $code")
 
+"""
+    rules_and_wiring(root) -> Int
+
+The documentation rules of the rulebook and the wiring check, run over the package at `root`: the new
+engine's half of what a build must satisfy. The argument is `root`, the package root.
+
+It runs beside the old scans while the ninety-five rules are converted, and takes over from them rule by
+rule — each conversion deletes the scan it replaces, so nothing is checked twice and nothing stops being
+checked. A package with no `.gbg/config.jl` yet has nothing converted to run, which is exit 0.
+
+Returns the exit code: 0 clean, 1 findings.
+"""
+function rules_and_wiring(root::AbstractString)
+    isfile(joinpath(root, ".gbg", "config.jl")) || return 0
+    cfg = GBGCodingTools.ConfigIO.read_config(root)
+    found = GBGCodingTools.Engine.Checks.run_all(cfg, root; intention = GBGCodingTools.Model.Intention.DOCUMENTATION)
+    drift = GBGCodingTools.Render.wiring(cfg, root)
+    isempty(found) && isempty(drift) && return 0
+    for l in found
+        println(stderr, "  RULE   ", l.file, ":", l.line, isempty(l.node) ? "" : "  [" * l.node * "]", "  ", l.text)
+    end
+    for l in drift
+        println(stderr, "  WIRING ", l.file, "  ", l.text, " — run `gbg sync`")
+    end
+    return 1
+end
+
 function makedocs(cfg; kwargs...)
     println("GBGCodingTools v", GBGCodingTools.tool_version(), " makedocs")
     root = cfg["root"]
     check("doctor --only QUICK", GBGCodingTools.doctor(cfg, :QUICK))
     check("scan docs --hard-only", last(GBGCodingTools.scan_docs(cfg; hard_only = true)))
+    check("check --only docs", rules_and_wiring(root))
     # Nothing here reads review state any more: a build reports what its checks find and nothing
     # else, and no round can freeze it (docs/ARCHITECTURE.md §5.1, §10 — the closure gate went with the
     # round machinery on 2026-09-17).

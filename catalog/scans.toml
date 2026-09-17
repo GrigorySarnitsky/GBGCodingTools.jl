@@ -11,14 +11,6 @@
 # "which rules does this scan carry".
 
 [[scan]]
-id = "SCAN.TABLE_INDENTED"
-rule = "RULE.DOC.TABLE_TOP_LEVEL"
-tier = "hard"
-surfaces = ["rationale", "pages"]
-runner = "julia"
-fixture = ["indented-table"]
-
-[[scan]]
 id = "SCAN.REGISTER"
 rule = "RULE.DOC.REGISTER"
 tier = "hard"
@@ -281,14 +273,6 @@ tier = "triage"
 surfaces = ["all"]
 runner = "julia"
 fixture = ["manual-spacing"]
-
-[[scan]]
-id = "SCAN.CODE_IN_MATH"
-rule = "RULE.TEX.CODE_IN_MATH"
-tier = "triage"
-surfaces = ["all"]
-runner = "julia"
-fixture = ["code-in-math"]
 
 [[scan]]
 id = "SCAN.CITATION_CRAMMED"

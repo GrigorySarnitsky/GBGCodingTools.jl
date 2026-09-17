@@ -5,11 +5,6 @@
 # directory under defects/html/ standing in for a built site.
 
 [[defect]]
-class = "indented-table"
-scan = "SCAN.TABLE_INDENTED"
-file = "defects/page.md"
-fragment = "|---|---|"
-[[defect]]
 class = "bare-sibling"
 scan = "SCAN.SIBLING_LINK"
 file = "defects/page.md"
@@ -180,11 +175,6 @@ scan = "SCAN.MANUAL_SPACING"
 file = "defects/Defects.jl"
 fragment = '\;'
 [[defect]]
-class = "code-in-math"
-scan = "SCAN.CODE_IN_MATH"
-file = "defects/Defects.jl"
-fragment = "spacing < 1"
-[[defect]]
 class = "crammed-citation"
 scan = "SCAN.CITATION_CRAMMED"
 file = "defects/Defects.jl"
@@ -251,9 +241,6 @@ file = "defects/html/base-leak"
 fragment = "Base.copy"
 
 # Clean twins: the scan must report nothing on these (the clean corpus, or the clean HTML site).
-[[clean]]
-scan = "SCAN.TABLE_INDENTED"
-file = "docs/src/notation.md"
 [[clean]]
 scan = "SCAN.REGISTER"
 file = "src/FixtureC.jl"

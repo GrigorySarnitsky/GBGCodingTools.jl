@@ -83,14 +83,17 @@ const INSTRUMENTS = Model.Instrument[
         budget = Model.Budget(fix_passes = 0, agent_launches = 15)),
 ]
 
+include("Rules/rendering.jl")     # one file per batch of the conversion
+
 """
     RULES
 
 The rulebook: every rule as a value, beside the check that decides it and the examples that show the
-check matches the statement. It is empty while the ninety-five rules of `policy/RULES.toml` are converted
-in batches (`IMPLEMENTATION.md` §6); `test/conversion.jl` holds the count that may only fall.
+check matches the statement. The ninety-five rules of `policy/RULES.toml` are converted in batches
+(`IMPLEMENTATION.md` §6), one file of `src/Rules/` per batch; `test/conversion.jl` holds the count still
+outstanding, which may only fall.
 """
-const RULES = Model.Rule[]
+const RULES = Model.Rule[Rendering.RULES...]
 
 """
     GENERATED

@@ -28,8 +28,8 @@ Config(
     normative = ["docs/ARCHITECTURE.md"],
     filesets = Dict(FileSet.PAGES => ["docs/src/**/*.md"], FileSet.CODE => ["src/**/*.jl"]),
     copies = ["docs/src/architecture.md" => "docs/ARCHITECTURE.md"],
-    switches = [Switch(target = :RULE_TEX_RENDERED_MATH, reason = "no mathematics in this package's prose")],
-    settings = [Setting(rule = :RULE_DOC_LEADING_IDENTITY, name = :leading, value = "what the operation does")],
+    switches = [Switch(target = Symbol("RULE.TEX.CODE_IN_MATH"), reason = "no mathematics in this package's prose")],
+    settings = [Setting(rule = Symbol("RULE.DOC.TABLE_TOP_LEVEL"), name = :leading, value = "what the operation does")],
     rules = [PatternRule(id = :NO_TODO, statement = "No TODO is left in shipped prose.",
                          fileset = FileSet.PAGES, pattern = r"TODO", forbidden = true)],
     code_areas = [:engine => ["src/Engine/*.jl"]],
@@ -46,7 +46,7 @@ Config(
         @test cfg.normative == ["docs/ARCHITECTURE.md"]
         @test cfg.filesets[MM.FileSet.PAGES] == ["docs/src/**/*.md"]
         @test first(cfg.copies) == ("docs/src/architecture.md" => "docs/ARCHITECTURE.md")
-        @test cfg.switches[1].target === :RULE_TEX_RENDERED_MATH
+        @test cfg.switches[1].target === Symbol("RULE.TEX.CODE_IN_MATH")
         @test cfg.settings[1].value == "what the operation does"
         @test cfg.rules[1].pattern == r"TODO" && cfg.rules[1].forbidden
         @test first(cfg.code_areas) == (:engine => ["src/Engine/*.jl"])
@@ -125,8 +125,13 @@ end
     dir = in_config("""Config(package = "P", tool = :dev,
         switches = [Switch(target = :NO_SUCH_RULE, reason = "a reason long enough to count as one")])""")
     problems = CIO.validate(CIO.read_config(dir), dir)
-    # with an empty rulebook nothing can be named, so the check waits rather than refusing everything
+    # the arm turns itself on once a rule has been converted: before that, a name cannot be judged
     @test isempty(G.Catalogue.RULES) ? isempty(problems) : any(p -> occursin("not a rule", p), problems)
+
+    # and a switch naming a rule that EXISTS is accepted, dots and all
+    ok = in_config("""Config(package = "P", tool = :dev,
+        switches = [Switch(target = Symbol("RULE.DOC.TABLE_TOP_LEVEL"), reason = "this package ships no tables at all")])""")
+    @test isempty(CIO.validate(CIO.read_config(ok), ok))
 
     @test isempty(G.Catalogue.ALWAYS_ON_RULES)         # the set ships switchable, as ruled (§9)
     @test G.Catalogue.doc(G.Catalogue.INSTRUMENTS[1]) isa String

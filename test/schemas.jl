@@ -116,6 +116,9 @@ include("helpers.jl")
                     # the binding must be DEFINED in the source, not merely mentioned: `report(` occurs
                     # in a comment as readily as in the function this rule rests on
                     @test occursin(Regex("function\\s+" * last(split(c[9:end], '.')) * "\\b"), srctext)
+                elseif startswith(c, "rule:")
+                    # converted: the rule is a value now, and test/rules.jl shows its check matches it
+                    @test Symbol(c[6:end]) in Set(r.id for r in G.Catalogue.RULES)
                 else
                     @test c in ("panel", "weakness")             # judged by a running panel, or owed
                 end

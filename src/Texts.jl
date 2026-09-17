@@ -236,6 +236,53 @@ function docs!(out, node)
     end
 end
 
+"""
+    prose_text(path; comments = true) -> String
+
+The file's PROSE alone, with every other line left empty so that line numbers are unchanged. The
+arguments are `path`, the Julia file to read, and `comments`, whether ordinary comments count as prose
+here. Returns the masked text.
+
+The distinction matters to a rule about RENDERING: a docstring is published and a comment is not, so a
+rule that exists because a reader would see the wrong thing on the page reads docstrings alone, while a
+rule about what the text says reads both.
+
+A documentation rule reads this rather than the source. Julia code is full of text that looks like prose
+markup — a regular expression holding double backticks, a string holding a pipe table — and a rule handed
+the whole file reports the code as though it were the prose about it. Keeping the line numbering is what
+lets a finding still say where it is.
+"""
+function prose_text(path::AbstractString; comments::Bool = true)
+    isfile(path) || return ""
+    src = read(path, String)
+    lines = split(src, '\n')
+    keep = falses(length(lines))
+    for d in docstrings(path)                        # the docstring blocks, by their own line ranges
+        span = doc_span(lines, d.line)
+        for i in span; keep[i] = true; end
+    end
+    if comments
+        for (i, line) in pairs(lines)
+            occursin(r"^\s*#(?!=)", line) && (keep[i] = true)  # a comment line, never a `#=` block opener
+        end
+    end
+    return join((keep[i] ? lines[i] : "" for i in eachindex(lines)), '\n')
+end
+
+# A docstring runs from its opening triple quote to the closing one; a one-line docstring, written
+# with single quotes, is that line alone. (The marker is not written out here: the docstring reader of
+# the tree being replaced pairs on it literally, and a comment holding one shifts every pairing after it.)
+function doc_span(lines, start)
+    start <= length(lines) || return start:start-1
+    opener = lines[start]
+    count(==("\"\"\""), [m.match for m in eachmatch(r"\"\"\"", opener)]) >= 2 && return start:start
+    occursin("\"\"\"", opener) || return start:start
+    for i in (start+1):length(lines)
+        occursin("\"\"\"", lines[i]) && return start:i
+    end
+    return start:length(lines)
+end
+
 # ───────────────────────────────────────────────────────────────────────────────────────── Markdown
 
 """
