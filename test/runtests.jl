@@ -5,9 +5,9 @@ using Test, GBGCodingTools
 
 const TOOL = normpath(joinpath(@__DIR__, ".."))
 const FIXTURE = joinpath(TOOL, "fixture", "GBG Fixture")
-const TMP = joinpath(TOOL, "fixture", ".tmp", string(getpid()))   # gitignored; per process, so two concurrent suites never share a copy; inside the repository so a `dev` pin stays legal
-isdir(TMP) && rm(TMP; recursive = true, force = true)
-mkpath(TMP)
+# The scratch of the whole suite: a system temporary directory, removed by the process that made it —
+# never inside this repository, which Dropbox syncs (test/helpers.jl says what that cost).
+const TMP = mktempdir(; prefix = "gbg-selftest-", cleanup = true)
 
 module SchemaTests;      include("schemas.jl");      end
 module ConfigTests;      include("config.jl");       end
@@ -18,7 +18,7 @@ module SyncDoctorTests;  include("sync_doctor.jl");  end
 module TreeHashTests;    include("treehash.jl");     end
 module CoverageTests;    include("coverage.jl");     end
 
-rm(TMP; recursive = true, force = true)
+rm(TMP; recursive = true, force = true)   # cleanup = true would do it at exit; this is the tidy path
 
 # Promoted witnesses of the tool's own hunts, then the closure gate on the tool itself (D15).
 GBGCodingTools.TestHarness.run_regressions(@__DIR__)

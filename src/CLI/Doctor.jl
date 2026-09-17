@@ -132,7 +132,26 @@ check!("SHIM.HASH", ctx -> begin
     pass("SHIM.HASH", "installed shim equals bin/gbg")
 end)
 
-isdevlegal(ctx) = ctx.tool_root !== nothing && (abspath(ctx.root) == ctx.tool_root || startswith(abspath(ctx.root), ctx.tool_root * "/"))
+# A `dev` pin is legal where the consumer actually resolves this package by PATH to a working checkout:
+# the tool root, anything inside it, or any tree whose docs/ or test/ environment names that checkout as
+# a `[sources]` path. The third arm is what lets the self-tests copy the fixture into a system temporary
+# directory instead of into the repository — scratch inside a Dropbox-synced repository once grew to
+# 61,057 directories and stopped the whole account syncing — without weakening the rule for a science
+# package, which pins a release and names no path source at all.
+function dev_path_source(ctx)
+    ctx.tool_root === nothing && return nothing
+    for e in tool_sub_envs(ctx.root)
+        p = joinpath(ctx.root, e, "Project.toml")
+        isfile(p) || continue
+        src = get(get(TOML.parsefile(p), "sources", Dict{String,Any}()), PKG_NAME, nothing)
+        src isa AbstractDict && haskey(src, "path") || continue
+        resolved = normpath(joinpath(ctx.root, e, String(src["path"])))
+        isdir(resolved) && abspath(resolved) == ctx.tool_root && return resolved
+    end
+    return nothing
+end
+isdevlegal(ctx) = ctx.tool_root !== nothing && (abspath(ctx.root) == ctx.tool_root ||
+    startswith(abspath(ctx.root), ctx.tool_root * "/") || dev_path_source(ctx) !== nothing)
 check!("PIN.CONFIG", ctx -> begin
     v = String(ctx.cfg["tool"]["version"])
     if v == "dev"

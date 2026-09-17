@@ -1,11 +1,17 @@
-# Shared helpers of the self-tests: a fresh copy of the fixture under fixture/.tmp/<name>/ (inside the
-# tool repository, so its `dev` pin and its `path` sources stay legal), the derived config that adds the
-# defects corpus to the surfaces, and a quiet IO.
+# Shared helpers of the self-tests: a fresh copy of the fixture under a system temporary directory, the
+# derived config that adds the defects corpus to the surfaces, and a quiet IO.
+#
+# The scratch is NEVER inside the repository. Every repository here lives in Dropbox, and this scratch
+# once grew to 61,057 directories — the fixture is copied per test and only runtests.jl cleaned up, so an
+# interrupted run left its copies behind — which passed the system's inotify watch limit and stopped
+# Dropbox syncing for every package at once (2026-09-16). `mktempdir` puts it under TMPDIR, outside any
+# synced tree, and the copy's `dev` pin stays legal because its docs/ and test/ environments name this
+# checkout as a `[sources]` path, which is what the doctor's rule now asks for.
 using GBGCodingTools, TOML, JSON3
 const G = GBGCodingTools
 const TOOL = normpath(joinpath(@__DIR__, ".."))
 const FIXTURE = joinpath(TOOL, "fixture", "GBG Fixture")
-const TMP = joinpath(TOOL, "fixture", ".tmp", string(getpid()))
+const TMP = mktempdir(; prefix = "gbg-selftest-", cleanup = true)
 
 # The witness runner starts a fresh process on the fixture's TEST environment. A clone carries no
 # Manifest there (the tool's first CI run failed on `using GBGFixture` in every witness), so it is
@@ -17,18 +23,16 @@ let proj = joinpath(FIXTURE, "test"), sep = Sys.iswindows() ? ";" : ":"
         run(addenv(`$(Base.julia_cmd()) --startup-file=no --project=$proj -e "using Pkg; Pkg.instantiate()"`, "JULIA_LOAD_PATH" => "@" * sep * "@stdlib"))
 end
 
-"""A fresh copy of the fixture at fixture/.tmp/<name>/ (build products excluded). Returns its root."""
+"""A fresh copy of the fixture at `TMP/<name>/` (build products excluded). Returns its root."""
 function fixture_copy(name)
     dst = joinpath(TMP, name)
     rm(dst; recursive = true, force = true); mkpath(dirname(dst))
     cp(FIXTURE, dst; force = true)
     for d in ("docs/build", ".gbg/scratch"); rm(joinpath(dst, d); recursive = true, force = true); end
-    # the copy sits deeper than the fixture: its relative paths to the tool repository are recomputed
-    c = joinpath(dst, ".gbg", "config.toml")
-    write(c, replace(read(c, String), "\"../../catalog/seeds/fixture.toml\"" => "\"" * relpath(joinpath(TOOL, "catalog", "seeds", "fixture.toml"), dst) * "\""))
+    # the copy sits outside the repository: its paths to the tool checkout are recomputed as absolute
     for env in ("docs", "test")
         pj = joinpath(dst, env, "Project.toml")
-        write(pj, replace(read(pj, String), "GBGCodingTools = {path = \"../../..\"}" => "GBGCodingTools = {path = \"" * relpath(TOOL, joinpath(dst, env)) * "\"}"))
+        write(pj, replace(read(pj, String), "GBGCodingTools = {path = \"../../..\"}" => "GBGCodingTools = {path = \"" * TOOL * "\"}"))
     end
     # the copy's managed files were rendered for the fixture's own inputs; re-sync so its sidecar is its own
     G.Sync.sync(G.Config.read(dst); io = devnull)
