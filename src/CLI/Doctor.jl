@@ -460,10 +460,16 @@ check!("WIRE.CI_AUTH", ctx -> begin
     isempty(errs) ? pass("WIRE.CI_AUTH", "$n workflow(s) wired") : fail("WIRE.CI_AUTH", join(errs, "; "))
 end)
 sync_status(ctx) = try Sync.status(ctx.cfg; ledger = ctx.ledger) catch err; Sync.Entry[Sync.Entry("(render)", :MODIFIED, sprint(showerror, err))] end
+# The ignore block is written by `Render` and compared by the wiring check now, not by `sync`, so this
+# check asks the generator rather than the sidecar (2026-09-17).
 check!("WIRE.GITIGNORE", ctx -> begin
-    e = findfirst(x -> x.path == ".gitignore#gbg:managed", sync_status(ctx)); st = sync_status(ctx)
-    e === nothing && return fail("WIRE.GITIGNORE", "no status")
-    st[e].state == :OK ? pass("WIRE.GITIGNORE") : fail("WIRE.GITIGNORE", "$(st[e].state): $(st[e].detail)")
+    cfg = try
+        GBGCodingTools.ConfigIO.read_config(ctx.root)
+    catch
+        return na("WIRE.GITIGNORE", "no .gbg/config.jl here yet")
+    end
+    drift = [l for l in GBGCodingTools.Render.wiring(cfg, ctx.root) if l.file == ".gitignore"]
+    isempty(drift) ? pass("WIRE.GITIGNORE") : fail("WIRE.GITIGNORE", first(drift).text)
 end)
 check!("WIRE.CLAUDE_MD", ctx -> begin
     st = sync_status(ctx); e = findfirst(x -> x.path == "CLAUDE.md#gbg:managed", st)

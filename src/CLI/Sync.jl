@@ -233,18 +233,18 @@ function plan(cfg::AbstractDict; ledger = Ledger.read(cfg))
                            "skill.command" => "gbg doctor"))
         push!(out, ManagedFile(joinpath(".claude", "skills", name, "SKILL.md"), "SKILL.md.tmpl", render(skill, ss), 0o644))
     end
-    push!(out, ManagedFile(joinpath(".claude", "settings.json"), "settings.json.tmpl", render(template("settings.json.tmpl"), s), 0o644))
-    push!(out, ManagedFile(joinpath(".claude", "hooks", "queue-guard.sh"), "queue-guard.sh.tmpl", template("queue-guard.sh.tmpl"), 0o755))
+    # .claude/settings.json, the end-of-turn hook, the .gitignore block and the regressions note left
+    # this list on 2026-09-17: `Render` writes them from the config now, and the wiring check compares
+    # them. Two generators for one file is how a generated file drifts from the thing that generates it.
     append!(out, render_policy(cfg, s; ledger))
-    push!(out, ManagedFile(joinpath("test", "regressions", "README.md"), "regressions-README.md", render(template("regressions-README.md"), s), 0o644))
     return out
 end
 
 # ---- the managed blocks ----------------------------------------------------------------------------------
 
+# `.gitignore` left this table on 2026-09-17: `Render.gitignore` writes that block now.
 const BLOCKS = Dict(
     "CLAUDE.md" => (template = "claude-md.block", begin_re = r"^<!-- gbg:managed begin.*-->\s*$"m, end_line = "<!-- gbg:managed end -->"),
-    ".gitignore" => (template = "gitignore.block", begin_re = r"^# gbg:managed begin.*$"m, end_line = "# gbg:managed end"),
 )
 
 """
@@ -253,11 +253,11 @@ const BLOCKS = Dict(
 The rendered managed block for one file. The arguments are:
 
 - `cfg` — the validated config.
-- `file` — `"CLAUDE.md"` or `".gitignore"`.
+- `file` — `"CLAUDE.md"`.
 - `s` — the slot values.
 
-The `CLAUDE.md` header's `sha256` is the sha256 of the block's body lines (between the markers), so an
-edited body no longer matches its header. Returns the block text ending in a newline.
+The header's `sha256` is that of the body lines between the markers, so an edited body no longer matches
+its header. Returns the block text ending in a newline.
 """
 function managed_block(cfg::AbstractDict, file::AbstractString, s::AbstractDict)
     b = BLOCKS[file]
@@ -299,7 +299,7 @@ end
 none (a blank line separates it from what follows). The arguments are:
 
 - `text` — the file's current text.
-- `file` — which block markers apply (`"CLAUDE.md"` or `".gitignore"`).
+- `file` — which block markers apply (`"CLAUDE.md"`).
 - `block` — the rendered block.
 
 Returns the new text.
@@ -587,7 +587,7 @@ function status(cfg::AbstractDict; ledger = Ledger.read(cfg))
     for f in plan(cfg; ledger)
         push!(planned, f.path); push!(out, classify(root, sidecar, f.path, f.content, inputs_same))
     end
-    for file in ("CLAUDE.md", ".gitignore")
+    for file in ("CLAUDE.md",)
         push!(planned, file * "#gbg:managed"); push!(out, classify_block(root, sidecar, file, managed_block(cfg, file, s), inputs_same))
     end
     for k in sort!(collect(keys(sidecar["files"])))
@@ -652,7 +652,7 @@ function sync(cfg::AbstractDict; check::Bool = false, io::IO = stdout, ledger = 
         write_managed(root, f)
         files[f.path] = Dict("template" => f.template, "version" => v, "sha256" => sha256hex(f.content))
     end
-    for file in ("CLAUDE.md", ".gitignore")
+    for file in ("CLAUDE.md",)
         full = joinpath(root, file)
         block = managed_block(cfg, file, s)
         text = isfile(full) ? read(full, String) :

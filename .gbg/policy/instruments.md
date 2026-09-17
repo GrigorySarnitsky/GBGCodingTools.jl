@@ -1,6 +1,15 @@
 <!-- gbg:managed policy/instruments.md vdev — rewritten by `gbg sync`; do not edit -->
 # The instruments (`RULE.INST.*`)
 
+!!! warning "Being rebuilt"
+    The instruments these rules govern are being rebuilt to `docs/ARCHITECTURE.md` of
+    GBGCodingTools, adopted 2026-09-17; the machinery that ran them was deleted that day and none
+    of them runs today. The rules below are kept because they are the rulebook every package
+    pins, and because the rebuilt instruments must still satisfy them or say why not — but ten of
+    them name a check that no longer exists and are marked `weakness` in the register until the
+    rebuild gives them one.
+
+
 ### RULE.INST.CONSENT
 Unasked, run only `Pkg.test()`; every instrument, survey, benchmark and panel runs only on the user's
 request, in words or by slash. The correct output when one would be informative is to name it and its

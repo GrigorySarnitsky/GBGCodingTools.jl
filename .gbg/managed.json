@@ -1,6 +1,6 @@
 {
     "tool_version": "dev",
-    "inputs_sha": "08b3e7ab7965c6553b06fca54d3b96930ec37270f4cc0bac3d2a8e2aaf215322",
+    "inputs_sha": "a652fdb88b6cb7aa63b0cf01bf39e5a0ef5b577951448222c780046f9c42ff60",
     "files": {
         "CLAUDE.md#gbg:managed": {
             "template": "claude-md.block",
@@ -37,14 +37,9 @@
             "sha256": "40e6712b4f7f31e75fd0267c24e4a6270683cec65d8a148c532dab717e2a63f3",
             "version": "dev"
         },
-        ".claude/settings.json": {
-            "template": "settings.json.tmpl",
-            "sha256": "2a70c4b2119a142aa2cd32e4312c18bf92960b94b4dc69b9802b9abfd30a8348",
-            "version": "dev"
-        },
         ".gbg/policy/instruments.md": {
             "template": "policy/instruments.md",
-            "sha256": "5dc90921f9740f331736c94796547ee12b46775d11b10a253534546fbced6e00",
+            "sha256": "a0a2541bc081f50de9c4d386fb7e1a213117d0f521a2eb3832d88e675ae58626",
             "version": "dev"
         },
         ".gbg/policy/citations.md": {
@@ -52,24 +47,9 @@
             "sha256": "2cf0431fc2236312cbd5b1684c32d5d31219147af1d78686ce7cc016950037b8",
             "version": "dev"
         },
-        ".claude/hooks/queue-guard.sh": {
-            "template": "queue-guard.sh.tmpl",
-            "sha256": "f5ab1a66f0b1b3ff8fbee4e3ecd0490fbfdd039b6236bd95ecbf3ad50c063fdc",
-            "version": "dev"
-        },
-        ".gitignore#gbg:managed": {
-            "template": "gitignore.block",
-            "sha256": "8152d6fa1b40375ae0414d1a8b0c2a6d07bd553f5eb3dd49de0150c056284a8f",
-            "version": "dev"
-        },
         ".gbg/policy/git-conventions.md": {
             "template": "policy/git-conventions.md",
             "sha256": "21cd037a36f97652e3ad1b413a2f6dc47d4b8a1181bbe51e56f262f46bf5bb5e",
-            "version": "dev"
-        },
-        "test/regressions/README.md": {
-            "template": "regressions-README.md",
-            "sha256": "639b8140587fb813d999cf40cdf3af745fee5b33d717de4fee9e9992aa304107",
             "version": "dev"
         },
         ".gbg/policy/deviations.md": {
@@ -79,5 +59,5 @@
         }
     },
     "schema_version": 1,
-    "rendered": "2026-09-17T13:02:08"
+    "rendered": "2026-09-17T14:00:40"
 }

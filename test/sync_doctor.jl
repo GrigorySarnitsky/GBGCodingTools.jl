@@ -19,15 +19,17 @@ include("helpers.jl")
         @test cd(() -> G.Sync.cmd_sync(String[]), root) == 2            # and the verb names it
         write(sc, keep)
     end
+    # The end-of-turn hook left the sidecar on 2026-09-17 — `Render` writes it and the wiring check
+    # compares it (test/wiring.jl) — so this uses a policy file, which `sync` still renders.
     @testset "a managed file edited (and its sidecar) is MODIFIED" begin
-        hook = joinpath(root, ".claude", "hooks", "queue-guard.sh")
-        open(hook, "a") do io; println(io, "# edited"); end
+        managed = joinpath(root, ".gbg", "policy", "glossary.md")
+        open(managed, "a") do io; println(io, "<!-- edited -->"); end
         sc = joinpath(root, ".gbg", "managed.json"); d = JSON3.read(read(sc, String), Dict{String,Any})
-        d["files"][".claude/hooks/queue-guard.sh"]["sha256"] = bytes2hex(G.Sync.sha256(read(hook)))
+        d["files"][".gbg/policy/glossary.md"]["sha256"] = bytes2hex(G.Sync.sha256(read(managed)))
         open(sc, "w") do io; JSON3.pretty(io, JSON3.write(d)); end
         @test run_only(["MANAGED.HASH"])["MANAGED.HASH"].status == :FAIL
         @test G.Sync.sync(cfg; io = devnull) == 2
-        rm(hook); @test G.Sync.sync(cfg; io = devnull) == 0             # removed, re-rendered
+        rm(managed); @test G.Sync.sync(cfg; io = devnull) == 0          # removed, re-rendered
         @test run_only(["MANAGED.HASH"])["MANAGED.HASH"].status == :PASS
     end
     # The dev-stamped-round testset stood here until 2026-09-17: ROUND.DEV named a closed round whose

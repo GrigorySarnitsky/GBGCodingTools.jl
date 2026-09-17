@@ -66,6 +66,7 @@ include("Texts.jl")          # reading the texts a rule is about, and finding a 
 include("Catalogue.jl")      # what this package knows, as values: the table, the rulebook, the register
 include("ConfigIO.jl")       # a package's own settings, read as data and never evaluated
 include("Engine.jl")         # what runs the rules; for now, the change guard
+include("Render.jl")         # every file that connects a package to this one
 include("TreeHash.jl")
 include("HtmlWalker.jl")
 include("DocLints.jl")
