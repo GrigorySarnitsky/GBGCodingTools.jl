@@ -117,3 +117,19 @@ Config(
         @test any(p -> occursin("gives no reason", p), CIO.validate(CIO.read_config(dir), dir))
     end
 end
+
+# The three refusals of §9, and the fourth for a setting. They are in `validate` rather than in the
+# reader because they are about what the config CLAIMS, not about whether it is data: a switch naming
+# nothing is well-formed and still meaningless.
+@testset "what a config may not switch off" begin
+    dir = in_config("""Config(package = "P", tool = :dev,
+        switches = [Switch(target = :NO_SUCH_RULE, reason = "a reason long enough to count as one")])""")
+    problems = CIO.validate(CIO.read_config(dir), dir)
+    # with an empty rulebook nothing can be named, so the check waits rather than refusing everything
+    @test isempty(G.Catalogue.RULES) ? isempty(problems) : any(p -> occursin("not a rule", p), problems)
+
+    @test isempty(G.Catalogue.ALWAYS_ON_RULES)         # the set ships switchable, as ruled (§9)
+    @test G.Catalogue.doc(G.Catalogue.INSTRUMENTS[1]) isa String
+    @test occursin("Owner's request", G.Catalogue.doc(G.Catalogue.INSTRUMENTS[1]))
+    @test occursin("nobody starts it", G.Catalogue.doc(G.Catalogue.ALWAYS_ON[1]))
+end

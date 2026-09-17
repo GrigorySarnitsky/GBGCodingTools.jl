@@ -118,4 +118,99 @@ identifier. Returns the rule.
 """
 rule(id::Symbol) = findfirst(r -> r.id === id, RULES) === nothing ? nothing : RULES[findfirst(r -> r.id === id, RULES)]
 
+"""
+    ALWAYS_ON_RULES
+
+The rules no package may switch off: the ones catching text that renders wrongly and the ones holding the
+shape of a docstring (`docs/ARCHITECTURE.md` §9).
+
+It is EMPTY, and deliberately. The design's own ruling is that the set ships switchable until two packages
+have run those rules over their own prose and their counts are known: a rule nobody may escape, settled
+before anyone has read what it reports, is how a package ends up with a red build and no way out. Filling
+this list is a MAJOR release, and after it the only escape is changing the rule for every package.
+"""
+const ALWAYS_ON_RULES = Symbol[]
+
+"""
+    known_ids() -> Set{Symbol}
+
+Every id a package's config may name in a switch: each rule of the rulebook, each agent role of each
+instrument, and each instrument. Returns the set.
+"""
+function known_ids()
+    ids = Set{Symbol}(r.id for r in RULES)
+    for i in INSTRUMENTS
+        push!(ids, i.id)
+        for r in i.roles; push!(ids, r.id); end
+    end
+    for a in ALWAYS_ON; push!(ids, a.id); end
+    return ids
+end
+
+"""
+    doc(x) -> String
+
+The docstring of a rule, an agent role, an instrument or an always-on check, written from the value
+itself. A rule's prose is written once, in the value, and the docstring a reader sees on the package's own
+site is derived from it — so the two cannot disagree, and a rule reworded in one place is reworded in
+both.
+
+The argument is `x`, the value to describe. Returns the docstring text, which the source attaches with
+`@doc doc(x) x`.
+"""
+function doc(r::Model.Rule)
+    io = IOBuffer()
+    println(io, "    ", r.id, "\n")
+    println(io, r.statement, "\n")
+    isempty(r.why) || println(io, r.why, "\n")
+    println(io, "- Intention: ", lowercase(replace(string(r.intention), "_" => " ")), ".")
+    println(io, "- Decided by: ", check_words(r.check), ".")
+    isempty(r.filesets) || println(io, "- Runs over: ", join(lowercase.(string.(r.filesets)), ", "), ".")
+    r.check === nothing && println(io, "- Unchecked because: ", r.unchecked_reason)
+    isempty(r.examples) || println(io, "- Shown by ", length(r.examples), " example(s), over ",
+                                  length(unique(e.clause for e in r.examples)), " clause(s).")
+    return String(take!(io))
+end
+
+function doc(role::Model.AgentRole)
+    io = IOBuffer()
+    println(io, "    ", role.id, "\n")
+    println(io, role.description, "\n")
+    println(io, "- Launched by: ", role.instrument, ".")
+    println(io, "- Reads: ", isempty(role.reads) ? "nothing named" : join(lowercase.(string.(role.reads)), ", "),
+            role.site ? ", as the built site" : "", role.kept_from_code ? "; the code is kept from it" : "", ".")
+    println(io, "- Checks: ", isempty(role.rules) ? "no rule by name — an open reader, looking for what no rule names yet" :
+                              join(string.(role.rules), ", "), ".")
+    println(io, "- Strength: ", lowercase(string(role.strength)), "; at most ", role.cap, " distinct defects.")
+    return String(take!(io))
+end
+
+function doc(i::Model.Instrument)
+    io = IOBuffer()
+    println(io, "    ", i.id, "\n")
+    println(io, i.purpose, "\n")
+    println(io, "- Intention: ", lowercase(replace(string(i.intention), "_" => " ")), ".")
+    println(io, "- Decided by: ", lowercase(replace(string(i.decider), "_" => " ")), ".")
+    println(io, "- Fixed by: ", lowercase(replace(string(i.fixer), "_" => " ")), ".")
+    println(io, "- Runs: ", i.when, ".")
+    println(io, "- A run ends when: ", i.ends, ".")
+    println(io, "- One run may launch ", i.budget.agent_launches, " agent(s) and make ",
+            i.budget.fix_passes, " fix pass(es).")
+    return String(take!(io))
+end
+
+function doc(a::Model.AlwaysOn)
+    io = IOBuffer()
+    println(io, "    ", a.id, "\n")
+    println(io, a.purpose, "\n")
+    println(io, "- Intention: ", lowercase(replace(string(a.intention), "_" => " ")), ".")
+    println(io, "- Fixed by: ", lowercase(replace(string(a.fixer), "_" => " ")), ".")
+    println(io, "- Runs: ", a.when, ". It has no runs of its own and nobody starts it.")
+    return String(take!(io))
+end
+
+check_words(c::Model.ProgramCheck) = "a program" * (c.network ? ", which reaches the network and runs only under `gbg check --network`" : "")
+check_words(c::Model.AgentCheck) = "an agent, because this needs " * lowercase(replace(string(c.why), "_" => " "))
+check_words(::Nothing) = "nothing yet"
+
 end # module Catalogue

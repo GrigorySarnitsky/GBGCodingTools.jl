@@ -17,6 +17,7 @@ module ConfigIO
 
 using ..Model
 using ..Texts
+using ..Catalogue
 
 const JS = Base.JuliaSyntax
 
@@ -226,8 +227,24 @@ function validate(cfg::Model.Config, root::AbstractString)
         isfile(joinpath(root, source)) ||
             push!(problems, "the copy $copy is declared from $source, which is not a file here")
     end
+    # The three refusals of §9. A switch is how a package says a rule does not apply to it, and each of
+    # these would make that claim unreadable: one naming nothing, one giving no reason to show on the
+    # package's own site, and one against a rule the rulebook says nobody may escape.
+    known = Catalogue.known_ids()
+    # A name can only be judged against a complete rulebook. While the ninety-five rules are being
+    # converted, `RULES` is short by construction, so a switch naming one that has not arrived yet is not
+    # a mistake — this arm turns itself on when the conversion ratchet reaches zero.
+    judge_names = !isempty(Catalogue.RULES)
     for s in cfg.switches
         isempty(strip(s.reason)) && push!(problems, "the switch against $(s.target) gives no reason")
+        judge_names && !(s.target in known) &&
+            push!(problems, "the switch names $(s.target), which is not a rule, a role or an instrument")
+        s.target in Catalogue.ALWAYS_ON_RULES &&
+            push!(problems, "$(s.target) is always on: no package may switch it off (docs/ARCHITECTURE.md §9)")
+    end
+    for st in cfg.settings
+        judge_names && !(st.rule in known) &&
+            push!(problems, "the setting is for $(st.rule), which is not a rule")
     end
     for n in cfg.normative
         isfile(joinpath(root, n)) || push!(problems, "the normative document $n is not a file here")
