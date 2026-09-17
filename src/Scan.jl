@@ -409,7 +409,9 @@ function apply_ledger(cfg::AbstractDict, ledger, row, hits::Vector{Hit})
     scan_entries = Ledger.entries(ledger, id; scope = "scan")
     isempty(scan_entries) && return (hits, 0, false)
     any(e -> e["target"] == "*" && !haskey(e, "match"), scan_entries) && return (Hit[], length(hits), true)
-    reflection = id in ("SCAN.ARGCOV", "SCAN.SIGNATURE_FIDELITY")
+    # The reflection scans, which alone could evaluate `match.arg_type`, are rules now; no registered
+    # scan can, so an entry carrying it is refused whichever scan it names.
+    reflection = false
     kept = Hit[]
     for h in hits
         covered = any(scan_entries) do e

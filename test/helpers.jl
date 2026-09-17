@@ -54,7 +54,9 @@ end
 
 const DEFECTS = TOML.parsefile(joinpath(FIXTURE, "defects.toml"))
 const CATALOG = Dict(r["id"] => r for r in G.scan_catalog())
-const REFLECTION = ("SCAN.SIGNATURE_FIDELITY",)
+# The scans that must load the package. SCAN.SIGNATURE_FIDELITY was the last of them and went on
+# 2026-09-17; the tuple is empty rather than gone, because the next scan converted is read here too.
+const REFLECTION = ()
 
 quiet(f) = f(devnull)
 

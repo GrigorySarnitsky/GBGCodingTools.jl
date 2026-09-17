@@ -371,7 +371,7 @@ check!("CFG.EXEMPTIONS", ctx -> begin
         end
         if haskey(e, "match")
             e["scope"] in ("scan", "lint", "policy", "harness") || push!(errs, "$tag: match on scope $(e["scope"])")
-            if haskey(e["match"], "arg_type") && !(id in ("SCAN.ARGCOV", "SCAN.SIGNATURE_FIDELITY") || startswith(id, "RULE.DOC.ARGCOV") || startswith(id, "RULE.DOC.SIGNATURE"))
+            if haskey(e["match"], "arg_type") && !(startswith(id, "RULE.DOC.ARGCOV") || startswith(id, "RULE.DOC.SIGNATURE"))
                 push!(errs, "$tag: arg_type is evaluable by the reflection scans only; a text scan refuses it")
             end
         end

@@ -263,7 +263,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.SIGNATURE_FIDELITY"
 statement = "The displayed signature set and the defined method table agree per exported binding (the symmetric difference is reported)."
 sentinel = "The displayed signature set and the defined method table agree per exported binding, and the symmetric difference is reported."
-check = ["scan:SCAN.SIGNATURE_FIDELITY"]
+check = ["rule:RULE.DOC.SIGNATURE_FIDELITY"]  # converted 2026-09-17: src/Rules/modules.jl
 [[rule]]
 id = "RULE.DOC.XLINK"
 file = "docs-rubric.md"

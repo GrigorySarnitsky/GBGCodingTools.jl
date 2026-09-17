@@ -1,12 +1,6 @@
 using Test, GBGCodingTools, TOML, Dates
 include("helpers.jl")
 
-# A package whose whole displayed surface is homed in an extension that is not loaded: `ghost` is
-# declared and never given a method, exactly as `makedocs` is homed in this tool's Documenter extension.
-module ExtensionHomed
-    function ghost end
-end
-
 # a rebaseline names every ceiling it raises before it writes (2026-09-12-audit-changes-01)
 @testset "a prose-shape rebaseline lists what it raises" begin
     root = fixture_copy("rebaseline")
@@ -59,9 +53,6 @@ end
         r = G.run_scan(cfg, CATALOG[id]; ledger = Dict{String,Any}[], files)
         @test isempty([h for h in r.hits if html || h.file == c["file"]])
     end
-    # signature_fidelity's `examined` is the scan's population, and population 0 is the DEAD refusal. It
-    # counts what was COMPARED: an extension-homed binding with no methods loaded is skipped, so it must
-    # not be counted, and a package of nothing but those is DEAD rather than clean.
     # RULE.TEST.BOTH_DIRECTIONS. A package function wins its own name against a Base export of the same
     # name: `Config.read` and `Git.run` collide with `Base.read` and `Base.run`. Ordering the externals
     # last does NOT achieve this — `isdefined(pkg, :read)` is true through the implicit `using Base` — so
@@ -78,42 +69,9 @@ end
         end
         @test parentmodule(G.TestHarness.resolve_function(:read, pkg, mods)) === G.Config
     end
-    # `examined` is the scan's population and counts what was COMPARED. Both directions, and the second
-    # is the one that can fail: on the fixture every displayed binding has methods, so the count is the
-    # whole surface; on a package whose displayed surface is entirely extension-homed nothing is
-    # compared, the count is 0 — moving the increment above the skip would make it 1 — and the scan is
-    # DEAD carrying the names as its reason, since "measured nothing" without the why is a puzzle.
-    @testset "signature_fidelity counts what it compared" begin
-        n = Ref(0)
-        rows = G.Reflection.signature_fidelity(G.Config.read(FIXTURE); examined = n)
-        @test n[] > 0                                                    # population 0 would be DEAD
-        @test isempty(rows)                                              # the fixture skips nothing
-        root = fixture_copy("extension-homed")
-        write(joinpath(root, "src", "Ghost.jl"), """
-        \"\"\"
-            ghost(x; opt = 1)
-
-        A binding whose methods live in an extension that is not loaded.
-        \"\"\"
-        function ghost end
-        """)
-        gcfg = G.Config.read(root)
-        m = Ref(0)
-        grows = G.Reflection.signature_fidelity(gcfg; pkg = ExtensionHomed, examined = m)
-        @test any(r -> occursin("ghost", r) && occursin("EXTENSION-HOMED", r), grows)
-        @test m[] == 0                                                   # a skipped binding is NOT compared
-        res = G.ScanResult("SCAN.SIGNATURE_FIDELITY", "RULE.DOC.SIGNATURE_FIDELITY", "triage", G.Hit[], m[], 0,
-                           "1 extension-homed binding(s) not compared (no methods loaded): ghost")
-        io = IOBuffer(); @test G.report([res]; io) == 2                   # DEAD, not clean
-        out = String(take!(io))
-        @test occursin("DEAD", out) && occursin("measured nothing", out) && occursin("ghost", out)
-        # the wrapper builds that reason itself, and run_scan carries a scan's third element as its note:
-        # this tool homes `makedocs` in its Documenter extension, so the note names it while the
-        # population stays what was compared
-        r = G.run_scan(G.Config.read(TOOL), CATALOG["SCAN.SIGNATURE_FIDELITY"]; ledger = Dict{String,Any}[])
-        @test occursin("makedocs", r.note) && occursin("not compared", r.note)
-        @test r.population > 0 && all(h -> !occursin("EXTENSION-HOMED", h.text), r.hits)
-    end
+    # The two signature_fidelity testsets stood here until 2026-09-17 — the population it counted and the
+    # extension-homed binding it skips. The scan is retired: RULE.DOC.SIGNATURE_FIDELITY is a value now,
+    # and what it judges is shown by the rule's own examples in test/rules.jl.
     # RULE.DOC.SIGNATURE_MIRROR's variation point, `rubric.signature_types`, in BOTH its forms over the
     # same corpus: under `names` a type in the signature's argument list is the hit, under `mirror` an
     # argument the method types and the signature leaves bare. A return annotation after `->` is not an

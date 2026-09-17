@@ -18,11 +18,3 @@ surfaces = ["src"]
 runner = "julia"
 fixture = ["doi-missing", "prose-reference"]
 
-[[scan]]
-id = "SCAN.SIGNATURE_FIDELITY"
-rule = "RULE.DOC.SIGNATURE_FIDELITY"
-tier = "triage"
-surfaces = ["src"]
-runner = "julia"
-fixture = ["stale-keyword"]
-

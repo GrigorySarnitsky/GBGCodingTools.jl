@@ -6,7 +6,7 @@ include("helpers.jl")
     cfg = G.Config.read(root)
     write(joinpath(root, ".gbg", "exemptions.toml"), """
     [[exemption]]
-    id = "SCAN.SIGNATURE_FIDELITY"
+    id = "SCAN.DOI_CROSSCHECK"
     scope = "scan"
     target = "src/FixtureA.jl"
     reason = "a forty-character reason for the ledger arm of the self-tests here"
@@ -22,7 +22,7 @@ include("helpers.jl")
     """)
     led = G.Ledger.read(cfg)
     @test length(led) == 2
-    @test length(G.Ledger.entries(led, "SCAN.SIGNATURE_FIDELITY"; scope = "scan")) == 1
+    @test length(G.Ledger.entries(led, "SCAN.DOI_CROSSCHECK"; scope = "scan")) == 1
     @test G.Ledger.matches(led[1], root; file = "src/FixtureA.jl")
     @test !G.Ledger.matches(led[1], root; file = "src/FixtureB.jl")
     checks, _ = G.Doctor.run(cfg; only = ["CFG.EXEMPTIONS", "EXEMPT"], io = devnull)

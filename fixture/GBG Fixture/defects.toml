@@ -14,11 +14,6 @@ class = "prose-reference"
 scan = "SCAN.DOI_CROSSCHECK"
 file = "defects/Defects.jl"
 fragment = "a full reference in the prose"
-[[defect]]
-class = "stale-keyword"
-scan = "SCAN.SIGNATURE_FIDELITY"
-file = "defects/Defects.jl"
-fragment = "stale"
 [[clean]]
 scan = "SCAN.DOI_CROSSCHECK"
 file = "src/FixtureB.jl"

@@ -312,14 +312,6 @@ The factor `coefficient` ``= -D\\tau`` in the exponent. The argument `coefficien
 abutting_span(coefficient) = coefficient
 
 """
-    twice(x; stale = 1)
-
-A stale signature: `twice` takes no keyword. The arguments are `x`, the number, and `stale`, a keyword
-that does not exist.
-"""
-function stale_keyword end
-
-"""
     unlinked_cross_module(u)
 
 The mean is computed by mean_value in the sibling module, mentioned bare as `mean_value`. The
