@@ -15,17 +15,11 @@ GBGCodingTools.VERBS
 ## Engines
 
 ```@docs
-GBGCodingTools.Sync
-GBGCodingTools.Sync.plan
-GBGCodingTools.Sync.status
-GBGCodingTools.Sync.render
-GBGCodingTools.Sync.subenv_entries
-GBGCodingTools.Init
-GBGCodingTools.Init.derive_config
-GBGCodingTools.Init.migrate_seeds
+GBGCodingTools.Wire
 GBGCodingTools.Ledger
-GBGCodingTools.Doctor
-GBGCodingTools.Doctor.select
+GBGCodingTools.Ledger.read
+GBGCodingTools.Ledger.entries
+GBGCodingTools.Ledger.matches
 GBGCodingTools.Git
 GBGCodingTools.Git.run
 GBGCodingTools.Git.head
@@ -41,7 +35,6 @@ GBGCodingTools.HtmlWalker.attr
 GBGCodingTools.HtmlWalker.elements
 GBGCodingTools.HtmlWalker.text_of
 GBGCodingTools.HtmlWalker.article_of
-GBGCodingTools.consolidate
 GBGCodingTools.Hit
 GBGCodingTools.ScanResult
 GBGCodingTools.register_scan!

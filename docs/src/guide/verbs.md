@@ -28,26 +28,23 @@ GBGCodingTools.cmd_probe
 ## Consumer setup
 
 ```@docs
-GBGCodingTools.Init.init
-GBGCodingTools.Init.migrate_baselines
-GBGCodingTools.Init.new
-GBGCodingTools.Sync.sync
-GBGCodingTools.Sync.cmd_sync
+GBGCodingTools.Wire.init
+GBGCodingTools.Wire.sync
 GBGCodingTools.cmd_config
-GBGCodingTools.cmd_schema
 ```
 
 ## Checks and scans
 
 ```@docs
-GBGCodingTools.Doctor.run
-GBGCodingTools.Doctor.cmd_doctor
-GBGCodingTools.doctor
+GBGCodingTools.Check.run
 GBGCodingTools.cmd_scan
 GBGCodingTools.scan_docs
 GBGCodingTools.scan_html
 GBGCodingTools.write_public_surface
 ```
+
+The doctor's verbs stood here until 2026-09-17: `gbg doctor` judged a package's wiring, and the wiring
+check judges it now, inside every build and every test run rather than on request.
 
 The round verbs and the two design checks stood here until 2026-09-17. The machinery that ran them is
 filed under `docs/design-record/machinery-v1/`, and what replaces it — a run, its stages and its report —
@@ -59,7 +56,6 @@ is `docs/ARCHITECTURE.md` §10.
 GBGCodingTools.Fleet
 GBGCodingTools.Fleet.latest_tag
 GBGCodingTools.Fleet.rows
-GBGCodingTools.bump
+GBGCodingTools.Bump.bump
 GBGCodingTools.release
-GBGCodingTools.selftest
 ```

@@ -52,9 +52,8 @@ end
 """
     SCANS
 
-The registry `id => function`. Every file under `src/Scans/` registers exactly one scan with
-[`register_scan!`](@ref); `gbg selftest` fails when a registered id is absent from the catalogue or a
-catalogued id has no function.
+The registry `id => function`, empty since the last scan became a `Rule` value on 2026-09-17. The
+engine around it goes in Phase 5.
 """
 const SCANS = Dict{String,Function}()
 

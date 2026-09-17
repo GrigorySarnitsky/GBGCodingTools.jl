@@ -34,8 +34,9 @@ function fixture_copy(name)
         pj = joinpath(dst, env, "Project.toml")
         write(pj, replace(read(pj, String), "GBGCodingTools = {path = \"../../..\"}" => "GBGCodingTools = {path = \"" * TOOL * "\"}"))
     end
-    # the copy's managed files were rendered for the fixture's own inputs; re-sync so its sidecar is its own
-    G.Sync.sync(G.Config.read(dst); io = devnull)
+    # the copy's generated files name a path to the tool that the copy does not have; rewrite them where
+    # they stand, which is what the copy's own `gbg sync` would do
+    G.Wire.sync(dst; io = devnull)
     return dst
 end
 

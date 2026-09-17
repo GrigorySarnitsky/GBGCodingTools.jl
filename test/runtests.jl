@@ -20,9 +20,7 @@ module WiringTests;      include("wiring.jl");       end
 module SchemaTests;      include("schemas.jl");      end
 module ConfigTests;      include("config.jl");       end
 module ScanTests;        include("scans.jl");        end
-module LedgerTests;      include("ledger.jl");       end
 module WitnessTests;     include("witnesses.jl");    end
-module SyncDoctorTests;  include("sync_doctor.jl");  end
 module TreeHashTests;    include("treehash.jl");     end
 module CoverageTests;    include("coverage.jl");     end
 

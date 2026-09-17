@@ -12,7 +12,7 @@ tests run over; the [glossary](@ref glossary) binds the term.
 ## The pinned version
 
 Every sub-environment of a consumer that lists the tool (`docs/`, `test/`, `benchmark/`) carries the
-same three entries, rendered by [`gbg sync`](@ref GBGCodingTools.Sync.sync) from the pinned version in
+same three entries, rendered by [`gbg sync`](@ref GBGCodingTools.Wire.sync) from the pinned version in
 `.gbg/config.toml`:
 
 ```toml

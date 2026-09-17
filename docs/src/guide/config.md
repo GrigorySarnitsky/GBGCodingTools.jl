@@ -27,6 +27,4 @@ GBGCodingTools.Config.read
 GBGCodingTools.Config.parse
 GBGCodingTools.Config.surface_files
 GBGCodingTools.Config.resolve_anchor
-GBGCodingTools.validate
-GBGCodingTools.load_schema
 ```

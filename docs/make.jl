@@ -1,27 +1,14 @@
-# docs/make.jl — the tool's own site, built through its own wrapper (ARCHITECTURE D9, D15): the quick
-# doctor set (QUICK: the checks that hold on any machine), the hard scans, the gate, Documenter, the built-HTML scans, the gate again. WIRE.MAKEDOCS holds
-# here as in every consumer. Run as `julia --project=docs docs/make.jl`.
+# docs/make.jl — the tool's own site, built through its own wrapper: the documentation rules and the
+# wiring check, then Documenter, then the rules that read the built site. It holds here as in every
+# consumer. Run as `julia --project=docs docs/make.jl`.
 using Documenter, GBGCodingTools
-using GBGCodingTools: TestHarness, Reflection, Witnesses, Config, Doctor
+using GBGCodingTools: TestHarness, Reflection, Witnesses, Config
 
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 
-# Generated pages: the architecture copy and the doctor's check table, written from the tool's own data
-# so they cannot drift. Both are `generated` globs of the tool's config and gitignored.
+# The architecture copy, a generated glob of the tool's config and gitignored. The doctor's check table
+# was generated beside it until 2026-09-17; the doctor is deleted and the page with it.
 cp(joinpath(ROOT, "docs", "ARCHITECTURE.md"), joinpath(@__DIR__, "src", "architecture.md"); force = true)
-open(joinpath(@__DIR__, "src", "guide", "doctor.md"), "w") do io
-    println(io, "# The doctor's checks\n")
-    println(io, "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human.\n")
-    println(io, "Generated at build time from the doctor's own table (`Doctor.CHECKS`): every stable id, its family, whether")
-    println(io, "the `QUICK` set runs it, whether it needs `--deep`, and whether a `scope = \"check\"` ledger entry may")
-    println(io, "exempt it. The check's own detail line says what failed and what fixes it; ARCHITECTURE §7.3 is the")
-    println(io, "authoritative table with the failure conditions.\n")
-    println(io, "| Id | Family | QUICK | `--deep` | Exemptable |\n|---|---|---|---|---|")
-    for (id, _) in Doctor.CHECKS
-        fam = first(split(id, '.'))
-        println(io, "| `", id, "` | ", fam, " | ", id in Doctor.QUICK ? "yes" : "", " | ", id in Doctor.DEEP ? "yes" : "", " | ", Doctor.exemptable(id) ? "yes" : "no", " |")
-    end
-end
 
 # The four instruments' protocols and the rendered rulebook, as pages: the protocol files under
 # instruments/<name>/ and the tool's own rendered policy copy under .gbg/policy/, headings demoted one level,
@@ -35,7 +22,7 @@ open(joinpath(@__DIR__, "src", "guide", "rules.md"), "w") do io
     println(io, "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human.\n")
     println(io, "Generated at build time from this package's rendered policy copy under `.gbg/policy/`: the shared rulebook")
     println(io, "every [consumer](@ref install) imports, with this package's parameters substituted. A rule's id is stable; the scans and the")
-    println(io, "doctor cite it.\n")
+    println(io, "rules cite it.\n")
     for f in GBGCodingTools.Render.policy_paths()
         for l in readlines(joinpath(ROOT, f))
             startswith(l, "<!-- gbg:managed") && continue
@@ -60,8 +47,7 @@ result = GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
         "Home" => "index.md",
         # The guide reads as a sequence first (set up, run a review, see what it produces, read what it judges
         # against), then the four reference tables, most consulted first (2026-09-09, the owner's ruling).
-        "Guide" => ["guide/install.md", "guide/rules.md",
-                    "guide/verbs.md", "guide/doctor.md", "guide/config.md", "guide/ledger.md"],
+        "Guide" => ["guide/install.md", "guide/rules.md", "guide/verbs.md", "guide/config.md"],
         "API" => ["api/TestHarness.md", "api/Reflection.md", "api/Witnesses.md", "api/Config.md", "api/CLI.md"],
         "Architecture" => "architecture.md",
     ],

@@ -90,9 +90,12 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
             ok = success(pipeline(setenv(cmd; dir = root); stdout = devnull, stderr = devnull))
             ok || (println(io, "release: refused — $label failed"); return 2)
         end
-        println(io, "release: running gbg doctor --deep …"); flush(io)
-        _, dcode = Doctor.run(cfg; deep = true, io = devnull)
-        dcode == 0 || (println(io, "release: refused — gbg doctor --deep is not green"); return 2)
+        # `gbg doctor --deep` was the third gate here until 2026-09-17, when the doctor was deleted.
+        # What it checked of a package's wiring is the wiring check, which both commands above already
+        # run — the docs build and the test suite each call it — so a third invocation added nothing.
+        println(io, "release: running gbg sync --check …"); flush(io)
+        GBGCodingTools.Wire.sync(root; check = true, io = devnull) == 0 ||
+            (println(io, "release: refused — generated files are adrift; run `gbg sync`"); return 2)
     end
     Git.run(root, "tag", "-a", "v$ver", "-m", "GBGCodingTools v$ver") === nothing && (println(io, "release: git tag failed"); return 3)
     Git.run(root, "push", "origin", "v$ver") === nothing && (println(io, "release: tag created but the push failed — push it by hand: git push origin v$ver"); return 3)

@@ -1,8 +1,0 @@
-<!-- gbg:managed begin v{{tool.version}} sha256:{{sha256}} — rewritten by `gbg sync`; do not edit -->
-@.gbg/policy/00-index.md
-## GBGCodingTools — this package's parameters and declared deviations
-- Package `{{package.name}}`; leading identity: {{rubric.leading_identity}}; vectors: {{notation.vectors}}.
-- Deviations: {{deviations}}
-- "Check the docs" means run `/check-docs`. Instruments run only on the user's request, in words or by
-  slash — never unasked; unasked, run only `Pkg.test()`.
-<!-- gbg:managed end -->

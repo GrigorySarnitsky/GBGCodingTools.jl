@@ -13,7 +13,7 @@ non-exemptable prefixes); the reader only parses.
 module Ledger
 
 using TOML, Dates
-using ..GBGCodingTools: load_schema, validate, Config
+using ..GBGCodingTools: Config
 
 struct LedgerError <: Exception
     msg::String
@@ -35,8 +35,9 @@ function read(cfg::AbstractDict)
     catch err
         throw(LedgerError("$path does not parse: " * sprint(showerror, err)))
     end
-    errs = validate(load_schema("exemptions"), doc)
-    isempty(errs) || throw(LedgerError("$path is invalid:\n  " * join(errs, "\n  ")))
+    # The schema that validated this went with `schema/` on 2026-09-17. The ledger itself goes in Phase 5;
+    # what a package turns off is a `Switch` in `.gbg/config.jl`, which `ConfigIO.validate` refuses when it
+    # names an unknown rule or gives no reason.
     return Dict{String,Any}[Dict{String,Any}(e) for e in get(doc, "exemption", Any[])]
 end
 

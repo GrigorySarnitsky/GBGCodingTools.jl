@@ -16,17 +16,15 @@ docs_post = []
 domain = "review tooling"
 extensions = ["ext/GBGCodingToolsDocumenterExt.jl"]
 julia_test = "julia --project -e 'using Pkg; Pkg.test()'"
-modules = ["Config", "Doctor", "Fleet", "Git", "HtmlWalker", "Init", "Ledger", "Reflection", "Sync", "TestHarness", 
-           "TreeHash", "Witnesses"]
+modules = ["Config", "Fleet", "Git", "HtmlWalker", "Ledger", "Reflection", "TestHarness",
+           "TreeHash", "Witnesses", "Wire"]
 name = "GBGCodingTools"
 rulebook_sections = ["docs/ARCHITECTURE.md#1. Purpose and scope", "docs/ARCHITECTURE.md#13. Change control and growth", "CLAUDE.md#Release checklist"]
 terms = ["consumer", "instrument", "round", "lane", "hat", "anchor", "gate", "pin", "managed file", "ledger"]
 
 [paths]
-schema = "schema"
 catalog = "catalog"
 fixture = "fixture"
-templates = "templates"
 
 [git]
 branch = "master"
@@ -37,9 +35,9 @@ built_html = "docs/build"
 # Markdown, and its comment prose was read by nothing. A file's COMMENTS are its prose; a JSON file's
 # `description` strings are. An inline comment after a value is not prose, so a pattern in a value is
 # never a hit.
-data = ["catalog/**/*.toml", "schema/*.json",
-        "templates/*.tmpl", "templates/*.seed", "templates/*.snippet", "templates/*.block", "templates/*.md",
-        "templates/*.skeleton", "templates/queue-guard.sh.tmpl", "bin/gbg", ".claude/hooks/queue-guard.sh"]
+# schema/ and templates/ were deleted on 2026-09-17: the schemas became Julia types, the templates
+# became `Render` generators. What is left of this surface is the catalogue and the two scripts.
+data = ["catalog/**/*.toml", "bin/gbg", ".claude/hooks/queue-guard.sh"]
 ext = ["ext/*.jl"]
 history_exempt = "docs/design-record/ARCHITECTURE-v1.md#Revision history"
 literate = []

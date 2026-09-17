@@ -11,7 +11,7 @@ The fleet scorecard: [`Fleet.rows`](@ref) computes one row per consumer of `flee
 module Fleet
 
 using TOML, Dates, JSON3
-using ..GBGCodingTools: GBGCodingTools, Config, Doctor, Git, Sync, parse_options, VERBS, running_dev, git_stamp
+using ..GBGCodingTools: GBGCodingTools, Config, Git, parse_options, VERBS, running_dev, git_stamp
 
 const WINDOW = Day(7)
 
@@ -37,10 +37,10 @@ end
     Fleet.rows(; deep = false) -> (rows, code)
 
 One row per `[[consumer]]`: `(name, pin, status, detail)`. A consumer without `.gbg/config.toml` is
-`NOT-INITIALISED`; one whose QUICK doctor fails is `RED` with the failing ids; one whose pinned version
+`NOT-INITIALISED`; one whose generated files are adrift is `RED`; one whose pinned version
 is older than the fleet's newest is `BEHIND` with both versions and the window state; else `OK`. The
 tool's own row (`path = "."`) shows `dev+<sha>[-dirty]` with `clean at vX.Y.Z` or `off tag`, is
-`OK`/`RED` by its own doctor and never `BEHIND`. A missing path is exit 2. The arguments are:
+`OK`/`RED` by its own wiring and never `BEHIND`. A missing path is exit 2. The arguments are:
 
 - `deep` — run every check, the `--deep` ones included, as each consumer's doctor pass instead of the
   `QUICK` set.
@@ -77,8 +77,9 @@ function rows(; deep::Bool = false)
             push!(out, (name = c["name"], pin = "?", status = "RED", detail = "CFG.VALID: " * first(err, 120))); code = max(code, 1); continue
         end
         pin = String(cfg["tool"]["version"])
-        checks, dcode = Doctor.run(cfg; only = deep ? nothing : ["QUICK"], deep, io = devnull)
-        fails = [ch.id for ch in checks if ch.status == :FAIL]
+        # The doctor's check list was read here until 2026-09-17. A package's wiring is the wiring
+        # check's to judge now, and it answers in one word: adrift, or not.
+        fails = GBGCodingTools.Wire.sync(p; check = true, io = devnull) == 0 ? String[] : ["WIRING"]
         if c["path"] == "."
             stamp = git_stamp(p); tag = Git.run(p, "describe", "--exact-match", "--tags", "HEAD")
             detail = (tag !== nothing && !endswith(stamp, "-dirty")) ? "clean at $tag" : "off tag"
@@ -92,7 +93,7 @@ function rows(; deep::Bool = false)
             push!(out, (name = c["name"], pin = pin, status = "BEHIND", detail = "pinned at $pin, newest $newest — $window"))
             window == "within window" || (code = max(code, 1))
         else
-            push!(out, (name = c["name"], pin = pin, status = "OK", detail = "doctor green"))
+            push!(out, (name = c["name"], pin = pin, status = "OK", detail = "wired"))
         end
     end
     return (out, code)

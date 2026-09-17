@@ -13,9 +13,8 @@ The arguments are:
 - `kwargs...` — passed through to `Documenter.makedocs` unchanged (`sitename`, `pages`, `modules`,
   `checkdocs`, `doctest`, `format`, …).
 
-Before Documenter runs it runs, in-process, the quick doctor set — the `:QUICK` selection of
-[`GBGCodingTools.doctor`](@ref), the checks that hold on any machine with no build and no network — and
-the hard scans over the source surfaces; after Documenter it runs the built-HTML scans. Any non-zero
+Before Documenter runs it runs, in-process, the documentation rules of the rulebook and the wiring
+check; after Documenter it runs the rules that read the built site. Any non-zero
 return is an `error`, so the build fails. It prints one banner line, `GBGCodingTools v<ver> makedocs`,
 which a consumer's CI greps for.
 

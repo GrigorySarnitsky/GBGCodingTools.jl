@@ -17,7 +17,7 @@ const LAYERS = Dict("src/Model.jl" => 1, "src/Texts.jl" => 2, "src/ConfigIO.jl" 
                     "src/Rules/arguments.jl" => 3, "src/Rules/latex.jl" => 3, "src/Rules/pages.jl" => 3, "src/Rules/reflection.jl" => 3, "src/Rules/site.jl" => 3, "src/Rules/shape.jl" => 3, "src/Rules/modules.jl" => 3,
                     "src/Rules/judgement_api.jl" => 3, "src/Rules/judgement_cit.jl" => 3, "src/Rules/judgement_doc.jl" => 3, "src/Rules/judgement_git.jl" => 3, "src/Rules/judgement_inst.jl" => 3, "src/Rules/judgement_test.jl" => 3, "src/Rules/judgement_tex.jl" => 3,
                     "src/Engine.jl" => 5, "src/Engine/Guard.jl" => 5,
-                    "src/CLI/Docfix.jl" => 8, "src/CLI/Check.jl" => 8,
+                    "src/CLI/Docfix.jl" => 8, "src/CLI/Check.jl" => 8, "src/CLI/Wire.jl" => 8,
                     "src/Catalogue.jl" => 3, "src/Engine/Checks.jl" => 5, "src/Engine/Harness.jl" => 5, "src/Render.jl" => 6)
 
 const RANK_OF_MODULE = Dict("Model" => 1, "Texts" => 2, "Catalogue" => 3, "ConfigIO" => 4,
@@ -25,7 +25,7 @@ const RANK_OF_MODULE = Dict("Model" => 1, "Texts" => 2, "Catalogue" => 3, "Confi
 
 # The tree being replaced. This number only falls; a commit that raises it fails here, which is what
 # makes "two machines in one tree" a measured state rather than a feeling.
-const LEGACY_CEILING = 24
+const LEGACY_CEILING = 18
 
 # The table as the document holds it: one named tuple per row, the leading `**name**` and six cells.
 function table_rows(path)

@@ -36,22 +36,20 @@ The module is a map; every part is documented at its home. The command line and 
 
 The upkeep verbs and the rest of `src/CLI/`:
 
-- [`Sync`](@ref), [`Init`](@ref) — rendering the managed files into a consumer, and seeding a new
-  consumer's `.gbg/`.
-- [`Ledger`](@ref) — the reader of `.gbg/exemptions.toml`; [`Doctor`](@ref) — the read-only health
-  check; [`Git`](@ref) — the git questions the verbs ask.
-- `Fleet.jl`, `Bump.jl`, `Release.jl`, `Install.jl`, `Self.jl`, `Selftest.jl` — the fleet report, the
-  pin bump, the release, the install of the `gbg` command, `gbg self verify` and the self-test;
-  `Schema.jl` — the one validator of every artefact against `schema/`.
+- [`Wire`](@ref) — `gbg init` and `gbg sync`: everything that connects a package to this one, written
+  from the config by `Render` and compared by the wiring check.
+- [`Ledger`](@ref) — the reader of `.gbg/exemptions.toml`, which goes with the old config;
+  [`Git`](@ref) — the git questions the verbs ask.
+- `Fleet.jl`, `Bump.jl`, `Release.jl`, `Install.jl`, `Self.jl` — the fleet report, the pin bump, the
+  release, the install of the `gbg` command, and `gbg self verify`.
 
 The engines:
 
 - `TestHarness`, `Reflection`, `Witnesses` — the Julia-side engines a consumer's tests call.
-- [`scan_docs`](@ref), [`scan_html`](@ref), [`register_scan!`](@ref) — the deterministic text and
-  built-HTML scan engine over `catalog/scans.toml`, one function per scan id under `src/Scans/`.
 - `TreeHash` — git blob and tree hashing on the `SHA` stdlib, behind `gbg self verify`.
-- `HtmlWalker` — the Gumbo walker shared by the consolidator and the built-HTML scans.
-- [`consolidate`](@ref) — the consolidator: the built site as one page-marked manuscript.
+- `HtmlWalker` — the Gumbo walker the rules that read a built site use.
+- [`scan_docs`](@ref), [`scan_html`](@ref), [`register_scan!`](@ref) — the text-scan engine, whose
+  catalogue and registry are empty since the last scan became a rule; it goes in Phase 5.
 """
 module GBGCodingTools
 
@@ -72,25 +70,20 @@ include("TreeHash.jl")
 include("HtmlWalker.jl")
 include("DocLints.jl")
 include("CLI/Main.jl")
-include("CLI/Schema.jl")
 include("CLI/Config.jl")
 include("Witnesses.jl")
 include("Reflection.jl")
 include("TestHarness.jl")
 include("CLI/Ledger.jl")
 include("Scan.jl")
-include("CLI/Consolidate.jl")
 include("CLI/Self.jl")
 include("CLI/Install.jl")
-include("CLI/Sync.jl")
-include("CLI/Init.jl")
 include("CLI/Git.jl")
+include("CLI/Wire.jl")
 include("CLI/Check.jl")
 include("CLI/Docfix.jl")
-include("CLI/Doctor.jl")
 include("CLI/Fleet.jl")
 include("CLI/Bump.jl")
 include("CLI/Release.jl")
-include("CLI/Selftest.jl")
 
 end # module

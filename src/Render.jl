@@ -20,6 +20,8 @@ it. The instrument skills wait for the instruments.
 """
 module Render
 
+using TOML
+
 using ..Model
 using ..Catalogue
 
@@ -171,16 +173,125 @@ function regressions_note(cfg::Model.Config)
     """
 end
 
-"""
-    pin_entries(cfg) -> Dict{String,Any}
+const PKG = "GBGCodingTools"
+const PKG_UUID = "3aee1de0-bb62-4679-b1c5-a861fbcaaa51"
+const PKG_URL = "https://github.com/GrigorySarnitsky/GBGCodingTools.jl.git"
 
-What a sub-environment's `Project.toml` says about this package: the compat bound for a released pin, or
-the path source for a checkout. The argument is `cfg`, the package's config. Returns the entries, keyed by
-the TOML table they belong in.
 """
-function pin_entries(cfg::Model.Config)
-    cfg.tool isa VersionNumber || return Dict{String,Any}("sources" => Dict("GBGCodingTools" => Dict("path" => "..")))
-    return Dict{String,Any}("compat" => Dict("GBGCodingTools" => "=" * string(cfg.tool)))
+    SUBENVS
+
+The sub-environments of a package that must see this one: the documentation build and the test suite.
+Both run this package's checks, so both name it, and a package whose two environments disagree about
+which version to use gets two different answers from the same commit.
+"""
+const SUBENVS = ["docs", "test"]
+
+"""
+    pin_entries(cfg, root, envdir) -> Dict{String,Any}
+
+What one sub-environment's `Project.toml` must say about this package: the dependency, and either the
+released version with its compat bound or the path to the checkout. The arguments are:
+
+- `cfg` — the package's config, which carries the pin.
+- `root` — the package root.
+- `envdir` — the sub-environment, `"docs"` or `"test"`.
+
+Returns the entries, keyed by the TOML table each belongs in; a table whose value is `nothing` must be
+absent, which is how a checkout is distinguished from a release rather than merely left unstated.
+
+A checkout is named by a relative path where this package's repository encloses the consumer, or is it,
+and absolutely otherwise: a chain of `../` out of one repository and into another breaks the moment
+either moves.
+"""
+function pin_entries(cfg::Model.Config, root::AbstractString, envdir::AbstractString)
+    deps = Dict{String,Any}(PKG => PKG_UUID)
+    if cfg.tool isa VersionNumber
+        v = string(cfg.tool)
+        return Dict{String,Any}("deps" => deps,
+                                "sources" => Dict{String,Any}(PKG => Dict("url" => PKG_URL, "rev" => "v" * v)),
+                                "compat" => Dict{String,Any}(PKG => "=" * v))
+    end
+    here = abspath(something(pkgdir(@__MODULE__), root)); there = abspath(root)
+    path = (there == here || startswith(there, here * "/")) ? relpath(here, joinpath(there, envdir)) : here
+    return Dict{String,Any}("deps" => deps,
+                            "sources" => Dict{String,Any}(PKG => Dict("path" => path)),
+                            "compat" => nothing)
+end
+
+"""
+    pin_drift(cfg, root, envdir) -> Union{String,Nothing}
+
+What one sub-environment's `Project.toml` gets wrong about this package, or `nothing` where it gets it
+right. The arguments are:
+
+- `cfg` — the package's config, which carries the pin.
+- `root` — the package root.
+- `envdir` — the sub-environment.
+
+Returns the first disagreement, in words.
+
+Only this package's own entries are compared, as parsed values: Pkg rewrites these files whenever it
+resolves, so comparing the text would report every ordinary `Pkg.add` as drift.
+"""
+function pin_drift(cfg::Model.Config, root::AbstractString, envdir::AbstractString)
+    path = joinpath(root, envdir, "Project.toml")
+    isfile(path) || return "$envdir/Project.toml is absent"
+    have = TOML.parsefile(path)
+    for (table, want) in pin_entries(cfg, root, envdir)
+        got = get(get(have, table, Dict{String,Any}()), PKG, nothing)
+        if want === nothing
+            got === nothing || return "[$table] names $PKG, and a checkout carries no $table entry"
+            continue
+        end
+        got === nothing && return "[$table] does not name $PKG"
+        got == want[PKG] || return "[$table] $PKG is `$got`, and the pin says `$(want[PKG])`"
+    end
+    return nothing
+end
+
+"""
+    write_pin(cfg, root, envdir) -> Bool
+
+Sets this package's entries in one sub-environment's `Project.toml`, keeping every other entry and
+Pkg's own section order. The arguments are:
+
+- `cfg` — the package's config, which carries the pin.
+- `root` — the package root.
+- `envdir` — the sub-environment.
+
+Returns whether the file changed.
+"""
+function write_pin(cfg::Model.Config, root::AbstractString, envdir::AbstractString)
+    path = joinpath(root, envdir, "Project.toml")
+    proj = isfile(path) ? TOML.parsefile(path) : Dict{String,Any}()
+    for (table, want) in pin_entries(cfg, root, envdir)
+        if want === nothing
+            haskey(proj, table) && delete!(proj[table], PKG)
+            haskey(proj, table) && isempty(proj[table]) && delete!(proj, table)
+        else
+            get!(proj, table, Dict{String,Any}())[PKG] = want[PKG]
+        end
+    end
+    io = IOBuffer()
+    top = [k for k in ("name", "uuid", "authors", "version") if haskey(proj, k)]
+    for k in top; TOML.print(io, Dict(k => proj[k])); end
+    isempty(top) || println(io)
+    rest = sort!([k for k in keys(proj) if !(k in ("name", "uuid", "authors", "version", "deps", "sources", "compat"))])
+    for sec in vcat(["deps", "sources", "compat"], rest)
+        haskey(proj, sec) || continue
+        println(io, "[", sec, "]")
+        for k in sort!(collect(keys(proj[sec])))
+            v = proj[sec][k]
+            println(io, k, " = ", v isa AbstractDict ?
+                    "{" * join(("$kk = $(repr(String(vv)))" for (kk, vv) in sort!(collect(v); by = first)), ", ") * "}" :
+                    repr(String(v)))
+        end
+        println(io)
+    end
+    text = String(take!(io))
+    isfile(path) && read(path, String) == text && return false
+    mkpath(dirname(path)); write(path, text)
+    return true
 end
 
 """
@@ -479,8 +590,9 @@ end
 """
     wiring(cfg, root) -> Vector{Model.Location}
 
-Every generated path of the package at `root` that is not what its generator writes now: one location per
-path, quoting the first line that differs. The arguments are `cfg`, the package's config, and `root`, the
+Every generated path of the package at `root` that is not what its generator writes now, and each
+sub-environment whose pin disagrees with the config: one location per path, quoting the first line that
+differs. The arguments are `cfg`, the package's config, and `root`, the
 package root. A path that does not exist at all is reported the same way, since a package missing a
 generated file is as wired-wrongly as one holding a stale copy. Returns the locations.
 """
@@ -500,6 +612,12 @@ function wiring(cfg::Model.Config, root::AbstractString)
         push!(out, Model.Location(; file = g.path, line = first_difference(have, want),
                                    text = "this file is not what `gbg sync` writes now"))
     end
+    # The pin is entries inside a file Pkg owns and rewrites, so only this package's own entries are
+    # compared, and as parsed values: comparing the text would report every `Pkg.add` as drift.
+    for envdir in SUBENVS
+        why = pin_drift(cfg, root, envdir)
+        why === nothing || push!(out, Model.Location(; file = joinpath(envdir, "Project.toml"), text = why))
+    end
     return out
 end
 
@@ -510,7 +628,8 @@ first_difference(a::AbstractString, b::AbstractString) =
 """
     write_all(cfg, root) -> Vector{String}
 
-Writes every generated path of the package at `root` and returns the paths it changed. The arguments are
+Writes every generated path of the package at `root`, sets the pin in each sub-environment, and returns
+the paths it changed. The arguments are
 `cfg`, the package's config, and `root`, the package root. A marked block is replaced inside the file that
 holds it and the rest of that file is left alone; anything else is written whole.
 """
@@ -532,6 +651,9 @@ function write_all(cfg::Model.Config, root::AbstractString)
         end
         g.generator === :hook && chmod(full, 0o755)
         push!(changed, g.path)
+    end
+    for envdir in SUBENVS
+        write_pin(cfg, root, envdir) && push!(changed, joinpath(envdir, "Project.toml"))
     end
     return changed
 end

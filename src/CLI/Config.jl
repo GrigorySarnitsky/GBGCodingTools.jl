@@ -28,7 +28,6 @@ module Config
 
 using TOML, Dates
 import ..GBGCodingTools
-import ..GBGCodingTools: load_schema, validate, materialize!, SchemaError
 
 export ConfigError
 
@@ -325,10 +324,10 @@ function parse(text::AbstractString; root::AbstractString, check::Bool = true)
     catch err
         throw(ConfigError("config does not parse: " * sprint(showerror, err)))
     end
-    schema = load_schema("config")
-    errs = validate(schema, cfg)
-    isempty(errs) || throw(ConfigError(".gbg/config.toml is invalid:\n  " * join(errs, "\n  ")))
-    materialize!(schema, cfg)
+    # `schema/config.schema.json` validated this until 2026-09-17, when the JSON-Schema subset validator
+    # and its four schemas were deleted (IMPLEMENTATION.md §7). Nothing replaces it HERE: `.gbg/config.toml`
+    # is the legacy config on its way out, read only by what is left of the old tree, and the config that
+    # matters — `.gbg/config.jl` — is validated in Julia by `ConfigIO.validate`.
     cfg["root"] = root
     if check
         perrs = check_paths(cfg)

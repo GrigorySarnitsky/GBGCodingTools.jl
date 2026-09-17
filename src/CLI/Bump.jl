@@ -1,61 +1,103 @@
-# Bump.jl — `gbg bump <ver>`: moves a consumer's pinned version, syncs, writes the
-# bump commit message, records the fleet sweep window (ARCHITECTURE D4, D16).
+# The design's §11; the coordinates live here rather than in a docstring, which must read complete at the REPL.
+"""
+    Bump
+
+`gbg bump <version>`: moves a package's pin to a released version of this one and rewrites its wiring
+at that version.
+
+It runs the new version's checks FIRST and refuses to move the pin while any of them finds something,
+printing the count per rule. A pin moved silently is a package that finds out at its next build, on
+someone else's time, that a newer rulebook has opinions about its prose; a package told first can fix
+what it wants to fix and switch off what it does not, and then bump.
+"""
+module Bump
+
+using ..GBGCodingTools: GBGCodingTools, Catalogue, ConfigIO, Engine, Model, Render, parse_options, VERBS
 
 """
-    bump(cfg, ver; io = stdout) -> Int
+    set_pin(root, version) -> Bool
 
-Moves the pinned version of the consumer at `cfg["root"]` to `ver` (a released `X.Y.Z`); rewrites the
-`[tool] version` line of `.gbg/config.toml`, runs `sync` (which re-renders every managed file and the
-sub-environment entries), writes `.gbg/scratch/bump-message.txt` from the template, and records the
-`[sweep]` window in the dev checkout's `fleet.toml` when the bump leaves the fleet at two versions.
-The arguments are:
+Rewrites the `tool` line of the package's `.gbg/config.jl` to name `version`. The arguments are `root`,
+the package root, and `version`, the released version. Returns whether the line was found and changed.
 
-- `cfg` — the validated config.
-- `ver` — the target version.
+The file is a Julia expression read as data, so the line is rewritten rather than the file regenerated:
+everything else in it — what the package has switched off, and why — is the package's own text, and a
+verb that rewrote it would lose the reasons.
+"""
+function set_pin(root::AbstractString, version::VersionNumber)
+    path = joinpath(root, ".gbg", "config.jl")
+    isfile(path) || return false
+    text = read(path, String)
+    new = replace(text, r"(?m)^(\s*tool\s*=\s*)(:dev|v\"[^\"]*\")" => SubstitutionString("\\1v\"$version\""); count = 1)
+    new == text && return false
+    write(path, new)
+    return true
+end
+
+"""
+    counts(cfg, root) -> Vector{Pair{Symbol,Int}}
+
+How many findings each rule has in the package at `root`, most first. The arguments are `cfg`, the
+package's config, and `root`, the package root. Returns one pair per rule that found anything.
+"""
+function counts(cfg::Model.Config, root::AbstractString)
+    out = Dict{Symbol,Int}()
+    for rule in Catalogue.RULES
+        n = length(Engine.Checks.run_rule(rule, cfg, root))
+        n > 0 && (out[rule.id] = n)
+    end
+    return sort!(collect(out), by = last, rev = true)
+end
+
+"""
+    bump(root, version; io = stdout) -> Int
+
+Moves the pin of the package at `root` to `version` and rewrites its wiring, or refuses and changes
+nothing. The arguments are:
+
+- `root` — the package root.
+- `version` — the released version to pin, `X.Y.Z`.
 - `io` — where the report goes.
 
-Returns the exit code.
+Exit 0 when the pin moved, 1 when the new version's rules found something and it did not, 2 when the
+config could not be read or the pin line could not be found.
 """
-function bump(cfg::AbstractDict, ver::AbstractString; io::IO = stdout)
-    occursin(r"^\d+\.\d+\.\d+$", ver) || (println(io, "bump: $ver is not a released X.Y.Z (a prerelease is never pinned)"); return 2)
-    root = cfg["root"]; from = String(cfg["tool"]["version"])
-    p = joinpath(root, ".gbg", "config.toml"); text = read(p, String)
-    new = replace(text, r"^(version\s*=\s*)\"[^\"]*\""m => SubstitutionString("\\1\"$ver\""); count = 1)
-    new == text && (println(io, "bump: could not find the [tool] version line in .gbg/config.toml"); return 2)
-    write(p, new)
-    cfg2 = Config.read_written(root)                  # we just wrote it: failing to read back is our crash
-    code = Sync.sync(cfg2; io)
-    code == 0 || return code
-    files = [e.path for e in Sync.status(cfg2) if e.state == :OK]
-    abandoned = ""
-    msg = Sync.render(Sync.template("bump-message.tmpl"), merge(Sync.slots(cfg2), Dict("from" => from, "to" => ver, "files" => join("- " .* files, "\n"), "abandoned" => abandoned)))
-    mkpath(joinpath(root, ".gbg", "scratch")); write(joinpath(root, ".gbg", "scratch", "bump-message.txt"), msg)
-    # the sweep window: the dev checkout's fleet.toml, when the fleet is now at two versions
-    fp = Fleet.fleet_path()
-    if isfile(fp)
-        fleet = TOML.parsefile(fp); base = dirname(fp)
-        pins = Set{String}()
-        for c in get(fleet, "consumer", Any[])
-            c["path"] == "." && continue
-            cp_ = joinpath(base, c["path"], ".gbg", "config.toml"); isfile(cp_) || continue
-            v = get(get(TOML.parsefile(cp_), "tool", Dict()), "version", ""); occursin(r"^\d+\.\d+\.\d+$", v) && push!(pins, v)
-        end
-        ftext = read(fp, String)
-        if length(pins) >= 2 && !occursin(r"^started\s*="m, ftext)
-            ftext = replace(ftext, r"^\[sweep\][^\n]*\n"m => "[sweep]\nstarted = $(today())\nfrom = \"$from\"\nto = \"$ver\"\n"; count = 1)
-            write(fp, ftext); println(io, "bump: fleet at two versions — [sweep] window started today in fleet.toml (7 days)")
-        elseif length(pins) <= 1 && occursin(r"^started\s*="m, ftext)
-            ftext = replace(ftext, r"^started\s*=[^\n]*\n(from\s*=[^\n]*\n)?(to\s*=[^\n]*\n)?"m => ""); write(fp, ftext)
-            println(io, "bump: the fleet converged on $ver — [sweep] window closed")
-        end
+function bump(root::AbstractString, version::VersionNumber; io::IO = stdout)
+    isempty(version.prerelease) || (println(io, "bump: $version is a prerelease, and a prerelease is never pinned"); return 2)
+    cfg = try
+        ConfigIO.read_config(root)
+    catch err
+        err isa ConfigIO.ConfigError || rethrow()
+        println(io, sprint(showerror, err))
+        return 2
     end
-    println(io, "bump: $(cfg2["package"]["name"]) $from → $ver; commit with `git commit -F .gbg/scratch/bump-message.txt` (stage -u plus the managed files by name), then push")
+
+    found = counts(cfg, root)
+    if !isempty(found)
+        println(io, "bump: ", Render.version_tag(cfg), " → v", version, " is refused; its rules find ",
+                sum(last, found), " thing(s) here:")
+        for (id, n) in found; println(io, "  ", lpad(n, 5), "  ", id); end
+        println(io, "Fix what you mean to fix, switch the rest off in .gbg/config.jl with a reason, then bump.")
+        println(io, "Nothing was changed.")
+        return 1
+    end
+
+    set_pin(root, version) || (println(io, "bump: no `tool = …` line in .gbg/config.jl to move"); return 2)
+    cfg = ConfigIO.read_config(root)                 # we just wrote it; failing to read it back is a crash
+    changed = Render.write_all(cfg, root)
+    println(io, "bump: pinned at v", version, "; ", length(changed), " path(s) rewritten.")
+    for p in changed; println(io, "  ", p); end
+    println(io, "Commit the config and the rewritten paths together: the pin and what it generates are one change.")
     return 0
 end
 
 function cmd_bump(args)
     o = parse_options(args)
-    isempty(o.positional) && (println(stderr, "usage: gbg bump <ver>"); return 2)
-    return bump(Config.read(), o.positional[1])
+    isempty(o.positional) && (println(stderr, "usage: gbg bump <version>"); return 2)
+    v = tryparse(VersionNumber, o.positional[1])
+    v === nothing && (println(stderr, "bump: $(o.positional[1]) is not a version"); return 2)
+    return bump(GBGCodingTools.Config.find_root(), v)
 end
 VERBS["bump"] = cmd_bump
+
+end # module Bump

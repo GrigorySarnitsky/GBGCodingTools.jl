@@ -13,14 +13,16 @@ include("helpers.jl")
         @test G.main(["no-such-verb"]) == 2                            # an unknown verb is not a crash
         @test G.main(String[]) == 2                                    # no verb at all
         @test G.main(["scan"]) == 2                                    # a verb missing its noun
-        @test G.main(["doctor", "--only", "CFG.VALID"]) == 0
+        @test G.main(["sync", "--check"]) == 0
         # The ConfigError arm, both directions. A consumer's bad config is exit 2 for ANY verb — the arm
         # had no test at all, and before it only three verbs caught the class. A config the verb itself
         # has just written failing to read back is the tool's crash, exit 3, which the arm used to swallow.
         cp_ = joinpath(root, ".gbg", "config.toml"); good = read(cp_, String)
-        write(cp_, good * "\n[no_such_section]\nx = 1\n")
+        # An unknown table was the refusal here until 2026-09-17, when the schema that closed the key set
+        # was deleted. What still cannot be read is a file that is not TOML, which is the same arm.
+        write(cp_, good * "\n[[[not toml\n")
         redirect_stderr(devnull) do
-            @test G.main(["sync", "status"]) == 2                          # the consumer's mistake: cannot evaluate
+            @test G.main(["config", "show"]) == 2                          # the consumer's mistake: cannot evaluate
             G.VERBS["__reads_what_it_wrote"] = args -> (G.Config.read_written(root); 0)
             try
                 @test G.main(["__reads_what_it_wrote"]) == 3               # the tool's own write: a crash
@@ -31,15 +33,11 @@ include("helpers.jl")
         @test_throws G.Config.ConfigWrittenError G.Config.read_written(root)
         @test !(G.Config.ConfigWrittenError <: G.Config.ConfigError)       # a subtype would be caught as exit 2
         write(cp_, good)
-        @test G.main(["sync", "status"]) == 0
-        # the consumer's LEDGER is its own file too: one that does not parse is exit 2, not a crash with a
-        # backtrace (2026-09-15-audit-changes-01)
-        lp = joinpath(root, ".gbg", "exemptions.toml"); keep = read(lp, String)
-        write(lp, keep * "\n[[exemption]\nthis is not toml\n")
-        redirect_stdout(devnull) do; redirect_stderr(devnull) do
-            @test G.main(["scan", "docs", "--only", "SCAN.REGISTER"]) == 2
-        end; end
-        write(lp, keep)
+        @test G.main(["config", "show"]) == 0
+        # The ledger arm stood here: a consumer's `.gbg/exemptions.toml` that did not parse had to be
+        # exit 2 rather than a backtrace (2026-09-15-audit-changes-01). That file is deleted; what a
+        # package turns off is a `Switch` in `.gbg/config.jl`, and a config that does not parse is
+        # already exit 2 above, by the same arm.
     end
     @test Set(keys(G.VERBS)) == Set(k for k in keys(G.VERBS))          # the table is a table, not a closure
     @test length(G.VERBS) >= 12
@@ -52,39 +50,11 @@ end
 # replaces them is one fixed driver and the run stages of docs/ARCHITECTURE.md §6 and §10, and the
 # rehearsal that will exercise them is named in IMPLEMENTATION.md Phase 4.
 
-@testset "every doctor check runs without crashing" begin
-    root = fixture_copy("doctor-all")
-    cfg = G.Config.read(root)
-    ids = [id for (id, _) in G.Doctor.CHECKS]
-    @test length(ids) == length(unique(ids))                           # no id registered twice
-    for id in ids
-        id in G.Doctor.DEEP && continue                                # the deep set builds and tests; not here
-        checks, _ = G.Doctor.run(cfg; only = [id], io = devnull)
-        @test length(checks) == 1
-        @test checks[1].status in (:PASS, :FAIL, :WARN, :NA)           # a status, never an exception
-        @test checks[1].id == id
-    end
-end
+# "every doctor check runs without crashing" stood here until 2026-09-17, calling each of the doctor's
+# checks and requiring a status rather than an exception. The doctor is deleted: what it judged of a
+# package's wiring is the wiring check, which test/wiring.jl drives by flipping a byte in each generated
+# path in turn — a stronger test, since it requires the check to FAIL as well as to run.
 
-@testset "the consolidator against a golden manuscript" begin
-    # The Julia port's only evidence was a byte comparison run by hand once (Consolidate.jl's header).
-    # This pins its output on a tracked corpus, so a rendering rule cannot drift unnoticed.
-    dir = joinpath(TMP, "consolidate"); mkpath(dir)
-    site = joinpath(FIXTURE, "defects", "html", "clean")
-    full = joinpath(dir, "full.txt"); site_only = joinpath(dir, "site.txt")
-    pages, nfull, nsite = G.consolidate(site, String[]; out_full = full, out_siteonly = site_only)
-    text = read(full, String)
-    @test pages == 2 && nfull == length(text) && nsite == nfull        # nothing withheld: the two agree
-    @test occursin("===== PAGE: api =====", text) && occursin("===== PAGE: page =====", text)
-    @test occursin("# ", text)                                          # a heading rendered as Markdown
-    golden = joinpath(TOOL, "test", "golden", "clean-manuscript.txt")
-    if isfile(golden)
-        @test read(golden, String) == text                              # byte-for-byte, or the port drifted
-    else
-        mkpath(dirname(golden)); write(golden, text)
-        @test_broken false                                              # first run writes it; commit it
-    end
-    _, _, n2 = G.consolidate(site, ["api"]; out_full = full, out_siteonly = site_only)
-    @test n2 < nfull                                                    # a withheld word removes a page
-end
-
+# The consolidator's golden-manuscript testset stood here until 2026-09-17. `Consolidate` turned a built
+# site into one manuscript for the check-consistency panel to read; the panel and the verb went together,
+# and the golden file under test/golden/ went with them.

@@ -26,9 +26,9 @@ engine's half of what a build must satisfy. The arguments are `root`, the packag
 built site's directory after Documenter has run — `nothing` before it, which is when the wiring check
 runs and the rules that read a rendered page do not.
 
-It runs beside the old scans while the ninety-five rules are converted, and takes over from them rule by
-rule — each conversion deletes the scan it replaces, so nothing is checked twice and nothing stops being
-checked. A package with no `.gbg/config.jl` yet has nothing converted to run, which is exit 0.
+It is the whole of what a build checks. It ran beside the text scans while the rules were converted;
+the last scan was retired on 2026-09-17, and nothing else remains to run. A package with no
+`.gbg/config.jl` has no rules to run over it, which is exit 0.
 
 Returns the exit code: 0 clean, 1 findings.
 """
@@ -62,8 +62,8 @@ end
 function makedocs(cfg; kwargs...)
     println("GBGCodingTools v", GBGCodingTools.tool_version(), " makedocs")
     root = cfg["root"]
-    check("doctor --only QUICK", GBGCodingTools.doctor(cfg, :QUICK))
-    check("scan docs --hard-only", last(GBGCodingTools.scan_docs(cfg; hard_only = true)))
+    # The quick doctor set and the hard scans ran here until 2026-09-17. The doctor is deleted and the
+    # scan catalogue is empty: every one of them is a rule now, and `rules_and_wiring` runs them all.
     check("check --only docs", rules_and_wiring(root))
     # Nothing here reads review state any more: a build reports what its checks find and nothing
     # else, and no round can freeze it (docs/ARCHITECTURE.md §5.1, §10 — the closure gate went with the
@@ -72,7 +72,6 @@ function makedocs(cfg; kwargs...)
     result = Documenter.makedocs(; kwargs...)
     build_dir = get(Dict(kwargs), :build, joinpath(root, "docs", "build"))
     isabspath(build_dir) || (build_dir = joinpath(root, "docs", build_dir))
-    check("scan html", last(GBGCodingTools.scan_html(cfg, build_dir)))
     check("check --site", rules_and_wiring(root; site = build_dir))
     # Documenter returns `nothing` unless `debug = true`, so a build that happened says so with `true`
     return something(result, true)

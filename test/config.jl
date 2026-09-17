@@ -1,3 +1,17 @@
+# test/config.jl — what the OLD config reader still guarantees.
+#
+# `.gbg/config.toml` is the legacy config, read by what is left of the old tree and deleted with it in
+# Phase 5. Its JSON-Schema validation went with `schema/` on 2026-09-17, and with it the three refusals
+# this file used to assert — an unknown table, a branch that is not `master`, a `docs_build` command
+# naming a script other than `docs/make.jl`. Nothing replaces them here: the config that matters is
+# `.gbg/config.jl`, whose refusals are Julia and are held by test/configio.jl.
+#
+# `Init.derive_config` was tested here too, and went with `Init`. A package's config is written by
+# `gbg init` from a seed now, and read rather than derived: a config guessed from a tree is a config
+# nobody wrote and nobody owns.
+#
+# What is left is what the reader still does for its remaining callers: read, resolve a surface, find
+# an anchor, and refuse a path that does not exist.
 using Test, GBGCodingTools, TOML
 include("helpers.jl")
 
@@ -8,22 +22,9 @@ include("helpers.jl")
     @test "docs/src/index.md" in G.Config.surface_files(cfg, "pages")
     @test G.Config.resolve_anchor(FIXTURE, "docs/ARCHITECTURE.md#3. Decision log")[3] == 1
     @test isempty(G.Config.check_paths(cfg))
-    # the command and the path cannot diverge: the SCHEMA pins docs_build to name docs/make.jl, so a
-    # config that named another script never reaches check_paths at all. Both directions.
+    # a path that names nothing is still a refusal, and it is the one this reader is kept for
     let text = read(joinpath(FIXTURE, ".gbg", "config.toml"), String)
         @test_throws G.Config.ConfigError G.Config.parse(
-            replace(text, "docs/make.jl" => "docs/build_the_site.jl"); root = FIXTURE)
-    end
-    @testset "refusals" begin
-        text = read(joinpath(FIXTURE, ".gbg", "config.toml"), String)
-        @test_throws G.Config.ConfigError G.Config.parse(replace(text, "branch = \"master\"" => "branch = \"trunk\""); root = FIXTURE)
-        @test_throws G.Config.ConfigError G.Config.parse(text * "\n[unknown]\nx = 1\n"; root = FIXTURE)
-        @test_throws G.Config.ConfigError G.Config.parse(replace(text, "src = [\"src/*.jl\"]" => "src = [\"nowhere/*.jl\"]"); root = FIXTURE)
-    end
-    @testset "derive_config on the fixture tree" begin
-        d = G.Init.derive_config(FIXTURE)
-        @test d["tool"]["version"] == "dev"          # inside the tool repository
-        @test "FixtureA" in d["package"]["modules"]
-        @test d["surfaces"]["references_heading"] == "docs/ARCHITECTURE.md#References"
+            replace(text, "src = [\"src/*.jl\"]" => "src = [\"nowhere/*.jl\"]"); root = FIXTURE)
     end
 end
