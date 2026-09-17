@@ -151,7 +151,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.CURRENT"
 statement = "No stale claim; a summary naming a subset of what the code provides is stale; retired phrasings are listed per package (docs.retired_claims)."
 sentinel = "Every claim matches the code's present state, and a summary that names only a subset of what the code now provides is stale even if every sentence is literally true."
-check = ["scan:SCAN.RETIRED_CLAIMS", "scan:SCAN.ID_RESOLVES"]
+check = ["rule:RULE.DOC.CURRENT"]  # converted 2026-09-17: src/Rules/reflection.jl
 [[rule]]
 id = "RULE.DOC.CLASS_SWEEP"
 file = "docs-rubric.md"
@@ -207,7 +207,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.LINKS"
 statement = "Cross-referencing is discriminating-minimalist: a target linked at most once per docstring; never the own binding, arguments or Base; a family is one destination unless members must be chosen between; sibling names in one list are all linked or all plain."
 sentinel = "Cross-referencing is discriminating-minimalist: backtick every code identifier and promote to `@ref` only where a reader would genuinely jump and there is one clear destination."
-check = ["scan:SCAN.LINK_UNIFORMITY"]
+check = ["rule:RULE.DOC.LINK_UNIFORMITY"]  # converted 2026-09-17: src/Rules/reflection.jl
 [[rule]]
 id = "RULE.DOC.SIBLING_LINK"
 file = "docs-rubric.md"

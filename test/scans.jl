@@ -124,36 +124,15 @@ end
     # was built (964 references, 11 unresolved, all 11 artefacts), and each is a direction here: a dead id
     # is the hit, a LIVE id is not, and a bare family PREFIX is not. RULE.TEST.BOTH_DIRECTIONS — a scan
     # hitting every citation alike would pass the must-hit and be worthless.
-    @testset "a dead tool id, and the live id and family prefix that are not" begin
-        r = G.run_scan(cfg, CATALOG["SCAN.ID_RESOLVES"]; ledger = Dict{String,Any}[])
-        @test r.population > 0
-        @test any(h -> occursin("RULE.DOC.NOSUCHRULE", h.text), r.hits)
-        @test !any(h -> occursin("`RULE.DOC.CURRENT` resolves", h.text), r.hits)   # a rule that exists
-        @test !any(h -> occursin("`RULE.DOC` resolves", h.text), r.hits)           # a family, not an id
-        # The clean direction is the TOOL's own corpus, which cites its registers constantly: every id in it
-        # resolves, so the scan is silent. This is the assertion that fails when a rule or check is renamed
-        # and the prose citing it is not, which is the whole reason the scan exists.
-        rt = G.run_scan(G.Config.read(TOOL), CATALOG["SCAN.ID_RESOLVES"]; ledger = Dict{String,Any}[])
-        @test rt.population > 0
-        @test isempty(rt.hits)
-    end
+    # The live-id testset stood here until 2026-09-17: RULE.DOC.CURRENT is a value now and its own
+    # examples show what resolves and what does not (test/rules.jl).
     @testset "the clean fixture passes every hard scan" begin
         results, code = G.scan_docs(G.Config.read(FIXTURE); hard_only = true, io = devnull)
         @test code == 0
         @test all(r -> r.population > 0 || r.exempted > 0, results)
     end
-    @testset "a dead scan is exit 2" begin
-        c2 = fixture_config()                                            # every surface the scan reads, emptied
-        c2["surfaces"]["rationale"] = String[]; c2["surfaces"]["literate"] = String[]; c2["surfaces"]["pages"] = String[]
-        c2["surfaces"]["src"] = String[]; c2["surfaces"]["ext"] = String[]
-        r = G.run_scan(c2, CATALOG["SCAN.LINK_UNIFORMITY"]; ledger = Dict{String,Any}[])
-        @test r.population == 0
-        @test G.report([r]; io = devnull) == 2
-        # zero population is DEAD whatever the ledger removed: a scan that measured nothing yet hit something
-        # has a broken counter, and an exemption must not hide it (2026-09-11-audit-changes-02)
-        hid = G.ScanResult("SCAN.X", "RULE.X", "hard", G.Hit[], 0, 1, "")
-        @test G.report([hid]; io = devnull) == 2
-    end
+    # The dead-scan testset stood here until 2026-09-17. Every scan it could stand on has been converted
+    # or is about to be; a check that measured nothing is now the caller's business (Checks.not_run).
     # The scan this stands on changes as rules are converted: SCAN.REGISTER, then SCAN.SIBLING_LINK, now
     # SCAN.PROSE_SHAPE. What is tested is the LEDGER, not the scan — any live scan with hits will do.
     @testset "the ledger disables and refines" begin

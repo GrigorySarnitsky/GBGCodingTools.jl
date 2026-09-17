@@ -5,16 +5,6 @@
 # directory under defects/html/ standing in for a built site.
 
 [[defect]]
-class = "mixed-link-run"
-scan = "SCAN.LINK_UNIFORMITY"
-file = "defects/Defects.jl"
-fragment = "mixed_link_run"
-[[defect]]
-class = "retired-claim"
-scan = "SCAN.RETIRED_CLAIMS"
-file = "defects/Defects.jl"
-fragment = "factor one third is used"
-[[defect]]
 class = "paragraph-over-cap"
 scan = "SCAN.PROSE_SHAPE"
 file = "defects/Defects.jl"
@@ -45,22 +35,8 @@ scan = "SCAN.XLINK"
 file = "defects/Defects.jl"
 fragment = "mean_value"
 [[clean]]
-scan = "SCAN.LINK_UNIFORMITY"
-file = "src/FixtureA.jl"
-[[clean]]
-scan = "SCAN.RETIRED_CLAIMS"
-file = "docs/ARCHITECTURE.md"
-[[clean]]
 scan = "SCAN.DOI_CROSSCHECK"
 file = "src/FixtureB.jl"
 [[clean]]
 scan = "SCAN.DOI_CROSSCHECK"
 file = "src/FixtureC.jl"
-[[defect]]
-class = "dead-rule-id"
-scan = "SCAN.ID_RESOLVES"
-file = "defects/Defects.jl"
-fragment = "RULE.DOC.NOSUCHRULE"
-[[clean]]
-scan = "SCAN.ID_RESOLVES"
-file = "src/FixtureB.jl"
