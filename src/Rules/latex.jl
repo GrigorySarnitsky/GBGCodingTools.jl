@@ -239,12 +239,61 @@ const INLINE_MATH_SPLIT = Model.Rule(
             Model.Location[], "never across a marker"),
     ])
 
+# ────────────────────────────────────────────────────────────── the bold symbols a package admits
+
+"""
+    MATHBF_ALLOWED
+
+The `\\mathbf` strings a package admits. Every package is granted `\\mathbf{1}`, the identity; anything
+else is the package's own notation and is listed by a [`Model.Setting`](@ref).
+"""
+const MATHBF_ALLOWED = Model.Parameter(:mathbf_allowed, String[])
+
+"""
+    mathbf(text, cfg) -> Vector{Model.Location}
+
+Every use of bold that the package has not admitted. The arguments are `text`, the file's prose, and
+`cfg`, the package's config, which supplies the admitted strings. Returns one location per use.
+
+Bold in mathematics means one thing in a package and another in the next; a package states which strings
+it uses, and every other one is a reader's guess.
+"""
+function mathbf(text::AbstractString, cfg)
+    allowed = Set{String}(["\\mathbf{1}"])
+    for s in cfg.settings
+        s.name === :mathbf_allowed && s.value isa Vector{String} && union!(allowed, s.value)
+    end
+    out = Model.Location[]
+    for (i, line) in pairs(split(text, '\n'))
+        for m in eachmatch(r"\\mathbf(\{[^}]*\})?", Texts.mask_code_spans(line))
+            m.match in allowed && continue
+            push!(out, Model.Location(; file = "", line = i, text = m.match * " in: " * strip(String(line))))
+        end
+    end
+    return out
+end
+
+const MATHBF = Model.Rule(
+    id = Symbol("RULE.TEX.MATHBF"),
+    statement = "Bold is admitted only for the strings a package lists, plus the identity, which every package is granted.",
+    why = "Bold means one thing in one package and another in the next; unlisted, it is a reader's guess.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, mathbf, false),
+    parameters = Model.Parameter[MATHBF_ALLOWED],
+    examples = [
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe velocity ``\\mathbf{u}`` is solenoidal.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "only the strings a package lists"),
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe identity ``\\mathbf{1}`` acts trivially.\n",
+            Model.Location[], "only the strings a package lists"),
+    ])
+
 """
     RULES
 
 The rules of this batch, in the order they were converted.
 """
 const RULES = Model.Rule[RENDERED_MATH, SPACING, MATHBB_DIGIT, FRAC_UNBRACED, LEFTRIGHT,
-                         PARTIAL_BARE, BOLDSYMBOL_UNBRACED, INLINE_MATH_SPLIT]
+                         PARTIAL_BARE, BOLDSYMBOL_UNBRACED, INLINE_MATH_SPLIT, MATHBF]
 
 end # module Latex

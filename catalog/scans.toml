@@ -11,14 +11,6 @@
 # "which rules does this scan carry".
 
 [[scan]]
-id = "SCAN.MATHBF"
-rule = "RULE.TEX.MATHBF"
-tier = "hard"
-surfaces = ["all"]
-runner = "julia"
-fixture = ["mathbf-banned"]
-
-[[scan]]
 id = "SCAN.LINK_UNIFORMITY"
 rule = "RULE.DOC.LINKS"
 tier = "hard"

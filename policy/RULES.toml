@@ -361,7 +361,7 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.MATHBF"
 statement = "\\mathbf is admitted only for the strings in notation.mathbf_allowed, plus \\mathbf{1}, which every package is granted whatever that list holds; vectors follow notation.vectors."
 sentinel = "`\\mathbf` is admitted only for an agreed list of strings, and vectors and tensors follow the package's one vector notation."
-check = ["scan:SCAN.MATHBF"]
+check = ["rule:RULE.TEX.MATHBF"]  # converted 2026-09-17: src/Rules/latex.jl
 [[rule]]
 id = "RULE.TEX.LEFTRIGHT"
 file = "latex-idiom.md"

@@ -314,7 +314,7 @@
           "default": [
             "\\mathbf{1}"
           ],
-          "description": "the `\\mathbf` strings this package admits. `\\mathbf{1}` is RULE.TEX.MATHBF's standing exception and SCAN.MATHBF admits it whatever this list holds, so emptying the list does not forbid it"
+          "description": "the `\\mathbf` strings this package admits. `\\mathbf{1}` is RULE.TEX.MATHBF's standing exception, admitted whatever this list holds, so emptying the list does not forbid it"
         }
       }
     },
