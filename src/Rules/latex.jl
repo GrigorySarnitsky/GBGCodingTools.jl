@@ -13,6 +13,7 @@ module Latex
 
 using ...Model
 using ...Texts
+using ...Texts
 
 """
     matching(pattern; mask = true) -> Function
@@ -73,6 +74,13 @@ end
 
 const DOLLAR_MATH = r"\$[^$\n]*[\\_^{}][^$\n]*\$"
 const FORMULA_GLYPHS = r"[≤≥≠∈∉∇Δ⟨⟩‖√×⋅]"
+# Every glyph above is also legal Julia — `≤`, `×`, `⋅`, `√` and `∈` are operators, `Δ` is an ordinary
+# letter in a name — so the glyph alone cannot tell a formula from code. What tells them apart is
+# SYNTAX: a call, an index, a keyword argument, an assignment, a field access or a lambda arrow is code
+# and nothing else. A code span holding one of those is naming code, however mathematical it looks.
+const CODE_SYNTAX = r"[(\[{=;\"]|->|\w\.\w"
+# Julia prints an array's dimensions this way, and a docstring quoting that print is quoting code.
+const DIMENSIONS = r"^\d+(?:×\d+)+$"
 
 """
     rendered_math(text, cfg) -> Vector{Model.Location}
@@ -94,8 +102,13 @@ function rendered_math(text::AbstractString, cfg)
             continue
         end
         for m in eachmatch(r"(?<!`)`([^`\n]+)`(?!`)", raw)
-            occursin(FORMULA_GLYPHS, m.captures[1]) || continue
-            push!(out, Model.Location(; file = "", line = i, text = "`" * m.captures[1] * "`"))
+            span = m.captures[1]
+            occursin(FORMULA_GLYPHS, span) || continue
+            occursin(CODE_SYNTAX, span) && continue                 # a call, an index, an assignment: code
+            occursin(DIMENSIONS, strip(span)) && continue           # `64×64×64`, as Julia prints it
+            occursin(Regex("^\\s*" * Texts.NAME * "?\\s*\$"), strip(span)) && continue   # one token: an operator named
+            length(split(strip(span))) == 1 && !occursin(r"\s", strip(span)) && continue     # `⋅` and its like
+            push!(out, Model.Location(; file = "", line = i, text = "`" * span * "`"))
             break
         end
     end
@@ -117,6 +130,13 @@ const RENDERED_MATH = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe bound `x ≤ y` holds.\n",
             [Model.Location(; file = "docs/src/page.md", line = 3)], "never inside a code span"),
         Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe bound ``x \\le y`` holds.\n",
+            Model.Location[], "never inside a code span"),
+        # A code span holding CODE is not mathematics, however mathematical its glyphs look: `⋅` and `×`
+        # are Julia operators, and `64×64×64` is how Julia prints an array's dimensions.
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe bound `x ≤ y` in `clamp(x ≤ y, lo, hi)`.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "never inside a code span"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe operator `⋅` contracts a `64×64×64` grid through `dot(u ⋅ v, w)`.\n",
             Model.Location[], "never inside a code span"),
     ])
 
