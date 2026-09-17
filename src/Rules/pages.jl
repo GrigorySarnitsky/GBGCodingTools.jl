@@ -236,11 +236,89 @@ const INTERNAL_API = Model.Rule(
             Model.Location[], "never indexed"),
     ])
 
+# ───────────────────────────────────────────────────────── naming a sibling package, and its site
+
+"""
+    SIBLING_SITES
+
+The sibling packages a first mention links to, and where their sites are. A package overrides this with a
+[`Model.Setting`](@ref); the default is the fleet as it stands.
+"""
+const SIBLING_SITES = Model.Parameter(:sibling_sites, [
+    "GBGPeriodicFields" => "https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/",
+    "GBGIsotropicTurbulence" => "https://grigorysarnitsky.github.io/GBGIsotropicTurbulence.jl/",
+    "GBGStreamingStatistics" => "https://grigorysarnitsky.github.io/GBGStreamingStatistics.jl/",
+    "GBGCloudPhysics" => "https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/",
+    "GBGCodingTools" => "https://grigorysarnitsky.github.io/GBGCodingTools.jl/",
+])
+
+"""
+    sibling_link(text, cfg) -> Vector{Model.Location}
+
+Every first mention of a sibling package that is not a link to that package's site, and every later
+mention that links the site again where a bare name belongs. The arguments are `text`, the file's prose,
+and `cfg`, the package's config, which names the package doing the mentioning. Returns one location per
+mention.
+
+A reader meeting a sibling's name for the first time needs to be able to reach it; meeting it a fourth
+time, linked again, learns only that the writer was not reading.
+"""
+function sibling_link(text::AbstractString, cfg)
+    out = Model.Location[]
+    lines = split(text, '\n')
+    for (name, site) in SIBLING_SITES.default
+        name == cfg.package && continue
+        name_re = Regex("(?<![A-Za-z0-9_])" * name * "(?![A-Za-z0-9_])")
+        link_re = Regex("\\[`?" * name * "`?\\]\\(\\Q" * site * "\\E")
+        home_re = Regex("\\[`?" * name * "`?\\]\\(\\Q" * site * "\\E[\"')]")
+        seen = false
+        for (n, raw) in pairs(lines)
+            o = findfirst(name_re, raw); o === nothing && continue
+            m = match(link_re, raw)
+            linked = m !== nothing && m.offset <= first(o) <= m.offset + ncodeunits(m.match)
+            if !seen
+                seen = true
+                linked || push!(out, Model.Location(; file = "", line = n,
+                    text = "the first mention of `$name` is not a link to its site"))
+            elseif linked && match(home_re, raw) !== nothing
+                push!(out, Model.Location(; file = "", line = n,
+                    text = "a later mention of `$name` links its site again where a bare name belongs"))
+            end
+        end
+    end
+    return out
+end
+
+const SIBLING_LINK = Model.Rule(
+    id = Symbol("RULE.DOC.SIBLING_LINK"),
+    statement = "The first mention of a sibling package links to that package's site; later mentions are bare.",
+    why = "A reader meeting the name for the first time must be able to reach it, and a fourth link teaches nothing.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, sibling_link, false),
+    parameters = Model.Parameter[SIBLING_SITES],
+    examples = [
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nAs GBGCloudPhysics does it.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "the first mention links"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nAs [GBGCloudPhysics](https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/) does it.\n",
+            Model.Location[], "the first mention links"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nAs [GBGCloudPhysics](https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/) does it.\n" *
+            "And again, [GBGCloudPhysics](https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/), linked twice.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 4)], "later mentions are bare"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nAs [GBGCloudPhysics](https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/) does it.\n" *
+            "And again, GBGCloudPhysics, bare.\n",
+            Model.Location[], "later mentions are bare"),
+    ])
+
 """
     RULES
 
 The rules of this batch, in the order they were converted.
 """
-const RULES = Model.Rule[AI_BANNER, SIGNATURE_MIRROR, BLOCK_LIST, NO_DEAD_REFS, INTERNAL_API]
+const RULES = Model.Rule[AI_BANNER, SIGNATURE_MIRROR, BLOCK_LIST, NO_DEAD_REFS, INTERNAL_API, SIBLING_LINK]
 
 end # module Pages

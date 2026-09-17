@@ -5,16 +5,6 @@
 # directory under defects/html/ standing in for a built site.
 
 [[defect]]
-class = "bare-sibling"
-scan = "SCAN.SIBLING_LINK"
-file = "defects/page.md"
-fragment = "GBGPeriodicFields"
-[[defect]]
-class = "linked-later-mention"
-scan = "SCAN.SIBLING_LINK"
-file = "defects/page.md"
-fragment = "later mention of `GBGIsotropicTurbulence`"
-[[defect]]
 class = "mathbf-banned"
 scan = "SCAN.MATHBF"
 file = "defects/Defects.jl"
@@ -86,9 +76,6 @@ file = "defects/html/base-leak"
 fragment = "Base.copy"
 
 # Clean twins: the scan must report nothing on these (the clean corpus, or the clean HTML site).
-[[clean]]
-scan = "SCAN.SIBLING_LINK"
-file = "docs/src/index.md"
 [[clean]]
 scan = "SCAN.MATHBF"
 file = "docs/ARCHITECTURE.md"

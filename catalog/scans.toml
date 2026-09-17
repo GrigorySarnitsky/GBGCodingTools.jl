@@ -27,14 +27,6 @@ runner = "julia"
 fixture = ["mixed-link-run"]
 
 [[scan]]
-id = "SCAN.SIBLING_LINK"
-rule = "RULE.DOC.SIBLING_LINK"
-tier = "hard"
-surfaces = ["all"]
-runner = "julia"
-fixture = ["bare-sibling", "linked-later-mention"]
-
-[[scan]]
 id = "SCAN.RETIRED_CLAIMS"
 rule = "RULE.DOC.CURRENT"
 tier = "hard"

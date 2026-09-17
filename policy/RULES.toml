@@ -214,7 +214,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.SIBLING_LINK"
 statement = "The first mention of a sibling GBG package in a page, rationale document, Literate example or docstring links to that package's documentation site; a later mention does not link that site again, though it may deep-link a page of it; a package never links its own name."
 sentinel = "The first mention of a sibling GBG package in a page, a rationale document, a Literate example or a docstring is a link to that package's documentation site, written `[`Package`](https://<owner>.github.io/Package.jl/)`."
-check = ["scan:SCAN.SIBLING_LINK"]
+check = ["rule:RULE.DOC.SIBLING_LINK"]  # converted 2026-09-17: src/Rules/pages.jl
 [[rule]]
 id = "RULE.DOC.NO_DEAD_REFS"
 file = "docs-rubric.md"
