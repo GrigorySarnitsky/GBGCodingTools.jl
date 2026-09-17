@@ -12,16 +12,19 @@
     release_fails(cfg, root, ver, base, rc) -> Vector{String}
 
 Every reason `v<ver>` may not be tagged from `root`, in the order they are checked; empty when there is
-none. The arguments are `cfg`, the config read at `root`; `root`, the checkout; `ver`, the version;
-`base`, its `X.Y.Z` part; and `rc`, whether it is a candidate.
+none. The arguments are:
 
-It reads the tree, the tags, `CHANGELOG.md`, `Project.toml` and the rounds, and writes NOTHING — which
-is the point of it being separate. A test of [`release`](@ref) can only ever reach the refusals, because
-past them the verb runs `git tag` and `git push` and a test must never cut a tag; so the conditions
-beyond the refusal list were untestable, and they are exactly where the defect lived. `if !rc` lets a
-CANDIDATE be cut while a round is open, and that permission was unusable for nine releases. Lifted out
-so `cites_round`, `carry_release_fails` and the rc-versus-final split can each be exercised over a
-temporary repository (2026-09-12 work queue).
+- `cfg` — the config read at `root`.
+- `root` — the checkout to release.
+- `ver` — the version to tag.
+- `base` — its `X.Y.Z` part.
+- `rc` — whether it is a candidate.
+
+It reads the tree, the tags, `CHANGELOG.md` and `Project.toml`, and writes NOTHING — which is the point
+of it being separate. A test of [`release`](@ref) can only reach the refusals: past them the verb runs
+`git tag` and `git push`, and a test must never cut a tag. So the conditions beyond this list were
+untestable, and that is exactly where a defect lived for nine releases. Lifted out so each can be
+exercised over a temporary repository (2026-09-12 work queue).
 """
 function release_fails(cfg::AbstractDict, root::AbstractString, ver::AbstractString,
                        base::AbstractString, rc::Bool)

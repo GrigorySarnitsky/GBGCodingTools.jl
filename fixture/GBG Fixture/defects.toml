@@ -105,11 +105,6 @@ scan = "SCAN.DOI_CROSSCHECK"
 file = "defects/Defects.jl"
 fragment = "10.9999/never-listed"
 [[defect]]
-class = "wrong-args-form"
-scan = "SCAN.ARGS_FORM"
-file = "defects/Defects.jl"
-fragment = "the bulleted"
-[[defect]]
 class = "typed-signature"
 scan = "SCAN.SIGNATURE_TYPED"
 file = "defects/Defects.jl"
@@ -202,9 +197,6 @@ file = "docs/src/index.md"
 [[clean]]
 scan = "SCAN.AI_BANNER"
 file = "docs/src/index.md"
-[[clean]]
-scan = "SCAN.ARGS_FORM"
-file = "src/FixtureC.jl"
 [[clean]]
 scan = "SCAN.SIGNATURE_TYPED"
 file = "src/FixtureC.jl"

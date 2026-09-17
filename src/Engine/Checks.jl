@@ -33,7 +33,12 @@ const DEFAULT_PATTERNS = Dict{Model.FileSet.T,Vector{String}}(
     files(cfg, root, fileset) -> Vector{String}
 
 The files of one file set in the package at `root`, as paths relative to it, sorted and without
-duplicates. The arguments are `cfg`, the package's config, `root`, its root, and `fileset`, the set.
+duplicates. The arguments are:
+
+- `cfg` — the package's config.
+- `root` — the package root.
+- `fileset` — the set to resolve.
+
 A package's own patterns replace the defaults for that set rather than adding to them, so a package that
 says where its pages are is believed. Returns the paths.
 """
@@ -73,9 +78,13 @@ end
     applies(cfg, id; file = "") -> Bool
 
 Whether the rule, agent role or instrument with that id is on in this package: a [`Model.Switch`](@ref)
-naming it turns it off, and one naming files turns it off for those files alone. The arguments are `cfg`,
-the package's config, `id`, what is being asked about, and `file`, the file it would run over. Returns
-whether it applies.
+naming it turns it off, and one naming files turns it off for those files alone. The arguments are:
+
+- `cfg` — the package's config.
+- `id` — what is being asked about.
+- `file` — the file it would run over, empty to ask about the package.
+
+Returns whether it applies.
 """
 function applies(cfg::Model.Config, id::Symbol; file::AbstractString = "")
     for s in cfg.switches
@@ -90,9 +99,13 @@ end
 """
     run_rule(rule, cfg, root; network = false) -> Vector{Model.Location}
 
-Everywhere the rule is broken in the package at `root`. The arguments are `rule`, the rule to run, `cfg`,
-the package's config, `root`, its root, and `network`, whether a check that reaches the network may run —
-`false` inside every build and test, so a run gives the same answer offline.
+Everywhere the rule is broken in the package at `root`. The arguments are:
+
+- `rule` — the rule to run.
+- `cfg` — the package's config.
+- `root` — the package root.
+- `network` — whether a check that reaches the network may run; `false` inside every build and test, so a
+  run gives the same answer offline.
 
 A rule an agent decides, or one with no check at all, reports nothing here: this is the program half.
 Returns the locations, in file and line order.

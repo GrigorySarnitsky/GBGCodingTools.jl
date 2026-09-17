@@ -49,7 +49,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.ARGS_FORM"
 statement = "Three or more arguments, or any keyword, use the bulleted form led by 'The arguments are:'; fewer are bound in prose; never mixed; a thin wrapper and an internal _ helper are exempt (the threshold 3 is a constant)."
 sentinel = "A docstring documenting three or more arguments, or any keyword argument, uses the bulleted form led by `The arguments are:`; with fewer, the arguments are bound in running prose, and the two forms are never mixed in one docstring."
-check = ["scan:SCAN.ARGS_FORM"]
+check = ["rule:RULE.DOC.ARGS_FORM"]  # converted 2026-09-17: src/Rules/arguments.jl
 [[rule]]
 id = "RULE.DOC.FIELDS"
 file = "docs-rubric.md"

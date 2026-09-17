@@ -35,9 +35,13 @@ at_head(root::AbstractString, path::AbstractString) = Git.run(root, "show", "HEA
 """
     rulings(root; generated = Dict{String,String}()) -> Vector{Engine.Guard.Ruling}
 
-What the guard says about every changed file of the working tree at `root`. The arguments are `root`, the
-package root, and `generated`, the current output of each generated path's generator, which the caller
-supplies because the generators live above the guard. Returns one ruling per changed file.
+What the guard says about every changed file of the working tree at `root`. The arguments are:
+
+- `root` — the package root.
+- `generated` — the current output of each generated path's generator, which the caller supplies because
+  the generators live above the guard.
+
+Returns one ruling per changed file.
 """
 function rulings(root::AbstractString; generated::AbstractDict = Dict{String,String}())
     cfg = ConfigIO.read_config(root)
@@ -88,8 +92,13 @@ end
     check(root; io = stdout) -> Int
 
 Prints what the guard says about the working tree and changes nothing: the same rulings `commit` would
-act on. The arguments are `root`, the package root, and `io`, where the report goes. Exit 0 when every
-changed file is documentation, 1 when any is code, 2 when nothing has changed. Returns the exit code.
+act on. The arguments are:
+
+- `root` — the package root.
+- `io` — where the report goes.
+
+Exit 0 when every changed file is documentation, 1 when any is code, 2 when nothing has changed. Returns
+the exit code.
 """
 function check(root::AbstractString; io::IO = stdout)
     rs = rulings(root)

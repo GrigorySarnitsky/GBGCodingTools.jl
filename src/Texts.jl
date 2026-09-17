@@ -216,7 +216,12 @@ end
     docstrings_of(src; filename = "source.jl") -> Vector{DocBlock}
 
 The docstrings of Julia source held in memory, for a rule handed the text rather than the path. The
-arguments are `src`, the source, and `filename`, the name to parse it under. Returns the blocks.
+arguments are:
+
+- `src` — the source.
+- `filename` — the name to parse it under.
+
+Returns the blocks.
 """
 function docstrings_of(src::AbstractString; filename::AbstractString = "source.jl")
     out = DocBlock[]
@@ -236,9 +241,13 @@ function docs!(out, node)
         if JS.kind(c) === JS.K"doc"
             kids = something(JS.children(c), ())
             if length(kids) >= 2
-                text = node_text(kids[1])
+                # The INDENTATION is kept: a docstring opens with its signature, indented, and stripping
+                # the text of leading space hides that line from any rule that reads it. Only the quotes
+                # and the blank lines around the body come off.
+                raw = String(JS.sourcetext(kids[1]))
+                body = strip(replace(raw, r"^(?:raw)?\"{1,3}" => "", r"\"{1,3}$" => ""), '\n')
                 target = something(bound_name(kids[2]), "")
-                push!(out, DocBlock(target, strip(strip(text, '"')), JS.source_line(c)))
+                push!(out, DocBlock(target, body, JS.source_line(c)))
             end
         end
         docs!(out, c)
@@ -249,8 +258,12 @@ end
     prose_text(path; comments = true) -> String
 
 The file's PROSE alone, with every other line left empty so that line numbers are unchanged. The
-arguments are `path`, the Julia file to read, and `comments`, whether ordinary comments count as prose
-here. Returns the masked text.
+arguments are:
+
+- `path` — the Julia file to read.
+- `comments` — whether ordinary comments count as prose here.
+
+Returns the masked text.
 
 The distinction matters to a rule about RENDERING: a docstring is published and a comment is not, so a
 rule that exists because a reader would see the wrong thing on the page reads docstrings alone, while a
@@ -290,6 +303,74 @@ function doc_span(lines, start)
         occursin("\"\"\"", lines[i]) && return start:i
     end
     return start:length(lines)
+end
+
+# ─────────────────────────────────────────────────────────────────────────── a docstring's signature
+
+# Greek letters are identifiers here: the science packages name parameters ε, Δ and ω.
+const IDENTIFIER = r"^[A-Za-zα-ωΑ-Ω_][A-Za-z0-9_!α-ωΑ-Ω̂]*$"
+
+"""
+    signature_line(doc) -> String
+
+The signature a docstring opens with — the indented call on its first non-empty line — or an empty string
+where it opens with prose instead. The argument is `doc`, the docstring's text. Returns the line, stripped.
+"""
+function signature_line(doc::AbstractString)
+    for line in split(doc, '\n')
+        isempty(strip(line)) && continue
+        startswith(line, (' ', '\t')) || return ""
+        return String(strip(line))
+    end
+    return ""
+end
+
+"""
+    argument_list(signature) -> Union{String,Nothing}
+
+What sits between the parentheses of a call: the FIRST opening parenthesis and the one that closes it,
+matched by depth. The argument is `signature`, the signature line. Returns the text inside, or `nothing`
+where the line holds no balanced call.
+
+Depth matching is what makes it right. Cutting a `-> …` return annotation off first is unsound, because a
+default holding an arrow — `exempt = (hit -> false)` — is then cut in half and the signature parses as
+nothing at all.
+"""
+function argument_list(signature::AbstractString)
+    o = findfirst('(', signature)
+    o === nothing && return nothing
+    depth = 0
+    i = o
+    while i <= lastindex(signature)
+        signature[i] == '(' && (depth += 1)
+        if signature[i] == ')'
+            depth -= 1
+            depth == 0 && return signature[nextind(signature, o):prevind(signature, i)]
+        end
+        i = nextind(signature, i)
+    end
+    return nothing
+end
+
+"""
+    parameters(inside) -> Tuple{Vector{String},Vector{String}}
+
+The positional and keyword parameter NAMES of an argument list, with their types and defaults taken off.
+The argument is `inside`, the text between the parentheses. Returns the two lists, positional first.
+
+A bare splat — `kwargs...` — counts as a parameter although it is not an identifier: a docstring for
+`f(cfg; kwargs...)` documents a keyword argument, and dropping the splat would read it as taking none.
+A typed splat is already its own name and is not counted twice.
+"""
+function parameters(inside::AbstractString)
+    semi = findfirst(';', inside)
+    positional_text = semi === nothing ? inside : inside[1:prevind(inside, semi)]
+    keyword_text = semi === nothing ? "" : inside[nextind(inside, semi):end]
+    bare(raw) = String(strip(split(split(raw, "::")[1], "=")[1]))
+    named(text) = [bare(r) for r in split(text, ',') if occursin(IDENTIFIER, bare(r))]
+    splats(text) = [x for x in bare.(split(text, ',')) if occursin(r"^[A-Za-z_][A-Za-z0-9_]*\.\.\.$", x)]
+    return (vcat(named(positional_text), splats(positional_text)),
+            vcat(named(keyword_text), splats(keyword_text)))
 end
 
 # ───────────────────────────────────────────────────────────────────────────────────────── Markdown
@@ -352,7 +433,12 @@ end
 The lines the named node spans in the file, or an empty range when the file holds no such node. Julia
 nodes are named by binding (`f`, `S`, `ARGS_FORM.statement`) and Markdown nodes by heading path.
 
-The arguments are `root`, the package root, `file`, the path relative to it, and `node`, the name.
+The arguments are:
+
+- `root` — the package root.
+- `file` — the path relative to it.
+- `node` — the name to find.
+
 Returns the line range.
 """
 function find_node(root::AbstractString, file::AbstractString, node::AbstractString)
@@ -416,8 +502,13 @@ outdated(loc) = Model.Location(; file = loc.file, node = loc.node, text = loc.te
     node_at(root, file, line) -> String
 
 The name of the node the line falls in — the innermost Julia definition, or the Markdown heading path —
-empty where it falls in none. The arguments are `root`, the package root, `file`, the path relative to
-it, and `line`, the line. Returns the name.
+empty where it falls in none. The arguments are:
+
+- `root` — the package root.
+- `file` — the path relative to it.
+- `line` — the line to place.
+
+Returns the name.
 """
 function node_at(root::AbstractString, file::AbstractString, line::Integer)
     path = joinpath(root, file)

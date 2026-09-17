@@ -99,14 +99,6 @@ runner = "julia"
 fixture = ["bare-sibling", "linked-later-mention"]
 
 [[scan]]
-id = "SCAN.ARGS_FORM"
-rule = "RULE.DOC.ARGS_FORM"
-tier = "triage"
-surfaces = ["src", "ext"]
-runner = "julia"
-fixture = ["wrong-args-form"]
-
-[[scan]]
 id = "SCAN.SIGNATURE_TYPED"
 rule = "RULE.DOC.SIGNATURE_MIRROR"
 tier = "triage"
