@@ -10,6 +10,7 @@ const FIXTURE = joinpath(TOOL, "fixture", "GBG Fixture")
 const TMP = mktempdir(; prefix = "gbg-selftest-", cleanup = true)
 
 module ArchitectureTests; include("architecture.jl"); end
+module AnchorTests;      include("anchors.jl");      end
 module SchemaTests;      include("schemas.jl");      end
 module ConfigTests;      include("config.jl");       end
 module ScanTests;        include("scans.jl");        end
