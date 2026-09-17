@@ -5,8 +5,8 @@
 
 `gbg <noun> <verb>` is the whole command line; the table is closed, and every verb below is rendered
 from its own docstring so the page cannot drift from the code. The exit contract is one for all: `0`
-clean, `1` a substantive finding (the gate's refusal over an open round is one), `2` cannot evaluate (a
-precondition not met, missing input, torn file), `3` crash.
+clean, `1` a substantive finding, `2` cannot evaluate (a precondition not met, missing input, torn
+file), `3` crash.
 
 ## Entry point
 
@@ -47,44 +47,11 @@ GBGCodingTools.cmd_scan
 GBGCodingTools.scan_docs
 GBGCodingTools.scan_html
 GBGCodingTools.write_public_surface
-GBGCodingTools.gate
-GBGCodingTools.cmd_gate
-GBGCodingTools.gate_problems
-GBGCodingTools.frozen_rounds
 ```
 
-## Rounds
-
-```@docs
-GBGCodingTools.Preflight.preflight
-GBGCodingTools.Preflight.dev_round
-GBGCodingTools.Rounds.prepare
-GBGCodingTools.Rounds.build
-GBGCodingTools.Rounds.test
-GBGCodingTools.Rounds.bank
-GBGCodingTools.Rounds.rerun
-GBGCodingTools.Passes.pass_open
-GBGCodingTools.Passes.grade
-GBGCodingTools.Passes.close
-GBGCodingTools.Passes.audit_after_code
-GBGCodingTools.Rounds.abandon
-GBGCodingTools.Rounds.list
-GBGCodingTools.Rounds.render
-GBGCodingTools.cmd_witnesses
-GBGCodingTools.audit_bank
-```
-
-## Design checks
-
-The two checks on the instruments themselves, run outside any round: an attack on an instrument's lens
-set, and a calibration of the consistency panel against what a human read found.
-
-```@docs
-GBGCodingTools.attack
-GBGCodingTools.attack_read
-GBGCodingTools.calibrate
-GBGCodingTools.calibrate_read
-```
+The round verbs and the two design checks stood here until 2026-09-17. The machinery that ran them is
+filed under `docs/design-record/machinery-v1/`, and what replaces it — a run, its stages and its report —
+is `docs/ARCHITECTURE.md` §10.
 
 ## Fleet and release
 
@@ -92,9 +59,7 @@ GBGCodingTools.calibrate_read
 GBGCodingTools.Fleet
 GBGCodingTools.Fleet.latest_tag
 GBGCodingTools.Fleet.rows
-GBGCodingTools.Fleet.diff
 GBGCodingTools.bump
 GBGCodingTools.release
-GBGCodingTools.cites_round
 GBGCodingTools.selftest
 ```

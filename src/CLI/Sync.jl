@@ -30,11 +30,7 @@ const INSTRUMENTS = ("check-docs", "check-consistency", "bug-hunt", "audit-chang
 # a second grep over both spellings of the order.
 const DOCS_INSTRUMENTS = ("check-docs", "check-consistency")
 const SKILL_DESCRIPTION = Dict(
-    "check-docs" => "Run the COMPLETE documentation-quality battery over every surface — scans, reflection checks, the build, the judgment lanes — then bank, fix, verify and close the round",
-    "check-consistency" => "Fresh-eyed multi-hat panel over the rendered documentation site — consolidate, run the hats, bank, fix, verify and close the round",
-    "bug-hunt" => "Static hunt, dynamic confirmation — hunters hypothesise, reproducers write failing witnesses; bank, fix, promote and close the round",
-    "audit-changes" => "Were these edits justified, and did they silently change behaviour? Lanes over a diff range, the executable claims run by the CLI",
-    "gbg-doctor" => "The health check of this package's tooling — config, pinned version, managed files, wiring, ledger, rounds; read-only unless run --deep",
+    "gbg-doctor" => "The health check of this package's tooling — config, pinned version, managed files, wiring, ledger; read-only unless run --deep",
 )
 const POLICY_FILES = ("00-index.md", "docs-rubric.md", "latex-idiom.md", "citations.md", "testing-protocol.md",
                       "instruments.md", "git-conventions.md", "glossary.md")
@@ -226,10 +222,15 @@ The two managed blocks and the sub-environment entries are planned by [`managed_
 function plan(cfg::AbstractDict; ledger = Ledger.read(cfg))
     s = slots(cfg; ledger); v = pin(cfg)
     out = ManagedFile[]
+    # One skill per instrument stood here until 2026-09-17, each running `gbg preflight <name>`. The
+    # preflight went with the round machinery, so a rendered skill would name a verb that does not
+    # exist; the new design generates one skill per instrument that applies, from `Instrument` values
+    # (docs/ARCHITECTURE.md §6), which is IMPLEMENTATION.md Phase 4's work. The doctor's own skill is
+    # kept: `gbg doctor` still exists.
     skill = template("SKILL.md.tmpl")
-    for name in vcat([i for i in INSTRUMENTS if i in cfg["instruments"]["enabled"]], ["gbg-doctor"])
+    for name in ("gbg-doctor",)
         ss = merge(s, Dict("skill.name" => name, "skill.description" => SKILL_DESCRIPTION[name],
-                           "skill.command" => name == "gbg-doctor" ? "gbg doctor" : "gbg preflight $name \$ARGUMENTS"))
+                           "skill.command" => "gbg doctor"))
         push!(out, ManagedFile(joinpath(".claude", "skills", name, "SKILL.md"), "SKILL.md.tmpl", render(skill, ss), 0o644))
     end
     push!(out, ManagedFile(joinpath(".claude", "settings.json"), "settings.json.tmpl", render(template("settings.json.tmpl"), s), 0o644))

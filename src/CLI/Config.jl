@@ -6,7 +6,7 @@
     Config
 
 The loader of a consumer's `.gbg/config.toml`. [`Config.read`](@ref) is the one way the config is
-obtained — by every verb, by the `makedocs` wrapper and by `TestHarness.gate()` — and
+obtained — by every verb and by the `makedocs` wrapper — and
 [`Config.ConfigError`](@ref) is what a config that cannot be used raises; [`Config.find_root`](@ref)
 finds the consumer root a directory lies in, and [`Config.check_paths`](@ref) runs every existence check
 the config implies (the doctor's `CFG.SURFACES`). The helpers [`Config.glob_files`](@ref), over
@@ -336,6 +336,21 @@ function parse(text::AbstractString; root::AbstractString, check::Bool = true)
     end
     return cfg
 end
+
+"""
+    expand_globs(root, files) -> Vector{String}
+
+`files` with every glob replaced by the files it names, in order and deduplicated. The arguments are
+`root`, the consumer root, and `files`, a lane's or a territory's list.
+
+A pattern matching nothing is KEPT as written: a directory a lane names (`catalog`, `policy`) is not a
+glob, and dropping it would silently empty that lane. Both roster resolvers share this one home, because
+a lane receives its files VERBATIM in its prompt — an unexpanded `src/Scans/*.jl` reaches the agent as a
+pattern rather than as the files it names, and the same unexpanded string never matches the engine's own
+surface list when a refinement is subtracted from it. Returns the expanded list.
+"""
+expand_globs(root::AbstractString, files) =
+    unique!(reduce(vcat, (isempty(glob_files(root, String(g))) ? [String(g)] : glob_files(root, String(g)) for g in files); init = String[]))
 
 end # module Config
 

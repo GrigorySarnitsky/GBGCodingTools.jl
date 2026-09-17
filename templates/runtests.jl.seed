@@ -8,7 +8,6 @@ using {{package.name}}
 # module SomethingTests; include("something.jl"); end
 
 # Promoted witnesses (test/regressions/README.md): each began as a /bug-hunt witness observed to fail
-# on the tree that had the defect and is included unchanged. Then the tool's closure gate, which fails
-# while a finding of an open round is unresolved.
+# on the tree that had the defect and is included unchanged. A test suite reads no review state
+# (docs/ARCHITECTURE.md §10), so nothing else runs here.
 GBGCodingTools.TestHarness.run_regressions(@__DIR__)
-GBGCodingTools.TestHarness.gate()

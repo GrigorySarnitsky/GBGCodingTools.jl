@@ -70,7 +70,7 @@ result = GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
         "Home" => "index.md",
         # The guide reads as a sequence first (set up, run a review, see what it produces, read what it judges
         # against), then the four reference tables, most consulted first (2026-09-09, the owner's ruling).
-        "Guide" => ["guide/install.md", "guide/instruments.md", "guide/rounds.md", "guide/rules.md",
+        "Guide" => ["guide/install.md", "guide/instruments.md", "guide/rules.md",
                     "guide/verbs.md", "guide/doctor.md", "guide/config.md", "guide/ledger.md"],
         "API" => ["api/TestHarness.md", "api/Reflection.md", "api/Witnesses.md", "api/Config.md", "api/CLI.md"],
         "Architecture" => "architecture.md",

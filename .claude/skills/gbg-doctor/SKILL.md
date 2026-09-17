@@ -1,6 +1,6 @@
 ---
 name: gbg-doctor
-description: The health check of this package's tooling — config, pinned version, managed files, wiring, ledger, rounds; read-only unless run --deep (GBGCodingTools vdev, GBGCodingTools)
+description: The health check of this package's tooling — config, pinned version, managed files, wiring, ledger; read-only unless run --deep (GBGCodingTools vdev, GBGCodingTools)
 allowed-tools: Bash(gbg *)
 ---
 <!-- gbg:managed SKILL.md.tmpl vdev — rewritten by `gbg sync`; do not edit -->

@@ -1,6 +1,6 @@
 # Doctor.jl — `gbg doctor [--deep] [--json] [--effective] [--only <id-or-prefix>[,…]|QUICK]`: the check
 # table of ARCHITECTURE §7.3, read-only, stable ids, exit 1 on any FAIL, 2 when the tree is not a
-# consumer. The QUICK set runs inside preflight, the makedocs wrapper and TestHarness.gate().
+# consumer. The QUICK set runs inside the makedocs wrapper.
 
 """
     Doctor
@@ -22,7 +22,7 @@ implies another.
 module Doctor
 
 using TOML, Dates, JSON3, Pkg
-using ..GBGCodingTools: GBGCodingTools, PKG_NAME, PKG_UUID, JULIA_FLOOR, Config, Ledger, Sync, RoundFiles, Git, Witnesses, Reflection,
+using ..GBGCodingTools: GBGCodingTools, PKG_NAME, PKG_UUID, JULIA_FLOOR, Config, Ledger, Sync, Git, Witnesses, Reflection,
       load_schema, instrument_schema, validate, parse_options, VERBS, tool_version, running_dev, tool_sub_envs, manifest_tree_sha, self_verify,
       scan_catalog, run_scan, SCANS, prose_lines, surface_kind, rules_register, unreachable_waiver_scans
 
@@ -47,11 +47,10 @@ na(id, d) = Check(id, :NA, d)
 
 const NON_EXEMPTABLE = ("PIN.", "CFG.", "EXEMPT.", "WIRE.", "MANAGED.", "SHIM.", "POL.", "ROUND.", "SELF.")
 const EXEMPTABLE = ("LEG.", "GIT.", "AUDIT.")
-const QUICK = ["CFG.VALID", "CFG.SURFACES", "CFG.HATS", "CFG.SEEDS", "CFG.TERRITORIES", "CFG.EXEMPTIONS", "PIN.CONFIG", "PIN.SOURCES", "PIN.NOT_DEV",
+const QUICK = ["CFG.VALID", "CFG.SURFACES", "CFG.TERRITORIES", "CFG.EXEMPTIONS", "PIN.CONFIG", "PIN.SOURCES", "PIN.NOT_DEV",
                "EXEMPT.EXPIRED", "EXEMPT.EXPIRING", "EXEMPT.STALE", "EXEMPT.BROAD", "WIRE.MAKEDOCS", "WIRE.RUNTESTS", "WIRE.CI_AUTH",
-               "WIRE.GITIGNORE", "WIRE.CLAUDE_MD", "MANAGED.HASH", "ROUND.DIR", "ROUND.MARKER", "ROUND.OPEN", "ROUND.ABANDONED",
-               "ROUND.DEV", "ROUND.FROZEN", "POL.SENTINEL", "SELF.CONSUMER", "AUDIT.GAP"]
-const DEEP = ["LOAD.ENVS", "BUILD.DOCS", "SELF.DOCS", "TEST.PKG", "WITNESSES.ESCALATED", "WITNESSES.BLOCKED"]
+               "WIRE.GITIGNORE", "WIRE.CLAUDE_MD", "MANAGED.HASH", "POL.SENTINEL", "SELF.CONSUMER"]
+const DEEP = ["LOAD.ENVS", "BUILD.DOCS", "SELF.DOCS", "TEST.PKG"]
 const LEGACY_PILES = Dict(
     "GBGPeriodicFields" => [".claude/doc-review", ".claude/doc-review-prev", ".claude/doc-review-checkdocs", ".claude/audit-changes", ".claude/doc-review-adjudicated.md"],
     "GBGIsotropicTurbulence" => [".claude/doc-review", ".claude/doc-review-prev", ".claude/doc-review-minimal", ".claude/doc-review-round1", ".claude/doc-review-closures",
@@ -218,13 +217,7 @@ check!("SELF.CONSUMER", ctx -> begin
     pass("SELF.CONSUMER", ctx.tool_root)
 end)
 
-check!("CFG.VALID", ctx -> begin
-    for r in RoundFiles.rounds(ctx.cfg)
-        r.state == :open || continue
-        r.round["instrument"] in ctx.cfg["instruments"]["enabled"] || return fail("CFG.VALID", "open round $(r.name) of the disabled instrument $(r.round["instrument"])")
-    end
-    pass("CFG.VALID", "config parses, validates, paths resolve")
-end)
+check!("CFG.VALID", ctx -> pass("CFG.VALID", "config parses, validates, paths resolve"))
 """
     pinned_and_managed(ctx) -> Vector{String}
 
@@ -249,8 +242,7 @@ check!("CFG.TORN", ctx -> begin
     Git.is_repo(ctx.root) || return na("CFG.TORN", "not a git repository")
     modified = Set(p for (_, p) in Git.porcelain(ctx.root; untracked = false))
     watched = Set(pinned_and_managed(ctx))
-    open_rounds = [r.name for r in RoundFiles.rounds(ctx.cfg) if r.state == :open]
-    torn = [f for f in modified if f in watched && !any(o -> startswith(f, ".gbg/rounds/$o/"), open_rounds)]
+    torn = [f for f in modified if f in watched]
     isempty(torn) ? pass("CFG.TORN", "no pinned file (consumer-owned, never rendered) or managed file (`gbg sync` writes and hash-checks it) modified") : fail("CFG.TORN", "modified in the working tree: " * join(sort!(torn), ", ") * " — wait for the sync, or commit")
 end)
 check!("CFG.SURFACES", ctx -> begin
@@ -325,7 +317,7 @@ check!("CFG.TERRITORIES", ctx -> begin
     ts = get(get(ctx.cfg["instruments"], "bug-hunt", Dict{String,Any}()), "territories", Any[])
     isempty(ts) && return na("CFG.TERRITORIES", "no bug-hunt territories configured")
     covered = Set{String}()
-    for t in ts; union!(covered, GBGCodingTools.Preflight.expand_globs(ctx.root, t["files"])); end
+    for t in ts; union!(covered, Config.expand_globs(ctx.root, t["files"])); end
     src = Config.surface_files(ctx.cfg, "src")
     miss = [f for f in src if !(f in covered)]
     isempty(miss) ? pass("CFG.TERRITORIES", "$(length(src)) src file(s), every one in a territory") :
@@ -431,7 +423,6 @@ check!("WIRE.RUNTESTS", ctx -> begin
     isfile(p) || return fail("WIRE.RUNTESTS", "test/runtests.jl absent")
     t = strip_code(read(p, String)); errs = String[]
     occursin("TestHarness.run_regressions(", t) || push!(errs, "no TestHarness.run_regressions( call")
-    occursin("TestHarness.gate(", t) || push!(errs, "no TestHarness.gate( call")
     isdir(joinpath(ctx.root, "test", "regressions")) || push!(errs, "test/regressions/ absent")
     isempty(errs) ? pass("WIRE.RUNTESTS") : fail("WIRE.RUNTESTS", join(errs, "; "))
 end)
@@ -570,88 +561,9 @@ check!("GIT.TRAILER", ctx -> begin
     # a FAIL, not a WARN: RULE.GIT.TRAILER is a rule, and a check that cannot fail is not a check
     missing_ == 0 ? pass("GIT.TRAILER", "last $(length(commits)) commits carry the trailer") : fail("GIT.TRAILER", "$missing_ of the last $(length(commits)) commits lack the versionless trailer")
 end)
-check!("ROUND.DIR", ctx -> begin
-    isempty(ctx.cfg["instruments"]["enabled"]) && return pass("ROUND.DIR", "no instrument enabled")
-    isdir(RoundFiles.rounds_dir(ctx.cfg)) ? pass("ROUND.DIR") : fail("ROUND.DIR", ".gbg/rounds/ absent while instruments are enabled (gbg init writes it with .keep)")
-end)
-check!("ROUND.MARKER", ctx -> begin
-    bad = [r.name for r in RoundFiles.rounds(ctx.cfg) if r.state in (:nomarker, :invalid)]
-    isempty(bad) ? pass("ROUND.MARKER") : fail("ROUND.MARKER", "round directories without a valid ROUND.toml: " * join(bad, ", "))
-end)
-check!("ROUND.OPEN", ctx -> begin
-    open_ = [r.name for r in RoundFiles.rounds(ctx.cfg) if r.state == :open]
-    isempty(open_) ? pass("ROUND.OPEN", "no open round") : warn("ROUND.OPEN", "open: " * join(open_, ", "))
-end)
-check!("ROUND.ABANDONED", ctx -> begin
-    ab = [r for r in RoundFiles.rounds(ctx.cfg) if r.state == :abandoned]
-    isempty(ab) ? pass("ROUND.ABANDONED") : warn("ROUND.ABANDONED", join(("$(r.name) carries $(length(r.round["abandoned"]["open_ids"])) open id(s)" for r in ab), "; "))
-end)
-# A round is stopped from closing at a dev stamp where that can still be acted on — `Preflight.dev_round`
-# refuses to OPEN one. This reports what is already recorded, and a recorded round is frozen: FAILing on
-# it made a fact about last week's round the reason `Pkg.test()` and every docs build refused today, with
-# no verb able to clear it. What a release leans on is enforced in `Release.release`, on the one round it
-# cites. An audit or hunt round at the tool root is off-tag by construction — it reads `base..HEAD` — so
-# a dev stamp there is the normal case and never named here.
-check!("ROUND.DEV", ctx -> begin
-    docs = Sync.DOCS_INSTRUMENTS
-    bad = [r.name for r in RoundFiles.rounds(ctx.cfg)
-           if r.state == :closed && String(r.round["instrument"]) in docs && startswith(String(r.round["tool_version"]), "dev")]
-    isempty(bad) ? pass("ROUND.DEV") :
-        warn("ROUND.DEV", "closed at a dev stamp, so not comparable across versions and no release may cite " *
-                          (length(bad) == 1 ? "it" : "them") * ": " * join(bad, ", "))
-end)
-check!("ROUND.FROZEN", ctx -> begin
-    errs = String[]
-    for r in RoundFiles.rounds(ctx.cfg)
-        r.state == :closed || continue
-        # the shas below cover the evidence, not the stamps, so a hand-edited `tool_version` passed
-        # unseen — and re-stamping a round is the one repair that would falsify rather than fix it.
-        # Every stamp form names its own revision, so they check each other.
-        v = String(get(r.round, "tool_version", "")); rev = String(get(r.round, "tool_rev", ""))
-        m = match(r"^dev\+([0-9a-f]{7,40})", v)
-        if m !== nothing
-            startswith(rev, m.captures[1]) || push!(errs, "$(r.name): tool_rev $rev does not begin with the revision tool_version $v names")
-        elseif startswith(rev, "v")
-            rev == "v" * v || push!(errs, "$(r.name): tool_rev $rev does not name tool_version $v")
-        elseif occursin(r"^\d+\.\d+\.\d+(-rc\.\d+)?$", v) && ctx.tool_root !== nothing
-            c = Git.run(ctx.tool_root, "rev-parse", "-q", "--verify", "refs/tags/v$v^{commit}")
-            (c === nothing || c == rev) || push!(errs, "$(r.name): tool_version says v$v, whose tag is $(first(c, 8)), but tool_rev is $(first(rev, 8))")
-        end
-        fj = joinpath(r.dir, "findings.json")
-        if haskey(r.round, "findings_sha")
-            isfile(fj) && RoundFiles.sha256_file(fj) == r.round["findings_sha"] || push!(errs, "$(r.name): findings.json ≠ findings_sha")
-        end
-        if haskey(r.round, "reproductions_sha")
-            # the disposition is recorded after bank and is excluded; any other field moving is the error
-            RoundFiles.reproductions_sha(joinpath(r.dir, "reproductions")) == r.round["reproductions_sha"] ||
-                push!(errs, "$(r.name): reproductions/ ≠ reproductions_sha (a verdict, witness sha or id changed since bank)")
-        end
-        cb = get(r.round, "closed_by", Dict())
-        if haskey(cb, "tally_sha")
-            k = r.round["passes"]; tj = joinpath(r.dir, "verdicts", "pass-$k", "tally.json")
-            isfile(tj) && RoundFiles.sha256_file(tj) == cb["tally_sha"] || push!(errs, "$(r.name): tally.json ≠ the stored tally sha")
-        end
-    end
-    isempty(errs) ? pass("ROUND.FROZEN") : fail("ROUND.FROZEN", join(errs, "; "))
-end)
-check!("AUDIT.GAP", ctx -> begin
-    audits = sort!([r for r in RoundFiles.rounds(ctx.cfg) if r.state == :closed && r.round["instrument"] == "audit-changes"]; by = r -> r.round["opened"])
-    gaps = String[]
-    # contiguous when the later audit's base is the earlier one's closed head OR AN ANCESTOR of it: an audit
-    # that re-reads commits the previous one already read overlaps, and leaves nothing unread; only a base
-    # PAST that head (or unrelated to it) leaves commits no audit read. An exact match needs no git
-    # object, so it is compared first: a shallow or rewritten checkout cannot turn it into a gap.
-    for i in 2:length(audits)
-        prev = String(get(audits[i-1].round, "closed_head", audits[i-1].round["head"]))
-        base = String(get(audits[i].round, "base", ""))
-        (!isempty(base) && (base == prev || Git.is_ancestor(ctx.root, base, prev))) ||
-            push!(gaps, "$(audits[i].name) base $(first(base, 8)) is not $(audits[i-1].name)'s closed head $(first(prev, 8)) or an ancestor of it — the commits between were never audited")
-    end
-    # a gap between two audits is a WARN; NO audit at all is not contiguity, it is a repository whose
-    # changes have never been audited, and the check said `pass` for it (found by the self-application sweep)
-    isempty(audits) && return warn("AUDIT.GAP", "no closed audit-changes round: no change here has ever been audited")
-    isempty(gaps) ? pass("AUDIT.GAP", "$(length(audits)) closed audit(s) contiguous") : warn("AUDIT.GAP", join(gaps, "; "))
-end)
+# The six ROUND.* checks and AUDIT.GAP stood here until 2026-09-17. They read .gbg/rounds/ through
+# RoundFiles, which went with the round machinery; the design they belonged to is
+# docs/design-record/ARCHITECTURE-v1.md.
 
 # --deep
 function run_logged(ctx, cmd::Cmd)
@@ -692,42 +604,12 @@ check!("SELF.DOCS", ctx -> begin
 end)
 check!("TEST.PKG", ctx -> begin
     ok, log = run_logged(ctx, shell(ctx.cfg["package"]["julia_test"]))
-    banner = occursin(r"GBGCodingTools v\S+ gate", log)
-    ok && banner && return pass("TEST.PKG", "Pkg.test() exit 0 with the gate banner")
-    fail("TEST.PKG", ok ? "exit 0 but no gate banner — TestHarness.gate() did not run" : "tests failed: " * last(split(strip(log), '\n')))
+    ok && return pass("TEST.PKG", "Pkg.test() exit 0")
+    fail("TEST.PKG", "tests failed: " * last(split(strip(log), '\n')))
 end)
-function witness_dirs(ctx, kind)
-    dirs = [joinpath(r.dir, "witnesses", kind) for r in RoundFiles.rounds(ctx.cfg)]
-    push!(dirs, joinpath(ctx.root, "test", "regressions", kind))
-    return filter(isdir, dirs)
-end
-header_line(path, key) = (m = match(Regex("^#\\s*" * key * ":\\s*(.*)\$", "m"), read(path, String)); m === nothing ? "(no $key header)" : String(strip(m.captures[1])))
-check!("WITNESSES.ESCALATED", ctx -> begin
-    dirs = witness_dirs(ctx, "escalated"); isempty(dirs) && return pass("WITNESSES.ESCALATED", "none")
-    notes = String[]; promote = String[]; stale = String[]
-    for d in dirs
-        _, results = Witnesses.run(d; expect = :fail, package = ctx.cfg["package"]["name"], project = joinpath(ctx.root, ctx.cfg["instruments"]["bug-hunt"]["witness_env"]), io = devnull)
-        for r in results
-            if r.status == :pass
-                push!(promote, "$(r.name): PASSES — promote")
-            elseif r.status in (:broken, :refused)
-                push!(stale, "$(r.name): $(r.status) — stale ($(r.reason))")
-            end
-            push!(notes, "$(r.name) [$(r.status)] overturn_when: $(header_line(joinpath(d, r.name), "overturn_when"))")
-        end
-    end
-    isempty(promote) && isempty(stale) && return pass("WITNESSES.ESCALATED", join(notes, "; "))
-    isempty(stale) ? warn("WITNESSES.ESCALATED", join(promote, "; ")) : fail("WITNESSES.ESCALATED", join(vcat(stale, promote), "; "))
-end)
-check!("WITNESSES.BLOCKED", ctx -> begin
-    dirs = witness_dirs(ctx, "blocked"); isempty(dirs) && return pass("WITNESSES.BLOCKED", "none")
-    notes = String[]
-    for d in dirs
-        _, results = Witnesses.run(d; expect = :fail, package = ctx.cfg["package"]["name"], project = joinpath(ctx.root, ctx.cfg["instruments"]["bug-hunt"]["witness_env"]), io = devnull)
-        for r in results; push!(notes, "$(r.name) [$(r.status)] blocked: $(header_line(joinpath(d, r.name), "blocked"))"); end
-    end
-    warn("WITNESSES.BLOCKED", join(notes, "; "))
-end)
+# WITNESSES.ESCALATED and WITNESSES.BLOCKED stood here until 2026-09-17: both walked a round's
+# witness directories. The new design keeps escalated failing tests in test/regressions/escalated/
+# instead (docs/ARCHITECTURE.md §4.4), which is not a round's business and not the doctor's.
 
 # ---- running -------------------------------------------------------------------------------------------------
 
@@ -831,7 +713,7 @@ end # module Doctor
 """
     doctor(cfg, set = :QUICK; io = stderr) -> Int
 
-The in-process doctor the `makedocs` wrapper, `TestHarness.gate()` and `gbg preflight` call. The
+The in-process doctor the `makedocs` wrapper calls. The
 arguments are:
 
 - `cfg` — the validated config.

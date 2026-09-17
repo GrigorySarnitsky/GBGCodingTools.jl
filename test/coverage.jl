@@ -12,25 +12,15 @@ include("helpers.jl")
         @test G.main(["probe", "--fail"]) == 2                         # 2 cannot evaluate
         @test G.main(["no-such-verb"]) == 2                            # an unknown verb is not a crash
         @test G.main(String[]) == 2                                    # no verb at all
-        @test G.main(["round", "list"]) == 0
         @test G.main(["scan"]) == 2                                    # a verb missing its noun
         @test G.main(["doctor", "--only", "CFG.VALID"]) == 0
-        @test G.main(["gate"]) == 0                                    # no open round
-        # the design-check verbs through the dispatch, not only as functions: rc.7 shipped `gbg attack`
-        # reading option fields that do not exist, and its first real invocation crashed (exit 3)
-        @test G.main(["attack"]) == 2                                  # usage
-        @test G.main(["attack", "audit-changes"]) == 0                 # the positional
-        @test G.main(["attack", "audit-changes", "--subject", "no-such-subject.toml"]) == 2   # the valued option
-        @test G.main(["attack", "read"]) == 2
-        @test G.main(["calibrate", "extra"]) == 2
-        @test G.main(["calibrate", "read"]) == 2
         # The ConfigError arm, both directions. A consumer's bad config is exit 2 for ANY verb — the arm
         # had no test at all, and before it only three verbs caught the class. A config the verb itself
         # has just written failing to read back is the tool's crash, exit 3, which the arm used to swallow.
         cp_ = joinpath(root, ".gbg", "config.toml"); good = read(cp_, String)
         write(cp_, good * "\n[no_such_section]\nx = 1\n")
         redirect_stderr(devnull) do
-            @test G.main(["round", "list"]) == 2                           # the consumer's mistake: cannot evaluate
+            @test G.main(["sync", "status"]) == 2                          # the consumer's mistake: cannot evaluate
             G.VERBS["__reads_what_it_wrote"] = args -> (G.Config.read_written(root); 0)
             try
                 @test G.main(["__reads_what_it_wrote"]) == 3               # the tool's own write: a crash
@@ -41,7 +31,7 @@ include("helpers.jl")
         @test_throws G.Config.ConfigWrittenError G.Config.read_written(root)
         @test !(G.Config.ConfigWrittenError <: G.Config.ConfigError)       # a subtype would be caught as exit 2
         write(cp_, good)
-        @test G.main(["round", "list"]) == 0
+        @test G.main(["sync", "status"]) == 0
         # the consumer's LEDGER is its own file too: one that does not parse is exit 2, not a crash with a
         # backtrace (2026-09-15-audit-changes-01)
         lp = joinpath(root, ".gbg", "exemptions.toml"); keep = read(lp, String)
@@ -52,116 +42,15 @@ include("helpers.jl")
         write(lp, keep)
     end
     @test Set(keys(G.VERBS)) == Set(k for k in keys(G.VERBS))          # the table is a table, not a closure
-    @test length(G.VERBS) >= 20
+    @test length(G.VERBS) >= 12
 end
 
-# The verifiers batch: one agent grades or reads several lanes and writes one file per lane, so a pass
-# buys the diff and the corpus once per unit instead of once per lane. The files stay one per lane, which
-# is what grade reads, so nothing downstream moves. Checked as text: there is no JS runtime here.
-@testset "the verifiers batch lanes into units" begin
-    for s in ("verify-act.js", "verify-state.js")
-        text = read(joinpath(TOOL, "instruments", "check-consistency", "workflow", s), String)
-        @test occursin("const BATCH = 6", text) && !occursin("A.batch", text)   # the unit size: a constant, since no CLI path sends one
-        @test occursin("lane_files", text)                               # one object per lane in one return
-        @test occursin("scribeAll(", text) && !occursin("scribe(stamped(", text)   # one scribe per unit
-        @test occursin("laneFile(", text)                                # a lane found by its own key, not by order
-    end
-    prelude = read(joinpath(TOOL, "instruments", "prelude.js"), String)
-    @test occursin("const scribeAll", prelude) && occursin("const laneFile", prelude)
-    # the lane runs are NOT batched: a lane is one agent over one surface, and each banks its own file —
-    # three through the prelude's scribe, the hunt through the banking agent its pipeline already carries
-    for (inst, s) in (("check-docs", "lanes.js"), ("check-consistency", "panel.js"), ("audit-changes", "audit.js"))
-        @test occursin("scribe(", read(joinpath(TOOL, "instruments", inst, "workflow", s), String))
-    end
-    @test occursin("label: `bank:", read(joinpath(TOOL, "instruments", "bug-hunt", "workflow", "hunt.js"), String))
-end
-
-# A lane is told what to report by three files that must agree: the catalogue brief (the procedure), the
-# script (the schema the agent is held to) and the instrument schema (what bank will accept). Changing one
-# alone leaves the lane instructed to return something the next stage refuses, which is silent until a round
-# is paid for.
-@testset "the brief, the script and the schema agree about classes and claims" begin
-    brief = read(joinpath(TOOL, "catalog", "lanes", "check-docs.toml"), String)
-    @test occursin("ONE DEFECT PER CLASS", brief)                        # classes, not sites
-    @test occursin("{lane.cap}", brief)                                  # the budget is a slot, not a literal
-    @test occursin("START WITH YOUR CLAIM CHECKLIST", brief)
-    @test occursin("key = \"one-home\"", brief) && !occursin("key = \"family\"", brief)
-    lanes = read(joinpath(TOOL, "instruments", "check-docs", "workflow", "lanes.js"), String)
-    @test occursin("claims_checked", lanes) && occursin("l.claims_path", lanes)
-    schema = read(joinpath(TOOL, "instruments", "check-docs", "schema.json"), String)
-    @test occursin("claims_checked", schema) && occursin("claims_path", schema)
-    # The three surfaces must enumerate the SAME claim kinds, and until 2026-09-12 nothing held them to
-    # it: this testset asserted only that the plumbing words occurred, so a `quantifier` tag was added to
-    # claim_checklist and every assertion here still passed while the brief, the schema and the protocol
-    # all still told a lane the checklist carried two kinds. A lane would have been handed `[quantifier]`
-    # items from a brief that said no such kind exists — the brief-versus-script disagreement this
-    # testset is named for.
-    protocol = read(joinpath(TOOL, "instruments", "check-docs", "PROTOCOL.md"), String)
-    for text in (lowercase(brief), lowercase(schema), lowercase(protocol)), kind in ("cited number", "exit-code", "quantifier")
-        @test occursin(kind, text)
-    end
-    # the cap reaches the brief only through substitute's slot pattern, which had no `lane.` prefix before
-    @test occursin("lane\\.[a-z_]+", read(joinpath(TOOL, "src", "CLI", "Preflight.jl"), String))
-end
-
-# A cap is a policy number, and the core invariant is that no package datum lives in a Workflow script:
-# three of the four instruments carried theirs as a literal (6, 8, 25) until 2026-09-12. Each now takes it
-# from args — check-docs through its brief's `{lane.cap}` slot, the other three through `A.finding_cap` —
-# and each tells its agents to report CLASSES, which RULE.DOC.CLASS_SWEEP always required and no lane
-# brief said.
-@testset "no instrument hard-codes its cap, and every one reports classes" begin
-    for (inst, script, slot) in (("check-docs", "lanes.js", "{lane.cap}"), ("check-consistency", "panel.js", "A.finding_cap"),
-                                 ("bug-hunt", "hunt.js", "A.finding_cap"), ("audit-changes", "audit.js", "A.finding_cap"))
-        text = read(joinpath(TOOL, "instruments", inst, "workflow", script), String)
-        inst == "check-docs" || @test occursin(slot, text)
-        @test !occursin(r"Cap: your \d+|at most your \d+|\d+-finding cap", text)   # no literal cap survives
-    end
-    @test occursin("{lane.cap}", read(joinpath(TOOL, "catalog", "lanes", "check-docs.toml"), String))
-    for (inst, script, phrase) in (("check-consistency", "panel.js", "ONE FINDING PER CLASS"),
-                                   ("bug-hunt", "hunt.js", "ONE CANDIDATE PER MECHANISM"),
-                                   ("audit-changes", "audit.js", "ONE CONCERN PER CLASS"))
-        @test occursin(phrase, read(joinpath(TOOL, "instruments", inst, "workflow", script), String))
-    end
-    # and each instrument's args schema REQUIRES the cap, so a missing one is loud rather than a fallback
-    for inst in ("check-consistency", "bug-hunt", "audit-changes")
-        s = JSON3.read(read(joinpath(TOOL, "instruments", inst, "schema.json"), String), Dict{String,Any})
-        @test "finding_cap" in s["properties"]["args"]["required"]
-    end
-end
-
-# The same core invariant for PATHS, not just for numbers: no package path lives in a Workflow script.
-# panel.js sent a `needs: source` hat to src/, ext/, docs/src/ and docs/ as LITERALS, so
-# instruments.check-consistency.latex_source_globs — validated, written by `gbg init`, documented — had no
-# reader anywhere: a consumer naming examples/*.jl had its Literate surface silently never read while the
-# hat was still required to quote findings at their source file:line (2026-09-12-check-docs-01 schemas#1,
-# whose dismissal the audit's own auditor overturned).
-@testset "no instrument hard-codes the corpus paths it reads" begin
-    panel = read(joinpath(TOOL, "instruments", "check-consistency", "workflow", "panel.js"), String)
-    @test occursin("A.source_globs", panel)
-    @test !occursin("the pages under", panel)                       # the literal path list is gone
-    s = JSON3.read(read(joinpath(TOOL, "instruments", "check-consistency", "schema.json"), String), Dict{String,Any})
-    @test "source_globs" in s["properties"]["args"]["required"]
-    # and preflight actually EMITS it — asserting only on the script's text would pass even if the CLI
-    # never sent the key, which is the half of this defect that was invisible
-    cfg = fixture_config()
-    a = G.Preflight.render_args(cfg, "check-consistency", "2026-01-01-check-consistency-01", Any[],
-                                Dict{String,Any}("manuscripts" => Dict("full" => "f", "siteonly" => "s"),
-                                                 "rulebook_path" => "r"); opened = "2026-01-01T00:00:00")
-    @test a["source_globs"] == G.Preflight.SOURCE_SURFACES                  # the key unset: the four surfaces
-    # the key set: ADDED to the four, never in place of them — a consumer naming only `src/*.jl` kept
-    # nothing but that under the first reader of the key (2026-09-12-audit-changes-02)
-    cfg["instruments"]["check-consistency"]["latex_source_globs"] = ["src/*.jl", "examples/*.jl"]
-    @test G.Preflight.source_globs(cfg) == ["src", "ext", "docs/src", "docs", "src/*.jl", "examples/*.jl"]
-    a2 = G.Preflight.render_args(cfg, "check-consistency", "2026-01-01-check-consistency-01", Any[],
-                                 Dict{String,Any}("manuscripts" => Dict("full" => "f", "siteonly" => "s"),
-                                                  "rulebook_path" => "r"); opened = "2026-01-01T00:00:00")
-    @test a2["source_globs"] == G.Preflight.source_globs(cfg)
-    # a check-docs pass keeps the four surfaces: the key is check-consistency's (2026-09-15-audit-changes-01)
-    @test occursin("\"source_scope\" => inst == \"check-consistency\" ? Preflight.source_globs(cfg) : Preflight.SOURCE_SURFACES",
-                   read(joinpath(TOOL, "src", "CLI", "Passes.jl"), String))
-    vs = read(joinpath(TOOL, "instruments", "check-consistency", "workflow", "verify-state.js"), String)
-    @test !occursin("'docs/src'", vs)                                     # the state verifier's copy is gone too
-end
+# Nine testsets stood here until 2026-09-17. Three read the eleven Workflow scripts as text (their
+# shape, the shared prelude, a bare code span in a prompt), three held a lane's brief, script and
+# schema to one another, and three drove `prepare` and a round of each instrument. The scripts are
+# filed under docs/design-record/instruments-v1/ and the round machinery under machinery-v1/; what
+# replaces them is one fixed driver and the run stages of docs/ARCHITECTURE.md §6 and §10, and the
+# rehearsal that will exercise them is named in IMPLEMENTATION.md Phase 4.
 
 @testset "every doctor check runs without crashing" begin
     root = fixture_copy("doctor-all")
@@ -174,101 +63,6 @@ end
         @test length(checks) == 1
         @test checks[1].status in (:PASS, :FAIL, :WARN, :NA)           # a status, never an exception
         @test checks[1].id == id
-    end
-end
-
-# A Markdown code span in prompt prose: a bare backtick pair holding a short run, PRECEDED by prose —
-# a lowercase word or a sentence end, and a space — where an ordinary template literal follows `=`, `(`,
-# `,` or `:`. A comma and a colon were in that lookbehind and are not: `{phase: `Review`}` and
-# `f(a, `b`)` are ordinary JavaScript, and so is a literal after `return`, `case`, `await` and the rest
-# of the keywords excluded here — a guard that flags six ordinary forms to catch one defect is a guard
-# nobody can leave switched on.
-#
-# `in` and `of` were among those keywords until 2026-09-12, and exempting them cost a BLOCKER. The prose
-# "Return one object per lane in `lane_files`" sat unescaped in verify-act.js and verify-state.js through
-# a whole release: unparseable, and green on every run, because the English PREPOSITION matched an
-# exemption written for the JavaScript OPERATOR. Neither operator is ever followed by a template literal
-# in these scripts — the forms are `x in obj` and `for (const x of [...])` — so the exemption protected
-# nothing and hid the one defect this guard exists to catch. An exemption keyed on a word, not on syntax,
-# costs whatever English also spells that way.
-const SPAN_IN_PROSE = r"(?<=[a-z.] )(?<!return )(?<!yield )(?<!throw )(?<!typeof )(?<!await )(?<!case )(?<!else )(?<!new )(?<!do )(?<!delete )(?<!instanceof )(?<!\\)`[^`\n\$,)}]{1,60}(?<!\\)`"
-
-@testset "every Workflow script is well formed" begin
-    scripts = [joinpath(r, f) for i in ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
-               for (r, _, fs) in walkdir(joinpath(TOOL, "instruments", i, "workflow")) for f in fs if endswith(f, ".js")]
-    @test length(scripts) == 11
-    for s in scripts
-        text = read(s, String)
-        # the meta block the runner requires, as a pure literal at the top
-        @test occursin(r"^export const meta = \{"m, text)
-        @test occursin(r"\bname:\s*'", text) && occursin(r"\bdescription:\s*'", text)
-        # No JS runtime exists in this environment, so this is not a parse. It is the check that catches
-        # the failure actually seen: a template literal left open, which makes every following line part
-        # of a string. Backticks outside `//` and `/* */` comments must pair, and no block comment is left
-        # open. A brace count is not attempted: a regex literal and a nested template defeat one without a parser.
-        code = replace(text, r"//[^\n]*" => "", r"/\*.*?\*/"s => "")
-        @test iseven(count(==('`'), code))
-        # An even count is not enough, and a round proved it: a Markdown code span written into prompt
-        # prose with BARE backticks (`--glob …`) pairs, yet closes the template literal it sits in and
-        # reopens it, so the file stops parsing. A code span in prompt text is `\``-escaped. What marks
-        # it apart from an ordinary short template literal is what PRECEDES it: prose, a word and a
-        # space, where a literal follows `=`, `(` or `,`. Without that the rule would read "no short
-        # template literal without an interpolation", which is not the rule and not anyone's to impose.
-        @test !occursin(SPAN_IN_PROSE, code)
-    end
-end
-
-# The helpers every script shares live once, in instruments/prelude.js, spliced in at each script's
-# `// gbg:prelude` line when the CLI copies it (Preflight.install_script). Without a JS runtime to catch
-# them, the two failures that matter are a script with no marker (its `A` undefined) and a name the
-# prelude declares declared again, which JavaScript refuses and which would kill the whole Workflow. Both
-# are checked on the ASSEMBLED text of all eleven scripts, and the splice itself in both directions.
-@testset "every Workflow script takes the shared prelude, once" begin
-    prelude = read(joinpath(TOOL, "instruments", "prelude.js"), String)
-    pcode = replace(prelude, r"//[^\n]*" => "", r"/\*.*?\*/"s => "")
-    @test iseven(count(==('`'), pcode)) && !occursin(SPAN_IN_PROSE, pcode)
-    declared(text) = [m.captures[1] for m in eachmatch(r"^const ([A-Za-z_]\w*)"m, text)]
-    n = 0
-    for i in ("check-docs", "check-consistency", "bug-hunt", "audit-changes"), (r, _, fs) in walkdir(joinpath(TOOL, "instruments", i, "workflow")), f in fs
-        endswith(f, ".js") || continue
-        n += 1
-        src = joinpath(r, f)
-        @test length(findall("// gbg:prelude", read(src, String))) == 1
-        text = read(G.Preflight.install_script(src, joinpath(mktempdir(), f)), String)
-        @test occursin("const stampIds", text) && !occursin("// gbg:prelude", text)
-        names = declared(text)
-        @test length(names) == length(unique(names))             # no name declared twice
-    end
-    @test n == 11
-    plain = joinpath(mktempdir(), "plain.js"); write(plain, "export const meta = { name: 'p', description: 'd' }\n")
-    @test read(G.Preflight.install_script(plain, joinpath(mktempdir(), "p.js")), String) == read(plain, String)
-    twice = joinpath(mktempdir(), "twice.js"); write(twice, "// gbg:prelude\n// gbg:prelude\n")
-    @test_throws G.Preflight.PreflightError G.Preflight.install_script(twice, joinpath(mktempdir(), "t.js"))
-end
-
-@testset "a bare code span in a Workflow prompt is caught" begin
-    # RULE.TEST.BOTH_DIRECTIONS, and in both: the check must fail on the defect it was written for and
-    # must pass ordinary JavaScript, since it polices every future edit to eleven frozen scripts.
-    broken = replace(read(joinpath(TOOL, "instruments", "bug-hunt", "workflow", "hunt.js"), String), "\\`" => "`")
-    code = replace(broken, r"//[^\n]*" => "", r"/\*.*?\*/"s => "")
-    @test occursin(SPAN_IN_PROSE, code)
-    for prose in ("scope every search with `--glob '!.gbg/**'`.", "Nothing under `.gbg/` is yours to open")
-        @test occursin(SPAN_IN_PROSE, prose)
-    end
-    # The two forms that cost a BLOCKER in rc.10: an exemption written for the JavaScript operators `in`
-    # and `of` also spared the English preposition, so an unescaped span after one of them sat in
-    # verify-act.js and verify-state.js unparseable — and GREEN on every run — for a whole release. A
-    # template literal placed directly after either operator is now flagged; no such form occurs in the
-    # eleven scripts or the prelude (checked 2026-09-12), and a guard forced to choose should keep the
-    # defect that has actually happened over the one that has not.
-    for prose in ("Return one object per lane in `lane_files`, in the order below",
-                  "each of `verdicts` is graded exactly once")
-        @test occursin(SPAN_IN_PROSE, prose)
-    end
-    for js in ("const banner = `ready`", "log(`ok`)", "x = `a b c`", "const q = `\${x}/y`", "x = `Audit`;",
-               "return `done`", "const o = {phase: `Review`}", "f(a, `b`)", "case `x`:", "yield `v`",
-               "await `x`", "arr.map(x => `y`)")
-        @test !occursin(SPAN_IN_PROSE, js)                       # valid JavaScript is not a finding
     end
 end
 
@@ -294,55 +88,3 @@ end
     @test n2 < nfull                                                    # a withheld word removes a page
 end
 
-@testset "prepare builds each instrument's substrate" begin
-    # `Rounds.prepare` — the scan battery, the reflection checks, the build under GBG_ROUND, the built-HTML
-    # scans, and for the panel the consolidated and seeded manuscripts — had no test at all, and with it the
-    # whole scan → finding → rescan closure path was unexercised (self-application sweep, 2026-09-09).
-    root = fixture_copy("prepare")
-    # the copy's docs environment carries the original's stale manifest: resolve it once, with the stdlib
-    # back on the load path (under `Pkg.test()` the inherited one names the sandbox and no stdlib)
-    let proj = joinpath(root, "docs"), sep = Sys.iswindows() ? ";" : ":"
-        rm(joinpath(proj, "Manifest.toml"); force = true)
-        run(addenv(`$(Base.julia_cmd()) --startup-file=no --project=$proj -e "using Pkg; Pkg.instantiate()"`,
-                   "JULIA_LOAD_PATH" => "@" * sep * "@stdlib"))
-    end
-    cfg = G.Config.read(root)
-    cd(root) do
-        @test G.Preflight.preflight(cfg, "check-docs"; io = devnull) == 0
-        round = only(filter(r -> r.state == :open, G.RoundFiles.rounds(cfg))).name
-        @test G.Rounds.prepare(cfg, round; io = devnull) == 0
-        scratch = G.Preflight.scratch_dir(cfg, round)
-        report = read(joinpath(scratch, "scans.txt"), String)
-        @test occursin("=== REFLECTION CHECKS ===", report)           # the reflection half ran
-        @test occursin("SCAN.REGISTER", report)                        # and the scan half
-        @test isfile(joinpath(scratch, "build.log"))                   # the docs build ran under GBG_ROUND
-        lane = joinpath(root, ".gbg", "rounds", round, "findings", "00-scans.json")
-        @test isfile(lane)                                             # every hard hit banked as lane 00-scans
-        banked = JSON3.read(read(lane, String), Dict{String,Any})
-        @test banked["lane"] == "scans" && banked["candidates_found"] == length(banked["findings"])
-        # a hard scan finding closes by RESCAN, never by a verdict: the channel exists and is reachable
-        for f in banked["findings"]; @test occursin(r"^SCAN\.[A-Z0-9_.]+ — ", f["title"]); end
-        @test G.Rounds.abandon(cfg, round, "the prepare test's round, never graded"; io = devnull) == 0
-    end
-end
-
-@testset "a round of every instrument reaches its substrate" begin
-    # The lifecycle was tested for check-docs only, so the preflight and prepare branches of the other
-    # three instruments ran nowhere (self-application sweep, 2026-09-09).
-    for inst in ("check-consistency", "bug-hunt", "audit-changes")
-        root = fixture_copy("inst-" * inst)
-        cfg = G.Config.read(root)
-        cd(root) do
-            base = inst == "audit-changes" ? "HEAD" : nothing
-            code = G.Preflight.preflight(cfg, inst; io = devnull, base)
-            @test code == 0
-            round = only(filter(r -> r.state == :open, G.RoundFiles.rounds(cfg))).name
-            rec = G.RoundFiles.read_round(joinpath(root, ".gbg", "rounds", round))
-            @test rec["instrument"] == inst && !isempty(rec["roster"])
-            args = JSON3.read(read(joinpath(G.Preflight.workflow_dir(cfg, round), "main.args.json"), String), Dict{String,Any})
-            @test haskey(args, "round") && args["round"] == round
-            @test all(!haskey(args, k) for k in ("policy", "persona", "brief"))   # payloads are paths, never text
-            @test G.Rounds.abandon(cfg, round, "the per-instrument preflight test's round"; io = devnull) == 0
-        end
-    end
-end

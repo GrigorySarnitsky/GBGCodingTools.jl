@@ -3,14 +3,10 @@ include("helpers.jl")
 
 @testset "schemas" begin
     names = [replace(f, ".schema.json" => "") for f in readdir(joinpath(TOOL, "schema")) if endswith(f, ".schema.json")]
-    @test length(names) >= 16 && length(names) == length(unique(names))   # derived, never a cited count
+    @test length(names) >= 4 && length(names) == length(unique(names))   # derived, never a cited count
     for n in names
         s = G.load_schema(n)
         @test s["type"] == "object"
-    end
-    for inst in ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
-        s = G.instrument_schema(inst)
-        @test haskey(s["properties"], "args") && haskey(s["properties"], "lane_file")
     end
     @testset "validator keywords" begin
         s = Dict("type" => "object", "additionalProperties" => false, "required" => ["a"],
@@ -35,41 +31,9 @@ include("helpers.jl")
             endswith(f, ".toml") && @test isempty(G.validate(hat, TOML.parsefile(f)))
         end
     end
-    @testset "every instrument script writes what its schema requires" begin
-        # the dismissal file's three shapes (the script, the schema and the close gate) disagreed for as
-        # long as no round had an adjudication to close (2026-09-09). These bind the two artefacts that
-        # nothing else compares: the object a script stringifies, and the schema the CLI validates it with.
-        function written_keys(js, marker)          # the top-level keys of the object literal after `marker`
-            i = findfirst(marker, js); i === nothing && return String[]
-            s = js[last(i):end]; o = findfirst('{', s); depth = 0; keys_ = String[]; cur = IOBuffer(); at_key = true
-            for c in s[o:end]
-                if c == '{' || c == '[' || c == '('; depth += 1; depth > 1 && (at_key = false)
-                elseif c == '}' || c == ']' || c == ')'
-                    depth -= 1; depth == 1 && (at_key = true)
-                    depth == 0 && (k = strip(String(take!(cur))); isempty(k) || push!(keys_, k); break)
-                elseif depth == 1 && (c == ',' || c == ':')
-                    k = strip(String(take!(cur))); isempty(k) || (at_key && push!(keys_, k)); at_key = (c == ',')
-                elseif depth == 1 && at_key; write(cur, c)
-                end
-            end
-            return [String(strip(k)) for k in keys_ if occursin(r"^[A-Za-z_][A-Za-z0-9_]*$", strip(k))]
-        end
-        for (inst, script, marker, schema) in (("bug-hunt", "dismissals.js", "JSON.stringify({", "dismissal"),
-                                               ("bug-hunt", "verify-architecture.js", "const file = {", "architecture-fix"))
-            js = read(joinpath(TOOL, "instruments", inst, "workflow", script), String)
-            keys_ = written_keys(js, marker)
-            @test !isempty(keys_)
-            req = JSON3.read(read(joinpath(TOOL, "schema", schema * ".schema.json"), String), Dict{String,Any})["required"]
-            for k in req; @test String(k) in keys_; end                       # the script writes every required key
-            props = keys(JSON3.read(read(joinpath(TOOL, "schema", schema * ".schema.json"), String), Dict{String,Any})["properties"])
-            for k in keys_; @test k in props; end                     # and writes nothing the schema forbids
-        end
-        # no instrument schema carries a cross-file reference, which the validator refuses by design
-        for i in ("check-docs", "check-consistency", "bug-hunt", "audit-changes")
-            s = read(joinpath(TOOL, "instruments", i, "schema.json"), String)
-            for m in eachmatch(r"\"\$ref\"\s*:\s*\"([^\"]+)\"", s); @test startswith(m.captures[1], "#/"); end
-        end
-    end
+    # The instrument scripts' schema testset stood here until 2026-09-17: the eleven Workflow scripts
+    # and the four instrument schemas are filed under docs/design-record/, and one fixed driver
+    # replaces them (docs/ARCHITECTURE.md §6).
     @testset "no prose cites a count of scans, verbs or checks" begin
         # the config, Init's defaults and the plan all carried "the 39 scans" while the catalogue held 41,
         # and the plan documented `gbg seed` and `gbg recall`, which are not verbs (2026-09-09). A count in
@@ -102,44 +66,9 @@ include("helpers.jl")
                       split(src, "\n"))
         end
     end
-    @testset "a bug-hunt finding banks against the core schema" begin
-        # The regression this pins: `bank` validated every finding against schema/finding.schema.json,
-        # which closes its property set, while a bug-hunt finding carries its own `kind`, `verdict`,
-        # `file`, `line`, `mechanism` — so every real hunt bank threw on its first finding.
-        hunt = Dict{String,Any}("type" => "operational", "severity" => "major", "confidence" => "high",
-                                "title" => "a title long enough", "locations" => ["src/X.jl:1"],
-                                "description" => "a description long enough to pass",
-                                "kind" => "runtime", "verdict" => "REPRODUCED", "observed" => "what happened",
-                                "file" => "src/X.jl", "line" => 1, "mechanism" => "why it happens",
-                                "id" => "2026-09-09-bug-hunt-01/free#1", "lane" => "free", "n" => 1, "seeded" => false)
-        core = G.load_schema("finding")
-        @test !isempty(G.validate(core, hunt))                             # the defect, both directions
-        @test isempty(G.validate(core, Dict{String,Any}(k => v for (k, v) in hunt if k in keys(core["properties"]))))
-    end
-    @testset "the reproduction record bank writes validates" begin
-        # `hunt_bank!` writes `disposition.state = "open"` for every REPRODUCED or EVIDENCED finding and
-        # validates the record at once; an enum without "open" threw on the first confirmed finding
-        rep = Dict{String,Any}("schema_version" => 1, "id" => "2026-09-09-bug-hunt-01/free#1", "title" => "a title long enough",
-                               "kind" => "runtime", "severity" => "major", "verdict" => "REPRODUCED",
-                               "observed" => "what happened", "evidence" => "", "disposition" => Dict{String,Any}("state" => "open"))
-        schema = G.load_schema("reproduction")
-        @test isempty(G.validate(schema, rep))
-        rep["disposition"]["state"] = "closed"                             # both directions: the enum still refuses
-        @test !isempty(G.validate(schema, rep))
-    end
-    @testset "a recorded disposition leaves reproductions_sha where bank froze it" begin
-        # the doctor hashed each record whole, so every hunt round failed it once a disposition was
-        # recorded — the one field recorded after bank. Both directions: a disposition is free, a verdict is not.
-        rdir = mktempdir()
-        rec(v, d) = Dict{String,Any}("id" => "2026-09-09-bug-hunt-01/free#1", "verdict" => v, "disposition" => Dict("state" => d))
-        write(joinpath(rdir, "a.json"), JSON3.write(rec("REPRODUCED", "open")))
-        h = G.RoundFiles.reproductions_sha(rdir)
-        write(joinpath(rdir, "a.json"), JSON3.write(rec("REPRODUCED", "fixed")))
-        @test G.RoundFiles.reproductions_sha(rdir) == h                    # a disposition recorded after bank
-        write(joinpath(rdir, "a.json"), JSON3.write(rec("EVIDENCED", "fixed")))
-        @test G.RoundFiles.reproductions_sha(rdir) != h                    # a verdict moved: the freeze holds
-        @test G.RoundFiles.reproductions_sha(joinpath(rdir, "absent")) == ""
-    end
+    # The three round-artefact testsets stood here until 2026-09-17: a banked bug-hunt finding, the
+    # reproduction record, and a disposition's frozen sha. All three drove the round machinery, which
+    # is gone; the schemas they validated against went with it.
     @testset "the home page's counts are the real ones" begin
         # every number the home page cites is re-measured here; a cited count nothing asserts drifts
         page = read(joinpath(TOOL, "docs", "src", "index.md"), String)

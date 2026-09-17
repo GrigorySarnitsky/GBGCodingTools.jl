@@ -30,39 +30,9 @@ include("helpers.jl")
         rm(hook); @test G.Sync.sync(cfg; io = devnull) == 0             # removed, re-rendered
         @test run_only(["MANAGED.HASH"])["MANAGED.HASH"].status == :PASS
     end
-    # A closed round stamped `dev` is recorded, not invalid: ROUND.DEV names it as uncomparable and no
-    # release may cite it, but it does not FAIL — a fact about a frozen record cannot be repaired, and
-    # failing on it stopped `Pkg.test()` and every docs build until nothing could be shipped at all. Both
-    # directions, and the scope: an audit round reads `base..HEAD` and is off-tag by construction, so it
-    # is never named; a tag-stamped docs round is clean.
-    @testset "a closed dev-stamped round is named, not failed" begin
-        rd = joinpath(root, ".gbg", "rounds", "2026-01-01-check-docs-09"); mkpath(rd)
-        st = G.Preflight.stamps(cfg)
-        rec = merge(st, Dict{String,Any}("round" => "2026-01-01-check-docs-09", "instrument" => "check-docs",
-            "schema_version" => 1, "head" => "0"^40, "roster" => Any[], "cost" => "economy", "strength" => "economy",
-            "hostname" => "t", "model_hint" => "sonnet", "opened" => "2026-01-01T00:00:00", "dead_lanes" => String[],
-            "passes" => 0, "closed" => "2026-01-02T00:00:00"))
-        rec["tool_version"] = "dev+abc1234"; rec["tool_rev"] = "abc1234" * "0"^33
-        write_round(rd, rec)
-        r = run_only(["ROUND.DEV"])["ROUND.DEV"]
-        @test r.status == :WARN && occursin("2026-01-01-check-docs-09", r.detail)
-        rec["instrument"] = "audit-changes"; rec["base"] = "0"^40; write_round(rd, rec)
-        @test run_only(["ROUND.DEV"])["ROUND.DEV"].status == :PASS      # an audit is off-tag by construction
-        rec["instrument"] = "check-docs"; delete!(rec, "base")
-        rec["tool_version"] = "1.0.0-rc.1"; rec["tool_rev"] = "v1.0.0-rc.1"; write_round(rd, rec)
-        @test run_only(["ROUND.DEV"])["ROUND.DEV"].status == :PASS      # stamped with a tag: comparable
-        # ROUND.FROZEN hashes the evidence; the stamps were unhashed, so re-stamping a frozen record —
-        # the one "repair" that falsifies instead of fixing — passed unseen. Each stamp form names its
-        # own revision now, so a tool_version that its tool_rev does not support is caught.
-        @test run_only(["ROUND.FROZEN"])["ROUND.FROZEN"].status == :PASS
-        rec["tool_rev"] = "9"^40; write_round(rd, rec)                  # a version whose rev is somebody else's
-        f = run_only(["ROUND.FROZEN"])["ROUND.FROZEN"]
-        @test f.status == :FAIL && occursin("2026-01-01-check-docs-09", f.detail)
-        rec["tool_version"] = "dev+abc1234"; rec["tool_rev"] = "9"^40; write_round(rd, rec)
-        @test run_only(["ROUND.FROZEN"])["ROUND.FROZEN"].status == :FAIL   # dev+<sha> that its rev denies
-        rm(rd; recursive = true)
-        @test run_only(["ROUND.DEV", "ROUND.FROZEN"])["ROUND.DEV"].status == :PASS
-    end
+    # The dev-stamped-round testset stood here until 2026-09-17: ROUND.DEV named a closed round whose
+    # tool stamp was a dev build. Rounds and that check went together (docs/design-record/machinery-v1/).
+
     @testset "wiring" begin
         mk = joinpath(root, "docs", "make.jl"); orig = read(mk, String)
         write(mk, replace(orig, "GBGCodingTools.makedocs(" => "# GBGCodingTools.makedocs(\nmakedocs("))
@@ -94,14 +64,11 @@ include("helpers.jl")
         mkpath(joinpath(root, ".claude", "commands")); touch(joinpath(root, ".claude", "commands", "check-docs.md"))
         @test run_only(["LEG.COMMANDS"])["LEG.COMMANDS"].status == :FAIL
         rm(joinpath(root, ".claude", "commands"); recursive = true)
-        mkpath(joinpath(root, ".gbg", "rounds", "2026-01-01-check-docs-01"))
-        @test run_only(["ROUND.MARKER"])["ROUND.MARKER"].status == :FAIL
-        rm(joinpath(root, ".gbg", "rounds", "2026-01-01-check-docs-01"); recursive = true)
     end
     @testset "doctor exit and json" begin
         checks, code = G.Doctor.run(cfg; only = ["QUICK"], io = devnull)
         @test code == 0 && !isempty(checks)
-        io = IOBuffer(); G.Doctor.run(cfg; only = ["ROUND"], json = true, io)
+        io = IOBuffer(); G.Doctor.run(cfg; only = ["WIRE"], json = true, io)
         @test haskey(JSON3.read(String(take!(io))), :checks)
     end
 end
@@ -166,36 +133,6 @@ end
     @test occursin("does not reach `SCAN.DOI_CROSSCHECK`", dev.content)
 end
 
-# AUDIT.GAP asks whether commits went unaudited between two closed audits: a later base AT or BEFORE the
-# earlier audit's closed head leaves none (an overlap re-reads some), a base PAST it leaves some. It
-# compared for equality, and warned on an overlap that left nothing unread.
-@testset "AUDIT.GAP warns on a base past the previous audit, never on an overlap" begin
-    root = fixture_copy("audit-gap")
-    git(args...) = run(pipeline(setenv(`git -C $root -c user.email=t@t -c user.name=t $args`,
-                                       "HOME" => root, "PATH" => ENV["PATH"]); stdout = devnull, stderr = devnull))
-    git("init", "-q", "-b", "master"); git("add", "-A"); git("commit", "-q", "-m", "c0")
-    shas = [G.Git.head(root)]
-    for n in 1:3
-        write(joinpath(root, "note$n.txt"), "$n\n"); git("add", "-A"); git("commit", "-q", "-m", "c$n"); push!(shas, G.Git.head(root))
-    end
-    cfg = G.Config.read(root)
-    audit(name, base, closed, opened) = begin
-        d = joinpath(root, ".gbg", "rounds", name); mkpath(d)
-        write_round(d, merge(G.Preflight.stamps(cfg), Dict{String,Any}("round" => name, "instrument" => "audit-changes",
-            "schema_version" => 1, "head" => closed, "base" => base, "closed_head" => closed, "roster" => Any[],
-            "cost" => "economy", "strength" => "economy", "hostname" => "t", "model_hint" => "sonnet",
-            "opened" => opened, "dead_lanes" => String[], "passes" => 0, "closed" => opened)))
-    end
-    gap() = Dict(c.id => c for c in first(G.Doctor.run(G.Config.read(root); only = ["AUDIT.GAP"], io = devnull)))["AUDIT.GAP"]
-    audit("2026-01-01-audit-changes-01", shas[1], shas[3], "2026-01-01T00:00:00")     # audited c0..c2
-    for (b, want) in ((shas[2], :PASS), (shas[3], :PASS), (shas[4], :WARN))            # overlap, contiguous, past it
-        audit("2026-01-02-audit-changes-01", b, shas[4], "2026-01-02T00:00:00")
-        @test gap().status == want
-    end
-    # an exact match whose commit this checkout does not have (a shallow clone, a rewritten history) is
-    # still contiguous: the strings say so, and no git object is needed (2026-09-15-audit-changes-01)
-    gone = "e"^40
-    audit("2026-01-01-audit-changes-01", shas[1], gone, "2026-01-01T00:00:00")
-    audit("2026-01-02-audit-changes-01", gone, shas[4], "2026-01-02T00:00:00")
-    @test gap().status == :PASS
-end
+# The AUDIT.GAP testset stood here until 2026-09-17: it planted two closed audit rounds and checked
+# that a base past the previous audit's closed head warns. The check and the rounds went together.
+

@@ -1,5 +1,11 @@
 # GBGCodingTools
 
+!!! warning "Being rebuilt"
+    This package is being rebuilt to a new design, adopted on 2026-09-17: `docs/ARCHITECTURE.md` in the
+    repository is what it is being built to, and `IMPLEMENTATION.md` is the order of the work. The round
+    machinery described in earlier versions of this page is gone, and the pages below describe what is in
+    the tree today, which is less than the site once documented and less than the design asks for.
+
 ## What it is
 
 `GBGCodingTools.jl` is a private Julia package, on GitHub, holding the review procedures, scans, test
@@ -17,50 +23,24 @@ the roles its AI reviewers adopt, its [ledger](@ref ledger) of waived rules, and
 names one exact released version of `GBGCodingTools`, and nothing else passes between the package and
 this one. This package carries a `.gbg/` directory too and is checked by its own tools.
 
-## The four review procedures
+## The review procedures
 
 The procedures, called instruments, are slash commands inside [Claude Code](https://claude.com/claude-code)
-(the AI coding tool the sessions run in); a person types the command, nothing starts them
-automatically. Their full protocols are on [The instruments](@ref instruments). Each command opens a
-[round](@ref rounds): a directory under the package's `.gbg/rounds/` holding the findings, the fixes and their
-independent verification, open until every finding is fixed or dismissed with a recorded reason. An
-open `/check-docs` or `/check-consistency` round freezes the package's docs build: the wrapper prints
-`makedocs: SKIPPED` and returns `nothing`, exit 0, so a red docs run still means something is broken
-(`GBG_DOCS_NO_SKIP`, which `gbg release` and the deep doctor set, turns the skip back into a refusal).
-An open `/bug-hunt` or `/audit-changes` round fails the package's tests outright.
-
-- [`/check-docs`](@ref check-docs) — checks that the pages and docstrings say what the code does and follow the
-  documentation rules: deterministic scans, then AI agents that read every documentation file, then a
-  fix pass, then two AI graders, one of which does not see the edits.
-- [`/check-consistency`](@ref check-consistency) — AI reviewers, each in one role (logician, LaTeX typesetter, citations
-  auditor, and others), read the rendered pages for contradictions, mathematical errors and dead
-  citations.
-- [`/bug-hunt`](@ref bug-hunt) — a reported defect counts only with a witness: a Julia program that fails before the
-  fix and passes after it, kept as a regression test.
-- [`/audit-changes`](@ref audit-changes) — over a range of commits: were the edits justified, did behaviour change silently,
-  do the commit messages match the diff.
-
-## Checking the instruments themselves
-
-Two `gbg` verbs test the review procedures rather than a package. Each runs outside any round, prints
-the AI workflow to launch, and then checks what that workflow wrote.
-
-- [`gbg attack <instrument>`](@ref GBGCodingTools.attack) — four AI adversaries read an instrument's list of reviewers and try
-  to build a harmful defect all of them would miss; run it whenever that list changes.
-  [`gbg attack read`](@ref GBGCodingTools.attack_read) lists each gap and the reviewer that would catch it.
-- [`gbg calibrate`](@ref GBGCodingTools.calibrate) — measures `/check-consistency` against a person's reading: each defect
-  the owner recorded in `.gbg/human-findings.toml` goes, passage only, to the reviewer whose role
-  should catch it, and [`gbg calibrate read`](@ref GBGCodingTools.calibrate_read) reports what was caught, missed, or covered by no role.
+(the AI coding tool the sessions run in); a person types the command, nothing starts them automatically.
+They are being rebuilt: the machinery that ran them — the rounds, their fix passes, their verifiers and
+the gate that froze a build while one was open — was deleted on 2026-09-17, and what replaces it is
+described in `docs/ARCHITECTURE.md` §3 and §4. Nothing a package's docs build or test suite runs reads
+review state any more.
 
 ## The command-line program `gbg`
 
 `gbg` is a program run from a terminal, in the directory of one of the packages. It is invoked as
 `gbg <noun> <verb>`, where the noun names what is acted on and the verb what is done, as in
-`gbg round close`; a bare verb is allowed where the noun is obvious, as in `gbg doctor`. There are 25
+`gbg sync status`; a bare verb is allowed where the noun is obvious, as in `gbg doctor`. There are 15
 verbs, listed on [The verbs](@ref verbs), and every one exits with `0` when clean, `1` when it found something, `2` when it could not
 evaluate, `3` when it crashed. The two a person runs most:
 
-- [`gbg doctor`](@ref "The doctor's checks") — 50 checks that a package is wired correctly (read-only, except that `--deep` builds and tests it): the installed version matches
+- [`gbg doctor`](@ref "The doctor's checks") — 41 checks that a package is wired correctly (read-only, except that `--deep` builds and tests it): the installed version matches
   the pinned one, no generated file was hand-edited, the docs build and the tests call this package.
 - [`gbg scan docs`](@ref GBGCodingTools.scan_docs) and [`gbg scan html`](@ref GBGCodingTools.scan_html) — 44 scans over docstrings, pages and the built site: banned
   LaTeX idioms, undocumented arguments, unlinked sibling packages, prose that grew past its baseline.
@@ -97,7 +77,6 @@ the current directory pins.
 
 - [Install](@ref install): the launcher, the pinned version, the dev checkout.
 - [The verbs](@ref verbs): the closed table of `gbg <noun> <verb>`.
-- [Rounds](@ref rounds): what an instrument round is, its files, its closure channels and exit codes.
 - [The doctor](@ref "The doctor's checks"): every check id.
 - [The ledger](@ref ledger) and [the config](@ref config).
 - [Architecture](@ref "GBGCodingTools — architecture"): the full design record with every decision and its evidence.

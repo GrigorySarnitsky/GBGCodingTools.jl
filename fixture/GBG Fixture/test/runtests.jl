@@ -17,4 +17,3 @@ using GBGFixture
 end
 
 GBGCodingTools.TestHarness.run_regressions(@__DIR__)
-GBGCodingTools.TestHarness.gate()

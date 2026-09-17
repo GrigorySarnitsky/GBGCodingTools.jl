@@ -34,5 +34,4 @@ GBGCodingTools.TestHarness.thread_digest
 
 ```@docs
 GBGCodingTools.TestHarness.run_regressions
-GBGCodingTools.TestHarness.gate
 ```

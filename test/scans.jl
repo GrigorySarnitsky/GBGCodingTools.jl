@@ -70,7 +70,9 @@ end
         tcfg = G.Config.read(TOOL)                                       # the tool itself: it has the collisions
         pkg = G.Reflection.load_package(tcfg)
         mods = [getfield(pkg, Symbol(m)) for m in tcfg["package"]["modules"] if isdefined(pkg, Symbol(m))]
-        for n in (:read, :list, :report)
+        # `list` was Rounds.list and went with the round machinery on 2026-09-17; `run` and `diff` collide
+        # with Base the same way and are here in its place.
+        for n in (:read, :run, :diff, :report)
             f = G.TestHarness.resolve_function(n, pkg, mods)
             @test f !== nothing && parentmodule(f) !== Base             # not the Base generic
         end

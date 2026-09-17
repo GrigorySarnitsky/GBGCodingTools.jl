@@ -49,17 +49,8 @@ include("helpers.jl")
     end
 end
 
-# The settled list every panel and verifier prompt carries is the owner's not-a-defect rulings only: a
-# `scoped` adjudication closes a real defect without a fix, and 26 such reasons once told every later
-# round not to flag defects that were real. Both directions; an absent `ruling` reads as not-a-defect.
-@testset "only a not-a-defect ruling is shown as settled" begin
-    e(r, ruling) = (d = Dict{String,Any}("scope" => "finding", "reason" => r); ruling === nothing || (d["ruling"] = ruling); d)
-    led = [e("ruled no defect", nothing), e("ruled so explicitly", "not-a-defect"), e("put out of scope", "scoped"),
-           Dict{String,Any}("scope" => "scan", "reason" => "a scan waiver, never a finding")]
-    @test G.Preflight.adjudicated_titles(Dict{String,Any}(), led) == ["ruled no defect", "ruled so explicitly"]
-    entry(ruling) = Dict{String,Any}("exemption" => [Dict{String,Any}("id" => "2026-01-01-check-docs-01/src#1", "scope" => "finding",
-        "target" => "2026-01-01-check-docs-01/src#1", "reason" => "a reason long enough to be a reason at all",
-        "recorded" => Date(2026, 1, 1), "overturn_when" => "the finding reappears", "ruling" => ruling)])
-    schema = G.load_schema("exemptions")
-    @test isempty(G.validate(schema, entry("scoped"))) && !isempty(G.validate(schema, entry("fixed")))   # a closed set
-end
+# The settled-titles testset stood here until 2026-09-17: it held `Preflight.adjudicated_titles`, the
+# reader that told every panel which rulings were the owner's not-a-defect ones. That reader went
+# with the round machinery; the new design keeps such rulings in `.gbg/settled.jl` and gives them to
+# agents from there (docs/ARCHITECTURE.md §8).
+

@@ -1,18 +1,17 @@
-# Fleet.jl — `gbg fleet [--deep] [--diff <consumer>:<round> <consumer>:<round>]`: the scorecard over
+# Fleet.jl — `gbg fleet [--deep]`: the scorecard over
 # fleet.toml (ARCHITECTURE D4), dev checkout only.
 
 """
     Fleet
 
 The fleet scorecard: [`Fleet.rows`](@ref) computes one row per consumer of `fleet.toml` — `OK`,
-`NOT-INITIALISED`, `BEHIND` or `RED` with a detail — and [`Fleet.diff`](@ref) prints two closed rounds'
-tallies side by side. The exit contract is D4's: 0 when every row is `OK`; 1 on `NOT-INITIALISED`,
+`NOT-INITIALISED`, `BEHIND` or `RED` with a detail. The exit contract is D4's: 0 when every row is `OK`; 1 on `NOT-INITIALISED`,
 `RED`, or `BEHIND` outside the 7-day sweep window; 2 when a listed path does not exist.
 """
 module Fleet
 
 using TOML, Dates, JSON3
-using ..GBGCodingTools: GBGCodingTools, Config, Doctor, Git, RoundFiles, Sync, parse_options, VERBS, running_dev, git_stamp
+using ..GBGCodingTools: GBGCodingTools, Config, Doctor, Git, Sync, parse_options, VERBS, running_dev, git_stamp
 
 const WINDOW = Day(7)
 
@@ -99,54 +98,14 @@ function rows(; deep::Bool = false)
     return (out, code)
 end
 
-"""
-    Fleet.diff(a, b; io = stdout) -> Int
+# `gbg fleet --diff` stood here until 2026-09-17: it put two closed rounds' tallies side by side.
+# Rounds no longer exist, and the new design records a run rather than a round
+# (docs/ARCHITECTURE.md §5.2, §12), so nothing here reads one.
 
-`gbg fleet --diff <consumer>:<round> <consumer>:<round>`: two closed rounds' tallies side by side. The
-arguments are:
-
-- `a`, `b` — the two rounds, each `<consumer>:<round>` naming a consumer of `fleet.toml` and a closed
-  round of it; `a` is the left column.
-- `io` — where the table is printed.
-
-The table holds the totals, the closure channels, the demotions, the adjudicated share and the recall.
-Rounds whose tool versions differ in `MAJOR.MINOR` are refused (exit 2), since their rates are not
-comparable. Returns the exit code.
-"""
-function diff(a::AbstractString, b::AbstractString; io::IO = stdout)
-    fleet = read_fleet(); base = dirname(fleet_path())
-    function load(spec)
-        name, round = split(spec, ':'; limit = 2)
-        c = findfirst(x -> x["name"] == name, fleet["consumer"]); c === nothing && throw(ArgumentError("no consumer $name in fleet.toml"))
-        dir = joinpath(base, fleet["consumer"][c]["path"], ".gbg", "rounds", round)
-        rec = RoundFiles.read_round(dir); rec === nothing && throw(ArgumentError("no round $round in $name"))
-        RoundFiles.state(rec) == :closed || throw(ArgumentError("$spec is not closed"))
-        tally = JSON3.read(read(joinpath(dir, "verdicts", "pass-$(rec["passes"])", "tally.json"), String), Dict{String,Any})
-        return (spec, rec, tally)
-    end
-    A, B = load(a), load(b)
-    mm(v) = (x = match(r"^v?(\d+)\.(\d+)", String(v)); x === nothing ? "dev" : x.captures[1] * "." * x.captures[2])
-    mm(A[2]["tool_version"]) == mm(B[2]["tool_version"]) || (println(io, "fleet --diff: refused — tool versions $(A[2]["tool_version"]) and $(B[2]["tool_version"]) differ in MAJOR.MINOR; the rates are not comparable"); return 2)
-    println(io, rpad("", 22), rpad(A[1], 40), B[1])
-    for (label, f) in (("instrument", r -> r[2]["instrument"]), ("tool", r -> r[2]["tool_version"]), ("findings", r -> r[3]["totals"]["findings"]),
-                       ("closed", r -> r[3]["totals"]["closed"]), ("seeded", r -> get(r[3]["totals"], "seeded", 0)), ("demoted by rule", r -> r[3]["demoted_by_rule"]),
-                       ("adjudicated share", r -> round(r[3]["adjudicated_share"]; digits = 2)), ("passes", r -> r[3]["pass"]), ("suspect hats", r -> join(r[3]["suspect_hats"], ",")))
-        println(io, rpad(label, 22), rpad(string(f(A)), 40), string(f(B)))
-    end
-    for ch in ("honored", "adjudicated", "seeded", "rescan")
-        n(r) = count(e -> e["closed_by"] == ch, values(r[3]["per_id"]))
-        println(io, rpad("closed by " * ch, 22), rpad(string(n(A)), 40), string(n(B)))
-    end
-    return 0
-end
 
 function cmd_fleet(args)
     o = parse_options(args)
     running_dev() || (println(stderr, "fleet: the dev checkout only (gbg --dev fleet)"); return 2)
-    if "diff" in o.flags
-        length(o.positional) == 2 || (println(stderr, "usage: gbg fleet --diff <consumer>:<round> <consumer>:<round>"); return 2)
-        return try diff(o.positional[1], o.positional[2]) catch err; err isa ArgumentError || rethrow(); println(stderr, "fleet --diff: ", err.msg); 2 end
-    end
     rs, code = rows(; deep = "deep" in o.flags)
     for r in rs
         println("  ", rpad(r.name, 26), rpad(r.pin, 22), rpad(r.status, 17), r.detail)

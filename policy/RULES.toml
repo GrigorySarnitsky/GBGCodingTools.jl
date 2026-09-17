@@ -165,7 +165,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.BATTERY"
 statement = "'Check the docs' means the complete battery over every surface, never one check or one file."
 sentinel = "\"Check the docs\" means the complete battery over every surface, never one check or one file."
-check = ["harness:Preflight.resolve_checkdocs_lanes"]
+check = ["weakness"]  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
 [[rule]]
 id = "RULE.DOC.LITERATE"
 file = "docs-rubric.md"
@@ -557,7 +557,7 @@ file = "instruments.md"
 section = "### RULE.INST.FOUR_OBJECTS"
 statement = "The four instruments audit different objects: changes, source prose, rendered prose, code."
 sentinel = "The four instruments audit four different objects: `/audit-changes` the changes to code, `/check-docs` the source prose, `/check-consistency` the rendered prose, `/bug-hunt` the code."
-check = ["harness:Preflight.preflight"]
+check = ["weakness"]  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
 [[rule]]
 id = "RULE.INST.WITNESS"
 file = "instruments.md"
@@ -571,14 +571,14 @@ file = "instruments.md"
 section = "### RULE.INST.SELF_REPORT"
 statement = "Self-reported closure is not closure; the act verifier sees the diff, the state verifier is blind; the demotion is mechanical."
 sentinel = "Self-reported closure is not closure: the act verifier sees the diff, the state verifier is blind, and the demotion is mechanical."
-check = ["harness:Passes.grade"]
+check = ["weakness"]  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
 [[rule]]
 id = "RULE.INST.CLOSURE_LOOP"
 file = "instruments.md"
 section = "### RULE.INST.CLOSURE_LOOP"
 statement = "The closure loop runs over the banked findings by id, never by re-running the battery; abandon is the only wholesale exit and names every open id."
 sentinel = "The closure loop runs over the banked findings by id, never by re-running the battery, and abandon is the only wholesale exit and names every open id."
-check = ["harness:Passes.grade"]
+check = ["weakness"]  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
 [[rule]]
 id = "RULE.INST.CARRY"
 file = "instruments.md"
@@ -616,7 +616,7 @@ file = "instruments.md"
 section = "### RULE.INST.SEEDS"
 statement = "A seeded finding is never fixed in the corpus and never enters the ledger."
 sentinel = "A seeded finding is never fixed in the corpus and never enters the ledger."
-check = ["harness:Passes.grade"]
+check = ["weakness"]  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
 [[rule]]
 id = "RULE.INST.NO_TRUNCATION"
 file = "instruments.md"
@@ -638,7 +638,7 @@ file = "instruments.md"
 section = "### RULE.INST.ECONOMY"
 statement = "Economy lanes by default; the five never-economised phases; strength = full on explicit request."
 sentinel = "Economy lanes are the default, the five phases — adjudication, reproduction, verification, consolidation, the fix pass — are never economised, and full strength runs on explicit request."
-check = ["harness:Preflight.render_args"]
+check = ["weakness"]  # its checker went with the round machinery, 2026-09-17 (IMPLEMENTATION.md §6, batch h)
 [[rule]]
 id = "RULE.GIT.PUSH"
 file = "git-conventions.md"

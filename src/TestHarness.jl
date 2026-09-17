@@ -16,8 +16,7 @@ The engines behind a consumer's `test/`: the allocation audit ([`@alloc_below`](
 method-parity baselines ([`TestHarness.method_parity`](@ref)), the oracle registry
 ([`TestHarness.oracle_registry`](@ref)), the display gate ([`TestHarness.display_gate`](@ref)), the
 cross-thread-count digest ([`TestHarness.thread_digest`](@ref)), the promoted-witness loop
-([`TestHarness.run_regressions`](@ref)) and the closure gate a suite ends with
-([`TestHarness.gate`](@ref)). The frozen tables a package pins (method counts, traffic rows, oracle
+([`TestHarness.run_regressions`](@ref)). The frozen tables a package pins (method counts, traffic rows, oracle
 classes) live in the consumer as TOML; the engines here read them.
 """
 module TestHarness
@@ -26,7 +25,7 @@ using Test, TOML
 import ..GBGCodingTools
 import ..GBGCodingTools: Reflection
 
-export @alloc_below, CountingArray, Traffic, counting, audit, run_regressions, gate
+export @alloc_below, CountingArray, Traffic, counting, audit, run_regressions
 
 # ─────────────────────────────────────────────────────────────────────── allocation audit
 
@@ -557,7 +556,7 @@ The thread count a cross-`-t` probe runs at: 4 when this process has one thread,
 """
 other_thread_count() = Threads.nthreads() == 1 ? 4 : 1
 
-# ─────────────────────────────────────────────────────────────────────── regressions and the gate
+# ───────────────────────────────────────────────────────────────────────────────── regressions
 
 """
     run_regressions(dir; parent = Main) -> Vector{String}
@@ -583,32 +582,6 @@ function run_regressions(dir::AbstractString; parent::Module = Main)
         Core.eval(parent, :(module $modname; Base.include($modname, $path); end))
     end
     return files
-end
-
-"""
-    gate(; root = GBGCodingTools.Config.find_root())
-
-The closure gate a consumer's `runtests.jl` ends with. The arguments are:
-
-- `root` — the consumer root, found by walking up from the working directory when not given.
-
-It runs the quick doctor set — the `:QUICK` selection of [`GBGCodingTools.doctor`](@ref), the checks
-that hold on any machine with no build and no network — and [`GBGCodingTools.gate`](@ref), the generic
-closure gate, over the two
-code instruments (`bug-hunt`, `audit-changes` — [`GBGCodingTools`](@ref) binds the term) in-process, `error()`ing on a non-zero return so a test run cannot pass over an open
-hunt or audit round, and prints one banner line `GBGCodingTools v<ver> gate` (the `TEST.PKG`
-witness). Never that generic gate over all four instruments: a test run must not fail on an open docs
-round.
-Returns `nothing`.
-"""
-function gate(; root = GBGCodingTools.Config.find_root())
-    println("GBGCodingTools v", GBGCodingTools.tool_version(), " gate")
-    cfg = GBGCodingTools.Config.read(root)
-    code = GBGCodingTools.doctor(cfg, :QUICK)
-    code == 0 || error("gbg doctor --only QUICK returned $code")
-    code = GBGCodingTools.gate(cfg, "bug-hunt", "audit-changes")
-    code == 0 || error("gbg gate bug-hunt audit-changes returned $code")
-    return nothing
 end
 
 end # module TestHarness
