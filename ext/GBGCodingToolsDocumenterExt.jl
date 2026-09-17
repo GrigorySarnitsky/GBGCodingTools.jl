@@ -22,7 +22,9 @@ check(verb::AbstractString, code::Integer) = code == 0 ? nothing : error("gbg $v
     rules_and_wiring(root) -> Int
 
 The documentation rules of the rulebook and the wiring check, run over the package at `root`: the new
-engine's half of what a build must satisfy. The argument is `root`, the package root.
+engine's half of what a build must satisfy. The arguments are `root`, the package root, and `site`, the
+built site's directory after Documenter has run — `nothing` before it, which is when the wiring check
+runs and the rules that read a rendered page do not.
 
 It runs beside the old scans while the ninety-five rules are converted, and takes over from them rule by
 rule — each conversion deletes the scan it replaces, so nothing is checked twice and nothing stops being
@@ -30,11 +32,12 @@ checked. A package with no `.gbg/config.jl` yet has nothing converted to run, wh
 
 Returns the exit code: 0 clean, 1 findings.
 """
-function rules_and_wiring(root::AbstractString)
+function rules_and_wiring(root::AbstractString; site = nothing)
     isfile(joinpath(root, ".gbg", "config.jl")) || return 0
     cfg = GBGCodingTools.ConfigIO.read_config(root)
-    found = GBGCodingTools.Engine.Checks.run_all(cfg, root; intention = GBGCodingTools.Model.Intention.DOCUMENTATION)
-    drift = GBGCodingTools.Render.wiring(cfg, root)
+    found = GBGCodingTools.Engine.Checks.run_all(cfg, root;
+                intention = GBGCodingTools.Model.Intention.DOCUMENTATION, site)
+    drift = site === nothing ? GBGCodingTools.Render.wiring(cfg, root) : GBGCodingTools.Model.Location[]
     isempty(found) && isempty(drift) && return 0
     for l in found
         println(stderr, "  RULE   ", l.file, ":", l.line, isempty(l.node) ? "" : "  [" * l.node * "]", "  ", l.text)
@@ -59,6 +62,7 @@ function makedocs(cfg; kwargs...)
     build_dir = get(Dict(kwargs), :build, joinpath(root, "docs", "build"))
     isabspath(build_dir) || (build_dir = joinpath(root, "docs", build_dir))
     check("scan html", last(GBGCodingTools.scan_html(cfg, build_dir)))
+    check("check --site", rules_and_wiring(root; site = build_dir))
     # Documenter returns `nothing` unless `debug = true`, so a build that happened says so with `true`
     return something(result, true)
 end

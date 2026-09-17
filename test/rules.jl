@@ -40,6 +40,17 @@ function materialise(rule, example)
                         filesets = Dict(example.fileset => [path]))
         r = MR.Rule(; id = rule.id, statement = rule.statement, filesets = [example.fileset], check = rule.check)
         return CK.run_rule(r, cfg, dir)
+    elseif example isa MR.SiteExample
+        # A rule that reads the BUILT site is shown on built pages: the example's pages are the rendered
+        # HTML a reader meets, which is what the check is about. Running Documenter to produce them would
+        # test Documenter, not the rule.
+        dir = mktempdir(; cleanup = true)
+        for (path, content) in example.pages
+            mkpath(joinpath(dir, dirname(path)))
+            write(joinpath(dir, path), content)
+        end
+        cfg = MR.Config(package = "Example", tool = :dev)
+        return CK.run_rule(rule, cfg, dir; site = dir)
     elseif example isa MR.TreeExample
         cfg = MR.Config(package = "Example", tool = :dev)
         dir = mktempdir(; cleanup = true)

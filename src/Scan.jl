@@ -600,8 +600,7 @@ applies the ledger and prints the report. The arguments are:
 - `only` — a list of ids or id prefixes to restrict the run to.
 - `io` — where the report goes.
 
-A missing or empty build is DEAD, exit 2. `SCAN.HTML_PUBLIC_HOME` reads
-`.gbg/scratch/public_surface.json`, which [`write_public_surface`](@ref) writes before the build.
+A missing or empty build is DEAD, exit 2.
 Returns the results and the exit `code` as [`scan_docs`](@ref) does.
 """
 function scan_html(cfg::AbstractDict, build_dir::AbstractString; only = nothing, io::IO = stdout)
@@ -621,7 +620,7 @@ end
 
 Writes `.gbg/scratch/public_surface.json`: the package's exported names and the public operations
 `Reflection.package_operations` derives (every function with a method in a package module), so the
-built-HTML scan `SCAN.HTML_PUBLIC_HOME` can ask whether each has a public home. The arguments are:
+a check can ask whether each has a public home. The arguments are:
 
 - `cfg` — the validated config.
 - `pkg` — the loaded package module (loaded from the config when not given).

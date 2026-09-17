@@ -146,7 +146,12 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
         append!(out, check.run(pkg, cfg))
     elseif check.input === Model.Input.BUILT_SITE
         site === nothing && return Model.Location[]
-        append!(out, check.run(site, cfg))
+        # A built-site check names the page it read by the path it walked; a location is relative to the
+        # package, so the runner relativises it — the check has no business knowing where the root is.
+        for loc in check.run(site, cfg)
+            file = isabspath(loc.file) ? relpath(loc.file, root) : loc.file
+            push!(out, Model.Location(; file, node = loc.node, text = loc.text, line = loc.line, found = loc.found))
+        end
     else
         return Model.Location[]      # a QUESTION check is run when a question is put, by `Questions`
     end

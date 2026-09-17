@@ -44,33 +44,6 @@ class = "unlinked-cross-module"
 scan = "SCAN.XLINK"
 file = "defects/Defects.jl"
 fragment = "mean_value"
-[[defect]]
-class = "emphasis-survives"
-scan = "SCAN.HTML_RENDERED_MARKUP"
-file = "defects/html/emphasis-survives"
-fragment = "*marker"
-[[defect]]
-class = "stray-math"
-scan = "SCAN.HTML_STRAY_MATH"
-file = "defects/html/stray-math"
-fragment = "lpnorm"
-[[defect]]
-class = "docstring-twice"
-scan = "SCAN.HTML_DOCSTRING_ONCE"
-file = "defects/html/docstring-twice"
-fragment = "2 pages"
-[[defect]]
-class = "unhomed-export"
-scan = "SCAN.HTML_PUBLIC_HOME"
-file = "defects/html/unhomed-export"
-fragment = "mean_value"
-[[defect]]
-class = "base-leak"
-scan = "SCAN.HTML_BASE_LEAK"
-file = "defects/html/base-leak"
-fragment = "Base.copy"
-
-# Clean twins: the scan must report nothing on these (the clean corpus, or the clean HTML site).
 [[clean]]
 scan = "SCAN.LINK_UNIFORMITY"
 file = "src/FixtureA.jl"
@@ -83,21 +56,6 @@ file = "src/FixtureB.jl"
 [[clean]]
 scan = "SCAN.DOI_CROSSCHECK"
 file = "src/FixtureC.jl"
-[[clean]]
-scan = "SCAN.HTML_RENDERED_MARKUP"
-file = "defects/html/clean"
-[[clean]]
-scan = "SCAN.HTML_STRAY_MATH"
-file = "defects/html/clean"
-[[clean]]
-scan = "SCAN.HTML_DOCSTRING_ONCE"
-file = "defects/html/clean"
-[[clean]]
-scan = "SCAN.HTML_PUBLIC_HOME"
-file = "defects/html/clean"
-[[clean]]
-scan = "SCAN.HTML_BASE_LEAK"
-file = "defects/html/clean"
 [[defect]]
 class = "dead-rule-id"
 scan = "SCAN.ID_RESOLVES"

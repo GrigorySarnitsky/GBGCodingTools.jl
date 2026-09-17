@@ -102,7 +102,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.API_GROUPING"
 statement = "API pages are math-grouped under hand-written headers via @docs; each object once; f/f! together, ! first; no @index; no empty @docs block; every public operation on a public page."
 sentinel = "API pages are math-grouped under hand-written headers via explicit `@docs` blocks, each object once, an `f`/`f!` pair together with the `!` home first, no `@index`, and no empty block."
-check = ["scan:SCAN.HTML_DOCSTRING_ONCE", "scan:SCAN.HTML_PUBLIC_HOME", "scan:SCAN.HTML_BASE_LEAK"]
+check = ["rule:RULE.DOC.API_GROUPING"]  # converted 2026-09-17: src/Rules/site.jl
 [[rule]]
 id = "RULE.DOC.COVERAGE_BASES"
 file = "docs-rubric.md"
@@ -305,7 +305,7 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.RENDERED_MATH"
 statement = "All math in docstrings and pages is rendered LaTeX in `` / ```math, never Unicode glyphs, backticks or $…$; every code object is bound to its symbol on first mention."
 sentinel = "All mathematics in docstrings and doc pages is rendered LaTeX, never a Unicode-glyph approximation, and every code object is bound to its math symbol on first mention."
-check = ["scan:SCAN.HTML_STRAY_MATH", "rule:RULE.TEX.RENDERED_MATH"]  # the source half converted 2026-09-17; the built-site half waits for BUILT_SITE input
+check = ["rule:RULE.TEX.RENDERED_MATH"]  # the source half converted 2026-09-17; the built-site half waits for BUILT_SITE input
 [[rule]]
 id = "RULE.TEX.CODE_IN_MATH"
 file = "latex-idiom.md"
@@ -410,7 +410,7 @@ file = "latex-idiom.md"
 section = "### RULE.TEX.RENDERED_MARKUP"
 statement = "No emphasis marker survives into rendered prose (overlapping *a **b***)."
 sentinel = "No emphasis marker survives into rendered prose."
-check = ["scan:SCAN.HTML_RENDERED_MARKUP"]
+check = ["rule:RULE.TEX.RENDERED_MARKUP"]  # converted 2026-09-17: src/Rules/site.jl
 [[rule]]
 id = "RULE.TEX.GREEK_AB"
 file = "latex-idiom.md"

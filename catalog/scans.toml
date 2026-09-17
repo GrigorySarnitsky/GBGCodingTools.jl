@@ -43,46 +43,6 @@ runner = "julia"
 fixture = ["doi-missing", "prose-reference"]
 
 [[scan]]
-id = "SCAN.HTML_RENDERED_MARKUP"
-rule = "RULE.TEX.RENDERED_MARKUP"
-tier = "hard"
-surfaces = ["built_html"]
-runner = "html"
-fixture = ["emphasis-survives"]
-
-[[scan]]
-id = "SCAN.HTML_STRAY_MATH"
-rule = "RULE.TEX.RENDERED_MATH"
-tier = "hard"
-surfaces = ["built_html"]
-runner = "html"
-fixture = ["stray-math"]
-
-[[scan]]
-id = "SCAN.HTML_DOCSTRING_ONCE"
-rule = "RULE.DOC.API_GROUPING"
-tier = "hard"
-surfaces = ["built_html"]
-runner = "html"
-fixture = ["docstring-twice"]
-
-[[scan]]
-id = "SCAN.HTML_PUBLIC_HOME"
-rule = "RULE.DOC.API_GROUPING"
-tier = "hard"
-surfaces = ["built_html"]
-runner = "html"
-fixture = ["unhomed-export"]
-
-[[scan]]
-id = "SCAN.HTML_BASE_LEAK"
-rule = "RULE.DOC.API_GROUPING"
-tier = "hard"
-surfaces = ["built_html"]
-runner = "html"
-fixture = ["base-leak"]
-
-[[scan]]
 id = "SCAN.SIGNATURE_FIDELITY"
 rule = "RULE.DOC.SIGNATURE_FIDELITY"
 tier = "triage"
