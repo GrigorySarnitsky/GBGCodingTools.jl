@@ -94,11 +94,20 @@ rubric caps a target at its first genuine mention.
 function dupref(src::AbstractString, cfg)
     out = Model.Location[]
     for d in Texts.docstrings_of(src)
-        targets = [String(m.captures[1]) for m in eachmatch(r"\[`([^`]+)`\]\(@ref[^)]*\)", d.text)]
-        for t in unique(targets)
-            n = count(==(t), targets)
-            n > 1 && push!(out, Model.Location(; file = "", line = d.line, node = d.node,
-                                                text = "`$t` is linked $n times in one docstring"))
+        # The line of each link, not just its target: a module docstring runs to seventy lines, and a
+        # finding anchored at its first one sends the fixer to search the whole of it for the repeat.
+        seen = Dict{String,Int}()
+        repeats = Dict{String,Vector{Int}}()
+        for m in eachmatch(r"\[`([^`]+)`\]\(@ref[^)]*\)", d.text)
+            t = String(m.captures[1])
+            at = d.line + 1 + count(==('\n'), d.text[1:prevind(d.text, m.offset)])   # the body opens after the delimiter
+            haskey(seen, t) ? push!(get!(repeats, t, Int[]), at) : (seen[t] = at)
+        end
+        for t in sort!(collect(keys(repeats)))
+            for at in repeats[t]
+                push!(out, Model.Location(; file = "", line = at, node = d.node,
+                    text = "`$t` is linked here and again at line $(seen[t]); the first mention carries the link"))
+            end
         end
     end
     return out
@@ -114,7 +123,7 @@ const LINKS = Model.Rule(
     examples = [
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(x)\n\nSee [`g`](@ref) and then [`g`](@ref) again.\n\"\"\"\nf(x) = x\n",
-            [Model.Location(; file = "src/Example.jl", line = 1)], "linked at most once"),
+            [Model.Location(; file = "src/Example.jl", line = 4)], "linked at most once"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(x)\n\nSee [`g`](@ref), which does the rest.\n\"\"\"\nf(x) = x\n",
             Model.Location[], "linked at most once"),

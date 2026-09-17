@@ -61,7 +61,11 @@ const MATH_MARKER = r"(?<!`)``(?!`)"
 const MATH_COMMAND_ARGS = r"\\(texttt|text|mathrm|operatorname|mathit|mathsf|mathbf|boldsymbol|label|mathcal)\{[^}]*\}"
 const MATH_CONTROL_WORD = r"\\[a-zA-Z]+"
 const MATH_BRACED_INDEX = r"[_^]\{[a-z]+\}"
-const BARE_WORD = r"[a-z]{2,}"
+# Three letters, not two. A two-letter run in a physics formula is almost always a PRODUCT of single
+# scalars — `ck_a`, `ac - bd`, `dx` — and reading those as code identifiers reported correct mathematics
+# in GBGPeriodicFields. A code identifier short enough to be missed by this is short enough that the
+# renderer's italic product looks the same as the name anyway.
+const BARE_WORD = r"[a-z]{3,}"
 
 """
     math_spans(text) -> Vector{Tuple{Int,String}}
@@ -95,9 +99,9 @@ end
 """
     code_in_math(text, cfg) -> Vector{Model.Location}
 
-Every math span holding what is almost certainly a code identifier: a run of two or more lowercase letters
-left over once the control words, the arguments of the text-setting commands and the braced indices are
-taken out. The arguments are `text`, the file's content, and `cfg`, the package's config, which this rule
+Every math span holding what is almost certainly a code identifier: a run of three or more lowercase
+letters left over once the control words, the arguments of the text-setting commands and the braced
+indices are taken out. The arguments are `text`, the file's content, and `cfg`, the package's config, which this rule
 does not read. Returns one location per span.
 
 The renderer sets such a run as a product of italic single letters, so `maxiter` comes out as seven
@@ -130,6 +134,10 @@ const CODE_IN_MATH = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe cap ``maxiter`` bounds the loop.\n",
             [Model.Location(; file = "docs/src/page.md", line = 3)], "never inside a math span"),
+        # A product of single scalars is not an identifier, however many letters sit side by side.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe real part is ``ac - bd`` here.\n",
+            Model.Location[], "never inside a math span"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe cap `maxiter` bounds the loop.\n",
             Model.Location[], "never inside a math span"),
