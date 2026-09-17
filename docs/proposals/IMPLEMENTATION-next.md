@@ -351,13 +351,20 @@ five consumer migrations, none ever done, and `Guard`, `reanchor`, `Runs` and `A
 12,032 source and 2,732 test lines built in 277 commits over six working days, measures the typing, not the judgement, over
 commits that wired zero consumers.
 
-## Five questions about the design, to settle before Phase 0 ends
+## What writing this plan settled in the design
 
-Writing the plan exposed these; each is about `ARCHITECTURE-next.md` itself, not about the order of work, and
-each is settled by the owner and written into that document, not decided here. This section leaves with them.
+Five gaps in `ARCHITECTURE-next.md` came out of writing the plan; the owner ruled on all five on 2026-09-17 and
+they are now in that document, not here. They are listed only so a reader of this plan knows where its
+assumptions come from.
 
-- §4.2 clause 0 needs a generator's current output, which §5.1's layering forbids the guard itself from computing.
-- §5.2 gives an unchecked rule a reason but no way to retire an id, so a migration cannot record a rule it drops.
-- §9 names rules no package may switch off, but not how a package escapes one that proves wrong for its prose.
-- §11 has `gbg init` write settings, queue, skill and CI files over a package's own, and says nothing about collisions.
-- §13 names `gbg attack` but gives it no row in §3 and no entry in §6, so what it writes, and where, is unstated.
+- The change guard takes the generator's current output as an argument, supplied by the verb that holds the
+  generators, so `Engine` never reaches `Render` (§4.2, §5.1) — which is why Phase 2, not Phase 1, carries
+  clause 0.
+- A rule is retired by removing its value, on the record: the question names the id and the reason, the
+  changelog records it, and the id is never reused (§13) — which is what batches h and i rest on (§6).
+- The always-on set ships switchable until two packages have shown their counts; fixing it is a MAJOR release
+  (§9) — the recommendation in decision 5 (§8).
+- `gbg init` never overwrites a file the package wrote itself; it prints the difference and exits 1 (§11) — the
+  refusal §4 relies on when wiring PF.
+- The design review writes no tracked file; its proposals reach the owner as questions (§13) — which is why
+  Phase 8 carries it in three commits and nothing else changes.

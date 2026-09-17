@@ -136,11 +136,14 @@ declared copy (§6); CI, hook and skill files; `CLAUDE.md`; any document the con
 "rationale" (this document, for GBGCodingTools) [a fix aligning a specification with code would authorise that code];
 and every other part of a rule, agent role or instrument — id, check, examples, parameters, file sets, strength, lists.
 
-The **change guard** is the program `Guard.classify(cfg, path, before, after)`. It returns documentation only when all
-of these hold, and code otherwise:
-0. a generated path or declared copy whose new content is exactly what its generator produces now is left out of the
-   classification: it merely follows whatever else the commit changed, and any other content there is code. This is
-   what lets a reworded rule statement be committed with the policy files it feeds (§4.3 step 2);
+The **change guard** is the program `Guard.classify(cfg, path, before, after, generated)`, where `generated` is what
+that path's generator produces now, or `nothing` where no generator writes it. The caller supplies it: the guard lives
+in `Engine`, which may not reach `Render` (§5.1), so the verb holding the generators — `gbg docfix commit`, and the
+wiring check — regenerates and hands the text in, and no layer below `CLI` calls a generator [as ruled]. The guard
+returns documentation only when all of these hold, and code otherwise:
+0. a generated path or declared copy whose new content is exactly `generated` is left out of the classification: it
+   merely follows whatever else the commit changed, and any other content there is code. This is what lets a reworded
+   rule statement be committed with the policy files it feeds (§4.3 step 2);
 1. the path is on the documentation list;
 2. for `.jl`: both versions parse; removing line numbers, plain string literals standing alone at top level or in a
    struct body (unattached and field docstrings), and docstrings whose text is a plain or `raw"…"` literal and whose
@@ -572,6 +575,11 @@ always on is exit 2. Those always-on rules are the ones catching text that rende
 backticks) and the docstring-structure rules; a test builds a page with such a fault under GBGCodingTools' own switches
 and requires a failed build.
 
+That mark is not set from the start. Until two packages have run those rules over their own prose and their counts are
+known, the set ships switchable, so a rule that proves wrong for one package's writing is switched off there with its
+reason while it is fixed or dropped [a rule nobody may escape is settled before anyone has read what it reports]. Setting
+the mark is a MAJOR release; after it the only escape is changing the rule for every package, through §13 [as ruled].
+
 Off in GBGCodingTools, with reasons — the second and third are its declared deviations today, the first and fourth new:
 - the LaTeX notation and spacing rules, the citation rules, and the site readers checking mathematics, notation,
   typesetting and citations — its documentation contains no mathematics and cites no literature;
@@ -692,6 +700,13 @@ test/regressions/            accepted failing tests; escalated/ holds those awai
 ```
 Agent output and the driver live in a scratch directory that git ignores.
 
+**`gbg init` never overwrites what the package wrote itself.** Four of those paths are commonly a package's own before
+the tooling arrives — a CI workflow, `.claude/settings.json`, the work queue, and a skill whose name is already taken by
+one of the package's commands. Where a file exists and did not come from a generator, `init` writes everything else,
+prints the difference for each collision and exits 1; the owner moves or keeps his own file and runs it again [a
+generated file silently replacing a hand-written workflow is the one wiring mistake that is noticed late]. Unwiring a
+package is reverting the commits that wired it, after which `gbg` finds no config there and refuses.
+
 ## 12. What is shown to work, and what is not
 
 **Program checks** are shown to work by their examples (§5.2): every check is run on every example of its rule, and its
@@ -714,7 +729,15 @@ A rule, agent role or instrument is code in GBGCodingTools, apart from the prose
 code fixer on the owner's answer, is released as a tag that is never moved, and reaches a package through `gbg bump`
 [R2]; it never changes during a run. A **design review** is not an instrument and has no row in §3: `gbg attack` runs
 agents over this design and produces proposals, never findings, and each proposal becomes a question to the owner or is
-dismissed with its reason.
+dismissed with its reason. It writes no tracked file — no run record, no report, no work-queue line — so it has no row in
+§6 either: its proposals reach the owner as questions in the session that ran it, the way a leak scan's findings do [as
+ruled].
+
+**Retiring a rule.** A rule leaves the rulebook by having its value removed, which is a code change like any other: the
+question proposing it names the id and why the rule is no longer worth keeping, the `CHANGELOG` entry records the
+removal, and the id is never reused [an id reused for a different rule makes every older record lie]. This is the
+counterpart of `unchecked_reason`, which says why a rule no program can check is kept: retirement is how one that should
+not be kept is dropped on the record rather than quietly [as ruled].
 
 **Growth limit.** A code change adding a mechanism — a rule, agent role, instrument, run stage, verb or refusal —
 names, in its question, the requirement or failure it answers and what it replaces; without one it is not added.
