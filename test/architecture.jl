@@ -12,7 +12,8 @@ include("helpers.jl")
 
 # The new tree, each file with its rank in the order Model → Texts → Catalogue → ConfigIO → Engine →
 # Render → Orchestration → CLI. A file lands here in the phase that writes it.
-const LAYERS = Dict("src/Model.jl" => 1, "src/Texts.jl" => 2, "src/ConfigIO.jl" => 4)
+const LAYERS = Dict("src/Model.jl" => 1, "src/Texts.jl" => 2, "src/ConfigIO.jl" => 4,
+                    "src/Engine.jl" => 5, "src/Engine/Guard.jl" => 5)
 
 const RANK_OF_MODULE = Dict("Model" => 1, "Texts" => 2, "Catalogue" => 3, "ConfigIO" => 4,
                             "Engine" => 5, "Render" => 6, "Orchestration" => 7, "CLI" => 8)
