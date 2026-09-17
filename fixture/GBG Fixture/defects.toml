@@ -30,16 +30,6 @@ scan = "SCAN.RETIRED_CLAIMS"
 file = "defects/Defects.jl"
 fragment = "factor one third is used"
 [[defect]]
-class = "internal-api-not-last"
-scan = "SCAN.API_PAGE_STRUCTURE"
-file = "defects/api/defects.md"
-fragment = "Internal API"
-[[defect]]
-class = "empty-docs-block"
-scan = "SCAN.API_PAGE_STRUCTURE"
-file = "defects/api/defects.md"
-fragment = "empty `@docs`"
-[[defect]]
 class = "paragraph-over-cap"
 scan = "SCAN.PROSE_SHAPE"
 file = "defects/Defects.jl"
@@ -108,9 +98,6 @@ file = "src/FixtureA.jl"
 [[clean]]
 scan = "SCAN.RETIRED_CLAIMS"
 file = "docs/ARCHITECTURE.md"
-[[clean]]
-scan = "SCAN.API_PAGE_STRUCTURE"
-file = "docs/src/api/FixtureC.md"
 [[clean]]
 scan = "SCAN.DOI_CROSSCHECK"
 file = "src/FixtureB.jl"

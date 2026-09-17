@@ -25,7 +25,7 @@ const RANK_OF_MODULE = Dict("Model" => 1, "Texts" => 2, "Catalogue" => 3, "Confi
 
 # The tree being replaced. This number only falls; a commit that raises it fails here, which is what
 # makes "two machines in one tree" a measured state rather than a feeling.
-const LEGACY_CEILING = 38
+const LEGACY_CEILING = 37
 
 # The table as the document holds it: one named tuple per row, the leading `**name**` and six cells.
 function table_rows(path)

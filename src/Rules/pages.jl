@@ -175,11 +175,72 @@ const NO_DEAD_REFS = Model.Rule(
             Model.Location[], "no inaccessible source"),
     ])
 
+# ─────────────────────────────────────────────────────────────── an API page's own structure
+
+"""
+    api_structure(text, cfg) -> Vector{Model.Location}
+
+Every place an API page departs from the house structure: an internal-API section that is not last, an
+empty block of collected docstrings, and an index block. The arguments are `text`, the page, and `cfg`,
+the package's config, which this rule does not read. Returns one location per departure.
+
+Each renders as something a reader must work around: a section of internals in the middle of the public
+surface, a heading with nothing under it, and a machine-ordered index on a page whose whole point is that
+a person grouped it.
+"""
+function api_structure(text::AbstractString, cfg)
+    out = Model.Location[]
+    sections = [m.captures[1] for m in eachmatch(r"^## (.+)$"m, text)]
+    k = findfirst(==("Internal API"), sections)
+    if k !== nothing && k != length(sections)
+        push!(out, Model.Location(; file = "", line = 1,
+            text = "`## Internal API` is section $k of $(length(sections)) — it comes last"))
+    end
+    for m in eachmatch(r"```@docs\n(.*?)```"s, text)
+        isempty(strip(m.captures[1])) || continue
+        push!(out, Model.Location(; file = "", line = count(==('\n'), text[1:prevind(text, m.offset)]) + 1,
+                                   text = "an empty block of collected docstrings renders as a heading with nothing under it"))
+    end
+    for m in eachmatch(r"```@index"s, text)
+        push!(out, Model.Location(; file = "", line = count(==('\n'), text[1:prevind(text, m.offset)]) + 1,
+                                   text = "an index block: an API page is grouped by a person, never indexed"))
+    end
+    return out
+end
+
+const INTERNAL_API = Model.Rule(
+    id = Symbol("RULE.DOC.INTERNAL_API"),
+    statement = "An API page puts its internal section last, holds no empty block of collected docstrings, and is never indexed.",
+    why = "Internals in the middle of the public surface, and an index on a hand-grouped page, both make a reader work around the page.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.PAGES],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, api_structure, false),
+    examples = [
+        Model.TextExample(Model.FileSet.PAGES,
+            "# API\n\n## Internal API\n\nThe internals.\n\n## Public\n\nThe public part.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 1)], "its internal section last"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# API\n\n## Public\n\nThe public part.\n\n## Internal API\n\nThe internals.\n",
+            Model.Location[], "its internal section last"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# API\n\n## Public\n\n```@docs\n```\n",
+            [Model.Location(; file = "docs/src/page.md", line = 5)], "no empty block of collected docstrings"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# API\n\n## Public\n\n```@docs\nf\n```\n",
+            Model.Location[], "no empty block of collected docstrings"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# API\n\n## Public\n\n```@index\n```\n",
+            [Model.Location(; file = "docs/src/page.md", line = 5)], "never indexed"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# API\n\n## Public\n\nGrouped by hand.\n",
+            Model.Location[], "never indexed"),
+    ])
+
 """
     RULES
 
 The rules of this batch, in the order they were converted.
 """
-const RULES = Model.Rule[AI_BANNER, SIGNATURE_MIRROR, BLOCK_LIST, NO_DEAD_REFS]
+const RULES = Model.Rule[AI_BANNER, SIGNATURE_MIRROR, BLOCK_LIST, NO_DEAD_REFS, INTERNAL_API]
 
 end # module Pages

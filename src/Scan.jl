@@ -103,8 +103,7 @@ Every rule `id` enforces: the rules whose `check` array in `policy/RULES.toml` n
 Returns the rule ids, empty when none does.
 
 The catalogue's `rule` column is ONE canonical rule per scan — what the doctor and a `scan`-scope ledger
-entry resolve against — and two scans enforce two apiece (`SCAN.API_PAGE_STRUCTURE`,
-`SCAN.DOI_CROSSCHECK`). `catalog/scans.toml`'s own header says to read the `check` arrays for the full
+entry resolve against — and one scan, `SCAN.DOI_CROSSCHECK`, enforces two. `catalog/scans.toml`'s own header says to read the `check` arrays for the full
 list and never that column, which is exactly what this does.
 """
 rules_for_scan(id::AbstractString) =

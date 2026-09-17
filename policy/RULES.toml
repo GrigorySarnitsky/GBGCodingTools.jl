@@ -84,7 +84,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.INTERNAL_API"
 statement = "An '## Internal API' section splits into '### Types'/'### Functions' only when it holds both, comes last, and opens with the disclaimer sentence."
 sentinel = "An `## Internal API` section splits into `### Types` and `### Functions` only when it holds both kinds, comes last on its page, and opens with the same disclaimer sentence."
-check = ["scan:SCAN.API_PAGE_STRUCTURE"]
+check = ["rule:RULE.DOC.INTERNAL_API"]  # converted 2026-09-17: src/Rules/pages.jl
 [[rule]]
 id = "RULE.DOC.REF_ABUT"
 file = "docs-rubric.md"
@@ -102,7 +102,7 @@ file = "docs-rubric.md"
 section = "### RULE.DOC.API_GROUPING"
 statement = "API pages are math-grouped under hand-written headers via @docs; each object once; f/f! together, ! first; no @index; no empty @docs block; every public operation on a public page."
 sentinel = "API pages are math-grouped under hand-written headers via explicit `@docs` blocks, each object once, an `f`/`f!` pair together with the `!` home first, no `@index`, and no empty block."
-check = ["scan:SCAN.API_PAGE_STRUCTURE", "scan:SCAN.HTML_DOCSTRING_ONCE", "scan:SCAN.HTML_PUBLIC_HOME", "scan:SCAN.HTML_BASE_LEAK"]
+check = ["scan:SCAN.HTML_DOCSTRING_ONCE", "scan:SCAN.HTML_PUBLIC_HOME", "scan:SCAN.HTML_BASE_LEAK"]
 [[rule]]
 id = "RULE.DOC.COVERAGE_BASES"
 file = "docs-rubric.md"

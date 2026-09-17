@@ -5,7 +5,7 @@
 # (the defect classes in fixture/GBG Fixture/defects.toml; a must-hit and a clean twin each).
 # `gbg selftest` fails when a scan function is unregistered here or a registered scan has no fixture pair.
 # `rule` is ONE canonical rule per scan, which is what the ledger and the doctor resolve against. A scan
-# may enforce more than one — SCAN.API_PAGE_STRUCTURE and SCAN.DOI_CROSSCHECK each enforce
+# may enforce more than one — SCAN.DOI_CROSSCHECK enforces
 # two — and the full list per scan is §12.B's table; the other direction, every scan enforcing a given
 # rule, is that rule's `check` array in policy/RULES.toml. Read either of those, never this column, for
 # "which rules does this scan carry".
@@ -41,14 +41,6 @@ tier = "hard"
 surfaces = ["all", "data"]
 runner = "julia"
 fixture = ["retired-claim"]
-
-[[scan]]
-id = "SCAN.API_PAGE_STRUCTURE"
-rule = "RULE.DOC.INTERNAL_API"
-tier = "hard"
-surfaces = ["pages"]
-runner = "julia"
-fixture = ["internal-api-not-last", "empty-docs-block"]
 
 [[scan]]
 id = "SCAN.PROSE_SHAPE"

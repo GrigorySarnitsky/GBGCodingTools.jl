@@ -179,8 +179,9 @@ end
         pol(rule) = [Dict{String,Any}("id" => rule, "scope" => "policy", "target" => "*",
                                       "reason" => "x"^40, "recorded" => Dates.today())]
         d = defects_config()
-        for (scan, canonical, second) in (("SCAN.DOI_CROSSCHECK", "RULE.CIT.FULL_INLINE", "RULE.CIT.DOI"),
-                                                                                    ("SCAN.API_PAGE_STRUCTURE", "RULE.DOC.INTERNAL_API", "RULE.DOC.API_GROUPING"))
+        # SCAN.DEAD_REF and SCAN.API_PAGE_STRUCTURE left this list as their rules were converted; one
+        # two-rule scan remains to hold the behaviour.
+        for (scan, canonical, second) in (("SCAN.DOI_CROSSCHECK", "RULE.CIT.FULL_INLINE", "RULE.CIT.DOI"),)
             row = CATALOG[scan]
             @test Set(G.rules_for_scan(scan)) == Set([canonical, second]) && row["rule"] == canonical
             @test G.unreachable_waiver_scans(second) == [scan] && isempty(G.unreachable_waiver_scans(canonical))
