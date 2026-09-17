@@ -81,11 +81,10 @@ re-create one outside its phase.
 - Two hosts (`Aiporetne`, `Enteropia`); per-machine state (`~/.local/bin/gbg`, `~/.gbg/dev`, juliaup) is
   installed on each and never synced; a torn Dropbox file is waited out (`CFG.TORN`).
 - EVERY repository here lives inside Dropbox, so scratch goes to a system temporary directory
-  (`mktempdir()`, `TMPDIR`), never inside the repository. The self-tests still break this:
-  `test/helpers.jl` copies the fixture into `fixture/.tmp/<pid>/`, and only `test/runtests.jl` cleans it
-  up — so an interrupted run leaves directories behind. On 2026-09-16 that scratch had grown to 61,057
-  directories, past the system's inotify watch limit, and Dropbox stopped syncing for everything. After
-  running tests, check `fixture/.tmp` and remove what is left; Phase 1 moves it, and this note goes then.
+  (`mktempdir()`, `TMPDIR`), never inside a repository. The self-tests do this since 2026-09-17; the
+  defect they had before — a per-test copy under `fixture/.tmp/` that only a complete run cleaned up —
+  grew to 61,057 directories, passed this machine's inotify watch limit, and stopped Dropbox syncing for
+  every package at once.
 
 ## Release checklist
 
