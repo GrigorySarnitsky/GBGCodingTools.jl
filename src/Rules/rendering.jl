@@ -260,7 +260,7 @@ name is doing in the sentence.
 """
 const ONE_SPAN = Model.Rule(
     id = Symbol("RULE.TEX.ONE_SPAN"),
-    statement = "A code span and a math span are never set against each other: where the name is an operand of the formula it goes inside it as \\texttt{…}, and where the formula names what the code denotes a connective joins the two.",
+    statement = "A code span and a math span are never set against each other: where the formula says more than the name — a symbol and then its definition — the name goes inside it as \\texttt{…}, and where the formula only names what the code denotes, a connective joins the two.",
     why = "Abutting spans render as two disjoint runs at different sizes, leaving the reader to guess whether the second continues the first, qualifies it, or defines it. Apposition says which: `atol` (``\\varepsilon``) keeps the name styled as code — clickable, and the same as every other name on the page — while `\\texttt{atol}` is the math renderer's monospace, and a link wrapped round the whole formula makes its every operator a link to the name.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
@@ -274,12 +274,18 @@ const ONE_SPAN = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe tolerance `atol` (``\\varepsilon``) is fixed.\n",
             Model.Location[], "a connective joins the two"),
-        # The name is an OPERAND of the formula: one span, the name set as text inside it.
+        # The formula says more than the name: one span, the name set as text inside it.
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe loop runs while `maxiter` ``\\le n`` holds.\n",
             [Model.Location(; file = "docs/src/page.md", line = 3)], "inside it as \\texttt{…}"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe loop runs while ``\\texttt{maxiter} \\le n`` holds.\n",
+            Model.Location[], "inside it as \\texttt{…}"),
+        # The naming and the definition in one chain — name, symbol, then what the symbol is. Apposition
+        # cannot carry this: the symbol is used again in later formulas, so it must be introduced as a
+        # symbol, not parenthesised as an aside. GBGIsotropicTurbulence writes seventeen of these.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe energy ``\\texttt{kinetic\\_energy} \\equiv k = \\tfrac{1}{2}\\langle u^2 \\rangle`` is reported.\n",
             Model.Location[], "inside it as \\texttt{…}"),
     ])
 

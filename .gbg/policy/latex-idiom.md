@@ -83,7 +83,7 @@ Neither a rendered code block nor display math auto-wraps; inline math reflows a
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
 ### RULE.TEX.ONE_SPAN
-A code span and a math span are never set against each other: where the name is an operand of the formula it goes inside it as \texttt{…}, and where the formula names what the code denotes a connective joins the two.
+A code span and a math span are never set against each other: where the formula says more than the name — a symbol and then its definition — the name goes inside it as \texttt{…}, and where the formula only names what the code denotes, a connective joins the two.
 
 Abutting spans render as two disjoint runs at different sizes, leaving the reader to guess whether the second continues the first, qualifies it, or defines it. Apposition says which: `atol` (``\varepsilon``) keeps the name styled as code — clickable, and the same as every other name on the page — while `\texttt{atol}` is the math renderer's monospace, and a link wrapped round the whole formula makes its every operator a link to the name.
 
