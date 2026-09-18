@@ -158,7 +158,88 @@ is what `RULE.TEX.CODE_IN_MATH` is about.
 The remaining three findings are not namings at all, just two adjacent facts (`` ``512^3`` `Float64` ``);
 a connective fixes those too.
 
-## Step 5 — fix, or switch, and say which
+## Step 5 — what this package now owns, and what it does not
+
+**This step applies to every package, not only PF.** Whoever adapts this file for the next one carries
+it over unchanged.
+
+`gbg init` installs a line at the head of your `CLAUDE.md`: *nothing restates a rule outside the
+rulebook*. A package that has been developed for a year violates that from the minute it is wired,
+because its own instructions grew before the rulebook existed. PF's `CLAUDE.md` is 2,753 lines and its
+§Style is about 590 of them; GBGIsotropicTurbulence's is 505 and GBGStreamingStatistics' 680.
+GBGCloudPhysics' is 134 and restates nothing, which is the proof that this is accumulated habit rather
+than something wiring requires.
+
+**No program finds the duplication.** Four measurements say so: no rule statement appears VERBATIM in
+any of the four packages (0 of 97, every time), and a loose lexical match reports 158 candidates from
+181 paragraphs. A middle threshold matches on document length rather than on content — 85 of 97 rules
+"present" in PF's file and 12 of 97 in CloudPhysics', which measures only that one file is twenty times
+longer. So this is a judgement a reader makes once per package, and the point of this step is to tell
+that reader what to look for BEFORE they spend a day inside the file.
+
+### The four kinds, and only two are this package's business
+
+1. **Prose restating a rule.** The bulk of the problem. It goes, and the rulebook carries it.
+2. **A mechanism this package has SUPERSEDED.** See the list below — and read the date on each.
+3. **Conventions that are genuinely the package's own.** PF's representation qualifier trailing what it
+   qualifies; "operators are not spectral". Another package will never want them and this one must not
+   lose them. They become `PatternRule`s in `.gbg/config.jl`, so they are checked rather than merely
+   written down.
+4. **Records — closures, round artefacts, decision logs, cross-package requests.** Not style, not
+   rules, and none of this package's business. Leave them alone. Filing them under "Style" is much of
+   why one `CLAUDE.md` is five times another's.
+
+### Superseded TODAY, with the evidence
+
+- **A package's own prose-shape lint** — PF's `lint_prose_shape` in `docs/make.jl`. `RULE.DOC.SHAPE`
+  reads the same baseline file, `docs/prose_shape.csv`, with the same keys: 381 of PF's 381 units match
+  its recorded rows, and the rule reports 0. Same input, same verdict.
+- **The end-of-turn hook** — `.claude/hooks/queue-guard.sh` is written by `Render.hook` and overwritten
+  on every `gbg sync`. The fleet's version differs from PF's: it does not count items under a
+  `## From the last review` heading.
+
+### NOT superseded, however much it looks it
+
+- **The four slash commands under `.claude/commands/`.** They are the package's OWN battery — a
+  self-contained protocol that calls no `gbg` verb. This package's replacement, the
+  `documentation_review` instrument, does not exist until Phase 4. Cutting them now removes a working
+  capability and puts nothing in its place.
+- **`test/exhaustive/` (1,003 lines in PF).** Its filenames — `checks.jl`, `selfcheck.jl`,
+  `classify_checks.jl` — read like documentation linting and are nothing of the sort: it is a property
+  sweep over the package's own operation surface (metadata, preservation, determinism, finiteness, type
+  stability), plus a harness that checks ITSELF because every false finding it ever produced was a
+  defect in the harness. Nothing here supersedes any of it. I nearly listed it as a candidate to cut,
+  from the filenames, without opening the file.
+- **Anything whose supersession you cannot demonstrate.** The test is not what a file is called or
+  where it sits. It is: *this rule reads the same input and produces the same verdict*. Two of the three
+  items I first believed were superseded failed that test, and one of them would have taken the most
+  valuable testing in the package with it.
+
+**A supersession has a date.** The question is never "does this package own that eventually" but "does
+it own it today". Ask it item by item, and where the answer is Phase 4 or Phase 5, write that down and
+leave the mechanism running.
+
+### This reconciliation is not finished when the wiring is
+
+Do not treat this step as a task with an end. Most of the conflicts have not happened yet, because most
+of this package does not exist yet: the instruments arrive in Phase 4 and the last of the old engines
+goes in Phase 5, and each of those supersedes something a consumer is still running. A mechanism that is
+correct to keep today is one you will be asked to cut in two months, and you will not be asked by a
+program — the list above is a snapshot with a date on it, not a contract.
+
+Two consequences worth writing into the package's own notes rather than only acting on:
+
+- **Record what you decided to keep, and why.** "The four slash commands stay until the
+  `documentation_review` instrument exists" is worth one line in the package's `CLAUDE.md`, because the
+  session that meets them in Phase 4 will otherwise re-derive the whole question, and may get it wrong
+  in the other direction.
+- **Expect the rulebook to move under you.** It has changed four times in the two days PF has been
+  wired, twice because PF's own prose showed a rule was wrong. A finding that was correct last week may
+  be gone, and prose you rewrote to satisfy a rule may now satisfy a different one. Re-measure before
+  acting on any list older than a day; the counts in this document carry the date they were taken for
+  exactly that reason.
+
+## Step 6 — fix, or switch, and say which
 
 A switch is a line in `.gbg/config.jl`:
 
