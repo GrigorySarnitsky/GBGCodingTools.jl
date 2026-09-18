@@ -57,11 +57,28 @@ The nine policy files, the hook, the regressions note, the ignore block, the CI 
 it, and a hand edit is lost at the next sync. The two `Project.toml`s and `settings.json` are
 **entry-merged** — only this package's own entries are written, everything else kept.
 
-**The pin, and what it blocks.** `init` writes `tool = :dev`, which puts an absolute path to the
-GBGCodingTools checkout into both `Project.toml`s. `v2.0.0-rc.1` is tagged but does not change this: a
-prerelease is never pinned, and `gbg bump 2.0.0-rc.1` refuses with exit 2. So until **2.0.0 final** PF is
-wired for this machine only — its CI cannot resolve a path source, and a second host needs a checkout at
-the same path. Consequences to expect, not problems to work around.
+**The pin — move it off the path as soon as `init` has run.** `init` writes `tool = :dev`, which puts an
+absolute path to the GBGCodingTools checkout into both `Project.toml`s. Wired that way PF is wired for
+one machine: its CI cannot resolve a path source and so runs none of these rules, and a second host needs
+a checkout at the same absolute path.
+
+`gbg bump 2.0.0-rc.1` is the fix and it works. A prerelease was refused here until 2026-09-18, on the
+reasoning that a candidate is not a release; the owner lifted it, because a tag is immutable whether or
+not it carries `-rc.N` and the refusal bought nothing against a real cost. What a prerelease pin renders:
+
+    [sources]
+    GBGCodingTools = {url = "…", rev = "v2.0.0-rc.1"}      # the tag is what pins
+    [compat]
+    GBGCodingTools = "=2.0.0"                              # the base version is the guard
+
+The two differ on purpose. Pkg throws `invalid version specifier` on a prerelease in `compat`, and `gbg
+release` already refuses to tag `vX.Y.Z-rc.N` unless `Project.toml` says `X.Y.Z` — so the base version is
+what a consumer resolving that tag actually reads. Measured, not assumed: a scratch environment carrying
+exactly those entries resolves `v2.0.0-rc.1` from GitHub.
+
+Expect to re-bump at each candidate. That is cheap and loud: `bump` refuses to move a pin while the new
+version's rules find anything in PF, printing the count per rule, so a candidate with new opinions about
+PF's prose is reported before it can redden a build.
 
 **Commit the new paths by name.** `.gbg/` and `.github/actions/` are untracked, and the fleet agreement
 is `git add -u` plus new files by name. Staged with `-u` alone, the commit ships a `CLAUDE.md` whose
@@ -207,19 +224,28 @@ this step exists to tell that reader what to look for before they spend a day in
 
 - **The end-of-turn hook.** `.claude/hooks/queue-guard.sh` is written by `Render.hook` and overwritten on
   every `gbg sync`.
+- **PF's `lint_prose_shape`, once the pin is off `:dev`.** An earlier draft of this file told PF to keep
+  it, and that was right at the time; both reasons have since been closed. The caps were always identical
+  (120 words, 3 admonitions) and so was the semantics (a unit that grew is reported, a new unit takes the
+  newcomer caps); what was missing was a way to raise a ceiling, now `gbg check --rebaseline`, and a
+  keying that survived an insertion, now `heading / item N` — which is **PF's own keying**, adopted here
+  over a positional suffix that silently re-pointed every later baseline row when an item was inserted
+  earlier in the file. Coverage is a superset: the rule additionally reads `ext/GBGPeriodicFieldsHDF5Ext.jl`,
+  which the lint misses, and the four generated lowercase copies and `gbg-rules.md` that the lint excludes
+  by name are excluded here too.
+
+  **Retire it in one commit, and re-baseline in the same one.** The two still measure a numbered item
+  differently — PF's lint drops the item's own line from the unit and `Rules.Shape.units` keeps it — so
+  `docs/prose_shape.csv` goes from 110 rows to 144 as merged ceilings split into their parts. That looks
+  like a fall in every ceiling it touches and is not one. Say so in the commit message; a reviewer reading
+  the diff alone will read it as a regression. Do this only after `gbg bump 2.0.0-rc.1`: while the pin is
+  `:dev` the rule does not run on CI, and retiring the lint first would leave PF with no prose-shape
+  enforcement anywhere but this machine.
 
 That is the whole list.
 
 ### NOT superseded, however much it looks it
 
-- **PF's `lint_prose_shape`.** An earlier draft told PF to delete it and was wrong twice over. With the
-  default file sets `RULE.DOC.SHAPE` reaches 381 of the 639 rows in `docs/prose_shape.csv` — PF's lint
-  also reads `docs/*.md` and `docs/src/api/*.md`, which the defaults do not. Declare the rationale
-  documents to close that gap and the two disagree outright: the rule reports **108 GREW findings** on
-  units PF's lint passes, because for a numbered top-level item PF's lint does not push the item's own
-  line into the unit and `Rules.Shape.units` does. Same baseline file, same keys, **different metrics**.
-  Keep the lint. Raising a ceiling is `PROSE_SHAPE_BASELINE=1` inside it, and there is no replacement for
-  that yet.
 - **The four slash commands under `.claude/commands/`.** They are PF's OWN battery — a self-contained
   protocol calling no `gbg` verb. This package's replacement, the `documentation_review` instrument, does
   not exist until Phase 4. Cutting them removes a working capability and puts nothing in its place.

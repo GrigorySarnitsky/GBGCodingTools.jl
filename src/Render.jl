@@ -243,14 +243,21 @@ absent, which is how a checkout is distinguished from a release rather than mere
 A checkout is named by a relative path where this package's repository encloses the consumer, or is it,
 and absolutely otherwise: a chain of `../` out of one repository and into another breaks the moment
 either moves.
+
+A PRERELEASE pin names the full tag as its `rev` and its BASE version in `compat`. The two differ
+because Pkg refuses a prerelease in a version specifier outright — `semver_spec("=2.0.0-rc.1")` throws
+`invalid version specifier` — while `release` already refuses to tag `vX.Y.Z-rc.N` unless `Project.toml`
+says `X.Y.Z`, so the base is what a consumer resolving that tag actually reads. The tag is what pins;
+compat is the guard that the tree behind it is the version it claims to be.
 """
 function pin_entries(cfg::Model.Config, root::AbstractString, envdir::AbstractString)
     deps = Dict{String,Any}(PKG => PKG_UUID)
     if cfg.tool isa VersionNumber
-        v = string(cfg.tool)
+        v = cfg.tool
+        base = string(VersionNumber(v.major, v.minor, v.patch))
         return Dict{String,Any}("deps" => deps,
-                                "sources" => Dict{String,Any}(PKG => Dict("url" => PKG_URL, "rev" => "v" * v)),
-                                "compat" => Dict{String,Any}(PKG => "=" * v))
+                                "sources" => Dict{String,Any}(PKG => Dict("url" => PKG_URL, "rev" => "v" * string(v))),
+                                "compat" => Dict{String,Any}(PKG => "=" * base))
     end
     here = abspath(something(pkgdir(@__MODULE__), root)); there = abspath(root)
     path = (there == here || startswith(there, here * "/")) ? relpath(here, joinpath(there, envdir)) : here

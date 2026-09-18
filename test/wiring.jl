@@ -4,7 +4,7 @@
 # those functions again and compares. So the test flips one byte in each generated path in turn and
 # requires the check to report that path — a check that cannot fail is worse than none, and this one is
 # what stands between a hand-edited generated file and a package that believes it is wired.
-using Test, GBGCodingTools
+using Test, Pkg, GBGCodingTools
 include("helpers.jl")
 
 const RN = G.Render
@@ -76,6 +76,25 @@ end
         # and a package with neither file is not told to grow one
         rm(joinpath(dir, "test", "runtests.jl")); rm(joinpath(dir, "docs", "make.jl"))
         @test isempty(RN.call_drift(dir))
+    end
+
+    # A prerelease pin, which was refused outright until 2026-09-18. Pkg throws `invalid version
+    # specifier` on a prerelease in compat, so the rev and the compat bound MUST differ: the rev is the
+    # full tag and the bound is the base version, which is what `release` forces `Project.toml` to say
+    # before it will tag a candidate at all. Measured against a real resolve from GitHub, not asserted.
+    @testset "a prerelease is pinned by its tag and guarded by its base version" begin
+        dir, _ = wired_package()
+        write(joinpath(dir, ".gbg", "config.jl"), """Config(package = "Sample", tool = v"2.0.0-rc.1")""")
+        cfg = G.ConfigIO.read_config(dir)
+        entries = RN.pin_entries(cfg, dir, "test")
+        @test entries["sources"][RN.PKG]["rev"] == "v2.0.0-rc.1"    # the tag is what pins
+        @test entries["compat"][RN.PKG] == "=2.0.0"                 # and Pkg can read the bound
+        @test Pkg.Types.semver_spec(entries["compat"][RN.PKG]) isa Pkg.Types.VersionSpec
+        # a release is unchanged: base and tag are the same string there
+        write(joinpath(dir, ".gbg", "config.jl"), """Config(package = "Sample", tool = v"2.0.0")""")
+        released = RN.pin_entries(G.ConfigIO.read_config(dir), dir, "test")
+        @test released["sources"][RN.PKG]["rev"] == "v2.0.0"
+        @test released["compat"][RN.PKG] == "=2.0.0"
     end
 
     # A runner cannot fetch a private dependency without a credential, and a workflow that omits the

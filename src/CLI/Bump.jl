@@ -61,9 +61,17 @@ nothing. The arguments are:
 
 Exit 0 when the pin moved, 1 when the new version's rules found something and it did not, 2 when the
 config could not be read or the pin line could not be found.
+
+A PRERELEASE may be pinned. It was refused here until 2026-09-18, on the reasoning that a candidate is
+not a release; the refusal bought nothing and the cost was concrete. A tag is immutable whether or not
+it carries `-rc.N`, so a candidate resolves from GitHub exactly as a release does.
+
+Refusing it left the first wired package pinned to an absolute path on one machine, its CI resolving
+nothing and running none of these rules, for as long as the final release was away. What guards a bad
+pin is the check below, which will not move a pin while the new version finds anything, and that guard
+does not care what the version is called.
 """
 function bump(root::AbstractString, version::VersionNumber; io::IO = stdout)
-    isempty(version.prerelease) || (println(io, "bump: $version is a prerelease, and a prerelease is never pinned"); return 2)
     cfg = try
         ConfigIO.read_config(root)
     catch err

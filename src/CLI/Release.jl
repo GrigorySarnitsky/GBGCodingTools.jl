@@ -99,7 +99,7 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
     end
     Git.run(root, "tag", "-a", "v$ver", "-m", "GBGCodingTools v$ver") === nothing && (println(io, "release: git tag failed"); return 3)
     Git.run(root, "push", "origin", "v$ver") === nothing && (println(io, "release: tag created but the push failed — push it by hand: git push origin v$ver"); return 3)
-    println(io, "release: v$ver tagged and pushed", rc ? " (a prerelease: nothing pins it)" : "")
+    println(io, "release: v$ver tagged and pushed", rc ? " (a prerelease; `gbg bump $ver` pins it)" : "")
     return 0
 end
 
