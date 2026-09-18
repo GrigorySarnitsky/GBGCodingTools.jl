@@ -4,6 +4,37 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.2 — 2026-09-18
+
+MAJOR. The same rulebook as rc.1, rehearsed against a real consumer for a day. rc.1 said it existed so a
+package could pin it and `gbg bump` then refused every prerelease, which is the first thing fixed here.
+
+**A package may pin a prerelease.** A tag is immutable whether or not it carries `-rc.N`. The rendering
+follows: the `rev` is the full tag and the `[compat]` bound is the base version, because Pkg throws
+`invalid version specifier` on a prerelease in compat and `release` already forces `Project.toml` to
+carry the base at any candidate tag.
+
+**Nineteen rule defects, every one found by running against a package this package does not own.** The
+shape rule keyed a docstring by its binding rather than its signature, grandfathering 30 findings; it
+now keys a numbered item under its enclosing heading, which the consumer's own lint did better first.
+The argument-form rule read a fraction of each signature, five ways. Both citation rules split a wrapped
+reference. The banner rule reasoned about a Julia file as though it were the page it produces. A rule
+read files the package's own nested `.gitignore` excludes — 264 findings that were never there. A node
+boundary inside a multi-byte name crashed a rule on the two consumers whose prose carries the most Greek.
+
+**Every finding names the rule that made it.** A report that printed only the message left a reader to
+infer the class from the wording, and a class inferred from wording is a class miscounted.
+
+**`gbg check --rebaseline`**, so a ratchet the rules own can be closed by the verb that owns it.
+
+**The gate measures where the thing runs.** `tools/floor.sh` now asks GitHub about the last push before
+it starts, loads the package from its tracked files alone, and sweeps every consumer when a rule's
+reading changed. Four defects reached a tag because the gate ran somewhere the failure could not appear:
+a built tree, the library instead of the command line, one consumer instead of four, this machine instead
+of a clone.
+
+Still not here: the instruments, the agent roles and the run record (`Orchestration`).
+
 ## 2.0.0-rc.1 — 2026-09-18
 
 MAJOR, and a rewrite rather than a change. Every public surface of 1.0.0 is gone: the verbs, the config
