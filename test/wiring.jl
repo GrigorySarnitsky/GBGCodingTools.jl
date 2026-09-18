@@ -78,6 +78,25 @@ end
         @test isempty(RN.call_drift(dir))
     end
 
+    # The two banners this package's OWN workflows grep for. Each step exists to catch a green job that
+    # ran a bare `Pkg.test()` or called Documenter directly, and each is a regular expression in a YAML
+    # file that nothing connected to the string it matches. Phase 2 renamed the test banner from `gate` to
+    # `checks`, the CI step kept greping `gate`, and every push after it was red on a step whose only
+    # subject was its own staleness — found on the v2.0.0-rc.3 tag, not before.
+    @testset "the workflows grep for the banners this package actually prints" begin
+        dir, cfg = wired_package()
+        banners = Dict("CI.yml" => "GBGCodingTools " * G.Engine.Harness.tool_name(cfg) * " checks",
+                       "docs.yml" => "GBGCodingTools " * G.Engine.Harness.tool_name(cfg) * " makedocs")
+        root = pkgdir(GBGCodingTools)
+        for (file, banner) in banners
+            path = joinpath(root, ".github", "workflows", file)
+            isfile(path) || continue                       # a clone without the workflows is not a failure
+            pats = [m.captures[1] for m in eachmatch(r"grep -Eq '([^']+)' gbg-run\.log", read(path, String))]
+            @test !isempty(pats)                           # the step is still there to be checked
+            @test any(p -> occursin(Regex(p), banner), pats)
+        end
+    end
+
     # A prerelease pin, which was refused outright until 2026-09-18. Pkg throws `invalid version
     # specifier` on a prerelease in compat, so the rev and the compat bound MUST differ: the rev is the
     # full tag and the bound is the base version, which is what `release` forces `Project.toml` to say

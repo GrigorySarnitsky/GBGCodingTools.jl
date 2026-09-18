@@ -39,10 +39,12 @@ jobs:
         run: |
           set -o pipefail
           julia --color=yes --project -e 'using Pkg; Pkg.test()' 2>&1 | tee gbg-run.log
-      - name: The tool's gate ran
-        # The gate prints `GBGCodingTools v<version> gate` once it has been consulted; a green job whose log lacks the
-        # banner ran the tests without the gate, which is the failure this step exists to catch.
-        run: grep -Eq 'GBGCodingTools v[^ ]+ gate' gbg-run.log
+      - name: The tool's checks ran
+        # `Engine.Harness.test` prints `GBGCodingTools v<version> checks` once it has been consulted; a green job whose
+        # log lacks the banner ran the tests without the checks, which is the failure this step exists to catch.
+        # It read `… gate` until 2026-09-18 — the wording Phase 2 replaced — so the step could not pass at all, and
+        # every push since has been red on a step that was testing nothing but its own staleness.
+        run: grep -Eq 'GBGCodingTools v[^ ]+ checks' gbg-run.log
   docs-build:
     name: The tool's own site builds (no deploy)
     runs-on: ubuntu-latest
