@@ -83,12 +83,11 @@ scan_catalog() = get(TOML.parsefile(joinpath(pkgdir(GBGCodingTools), "catalog", 
 """
     rules_register() -> Vector{Dict}
 
-Every rule of the rulebook as a row, for the readers that still want one: `id`, `statement` and
-`sentinel`, which is the statement — a rule has one sentence and one home. Returns the rows.
+Every rule as a row, for the readers that still want one: `id`, `statement` and `sentinel`, which is the
+statement — a rule has one sentence and one home. Returns the rows.
 
-It read `policy/RULES.toml` until 2026-09-17. That file was the register of ninety-five rules written as
-prose; every one of them is a `Rule` value now, so the register is derived from `Catalogue.RULES` and
-cannot disagree with it.
+It read `policy/RULES.toml` until 2026-09-17. Every rule is a `Rule` value now, so this is derived from
+`Catalogue.RULES` and cannot disagree with it.
 """
 rules_register() = [Dict{String,Any}("id" => String(r.id), "statement" => r.statement, "sentinel" => r.statement)
                     for r in GBGCodingTools.Catalogue.RULES]
@@ -599,8 +598,7 @@ end
 
 `gbg scan docs [--hard-only] [--only id,…] [--rebaseline prose-shape --reason "…"]` and
 `gbg scan html <build_dir>`: the CLI face of [`scan_docs`](@ref) and [`scan_html`](@ref). Returns the
-scan exit code; a rebaseline first prints every row it raises, adds or drops
-(the rule's own `changes`), then writes `docs/prose_shape.csv` and returns 0.
+scan exit code; a rebaseline prints every row it raises, adds or drops, then writes the baseline.
 """
 function cmd_scan(args)
     o = parse_options(args; valued = ["only", "rebaseline", "reason"])

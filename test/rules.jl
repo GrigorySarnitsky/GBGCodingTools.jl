@@ -137,7 +137,7 @@ const NO_BARE_URL = MR.Rule(
     @test CK.files(cfg, dir, MR.FileSet.PAGES) == ["docs/src/index.md"]
 
     # anchoring is read before the leading slash is stripped, or a negation leaks to every depth
-    rules = CK.gitignore_rules_of("Manifest.toml\n!/Manifest.toml\n")
+    rules = G.Texts.gitignore_rules_of("Manifest.toml\n!/Manifest.toml\n")
     hit(f) = (h = false; for (rx, neg) in rules; occursin(rx, f) && (h = !neg); end; h)
     @test !hit("Manifest.toml") && hit("docs/Manifest.toml")
 end

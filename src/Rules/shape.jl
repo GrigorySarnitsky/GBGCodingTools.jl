@@ -51,7 +51,12 @@ function units(root::AbstractString, files)
         if endswith(f, ".jl")
             for d in Texts.docstrings_of(read(path, String))
                 isempty(strip(d.text)) && continue
-                out["$(basename(f)) :: $(first(d.node, 60))"] = metrics(d.text)
+                # Keyed by the SIGNATURE a docstring displays, falling back to the binding where it
+                # shows none — a module or a type documented without one. Two methods of a generic have
+                # one binding and two docstrings, so a key that is only the binding collapses them and
+                # matches neither in a package's recorded baseline.
+                sig = Texts.signature_line(d.text)
+                out["$(basename(f)) :: $(first(isempty(sig) ? d.node : sig, 60))"] = metrics(d.text)
             end
         else
             section = "(preamble)"; buf = IOBuffer(); fenced = false
@@ -139,6 +144,7 @@ end
 # prose belongs to the source it came from.
 function default_files(root::AbstractString, cfg)
     written = Set(vcat(cfg.generated, first.(cfg.copies)))
+    skip = Texts.ignored(root)
     out = String[]
     for (dir, _, fs) in walkdir(root)
         rel = relpath(dir, root)
@@ -146,7 +152,7 @@ function default_files(root::AbstractString, cfg)
         for f in fs
             p = rel == "." ? f : joinpath(rel, f)
             p = replace(p, '\\' => '/')
-            p in written && continue
+            (p in written || skip(p)) && continue
             (startswith(p, "src/") && endswith(p, ".jl")) || (startswith(p, "docs/src/") && endswith(p, ".md")) || continue
             push!(out, p)
         end
@@ -217,7 +223,9 @@ function files_of(root::AbstractString, cfg)
         patterns = get(cfg.filesets, fs, String[])
         append!(files, [p for p in patterns if isfile(joinpath(root, p))])
     end
-    return isempty(files) ? default_files(root, cfg) : files
+    isempty(files) && return default_files(root, cfg)
+    skip = Texts.ignored(root)
+    return filter(!skip, files)
 end
 
 const SHAPE = Model.Rule(
