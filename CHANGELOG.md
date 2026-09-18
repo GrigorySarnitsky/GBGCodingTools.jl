@@ -4,6 +4,17 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.3 — 2026-09-18
+
+MAJOR. rc.2 with its CI green. Pin this one, not rc.2.
+
+**`test/docfix.jl` needed a git identity it did not have.** The fixture repository passed one to the
+commit its own setup makes and not to the commit the VERB makes, which is a child process of its own; on
+a developer's machine that fell back to the global config and on a runner there is none. rc.2's tag went
+out red on three tests. The fixture now sets an identity in its own repository, as a real package does,
+and `tools/floor.sh` runs the suite with the global and system git config neutralised, so this machine
+can no longer answer a question CI will be asked.
+
 ## 2.0.0-rc.2 — 2026-09-18
 
 MAJOR. The same rulebook as rc.1, rehearsed against a real consumer for a day. rc.1 said it existed so a
