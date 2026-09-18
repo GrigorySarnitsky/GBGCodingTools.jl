@@ -628,9 +628,8 @@ function cmd_scan(args)
 end
 VERBS["scan"] = cmd_scan
 
-# the directory is a compile dependency: a scan file ADDED to it must invalidate the precompile cache, which
-# tracks included files only (the first new scan was silently absent from a stale image)
-Base.include_dependency(joinpath(@__DIR__, "Scans"))
-for f in sort!(filter!(x -> endswith(x, ".jl"), readdir(joinpath(@__DIR__, "Scans"))))
-    include(joinpath(@__DIR__, "Scans", f))
-end
+# `src/Scans/` held one file per scan and was read here at load. It is EMPTY since the last scan became a
+# rule on 2026-09-17, and git does not track an empty directory — so it survived on the machine that
+# emptied it and was absent from every clone, and this `readdir` threw on each one. Every CI run failed
+# from that commit onward while the local gate stayed green, because the local gate ran where the
+# directory still existed.

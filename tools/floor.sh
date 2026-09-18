@@ -10,6 +10,27 @@ cd "${1:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}"
 julia --project --startup-file=no -e 'using Pkg; Pkg.test()'
 julia --project=docs --startup-file=no docs/make.jl
 
+# DOES IT LOAD FROM WHAT GIT ACTUALLY HOLDS?
+#
+# The two commands above run in this working tree, which is not what anyone else gets. `src/Scans/`
+# was emptied on 2026-09-17 and git does not track an empty directory, so it survived here and was
+# absent from every clone — and `Scan.jl` read it at load. Every CI run failed for a day while this
+# gate stayed green, because this gate ran in the one place the directory still existed.
+#
+# So: export the tracked files to a temporary directory and load the package there. It catches the
+# whole class — an untracked file, an empty directory, anything present here and not in the repository.
+# Outside Dropbox, because every repository here is inside it.
+echo "floor: loading from the tracked files alone"
+EXPORT=$(mktemp -d)
+trap 'rm -rf "$EXPORT"' EXIT
+git ls-files -z | xargs -0 tar -cf - | tar -xf - -C "$EXPORT"
+julia --project="$EXPORT" --startup-file=no -e '
+    using Pkg; Pkg.instantiate()
+    using GBGCodingTools
+    isempty(GBGCodingTools.Catalogue.RULES) && error("the rulebook is empty in a clean export")
+    println("floor: loaded ", length(GBGCodingTools.Catalogue.RULES), " rules from the tracked files")'
+
+
 # THE FLEET SWEEP, when this change could alter what a rule READS and the packages are on this machine.
 #
 # Two defects of 2026-09-18 were correct on every package being measured and broken on one that was not:
