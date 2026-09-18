@@ -39,7 +39,7 @@ end
 """
     Fleet.rows(; deep = false) -> (rows, code)
 
-One row per package of `Catalogue.FLEET`: `(name, pin, status, detail)`. A consumer without `.gbg/config.toml` is
+One row per package of `Catalogue.FLEET`: `(name, pin, status, detail)`. A consumer without `.gbg/config.jl` is
 `NOT-INITIALISED`; one whose generated files are adrift is `RED`; one whose pinned version
 is older than the fleet's newest is `BEHIND` with both versions and the window state; else `OK`. The
 tool's own row (`path = "."`) shows `dev+<sha>[-dirty]` with `clean at vX.Y.Z` or `off tag`, is
@@ -57,10 +57,9 @@ function rows(; deep::Bool = false)
     consumers = roster()
     for c in consumers
         c.path == "." && continue
-        p = joinpath(base, c.path); cfgp = joinpath(p, ".gbg", "config.toml")
-        isfile(cfgp) || continue
-        v = get(get(TOML.parsefile(cfgp), "tool", Dict()), "version", "")
-        occursin(r"^\d+\.\d+\.\d+$", v) && (pins[c.name] = VersionNumber(v))
+        cfg = try GBGCodingTools.ConfigIO.read_config(joinpath(base, c.path)) catch; nothing end
+        cfg === nothing && continue
+        cfg.tool isa VersionNumber && isempty(cfg.tool.prerelease) && (pins[c.name] = cfg.tool)
     end
     newest = isempty(pins) ? nothing : maximum(values(pins))
     sweep = get(fleet, "sweep", Dict())
@@ -71,15 +70,17 @@ function rows(; deep::Bool = false)
         if !isdir(p)
             push!(out, (name = c.name, pin = "—", status = "MISSING", detail = "$(c.path) does not exist")); code = 2; continue
         end
-        cfgp = joinpath(p, ".gbg", "config.toml")
-        if !isfile(cfgp)
-            push!(out, (name = c.name, pin = "—", status = "NOT-INITIALISED", detail = "no .gbg/config.toml (gbg init)")); code = max(code, 1); continue
+        # `.gbg/config.toml`, read here until 2026-09-18, has not existed since Phase 2 replaced it with
+        # `config.jl`. The verb therefore looked for a file no package has and called every one of them
+        # NOT-INITIALISED — five wrong rows, GBGPeriodicFields wired and reported as unwired.
+        if !isfile(joinpath(p, ".gbg", "config.jl"))
+            push!(out, (name = c.name, pin = "—", status = "NOT-INITIALISED", detail = "no .gbg/config.jl (gbg init)")); code = max(code, 1); continue
         end
-        cfg, err = try (Config.read(p), "") catch e; (nothing, sprint(showerror, e)) end
+        cfg, err = try (GBGCodingTools.ConfigIO.read_config(p), "") catch e; (nothing, sprint(showerror, e)) end
         if cfg === nothing
-            push!(out, (name = c.name, pin = "?", status = "RED", detail = "CFG.VALID: " * first(err, 120))); code = max(code, 1); continue
+            push!(out, (name = c.name, pin = "?", status = "RED", detail = "CFG: " * first(err, 120))); code = max(code, 1); continue
         end
-        pin = String(cfg["tool"]["version"])
+        pin = GBGCodingTools.Render.version_tag(cfg)
         # The doctor's check list was read here until 2026-09-17. A package's wiring is the wiring
         # check's to judge now, and it answers in one word: adrift, or not.
         fails = GBGCodingTools.Wire.sync(p; check = true, io = devnull) == 0 ? String[] : ["WIRING"]
