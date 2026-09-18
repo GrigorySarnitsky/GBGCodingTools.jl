@@ -137,7 +137,11 @@ function crammed_citation(src::AbstractString, cfg)
     out = Model.Location[]
     for d in Texts.docstrings_of(src)
         for m in eachmatch(r"References?:[^\n]*(?:\n[^\n]+)*"m, d.text)
-            occursin(';', m.match) || continue
+            # A semicolon inside brackets is punctuation, not a separator between citations: a link's
+            # target, or a parenthetical note — "(deposition / charge assignment; the NGP and CIC
+            # windows)" — is one citation's own text, and reading it as two reported a correct reference.
+            bare = replace(m.match, r"\([^()]*\)" => " ", r"\[[^\[\]]*\]" => " ")
+            occursin(';', bare) || continue
             offset = count(==('\n'), d.text[1:prevind(d.text, m.offset)]) + 1
             push!(out, Model.Location(; file = "", line = d.line + offset, node = d.node,
                                        text = strip(first(split(m.match, '\n')))))
@@ -157,6 +161,10 @@ const BLOCK_LIST = Model.Rule(
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(x)\n\nDoes a thing.\n\nReferences: Smith 1999; Jones 2001\n\"\"\"\nf(x) = x\n",
             [Model.Location(; file = "src/Example.jl", line = 6)], "never run together with semicolons"),
+        # One citation carrying a parenthetical note of its own is still one citation.
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(x)\n\nDoes a thing.\n\nReference: Smith 1999 (the window; and its width)\n\"\"\"\nf(x) = x\n",
+            Model.Location[], "never run together with semicolons"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(x)\n\nDoes a thing.\n\n# References\n\n- Smith 1999.\n- Jones 2001.\n\"\"\"\nf(x) = x\n",
             Model.Location[], "never run together with semicolons"),

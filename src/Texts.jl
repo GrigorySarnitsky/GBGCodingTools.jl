@@ -88,6 +88,32 @@ function expand(root::AbstractString, pattern::AbstractString)
 end
 
 """
+    unwrapped(text) -> Vector{Tuple{Int,String}}
+
+The text as logical lines, each with the number of the line it starts on: a line whose brackets do not
+close absorbs the lines after it until they do. The argument is `text`, the text to read. Returns the
+pairs, in order.
+
+Prose is hard-wrapped, and almost nothing in a docstring can be assumed to fit one line. A citation
+whose title crosses a wrap reads, line by line, as `[*Computer Simulation Using` — an opening bracket
+with no link — so a rule matching a bracketed construct line by line reports a correct reference as
+having no DOI. The same assumption cost `RULE.DOC.ARGS_FORM` a wrapped signature.
+"""
+function unwrapped(text::AbstractString)
+    out = Tuple{Int,String}[]
+    current = ""; start = 0
+    for (i, raw) in pairs(split(text, '\n'))
+        line = String(raw)
+        isempty(current) ? (current = line; start = i) : (current *= " " * strip(line))
+        balanced = count(==('['), current) == count(==(']'), current) &&
+                   count(==('('), current) == count(==(')'), current)
+        balanced && (push!(out, (start, current)); current = "")
+    end
+    isempty(current) || push!(out, (start, current))
+    return out
+end
+
+"""
     NAME
 
 What a Julia name looks like, as regex source for a rule to build a larger pattern around.

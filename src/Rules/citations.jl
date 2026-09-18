@@ -41,7 +41,7 @@ cannot tell from prose.
 """
 function doi_on_title(text::AbstractString, cfg)
     out = Model.Location[]
-    for (i, line) in pairs(split(text, '\n'))
+    for (i, line) in Texts.unwrapped(text)
         # In code ticks the form is NAMED, not used: this rule's own statement quotes it, and so does
         # every page that tells an author which form was retired.
         for m in eachmatch(r"\[doi:[^\]]+\]", Texts.mask_code_spans(line))
