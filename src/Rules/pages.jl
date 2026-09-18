@@ -268,9 +268,16 @@ function sibling_link(text::AbstractString, cfg)
     lines = split(text, '\n')
     for (name, site) in SIBLING_SITES.default
         name == cfg.package && continue
-        name_re = Regex("(?<![A-Za-z0-9_])" * name * "(?![A-Za-z0-9_])")
-        link_re = Regex("\\[`?" * name * "`?\\]\\(\\Q" * site * "\\E")
-        home_re = Regex("\\[`?" * name * "`?\\]\\(\\Q" * site * "\\E[\"')]")
+        # `.jl` is part of the name wherever a package is named as a repository — which is how its own
+        # link text and its URL both spell it. Reading the bare name only, the rule found the first
+        # mention INSIDE a link it did not recognise and reported the link as missing.
+        name_re = Regex("(?<![A-Za-z0-9_])" * name * "(?:\\.jl)?(?![A-Za-z0-9_])")
+        # The trailing slash of a site is optional in a link, and the table carries one. Matching it
+        # literally, a correct link to `…/Package.jl` did not count, and the rule reported the first
+        # mention — which was the link's own text — as unlinked.
+        bare_site = rstrip(site, '/')
+        link_re = Regex("\\[`?" * name * "(?:\\.jl)?`?\\]\\(\\Q" * bare_site * "\\E/?")
+        home_re = Regex("\\[`?" * name * "(?:\\.jl)?`?\\]\\(\\Q" * bare_site * "\\E/?[\"')]")
         seen = false
         for (n, raw) in pairs(lines)
             o = findfirst(name_re, raw); o === nothing && continue

@@ -211,8 +211,12 @@ end
 
 function line_range(src::AbstractString, bytes::UnitRange{Int})
     isempty(bytes) && return 1:0
-    first_line = count(==('\n'), SubString(src, 1, min(first(bytes), lastindex(src)))) + 1
-    last_line = count(==('\n'), SubString(src, 1, min(last(bytes), lastindex(src)))) + 1
+    # The parser reports BYTE offsets and `SubString` wants character indices. A package whose source
+    # holds `π`, `Δ` or any other multi-byte name eventually has a node boundary land inside one, and
+    # slicing there throws `StringIndexError` out of a rule — which is what happened on a real package.
+    at(i) = thisind(src, clamp(i, 1, lastindex(src)))
+    first_line = count(==('\n'), SubString(src, 1, at(first(bytes)))) + 1
+    last_line = count(==('\n'), SubString(src, 1, at(last(bytes)))) + 1
     return first_line:last_line
 end
 

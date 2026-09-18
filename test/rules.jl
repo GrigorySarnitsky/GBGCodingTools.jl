@@ -162,6 +162,36 @@ end
     @test T.signature_lines("    f(a)\n\nProse.\n\n    g(b, c, d)\n") == ["f(a)"]
 end
 
+# Three shapes real consumers write that the rules misread, each reported by the session wiring one.
+@testset "what a real consumer's source looks like" begin
+    # an inner constructor's arguments are spelled like fields and are not fields
+    src = split("""
+    struct S
+      a::Int
+      b::Int
+
+      function S(a::Int,
+          b::Int)
+        new(a, b)
+      end
+    end
+    """, '\n')
+    @test G.Catalogue.Docstrings.struct_fields(src, "S") == ["a", "b"]
+
+    # a site's trailing slash is optional in a link to it
+    dir = mktempdir(; cleanup = true); mkpath(joinpath(dir, "docs", "src"))
+    site = last(first(p for p in G.Catalogue.Pages.SIBLING_SITES.default if first(p) != "P"))
+    other = first(first(p for p in G.Catalogue.Pages.SIBLING_SITES.default if first(p) != "P"))
+    cfg = MR.Config(package = "P", tool = :dev, filesets = Dict(MR.FileSet.PAGES => ["docs/src/page.md"]))
+    r = G.Catalogue.RULES[findfirst(x -> String(x.id) == "RULE.DOC.SIBLING_LINK", G.Catalogue.RULES)]
+    write(joinpath(dir, "docs", "src", "page.md"), "# A page\n\nBuilt on [`$other`]($(rstrip(site, '/'))), which helps.\n")
+    @test isempty(CK.run_rule(r, cfg, dir))                      # no trailing slash: still a link
+    write(joinpath(dir, "docs", "src", "page.md"), "# A page\n\nBuilt on [`$other`]($site), which helps.\n")
+    @test isempty(CK.run_rule(r, cfg, dir))                      # with one: still a link
+    write(joinpath(dir, "docs", "src", "page.md"), "# A page\n\nBuilt on `$other`, which helps.\n")
+    @test length(CK.run_rule(r, cfg, dir)) == 1                  # bare: still a finding
+end
+
 @testset "the rulebook" begin
     @testset "the materialiser judges an example as the rule says" begin
         for rule in (NO_TODO, NO_BARE_URL), example in rule.examples

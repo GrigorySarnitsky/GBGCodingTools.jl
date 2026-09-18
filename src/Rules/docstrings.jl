@@ -157,6 +157,12 @@ function struct_fields(lines, node::AbstractString)
             continue
         end
         strip(line) == "end" && break
+        # An INNER CONSTRUCTOR ends the field list. Its arguments are indented and spelled `name::Type`
+        # exactly as a field is, so scanning past it counted six of them again: fourteen fields, sixteen
+        # names. A declaration also stands alone — a line ending in a comma is an argument list wrapped.
+        body = strip(line)
+        (startswith(body, "function ") || occursin(Regex("^" * Texts.NAME * "\\s*\\("), body)) && break
+        endswith(body, ",") && continue
         m = match(Regex("^\\s{2,}(" * Texts.NAME * ")\\s*::"), line)
         m === nothing || push!(out, String(m.captures[1]))
     end
