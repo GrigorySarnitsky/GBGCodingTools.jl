@@ -62,6 +62,16 @@ function find_root(start::AbstractString = pwd())
 end
 
 """
+    narrow(v) -> AbstractVector
+
+The vector retyped to its elements where they share a concrete type, and left alone otherwise. The
+argument is `v`, a freshly built list. Returns it, possibly retyped.
+
+A list literal builds as `Vector{Any}`, and every field of `Model` typed `Vector{String}` refuses one.
+"""
+narrow(v::AbstractVector) = isempty(v) ? v : (T = typeof(first(v)); all(x -> x isa T, v) ? T[x for x in v] : v)
+
+"""
     ConfigError
 
 A `.gbg/config.jl` or `.gbg/settled.jl` that cannot be read as data. The fields are:
@@ -174,7 +184,10 @@ function build(node, path, problems)
     elseif k === JS.K"quote"                                   # :a_symbol
         return Symbol(strip(text, ':'))
     elseif k === JS.K"vect"
-        return Any[build(c, path, problems) for c in cs]
+        # NARROWED to the element type where every element shares one. A `Vector{Any}` is refused by
+        # every field typed `Vector{String}` — `Setting.value` among them — so the one documented way to
+        # declare a package's admitted `\mathbf` strings could not be written at all.
+        return narrow(Any[build(c, path, problems) for c in cs])
     elseif k === JS.K"ref"
         # A typed array literal — `String[]`, `Switch[]` — is data: the type names an element type the
         # model already has, and an empty one is how a config says "none of these".

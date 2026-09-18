@@ -26,6 +26,68 @@ using AbstractTrees: PreOrderDFS
 const JS = Base.JuliaSyntax
 
 """
+    DEFAULT_PATTERNS
+
+Where each file set lives in a package that says nothing about it. A package's own config overrides any of
+these, which is how a package whose examples are elsewhere, or whose rationale is one document, says so.
+"""
+const DEFAULT_PATTERNS = Dict{Model.FileSet.T,Vector{String}}(
+    Model.FileSet.DOCSTRINGS => ["src/**/*.jl", "ext/**/*.jl"],
+    Model.FileSet.CODE       => ["src/**/*.jl", "ext/**/*.jl"],
+    Model.FileSet.PAGES      => ["docs/src/**/*.md"],
+    Model.FileSet.RATIONALE  => String[],
+    Model.FileSet.LITERATE   => ["examples/**/*.jl"],
+    Model.FileSet.TESTS      => ["test/**/*.jl"],
+)
+
+"""
+    files(cfg, root, fileset) -> Vector{String}
+
+The files of one file set in the package at `root`, as paths relative to it, sorted and without
+duplicates. The arguments are:
+
+- `cfg` — the package's config.
+- `root` — the package root.
+- `fileset` — the set to resolve.
+
+A package's own patterns replace the defaults for that set rather than adding to them, so a package that
+says where its pages are is believed. Returns the paths.
+"""
+function files(cfg::Model.Config, root::AbstractString, fileset::Model.FileSet.T)
+    patterns = get(cfg.filesets, fileset, DEFAULT_PATTERNS[fileset])
+    out = String[]
+    for pattern in patterns
+        append!(out, expand(root, pattern))
+    end
+    # A page written at build time is nobody's to fix: the rules page is by construction full of text
+    # that breaks the rules it lists, and a reader would spend its whole budget reporting it
+    # (docs/ARCHITECTURE.md §5.2). Same for a declared copy, whose text belongs to its source.
+    written = Set(vcat(cfg.generated, first.(cfg.copies)))
+    skip = Texts.ignored(root)
+    return sort!(unique!(filter(f -> !(f in written) && !skip(f), out)))
+end
+
+
+# `**` matches any run of directories, `*` anything within one name. Written out rather than taken from a
+# package: the patterns are few and the walk is over a source tree, not a corpus.
+function expand(root::AbstractString, pattern::AbstractString)
+    isfile(joinpath(root, pattern)) && return [String(pattern)]
+    rx = Regex("^" * replace(replace(replace(pattern, "." => "\\."), "**/" => "\0"), "*" => "[^/]*") * "\$")
+    rx = Regex(replace(rx.pattern, "\0" => "(?:.*/)?"))
+    out = String[]
+    for (dir, _, fs) in walkdir(root)
+        rel = relpath(dir, root)
+        for f in fs
+            p = rel == "." ? f : joinpath(rel, f)
+            p = replace(p, '\\' => '/')
+            startswith(p, ".git/") && continue
+            occursin(rx, p) && push!(out, p)
+        end
+    end
+    return out
+end
+
+"""
     NAME
 
 What a Julia name looks like, as regex source for a rule to build a larger pattern around.

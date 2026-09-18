@@ -7,9 +7,7 @@ What runs the rules.
 
 ```@docs
 GBGCodingTools.Engine.Checks
-GBGCodingTools.Engine.Checks.DEFAULT_PATTERNS
 GBGCodingTools.Engine.Checks.applies
-GBGCodingTools.Engine.Checks.files
 GBGCodingTools.Engine.Checks.not_run
 GBGCodingTools.Engine.Checks.run_all
 GBGCodingTools.Engine.Checks.run_rule

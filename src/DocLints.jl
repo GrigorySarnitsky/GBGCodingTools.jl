@@ -8,8 +8,8 @@ loads once `Documenter` is in the environment — a consumer's `make.jl` already
 
 The arguments are:
 
-- `cfg` — the validated config object [`Config.read`](@ref) returns; it names the surfaces the scans
-  read.
+- `cfg` — the package ROOT, for a package wired by `gbg init`; or, for one still carrying the old
+  `.gbg/config.toml`, the dictionary [`Config.read`](@ref) returns.
 - `kwargs...` — passed through to `Documenter.makedocs` unchanged (`sitename`, `pages`, `modules`,
   `checkdocs`, `doctest`, `format`, …).
 

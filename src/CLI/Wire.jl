@@ -122,7 +122,17 @@ end
 
 function cmd_init(args)
     o = parse_options(args)
-    return init(isempty(o.positional) ? pwd() : o.positional[1])
+    isempty(o.positional) || return init(o.positional[1])
+    # A package root, not the working directory. Run from `PF/docs`, the raw `pwd()` wired `PF/docs` as
+    # a package called `docs` — fifteen generated files in the wrong place, and a nested `.gbg/config.jl`
+    # that then captured every later verb. A directory is a package when it holds `Project.toml`.
+    root = pwd()
+    while !isfile(joinpath(root, "Project.toml"))
+        parent = dirname(root)
+        parent == root && (println(stderr, "init: no Project.toml here or above — run it in a package"); return 2)
+        root = parent
+    end
+    return init(root)
 end
 
 function cmd_sync(args)

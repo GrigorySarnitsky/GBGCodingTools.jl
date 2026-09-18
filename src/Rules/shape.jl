@@ -43,8 +43,9 @@ read. Returns the units with their metrics.
 A heading, a numbered top-level item and a bold lettered finding each open a new unit, which is what lets
 an append-only document grow by NEW units rather than by swelling one.
 """
-function units(root::AbstractString, files)
+function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,String}} = nothing)
     out = Dict{String,NamedTuple}()
+    note_owner!(key, f) = owners === nothing ? nothing : (owners[key] = f)
     for f in files
         path = joinpath(root, f)
         isfile(path) || continue
@@ -56,13 +57,17 @@ function units(root::AbstractString, files)
                 # one binding and two docstrings, so a key that is only the binding collapses them and
                 # matches neither in a package's recorded baseline.
                 sig = Texts.signature_line(d.text)
-                out["$(basename(f)) :: $(first(isempty(sig) ? d.node : sig, 60))"] = metrics(d.text)
+                key = "$(basename(f)) :: $(first(isempty(sig) ? d.node : sig, 60))"
+                out[key] = metrics(d.text); note_owner!(key, f)
             end
         else
             section = "(preamble)"; buf = IOBuffer(); fenced = false
             flush!() = begin
                 body = String(take!(buf))
-                isempty(strip(body)) || (out["$(basename(f)) § $(first(section, 60))"] = metrics(body))
+                if !isempty(strip(body))
+                    key = "$(basename(f)) § $(first(section, 60))"
+                    out[key] = metrics(body); note_owner!(key, f)
+                end
             end
             for line in split(read(path, String), '\n')
                 # A fenced block is code, a diagram or a doctest — never prose a reader parses, and
@@ -124,15 +129,19 @@ function prose_shape(root::AbstractString, cfg)
     files = files_of(root, cfg)
     base = baseline(root)
     out = Model.Location[]
-    for (key, u) in sort!(collect(units(root, files)))
+    owners = Dict{String,String}()
+    for (key, u) in sort!(collect(units(root, files, owners)))
         recorded = base === nothing ? nothing : get(base, csvkey(key), nothing)
+        # The finding NAMES its file. It carried an empty one, so a per-file switch could never reach
+        # this rule and a reader was left to find the unit from the key alone.
+        where_ = get(owners, key, "")
         if recorded === nothing
-            u.longest > PARAGRAPH_CAP && push!(out, Model.Location(; file = "", line = 0,
+            u.longest > PARAGRAPH_CAP && push!(out, Model.Location(; file = where_, line = 0,
                 text = "$key: longest paragraph $(u.longest) > $PARAGRAPH_CAP words"))
-            u.admonitions > ADMONITION_CAP && push!(out, Model.Location(; file = "", line = 0,
+            u.admonitions > ADMONITION_CAP && push!(out, Model.Location(; file = where_, line = 0,
                 text = "$key: $(u.admonitions) admonitions > $ADMONITION_CAP"))
         elseif u.words > recorded[1] || u.longest > recorded[2] || u.admonitions > recorded[3]
-            push!(out, Model.Location(; file = "", line = 0,
+            push!(out, Model.Location(; file = where_, line = 0,
                 text = "$key GREW: words $(recorded[1])→$(u.words), longest paragraph $(recorded[2])→$(u.longest) — rewrite, do not append"))
         end
     end
@@ -219,9 +228,12 @@ nothing. The arguments are `root`, the package root, and `cfg`, the package's co
 """
 function files_of(root::AbstractString, cfg)
     files = String[]
+    # Per file set, and through the same expander every other rule uses. Reading the package's patterns
+    # with `isfile` dropped every GLOB, and taking the fallback only when ALL THREE sets were silent
+    # meant a package naming its rationale documents — the one thing this instruction asks it to do —
+    # silently stopped this rule reading its code and its pages at all.
     for fs in (Model.FileSet.CODE, Model.FileSet.PAGES, Model.FileSet.RATIONALE)
-        patterns = get(cfg.filesets, fs, String[])
-        append!(files, [p for p in patterns if isfile(joinpath(root, p))])
+        append!(files, Texts.files(cfg, root, fs))
     end
     isempty(files) && return default_files(root, cfg)
     skip = Texts.ignored(root)
@@ -237,7 +249,7 @@ const SHAPE = Model.Rule(
     check = Model.ProgramCheck(Model.Input.FILE_TREE, prose_shape, false),
     examples = [
         Model.TreeExample(["docs/src/page.md" => "# A page\n\n" * join(fill("word", 130), " ") * "\n"],
-            [Model.Location(; file = "", line = 0)], "a paragraph stays inside the cap"),
+            [Model.Location(; file = "docs/src/page.md", line = 0)], "a paragraph stays inside the cap"),
         Model.TreeExample(["docs/src/page.md" => "# A page\n\n" * join(fill("word", 40), " ") * "\n"],
             Model.Location[], "a paragraph stays inside the cap"),
     ])

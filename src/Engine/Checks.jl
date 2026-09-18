@@ -15,67 +15,11 @@ using ..Model
 using ..Catalogue
 using ..Texts
 
-"""
-    DEFAULT_PATTERNS
-
-Where each file set lives in a package that says nothing about it. A package's own config overrides any of
-these, which is how a package whose examples are elsewhere, or whose rationale is one document, says so.
-"""
-const DEFAULT_PATTERNS = Dict{Model.FileSet.T,Vector{String}}(
-    Model.FileSet.DOCSTRINGS => ["src/**/*.jl", "ext/**/*.jl"],
-    Model.FileSet.CODE       => ["src/**/*.jl", "ext/**/*.jl"],
-    Model.FileSet.PAGES      => ["docs/src/**/*.md"],
-    Model.FileSet.RATIONALE  => String[],
-    Model.FileSet.LITERATE   => ["examples/**/*.jl"],
-    Model.FileSet.TESTS      => ["test/**/*.jl"],
-)
-
-"""
-    files(cfg, root, fileset) -> Vector{String}
-
-The files of one file set in the package at `root`, as paths relative to it, sorted and without
-duplicates. The arguments are:
-
-- `cfg` — the package's config.
-- `root` — the package root.
-- `fileset` — the set to resolve.
-
-A package's own patterns replace the defaults for that set rather than adding to them, so a package that
-says where its pages are is believed. Returns the paths.
-"""
-function files(cfg::Model.Config, root::AbstractString, fileset::Model.FileSet.T)
-    patterns = get(cfg.filesets, fileset, DEFAULT_PATTERNS[fileset])
-    out = String[]
-    for pattern in patterns
-        append!(out, expand(root, pattern))
-    end
-    # A page written at build time is nobody's to fix: the rules page is by construction full of text
-    # that breaks the rules it lists, and a reader would spend its whole budget reporting it
-    # (docs/ARCHITECTURE.md §5.2). Same for a declared copy, whose text belongs to its source.
-    written = Set(vcat(cfg.generated, first.(cfg.copies)))
-    skip = Texts.ignored(root)
-    return sort!(unique!(filter(f -> !(f in written) && !skip(f), out)))
-end
-
-
-# `**` matches any run of directories, `*` anything within one name. Written out rather than taken from a
-# package: the patterns are few and the walk is over a source tree, not a corpus.
-function expand(root::AbstractString, pattern::AbstractString)
-    isfile(joinpath(root, pattern)) && return [String(pattern)]
-    rx = Regex("^" * replace(replace(replace(pattern, "." => "\\."), "**/" => "\0"), "*" => "[^/]*") * "\$")
-    rx = Regex(replace(rx.pattern, "\0" => "(?:.*/)?"))
-    out = String[]
-    for (dir, _, fs) in walkdir(root)
-        rel = relpath(dir, root)
-        for f in fs
-            p = rel == "." ? f : joinpath(rel, f)
-            p = replace(p, '\\' => '/')
-            startswith(p, ".git/") && continue
-            occursin(rx, p) && push!(out, p)
-        end
-    end
-    return out
-end
+# `DEFAULT_PATTERNS`, `files` and `expand` moved to `Texts` on 2026-09-18. Which files a rule reads is a
+# text-reading concern, and a RULE could not reach them here: `Rules` is the third module of the order
+# and this is the fifth, so `RULE.DOC.SHAPE` had grown its own copy of the resolution and got it wrong.
+const DEFAULT_PATTERNS = Texts.DEFAULT_PATTERNS
+files(cfg::Model.Config, root::AbstractString, fileset::Model.FileSet.T) = Texts.files(cfg, root, fileset)
 
 """
     applies(cfg, id; file = "") -> Bool
@@ -121,6 +65,11 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
     applies(cfg, rule.id) || return Model.Location[]
 
     out = Model.Location[]
+    # A per-file switch is honoured on EVERY kind of check, not only the one that reads file by file.
+    # It used to be consulted inside the `SOURCE_TEXT` branch alone, so a switch naming files on a rule
+    # that reads the tree, the built site or the loaded module was a silent no-op — and its reason was
+    # still rendered onto the package's site, publishing a claim that was not in force.
+    keep(l) = isempty(l.file) || applies(cfg, rule.id; file = l.file)
     if check.input === Model.Input.SOURCE_TEXT
         for fs in rule.filesets, file in files(cfg, root, fs)
             applies(cfg, rule.id; file) || continue
@@ -159,7 +108,7 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
     else
         return Model.Location[]      # a QUESTION check is run when a question is put, by `Questions`
     end
-    return sort!(out; by = l -> (l.file, l.line))
+    return sort!(filter(keep, out); by = l -> (l.file, l.line))
 end
 
 # A check reading one text reports the line inside that text; the file, and the node it fell in, are the
