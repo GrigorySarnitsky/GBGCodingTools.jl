@@ -18,6 +18,10 @@ using ...Texts
 # ───────────────────────────────────────────────────────────── an argument bullet set in bold
 
 const BOLD_BULLET = r"^\s*[-*]\s+\*\*`"
+# The marker that opens an argument or field list. Without it a bulleted name is not an argument bullet:
+# a design document's type glossary is a bulleted list of names with prose about each, and reading it as
+# an argument list reported fourteen entries of one package's §10 for using bold where it means bold.
+const LIST_MARKER = r"The\s+(arguments?|fields)\s+(is|are)\b"
 
 """
     arg_bullet(text, cfg) -> Vector{Model.Location}
@@ -27,11 +31,24 @@ arguments are `text`, the file's prose, and `cfg`, the package's config, which t
 Returns one location per bullet.
 
 A bold PROSE label — `- **Positions.**` — is a different device and is not a hit: the backtick must
-follow the asterisks, which is what makes it a name rather than a heading.
+follow the asterisks, which is what makes it a name rather than a heading. Nor is a bulleted name
+OUTSIDE an argument or field list, which is why the list marker has to be found first: a design
+document indexes its types that way, and bold there is doing the job bold is for.
 """
 function arg_bullet(text::AbstractString, cfg)
-    return [Model.Location(; file = "", line = i, text = strip(String(line)))
-            for (i, line) in pairs(split(text, '\n')) if occursin(BOLD_BULLET, line)]
+    out = Model.Location[]
+    in_list = false
+    for (i, raw) in pairs(split(text, '\n'))
+        line = String(raw)
+        occursin(LIST_MARKER, line) && (in_list = true; continue)
+        body = strip(line)
+        # A blank line or an indented continuation keeps the list open; anything else closes it.
+        in_list && !(isempty(body) || startswith(body, "-") || startswith(body, "*") || startswith(line, "  ")) &&
+            (in_list = false)
+        in_list && occursin(BOLD_BULLET, line) &&
+            push!(out, Model.Location(; file = "", line = i, text = body))
+    end
+    return out
 end
 
 """
@@ -55,6 +72,11 @@ const ARG_BULLET = Model.Rule(
             Model.Location[], "a plain code span, never a bold one"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\n- **Positions.** Where each sits.\n",
+            Model.Location[], "a plain code span, never a bold one"),
+        # A design document's glossary of types is a bulleted list of NAMES, not of arguments, and bold
+        # there is doing the job bold is for.
+        Model.TextExample(Model.FileSet.RATIONALE,
+            "# The design\n\nThe types are, in layers:\n\n- **`Point{T}`** — a single position.\n",
             Model.Location[], "a plain code span, never a bold one"),
     ])
 

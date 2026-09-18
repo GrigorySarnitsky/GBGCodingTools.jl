@@ -236,10 +236,16 @@ const ABUT_MATH = raw"``[^`\n]{1,60}``"
 const ABUT = Regex("(?:" * ABUT_MATH * raw"\s*" * ABUT_CODE * "|" * ABUT_CODE * raw"\s*" * ABUT_MATH * ")")
 const CODE_THEN_MATH = Regex(ABUT_CODE * raw"\s*" * ABUT_MATH)
 const MATH_THEN_CODE = Regex(ABUT_MATH * raw"\s*" * ABUT_CODE)
-# A formula left OPEN at its right edge continues into whatever follows it. `` ``K_1 =`` `kernelx` `` is
-# an equation whose right-hand side is a name; `` ``512^3`` `Float64` `` is a finished value used as an
-# adjective, and nothing follows from it.
-const DANGLING = r"(=|\\equiv|\\ge|\\le|\\to|\\mapsto|\\sim|\\approx|\\times|[<>+\-])\s*$"
+# A formula left OPEN AT AN EDGE continues past that edge, and what continues it is the code span on
+# that side. Open at the right — an equation ending in a relation — and the name after it is the
+# right-hand side. Open at the left, and the name before it is the left-hand side.
+#
+# A RELATION, not any operator. `\times` is what closes `` ``\approx 48\times`` ``, a self-contained
+# measurement, and a leading `-` opens `` ``-92.0\%`` ``, a self-contained figure; reading either as an
+# open edge reported fourteen measurement rows of one package as split formulas with no rewrite.
+const RELATION = "(?:=|\\\\equiv|\\\\neq?|\\\\g?eq?|\\\\l?eq?|\\\\to|\\\\mapsto|\\\\sim|\\\\approx|\\\\subset|\\\\in|<|>)"
+const OPEN_RIGHT = Regex(RELATION * raw"\s*$")
+const OPEN_LEFT = Regex("^" * raw"\s*" * RELATION)
 
 """
     one_span(text, cfg) -> Vector{Model.Location}
@@ -264,17 +270,19 @@ the fourth, whose author writes the naming symbol-first.
 """
 function one_span(text::AbstractString, cfg)
     out = Model.Location[]
-    for (i, line) in pairs(split(text, '\n'))
-        raw = String(line)
-        report = occursin(CODE_THEN_MATH, raw)
+    # Continuation lines are joined first: prose is hard-wrapped, and one package's policy block ends a
+    # line with a name and opens the next with the formula naming it. Deciding adjacency line by line
+    # pairs each span with the wrong neighbour — which is what happened to the session converting them.
+    for (i, line) in Texts.wrapped_lines(text)
+        inner_of(m) = strip(String(match(Regex(ABUT_MATH), m).match)[3:end-2])
+        report = false
+        m = match(CODE_THEN_MATH, line)
+        m === nothing || (report = occursin(OPEN_LEFT, inner_of(m.match)))
         if !report
-            m = match(MATH_THEN_CODE, raw)
-            if m !== nothing
-                inner = strip(String(match(Regex(ABUT_MATH), m.match).match)[3:end-2])
-                report = occursin(DANGLING, inner)
-            end
+            m = match(MATH_THEN_CODE, line)
+            m === nothing || (report = occursin(OPEN_RIGHT, inner_of(m.match)))
         end
-        report && push!(out, Model.Location(; file = "", line = i, text = strip(raw)))
+        report && push!(out, Model.Location(; file = "", line = i, text = strip(line)))
     end
     return out
 end
@@ -324,6 +332,18 @@ const ONE_SPAN = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe first bandwidth ``h_1 =`` `hx` is set by the caller.\n",
             [Model.Location(; file = "docs/src/page.md", line = 3)], "a finished formula is an adjective"),
+        # A measurement beside a name, which is what a performance document is made of. Not an equation
+        # at either edge, so nothing continues and there is nothing to join.
+        Model.TextExample(Model.FileSet.RATIONALE,
+            "# Measurements\n\n`operators` ``-92.0\\%`` on the CPU path, an ``\\approx 48\\times`` `Float64` gap.\n",
+            Model.Location[], "a finished formula is an adjective"),
+        # A naming split by a line wrap is still one naming; a list's two items are not one line.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- [`curl`](@ref)\n  ``\\equiv \\nabla\\times`` returns the curl.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "a finished formula is an adjective"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- it uses `foo`\n- ``\\equiv bar`` is the other one.\n",
+            Model.Location[], "a finished formula is an adjective"),
     ])
 
 """

@@ -114,6 +114,37 @@ function unwrapped(text::AbstractString)
 end
 
 """
+    wrapped_lines(text) -> Vector{Tuple{Int,String}}
+
+The text as logical lines, each with the number of the line it starts on: a continuation of the line
+above is joined to it. A blank line, a heading, and a bullet or numbered item each START a line.
+
+The argument is `text`. Returns the pairs, in order.
+
+This is for a rule about ADJACENCY, where [`unwrapped`](@ref) is not enough: `unwrapped` joins only when
+brackets are open, and a line ending in a cross-reference has balanced brackets while the formula naming
+that reference sits on the next line. A bullet has to start a new logical line, or the end of one item and the start
+of the next read as adjacent when they are two entries of a list.
+"""
+function wrapped_lines(text::AbstractString)
+    out = Tuple{Int,String}[]
+    current = ""; start = 0
+    flush!() = (isempty(strip(current)) || push!(out, (start, current)); current = "")
+    for (i, raw) in pairs(split(text, '\n'))
+        line = String(raw); body = strip(line)
+        if isempty(body) || occursin(r"^#", body) || occursin(r"^([-*+]|\d+\.)\s", body)
+            flush!(); current = line; start = i
+        elseif isempty(current)
+            current = line; start = i
+        else
+            current *= " " * body
+        end
+    end
+    flush!()
+    return out
+end
+
+"""
     NAME
 
 What a Julia name looks like, as regex source for a rule to build a larger pattern around.
