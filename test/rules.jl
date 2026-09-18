@@ -37,7 +37,7 @@ function materialise(rule, example)
         mkpath(joinpath(dir, dirname(path)))
         write(joinpath(dir, path), example.text)
         cfg = MR.Config(package = "Example", tool = :dev,
-                        filesets = Dict(example.fileset => [path]))
+                        filesets = Dict(example.fileset => [path]), settings = example.settings)
         r = MR.Rule(; id = rule.id, statement = rule.statement, filesets = [example.fileset], check = rule.check)
         return CK.run_rule(r, cfg, dir)
     elseif example isa MR.ModuleExample

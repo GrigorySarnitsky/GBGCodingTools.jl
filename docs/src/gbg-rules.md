@@ -9,7 +9,7 @@ finding, a switch and a report all name.
 
 ## Documentation and API — `RULE.DOC.*`, `RULE.API.*`
 
-What a docstring and an API page contain, in what order and in what shape. 42 rules, written from the rule values themselves,
+What a docstring and an API page contain, in what order and in what shape. 43 rules, written from the rule values themselves,
 so a rule reworded here was reworded in the program that checks it.
 
 #### [`RULE.API.POSITIONAL`](@id RULE.API.POSITIONAL)
@@ -208,6 +208,14 @@ A tunable is an option, a setting or a keyword argument, never a `knob` or a `tw
 The house register is plain and exact; `knob` is neither, and reads as though the value did not matter.
 
 Decided by a program.
+
+#### [`RULE.DOC.RETIRED_CLAIMS`](@id RULE.DOC.RETIRED_CLAIMS)
+A phrase a package has retired does not reappear in its documentation.
+
+A claim retired once is retired because it was wrong, and the way a wrong claim comes back is that somebody copies the sentence that carried it. The check is only as good as the list, and the list is kept by the party being checked: nothing in a repository knows that a claim was retired, so a claim dropped from the list is invisible here, and a ban whose reason was itself later overturned stays in force until someone notices.
+
+Decided by a program.
+This package may set `retired_claims`; unset, it is `GBGCodingTools.Model.RetiredClaim[]`.
 
 #### [`RULE.DOC.RETURNS`](@id RULE.DOC.RETURNS)
 A type docstring leads with its constructor; a '-> Type' arrow or a 'Returns x.' sentence states the result where the identity sentence does not.

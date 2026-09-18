@@ -230,6 +230,42 @@ struct AgentCheck <: Check
 end
 
 """
+    RetiredClaim
+
+A phrase a package has retired, and must not assert again. The fields are:
+
+- `phrase` — the wording itself, matched literally and case-insensitively, with any run of whitespace
+  matching any other, so a phrase broken across a line wrap is still found.
+- `reason` — what to say instead, shown with every finding.
+- `decision` — the record that retired it, where the package keeps one.
+
+It carries a PHRASE and never a regular expression. A pattern written in a package's config would be
+compiled inside every docs build of that package, which puts a malformed pattern, a pathological one and
+an over-broad one into the build; a literal costs nothing and covers what the fleet's own retired claims
+need, because what makes them hard to match is line wrapping, which the check handles itself.
+"""
+Base.@kwdef struct RetiredClaim
+    phrase::String
+    reason::String
+    decision::String = ""
+end
+
+"""
+    Setting
+
+A package's value for one rule parameter. The fields are:
+
+- `rule` — the rule that reads it.
+- `name` — the parameter's name.
+- `value` — the value itself.
+"""
+Base.@kwdef struct Setting
+    rule::Symbol
+    name::Symbol
+    value::Union{String,Symbol,Bool,Int,Vector{String},Vector{RetiredClaim}}
+end
+
+"""
     Example
 
 Something a rule's check must judge a known way, so that the check can be shown to match the rule it
@@ -247,13 +283,20 @@ One text, judged by a check that reads a source text. The fields are:
 - `text` — the text itself.
 - `expect` — the locations the check must report, empty when the text complies.
 - `clause` — the clause of the rule's statement this example is for.
+- `settings` — the package settings the example is judged under, empty for the rule's own defaults.
+
+A rule whose behaviour is a package's to supply cannot otherwise be shown to work, which is what
+`settings` answers. A parameter empty by default makes its check silent by default, so every example of
+it complies and the rule carries no demonstration that it ever fires.
 """
 struct TextExample <: Example
     fileset::FileSet.T
     text::String
     expect::Vector{Location}
     clause::String
+    settings::Vector{Setting}
 end
+TextExample(fileset, text, expect, clause) = TextExample(fileset, text, expect, clause, Setting[])
 
 """
     TreeExample
@@ -489,21 +532,6 @@ Base.@kwdef struct Switch
     target::Symbol
     reason::String
     files::Vector{String} = String[]
-end
-
-"""
-    Setting
-
-A package's value for one rule parameter. The fields are:
-
-- `rule` — the rule that reads it.
-- `name` — the parameter's name.
-- `value` — the value itself.
-"""
-Base.@kwdef struct Setting
-    rule::Symbol
-    name::Symbol
-    value::Union{String,Symbol,Bool,Int,Vector{String}}
 end
 
 """

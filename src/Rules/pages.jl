@@ -382,6 +382,93 @@ const SIBLING_LINK = Model.Rule(
 
 The rules of this batch, in the order they were converted.
 """
-const RULES = Model.Rule[AI_BANNER, SIGNATURE_MIRROR, BLOCK_LIST, NO_DEAD_REFS, INTERNAL_API, SIBLING_LINK]
+
+
+# ───────────────────────────────────────────────── a claim this package has retired, said again
+
+"""
+    RETIRED_CLAIMS
+
+The phrases this package has retired, as [`Model.RetiredClaim`](@ref) values. Empty by default, and a
+package that has retired nothing has nothing to ban.
+"""
+const RETIRED_CLAIMS = Model.Parameter(:retired_claims, Model.RetiredClaim[])
+
+"""
+    retired_claims(text, cfg) -> Vector{Model.Location}
+
+Every place this package asserts something it has retired. The arguments are `text`, the file's prose,
+and `cfg`, the package's config, which carries the phrases. Returns one location per occurrence, each
+carrying the reason the claim was retired.
+
+Whitespace is flattened before matching: the phrases worth banning are sentences, a sentence in a
+hard-wrapped document crosses a line, and a check that matches only within a line is blind to most of
+what it is looking for. Matching is case-insensitive, since a claim at the start of a sentence is the
+same claim.
+
+The phrase is LITERAL. It is escaped before it is used, so nothing a package writes in its config is
+compiled as a pattern inside its own docs build.
+"""
+function retired_claims(text::AbstractString, cfg)
+    entries = Model.RetiredClaim[]
+    for s in cfg.settings
+        s.name === :retired_claims && s.value isa Vector{Model.RetiredClaim} && append!(entries, s.value)
+    end
+    isempty(entries) && return Model.Location[]
+    out = Model.Location[]
+    for e in entries
+        words = split(strip(e.phrase))
+        isempty(words) && continue
+        # Escaped word by word, joined by "any run of whitespace". Built from a literal, never from a
+        # pattern the package wrote: a config that could name a regular expression would have it
+        # compiled inside every build of that package.
+        pattern = Regex(join((replace(w, r"([\\^$.|?*+()\[\]{}])" => s"\\\1") for w in words), "\\s+"), "i")
+        for m in eachmatch(pattern, text)
+            line = count(==('\n'), SubString(text, 1, prevind(text, m.offset))) + 1
+            reason = isempty(e.decision) ? e.reason : e.reason * " (" * e.decision * ")"
+            push!(out, Model.Location(; file = "", line = line,
+                                       text = "a retired claim, said again: " * reason))
+        end
+    end
+    return sort!(out; by = l -> l.line)
+end
+
+# The one package setting the examples above are judged under: without it every example of a rule whose
+# phrases come from a package would comply, and the rule would carry no demonstration that it fires.
+const RETIRED_EXAMPLE = [Model.Setting(rule = Symbol("RULE.DOC.RETIRED_CLAIMS"), name = :retired_claims,
+                                       value = [Model.RetiredClaim(phrase = "the kernel is itself a scalar field",
+                                                                   reason = "a field in spectral representation is not a kernel",
+                                                                   decision = "decision 60")])]
+
+const RETIRED = Model.Rule(
+    id = Symbol("RULE.DOC.RETIRED_CLAIMS"),
+    statement = "A phrase a package has retired does not reappear in its documentation.",
+    why = "A claim retired once is retired because it was wrong, and the way a wrong claim comes back is that somebody copies the sentence that carried it. The check is only as good as the list, and the list is kept by the party being checked: nothing in a repository knows that a claim was retired, so a claim dropped from the list is invisible here, and a ban whose reason was itself later overturned stays in force until someone notices.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, retired_claims, false),
+    parameters = [RETIRED_CLAIMS],
+    examples = [
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe kernel is itself a scalar field, so it scales.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)],
+            "a retired phrase does not reappear", RETIRED_EXAMPLE),
+        # The same claim, wrapped — which is how it appears in a hard-wrapped document, and what a
+        # check matching within one line cannot see.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe kernel is itself a\nscalar field, so it scales.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)],
+            "a retired phrase does not reappear", RETIRED_EXAMPLE),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe kernel is a weight, not a field.\n",
+            Model.Location[], "a retired phrase does not reappear", RETIRED_EXAMPLE),
+        # With nothing retired the rule is silent, which is the honest answer and not a gap.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe kernel is itself a scalar field, so it scales.\n",
+            Model.Location[], "a retired phrase does not reappear"),
+    ],
+)
+
+const RULES = Model.Rule[AI_BANNER, SIGNATURE_MIRROR, BLOCK_LIST, NO_DEAD_REFS, INTERNAL_API, SIBLING_LINK, RETIRED]
 
 end # module Pages

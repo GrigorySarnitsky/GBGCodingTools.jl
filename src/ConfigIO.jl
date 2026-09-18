@@ -93,6 +93,7 @@ const CONSTRUCTORS = Dict{String,Any}(
     "Config" => Model.Config, "Switch" => Model.Switch, "Setting" => Model.Setting,
     "PatternRule" => Model.PatternRule, "AgentRole" => Model.AgentRole, "Settled" => Model.Settled,
     "Location" => Model.Location, "TextExample" => Model.TextExample,
+    "RetiredClaim" => Model.RetiredClaim,
 )
 
 # The enums a config file may name, by their scoped spelling (`FileSet.PAGES`, `Strength.FULL`).
