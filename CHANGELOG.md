@@ -4,6 +4,34 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.5 — 2026-09-18
+
+MAJOR. **98 rules**, one more than rc.4, and two changes a consumer will feel.
+
+**`RULE.DOC.RETIRED_CLAIMS` is new.** A phrase a package has retired does not reappear in its
+documentation: the check is the fleet's, the list is each package's own and empty by default. Entries are
+`RetiredClaim(phrase = …, reason = …, decision = …)` in `.gbg/config.jl`, carrying a LITERAL phrase — a
+pattern written in a package's config would be compiled inside every docs build of that package.
+Whitespace is flattened and matching is case-insensitive, so a phrase broken across a line wrap is still
+found, which is what a pattern was wanted for. The rule states its own limit in `why`: nothing in a
+repository knows a claim was retired, so the check is only as good as a list kept by the party being
+checked.
+
+**`RULE.DOC.AI_BANNER` can be told which pages it covers.** It compared verbatim and always had; what it
+could not do was reach the pages a package requires the banner on, because it read `rationale` and
+`literate` and those are a different question. A package sets `banner_pages` and names them. The general
+mechanism is `Model.Rule.files_parameter`, since a file set is shared and some rules are not. Its drift
+message is also fixed: a page whose banner TITLE had been reworded reported as carrying no banner.
+
+**GBGIsotropicTurbulence is GBGHomogeneousTurbulence**, and the fleet has one home — `Catalogue.FLEET`,
+with the sibling-site table derived from it. `fleet.toml` keeps only the sweep state.
+
+**`gbg fleet` reported every package as NOT-INITIALISED**, having looked for the `.gbg/config.toml` that
+Phase 2 deleted.
+
+Consumer-visible in `Model`: `Setting.value` widens to hold `Vector{RetiredClaim}`, and `TextExample`
+gains `settings`, without which a rule whose behaviour a package supplies cannot be shown to fire at all.
+
 ## 2.0.0-rc.4 — 2026-09-18
 
 MAJOR. **This is the candidate to pin.** rc.2 and rc.3 each went out with a red CI and are superseded by
