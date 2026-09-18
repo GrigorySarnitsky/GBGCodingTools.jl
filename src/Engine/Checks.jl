@@ -171,7 +171,8 @@ function located(loc::Model.Location, file::AbstractString, root::AbstractString
 end
 
 """
-    run_all(cfg, root; intention = nothing, network = false) -> Vector{Model.Location}
+    run_all(cfg, root; intention = nothing, network = false)
+        -> Vector{Tuple{Symbol,Model.Location}}
 
 Everywhere any rule of the rulebook is broken in the package at `root`, for the rules of one intention —
 the documentation rules in a docs build, the code rules in a test suite — or for every rule when
@@ -186,10 +187,15 @@ Returns the locations, in file and line order.
 """
 function run_all(cfg::Model.Config, root::AbstractString; intention = nothing, network::Bool = false,
                  pkg = nothing, site = nothing)
-    out = Model.Location[]
+    out = Tuple{Symbol,Model.Location}[]
     for rule in Catalogue.RULES
         intention === nothing || rule.intention === intention || continue
-        append!(out, run_rule(rule, cfg, root; network, pkg, site))
+        # The rule's id travels WITH its finding. A report that prints only the message leaves a reader
+        # to infer the class from the wording, and a class inferred from wording is a class miscounted:
+        # a consumer counting one rule's findings from the text got two different totals in two runs.
+        for l in run_rule(rule, cfg, root; network, pkg, site)
+            push!(out, (rule.id, l))
+        end
     end
     return out
 end

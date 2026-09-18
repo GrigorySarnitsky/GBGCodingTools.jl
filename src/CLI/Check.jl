@@ -50,8 +50,9 @@ function run(root::AbstractString; intention = nothing, network::Bool = false, i
                 length(Render.GENERATED), " generated path(s).")
         return 0
     end
-    for l in found
-        println(io, "  RULE   ", l.file, ":", l.line, isempty(l.node) ? "" : "  [" * l.node * "]", "  ", l.text)
+    for (id, l) in found
+        println(io, "  ", rpad(String(id), 30), " ", l.file, ":", l.line,
+                isempty(l.node) ? "" : "  [" * l.node * "]", "  ", l.text)
     end
     for l in drift
         println(io, "  WIRING ", l.file, "  ", l.text, " — run `gbg sync`")

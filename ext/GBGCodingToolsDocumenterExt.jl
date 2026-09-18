@@ -50,8 +50,9 @@ function rules_and_wiring(root::AbstractString; site = nothing)
                                 site === nothing ? " (before the site is built)" : "")
     drift = site === nothing ? GBGCodingTools.Render.wiring(cfg, root) : GBGCodingTools.Model.Location[]
     isempty(found) && isempty(drift) && return 0
-    for l in found
-        println(stderr, "  RULE   ", l.file, ":", l.line, isempty(l.node) ? "" : "  [" * l.node * "]", "  ", l.text)
+    for (id, l) in found
+        println(stderr, "  ", rpad(String(id), 30), " ", l.file, ":", l.line,
+                isempty(l.node) ? "" : "  [" * l.node * "]", "  ", l.text)
     end
     for l in drift
         println(stderr, "  WIRING ", l.file, "  ", l.text, " — run `gbg sync`")
