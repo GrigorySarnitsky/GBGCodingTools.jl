@@ -1,80 +1,104 @@
 # Wiring GBGPeriodicFields — instructions for the PF session
 
-Written 2026-09-17 by the GBGCodingTools session, after rehearsing the whole of it on a scratch clone
-of PF at `8b15c967`. Nothing was committed to PF and nothing in PF was touched; the rehearsal ran in a
-temporary directory outside Dropbox.
+Written 2026-09-18 by the GBGCodingTools session. Every figure below was re-measured on a fresh clone of
+PF at `b18db597` after three adversarial passes over an earlier draft found the gate unreachable, the
+counts stale, and five defects in this package's own code. Nothing was committed to PF and nothing in PF
+was touched.
 
 Read this whole file before running anything. It is written for the Claude session that works in PF.
 
 **Every command is `gbg --dev`, not `gbg`.** While PF's pin is `:dev`, the installed shim refuses to run
-in a package that is not inside the GBGCodingTools repository — deliberately, so a consumer cannot
-silently resolve against an unregistered checkout. `gbg --dev <verb>` uses the checkout registered in
-`~/.gbg/dev` and works from anywhere. This stops being necessary when PF pins a released version.
+in a package outside the GBGCodingTools repository — deliberately, so a consumer cannot silently resolve
+against an unregistered checkout. `gbg --dev <verb>` uses the checkout registered in `~/.gbg/dev` and
+works from anywhere. That applies to the gate commands at the foot of this file too.
+
+**Run `gbg --dev init` from PF's root.** It walks up to the nearest `Project.toml`, so a subdirectory
+still finds PF — but read the path it prints before going on.
+
+**The numbers here are a shape, not a target.** The rulebook changed six times on 2026-09-18, four of
+them because PF's own prose showed a rule was wrong. Re-measure; use the table to know which classes to
+expect and roughly how big each is.
 
 ## What you are doing, and what you are not
 
-You are putting PF under `GBGCodingTools` for the first time. That means one new file PF owns
-(`.gbg/config.jl`), a set of files GBGCodingTools writes, and then a report of everything the rulebook
-finds in PF's documentation.
+You are putting PF under `GBGCodingTools` for the first time: one new file PF owns (`.gbg/config.jl`),
+a set of files this package writes, three lines PF adds itself, then a report of what the rulebook finds.
 
 **You are not required to make PF clean.** The phase ends when PF's build and tests are green under
 whatever PF declares — a rule PF does not accept is switched off in `.gbg/config.jl` with a written
-reason, and that reason is rendered onto PF's own documentation site where a reader can weigh it. Fixing
-and switching are both legitimate answers. Declaring nothing and leaving the build red is not.
+reason, rendered onto PF's own site. Fixing and switching are both legitimate. Declaring nothing and
+leaving the build red is not.
+
+**If PF is already wired**, `init` prints `.gbg/config.jl exists and is kept — this is 'gbg sync'` and
+writes no config; `sync` then rewrites the generated paths. The table below will not reproduce, and the
+diff will hold your own editorial work interleaved with the generated changes. Diffing against the last
+commit before wiring is the only clean way to tell them apart.
 
 ## Step 1 — wire it
 
     gbg --dev init
 
-That writes `.gbg/config.jl` if PF has none, then writes everything that config generates. On the
-rehearsal it wrote 16 paths and exited 0. Expect these, and know what each one does to a file PF
-already has:
+On a fresh clone it wrote **17 paths** and exited 0: six modified, eleven new.
 
 | Path | What happens |
 |---|---|
-| `.gbg/config.jl` | **new, and PF's own.** Never rewritten by any verb. Read it before committing. |
-| `CLAUDE.md` | a marked block is inserted **at the head**; the rest of the file is untouched |
-| `.gitignore` | a marked block is appended; the rest is untouched |
-| `.claude/hooks/queue-guard.sh` | **overwritten whole.** PF's current hook is replaced by the fleet's, which differs: the fleet's version does not count items under a `## From the last review` heading. Read the diff before committing. |
-| `.claude/settings.json` | PF's Stop hook entry is **merged in**; every other hook, permission and setting PF holds is kept |
+| `.gbg/config.jl` | **new, and PF's own.** No verb regenerates it; `gbg bump` rewrites its `tool = …` line and nothing else. |
+| `CLAUDE.md` | a marked block is inserted **at the head**; the rest is untouched |
+| `.gitignore` | a marked block is inserted **at the head** too — not appended |
+| `.claude/hooks/queue-guard.sh` | **overwritten whole.** PF's hook is replaced by the fleet's, which differs: the fleet's does not count items under a `## From the last review` heading. Read the diff. |
 | `test/regressions/README.md` | overwritten whole |
-| `.gbg/policy/*.md` (8 files) | new: the rulebook, written from the rule values |
-| `docs/Project.toml`, `test/Project.toml` | this package's `[deps]`, `[sources]` and `[compat]` entries set; every other entry kept |
+| `.gbg/policy/*.md` | **nine** new files: the rulebook |
 | `.github/actions/gbg-auth/action.yml` | new: the composite action a workflow uses to fetch this package on a runner |
+| `docs/Project.toml`, `test/Project.toml` | this package's `[deps]` and `[sources]` entries set; every other entry kept |
+| `.claude/settings.json` | **not touched on PF** — its Stop hook is already right. Where one is missing the entry is merged in, keeping every other hook and setting. |
 
-Everything except `.gbg/config.jl` is a **generated file**: it is the return value of a Julia function,
-`gbg sync` rewrites it, and a hand edit is lost at the next sync. The wiring check reports drift on
-every build so nothing is lost silently. If you want one of them different, the change belongs in
-GBGCodingTools, not in PF.
+The nine policy files, the hook, the regressions note, the ignore block, the CI action and the
+`CLAUDE.md` block are **generated**: each is the return value of a Julia function, `gbg sync` rewrites
+it, and a hand edit is lost at the next sync. The two `Project.toml`s and `settings.json` are
+**entry-merged** — only this package's own entries are written, everything else kept.
 
-**The pin, and what it blocks.** `init` writes `tool = :dev`, which points `docs/Project.toml` at an
-absolute path to the GBGCodingTools checkout on this machine. `v2.0.0-rc.1` is tagged (2026-09-18) but
-that does NOT change this: a prerelease is never pinned, and `gbg bump 2.0.0-rc.1` refuses with exit 2.
-The candidate exists so `gbg install` can put a versioned CLI on each machine.
+**The pin, and what it blocks.** `init` writes `tool = :dev`, which puts an absolute path to the
+GBGCodingTools checkout into both `Project.toml`s. `v2.0.0-rc.1` is tagged but does not change this: a
+prerelease is never pinned, and `gbg bump 2.0.0-rc.1` refuses with exit 2. So until **2.0.0 final** PF is
+wired for this machine only — its CI cannot resolve a path source, and a second host needs a checkout at
+the same path. Consequences to expect, not problems to work around.
 
-So until **2.0.0 final**, PF is wired for this machine only. Two consequences, both fine for now and
-neither a thing to work around: PF's CI cannot resolve this package (a path source does not exist on a
-runner), and the second host needs its own checkout at the same path. When 2.0.0 is cut, `gbg bump
-2.0.0` moves the pin and rewrites everything that depends on it — and only then do the CI steps below
-matter.
+**Commit the new paths by name.** `.gbg/` and `.github/actions/` are untracked, and the fleet agreement
+is `git add -u` plus new files by name. Staged with `-u` alone, the commit ships a `CLAUDE.md` whose
+first line imports a file that is not in the repository.
 
 ## Step 2 — hand the package to the tool, in three lines
 
-`gbg init` writes files; it does not edit PF's own code. Three lines are PF's to add, and the wiring
-check reports each until they are there.
+`init` writes files; it does not edit PF's code. Three lines are PF's own, and the wiring check reports
+two of them until they are there. **`gbg sync` does not write these** — the report says "run `gbg sync`"
+and is wrong about that; it is a known defect of the report, not a hint.
 
-**`test/runtests.jl`** — without this the test suite runs no rule of the rulebook, and is green about it:
+**`test/runtests.jl`** — without this, `Pkg.test()` runs no rule and is green about it. PF's `runtests.jl`
+does not load this package, so the `using` is part of the change:
 
+    using GBGCodingTools
     GBGCodingTools.Engine.Harness.test(dirname(@__DIR__); checks = (GBGCodingTools.Render.wiring,))
 
-**`docs/make.jl`** — call `GBGCodingTools.makedocs(cfg; …)` in place of `Documenter.makedocs`, and write
-the rules page before it, listing the returned path in `pages`:
+**`docs/make.jl`** — PF's loads `Documenter` but not this package, and defines no `ROOT`:
+
+    using GBGCodingTools
+    const ROOT = normpath(joinpath(@__DIR__, ".."))
+
+then call the wrapper **with the package root**, in place of `Documenter.makedocs`:
+
+    GBGCodingTools.makedocs(ROOT; sitename = …, pages = …)
+
+It takes the ROOT, not a config object. An earlier draft said `makedocs(cfg; …)`, which needs the old
+`.gbg/config.toml` that `gbg init` does not write — the gate was unreachable, and one of the three ways
+a session would try to repair it passes the wiring check while the build dies.
+
+Write the rules page before that call and list what it returns in `pages`:
 
     GBGCodingTools.Render.pages(GBGCodingTools.ConfigIO.read_config(ROOT), ROOT)
 
-That page is how a reader sees the rules and what PF has switched off. Add `docs/src/gbg-rules.md` to
-`generated` in `.gbg/config.jl` and to `.gitignore`, so no rule reads it — a page that states the rules
-quotes every banned spelling in order to ban it.
+Add `docs/src/gbg-rules.md` to `generated` in `.gbg/config.jl` and to `.gitignore`. **Place the call
+after PF's own lint block**, not before: those eight lints walk `docs/src` from disk and know nothing
+about `generated`, so a rules page written before them becomes their input.
 
 **`.github/workflows/*.yml`** — once PF pins a released version, each workflow needs, after checkout and
 before any `julia-actions` step:
@@ -85,206 +109,201 @@ before any `julia-actions` step:
 
 Not yet, while the pin is a path: `ci_drift` reports nothing for a dev pin.
 
-## Step 3 — declare PF's file sets
+## Step 3 — decide PF's file sets
 
-The seed config declares none, so the defaults apply: `src/**/*.jl` and `ext/**/*.jl` for code and
-docstrings, `docs/src/**/*.md` for pages, `examples/**/*.jl` for Literate, `test/**/*.jl` for tests, and
-**nothing for rationale**.
+The seed declares none, so the defaults apply: `src/**/*.jl` and `ext/**/*.jl` for code and docstrings,
+`docs/src/**/*.md` for pages, `examples/**/*.jl` for Literate, `test/**/*.jl` for tests, and **nothing
+for rationale**.
 
-That last one matters: PF's `docs/ARCHITECTURE.md`, `FORMALIZATION.md`, `TESTING.md` and
-`PERFORMANCE.md` — 19,700 lines — are not read at all unless PF names them. Decide deliberately whether
-they are in scope. Naming them roughly triples what the rulebook reports, because those documents are
-where PF's mathematics lives. Either answer is defensible; an undeclared default is not a decision.
+PF's `docs/ARCHITECTURE.md`, `FORMALIZATION.md`, `TESTING.md` and `PERFORMANCE.md` — 9,084 lines — are
+therefore unread. Declaring them is a real decision and multiplies what is reported by about 3.4×
+(65 → 220 on the clone), because those documents are where PF's mathematics lives.
 
     filesets = Dict(
         FileSet.RATIONALE => ["docs/ARCHITECTURE.md", "docs/FORMALIZATION.md",
                               "docs/TESTING.md", "docs/PERFORMANCE.md"],
     )
 
+Declaring one set no longer disturbs the others — until 2026-09-18 doing so silently stopped
+`RULE.DOC.SHAPE` reading PF's code and pages at all, which matters if you read an older copy of this
+file.
+
+**108 of those 220 would be `RULE.DOC.SHAPE` on the rationale documents, and they are not PF's to fix.**
+See Step 5 before you declare them.
+
 ## Step 4 — read what it finds
 
     gbg --dev check
 
-Measured on a clone of PF at `b18db597` on 2026-09-18, with the DEFAULT file sets (no rationale
-documents): **108 findings over 13 of the 97 rules**, plus the two wiring findings Step 2 clears. Five
-more rules cannot run without a built site or a loaded module; they run inside `docs/make.jl` and
-`Pkg.test()` once PF calls them.
+Measured on a fresh clone at `b18db597`, default file sets: **65 findings over 10 of the 97 rules**, plus
+the two wiring findings Step 2 clears. Three more rules cannot run without a built site and two without a
+loaded module; they run inside `docs/make.jl` and `Pkg.test()` once PF calls them.
 
-**These move as you work.** The same measurement at `8b15c967`, two hours earlier, gave 107 over 12 —
-`ARGS_FORM` 5 → 7, `SIGNATURE_MIRROR` 3 → 1. Re-measure on your own HEAD; the table below is for
-knowing which classes to expect and roughly how big each is, not for checking off a count.
-
-| Rule | Findings | What it is, and what I think of it |
+| Rule | Findings | What it is |
 |---|---|---|
-| `RULE.TEX.ONE_SPAN` | 35 | One idiom of the module maps, mechanically fixable without losing the link — see below. |
-| `RULE.DOC.SHAPE` | 30 | Paragraphs past the house cap: `convolve!` has one of 174 words, `exponential_convolve!` one of 232. Real prose work. |
+| `RULE.TEX.ONE_SPAN` | 30 | The naming idiom — see below. |
 | `RULE.DOC.LINKS` | 21 | The same target linked twice in one docstring, mostly in the long module maps. Each finding names both lines. |
-| `RULE.DOC.ARGS_FORM` | 7 | Three-or-more arguments written as prose where the bulleted form is required, and one the other way. |
-| `RULE.DOC.AI_BANNER` | 4 | Two Literate examples carry no provenance banner, two carry a drifted copy. |
-| `RULE.DOC.SIGNATURE_MIRROR` | 1 | A displayed signature past the house column. |
-| `RULE.DOC.FIELDS` | 3 | A type whose field list does not document every field it has — genuine gaps. |
-| `RULE.CIT.DOI` | 2 | Hockney & Eastwood and Brandt & Lubrecht are cited with no DOI on the title. |
-| `SIBLING_LINK`, `MATHBF`, `BLOCK_LIST`, `SENTENCE_OPENER`, `RENDERED_MATH` | 1 each | One-line fixes, except `MATHBF`, which is a config line: PF must declare which `\mathbf{…}` strings it uses. |
+| `RULE.DOC.AI_BANNER` | 4 | Three Literate examples carry no provenance banner; one carries a drifted copy. |
+| `RULE.DOC.FIELDS` | 3 | A type whose field list does not document every field — see below. |
+| `RULE.CIT.DOI` | 2 | Hockney & Eastwood and Brandt & Lubrecht, cited with no DOI on the title. |
+| `RENDERED_MATH`, `SIGNATURE_MIRROR`, `MATHBF`, `SENTENCE_OPENER`, `BLOCK_LIST` | 1 each | One-line fixes, except `MATHBF` — a config line, given in Step 6. |
 
-### The largest class, `RULE.TEX.ONE_SPAN` (35)
+### `RULE.TEX.ONE_SPAN` (30)
 
-Thirty-two of the 35 are one construct, with and without a link:
+All 30 are one idiom of PF's module maps:
 
     - [`gradient`](@ref) ``\equiv \nabla`` raises the tensor order …
-    Compute the gradient (`gradient` ``\equiv \nabla``) of a field …
 
-PF is doing something the rulebook had no form for: **binding a code name to the mathematical object it
-denotes**, so a module map can be read from either side — by someone who knows ``\nabla`` and wants the
-function, or who knows `gradient` and wants the operator. GBGStreamingStatistics does the same thing in
-its own prose. It is a real and recurring need in a mathematical package, and PF invented `≡` and
-adjacency for it because nothing else was offered.
-
-The rule now states the house form, and it is apposition — the two spans kept apart by a connective:
+**Add a connective; do not move the name into the formula.**
 
     - [`gradient`](@ref) (``\nabla``) raises the tensor order …
-    Compute the gradient (`gradient`, ``\nabla``) of a field …
 
-A parenthesis, an em dash, a comma or a colon all serve. `≡` is not a connective; it is the thing the
-connective replaces, and dropping it is how mathematical writing has always done this — "the gradient
-operator ∇", not "gradient ≡ ∇".
+A parenthesis, em dash, comma or colon all serve, and `≡` disappears — it is not a connective, it is what
+the connective replaces. The other form that satisfies the check, with the name set inside the formula as
+`\texttt{…}`, is worse: it emits no `<code>` element, so the name loses the styling every other name on
+the page carries, and a link round the whole formula makes each operator in it a link to the name.
 
-Do NOT move the name into the formula as `` ``\texttt{gradient} \equiv \nabla`` ``. That also satisfies
-the check, and until 2026-09-18 the rule's own example recommended it, but it is worse: it emits no
-`<code>` element, so the name is set in the math renderer's monospace and loses the styling every other
-name on the page has, and a link wrapped round the whole formula makes `≡` and `∇` links to `gradient`.
-`\texttt{…}` is for a name that is an OPERAND of the formula — `` ``\texttt{maxiter} \le n`` `` — which
-is what `RULE.TEX.CODE_IN_MATH` is about.
+An attributive modifier — a finished formula before the type it qualifies — is no longer reported at all,
+so none of these 30 are that.
 
-The remaining three findings are not namings at all, just two adjacent facts (`` ``512^3`` `Float64` ``);
-a connective fixes those too.
+### `RULE.DOC.FIELDS` (3)
+
+The owner has ruled: **report all fields, and drop any "user-readable" qualifier.** A full field list
+helps a reader understand the architecture and shows up a bad one. The rule already does exactly this —
+every bullet a real field, and every field a bullet — so all three findings stand, including the internal
+`_FiberGather`, and no rule change is coming. A field documented in a paragraph rather than in the bullet
+list does not satisfy it.
 
 ## Step 5 — what this package now owns, and what it does not
 
-**This step applies to every package, not only PF.** Whoever adapts this file for the next one carries
-it over unchanged.
+**This step applies to every package, not only PF.** Whoever adapts this file for the next one carries it
+over unchanged.
 
 `gbg init` installs a line at the head of your `CLAUDE.md`: *nothing restates a rule outside the
-rulebook*. A package that has been developed for a year violates that from the minute it is wired,
-because its own instructions grew before the rulebook existed. PF's `CLAUDE.md` is 2,753 lines and its
-§Style is about 590 of them; GBGIsotropicTurbulence's is 505 and GBGStreamingStatistics' 680.
-GBGCloudPhysics' is 134 and restates nothing, which is the proof that this is accumulated habit rather
-than something wiring requires.
+rulebook*. A package developed for a year violates that from the minute it is wired, because its own
+instructions grew before the rulebook existed. PF's `CLAUDE.md` is 2,753 lines and its §Style about 572
+of them; GBGIsotropicTurbulence's is 505 and GBGStreamingStatistics' 680. GBGCloudPhysics' is 134 and
+restates nothing, which shows this is accumulated habit rather than something wiring requires.
 
-**No program finds the duplication.** Four measurements say so: no rule statement appears VERBATIM in
-any of the four packages (0 of 97, every time), and a loose lexical match reports 158 candidates from
-181 paragraphs. A middle threshold matches on document length rather than on content — 85 of 97 rules
-"present" in PF's file and 12 of 97 in CloudPhysics', which measures only that one file is twenty times
-longer. So this is a judgement a reader makes once per package, and the point of this step is to tell
-that reader what to look for BEFORE they spend a day inside the file.
+**No program finds the duplication.** The one reproducible measurement is that no rule statement appears
+VERBATIM in any of the four packages — 0 of 97, every time — because nobody copy-pastes a rule, they
+paraphrase it. Looser matching was tried and abandoned; those figures are not reproducible from anything
+in the repository and are not quoted here. So this is a judgement a reader makes once per package, and
+this step exists to tell that reader what to look for before they spend a day inside the file.
 
 ### The four kinds, and only two are this package's business
 
-1. **Prose restating a rule.** The bulk of the problem. It goes, and the rulebook carries it.
-2. **A mechanism this package has SUPERSEDED.** See the list below — and read the date on each.
-3. **Conventions that are genuinely the package's own.** PF's representation qualifier trailing what it
-   qualifies; "operators are not spectral". Another package will never want them and this one must not
-   lose them. They become `PatternRule`s in `.gbg/config.jl`, so they are checked rather than merely
-   written down.
-4. **Records — closures, round artefacts, decision logs, cross-package requests.** Not style, not
-   rules, and none of this package's business. Leave them alone. Filing them under "Style" is much of
-   why one `CLAUDE.md` is five times another's.
+1. **Prose restating a rule.** The bulk. It goes, and the rulebook carries it.
+2. **A mechanism this package has SUPERSEDED.** Read the list below, and the date on each.
+3. **Conventions genuinely the package's own.** PF's representation qualifier trailing what it qualifies;
+   "operators are not spectral". Another package will never want them and this one must not lose them.
+   They can be recorded as `PatternRule`s in `.gbg/config.jl` — but **nothing executes a `PatternRule`
+   today**: it is rendered onto the switches page and checked by nothing. Do not trade a live convention
+   in `CLAUDE.md` for one on the promise that it is enforced.
+4. **Records — closures, round artefacts, decision logs, cross-package requests.** Not style, not rules,
+   and none of this package's business. Leave them alone.
 
-### Superseded TODAY, with the evidence
+### Superseded today, with the evidence
 
-- **A package's own prose-shape lint** — PF's `lint_prose_shape` in `docs/make.jl`. `RULE.DOC.SHAPE`
-  reads the same baseline file, `docs/prose_shape.csv`, with the same keys: 381 of PF's 381 units match
-  its recorded rows, and the rule reports 0. Same input, same verdict.
-- **The end-of-turn hook** — `.claude/hooks/queue-guard.sh` is written by `Render.hook` and overwritten
-  on every `gbg sync`. The fleet's version differs from PF's: it does not count items under a
-  `## From the last review` heading.
+- **The end-of-turn hook.** `.claude/hooks/queue-guard.sh` is written by `Render.hook` and overwritten on
+  every `gbg sync`.
+
+That is the whole list.
 
 ### NOT superseded, however much it looks it
 
-- **The four slash commands under `.claude/commands/`.** They are the package's OWN battery — a
-  self-contained protocol that calls no `gbg` verb. This package's replacement, the
-  `documentation_review` instrument, does not exist until Phase 4. Cutting them now removes a working
-  capability and puts nothing in its place.
-- **`test/exhaustive/` (1,003 lines in PF).** Its filenames — `checks.jl`, `selfcheck.jl`,
-  `classify_checks.jl` — read like documentation linting and are nothing of the sort: it is a property
-  sweep over the package's own operation surface (metadata, preservation, determinism, finiteness, type
-  stability), plus a harness that checks ITSELF because every false finding it ever produced was a
-  defect in the harness. Nothing here supersedes any of it. I nearly listed it as a candidate to cut,
-  from the filenames, without opening the file.
-- **Anything whose supersession you cannot demonstrate.** The test is not what a file is called or
-  where it sits. It is: *this rule reads the same input and produces the same verdict*. Two of the three
-  items I first believed were superseded failed that test, and one of them would have taken the most
-  valuable testing in the package with it.
+- **PF's `lint_prose_shape`.** An earlier draft told PF to delete it and was wrong twice over. With the
+  default file sets `RULE.DOC.SHAPE` reaches 381 of the 639 rows in `docs/prose_shape.csv` — PF's lint
+  also reads `docs/*.md` and `docs/src/api/*.md`, which the defaults do not. Declare the rationale
+  documents to close that gap and the two disagree outright: the rule reports **108 GREW findings** on
+  units PF's lint passes, because for a numbered top-level item PF's lint does not push the item's own
+  line into the unit and `Rules.Shape.units` does. Same baseline file, same keys, **different metrics**.
+  Keep the lint. Raising a ceiling is `PROSE_SHAPE_BASELINE=1` inside it, and there is no replacement for
+  that yet.
+- **The four slash commands under `.claude/commands/`.** They are PF's OWN battery — a self-contained
+  protocol calling no `gbg` verb. This package's replacement, the `documentation_review` instrument, does
+  not exist until Phase 4. Cutting them removes a working capability and puts nothing in its place.
+- **`test/exhaustive/` (7,177 lines).** Its filenames read like documentation linting and are nothing of
+  the sort: a property sweep over PF's own operation surface — metadata, preservation, determinism,
+  finiteness, type stability — plus a harness that checks itself. Nothing here supersedes any of it.
+- **Anything whose supersession you cannot demonstrate.** The test is not what a file is called or where
+  it sits: *this rule reads the same input and produces the same verdict*. Of the three items an earlier
+  draft certified, two failed that test, and one would have taken the most valuable testing in the
+  package with it.
 
-**A supersession has a date.** The question is never "does this package own that eventually" but "does
-it own it today". Ask it item by item, and where the answer is Phase 4 or Phase 5, write that down and
-leave the mechanism running.
+**A supersession has a date.** The question is never "does this package own that eventually" but "does it
+own it today". Where the answer is Phase 4 or Phase 5, write that down and leave the mechanism running.
 
 ### This reconciliation is not finished when the wiring is
 
-Do not treat this step as a task with an end. Most of the conflicts have not happened yet, because most
-of this package does not exist yet: the instruments arrive in Phase 4 and the last of the old engines
-goes in Phase 5, and each of those supersedes something a consumer is still running. A mechanism that is
-correct to keep today is one you will be asked to cut in two months, and you will not be asked by a
-program — the list above is a snapshot with a date on it, not a contract.
+Most of the conflicts have not happened yet, because most of this package does not exist yet: the
+instruments arrive in Phase 4 and the last of the old engines goes in Phase 5, and each supersedes
+something a consumer is still running. A mechanism correct to keep today is one a later session will be
+asked to cut — by a person, not a program.
 
-Two consequences worth writing into the package's own notes rather than only acting on:
-
-- **Record what you decided to keep, and why.** "The four slash commands stay until the
-  `documentation_review` instrument exists" is worth one line in the package's `CLAUDE.md`, because the
-  session that meets them in Phase 4 will otherwise re-derive the whole question, and may get it wrong
-  in the other direction.
-- **Expect the rulebook to move under you.** It has changed four times in the two days PF has been
-  wired, twice because PF's own prose showed a rule was wrong. A finding that was correct last week may
-  be gone, and prose you rewrote to satisfy a rule may now satisfy a different one. Re-measure before
-  acting on any list older than a day; the counts in this document carry the date they were taken for
-  exactly that reason.
+- **Record what you decided to keep, and why.** "The four slash commands stay until `documentation_review`
+  exists" is one line in PF's `CLAUDE.md` that saves the Phase 4 session re-deriving the question, and
+  possibly getting it wrong the other way.
+- **Expect the rulebook to move under you.** Re-measure before acting on any list older than a day.
 
 ## Step 6 — fix, or switch, and say which
 
 A switch is a line in `.gbg/config.jl`:
 
     switches = [
-        Switch(target = Symbol("RULE.DOC.SHAPE"), files = ["docs/PERFORMANCE.md"],
-               reason = "the measurement tables here are one paragraph per run by design; \
-                         splitting them would separate a number from the conditions it was measured under"),
+        Switch(target = Symbol("RULE.DOC.LINKS"), files = ["src/Convolution.jl"],
+               reason = "the module map links each operation where it is introduced and again in the index, for a reader arriving from elsewhere"),
     ]
 
-Write the reason so that a reader who disagrees can argue with it. "Does not apply here" is not a
-reason; it is the claim the reason is supposed to support. And before writing one, check that the rule
-really cannot be satisfied — I claimed `ONE_SPAN` forced PF to drop its `@ref` links, and it does not;
-a switch resting on that would have been a false record on PF's own site.
+Keep the reason on one line. It is rendered into `.gbg/policy/switches.md` and onto PF's site, and a Julia
+line continuation inside the string lands a stray backslash there.
 
-The reason is not a formality — it is rendered into `.gbg/policy/switches.md` and onto PF's site, and it
-is the only thing a later reader has. Write it for them. A switch may also name files, so a rule can be
-off for one document and on everywhere else.
+A per-file switch works on every rule now; until 2026-09-18 it was a silent no-op on any rule reading the
+tree, the built site or the loaded module, while its reason was published regardless.
 
-## What the rehearsal already fixed, so you do not meet it
+A variant is a `Setting`. This is the whole of the `RULE.TEX.MATHBF` remedy:
 
-Wiring the scratch clone found nine defects in GBGCodingTools. All nine are fixed and pushed; the
-numbers above are after the fixes. They are listed here so that if you see one of these shapes, you
-know it is a tool defect and should be reported rather than worked around:
+    settings = [
+        Setting(rule = Symbol("RULE.TEX.MATHBF"), name = :mathbf_allowed, value = ["\\mathbf{k}"]),
+    ]
 
-1. The `CLAUDE.md` block was appended to the **foot** of the file — on PF, line 2,744 of 2,753.
-2. `.claude/settings.json` was written whole, which would have deleted PF's own hooks and permissions.
-3. `gbg init` took the package name from the **directory**, not `Project.toml`.
-4. Nothing refused a config whose name disagreed with `Project.toml`. That one wrong field turned every
-   mention PF makes of its own name into an unlinked-sibling finding: 19 of them, 18 false.
-5. The identifier pattern was ASCII-only in four places, so `φ::F` was not a field and the docstring
-   documenting it was reported as documenting a ghost. There is now one Unicode-aware pattern.
-6. `RULE.TEX.RENDERED_MATH` reported `⋅`, `×`, `64×64×64` and a call as mathematics-in-code. All eight
-   of its PF findings were false.
-7. `RULE.TEX.SPACING` reported every correct `\\,\\mathrm{d}x`: its exemption was written in the page's
-   spelling, and a docstring must double every LaTeX backslash. All ten were false.
-8. `RULE.TEX.CODE_IN_MATH` read `ck_a` and `ac - bd` as identifiers. Two letters is a product, not a
-   name; the threshold is three now.
-9. `RULE.DOC.LINKS` reported all 21 repeats at the docstring's first line, leaving you to search a
-   seventy-line module map for the second link. Each names both lines now.
+**A malformed `.gbg/config.jl` is fatal, not a finding.** Both `Pkg.test()` and the docs build read it
+before anything else and neither guards the read, so a typo — a switch naming an id that is not a rule, a
+`Setting` whose `name` is a string rather than a symbol — is a red suite and a dead build. Run
+`gbg --dev check` after any config edit; it reports the same error as exit 2, with the line.
 
-That is 39 false findings out of the 145 the first run produced. If a class of findings looks wrong to
-you in the same way, it probably is — say so rather than editing PF to satisfy it.
+Write the reason so a reader who disagrees can argue with it. "Does not apply here" is not a reason; it is
+the claim a reason should support. And check the rule really cannot be satisfied first — an earlier draft
+of this file asserted a conflict between the rulebook and PF's house style that did not exist.
 
 ## The gate
 
-PF is done when `julia --project=docs docs/make.jl` and `Pkg.test()` both exit 0, `gbg sync --check`
-is clean, and the tree is committed. Both commands run the rulebook themselves; there is no separate
-step and no report to file.
+PF is done when `julia --project=docs docs/make.jl` and `Pkg.test()` both exit 0, `gbg --dev sync --check`
+is clean, and the tree is committed. Both commands run the rulebook themselves; there is no separate step
+and no report to file.
+
+## What the rehearsals and the adversarial passes already fixed
+
+Fourteen defects in this package: nine from rehearsing the wiring, five from three adversarial passes over
+an earlier draft of this file. Listed so that if you meet one of these shapes you know it is a tool defect
+to report rather than something to work around.
+
+1. The `CLAUDE.md` block was appended to the FOOT of the file — on PF, line 2,744 of 2,753.
+2. `.claude/settings.json` was written whole, which would have deleted a package's own hooks.
+3. `gbg init` took the package name from the DIRECTORY, not `Project.toml`.
+4. Nothing refused a config whose name disagreed with `Project.toml` — 19 findings, 18 of them false.
+5. The identifier pattern was ASCII-only, so `φ::F` was not a field and the docstring documenting it was
+   reported as documenting a ghost.
+6. `RULE.TEX.RENDERED_MATH` reported `⋅`, `×`, `64×64×64` and a call as mathematics set in code.
+7. `RULE.TEX.SPACING` reported every correct differential: its exemption was written in the page's
+   spelling, and a docstring doubles every LaTeX backslash.
+8. `RULE.TEX.CODE_IN_MATH` read two-letter products as identifiers.
+9. `RULE.DOC.LINKS` reported every repeat at the docstring's first line.
+10. `makedocs` needed a config file `gbg init` does not write — the gate was unreachable.
+11. Declaring a file set silently stopped `RULE.DOC.SHAPE` reading anything else.
+12. A per-file switch was a no-op on most rules, while its reason was published.
+13. `gbg init` wired the working directory rather than the package.
+14. `Setting(value = […])` was refused, so `MATHBF`'s only remedy could not be written.
+
+If a class of findings looks wrong to you in the same way, it probably is — say so rather than editing PF
+to satisfy it.
