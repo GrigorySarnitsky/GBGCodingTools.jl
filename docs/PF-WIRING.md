@@ -35,18 +35,52 @@ already has:
 | `test/regressions/README.md` | overwritten whole |
 | `.gbg/policy/*.md` (8 files) | new: the rulebook, written from the rule values |
 | `docs/Project.toml`, `test/Project.toml` | this package's `[deps]`, `[sources]` and `[compat]` entries set; every other entry kept |
+| `.github/actions/gbg-auth/action.yml` | new: the composite action a workflow uses to fetch this package on a runner |
 
 Everything except `.gbg/config.jl` is a **generated file**: it is the return value of a Julia function,
 `gbg sync` rewrites it, and a hand edit is lost at the next sync. The wiring check reports drift on
 every build so nothing is lost silently. If you want one of them different, the change belongs in
 GBGCodingTools, not in PF.
 
-**The pin.** `init` writes `tool = :dev`, which points `docs/Project.toml` at an absolute path to the
-GBGCodingTools checkout on this machine. That is right only while 2.0.0 is unreleased. When
-`v2.0.0-rc.1` is tagged, run `gbg bump 2.0.0-rc.1`; after that PF's environments carry a version, not a
-path, and PF builds the same way on any machine and on CI.
+**The pin, and what it blocks.** `init` writes `tool = :dev`, which points `docs/Project.toml` at an
+absolute path to the GBGCodingTools checkout on this machine. `v2.0.0-rc.1` is tagged (2026-09-18) but
+that does NOT change this: a prerelease is never pinned, and `gbg bump 2.0.0-rc.1` refuses with exit 2.
+The candidate exists so `gbg install` can put a versioned CLI on each machine.
 
-## Step 2 — declare PF's file sets
+So until **2.0.0 final**, PF is wired for this machine only. Two consequences, both fine for now and
+neither a thing to work around: PF's CI cannot resolve this package (a path source does not exist on a
+runner), and the second host needs its own checkout at the same path. When 2.0.0 is cut, `gbg bump
+2.0.0` moves the pin and rewrites everything that depends on it — and only then do the CI steps below
+matter.
+
+## Step 2 — hand the package to the tool, in three lines
+
+`gbg init` writes files; it does not edit PF's own code. Three lines are PF's to add, and the wiring
+check reports each until they are there.
+
+**`test/runtests.jl`** — without this the test suite runs no rule of the rulebook, and is green about it:
+
+    GBGCodingTools.Engine.Harness.test(dirname(@__DIR__); checks = (GBGCodingTools.Render.wiring,))
+
+**`docs/make.jl`** — call `GBGCodingTools.makedocs(cfg; …)` in place of `Documenter.makedocs`, and write
+the rules page before it, listing the returned path in `pages`:
+
+    GBGCodingTools.Render.pages(GBGCodingTools.ConfigIO.read_config(ROOT), ROOT)
+
+That page is how a reader sees the rules and what PF has switched off. Add `docs/src/gbg-rules.md` to
+`generated` in `.gbg/config.jl` and to `.gitignore`, so no rule reads it — a page that states the rules
+quotes every banned spelling in order to ban it.
+
+**`.github/workflows/*.yml`** — once PF pins a released version, each workflow needs, after checkout and
+before any `julia-actions` step:
+
+    - uses: ./.github/actions/gbg-auth
+      with:
+        token: ${{ secrets.GBG_DEPS_TOKEN }}
+
+Not yet, while the pin is a path: `ci_drift` reports nothing for a dev pin.
+
+## Step 3 — declare PF's file sets
 
 The seed config declares none, so the defaults apply: `src/**/*.jl` and `ext/**/*.jl` for code and
 docstrings, `docs/src/**/*.md` for pages, `examples/**/*.jl` for Literate, `test/**/*.jl` for tests, and
@@ -62,7 +96,7 @@ where PF's mathematics lives. Either answer is defensible; an undeclared default
                               "docs/TESTING.md", "docs/PERFORMANCE.md"],
     )
 
-## Step 3 — read what it finds
+## Step 4 — read what it finds
 
     gbg check
 
@@ -114,7 +148,7 @@ is what `RULE.TEX.CODE_IN_MATH` is about.
 The remaining three findings are not namings at all, just two adjacent facts (`` ``512^3`` `Float64` ``);
 a connective fixes those too.
 
-## Step 4 — fix, or switch, and say which
+## Step 5 — fix, or switch, and say which
 
 A switch is a line in `.gbg/config.jl`:
 
