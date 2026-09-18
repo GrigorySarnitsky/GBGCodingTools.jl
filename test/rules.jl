@@ -298,4 +298,43 @@ end
             end
         end
     end
+    # A rule whose file list is the package's, not the file sets'. `RULE.DOC.AI_BANNER` reads `rationale`
+    # and `literate` by default; which pages a package requires the banner on is its own question and has
+    # nothing to do with which pages are rationale. Expressed as a file set it could only be answered by
+    # widening one that other rules also read.
+    #
+    # This is the defect GBGPeriodicFields hit on 2026-09-18: a page of theirs carrying a reworded banner
+    # passed, not because the comparison is loose — it is verbatim — but because the rule never opened the
+    # file. A check that does not reach the page it is required to judge has not run, and reported clean.
+    @testset "a package names the files one rule reads" begin
+        P = GBGCodingTools.Catalogue.Pages
+        root = mktempdir(; cleanup = true)
+        mkpath(joinpath(root, "docs", "src"))
+        write(joinpath(root, "docs", "src", "ok.md"), P.BANNER * "\n\n# Page\n\nProse.\n")
+        write(joinpath(root, "docs", "src", "drifted.md"),
+              replace(P.BANNER, "Written by AI, not regularly reviewed" => "Notes") * "\n\n# Page\n\nProse.\n")
+
+        # The default: neither page is rationale or literate, so the rule reads nothing and says nothing.
+        plain = MR.Config(package = "Sample", tool = :dev)
+        @test isempty(G.Engine.Checks.reading(P.AI_BANNER, plain, root))
+        @test isempty(G.Engine.Checks.run_rule(P.AI_BANNER, plain, root))
+
+        # Named by the package, the rule reads both and reports the drifted one AS drift, which is a
+        # different repair from a missing banner and used to be reported as one: the drift branch tested
+        # for `Written by AI`, the title's wording, while the body says `written by AI`.
+        named = MR.Config(package = "Sample", tool = :dev,
+                          settings = [MR.Setting(rule = P.AI_BANNER.id, name = :banner_pages,
+                                                 value = ["docs/src/**/*.md"])])
+        @test length(G.Engine.Checks.reading(P.AI_BANNER, named, root)) == 2
+        found = G.Engine.Checks.run_rule(P.AI_BANNER, named, root)
+        @test length(found) == 1
+        @test found[1].file == "docs/src/drifted.md"
+        @test occursin("drifted", found[1].text)
+
+        # A setting naming another rule's parameter is not this rule's file list.
+        other = MR.Config(package = "Sample", tool = :dev,
+                          settings = [MR.Setting(rule = Symbol("RULE.DOC.SIBLING_LINK"), name = :banner_pages,
+                                                 value = ["docs/src/**/*.md"])])
+        @test isempty(G.Engine.Checks.reading(P.AI_BANNER, other, root))
+    end
 end

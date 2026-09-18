@@ -44,6 +44,46 @@ function applies(cfg::Model.Config, id::Symbol; file::AbstractString = "")
 end
 
 """
+    reading(rule, cfg, root) -> Vector{Tuple{Model.FileSet.T,String}}
+
+Every file one rule reads in this package, each with the file set it was reached through. The arguments
+are:
+
+- `rule` — the rule about to run.
+- `cfg` — the package's config, which may name this rule's files itself.
+- `root` — the package root.
+
+Returns the pairs, in file order.
+
+Normally that is the rule's file sets. A rule that names a `files_parameter` and whose package has SET
+that parameter reads exactly the globs named there instead, so a package can say which files one rule
+means without widening a set that other rules also read — which pages carry the provenance banner is
+that kind of question, and expressing it as `rationale` put the banner's reach and every rationale
+rule's reach on one dial.
+
+The file set reported for a named file is `PAGES`, since what a package names this way is a page; a
+docstring surface is not selectable this way and does not need to be.
+"""
+function reading(rule::Model.Rule, cfg::Model.Config, root::AbstractString)
+    if rule.files_parameter !== nothing
+        globs = String[]
+        for s in cfg.settings
+            s.rule === rule.id && s.name === rule.files_parameter && s.value isa Vector{String} &&
+                append!(globs, s.value)
+        end
+        if !isempty(globs)
+            named = String[]
+            for g in globs; append!(named, Texts.expand(root, g)); end
+            skip = Texts.ignored(root)
+            written = Set(vcat(cfg.generated, first.(cfg.copies)))
+            return [(Model.FileSet.PAGES, f) for f in
+                    sort!(unique!(filter(f -> !(f in written) && !skip(f), named)))]
+        end
+    end
+    return [(fs, file) for fs in rule.filesets for file in files(cfg, root, fs)]
+end
+
+"""
     run_rule(rule, cfg, root; network = false) -> Vector{Model.Location}
 
 Everywhere the rule is broken in the package at `root`. The arguments are:
@@ -71,7 +111,7 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
     # still rendered onto the package's site, publishing a claim that was not in force.
     keep(l) = isempty(l.file) || applies(cfg, rule.id; file = l.file)
     if check.input === Model.Input.SOURCE_TEXT
-        for fs in rule.filesets, file in files(cfg, root, fs)
+        for (fs, file) in reading(rule, cfg, root)
             applies(cfg, rule.id; file) || continue
             # A documentation rule reads the file's PROSE, not its source: Julia code is full of text
             # that looks like prose markup, and a rule handed the whole file reports the code as though

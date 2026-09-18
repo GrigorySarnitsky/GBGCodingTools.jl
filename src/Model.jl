@@ -341,10 +341,18 @@ examples that show the check matches the statement. The fields are:
 - `why` — what goes wrong without it.
 - `intention` — whether its defects are in documentation or in code.
 - `filesets` — the file sets it runs over.
+- `files_parameter` — a parameter of globs a package may set to name this rule's files in place of
+  `filesets`, or `nothing`.
 - `check` — what decides a violation, or `nothing` where nothing does.
 - `unchecked_reason` — why it has no check, required when it has none.
 - `parameters` — the values a package may set.
 - `examples` — texts, trees, sources, pages or questions the check must judge a known way.
+
+A file set is shared and some rules are not, which is what `files_parameter` answers. Which pages must
+carry the provenance banner differs per package and has nothing to do with which pages are rationale.
+
+Expressed as a file set, widening one rule's reach drags every other rule reading that set along with
+it. A rule naming a parameter lets a package say which files it means and leave the sets alone.
 """
 Base.@kwdef struct Rule
     id::Symbol
@@ -352,6 +360,7 @@ Base.@kwdef struct Rule
     why::String = ""
     intention::Intention.T = Intention.DOCUMENTATION
     filesets::Vector{FileSet.T} = FileSet.T[]
+    files_parameter::Union{Symbol,Nothing} = nothing
     check::Union{ProgramCheck,AgentCheck,Nothing} = nothing
     unchecked_reason::String = ""
     parameters::Vector{Parameter} = Parameter[]

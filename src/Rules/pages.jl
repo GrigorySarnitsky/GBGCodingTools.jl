@@ -47,11 +47,28 @@ function ai_banner(text::AbstractString, cfg)
     # the raw text called the correct thing drifted. The file is not the page.
     unprefixed = replace(text, r"(?m)^#[ \t]?" => "")
     (occursin(BANNER, text) || occursin(BANNER, unprefixed)) && return Model.Location[]
-    mentions = occursin("Written by AI", text) || occursin("Written by AI", unprefixed)
+    # Whether this is a banner that has DRIFTED or no banner at all, which is a different repair and so
+    # a different message. It tested for `Written by AI`, the title's wording, and the body says
+    # `written by AI` — so a page whose TITLE had been reworded, the commonest drift there is, reported
+    # as carrying no banner and sent a reader looking for something that was in front of them.
+    mentions = occursin(r"written by AI"i, text) || occursin(r"written by AI"i, unprefixed)
     return [Model.Location(; file = "", line = 1,
                             text = mentions ? "the banner has drifted from the fleet's text — copy it verbatim" :
                                               "no provenance banner on a page that must carry one")]
 end
+
+"""
+    BANNER_PAGES
+
+The pages this package requires the provenance banner on, as globs. Unset — the default — the rule reads
+its file sets, the rationale documents and the rendered Literate examples.
+
+A package sets it where its list is its own: this one requires the banner on EVERY page of its site,
+because the owner reviews the four science packages' API prose and not this one's, and that requirement
+was written in `CLAUDE.md` and enforced by nothing until 2026-09-18. It is not `rationale`, which other
+rules read; naming the pages here leaves those sets alone.
+"""
+const BANNER_PAGES = Model.Parameter(:banner_pages, String[])
 
 const AI_BANNER = Model.Rule(
     id = Symbol("RULE.DOC.AI_BANNER"),
@@ -59,7 +76,9 @@ const AI_BANNER = Model.Rule(
     why = "A banner reworded in one package is a banner a reader learns to skim past in all of them.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.RATIONALE, Model.FileSet.LITERATE],
+    files_parameter = :banner_pages,
     check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, ai_banner, false),
+    parameters = [BANNER_PAGES],
     examples = [
         Model.TextExample(Model.FileSet.RATIONALE, "# A rationale\n\nThe reasoning.\n",
             [Model.Location(; file = "docs/RATIONALE.md", line = 1)], "carries the banner"),

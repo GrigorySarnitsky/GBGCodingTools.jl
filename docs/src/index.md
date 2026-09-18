@@ -1,5 +1,8 @@
 # GBGCodingTools
 
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
 !!! warning "Being rebuilt"
     This package is being rebuilt to a new design, adopted on 2026-09-17: `docs/ARCHITECTURE.md` in the
     repository is what it is being built to, and `IMPLEMENTATION.md` is the order of the work. The round

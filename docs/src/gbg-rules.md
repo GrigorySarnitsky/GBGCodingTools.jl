@@ -32,6 +32,7 @@ A rationale page and a rendered Literate example carry the provenance banner, ve
 A banner reworded in one package is a banner a reader learns to skim past in all of them.
 
 Decided by a program.
+This package may set `banner_pages`; unset, it is `String[]`.
 
 #### [`RULE.DOC.ALIASING_BULLET`](@id RULE.DOC.ALIASING_BULLET)
 An operation-specific aliasing statement lives in the destination bullet; the package-wide guarantee lives in the module docstring.

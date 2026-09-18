@@ -27,4 +27,15 @@ Config(
         Switch(target = Symbol("RULE.API.POSITIONAL"),
                reason = "no program decides whether an argument affects the result, and this package's own reading panels do not run over it yet; it is switched off here until they do"),
     ],
+    # STRICTER THAN THE FLEET, and this package's alone: every page of this site carries the provenance
+    # banner, because the owner reviews the four science packages' API prose and not this one's.
+    # `CLAUDE.md` has said so since Phase 1 and nothing enforced it — the rule read `rationale` and
+    # `literate`, which for this package is two documents and no examples at all.
+    settings = [
+        Setting(rule = Symbol("RULE.DOC.AI_BANNER"), name = :banner_pages,
+                # The site's pages and the rationale document behind one of them. The home page is
+                # exempt FLEET-WIDE and is not exempt here, which is what "every page" means.
+                # `IMPLEMENTATION.md` is not on the site and is not listed.
+                value = ["docs/src/**/*.md", "docs/ARCHITECTURE.md"]),
+    ],
 )
