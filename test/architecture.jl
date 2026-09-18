@@ -121,7 +121,10 @@ legacy_files() = sort([relpath(joinpath(r, f), TOOL) for (r, _, fs) in walkdir(j
         cfg = TOML.parsefile(joinpath(TOOL, ".gbg", "config.toml"))
         @test !haskey(cfg, "instruments")                               # no instrument is configured here
         skills = joinpath(TOOL, ".claude", "skills")
-        @test !isdir(skills) || issubset(Set(readdir(skills)), Set(["gbg-doctor"]))
+        # No skill at all until the instruments are values that run (Phase 4). `gbg-doctor` outlived
+        # the doctor by a day: nothing rendered it after `Sync` went, and it told a session to run
+        # `gbg doctor`, `gbg round prepare` and `/check-docs`, all three of which were deleted.
+        @test !isdir(skills) || isempty(readdir(skills))
         @test !isdir(joinpath(TOOL, ".gbg", "runs"))                    # no run has been recorded here
         @test occursin("GBGCodingTools.makedocs", read(joinpath(TOOL, "docs", "make.jl"), String))
     end
