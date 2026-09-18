@@ -97,6 +97,22 @@ end
         @test isempty(RN.ci_drift(pinned, dir))                    # a package with no workflows is told nothing
     end
 
+    # The page a consumer's build writes so a reader can see the rules and what the package turned off.
+    # Not compared by the wiring check: it is written at build time, and it is in every package's
+    # `generated` list precisely so that no rule reads it.
+    @testset "the rules page carries every rule, with an anchor each" begin
+        dir, cfg = wired_package()
+        written = RN.pages(cfg, dir)
+        @test written == ["gbg-rules.md"]
+        text = read(joinpath(dir, RN.RULES_PAGE), String)
+        for r in G.Catalogue.RULES
+            @test occursin("(@id " * String(r.id) * ")", text)     # linkable from a finding elsewhere
+            @test occursin(r.statement, text)                      # and the statement itself is on it
+        end
+        @test occursin("(@id glossary)", text)                     # the terms the rules use
+        @test !occursin(RN.BEGIN_MARK, text)                       # the managed markers do not leak onto a page
+    end
+
     @testset "a missing generated file is reported, not passed over" begin
         dir, cfg = wired_package()
         rm(joinpath(dir, ".claude", "settings.json"))

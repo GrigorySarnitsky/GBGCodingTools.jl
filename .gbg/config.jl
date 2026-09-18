@@ -9,7 +9,7 @@ Config(
     normative = ["docs/ARCHITECTURE.md", "IMPLEMENTATION.md"],
     # Written by docs/make.jl at build time. No rule reads one: a page that LISTS the rules necessarily
     # holds text that breaks them, and a page copied from elsewhere belongs to what it was copied from.
-    generated = ["docs/src/guide/rules.md"],
+    generated = ["docs/src/gbg-rules.md"],
     copies = ["docs/src/architecture.md" => "docs/ARCHITECTURE.md"],
     # What this package does not hold itself to. These were entries in `.gbg/exemptions.toml` with a
     # recorded date and an expiry; a switch carries the reason and nothing else, because an expiry on a

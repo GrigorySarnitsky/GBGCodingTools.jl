@@ -676,6 +676,60 @@ function switches(cfg::Model.Config)
     return String(take!(io))
 end
 
+"""
+    RULES_PAGE
+
+Where `pages` writes the rulebook into a consumer's site, relative to the package root.
+"""
+const RULES_PAGE = "docs/src/gbg-rules.md"
+
+"""
+    pages(cfg, root) -> Vector{String}
+
+Writes the site pages that show a package what it is held to, and returns the paths written relative to
+`docs/src/`, which is the form a `docs/make.jl` lists in its `pages`. The arguments are `cfg`, the
+package's config, and `root`, the package root.
+
+Today that is one page: every rule of the rulebook, and what this package has switched off with its
+reason. A switch is answerable because a reader can see it, and the rendered rulebook under `.gbg/` is
+not somewhere a reader of the documentation goes.
+
+This page is written at BUILD time and belongs in the package's `generated` list, so that no rule reads
+it. A page that states the rules is by construction full of text that breaks them — it quotes the
+banned spellings in order to ban them — and a reader sent to fix it would spend its whole budget there.
+"""
+function pages(cfg::Model.Config, root::AbstractString)
+    io = IOBuffer()
+    println(io, "# [The rules ", cfg.package, " is held to](@id gbg-rules)\n")
+    println(io, "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human.\n")
+    println(io, "Generated at build time from the rule values in GBGCodingTools ", version_tag(cfg),
+                ". Each rule carries its own check and the examples that show the check matches it, so this")
+    println(io, "text and the program that enforces it cannot disagree. A rule's id is stable and is what a")
+    println(io, "finding, a switch and a report all name.\n")
+    for path in policy_paths()
+        body = produce(only(g.generator for g in GENERATED if g.path == path), cfg)
+        for line in split(body, '\n')
+            (occursin(BEGIN_MARK, line) || occursin(END_MARK, line)) && continue
+            m = match(r"^### (RULE\.[A-Z]+\.[A-Z_]+)\s*$", line)
+            # The glossary binds the terms every rule uses, so the rest of a site links to it by name.
+            g = match(r"^# (Glossary)\s*$", line)
+            if g !== nothing
+                println(io, "## [Glossary](@id glossary)")
+                continue
+            end
+            # Every rule gets an anchor under its own id, so a finding elsewhere on the site can link to
+            # the rule that produced it; every other heading drops a level to sit under this page's own.
+            println(io, m !== nothing ? "#### [`" * m.captures[1] * "`](@id " * m.captures[1] * ")" :
+                        startswith(line, "#") ? "#" * line : line)
+        end
+        println(io)
+    end
+    full = joinpath(root, RULES_PAGE)
+    mkpath(dirname(full))
+    write(full, String(take!(io)))
+    return [relpath(RULES_PAGE, "docs/src")]
+end
+
 # ─────────────────────────────────────────────────────────────────────────── the register and the check
 
 """
