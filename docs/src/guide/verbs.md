@@ -58,4 +58,6 @@ GBGCodingTools.Fleet.latest_tag
 GBGCodingTools.Fleet.rows
 GBGCodingTools.Bump.bump
 GBGCodingTools.release
+GBGCodingTools.release_fails
+GBGCodingTools.ci_verdict
 ```

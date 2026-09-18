@@ -18,24 +18,54 @@ cd "${1:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}"
 # was read past. The escape is explicit, because the commit that fixes a red CI must be allowed
 # through: `FLOOR_IGNORE_CI=1 tools/floor.sh`. Where `gh` is missing or the network is not there, it
 # says it could not look — never silence.
+# It asks EACH WORKFLOW BY NAME, and says how far behind HEAD its newest run is. The first version of
+# this check read `gh run list --branch master --limit 1`, which answers "the newest run of anything" —
+# on 2026-09-18 that was the `Docs` workflow, green, while `CI` had been red for two tags. `CI` runs on
+# a tag or a manual dispatch (RULE.GIT.CI_MANUAL) and never on a branch push, so "the last run" is
+# routinely a different workflow at a different commit, and reading it as a verdict on this one is how
+# both v2.0.0-rc.2 and v2.0.0-rc.3 went out red.
+#
+# An empty conclusion is a run still going, which the first version counted as success.
 if [ -z "${FLOOR_IGNORE_CI:-}" ] && [ -z "${1:-}" ]; then
   if command -v gh >/dev/null 2>&1; then
-    LAST=$(gh run list --branch master --limit 1 --json conclusion,displayTitle,url 2>/dev/null) || LAST=""
-    if [ -z "$LAST" ]; then
-      echo "floor: could not reach GitHub — the last run's state is unknown"
-    else
-      VERDICT=$(printf '%s' "$LAST" | sed -n 's/.*"conclusion":"\([^"]*\)".*/\1/p')
+    HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+    for WF in CI Docs; do
+      RUN=$(gh run list --workflow "$WF" --limit 1 \
+              --json conclusion,status,headSha,url \
+              --jq '.[0] | "\(.status)\t\(.conclusion)\t\(.headSha)\t\(.url)"' 2>/dev/null) || RUN=""
+      if [ -z "$RUN" ]; then
+        echo "floor: could not reach GitHub — the state of the $WF workflow is unknown"
+        continue
+      fi
+      STATUS=$(printf '%s' "$RUN" | cut -f1)
+      VERDICT=$(printf '%s' "$RUN" | cut -f2)
+      SHA=$(printf '%s' "$RUN" | cut -f3)
+      URL=$(printf '%s' "$RUN" | cut -f4)
       case "$VERDICT" in
-        success|"") : ;;
+        success) : ;;
+        "")
+          echo "floor: the newest $WF run is still $STATUS — its answer is not in yet"
+          echo "  $URL" ;;
         *)
-          echo "floor: THE LAST PUSH IS $VERDICT ON GITHUB — fix that before adding to it."
-          printf '%s\n' "$LAST" | tr ',' '\n' | grep -E '"(displayTitle|url)"' | sed 's/^/  /'
+          echo "floor: THE NEWEST $WF RUN IS $VERDICT ON GITHUB — fix that before adding to it."
+          echo "  $URL"
           echo "  If THIS commit is the fix: FLOOR_IGNORE_CI=1 tools/floor.sh"
           exit 1 ;;
       esac
-    fi
+      # How old is that answer? A green run at a commit twenty behind HEAD has been read here as "green",
+      # which is the whole defect restated: it is a verdict on other code.
+      if [ -n "$SHA" ] && [ "$SHA" != "$HEAD_SHA" ]; then
+        if git cat-file -e "$SHA" 2>/dev/null; then
+          BEHIND=$(git rev-list --count "$SHA..HEAD" 2>/dev/null || echo "?")
+          echo "floor: the newest $WF run is $BEHIND commit(s) behind HEAD — it did not see this work."
+        else
+          echo "floor: the newest $WF run is at a commit this clone does not have — it did not see this work."
+        fi
+        [ "$WF" = "CI" ] && echo "  CI runs on a tag or a dispatch: gh workflow run CI --ref master"
+      fi
+    done
   else
-    echo "floor: no gh on this machine — the last run's state is unknown"
+    echo "floor: no gh on this machine — the workflows' state is unknown"
   fi
 fi
 

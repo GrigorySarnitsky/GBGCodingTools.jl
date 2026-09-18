@@ -97,6 +97,16 @@ end
         end
     end
 
+    # `release` refuses to tag a commit CI has not passed. The two live paths — green at HEAD, and no run
+    # at an older commit — are exercised by hand against GitHub, because a test may not reach the network.
+    # What IS testable offline is the deliberate way past it, which exists so a release is never wedged by
+    # a machine without `gh`; it must short-circuit before anything else is consulted.
+    @testset "the CI refusal has a deliberate way past it" begin
+        withenv("GBG_RELEASE_IGNORE_CI" => "1") do
+            @test GBGCodingTools.ci_verdict(pkgdir(GBGCodingTools), "0" ^ 40) === nothing
+        end
+    end
+
     # A prerelease pin, which was refused outright until 2026-09-18. Pkg throws `invalid version
     # specifier` on a prerelease in compat, so the rev and the compat bound MUST differ: the rev is the
     # full tag and the bound is the base version, which is what `release` forces `Project.toml` to say

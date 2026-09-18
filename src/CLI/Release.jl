@@ -10,6 +10,39 @@
 
 
 """
+    ci_verdict(root, sha) -> Union{String,Nothing}
+
+Why the CI workflow does not say this commit is green, or `nothing` when it does. The arguments are
+`root`, the checkout, and `sha`, the commit about to be tagged. Returns the reason, in words.
+
+It is asked over the network and is therefore NOT in [`release_fails`](@ref), which reads the tree alone
+and is what the refusal tests exercise.
+
+A tag is permanent and a local gate is not the same question: `v2.0.0-rc.2` and `v2.0.0-rc.3` both went
+out on 2026-09-18 with every local command green, one failing on a git identity this machine has and a
+runner does not, the other on a workflow step greping a banner that had been renamed. Neither could fail
+here. CI runs on a tag or a dispatch (`RULE.GIT.CI_MANUAL`), so the run to ask about is a DISPATCH on
+this commit — `gh workflow run CI --ref master` — before the tag, not after it.
+
+Where `gh` is missing or GitHub cannot be reached this REFUSES rather than passing: a release cut blind
+is what the two red tags were. `GBG_RELEASE_IGNORE_CI=1` is the deliberate way past it.
+"""
+function ci_verdict(root::AbstractString, sha::AbstractString)
+    get(ENV, "GBG_RELEASE_IGNORE_CI", "") == "" || return nothing
+    Sys.which("gh") === nothing && return "no `gh` on this machine, so CI's verdict on $sha cannot be read"
+    runs = try
+        strip(read(setenv(`gh run list --workflow CI --limit 30 --json headSha,status,conclusion
+                           --jq $("[.[] | select(.headSha==\"$sha\")] | map(\"\\(.status) \\(.conclusion)\") | join(\",\")")`;
+                          dir = root), String))
+    catch
+        return "GitHub could not be reached, so CI's verdict on $sha cannot be read"
+    end
+    isempty(runs) && return "CI has no run at $sha — dispatch one (`gh workflow run CI --ref master`) and wait for it"
+    occursin("completed success", runs) && return nothing
+    return "CI at $sha is `$runs`, not a completed success"
+end
+
+"""
     release_fails(cfg, root, ver, base, rc) -> Vector{String}
 
 Every reason `v<ver>` may not be tagged from `root`, in the order they are checked; empty when there is
@@ -67,7 +100,8 @@ Tags and pushes `v<ver>` from the dev checkout. The arguments are:
 
 Refused (exit 2) unless: the tree is clean and on the configured branch; the tag is absent; `CHANGELOG.md`
 carries `## <ver> — `; `Project.toml`'s version equals the release version (the base version for a
-prerelease); `Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`); `gbg doctor --deep`
+prerelease); the CI workflow has a completed, successful run AT THIS COMMIT ([`ci_verdict`](@ref));
+`Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`); `gbg doctor --deep`
 is green at the root. Nothing else holds a release — no review, no open finding, no unanswered
 question, no audit. A tag is never moved or re-issued.
 Returns the exit code.
@@ -96,6 +130,10 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
         println(io, "release: running gbg sync --check …"); flush(io)
         GBGCodingTools.Wire.sync(root; check = true, io = devnull) == 0 ||
             (println(io, "release: refused — generated files are adrift; run `gbg sync`"); return 2)
+        println(io, "release: asking GitHub about CI at this commit …"); flush(io)
+        sha = Git.run(root, "rev-parse", "HEAD")
+        why = sha === nothing ? "the commit to tag could not be read" : ci_verdict(root, String(sha))
+        why === nothing || (println(io, "release: refused — ", why); return 2)
     end
     Git.run(root, "tag", "-a", "v$ver", "-m", "GBGCodingTools v$ver") === nothing && (println(io, "release: git tag failed"); return 3)
     Git.run(root, "push", "origin", "v$ver") === nothing && (println(io, "release: tag created but the push failed — push it by hand: git push origin v$ver"); return 3)
