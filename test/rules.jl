@@ -142,6 +142,26 @@ const NO_BARE_URL = MR.Rule(
     @test !hit("Manifest.toml") && hit("docs/Manifest.toml")
 end
 
+# Four shapes a real package's signatures take that a naive reader gets wrong, each one a finding that
+# GBGPeriodicFields would have been asked to fix in prose that was already correct.
+@testset "a signature is read whole" begin
+    T = G.Texts
+    # several displayed arities: the widest is what a reader meets
+    doc = "    f(a, b)\n    f(a, b, c, d)\n\nProse.\n"
+    @test length(T.signature_lines(doc)) == 2
+    @test T.arity(T.argument_list(last(T.signature_lines(doc)))) == (4, 0)
+    # a signature wrapped across lines is one signature
+    @test T.signature_lines("    f(a,\n      b, c)\n\nProse.\n") == ["f(a, b, c)"]
+    # a comma inside a type is not a separator
+    @test T.arity("multipliers::Mult, offset::NTuple{3, Real}") == (2, 0)
+    @test T.arity("x::AbstractArray{Complex{T}, 3}, y::Grid{T}; opt = 1") == (2, 1)
+    # an unnamed typed positional is an argument the caller passes
+    @test T.arity("grid::Grid3D, layout::Layout, ::Val{R}") == (3, 0)
+    @test length(first(T.parameters("grid::Grid3D, layout::Layout, ::Val{R}"))) == 2   # but it has no NAME
+    # only the leading block counts: an indented line further down is an example
+    @test T.signature_lines("    f(a)\n\nProse.\n\n    g(b, c, d)\n") == ["f(a)"]
+end
+
 @testset "the rulebook" begin
     @testset "the materialiser judges an example as the rule says" begin
         for rule in (NO_TODO, NO_BARE_URL), example in rule.examples

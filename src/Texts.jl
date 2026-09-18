@@ -461,6 +461,36 @@ function signature_line(doc::AbstractString)
 end
 
 """
+    signature_lines(doc) -> Vector{String}
+
+Every signature a docstring displays: the run of indented lines it opens with, before its first line of
+prose. The argument is `doc`, the docstring's text. Returns them stripped, in order, empty where it
+opens with prose.
+
+A docstring may display several arities — `weighted_inner(f, w)`, `weighted_inner(f, g, w)` — and a
+rule about how many arguments something takes must see all of them. Reading only the first reported
+`weighted_inner` as taking two, and asked for the prose form on a binding whose three-argument form
+needs bullets. Only the LEADING block counts: an indented line further down is a code example.
+"""
+function signature_lines(doc::AbstractString)
+    out = String[]
+    current = ""
+    for line in split(doc, '\n')
+        isempty(strip(line)) && (isempty(out) && isempty(current) ? continue : break)
+        startswith(line, (' ', '\t')) || break
+        # A signature too wide for the column is wrapped, and its continuation is indented too. Lines are
+        # joined until the parentheses balance, or the second of a wrapped pair reads as its own call
+        # with the arguments left on the first line lost.
+        current = isempty(current) ? String(strip(line)) : current * " " * strip(line)
+        if count(==('('), current) == count(==(')'), current)
+            push!(out, current); current = ""
+        end
+    end
+    isempty(current) || push!(out, current)
+    return out
+end
+
+"""
     argument_list(signature) -> Union{String,Nothing}
 
 What sits between the parentheses of a call: the FIRST opening parenthesis and the one that closes it,
@@ -502,10 +532,50 @@ function parameters(inside::AbstractString)
     positional_text = semi === nothing ? inside : inside[1:prevind(inside, semi)]
     keyword_text = semi === nothing ? "" : inside[nextind(inside, semi):end]
     bare(raw) = String(strip(split(split(raw, "::")[1], "=")[1]))
-    named(text) = [bare(r) for r in split(text, ',') if occursin(IDENTIFIER, bare(r))]
-    splats(text) = [x for x in bare.(split(text, ',')) if occursin(Regex("^" * NAME * "\\.\\.\\.\$"), x)]
+    named(text) = [bare(r) for r in slots(text) if occursin(IDENTIFIER, bare(r))]
+    splats(text) = [x for x in bare.(slots(text)) if occursin(Regex("^" * NAME * "\\.\\.\\.\$"), x)]
     return (vcat(named(positional_text), splats(positional_text)),
             vcat(named(keyword_text), splats(keyword_text)))
+end
+
+"""
+    slots(text) -> Vector{String}
+
+One argument per entry, splitting only at the commas that separate arguments. The argument is `text`,
+part of an argument list. Returns the entries, stripped, with empty ones dropped.
+
+A comma inside a type is not a separator: `offset::NTuple{3, Real}` is ONE argument, and splitting on
+every comma makes it two — the second of which, `Real}`, carries no name, so a count came out right by
+luck wherever names were what mattered and wrong wherever the count was.
+"""
+function slots(text::AbstractString)
+    out = String[]; depth = 0; start = firstindex(text)
+    for (i, c) in pairs(text)
+        c in ('{', '(', '[') && (depth += 1)
+        c in ('}', ')', ']') && (depth -= 1)
+        if c == ',' && depth == 0
+            push!(out, String(strip(text[start:prevind(text, i)]))); start = nextind(text, i)
+        end
+    end
+    start <= lastindex(text) && push!(out, String(strip(text[start:end])))
+    return filter(!isempty, out)
+end
+
+"""
+    arity(inside) -> Tuple{Int,Int}
+
+How many positional and keyword arguments a signature's argument list holds, counting a slot that has
+no NAME. The argument is `inside`, what sits between the parentheses. Returns the two counts.
+
+`field_spectral_shape(grid, fourier_layout, ::Val{R})` takes three; [`parameters`](@ref) returns two,
+because the third slot is typed and unnamed and there is no name to return. A rule about how many
+arguments a reader meets must count it: the caller passes it, and the docstring documents it.
+"""
+function arity(inside::AbstractString)
+    semi = findfirst(';', inside)
+    pos = semi === nothing ? inside : inside[1:prevind(inside, semi)]
+    kw = semi === nothing ? "" : inside[nextind(inside, semi):end]
+    return (length(slots(pos)), length(slots(kw)))
 end
 
 # ───────────────────────────────────────────────────────────────────────────────────────── Markdown

@@ -11,9 +11,13 @@ module Arguments
 using ...Model
 using ...Texts
 
-const BULLETED = r"The\s+arguments\s+are:"
+# What tells the two forms apart is the BULLET, not the colon. Both open with the same marker phrase, so
+# a pattern that stops at the phrase matches the prose form too; and one that demands a colon misses a
+# consumer that writes the marker without one, which had three of its field lists read as argument lists
+# and reported for using the wrong argument form.
+const BULLETED = r"The\s+arguments\s+are\b[^\n]*\n\s*\n?\s*[-*]\s"
 const IN_PROSE = r"The\s+arguments?\s+(is|are)\s+`"
-const FIELDS_LIST = r"The\s+fields\s+are:"
+const FIELDS_LIST = r"The\s+fields\s+are\b[^\n]*\n\s*\n?\s*[-*]\s"
 const WRAPPER_PHRASE = "Allocating form of"
 const THRESHOLD = 3
 
@@ -37,29 +41,38 @@ function args_form(src::AbstractString, cfg)
         occursin(WRAPPER_PHRASE, d.text) && continue
         occursin(FIELDS_LIST, d.text) && continue
 
-        inside = Texts.argument_list(Texts.signature_line(d.text))
-        inside === nothing && continue
-        positional, keyword = Texts.parameters(inside)
-        isempty(positional) && isempty(keyword) && continue
+        # The WIDEST of the displayed signatures, not the first: a docstring showing a two- and a
+        # four-argument form is a docstring whose reader meets four, and the bulleted form is for them.
+        positional, keyword = String[], String[]
+        npos, nkw = 0, 0
+        for sig in Texts.signature_lines(d.text)
+            inside = Texts.argument_list(sig)
+            inside === nothing && continue
+            a, b = Texts.arity(inside)
+            a + b > npos + nkw || continue
+            npos, nkw = a, b
+            positional, keyword = Texts.parameters(inside)      # the NAMES of the widest, for the carve-out
+        end
+        npos + nkw == 0 && continue
 
         prosed = occursin(IN_PROSE, d.text)
         bulleted = occursin(BULLETED, d.text)
         # The rule's last exemption, and no wider: ONE element-type keyword BOUND IN A PROSE CLAUSE. A
         # docstring that binds nothing at all is not a prose clause, and exempting it would turn a hit
         # into silence — the direction that costs a reader something.
-        element_type = length(keyword) == 1 && first(keyword) in ("T", "eltype", "element_type") &&
-                       prosed && length(positional) + length(keyword) < THRESHOLD
-        wants_bullets = length(positional) + length(keyword) >= THRESHOLD || (!isempty(keyword) && !element_type)
+        element_type = nkw == 1 && length(keyword) == 1 && first(keyword) in ("T", "eltype", "element_type") &&
+                       prosed && npos + nkw < THRESHOLD
+        wants_bullets = npos + nkw >= THRESHOLD || (nkw > 0 && !element_type)
 
         if bulleted && prosed
             push!(out, Model.Location(; file = "", line = d.line, node = d.node,
                 text = "`$(d.node)` mixes the two argument forms in one docstring"))
         elseif wants_bullets && !bulleted
             push!(out, Model.Location(; file = "", line = d.line, node = d.node,
-                text = "`$(d.node)` takes $(length(positional)) positional and $(length(keyword)) keyword argument(s): the bulleted form, not prose"))
+                text = "`$(d.node)` takes $npos positional and $nkw keyword argument(s): the bulleted form, not prose"))
         elseif !wants_bullets && bulleted
             push!(out, Model.Location(; file = "", line = d.line, node = d.node,
-                text = "`$(d.node)` takes $(length(positional) + length(keyword)) argument(s): bind them in running prose, not bullets"))
+                text = "`$(d.node)` takes $(npos + nkw) argument(s): bind them in running prose, not bullets"))
         end
     end
     return out
