@@ -39,7 +39,14 @@ if [ -z "${FLOOR_IGNORE_CI:-}" ] && [ -z "${1:-}" ]; then
   fi
 fi
 
-julia --project --startup-file=no -e 'using Pkg; Pkg.test()'
+# WITHOUT THIS MACHINE'S GIT IDENTITY. A runner has no `user.name` and no `user.email`; a developer's
+# machine has both, globally, and hands them to every child process. A test that builds a git repository
+# and expects a commit to succeed therefore passed here and failed there — the whole first testset of
+# `test/docfix.jl`, on the v2.0.0-rc.2 tag, which is the fourth defect of this shape: the gate measured
+# somewhere the failure could not appear. A fixture that needs an identity now sets one in its own
+# repository, as a real package does, and this keeps it honest.
+GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
+  julia --project --startup-file=no -e 'using Pkg; Pkg.test()'
 julia --project=docs --startup-file=no docs/make.jl
 
 # DOES IT LOAD FROM WHAT GIT ACTUALLY HOLDS?

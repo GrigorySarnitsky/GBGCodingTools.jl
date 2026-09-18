@@ -34,8 +34,13 @@ function sample_repo()
     write(joinpath(dir, "src", "Sample.jl"), SOURCE)
     write(joinpath(dir, "docs", "src", "guide.md"), "# Guide\n\nOne sentence.\n")
     write(joinpath(dir, "docs", "SPEC.md"), "# Spec\n\nThe contract.\n")
-    for args in (("init", "-q"), ("add", "--all", "."), ("-c", "user.name=t", "-c", "user.email=t@t",
-                                                          "commit", "-q", "-m", "first"))
+    # The repository carries its own identity, in its own config. Passing `-c user.name=…` covers only
+    # the commit made HERE; the one the VERB makes is a child process of its own, and with no identity in
+    # the repository it fell back to whatever the machine had globally. So this passed on a developer's
+    # machine and failed on CI, where there is none — three tests, the whole first testset, on the
+    # v2.0.0-rc.2 tag. A real package always has an identity; the fixture now does too.
+    for args in (("init", "-q"), ("config", "user.name", "t"), ("config", "user.email", "t@t"),
+                 ("add", "--all", "."), ("commit", "-q", "-m", "first"))
         run(setenv(`git -C $dir $args`, "HOME" => dir, "GIT_AUTHOR_NAME" => "t", "GIT_AUTHOR_EMAIL" => "t@t",
                    "GIT_COMMITTER_NAME" => "t", "GIT_COMMITTER_EMAIL" => "t@t", "PATH" => ENV["PATH"]))
     end
