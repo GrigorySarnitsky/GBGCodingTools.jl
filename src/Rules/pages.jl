@@ -12,6 +12,7 @@ module Pages
 
 using ...Model
 using ...Texts
+using ..Catalogue: FLEET, site_of
 
 const BANNER = "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human."
 
@@ -281,14 +282,12 @@ const INTERNAL_API = Model.Rule(
 
 The sibling packages a first mention links to, and where their sites are. A package overrides this with a
 [`Model.Setting`](@ref); the default is the fleet as it stands.
+
+DERIVED from `Catalogue.FLEET`, which is the fleet's one home, rather than being a second list of the
+same packages: two lists diverge, and this pair diverging is silent both ways.
 """
-const SIBLING_SITES = Model.Parameter(:sibling_sites, [
-    "GBGPeriodicFields" => "https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/",
-    "GBGIsotropicTurbulence" => "https://grigorysarnitsky.github.io/GBGIsotropicTurbulence.jl/",
-    "GBGStreamingStatistics" => "https://grigorysarnitsky.github.io/GBGStreamingStatistics.jl/",
-    "GBGCloudPhysics" => "https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/",
-    "GBGCodingTools" => "https://grigorysarnitsky.github.io/GBGCodingTools.jl/",
-])
+const SIBLING_SITES = Model.Parameter(:sibling_sites,
+                                      [c.name => site_of(c.github) for c in FLEET])
 
 """
     sibling_link(text, cfg) -> Vector{Model.Location}

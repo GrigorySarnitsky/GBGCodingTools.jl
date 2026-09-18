@@ -1,10 +1,10 @@
 # Fleet.jl — `gbg fleet [--deep]`: the scorecard over
-# fleet.toml (ARCHITECTURE D4), dev checkout only.
+# `Catalogue.FLEET` (ARCHITECTURE D4), dev checkout only.
 
 """
     Fleet
 
-The fleet scorecard: [`Fleet.rows`](@ref) computes one row per consumer of `fleet.toml` — `OK`,
+The fleet scorecard: [`Fleet.rows`](@ref) computes one row per package of `Catalogue.FLEET` — `OK`,
 `NOT-INITIALISED`, `BEHIND` or `RED` with a detail. The exit contract is D4's: 0 when every row is `OK`; 1 on `NOT-INITIALISED`,
 `RED`, or `BEHIND` outside the 7-day sweep window; 2 when a listed path does not exist.
 """
@@ -16,7 +16,10 @@ using ..GBGCodingTools: GBGCodingTools, Config, Git, parse_options, VERBS, runni
 const WINDOW = Day(7)
 
 fleet_path() = joinpath(pkgdir(GBGCodingTools), "fleet.toml")
-read_fleet() = TOML.parsefile(fleet_path())
+# Only the sweep state is read from the file now; the roster is `Catalogue.FLEET`, its one home. The
+# file may be absent — a checkout without it still has a fleet.
+read_fleet() = isfile(fleet_path()) ? TOML.parsefile(fleet_path()) : Dict{String,Any}()
+roster() = GBGCodingTools.Catalogue.FLEET
 
 """
     latest_tag(root) -> Union{VersionNumber,Nothing}
@@ -36,7 +39,7 @@ end
 """
     Fleet.rows(; deep = false) -> (rows, code)
 
-One row per `[[consumer]]`: `(name, pin, status, detail)`. A consumer without `.gbg/config.toml` is
+One row per package of `Catalogue.FLEET`: `(name, pin, status, detail)`. A consumer without `.gbg/config.toml` is
 `NOT-INITIALISED`; one whose generated files are adrift is `RED`; one whose pinned version
 is older than the fleet's newest is `BEHIND` with both versions and the window state; else `OK`. The
 tool's own row (`path = "."`) shows `dev+<sha>[-dirty]` with `clean at vX.Y.Z` or `off tag`, is
@@ -51,49 +54,49 @@ function rows(; deep::Bool = false)
     fleet = read_fleet(); base = dirname(fleet_path())
     out = NamedTuple[]; code = 0
     pins = Dict{String,VersionNumber}()
-    consumers = get(fleet, "consumer", Any[])
+    consumers = roster()
     for c in consumers
-        c["path"] == "." && continue
-        p = joinpath(base, c["path"]); cfgp = joinpath(p, ".gbg", "config.toml")
+        c.path == "." && continue
+        p = joinpath(base, c.path); cfgp = joinpath(p, ".gbg", "config.toml")
         isfile(cfgp) || continue
         v = get(get(TOML.parsefile(cfgp), "tool", Dict()), "version", "")
-        occursin(r"^\d+\.\d+\.\d+$", v) && (pins[c["name"]] = VersionNumber(v))
+        occursin(r"^\d+\.\d+\.\d+$", v) && (pins[c.name] = VersionNumber(v))
     end
     newest = isempty(pins) ? nothing : maximum(values(pins))
     sweep = get(fleet, "sweep", Dict())
     started = haskey(sweep, "started") ? (sweep["started"] isa Date ? sweep["started"] : Date(string(sweep["started"]))) : nothing
     window = started === nothing ? "no window" : today() - started < WINDOW ? "within window" : "window closed"
     for c in consumers
-        p = normpath(joinpath(base, c["path"]))
+        p = normpath(joinpath(base, c.path))
         if !isdir(p)
-            push!(out, (name = c["name"], pin = "—", status = "MISSING", detail = "$(c["path"]) does not exist")); code = 2; continue
+            push!(out, (name = c.name, pin = "—", status = "MISSING", detail = "$(c.path) does not exist")); code = 2; continue
         end
         cfgp = joinpath(p, ".gbg", "config.toml")
         if !isfile(cfgp)
-            push!(out, (name = c["name"], pin = "—", status = "NOT-INITIALISED", detail = "no .gbg/config.toml (gbg init)")); code = max(code, 1); continue
+            push!(out, (name = c.name, pin = "—", status = "NOT-INITIALISED", detail = "no .gbg/config.toml (gbg init)")); code = max(code, 1); continue
         end
         cfg, err = try (Config.read(p), "") catch e; (nothing, sprint(showerror, e)) end
         if cfg === nothing
-            push!(out, (name = c["name"], pin = "?", status = "RED", detail = "CFG.VALID: " * first(err, 120))); code = max(code, 1); continue
+            push!(out, (name = c.name, pin = "?", status = "RED", detail = "CFG.VALID: " * first(err, 120))); code = max(code, 1); continue
         end
         pin = String(cfg["tool"]["version"])
         # The doctor's check list was read here until 2026-09-17. A package's wiring is the wiring
         # check's to judge now, and it answers in one word: adrift, or not.
         fails = GBGCodingTools.Wire.sync(p; check = true, io = devnull) == 0 ? String[] : ["WIRING"]
-        if c["path"] == "."
+        if c.path == "."
             stamp = git_stamp(p); tag = Git.run(p, "describe", "--exact-match", "--tags", "HEAD")
             detail = (tag !== nothing && !endswith(stamp, "-dirty")) ? "clean at $tag" : "off tag"
             st = isempty(fails) ? "OK" : "RED"
-            push!(out, (name = c["name"], pin = stamp, status = st, detail = st == "OK" ? detail : detail * "; " * join(fails, ", ")))
+            push!(out, (name = c.name, pin = stamp, status = st, detail = st == "OK" ? detail : detail * "; " * join(fails, ", ")))
             st == "RED" && (code = max(code, 1)); continue
         end
         if !isempty(fails)
-            push!(out, (name = c["name"], pin = pin, status = "RED", detail = join(fails, ", "))); code = max(code, 1)
-        elseif newest !== nothing && haskey(pins, c["name"]) && pins[c["name"]] < newest
-            push!(out, (name = c["name"], pin = pin, status = "BEHIND", detail = "pinned at $pin, newest $newest — $window"))
+            push!(out, (name = c.name, pin = pin, status = "RED", detail = join(fails, ", "))); code = max(code, 1)
+        elseif newest !== nothing && haskey(pins, c.name) && pins[c.name] < newest
+            push!(out, (name = c.name, pin = pin, status = "BEHIND", detail = "pinned at $pin, newest $newest — $window"))
             window == "within window" || (code = max(code, 1))
         else
-            push!(out, (name = c["name"], pin = pin, status = "OK", detail = "wired"))
+            push!(out, (name = c.name, pin = pin, status = "OK", detail = "wired"))
         end
     end
     return (out, code)

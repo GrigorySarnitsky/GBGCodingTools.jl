@@ -84,6 +84,42 @@ const INSTRUMENTS = Model.Instrument[
         budget = Model.Budget(fix_passes = 0, agent_launches = 15)),
 ]
 
+"""
+    FLEET
+
+Every package this one serves, and itself. Each row carries `name`, the package name; `github`, its
+`owner/repo` slug; and `path`, where its checkout sits relative to this repository — `"."` for this one.
+
+ONE home for the fleet. Until 2026-09-18 the roster was `[[consumer]]` rows in `fleet.toml` and the
+sibling sites were a second list in `Rules/pages.jl`: the same five packages written twice, in two files,
+with nothing comparing them. A rename applied to one alone fails silently in BOTH directions — a package
+writing the new name gets no finding from `RULE.DOC.SIBLING_LINK`, which has nothing to say about a name
+it does not hold, and a package writing the old name is linked to a URL that 404s. `fleet.toml` keeps
+only the sweep state, which a verb writes rather than a person declaring it.
+"""
+const FLEET = [
+    # The tool's own row (D15): pin `dev+<sha>[-dirty]`, OK/RED by its own wiring check, never BEHIND.
+    (name = "GBGCodingTools",         github = "GrigorySarnitsky/GBGCodingTools.jl",         path = "."),
+    (name = "GBGPeriodicFields",      github = "GrigorySarnitsky/GBGPeriodicFields.jl",      path = "../../Isotropic Turbulence/GBGPeriodicFields"),
+    (name = "GBGIsotropicTurbulence", github = "GrigorySarnitsky/GBGIsotropicTurbulence.jl", path = "../../Isotropic Turbulence/GBGIsotropicTurbulence"),
+    (name = "GBGStreamingStatistics", github = "GrigorySarnitsky/GBGStreamingStatistics.jl", path = "../../Statistics/GBGStreamingStatistics"),
+    (name = "GBGCloudPhysics",        github = "GrigorySarnitsky/GBGCloudPhysics.jl",        path = "../../Cloud Physics/GBGCloudPhysics"),
+]
+
+"""
+    site_of(slug) -> String
+
+Where a repository's documentation is published, from its `owner/repo` slug. The argument is `slug`.
+Returns the GitHub Pages URL.
+
+Derived rather than written down beside the slug, so a row cannot name one repository and a site
+belonging to another.
+"""
+function site_of(slug::AbstractString)
+    owner, repo = split(slug, '/')
+    return "https://" * lowercase(owner) * ".github.io/" * repo * "/"
+end
+
 include("Rules/rendering.jl")     # one file per batch of the conversion
 include("Rules/docstrings.jl")
 include("Rules/arguments.jl")

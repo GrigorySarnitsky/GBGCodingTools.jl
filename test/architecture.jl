@@ -129,25 +129,20 @@ legacy_files() = sort([relpath(joinpath(r, f), TOOL) for (r, _, fs) in walkdir(j
         @test occursin("GBGCodingTools.makedocs", read(joinpath(TOOL, "docs", "make.jl"), String))
     end
 
-    # The fleet is named in two files and nothing connected them. `fleet.toml` is the roster `gbg fleet`
-    # walks; `Rules.Pages.SIBLING_SITES` is what `RULE.DOC.SIBLING_LINK` uses to decide that a first
-    # mention of a sibling should be a link, and where that link goes.
-    #
-    # A rename applied to one and not the other fails SILENTLY IN BOTH DIRECTIONS, which is the worst
-    # shape a check has: a package writing the new name gets no finding, because the rule simply has
-    # nothing to say about a name it does not hold, and a package writing the old name is sent to a URL
-    # that 404s. Neither is an error anywhere. Written on 2026-09-18, when GBGIsotropicTurbulence
-    # announced its rename to GBGHomogeneousTurbulence and this was the first thing to look at.
-    #
-    # The site is DERIVED from the GitHub slug rather than compared as a free string, so the table cannot
-    # drift into naming a repository and a site that are not the same repository.
-    @testset "the roster and the sibling-site table name one fleet" begin
-        roster = TOML.parsefile(joinpath(TOOL, "fleet.toml"))["consumer"]
+    # The fleet has ONE home. It was named in two files until 2026-09-18 — the roster as `[[consumer]]`
+    # rows in `fleet.toml`, the sites as a second list in `Rules/pages.jl` — with nothing comparing them,
+    # and a rename applied to one alone fails SILENTLY IN BOTH DIRECTIONS: a package writing the new name
+    # gets no finding from `RULE.DOC.SIBLING_LINK`, which has nothing to say about a name it does not
+    # hold, and a package writing the old name is sent to a URL that 404s. What is held here is that the
+    # second list has not grown back, which is the only way the divergence can return.
+    @testset "the fleet is named once" begin
         sites = Dict(G.Catalogue.Pages.SIBLING_SITES.default)
-        @test sort([c["name"] for c in roster]) == sort(collect(keys(sites)))
-        for c in roster
-            owner, repo = split(c["github"], "/")
-            @test sites[c["name"]] == "https://" * lowercase(owner) * ".github.io/" * repo * "/"
+        @test sort([c.name for c in G.Catalogue.FLEET]) == sort(collect(keys(sites)))
+        for c in G.Catalogue.FLEET
+            @test sites[c.name] == G.Catalogue.site_of(c.github)       # derived, never written twice
+            @test occursin("/", c.github)                              # owner/repo, which site_of needs
         end
+        # `fleet.toml` carries the sweep state a verb writes, and no roster.
+        @test !haskey(TOML.parsefile(joinpath(TOOL, "fleet.toml")), "consumer")
     end
 end

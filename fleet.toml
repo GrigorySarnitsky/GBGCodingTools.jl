@@ -1,30 +1,10 @@
-# fleet.toml — dev-side only (read by `gbg fleet` and `gbg bump` from the dev checkout).
-# Paths are relative to this file. A path that does not exist is exit 2 for `gbg fleet`, never a skipped row.
+# fleet.toml — the sweep state, and nothing else. Dev-side only, written by `gbg bump` and read by
+# `gbg fleet`; a checkout without this file still has a fleet.
+#
+# The ROSTER used to live here as `[[consumer]]` rows, with the same five packages written a second time
+# in `Rules/pages.jl` as the sibling-site table and nothing comparing the two. It is now one value,
+# `Catalogue.FLEET`, from which the sites are derived. What stays here is state a verb writes, which is
+# not something to declare in code.
 
 [sweep]                                  # written by `gbg bump` when a bump leaves the fleet at two versions
 # started = 2026-09-20, from = "1.0.0", to = "1.0.1"
-
-[[consumer]]                             # the tool's own row (D15): pin dev+<sha>[-dirty], OK/RED by its own doctor, never BEHIND
-name = "GBGCodingTools"
-path = "."
-github = "GrigorySarnitsky/GBGCodingTools.jl"
-
-[[consumer]]
-name = "GBGPeriodicFields"
-path = "../../Isotropic Turbulence/GBGPeriodicFields"
-github = "GrigorySarnitsky/GBGPeriodicFields.jl"
-
-[[consumer]]
-name = "GBGIsotropicTurbulence"
-path = "../../Isotropic Turbulence/GBGIsotropicTurbulence"
-github = "GrigorySarnitsky/GBGIsotropicTurbulence.jl"
-
-[[consumer]]
-name = "GBGStreamingStatistics"
-path = "../../Statistics/GBGStreamingStatistics"
-github = "GrigorySarnitsky/GBGStreamingStatistics.jl"
-
-[[consumer]]
-name = "GBGCloudPhysics"
-path = "../../Cloud Physics/GBGCloudPhysics"
-github = "GrigorySarnitsky/GBGCloudPhysics.jl"
