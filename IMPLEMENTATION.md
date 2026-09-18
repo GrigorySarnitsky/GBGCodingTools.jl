@@ -166,7 +166,7 @@ answer), and the extension of the §3 table test to `INSTRUMENTS`, the leak-scan
 the witnesses stage; `test/witnesses.jl` goes. **Owner:** none. Release `v2.1.0`.
 **Gate** `bash -e -o pipefail -c 'tools/floor.sh && julia --project test/hunt.jl'` — over the fixture with a planted defect and recorded agent output: the witness goes failing then passing; the loop stops at three failed attempts and writes a question; an attempt editing the frozen test does not count; a change under `test/` is named first to the audit; `Pkg.test()` does not run `escalated/`; the audit starts once and never after itself.
 
-### Phase 7 — GBGIsotropicTurbulence, GBGStreamingStatistics, and the legacy deletions (40 commits, 6–7 sessions)
+### Phase 7 — GBGHomogeneousTurbulence, GBGStreamingStatistics, and the legacy deletions (40 commits, 6–7 sessions)
 **Ends with** all four science packages wired and on one version, and no legacy instruments left in any of them. **Depends
 on** Phase 6. **Creates** IT's and SS's `.gbg/`. **Deletes**, each in its own package's commit and only after a real
 documentation review has run there and the owner has read its report: PF's, IT's and SS's legacy instrument directories,

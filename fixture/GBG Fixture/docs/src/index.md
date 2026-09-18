@@ -2,8 +2,8 @@
 
 `GBGFixture` is the toy consumer of [`GBGCodingTools`](https://grigorysarnitsky.github.io/GBGCodingTools.jl/): a grid, a value field over it, two reductions and
 an options record. Its documentation is written to the shared rubric so the tool can be tested against
-a clean corpus. It is read alongside [`GBGIsotropicTurbulence`](https://grigorysarnitsky.github.io/GBGIsotropicTurbulence.jl/), and a later mention of
-`GBGIsotropicTurbulence` is a bare code span, as the rule asks. The grid is a [`Grid`](@ref); values are scaled with [`scale!`](@ref) and reduced with
+a clean corpus. It is read alongside [`GBGHomogeneousTurbulence`](https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/), and a later mention of
+`GBGHomogeneousTurbulence` is a bare code span, as the rule asks. The grid is a [`Grid`](@ref); values are scaled with [`scale!`](@ref) and reduced with
 [`mean_value`](@ref) and [`total_energy`](@ref); a run's settings are an [`Options`](@ref) record.
 
 ```@docs

@@ -101,7 +101,10 @@ const FLEET = [
     # The tool's own row (D15): pin `dev+<sha>[-dirty]`, OK/RED by its own wiring check, never BEHIND.
     (name = "GBGCodingTools",         github = "GrigorySarnitsky/GBGCodingTools.jl",         path = "."),
     (name = "GBGPeriodicFields",      github = "GrigorySarnitsky/GBGPeriodicFields.jl",      path = "../../Isotropic Turbulence/GBGPeriodicFields"),
-    (name = "GBGIsotropicTurbulence", github = "GrigorySarnitsky/GBGIsotropicTurbulence.jl", path = "../../Isotropic Turbulence/GBGIsotropicTurbulence"),
+    # Renamed from GBGIsotropicTurbulence on 2026-09-18: homogeneity is what a triple-periodic box
+    # enforces, and isotropy only what one forcing chooses. The PARENT folder is still "Isotropic
+    # Turbulence" — that is the directory on disk, not a stale reference.
+    (name = "GBGHomogeneousTurbulence", github = "GrigorySarnitsky/GBGHomogeneousTurbulence.jl", path = "../../Isotropic Turbulence/GBGHomogeneousTurbulence"),
     (name = "GBGStreamingStatistics", github = "GrigorySarnitsky/GBGStreamingStatistics.jl", path = "../../Statistics/GBGStreamingStatistics"),
     (name = "GBGCloudPhysics",        github = "GrigorySarnitsky/GBGCloudPhysics.jl",        path = "../../Cloud Physics/GBGCloudPhysics"),
 ]

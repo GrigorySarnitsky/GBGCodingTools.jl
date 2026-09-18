@@ -318,7 +318,7 @@ const ONE_SPAN = Model.Rule(
             Model.Location[], "inside it as \\texttt{…}"),
         # The naming and the definition in one chain — name, symbol, then what the symbol is. Apposition
         # cannot carry this: the symbol is used again in later formulas, so it must be introduced as a
-        # symbol, not parenthesised as an aside. GBGIsotropicTurbulence writes seventeen of these.
+        # symbol, not parenthesised as an aside. GBGHomogeneousTurbulence writes seventeen of these.
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe energy ``\\texttt{kinetic\\_energy} \\equiv k = \\tfrac{1}{2}\\langle u^2 \\rangle`` is reported.\n",
             Model.Location[], "inside it as \\texttt{…}"),

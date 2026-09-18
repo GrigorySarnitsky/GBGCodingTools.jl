@@ -242,7 +242,7 @@ The first mention of a sibling package links to that package's site; later menti
 A reader meeting the name for the first time must be able to reach it, and a fourth link teaches nothing.
 
 Decided by a program.
-This package may set `sibling_sites`; unset, it is `["GBGCodingTools" => "https://grigorysarnitsky.github.io/GBGCodingTools.jl/", "GBGPeriodicFields" => "https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/", "GBGIsotropicTurbulence" => "https://grigorysarnitsky.github.io/GBGIsotropicTurbulence.jl/", "GBGStreamingStatistics" => "https://grigorysarnitsky.github.io/GBGStreamingStatistics.jl/", "GBGCloudPhysics" => "https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/"]`.
+This package may set `sibling_sites`; unset, it is `["GBGCodingTools" => "https://grigorysarnitsky.github.io/GBGCodingTools.jl/", "GBGPeriodicFields" => "https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/", "GBGHomogeneousTurbulence" => "https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/", "GBGStreamingStatistics" => "https://grigorysarnitsky.github.io/GBGStreamingStatistics.jl/", "GBGCloudPhysics" => "https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/"]`.
 
 #### [`RULE.DOC.SIGNATURE_FIDELITY`](@id RULE.DOC.SIGNATURE_FIDELITY)
 The signature a docstring displays and the methods the module defines agree, argument for argument.

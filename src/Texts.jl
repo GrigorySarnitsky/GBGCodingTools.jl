@@ -498,8 +498,9 @@ deliberate and both the same name:
 """
 function ignored(root::AbstractString)
     # Every `.gitignore` under the root, not only the one at it: a package may ignore build output from
-    # the directory that holds it, and GBGIsotropicTurbulence ignores 129 files that way. A deeper file
-    # overrides a shallower one, and within one file the last matching line wins, as git decides it.
+    # the directory that holds it, and GBGHomogeneousTurbulence — then called GBGIsotropicTurbulence —
+    # ignores 129 files that way. A deeper file overrides a shallower one, and within one file the last
+    # matching line wins, as git decides it.
     levels = Tuple{String,Vector{Tuple{Regex,Bool}}}[]
     for (dir, _, fs) in walkdir(root)
         rel = relpath(dir, root)
@@ -547,7 +548,7 @@ function gitignore_rules_of(text::AbstractString)
         isdir_only = endswith(line, "/")
         # Anchoring is decided BEFORE the leading slash is stripped. `!/Manifest.toml` anchors to the
         # root; read after stripping it looks unanchored, and the negation then re-includes the file at
-        # every depth — which is exactly what GBGIsotropicTurbulence's `Manifest.toml` / `!/Manifest.toml`
+        # every depth — which is exactly what GBGHomogeneousTurbulence's `Manifest.toml` / `!/Manifest.toml`
         # pair is written to prevent.
         anchored = startswith(line, "/") || occursin('/', strip(line, '/'))
         line = strip(line, '/')

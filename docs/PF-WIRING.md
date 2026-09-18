@@ -199,7 +199,7 @@ over unchanged.
 `gbg init` installs a line at the head of your `CLAUDE.md`: *nothing restates a rule outside the
 rulebook*. A package developed for a year violates that from the minute it is wired, because its own
 instructions grew before the rulebook existed. PF's `CLAUDE.md` is 2,753 lines and its §Style about 572
-of them; GBGIsotropicTurbulence's is 505 and GBGStreamingStatistics' 680. GBGCloudPhysics' is 134 and
+of them; GBGHomogeneousTurbulence's is 505 and GBGStreamingStatistics' 680. GBGCloudPhysics' is 134 and
 restates nothing, which shows this is accumulated habit rather than something wiring requires.
 
 **No program finds the duplication.** The one reproducible measurement is that no rule statement appears

@@ -14,7 +14,7 @@ migration order (`IMPLEMENTATION.md`); history and evidence, with the replaced a
 GBGCodingTools is a Julia package, on the Julia 1.12 floor. It keeps the owner's Julia packages written to one set of
 rules, and it helps AI sessions find and fix defects in them without breaking how they work. It serves the four science
 packages — [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/),
-[GBGIsotropicTurbulence](https://grigorysarnitsky.github.io/GBGIsotropicTurbulence.jl/),
+[GBGHomogeneousTurbulence](https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/),
 [GBGStreamingStatistics](https://grigorysarnitsky.github.io/GBGStreamingStatistics.jl/),
 [GBGCloudPhysics](https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/) — and itself. Each of the
 five is a **package** below; the **owner** is the person who owns them; a **session** is one Claude Code conversation

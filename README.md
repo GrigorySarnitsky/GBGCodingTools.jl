@@ -8,7 +8,7 @@
 **A consumer holds data; the tool holds behaviour; the only thing connecting them is the pinned version.**
 
 The one shared tooling package of the four GBG Julia packages (`GBGPeriodicFields`,
-`GBGIsotropicTurbulence`, `GBGStreamingStatistics`, `GBGCloudPhysics`) and of itself: the four review
+`GBGHomogeneousTurbulence`, `GBGStreamingStatistics`, `GBGCloudPhysics`) and of itself: the four review
 instruments (`/check-docs`, `/check-consistency`, `/bug-hunt`, `/audit-changes`), the docs-build wrapper
 and its scans, the test harness, the doctor, the policy prose and the migration scaffolding — one
 version, pinned by every consumer through its sub-environment `Project.toml` files.

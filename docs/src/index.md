@@ -11,7 +11,7 @@
 `GBGCodingTools.jl` is a private Julia package, on GitHub, holding the review procedures, scans, test
 engines and writing rules of four Julia research packages:
 [`GBGPeriodicFields`](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/),
-[`GBGIsotropicTurbulence`](https://grigorysarnitsky.github.io/GBGIsotropicTurbulence.jl/),
+[`GBGHomogeneousTurbulence`](https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/),
 [`GBGStreamingStatistics`](https://grigorysarnitsky.github.io/GBGStreamingStatistics.jl/) and
 [`GBGCloudPhysics`](https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/). AI coding sessions do
 much of the writing, testing and reviewing in those four packages; this package holds the rules those
