@@ -6,6 +6,11 @@ temporary directory outside Dropbox.
 
 Read this whole file before running anything. It is written for the Claude session that works in PF.
 
+**Every command is `gbg --dev`, not `gbg`.** While PF's pin is `:dev`, the installed shim refuses to run
+in a package that is not inside the GBGCodingTools repository — deliberately, so a consumer cannot
+silently resolve against an unregistered checkout. `gbg --dev <verb>` uses the checkout registered in
+`~/.gbg/dev` and works from anywhere. This stops being necessary when PF pins a released version.
+
 ## What you are doing, and what you are not
 
 You are putting PF under `GBGCodingTools` for the first time. That means one new file PF owns
@@ -19,10 +24,10 @@ and switching are both legitimate answers. Declaring nothing and leaving the bui
 
 ## Step 1 — wire it
 
-    gbg init
+    gbg --dev init
 
 That writes `.gbg/config.jl` if PF has none, then writes everything that config generates. On the
-rehearsal it wrote 15 paths and exited 0. Expect these, and know what each one does to a file PF
+rehearsal it wrote 16 paths and exited 0. Expect these, and know what each one does to a file PF
 already has:
 
 | Path | What happens |
@@ -98,23 +103,28 @@ where PF's mathematics lives. Either answer is defensible; an undeclared default
 
 ## Step 4 — read what it finds
 
-    gbg check
+    gbg --dev check
 
-On the rehearsal, with the DEFAULT file sets (no rationale documents), PF reported **107 findings over
-12 of the 97 rules**. Five more rules could not run at all without a built site or a loaded module; they
-run inside `docs/make.jl` and `Pkg.test()` once PF calls them.
+Measured on a clone of PF at `b18db597` on 2026-09-18, with the DEFAULT file sets (no rationale
+documents): **108 findings over 13 of the 97 rules**, plus the two wiring findings Step 2 clears. Five
+more rules cannot run without a built site or a loaded module; they run inside `docs/make.jl` and
+`Pkg.test()` once PF calls them.
+
+**These move as you work.** The same measurement at `8b15c967`, two hours earlier, gave 107 over 12 —
+`ARGS_FORM` 5 → 7, `SIGNATURE_MIRROR` 3 → 1. Re-measure on your own HEAD; the table below is for
+knowing which classes to expect and roughly how big each is, not for checking off a count.
 
 | Rule | Findings | What it is, and what I think of it |
 |---|---|---|
 | `RULE.TEX.ONE_SPAN` | 35 | One idiom of the module maps, mechanically fixable without losing the link — see below. |
 | `RULE.DOC.SHAPE` | 30 | Paragraphs past the house cap: `convolve!` has one of 174 words, `exponential_convolve!` one of 232. Real prose work. |
 | `RULE.DOC.LINKS` | 21 | The same target linked twice in one docstring, mostly in the long module maps. Each finding names both lines. |
-| `RULE.DOC.ARGS_FORM` | 5 | Three-or-more arguments written as prose where the bulleted form is required, and one the other way. |
+| `RULE.DOC.ARGS_FORM` | 7 | Three-or-more arguments written as prose where the bulleted form is required, and one the other way. |
 | `RULE.DOC.AI_BANNER` | 4 | Two Literate examples carry no provenance banner, two carry a drifted copy. |
-| `RULE.DOC.SIGNATURE_MIRROR` | 3 | Displayed signatures 89–93 columns wide, past the house column. |
+| `RULE.DOC.SIGNATURE_MIRROR` | 1 | A displayed signature past the house column. |
 | `RULE.DOC.FIELDS` | 3 | A type whose field list does not document every field it has — genuine gaps. |
 | `RULE.CIT.DOI` | 2 | Hockney & Eastwood and Brandt & Lubrecht are cited with no DOI on the title. |
-| `SIBLING_LINK`, `MATHBF`, `BLOCK_LIST`, `SENTENCE_OPENER` | 1 each | One-line fixes, except `MATHBF`, which is a config line: PF must declare which `\mathbf{…}` strings it uses. |
+| `SIBLING_LINK`, `MATHBF`, `BLOCK_LIST`, `SENTENCE_OPENER`, `RENDERED_MATH` | 1 each | One-line fixes, except `MATHBF`, which is a config line: PF must declare which `\mathbf{…}` strings it uses. |
 
 ### The largest class, `RULE.TEX.ONE_SPAN` (35)
 
