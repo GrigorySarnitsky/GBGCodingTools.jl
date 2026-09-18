@@ -259,8 +259,8 @@ whether the second continues the first, qualifies it, or defines it. Which remed
 what the name is DOING, and the rule's own prose says how to choose.
 
 An ATTRIBUTIVE MODIFIER is not reported, because it has no remedy and needs none: a finished formula
-naming a size or a smoothness class, set before the type it qualifies, stands exactly where an English
-adjective stands. A connective between them produces a comma where no English sentence has one, so the
+naming a size, a smoothness class or a measurement, set beside the name it qualifies, stands exactly
+where an English adjective stands. A connective between them produces a comma where no English sentence has one, so the
 rule would be asking for a rewrite that does not exist.
 
 A formula left OPEN at its right edge is a different thing and is still reported. An equation ending in
@@ -295,7 +295,7 @@ name is doing in the sentence.
 """
 const ONE_SPAN = Model.Rule(
     id = Symbol("RULE.TEX.ONE_SPAN"),
-    statement = "A code span and a math span are never set against each other: where the formula says more than the name — a symbol and then its definition — the name goes inside it as \\texttt{…}, and where the formula only names what the code denotes, a connective joins the two; a FINISHED formula standing before a code span is an adjective and is left as it is.",
+    statement = "A code span and a math span are never set against each other where the formula continues into or out of the name: where it says more than the name — a definition, or a symbol and then its definition — the name goes inside it as \\texttt{…}, and where it only names what the code denotes, a connective joins the two. A formula finished at the edge the name sits on is not continued by it and is left as it is.",
     why = "Abutting spans render as two disjoint runs at different sizes, leaving the reader to guess whether the second continues the first, qualifies it, or defines it. Apposition says which: `atol` (``\\varepsilon``) keeps the name styled as code — clickable, and the same as every other name on the page — while `\\texttt{atol}` is the math renderer's monospace, and a link wrapped round the whole formula makes its every operator a link to the name.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
