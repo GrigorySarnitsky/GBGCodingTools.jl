@@ -96,7 +96,9 @@ function cmd_bump(args)
     isempty(o.positional) && (println(stderr, "usage: gbg bump <version>"); return 2)
     v = tryparse(VersionNumber, o.positional[1])
     v === nothing && (println(stderr, "bump: $(o.positional[1]) is not a version"); return 2)
-    return bump(GBGCodingTools.Config.find_root(), v)
+    root = ConfigIO.require_root("bump")
+    root === nothing && return 2
+    return bump(root, v)
 end
 VERBS["bump"] = cmd_bump
 

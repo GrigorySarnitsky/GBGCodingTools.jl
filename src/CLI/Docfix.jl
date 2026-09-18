@@ -112,7 +112,8 @@ end
 
 function cmd_docfix(args)
     o = parse_options(args; valued = ["message"])
-    root = GBGCodingTools.Config.find_root()
+    root = ConfigIO.require_root("docfix")
+    root === nothing && return 2
     sub = isempty(o.positional) ? "" : o.positional[1]
     if sub == "check"
         return check(root)

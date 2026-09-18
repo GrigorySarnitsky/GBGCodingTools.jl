@@ -148,3 +148,21 @@ end
     @test occursin("Owner's request", G.Catalogue.doc(G.Catalogue.INSTRUMENTS[1]))
     @test occursin("nobody starts it", G.Catalogue.doc(G.Catalogue.ALWAYS_ON[1]))
 end
+
+# Every verb of the new tree finds its package with this. It looked for `.gbg/config.toml` — the OLD
+# config — until 2026-09-18, so `gbg check`, `sync`, `bump` and `docfix` all died with a MethodError on
+# `nothing` the first time one was run from a package `gbg init` had wired. Each worked when handed a
+# root, which is how a rehearsal that called the library missed it and running the command line found it.
+@testset "a verb finds its package, and says so when there is none" begin
+    dir = mktempdir(; cleanup = true)
+    deep = joinpath(dir, "src", "inner"); mkpath(deep)
+    @test G.ConfigIO.find_root(deep) === nothing               # nothing above it
+    mkpath(joinpath(dir, ".gbg"))
+    write(joinpath(dir, ".gbg", "config.jl"), """Config(package = "P", tool = :dev)""")
+    @test G.ConfigIO.find_root(deep) == abspath(dir)           # found from below
+    # a package carrying only the OLD config is not a package to these verbs
+    other = mktempdir(; cleanup = true); mkpath(joinpath(other, ".gbg"))
+    write(joinpath(other, ".gbg", "config.toml"), "schema = 1\n")
+    @test G.ConfigIO.find_root(other) === nothing
+    @test cd(() -> G.Check.cmd_check(String[]), other) == 2    # a named refusal, not a crash
+end

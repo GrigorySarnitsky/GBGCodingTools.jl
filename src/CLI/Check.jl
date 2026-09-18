@@ -62,7 +62,8 @@ end
 
 function cmd_check(args)
     o = parse_options(args; valued = ["only"])
-    root = GBGCodingTools.Config.find_root()
+    root = ConfigIO.require_root("check")
+    root === nothing && return 2
     intention = get(o.values, "only", "") == "docs" ? Model.Intention.DOCUMENTATION :
                 get(o.values, "only", "") == "code" ? Model.Intention.CODE : nothing
     return run(root; intention, network = "network" in o.flags)

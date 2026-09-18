@@ -25,6 +25,43 @@ using ..Catalogue
 const JS = Base.JuliaSyntax
 
 """
+    require_root(verb) -> Union{String,Nothing}
+
+The package root for a verb that needs one, or `nothing` with a named refusal on `stderr`. The argument
+is `verb`, the verb's name, which the message opens with. Returns the root.
+
+A verb run outside a package is exit 2, not a `MethodError` on `nothing` — which is what every new verb
+did until 2026-09-18, because each passed `find_root()` straight into a function typed `AbstractString`.
+"""
+function require_root end
+
+"""
+    find_root(start = pwd()) -> Union{String,Nothing}
+
+The package root at or above `start`: the nearest directory holding `.gbg/config.jl`. The argument is
+`start`, where to begin. Returns the root, or `nothing` where no package encloses it.
+
+Every verb of the new tree finds its package this way. The old reader looks for `.gbg/config.toml`
+instead, and a package wired by `gbg init` has never had one — which made every new verb fail with a
+`MethodError` on `nothing` when run from a real consumer, though each worked when handed a root.
+"""
+function require_root(verb::AbstractString)
+    root = find_root()
+    root === nothing && println(stderr, "$verb: no .gbg/config.jl here or above — run `gbg init` in the package")
+    return root
+end
+
+function find_root(start::AbstractString = pwd())
+    d = abspath(start)
+    while true
+        isfile(joinpath(d, ".gbg", "config.jl")) && return d
+        p = dirname(d)
+        p == d && return nothing
+        d = p
+    end
+end
+
+"""
     ConfigError
 
 A `.gbg/config.jl` or `.gbg/settled.jl` that cannot be read as data. The fields are:

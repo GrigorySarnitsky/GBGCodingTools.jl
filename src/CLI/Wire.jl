@@ -127,7 +127,9 @@ end
 
 function cmd_sync(args)
     o = parse_options(args)
-    return sync(GBGCodingTools.Config.find_root(); check = "check" in o.flags)
+    root = ConfigIO.require_root("sync")
+    root === nothing && return 2
+    return sync(root; check = "check" in o.flags)
 end
 
 VERBS["init"] = cmd_init
