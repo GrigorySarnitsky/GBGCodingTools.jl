@@ -234,6 +234,12 @@ const REF_ABUT_RULE = Model.Rule(
 const ABUT_CODE = "(?:\\[`" * Texts.NAME * "`\\]\\([^)\\n]*\\)|`" * Texts.NAME * "`)"
 const ABUT_MATH = raw"``[^`\n]{1,60}``"
 const ABUT = Regex("(?:" * ABUT_MATH * raw"\s*" * ABUT_CODE * "|" * ABUT_CODE * raw"\s*" * ABUT_MATH * ")")
+const CODE_THEN_MATH = Regex(ABUT_CODE * raw"\s*" * ABUT_MATH)
+const MATH_THEN_CODE = Regex(ABUT_MATH * raw"\s*" * ABUT_CODE)
+# A formula left OPEN at its right edge continues into whatever follows it. `` ``K_1 =`` `kernelx` `` is
+# an equation whose right-hand side is a name; `` ``512^3`` `Float64` `` is a finished value used as an
+# adjective, and nothing follows from it.
+const DANGLING = r"(=|\\equiv|\\ge|\\le|\\to|\\mapsto|\\sim|\\approx|\\times|[<>+\-])\s*$"
 
 """
     one_span(text, cfg) -> Vector{Model.Location}
@@ -244,12 +250,33 @@ location per line.
 
 Two abutting spans render as two disjoint runs at different sizes, and the reader is left to guess
 whether the second continues the first, qualifies it, or defines it. Which remedy applies depends on
-what the name is DOING, and the rule's own prose says how to choose. The known false positive is plain
-adjacency of unrelated things — a size beside a type — which is why this is worth reading before obeying.
+what the name is DOING, and the rule's own prose says how to choose.
+
+An ATTRIBUTIVE MODIFIER is not reported, because it has no remedy and needs none: a finished formula
+before a code span is a value used as an adjective — `` ``512^3`` `Float64` ``, `` ``C^0`` `LagrangeSpline` ``
+— and it stands exactly where an English adjective stands. A connective there gives "the (2n+2)×(2m+2),
+`SMatrix`", which is not English, so the rule would be asking for a rewrite that does not exist.
+
+A formula left OPEN at its right edge is a different thing and is still reported: `` ``K_1 =`` `kernelx` ``
+is an equation whose right-hand side is a name, which is a naming and wants a connective. Span ORDER
+alone cannot tell the two apart — that was tried, fits three of the four packages, and fails on the
+fourth, where the naming is written symbol-first.
 """
 function one_span(text::AbstractString, cfg)
-    return [Model.Location(; file = "", line = i, text = strip(String(line)))
-            for (i, line) in pairs(split(text, '\n')) if occursin(ABUT, line)]
+    out = Model.Location[]
+    for (i, line) in pairs(split(text, '\n'))
+        raw = String(line)
+        report = occursin(CODE_THEN_MATH, raw)
+        if !report
+            m = match(MATH_THEN_CODE, raw)
+            if m !== nothing
+                inner = strip(String(match(Regex(ABUT_MATH), m.match).match)[3:end-2])
+                report = occursin(DANGLING, inner)
+            end
+        end
+        report && push!(out, Model.Location(; file = "", line = i, text = strip(raw)))
+    end
+    return out
 end
 
 """
@@ -260,7 +287,7 @@ name is doing in the sentence.
 """
 const ONE_SPAN = Model.Rule(
     id = Symbol("RULE.TEX.ONE_SPAN"),
-    statement = "A code span and a math span are never set against each other: where the formula says more than the name — a symbol and then its definition — the name goes inside it as \\texttt{…}, and where the formula only names what the code denotes, a connective joins the two.",
+    statement = "A code span and a math span are never set against each other: where the formula says more than the name — a symbol and then its definition — the name goes inside it as \\texttt{…}, and where the formula only names what the code denotes, a connective joins the two; a FINISHED formula standing before a code span is an adjective and is left as it is.",
     why = "Abutting spans render as two disjoint runs at different sizes, leaving the reader to guess whether the second continues the first, qualifies it, or defines it. Apposition says which: `atol` (``\\varepsilon``) keeps the name styled as code — clickable, and the same as every other name on the page — while `\\texttt{atol}` is the math renderer's monospace, and a link wrapped round the whole formula makes its every operator a link to the name.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
@@ -287,6 +314,16 @@ const ONE_SPAN = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe energy ``\\texttt{kinetic\\_energy} \\equiv k = \\tfrac{1}{2}\\langle u^2 \\rangle`` is reported.\n",
             Model.Location[], "inside it as \\texttt{…}"),
+        # A finished formula before a code span is a value used as an adjective, exactly where an English
+        # adjective stands, and there is no rewrite: "the (2n+2)×(2m+2), `SMatrix`" is not English.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nIt runs on a ``512^3`` `Float64` grid.\n",
+            Model.Location[], "a finished formula is an adjective"),
+        # One left OPEN at its right edge is an equation continuing into the name, which is a naming.
+        # Span order cannot tell these apart: this one is a naming written symbol-first.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe first bandwidth ``h_1 =`` `hx` is set by the caller.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "a finished formula is an adjective"),
     ])
 
 """
