@@ -27,7 +27,7 @@ For this package the rule is {{docs.admonition_titles}}: either every `!!!` bloc
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
 #### [`RULE.DOC.AI_BANNER`](@id RULE.DOC.AI_BANNER)
-A rationale page and a Literate example carry the provenance banner, verbatim.
+A rationale page and a rendered Literate example carry the provenance banner, verbatim; a script that is never rendered is not a page and carries none.
 
 A banner reworded in one package is a banner a reader learns to skim past in all of them.
 

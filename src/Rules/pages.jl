@@ -26,9 +26,27 @@ Verbatim is the point: a banner reworded in one package is a banner a reader lea
 mentions the words without the exact text is reported as drifted rather than as missing, which is the
 more useful thing to be told.
 """
+# A Literate source becomes a PAGE; a script beside it does not, however alike they look on disk. What
+# separates them is the Markdown structure Literate renders — a `# #` heading — not the directory or the
+# extension. GBGPeriodicFields keeps three runnable scripts beside its one rendered example, and this
+# rule reported a missing banner on all three: a banner for a reader of a page nobody publishes.
+# `[ \t]`, not `\s`: `\s` matches a newline, so `^#\s+#` matched any two consecutive comment lines and
+# called every script a Literate page.
+const LITERATE_HEADING = r"(?m)^#[ \t]+#"
+
 function ai_banner(text::AbstractString, cfg)
-    occursin(BANNER, text) && return Model.Location[]
-    mentions = occursin("Written by AI", text)
+    # A Markdown page is a page. A Julia file is one only if Literate renders it, and what Literate
+    # renders is the Markdown structure in its comments — a `# #` heading. Fenced blocks are removed
+    # before looking for code, or a page holding a `julia` example would read as a script itself.
+    unfenced = replace(text, r"(?ms)^```.*?^```" => "")
+    is_script = occursin(r"(?m)^(using|import|function|const|module|struct|macro)\s", unfenced)
+    is_script && !occursin(LITERATE_HEADING, text) && return Model.Location[]
+    # Literate renders a full-line `# ` comment as prose, so the banner in a Literate source carries that
+    # prefix on every line and MUST: without it the admonition would render as a code block. Comparing
+    # the raw text called the correct thing drifted. The file is not the page.
+    unprefixed = replace(text, r"(?m)^#[ \t]?" => "")
+    (occursin(BANNER, text) || occursin(BANNER, unprefixed)) && return Model.Location[]
+    mentions = occursin("Written by AI", text) || occursin("Written by AI", unprefixed)
     return [Model.Location(; file = "", line = 1,
                             text = mentions ? "the banner has drifted from the fleet's text — copy it verbatim" :
                                               "no provenance banner on a page that must carry one")]
@@ -36,7 +54,7 @@ end
 
 const AI_BANNER = Model.Rule(
     id = Symbol("RULE.DOC.AI_BANNER"),
-    statement = "A rationale page and a Literate example carry the provenance banner, verbatim.",
+    statement = "A rationale page and a rendered Literate example carry the provenance banner, verbatim; a script that is never rendered is not a page and carries none.",
     why = "A banner reworded in one package is a banner a reader learns to skim past in all of them.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.RATIONALE, Model.FileSet.LITERATE],
@@ -44,6 +62,18 @@ const AI_BANNER = Model.Rule(
     examples = [
         Model.TextExample(Model.FileSet.RATIONALE, "# A rationale\n\nThe reasoning.\n",
             [Model.Location(; file = "docs/RATIONALE.md", line = 1)], "carries the banner"),
+        # A runnable script beside the rendered example: no Literate heading, so no page, so no banner.
+        Model.TextExample(Model.FileSet.LITERATE,
+            "using Printf\n\n# Re-render the figures from a saved dump.\nfunction main()\n    return 1\nend\n",
+            Model.Location[], "a script that is never rendered is not a page"),
+        # The same file once it is a Literate source: a heading, so a page, so the banner is owed.
+        Model.TextExample(Model.FileSet.LITERATE,
+            "# # The worked example\n#\n# What it shows.\n\nusing Printf\n",
+            [Model.Location(; file = "examples/example.jl", line = 1)], "a script that is never rendered is not a page"),
+        # The banner as Literate requires it: every line prefixed `# `, which is not drift.
+        Model.TextExample(Model.FileSet.LITERATE,
+            "# # The worked example\n#\n" * join("# " .* split(BANNER, "\n"), "\n") * "\n\nusing Printf\n",
+            Model.Location[], "carries the banner"),
         Model.TextExample(Model.FileSet.RATIONALE, "# A rationale\n\n" * BANNER * "\n\nThe reasoning.\n",
             Model.Location[], "carries the banner"),
         Model.TextExample(Model.FileSet.RATIONALE,
