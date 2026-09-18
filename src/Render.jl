@@ -342,6 +342,73 @@ was wrong in both places that already held it.
 runtests_call() = "GBGCodingTools.Engine.Harness.test(dirname(@__DIR__); checks = (GBGCodingTools.Render.wiring,))"
 
 """
+    CI_ACTION
+
+Where the composite action this package writes for a consumer's CI lives.
+"""
+const CI_ACTION = ".github/actions/gbg-auth/action.yml"
+
+"""
+    ci(cfg) -> String
+
+The composite GitHub action a consumer's workflows call before resolving their environment: the token
+rewrite that lets a private dependency be fetched on a runner. The argument is `cfg`, the package's
+config, which this generator does not read. Returns the action file.
+
+It is a whole FILE that a workflow names in one line, not a fragment spliced into the workflow. A
+fragment has to be inserted at the right indentation inside somebody else's `steps:` list, and getting
+that wrong produces YAML that is valid and does nothing. A `uses:` line is one line, and the wiring
+check can read it the way it reads any other call.
+
+Only a package pinned to a RELEASED version needs this. A checkout resolves this package over a path,
+and a path needs no credential.
+"""
+function ci(cfg::Model.Config)
+    return """
+    # $BEGIN_MARK $(version_tag(cfg)) — rewritten by `gbg sync`; do not edit
+    name: GBG private dependencies
+    description: Lets a runner fetch the GBG packages, which are private repositories.
+    inputs:
+      token:
+        description: A token that can read the GBG repositories.
+        required: true
+    runs:
+      using: composite
+      steps:
+        - shell: bash
+          # Before any julia-actions step: Pkg fetches the pinned tool over https, and this rewrite is
+          # what lets a private repository resolve on the runner.
+          run: git config --global url."https://x-access-token:\${{ inputs.token }}@github.com/".insteadOf "https://github.com/"
+    # $END_MARK
+    """
+end
+
+"""
+    ci_drift(cfg, root) -> Vector{Model.Location}
+
+Every GitHub workflow in the package at `root` that resolves this package without authenticating first.
+The arguments are `cfg`, the package's config, and `root`, the package root. Returns one location per
+workflow.
+
+Nothing is reported for a package pinned to a checkout, which needs no credential, or for one with no
+workflows at all.
+"""
+function ci_drift(cfg::Model.Config, root::AbstractString)
+    cfg.tool isa VersionNumber || return Model.Location[]
+    dir = joinpath(root, ".github", "workflows")
+    isdir(dir) || return Model.Location[]
+    out = Model.Location[]
+    for f in sort!(readdir(dir))
+        (endswith(f, ".yml") || endswith(f, ".yaml")) || continue
+        path = joinpath(".github", "workflows", f)
+        occursin("./.github/actions/gbg-auth", read(joinpath(dir, f), String)) && continue
+        push!(out, Model.Location(; file = path,
+            text = "does not use `./.github/actions/gbg-auth`, so a runner cannot fetch this package"))
+    end
+    return out
+end
+
+"""
     CALLS
 
 The two files a package must hand to this one, and what each must name. A package whose `runtests.jl`
@@ -623,6 +690,7 @@ const GENERATED = [
     (path = ".claude/hooks/queue-guard.sh", part = Model.Part.WHOLE,       generator = :hook),
     (path = "test/regressions/README.md",  part = Model.Part.WHOLE,        generator = :regressions_note),
     (path = "CLAUDE.md",                   part = Model.Part.BLOCK,        generator = :claude_block),
+    (path = CI_ACTION,                     part = Model.Part.WHOLE,        generator = :ci),
     (path = ".gbg/policy/00-index.md",     part = Model.Part.WHOLE,        generator = :policy_index),
     (path = ".gbg/policy/glossary.md",     part = Model.Part.WHOLE,        generator = :glossary),
     (path = ".gbg/policy/switches.md",     part = Model.Part.WHOLE,        generator = :switches),
@@ -643,6 +711,7 @@ function produce(name::Symbol, cfg::Model.Config)
     name === :glossary && return glossary(cfg)
     name === :switches && return switches(cfg)
     name === :claude_block && return claude_block(cfg)
+    name === :ci && return ci(cfg)
     for e in POLICY_FILES
         name === e.generator && return policy_file(cfg, e)
     end
@@ -688,8 +757,9 @@ function wiring(cfg::Model.Config, root::AbstractString)
         push!(out, Model.Location(; file = g.path, line = first_difference(have, want),
                                    text = "this file is not what `gbg sync` writes now"))
     end
-    # The two calls that make any of this run at all.
+    # The two calls that make any of this run at all, and the one a runner needs.
     append!(out, call_drift(root))
+    append!(out, ci_drift(cfg, root))
     # `.claude/settings.json` is the package's own file too: only this package's hook is looked for.
     why = settings_drift(root)
     why === nothing || push!(out, Model.Location(; file = ".claude/settings.json", text = why))

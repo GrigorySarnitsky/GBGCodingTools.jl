@@ -78,6 +78,25 @@ end
         @test isempty(RN.call_drift(dir))
     end
 
+    # A runner cannot fetch a private dependency without a credential, and a workflow that omits the
+    # step fails at resolve time with a message about a missing package. Only a RELEASED pin needs it:
+    # a checkout resolves over a path. Both directions, both pins.
+    @testset "a released pin needs its workflows to authenticate" begin
+        dir, _ = wired_package()
+        mkpath(joinpath(dir, ".github", "workflows"))
+        write(joinpath(dir, ".github", "workflows", "CI.yml"), "jobs:\n  test:\n    steps:\n      - uses: actions/checkout@v6\n")
+        dev = G.ConfigIO.read_config(dir)
+        @test isempty(RN.ci_drift(dev, dir))                       # a checkout needs no credential
+        write(joinpath(dir, ".gbg", "config.jl"), """Config(package = "Sample", tool = v"2.0.0")""")
+        pinned = G.ConfigIO.read_config(dir)
+        @test length(RN.ci_drift(pinned, dir)) == 1                # a release does
+        write(joinpath(dir, ".github", "workflows", "CI.yml"),
+              "jobs:\n  test:\n    steps:\n      - uses: ./.github/actions/gbg-auth\n")
+        @test isempty(RN.ci_drift(pinned, dir))
+        rm(joinpath(dir, ".github"); recursive = true)
+        @test isempty(RN.ci_drift(pinned, dir))                    # a package with no workflows is told nothing
+    end
+
     @testset "a missing generated file is reported, not passed over" begin
         dir, cfg = wired_package()
         rm(joinpath(dir, ".claude", "settings.json"))
