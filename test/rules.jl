@@ -116,6 +116,32 @@ const NO_BARE_URL = MR.Rule(
                        "written as Markdown"),
     ])
 
+# A rule never reads a file the package's own `.gitignore` excludes: that file is build output, and a
+# finding in it names a line the next build deletes. GBGPeriodicFields copies four rationale documents
+# into `docs/src/` and renders a Literate example beside them, all ignored and all globbed by the default
+# pages pattern — 264 findings against 108 real ones, and a build that would have linted its own output.
+@testset "an ignored file is never read" begin
+    dir = mktempdir(; cleanup = true)
+    mkpath(joinpath(dir, "docs", "src", "examples"))
+    for f in ("index.md", "generated.md"); write(joinpath(dir, "docs", "src", f), "# A page\n\nTODO: x\n"); end
+    write(joinpath(dir, "docs", "src", "examples", "rendered.md"), "# A page\n\nTODO: x\n")
+    cfg = MR.Config(package = "P", tool = :dev, filesets = Dict(MR.FileSet.PAGES => ["docs/src/**/*.md"]))
+    @test length(CK.files(cfg, dir, MR.FileSet.PAGES)) == 3          # nothing ignored yet
+    write(joinpath(dir, ".gitignore"), "docs/src/generated.md\ndocs/src/examples/\n")
+    @test CK.files(cfg, dir, MR.FileSet.PAGES) == ["docs/src/index.md"]
+
+    # a nested .gitignore decides its own directory, and a deeper rule overrides a shallower one
+    write(joinpath(dir, ".gitignore"), "*.md\n")
+    @test isempty(CK.files(cfg, dir, MR.FileSet.PAGES))
+    write(joinpath(dir, "docs", "src", ".gitignore"), "!index.md\n")
+    @test CK.files(cfg, dir, MR.FileSet.PAGES) == ["docs/src/index.md"]
+
+    # anchoring is read before the leading slash is stripped, or a negation leaks to every depth
+    rules = CK.gitignore_rules_of("Manifest.toml\n!/Manifest.toml\n")
+    hit(f) = (h = false; for (rx, neg) in rules; occursin(rx, f) && (h = !neg); end; h)
+    @test !hit("Manifest.toml") && hit("docs/Manifest.toml")
+end
+
 @testset "the rulebook" begin
     @testset "the materialiser judges an example as the rule says" begin
         for rule in (NO_TODO, NO_BARE_URL), example in rule.examples

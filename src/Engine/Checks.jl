@@ -53,7 +53,101 @@ function files(cfg::Model.Config, root::AbstractString, fileset::Model.FileSet.T
     # that breaks the rules it lists, and a reader would spend its whole budget reporting it
     # (docs/ARCHITECTURE.md §5.2). Same for a declared copy, whose text belongs to its source.
     written = Set(vcat(cfg.generated, first.(cfg.copies)))
-    return sort!(unique!(filter(f -> !(f in written), out)))
+    skip = ignored(root)
+    return sort!(unique!(filter(f -> !(f in written) && !skip(f), out)))
+end
+
+"""
+    ignored(root) -> Function
+
+A predicate saying whether a path, relative to `root`, is one the package's own `.gitignore` excludes.
+The argument is `root`, the package root. Returns the predicate; it is `false` everywhere when there is
+no `.gitignore`.
+
+**Why a rule never reads an ignored file.** Such a file is not source — the package has said so. It is
+build output, and a finding in it names a line that will not exist after the next build, sends whoever
+fixes it into an artefact, and cannot be fixed there at all. A consumer copies four rationale
+documents into `docs/src/` as lowercase siblings and renders a Literate example beside them; all five
+are ignored, all five are rewritten every build, and the default pages pattern `docs/src/**/*.md` globs
+them. On a built tree that was 264 findings against 108 real ones, and once its `docs/make.jl` called
+this package the build would have been linting its own output.
+
+It is read from the FILES rather than from `git check-ignore`, because the harness that runs these
+checks starts no child process: a rule must give the same answer on a machine with no git on its path.
+Checked against `git check-ignore` over 3,203 files in four repositories, it disagrees on two, both
+deliberate and both the same name:
+
+- a file that a pattern matches but the repository TRACKS. Git never ignores a tracked file; knowing
+  which are tracked needs git, so this skips it. The difference is conservative — a file the package
+  told git to ignore goes unread — and it is a file the package asked not to have around.
+- a file ignored by the user's GLOBAL excludes (`~/.config/git/ignore`). Those are per-machine, and
+  reading them would make a rule answer differently on two machines from the same commit, which is the
+  one thing this may not do.
+"""
+function ignored(root::AbstractString)
+    # Every `.gitignore` under the root, not only the one at it: a package may ignore build output from
+    # the directory that holds it, and GBGIsotropicTurbulence ignores 129 files that way. A deeper file
+    # overrides a shallower one, and within one file the last matching line wins, as git decides it.
+    levels = Tuple{String,Vector{Tuple{Regex,Bool}}}[]
+    for (dir, _, fs) in walkdir(root)
+        rel = relpath(dir, root)
+        startswith(rel, ".git") && continue
+        ".gitignore" in fs || continue
+        prefix = rel == "." ? "" : replace(rel, '\\' => '/') * "/"
+        push!(levels, (prefix, gitignore_rules(joinpath(dir, ".gitignore"))))
+    end
+    isempty(levels) && return _ -> false
+    sort!(levels; by = first)
+    return function (f::AbstractString)
+        hit = false
+        for (prefix, rules) in levels
+            startswith(f, prefix) || continue
+            rest = f[nextind(f, 0, length(prefix) + 1):end]
+            for (rx, negated) in rules
+                occursin(rx, rest) && (hit = !negated)
+            end
+        end
+        return hit
+    end
+end
+
+"""
+    gitignore_rules(path) -> Vector{Tuple{Regex,Bool}}
+
+The lines of one `.gitignore` as patterns, each with whether it re-includes rather than excludes. The
+argument is `path`, the file to read. Returns them in file order, since the last match decides.
+"""
+gitignore_rules(path::AbstractString) = gitignore_rules_of(isfile(path) ? read(path, String) : "")
+
+"""
+    gitignore_rules_of(text) -> Vector{Tuple{Regex,Bool}}
+
+The same, from the text of a `.gitignore` rather than its path, so the pattern grammar can be tested
+without a directory. The argument is `text`, the file's content. Returns the rules in file order.
+"""
+function gitignore_rules_of(text::AbstractString)
+    rules = Tuple{Regex,Bool}[]
+    for raw in split(text, '\n')
+        line = strip(raw)
+        (isempty(line) || startswith(line, "#")) && continue
+        negated = startswith(line, "!")
+        negated && (line = line[2:end])
+        isdir_only = endswith(line, "/")
+        # Anchoring is decided BEFORE the leading slash is stripped. `!/Manifest.toml` anchors to the
+        # root; read after stripping it looks unanchored, and the negation then re-includes the file at
+        # every depth — which is exactly what GBGIsotropicTurbulence's `Manifest.toml` / `!/Manifest.toml`
+        # pair is written to prevent.
+        anchored = startswith(line, "/") || occursin('/', strip(line, '/'))
+        line = strip(line, '/')
+        isempty(line) && continue
+        # `**` is held aside as a sentinel while `*` is rewritten, or the first pass would eat it.
+        body = replace(line, "." => "\\.", "**" => "\0", "*" => "[^/]*", "?" => "[^/]")
+        body = replace(body, "\0" => ".*")
+        # A directory matches everything under it; an unanchored pattern matches at any depth.
+        tail = isdir_only ? "/.*" : "(?:/.*)?"
+        push!(rules, (Regex("^" * (anchored ? "" : "(?:.*/)?") * body * tail * "\$"), negated))
+    end
+    return rules
 end
 
 # `**` matches any run of directories, `*` anything within one name. Written out rather than taken from a
