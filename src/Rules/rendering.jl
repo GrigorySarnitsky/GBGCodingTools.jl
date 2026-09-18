@@ -253,14 +253,14 @@ whether the second continues the first, qualifies it, or defines it. Which remed
 what the name is DOING, and the rule's own prose says how to choose.
 
 An ATTRIBUTIVE MODIFIER is not reported, because it has no remedy and needs none: a finished formula
-before a code span is a value used as an adjective — `` ``512^3`` `Float64` ``, `` ``C^0`` `LagrangeSpline` ``
-— and it stands exactly where an English adjective stands. A connective there gives "the (2n+2)×(2m+2),
-`SMatrix`", which is not English, so the rule would be asking for a rewrite that does not exist.
+naming a size or a smoothness class, set before the type it qualifies, stands exactly where an English
+adjective stands. A connective between them produces a comma where no English sentence has one, so the
+rule would be asking for a rewrite that does not exist.
 
-A formula left OPEN at its right edge is a different thing and is still reported: `` ``K_1 =`` `kernelx` ``
-is an equation whose right-hand side is a name, which is a naming and wants a connective. Span ORDER
-alone cannot tell the two apart — that was tried, fits three of the four packages, and fails on the
-fourth, where the naming is written symbol-first.
+A formula left OPEN at its right edge is a different thing and is still reported. An equation ending in
+a relation, whose right-hand side is the name that follows it, is a naming and wants a connective. Span
+ORDER alone cannot tell the two apart — that was tried, fits three of the four packages, and fails on
+the fourth, whose author writes the naming symbol-first.
 """
 function one_span(text::AbstractString, cfg)
     out = Model.Location[]
