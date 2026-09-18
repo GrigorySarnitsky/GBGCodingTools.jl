@@ -216,7 +216,12 @@ end
     write(joinpath(dir, "docs", "src", "page.md"),
           "# A page\n\n## First\n\n1. one\n\n## Second\n\n1. another\n")
     u = G.Catalogue.Shape.units(dir, ["docs/src/page.md"])
-    @test count(k -> occursin("item 1", k), collect(keys(u))) == 2
+    ks = collect(keys(u))
+    @test count(k -> occursin("item 1", k), ks) == 2
+    # Keyed under the HEADING, not by position: inserting an item earlier must not re-point the rows
+    # that follow it, which a positional suffix would.
+    @test any(k -> occursin("First / item 1", k), ks)
+    @test any(k -> occursin("Second / item 1", k), ks)
 end
 
 @testset "the rulebook" begin

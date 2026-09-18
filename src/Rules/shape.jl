@@ -71,7 +71,7 @@ function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,St
                 out[key] = metrics(d.text); note_owner!(key, f)
             end
         else
-            section = "(preamble)"; buf = IOBuffer(); fenced = false
+            section = "(preamble)"; heading = ""; buf = IOBuffer(); fenced = false
             flush!() = begin
                 body = String(take!(buf))
                 if !isempty(strip(body))
@@ -88,11 +88,19 @@ function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,St
                 end
                 fenced && continue
                 if startswith(line, "#")
-                    flush!(); section = strip(replace(String(line), r"^#+" => ""))
+                    flush!(); heading = strip(replace(String(line), r"^#+" => "")); section = heading
                 elseif (m = match(r"^(\d+)\. ", line)) !== nothing
-                    flush!(); section = "item " * m.captures[1]; println(buf, line)
+                    # Keyed UNDER its heading. A document restarts its numbering in each section, so
+                    # `item 1` occurs three times in one file here; keyed by the number alone they are
+                    # one unit and two of the three are tracked by nothing. A positional suffix would
+                    # also separate them, and would move every later one when an item is inserted —
+                    # silently re-pointing the baseline rows. GBGPeriodicFields' own lint carries the
+                    # heading for this reason, and it is the better answer.
+                    flush!(); section = (isempty(heading) ? "" : heading * " / ") * "item " * m.captures[1]
+                    println(buf, line)
                 elseif (m = match(r"^\*\*\(([a-z]{1,2})\) ", line)) !== nothing
-                    flush!(); section = "finding (" * m.captures[1] * ")"; println(buf, line)
+                    flush!(); section = (isempty(heading) ? "" : heading * " / ") * "finding (" * m.captures[1] * ")"
+                    println(buf, line)
                 else
                     println(buf, line)
                 end
