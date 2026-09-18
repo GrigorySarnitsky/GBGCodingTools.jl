@@ -9,6 +9,10 @@ benchmark/Manifest.toml
 # gbg:managed end
 
 # seeded by hand at Phase 0; `gbg sync` adds its managed block at Phase 1.10
+# Local copies of other packages, kept for study — the fleet's convention, one `inspiration/` per
+# package. Never committed here, and gitignored is also what keeps a rule from reading four other
+# packages' source as though it were this one's (`Texts.ignored`).
+inspiration/
 .claude/settings.local.json
 Manifest.toml
 docs/build/
