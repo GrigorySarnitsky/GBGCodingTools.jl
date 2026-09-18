@@ -334,8 +334,52 @@ end
 The line a package's `test/runtests.jl` ends with: the harness, handed the wiring check. The harness sits
 below the generators in the module order and so cannot reach that check itself; a consumer gets both by
 being given both, in one line it can read. Returns the line.
+
+It is `dirname(@__DIR__)`, not `@__DIR__ |> dirname`: a macro call takes the rest of the line as its
+arguments, so the second spelling is a parse error. This line is copied into consumers verbatim, and it
+was wrong in both places that already held it.
 """
-runtests_call() = "GBGCodingTools.Engine.Harness.test(@__DIR__ |> dirname; checks = (GBGCodingTools.Render.wiring,))"
+runtests_call() = "GBGCodingTools.Engine.Harness.test(dirname(@__DIR__); checks = (GBGCodingTools.Render.wiring,))"
+
+"""
+    CALLS
+
+The two files a package must hand to this one, and what each must name. A package whose `runtests.jl`
+does not call the harness runs no rule in its test suite, and one whose `make.jl` calls
+`Documenter.makedocs` directly runs none in its build — in both cases silently, and green.
+
+This is checked by reading the files rather than by grepping a CI log for a banner, which is what the
+tree being replaced did. A log grep answers only on the machine that produced the log; reading the call
+answers on every machine, before anything is pushed, and it is the same answer.
+"""
+const CALLS = [
+    (path = "test/runtests.jl", names = "Harness.test",
+     want = "GBGCodingTools.Engine.Harness.test", why = "the test suite runs no rule of the rulebook"),
+    (path = "docs/make.jl", names = "GBGCodingTools.makedocs",
+     want = "GBGCodingTools.makedocs", why = "the documentation build runs no rule of the rulebook"),
+]
+
+"""
+    call_drift(root) -> Vector{Model.Location}
+
+Every file of [`CALLS`](@ref) in the package at `root` that does not call into this package. The argument
+is `root`, the package root. Returns one location per file, and none where a file is absent — a package
+with no documentation build has nothing to wire, and saying otherwise would make this package's
+opinions a requirement to have one.
+"""
+function call_drift(root::AbstractString)
+    out = Model.Location[]
+    for c in CALLS
+        full = joinpath(root, c.path)
+        isfile(full) || continue
+        # A commented-out call is not a call. The line must survive with the name on it, uncommented.
+        live = join([l for l in eachline(full) if !startswith(strip(l), "#")], "\n")
+        occursin(c.want, live) && continue
+        push!(out, Model.Location(; file = c.path,
+            text = "nothing here calls `$(c.names)`, so $(c.why)"))
+    end
+    return out
+end
 
 # ──────────────────────────────────────────────────────────────────────────────── the rendered rulebook
 
@@ -644,6 +688,8 @@ function wiring(cfg::Model.Config, root::AbstractString)
         push!(out, Model.Location(; file = g.path, line = first_difference(have, want),
                                    text = "this file is not what `gbg sync` writes now"))
     end
+    # The two calls that make any of this run at all.
+    append!(out, call_drift(root))
     # `.claude/settings.json` is the package's own file too: only this package's hook is looked for.
     why = settings_drift(root)
     why === nothing || push!(out, Model.Location(; file = ".claude/settings.json", text = why))

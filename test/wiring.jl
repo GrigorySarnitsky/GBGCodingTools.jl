@@ -51,6 +51,33 @@ end
         end
     end
 
+    # The line this package tells a consumer to write must PARSE. It did not: `@__DIR__ |> dirname` is a
+    # parse error, because a macro call takes the rest of the line as its arguments, and the line had
+    # been copied verbatim into two suites before anything ran it.
+    @testset "the line a consumer is told to write is valid Julia" begin
+        @test Meta.parse(RN.runtests_call()) isa Expr
+        @test occursin("Harness.test", RN.runtests_call())
+    end
+
+    # A package whose suite does not call the harness runs no rule and is green about it; likewise a
+    # build that calls Documenter directly. Both directions, on both files.
+    @testset "a package that does not call in is reported" begin
+        dir = mktempdir(; cleanup = true)
+        mkpath(joinpath(dir, "test")); mkpath(joinpath(dir, "docs"))
+        write(joinpath(dir, "test", "runtests.jl"), "using Test\n@test true\n")
+        write(joinpath(dir, "docs", "make.jl"), "using Documenter\nmakedocs()\n")
+        @test length(RN.call_drift(dir)) == 2
+        write(joinpath(dir, "test", "runtests.jl"), RN.runtests_call() * "\n")
+        write(joinpath(dir, "docs", "make.jl"), "GBGCodingTools.makedocs(cfg)\n")
+        @test isempty(RN.call_drift(dir))
+        # commented out is not called
+        write(joinpath(dir, "docs", "make.jl"), "# GBGCodingTools.makedocs(cfg)\nmakedocs()\n")
+        @test length(RN.call_drift(dir)) == 1
+        # and a package with neither file is not told to grow one
+        rm(joinpath(dir, "test", "runtests.jl")); rm(joinpath(dir, "docs", "make.jl"))
+        @test isempty(RN.call_drift(dir))
+    end
+
     @testset "a missing generated file is reported, not passed over" begin
         dir, cfg = wired_package()
         rm(joinpath(dir, ".claude", "settings.json"))

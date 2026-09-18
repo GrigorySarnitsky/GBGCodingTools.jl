@@ -1,5 +1,6 @@
 # test/runtests.jl — GBGFixture. `Pkg.test()` is the gate: the package's own tests, the promoted
-# witnesses, then the tool's closure gate.
+# witnesses, then the rulebook's code rules and the wiring check, which is the line `gbg init` tells a
+# consumer to add and the reason `Pkg.test()` is worth running at all.
 using Test, GBGCodingTools
 using GBGFixture
 
@@ -17,3 +18,5 @@ using GBGFixture
 end
 
 GBGCodingTools.TestHarness.run_regressions(@__DIR__)
+
+GBGCodingTools.Engine.Harness.test(dirname(@__DIR__); checks = (GBGCodingTools.Render.wiring,))

@@ -26,5 +26,11 @@ module CoverageTests;    include("coverage.jl");     end
 
 rm(TMP; recursive = true, force = true)   # cleanup = true would do it at exit; this is the tidy path
 
-# Promoted witnesses of the tool's own hunts, then the closure gate on the tool itself (D15).
+# Promoted witnesses of the tool's own hunts.
 GBGCodingTools.TestHarness.run_regressions(@__DIR__)
+
+# And then this package under its own rulebook: the code rules, and the wiring check handed in, exactly
+# as a consumer's suite runs them. It is the line `Render.runtests_call` writes into a consumer, and it
+# is here for the same reason — a package whose suite does not call the harness runs no rule and is
+# green about it.
+GBGCodingTools.Engine.Harness.test(dirname(@__DIR__); checks = (GBGCodingTools.Render.wiring,))
