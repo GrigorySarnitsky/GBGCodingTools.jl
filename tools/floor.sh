@@ -7,6 +7,38 @@
 # Usage: tools/floor.sh [package-root]   — the root defaults to this repository.
 set -e
 cd "${1:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}"
+
+# IS THE LAST THING I PUSHED GREEN?
+#
+# This is asked FIRST, before the tests, because the answer decides whether more work belongs on top.
+# Twenty-five consecutive CI runs failed on 2026-09-18 without reaching anyone: the local gate was
+# green every time, nothing here looked at the remote, and the owner found out from his inbox.
+#
+# It REFUSES rather than warns. A printed line is what the previous version of this lesson was, and it
+# was read past. The escape is explicit, because the commit that fixes a red CI must be allowed
+# through: `FLOOR_IGNORE_CI=1 tools/floor.sh`. Where `gh` is missing or the network is not there, it
+# says it could not look — never silence.
+if [ -z "${FLOOR_IGNORE_CI:-}" ] && [ -z "${1:-}" ]; then
+  if command -v gh >/dev/null 2>&1; then
+    LAST=$(gh run list --branch master --limit 1 --json conclusion,displayTitle,url 2>/dev/null) || LAST=""
+    if [ -z "$LAST" ]; then
+      echo "floor: could not reach GitHub — the last run's state is unknown"
+    else
+      VERDICT=$(printf '%s' "$LAST" | sed -n 's/.*"conclusion":"\([^"]*\)".*/\1/p')
+      case "$VERDICT" in
+        success|"") : ;;
+        *)
+          echo "floor: THE LAST PUSH IS $VERDICT ON GITHUB — fix that before adding to it."
+          printf '%s\n' "$LAST" | tr ',' '\n' | grep -E '"(displayTitle|url)"' | sed 's/^/  /'
+          echo "  If THIS commit is the fix: FLOOR_IGNORE_CI=1 tools/floor.sh"
+          exit 1 ;;
+      esac
+    fi
+  else
+    echo "floor: no gh on this machine — the last run's state is unknown"
+  fi
+fi
+
 julia --project --startup-file=no -e 'using Pkg; Pkg.test()'
 julia --project=docs --startup-file=no docs/make.jl
 
