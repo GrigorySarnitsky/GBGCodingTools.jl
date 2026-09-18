@@ -61,8 +61,50 @@ function run(root::AbstractString; intention = nothing, network::Bool = false, i
     return 1
 end
 
+"""
+    rebaseline(root; io = stdout) -> Int
+
+Records what the package's prose measures NOW as the ceiling it may not rise above, printing every row
+it raises, adds or drops first. The arguments are:
+
+- `root` — the package root.
+- `io` — where the report goes.
+
+Exit 0 when written, 2 when the config cannot be read.
+
+`RULE.DOC.SHAPE` may only report growth against a recorded baseline; without a way to WRITE one, a
+finding on a ratcheted file could not be cleared from either end — which is why a consumer kept its own
+prose lint after wiring, and switched the rule off for the files the two disagreed about.
+
+It prints before it writes because a re-baseline is how a ratchet is defeated by accident. What it
+raises is the part worth reading.
+"""
+function rebaseline(root::AbstractString; io::IO = stdout)
+    cfg = try
+        ConfigIO.read_config(root)
+    catch err
+        err isa ConfigIO.ConfigError || rethrow()
+        println(io, sprint(showerror, err)); return 2
+    end
+    changes = Catalogue.Shape.changes(root, cfg)
+    if isempty(changes)
+        println(io, "rebaseline: nothing has grown; the baseline already records this prose.")
+    else
+        for line in changes; println(io, "  ", line); end
+        println(io, "rebaseline: ", length(changes), " row(s) above.")
+    end
+    Catalogue.Shape.write_baseline(root, cfg)
+    println(io, "rebaseline: wrote ", Catalogue.Shape.BASELINE, ".")
+    return 0
+end
+
 function cmd_check(args)
     o = parse_options(args; valued = ["only"])
+    if "rebaseline" in o.flags
+        root = ConfigIO.require_root("check")
+        root === nothing && return 2
+        return rebaseline(root)
+    end
     root = ConfigIO.require_root("check")
     root === nothing && return 2
     intention = get(o.values, "only", "") == "docs" ? Model.Intention.DOCUMENTATION :

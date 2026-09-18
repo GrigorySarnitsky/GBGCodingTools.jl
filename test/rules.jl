@@ -192,6 +192,33 @@ end
     @test length(CK.run_rule(r, cfg, dir)) == 1                  # bare: still a finding
 end
 
+# The ratchet must be able to CLOSE: a rule that only reads a baseline leaves a legitimate finding with
+# no remedy, which is why a consumer kept its own prose lint after wiring.
+@testset "a ratchet a package can close" begin
+    dir = mktempdir(; cleanup = true)
+    mkpath(joinpath(dir, ".gbg")); mkpath(joinpath(dir, "docs", "src"))
+    write(joinpath(dir, ".gbg", "config.jl"), """Config(package = "P", tool = :dev)""")
+    page = joinpath(dir, "docs", "src", "page.md")
+    write(page, "# A page\n\n" * join(fill("word", 130), " ") * "\n")
+    cfg = G.ConfigIO.read_config(dir)
+    r = G.Catalogue.RULES[findfirst(x -> String(x.id) == "RULE.DOC.SHAPE", G.Catalogue.RULES)]
+    @test !isempty(CK.run_rule(r, cfg, dir))                      # over the cap, and no baseline
+    @test G.Check.rebaseline(dir; io = devnull) == 0
+    @test isempty(CK.run_rule(r, cfg, dir))                       # recorded, so it is the ceiling now
+    write(page, "# A page\n\n" * join(fill("word", 160), " ") * "\n")
+    @test !isempty(CK.run_rule(r, cfg, dir))                      # and it may not rise above it
+end
+
+# A unit whose name repeats is a DIFFERENT unit: one document restarting its numbering under a later
+# heading had 28 of 144 entries tracked by nothing, in both this rule and the lint it was compared with.
+@testset "two units of one name are two units" begin
+    dir = mktempdir(; cleanup = true); mkpath(joinpath(dir, "docs", "src"))
+    write(joinpath(dir, "docs", "src", "page.md"),
+          "# A page\n\n## First\n\n1. one\n\n## Second\n\n1. another\n")
+    u = G.Catalogue.Shape.units(dir, ["docs/src/page.md"])
+    @test count(k -> occursin("item 1", k), collect(keys(u))) == 2
+end
+
 @testset "the rulebook" begin
     @testset "the materialiser judges an example as the rule says" begin
         for rule in (NO_TODO, NO_BARE_URL), example in rule.examples

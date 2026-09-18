@@ -46,6 +46,16 @@ an append-only document grow by NEW units rather than by swelling one.
 function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,String}} = nothing)
     out = Dict{String,NamedTuple}()
     note_owner!(key, f) = owners === nothing ? nothing : (owners[key] = f)
+    # A key that already exists is a DIFFERENT unit with the same name — one document restarting its
+    # numbering under a later heading, so `item 1` occurs three times. Keyed alike they overwrite, and
+    # 28 of GBGPeriodicFields' 144 numbered entries were tracked by nothing at all. The first keeps the
+    # plain name, so a baseline recorded before this still matches everything that never collided.
+    function unique_key(key)
+        haskey(out, key) || return key
+        n = 2
+        while haskey(out, key * " ($n)"); n += 1; end
+        return key * " ($n)"
+    end
     for f in files
         path = joinpath(root, f)
         isfile(path) || continue
@@ -57,7 +67,7 @@ function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,St
                 # one binding and two docstrings, so a key that is only the binding collapses them and
                 # matches neither in a package's recorded baseline.
                 sig = Texts.signature_line(d.text)
-                key = "$(basename(f)) :: $(first(isempty(sig) ? d.node : sig, 60))"
+                key = unique_key("$(basename(f)) :: $(first(isempty(sig) ? d.node : sig, 60))")
                 out[key] = metrics(d.text); note_owner!(key, f)
             end
         else
@@ -65,7 +75,7 @@ function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,St
             flush!() = begin
                 body = String(take!(buf))
                 if !isempty(strip(body))
-                    key = "$(basename(f)) § $(first(section, 60))"
+                    key = unique_key("$(basename(f)) § $(first(section, 60))")
                     out[key] = metrics(body); note_owner!(key, f)
                 end
             end
