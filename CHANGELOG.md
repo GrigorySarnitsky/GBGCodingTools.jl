@@ -4,6 +4,17 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.4 — 2026-09-18
+
+MAJOR. **This is the candidate to pin.** rc.2 and rc.3 each went out with a red CI and are superseded by
+this one; their tags stand, as every tag does.
+
+**The CI step that proves the suite ran was greping a banner Phase 2 renamed.** `Engine.Harness.test`
+prints `GBGCodingTools v<version> checks`; the step looked for `… gate`. It could not pass, so it was
+testing nothing but its own staleness, and it was hidden behind the git-identity failure until that was
+fixed. A test now reads the grep patterns out of both workflow files and requires each to match the
+banner the code prints, and is shown to fail when the stale pattern is put back.
+
 ## 2.0.0-rc.3 — 2026-09-18
 
 MAJOR. rc.2 with its CI green. Pin this one, not rc.2.
