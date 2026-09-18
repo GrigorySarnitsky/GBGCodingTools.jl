@@ -14,7 +14,7 @@ Decided by a program.
 ### RULE.TEX.CODE_IN_MATH
 A code identifier never sits inside a math span; inside a formula it is written \texttt{…}.
 
-The renderer sets a run of letters in a math span as a product of italic single letters, not as a name.
+The renderer sets a run of letters in a math span as a product of italic single letters, not as a name. That remedy is for a name taking part in a formula which says more than the name itself: where the formula only names what the code denotes, the name stays a code span and a connective joins the two (`RULE.TEX.ONE_SPAN`).
 
 Decided by a program.
 
