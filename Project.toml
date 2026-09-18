@@ -1,7 +1,7 @@
 name = "GBGCodingTools"
 uuid = "3aee1de0-bb62-4679-b1c5-a861fbcaaa51"
 authors = ["Grigory Sarnitsky <grigory@sarnitsky.se>"]
-version = "2.0.0-DEV"
+version = "2.0.0"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"

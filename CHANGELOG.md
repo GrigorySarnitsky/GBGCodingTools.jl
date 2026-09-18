@@ -1,7 +1,46 @@
 # Changelog
 
-Every tag has one entry: version, date, MAJOR | MINOR | PATCH, the instruments affected, and
-"rates comparable: yes | no" (for a MAJOR, the fixture recall before and after).
+Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to 1.0.0-rc.11 also
+carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
+being rebuilt, and nothing measures a recall rate any more.
+
+## 2.0.0-rc.1 — 2026-09-18
+
+MAJOR, and a rewrite rather than a change. Every public surface of 1.0.0 is gone: the verbs, the config
+format, the home of the rulebook, and the way a package is checked at all. The eleven `v1.0.0-rc.*` tags
+stand and 1.0.0 is never released.
+
+**The rulebook is Julia.** All 97 rules are `Rule` values under `src/Rules/`, each carrying its own
+statement, the reason it exists, the check that decides a violation, and the examples that show the
+check matches the statement — one that breaks each clause and one that complies. `test/rules.jl` runs
+every example, so a rule cannot be reworded without the program that enforces it being reworded too.
+`policy/` (the prose and `RULES.toml`) and `catalog/scans.toml` are deleted; what a session reads,
+`.gbg/policy/`, is written from the values by `Render.policy`.
+
+**There are no scans.** Every one of the 44 text scans became a rule. The engine around them survives
+with an empty registry and goes in the next phase.
+
+**A package is checked by what it already runs.** The wiring check — `Render.wiring` — runs inside every
+docs build and every test run, so a generated file that was hand-edited is a finding at the moment
+someone builds. `gbg doctor` and its 41 checks are deleted; `gbg sync --check` answers the same question
+and nothing has to be run on request.
+
+**Everything a package receives is a Julia function's return value.** No templates, no hash sidecar:
+`schema/`, `templates/`, `.gbg/managed.json` and `.gbg/exemptions.toml` are gone. A JSON-Schema subset
+validator is replaced by the types themselves.
+
+**A package overrides any rule it likes.** A `Switch` in its own `.gbg/config.jl` names the rule and
+gives a reason, which is rendered into its rulebook and onto its site. There is no set a package may
+not escape: that concept was removed on the owner's ruling, since a switch is already on the record and
+the refusal only bought a red build with no way out.
+
+**Verbs:** `init`, `sync`, `check`, `docfix`, `bump`, `release`, `fleet`, `install`, `self verify`,
+`config`, `scan`, `probe`. `bump` refuses to move a pin while the new version's rules find anything,
+printing the count per rule.
+
+Not yet here, and why this is a candidate: the instruments, the agent roles and the run record
+(`Orchestration`) are not built, and no package is wired to this version yet. This tag exists so one
+can be — a consumer cannot pin a path.
 
 ## 1.0.0-rc.11 — 2026-09-12
 
