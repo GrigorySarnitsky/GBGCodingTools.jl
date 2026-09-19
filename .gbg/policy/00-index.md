@@ -23,6 +23,7 @@ The files:
 - `testing-protocol.md` — What a test is for, where its oracle comes from, and when a thing is done. (12 rules)
 - `instruments.md` — How a review runs: consent, witnesses, closure, cost, and the limits it must state. (13 rules)
 - `git-conventions.md` — What a commit carries, where it goes, and what is never committed. (7 rules)
+- `asking.md` — One decision, short, in his words rather than this package's, with every identifier moved out of the sentence. (5 rules)
 - `glossary.md` — the terms the rules use, bound once.
 - `switches.md` — what this package has switched off, and why.
 
@@ -32,6 +33,7 @@ The files:
 @.gbg/policy/testing-protocol.md
 @.gbg/policy/instruments.md
 @.gbg/policy/git-conventions.md
+@.gbg/policy/asking.md
 @.gbg/policy/glossary.md
 @.gbg/policy/switches.md
 <!-- gbg:managed end -->

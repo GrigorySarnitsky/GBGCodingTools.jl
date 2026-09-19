@@ -26,5 +26,6 @@ using ..ConfigIO
 include("Engine/Checks.jl")
 include("Engine/Harness.jl")
 include("Engine/Guard.jl")
+include("Engine/Questions.jl")
 
 end # module Engine

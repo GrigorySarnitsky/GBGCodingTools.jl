@@ -69,6 +69,12 @@ function materialise(rule, example)
         end
         cfg = MR.Config(package = "Example", tool = :dev)
         return CK.run_rule(rule, cfg, dir; site = dir)
+    elseif example isa MR.QuestionExample
+        # A question is judged where it is PUT, so there is no tree to materialise: the check reads the
+        # value itself. `Engine.Questions.check` is what the runner uses, and using it here is what makes
+        # these examples a test of the path a real question takes rather than of the function alone.
+        cfg = MR.Config(package = "Example", tool = :dev)
+        return [loc for (id, loc) in G.Engine.Questions.check(example.question, cfg) if id == rule.id]
     elseif example isa MR.TreeExample
         cfg = MR.Config(package = "Example", tool = :dev)
         dir = mktempdir(; cleanup = true)
@@ -78,7 +84,7 @@ function materialise(rule, example)
         end
         return CK.run_rule(rule, cfg, dir)
     end
-    return nothing                      # module, site and question examples arrive with the checks that need them
+    return nothing                      # an example kind with no materialiser yet
 end
 
 """The clauses an example set covers, and whether each has both a breaking and a complying example."""

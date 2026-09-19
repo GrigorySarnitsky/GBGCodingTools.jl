@@ -17,6 +17,7 @@ module DocfixTests;      include("docfix.jl");       end
 module RulesTests;       include("rules.jl");        end
 module ConversionTests;  include("conversion.jl");   end
 module WiringTests;      include("wiring.jl");       end
+module QuestionTests;    include("questions.jl");    end
 module SchemaTests;      include("schemas.jl");      end
 module ConfigTests;      include("config.jl");       end
 module ScanTests;        include("scans.jl");        end

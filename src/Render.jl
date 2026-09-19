@@ -492,6 +492,11 @@ const POLICY_FILES = [
     (generator = :policy_git, path = ".gbg/policy/git-conventions.md", families = [:GIT],
      title = "Git conventions — `RULE.GIT.*`",
      opening = "What a commit carries, where it goes, and what is never committed."),
+    # A family with no ancestor: nothing in the old tree checked how a person was addressed. These read a
+    # question rather than a file, and they run at the moment one is put.
+    (generator = :policy_asking, path = ".gbg/policy/asking.md", families = [:ASK],
+     title = "Asking the owner — `RULE.ASK.*`",
+     opening = "One decision, short, in his words rather than this package's, with every identifier moved out of the sentence."),
 ]
 
 """
