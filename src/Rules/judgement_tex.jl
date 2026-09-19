@@ -39,7 +39,7 @@ const IMAGINARY = Model.Rule(
 
 const GREEK_AB = Model.Rule(
     id = Symbol("RULE.TEX.GREEK_AB"),
-    statement = "The accumulation scalars are Unicode α/β everywhere; the two named ASCII holdouts stay.",
+    statement = "The accumulation scalars are written as Unicode α and β wherever they appear. Two ASCII spellings stay, both named in this rule's `why`: a flag whose name carries the α/β variant, and an external window-shape parameter `beta` inside an English-register block.",
     why = "A hand-written operation spelling them `alpha`/`beta` is drift; a flag naming the α/β variant and an external window-shape `beta` in an English-register block are the recorded exceptions.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],

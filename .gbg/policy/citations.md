@@ -34,7 +34,7 @@ A citation the reader cannot follow is the author telling themselves where they 
 Decided by an agent, because this needs meaning.
 
 ### RULE.CIT.STYLE
-In-text author–year: author-prominent takes a parenthesized year; up to 3 authors are named, 'First et al.' for four or more.
+An in-text citation is author–year. An author-prominent citation puts the year in parentheses. Up to three authors are named in full; four or more are written 'First et al.'. The author count is read from the package's reference list, the file RULE.CIT.FULL_INLINE's `references` names.
 
 Keep enough surnames to disambiguate two works that would otherwise collide. An eponymous method name takes no year unless the work is actually cited.
 

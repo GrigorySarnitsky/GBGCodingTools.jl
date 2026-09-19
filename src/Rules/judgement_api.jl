@@ -15,11 +15,11 @@ using ...Model
 
 const POSITIONAL = Model.Rule(
     id = Symbol("RULE.API.POSITIONAL"),
-    statement = "A result-affecting argument is positional; a performance hint or a builder cost/accuracy tunable is a keyword; exceptions are recorded.",
-    why = "In an operation, every argument that affects the result is positional, defaults included; an argument that cannot change the result is a keyword. An exception is a ledger deviation with its reason.",
+    statement = "In an operation, an argument that can change the result is positional, defaults included; an argument that cannot change the result — a performance hint, a builder's cost/accuracy tunable — is a keyword. An exception is a `Switch` on this rule in the package's own config, with its reason.",
+    why = "In an operation, every argument that affects the result is positional, defaults included; an argument that cannot change the result is a keyword. An exception is a `Switch` on this rule, with its reason.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.PAGES],
-    check = Model.AgentCheck("A result-affecting argument is positional; a performance hint or a builder cost/accuracy tunable is a keyword; exceptions are recorded.", Model.WhyAgent.MEANING))
+    check = Model.AgentCheck("In an operation, an argument that can change the result is positional, defaults included; an argument that cannot change the result — a performance hint, a builder's cost/accuracy tunable — is a keyword. An exception is a `Switch` on this rule in the package's own config, with its reason.", Model.WhyAgent.MEANING))
 
 """
     RULES

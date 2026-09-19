@@ -22,4 +22,7 @@ where it is used, or it is not a term of art.
 - **pin** — the one version of this package a consumer uses, named in its sub-environments.
 - **intention** — whether a change or a finding is in documentation or in code. Documentation is safe
   to fix without asking; code is not.
+- **operation family** — an operation together with its variants: the allocating and in-place
+  forms, a getter and its setter, the methods of one name across representations. A module map
+  lists one entry per family; the family's home docstring is the one `RULE.DOC.ONE_HOME` names.
 <!-- gbg:managed end -->

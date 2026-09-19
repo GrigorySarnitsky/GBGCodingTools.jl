@@ -15,11 +15,11 @@ using ...Model
 
 const STYLE = Model.Rule(
     id = Symbol("RULE.CIT.STYLE"),
-    statement = "In-text author–year: author-prominent takes a parenthesized year; up to 3 authors are named, 'First et al.' for four or more.",
+    statement = "An in-text citation is author–year. An author-prominent citation puts the year in parentheses. Up to three authors are named in full; four or more are written 'First et al.'. The author count is read from the package's reference list, the file RULE.CIT.FULL_INLINE's `references` names.",
     why = "Keep enough surnames to disambiguate two works that would otherwise collide. An eponymous method name takes no year unless the work is actually cited.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    check = Model.AgentCheck("In-text author–year: author-prominent takes a parenthesized year; up to 3 authors are named, 'First et al.' for four or more.", Model.WhyAgent.MEANING))
+    check = Model.AgentCheck("An in-text citation is author–year. An author-prominent citation puts the year in parentheses. Up to three authors are named in full; four or more are written 'First et al.'. The author count is read from the package's reference list, the file RULE.CIT.FULL_INLINE's `references` names.", Model.WhyAgent.MEANING))
 
 const NO_INACCESSIBLE = Model.Rule(
     id = Symbol("RULE.CIT.NO_INACCESSIBLE"),
