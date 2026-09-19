@@ -443,7 +443,7 @@ const RETIRED_EXAMPLE = [Model.Setting(rule = Symbol("RULE.DOC.RETIRED_CLAIMS"),
 const RETIRED = Model.Rule(
     id = Symbol("RULE.DOC.RETIRED_CLAIMS"),
     statement = "A phrase a package has retired does not reappear in its documentation.",
-    why = "A claim retired once is retired because it was wrong, and the way a wrong claim comes back is that somebody copies the sentence that carried it. The check is only as good as the list, and the list is kept by the party being checked: nothing in a repository knows that a claim was retired, so a claim dropped from the list is invisible here, and a ban whose reason was itself later overturned stays in force until someone notices.",
+    why = "A claim retired once is retired because it was wrong, and the way a wrong claim comes back is that somebody copies the sentence that carried it. A DECISION LOG quotes what it retires, in order to record that it was retired, so this rule fires on a package's own history and is right to: keep the log in a file of its own and switch the rule off for that file, never for the design document the log was buried in, which is where the guard is worth most. The check is only as good as the list, and the list is kept by the party being checked: nothing in a repository knows that a claim was retired, so a claim dropped from the list is invisible here, and a ban whose reason was itself later overturned stays in force until someone notices.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
     check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, retired_claims, false),

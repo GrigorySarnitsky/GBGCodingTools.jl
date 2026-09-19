@@ -204,7 +204,7 @@ Decided by a program.
 ### RULE.DOC.RETIRED_CLAIMS
 A phrase a package has retired does not reappear in its documentation.
 
-A claim retired once is retired because it was wrong, and the way a wrong claim comes back is that somebody copies the sentence that carried it. The check is only as good as the list, and the list is kept by the party being checked: nothing in a repository knows that a claim was retired, so a claim dropped from the list is invisible here, and a ban whose reason was itself later overturned stays in force until someone notices.
+A claim retired once is retired because it was wrong, and the way a wrong claim comes back is that somebody copies the sentence that carried it. A DECISION LOG quotes what it retires, in order to record that it was retired, so this rule fires on a package's own history and is right to: keep the log in a file of its own and switch the rule off for that file, never for the design document the log was buried in, which is where the guard is worth most. The check is only as good as the list, and the list is kept by the party being checked: nothing in a repository knows that a claim was retired, so a claim dropped from the list is invisible here, and a ban whose reason was itself later overturned stays in force until someone notices.
 
 Decided by a program.
 This package may set `retired_claims`; unset, it is `GBGCodingTools.Model.RetiredClaim[]`.
