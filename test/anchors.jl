@@ -5,8 +5,9 @@
 # by node where the node still holds the quote, by quote where the node is gone, and OUTDATED where both
 # are, never a guess at whatever now sits on the old line.
 #
-# The BY_DIFF case — the old line mapped through git by `Runs.reanchor` — is not here: `Runs` arrives in
-# Phase 4, and this file gains that case with it.
+# The BY_DIFF case is at the foot of the file: the old line mapped through git by `Runs.reanchor`, which
+# is the wrapper a run calls. The git step lives there and not in `Texts` because nothing a consumer's
+# build or test runs may read git state, and `Texts` is reached from both.
 using Test, GBGCodingTools
 include("helpers.jl")
 
@@ -178,6 +179,71 @@ end
         in_tree() do dir
             loc = M.Location(; file = "guide.md")
             @test T.reanchor(dir, loc) == loc
+        end
+    end
+end
+
+# ── BY_DIFF: what git says, once the node and the quote have both failed ─────────────────────────────
+#
+# This is the LAST resort and it is reached only when the text at the location was rewritten — which is
+# exactly when the node and the quote fail. A mapping that gave up on a rewritten span would therefore
+# never fire at all, and the first version of it did not: it returned `nothing` for any line inside a
+# changed hunk, so every case that reached it came back OUTDATED.
+const RN = G.Orchestration.Runs
+
+function in_git(f)
+    dir = mktempdir(; cleanup = true)
+    gg(a...) = run(setenv(Cmd(["git", "-C", dir, a...]); dir = dir))
+    gg("init", "-q"); gg("config", "user.name", "t"); gg("config", "user.email", "t@t")
+    mkpath(joinpath(dir, "docs"))
+    write(joinpath(dir, "docs", "page.md"), "# Title\n\nalpha\n\nbeta\n\nthe decisive line\n\ngamma\n")
+    gg("add", "--all", "."); gg("commit", "-q", "-m", "first")
+    base = strip(read(setenv(Cmd(["git", "-C", dir, "rev-parse", "HEAD"]); dir = dir), String))
+    f(dir, gg, base)
+end
+
+@testset "the old line, mapped through git" begin
+    @testset "a rewritten span maps to where that span now begins" begin
+        in_git() do dir, gg, base
+            # Lines added ABOVE it, and the line itself replaced: neither the node nor the quote can find it.
+            write(joinpath(dir, "docs", "page.md"),
+                  "# Title\n\nnew\nlines\nadded\n\nalpha\n\nbeta\n\nrewritten entirely\n\ngamma\n")
+            gg("add", "--all", "."); gg("commit", "-q", "-m", "second")
+            loc = M.Location(; file = "docs/page.md", text = "the decisive line", line = 7)
+            @test T.reanchor(dir, loc).found == M.Anchor.OUTDATED      # files alone cannot say
+            got = RN.reanchor(dir, loc; since = base)
+            @test got.found == M.Anchor.BY_DIFF
+            @test strip(readlines(joinpath(dir, "docs", "page.md"))[got.line]) == "rewritten entirely"
+        end
+    end
+
+    @testset "a quote that survives never reaches the diff" begin
+        in_git() do dir, gg, base
+            write(joinpath(dir, "docs", "page.md"),
+                  "# Title\n\nnew\nlines\nadded\n\nalpha\n\nbeta\n\nthe decisive line\n\ngamma\n")
+            gg("add", "--all", "."); gg("commit", "-q", "-m", "second")
+            loc = M.Location(; file = "docs/page.md", text = "the decisive line", line = 7)
+            @test RN.reanchor(dir, loc; since = base).found == M.Anchor.BY_QUOTE
+        end
+    end
+
+    # A file that is GONE is outdated whatever git says. `git diff` over a path that no longer exists
+    # prints nothing, and an empty patch otherwise means "nothing moved" — so this came back BY_DIFF at
+    # its original line, which is the one answer the design forbids.
+    @testset "a deleted file is outdated, not unmoved" begin
+        in_git() do dir, gg, base
+            rm(joinpath(dir, "docs", "page.md"))
+            gg("add", "--all", "."); gg("commit", "-q", "-m", "deleted")
+            loc = M.Location(; file = "docs/page.md", text = "the decisive line", line = 7)
+            @test RN.reanchor(dir, loc; since = base).found == M.Anchor.OUTDATED
+        end
+    end
+
+    @testset "with no commit to compare against, the answer is the files' own" begin
+        in_git() do dir, gg, base
+            write(joinpath(dir, "docs", "page.md"), "# Title\n\nnothing of the sort\n")
+            loc = M.Location(; file = "docs/page.md", text = "the decisive line", line = 7)
+            @test RN.reanchor(dir, loc).found == M.Anchor.OUTDATED
         end
     end
 end
