@@ -239,6 +239,96 @@ function from_dict(d::AbstractDict)
                      stop = getfield(Model.Stop, Symbol(get(d, "stop", "DONE"))))
 end
 
+
+"""
+    unguarded_code(root, since) -> Vector{String}
+
+Every commit since `since` that changed CODE without going through the change guard. The arguments are
+`root`, the package root, and `since`, the commit the run started at. Returns one line per commit, each
+naming it and the files that make it code.
+
+This is the first of the two programs a run's close runs, and it is why a run records where it started.
+A review that edited code behind its own guard has not been reviewed: the guard is what decides that a
+change is documentation and may be committed without asking, so a code change made around it is exactly
+the thing nobody looked at. The run ends `CANNOT_EVALUATE` and the owner is asked to keep or revert.
+
+A commit `gbg docfix commit` made is recognised by the trailer it writes, not by its subject line: a
+subject can be typed by anyone, and the point here is to find changes that did not pass the guard.
+"""
+function unguarded_code(root::AbstractString, since::AbstractString)
+    (isempty(since) || since == "unknown") && return String[]
+    cfg = try ConfigIO.read_config(root) catch; return String[] end
+    log = try
+        readchomp(pipeline(setenv(`git -C $root log --format=%H%x1f%s%x1f%b%x1e $since..HEAD`; dir = root); stderr = devnull))
+    catch
+        return String[]
+    end
+    out = String[]
+    for entry in split(log, '\x1e'; keepempty = false)
+        parts = split(strip(entry, ['\n']), '\x1f')
+        length(parts) >= 2 || continue
+        sha, subject = String(parts[1]), String(parts[2])
+        body = length(parts) >= 3 ? String(parts[3]) : ""
+        occursin(GUARD_TRAILER, body) && continue          # it passed the guard
+        code = String[]
+        for f in changed_files(root, sha)
+            own_record(f) && continue
+            at(rev) = try
+                readchomp(pipeline(setenv(`git -C $root show $rev:$f`; dir = root); stderr = devnull))
+            catch
+                ""
+            end
+            # `Guard.classify`, not `on_documentation_list`. The list says only where documentation MAY
+            # live; whether one change IS documentation is what the guard decides, by reading both
+            # versions. Asking the list instead called every edit to a `.jl` file documentation — which
+            # is the one answer this program exists to refuse.
+            Engine.Guard.classify(cfg, f, at(sha * "^"), at(sha)).documentation || push!(code, f)
+        end
+        isempty(code) && continue
+        push!(out, first(sha, 8) * "  " * subject * "  [" * join(first(code, 4), ", ") *
+                   (length(code) > 4 ? ", …" : "") * "]")
+    end
+    return out
+end
+
+"""
+    changed_files(root, sha) -> Vector{String}
+
+The files one commit touched. The arguments are `root`, the package root, and `sha`, the commit. Returns
+the paths, empty where git cannot say.
+"""
+function changed_files(root::AbstractString, sha::AbstractString)
+    out = try
+        readchomp(pipeline(setenv(`git -C $root show --name-only --format= $sha`; dir = root); stderr = devnull))
+    catch
+        return String[]
+    end
+    return [String(f) for f in split(out, '\n') if !isempty(f)]
+end
+
+"""
+    own_record(path) -> Bool
+
+Whether a path is a run's OWN record rather than the package's work. The argument is `path`. Returns
+whether close should look past it.
+
+A session commits what a run wrote — that is the design — so a run's record, its arguments and its
+results appear in the history between its first commit and its close. Counted as code they would end
+every run `CANNOT_EVALUATE` on its own artefacts, which is a check that fires on itself and on nothing
+else. The package's own `.gbg/config.jl` is NOT excluded: that is the owner's file, and a change to it
+during a run is exactly the kind of thing worth asking about.
+"""
+own_record(path::AbstractString) =
+    startswith(path, ".gbg/runs/") || startswith(path, ".gbg/scratch/") || path == ".gbg/questions.json"
+
+"""
+    GUARD_TRAILER
+
+The line `gbg docfix commit` writes into a commit it made, and the only mark a close trusts. A subject
+line can be typed by anyone; what is being looked for is a change that did not pass the guard at all.
+"""
+const GUARD_TRAILER = "GBG-Docfix: guarded"
+
 # ──────────────────────────────────────────────────────────── finding a location again
 
 """

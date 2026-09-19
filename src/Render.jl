@@ -807,6 +807,105 @@ function block_of(text::AbstractString)
     return join(lines[first_i:last_i], '\n') * "\n"
 end
 
+
+# ─────────────────────────────────────────────────────────── what a run hands back to the owner
+
+"""
+    report(run, cfg) -> String
+
+What one run found, as the page the owner reads. The arguments are `run`, the finished run, and `cfg`,
+the package's config. Returns the Markdown.
+
+It reports the WHOLE run, the parts that did not work included: a stage that could not be evaluated, a
+location that could not be found again, a budget that ran out with findings still open. A report that
+printed only what went well would make the two endings — nothing left to do, and no budget left to do it
+with — read the same.
+
+It keeps no second list of leftovers. What is owed goes to the package's work queue, one line each, and
+the report says how many went and names the record, so the two cannot disagree about the count.
+"""
+function report(run::Model.Run, cfg::Model.Config)
+    io = IOBuffer()
+    println(io, "# ", titlecase(replace(String(run.instrument), "_" => " ")), " — ", run.id)
+    println(io)
+    # The provenance banner, taken from the RULE that defines it rather than copied: a report is a page
+    # like any other, and a second copy of the banner here is the drift that rule exists to catch.
+    println(io, Catalogue.Pages.BANNER)
+    println(io)
+    println(io, "Run `", run.id, "` of `", cfg.package, "`, by GBGCodingTools ", run.tool_version,
+            ", from commit `", first(run.first_commit, 8), "`.")
+    println(io)
+
+    # The ending first, because it decides how the rest is read: findings still open after a spent
+    # budget are not the same as none.
+    ended = run.stop === Model.Stop.DONE ? "It ran to the end." :
+            run.stop === Model.Stop.BUDGET_SPENT ? "**Its budget ran out.** What is still open below was not finished, and is in the work queue." :
+            run.stop === Model.Stop.CANNOT_EVALUATE ? "**It could not be evaluated.** A step exited 2 or 3, and an instrument is never repaired inside a run." :
+            "**The owner stopped it.**"
+    println(io, ended, " It launched ", run.agent_launches, " of ", run.budget.agent_launches,
+            " agent(s) it was allowed.")
+    println(io)
+
+    if isempty(run.findings)
+        println(io, "## Nothing was found")
+        println(io)
+        println(io, "Every reader wrote its file and none of them reported a defect.")
+    else
+        println(io, "## Findings — ", length(run.findings))
+        println(io)
+        for f in run.findings
+            println(io, "### ", f.id, "  ", f.draft.claim)
+            println(io)
+            f.draft.rule === nothing || println(io, "Rule: `", f.draft.rule, "`.  ")
+            println(io, "Reported by `", f.source, "`, decided by ",
+                    f.decider === Model.Decider.PROGRAM ? "a program" :
+                    f.decider === Model.Decider.FAILING_TEST ? "a failing test" : "an agent", ".")
+            println(io)
+            isempty(f.draft.evidence) || (println(io, f.draft.evidence); println(io))
+            isempty(f.draft.fix) || (println(io, "**Fix.** ", f.draft.fix); println(io))
+            f.draft.maybe_code && println(io, "!!! warning \"The code may be what is wrong\"\n    The reader believed the documentation and the code disagree, and that the code is the wrong half. That is a question for the owner, not a documentation fix.\n")
+            for l in f.draft.locations
+                stale = l.found === Model.Anchor.OUTDATED
+                println(io, "- `", l.file, "`", l.line > 0 ? ":" * string(l.line) : "",
+                        isempty(l.node) ? "" : "  (" * l.node * ")",
+                        stale ? "  — **the text here has moved and was not found again**" : "")
+            end
+            println(io)
+        end
+    end
+
+    stale = [(f, l) for f in run.findings for l in f.draft.locations if l.found === Model.Anchor.OUTDATED]
+    if !isempty(stale)
+        println(io, "## Locations that could not be found again — ", length(stale))
+        println(io)
+        println(io, "The text each of these named has changed since it was read. They are named rather than")
+        println(io, "pointed at whatever now sits on the old line, and no fix was attempted at any of them.")
+        println(io)
+    end
+
+    if !isempty(run.questions)
+        println(io, "## Questions")
+        println(io)
+        for q in run.questions
+            println(io, "### ", q.id)
+            println(io)
+            println(io, q.decision)
+            println(io)
+            isempty(q.context) || (println(io, q.context); println(io))
+            for o in q.options
+                println(io, "- **", o.label, "**", o.recommended ? " (recommended)" : "", " — ", o.consequence)
+            end
+            for i in q.items
+                println(io, "  * ", i.text)
+            end
+            println(io)
+            println(io, "Answer with: `gbg answer ", q.id, " \"<option>\"`")
+            println(io)
+        end
+    end
+    return String(take!(io))
+end
+
 """
     wiring(cfg, root) -> Vector{Model.Location}
 
