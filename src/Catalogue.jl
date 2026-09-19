@@ -142,6 +142,8 @@ include("Rules/judgement_inst.jl")
 include("Rules/judgement_test.jl")
 include("Rules/judgement_tex.jl")
 
+include("Roles/documentation_review.jl")
+
 """
     RULES
 
@@ -151,6 +153,24 @@ check matches the statement. The ninety-five rules of `policy/RULES.toml` are co
 outstanding, which may only fall.
 """
 const RULES = Model.Rule[Rendering.RULES..., Docstrings.RULES..., Arguments.RULES..., Latex.RULES..., Pages.RULES..., Reflection.RULES..., Site.RULES..., Shape.RULES..., Modules.RULES..., Questions.RULES..., Citations.RULES..., JudgementApi.RULES..., JudgementCit.RULES..., JudgementDoc.RULES..., JudgementGit.RULES..., JudgementInst.RULES..., JudgementTest.RULES..., JudgementTex.RULES...]
+
+
+"""
+    ROLES
+
+Every agent role of every instrument, as values. A role says WHO reads and what is withheld from them;
+what they are asked comes from the rulebook and the instrument, so a reworded rule reaches every role
+without a second copy of it being edited.
+"""
+const ROLES = Model.AgentRole[DocumentationReview.ROLES...]
+
+"""
+    roles_of(instrument) -> Vector{Model.AgentRole}
+
+The roles one instrument launches. The argument is `instrument`, the instrument's id. Returns its roles,
+in the order they are declared.
+"""
+roles_of(instrument::Symbol) = filter(r -> r.instrument === instrument, ROLES)
 
 """
     GENERATED

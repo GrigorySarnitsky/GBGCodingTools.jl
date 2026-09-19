@@ -19,5 +19,6 @@ using ..ConfigIO
 using ..Engine
 
 include("Orchestration/Runs.jl")
+include("Orchestration/Agents.jl")
 
 end # module Orchestration

@@ -107,8 +107,12 @@ A run records where it started so its close can classify every commit made since
 change slipped in outside the guard is found rather than assumed absent.
 """
 function head_commit(root::AbstractString)
+    # `stderr` to `devnull`: a package that is not a git repository is an ordinary case — the fixture,
+    # a temporary tree — and git prints "fatal: not a git repository" to the terminal on its way to the
+    # `catch` below. A handled condition that still prints is a verb telling a reader something failed
+    # when nothing did.
     out = try
-        readchomp(setenv(`git -C $root rev-parse HEAD`; dir = root))
+        readchomp(pipeline(setenv(`git -C $root rev-parse HEAD`; dir = root); stderr = devnull))
     catch
         return "unknown"
     end
