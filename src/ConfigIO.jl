@@ -135,6 +135,45 @@ function read_settled(root::AbstractString)
     return Vector{Model.Settled}(value)
 end
 
+
+"""
+    append_settled(root, s) -> String
+
+Adds one ruling to `.gbg/settled.jl`, creating the file where there is none. The arguments are `root`,
+the package root, and `s`, the ruling. Returns the path written.
+
+APPENDED, never rewritten. The file is the owner's record of what he has already decided, and a verb
+that regenerated it would put his words through a renderer; what is added is one value, formatted the
+way the rest of the file is, and everything above it is left byte for byte as he last saw it.
+"""
+function append_settled(root::AbstractString, s::Model.Settled)
+    path = joinpath(root, ".gbg", "settled.jl")
+    existing = isfile(path) ? read(path, String) : ""
+    io = IOBuffer()
+    if isempty(strip(existing))
+        println(io, "# .gbg/settled.jl — what the owner has already decided, and agents are told not to report.")
+        println(io, "#")
+        println(io, "# Read as data by ConfigIO, which evaluates nothing. Appended to by `gbg answer`; no build, test")
+        println(io, "# or check reads it, and only the agents of a run are shown it.")
+        println(io, "[")
+    else
+        print(io, rstrip(rstrip(strip(existing), ']')))
+    end
+    println(io, "    Settled(question = ", repr(s.question), ",")
+    println(io, "            text = ", repr(s.text), ",")
+    println(io, "            date = ", repr(s.date), ",")
+    println(io, "            locations = [")
+    for l in s.locations
+        println(io, "                Location(file = ", repr(l.file), ", node = ", repr(l.node),
+                ", text = ", repr(l.text), ", line = ", l.line, "),")
+    end
+    println(io, "            ]),")
+    println(io, "]")
+    mkpath(dirname(path))
+    write(path, String(take!(io)))
+    return path
+end
+
 """
     read_value(path) -> Any
 

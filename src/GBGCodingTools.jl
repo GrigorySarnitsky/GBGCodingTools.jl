@@ -84,6 +84,7 @@ include("CLI/Check.jl")
 include("CLI/Docfix.jl")
 include("CLI/Fleet.jl")
 include("CLI/Bump.jl")
+include("CLI/Answer.jl")
 include("CLI/Release.jl")
 
 end # module
