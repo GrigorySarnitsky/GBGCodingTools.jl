@@ -901,7 +901,8 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
             f.draft.rule === nothing || println(io, "Rule: `", f.draft.rule, "`.  ")
             println(io, "Reported by `", f.source, "`, decided by ",
                     f.decider === Model.Decider.PROGRAM ? "a program" :
-                    f.decider === Model.Decider.FAILING_TEST ? "a failing test" : "an agent", ".")
+                    f.decider === Model.Decider.FAILING_TEST ? "a failing test" : "an agent",
+                    startswith(f.id, run.id) ? "." : "; carried over from an earlier run, which left it open.")
             println(io)
             isempty(f.draft.evidence) || (println(io, f.draft.evidence); println(io))
             isempty(f.draft.fix) || (println(io, "**Fix.** ", f.draft.fix); println(io))

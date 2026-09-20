@@ -209,6 +209,55 @@ end
         end
     end
 
+    # The agents read one tree; a collect over another would anchor their quotes in the wrong text.
+    @testset "a tree that changed under the agents is not collected" begin
+        package() do root, gg
+            G.Run.start(root, :documentation_review; io = devnull)
+            id = G.Run.open_run(root)
+            reader_found(root, id, "withheld", "one"); others_clean(root, id)
+            write(joinpath(root, "src", "Sample.jl"), "module Sample\ng() = 2\nend\n")
+            @test G.Run.collect(root; io = devnull) == 2                 # an uncommitted edit
+            @test RUNS.stage_of(root, id) === :find && isempty(RUNS.load(root, id).findings)
+            gg("add", "src"); gg("commit", "-q", "-m", "committed under the readers")
+            @test G.Run.collect(root; io = devnull) == 2                 # a commit
+            gg("reset", "-q", "--hard", "HEAD~1")                        # the tree restored (the run's files are untracked)
+            @test G.Run.collect(root; io = devnull) == 1                 # collected
+        end
+    end
+
+    # What a run leaves open, the next run of the same instrument carries, under the old id.
+    @testset "a second run carries the first's open findings" begin
+        package() do root, gg
+            id, fid = with_one_finding(root)
+            cap = RUNS.load(root, id).budget.fix_passes
+            for p in 1:cap
+                G.Run.next(root; io = devnull); G.Run.next(root; io = devnull)
+                verifier_said(root, id, "verify", fid, "NOT_FIXED")
+                G.Run.collect(root; io = devnull); G.Run.next(root; io = devnull); G.Run.collect(root; io = devnull)
+            end
+            G.Run.next(root; io = devnull)
+            @test G.Run.close_run(root; io = devnull) == 1
+            @test G.Run.start(root, :documentation_review; io = devnull) == 0
+            id2 = G.Run.open_run(root)
+            @test id2 != id
+            second = RUNS.load(root, id2)
+            @test [f.id for f in second.findings] == [fid]                # carried, under its old id
+            @test only(second.findings).source === :withheld
+            @test only(only(second.findings).draft.locations).line == 3   # re-anchored
+            @test to_close(root, id2) === :close
+            @test G.Run.close_run(root; io = devnull) == 1
+            rep = read(joinpath(RUNS.dir(root, id2), "report.md"), String)
+            @test occursin("carried over from an earlier run", rep)
+            queue = read(joinpath(root, ".claude", "WORK_QUEUE.md"), String)
+            @test count("- [ ] " * fid, queue) == 1                        # one line, not one per run
+            # a third start after an abandoned run carries nothing: the owner dropped them
+            G.Run.start(root, :documentation_review; io = devnull)
+            @test G.Run.abandon(root; io = devnull) == 0
+            G.Run.start(root, :documentation_review; io = devnull)
+            @test isempty(RUNS.load(root, G.Run.open_run(root)).findings)
+        end
+    end
+
     # A tracked change already in the tree would be committed by the fixer under the guard's name.
     @testset "a start on a dirty tree is refused" begin
         package() do root, gg
@@ -286,6 +335,7 @@ end
         package() do root, gg
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
+            G.Run.collect(root; io = devnull)                            # the readers are in; the change comes after
             write(joinpath(root, "src", "Sample.jl"), "module Sample\nf() = 1\nend\n")
             gg("add", "--all", "."); gg("commit", "-q", "-m", "a code change nobody guarded")
             to_close(root, id)
@@ -299,6 +349,7 @@ end
         package() do root, gg
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
+            G.Run.collect(root; io = devnull)
             write(joinpath(root, "docs", "src", "guide.md"), "# Guide\n\nThe grid is a lattice.\n")
             gg("add", "--all", "."); gg("commit", "-q", "-m", "prose only")
             to_close(root, id)

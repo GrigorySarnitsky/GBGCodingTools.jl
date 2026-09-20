@@ -279,7 +279,13 @@ stage, which it grades — and moves the run to its `collect` stage. The argumen
 - `root` — the package root.
 - `io` — where the result goes.
 
-Exit 0 when every role wrote and nothing is open, 1 when findings are open, 2 when a role wrote nothing.
+Exit 0 when every role wrote and nothing is open, 1 when findings are open, 2 when a role wrote nothing
+or the tree changed under the agents.
+
+A tracked file changed since the launch — a commit, or an edit not yet committed — is exit 2 before
+anything is read: the agents read one package and their quotes would be anchored in another, and
+nothing distinguishes a finding that moved from one that was fixed. The owner restores the tree or
+abandons the run.
 
 A role that wrote NOTHING is exit 2, not a quiet zero. A crashed agent and a careful one that found
 nothing are the same empty set here; the driver relaunches a silent role once, and what is still silent
@@ -295,6 +301,15 @@ function collect(root::AbstractString; io::IO = stdout)
     launched = order[at]
     (at < length(order) && order[at + 1] === :collect) ||
         (println(io, "run: ", id, " is at ", launched, ", which launches nothing to collect; gbg run next"); return 2)
+    since = Agents.launched_at(root, id)
+    dirty = Runs.changed_tracked(root)
+    if (since !== nothing && since != Agents.head(root)) || !isempty(dirty)
+        println(io, "run: the tree changed under the agents of ", launched, "; nothing is collected.")
+        isempty(dirty) || println(io, "  changed and not committed: ", join(dirty, ", "))
+        since === nothing || since == Agents.head(root) || println(io, "  launched at ", first(since, 8), ", now at ", first(Agents.head(root), 8))
+        println(io, "  Restore the tree and collect, or: gbg run abandon")
+        return 2
+    end
     drafts, verdicts, silent, arrived, wrote = Agents.collect_results(root, id)
     Runs.advance!(root, id, :collect; io) || return 2
     if launched === :verify || launched === :diff

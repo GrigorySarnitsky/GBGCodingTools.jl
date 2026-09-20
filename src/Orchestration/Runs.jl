@@ -80,7 +80,9 @@ Returns the run, or `nothing` when one may not start: the instrument is unknown 
 no readers, another run is open, or a tracked file is changed and uncommitted.
 
 The budget is fixed HERE, from the instrument's own value, and nothing later raises it. Inside a run the
-program stops the work, from this number; across runs the owner does, by asking or not.
+program stops the work, from this number; across runs the owner does, by asking or not. What the last
+closed run of the same instrument left open is CARRIED into this one, re-anchored, under its old id, so
+the report says where it came from; a finding parked on a question is not, since the question stands.
 
 A DIRTY tree is refused because close classifies every commit since the first one: an edit that was
 already in the tree when the run started would be committed by the fixer under the guard's name, and a
@@ -111,7 +113,10 @@ function start(instrument::Symbol, root::AbstractString; readers::Symbol = :boun
     end
     run = Model.Run(id = new_id(instrument, root), instrument = instrument,
                     tool_version = string(GBG_VERSION[]), first_commit = head_commit(root),
-                    budget = inst.budget, stage = :start, readers = readers)
+                    budget = inst.budget, stage = :start, readers = readers,
+                    findings = carry_over(root, instrument))
+    isempty(run.findings) || println(io, "run: ", length(run.findings), " finding(s) carried over from ",
+                                     first(run.findings).id[1:something(findlast('-', first(run.findings).id), 1)-1])
     mkpath(dir(root, run.id))
     save(root, run)
     write_stage(root, run.id, 1)                # after the record, which the stage file is read against
@@ -120,6 +125,33 @@ end
 
 # The version that ran, recorded so a record says what judged it. Set by the package at load.
 const GBG_VERSION = Ref{Any}("dev")
+
+"""
+    carry_over(root, instrument) -> Vector{Model.Finding}
+
+What the last closed run of `instrument` in the package at `root` left open and workable, each location
+re-anchored on the tree as it is now. The arguments are `root`, the package root, and `instrument`.
+Returns the findings, or none where no run of the instrument has closed.
+
+Only the LAST closed run is read: an earlier one's leftovers were carried into it already, or were
+dropped when the owner abandoned it, and either way are not this run's to revive.
+"""
+function carry_over(root::AbstractString, instrument::Symbol)
+    runs = joinpath(root, ".gbg", "runs")
+    isdir(runs) || return Model.Finding[]
+    for d in sort(readdir(runs); rev = true)
+        isfile(joinpath(runs, d, "run.json")) || continue
+        prev = load(root, d)
+        (prev === nothing || prev.instrument !== instrument) && continue
+        return [Model.Finding(f.id, f.source, f.decider,
+                    Model.FindingDraft(rule = f.draft.rule,
+                        locations = [reanchor(root, l; since = prev.first_commit) for l in f.draft.locations],
+                        claim = f.draft.claim, evidence = f.draft.evidence, fix = f.draft.fix,
+                        maybe_code = f.draft.maybe_code))
+                for f in workable(prev)]
+    end
+    return Model.Finding[]
+end
 
 """
     changed_tracked(root) -> Vector{String}

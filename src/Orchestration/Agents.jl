@@ -167,6 +167,18 @@ function head(root::AbstractString)
 end
 
 """
+    launched_at(root, id) -> Union{String,Nothing}
+
+The commit the current stage's arguments were written at, or `nothing` where none were. The arguments
+are `root`, the package root, and `id`, the run's id. Returns the commit.
+"""
+function launched_at(root::AbstractString, id::AbstractString)
+    path = arguments_path(root, id)
+    isfile(path) || return nothing
+    return String(get(JSON3.read(read(path, String), Dict{String,Any}), "commit", ""))
+end
+
+"""
     continue_stage(root, id) -> Union{NamedTuple,Nothing}
 
 Prepares the current stage to be launched again after an interruption: every role whose result file
