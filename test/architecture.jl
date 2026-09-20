@@ -139,6 +139,45 @@ legacy_files() = sort([relpath(joinpath(r, f), TOOL) for (r, _, fs) in walkdir(j
         @test occursin("GBGCodingTools.makedocs", read(joinpath(TOOL, "docs", "make.jl"), String))
     end
 
+    # §5.2 of the design prints the types as Julia. Prose that restates Julia values is compared with
+    # them by a test, or the two drift and the design becomes a description of something else: the
+    # enums lost a value and gained one during this phase, and nothing but this would have said so.
+    @testset "the design's types are the types" begin
+        text = read(joinpath(TOOL, "docs", "ARCHITECTURE.md"), String)
+        section = match(r"### 5\.2 Types(.*?)\n### ", text; ) === nothing ?
+                  split(split(text, "### 5.2 Types")[2], "\n## ")[1] :
+                  match(r"### 5\.2 Types(.*?)\n### "s, text).captures[1]
+
+        # every enum the design prints, with exactly the values it prints
+        enums = collect(eachmatch(r"module (\w+);\s*@enum T ([^;]+);\s*end", section))
+        @test length(enums) >= 10
+        for m in enums
+            occursin("…", m.captures[2]) && continue     # the sentence that shows the FORM, not an enum
+            name, values = Symbol(m.captures[1]), Symbol.(split(strip(m.captures[2])))
+            @test isdefined(G.Model, name)
+            mod = getfield(G.Model, name)
+            @test collect(Symbol.(instances(mod.T))) == values
+        end
+
+        # every struct it prints, with the fields it names on them
+        for m in eachmatch(r"(?:Base\.@kwdef )?struct (\w+)", section)
+            name = Symbol(m.captures[1])
+            @test isdefined(G.Model, name)
+        end
+        for (name, fields) in (:Location => [:file, :node, :text, :line, :found],
+                               :FindingDraft => [:rule, :locations, :claim, :evidence, :fix, :maybe_code],
+                               :Finding => [:id, :source, :decider, :draft],
+                               :Option => [:label, :consequence, :recommended],
+                               :Switch => [:target, :reason, :files])
+            @test collect(fieldnames(getfield(G.Model, name))) == fields
+        end
+
+        # and the design does not print a type that no longer exists
+        for m in eachmatch(r"^(?:Base\.@kwdef )?struct (\w+)"m, section)
+            @test isdefined(G.Model, Symbol(m.captures[1]))
+        end
+    end
+
     # The fleet has ONE home. It was named in two files until 2026-09-18 — the roster as `[[consumer]]`
     # rows in `fleet.toml`, the sites as a second list in `Rules/pages.jl` — with nothing comparing them,
     # and a rename applied to one alone fails SILENTLY IN BOTH DIRECTIONS: a package writing the new name
