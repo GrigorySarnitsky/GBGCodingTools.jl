@@ -91,7 +91,7 @@ Base.showerror(io::IO, e::ConfigError) =
 # accepted: a name not in this table is a refusal, so a config cannot reach a function by naming it.
 const CONSTRUCTORS = Dict{String,Any}(
     "Config" => Model.Config, "Switch" => Model.Switch, "Setting" => Model.Setting,
-    "PatternRule" => Model.PatternRule, "AgentRole" => Model.AgentRole, "Settled" => Model.Settled,
+    "PatternRule" => Model.PatternRule, "Settled" => Model.Settled,
     "Location" => Model.Location, "TextExample" => Model.TextExample,
     "RetiredClaim" => Model.RetiredClaim,
 )

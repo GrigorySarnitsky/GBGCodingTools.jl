@@ -13,7 +13,7 @@ tests run over; the [glossary](@ref glossary) binds the term.
 
 Every sub-environment of a consumer that lists the tool (`docs/`, `test/`, `benchmark/`) carries the
 same three entries, rendered by [`gbg sync`](@ref GBGCodingTools.Wire.sync) from the pinned version in
-`.gbg/config.toml`:
+`.gbg/config.jl`:
 
 ```toml
 [deps]
@@ -34,7 +34,7 @@ julia --startup-file=no --project=docs -e 'using GBGCodingTools; exit(GBGCodingT
 ```
 
 [`gbg install`](@ref GBGCodingTools.cmd_install) copies `bin/gbg` to `~/.local/bin/gbg` and, with the
-option, writes `~/.gbg/dev`. The shim is POSIX `sh`: it walks up to the nearest `.gbg/config.toml`,
+option, writes `~/.gbg/dev`. The shim is POSIX `sh`: it walks up to the nearest `.gbg/config.jl`,
 reads the pin only to tell `dev` from a release, and executes `julia --project=<root>/docs` on the copy
 that environment resolved — so `gbg` in a consumer runs the version its `docs/` environment resolved,
 which is the pinned one once that environment is instantiated after a bump. One consumer is routed differently: a
@@ -46,4 +46,4 @@ runs the registered dev checkout instead; `GBG_DEV=1` marks it.
 
 The owner's working tree of the tool is a consumer of itself: `gbg --dev init` at its root writes a
 config pinned `dev`, `gbg --dev sync` renders its managed files, and its `docs/Project.toml` resolves the
-tool by `path = ".."`. The doctor's `SELF.CONSUMER` check holds this in place.
+tool by `path = ".."`.

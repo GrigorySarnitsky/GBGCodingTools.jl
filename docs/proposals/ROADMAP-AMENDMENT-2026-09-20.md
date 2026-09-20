@@ -545,3 +545,5 @@ in the commit that follows this note, with the 28 truncated `why` texts restored
 and COORD_FREE's lost allowance ("state the basis and the space it acts on") put back. The claim-ownership
 mechanism (each expert marks the claims it owns; the review prints the claims nobody owned) is a later
 refinement, to build when a run with experts shows the need.
+
+**Adopted 2026-09-21 (14a–14d):** every §2 text was edited in `docs/ARCHITECTURE.md`, `IMPLEMENTATION.md`, `CLAUDE.md` and the site in the adoption commit, with the two `roles` fields removed (22); this file stays as the record of how the amendment was reached and what the owner answered.

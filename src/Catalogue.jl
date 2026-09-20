@@ -306,10 +306,7 @@ instrument, and each instrument. Returns the set.
 """
 function known_ids()
     ids = Set{Symbol}(r.id for r in RULES)
-    for i in INSTRUMENTS
-        push!(ids, i.id)
-        for r in i.roles; push!(ids, r.id); end
-    end
+    for i in INSTRUMENTS; push!(ids, i.id); end
     for a in ALWAYS_ON; push!(ids, a.id); end
     union!(ids, DocumentationReview.READER_IDS)              # a derived reader is switched off by name too
     for r in RETIRED; push!(ids, r.id); end                  # a switch on a retired rule stays legal

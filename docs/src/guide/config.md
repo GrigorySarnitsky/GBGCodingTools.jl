@@ -3,24 +3,19 @@
 !!! info "Written by AI, not regularly reviewed"
     This page is written by AI and is not reviewed regularly by a human.
 
-`.gbg/config.toml` is the one config file of a [consumer](@ref install) — a package that pins this tool
-and is reviewed by it: one layer, closed keys, validated by
-`schema/config.schema.json` through the tool's own validator. `gbg init` writes it from the package tree;
-`gbg config --toml` prints it with every default materialised; `gbg schema config` prints the schema.
+`.gbg/config.jl` is the one file a [consumer](@ref install) writes by hand. It holds one `Config(…)` value
+and is read as DATA: only literals and the constructors of `Model` are accepted, so a function call or an
+interpolation is refused. `gbg init` writes a first one; `gbg sync` writes everything the config generates.
 
-The sections: `[tool]` (the pinned version), `[package]` (name, description, modules, the test and build
-commands), `[paths]`, `[git]`, `[surfaces]` (the ONE copy of every surface list: rationale documents,
-pages, generated copies, source, extensions, Literate examples, the built site, the history and
-references anchors, the glossary file, and any data or script surface whose comments are prose), `[docs]` (doctest, admonition titles, the Base allowance, retired claims),
-`[rubric]`, `[notation]`, `[citations]`, `[instruments]` with one table per instrument, `[cost]`,
-`[schema]`, `[[scans.custom]]`.
+What it states: the package's name and the version it pins; its build and test commands; its file sets where
+the defaults miss; its normative and rationale documents, copies and generated pages; the rules it switches off,
+each with its reason; its values for rule parameters — the notation page, the formalization document, how a first
+sentence leads, which admonitions need a title, the retired claims, the banner pages.
 
-Six values vary by package and are substituted into the rendered policy: `rubric.leading_identity`,
-`rubric.signature_types` (`names` or `mirror` — how much of the method a docstring signature repeats),
-`notation.vectors`, `docs.admonition_titles`, `notation.mathbf_allowed` (which never forbids
-`\mathbf{1}`, the indicator and identity every package is granted) and
-`instruments.check-docs.argcov_policy`, the tier `RULE.DOC.ARGCOV` binds at. Everything else about the instruments is a constant
-of the tool, and changing one is a MAJOR release.
+It also names the disciplines its readers need, from the tool's catalogue, its own pattern rules, and its code
+areas. It writes no readers: one it needs and the tool lacks is requested from the tool's session.
+
+The old reader of `.gbg/config.toml` remains until Phase 5:
 
 ```@docs
 GBGCodingTools.Config.read

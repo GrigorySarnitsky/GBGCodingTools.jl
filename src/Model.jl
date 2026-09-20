@@ -504,8 +504,9 @@ sentences the instrument table prints. The fields are:
 - `fixer` — who fixes what it found.
 - `when` — when it runs.
 - `ends` — when one of its runs ends.
-- `roles` — the agent roles it launches.
 - `budget` — what one run may spend.
+
+Its readers are not a field: they are derived from the rules at run time, by the catalogue.
 """
 Base.@kwdef struct Instrument
     id::Symbol
@@ -515,7 +516,6 @@ Base.@kwdef struct Instrument
     fixer::Fixer.T
     when::String
     ends::String
-    roles::Vector{AgentRole} = AgentRole[]
     budget::Budget
 end
 
@@ -612,7 +612,6 @@ The fields are:
 - `settings` — its values for rule parameters.
 - `code_areas` — its code in named areas, one hunter each.
 
-- `roles` — its own expert readers, rarely.
 - `disciplines` — the catalogued disciplines its documentation needs read by.
 
 A reader or a discipline a package needs and the tool's catalogue lacks is requested from the tool's
@@ -630,7 +629,6 @@ Base.@kwdef struct Config
     generated::Vector{String} = String[]
     switches::Vector{Switch} = Switch[]
     settings::Vector{Setting} = Setting[]
-    roles::Vector{AgentRole} = AgentRole[]
     disciplines::Vector{Symbol} = Symbol[]
     code_areas::Vector{Pair{Symbol,Vector{String}}} = Pair{Symbol,Vector{String}}[]
 end

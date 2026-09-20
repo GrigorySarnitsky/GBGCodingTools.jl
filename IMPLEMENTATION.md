@@ -11,7 +11,7 @@ them into a tracked `tools/floor.sh` (`#!/bin/sh`, `set -e`, run in the director
 gate calls that file by path [a variable inside `bash -c '…'` is unset in the new shell and an exported one holding `&&` is
 not re-parsed as an operator, so a gate written that way passes without running anything]; no gate uses a pipeline [a pipe's
 exit code can hide a match]. A gate that runs in a science package takes that package's path as an argument (`"$1"`, `"$@"`)
-supplied after the quoted command, never as a variable inside it; `$PF`, `$CP`, `$IT` and `$SS` stand for those paths, each
+supplied after the quoted command, never as a variable inside it; `$PF`, `$CP`, `$HT` and `$SS` stand for those paths, each
 of which holds a space. To **harvest** is to move measured content into the new tree rather than
 re-derive it; a **stroke** is one moment at which a group of files is deleted (§7); a **batch** is one commit's worth of rule
 conversion (§6). This package's `CLAUDE.md` is binding instruction here and is **code** under §4.2, so no documentation fixer
@@ -41,7 +41,7 @@ held visible by `LEGACY` in `test/architecture.jl`, printed every run and never 
 | `CLI/{Main,Bump,Release,Install,Git}.jl` (669); `CLI/Config.jl` (371) | 1,040 | `CLI`; `ConfigIO` | reshaped, the exit-code contract unchanged; the reader rewritten, literals only |
 | the round machinery (11 files) | 4,493 | `Orchestration` re-derives its behaviour | deleted from `src/`, **filed** as `docs/design-record/machinery-v1/` — Phase 4's named source |
 | `CLI/{Schema,Ledger,Fleet,Self,Selftest}.jl`, `TreeHash.jl`, `DocLints.jl`, `schema/` (22 files) | 3,454 | — | deleted (§7); the live schema shapes are `Model` types |
-| `instruments/` (4 protocols, 4 schemas, 12 JavaScript files); `catalog/hats/` (22), `lanes/` (3), `models.toml` (318) | 3,422 | `Instrument` values, one driver; ~40 `AgentRole`s | prose into fields, the scripts into one driver; briefs verbatim into `description` |
+| `instruments/` (4 protocols, 4 schemas, 12 JavaScript files); `catalog/hats/` (22), `lanes/` (3), `models.toml` (318) | 3,422 | `Instrument` values, one driver; readers DERIVED from the rules' tags, two open standpoints and six disciplines written by hand | prose into fields, the scripts into one driver; two briefs survive as standpoints, the rest as the disciplines' descriptions |
 | `policy/*.md` (710), `RULES.toml` (686, the 95 ids); `fixture/…/defects.toml` (342) | 1,738 | `Rule.statement`, `Rule.why`; `Example`s | prose verbatim, live until the ratchet reaches zero (§6); 50 planted defects over all 44 scans, 28 clean twins over 25 |
 | `test/*.jl` (13 files); `docs/src/` (1,710 hand-written, 2,782 the copied architecture) | 7,224 | `test/{rules,architecture,rehearse,…}.jl`; the new site | about 400 test lines kept; the site cut in Phase 0 to what survives and regrown per phase |
 
@@ -122,38 +122,91 @@ satisfy is either fixed — PF's own documentation work, in PF's own commits, **
 `Switch` with its reason, which the design provides and PF's site shows. The phase ends when PF's build and tests are green
 under whatever switches PF declares, not when PF is clean. What is probably owed: a fence-aware replay of four of the fifteen
 over PF's tracked source and documentation gives 55 live hits before the noisier structure rules, and this package's own
-`docs/ROADMAP.md` records 80 docstrings in the prose form for one of the fifteen. **Nothing is written to PF's
+**Nothing is written to PF's
 `.claude/WORK_QUEUE.md` here**; findings are printed [its `queue-guard.sh` counts every `- [ ]` line with no heading
 exclusion, so a written line would hold every later PF session hostage]. **Owner:** decisions 4–6. **Release `v2.0.0-rc.1`**,
 then `gbg install` on the second host.
 **Gate** `bash -e -o pipefail -c 'tools/floor.sh && tools/floor.sh "$1" && git -C "$1" diff --quiet && test -z "$(git -C "$1" diff --name-only HEAD~1 -- .claude/WORK_QUEUE.md)"' _ "$PF"` — the last two: the build regenerated nothing, and this phase's commits wrote no work-queue line in PF.
 
-### Phase 4 — Questions and answers, then Documentation review end to end on PF (70 commits, 9–12 sessions)
-**Ends with** the instrument the package exists for: the owner asks, agents read PF, findings are collected and anchored,
-four fix passes run under the guard, two verifier stages grade them, and he is handed `report.md`, questions he can answer,
-and work-queue lines under a heading his hook does not count. **Depends on** Phase 3. **First group, the way to reach him** —
-a review has three exits that need it (a possible code defect, a formula edit without agreement, the keep-or-revert at
-close): `Engine/Questions.jl`, the five question-language rules (batch e), `src/CLI/Answer.jl`, `.gbg/settled.jl` and its
-reader, `test/questions.jl`. **Then** `src/Orchestration/{Agents,Runs}.jl` (the stage machine, the budget, the relaunch-once
-rule, `Runs.reanchor`'s git step, collect's remap of a location in a declared build-time copy to its tracked source, close's
-two programs), the review's `Instrument` value and its `AgentRole`s (batch g), `Render.report`, `src/CLI/Run.jl`, the rest of
-`Docfix` (§4.3 steps 1–4), one fixed Workflow driver replacing eleven scripts, `Render.hook` writing each package's
-end-of-turn hook with the uncounted heading **before** any leftover line is written, and `test/{rehearse,driver}.jl`;
-`test/anchors.jl` is re-pointed at `Runs.reanchor` and gains the `BY_DIFF` case. **Why it is this large**: it re-derives the
-behaviour of the 4,357 lines Phase 0 filed under `machinery-v1/`, against a design that changed every stage; its commits cut
-at the design's own handoffs, one group per stage. **Owner:** decisions 7 and 8. Release `v2.0.0-rc.2`.
-**Gate** `bash -e -o pipefail -c 'tools/floor.sh && julia --project test/rehearse.jl && julia --project test/driver.jl'` — the rehearsal drives every stage over the fixture from result files recorded in one real Workflow launch (the launch is the session's, since `node` is not installed here), asserting: a stage out of order exits 2; collect exits 2 when a tracked file changed under it; a malformed result file is relaunched once then named; re-anchoring runs before each pass and each verifier stage; a `HIDES_CODE_DEFECT` verdict and a `maybe_code` finding each produce a question that passes `Questions.check`; `MADE_WORSE` reverts; a budget-spent run writes its leftovers under the uncounted heading and the hook still lets the turn end.
+### Phase 4 — Questions and answers, then Documentation review end to end on PF (amended 2026-09-21)
 
-### Phase 5 — The rest of the rulebook, and GBGCloudPhysics (45 commits, 5–7 sessions)
-**Ends with** all 95 ids converted, re-checked or retired with a reason, a second science package wired, and one machine in
-the tree. **Depends on** Phase 4. **Creates** batches b, c, d, f, h and i (§6); `gbg check --network` [the citation
-cross-check is the one check the design keeps out of every build]; `Main.jl` rewritten; CP's `.gbg/`. **Deletes** the third
-stroke (§7): the remaining `src/Scans/*`, `Scan.jl`, `Reflection.jl`, `DocLints`, `HtmlWalker`, `TreeHash`,
-`catalog/scans.toml`, the old `Config` and `Ledger`, the last old verbs, three test files and the conversion adapter;
-`policy/` moves to `docs/design-record/policy-v1/` in the commit where the ratchet reaches zero and `Render.policy` takes
-over. `LEGACY` is empty and `test/architecture.jl` covers `src/` whole. **Owner:** decisions 9–11. **`v2.0.0` is cut here** —
-the rulebook is complete and two packages are wired.
-**Gate** `bash -e -o pipefail -c 'tools/floor.sh && tools/floor.sh "$1" && tools/floor.sh "$2" && test -z "$(git ls-files -- src/Scans policy catalog)" && julia --project test/conversion.jl' _ "$PF" "$CP"` — the last at an allowance of zero (§6).
+**Ends with** the instrument the package exists for: the owner asks, derived readers read PF, findings are collected and
+anchored, four fix passes run under the guard, two verifier stages grade them, and he is handed `report.md`, questions he
+can answer, and work-queue lines under a heading his hook does not count. **Depends on** Phase 3. The amendment
+`docs/proposals/ROADMAP-AMENDMENT-2026-09-20.md` re-grouped this phase after eight adversarial rounds; its §8 records the
+owner's answers of 2026-09-21. The phase is five pieces:
+
+- **4a — done** (ten commits from `71993cc`, 2026-09-19/20): the question language and `gbg ask`/`answer`; `Runs`,
+  `gbg run` and the one driver, `drivers/run.js`, tracked here (ruled 2026-09-21); the rehearsal; 17 agent-decided rules
+  reworded until three blind taggers stopped splitting on them; the readers **derived** from the rules' access and
+  discipline tags (`Roles.derive`), the hand-written roles deleted; `--readers bound|open|both`; thirteen rules retired
+  on the record and every rule given its cover (a program, a reader, an instruction); fourteen defects of the find half
+  fixed; no launch budget; the stage machine by position; agents' files under `.gbg/scratch/<run>/`.
+- **4b — the review made whole** (50–70 commits, 6–9 sessions): the fix half of §4.3 — re-anchor before each pass, the
+  guarded fix, the other-copies search, the formula-edit rule, `gbg docfix check`'s real checks, the blind and the diff
+  verifier with their own output schema, grading, `DocFix` and `Verdict` records, the pass driver and the four-pass cap;
+  the guard's clause 3; an interrupted run continued by the next session (§10) and `gbg run abandon`; sequential launch;
+  the named careful model recorded on the run; what a reader is given — the withheld reader one built page's article
+  body per launch from a site built inside the run, the rendered reader `docs/build`, a verifier its finding's reader's
+  bundle; `Render.skill` and `Wire`'s `settled.jl`, `questions.json` and skill, with §11's refusals; a readers page and
+  an instruments page; the glossary's new terms; `Release` off the legacy config; the work-queue lines at close;
+  carry-over; the switch that keeps the review off this package until Phase 8; and every text this makes false. **Gate**
+  — `test/rehearse.jl` over the `gbg run` verbs on a git-initialised copy of the fixture with its site built in the
+  test, from reader, fixer and verifier files recorded in one real launch: a review runs to four passes and a fifth is
+  refused; a run interrupted with one reader uncollected is continued, that reader alone relaunched, each finding
+  collected once; a `DONE` run with findings open after four passes writes one queue line per finding under the
+  uncounted heading; a malformed result file is named and `collect` exits 2; a question put at find is in the record at
+  close and `gbg answer` reaches it; `HIDES_CODE_DEFECT` becomes a question that passes `Questions.check`; `MADE_WORSE`
+  reverts; a moved location comes back `BY_DIFF`; collect exits 2 when a tracked file changed under the readers; a start
+  on a dirty tree, and a bug hunt, are refused; close on a red build restores the documentation through a guarded
+  commit; a second run carries the first's open findings; every withheld launch names exactly one unit and no source; a
+  verifier names its finding's reader's bundle; a guarded commit succeeds while a run is open, with the trailer; nothing
+  under `.gbg/runs/` but the record, the report and the open-run files; `test/guard.jl` holds clause 3 in both
+  directions; `Wire` refuses to overwrite a skill the package owns.
+- **4f — the six disciplines attacked** (three sessions, one commit): each description put to three lenses — a scientist
+  of that field, a reader of the rule it would carry, a plain-language reader — until a round has no objection of
+  substance; the survivors put to the owner (decision 28 of the amendment). Before any package declares one.
+- **Release `v2.0.0-rc.6`** after 4b and 4f, with a CHANGELOG entry covering everything since rc.5, which holds no
+  Phase 4 commit; `docs/PF-WIRING.md` rewritten for it. **Then PF**, in its own session and on its own pin: it proposes
+  its disciplines, sets `formalization` and confirms the other three parameters, declares `copies` for its five built
+  rationale documents, narrows its `literate` set, bumps, adds the two page entries, and runs the review. PF's legacy
+  `.claude` commands stay until Phase 7.
+- **4d — scope** (10 commits, 1–2 sessions): `--scope full|changed`, the base per reader combination — the commit that
+  added the last finished run's record with that `readers` value — invalidated by a tool bump or a config or switch
+  change since; the diff-to-units mapping per access tag. **Gate**: replayed from recorded files over the fixture copy,
+  one edited docstring, one added sibling, one edited notation page, one edited hand page and one edited function body
+  produce exactly the set the mapping gives, and nothing else; a paused or `CANNOT_EVALUATE` run is no base; a tool bump
+  reads full. Release `-rc.7`.
+- **4e — `gbg attack rules`** (8 commits, 1 session): the tagging procedure as the first piece of the design review,
+  through the one driver with a second output schema; kappa, splits and flags as a program over the round-1 fixtures
+  filed under `test/`; a drift between the majority and a rule's tag reported as a proposal that becomes a question.
+  **Gate**: the arithmetic over the filed fixtures reproduces round 1 — 0.90 / 0.91, 8 flagged, 3 splits — and
+  `test/driver.jl`'s one-driver assertion still holds.
+
+**Owner:** the decisions of the amendment's §6, all answered on 2026-09-21 except 28 (after 4f).
+
+### Phase 5 — The rest of the rulebook, and GBGCloudPhysics (amended 2026-09-21)
+
+**Ends with** the rulebook finished — every rule checked by a program, judged by a reader, or an instruction the session
+is given (ruled 2026-09-21), and nothing else remaining — a second science package wired, and one machine in the tree.
+**Depends on** Phase 4. The coverage sittings the plan foresaw (decisions 9–11) shrank to specific items once the covers
+were derived: whether the seven git instructions get programs (four over the tree in `Pkg.test()`, three over git state
+in the end-of-turn hook or a verb — never in a build); whether the four harness contracts (`TestHarness.*`) are
+harvested into `Engine.Harness` and wired, or their rules restated; and, if the owner asks, any instruction restated as
+a principle of the design. Each is a question in §8's form; unanswered means unchanged. **Creates** what those answers
+say; `gbg release --counts`, which prints for `v2.0.0` alone what still holds it and refuses nothing (ruled 2026-09-16);
+`Main.jl` rewritten and the last old verbs; a `CP-WIRING.md` (CP's `[extras]`/`[targets]` test declaration becomes a
+`test/Project.toml` the pin can land in; the disciplines CP may propose); CP wired by CP's own session on the last
+candidate after 4d. **Deletes** the third stroke (§7) in full — `Scan.jl`, `Reflection.jl`, `DocLints.jl`,
+`HtmlWalker.jl`, `TreeHash.jl`, `CLI/Config.jl`, `CLI/Ledger.jl`, `.gbg/config.toml` here and in the fixture, the
+fixture's `.gbg/hats/`, `.gbg/rounds/.keep`, `catalog/scans.toml`, `TestHarness.jl` harvested or wired as answered —
+with what reads them: this repository's `docs/make.jl`, the extension's `makedocs(cfg::AbstractDict)` and
+`write_public_surface`, `CLI/Self.jl`'s `TreeHash`, `CLI/Main.jl`'s `LedgerError`, `test/{helpers,schemas,config,scans,
+treehash,coverage}.jl`, `test/architecture.jl`'s `config.toml` line, `test/runtests.jl`'s legacy includes, the site's
+`api/{Reflection,TestHarness,Config}.md` and `guide/install.md`'s `config.toml` lines. `LAYERS` gains
+`GBGCodingTools.jl`, `CLI/{Main,Bump,Release,Fleet,Install,Self,Git}.jl` and, if kept, `TestHarness.jl`;
+`LEGACY_CEILING` falls to 1 (`Witnesses.jl`, Phase 6's). **`v2.0.0` is cut here.**
+**Gate** `bash -e -o pipefail -c 'tools/floor.sh && tools/floor.sh "$1" && tools/floor.sh "$2" && test -z "$(git ls-files -- src/Scans policy catalog .gbg/config.toml .gbg/rounds "fixture/GBG Fixture/.gbg/config.toml" "fixture/GBG Fixture/.gbg/hats" src/Scan.jl src/Reflection.jl src/DocLints.jl src/HtmlWalker.jl src/TreeHash.jl src/CLI/Config.jl src/CLI/Ledger.jl)" && julia --project test/conversion.jl && test "$(gbg release --counts)" = "0"' _ "$PF" "$CP"` — the last a printed count, the checklist's to read, not a refusal.
 
 ### Phase 6 — Bug hunt, the code fixer and Change audit (45 commits, 5–6 sessions)
 **Ends with** the code half: hunters per code area, agents writing failing tests, `gbg run witnesses`,
@@ -168,18 +221,18 @@ the witnesses stage; `test/witnesses.jl` goes. **Owner:** none. Release `v2.1.0`
 
 ### Phase 7 — GBGHomogeneousTurbulence, GBGStreamingStatistics, and the legacy deletions (40 commits, 6–7 sessions)
 **Ends with** all four science packages wired and on one version, and no legacy instruments left in any of them. **Depends
-on** Phase 6. **Creates** IT's and SS's `.gbg/`. **Deletes**, each in its own package's commit and only after a real
-documentation review has run there and the owner has read its report: PF's, IT's and SS's legacy instrument directories,
+on** Phase 6. **Creates** HT's and SS's `.gbg/`. **Deletes**, each in its own package's commit and only after a real
+documentation review has run there and the owner has read its report: PF's, HT's and SS's legacy instrument directories,
 their round folders moving to that package's `docs/design-record/`. **Why it is not three sessions**: two wirings, three full
 instrument runs, the fixing each produces, and three owner readings the plan cannot schedule. **Owner:** decision 12. Release
 `v2.1.1`.
-**Gate** `bash -e -o pipefail -c 'for P in "$@"; do tools/floor.sh "$P"; test -z "$(git -C "$P" ls-files -- .claude/commands .claude/doc-review .claude/audit-changes .claude/bug-hunt)"; done' _ "$PF" "$CP" "$IT" "$SS"`
+**Gate** `bash -e -o pipefail -c 'for P in "$@"; do tools/floor.sh "$P"; test -z "$(git -C "$P" ls-files -- .claude/commands .claude/doc-review .claude/audit-changes .claude/bug-hunt)"; done' _ "$PF" "$CP" "$HT" "$SS"`
 
 ### Phase 8 — GBGCodingTools as its fifth consumer, and the design review (20 commits, 3–4 sessions)
 **Ends with** the tool checked by itself and `gbg attack` available (§13: agents over the design, producing proposals that
 become questions or are dismissed with a reason). Last on purpose: the machinery has run on four packages, so its own defects
 arrive as ordinary findings rather than as the work. **Depends on** Phase 7. **Creates** this package's full `.gbg/config.jl`
-— the four switches §9 names, its two settings, `tool = :dev` — its generated skills and hook, `src/CLI/Attack.jl`, and
+— the switches §9 names, its settings, `tool = :dev` — its generated skill and hook, `src/CLI/Attack.jl`, and
 `test/switches.jl` (§9's own test: a page built with a rendering fault under this package's switches must fail the build).
 `docs/make.jl` here switches to the wrapper and `test/runtests.jl` to `Harness.test`, and the three self-application lines
 leave `test/architecture.jl` in that same commit — the one commit that turns self-application on, visibly. **Owner:**
@@ -211,25 +264,26 @@ He stops between sessions, not phases: every commit leaves the floor green, so a
 
 ## 4. The fleet
 
-Order: **PF, then CP, then IT, then SS**; he may reorder by whatever he is working on. PF first (Phase 3): most active,
+Order: **PF, then CP, then HT, then SS**; he may reorder by whatever he is working on. PF first (Phase 3): most active,
 heaviest documentation, the only one with Literate examples and live doctests. CP second (Phase 5): sharing none of PF's
-habits and holding no legacy machinery, it proves the config is a config. IT and SS last (Phase 7): both are mostly
+habits and holding no legacy machinery, it proves the config is a config. HT and SS last (Phase 7): both are mostly
 deletions. Wiring writes more than a config: `.gbg/{config.jl,settled.jl,questions.json,policy/*.md}`, the pin in both
 environments, `.claude/{settings.json,WORK_QUEUE.md}`, a skill file per instrument, the tooling block in `.gitignore` and
 `CLAUDE.md`, the CI workflow files, and `test/regressions/`. **Wiring refuses to overwrite** an existing
 `.github/workflows/*`, `.claude/settings.json`, `WORK_QUEUE.md` or a skill of the same name, printing the diff instead [PF
 has hand-written workflows, its own settings, a 168-line queue, and a `.claude/commands/bug-hunt.md` a generated skill would
 shadow]; unwiring is reverting those commits, after which `gbg` finds no config and refuses. Each package declares its
-`Switch`es, `Setting`s, `code_areas`, `normative` documents, build-time copies and, where it has them, its own `PatternRule`s
-and `AgentRole`s.
+`Switch`es, `Setting`s, `code_areas`, `normative` documents, build-time copies, the disciplines it declares and, where it
+has them, its own `PatternRule`s; a reader or a discipline it needs and the tool lacks is requested from the tooling
+session, never written in the package (ruled 2026-09-20).
 
 ## 5. Versions and releases
 
 The eleven `v1.0.0-rc.*` tags stay where they are and are never moved. **`1.0.0` is never released**: what those candidates
 named does not survive Phase 0, and `Project.toml` names a release that does not exist, so Phase 0 sets it to `2.0.0-DEV` —
 MAJOR by any reading, since the config format, the verbs and both entry points change. A candidate is cut at each phase that
-changes what a consumer sees: `v2.0.0-rc.1` (Phase 3, the first moment a package can pin anything), `-rc.2` (4), **`v2.0.0`
-at the end of Phase 5**, where the rulebook is complete and two packages are wired, then `v2.1.0` (6), `v2.1.1` (7), `v2.2.0`
+changes what a consumer sees: `v2.0.0-rc.1` (Phase 3, the first moment a package can pin anything), `-rc.2` to `-rc.5` (Phases 3 and 4's
+first half, cut as PF needed them), `-rc.6` (4b), `-rc.7` (4d), **`v2.0.0` at the end of Phase 5**, where the rulebook is complete and two packages are wired, then `v2.1.0` (6), `v2.1.1` (7), `v2.2.0`
 (8). Until the first candidate no package pins anything, as none does today; this checkout carries `tool = :dev`.
 `CHANGELOG.md` gains one MAJOR `## 2.0.0`: rates are not comparable and nothing re-measures them (§12).
 
@@ -248,12 +302,12 @@ re-derivations, not harvests.
 | a | the fifteen always-on: five rendering rules (`TEX.RENDERED_MATH`, `RENDERED_MARKUP`, `CODE_IN_MATH`, `ONE_SPAN`, `SWALLOWED_ESCAPE`), `DOC.TABLE_TOP_LEVEL`, `REF_ABUT`, and eight structure and reflection rules (`ARGS_FORM`, `ARG_BULLET`, `FIELDS`, `SHAPE`, `SENTENCE_OPENER`, `REGISTER`, `ARGCOV`, `SIGNATURE_FIDELITY`) | 3 | `TextExample`s, `ModuleExample`s, and `SiteExample`s for the two rendering rules with built-site scans |
 | b | the other 9 scan-checked `RULE.DOC.*` | 5 | `TextExample`s, `ModuleExample`s, one `SiteExample` set for `API_GROUPING` |
 | c | the other 8 scan-checked `RULE.TEX.*` | 5 | `TextExample`s |
-| d | the 4 scan-checked `RULE.CIT.*`; `NO_INACCESSIBLE` splits into a program rule and an agent rule (§7) | 5 | `TextExample`s; the cross-check rule is `network = true` and runs only under `gbg check --network` |
+| d | the 4 scan-checked `RULE.CIT.*`; `NO_INACCESSIBLE` split into the reader's rule and `RULE.CIT.RESOLVES` — done 2026-09-21 | 4 | `TextExample`s; the resolving rule is `network = true`, runs only under `gbg check --network`, and is tested on a canned resolver |
 | e | the 5 question-language rules | 4 | `QuestionExample`s |
 | f | the 10 surviving harness- and test-checked rules (`DOC.BUILD_VERIFY`, seven `RULE.TEST.*`, `INST.WITNESS`, `NO_TRUNCATION`) | 5 | `ModuleExample`s against `Engine.Harness`, `makedocs` and `Render.report` |
-| g | 22 hats and 3 lane catalogues into ~40 `AgentRole`s; the 14 panel rules into `AgentCheck`s with their `WhyAgent` value | 4 | a test that every id in `rules` exists and every agent-checked rule belongs to exactly one role |
-| h | the 10 rules whose checker Phase 0 deleted: a new check against `Runs`, or retirement with a reason | 5 | `ModuleExample`s against `Orchestration`, or a retirement line in `test/conversion.jl` |
-| i | the 3 `RULE.GIT.*` doctor rules and the 22 with no check: an `unchecked_reason`, a new program check, or retirement | 5 | no examples where there is no check; the owner's answers decide (§8) |
+| g | the readers DERIVED from tags on the rules (`Roles.derive`), the hats deleted — done 2026-09-20 | 4 | `test/readers.jl`: every tagged rule on exactly one bound reader or a named gap |
+| h | the 10 rules whose checker Phase 0 deleted: eight retired as dead machinery and two (`DOC.BATTERY`, `INST.NO_TRUNCATION`) kept as instructions — done 2026-09-21 | 4 | `Catalogue.RETIRED`, read by `test/conversion.jl` and `known_ids` |
+| i | the 3 `RULE.GIT.*` doctor rules and the 22 with no check: every one is now an instruction to the session or a reader's, by cover (ruled 2026-09-21); whether the git ones get programs is Phase 5's remaining question | 4–5 | `test/conversion.jl`: every rule has one of the three covers |
 
 15 + 9 + 8 + 4 (the scan-checked 36) + 10 + 14 + 10 + 3 + 22 = 95: every id of the register is in exactly one batch, and
 batch e's five question-language rules are new in the design, outside it. One commit per batch of 8 to 12 rules, each
@@ -287,7 +341,7 @@ rather than deleted when it stops being live.
 | 3 | 5 | the old engines — `Scan.jl`, the last of `src/Scans/`, `Reflection.jl`, `DocLints`, `HtmlWalker`, `TreeHash`, `catalog/scans.toml` — with the old `Config`, `Ledger` and the last old verbs | ~2,900 |
 
 The first stroke has no user left once its readers are corrected in the same commits — the owner has stopped running rounds
-here, and PF's and IT's instruments never load this package — but it is not free: Phase 4 re-derives its behaviour, which is
+here, and PF's and HT's instruments never load this package — but it is not free: Phase 4 re-derives its behaviour, which is
 why it is filed rather than dropped. The third waits because every rule using those engines must be converted first. Seeding,
 recall and the ledger survive in no form [recall measured nothing after the seed-delivery defect; an exemption is a
 `Switch`].
@@ -302,11 +356,11 @@ recall and the ledger survive in no form [recall measured nothing after the seed
 | 4 | Is the most active science package the right one to protect first? | 3 | the four packages, with sizes and recent commits | Yes — heaviest documentation, most readers | Phase 3 stops after the rules; no package is wired. |
 | 5 | Are these fifteen the rules every package must always satisfy? | 3 | the fifteen statements, each with its finding count in that package | Yes to all fifteen — they catch text that renders wrongly, and docstring structure | The phase cannot end: nothing is wired until the set is fixed. Chosen, the set can never be switched off in any package — changing it later is a MAJOR release and a bump — so it ships switchable until two packages have shown their counts. |
 | 6 | How much of his own documentation does he want cleaned before the rest is switched off with a reason? | 3 | the finding list, by rule, for that package | Fix the two smallest, switch the rest off with reasons, revisit at the next release | The phase cannot end: that package's build stays red until each rule is fixed or switched off. |
-| 7 | How many agents may one run of each instrument launch? | 4 | past rounds' launch counts and token totals | Economy for readers, full strength for verifiers | No real review runs; the rehearsal uses a placeholder. |
-| 8 | Do the leftovers of a spent review go into his own list, or only into the run record? | 4 | one report and one queue as they would look | Both, under a heading the end-of-turn guard does not count | The review runs but its leftovers have nowhere to go. |
-| 9 | For each rule with no check today: keep it with the reason it cannot be checked, or retire it? | 5 | the statement and its history, eight at a sitting | Per item, default for anything unanswered: keep, reason drafted | The allowance floors above zero and `v2.0.0` waits. |
-| 10 | For each rule a reading panel decides today: is it still a matter of meaning, derivation or reading order? | 5 | the statement and the role that would check it, eight at a sitting | Per item, the drafted reason as the default | The same. |
-| 11 | Should the rules about commits and branches be checked by the tool at all? | 5 | the three statements and what a program could see | Retire two; keep the manifest one as a wiring check | Those three ids hold the allowance above zero. |
+| 7 | ~~How many agents may one run of each instrument launch?~~ Superseded 2026-09-21: no launch ceiling; the design bounds launches. Every reader on the careful model (2026-09-20). | 4 | — | — | — |
+| 8 | ~~Do the leftovers of a spent review go into his own list?~~ Moot 2026-09-19: a run cut short is unfinished and continued, not filed; a finished run's leftovers go to both places as before. | 4 | — | — | — |
+| 9 | ~~For each rule with no check today: keep it with the reason, or retire it?~~ Answered 2026-09-21 by the three covers: every rule is a program's, a reader's or an instruction; thirteen retired. What remains is whether the seven git instructions get programs. | 5 | the seven statements and what a program could see | as Phase 5 says | Those seven stay instructions. |
+| 10 | ~~For each rule a reading panel decides: still meaning, derivation or reading order?~~ Answered another way: the tagging study says what each rule needs; the `WhyAgent` on the 14 agent checks is metadata a reader is not shown. | 5 | — | — | — |
+| 11 | Should the rules about commits and branches be checked by a program at all, now that they are instructions? | 5 | the three statements and what the end-of-turn hook could see | Give all three the hook check | They stay instructions; nothing holds. |
 | 12 | May a package's old review machinery be deleted now that a real review has run there? | 7 | that package's report and its legacy directories | Yes, once he has read the report | Both machineries stay there; the phase cannot end. |
 | 13 | Should the tool be wired to check itself? | 8 | its own switches and settings | Yes, last, so its defects arrive as ordinary findings | The tool stays unchecked by its own rules; nothing else blocks. |
 
@@ -315,7 +369,7 @@ recall and the ledger survive in no form [recall measured nothing after the seed
 | Risk | Counter |
 |---|---|
 | **The rebuild stalls half-done and the owner has neither machine.** | Every phase from 3 ends with a tag a package pins; nothing old is deleted before its replacement is green; PF's and IT's legacy instruments stand until a real review has run in their package. |
-| Phase 4 is nine to twelve sessions and sits between him and the capability the package exists for. | Cut at the design's own handoffs, one commit group per stage, each with its assertion in `test/rehearse.jl`, which runs the whole instrument with no model call. |
+| Phase 4 is eleven to fifteen sessions and sits between him and the capability the package exists for. | Cut at the design's own handoffs, one commit group per stage, each with its assertion in `test/rehearse.jl`, which runs the whole instrument with no model call. |
 | Wiring PF exposes an unbounded documentation cleanup in his most active package. | The gate never requires PF to be clean: a rule PF does not satisfy is fixed as PF's own work or switched off with a reason on its site, and the fifteen ship switchable until two packages have shown their counts. |
 | A generated file overwrites something he wrote by hand — CI, settings, the queue, a command; or his two hosts drift and the stale one fails silently. | Wiring refuses to overwrite those four and prints the diff, and unwiring is reverting the wiring commits; Phase 1 makes the shim refuse rather than fall back and print the checkout it resolved, and every release phase ends with `gbg install` on the other host, named as his action. |
 | `Guard.classify` decides what is committed, and has no ancestor here. | An example per covered clause in both directions is Phase 1's gate — three phases before any fixer can call it; every guarded commit is on `master` and pushed. |
@@ -343,8 +397,8 @@ recall and the ledger survive in no form [recall measured nothing after the seed
 
 | Phase | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | Total |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Commits | 15 | 14 | 35 | 20 | 70 | 45 | 45 | 40 | 20 | **304** |
-| Sessions | 2–3 | 2–3 | 5 | 3 | 9–12 | 5–7 | 5–6 | 6–7 | 3–4 | **40–50** |
+| Commits | 15 | 14 | 35 | 20 | 10 + 69–89 | 25–35 | 45 | 40 | 20 | **293–323** |
+| Sessions | 2–3 | 2–3 | 5 | 3 | 11–15 | 4–6 | 5–6 | 6–7 | 3–4 | **41–52** |
 
 Phase 9 adds 12 commits and 2–3 sessions when asked for; PF's cleanup (Phase 3) is his own package work, sized by him.
 The first capability in a science package arrives at session 12 to 14. About a third of this work has no precedent here —
