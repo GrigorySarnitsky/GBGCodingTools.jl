@@ -34,7 +34,9 @@ second verifier, at economy, reads the diff of each fix called fixed and answers
 the owner and parks the finding, which no pass touches again; a fifth pass is refused and what is open
 goes to `.claude/WORK_QUEUE.md`, one line each under the heading the hook does not count. `collect` now
 moves the run to its `collect` stage itself and is refused a second time; the driver relaunches a silent
-agent once before the collect names it. The other changes since rc.5 are in the commits from `71993cc`.
+agent once before the collect names it. `gbg run abandon` ends the open run as `OWNER_STOPPED` with its
+findings dropped, and a start on a tree with uncommitted tracked changes is refused. The other changes
+since rc.5 are in the commits from `71993cc`.
 
 ## 2.0.0-rc.5 — 2026-09-18
 

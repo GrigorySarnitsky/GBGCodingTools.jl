@@ -2,8 +2,8 @@
 """
     Run
 
-`gbg run <instrument>`, `gbg run next`, `gbg run collect` and `gbg run close`: one execution of one
-instrument, a stage at a time.
+`gbg run <instrument>`, `gbg run next`, `gbg run collect`, `gbg run close` and `gbg run abandon`: one
+execution of one instrument, a stage at a time.
 
 Each stage is a HANDOFF. Julia cannot launch an agent and only the session can, so `next` writes what
 the session needs and exits, the session runs the one fixed driver, and `collect` reads what the agents
@@ -416,6 +416,40 @@ function close_run(root::AbstractString; io::IO = stdout)
     return isempty(left) ? 0 : 1
 end
 
+"""
+    abandon(root; io = stdout) -> Int
+
+Ends the open run as `OWNER_STOPPED`, its findings dropped, and writes its record and report so the id
+is never reused. The arguments are:
+
+- `root` — the package root.
+- `io` — where the result goes.
+
+Exit 0 when a run was abandoned, 2 when none was open.
+
+The findings are DROPPED, not queued: the owner stopping a run is the owner saying its findings are not
+wanted, and a leftover line from a run nobody finished would be read as a finding somebody stood behind.
+What the run committed through the guard stays; a fix already verified is not undone by stopping.
+"""
+function abandon(root::AbstractString; io::IO = stdout)
+    id = open_run(root)
+    id === nothing && (println(io, "run: nothing is open here"); return 2)
+    run = Runs.load(root, id)
+    cfg = ConfigIO.read_config(root)
+    stopped = with(run; stage = :close, stop = Model.Stop.OWNER_STOPPED, findings = Model.Finding[],
+                   fixes = Model.DocFix[])
+    dir = Runs.dir(root, id)
+    write(joinpath(dir, "report.md"), Render.report(stopped, cfg; root))
+    open(joinpath(dir, "run.json"), "w") do f
+        GBGCodingTools.JSON3.pretty(f, GBGCodingTools.JSON3.write(Runs.as_dict(stopped)))
+    end
+    rm(joinpath(dir, "run.draft.json"); force = true)
+    rm(Agents.scratch_dir(root, id); force = true, recursive = true)
+    Runs.write_stage(root, id, length(get(Runs.STAGES, run.instrument, Symbol[])))
+    println(io, "run: ", id, " abandoned at ", run.stage, "; ", length(run.findings), " finding(s) dropped.")
+    return 0
+end
+
 "The heading of the work queue's section the end-of-turn hook does not count."
 const QUEUE_HEADING = "## From the last review"
 
@@ -464,11 +498,12 @@ function cmd_run(args)
     o = parse_options(args; valued = ["readers"])
     root = ConfigIO.require_root("run")
     root === nothing && return 2
-    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] | gbg run next|collect|close"); return 2)
+    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] | gbg run next|collect|close|abandon"); return 2)
     what = o.positional[1]
     what == "next" && return next(root)
     what == "collect" && return collect(root)
     what == "close" && return close_run(root)
+    what == "abandon" && return abandon(root)
     return start(root, Symbol(replace(what, "-" => "_")); readers = Symbol(get(o.values, "readers", "bound")))
 end
 VERBS["run"] = cmd_run

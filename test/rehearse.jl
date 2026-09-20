@@ -156,6 +156,37 @@ end
         end
     end
 
+    # The owner stopping a run: OWNER_STOPPED on the record, the findings dropped rather than queued, the
+    # id kept, the agents' files gone, and the next run free to start.
+    @testset "abandon ends the run as the owner's, with its findings dropped" begin
+        package() do root, gg
+            id, fid = with_one_finding(root)
+            G.Run.next(root; io = devnull)                               # into the first fix pass
+            @test G.Run.abandon(root; io = devnull) == 0
+            @test G.Run.open_run(root) === nothing
+            record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
+            @test record["stop"] == "OWNER_STOPPED" && isempty(record["findings"])
+            @test occursin("The owner stopped it.", read(joinpath(RUNS.dir(root, id), "report.md"), String))
+            @test !isdir(AGENTS.scratch_dir(root, id))
+            @test !isfile(joinpath(root, ".claude", "WORK_QUEUE.md"))
+            @test G.Run.abandon(root; io = devnull) == 2                # nothing open now
+            @test G.Run.start(root, :documentation_review; io = devnull) == 0
+            @test G.Run.open_run(root) != id                             # the id is never reused
+        end
+    end
+
+    # A tracked change already in the tree would be committed by the fixer under the guard's name.
+    @testset "a start on a dirty tree is refused" begin
+        package() do root, gg
+            write(joinpath(root, "src", "Sample.jl"), "module Sample\nf() = 1\nend\n")
+            @test G.Run.start(root, :documentation_review; io = devnull) == 2
+            @test G.Run.open_run(root) === nothing
+            write(joinpath(root, "docs", "src", "untracked.md"), "# New\n")     # untracked does not count
+            gg("checkout", "--", "src/Sample.jl")
+            @test G.Run.start(root, :documentation_review; io = devnull) == 0
+        end
+    end
+
     @testset "a run never starts another" begin
         package() do root, gg
             G.Run.start(root, :documentation_review; io = devnull)

@@ -76,10 +76,16 @@ Opens a run of `instrument` in the package at `root`. The arguments are:
 - `root` — the package root.
 - `io` — where a refusal is reported.
 
-Returns the run, or `nothing` when one may not start.
+Returns the run, or `nothing` when one may not start: the instrument is unknown or switched off, it has
+no readers, another run is open, or a tracked file is changed and uncommitted.
 
 The budget is fixed HERE, from the instrument's own value, and nothing later raises it. Inside a run the
 program stops the work, from this number; across runs the owner does, by asking or not.
+
+A DIRTY tree is refused because close classifies every commit since the first one: an edit that was
+already in the tree when the run started would be committed by the fixer under the guard's name, and a
+code change would pass as documentation. Untracked files do not count — a built site, a scratch
+directory — since nothing commits them unasked.
 """
 function start(instrument::Symbol, root::AbstractString; readers::Symbol = :bound, io::IO = stdout)
     readers in (:bound, :open, :both) ||
@@ -97,6 +103,12 @@ function start(instrument::Symbol, root::AbstractString; readers::Symbol = :boun
     open = [d for d in (isdir(joinpath(root, ".gbg", "runs")) ? readdir(joinpath(root, ".gbg", "runs")) : String[])
             if isfile(joinpath(root, ".gbg", "runs", d, "stage")) && !isfile(joinpath(root, ".gbg", "runs", d, "run.json"))]
     isempty(open) || (println(io, "run: ", first(open), " is still open; a run never starts another"); return nothing)
+    dirty = changed_tracked(root)
+    if !isempty(dirty)
+        println(io, "run: the tree is not clean; commit or stash these first, or close cannot tell the run's changes from yours:")
+        for d in dirty; println(io, "  ", d); end
+        return nothing
+    end
     run = Model.Run(id = new_id(instrument, root), instrument = instrument,
                     tool_version = string(GBG_VERSION[]), first_commit = head_commit(root),
                     budget = inst.budget, stage = :start, readers = readers)
@@ -108,6 +120,21 @@ end
 
 # The version that ran, recorded so a record says what judged it. Set by the package at load.
 const GBG_VERSION = Ref{Any}("dev")
+
+"""
+    changed_tracked(root) -> Vector{String}
+
+The tracked files changed and not committed in the package at `root`, or none outside a repository. The
+argument is `root`, the package root. Returns the paths.
+"""
+function changed_tracked(root::AbstractString)
+    out = try
+        readchomp(pipeline(setenv(`git -C $root status --porcelain --untracked-files=no`; dir = root); stderr = devnull))
+    catch
+        return String[]
+    end
+    return [String(strip(l[4:end])) for l in split(out, '\n') if length(l) > 3]
+end
 
 """
     head_commit(root) -> String
