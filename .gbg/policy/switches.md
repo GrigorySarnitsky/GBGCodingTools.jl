@@ -9,5 +9,6 @@ here is read as the entry states it.
 - `RULE.TEST.EXAMPLES_RUN` — this package ships no Literate examples: a worked example of a review instrument is a review, which is recorded rather than executed as a script (the whole package)
 - `RULE.DOC.LEADING_IDENTITY` — the leading identity of a docstring is the physical meaning of the quantity it computes; this package computes no physical quantity, so its docstrings lead with what the operation does, which the rule's own parameter already admits (the whole package)
 - `RULE.API.POSITIONAL` — no program decides whether an argument affects the result, and this package's own reading panels do not run over it yet; it is switched off here until they do (the whole package)
+- `documentation_review` — the review reads a package's documentation with the rulebook this package writes; running it here while the rulebook and the run machinery are still being built would grade the tool against rules it is in the middle of changing. It is switched on in Phase 8, when the tool reviews itself last (the whole package)
 
 <!-- gbg:managed end -->

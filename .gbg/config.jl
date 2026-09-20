@@ -26,6 +26,8 @@ Config(
                reason = "the leading identity of a docstring is the physical meaning of the quantity it computes; this package computes no physical quantity, so its docstrings lead with what the operation does, which the rule's own parameter already admits"),
         Switch(target = Symbol("RULE.API.POSITIONAL"),
                reason = "no program decides whether an argument affects the result, and this package's own reading panels do not run over it yet; it is switched off here until they do"),
+        Switch(target = :documentation_review,
+               reason = "the review reads a package's documentation with the rulebook this package writes; running it here while the rulebook and the run machinery are still being built would grade the tool against rules it is in the middle of changing. It is switched on in Phase 8, when the tool reviews itself last"),
     ],
     # STRICTER THAN THE FLEET, and this package's alone: every page of this site carries the provenance
     # banner, because the owner reviews the four science packages' API prose and not this one's.

@@ -24,6 +24,7 @@ using TOML, JSON3
 
 using ..Model
 using ..Catalogue
+using ..Engine
 
 # The marker a generated block carries. It is matched anywhere in the line rather than at its start,
 # because the comment syntax differs by file — `#` in a shell script or a `.gitignore`, `<!-- -->` in
@@ -589,6 +590,95 @@ function claude_block(cfg::Model.Config)
 end
 
 """
+    wanted(cfg, g) -> Bool
+
+Whether the package configured by `cfg` is to have the generated part `g`. The arguments are `cfg` and
+`g`, one entry of [`GENERATED`](@ref). Returns the answer.
+
+Everything is wanted but the skill of an instrument the package has switched off: a skill file is a
+command a person can type, and leaving one for an instrument that refuses to start is an invitation to
+an error message. What is not wanted is deleted, and the wiring check reports one left behind.
+"""
+function wanted(cfg::Model.Config, g)
+    startswith(String(g.generator), "skill_") || return true
+    return Engine.Checks.applies(cfg, Symbol(SubString(String(g.generator), ncodeunits("skill_") + 1)))
+end
+
+"""
+    skill_path(instrument) -> String
+
+Where one instrument's skill file goes: `.claude/skills/<instrument>/SKILL.md`, the instrument's id with
+its underscores as dashes, which is what a person types after the slash. The argument is `instrument`,
+the instrument's id. Returns the path.
+"""
+skill_path(instrument::Symbol) = joinpath(".claude", "skills", replace(String(instrument), "_" => "-"), "SKILL.md")
+
+"""
+    skill(cfg, instrument) -> String
+
+The skill file that runs one instrument: what it is for, and the exact sequence of verbs, ending in a
+closed run. The arguments are `cfg`, the package's config, and `instrument`, the instrument's id.
+Returns the file.
+
+It carries NO rule and no judgement of its own. What a reader is given, which rules it checks and how
+many passes there are follow from the rulebook and the instrument's own value, and the verbs print them
+at each step; a skill that repeated any of it would be a second copy to reword. What it does hold is the
+ORDER, because the order is not discoverable from any one verb: a session that stopped after collecting
+would leave a run open, and the stage machine cannot start the driver itself.
+"""
+function skill(cfg::Model.Config, instrument::Symbol)
+    i = only(x for x in Catalogue.INSTRUMENTS if x.id === instrument)
+    name = replace(String(instrument), "_" => "-")
+    fixes = i.budget.fix_passes > 0
+    io = IOBuffer()
+    println(io, "<!-- ", BEGIN_MARK, " ", version_tag(cfg), " — rewritten by `gbg sync`; do not edit -->")
+    println(io, "# /", name, "\n")
+    println(io, i.purpose, ".\n")
+    println(io, """
+    Run it when the owner asks for it, and not otherwise: nothing else starts a run. It ends when
+    $(lowercase(first(i.ends, 1)) * SubString(i.ends, 2)).
+
+    **Run it to its end in one sitting.** Every step below is one command, and the run is not finished
+    until `gbg run close` has written its report. A run left open blocks the next one, and a session
+    that stopped in the middle has spent its agents for nothing.
+
+    ## The steps
+
+    1. `gbg run $name` — opens the run and writes the first stage's arguments. Add `--readers open` or
+       `--readers both` for the open readers, `--model <name>` to name the careful model, `--sequential`
+       to launch one agent at a time. It refuses a tree with uncommitted changes to tracked files.
+    2. Launch the agents: run the ONE driver, `drivers/run.js` of the pinned GBGCodingTools, through the
+       `Workflow` tool, with the arguments file the verb just named. Julia cannot launch an agent and
+       only this session can, which is why the verb stopped here.
+    3. `gbg run collect` — reads what the agents wrote. Exit 2 means a role wrote nothing, or the tree
+       moved under them; the first is relaunched once, the second is the owner's to answer.
+    4. `gbg run next` — moves to the next stage and says what it wants. Repeat 2 to 4 until it says the
+       run is ready to close.""")
+    if fixes
+        println(io, """
+    5. At a FIX stage it writes the open findings instead of launching agents. Fix each in the
+       documentation and commit it with `gbg docfix commit --message "…" --finding <id>`, which asks the
+       change guard first. `gbg docfix check` says what the change broke. Never edit code here: a finding
+       that needs code becomes a question for the owner.
+    6. `gbg run close` — writes the record and the report, and puts what is still open on the owner's
+       work queue.""")
+    else
+        println(io, "5. `gbg run close` — writes the record and the report.")
+    end
+    println(io, """
+    ## What it may not do
+
+    - It never starts another run, never raises the budget, and never edits the instrument.
+    - It never fixes what it was not asked to fix: $(i.intention === Model.Intention.DOCUMENTATION ?
+      "this instrument's findings are documentation's, and a code defect becomes a question" :
+      "this instrument reports and grades; the code is changed only on the owner's answer").
+    - `gbg run abandon` ends a run the owner does not want continued. Its findings are dropped.
+    """)
+    println(io, "<!-- ", END_MARK, " -->")
+    return String(take!(io))
+end
+
+"""
     policy_paths() -> Vector{String}
 
 Every file of the rendered rulebook, in the order a reader meets them: the rule families as
@@ -798,6 +888,8 @@ const GENERATED = [
     (path = ".gbg/policy/glossary.md",     part = Model.Part.WHOLE,        generator = :glossary),
     (path = ".gbg/policy/switches.md",     part = Model.Part.WHOLE,        generator = :switches),
     (map(e -> (path = e.path, part = Model.Part.WHOLE, generator = e.generator), POLICY_FILES))...,
+    (map(i -> (path = skill_path(i.id), part = Model.Part.WHOLE, generator = Symbol("skill_", i.id)),
+         Catalogue.INSTRUMENTS))...,
 ]
 
 """
@@ -817,6 +909,9 @@ function produce(name::Symbol, cfg::Model.Config)
     name === :ci && return ci(cfg)
     for e in POLICY_FILES
         name === e.generator && return policy_file(cfg, e)
+    end
+    for i in Catalogue.INSTRUMENTS
+        name === Symbol("skill_", i.id) && return skill(cfg, i.id)
     end
     error("no generator named $name")
 end
@@ -970,6 +1065,11 @@ function wiring(cfg::Model.Config, root::AbstractString)
     out = Model.Location[]
     for g in GENERATED
         full = joinpath(root, g.path)
+        if !wanted(cfg, g)
+            isfile(full) && push!(out, Model.Location(; file = g.path,
+                                   text = "this instrument is switched off here and keeps no skill file"))
+            continue
+        end
         want = produce(g.generator, cfg)
         if !isfile(full)
             push!(out, Model.Location(; file = g.path, text = "the file is absent"))
@@ -1013,6 +1113,13 @@ function write_all(cfg::Model.Config, root::AbstractString)
     changed = String[]
     for g in GENERATED
         full = joinpath(root, g.path)
+        if !wanted(cfg, g)
+            isfile(full) || continue
+            rm(full; force = true)                       # a switched-off instrument keeps no skill
+            isdir(dirname(full)) && isempty(readdir(dirname(full))) && rm(dirname(full))
+            push!(changed, g.path)
+            continue
+        end
         want = produce(g.generator, cfg)
         mkpath(dirname(full))
         if g.part === Model.Part.BLOCK && isfile(full)

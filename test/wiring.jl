@@ -185,6 +185,35 @@ end
         @test length(drift) == 1 && occursin("block is absent", first(drift).text)
     end
 
+    # A skill file is a command a person can type. An instrument the package switched off must not have
+    # one, or the command is an invitation to an error message.
+    @testset "a switched-off instrument keeps no skill" begin
+        dir, cfg = wired_package()
+        for i in G.Catalogue.INSTRUMENTS
+            @test isfile(joinpath(dir, RN.skill_path(i.id)))
+        end
+        text = read(joinpath(dir, RN.skill_path(:documentation_review)), String)
+        @test occursin("gbg run documentation-review", text)
+        @test occursin("gbg run close", text)
+        @test occursin("gbg docfix commit", text)            # it has fix passes
+        @test !occursin("gbg docfix commit", read(joinpath(dir, RN.skill_path(:bug_hunt)), String))
+
+        off = G.Model.Config(package = cfg.package, tool = cfg.tool, filesets = cfg.filesets,
+                             switches = [G.Model.Switch(target = :documentation_review,
+                                                        reason = "not while the tool is being rebuilt")])
+        # the switches page changes too, since the switch is now one of them
+        @test RN.write_all(off, dir) == [".gbg/policy/switches.md", RN.skill_path(:documentation_review)]
+        @test !isfile(joinpath(dir, RN.skill_path(:documentation_review)))
+        @test !isdir(dirname(joinpath(dir, RN.skill_path(:documentation_review))))
+        @test isempty(RN.wiring(off, dir))                    # and its absence is not drift
+        @test isempty(RN.write_all(off, dir))                 # nothing to do the second time
+        # one left behind after the switch IS drift
+        mkpath(dirname(joinpath(dir, RN.skill_path(:documentation_review))))
+        write(joinpath(dir, RN.skill_path(:documentation_review)), "stale")
+        drift = RN.wiring(off, dir)
+        @test length(drift) == 1 && occursin("switched off", first(drift).text)
+    end
+
     @testset "write_all is idempotent, and says what it changed" begin
         dir, cfg = wired_package()
         @test isempty(RN.write_all(cfg, dir))                                  # nothing to do the second time

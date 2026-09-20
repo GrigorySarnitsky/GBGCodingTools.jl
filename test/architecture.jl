@@ -124,10 +124,17 @@ legacy_files() = sort([relpath(joinpath(r, f), TOOL) for (r, _, fs) in walkdir(j
         cfg = TOML.parsefile(joinpath(TOOL, ".gbg", "config.toml"))
         @test !haskey(cfg, "instruments")                               # no instrument is configured here
         skills = joinpath(TOOL, ".claude", "skills")
-        # No skill at all until the instruments are values that run (Phase 4). `gbg-doctor` outlived
-        # the doctor by a day: nothing rendered it after `Sync` went, and it told a session to run
-        # `gbg doctor`, `gbg round prepare` and `/check-docs`, all three of which were deleted.
-        @test !isdir(skills) || isempty(readdir(skills))
+        # A skill per instrument that applies, and NOT ONE MORE. `gbg-doctor` outlived the doctor by a
+        # day: nothing rendered it after `Sync` went, and it told a session to run `gbg doctor`,
+        # `gbg round prepare` and `/check-docs`, all three of which were deleted. Every skill here is
+        # written from the instrument's own value, so it cannot outlive it the same way.
+        here = G.ConfigIO.read_config(TOOL)
+        applies = [i.id for i in G.Catalogue.INSTRUMENTS if G.Engine.Checks.applies(here, i.id)]
+        @test sort(readdir(skills)) == sort([basename(dirname(G.Render.skill_path(id))) for id in applies])
+        # The review is switched off HERE until Phase 8: the tool reviews itself last, and a skill for
+        # it would be a command that refuses to start.
+        @test !(:documentation_review in applies)
+        @test !isdir(joinpath(skills, "documentation-review"))
         @test !isdir(joinpath(TOOL, ".gbg", "runs"))                    # no run has been recorded here
         @test occursin("GBGCodingTools.makedocs", read(joinpath(TOOL, "docs", "make.jl"), String))
     end
