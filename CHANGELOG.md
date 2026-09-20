@@ -4,6 +4,23 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## Unreleased — toward 2.0.0-rc.6
+
+MAJOR. **91 rules.** Thirteen retired on the owner's word of 2026-09-21, each with its reason in
+`Catalogue.RETIRED` and its id never reused: eight named machinery that no longer exists (INST
+FOUR_OBJECTS, CLOSURE_LOOP, AUDIT_DISPOSED, FIX_FROM_LANES, SEEDS, FROZEN_MIDROUND, CARRY, ECONOMY) and
+five stated how this tool itself behaves, which the design holds (INST WITNESS, SELF_REPORT,
+AUDIT_AFTER_CODE; TEST RULE_WITH_CHECK, COUNTS_REMEASURED). A switch on a retired id stays legal.
+
+**Every rule has one of three covers**, read off the rule and shown on every rendered rule and on the
+site's rules page, which is grouped by it: checked by a program; judged by a reader given the material
+its access tag names; or an instruction to the session, followed while working and checked by nothing.
+
+The reader panel is derived from the rules (`Roles.derive`); one rule names a discipline
+(COORD_FREE, differential geometry); a declared discipline is an open expert. No launch budget. The
+stage machine advances by position. Agents' files under `.gbg/scratch/<run>/`, deleted at close.
+The other changes since rc.5 are in the commits from `71993cc`.
+
 ## 2.0.0-rc.5 — 2026-09-18
 
 MAJOR. **98 rules**, one more than rc.4, and two changes a consumer will feel.

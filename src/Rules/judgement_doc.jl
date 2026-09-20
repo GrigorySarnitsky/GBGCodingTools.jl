@@ -33,7 +33,7 @@ const HOME_ORDER = Model.Rule(
     why = "In full: (1) a plain one-sentence identity in the user's terms; (2) when to use it, versus the alternatives; (3) each argument (positional and keyword) and its effect; (4) one formula if a clean one exists, never overflowing; (5) an inline citation for a named or published method and none for a classical one; (6) cross-links; (7) the caveats a user needs, as an admonition where load-bearing — the last block of the home's PROSE. Then the sections that are not prose, in this order and no other: the `# References` section of `RULE.CIT.FULL_INLINE`, then `# Fields`, which is last (`RULE.DOC.SHAPE`, and the shape scan reads any heading after `# Fields` as a hit). Three rules each used to claim the end of a docstring; the order lives here, and they defer to it. Excluded: implementation internals (a `#` comment), unexplained specialist jargon, architectural rationale and the formal apparatus (the rationale documents).",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    unchecked_reason = "judged by a reader; no program can decide it",
     access = [Model.Access.OTHER_DOCUMENTS])
 
 "How a docstring's first sentence leads: the physical meaning, or the estimand."
@@ -55,7 +55,7 @@ const ONE_HOME = Model.Rule(
     why = "Per-scheme or per-representation specifics live in the scheme's or the representation's own docstring, linked. Across an `f`/`f!` pair the in-place `!` form is the home — it owns the formula and the kernel and is listed first — and the allocating form and any operator alias is a thin wrapper that leads with the one-sentence meaning and `@ref`-links the home, carrying no second copy of the formula.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    unchecked_reason = "judged by a reader; no program can decide it",
     access = [Model.Access.SIBLINGS])
 
 const VARIANT_PAIR = Model.Rule(
@@ -64,7 +64,7 @@ const VARIANT_PAIR = Model.Rule(
     why = "Typed twice, the math drifts — one member writing a partial one way and its twin another — and a within-string check cannot see it; a lane that groups each operation's generics and diffs them can.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    unchecked_reason = "judged by a reader; no program can decide it",
     access = [Model.Access.OTHER_DOCUMENTS])
 
 "Which `!!!` blocks need a custom title: every one, or only a load-bearing one."
@@ -76,7 +76,7 @@ const ADMONITION_TITLE = Model.Rule(
     why = "For this package the rule is what `admonition_titles` says: either every `!!!` block carries a custom descriptive title, or a block carrying one load-bearing claim does while a general aside may stay a bare `!!! note`. A caveat admonition is the last substantive block of a docstring, before the fields list.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    unchecked_reason = "judged by a reader; no program can decide it",
     parameters = Model.Parameter[ADMONITION_TITLES],
     access = [Model.Access.OTHER_DOCUMENTS, Model.Access.SIBLINGS])
 
@@ -86,7 +86,7 @@ const STEER = Model.Rule(
     why = "The sentence is a template, not a link: `destination` is replaced by the argument the signature actually has and `f` by the allocating sibling's own name, written as an `@ref` link, so the link resolves. The template: Use this in-place form when `destination` is already allocated; the allocating `f` returns a fresh result instead.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    unchecked_reason = "judged by a reader; no program can decide it",
     access = [Model.Access.SIBLINGS, Model.Access.OTHER_DOCUMENTS])
 
 const ALIASING_BULLET = Model.Rule(
@@ -149,7 +149,7 @@ const CLASS_SWEEP = Model.Rule(
     why = "Fixing only the pointed-at line and waiting to be handed the next instance is the failure this rule exists to stop. After a class fix, enumerate the surfaces from the finding's own text, not from memory, and re-measure.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    check = Model.AgentCheck("A flagged instance is a sample of a class: sweep every surface for the class and fix all in one pass.", Model.WhyAgent.MEANING))
+    unchecked_reason = "an instruction to the session: followed while working, checked by nothing")
 
 const BATTERY = Model.Rule(
     id = Symbol("RULE.DOC.BATTERY"),
@@ -157,7 +157,7 @@ const BATTERY = Model.Rule(
     why = "When asked to check, review or audit the documentation in any words, run the full matrix — every check across every surface — and report it; do not run one check, sweep one file, and stop.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps")
+    unchecked_reason = "an instruction to the session: followed while working, checked by nothing")
 
 # Two rules where there was one. The three clauses below are properties of the `.jl` file; what the page
 # made of them is invisible there — `a_b and c_d` reads fine in the source and renders as italic — and is
@@ -168,7 +168,7 @@ const LITERATE = Model.Rule(
     why = "A full-line comment inside a control-flow block splits the code fence, so reserve full-line `# ` for narrative prose at statement boundaries. An underscored identifier in that prose is backticked, or Markdown parses it as an italic span.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.LITERATE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    unchecked_reason = "judged by a reader; no program can decide it",
     access = [Model.Access.NOTHING])
 
 const LITERATE_RENDERED = Model.Rule(
@@ -177,7 +177,7 @@ const LITERATE_RENDERED = Model.Rule(
     why = "What a `#` comment becomes is decided by Literate and then by Markdown, and neither is visible in the source: `a_b and c_d` renders as italic, a comment beginning `# 1.` becomes a list item, four spaces of indentation become a code block, and mathematics split across two comment lines is not mathematics. The habits in the source are RULE.DOC.LITERATE's; this rule reads what they produced.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.LITERATE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    unchecked_reason = "judged by a reader; no program can decide it",
     access = [Model.Access.RENDERED])
 
 const BUILD_VERIFY = Model.Rule(
@@ -186,7 +186,7 @@ const BUILD_VERIFY = Model.Rule(
     why = "A lint run standalone cannot see a dangling reference, and grepping a log for error text passes a build that died at load. After editing a Literate example, regenerate it and read the output.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "the rulebook does not check it: harness:makedocs enforces it inside a package's own test suite")
+    unchecked_reason = "an instruction to the session: followed while working, checked by nothing")
 
 "The page where the package records what each symbol denotes."
 const NOTATION_PAGE = Model.Parameter(:notation_page, "docs/src/notation.md")
@@ -221,7 +221,7 @@ const MODULE_MAP = Model.Rule(
     why = "Its order is identity, then the contents list, then an optional trailing remark.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    unchecked_reason = "judged by a reader; no program can decide it",
     access = [Model.Access.SIBLINGS])
 
 const RETURNS = Model.Rule(
@@ -230,7 +230,7 @@ const RETURNS = Model.Rule(
     why = "A mutator whose signature carries no arrow says what it returns in a sentence before any caveat; a signature carries an arrow only where the return type is fixed by the signature; arrow and sentence never both appear.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    unchecked_reason = "judged by a reader; no program can decide it",
     access = [Model.Access.NOTHING])
 
 """

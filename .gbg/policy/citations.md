@@ -9,21 +9,21 @@ References are listed one to a line, never run together with semicolons.
 
 A reader looking for one reference in a semicolon-separated run has to parse the whole paragraph.
 
-Decided by a program.
+Covered by a program.
 
 ### RULE.CIT.DOI
 Every reference carries a clickable DOI, or an Open Library link for a book, on its title.
 
 A DOI a reader cannot click is a string to retype; one written as a bare label is indistinguishable from prose.
 
-Decided by a program.
+Covered by a program.
 
 ### RULE.CIT.FULL_INLINE
 A docstring cites author–year in its prose and carries the full reference in a `# References` section, identical to the canonical entry in title and DOI.
 
 A full reference mid-sentence takes the reader's eye out of the sentence, and a hand-copied entry drifts from the one the package keeps.
 
-Decided by a program.
+Covered by a program.
 This package may set `references`; unset, it is `docs/ARCHITECTURE.md`.
 
 ### RULE.CIT.NO_INACCESSIBLE
@@ -31,13 +31,13 @@ Never cite an inaccessible source on any user-facing surface: not a gitignored m
 
 A citation the reader cannot follow is the author telling themselves where they got it; the reader is left with an assertion and nowhere to check it.
 
-Decided by an agent, because this needs meaning.
+Covered by a reader given cited work + other documents, because this needs meaning.
 
 ### RULE.CIT.STYLE
 An in-text citation is author–year. An author-prominent citation puts the year in parentheses. Up to three authors are named in full; four or more are written 'First et al.'. The author count is read from the package's reference list, the file RULE.CIT.FULL_INLINE's `references` names.
 
 Keep enough surnames to disambiguate two works that would otherwise collide. An eponymous method name takes no year unless the work is actually cited.
 
-Decided by an agent, because this needs meaning.
+Covered by a reader given other documents, because this needs meaning.
 
 <!-- gbg:managed end -->

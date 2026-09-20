@@ -489,7 +489,7 @@ const POLICY_FILES = [
      opening = "What a test is for, where its oracle comes from, and when a thing is done."),
     (generator = :policy_instruments, path = ".gbg/policy/instruments.md", families = [:INST],
      title = "Instruments — `RULE.INST.*`",
-     opening = "How a review runs: consent, witnesses, closure, cost, and the limits it must state."),
+     opening = "What a session runs unasked, and how it reads what a scan prints."),
     (generator = :policy_git, path = ".gbg/policy/git-conventions.md", families = [:GIT],
      title = "Git conventions — `RULE.GIT.*`",
      opening = "What a commit carries, where it goes, and what is never committed."),
@@ -524,8 +524,9 @@ function rule_section(rule::Model.Rule)
     println(io, rule.statement)
     isempty(rule.why) || (println(io); println(io, rule.why))
     println(io)
-    println(io, "Decided by ", Catalogue.check_words(rule.check), ".",
-            rule.check === nothing ? " Nothing checks it: " * rule.unchecked_reason : "")
+    println(io, "Covered by ", Catalogue.cover_words(rule), ".",
+            rule.check === nothing && Catalogue.cover(rule) !== Catalogue.Cover.READER ?
+                " Nothing checks it: " * rule.unchecked_reason : "")
     for p in rule.parameters
         println(io, "This package may set `", p.name, "`; unset, it is `", p.default, "`.")
     end
@@ -735,21 +736,36 @@ function pages(cfg::Model.Config, root::AbstractString)
                 ". Each rule carries its own check and the examples that show the check matches it, so this")
     println(io, "text and the program that enforces it cannot disagree. A rule's id is stable and is what a")
     println(io, "finding, a switch and a report all name.\n")
-    for path in policy_paths()
+    # Every rule gets an anchor under its own id, so a finding elsewhere on the site can link to the rule
+    # that produced it; every other heading drops a level to sit under this page's own.
+    relevel(line) = (m = match(r"^### (RULE\.[A-Z]+\.[A-Z_]+)\s*$", line);
+                     m !== nothing ? "#### [`" * m.captures[1] * "`](@id " * m.captures[1] * ")" :
+                     startswith(line, "#") ? "#" * line : line)
+    # The rules are grouped by what covers them (ruled 2026-09-21): a program, a reader, or the session
+    # following an instruction — so a reader of the page sees at once which rules something finds broken.
+    groups = [(Catalogue.Cover.PROGRAM, "Checked by a program",
+               "These run in every build and every test of the package; a breach is a red build."),
+              (Catalogue.Cover.READER, "Judged by a reader",
+               "No program can decide these. A documentation review hands each to the reader given what it needs; a rule needing more than any reader is given is reported as not judged."),
+              (Catalogue.Cover.INSTRUCTION, "Instructions to the session",
+               "These are followed while working and checked by nothing: they tell a session how to commit, what to run unasked, and how to read what a scan prints.")]
+    for (c, title, opening) in groups
+        rules = sort([r for r in Catalogue.RULES if Catalogue.cover(r) === c], by = r -> String(r.id))
+        println(io, "## ", title, " — ", length(rules), "\n")
+        println(io, opening, "\n")
+        for r in rules
+            for line in split(rule_section(r), '\n'); println(io, relevel(line)); end
+            println(io)
+        end
+    end
+    for path in (".gbg/policy/glossary.md", ".gbg/policy/switches.md")
         body = produce(only(g.generator for g in GENERATED if g.path == path), cfg)
         for line in split(body, '\n')
             (occursin(BEGIN_MARK, line) || occursin(END_MARK, line)) && continue
-            m = match(r"^### (RULE\.[A-Z]+\.[A-Z_]+)\s*$", line)
             # The glossary binds the terms every rule uses, so the rest of a site links to it by name.
             g = match(r"^# (Glossary)\s*$", line)
-            if g !== nothing
-                println(io, "## [Glossary](@id glossary)")
-                continue
-            end
-            # Every rule gets an anchor under its own id, so a finding elsewhere on the site can link to
-            # the rule that produced it; every other heading drops a level to sit under this page's own.
-            println(io, m !== nothing ? "#### [`" * m.captures[1] * "`](@id " * m.captures[1] * ")" :
-                        startswith(line, "#") ? "#" * line : line)
+            g !== nothing && (println(io, "## [Glossary](@id glossary)"); continue)
+            println(io, relevel(line))
         end
         println(io)
     end

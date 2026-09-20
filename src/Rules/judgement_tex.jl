@@ -19,7 +19,7 @@ const NO_HSCROLL = Model.Rule(
     why = "Neither a rendered code block nor display math auto-wraps; inline math reflows and is exempt. Never pack several equations on one line behind `\\quad`.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    unchecked_reason = "judged by a reader; no program can decide it",
     access = [Model.Access.RENDERED])
 
 const CODE_SPAN_JULIA = Model.Rule(
@@ -28,7 +28,7 @@ const CODE_SPAN_JULIA = Model.Rule(
     why = "A half-open interval, an inequality, a product, a lone `≤` or `·` glyph is LaTeX; the real operators `×`, `⋅` and `≈` backticked are code and stay.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    unchecked_reason = "judged by a reader; no program can decide it",
     access = [Model.Access.NOTHING])
 
 const IMAGINARY = Model.Rule(
@@ -46,7 +46,7 @@ const GREEK_AB = Model.Rule(
     why = "A hand-written operation spelling them `alpha`/`beta` is drift; a flag naming the α/β variant and an external window-shape `beta` in an English-register block are the recorded exceptions.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    unchecked_reason = "judged by a reader; no program can decide it",
     access = [Model.Access.OTHER_DOCUMENTS])
 
 """

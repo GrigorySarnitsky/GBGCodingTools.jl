@@ -22,7 +22,7 @@ sessions are given and the scans, checks and test engines that verify the rules,
 are held to one standard by the same programs.
 
 Each of the four packages keeps only its own data, under its `.gbg/` directory: its configuration,
-the roles its AI reviewers adopt, what it switches off and why, and its past reviews. It
+the disciplines its readers need, what it switches off and why, and its past reviews. It
 names one exact released version of `GBGCodingTools`, and nothing else passes between the package and
 this one. This package carries a `.gbg/` directory too and is checked by its own tools.
 
@@ -61,7 +61,7 @@ evaluate, `3` when it crashed. The two a person runs most:
 
 ## The written rules
 
-The policy is 104 rules, on [The rules](@ref gbg-rules), each with an id like
+The policy is 91 rules, on [The rules](@ref gbg-rules), each with an id like
 [`RULE.DOC.ARGCOV`](@ref RULE.DOC.ARGCOV) (every argument of a function appears in its docstring): a documentation rubric, the LaTeX idiom, the citation style, the testing
 protocol, the rules of the instruments, and git conventions. Each is a Julia value carrying its own
 check and the examples that show the check matches it; `Render.policy` writes them into every package,

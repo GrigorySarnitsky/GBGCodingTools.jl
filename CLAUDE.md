@@ -27,9 +27,10 @@ The managed block above imports the shared policy; this file holds only what is 
 
 **Phase 2 of `IMPLEMENTATION.md` is done** (2026-09-17). The new tree stands as far as `Render`:
 `Model`, `Texts`, `Catalogue`, `ConfigIO`, `Engine` (`Checks`, `Guard`, `Harness`) and `Render`, with
-`Wire`, `Check` and `Docfix` above them. `Orchestration` has not been started.
+`Wire`, `Check` and `Docfix` above them. `Orchestration` holds the run machinery's find half; the fix
+half is Phase 4b's (`docs/proposals/ROADMAP-AMENDMENT-2026-09-20.md`).
 
-All 97 rules are `Rule` values under `src/Rules/`, each with its check and the examples that show the
+Every rule is a `Rule` value under `src/Rules/`, each with its check and the examples that show the
 check matches its statement (`test/rules.jl`). There are NO scans: `catalog/scans.toml` and `src/Scans/`
 are empty, and `policy/` is deleted — the rulebook a session loads, `.gbg/policy/`, is written by
 `Render.policy` from the rule values. What a package switches off is a `Switch` in its `.gbg/config.jl`,

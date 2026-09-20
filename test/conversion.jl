@@ -15,9 +15,10 @@ include("helpers.jl")
 const REGISTER = joinpath(TOOL, "docs", "design-record", "RULES-v1.toml")
 
 # Rules dropped rather than converted, each with the reason. A retirement is a code change like any other
-# (docs/ARCHITECTURE.md §13): the question that proposed it named the id and why, and the id is never
-# reused. Nothing is here yet.
-const RETIRED = Dict{String,String}()
+# (docs/ARCHITECTURE.md §13): the owner's answer named the id and why, and the id is never reused. The
+# register lives in the catalogue, where `known_ids` reads it so a consumer's switch on a retired rule
+# stays legal; this test reads the same register.
+const RETIRED = Dict(String(r.id) => r.reason for r in G.Catalogue.RETIRED)
 
 # How many ids are still neither converted nor retired. LOWER THIS AND NEVER RAISE IT. It reached 0 on
 # 2026-09-17: all ninety-five are `Rule` values, and the `- 8` floor below now holds it there.
@@ -41,10 +42,23 @@ const ALLOWANCE = 0
         @test isempty(intersect(converted, keys(RETIRED)))
     end
 
-    @testset "every retirement carries its reason" begin
+    @testset "every retirement carries its reason, and its id is never reused" begin
         for (id, reason) in RETIRED
             @test id in ids                                   # a retirement names an id that existed
             @test length(strip(reason)) >= 24                 # and says why, at more than a word
+            @test !(id in converted)
+            @test Symbol(id) in G.Catalogue.known_ids()       # a switch naming it is still legal
+        end
+    end
+
+    # The owner's ruling of 2026-09-21: every rule is checked by a program, judged by a reader, or an
+    # instruction the session is given — and nothing else remains.
+    @testset "every rule has one of the three covers" begin
+        for r in G.Catalogue.RULES
+            c = G.Catalogue.cover(r)
+            c === G.Catalogue.Cover.PROGRAM && @test r.check isa G.Model.ProgramCheck
+            c === G.Catalogue.Cover.READER && @test (r.check isa G.Model.AgentCheck || !isempty(r.access))
+            c === G.Catalogue.Cover.INSTRUCTION && @test (r.check === nothing && isempty(r.access) && occursin("instruction", r.unchecked_reason))
         end
     end
 

@@ -156,6 +156,50 @@ const RULES = Model.Rule[Rendering.RULES..., Docstrings.RULES..., Arguments.RULE
 
 
 """
+    Cover
+
+How a rule is covered — what finds it broken. `PROGRAM`: a check that runs in every build or test.
+`READER`: an agent of a review, given the material the rule's access tag names (or the one agent that
+judges a question's language). `INSTRUCTION`: a rule a session follows while working — pushing on commit,
+never truncating a scan, verifying by the build — checked by nothing and meant for the session that reads
+the rulebook. The owner ruled on 2026-09-21 that every rule is one of these three, and that a statement
+about how this tool itself behaves is the design's, not a rule.
+"""
+module Cover; @enum T PROGRAM READER INSTRUCTION; end
+
+"""
+    cover(rule) -> Cover.T
+
+Which of the three covers a rule has, read off the rule itself. The argument is `rule`. Returns the cover.
+"""
+cover(rule::Model.Rule) = rule.check isa Model.ProgramCheck ? Cover.PROGRAM :
+                          (rule.check isa Model.AgentCheck || !isempty(rule.access)) ? Cover.READER :
+                          Cover.INSTRUCTION
+
+"""
+    RETIRED
+
+Every rule that has left the rulebook, with the reason and the day: its id is never reused, and a
+package's switch naming it is still a legal switch. A retirement is on the record here, in the CHANGELOG
+and in the commit that removed the value, as the design's change-control section asks.
+"""
+const RETIRED = [
+    (id = Symbol("RULE.INST.FOUR_OBJECTS"),     date = "2026-09-21", reason = "named four instruments; the design has three, and its §3 table is what says what each audits"),
+    (id = Symbol("RULE.INST.CLOSURE_LOOP"),     date = "2026-09-21", reason = "spoke of banked findings, lanes and a plateau — the v1 round machinery, gone; the one-search-per-run rule is ARCH §10's"),
+    (id = Symbol("RULE.INST.AUDIT_DISPOSED"),   date = "2026-09-21", reason = "spoke of an audit round's staleness check and re-bank — v1 machinery, gone; the change audit's shape is ARCH §4.4's"),
+    (id = Symbol("RULE.INST.FIX_FROM_LANES"),   date = "2026-09-21", reason = "spoke of per-lane findings and a consolidated summary — v1 machinery, gone; a fix pass works from the run's findings by id, ARCH §4.3"),
+    (id = Symbol("RULE.INST.SEEDS"),            date = "2026-09-21", reason = "seeding and recall measurement survive in no form (IMPLEMENTATION §7); nothing plants a seed"),
+    (id = Symbol("RULE.INST.FROZEN_MIDROUND"),  date = "2026-09-21", reason = "spoke of deferred.md, ROUND.toml and replaced verifier scripts — v1 machinery, gone; that a run never changes an instrument is ARCH §10's"),
+    (id = Symbol("RULE.INST.CARRY"),            date = "2026-09-21", reason = "spoke of CARRY_LIMIT, re-rated severities and a draining backlog — v1 machinery, gone; that open findings carry over is ARCH §10's, as ruled 2026-09-16"),
+    (id = Symbol("RULE.INST.ECONOMY"),          date = "2026-09-21", reason = "economy lanes by default: the opposite of the 2026-09-20 ruling that every reader runs on the careful model"),
+    (id = Symbol("RULE.INST.WITNESS"),          date = "2026-09-21", reason = "a statement of how the bug hunt decides (ARCH §4.4, §10), which a consumer's session cannot act on; the design holds it"),
+    (id = Symbol("RULE.INST.SELF_REPORT"),      date = "2026-09-21", reason = "a statement of how a fix is verified — blind, then with the diff (ARCH §4.3 steps 5–6); the design holds it"),
+    (id = Symbol("RULE.INST.AUDIT_AFTER_CODE"), date = "2026-09-21", reason = "a statement of when the change audit runs — once, after an approved code fix (ARCH §4.4); the design holds it"),
+    (id = Symbol("RULE.TEST.RULE_WITH_CHECK"),  date = "2026-09-21", reason = "a statement about this tool's own rulebook — a rule lands with its check (ARCH §7, test/rules.jl); the design and its test hold it"),
+    (id = Symbol("RULE.TEST.COUNTS_REMEASURED"), date = "2026-09-21", reason = "a statement about this tool's own records — a count is re-measured, never cited (ARCH §12); the design holds it"),
+]
+
+"""
     DISCIPLINES
 
 The fields of expertise a package may declare it needs a reader to have, catalogued once for the
@@ -268,6 +312,7 @@ function known_ids()
     end
     for a in ALWAYS_ON; push!(ids, a.id); end
     union!(ids, DocumentationReview.READER_IDS)              # a derived reader is switched off by name too
+    for r in RETIRED; push!(ids, r.id); end                  # a switch on a retired rule stays legal
     return ids
 end
 
@@ -288,9 +333,9 @@ function doc(r::Model.Rule)
     println(io, r.statement, "\n")
     isempty(r.why) || println(io, r.why, "\n")
     println(io, "- Intention: ", lowercase(replace(string(r.intention), "_" => " ")), ".")
-    println(io, "- Decided by: ", check_words(r.check), ".")
+    println(io, "- Covered by: ", cover_words(r), ".")
     isempty(r.filesets) || println(io, "- Runs over: ", join(lowercase.(string.(r.filesets)), ", "), ".")
-    r.check === nothing && println(io, "- Unchecked because: ", r.unchecked_reason)
+    r.check === nothing && cover(r) !== Cover.READER && println(io, "- Unchecked because: ", r.unchecked_reason)
     isempty(r.examples) || println(io, "- Shown by ", length(r.examples), " example(s), over ",
                                   length(unique(e.clause for e in r.examples)), " clause(s).")
     return String(take!(io))
@@ -336,5 +381,22 @@ end
 check_words(c::Model.ProgramCheck) = "a program" * (c.network ? ", which reaches the network and runs only under `gbg check --network`" : "")
 check_words(c::Model.AgentCheck) = "an agent, because this needs " * lowercase(replace(string(c.why), "_" => " "))
 check_words(::Nothing) = "nothing yet"
+
+"""
+    cover_words(rule) -> String
+
+The rule's cover in words, for the rendered rulebook: the program; the reader and what it is given, with
+its discipline where the rule names one; or the instruction. The argument is `rule`. Returns the phrase.
+"""
+function cover_words(rule::Model.Rule)
+    c = cover(rule)
+    c === Cover.PROGRAM && return check_words(rule.check)
+    c === Cover.INSTRUCTION && return "the session, as an instruction: followed while working, checked by nothing"
+    isempty(rule.access) && return check_words(rule.check)            # the question-language agent
+    given = join(lowercase.(replace.(String.(Symbol.(rule.access)), "_" => " ")), " + ")
+    who = rule.discipline === nothing ? "a reader" : "a $(rule.discipline) reader"
+    return who * " given " * given * (rule.check isa Model.AgentCheck ? ", because this needs " *
+           lowercase(replace(string(rule.check.why), "_" => " ")) : "")
+end
 
 end # module Catalogue

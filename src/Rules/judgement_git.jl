@@ -19,7 +19,7 @@ const PUSH = Model.Rule(
     why = "The repository is private and synced across machines through GitHub, so work is committed on the default branch and pushed in the same step; GitHub is the cross-machine sync path and the docs site deploys on push. Stage with `git add -u` plus every new file by name, never `-A`.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.CODE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps")
+    unchecked_reason = "an instruction to the session: followed while working, checked by nothing")
 
 const TRAILER = Model.Rule(
     id = Symbol("RULE.GIT.TRAILER"),
@@ -27,7 +27,7 @@ const TRAILER = Model.Rule(
     why = "The trailer names no model version on purpose: the model in use changes often and the versions supersede each other, so a version in the trailer is a fact about the day rather than about the work, and it goes stale in the one place git never lets anyone correct it.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.CODE],
-    unchecked_reason = "the rulebook does not check it: doctor:GIT.TRAILER checks the wiring of a package, not its text")
+    unchecked_reason = "an instruction to the session: followed while working, checked by nothing")
 
 const CI_MANUAL = Model.Rule(
     id = Symbol("RULE.GIT.CI_MANUAL"),
@@ -35,7 +35,7 @@ const CI_MANUAL = Model.Rule(
     why = "Before committing a code change, run the gate locally; a documentation-only change needs a load and the docs build. The docs build is therefore the per-push enforcement point, and the doctor, the hard scans and the gate stay inside it.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.CODE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps")
+    unchecked_reason = "an instruction to the session: followed while working, checked by nothing")
 
 const NO_SHIMS = Model.Rule(
     id = Symbol("RULE.GIT.NO_SHIMS"),
@@ -43,7 +43,7 @@ const NO_SHIMS = Model.Rule(
     why = "Errors found later are fixed one by one; architectural soundness is judged on the full picture first.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.CODE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps")
+    unchecked_reason = "an instruction to the session: followed while working, checked by nothing")
 
 const BRANCH = Model.Rule(
     id = Symbol("RULE.GIT.BRANCH"),
@@ -51,7 +51,7 @@ const BRANCH = Model.Rule(
     why = "A rename is a decision about the package, never bundled with a tooling adoption.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.CODE],
-    unchecked_reason = "the rulebook does not check it: doctor:GIT.BRANCH checks the wiring of a package, not its text")
+    unchecked_reason = "an instruction to the session: followed while working, checked by nothing")
 
 const MANIFEST_TRACKED = Model.Rule(
     id = Symbol("RULE.GIT.MANIFEST_TRACKED"),
@@ -59,7 +59,7 @@ const MANIFEST_TRACKED = Model.Rule(
     why = "A stale sub-environment manifest is resolved locally when precompilation breaks; CI resolves its own.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.CODE],
-    unchecked_reason = "the rulebook does not check it: doctor:WIRE.GITIGNORE checks the wiring of a package, not its text")
+    unchecked_reason = "an instruction to the session: followed while working, checked by nothing")
 
 const REQUESTS = Model.Rule(
     id = Symbol("RULE.GIT.REQUESTS"),
@@ -67,7 +67,7 @@ const REQUESTS = Model.Rule(
     why = "The requests directory holds what is still awaiting the other package and nothing else.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.CODE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps")
+    unchecked_reason = "an instruction to the session: followed while working, checked by nothing")
 
 """
     RULES
