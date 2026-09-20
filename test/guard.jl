@@ -126,6 +126,31 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         @test !doc("src/M.jl", jl_a, jl_b)
     end
 
+    # Clause 3: in GBGCodingTools alone, a change confined to a rule's statement or why is documentation.
+    # It is the one code-like text the fixer may touch (§4.3 step 3), and everything else about a rule —
+    # its id, check, examples, tags, argument order, an interpolated statement — stays code.
+    @testset "clause 3 — the prose of a rule, in the tooling package only" begin
+        tool = MD.Config(package = "GBGCodingTools", tool = :dev)
+        rule(id, st, why; check = "Model.AgentCheck(\"q\", Model.WhyAgent.MEANING)", access = "[Model.Access.NOTHING]") =
+            "const R_$id = Model.Rule(\n    id = Symbol(\"RULE.T.$id\"),\n    statement = $st,\n    why = $why,\n" *
+            "    check = $check,\n    access = $access)\n"
+        before = "module M\nusing ..Model\n" * rule("A", "\"one\"", "\"because\"") * rule("B", "\"two\"", "\"since\"") * "end\n"
+        reworded = "module M\nusing ..Model\n" * rule("A", "\"one, reworded\"", "\"because, reworded\"") * rule("B", "\"two, reworded\"", "\"since\"") * "end\n"
+        ruling = GD.classify(tool, "src/Rules/t.jl", before, reworded)
+        @test ruling.documentation && occursin("clause 3", ruling.reason)           # two statements and a why
+        @test !GD.classify(cfg(), "src/Rules/t.jl", before, reworded).documentation  # elsewhere it is code
+        # and each of these is code, in the tooling package too
+        @test !GD.classify(tool, "src/Rules/t.jl", before, "module M\nusing ..Model\n" * rule("A", "\"one\"", "\"because\""; check = "Model.AgentCheck(\"q2\", Model.WhyAgent.MEANING)") * rule("B", "\"two\"", "\"since\"") * "end\n").documentation
+        @test !GD.classify(tool, "src/Rules/t.jl", before, "module M\nusing ..Model\n" * rule("A", "\"one\"", "\"because\""; access = "[Model.Access.SOURCE]") * rule("B", "\"two\"", "\"since\"") * "end\n").documentation
+        @test !GD.classify(tool, "src/Rules/t.jl", before, "module M\nusing ..Model\n" * rule("A2", "\"one\"", "\"because\"") * rule("B", "\"two\"", "\"since\"") * "end\n").documentation
+        @test !GD.classify(tool, "src/Rules/t.jl", before, "module M\nusing ..Model\n" * rule("A", "\"one \$(x)\"", "\"because\"") * rule("B", "\"two\"", "\"since\"") * "end\n").documentation
+        swapped = "module M\nusing ..Model\n" * rule("B", "\"two\"", "\"since\"") * rule("A", "\"one\"", "\"because\"") * "end\n"
+        @test !GD.classify(tool, "src/Rules/t.jl", before, swapped).documentation
+        role_before = "module M\nconst X = Model.AgentRole(id = :x, instrument = :i, description = \"a\", cap = 1)\nend\n"
+        role_after = "module M\nconst X = Model.AgentRole(id = :x, instrument = :i, description = \"b\", cap = 1)\nend\n"
+        @test !GD.classify(tool, "src/Roles/t.jl", role_before, role_after).documentation
+    end
+
     @testset "clause 0 — a generated file equal to its generator's output" begin
         rendered = "# generated\nkey = \"value\"\n"
         @test doc("docs/src/architecture.md", "# generated\nkey = \"old\"\n", rendered; generated = rendered)

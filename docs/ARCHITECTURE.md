@@ -175,11 +175,11 @@ simply documentation either: it is the one code-like text the fixer may touch, a
 the report.
 
 Accepted limit: a longer docstring shifts what `@__LINE__` returns — the same shift that moves every line below an
-edit, which is why a finding is anchored to a node and a quote (§4.5). `test/guard.jl` holds one example per clause it
-implements, in both directions [parsed code alone passed changed doctest output, a `@autodocs` filter, and a docstring
-that stopped a call from running]. Clause 3 is not implemented yet — Phase 4b builds it, with these examples: two
-reworded `statement`s and a reworded `why` in one file (documentation); a changed check, example, id, tag or argument
-order, an interpolated statement and a reworded `description` (code).
+edit, which is why a finding is anchored to a node and a quote (§4.5). `test/guard.jl` holds one example per clause, in
+both directions [parsed code alone passed changed doctest output, a `@autodocs` filter, and a docstring that stopped a
+call from running]. For clause 3: two reworded `statement`s and a reworded `why` in one file (documentation); a changed
+check, id, tag or argument order, an interpolated statement and a reworded `description` (code); and the same rewording
+outside the tooling package (code).
 
 ### 4.3 The documentation fixer — automatic, with checks
 

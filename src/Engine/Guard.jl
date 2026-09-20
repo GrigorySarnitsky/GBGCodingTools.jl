@@ -17,10 +17,12 @@ and with the docstrings and the standalone string literals removed, THE CODE MUS
 docstring whose target is a call rather than a definition is not documentation at all — Julia then
 documents the call instead of running it — and neither is one built by interpolation.
 
-Two clauses of the design are not here yet. Clause 0, a generated file equal to its generator's output,
-needs the generators (Phase 2), and the caller passes their output in rather than this module reaching
-for them, since `Engine` may not name `Render`. Clause 3, the prose fields of a rule, needs the rulebook
-to be Julia (Phase 5).
+Clause 0, a generated file equal to its generator's output, needs the generators, and the caller passes
+their output in rather than this module reaching for them, since `Engine` may not name `Render`. Clause
+3 — in GBGCodingTools only, a change confined to the plain string literals given to `statement` or `why`
+of a `Rule(…)` call is documentation — is decided by comparing the two versions' shapes with those
+literals elided; any other difference, a moved argument, a changed check or tag or an interpolated
+statement among them, is code.
 """
 module Guard
 
@@ -98,19 +100,26 @@ function classify(cfg::Model.Config, path::AbstractString, before, after; genera
     on_documentation_list(cfg, path) ||
         return Ruling(path, false, "not a path where documentation lives (clause 1)")
 
+    rule_prose = false
     if endswith(path, ".jl")
         shape_before = code_shape(before)
         shape_after = code_shape(after)
         shape_before === nothing && return Ruling(path, false, "the file did not parse before the change (clause 2)")
         shape_after === nothing && return Ruling(path, false, "the file does not parse after the change (clause 2)")
-        shape_before == shape_after ||
-            return Ruling(path, false, "the code changed, not only its docstrings and comments (clause 2)")
+        if shape_before != shape_after
+            # Clause 3, in the tooling package alone: the statement and why of a rule are its prose, and a
+            # change confined to those literals is documentation. Everything else about a rule is code.
+            rule_prose = cfg.package == "GBGCodingTools" &&
+                         code_shape(before; rule_prose = true) == code_shape(after; rule_prose = true)
+            rule_prose || return Ruling(path, false, "the code changed, not only its docstrings and comments (clause 2)")
+        end
         literate_changed(before, after) &&
             return Ruling(path, false, "a comment carrying a Literate mark changed, which moves what runs (clause 4)")
     end
 
     fenced_kept(before, after) ||
         return Ruling(path, false, "a doctest or an `@` block changed: those are run, not read (clause 5)")
+    rule_prose && return Ruling(path, true, "the prose of a rule — its statement or why — and nothing else (clause 3)")
     return Ruling(path, true, "docstrings, comments or prose only")
 end
 
@@ -128,9 +137,11 @@ A docstring whose target is a CALL, or a macro call that does not define anythin
 documents the call instead of running it, so removing it would hide a change in what the file does. So is
 one built by interpolation, whose text is a program.
 
-The argument is `src`, the file's content. Returns the shape, or `nothing` when the source does not parse.
+The arguments are `src`, the file's content, and `rule_prose`, whether the plain string literals given to
+`statement` or `why` inside a `Rule(…)` call are elided too (clause 3). Returns the shape, or `nothing`
+when the source does not parse.
 """
-function code_shape(src::AbstractString)
+function code_shape(src::AbstractString; rule_prose::Bool = false)
     tree = try
         JS.parseall(JS.SyntaxNode, src; filename = "shape.jl")
     catch
@@ -138,7 +149,7 @@ function code_shape(src::AbstractString)
     end
     any_error(tree) && return nothing
     io = IOBuffer()
-    shape!(io, tree, false)
+    shape!(io, tree, false; rule_prose, in_rule = false)
     return String(take!(io))
 end
 
@@ -146,12 +157,18 @@ any_error(node) = JS.kind(node) === JS.K"error" ||
                   any(any_error, something(JS.children(node), ()))
 
 # `in_struct` says whether a bare string here is a field docstring, which is documentation like any other.
-function shape!(io, node, in_struct)
+# `in_rule` says whether this node sits inside a `Rule(…)` call, where — with `rule_prose` — the plain
+# string literal of a `statement = "…"` or `why = "…"` keyword is elided as that rule's prose.
+function shape!(io, node, in_struct; rule_prose::Bool = false, in_rule::Bool = false)
     k = JS.kind(node)
     cs = something(JS.children(node), ())
 
     if k === JS.K"doc" && length(cs) >= 2 && removable_doc(cs[1], cs[2])
-        shape!(io, cs[2], in_struct)                       # the docstring goes; what it documents stays
+        shape!(io, cs[2], in_struct; rule_prose, in_rule)    # the docstring goes; what it documents stays
+        return
+    end
+    if rule_prose && in_rule && k === JS.K"=" && length(cs) == 2 && is_prose_keyword(cs[1]) && plain_string(cs[2])
+        print(io, "(= ", strip(String(JS.sourcetext(cs[1]))), " <prose>)")
         return
     end
     if (k === JS.K"string" || k === JS.K"String") && in_struct
@@ -163,16 +180,23 @@ function shape!(io, node, in_struct)
     end
     print(io, "(", k)
     nested = in_struct || k === JS.K"struct" || is_kwdef_struct(node)
+    inside = in_rule || (k === JS.K"call" && !isempty(cs) && is_rule_callee(cs[1]))
     for c in cs
         # a bare string standing alone in a block is an unattached docstring, not code
         if JS.kind(c) === JS.K"string" && (k === JS.K"toplevel" || k === JS.K"block" || k === JS.K"module")
             continue
         end
         print(io, " ")
-        shape!(io, c, nested && k !== JS.K"toplevel")
+        shape!(io, c, nested && k !== JS.K"toplevel"; rule_prose, in_rule = inside)
     end
     print(io, ")")
 end
+
+# `Rule(` or `Model.Rule(`: the one constructor whose statement and why are prose (clause 3).
+is_rule_callee(node) = (t = strip(String(JS.sourcetext(node))); t == "Rule" || endswith(t, ".Rule"))
+is_prose_keyword(node) = JS.kind(node) === JS.K"Identifier" && strip(String(JS.sourcetext(node))) in ("statement", "why")
+plain_string(node) = JS.kind(node) === JS.K"string" &&
+                     all(c -> JS.kind(c) === JS.K"String", something(JS.children(node), ()))
 
 is_kwdef_struct(node) = JS.kind(node) === JS.K"macrocall" &&
                         occursin(r"@kwdef\b", String(JS.sourcetext(node))) &&
