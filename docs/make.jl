@@ -31,7 +31,8 @@ result = GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
         "Home" => "index.md",
         # The guide reads as a sequence first (set up, run a review, see what it produces, read what it judges
         # against), then the four reference tables, most consulted first (2026-09-09, the owner's ruling).
-        "Guide" => ["guide/install.md", "gbg-rules.md", "guide/verbs.md", "guide/config.md"],
+        "Guide" => ["guide/install.md", "gbg-rules.md", "gbg-readers.md", "gbg-instruments.md",
+                    "guide/verbs.md", "guide/config.md"],
         # The new tree in its own order — a module may name only the modules above it — then what is
         # left of the old one.
         "API" => ["api/Model.md", "api/Texts.md", "api/Catalogue.md", "api/ConfigIO.md", "api/Engine.md",

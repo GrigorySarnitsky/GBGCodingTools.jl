@@ -589,6 +589,106 @@ function claude_block(cfg::Model.Config)
     """
 end
 
+
+# The banner every page of a consumer's site carries, and this package's own rule requires on all of them.
+const BANNER = "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human.\n"
+
+"""
+    readers_page(cfg) -> String
+
+The site page describing the readers a documentation review of this package would launch. The argument
+is `cfg`, the package's config. Returns the page.
+
+The readers are DERIVED, so this page is derived too: it is what `Roles.derive` returns for this config,
+not a list kept beside it. What it is for is the owner's question "who read my documentation, and what
+were they allowed to see?", which a report answers for one run and this answers for the package.
+"""
+function readers_page(cfg::Model.Config)
+    roles, gaps = Catalogue.panel(:documentation_review, cfg)
+    io = IOBuffer()
+    println(io, "# [The readers of ", cfg.package, "](@id gbg-readers)\n")
+    println(io, BANNER)
+    if !Engine.Checks.applies(cfg, :documentation_review)
+        why = only(s.reason for s in cfg.switches if s.target === :documentation_review)
+        println(io, "!!! warning \"The review is switched off here\"\n    ",
+                uppercase(first(why, 1)) * SubString(why, 2), ".\n")
+    end
+    println(io, """
+    A documentation review is read by agents, and which agents they are is not a list anybody keeps: it
+    follows from the rules. A rule no program can decide carries a tag saying what a reader must be given
+    to judge it — nothing beyond the one page, the sibling pages, the source, the built site — and the
+    readers below are the bundles those tags fall into. A rule that names a field of expertise goes to a
+    reader of that field, which the package declares in its config.\n""")
+    println(io, "| Reader | Given | Rules it carries |")
+    println(io, "|---|---|---|")
+    for r in roles
+        given = r.kept_from_code ? "one built page, and nothing else" :
+                r.site ? "the built site" : "every document and the source"
+        println(io, "| `", r.id, "` | ", given, " | ", isempty(r.rules) ? "none: it reports what no rule names" :
+                string(length(r.rules)), " |")
+    end
+    println(io)
+    for r in roles
+        println(io, "## `", r.id, "`\n")
+        println(io, r.description, "\n")
+        isempty(r.rules) && continue
+        println(io, "It is given these rules to check:\n")
+        for id in sort(r.rules; by = String); println(io, "- [`", id, "`](@ref ", id, ")"); end
+        println(io)
+    end
+    println(io, "## What no reader here can judge\n")
+    if isempty(gaps)
+        println(io, "Every rule a reader decides reaches one of the readers above.\n")
+    else
+        println(io, "These rules reach nobody in this package. A review says so at every launch and first in its report, ")
+        println(io, "because a pass from a reader that cannot recognise the defect is indistinguishable from not looking.\n")
+        for g in gaps; println(io, "- ", g); end
+        println(io)
+    end
+    return String(take!(io))
+end
+
+"""
+    instruments_page(cfg) -> String
+
+The site page describing the instruments: what each is for, what starts it, what ends it, and who fixes
+what it finds. The argument is `cfg`, the package's config. Returns the page.
+"""
+function instruments_page(cfg::Model.Config)
+    io = IOBuffer()
+    println(io, "# [The instruments](@id gbg-instruments)\n")
+    println(io, BANNER)
+    println(io, """
+    An instrument is one procedure with one question, run only when the owner asks for it. Each is a value
+    in GBGCodingTools carrying its purpose, what ends it and how many times it may hand a finding back to
+    be fixed; `gbg run <instrument>` executes one, a stage at a time, and `.claude/skills/` holds the
+    file that tells a session the order of the steps.\n""")
+    println(io, "| Instrument | Finds a defect in | Decided by | Fixed by | Fix passes | Here |")
+    println(io, "|---|---|---|---|---|---|")
+    for i in Catalogue.INSTRUMENTS
+        on = Engine.Checks.applies(cfg, i.id)
+        println(io, "| `", replace(String(i.id), "_" => "-"), "` | ",
+                i.intention === Model.Intention.DOCUMENTATION ? "documentation" : "code", " | ",
+                i.decider === Model.Decider.AGENT ? "an agent" :
+                i.decider === Model.Decider.PROGRAM ? "a program" : "a failing test", " | ",
+                lowercase(replace(String(Symbol(i.fixer)), "_" => " ")), " | ",
+                i.budget.fix_passes, " | ", on ? "runs" : "switched off", " |")
+    end
+    println(io)
+    for i in Catalogue.INSTRUMENTS
+        println(io, "## `", replace(String(i.id), "_" => "-"), "`\n")
+        println(io, i.purpose, ".\n")
+        println(io, "- **Starts**: ", lowercase(first(i.when, 1)) * SubString(i.when, 2), ".")
+        println(io, "- **Ends**: ", lowercase(first(i.ends, 1)) * SubString(i.ends, 2), ".")
+        if !Engine.Checks.applies(cfg, i.id)
+            why = only(s.reason for s in cfg.switches if s.target === i.id)
+            println(io, "- **Switched off here**: ", uppercase(first(why, 1)) * SubString(why, 2), ".")
+        end
+        println(io)
+    end
+    return String(take!(io))
+end
+
 """
     wanted(cfg, g) -> Bool
 
@@ -761,6 +861,29 @@ function glossary(cfg::Model.Config)
     - **operation family** — an operation together with its variants: the allocating and in-place
       forms, a getter and its setter, the methods of one name across representations. A module map
       lists one entry per family; the family's home docstring is the one `RULE.DOC.ONE_HOME` names.
+    - **instrument** — one review procedure with one question, started only on the owner's request.
+    - **run** — one execution of one instrument, with its own record, its own report and its own id.
+      A run never starts another.
+    - **stage** — one step of a run, in a fixed order. The session launches each; a stage out of order
+      is refused.
+    - **reader** — an agent given some of the documentation and asked what is wrong with it. Which
+      readers a review has follows from the rules, not from a list.
+    - **bundle** — what a reader is given: one built page alone, the whole documentation with the
+      source, or the built site. A rule's tag says which bundle can judge it.
+    - **unit** — the one page a reader of the first bundle is given. That reader is launched once per
+      unit, so that what it cannot see is what the rule needs it not to see.
+    - **pass** — one round of fixing and verifying inside a run. A documentation review makes at most
+      four, after which what is still open carries to the next run.
+    - **verifier** — an agent that judges whether a fix fixed the finding: the first blind to the
+      change, the second reading the diff.
+    - **cover** — what decides a rule is broken: a program, a reader, or nothing, the last being an
+      instruction the session follows while working.
+    - **discipline** — a field of expertise a package declares it needs a reader to have. A rule naming
+      a discipline the package does not declare is a gap.
+    - **gap** — a rule no reader of this package can be given what it needs to judge. A run says so at
+      every launch and first in its report.
+    - **settled** — a decision the owner has already given, kept in `.gbg/settled.jl` and given to every
+      reader as "do not report this again".
     <!-- gbg:managed end -->
     """
 end
@@ -806,6 +929,8 @@ end
 Where `pages` writes the rulebook into a consumer's site, relative to the package root.
 """
 const RULES_PAGE = "docs/src/gbg-rules.md"
+const READERS_PAGE = "docs/src/gbg-readers.md"
+const INSTRUMENTS_PAGE = "docs/src/gbg-instruments.md"
 
 """
     pages(cfg, root) -> Vector{String}
@@ -866,7 +991,12 @@ function pages(cfg::Model.Config, root::AbstractString)
     full = joinpath(root, RULES_PAGE)
     mkpath(dirname(full))
     write(full, String(take!(io)))
-    return [relpath(RULES_PAGE, "docs/src")]
+    written = [RULES_PAGE]
+    for (path, body) in (READERS_PAGE => readers_page(cfg), INSTRUMENTS_PAGE => instruments_page(cfg))
+        write(joinpath(root, path), body)
+        push!(written, path)
+    end
+    return [relpath(p, "docs/src") for p in written]
 end
 
 # ─────────────────────────────────────────────────────────────────────────── the register and the check
