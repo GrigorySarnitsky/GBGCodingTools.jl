@@ -29,10 +29,13 @@ The managed block above imports the shared policy; this file holds only what is 
 
 ## Where the rebuild stands
 
-**Phase 2 of `IMPLEMENTATION.md` is done** (2026-09-17). The new tree stands as far as `Render`:
-`Model`, `Texts`, `Catalogue`, `ConfigIO`, `Engine` (`Checks`, `Guard`, `Harness`) and `Render`, with
-`Wire`, `Check` and `Docfix` above them. `Orchestration` holds the run machinery's find half; the fix
-half is Phase 4b's (`docs/proposals/ROADMAP-AMENDMENT-2026-09-20.md`).
+**Phase 4b of `IMPLEMENTATION.md` is in progress** (2026-09-21). The new tree stands whole:
+`Model`, `Texts`, `Catalogue`, `ConfigIO`, `Engine` (`Checks`, `Guard`, `Harness`), `Render` and
+`Orchestration` (`Runs`, `Site`, `Agents`), with `Wire`, `Check`, `Docfix`, `Run` and `Release` above
+them. A documentation review runs end to end in the rehearsal: `gbg run` opens it, builds the site,
+launches the readers through the one driver, collects, fixes through the guard, verifies blind and
+then with the diff, and closes with a report and the owner's work queue. What is NOT yet built of
+Phase 4b is listed there; a run has never been launched over real agents.
 
 Every rule is a `Rule` value under `src/Rules/`, each with its check and the examples that show the
 check matches its statement (`test/rules.jl`). There are NO scans: `catalog/scans.toml` and `src/Scans/`
@@ -43,8 +46,10 @@ not a ledger entry.
 Gone with Phase 2: the old `Sync`, `Init`, `Doctor`, `Selftest`, `Consolidate` and `Schema`, with
 `schema/`, `templates/`, `.gbg/managed.json` and `.gbg/exemptions.toml`. A package's wiring is judged by
 the WIRING CHECK — `Render.wiring`, run inside every docs build and every test run — not by a doctor on
-request. **No instrument runs here**, and no slash command opens a round; do not look for one, and do
-not re-create one outside its phase.
+request. The documentation review is SWITCHED OFF here until Phase 8, with the reason in
+`.gbg/config.jl`: the tool reviews itself last, and a package cannot be graded against a rulebook it is
+in the middle of writing. `.claude/skills/` holds one file per instrument that applies, written by
+`Render.skill`; do not hand-edit one, and do not re-create an instrument outside its phase.
 
 What is left of the old tree, all of it Phase 5's to delete: `Scan.jl`, `Reflection`, `DocLints`,
 `HtmlWalker`, `TreeHash`, the old `Config` and `Ledger`, and `.gbg/config.toml`.

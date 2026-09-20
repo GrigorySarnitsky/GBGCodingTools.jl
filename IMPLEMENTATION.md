@@ -142,7 +142,17 @@ owner's answers of 2026-09-21. The phase is five pieces:
   discipline tags (`Roles.derive`), the hand-written roles deleted; `--readers bound|open|both`; thirteen rules retired
   on the record and every rule given its cover (a program, a reader, an instruction); fourteen defects of the find half
   fixed; no launch budget; the stage machine by position; agents' files under `.gbg/scratch/<run>/`.
-- **4b — the review made whole** (50–70 commits, 6–9 sessions): the fix half of §4.3 — re-anchor before each pass, the
+- **4b — the review made whole** (50–70 commits, 6–9 sessions). **In progress 2026-09-21**; built so far:
+  the pass stages (fix, blind verifier, diff verifier) graded by a program with the quote rule, `DocFix`
+  records, reverts and the four-pass cap; the work-queue lines at close; `gbg docfix commit --finding`;
+  `gbg run abandon`; a start refused on a dirty tree and a collect refused when the tree moved under the
+  agents; an interrupted run continued by the next session; carry-over; the site built inside the run
+  with the withheld reader launched once per page and its verifier given the same page rebuilt; a quote
+  placed across the documentation; `Run.model` and sequential launch; `gbg docfix check`'s real checks;
+  close's red-build restore; `Render.skill` and the per-instrument skill files; a readers page and an
+  instruments page; the glossary's new terms; `Release` off the legacy config. **Left**: the other-copies
+  search, the formula-edit rule, `Wire`'s `settled.jl` and `questions.json` refusals of §11, and the
+  §5.2-versus-`Model` test. The rest of the entry as first written: the fix half of §4.3 — re-anchor before each pass, the
   guarded fix, the other-copies search, the formula-edit rule, `gbg docfix check`'s real checks, the blind and the diff
   verifier with their own output schema, grading, `DocFix` and `Verdict` records, the pass driver and the four-pass cap;
   the guard's clause 3; an interrupted run continued by the next session (§10) and `gbg run abandon`; sequential launch;
