@@ -142,7 +142,7 @@ function next(root::AbstractString; io::IO = stdout)
     to === :fix && (moved = with(moved; passes = run.passes + 1))
     Runs.save(root, moved)
     to === :close && (println(io, "run: ", id, " is ready to close: gbg run close"); return 0)
-    to === :fix && return fix_stage(root, moved; io)
+    to === :fix && return fix_stage(root, moved, cfg; io)
     (to === :verify || to === :diff) && return verifier_stage(root, moved, cfg, to, site; io)
     roles, extras = reader_roles(root, moved, cfg, site; io)
     Agents.write_arguments(root, moved, cfg; roles, extras, site, io)
@@ -243,22 +243,28 @@ unit_role(r::Model.AgentRole, id::Symbol) =
 """
     fix_stage(root, run; io = stdout) -> Int
 
-Opens a fix pass: re-anchors every open finding and writes the workable ones for the session, which
-edits and commits each through `gbg docfix commit --finding <id>`. The arguments are:
+Opens a fix pass: re-anchors every open finding, adds the other copies of what each says, and writes
+the workable ones for the session, which edits and commits each through
+`gbg docfix commit --finding <id>`. The arguments are:
 
 - `root` — the package root.
 - `run` — the run, at its `fix` stage.
+- `cfg` — the package's config, which says where its documentation is.
 - `io` — where the handoff is described.
 
 Exit 0.
 
 A location that comes back `OUTDATED` is kept and named; the session is not sent there.
 """
-function fix_stage(root::AbstractString, run::Model.Run; io::IO = stdout)
+function fix_stage(root::AbstractString, run::Model.Run, cfg::Model.Config; io::IO = stdout)
     anchored = Model.Finding[]
+    copies = 0
     for f in run.findings
         Runs.closed(run, f.id) && (push!(anchored, f); continue)
         locs = [Runs.reanchor(root, l; since = run.first_commit) for l in f.draft.locations]
+        more = other_copies(root, cfg, locs)
+        copies += length(more)
+        append!(locs, more)
         push!(anchored, Model.Finding(f.id, f.source, f.decider,
               Model.FindingDraft(rule = f.draft.rule, locations = locs, claim = f.draft.claim,
                                  evidence = f.draft.evidence, fix = f.draft.fix, maybe_code = f.draft.maybe_code)))
@@ -273,7 +279,8 @@ function fix_stage(root::AbstractString, run::Model.Run; io::IO = stdout)
         GBGCodingTools.JSON3.pretty(f, GBGCodingTools.JSON3.write([Agents.finding_dict(x) for x in todo]))
     end
     println(io, "run: ", run.id, " fix pass ", run.passes, " of ", run.budget.fix_passes, "; ",
-            length(todo), " finding(s) to fix, re-anchored:")
+            length(todo), " finding(s) to fix, re-anchored",
+            copies > 0 ? ", with $copies further copy(s) of what they quote:" : ":")
     for f in todo
         stale = count(l -> l.found === Model.Anchor.OUTDATED, f.draft.locations)
         println(io, "  ", f.id, "  ", f.draft.claim,
@@ -285,6 +292,40 @@ function fix_stage(root::AbstractString, run::Model.Run; io::IO = stdout)
     println(io, "  the findings: ", relpath(path, root))
     println(io, "  fix each, then: gbg docfix commit --message \"…\" --finding <id>; when all are committed: gbg run next")
     return 0
+end
+
+"""
+    other_copies(root, cfg, locations) -> Vector{Model.Location}
+
+Every further place in the documentation that says what these locations say. The arguments are:
+
+- `root` — the package root.
+- `cfg` — the package's config, which says where its documentation is.
+- `locations` — the finding's own locations, already re-anchored.
+
+Returns the locations to add, none of them one the finding already holds.
+
+A sentence, and above all a FORMULA, is written in more places than the reader who reported it looked
+at, and a fix made only where it was reported leaves the rest standing: a fourth copy of a corrected
+formula once survived a whole run. So each location's quote is searched for across the documentation,
+and so is each expression inside it, which travels between documents without the sentence that carried
+it.
+"""
+function other_copies(root::AbstractString, cfg::Model.Config, locations::Vector{Model.Location})
+    have = Set((l.file, l.line) for l in locations)
+    out = Model.Location[]
+    for l in locations
+        l.found === Model.Anchor.OUTDATED && continue
+        for needle in vcat([l.text], Texts.formulas(l.text))
+            length(strip(needle)) >= 8 || continue     # a fragment shorter than this is not a copy of anything
+            for hit in Texts.occurrences(cfg, root, needle)
+                (hit.file, hit.line) in have && continue
+                push!(have, (hit.file, hit.line))
+                push!(out, hit)
+            end
+        end
+    end
+    return out
 end
 
 """

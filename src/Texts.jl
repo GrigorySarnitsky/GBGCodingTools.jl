@@ -862,13 +862,74 @@ end
 # One run of whitespace is one space, so a sentence the build re-wrapped still matches the source.
 flatten(text::AbstractString) = strip(replace(String(text), r"\s+" => " "))
 
+"""
+    occurrences(cfg, root, text) -> Vector{Model.Location}
+
+Every place in the package's documentation that holds a quote, one location each. The arguments are:
+
+- `cfg` — the package's config, which says where its documentation is.
+- `root` — the package root.
+- `text` — the quote, as it was read.
+
+Returns the locations, ordered by file and line, empty where nothing holds it.
+
+This is what a fix pass runs over each finding before the fixer is sent out: a sentence, and above all a
+formula, is often written in several places, and a fix made where the reader happened to look leaves the
+others standing. A fourth copy of a corrected formula once survived a whole run that way.
+"""
+function occurrences(cfg::Model.Config, root::AbstractString, text::AbstractString)
+    needle = flatten(text)
+    isempty(needle) && return Model.Location[]
+    out = Model.Location[]
+    seen = Set{String}()
+    for fileset in (Model.FileSet.PAGES, Model.FileSet.DOCSTRINGS, Model.FileSet.LITERATE, Model.FileSet.RATIONALE)
+        for file in files(cfg, root, fileset)
+            file in seen && continue
+            push!(seen, file)
+            for line in flattened_lines(joinpath(root, file), needle)
+                push!(out, Model.Location(; file, node = node_at(root, file, line), text = String(text),
+                                           line = line, found = Model.Anchor.BY_QUOTE))
+            end
+        end
+    end
+    return sort!(out; by = l -> (l.file, l.line))
+end
+
+"""
+    formulas(text) -> Vector{String}
+
+Every mathematical expression written in a text, as the LaTeX idiom writes them: what stands between
+single dollars. The argument is `text`. Returns the expressions, without their delimiters and without
+repetition.
+
+A fix pass searches for these as well as for the whole quote. A formula travels between documents on its
+own, without the sentence that carried it, so a search for the sentence alone finds one copy of three.
+
+A single character between dollars is not one of these: searching a whole documentation for one letter
+finds every page and means nothing.
+"""
+function formulas(text::AbstractString)
+    out = String[]
+    for m in eachmatch(r"(?<!\$)\$([^\$\n]{2,})\$(?!\$)", String(text))
+        f = strip(m.captures[1])
+        isempty(f) || f in out || push!(out, String(f))
+    end
+    return out
+end
+
 # The line a flattened quote starts on, or nothing where the file does not hold it.
 function flattened_line(path::AbstractString, needle::AbstractString)
-    isfile(path) || return nothing
+    hits = flattened_lines(path, needle)
+    return isempty(hits) ? nothing : first(hits)
+end
+
+# Every line a flattened quote starts on, in order.
+function flattened_lines(path::AbstractString, needle::AbstractString)
+    isfile(path) || return Int[]
     lines = try
         readlines(path)
     catch
-        return nothing
+        return Int[]
     end
     io = IOBuffer(); at = Int[]
     for (i, l) in pairs(lines)
@@ -879,11 +940,19 @@ function flattened_line(path::AbstractString, needle::AbstractString)
         write(io, piece)
     end
     hay = String(take!(io))
-    r = findfirst(needle, hay)
-    r === nothing && return nothing
-    # `findfirst` indexes bytes; the map is per character, so count characters up to the hit.
-    chars = length(SubString(hay, 1, prevind(hay, first(r)))) + 1
-    return at[min(chars, length(at))]
+    out = Int[]
+    from = 1
+    while true
+        r = findnext(needle, hay, from)
+        r === nothing && break
+        # `findnext` indexes bytes; the map is per character, so count characters up to the hit.
+        chars = length(SubString(hay, 1, prevind(hay, first(r)))) + 1
+        line = at[min(chars, length(at))]
+        isempty(out) || last(out) == line || push!(out, line)
+        isempty(out) && push!(out, line)
+        from = nextind(hay, first(r))
+    end
+    return out
 end
 
 outdated(loc) = Model.Location(; file = loc.file, node = loc.node, text = loc.text, line = loc.line,

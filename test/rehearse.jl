@@ -93,11 +93,19 @@ code_change(root) = write(joinpath(root, "src", "FixtureA.jl"),
     replace(read(joinpath(root, "src", "FixtureA.jl"), String),
             "end # module FixtureA" => "shadow(x) = x\n\nend # module FixtureA"))
 
-"""Write what one reader found, as the driver would have written it, into the current stage's results."""
+"""
+Write what one reader found, as the driver would have written it, into the current stage's results.
+
+The payload goes through `JSON3.write` rather than string interpolation: a quote carrying a backslash —
+which any quote of a formula does — is not JSON until it is escaped, and a file that does not parse is
+read as a reader that wrote nothing, so the test would pass by testing nothing.
+"""
 function reader_found(root, id, role, claim; file = "docs/src/index.md", quote_ = "The grid is spectral.")
     mkpath(AGENTS.results_dir(root, id))
-    write(joinpath(AGENTS.results_dir(root, id), role * ".json"),
-          """{"findings":[{"claim":"$claim","fix":"say which","locations":[{"file":"$file","text":"$quote_"}]}],"checked":["$file"]}""")
+    payload = Dict("findings" => [Dict("claim" => claim, "fix" => "say which",
+                                       "locations" => [Dict("file" => file, "text" => quote_)])],
+                   "checked" => [file])
+    write(joinpath(AGENTS.results_dir(root, id), role * ".json"), G.JSON3.write(payload))
 end
 
 """Write one verifier's verdict, as the driver would have written it, for the current stage."""
@@ -329,6 +337,65 @@ end
             G.Run.collect(root; io = devnull)
             @test RUNS.stage_of(root, id) === :collect
             @test G.Run.collect(root; io = devnull) == 2               # a stage is collected once
+        end
+    end
+
+    # A sentence is written in more places than the reader who reported it looked at. A fix made only
+    # where it was reported leaves the rest standing, and a fourth copy of a corrected formula once
+    # survived a whole run.
+    @testset "the fix pass finds the other copies of what a finding quotes" begin
+        package() do root, gg
+            # the same sentence, and the same formula, on a second page
+            write(joinpath(root, "docs", "src", "notation.md"),
+                  read(joinpath(root, "docs", "src", "notation.md"), String) *
+                  "\n\nThe grid is spectral.\n")
+            gg("add", "--all", "."); gg("commit", "-q", "-m", "a second page says the same")
+            id, fid = with_one_finding(root)
+            G.Run.next(root; io = devnull)                               # fix
+            todo = G.JSON3.read(read(joinpath(AGENTS.stage_dir(root, id), "findings.json"), String))
+            files = [String(l["file"]) for l in todo[1]["locations"]]
+            @test joinpath("docs", "src", "index.md") in files
+            @test joinpath("docs", "src", "notation.md") in files        # the copy the reader never saw
+            @test length(files) == 2
+        end
+    end
+
+    # A formula travels between documents without the sentence that carried it, so a fix that followed
+    # only the sentence would leave the formula wrong wherever it was written alone.
+    @testset "a formula inside a quote is searched for on its own" begin
+        package() do root, gg
+            energy = raw"E = \tfrac{1}{2} h \sum_i u_i^2"
+            write(joinpath(root, "docs", "src", "index.md"),
+                  replace(HOME_PAGE, "The grid is spectral." => "The energy is \$$energy\$ at every node."))
+            # the same formula on another page, in a sentence of its own
+            write(joinpath(root, "docs", "src", "notation.md"),
+                  read(joinpath(root, "docs", "src", "notation.md"), String) *
+                  "\n\nThe discrete energy is \$$energy\$.\n")
+            gg("add", "--all", "."); gg("commit", "-q", "-m", "a formula written twice")
+            cfg = G.ConfigIO.read_config(root)
+
+            @test G.Texts.formulas("The energy is \$$energy\$ at every node.") == [energy]
+            @test isempty(G.Texts.formulas("no mathematics here"))
+            @test G.Texts.formulas(raw"a single $x$ is not searched for") == []
+
+            found = G.Texts.occurrences(cfg, root, energy)
+            # the fixture writes this formula in its own documents too, which is the point: every copy
+            @test joinpath("docs", "src", "index.md") in [l.file for l in found]
+            @test joinpath("docs", "src", "notation.md") in [l.file for l in found]
+            @test length(unique(l.file for l in found)) >= 3
+            @test all(l -> l.found === MRun.Anchor.BY_QUOTE, found)
+
+            # and a finding reported on one page reaches the other through the fix pass
+            G.Run.start(root, :documentation_review; io = devnull)
+            id = G.Run.open_run(root)
+            reader_found(root, id, HOME_READER, "the one half is unexplained";
+                         file = joinpath("docs", "src", "index.md"),
+                         quote_ = "The energy is \$$energy\$ at every node.")
+            all_clean(root, id; except = [HOME_READER])
+            G.Run.collect(root; io = devnull)
+            G.Run.next(root; io = devnull)
+            todo = G.JSON3.read(read(joinpath(AGENTS.stage_dir(root, id), "findings.json"), String))
+            @test joinpath("docs", "src", "notation.md") in [String(l["file"]) for l in todo[1]["locations"]]
         end
     end
 
