@@ -35,8 +35,11 @@ the owner and parks the finding, which no pass touches again; a fifth pass is re
 goes to `.claude/WORK_QUEUE.md`, one line each under the heading the hook does not count. `collect` now
 moves the run to its `collect` stage itself and is refused a second time; the driver relaunches a silent
 agent once before the collect names it. `gbg run abandon` ends the open run as `OWNER_STOPPED` with its
-findings dropped, and a start on a tree with uncommitted tracked changes is refused. The other changes
-since rc.5 are in the commits from `71993cc`.
+findings dropped, and a start on a tree with uncommitted tracked changes is refused. A run interrupted
+at a launched stage is continued by `gbg run next`: the roles that wrote are kept, the rest are marked
+to launch again, and the tree having moved since the launch is the one case it stops for the owner;
+the session block in `CLAUDE.md` gains the instruction to continue such a run first and say so. The
+other changes since rc.5 are in the commits from `71993cc`.
 
 ## 2.0.0-rc.5 — 2026-09-18
 

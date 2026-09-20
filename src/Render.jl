@@ -558,7 +558,7 @@ end
     claude_block(cfg) -> String
 
 The block this package owns at the top of a package's `CLAUDE.md`: the import of the rulebook, and the
-three standing instructions a session needs before it has read anything. The argument is `cfg`, the
+four standing instructions a session needs before it has read anything. The argument is `cfg`, the
 package's config. Returns the block, marked at both ends so the rest of the file is the package's own.
 
 It imports and does not restate. A block that listed the rules, or what this package has switched off,
@@ -580,6 +580,10 @@ function claude_block(cfg::Model.Config)
     The readers of a review are derived from the rules and the tool's catalogue of disciplines. A
     reader or a discipline this package needs and the tool lacks is requested from the tool's own
     session, never written here.
+
+    A run an earlier session left open is continued before anything else, and the chat says so:
+    `gbg run next` says what to launch or that the stage is ready to collect, and the run goes on to
+    its close. It waits for the owner only when `gbg run next` says the tree moved since the launch.
     <!-- $END_MARK -->
     """
 end

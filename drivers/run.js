@@ -151,9 +151,11 @@ function brief(role) {
 
 phase('Read');
 
-// Every reader of the stage is launched: nothing caps launches (ruled 2026-09-21) — the panel over the
-// units, one relaunch each, and the pass cap bound them by design.
-const roles = args.roles;
+// Every marked reader of the stage is launched: nothing caps launches (ruled 2026-09-21) — the panel
+// over the units, one relaunch each, and the pass cap bound them by design. A stage continued after
+// an interruption carries the mark only on the roles whose result did not arrive.
+const roles = args.roles.filter((role) => role.launch !== false);
+log(`${args.stage}: ${roles.length} of ${args.roles.length} role(s) to launch, at commit ${String(args.commit).slice(0, 8)}`);
 
 const wrote = await parallel(
   roles.map((role) => async () => {

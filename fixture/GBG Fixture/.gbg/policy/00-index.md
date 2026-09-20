@@ -17,11 +17,11 @@ adds for itself is a `PatternRule` in the same file, and is nobody else's.
 
 The files:
 
-- `docs-rubric.md` — What a docstring and an API page contain, in what order and in what shape. (43 rules)
+- `docs-rubric.md` — What a docstring and an API page contain, in what order and in what shape. (44 rules)
 - `latex-idiom.md` — What renders, and how mathematics is written so that it renders the same way everywhere. (18 rules)
-- `citations.md` — Author–year in the prose, the full reference where the reader can reach it, a DOI on every title. (5 rules)
-- `testing-protocol.md` — What a test is for, where its oracle comes from, and when a thing is done. (12 rules)
-- `instruments.md` — How a review runs: consent, witnesses, closure, cost, and the limits it must state. (13 rules)
+- `citations.md` — Author–year in the prose, the full reference where the reader can reach it, a DOI on every title. (6 rules)
+- `testing-protocol.md` — What a test is for, where its oracle comes from, and when a thing is done. (10 rules)
+- `instruments.md` — What a session runs unasked, and how it reads what a scan prints. (2 rules)
 - `git-conventions.md` — What a commit carries, where it goes, and what is never committed. (7 rules)
 - `asking.md` — One decision, short, in his words rather than this package's, with every identifier moved out of the sentence. (5 rules)
 - `glossary.md` — the terms the rules use, bound once.

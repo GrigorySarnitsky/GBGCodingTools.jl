@@ -15,9 +15,10 @@
 # open by this hook; blocking again there would trap it forever. It is the difference between a
 # harness and a cage.
 #
-# THE UNCOUNTED HEADING. Lines under "## From the last review" are NOT counted: a run's leftovers are
-# the owner's list to act on when he chooses, and holding a session to them would be a review setting
-# a session to work nobody asked for.
+# THE UNCOUNTED HEADING. Lines under "## From the last review" are NOT counted, up to the next
+# heading: a run's leftovers are the owner's list to act on when he chooses, and holding a session to
+# them would be a review setting a session to work nobody asked for. A section the owner adds below
+# it is his, and counted.
 set -uo pipefail
 payload=$(cat)
 if grep -q '"stop_hook_active"[[:space:]]*:[[:space:]]*true' <<<"$payload"; then
@@ -27,7 +28,7 @@ fi
 queue="${CLAUDE_PROJECT_DIR:-.}/.claude/WORK_QUEUE.md"
 [[ -f "$queue" ]] || exit 0
 
-counted=$(sed '/^## From the last review/,$d' "$queue")
+counted=$(awk '/^## From the last review/{skip=1; next} /^## /{skip=0} !skip' "$queue")
 open_items=$(grep -nE '^[[:space:]]*- \[ \]' <<<"$counted" || true)
 [[ -z "$open_items" ]] && exit 0
 

@@ -91,6 +91,11 @@ Exit 0 when it moved, 2 when it could not.
 It writes the arguments and EXITS. The session launches the driver itself, because only a session can;
 a verb that waited for agents would be a verb that cannot run. From a collect it chooses: `close` when
 no finding can be worked on or the passes are used, else the pass's next stage.
+
+At a stage whose agents were launched and not collected — a run interrupted, and continued by the next
+session — it CONTINUES the stage rather than skipping it: the roles that wrote are kept, the rest are
+marked to launch again, and it says so. It stops, exit 2, when the tree is at a different commit than
+the stage was launched at, which is the one case the owner is waited for.
 """
 function next(root::AbstractString; io::IO = stdout)
     id = open_run(root)
@@ -101,7 +106,7 @@ function next(root::AbstractString; io::IO = stdout)
     at == 0 && (println(io, "run: $id is at $(Runs.stage_of(root, id)), which is not a stage of $(run.instrument)"); return 2)
     at == length(order) && (println(io, "run: ", id, " is at ", order[at], ", its last stage; close it"); return 2)
     to = order[at + 1]
-    to === :collect && (println(io, "run: ", id, " is at ", order[at], ", whose agents are collected, not skipped: gbg run collect"); return 2)
+    to === :collect && return continue_stage(root, id, order[at]; io)
     if order[at] === :collect
         if isempty(Runs.workable(run))
             to = :close
@@ -125,6 +130,39 @@ function next(root::AbstractString; io::IO = stdout)
         println(io, "run: not judged here —")
         for g in gaps; println(io, "  ", g); end
     end
+    return 0
+end
+
+"""
+    continue_stage(root, id, stage; io = stdout) -> Int
+
+Continues a launched, uncollected stage after an interruption. The arguments are:
+
+- `root` — the package root.
+- `id` — the run's id.
+- `stage` — the stage the run is at.
+- `io` — where the handoff is described.
+
+Exit 0 when there is something to launch again, 2 when every role wrote (collect it), when the tree
+moved since the launch, or when the stage was never written.
+"""
+function continue_stage(root::AbstractString, id::AbstractString, stage::Symbol; io::IO = stdout)
+    c = Agents.continue_stage(root, id)
+    c === nothing && (println(io, "run: ", id, " is at ", stage, " with no arguments written; abandon it"); return 2)
+    if c.moved
+        println(io, "run: ", id, " was launched at ", stage, " against another commit, and the tree has moved since.")
+        println(io, "  The readers would read a different package than the ones that already wrote. The owner decides:")
+        println(io, "  gbg run abandon, and start again on the tree as it is now — or restore the tree and continue.")
+        return 2
+    end
+    if isempty(c.missing)
+        println(io, "run: ", id, " is at ", stage, " and every agent wrote; gbg run collect")
+        return 2
+    end
+    println(io, "run: continuing ", id, " at ", stage, ": ", c.total - length(c.missing), " of ", c.total,
+            " agent(s) wrote before the interruption; launching again: ", join(c.missing, ", "))
+    println(io, "  arguments: ", relpath(Agents.arguments_path(root, id), root))
+    println(io, "  then: gbg run collect")
     return 0
 end
 

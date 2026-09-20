@@ -100,6 +100,8 @@ end
             @test !isempty(args["roles"])
             @test all(r -> haskey(r, "result_file") && haskey(r, "cap"), args["roles"])
             @test !haskey(args, "launches_left")                   # nothing caps launches (ruled 2026-09-21)
+            @test all(r -> r["launch"] === true, args["roles"])       # a fresh stage launches everyone
+            @test args["commit"] == RUNS.load(root, id).first_commit
 
             reader_found(root, id, "withheld", "a term is used before it is defined")
             @test G.Run.collect(root; io = devnull) == 2          # other readers wrote nothing: NOT clean
@@ -148,7 +150,7 @@ end
             @test !RUNS.advance!(root, id, :close; io = devnull)       # skipping collect and the passes
             @test !RUNS.advance!(root, id, :start; io = devnull)       # and never backwards
             @test G.Run.close_run(root; io = devnull) == 2             # close refuses a run still at find
-            @test G.Run.next(root; io = devnull) == 2                  # and next refuses to skip the collect
+            @test G.Run.next(root; io = devnull) == 0                  # next continues the stage, never skips it
             @test RUNS.stage_of(root, id) === :find                    # and nothing moved
             G.Run.collect(root; io = devnull)
             @test RUNS.stage_of(root, id) === :collect
@@ -172,6 +174,38 @@ end
             @test G.Run.abandon(root; io = devnull) == 2                # nothing open now
             @test G.Run.start(root, :documentation_review; io = devnull) == 0
             @test G.Run.open_run(root) != id                             # the id is never reused
+        end
+    end
+
+    # A run interrupted with readers uncollected is continued: the readers that wrote are kept, the one
+    # that did not is launched again alone, each finding is collected once — and a tree that moved since
+    # the launch stops the continuation for the owner.
+    @testset "an interrupted stage is continued, relaunching only what did not write" begin
+        package() do root, gg
+            G.Run.start(root, :documentation_review; io = devnull)
+            id = G.Run.open_run(root)
+            reader_found(root, id, "withheld", "one")
+            reader_found(root, id, "full", "two")
+            @test G.Run.next(root; io = devnull) == 0                    # continue: rendered is missing
+            args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+            launch = Dict(r["key"] => r["launch"] for r in args["roles"])
+            @test launch == Dict("withheld" => false, "full" => false, "rendered" => true)
+            @test length(args["roles"]) == 3                             # the collect still expects everyone
+            reader_found(root, id, "rendered", "three")
+            @test G.Run.next(root; io = devnull) == 2                    # every agent wrote: collect
+            @test G.Run.collect(root; io = devnull) == 1
+            @test length(RUNS.load(root, id).findings) == 3              # each collected once
+            @test RUNS.load(root, id).agent_launches == 3
+        end
+        package() do root, gg
+            G.Run.start(root, :documentation_review; io = devnull)
+            id = G.Run.open_run(root)
+            reader_found(root, id, "withheld", "one")
+            write(joinpath(root, "docs", "src", "guide.md"), "# Guide\n\nThe grid is a lattice.\n")
+            gg("add", "--all", "."); gg("commit", "-q", "-m", "the tree moves under the run")
+            @test G.Run.next(root; io = devnull) == 2                    # moved: the owner decides
+            @test RUNS.stage_of(root, id) === :find                      # and nothing was taken
+            @test G.Run.abandon(root; io = devnull) == 0
         end
     end
 

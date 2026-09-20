@@ -11,6 +11,10 @@ documentation may be fixed without asking, and anything else waits for an answer
 The readers of a review are derived from the rules and the tool's catalogue of disciplines. A
 reader or a discipline this package needs and the tool lacks is requested from the tool's own
 session, never written here.
+
+A run an earlier session left open is continued before anything else, and the chat says so:
+`gbg run next` says what to launch or that the stage is ready to collect, and the run goes on to
+its close. It waits for the owner only when `gbg run next` says the tree moved since the launch.
 <!-- gbg:managed end -->
 
 # CLAUDE.md — GBGCodingTools

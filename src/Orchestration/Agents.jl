@@ -18,7 +18,9 @@ carries the same keys — a reader's `finding` is empty — so the driver reads 
 
 Everything the agents write, and the arguments they are given, lives under `.gbg/scratch/<run>/`, one
 directory per stage instance — git-ignored, so it is never committed, and inside the package, so a run
-interrupted in one session is continued in the next (ruled 2026-09-21). Closing the run deletes it.
+interrupted in one session is continued in the next (ruled 2026-09-21): the arguments record the commit
+they were written at, each role carries a LAUNCH mark, and continuing a stage clears the mark of every
+role whose result already arrived. Closing the run deletes it.
 """
 module Agents
 
@@ -119,6 +121,7 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
                          roles::Vector{Model.AgentRole}, extras::AbstractDict = Dict{Symbol,Any}(), io::IO = stdout)
     args = Dict{String,Any}(
         "run" => run.id,
+        "commit" => head(root),
         "instrument" => String(run.instrument),
         "stage" => String(run.stage),
         "pass" => run.passes,
@@ -133,6 +136,7 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
                         x = get(extras, r.id, Dict{String,Any}())
                         Dict{String,Any}("key" => String(r.id),
                                          "kind" => get(x, "kind", "reader"),
+                                         "launch" => true,
                                          "reads" => [lowercase(String(Symbol(fs))) for fs in r.reads],
                                          "site" => r.site, "kept_from_code" => r.kept_from_code,
                                          "description" => r.description,
@@ -151,6 +155,42 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
     println(io, "  arguments: ", relpath(path, root))
     println(io, "  then: gbg run collect ", run.id)
     return path
+end
+
+# The commit the package is at, or "" outside a repository; what a continued stage is compared against.
+function head(root::AbstractString)
+    try
+        readchomp(pipeline(setenv(`git -C $root rev-parse HEAD`; dir = root); stderr = devnull))
+    catch
+        ""
+    end
+end
+
+"""
+    continue_stage(root, id) -> Union{NamedTuple,Nothing}
+
+Prepares the current stage to be launched again after an interruption: every role whose result file
+already arrived has its launch mark cleared, so the driver relaunches only what is missing and the
+collect still expects every role. The arguments are `root`, the package root, and `id`, the run's id.
+Returns `(missing, total, moved)` — the roles still to launch, how many there were, and whether the tree
+is at a different commit than when the stage was written — or `nothing` where no arguments exist.
+
+Nothing of an unfinished stage is taken: a result that arrived stands, one that did not is asked for
+again, and a stage launched against one commit and continued against another is reported as MOVED
+rather than mixed, since the readers would then have read two different packages.
+"""
+function continue_stage(root::AbstractString, id::AbstractString)
+    path = arguments_path(root, id)
+    isfile(path) || return nothing
+    args = JSON3.read(read(path, String), Dict{String,Any})
+    missing = String[]
+    for r in get(args, "roles", [])
+        r["launch"] = !isfile(String(r["result_file"]))
+        r["launch"] && push!(missing, String(r["key"]))
+    end
+    open(path, "w") do f; JSON3.pretty(f, JSON3.write(args)); end
+    moved = String(get(args, "commit", "")) != head(root)
+    return (missing = missing, total = length(get(args, "roles", [])), moved = moved)
 end
 
 """
