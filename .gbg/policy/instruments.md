@@ -7,14 +7,14 @@ so a rule reworded here was reworded in the program that checks it.
 ### RULE.INST.AUDIT_AFTER_CODE
 A fix pass that changed code is audited before its round closes — always for a hunt, and for a check-docs round whose pass touched src or ext — by an audit that read the round's last code change.
 
-`/bug-hunt` always qualifies, and so does a `/check-docs` round whose pass touched the `src` or `ext` surfaces: closing refuses until a `/audit-changes` round based at the closing round's opening …
+`/bug-hunt` always qualifies, and so does a `/check-docs` round whose pass touched the `src` or `ext` surfaces: closing refuses until a `/audit-changes` round based at the closing round's opening head is itself closed and has read the round's last code change, so it runs after the final fix pass. The two verifiers grade each finding as asked; neither reads the diff whole, runs anything, or asks whether input that worked before still does. A prose-only pass is not gated: run the audit's prose lenses on judgment when the pass rewrote docstrings that state a contract.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
 ### RULE.INST.AUDIT_DISPOSED
 An audit round is closed by disposing its concerns, never by correcting them inside it; a correction rides the next change set, which the next audit covers.
 
-A correction moves the tree, the staleness check then refuses the close, and there is no re-bank; the round would be permanently unclosable. Each gated concern takes a disposition record instead, …
+A correction moves the tree, the staleness check then refuses the close, and there is no re-bank; the round would be permanently unclosable. Each gated concern takes a disposition record instead, and a correction the audit asks for rides the next change set, which the next audit covers. This is why `bank` on an audit round names the disposition and not a fix pass.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -28,14 +28,14 @@ Decided by nothing yet. Nothing checks it: no program decides it yet: it is a ha
 ### RULE.INST.CLOSURE_LOOP
 The closure loop runs over the banked findings by id, never by re-running the battery; abandon is the only wholesale exit and names every open id.
 
-Closing a banked round terminates because the denominator is fixed; re-running the lanes over a just-edited corpus is a new search with no fixed point. Stop on a plateau — three passes flat within …
+Closing a banked round terminates because the denominator is fixed; re-running the lanes over a just-edited corpus is a new search with no fixed point. Stop on a plateau — three passes flat within noise, with no dead lane — never on a good round.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
 ### RULE.INST.CONSENT
 Unasked, run only Pkg.test(); every instrument, survey, benchmark and panel runs only on the user's request, in words or by slash.
 
-The correct output when one would be informative is to name it and its cost and wait. This is a consent boundary, not licence to leave work unfinished: finish the code, run the gate, and report what …
+The correct output when one would be informative is to name it and its cost and wait. This is a consent boundary, not licence to leave work unfinished: finish the code, run the gate, and report what remains unverified and why. "Check the docs" is such a request: it means run `/check-docs`.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -56,14 +56,14 @@ Decided by nothing yet. Nothing checks it: no program decides it yet: it is a ha
 ### RULE.INST.FOUR_OBJECTS
 The four instruments audit different objects: changes, source prose, rendered prose, code.
 
-A flawless docstring on a function returning the wrong number passes both prose instruments; an edit that is a correct fix and still wider than the defect passes the hunt; each exists for what the …
+A flawless docstring on a function returning the wrong number passes both prose instruments; an edit that is a correct fix and still wider than the defect passes the hunt; each exists for what the others cannot see.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
 ### RULE.INST.FROZEN_MIDROUND
 An instrument is never changed mid-round; a change is its own commit and release; a deferral is written in the round's deferred.md and carried into the work queue at close; a round whose own frozen verifiers or auditors cannot run has those differing copies replaced by gbg round scripts --reason, never a lens, recorded in ROUND.toml.
 
-A change the round wanted and could not make is written one line per deferral in the round's `deferred.md`, and `gbg round close` carries each into `.claude/WORK_QUEUE.md`, where the Stop hook holds …
+A change the round wanted and could not make is written one line per deferral in the round's `deferred.md`, and `gbg round close` carries each into `.claude/WORK_QUEUE.md`, where the Stop hook holds the next session to it. A deferral recorded anywhere else is a note, and a note is not a mechanism. A round records the instrument version that measured it and cannot close under a different one unless re-graded; a rate sequence means something only at a fixed instrument. One relaxation is recorded rather than hidden: a round whose own frozen verifier or auditor scripts cannot run — its verifiers unparseable, so it could never verify — has those differing copies replaced by `gbg round scripts --reason`, which writes the reason, the pass count and each script's sha into `ROUND.toml`. A lens script is never replaced mid-round: a changed lens is a new round.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -77,21 +77,21 @@ Decided by nothing yet. Nothing checks it: the rulebook does not check it: harne
 ### RULE.INST.SEEDS
 A seeded finding is never fixed in the corpus and never enters the ledger.
 
-Seeds are planted in a disposable copy to measure recall; the ground truth reaches no hat; a class at zero seeded recall is unmeasured, not clean; and recording a seed as adjudicated would hand the …
+Seeds are planted in a disposable copy to measure recall; the ground truth reaches no hat; a class at zero seeded recall is unmeasured, not clean; and recording a seed as adjudicated would hand the next round its answer key.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
 ### RULE.INST.SELF_REPORT
 Self-reported closure is not closure; the act verifier sees the diff, the state verifier is blind; the demotion is mechanical.
 
-Both default to the unfavourable verdict so a truncated lane fails safe; a zero count is a dead lane rather than a clean hat; the denominator never comes from the party being measured; and a …
+Both default to the unfavourable verdict so a truncated lane fails safe; a zero count is a dead lane rather than a clean hat; the denominator never comes from the party being measured; and a dismissal is a verdict the verifier grades like any other.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
 ### RULE.INST.WITNESS
 A static claim about code is a hypothesis; the only evidence is a program that fails; a fixed witness is promoted unchanged.
 
-A passing witness means not a bug, discarded however good the argument; no witness writable means a latent hazard, reported and not fixed; a failing witness is the finding and, once the fix lands, …
+A passing witness means not a bug, discarded however good the argument; no witness writable means a latent hazard, reported and not fixed; a failing witness is the finding and, once the fix lands, the regression test — necessary and not sufficient, since a witness can fail because the witness is wrong, so adjudication derives the expected value independently of the assertion.
 
 Decided by nothing yet. Nothing checks it: the rulebook does not check it: harness:Witnesses.run enforces it inside a package's own test suite
 

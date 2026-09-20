@@ -8,21 +8,25 @@ rules, not listed.
 Until 2026-09-20 this file held nineteen readers written by hand, twelve of them given identical
 material on the identical model and differing only in the sentence saying who they were. What replaced
 them is a computation over two tags each reader's rule carries: what deciding it requires a reader to
-be GIVEN (`Rule.access`) and whether it needs the package's discipline (`Rule.needs_discipline`). Three
-blind readers put those tags on from the rules' text alone, and agreed on them (Fleiss' kappa 0.90 on
-the material, 0.91 on the discipline).
+be GIVEN (`Rule.access`) and, for the rare rule whose own words are a field's, which field
+(`Rule.discipline`). Three blind readers put the access tags on from the rules' text alone and agreed on
+them (Fleiss' kappa 0.90 in round 1; 0.74 in round 0, before the rewording).
 
 The readers come in two kinds. A BOUND reader carries rules: one per bundle of material under one
 principle — a reader given more material can decide any rule needing less, except that a rule needing
-NOTHING goes to a reader given nothing, because more material would change the answer — plus one per
-discipline the package declares, carrying every rule that needs one.
+NOTHING goes to a reader given nothing, because more material would change the answer — plus, for a rule
+that names a discipline, that discipline's reader where the package declares it.
 
-An OPEN reader carries a standpoint and no rule, and finds what no rule names; the two here are the two
-whose yield was recorded highest in the one review that recorded it.
+An OPEN reader carries a standpoint and no checklist, and finds what no rule names: the two standpoints
+here, whose yield was recorded highest in the one review that recorded it, and one expert per discipline
+the package declares — the same model with a specialist's standpoint, reading the whole documentation for
+what is wrong in its field. On 2026-09-21 the owner ruled, on the record of what checked each rule before,
+that formulas true of the code, notation, coverage and the identity sentence are a careful generalist's
+with the source open, not an expert's; only stating maps without flattening is a geometer's.
 
-A rule no reader can be given — one needing the network, or git history — is reported as a GAP, as is
-a discipline rule in a package that declares no discipline: a reader that cannot recognise the defect
-returns a pass indistinguishable from not looking.
+A rule no reader can be given — one needing the network, or git history, or a discipline the package does
+not declare — is reported as a GAP: a reader that cannot recognise the defect returns a pass
+indistinguishable from not looking.
 
 **`kept_from_code` and `site` are the load-bearing fields.** The withheld reader's whole value is that
 the source and the other pages are not in front of it; it reads the BUILT page, which is exactly one
@@ -69,13 +73,13 @@ const DISCIPLINES = Model.Discipline[
 const WITHHELD = (
     id = :withheld, given = Set([AC.NOTHING]),
     reads = [FS.PAGES, FS.DOCSTRINGS, FS.LITERATE, FS.RATIONALE], site = true, kept_from_code = true,
-    description = "A competent newcomer's first read of ONE page, with every other page, the design documents and the source withheld. Judges only what this page says by itself: a term it uses before it defines, a sentence without a verb, a symbol it binds nowhere, a comment that will not render as prose.",
+    description = "A scientist in the package's own fields, new to the package, on a first read of ONE page — every other page, the design documents and the source withheld. Judges only what this page says by itself: a term of the package it uses before it defines, a sentence without a verb, a symbol it binds nowhere, a comment that will not render as prose. Standard mathematics and the field's own vocabulary need no definition; the package's do.",
     cap = 10)
 
 const FULL = (
     id = :full, given = Set([AC.SIBLINGS, AC.OTHER_DOCUMENTS, AC.SOURCE]),
     reads = [FS.RATIONALE, FS.PAGES, FS.DOCSTRINGS, FS.LITERATE], site = false, kept_from_code = false,
-    description = "A careful reader of the whole documentation with the source beside it: every docstring, every page, the reference list, the notation page and the package's config. Judges what one place says against what the others say and against the code it documents.",
+    description = "A careful reader of the whole documentation with the source beside it: every docstring, every page, the reference list, the notation page and the package's config. Judges what one place says against what the others say and against the code it documents — expanding a formula against the code rather than taking the docstring's word.",
     cap = 10)
 
 const RENDERED = (
@@ -110,6 +114,9 @@ discipline. A package's `Switch` may name any of them, which is how a reader is 
 const READER_IDS = Set{Symbol}(vcat([b.id for b in BUNDLES], [s.id for s in STANDPOINTS],
                                     [d.id for d in DISCIPLINES]))
 
+"The ids of the discipline readers, which `select` counts as open whether or not a rule binds them."
+const DISCIPLINE_IDS = Set{Symbol}(d.id for d in DISCIPLINES)
+
 # A switch on the whole package turns a reader or a rule off; one on named files does not, since a
 # reader is not launched per file.
 off(cfg::Model.Config, id::Symbol) = any(s -> s.target === id && isempty(s.files), cfg.switches)
@@ -125,11 +132,12 @@ role(b, rules::Vector{Symbol}; id = b.id, description = b.description, cap = b.c
 The readers a documentation review of the package configured by `cfg` launches, computed from the
 rules that carry an access tag. The arguments are `rules`, the rulebook, and `cfg`, the package's
 config. Returns the readers, bound first and open after, and the gaps: one line for each tagged rule
-that no reader is given, and one for the discipline rules where the package declares no discipline.
+that no reader is given, including a rule naming a discipline the package does not declare.
 
 Every reader runs on the careful model — the owner's ruling of 2026-09-19 that the model is the only
 carefulness dial, and of 2026-09-20 that the smaller panel runs careful. A bundle no rule lands in is
-not launched.
+not launched. A declared discipline is launched whether or not a rule binds it: it is an open reader
+first, and bound to the rules that name it.
 """
 function derive(rules::Vector{Model.Rule}, cfg::Model.Config)
     tagged = [r for r in rules if !isempty(r.access) && !off(cfg, r.id)]
@@ -137,10 +145,9 @@ function derive(rules::Vector{Model.Rule}, cfg::Model.Config)
     gaps = String[]
 
     # The bound readers, one per bundle a rule lands in.
-    placed = Set{Symbol}()
     bound = Dict{Symbol,Vector{Symbol}}(b.id => Symbol[] for b in BUNDLES)
     for r in tagged
-        r.needs_discipline && continue
+        r.discipline === nothing || continue
         need = Set(r.access)
         if AC.NOTHING in need && length(need) > 1
             push!(gaps, "$(r.id) is tagged NOTHING together with more, and NOTHING is exclusive; it goes to no reader until its tag is one thing")
@@ -152,7 +159,7 @@ function derive(rules::Vector{Model.Rule}, cfg::Model.Config)
                         ", which no reader is given")
             continue
         end
-        push!(bound[BUNDLES[at].id], r.id); push!(placed, r.id)
+        push!(bound[BUNDLES[at].id], r.id)
     end
     for b in BUNDLES
         isempty(bound[b.id]) && continue
@@ -160,20 +167,26 @@ function derive(rules::Vector{Model.Rule}, cfg::Model.Config)
         push!(roles, role(b, bound[b.id]))
     end
 
-    # The discipline readers: every rule needing a discipline, to each discipline the package declares.
-    expert = [r.id for r in tagged if r.needs_discipline]
-    declared = [d for d in DISCIPLINES if d.id in cfg.disciplines]
+    # The discipline readers: one per declared discipline, given the full bundle, carrying the rules
+    # that name it, open beyond them. A rule naming an undeclared discipline is a gap by name.
     for id in cfg.disciplines
         any(d -> d.id === id, DISCIPLINES) ||
             push!(gaps, "$(cfg.package) declares the discipline $id, which the catalogue does not have")
     end
-    if !isempty(expert) && isempty(declared)
-        push!(gaps, string(length(expert), " rule(s) need a discipline and ", cfg.package,
-                           " declares none, so nobody judges them: ", join(String.(expert), ", ")))
+    for r in tagged
+        r.discipline === nothing && continue
+        AC.NOTHING in r.access &&
+            (push!(gaps, "$(r.id) names a discipline and is tagged NOTHING; a discipline reader is given the full bundle, so it goes to no reader until one of the two changes"); continue)
+        r.discipline in cfg.disciplines ||
+            push!(gaps, "$(r.id) needs a $(r.discipline) reader and $(cfg.package) declares none, so nobody judges it")
     end
-    for d in declared
+    for d in DISCIPLINES
+        d.id in cfg.disciplines || continue
         off(cfg, d.id) && continue
-        push!(roles, role(FULL, expert; id = d.id, description = d.description, cap = 8))
+        mine = [r.id for r in tagged if r.discipline === d.id && !(AC.NOTHING in r.access)]
+        text = d.description * " An open reader of the whole documentation: reports whatever is wrong in this field, whether or not a rule names it" *
+               (isempty(mine) ? "." : ", and judges the rule(s) named below.")
+        push!(roles, role(FULL, mine; id = d.id, description = text, cap = 8))
     end
 
     # The open readers.
@@ -188,13 +201,17 @@ end
     select(roles, readers) -> Vector{Model.AgentRole}
 
 The readers one run launches. The arguments are `roles`, the derived panel, and `readers`, the run's
-choice: `:bound` for the readers carrying rules, `:open` for those carrying none, `:both`. Returns the
+choice: `:bound` for the readers carrying rules, `:open` for the readers carrying a standpoint — the two
+standpoints and every discipline reader, whether or not a rule binds it — and `:both`. Returns the
 selection, in the panel's order.
+
+A discipline reader that a rule binds is in both: the default run judges the rule, and an open run has
+the expert read for whatever else is wrong in its field.
 """
 function select(roles::Vector{Model.AgentRole}, readers::Symbol)
     readers === :both && return roles
     readers === :bound && return filter(r -> !isempty(r.rules), roles)
-    readers === :open && return filter(r -> isempty(r.rules), roles)
+    readers === :open && return filter(r -> isempty(r.rules) || r.id in DISCIPLINE_IDS, roles)
     throw(ArgumentError("readers is bound, open or both, not $readers"))
 end
 

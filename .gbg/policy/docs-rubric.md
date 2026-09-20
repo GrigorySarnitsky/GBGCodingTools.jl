@@ -14,7 +14,7 @@ Decided by an agent, because this needs meaning.
 ### RULE.DOC.ADMONITION_TITLE
 Every !!! block carries a custom descriptive title. Where this rule's `admonition_titles` is `load-bearing only`, a block need carry one only when text elsewhere relies on the block's content; a general aside may keep its default title.
 
-For this package the rule is what `admonition_titles` says: either every `!!!` block carries a custom descriptive title, or a block carrying one load-bearing claim does while a general aside may stay a …
+For this package the rule is what `admonition_titles` says: either every `!!!` block carries a custom descriptive title, or a block carrying one load-bearing claim does while a general aside may stay a bare `!!! note`. A caveat admonition is the last substantive block of a docstring, before the fields list.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 This package may set `admonition_titles`; unset, it is `always`.
@@ -30,7 +30,7 @@ This package may set `banner_pages`; unset, it is `String[]`.
 ### RULE.DOC.ALIASING_BULLET
 An aliasing statement specific to one operation — one that names that operation's own arguments — lives in the bullet for its destination argument. The package-wide aliasing guarantee lives once, in the module docstring, and is not repeated per operation.
 
-The package-wide guarantee lives in the module docstring and is not repeated per operation; an operation states it for itself only when it has an operation-specific reason, or when its contract is …
+The package-wide guarantee lives in the module docstring and is not repeated per operation; an operation states it for itself only when it has an operation-specific reason, or when its contract is the contrary one.
 
 Decided by an agent, because this needs meaning.
 
@@ -79,14 +79,14 @@ Decided by nothing yet. Nothing checks it: the rulebook does not check it: harne
 ### RULE.DOC.CLASS_SWEEP
 A flagged instance is a sample of a class: sweep every surface for the class and fix all in one pass.
 
-Fixing only the pointed-at line and waiting to be handed the next instance is the failure this rule exists to stop. After a class fix, enumerate the surfaces from the finding's own text, not from …
+Fixing only the pointed-at line and waiting to be handed the next instance is the failure this rule exists to stop. After a class fix, enumerate the surfaces from the finding's own text, not from memory, and re-measure.
 
 Decided by an agent, because this needs meaning.
 
 ### RULE.DOC.COORD_FREE
-Maps and pairings are stated intrinsically, without flattening a structured space to a bare vector; matrix and flattening machinery appears only in the package's formalization document — the file this rule's `formalization` names — and nowhere when none is named.
+Maps and pairings are stated intrinsically, without flattening a structured space to a bare vector; matrix and flattening machinery appears only in the package's formalization document — the file this rule's `formalization` names — and nowhere when none is named. Where a basis form is needed to mirror the code, the docstring states the basis and the space it acts on.
 
-Component notation for a genuine fiber algebra is fine; the rule targets flattening a structured space to a bare vector. Where a basis form is needed to mirror the code, state the basis and the …
+Component notation for a genuine fiber algebra is fine; the rule targets flattening a structured space to a bare vector. Where a basis form is needed to mirror the code, state the basis and the space it acts on.
 
 Decided by an agent, because this needs meaning.
 This package may set `formalization`; unset, it is ``.
@@ -122,7 +122,7 @@ Decided by an agent, because this needs meaning.
 ### RULE.DOC.HOME_ORDER
 A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats, then `# References`, then `# Fields` last. Implementation internals and design rationale are excluded; so is any term that neither the surrounding sentence nor the package's notation page — the file RULE.DOC.ONE_NOTATION's `notation_page` names — defines.
 
-In full: (1) a plain one-sentence identity in the user's terms; (2) when to use it, versus the alternatives; (3) each argument (positional and keyword) and its effect; (4) one formula if a clean one …
+In full: (1) a plain one-sentence identity in the user's terms; (2) when to use it, versus the alternatives; (3) each argument (positional and keyword) and its effect; (4) one formula if a clean one exists, never overflowing; (5) an inline citation for a named or published method and none for a classical one; (6) cross-links; (7) the caveats a user needs, as an admonition where load-bearing — the last block of the home's PROSE. Then the sections that are not prose, in this order and no other: the `# References` section of `RULE.CIT.FULL_INLINE`, then `# Fields`, which is last (`RULE.DOC.SHAPE`, and the shape scan reads any heading after `# Fields` as a hit). Three rules each used to claim the end of a docstring; the order lives here, and they defer to it. Excluded: implementation internals (a `#` comment), unexplained specialist jargon, architectural rationale and the formal apparatus (the rationale documents).
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -136,7 +136,7 @@ Decided by a program.
 ### RULE.DOC.LEADING_IDENTITY
 Item (1) of a docstring is one plain sentence saying what the operation computes — the physical meaning first, or the estimand first, as this rule's `leading_identity` sets for the package. Whether that sentence is true of the code is RULE.DOC.VERIFIED's question, not this rule's.
 
-For this package the identity leads with what `leading_identity` names: an operation computed in a derived representation still states what it does to the real object first — with the explicit …
+For this package the identity leads with what `leading_identity` names: an operation computed in a derived representation still states what it does to the real object first — with the explicit relation — and gives the derived form it uses after; an estimator states the population quantity it estimates, in standard probability notation, before the estimator. Where no clean form exists, say so briefly rather than forcing one.
 
 Decided by an agent, because this needs meaning.
 This package may set `leading_identity`; unset, it is `physical meaning`.
@@ -158,7 +158,7 @@ Decided by a program.
 ### RULE.DOC.LITERATE
 In the source file of a Literate example, every full-line # comment is prose that will render, any mathematics in such a comment is LaTeX, and a comment inside control flow is written ## so that it does not render. The rule is judged on the source file; what the page made of it is RULE.DOC.LITERATE_RENDERED's question.
 
-A full-line comment inside a control-flow block splits the code fence, so reserve full-line `# ` for narrative prose at statement boundaries. An underscored identifier in that prose is backticked, …
+A full-line comment inside a control-flow block splits the code fence, so reserve full-line `# ` for narrative prose at statement boundaries. An underscored identifier in that prose is backticked, or Markdown parses it as an italic span.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -186,7 +186,7 @@ Decided by a program.
 ### RULE.DOC.ONE_HOME
 One concept, one home: one docstring per operation on the bare binding; the ! form owns the formula and is listed first; every other variant is a thin wrapper that @ref-links the home and carries no second formula.
 
-Per-scheme or per-representation specifics live in the scheme's or the representation's own docstring, linked. Across an `f`/`f!` pair the in-place `!` form is the home — it owns the formula and the …
+Per-scheme or per-representation specifics live in the scheme's or the representation's own docstring, linked. Across an `f`/`f!` pair the in-place `!` form is the home — it owns the formula and the kernel and is listed first — and the allocating form and any operator alias is a thin wrapper that leads with the one-sentence meaning and `@ref`-links the home, carrying no second copy of the formula.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -223,7 +223,7 @@ This package may set `retired_claims`; unset, it is `GBGCodingTools.Model.Retire
 ### RULE.DOC.RETURNS
 A type docstring leads with its constructor. A function docstring whose identity sentence does not name the result states it with a '-> Type' arrow or a 'Returns x.' sentence. Whether the stated result is what the code returns is RULE.DOC.VERIFIED's question, not this rule's.
 
-A mutator whose signature carries no arrow says what it returns in a sentence before any caveat; a signature carries an arrow only where the return type is fixed by the signature; arrow and sentence …
+A mutator whose signature carries no arrow says what it returns in a sentence before any caveat; a signature carries an arrow only where the return type is fixed by the signature; arrow and sentence never both appear.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -287,14 +287,14 @@ Decided by a program.
 ### RULE.DOC.TERMS_DEFINED
 A term of art is defined in a clause, or @ref-linked to its definition, before its first use on the same page. The test is a cold read of that page alone.
 
-A docstring can bind every symbol and still be unreadable to someone who has not read the module, because its terms of art are nouns, not symbols; parse it with the module's context withheld, and a …
+A docstring can bind every symbol and still be unreadable to someone who has not read the module, because its terms of art are nouns, not symbols; parse it with the module's context withheld, and a noun that silently assumes the package's context is the defect.
 
 Decided by an agent, because this needs meaning.
 
 ### RULE.DOC.TWO_TIER
 A module docstring is a map: one linked one-line entry per operation family, and no formula. A function docstring is a home: the one place where that operation's identity, arguments and defining formula are stated in full.
 
-The map states what the module is, its scope and place in the architecture, and its invariants — then a linked one-liner per operation family, and no formulas; every formula lives in the operation's …
+The map states what the module is, its scope and place in the architecture, and its invariants — then a linked one-liner per operation family, and no formulas; every formula lives in the operation's own docstring.
 
 Decided by an agent, because this needs reading order.
 
@@ -308,7 +308,7 @@ Decided by nothing yet. Nothing checks it: no program decides it yet: it is a ha
 ### RULE.DOC.VERIFIED
 Every formula, normalization, adjoint relation and cross-scheme equivalence stated in the documentation is true of what the code computes, established by expanding the statement against the code, never taken on the docstring's word.
 
-A plausible 'X is just Y' is a false claim until the expansion matches. Run this as a positive verification — enumerate every formula, constant, relation and quantifier and verify each — not as a …
+A plausible 'X is just Y' is a false claim until the expansion matches. Run this as a positive verification — enumerate every formula, constant, relation and quantifier and verify each — not as a read-through; a false-but-plausible statement is as invisible as an unbound symbol. Category and type errors are their own class: an object conflated with its representation, an operator with its parameter, a rate with its time-integral, a scalar with the field it reduces; type every object from the code.
 
 Decided by an agent, because this needs meaning.
 

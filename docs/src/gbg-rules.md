@@ -22,7 +22,7 @@ Decided by an agent, because this needs meaning.
 #### [`RULE.DOC.ADMONITION_TITLE`](@id RULE.DOC.ADMONITION_TITLE)
 Every !!! block carries a custom descriptive title. Where this rule's `admonition_titles` is `load-bearing only`, a block need carry one only when text elsewhere relies on the block's content; a general aside may keep its default title.
 
-For this package the rule is what `admonition_titles` says: either every `!!!` block carries a custom descriptive title, or a block carrying one load-bearing claim does while a general aside may stay a …
+For this package the rule is what `admonition_titles` says: either every `!!!` block carries a custom descriptive title, or a block carrying one load-bearing claim does while a general aside may stay a bare `!!! note`. A caveat admonition is the last substantive block of a docstring, before the fields list.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 This package may set `admonition_titles`; unset, it is `always`.
@@ -38,7 +38,7 @@ This package may set `banner_pages`; unset, it is `String[]`.
 #### [`RULE.DOC.ALIASING_BULLET`](@id RULE.DOC.ALIASING_BULLET)
 An aliasing statement specific to one operation — one that names that operation's own arguments — lives in the bullet for its destination argument. The package-wide aliasing guarantee lives once, in the module docstring, and is not repeated per operation.
 
-The package-wide guarantee lives in the module docstring and is not repeated per operation; an operation states it for itself only when it has an operation-specific reason, or when its contract is …
+The package-wide guarantee lives in the module docstring and is not repeated per operation; an operation states it for itself only when it has an operation-specific reason, or when its contract is the contrary one.
 
 Decided by an agent, because this needs meaning.
 
@@ -87,14 +87,14 @@ Decided by nothing yet. Nothing checks it: the rulebook does not check it: harne
 #### [`RULE.DOC.CLASS_SWEEP`](@id RULE.DOC.CLASS_SWEEP)
 A flagged instance is a sample of a class: sweep every surface for the class and fix all in one pass.
 
-Fixing only the pointed-at line and waiting to be handed the next instance is the failure this rule exists to stop. After a class fix, enumerate the surfaces from the finding's own text, not from …
+Fixing only the pointed-at line and waiting to be handed the next instance is the failure this rule exists to stop. After a class fix, enumerate the surfaces from the finding's own text, not from memory, and re-measure.
 
 Decided by an agent, because this needs meaning.
 
 #### [`RULE.DOC.COORD_FREE`](@id RULE.DOC.COORD_FREE)
-Maps and pairings are stated intrinsically, without flattening a structured space to a bare vector; matrix and flattening machinery appears only in the package's formalization document — the file this rule's `formalization` names — and nowhere when none is named.
+Maps and pairings are stated intrinsically, without flattening a structured space to a bare vector; matrix and flattening machinery appears only in the package's formalization document — the file this rule's `formalization` names — and nowhere when none is named. Where a basis form is needed to mirror the code, the docstring states the basis and the space it acts on.
 
-Component notation for a genuine fiber algebra is fine; the rule targets flattening a structured space to a bare vector. Where a basis form is needed to mirror the code, state the basis and the …
+Component notation for a genuine fiber algebra is fine; the rule targets flattening a structured space to a bare vector. Where a basis form is needed to mirror the code, state the basis and the space it acts on.
 
 Decided by an agent, because this needs meaning.
 This package may set `formalization`; unset, it is ``.
@@ -130,7 +130,7 @@ Decided by an agent, because this needs meaning.
 #### [`RULE.DOC.HOME_ORDER`](@id RULE.DOC.HOME_ORDER)
 A function docstring is ordered: identity, when-to-use, arguments, one formula, citation, links, caveats, then `# References`, then `# Fields` last. Implementation internals and design rationale are excluded; so is any term that neither the surrounding sentence nor the package's notation page — the file RULE.DOC.ONE_NOTATION's `notation_page` names — defines.
 
-In full: (1) a plain one-sentence identity in the user's terms; (2) when to use it, versus the alternatives; (3) each argument (positional and keyword) and its effect; (4) one formula if a clean one …
+In full: (1) a plain one-sentence identity in the user's terms; (2) when to use it, versus the alternatives; (3) each argument (positional and keyword) and its effect; (4) one formula if a clean one exists, never overflowing; (5) an inline citation for a named or published method and none for a classical one; (6) cross-links; (7) the caveats a user needs, as an admonition where load-bearing — the last block of the home's PROSE. Then the sections that are not prose, in this order and no other: the `# References` section of `RULE.CIT.FULL_INLINE`, then `# Fields`, which is last (`RULE.DOC.SHAPE`, and the shape scan reads any heading after `# Fields` as a hit). Three rules each used to claim the end of a docstring; the order lives here, and they defer to it. Excluded: implementation internals (a `#` comment), unexplained specialist jargon, architectural rationale and the formal apparatus (the rationale documents).
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -144,7 +144,7 @@ Decided by a program.
 #### [`RULE.DOC.LEADING_IDENTITY`](@id RULE.DOC.LEADING_IDENTITY)
 Item (1) of a docstring is one plain sentence saying what the operation computes — the physical meaning first, or the estimand first, as this rule's `leading_identity` sets for the package. Whether that sentence is true of the code is RULE.DOC.VERIFIED's question, not this rule's.
 
-For this package the identity leads with what `leading_identity` names: an operation computed in a derived representation still states what it does to the real object first — with the explicit …
+For this package the identity leads with what `leading_identity` names: an operation computed in a derived representation still states what it does to the real object first — with the explicit relation — and gives the derived form it uses after; an estimator states the population quantity it estimates, in standard probability notation, before the estimator. Where no clean form exists, say so briefly rather than forcing one.
 
 Decided by an agent, because this needs meaning.
 This package may set `leading_identity`; unset, it is `physical meaning`.
@@ -166,7 +166,7 @@ Decided by a program.
 #### [`RULE.DOC.LITERATE`](@id RULE.DOC.LITERATE)
 In the source file of a Literate example, every full-line # comment is prose that will render, any mathematics in such a comment is LaTeX, and a comment inside control flow is written ## so that it does not render. The rule is judged on the source file; what the page made of it is RULE.DOC.LITERATE_RENDERED's question.
 
-A full-line comment inside a control-flow block splits the code fence, so reserve full-line `# ` for narrative prose at statement boundaries. An underscored identifier in that prose is backticked, …
+A full-line comment inside a control-flow block splits the code fence, so reserve full-line `# ` for narrative prose at statement boundaries. An underscored identifier in that prose is backticked, or Markdown parses it as an italic span.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -194,7 +194,7 @@ Decided by a program.
 #### [`RULE.DOC.ONE_HOME`](@id RULE.DOC.ONE_HOME)
 One concept, one home: one docstring per operation on the bare binding; the ! form owns the formula and is listed first; every other variant is a thin wrapper that @ref-links the home and carries no second formula.
 
-Per-scheme or per-representation specifics live in the scheme's or the representation's own docstring, linked. Across an `f`/`f!` pair the in-place `!` form is the home — it owns the formula and the …
+Per-scheme or per-representation specifics live in the scheme's or the representation's own docstring, linked. Across an `f`/`f!` pair the in-place `!` form is the home — it owns the formula and the kernel and is listed first — and the allocating form and any operator alias is a thin wrapper that leads with the one-sentence meaning and `@ref`-links the home, carrying no second copy of the formula.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -231,7 +231,7 @@ This package may set `retired_claims`; unset, it is `GBGCodingTools.Model.Retire
 #### [`RULE.DOC.RETURNS`](@id RULE.DOC.RETURNS)
 A type docstring leads with its constructor. A function docstring whose identity sentence does not name the result states it with a '-> Type' arrow or a 'Returns x.' sentence. Whether the stated result is what the code returns is RULE.DOC.VERIFIED's question, not this rule's.
 
-A mutator whose signature carries no arrow says what it returns in a sentence before any caveat; a signature carries an arrow only where the return type is fixed by the signature; arrow and sentence …
+A mutator whose signature carries no arrow says what it returns in a sentence before any caveat; a signature carries an arrow only where the return type is fixed by the signature; arrow and sentence never both appear.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -295,14 +295,14 @@ Decided by a program.
 #### [`RULE.DOC.TERMS_DEFINED`](@id RULE.DOC.TERMS_DEFINED)
 A term of art is defined in a clause, or @ref-linked to its definition, before its first use on the same page. The test is a cold read of that page alone.
 
-A docstring can bind every symbol and still be unreadable to someone who has not read the module, because its terms of art are nouns, not symbols; parse it with the module's context withheld, and a …
+A docstring can bind every symbol and still be unreadable to someone who has not read the module, because its terms of art are nouns, not symbols; parse it with the module's context withheld, and a noun that silently assumes the package's context is the defect.
 
 Decided by an agent, because this needs meaning.
 
 #### [`RULE.DOC.TWO_TIER`](@id RULE.DOC.TWO_TIER)
 A module docstring is a map: one linked one-line entry per operation family, and no formula. A function docstring is a home: the one place where that operation's identity, arguments and defining formula are stated in full.
 
-The map states what the module is, its scope and place in the architecture, and its invariants — then a linked one-liner per operation family, and no formulas; every formula lives in the operation's …
+The map states what the module is, its scope and place in the architecture, and its invariants — then a linked one-liner per operation family, and no formulas; every formula lives in the operation's own docstring.
 
 Decided by an agent, because this needs reading order.
 
@@ -316,7 +316,7 @@ Decided by nothing yet. Nothing checks it: no program decides it yet: it is a ha
 #### [`RULE.DOC.VERIFIED`](@id RULE.DOC.VERIFIED)
 Every formula, normalization, adjoint relation and cross-scheme equivalence stated in the documentation is true of what the code computes, established by expanding the statement against the code, never taken on the docstring's word.
 
-A plausible 'X is just Y' is a false claim until the expansion matches. Run this as a positive verification — enumerate every formula, constant, relation and quantifier and verify each — not as a …
+A plausible 'X is just Y' is a false claim until the expansion matches. Run this as a positive verification — enumerate every formula, constant, relation and quantifier and verify each — not as a read-through; a false-but-plausible statement is as invisible as an unbound symbol. Category and type errors are their own class: an object conflated with its representation, an operator with its parameter, a rate with its time-integral, a scalar with the field it reduces; type every object from the code.
 
 Decided by an agent, because this needs meaning.
 
@@ -535,7 +535,7 @@ Decided by nothing yet. Nothing checks it: the rulebook does not check it: test:
 #### [`RULE.TEST.DEFINITION_OF_DONE`](@id RULE.TEST.DEFINITION_OF_DONE)
 A feature is done when its correctness tests, performance test, four guiding docs, remaining docs, benchmarks (built AND run) and examples (run) are each verified.
 
-'Should work' is not done: a step is done when its verification command exits 0 and the exit code was observed. Grep the docs for stale deferred, none-exist and future claims about whatever was just …
+'Should work' is not done: a step is done when its verification command exits 0 and the exit code was observed. Grep the docs for stale deferred, none-exist and future claims about whatever was just implemented.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -549,7 +549,7 @@ Decided by nothing yet. Nothing checks it: the rulebook does not check it: harne
 #### [`RULE.TEST.GATE_VS_SURVEY`](@id RULE.TEST.GATE_VS_SURVEY)
 Pkg.test() is a gate; the exhaustive suite is a survey; a specific oracle and every completeness guard go in the gate.
 
-A gate re-checks claims already known and must be green or the change does not ship; a survey searches for combinations nobody enumerated and is read, not passed. A universal oracle over a product …
+A gate re-checks claims already known and must be green or the change does not ship; a survey searches for combinations nobody enumerated and is read, not passed. A universal oracle over a product goes in the survey, and anything that may legitimately be non-green goes there too, because a suppressed failure reads as a pass.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -577,7 +577,7 @@ Decided by nothing yet. Nothing checks it: no program decides it yet: it is a ha
 #### [`RULE.TEST.ORACLE_INDEPENDENT`](@id RULE.TEST.ORACLE_INDEPENDENT)
 Every public value-returning operation is classified in the oracle registry; relational-only coverage is a finding.
 
-The classes are analytic (a closed form derived independently of the package), independent (a direct computation written in the test), property (an invariant that pins the operation without …
+The classes are analytic (a closed form derived independently of the package), independent (a direct computation written in the test), property (an invariant that pins the operation without computing it), relational (compared only against other package operations — legitimate as a second layer, never as the only one) and structural (returns metadata or storage). A new operation fails the registry until someone classifies it, which is the moment to notice it has no independent oracle.
 
 Decided by nothing yet. Nothing checks it: the rulebook does not check it: harness:TestHarness.oracle_registry enforces it inside a package's own test suite
 
@@ -591,7 +591,7 @@ Decided by nothing yet. Nothing checks it: the rulebook does not check it: harne
 #### [`RULE.TEST.RULE_WITH_CHECK`](@id RULE.TEST.RULE_WITH_CHECK)
 A rule and its check land in the same commit; a stated rule without a check is a known weakness.
 
-A rule is written by whoever has just fixed an instance, at the moment they are most confident the class is handled — which is precisely when nobody builds the check; afterwards the rule's presence …
+A rule is written by whoever has just fixed an instance, at the moment they are most confident the class is handled — which is precisely when nobody builds the check; afterwards the rule's presence reads as compliance. When a rule is written down, name what would catch its next violation in its `RULES.toml` `check` field: a `scan:`, `doctor:` or `test:` id, a `harness:` binding the tool enforces it by, `panel` for a rule a reading panel decides inside an instrument that runs, or `weakness` — a check is possible and none is built. Only `panel` is an answer without a program behind it, and only because the panel is itself a procedure with a roster, a record and a verdict; "someone remembering this rule" is not one, and a rule resting on nothing but that is `weakness` however old the habit. A rule no program could ever decide is `panel`; `weakness` is reserved for the check that could exist and does not. A sweep reporting zero is the one to distrust: falsify it against a fixture carrying a known positive before believing it.
 
 Decided by nothing yet. Nothing checks it: the rulebook does not check it: test:test/schemas.jl enforces it inside a package's own test suite
 
@@ -605,14 +605,14 @@ so a rule reworded here was reworded in the program that checks it.
 #### [`RULE.INST.AUDIT_AFTER_CODE`](@id RULE.INST.AUDIT_AFTER_CODE)
 A fix pass that changed code is audited before its round closes — always for a hunt, and for a check-docs round whose pass touched src or ext — by an audit that read the round's last code change.
 
-`/bug-hunt` always qualifies, and so does a `/check-docs` round whose pass touched the `src` or `ext` surfaces: closing refuses until a `/audit-changes` round based at the closing round's opening …
+`/bug-hunt` always qualifies, and so does a `/check-docs` round whose pass touched the `src` or `ext` surfaces: closing refuses until a `/audit-changes` round based at the closing round's opening head is itself closed and has read the round's last code change, so it runs after the final fix pass. The two verifiers grade each finding as asked; neither reads the diff whole, runs anything, or asks whether input that worked before still does. A prose-only pass is not gated: run the audit's prose lenses on judgment when the pass rewrote docstrings that state a contract.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
 #### [`RULE.INST.AUDIT_DISPOSED`](@id RULE.INST.AUDIT_DISPOSED)
 An audit round is closed by disposing its concerns, never by correcting them inside it; a correction rides the next change set, which the next audit covers.
 
-A correction moves the tree, the staleness check then refuses the close, and there is no re-bank; the round would be permanently unclosable. Each gated concern takes a disposition record instead, …
+A correction moves the tree, the staleness check then refuses the close, and there is no re-bank; the round would be permanently unclosable. Each gated concern takes a disposition record instead, and a correction the audit asks for rides the next change set, which the next audit covers. This is why `bank` on an audit round names the disposition and not a fix pass.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -626,14 +626,14 @@ Decided by nothing yet. Nothing checks it: no program decides it yet: it is a ha
 #### [`RULE.INST.CLOSURE_LOOP`](@id RULE.INST.CLOSURE_LOOP)
 The closure loop runs over the banked findings by id, never by re-running the battery; abandon is the only wholesale exit and names every open id.
 
-Closing a banked round terminates because the denominator is fixed; re-running the lanes over a just-edited corpus is a new search with no fixed point. Stop on a plateau — three passes flat within …
+Closing a banked round terminates because the denominator is fixed; re-running the lanes over a just-edited corpus is a new search with no fixed point. Stop on a plateau — three passes flat within noise, with no dead lane — never on a good round.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
 #### [`RULE.INST.CONSENT`](@id RULE.INST.CONSENT)
 Unasked, run only Pkg.test(); every instrument, survey, benchmark and panel runs only on the user's request, in words or by slash.
 
-The correct output when one would be informative is to name it and its cost and wait. This is a consent boundary, not licence to leave work unfinished: finish the code, run the gate, and report what …
+The correct output when one would be informative is to name it and its cost and wait. This is a consent boundary, not licence to leave work unfinished: finish the code, run the gate, and report what remains unverified and why. "Check the docs" is such a request: it means run `/check-docs`.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -654,14 +654,14 @@ Decided by nothing yet. Nothing checks it: no program decides it yet: it is a ha
 #### [`RULE.INST.FOUR_OBJECTS`](@id RULE.INST.FOUR_OBJECTS)
 The four instruments audit different objects: changes, source prose, rendered prose, code.
 
-A flawless docstring on a function returning the wrong number passes both prose instruments; an edit that is a correct fix and still wider than the defect passes the hunt; each exists for what the …
+A flawless docstring on a function returning the wrong number passes both prose instruments; an edit that is a correct fix and still wider than the defect passes the hunt; each exists for what the others cannot see.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
 #### [`RULE.INST.FROZEN_MIDROUND`](@id RULE.INST.FROZEN_MIDROUND)
 An instrument is never changed mid-round; a change is its own commit and release; a deferral is written in the round's deferred.md and carried into the work queue at close; a round whose own frozen verifiers or auditors cannot run has those differing copies replaced by gbg round scripts --reason, never a lens, recorded in ROUND.toml.
 
-A change the round wanted and could not make is written one line per deferral in the round's `deferred.md`, and `gbg round close` carries each into `.claude/WORK_QUEUE.md`, where the Stop hook holds …
+A change the round wanted and could not make is written one line per deferral in the round's `deferred.md`, and `gbg round close` carries each into `.claude/WORK_QUEUE.md`, where the Stop hook holds the next session to it. A deferral recorded anywhere else is a note, and a note is not a mechanism. A round records the instrument version that measured it and cannot close under a different one unless re-graded; a rate sequence means something only at a fixed instrument. One relaxation is recorded rather than hidden: a round whose own frozen verifier or auditor scripts cannot run — its verifiers unparseable, so it could never verify — has those differing copies replaced by `gbg round scripts --reason`, which writes the reason, the pass count and each script's sha into `ROUND.toml`. A lens script is never replaced mid-round: a changed lens is a new round.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -675,21 +675,21 @@ Decided by nothing yet. Nothing checks it: the rulebook does not check it: harne
 #### [`RULE.INST.SEEDS`](@id RULE.INST.SEEDS)
 A seeded finding is never fixed in the corpus and never enters the ledger.
 
-Seeds are planted in a disposable copy to measure recall; the ground truth reaches no hat; a class at zero seeded recall is unmeasured, not clean; and recording a seed as adjudicated would hand the …
+Seeds are planted in a disposable copy to measure recall; the ground truth reaches no hat; a class at zero seeded recall is unmeasured, not clean; and recording a seed as adjudicated would hand the next round its answer key.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
 #### [`RULE.INST.SELF_REPORT`](@id RULE.INST.SELF_REPORT)
 Self-reported closure is not closure; the act verifier sees the diff, the state verifier is blind; the demotion is mechanical.
 
-Both default to the unfavourable verdict so a truncated lane fails safe; a zero count is a dead lane rather than a clean hat; the denominator never comes from the party being measured; and a …
+Both default to the unfavourable verdict so a truncated lane fails safe; a zero count is a dead lane rather than a clean hat; the denominator never comes from the party being measured; and a dismissal is a verdict the verifier grades like any other.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
 #### [`RULE.INST.WITNESS`](@id RULE.INST.WITNESS)
 A static claim about code is a hypothesis; the only evidence is a program that fails; a fixed witness is promoted unchanged.
 
-A passing witness means not a bug, discarded however good the argument; no witness writable means a latent hazard, reported and not fixed; a failing witness is the finding and, once the fix lands, …
+A passing witness means not a bug, discarded however good the argument; no witness writable means a latent hazard, reported and not fixed; a failing witness is the finding and, once the fix lands, the regression test — necessary and not sufficient, since a witness can fail because the witness is wrong, so adjudication derives the expected value independently of the assertion.
 
 Decided by nothing yet. Nothing checks it: the rulebook does not check it: harness:Witnesses.run enforces it inside a package's own test suite
 
@@ -710,7 +710,7 @@ Decided by nothing yet. Nothing checks it: the rulebook does not check it: docto
 #### [`RULE.GIT.CI_MANUAL`](@id RULE.GIT.CI_MANUAL)
 CI is manual-only; the matrix runs locally before a commit; docs deploy on push.
 
-Before committing a code change, run the gate locally; a documentation-only change needs a load and the docs build. The docs build is therefore the per-push enforcement point, and the doctor, the …
+Before committing a code change, run the gate locally; a documentation-only change needs a load and the docs build. The docs build is therefore the per-push enforcement point, and the doctor, the hard scans and the gate stay inside it.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -731,7 +731,7 @@ Decided by nothing yet. Nothing checks it: no program decides it yet: it is a ha
 #### [`RULE.GIT.PUSH`](@id RULE.GIT.PUSH)
 Commit ⇒ push, directly on the configured branch; no feature branches.
 
-The repository is private and synced across machines through GitHub, so work is committed on the default branch and pushed in the same step; GitHub is the cross-machine sync path and the docs site …
+The repository is private and synced across machines through GitHub, so work is committed on the default branch and pushed in the same step; GitHub is the cross-machine sync path and the docs site deploys on push. Stage with `git add -u` plus every new file by name, never `-A`.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -745,7 +745,7 @@ Decided by nothing yet. Nothing checks it: no program decides it yet: it is a ha
 #### [`RULE.GIT.TRAILER`](@id RULE.GIT.TRAILER)
 Every commit ends with the versionless 'Co-Authored-By: Anthropic Claude <noreply@anthropic.com>' trailer; never [skip ci].
 
-The trailer names no model version on purpose: the model in use changes often and the versions supersede each other, so a version in the trailer is a fact about the day rather than about the work, …
+The trailer names no model version on purpose: the model in use changes often and the versions supersede each other, so a version in the trailer is a fact about the day rather than about the work, and it goes stale in the one place git never lets anyone correct it.
 
 Decided by nothing yet. Nothing checks it: the rulebook does not check it: doctor:GIT.TRAILER checks the wiring of a package, not its text
 

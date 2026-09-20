@@ -401,11 +401,11 @@ examples that show the check matches the statement. The fields are:
 
 - `access` — what a reader must be given beyond the unit; empty where a program decides it or a
   session keeps it as a habit.
-- `needs_discipline` — whether deciding it takes the package's field; unset, any careful reader.
+- `discipline` — the catalogued discipline deciding it takes, or `nothing`: any careful reader.
 
 A rule with an access tag is a READER'S rule: the readers of a documentation review are derived from
-these tags rather than listed. A rule needing a discipline goes to a reader with one of the package's
-declared disciplines, and to nobody — said in the report — where none is declared.
+these tags rather than listed. A rule naming a discipline goes to that discipline's reader where the package
+declares it, and to nobody — said in the report — where it does not.
 
 A file set is shared and some rules are not, which is what `files_parameter` answers. Which pages must
 carry the provenance banner differs per package and has nothing to do with which pages are rationale.
@@ -425,7 +425,7 @@ Base.@kwdef struct Rule
     parameters::Vector{Parameter} = Parameter[]
     examples::Vector{Example} = Example[]
     access::Vector{Access.T} = Access.T[]
-    needs_discipline::Bool = false
+    discipline::Union{Symbol,Nothing} = nothing
 end
 
 # ────────────────────────────────────────────────────────────────────── who reads, and what runs
@@ -468,8 +468,8 @@ and shared: a fluid-dynamics theoretician serves two of the science packages. Th
 - `description` — who the reader is, in two or three sentences.
 
 A reader with a discipline is the same model with a standpoint, not a different model. It is derived
-into the panel as a BOUND reader carrying every rule tagged `needs_discipline`, and may be launched
-open as well when asked.
+into the panel as an OPEN reader — a specialist reading the whole documentation for whatever is wrong in
+its field — bound only to a rule that names its discipline.
 """
 Base.@kwdef struct Discipline
     id::Symbol

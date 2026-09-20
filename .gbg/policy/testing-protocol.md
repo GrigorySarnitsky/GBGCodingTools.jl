@@ -28,7 +28,7 @@ Decided by nothing yet. Nothing checks it: the rulebook does not check it: test:
 ### RULE.TEST.DEFINITION_OF_DONE
 A feature is done when its correctness tests, performance test, four guiding docs, remaining docs, benchmarks (built AND run) and examples (run) are each verified.
 
-'Should work' is not done: a step is done when its verification command exits 0 and the exit code was observed. Grep the docs for stale deferred, none-exist and future claims about whatever was just …
+'Should work' is not done: a step is done when its verification command exits 0 and the exit code was observed. Grep the docs for stale deferred, none-exist and future claims about whatever was just implemented.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -42,7 +42,7 @@ Decided by nothing yet. Nothing checks it: the rulebook does not check it: harne
 ### RULE.TEST.GATE_VS_SURVEY
 Pkg.test() is a gate; the exhaustive suite is a survey; a specific oracle and every completeness guard go in the gate.
 
-A gate re-checks claims already known and must be green or the change does not ship; a survey searches for combinations nobody enumerated and is read, not passed. A universal oracle over a product …
+A gate re-checks claims already known and must be green or the change does not ship; a survey searches for combinations nobody enumerated and is read, not passed. A universal oracle over a product goes in the survey, and anything that may legitimately be non-green goes there too, because a suppressed failure reads as a pass.
 
 Decided by nothing yet. Nothing checks it: no program decides it yet: it is a habit the rulebook states and a reader keeps
 
@@ -70,7 +70,7 @@ Decided by nothing yet. Nothing checks it: no program decides it yet: it is a ha
 ### RULE.TEST.ORACLE_INDEPENDENT
 Every public value-returning operation is classified in the oracle registry; relational-only coverage is a finding.
 
-The classes are analytic (a closed form derived independently of the package), independent (a direct computation written in the test), property (an invariant that pins the operation without …
+The classes are analytic (a closed form derived independently of the package), independent (a direct computation written in the test), property (an invariant that pins the operation without computing it), relational (compared only against other package operations — legitimate as a second layer, never as the only one) and structural (returns metadata or storage). A new operation fails the registry until someone classifies it, which is the moment to notice it has no independent oracle.
 
 Decided by nothing yet. Nothing checks it: the rulebook does not check it: harness:TestHarness.oracle_registry enforces it inside a package's own test suite
 
@@ -84,7 +84,7 @@ Decided by nothing yet. Nothing checks it: the rulebook does not check it: harne
 ### RULE.TEST.RULE_WITH_CHECK
 A rule and its check land in the same commit; a stated rule without a check is a known weakness.
 
-A rule is written by whoever has just fixed an instance, at the moment they are most confident the class is handled — which is precisely when nobody builds the check; afterwards the rule's presence …
+A rule is written by whoever has just fixed an instance, at the moment they are most confident the class is handled — which is precisely when nobody builds the check; afterwards the rule's presence reads as compliance. When a rule is written down, name what would catch its next violation in its `RULES.toml` `check` field: a `scan:`, `doctor:` or `test:` id, a `harness:` binding the tool enforces it by, `panel` for a rule a reading panel decides inside an instrument that runs, or `weakness` — a check is possible and none is built. Only `panel` is an answer without a program behind it, and only because the panel is itself a procedure with a roster, a record and a verdict; "someone remembering this rule" is not one, and a rule resting on nothing but that is `weakness` however old the habit. A rule no program could ever decide is `panel`; `weakness` is reserved for the check that could exist and does not. A sweep reporting zero is the one to distrust: falsify it against a fixture carrying a known positive before believing it.
 
 Decided by nothing yet. Nothing checks it: the rulebook does not check it: test:test/schemas.jl enforces it inside a package's own test suite
 
