@@ -150,9 +150,10 @@ owner's answers of 2026-09-21. The phase is five pieces:
   with the withheld reader launched once per page and its verifier given the same page rebuilt; a quote
   placed across the documentation; `Run.model` and sequential launch; `gbg docfix check`'s real checks;
   close's red-build restore; `Render.skill` and the per-instrument skill files; a readers page and an
-  instruments page; the glossary's new terms; `Release` off the legacy config. **Left**: the other-copies
-  search, the formula-edit rule, `Wire`'s `settled.jl` and `questions.json` refusals of §11, and the
-  §5.2-versus-`Model` test. The rest of the entry as first written: the fix half of §4.3 — re-anchor before each pass, the
+  instruments page; the glossary's new terms; `Release` off the legacy config. Then the other-copies search; the formula
+  rule, which the owner settled by ruling that NO edit inside a math span is automatic (guard clause 6);
+  `gbg init`'s refusal to overwrite a file the package wrote itself; and the §5.2-versus-`Model` test.
+  **4b is complete**; what was written as its scope, for the record: the fix half of §4.3 — re-anchor before each pass, the
   guarded fix, the other-copies search, the formula-edit rule, `gbg docfix check`'s real checks, the blind and the diff
   verifier with their own output schema, grading, `DocFix` and `Verdict` records, the pass driver and the four-pass cap;
   the guard's clause 3; an interrupted run continued by the next session (§10) and `gbg run abandon`; sequential launch;

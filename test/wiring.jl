@@ -195,6 +195,33 @@ end
         @test occursin("The review is switched off here", read(joinpath(dir, RN.READERS_PAGE), String))
     end
 
+    # A generated file silently replacing a hand-written workflow is the one wiring mistake that is
+    # noticed late, so `gbg init` stops on a path the package wrote itself and writes nothing.
+    @testset "init keeps what the package wrote itself" begin
+        dir, cfg = wired_package()
+        @test isempty(RN.collisions(cfg, dir))                 # everything there came from a generator
+
+        # the package's own CI action, and its own skill of a name the tool also uses
+        own = joinpath(dir, RN.CI_ACTION)
+        mkpath(dirname(own)); write(own, "name: the package's own action\non: [push]\n")
+        skill = joinpath(dir, RN.skill_path(:bug_hunt))
+        write(skill, "# /bug-hunt — the package had this command first\n")
+        clash = RN.collisions(cfg, dir)
+        @test sort(first.(clash)) == sort([RN.CI_ACTION, RN.skill_path(:bug_hunt)])
+        @test occursin("the package's own action", last(first(filter(c -> first(c) == RN.CI_ACTION, clash))))
+
+        @test G.Wire.init(dir; io = devnull) == 1              # it stops
+        @test read(own, String) == "name: the package's own action\non: [push]\n"   # and writes nothing
+        @test occursin("had this command first", read(skill, String))
+
+        # moved away, it wires
+        rm(own); rm(skill)
+        @test G.Wire.init(dir; io = devnull) == 0
+        @test occursin(RN.BEGIN_MARK, read(own, String))
+        @test occursin(RN.BEGIN_MARK, read(skill, String))
+        @test isempty(RN.collisions(cfg, dir))
+    end
+
     @testset "a missing generated file is reported, not passed over" begin
         dir, cfg = wired_package()
         rm(joinpath(dir, ".claude", "settings.json"))

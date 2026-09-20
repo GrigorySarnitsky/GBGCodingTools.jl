@@ -57,6 +57,20 @@ Exit 0 when the package is wired, 2 when the config it wrote or found cannot be 
 """
 function init(root::AbstractString; io::IO = stdout)
     path = joinpath(root, ".gbg", "config.jl")
+    # What the package wrote itself is never overwritten. This is asked BEFORE the config is written, so
+    # a refusal leaves the package exactly as it was.
+    if isfile(path)
+        cfg = try ConfigIO.read_config(root) catch; nothing end
+        if cfg !== nothing
+            clash = Render.collisions(cfg, root)
+            if !isempty(clash)
+                println(io, "init: these paths are the package's own, not a generator's, and are kept:")
+                for (p, line) in clash; println(io, "  ", p, "\n      it begins: ", first(line, 70)); end
+                println(io, "Move or keep each, then run `gbg init` again. Nothing was written.")
+                return 1
+            end
+        end
+    end
     if isfile(path)
         println(io, "init: ", relpath(path, root), " exists and is kept — this is `gbg sync`.")
     else

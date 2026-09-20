@@ -29,7 +29,8 @@ using ..Engine
 # The marker a generated block carries. It is matched anywhere in the line rather than at its start,
 # because the comment syntax differs by file — `#` in a shell script or a `.gitignore`, `<!-- -->` in
 # Markdown — and one marker the reader recognises in every file is worth more than one parser per format.
-const BEGIN_MARK = "gbg:managed begin"
+const MANAGED_MARK = "gbg:managed"
+const BEGIN_MARK = MANAGED_MARK * " begin"
 const END_MARK = "gbg:managed end"
 
 """
@@ -688,6 +689,42 @@ function instruments_page(cfg::Model.Config)
     end
     return String(take!(io))
 end
+
+"""
+    collisions(cfg, root) -> Vector{Pair{String,String}}
+
+Every generated path the package at `root` already holds and did not get from a generator. The
+arguments are `cfg`, the package's config, and `root`, the package root. Returns the path and its first
+line, one pair each, empty when nothing collides.
+
+A generated file says so in its first lines — the managed marker, or this package's name where the file
+is a script that cannot carry one; a file at the same path saying neither is the package's own —
+a CI workflow it wrote, a skill whose name one of its own commands already had. `gbg init` writes
+everything else and stops on these, because a generated file silently replacing a hand-written workflow
+is the one wiring mistake that is noticed late. Files this package merges into rather than writes whole
+(`.claude/settings.json`) and files it only appends to (the work queue) cannot collide and are not here.
+"""
+function collisions(cfg::Model.Config, root::AbstractString)
+    out = Pair{String,String}[]
+    for g in GENERATED
+        g.part === Model.Part.WHOLE && wanted(cfg, g) || continue
+        full = joinpath(root, g.path)
+        isfile(full) || continue
+        text = read(full, String)
+        generated_here(text) && continue              # it came from a generator, and is ours to rewrite
+        first_line = isempty(text) ? "(empty)" : first(split(text, '\n'))
+        push!(out, g.path => String(first_line))
+    end
+    return out
+end
+
+# Whether a file says, in its opening lines, that this package wrote it. The marker is what most
+# generated files carry; the hook is a shell script whose first line must be its shebang, and it says so
+# in the sentence under it instead. Only the opening is read: a file that MENTIONS the marker far below
+# is discussing it, not claiming it.
+generated_here(text::AbstractString) =
+    any(l -> occursin(MANAGED_MARK, l) || occursin("Written by GBGCodingTools", l),
+        first(split(text, '\n'), 5))
 
 """
     wanted(cfg, g) -> Bool
