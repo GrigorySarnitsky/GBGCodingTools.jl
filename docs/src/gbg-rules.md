@@ -7,7 +7,7 @@ Generated at build time from the rule values in GBGCodingTools vdev. Each rule c
 text and the program that enforces it cannot disagree. A rule's id is stable and is what a
 finding, a switch and a report all name.
 
-## Checked by a program — 42
+## Checked by a program — 43
 
 These run in every build and every test of the package; a breach is a red build.
 
@@ -69,6 +69,14 @@ A full reference mid-sentence takes the reader's eye out of the sentence, and a 
 
 Covered by a program.
 This package may set `references`; unset, it is `docs/ARCHITECTURE.md`.
+
+
+#### [`RULE.CIT.RESOLVES`](@id RULE.CIT.RESOLVES)
+Every DOI or Open Library link on a title answers, and answers with the work the title names.
+
+A link is a promise that the reader can reach the work. A DOI that answers 404, or answers with another paper's record, breaks it and nothing in the text looks different. This reaches the network, so it runs only under `gbg check --network` — on request, never in a build or a test — which is why the reader's rule about inaccessible sources does not ask it.
+
+Covered by a program, which reaches the network and runs only under `gbg check --network`.
 
 
 #### [`RULE.DOC.AI_BANNER`](@id RULE.DOC.AI_BANNER)
@@ -376,11 +384,11 @@ Covered by an agent, because this needs meaning.
 
 
 #### [`RULE.CIT.NO_INACCESSIBLE`](@id RULE.CIT.NO_INACCESSIBLE)
-Never cite an inaccessible source on any user-facing surface: not a gitignored monograph, an accompanying thesis, an appendix or figure the reader cannot open, nor working notes.
+Never cite an inaccessible source on any user-facing surface: not a gitignored monograph, an accompanying thesis, an appendix or figure the reader cannot open, nor working notes. Whether a link answers is RULE.CIT.RESOLVES's question, not this rule's.
 
 A citation the reader cannot follow is the author telling themselves where they got it; the reader is left with an assertion and nowhere to check it.
 
-Covered by a reader given cited work + other documents, because this needs meaning.
+Covered by a reader given other documents, because this needs meaning.
 
 
 #### [`RULE.CIT.STYLE`](@id RULE.CIT.STYLE)

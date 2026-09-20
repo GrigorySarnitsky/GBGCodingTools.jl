@@ -2,14 +2,19 @@
 """
     Rules.Citations
 
-The `RULE.CIT.*` rules a program decides: that every reference carries a clickable DOI, and that the
-full reference sits under the docstring's own `# References` heading and says the same thing as the
-canonical entry.
+The `RULE.CIT.*` rules a program decides: that every reference carries a clickable DOI, that the full
+reference sits under the docstring's own `# References` heading and says the same thing as the canonical
+entry, and — under `gbg check --network` alone — that every such link resolves to the work its title
+names.
 
-Both were one text scan, `SCAN.DOI_CROSSCHECK`, which enforced two rules at once. They are two checks
-here, because a rule whose violation is reported under another rule's name is a rule nobody can waive.
+The first two were one text scan, `SCAN.DOI_CROSSCHECK`, which enforced two rules at once. They are two
+checks here, because a rule whose violation is reported under another rule's name is a rule nobody can
+waive. The third is the program half of the split the plan's batch d named: the reader's half asks
+whether a citation is to something unpublished, this asks whether the link answers.
 """
 module Citations
+
+import Downloads, JSON3
 
 using ...Model
 using ...Texts
@@ -271,6 +276,104 @@ const FULL_INLINE = Model.Rule(
 
 The rules of this batch.
 """
-const RULES = Model.Rule[DOI, FULL_INLINE]
+# ──────────────────────────────────────────────────────────── the link that answers
+
+"""
+    RESOLVER
+
+How a link is resolved: a function of the URL returning `(status, title)` — the HTTP status, 0 where
+nothing answered, and for a DOI the title the resolver's record carries. The one place the network is
+touched; `test/rules.jl` swaps it for a canned one, so the rule's examples run offline.
+"""
+const RESOLVER = Ref{Function}(url -> resolve_online(url))
+
+"""
+    resolve_online(url) -> (status, title)
+
+Asks the resolver for the work behind `url`. The argument is `url`. Returns the HTTP status (0 where
+nothing answered within the timeout) and, for a DOI, the title of the record it resolves to.
+
+A DOI is asked for its citation record rather than followed to a publisher's page: the record is what
+says which work the DOI names, and a paywall in front of the page is not the reader's inability to open it.
+"""
+function resolve_online(url::AbstractString)
+    buf = IOBuffer()
+    response = try
+        Downloads.request(String(url); method = "GET", output = buf, throw = false, timeout = 20,
+                          headers = ["Accept" => "application/vnd.citationstyles.csl+json",
+                                     "User-Agent" => "GBGCodingTools (gbg check --network)"])
+    catch
+        return (0, "")
+    end
+    response isa Downloads.Response || return (0, "")
+    title = ""
+    if occursin("doi.org/", url) && response.status < 400
+        title = try
+            String(get(JSON3.read(String(take!(buf))), :title, ""))
+        catch
+            ""
+        end
+    end
+    return (response.status, title)
+end
+
+# Whether the linked title and the resolved title are the same work: at least half of the linked title's
+# words of four letters or more appear in the record's title. Looser would pass a wrong record; tighter
+# would fail a subtitle or a translated article.
+function names_the_work(linked::AbstractString, title::AbstractString)
+    words = [w for w in split(lowercase(linked), r"[^a-z0-9]+") if length(w) >= 4]
+    isempty(words) && return true
+    return 2 * count(w -> occursin(w, lowercase(title)), words) >= length(words)
+end
+
+"""
+    links_resolve(text, cfg) -> Vector{Model.Location}
+
+Every DOI or Open Library link on a title that does not answer, or answers with another work's record.
+The arguments are `text`, the prose, and `cfg`, the package's config, which this rule does not read.
+Returns one location per link, with what the resolver said.
+"""
+function links_resolve(text::AbstractString, cfg)
+    out = Model.Location[]
+    for (i, line) in Texts.unwrapped(text)
+        for m in eachmatch(r"\[([^\]]*)\]\((https://(?:doi\.org|openlibrary\.org)/[^)\s]+)\)", Texts.mask_code_spans(line))
+            linked = strip(String(m.captures[1]), ['*', '_', ' '])
+            url = String(m.captures[2])
+            status, title = RESOLVER[](url)
+            if status == 0 || status >= 400
+                push!(out, Model.Location(; file = "", line = i,
+                    text = url * " does not resolve" * (status == 0 ? " (nothing answered)" : " (HTTP $status)")))
+            elseif !isempty(title) && !names_the_work(linked, title)
+                push!(out, Model.Location(; file = "", line = i,
+                    text = url * " resolves to \"" * title * "\", not to \"" * linked * "\""))
+            end
+        end
+    end
+    return out
+end
+
+const RESOLVES = Model.Rule(
+    id = Symbol("RULE.CIT.RESOLVES"),
+    statement = "Every DOI or Open Library link on a title answers, and answers with the work the title names.",
+    why = "A link is a promise that the reader can reach the work. A DOI that answers 404, or answers with another paper's record, breaks it and nothing in the text looks different. This reaches the network, so it runs only under `gbg check --network` — on request, never in a build or a test — which is why the reader's rule about inaccessible sources does not ask it.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, links_resolve, true),
+    examples = [
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Pope, [*Turbulent Flows*](https://doi.org/10.9999/no.such.record), CUP (2000)\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "answers"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Pope, [*Turbulent Flows*](https://doi.org/10.1017/CBO9780511840531), CUP (2000)\n",
+            Model.Location[], "answers"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Pope, [*Turbulent Flows*](https://doi.org/10.1098/rspa.1991.0075), CUP (2000)\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "answers with the work the title names"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Kolmogorov, [*The local structure of turbulence in incompressible viscous fluid*](https://doi.org/10.1098/rspa.1991.0075), Proc. R. Soc. A (1991)\n",
+            Model.Location[], "answers with the work the title names"),
+    ])
+
+const RULES = Model.Rule[DOI, FULL_INLINE, RESOLVES]
 
 end # module Citations

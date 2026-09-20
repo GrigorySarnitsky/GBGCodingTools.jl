@@ -53,8 +53,9 @@ tagged() = [r for r in G.Catalogue.RULES if !isempty(r.access)]
         # the geometer's rule is on no reader, and the gap names the discipline
         @test !(Symbol("RULE.DOC.COORD_FREE") in placed)
         @test any(g -> startswith(g, "RULE.DOC.COORD_FREE") && occursin("differential_geometry", g), gaps)
-        # the rule needing the cited work is a gap, not a reader
-        @test any(g -> startswith(g, "RULE.CIT.NO_INACCESSIBLE") && occursin("cited work", g), gaps)
+        # the citation rule's reader half is the full reader's; its network half is a program (decision 17)
+        @test Symbol("RULE.CIT.NO_INACCESSIBLE") in full.rules
+        @test !any(g -> startswith(g, "RULE.CIT.NO_INACCESSIBLE"), gaps)
     end
 
     @testset "a rule needing nothing goes only to the reader given nothing" begin

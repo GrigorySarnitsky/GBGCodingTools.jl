@@ -24,12 +24,12 @@ const STYLE = Model.Rule(
 
 const NO_INACCESSIBLE = Model.Rule(
     id = Symbol("RULE.CIT.NO_INACCESSIBLE"),
-    statement = "Never cite an inaccessible source on any user-facing surface: not a gitignored monograph, an accompanying thesis, an appendix or figure the reader cannot open, nor working notes.",
+    statement = "Never cite an inaccessible source on any user-facing surface: not a gitignored monograph, an accompanying thesis, an appendix or figure the reader cannot open, nor working notes. Whether a link answers is RULE.CIT.RESOLVES's question, not this rule's.",
     why = "A citation the reader cannot follow is the author telling themselves where they got it; the reader is left with an assertion and nowhere to check it.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.LITERATE],
-    check = Model.AgentCheck("Does every source this text cites exist somewhere the reader can open it? A gitignored monograph, an accompanying thesis, an appendix, a figure or a set of working notes is not such a place.", Model.WhyAgent.MEANING),
-    access = [Model.Access.CITED_WORK, Model.Access.OTHER_DOCUMENTS])
+    check = Model.AgentCheck("Is every source this text cites a published work a reader could obtain — one with its entry in the package's reference list — rather than a gitignored monograph, an accompanying thesis, an appendix or figure the site does not carry, or working notes? Judge from the citation and the reference list; whether a link answers is not asked here.", Model.WhyAgent.MEANING),
+    access = [Model.Access.OTHER_DOCUMENTS])
 
 """
     RULES

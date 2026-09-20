@@ -6,7 +6,10 @@ being rebuilt, and nothing measures a recall rate any more.
 
 ## Unreleased — toward 2.0.0-rc.6
 
-MAJOR. **91 rules.** Thirteen retired on the owner's word of 2026-09-21, each with its reason in
+MAJOR. **92 rules.** `RULE.CIT.RESOLVES` is new: every DOI or Open Library link on a title answers,
+and with the work the title names — a program that reaches the network and runs only under `gbg check
+--network`; `RULE.CIT.NO_INACCESSIBLE`, its reader half, no longer asks whether a link answers and is
+the full reader's. Thirteen retired on the owner's word of 2026-09-21, each with its reason in
 `Catalogue.RETIRED` and its id never reused: eight named machinery that no longer exists (INST
 FOUR_OBJECTS, CLOSURE_LOOP, AUDIT_DISPOSED, FIX_FROM_LANES, SEEDS, FROZEN_MIDROUND, CARRY, ECONOMY) and
 five stated how this tool itself behaves, which the design holds (INST WITNESS, SELF_REPORT,

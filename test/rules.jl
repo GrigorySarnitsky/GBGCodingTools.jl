@@ -39,7 +39,19 @@ function materialise(rule, example)
         cfg = MR.Config(package = "Example", tool = :dev,
                         filesets = Dict(example.fileset => [path]), settings = example.settings)
         r = MR.Rule(; id = rule.id, statement = rule.statement, filesets = [example.fileset], check = rule.check)
-        return CK.run_rule(r, cfg, dir)
+        # A check that reaches the network is shown on a CANNED resolver: the examples say what each
+        # link would answer, so the rule's judgement is tested and the network is never touched here.
+        rule.check isa MR.ProgramCheck && rule.check.network || return CK.run_rule(r, cfg, dir)
+        was = G.Catalogue.Citations.RESOLVER[]
+        G.Catalogue.Citations.RESOLVER[] = url ->
+            occursin("10.1017/CBO9780511840531", url) ? (200, "Turbulent Flows") :
+            occursin("10.1098/rspa.1991.0075", url) ? (200, "The local structure of turbulence in incompressible viscous fluid for very large Reynolds numbers") :
+            (404, "")
+        try
+            return CK.run_rule(r, cfg, dir; network = true)
+        finally
+            G.Catalogue.Citations.RESOLVER[] = was
+        end
     elseif example isa MR.ModuleExample
         # A rule that reads the LOADED package is shown on source loaded into a fresh module: the same
         # text on disk, so the check sees both halves it compares.
