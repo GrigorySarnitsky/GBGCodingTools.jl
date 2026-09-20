@@ -27,6 +27,7 @@ module ScanTests;        include("scans.jl");        end
 module WitnessTests;     include("witnesses.jl");    end
 module TreeHashTests;    include("treehash.jl");     end
 module CoverageTests;    include("coverage.jl");     end
+module ReleaseTests;     include("release.jl");      end
 
 rm(TMP; recursive = true, force = true)   # cleanup = true would do it at exit; this is the tidy path
 

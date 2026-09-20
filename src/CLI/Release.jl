@@ -48,7 +48,7 @@ end
 Every reason `v<ver>` may not be tagged from `root`, in the order they are checked; empty when there is
 none. The arguments are:
 
-- `cfg` — the config read at `root`.
+- `cfg` — the package's config, read at `root`.
 - `root` — the checkout to release.
 - `ver` — the version to tag.
 - `base` — its `X.Y.Z` part.
@@ -60,12 +60,13 @@ of it being separate. A test of [`release`](@ref) can only reach the refusals: p
 untestable, and that is exactly where a defect lived for nine releases. Lifted out so each can be
 exercised over a temporary repository (2026-09-12 work queue).
 """
-function release_fails(cfg::AbstractDict, root::AbstractString, ver::AbstractString,
+function release_fails(cfg::Model.Config, root::AbstractString, ver::AbstractString,
                        base::AbstractString, rc::Bool)
     fails = String[]
     isempty(Git.porcelain(root)) || push!(fails, "the tree is not clean")
     branch = Git.run(root, "rev-parse", "--abbrev-ref", "HEAD")
-    branch == cfg["git"]["branch"] || push!(fails, "on branch $branch, not $(cfg["git"]["branch"])")
+    want = Catalogue.branch_of(cfg)
+    branch == want || push!(fails, "on branch $branch, not $want")
     Git.run(root, "rev-parse", "-q", "--verify", "refs/tags/v$ver") === nothing || push!(fails, "tag v$ver exists — a tag is never re-issued")
     # A NAMED refusal, never a crash. The exit contract is 0 clean, 1 substantive finding, 2 cannot
     # evaluate, 3 crash; a bare `read` threw SystemError out of the verb — exit 3, with a backtrace — for
@@ -112,7 +113,7 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
     m === nothing && (println(io, "release: $ver is neither X.Y.Z nor X.Y.Z-rc.N"); return 2)
     base = m.captures[1]; rc = m.captures[2] !== nothing
     ispath(joinpath(root, ".git")) || (println(io, "release: the dev checkout only — $root is not a git working tree"); return 2)
-    cfg = Config.read(root)
+    cfg = ConfigIO.read_config(root)
     fails = release_fails(cfg, root, ver, base, rc)
     if !isempty(fails)
         println(io, "release: refused —"); foreach(f -> println(io, "  - ", f), fails); return 2

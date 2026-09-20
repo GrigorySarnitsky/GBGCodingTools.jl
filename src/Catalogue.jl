@@ -138,6 +138,7 @@ include("Rules/judgement_api.jl")
 include("Rules/judgement_cit.jl")
 include("Rules/judgement_doc.jl")
 include("Rules/judgement_git.jl")
+using .JudgementGit: branch_of
 include("Rules/judgement_inst.jl")
 include("Rules/judgement_test.jl")
 include("Rules/judgement_tex.jl")

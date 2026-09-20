@@ -45,12 +45,34 @@ const NO_SHIMS = Model.Rule(
     filesets = [Model.FileSet.CODE],
     unchecked_reason = "an instruction to the session: followed while working, checked by nothing")
 
+"Which branch a package works on. A rename is the package's decision, so it is a parameter and not a constant."
+const WORKING_BRANCH = Model.Parameter(:branch, "master")
+
+"""
+    branch_of(cfg) -> String
+
+The branch the package configured by `cfg` works on. The argument is `cfg`, the package's config.
+Returns the branch name, `master` where the package has not set one.
+
+`gbg release` refuses to tag from any other branch, and reads it here rather than keeping its own idea
+of the name: the rule and the verb that enforces it cannot then disagree.
+"""
+function branch_of(cfg)
+    name = WORKING_BRANCH.default
+    for s in cfg.settings
+        s.rule === Symbol("RULE.GIT.BRANCH") && s.name === :branch && s.value isa AbstractString &&
+            (name = String(s.value))
+    end
+    return name
+end
+
 const BRANCH = Model.Rule(
     id = Symbol("RULE.GIT.BRANCH"),
-    statement = "The working branch is git.branch (master by default; a rename is a consumer decision).",
+    statement = "The working branch is the one `branch` names, `master` unless the package sets it; a rename is the package's decision.",
     why = "A rename is a decision about the package, never bundled with a tooling adoption.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.CODE],
+    parameters = Model.Parameter[WORKING_BRANCH],
     unchecked_reason = "an instruction to the session: followed while working, checked by nothing")
 
 const MANIFEST_TRACKED = Model.Rule(

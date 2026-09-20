@@ -616,11 +616,12 @@ Covered by the session, as an instruction: followed while working, checked by no
 
 
 #### [`RULE.GIT.BRANCH`](@id RULE.GIT.BRANCH)
-The working branch is git.branch (master by default; a rename is a consumer decision).
+The working branch is the one `branch` names, `master` unless the package sets it; a rename is the package's decision.
 
 A rename is a decision about the package, never bundled with a tooling adoption.
 
 Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session: followed while working, checked by nothing
+This package may set `branch`; unset, it is `master`.
 
 
 #### [`RULE.GIT.CI_MANUAL`](@id RULE.GIT.CI_MANUAL)
