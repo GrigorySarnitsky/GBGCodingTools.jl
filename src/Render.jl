@@ -91,9 +91,10 @@ function hook(cfg::Model.Config)
     # open by this hook; blocking again there would trap it forever. It is the difference between a
     # harness and a cage.
     #
-    # THE UNCOUNTED HEADING. Lines under "## From the last review" are NOT counted: a run's leftovers are
-    # the owner's list to act on when he chooses, and holding a session to them would be a review setting
-    # a session to work nobody asked for.
+    # THE UNCOUNTED HEADING. Lines under "## From the last review" are NOT counted, up to the next
+    # heading: a run's leftovers are the owner's list to act on when he chooses, and holding a session to
+    # them would be a review setting a session to work nobody asked for. A section the owner adds below
+    # it is his, and counted.
     set -uo pipefail
     payload=\$(cat)
     if grep -q '"stop_hook_active"[[:space:]]*:[[:space:]]*true' <<<"\$payload"; then
@@ -103,7 +104,7 @@ function hook(cfg::Model.Config)
     queue="\${CLAUDE_PROJECT_DIR:-.}/.claude/WORK_QUEUE.md"
     [[ -f "\$queue" ]] || exit 0
 
-    counted=\$(sed '/^## From the last review/,\$d' "\$queue")
+    counted=\$(awk '/^## From the last review/{skip=1; next} /^## /{skip=0} !skip' "\$queue")
     open_items=\$(grep -nE '^[[:space:]]*- \\[ \\]' <<<"\$counted" || true)
     [[ -z "\$open_items" ]] && exit 0
 
@@ -831,7 +832,7 @@ with — read the same.
 It keeps no second list of leftovers. What is owed goes to the package's work queue, one line each, and
 the report says how many went and names the record, so the two cannot disagree about the count.
 """
-function report(run::Model.Run, cfg::Model.Config)
+function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "")
     io = IOBuffer()
     println(io, "# ", titlecase(replace(String(run.instrument), "_" => " ")), " — ", run.id)
     println(io)
@@ -846,17 +847,16 @@ function report(run::Model.Run, cfg::Model.Config)
     # The ending first, because it decides how the rest is read: findings still open after a spent
     # budget are not the same as none.
     ended = run.stop === Model.Stop.DONE ? "It ran to the end." :
-            run.stop === Model.Stop.BUDGET_SPENT ? "**Its budget ran out.** What is still open below was not finished, and is in the work queue." :
             run.stop === Model.Stop.CANNOT_EVALUATE ? "**It could not be evaluated.** A step exited 2 or 3, and an instrument is never repaired inside a run." :
             "**The owner stopped it.**"
-    println(io, ended, " It launched ", run.agent_launches, " of ", run.budget.agent_launches,
-            " agent(s) it was allowed, with the ", run.readers === :both ? "bound and open" : String(run.readers),
-            " readers.")
+    println(io, ended, " It launched ", run.agent_launches, " agent(s), with the ",
+            run.readers === :both ? "bound and open" : String(run.readers), " readers.")
     println(io)
 
     # What no reader of this package could judge, before the findings: a report with no finding under
     # a rule nobody read must not read as a pass of that rule.
-    gaps = last(Catalogue.panel(run.instrument, cfg))
+    gaps = vcat(last(Catalogue.panel(run.instrument, cfg)),
+                isempty(root) ? String[] : Catalogue.missing_documents(cfg, root))
     if !isempty(gaps)
         println(io, "## Not judged — ", length(gaps))
         println(io)

@@ -111,10 +111,9 @@ function brief(role) {
 
 phase('Read');
 
-const roles = args.roles.slice(0, Math.max(0, args.launches_left));
-if (roles.length < args.roles.length) {
-  log(`budget: ${args.roles.length - roles.length} reader(s) not launched — ${args.launches_left} launches left`);
-}
+// Every reader of the stage is launched: nothing caps launches (ruled 2026-09-21) — the panel over the
+// units, one relaunch each, and the pass cap bound them by design.
+const roles = args.roles;
 
 const wrote = await parallel(
   roles.map((role) => async () => {

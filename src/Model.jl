@@ -63,7 +63,7 @@ module Part; @enum T WHOLE BLOCK TOML_ENTRIES; end
 module Verdict; @enum T FIXED NOT_FIXED LINE_ONLY MADE_WORSE HIDES_CODE_DEFECT NOT_A_DEFECT; end
 
 "Why a run ended, decided by a program and recorded in the run."
-module Stop; @enum T DONE BUDGET_SPENT CANNOT_EVALUATE OWNER_STOPPED; end
+module Stop; @enum T DONE CANNOT_EVALUATE OWNER_STOPPED; end
 
 """
 The only three reasons an agent may decide a rule rather than a program: the meaning of a sentence, a
@@ -479,14 +479,16 @@ end
 """
     Budget
 
-The ceiling on one run; reaching any part of it ends the run. The fields are:
+The one ceiling on a run: how many fix passes it may make. The fields are:
 
 - `fix_passes` — how many times the open findings may go back to the fixer.
-- `agent_launches` — how many agents the whole run may launch.
+
+There is no ceiling on agent launches, as ruled 2026-09-21: the design bounds them — a panel over the
+units per stage, one relaunch each, two verifiers per open finding per pass, at most four passes — and a
+run interrupted before its end (an outage, the plan's tokens gone) is continued, not capped.
 """
 Base.@kwdef struct Budget
     fix_passes::Int = 4
-    agent_launches::Int
 end
 
 """

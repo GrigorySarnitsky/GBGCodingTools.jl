@@ -35,6 +35,13 @@ Returns the exit code: 0 clean, 1 findings.
 function rules_and_wiring(root::AbstractString; site = nothing)
     isfile(joinpath(root, ".gbg", "config.jl")) || return 0
     cfg = GBGCodingTools.ConfigIO.read_config(root)
+    # The config is validated here as it is in the test suite: an unknown discipline, a switch naming
+    # nothing or a file set matching nothing must not pass the build while failing the tests.
+    problems = GBGCodingTools.ConfigIO.validate(cfg, root)
+    if !isempty(problems)
+        for p in problems; println(stderr, "  CONFIG  ", p); end
+        return 2
+    end
     # The package itself, where it can be loaded: a build has it on the path already, and the rules that
     # compare a docstring with the module it documents need it. A package that cannot be loaded is not a
     # silent pass — `Checks.not_run` names what went unchecked.

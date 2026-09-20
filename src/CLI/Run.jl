@@ -74,24 +74,23 @@ function next(root::AbstractString; io::IO = stdout)
     id = open_run(root)
     id === nothing && (println(io, "run: nothing is open here"); return 2)
     run = Runs.load(root, id)
-    here = Runs.stage_of(root, id)
     order = get(Runs.STAGES, run.instrument, Symbol[])
-    at = findfirst(==(here), order)
-    at === nothing && (println(io, "run: $id is at $here, which is not a stage of $(run.instrument)"); return 2)
-    at == length(order) && (println(io, "run: ", id, " is at ", here, ", its last stage; close it"); return 2)
+    at = Runs.stage_index(root, id)                 # by position: a stage name may repeat
+    at == 0 && (println(io, "run: $id is at $(Runs.stage_of(root, id)), which is not a stage of $(run.instrument)"); return 2)
+    at == length(order) && (println(io, "run: ", id, " is at ", order[at], ", its last stage; close it"); return 2)
     to = order[at + 1]
     Runs.advance!(root, id, to; io) || return 2
     cfg = ConfigIO.read_config(root)
     moved = Model.Run(id = run.id, instrument = run.instrument, tool_version = run.tool_version,
                       first_commit = run.first_commit, budget = run.budget, stage = to,
-                      findings = run.findings, agent_launches = run.agent_launches, stop = run.stop,
-                      readers = run.readers)
+                      findings = run.findings, questions = run.questions,
+                      agent_launches = run.agent_launches, stop = run.stop, readers = run.readers)
     Runs.save(root, moved)
     to === :close && (println(io, "run: ", id, " is ready to close: gbg run close"); return 0)
     Agents.write_arguments(root, moved, cfg; roles = Catalogue.roles_of(run.instrument, cfg; readers = run.readers), io)
     # What no reader of this package can judge is said at every launch, not only in the report: a
     # discipline rule in a package that declares no discipline is a gap the session should see now.
-    gaps = last(Catalogue.panel(run.instrument, cfg))
+    gaps = vcat(last(Catalogue.panel(run.instrument, cfg)), Catalogue.missing_documents(cfg, root))
     if !isempty(gaps)
         println(io, "run: not judged here —")
         for g in gaps; println(io, "  ", g); end
@@ -116,23 +115,23 @@ which cannot happen if its silence is read as a clean result.
 function collect(root::AbstractString; io::IO = stdout)
     id = open_run(root)
     id === nothing && (println(io, "run: nothing is open here"); return 2)
-    drafts, silent = Agents.collect_results(root, id)
+    drafts, silent, arrived = Agents.collect_results(root, id)
     run = Runs.load(root, id)
-    cfg = ConfigIO.read_config(root)
-    launched = length(Catalogue.roles_of(run.instrument, cfg; readers = run.readers))
     findings = Model.Finding[]
-    for (i, d) in pairs(drafts)
-        push!(findings, Model.Finding(string(id, "-", lpad(i, 3, '0')), :agent,
+    offset = length(run.findings)
+    for (i, (role, d)) in pairs(drafts)
+        # The finding names the reader that made it: with readers derived, the id is what says which
+        # bundle and which standpoint stood behind the claim.
+        push!(findings, Model.Finding(string(id, "-", lpad(offset + i, 3, '0')), Symbol(role),
                                       Model.Decider.AGENT, d))
     end
     collected = Model.Run(id = run.id, instrument = run.instrument, tool_version = run.tool_version,
                           first_commit = run.first_commit, budget = run.budget, stage = run.stage,
-                          findings = vcat(run.findings, findings),
-                          agent_launches = run.agent_launches + launched,
+                          findings = vcat(run.findings, findings), questions = run.questions,
+                          agent_launches = run.agent_launches + arrived,       # what arrived, not the panel
                           stop = run.stop, readers = run.readers)
     Runs.save(root, collected)
-    println(io, "run: collected ", length(findings), " finding(s) from ",
-            launched - length(silent), " reader(s).")
+    println(io, "run: collected ", length(findings), " finding(s) from ", arrived - length(silent), " reader(s).")
     if !isempty(silent)
         println(io, "run: these wrote nothing, and are not clean — relaunch them once, then name them:")
         for s in silent; println(io, "  ", s); end
@@ -176,11 +175,12 @@ function close_run(root::AbstractString; io::IO = stdout)
                        findings = run.findings, questions = run.questions,
                        agent_launches = run.agent_launches, stop = stop, readers = run.readers)
     dir = Runs.dir(root, id)
-    write(joinpath(dir, "report.md"), Render.report(closed, cfg))
+    write(joinpath(dir, "report.md"), Render.report(closed, cfg; root))
     open(joinpath(dir, "run.json"), "w") do f
         GBGCodingTools.JSON3.pretty(f, GBGCodingTools.JSON3.write(Runs.as_dict(closed)))
     end
     rm(joinpath(dir, "run.draft.json"); force = true)
+    rm(Agents.scratch_dir(root, id); force = true, recursive = true)   # the agents' files go with the run
     println(io, "run: ", id, " closed. ", length(closed.findings), " finding(s).")
     println(io, "  ", relpath(joinpath(dir, "report.md"), root))
     stop === Model.Stop.CANNOT_EVALUATE && return 2

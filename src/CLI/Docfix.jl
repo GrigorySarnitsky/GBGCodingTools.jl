@@ -15,7 +15,7 @@ whether what it did was documentation.
 """
 module Docfix
 
-using ..GBGCodingTools: GBGCodingTools, ConfigIO, Engine, Git, Model, parse_options, VERBS
+using ..GBGCodingTools: GBGCodingTools, ConfigIO, Engine, Git, Model, Orchestration, parse_options, VERBS
 
 """
     changed_files(root) -> Vector{String}
@@ -73,7 +73,9 @@ commit or the config could not be read. Returns the exit code.
 function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
                 generated::AbstractDict = Dict{String,String}())
     Git.is_repo(root) || (println(io, "docfix: $root is not a git working tree"); return 2)
-    rs = rulings(root; generated)
+    # An open run's own record — its stage file, its draft — sits untracked in the tree while the run
+    # works, and is the session's to commit at close, not the fixer's now.
+    rs = filter(r -> !Orchestration.Runs.own_record(r.path), rulings(root; generated))
     isempty(rs) && (println(io, "docfix: nothing has changed"); return 2)
     code = [r for r in rs if !r.documentation]
     if !isempty(code)
@@ -82,8 +84,10 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
         println(io, "Nothing was committed. A code change waits for the owner's answer.")
         return 1
     end
-    Git.run(root, "add", "--all", ".") === nothing && (println(io, "docfix: git add failed"); return 3)
-    Git.run(root, "commit", "-m", message) === nothing && (println(io, "docfix: git commit failed"); return 3)
+    Git.run(root, "add", "--", [r.path for r in rs]...) === nothing && (println(io, "docfix: git add failed"); return 3)
+    # The trailer is the mark a run's close trusts: a commit carrying it passed this guard.
+    Git.run(root, "commit", "-m", message * "\n\n" * Orchestration.Runs.GUARD_TRAILER) === nothing &&
+        (println(io, "docfix: git commit failed"); return 3)
     println(io, "docfix: committed ", length(rs), " documentation file(s).")
     for r in rs; println(io, "  - ", r.path); end
     return 0

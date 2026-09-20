@@ -62,8 +62,8 @@ const INSTRUMENTS = Model.Instrument[
         decider = Model.Decider.AGENT,
         fixer = Model.Fixer.DOCUMENTATION_FIXER,
         when = "Owner's request",
-        ends = "Nothing is open, or the budget is spent",
-        budget = Model.Budget(fix_passes = 4, agent_launches = 40)),
+        ends = "Nothing is open after its last pass, or the owner ended it",
+        budget = Model.Budget(fix_passes = 4)),
     Model.Instrument(
         id = :bug_hunt,
         purpose = "The code does what its documentation says",
@@ -72,7 +72,7 @@ const INSTRUMENTS = Model.Instrument[
         fixer = Model.Fixer.CODE_FIXER,
         when = "Owner's request",
         ends = "Every candidate is confirmed or discarded, once",
-        budget = Model.Budget(fix_passes = 0, agent_launches = 30)),
+        budget = Model.Budget(fix_passes = 0)),
     Model.Instrument(
         id = :change_audit,
         purpose = "A code change is no wider than the defect and the owner's direction and still accepts input that worked before; it grades the fix and changes nothing",
@@ -81,7 +81,7 @@ const INSTRUMENTS = Model.Instrument[
         fixer = Model.Fixer.CODE_FIXER,
         when = "After each approved code fix, and on request",
         ends = "One pass over the change",
-        budget = Model.Budget(fix_passes = 0, agent_launches = 15)),
+        budget = Model.Budget(fix_passes = 0)),
 ]
 
 """
@@ -196,6 +196,32 @@ roles_of(instrument::Symbol, cfg::Model.Config; readers::Symbol = :both) =
     DocumentationReview.select(first(panel(instrument, cfg)), readers)
 
 """
+    missing_documents(cfg, root) -> Vector{String}
+
+Every rule parameter that names a file the package does not have. The arguments are `cfg`, the package's
+config, and `root`, the package root. Returns one line per parameter, empty when every named file exists.
+
+A rule that reads "the notation page" and is handed a path to nothing passes silently — no reader is
+given a page that is not there, and nothing says so. This is printed with the gaps at every launch and
+in the report.
+"""
+function missing_documents(cfg::Model.Config, root::AbstractString)
+    out = String[]
+    for rule in RULES, p in rule.parameters
+        p.default isa AbstractString || continue
+        value = p.default
+        for s in cfg.settings
+            s.rule === rule.id && s.name === p.name && s.value isa AbstractString && (value = s.value)
+        end
+        isempty(value) && continue
+        (endswith(value, ".md") || occursin('/', value)) || continue
+        isfile(joinpath(root, value)) ||
+            push!(out, "$(rule.id)'s `$(p.name)` names $value, which is not a file here")
+    end
+    return out
+end
+
+"""
     GENERATED
 
 Every path, or part of a path, that a Julia function writes in a package, with the generator that writes
@@ -292,8 +318,8 @@ function doc(i::Model.Instrument)
     println(io, "- Fixed by: ", lowercase(replace(string(i.fixer), "_" => " ")), ".")
     println(io, "- Runs: ", i.when, ".")
     println(io, "- A run ends when: ", i.ends, ".")
-    println(io, "- One run may launch ", i.budget.agent_launches, " agent(s) and make ",
-            i.budget.fix_passes, " fix pass(es).")
+    println(io, "- One run may make ", i.budget.fix_passes, " fix pass(es); what it launches is bounded by",
+            " the panel and the passes, not capped.")
     return String(take!(io))
 end
 

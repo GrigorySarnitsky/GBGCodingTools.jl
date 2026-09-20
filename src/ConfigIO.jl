@@ -339,6 +339,12 @@ function validate(cfg::Model.Config, root::AbstractString)
         isfile(joinpath(root, source)) ||
             push!(problems, "the copy $copy is declared from $source, which is not a file here")
     end
+    # A pattern matching nothing is a surface handed to no reader and read by no rule, silently: the
+    # fixture carried two such for a week and every rule over them reported clean.
+    for (fs, patterns) in cfg.filesets, pat in patterns
+        isempty(Texts.expand(root, pat)) &&
+            push!(problems, "the $(lowercase(String(Symbol(fs)))) file set names $pat, which matches nothing here")
+    end
     # The two refusals of §9. A switch is how a package says a rule does not apply to it, and each of
     # these would make that claim unreadable: one naming nothing, and one giving no reason to show on the
     # package's own site. There is no third: every rule is switchable, and the rulebook is the default

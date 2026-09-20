@@ -8,7 +8,8 @@
 #
 # This is the gate Phase 4 ends on. What it is guarding against is a stage machine that looks right and
 # has never been driven: every defect found while writing it — a report naming a constant it could not
-# see, a close that accepted a run still at `pass`, a silent reader read as a clean one — was invisible
+# see, a close that accepted a run still at `pass`, a silent reader read as a clean one, a malformed
+# file read as a reader that wrote, a stage list with a repeated name looping for ever — was invisible
 # from the source and obvious on the first run.
 using Test, GBGCodingTools
 include("helpers.jl")
@@ -31,10 +32,11 @@ function package(f)
     f(root, gg)
 end
 
-"""Write what one reader found, as the driver would have written it."""
+"""Write what one reader found, as the driver would have written it, into the current stage's results."""
 function reader_found(root, id, role, claim; file = "docs/src/guide.md", quote_ = "The grid is spectral.")
-    write(joinpath(RUNS.dir(root, id), "results", role * ".json"),
-          """{"findings":[{"claim":"$claim","fix":"say which","locations":[{"file":"$file","text":"$quote_"}]}]}""")
+    mkpath(AGENTS.results_dir(root, id))
+    write(joinpath(AGENTS.results_dir(root, id), role * ".json"),
+          """{"findings":[{"claim":"$claim","fix":"say which","locations":[{"file":"$file","text":"$quote_"}]}],"checked":["$file"]}""")
 end
 
 """Drive the open run forward until it is ready to close."""
@@ -54,26 +56,52 @@ end
             id = G.Run.open_run(root)
             @test id !== nothing
             @test RUNS.stage_of(root, id) === :find             # start writes the first stage's arguments
+            @test RUNS.stage_index(root, id) == 2
 
-            # The arguments are what the session needs and nothing it does not.
-            args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+            # The arguments are what the session needs and nothing it does not, under the run's scratch.
+            args_path = AGENTS.arguments_path(root, id)
+            @test startswith(relpath(args_path, root), joinpath(".gbg", "scratch", id))
+            args = G.JSON3.read(read(args_path, String), Dict{String,Any})
             @test args["run"] == id
             @test !isempty(args["roles"])
             @test all(r -> haskey(r, "result_file") && haskey(r, "cap"), args["roles"])
-            @test args["launches_left"] == args["launches_left"]   # present, and a number
+            @test !haskey(args, "launches_left")                   # nothing caps launches (ruled 2026-09-21)
 
             reader_found(root, id, "withheld", "a term is used before it is defined")
             @test G.Run.collect(root; io = devnull) == 2          # other readers wrote nothing: NOT clean
+            run = RUNS.load(root, id)
+            @test run.agent_launches == 1                          # what arrived, not the panel's size
+            @test only(run.findings).source === :withheld          # the finding names its reader
             @test to_close(root, id) === :close
             @test G.Run.close_run(root; io = devnull) == 1        # closed, with a finding
 
             rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
             @test occursin("used before it is defined", rep)
+            @test occursin("Reported by `withheld`", rep)
             @test occursin("Written by AI", rep)                  # a report is a page like any other
             @test occursin("docs/src/guide.md", rep)
             @test isfile(joinpath(RUNS.dir(root, id), "run.json"))
             @test !isfile(joinpath(RUNS.dir(root, id), "run.draft.json"))
+            @test !isdir(AGENTS.scratch_dir(root, id))            # the agents' files went with the run
+            @test sort(readdir(RUNS.dir(root, id))) == ["report.md", "run.json", "stage"]
             @test G.Run.open_run(root) === nothing                # and it is no longer open
+        end
+    end
+
+    # A reader whose file does not parse, or that reports nothing and says it examined nothing, is
+    # SILENT: the design relaunches it once and then names it, and never reads it as clean.
+    @testset "a malformed or empty result is a silent reader, not a clean one" begin
+        package() do root, gg
+            G.Run.start(root, :documentation_review; io = devnull)
+            id = G.Run.open_run(root)
+            mkpath(AGENTS.results_dir(root, id))
+            write(joinpath(AGENTS.results_dir(root, id), "withheld.json"), "{not json")
+            write(joinpath(AGENTS.results_dir(root, id), "full.json"), """{"findings":[],"checked":[]}""")
+            write(joinpath(AGENTS.results_dir(root, id), "rendered.json"), """{"findings":[],"checked":["docs/src/guide.md"]}""")
+            _, silent, arrived = AGENTS.collect_results(root, id)
+            @test arrived == 3
+            @test "withheld" in silent && "full" in silent && !("rendered" in silent)
+            @test G.Run.collect(root; io = devnull) == 2
         end
     end
 
@@ -96,20 +124,55 @@ end
         end
     end
 
-    # The budget is fixed at start and nothing raises it. A stage that recomputed its allowance from the
-    # instrument would spend the whole budget again on every pass.
-    @testset "the budget is what is left, not what was allowed" begin
+    # An instrument with no derived readers does not open: a bug hunt today would launch nobody and
+    # close clean.
+    @testset "an instrument with no readers refuses to start" begin
+        package() do root, gg
+            @test RUNS.start(:bug_hunt, root; io = devnull) === nothing
+            @test G.Run.open_run(root) === nothing
+        end
+    end
+
+    # The stage machine finds its place by POSITION, not by name: the bug hunt's list repeats `collect`,
+    # and a machine that looked the name up went from the second collect back to `witnesses` for ever.
+    @testset "a stage list with a repeated name advances to close" begin
+        package() do root, gg
+            id = "2026-01-01-bug-hunt-01"
+            mkpath(RUNS.dir(root, id))
+            RUNS.save(root, MRun.Run(id = id, instrument = :bug_hunt, tool_version = "dev", first_commit = "",
+                                     budget = MRun.Budget(fix_passes = 0), stage = :start))
+            RUNS.write_stage(root, id, 1)
+            for to in (:hunt, :collect, :witnesses, :collect, :close)
+                @test RUNS.advance!(root, id, to; io = devnull)
+            end
+            @test RUNS.stage_of(root, id) === :close
+            @test RUNS.stage_index(root, id) == 6
+            # and a stage file written before positions existed still reads
+            write(joinpath(RUNS.dir(root, id), "stage"), "hunt")
+            @test RUNS.stage_index(root, id) == 2
+        end
+    end
+
+    # A question put during a run is part of its record, and survives every stage after it.
+    @testset "the record keeps its questions" begin
         package() do root, gg
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
-            first_left = G.JSON3.read(read(AGENTS.arguments_path(root, id), String),
-                                      Dict{String,Any})["launches_left"]
+            run = RUNS.load(root, id)
+            q = MRun.Question(id = "q-1", decision = "Keep the new formula?",
+                              options = [MRun.Option("Keep", "it stays", true), MRun.Option("Revert", "it goes", false)],
+                              items = [MRun.Item(text = "the one in convolve", recommended = "Keep")])
+            RUNS.save(root, MRun.Run(id = run.id, instrument = run.instrument, tool_version = run.tool_version,
+                                     first_commit = run.first_commit, budget = run.budget, stage = run.stage,
+                                     questions = [q], readers = run.readers))
             reader_found(root, id, "withheld", "something")
             G.Run.collect(root; io = devnull)
             G.Run.next(root; io = devnull)
-            later = G.JSON3.read(read(AGENTS.arguments_path(root, id), String),
-                                 Dict{String,Any})["launches_left"]
-            @test later < first_left
+            again = RUNS.load(root, id)
+            @test length(again.questions) == 1
+            @test again.questions[1].decision == "Keep the new formula?"
+            @test again.questions[1].options[1].recommended
+            @test again.questions[1].items[1].recommended == "Keep"
         end
     end
 
@@ -138,6 +201,22 @@ end
             @test G.Run.close_run(root; io = devnull) == 0             # nothing found, nothing unguarded
             record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
             @test record["stop"] == "DONE"
+        end
+    end
+
+    # A guarded commit made while a run is open looks past the run's own untracked record, stages only
+    # the ruled paths, and carries the trailer close trusts.
+    @testset "a guarded commit succeeds while a run is open, and carries the trailer" begin
+        package() do root, gg
+            G.Run.start(root, :documentation_review; io = devnull)
+            id = G.Run.open_run(root)
+            write(joinpath(root, "docs", "src", "guide.md"), "# Guide\n\nThe grid is a lattice.\n")
+            @test G.Docfix.commit(root, "a prose fix"; io = devnull) == 0
+            log = readchomp(setenv(`git -C $root log -1 --format=%B`; dir = root))
+            @test occursin(RUNS.GUARD_TRAILER, log)
+            tracked = readchomp(setenv(`git -C $root ls-files .gbg/runs`; dir = root))
+            @test isempty(tracked)                                     # the run's record was not staged
+            @test isempty(RUNS.unguarded_code(root, RUNS.load(root, id).first_commit))
         end
     end
 

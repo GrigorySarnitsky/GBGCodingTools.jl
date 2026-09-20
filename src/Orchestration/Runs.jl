@@ -84,6 +84,10 @@ function start(instrument::Symbol, root::AbstractString; readers::Symbol = :boun
     cfg = ConfigIO.read_config(root)
     Engine.Checks.applies(cfg, instrument) ||
         (println(io, "run: $instrument is switched off in this package"); return nothing)
+    # An instrument with no derived readers would open, launch nobody and close clean: the bug hunt and
+    # the change audit until Phase 6 derives theirs.
+    isempty(first(Catalogue.panel(instrument, cfg))) &&
+        (println(io, "run: $instrument has no readers yet; nothing would be launched"); return nothing)
     open = [d for d in (isdir(joinpath(root, ".gbg", "runs")) ? readdir(joinpath(root, ".gbg", "runs")) : String[])
             if isfile(joinpath(root, ".gbg", "runs", d, "stage")) && !isfile(joinpath(root, ".gbg", "runs", d, "run.json"))]
     isempty(open) || (println(io, "run: ", first(open), " is still open; a run never starts another"); return nothing)
@@ -91,8 +95,8 @@ function start(instrument::Symbol, root::AbstractString; readers::Symbol = :boun
                     tool_version = string(GBG_VERSION[]), first_commit = head_commit(root),
                     budget = inst.budget, stage = :start, readers = readers)
     mkpath(dir(root, run.id))
-    write(joinpath(dir(root, run.id), "stage"), "start")
     save(root, run)
+    write_stage(root, run.id, 1)                # after the record, which the stage file is read against
     return run
 end
 
@@ -130,8 +134,34 @@ the stage, or `:none` where there is no such run.
 function stage_of(root::AbstractString, id::AbstractString)
     path = joinpath(dir(root, id), "stage")
     isfile(path) || return :none
-    return Symbol(strip(read(path, String)))
+    return Symbol(last(split(strip(read(path, String)))))
 end
+
+"""
+    stage_index(root, id) -> Int
+
+Where in its instrument's stage list a run stands. The arguments are `root`, the package root, and `id`,
+the run's id. Returns the position, or 0 where there is no such run.
+
+The position is kept beside the name because a name is not unique: the bug hunt's list holds `collect`
+twice, and a machine that found its place by name went from the second `collect` back to `witnesses`
+for ever. A stage file written before this carried the name alone and is read as the first stage of
+that name.
+"""
+function stage_index(root::AbstractString, id::AbstractString)
+    path = joinpath(dir(root, id), "stage")
+    isfile(path) || return 0
+    parts = split(strip(read(path, String)))
+    length(parts) == 2 && return parse(Int, parts[1])
+    run = load(root, id)
+    run === nothing && return 0
+    at = findfirst(==(Symbol(parts[end])), get(STAGES, run.instrument, Symbol[]))
+    return at === nothing ? 0 : at
+end
+
+# The stage file: the position and the name, so a repeated name is still one place.
+write_stage(root::AbstractString, id::AbstractString, at::Int) =
+    (run = load(root, id); write(joinpath(dir(root, id), "stage"), string(at, " ", String(get(STAGES, run.instrument, Symbol[])[at]))))
 
 """
     advance!(root, id, to; io = stdout) -> Bool
@@ -153,17 +183,19 @@ function advance!(root::AbstractString, id::AbstractString, to::Symbol; io::IO =
     run = load(root, id)
     run === nothing && (println(io, "run: no run is called $id"); return false)
     order = get(STAGES, run.instrument, Symbol[])
-    here = stage_of(root, id)
-    at = findfirst(==(here), order)
-    at === nothing && (println(io, "run: $id is at $here, which is not a stage of $(run.instrument)"); return false)
+    at = stage_index(root, id)
+    at == 0 && (println(io, "run: $id is at $(stage_of(root, id)), which is not a stage of $(run.instrument)"); return false)
+    here = order[at]
     # A stage may repeat where the instrument repeats it — a documentation review's passes, a bug hunt's
-    # second collect — and may never go backwards or skip one.
-    nexts = Set{Symbol}([order[min(at + 1, length(order))]])
-    order[at] === :pass && push!(nexts, :pass)
-    order[at] === :collect && at + 1 <= length(order) && push!(nexts, order[at])
-    to in nexts || (println(io, "run: $id is at $here; the next stage is ", join(sort(collect(nexts)), " or "),
-                            ", not $to"); return false)
-    write(joinpath(dir(root, id), "stage"), String(to))
+    # second collect — and may never go backwards or skip one. The candidates are POSITIONS: a pass
+    # repeats in place, a second collect is the next position, and `close` is reached by position too.
+    candidates = Int[]
+    at + 1 <= length(order) && push!(candidates, at + 1)
+    here === :pass && push!(candidates, at)
+    hit = findfirst(c -> order[c] === to, candidates)
+    hit === nothing && (println(io, "run: $id is at $here; the next stage is ",
+                                join(sort(unique(String.(order[candidates]))), " or "), ", not $to"); return false)
+    write_stage(root, id, candidates[hit])
     return true
 end
 
@@ -205,9 +237,10 @@ end
 as_dict(r::Model.Run) = Dict{String,Any}(
     "id" => r.id, "instrument" => String(r.instrument), "tool_version" => r.tool_version,
     "first_commit" => r.first_commit, "stage" => String(r.stage),
-    "budget" => Dict("fix_passes" => r.budget.fix_passes, "agent_launches" => r.budget.agent_launches),
+    "budget" => Dict("fix_passes" => r.budget.fix_passes),
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
     "readers" => String(r.readers),
+    "questions" => [question_dict(q) for q in r.questions],
     "findings" => [Dict{String,Any}("id" => f.id, "source" => String(f.source),
                                     "decider" => String(Symbol(f.decider)),
                                     "claim" => f.draft.claim, "evidence" => f.draft.evidence,
@@ -222,8 +255,26 @@ loc_of(d) = Model.Location(; file = get(d, "file", ""), node = get(d, "node", ""
                             text = get(d, "text", ""), line = get(d, "line", 0),
                             found = getfield(Model.Anchor, Symbol(get(d, "found", "FRESH"))))
 
+question_dict(q::Model.Question) = Dict{String,Any}(
+    "id" => q.id, "decision" => q.decision, "context" => q.context, "exhibit" => q.exhibit,
+    "answer" => q.answer, "direction" => q.direction,
+    "options" => [Dict{String,Any}("label" => o.label, "consequence" => o.consequence, "recommended" => o.recommended)
+                  for o in q.options],
+    "items" => [Dict{String,Any}("text" => i.text, "recommended" => i.recommended, "sources" => i.sources,
+                                 "answer" => i.answer, "direction" => i.direction) for i in q.items])
+
+question_of(d::AbstractDict) = Model.Question(
+    id = d["id"], decision = get(d, "decision", ""), context = get(d, "context", ""),
+    exhibit = get(d, "exhibit", ""), answer = get(d, "answer", nothing), direction = get(d, "direction", ""),
+    options = [Model.Option(o["label"], get(o, "consequence", ""), get(o, "recommended", false))
+               for o in get(d, "options", [])],
+    items = [Model.Item(text = i["text"], recommended = get(i, "recommended", ""),
+                        sources = String[String(x) for x in get(i, "sources", [])],
+                        answer = get(i, "answer", nothing), direction = get(i, "direction", ""))
+             for i in get(d, "items", [])])
+
 function from_dict(d::AbstractDict)
-    b = get(d, "budget", Dict("fix_passes" => 0, "agent_launches" => 0))
+    b = get(d, "budget", Dict("fix_passes" => 0))
     findings = Model.Finding[]
     for f in get(d, "findings", [])
         draft = Model.FindingDraft(
@@ -236,8 +287,9 @@ function from_dict(d::AbstractDict)
     end
     return Model.Run(id = d["id"], instrument = Symbol(d["instrument"]),
                      tool_version = get(d, "tool_version", ""), first_commit = get(d, "first_commit", ""),
-                     budget = Model.Budget(fix_passes = b["fix_passes"], agent_launches = b["agent_launches"]),
+                     budget = Model.Budget(fix_passes = get(b, "fix_passes", 4)),
                      stage = Symbol(get(d, "stage", "start")), findings = findings,
+                     questions = [question_of(q) for q in get(d, "questions", [])],
                      agent_launches = get(d, "agent_launches", 0), tokens = get(d, "tokens", nothing),
                      stop = getfield(Model.Stop, Symbol(get(d, "stop", "DONE"))),
                      readers = Symbol(get(d, "readers", "bound")))

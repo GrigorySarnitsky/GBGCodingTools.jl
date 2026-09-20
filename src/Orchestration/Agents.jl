@@ -11,6 +11,10 @@ collect` reads what the agents wrote. Nothing here starts a process.
 The arguments are a file rather than a return value for the same reason: the two halves run in different
 programs, minutes apart, and a file is what survives that. `test/driver.jl` checks the driver reads every
 key written here, so a key added in Julia and never read is caught rather than silently ignored.
+
+Everything the agents write, and the arguments they are given, lives under `.gbg/scratch/<run>/`, one
+directory per stage instance — git-ignored, so it is never committed, and inside the package, so a run
+interrupted in one session is continued in the next (ruled 2026-09-21). Closing the run deletes it.
 """
 module Agents
 
@@ -23,23 +27,41 @@ using ...ConfigIO
 using ..Runs
 
 """
+    scratch_dir(root, id) -> String
+
+Where a run's agents work: `.gbg/scratch/<id>/`. The arguments are `root`, the package root, and `id`,
+the run's id. Returns the directory.
+"""
+scratch_dir(root::AbstractString, id::AbstractString) = joinpath(root, ".gbg", "scratch", id)
+
+"""
+    stage_dir(root, id) -> String
+
+The current stage's directory under the run's scratch: `<position>-<stage>`, so two passes, or the bug
+hunt's two collects, do not overwrite each other. The arguments are `root`, the package root, and `id`,
+the run's id. Returns the directory.
+"""
+stage_dir(root::AbstractString, id::AbstractString) =
+    joinpath(scratch_dir(root, id), string(Runs.stage_index(root, id), "-", String(Runs.stage_of(root, id))))
+
+"""
     arguments_path(root, id) -> String
 
-Where a stage's arguments are written for the session to pick up. The arguments are `root`, the package
-root, and `id`, the run's id. Returns the path.
+Where the current stage's arguments are written for the session to pick up. The arguments are `root`,
+the package root, and `id`, the run's id. Returns the path.
 """
-arguments_path(root::AbstractString, id::AbstractString) = joinpath(Runs.dir(root, id), "arguments.json")
+arguments_path(root::AbstractString, id::AbstractString) = joinpath(stage_dir(root, id), "arguments.json")
 
 """
     results_dir(root, id) -> String
 
-Where the agents write what they found. The arguments are `root`, the package root, and `id`, the run's
-id. Returns the directory.
+Where the agents of the current stage write what they found. The arguments are `root`, the package root,
+and `id`, the run's id. Returns the directory.
 
-One file per agent, named by its role and its index, so a crashed agent is a missing file rather than a
-truncated one: the collector reports which roles wrote nothing, and the design relaunches those once.
+One file per agent, named by its role, so a crashed agent is a missing file rather than a truncated one:
+the collector reports which roles wrote nothing, and the design relaunches those once.
 """
-results_dir(root::AbstractString, id::AbstractString) = joinpath(Runs.dir(root, id), "results")
+results_dir(root::AbstractString, id::AbstractString) = joinpath(stage_dir(root, id), "results")
 
 """
     surfaces(cfg, root) -> Vector{Pair{String,Vector{String}}}
@@ -66,20 +88,18 @@ end
 Writes what the session needs to launch one stage. The arguments are:
 
 - `root` — the package root.
-- `run` — the run, which carries its budget and what it has spent.
+- `run` — the run.
 - `cfg` — the package's config.
 - `roles` — the agent roles this stage launches.
 - `io` — where the handoff is described.
 
 Returns the path written.
 
-The BUDGET travels with the arguments, as what is left rather than what was allowed: the driver launches
-what it is given, and a stage that recomputed its own allowance from the instrument would spend the
-budget again on every pass.
+Every role is launched: nothing caps launches, as ruled 2026-09-21 — the panel over the units, one
+relaunch each and the pass cap bound a run by design, and a run cut short by an outage is continued.
 """
 function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config;
                          roles::Vector{Model.AgentRole}, io::IO = stdout)
-    left = max(0, run.budget.agent_launches - run.agent_launches)
     args = Dict{String,Any}(
         "run" => run.id,
         "instrument" => String(run.instrument),
@@ -87,7 +107,6 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
         "package" => cfg.package,
         "root" => root,
         "results_dir" => results_dir(root, run.id),
-        "launches_left" => left,
         "settled" => [Dict{String,Any}("question" => s.question, "text" => s.text,
                                        "locations" => [Dict("file" => l.file, "text" => l.text) for l in s.locations])
                       for s in ConfigIO.read_settled(root)],
@@ -104,22 +123,23 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
     path = arguments_path(root, run.id)
     mkpath(dirname(path)); mkpath(results_dir(root, run.id))
     open(path, "w") do f; JSON3.pretty(f, JSON3.write(args)); end
-    println(io, "run: ", run.id, " is at ", run.stage, "; ", length(roles), " agent(s) to launch, ",
-            left, " launch(es) left in the budget.")
+    println(io, "run: ", run.id, " is at ", run.stage, "; ", length(roles), " agent(s) to launch.")
     println(io, "  arguments: ", relpath(path, root))
     println(io, "  then: gbg run collect ", run.id)
     return path
 end
 
 """
-    collect_results(root, id) -> (findings, missing)
+    collect_results(root, id) -> (findings, silent, arrived)
 
-Reads what the agents wrote for one stage. The arguments are `root`, the package root, and `id`, the
-run's id. Returns the findings and the roles that wrote nothing.
+Reads what the agents wrote for the current stage. The arguments are `root`, the package root, and `id`,
+the run's id. Returns the findings, each with the role that made it; the roles that count as having
+written nothing; and how many result files arrived at all.
 
-A role that wrote NOTHING is named rather than counted as clean. A crashed agent and a careful one that
-found nothing are the same empty set to a reader, and the design relaunches a missing one once and then
-names it — which is why this reports the gap instead of returning only what arrived.
+A role counts as SILENT when its file is missing, when it does not parse, or when it reports no finding
+and an empty `checked` list — the brief says an empty `checked` reads as a reader that did nothing, and
+this is where that is kept. A crashed agent and a careful one that found nothing are the same empty set
+to a reader, and the design relaunches a silent one once and then names it.
 
 The LINE is filled in here, never taken from an agent: an agent reports the file, the quote and the node
 it read, and a line it also reported would be its count of the text it was shown, not the file's.
@@ -132,32 +152,37 @@ function collect_results(root::AbstractString, id::AbstractString)
         args = JSON3.read(read(args_path, String), Dict{String,Any})
         expected = [String(r["key"]) for r in get(args, "roles", [])]
     end
-    findings = Model.FindingDraft[]
+    findings = Tuple{String,Model.FindingDraft}[]
     wrote = String[]
+    arrived = 0
     for role in expected
         path = joinpath(dir, role * ".json")
         isfile(path) || continue
-        push!(wrote, role)
+        arrived += 1
         payload = try
             JSON3.read(read(path, String), Dict{String,Any})
         catch
-            continue                                   # a malformed file is a missing one; the caller relaunches
+            continue                                   # malformed: silent, as if nothing had arrived
         end
-        for f in get(payload, "findings", [])
+        found = get(payload, "findings", [])
+        checked = get(payload, "checked", [])
+        isempty(found) && isempty(checked) && continue  # nothing found and nothing examined: silent
+        push!(wrote, role)
+        for f in found
             locs = Model.Location[]
             for l in get(f, "locations", [])
                 file = String(get(l, "file", "")); quote_ = String(get(l, "text", ""))
                 node = String(get(l, "node", ""))
                 push!(locs, Texts.reanchor(root, Model.Location(; file, node, text = quote_, line = 0)))
             end
-            push!(findings, Model.FindingDraft(
+            push!(findings, (role, Model.FindingDraft(
                 rule = get(f, "rule", nothing) === nothing ? nothing : Symbol(f["rule"]),
                 locations = locs, claim = String(get(f, "claim", "")),
                 evidence = String(get(f, "evidence", "")), fix = String(get(f, "fix", "")),
-                maybe_code = get(f, "maybe_code", false)))
+                maybe_code = get(f, "maybe_code", false))))
         end
     end
-    return (findings, setdiff(expected, wrote))
+    return (findings, setdiff(expected, wrote), arrived)
 end
 
 end # module Agents

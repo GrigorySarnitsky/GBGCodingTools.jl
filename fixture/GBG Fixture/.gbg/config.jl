@@ -7,8 +7,8 @@ Config(
     test = ["julia", "--project", "-e", "using Pkg; Pkg.test()"],
     filesets = Dict(
         FileSet.CODE => ["src/FixtureA.jl", "src/FixtureB.jl", "src/FixtureC.jl", "src/GBGFixture.jl"],
-        FileSet.PAGES => ["docs/src/index.md", "docs/src/notation.md", "docs/src/api/fixture.md"],
+        FileSet.PAGES => ["docs/src/index.md", "docs/src/notation.md", "docs/src/api/FixtureA.md", "docs/src/api/FixtureB.md", "docs/src/api/FixtureC.md"],
         FileSet.RATIONALE => ["docs/ARCHITECTURE.md"],
-        FileSet.LITERATE => ["examples/walkthrough.jl"],
+        FileSet.LITERATE => ["examples/scaling.jl"],
     ),
 )

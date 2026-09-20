@@ -106,9 +106,11 @@ Config(
         problems = CIO.validate(CIO.read_config(dir), dir)
         @test any(p -> occursin("docs/make.jl", p), problems)             # the command names no file here
         @test any(p -> occursin("docs/ARCHITECTURE.md", p), problems)     # nor does the normative document
+        @test any(p -> occursin("matches nothing", p), problems)          # nor do its file sets match a file
         # and with the files in place it says nothing
-        mkpath(joinpath(dir, "docs", "src")); touch(joinpath(dir, "docs", "make.jl"))
-        touch(joinpath(dir, "docs", "ARCHITECTURE.md"))
+        mkpath(joinpath(dir, "docs", "src")); mkpath(joinpath(dir, "src"))
+        touch(joinpath(dir, "docs", "make.jl")); touch(joinpath(dir, "docs", "ARCHITECTURE.md"))
+        touch(joinpath(dir, "docs", "src", "index.md")); touch(joinpath(dir, "src", "GBGFixture.jl"))
         @test isempty(CIO.validate(CIO.read_config(dir), dir))
     end
 
