@@ -848,7 +848,7 @@ with — read the same.
 It keeps no second list of leftovers. What is owed goes to the package's work queue, one line each, and
 the report says how many went and names the record, so the two cannot disagree about the count.
 """
-function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "")
+function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", queued::Int = 0)
     io = IOBuffer()
     println(io, "# ", titlecase(replace(String(run.instrument), "_" => " ")), " — ", run.id)
     println(io)
@@ -866,7 +866,9 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "")
             run.stop === Model.Stop.CANNOT_EVALUATE ? "**It could not be evaluated.** A step exited 2 or 3, and an instrument is never repaired inside a run." :
             "**The owner stopped it.**"
     println(io, ended, " It launched ", run.agent_launches, " agent(s), with the ",
-            run.readers === :both ? "bound and open" : String(run.readers), " readers.")
+            run.readers === :both ? "bound and open" : String(run.readers), " readers, and made ",
+            run.passes, " of ", run.budget.fix_passes, " fix pass(es).",
+            queued > 0 ? " $queued finding(s) still open went to the work queue, one line each, under the heading the end-of-turn hook does not count." : "")
     println(io)
 
     # What no reader of this package could judge, before the findings: a report with no finding under
@@ -905,6 +907,14 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "")
                 println(io, "- `", l.file, "`", l.line > 0 ? ":" * string(l.line) : "",
                         isempty(l.node) ? "" : "  (" * l.node * ")",
                         stale ? "  — **the text here has moved and was not found again**" : "")
+            end
+            # The passes, as a program graded them: the verdict of the blind verifier and, for a fix it
+            # called fixed, of the one that read the diff.
+            for x in run.fixes
+                x.finding == f.id || continue
+                println(io, "- pass ", x.pass, ": blind verifier `", x.blind, "`",
+                        x.with_diff === nothing ? "" : ", with the diff `" * string(x.with_diff) * "`",
+                        isempty(x.commit) ? "" : "  (commit `" * first(x.commit, 8) * "`)")
             end
             println(io)
         end

@@ -28,9 +28,15 @@ using ...Engine
 
 The stages each instrument passes through, in order. A stage out of order is refused: the session
 launches each one, and a session that skipped `collect` would grade findings nobody had read back.
+
+A documentation review's pass is `fix → verify → collect → diff → collect`: the session fixes and commits
+each finding through the guard, a blind verifier per open finding answers without the diff, and for the
+findings it called fixed a second verifier reads the diff. From the last `collect` the run goes back to
+`fix` while findings are open and passes remain, else to `close`; from the first `collect` it goes
+straight to `close` when nothing was found.
 """
 const STAGES = Dict{Symbol,Vector{Symbol}}(
-    :documentation_review => [:start, :find, :collect, :pass, :close],
+    :documentation_review => [:start, :find, :collect, :fix, :verify, :collect, :diff, :collect, :close],
     :bug_hunt            => [:start, :hunt, :collect, :witnesses, :collect, :close],
     :change_audit        => [:start, :audit, :collect, :close],
 )
@@ -191,13 +197,70 @@ function advance!(root::AbstractString, id::AbstractString, to::Symbol; io::IO =
     # repeats in place, a second collect is the next position, and `close` is reached by position too.
     candidates = Int[]
     at + 1 <= length(order) && push!(candidates, at + 1)
-    here === :pass && push!(candidates, at)
+    if here === :collect
+        # A collect may close the run when nothing is open, and the last collect of a pass may open the
+        # next pass while passes remain.
+        push!(candidates, length(order))
+        fix = findfirst(==(:fix), order)
+        fix !== nothing && at == length(order) - 1 && push!(candidates, fix)
+    end
     hit = findfirst(c -> order[c] === to, candidates)
     hit === nothing && (println(io, "run: $id is at $here; the next stage is ",
                                 join(sort(unique(String.(order[candidates]))), " or "), ", not $to"); return false)
+    if to === :fix && run.passes >= run.budget.fix_passes
+        println(io, "run: $id has made its ", run.budget.fix_passes, " pass(es); a further pass is refused, and what is open carries over")
+        return false
+    end
+    if to === :close && here === :collect && at < length(order) - 1 && !isempty(workable(run)) &&
+       run.passes < run.budget.fix_passes
+        println(io, "run: $id has ", length(workable(run)), " finding(s) to work on; the next stage is fix, not close")
+        return false
+    end
     write_stage(root, id, candidates[hit])
     return true
 end
+
+"""
+    closed(run, id) -> Bool
+
+Whether the finding `id` of `run` is closed: a verifier called it not a defect, or the blind verifier
+called it fixed and the diff verifier agreed. The arguments are `run` and the finding's id. Returns the
+answer; a finding with no verdict yet is open.
+"""
+closed(run::Model.Run, id::AbstractString) = any(f -> f.finding == id &&
+    (f.blind === Model.Verdict.NOT_A_DEFECT ||
+     (f.blind === Model.Verdict.FIXED && f.with_diff === Model.Verdict.FIXED)), run.fixes)
+
+"""
+    open_findings(run) -> Vector{Model.Finding}
+
+The findings of `run` still open: not closed by a verdict. The argument is `run`. Returns them in the
+run's order.
+"""
+open_findings(run::Model.Run) = [f for f in run.findings if !closed(run, f.id)]
+
+"""
+    parked(run, id) -> Bool
+
+Whether the finding `id` waits on the owner: its last blind verdict was `HIDES_CODE_DEFECT`, the fix is
+reverted, and a question stands. The arguments are `run` and the finding's id. Returns the answer.
+
+A parked finding is open — it is nobody's leftover — and is worked on by no pass: the fixer is not sent
+back to describe code the verifier believes wrong, and no verifier is asked about it again until the
+owner has said which half is right.
+"""
+function parked(run::Model.Run, id::AbstractString)
+    k = findlast(x -> x.finding == id, run.fixes)
+    return k !== nothing && run.fixes[k].blind === Model.Verdict.HIDES_CODE_DEFECT
+end
+
+"""
+    workable(run) -> Vector{Model.Finding}
+
+The open findings a pass may work on: open and not parked. The argument is `run`. Returns them in the
+run's order.
+"""
+workable(run::Model.Run) = [f for f in open_findings(run) if !parked(run, f.id)]
 
 # ────────────────────────────────────────────────────────────────── the record on disk
 
@@ -239,8 +302,13 @@ as_dict(r::Model.Run) = Dict{String,Any}(
     "first_commit" => r.first_commit, "stage" => String(r.stage),
     "budget" => Dict("fix_passes" => r.budget.fix_passes),
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
-    "readers" => String(r.readers),
+    "readers" => String(r.readers), "passes" => r.passes,
     "questions" => [question_dict(q) for q in r.questions],
+    "fixes" => [Dict{String,Any}("finding" => f.finding, "pass" => f.pass, "commit" => f.commit,
+                                  "formula_edit" => f.formula_edit, "blind" => String(Symbol(f.blind)),
+                                  "with_diff" => f.with_diff === nothing ? nothing : String(Symbol(f.with_diff)),
+                                  "agreeing_code" => f.agreeing_code === nothing ? nothing : loc_dict(f.agreeing_code))
+                for f in r.fixes],
     "findings" => [Dict{String,Any}("id" => f.id, "source" => String(f.source),
                                     "decider" => String(Symbol(f.decider)),
                                     "claim" => f.draft.claim, "evidence" => f.draft.evidence,
@@ -290,6 +358,15 @@ function from_dict(d::AbstractDict)
                      budget = Model.Budget(fix_passes = get(b, "fix_passes", 4)),
                      stage = Symbol(get(d, "stage", "start")), findings = findings,
                      questions = [question_of(q) for q in get(d, "questions", [])],
+                     fixes = [Model.DocFix(finding = f["finding"], pass = f["pass"], commit = get(f, "commit", ""),
+                                           formula_edit = get(f, "formula_edit", false),
+                                           blind = getfield(Model.Verdict, Symbol(f["blind"])),
+                                           with_diff = get(f, "with_diff", nothing) === nothing ? nothing :
+                                                       getfield(Model.Verdict, Symbol(f["with_diff"])),
+                                           agreeing_code = get(f, "agreeing_code", nothing) === nothing ? nothing :
+                                                           loc_of(f["agreeing_code"]))
+                              for f in get(d, "fixes", [])],
+                     passes = get(d, "passes", 0),
                      agent_launches = get(d, "agent_launches", 0), tokens = get(d, "tokens", nothing),
                      stop = getfield(Model.Stop, Symbol(get(d, "stop", "DONE"))),
                      readers = Symbol(get(d, "readers", "bound")))
@@ -384,6 +461,54 @@ The line `gbg docfix commit` writes into a commit it made, and the only mark a c
 line can be typed by anyone; what is being looked for is a change that did not pass the guard at all.
 """
 const GUARD_TRAILER = "GBG-Docfix: guarded"
+
+"""
+    FINDING_TRAILER
+
+The trailer `gbg docfix commit --finding <id>` writes: which finding a guarded commit fixed. The pass
+machinery finds a finding's commits by it — to hand the diff verifier the diff, and to revert a fix a
+verifier called worse.
+"""
+const FINDING_TRAILER = "GBG-Docfix-Finding: "
+
+"""
+    fix_commits(root, since, id) -> Vector{String}
+
+The commits that `gbg docfix commit --finding` made for one finding, newest first. The arguments are:
+
+- `root` — the package root.
+- `since` — the run's first commit; nothing before it is searched.
+- `id` — the finding's id.
+
+Returns the shas.
+"""
+function fix_commits(root::AbstractString, since::AbstractString, id::AbstractString)
+    (isempty(since) || since == "unknown") && return String[]
+    out = try
+        readchomp(pipeline(setenv(`git -C $root log --format=%H --grep=$(FINDING_TRAILER * id) $since..HEAD`; dir = root); stderr = devnull))
+    catch
+        return String[]
+    end
+    return [String(l) for l in split(out, '\n') if !isempty(l)]
+end
+
+"""
+    revert!(root, sha) -> Bool
+
+Reverts one guarded commit with a guarded revert, so close's classification sees a documentation change
+and not code around the guard. The arguments are `root`, the package root, and `sha`, the commit.
+Returns whether it reverted.
+"""
+function revert!(root::AbstractString, sha::AbstractString)
+    ok = try
+        run(pipeline(setenv(`git -C $root revert --no-edit $sha`; dir = root); stdout = devnull, stderr = devnull))
+        run(pipeline(setenv(`git -C $root commit --amend -q -m "Revert $(first(sha, 8)): a verifier called the fix worse\n\n$GUARD_TRAILER"`; dir = root); stdout = devnull, stderr = devnull))
+        true
+    catch
+        false
+    end
+    return ok
+end
 
 # ──────────────────────────────────────────────────────────── finding a location again
 

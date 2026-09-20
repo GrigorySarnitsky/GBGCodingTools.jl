@@ -39,11 +39,45 @@ function reader_found(root, id, role, claim; file = "docs/src/guide.md", quote_ 
           """{"findings":[{"claim":"$claim","fix":"say which","locations":[{"file":"$file","text":"$quote_"}]}],"checked":["$file"]}""")
 end
 
-"""Drive the open run forward until it is ready to close."""
+"""Write one verifier's verdict, as the driver would have written it, for the current stage."""
+function verifier_said(root, id, stage, finding, verdict; quote_ = "")
+    mkpath(AGENTS.results_dir(root, id))
+    write(joinpath(AGENTS.results_dir(root, id), string(stage, "-", finding, ".json")),
+          """{"verdict":"$verdict","quote":"$quote_"}""")
+end
+
+"""The other two bound readers report clean, so a collect is not exit 2 for their silence."""
+function others_clean(root, id; but = "withheld")
+    for role in ("withheld", "full", "rendered")
+        role == but && continue
+        write(joinpath(AGENTS.results_dir(root, id), role * ".json"),
+              """{"findings":[],"checked":["docs/src/guide.md"]}""")
+    end
+end
+
+"""A run with one finding collected, at its first collect: the pass machinery starts here."""
+function with_one_finding(root)
+    G.Run.start(root, :documentation_review; io = devnull)
+    id = G.Run.open_run(root)
+    reader_found(root, id, "withheld", "the grid is named but not said to be a lattice")
+    others_clean(root, id)
+    @test G.Run.collect(root; io = devnull) == 1
+    return id, only(RUNS.load(root, id).findings).id
+end
+
+"""Commit a documentation edit as the fixer would, through the guard, for one finding."""
+function fixed_as(root, fid, text)
+    write(joinpath(root, "docs", "src", "guide.md"), "# Guide\n\n$text\n")
+    @test G.Docfix.commit(root, "fix for " * fid; io = devnull, finding = fid) == 0
+end
+
+"""Drive the open run forward until it is ready to close: collecting where agents were launched, moving on elsewhere."""
 function to_close(root, id)
-    for _ in 1:8
-        RUNS.stage_of(root, id) === :close && break
-        G.Run.next(root; io = devnull)
+    order = RUNS.STAGES[:documentation_review]
+    for _ in 1:40
+        at = RUNS.stage_index(root, id)
+        order[at] === :close && break
+        order[at + 1] === :collect ? G.Run.collect(root; io = devnull) : G.Run.next(root; io = devnull)
     end
     return RUNS.stage_of(root, id)
 end
@@ -98,7 +132,8 @@ end
             write(joinpath(AGENTS.results_dir(root, id), "withheld.json"), "{not json")
             write(joinpath(AGENTS.results_dir(root, id), "full.json"), """{"findings":[],"checked":[]}""")
             write(joinpath(AGENTS.results_dir(root, id), "rendered.json"), """{"findings":[],"checked":["docs/src/guide.md"]}""")
-            _, silent, arrived = AGENTS.collect_results(root, id)
+            _, _, silent, arrived, wrote = AGENTS.collect_results(root, id)
+            @test wrote == 1
             @test arrived == 3
             @test "withheld" in silent && "full" in silent && !("rendered" in silent)
             @test G.Run.collect(root; io = devnull) == 2
@@ -113,7 +148,11 @@ end
             @test !RUNS.advance!(root, id, :close; io = devnull)       # skipping collect and the passes
             @test !RUNS.advance!(root, id, :start; io = devnull)       # and never backwards
             @test G.Run.close_run(root; io = devnull) == 2             # close refuses a run still at find
+            @test G.Run.next(root; io = devnull) == 2                  # and next refuses to skip the collect
             @test RUNS.stage_of(root, id) === :find                    # and nothing moved
+            G.Run.collect(root; io = devnull)
+            @test RUNS.stage_of(root, id) === :collect
+            @test G.Run.collect(root; io = devnull) == 2               # a stage is collected once
         end
     end
 
@@ -217,6 +256,167 @@ end
             tracked = readchomp(setenv(`git -C $root ls-files .gbg/runs`; dir = root))
             @test isempty(tracked)                                     # the run's record was not staged
             @test isempty(RUNS.unguarded_code(root, RUNS.load(root, id).first_commit))
+        end
+    end
+
+    # ── the pass: fix, verify blind, verify with the diff, graded by a program (design §4.3)
+
+    # The whole happy path: a finding, a guarded fix carrying its trailer, a blind verifier that quotes
+    # the new text, a diff verifier that agrees, and a run that closes clean with the pass on record.
+    @testset "a fix verified twice closes its finding, and the run closes clean" begin
+        package() do root, gg
+            id, fid = with_one_finding(root)
+            @test G.Run.next(root; io = devnull) == 0                  # → fix, pass 1
+            @test RUNS.stage_of(root, id) === :fix
+            run = RUNS.load(root, id)
+            @test run.passes == 1
+            todo = G.JSON3.read(read(joinpath(AGENTS.stage_dir(root, id), "findings.json"), String))
+            @test length(todo) == 1 && todo[1]["id"] == fid
+            @test todo[1]["locations"][1]["line"] == 3                # re-anchored before the fixer sees it
+
+            fixed_as(root, fid, "The grid is a lattice.")
+            @test RUNS.fix_commits(root, run.first_commit, fid) |> length == 1
+
+            @test G.Run.next(root; io = devnull) == 0                  # → verify: one blind verifier
+            args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+            @test length(args["roles"]) == 1
+            v = args["roles"][1]
+            @test v["kind"] == "verifier" && v["key"] == "verify-" * fid
+            @test v["finding"]["id"] == fid && v["diff"] == ""        # blind: no diff
+            @test v["kept_from_code"] == true                        # what the withheld reader was given
+            @test "HIDES_CODE_DEFECT" in v["verdicts"]
+            verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a lattice.")
+            @test G.Run.collect(root; io = devnull) == 1              # graded; still open until the diff agrees
+            @test only(RUNS.load(root, id).fixes).blind === MRun.Verdict.FIXED
+
+            @test G.Run.next(root; io = devnull) == 0                  # → diff: the same finding, with its diff
+            args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+            d = only(args["roles"])
+            @test d["key"] == "diff-" * fid && occursin("lattice", d["diff"]) && d["strength"] == "economy"
+            verifier_said(root, id, "diff", fid, "FIXED"; quote_ = "The grid is a lattice.")
+            @test G.Run.collect(root; io = devnull) == 0              # nothing open
+            fix = only(RUNS.load(root, id).fixes)
+            @test fix.with_diff === MRun.Verdict.FIXED && fix.pass == 1 && !isempty(fix.commit)
+
+            @test G.Run.next(root; io = devnull) == 0                  # → close
+            @test G.Run.close_run(root; io = devnull) == 0
+            rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
+            @test occursin("pass 1: blind verifier `FIXED`, with the diff `FIXED`", rep)
+            @test occursin("1 of 4 fix pass", rep)
+            @test !isfile(joinpath(root, ".claude", "WORK_QUEUE.md"))   # nothing was left over
+            record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
+            @test record["passes"] == 1 && length(record["fixes"]) == 1
+        end
+    end
+
+    # A verdict is worth its quote: FIXED with words the text does not hold is NOT_FIXED, and the
+    # finding goes round again.
+    @testset "a verdict without a quote in the text is NOT_FIXED" begin
+        package() do root, gg
+            id, fid = with_one_finding(root)
+            G.Run.next(root; io = devnull)                               # fix
+            fixed_as(root, fid, "The grid is a lattice.")
+            G.Run.next(root; io = devnull)                               # verify
+            verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "words nobody wrote")
+            @test G.Run.collect(root; io = devnull) == 1
+            @test only(RUNS.load(root, id).fixes).blind === MRun.Verdict.NOT_FIXED
+            @test G.Run.next(root; io = devnull) == 0                    # → diff, with nobody to ask
+            @test RUNS.stage_of(root, id) === :diff
+            args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+            @test isempty(args["roles"])                                 # nothing was called fixed
+            @test G.Run.collect(root; io = devnull) == 1
+            @test G.Run.next(root; io = devnull) == 0                    # → fix again, pass 2
+            @test RUNS.stage_of(root, id) === :fix && RUNS.load(root, id).passes == 2
+        end
+    end
+
+    # The passes are capped: after the last one a further fix is refused, what is open carries over,
+    # and each leftover is one line in the work queue under the heading the hook does not count.
+    @testset "after the last pass the run closes, and what is open goes to the work queue" begin
+        package() do root, gg
+            id, fid = with_one_finding(root)
+            cap = RUNS.load(root, id).budget.fix_passes
+            for p in 1:cap
+                @test G.Run.next(root; io = devnull) == 0 && RUNS.stage_of(root, id) === :fix
+                @test G.Run.next(root; io = devnull) == 0 && RUNS.stage_of(root, id) === :verify
+                verifier_said(root, id, "verify", fid, "NOT_FIXED")
+                @test G.Run.collect(root; io = devnull) == 1
+                @test G.Run.next(root; io = devnull) == 0 && RUNS.stage_of(root, id) === :diff
+                @test G.Run.collect(root; io = devnull) == 1
+            end
+            @test RUNS.load(root, id).passes == cap
+            @test !RUNS.advance!(root, id, :fix; io = devnull)           # a further pass is refused
+            @test G.Run.next(root; io = devnull) == 0
+            @test RUNS.stage_of(root, id) === :close
+            @test G.Run.close_run(root; io = devnull) == 1
+            queue = read(joinpath(root, ".claude", "WORK_QUEUE.md"), String)
+            @test occursin("## From the last review", queue)
+            @test occursin("- [ ] " * fid * " the grid is named but not said to be a lattice — `docs/src/guide.md`", queue)
+            @test count("- [ ]", queue) == 1
+            rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
+            @test occursin("$cap of $cap fix pass", rep)
+            @test count("blind verifier `NOT_FIXED`", rep) == cap
+            # a second close over the same queue replaces the section rather than appending to it
+            write(joinpath(root, ".claude", "WORK_QUEUE.md"), queue * "\n## Mine\n\n- [ ] the owner's own item\n")
+            G.Run.queue_leftovers(root, RUNS.load(root, id))
+            again = read(joinpath(root, ".claude", "WORK_QUEUE.md"), String)
+            @test count("- [ ] " * fid, again) == 1 && occursin("the owner's own item", again)
+        end
+    end
+
+    # The diff verifier's MADE_WORSE reverts the fix with a guarded revert: the old text is back, close
+    # sees no code around the guard, and the finding stays open for the next pass.
+    @testset "MADE_WORSE reverts the fix" begin
+        package() do root, gg
+            id, fid = with_one_finding(root)
+            G.Run.next(root; io = devnull)
+            fixed_as(root, fid, "The grid is a lattice.")
+            G.Run.next(root; io = devnull)
+            verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a lattice.")
+            G.Run.collect(root; io = devnull)
+            G.Run.next(root; io = devnull)
+            verifier_said(root, id, "diff", fid, "MADE_WORSE"; quote_ = "The grid is a lattice.")
+            @test G.Run.collect(root; io = devnull) == 1
+            @test occursin("spectral", read(joinpath(root, "docs", "src", "guide.md"), String))
+            @test only(RUNS.load(root, id).fixes).with_diff === MRun.Verdict.MADE_WORSE
+            @test isempty(RUNS.unguarded_code(root, RUNS.load(root, id).first_commit))
+            @test length(RUNS.open_findings(RUNS.load(root, id))) == 1
+        end
+    end
+
+    # HIDES_CODE_DEFECT reverts too, puts a question to the owner, and parks the finding: no pass works
+    # on it again, so the run closes rather than spending its passes describing code that looks wrong.
+    @testset "HIDES_CODE_DEFECT reverts, asks the owner, and parks the finding" begin
+        package() do root, gg
+            id, fid = with_one_finding(root)
+            G.Run.next(root; io = devnull)
+            fixed_as(root, fid, "The grid is a lattice.")
+            G.Run.next(root; io = devnull)
+            verifier_said(root, id, "verify", fid, "HIDES_CODE_DEFECT"; quote_ = "The grid is a lattice.")
+            @test G.Run.collect(root; io = devnull) == 1
+            run = RUNS.load(root, id)
+            @test occursin("spectral", read(joinpath(root, "docs", "src", "guide.md"), String))
+            @test length(run.questions) == 1 && occursin("code right", run.questions[1].decision)
+            @test RUNS.parked(run, fid)
+            @test G.Run.next(root; io = devnull) == 0                    # nothing workable: straight to close
+            @test RUNS.stage_of(root, id) === :close
+            @test G.Run.close_run(root; io = devnull) == 1
+            queue = read(joinpath(root, ".claude", "WORK_QUEUE.md"), String)
+            @test occursin("waits on the owner's answer", queue)
+        end
+    end
+
+    # NOT_A_DEFECT closes the finding for this run without a fix.
+    @testset "NOT_A_DEFECT closes the finding" begin
+        package() do root, gg
+            id, fid = with_one_finding(root)
+            G.Run.next(root; io = devnull)                               # fix: the session decides not to
+            G.Run.next(root; io = devnull)                               # verify
+            verifier_said(root, id, "verify", fid, "NOT_A_DEFECT"; quote_ = "The grid is spectral.")
+            @test G.Run.collect(root; io = devnull) == 0
+            @test RUNS.closed(RUNS.load(root, id), fid)
+            @test G.Run.next(root; io = devnull) == 0 && RUNS.stage_of(root, id) === :close
+            @test G.Run.close_run(root; io = devnull) == 0
         end
     end
 

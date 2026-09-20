@@ -54,7 +54,47 @@ const FINDINGS = {
   required: ['findings', 'checked'],
 };
 
+// What a VERIFIER returns: one verdict from the list its arguments allow, and the quote that decides it.
+// The grade is Julia's: a verdict without a quote the current text holds is read as NOT_FIXED.
+const VERDICT = {
+  type: 'object',
+  properties: {
+    verdict: { type: 'string' },
+    quote: { type: 'string' },
+    reason: { type: 'string' },
+  },
+  required: ['verdict', 'quote'],
+};
+
+function verifierBrief(role) {
+  const f = role.finding || {};
+  const where = (f.locations || [])
+    .map((l) => `- ${l.file}${l.node ? ` (${l.node})` : ''}: "${l.text}"${l.found === 'OUTDATED' ? '  [not found again — read the file's changed regions]' : ''}`)
+    .join('\n');
+  const withheld = role.kept_from_code
+    ? 'The SOURCE and the design documents are withheld from you, as they were from the reader: judge the text alone.'
+    : '';
+  return [
+    `You are verifying one fix in the Julia package ${args.package}, pass ${args.pass} of a ${args.instrument.replace(/_/g, ' ')}.`,
+    '',
+    role.description,
+    '',
+    withheld,
+    '',
+    `The finding ${f.id}${f.rule ? ` (rule ${f.rule})` : ''}: ${f.claim}`,
+    f.fix ? `What the reader proposed: ${f.fix}` : '',
+    'Where it was found:',
+    where,
+    role.diff ? `\nThe change made for it:\n${role.diff}` : '',
+    '',
+    `Answer with ONE verdict from: ${(role.verdicts || []).join(', ')} — and the decisive QUOTE (at most 25`,
+    'words, exactly as it appears in the current text or the diff). A verdict without a quote that is in',
+    'the text counts as NOT_FIXED.',
+  ].join('\n');
+}
+
 function brief(role) {
+  if (role.kind === 'verifier') return verifierBrief(role);
   const surfaces = (role.reads || [])
     .map((name) => `${name}:\n${(args.surfaces[name] || []).join('\n')}`)
     .join('\n\n');
@@ -117,12 +157,15 @@ const roles = args.roles;
 
 const wrote = await parallel(
   roles.map((role) => async () => {
-    const out = await agent(brief(role), {
-      label: `${args.stage}:${role.key}`,
+    const launch = (again) => agent(brief(role), {
+      label: `${args.stage}:${role.key}${again ? ':again' : ''}`,
       phase: 'Read',
-      schema: FINDINGS,
+      schema: role.kind === 'verifier' ? VERDICT : FINDINGS,
       model: role.strength === 'full' ? undefined : 'sonnet',
     });
+    // A silent agent is relaunched ONCE; what is still silent is named by the collect.
+    let out = await launch(false);
+    if (!out) { log(`${role.key} wrote nothing; launching it once more`); out = await launch(true); }
     if (!out) return { key: role.key, wrote: false };
     await writeResult(role.result_file, out);
     return { key: role.key, wrote: true };
@@ -132,7 +175,7 @@ const wrote = await parallel(
 // A reader that wrote nothing is NAMED. A crashed agent and a careful one that found nothing are the
 // same empty set to whoever reads the report, and the run refuses to treat silence as a clean result.
 const silent = wrote.filter((w) => !w || !w.wrote).map((w) => (w ? w.key : 'unknown'));
-if (silent.length) log(`silent: ${silent.join(', ')} — relaunch once, then name them`);
+if (silent.length) log(`silent after a relaunch: ${silent.join(', ')} — the collect names them`);
 
 return {
   run: args.run,

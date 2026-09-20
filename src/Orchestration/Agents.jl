@@ -1,4 +1,4 @@
-# The design's §4.1, §6; the coordinates live here rather than in a docstring, which must read complete at the REPL.
+# The design's §4.1, §4.3, §6; the coordinates live here rather than in a docstring, which must read complete at the REPL.
 """
     Agents
 
@@ -11,6 +11,10 @@ collect` reads what the agents wrote. Nothing here starts a process.
 The arguments are a file rather than a return value for the same reason: the two halves run in different
 programs, minutes apart, and a file is what survives that. `test/driver.jl` checks the driver reads every
 key written here, so a key added in Julia and never read is caught rather than silently ignored.
+
+Two kinds of agent are launched through the same arguments: a READER, given surfaces and rules and
+returning findings, and a VERIFIER, given one finding and returning a verdict on its fix. Every role
+carries the same keys — a reader's `finding` is empty — so the driver reads one shape.
 
 Everything the agents write, and the arguments they are given, lives under `.gbg/scratch/<run>/`, one
 directory per stage instance — git-ignored, so it is never committed, and inside the package, so a run
@@ -83,14 +87,27 @@ function surfaces(cfg::Model.Config, root::AbstractString)
 end
 
 """
-    write_arguments(root, run, cfg; roles, io = stdout) -> String
+    finding_dict(f) -> Dict
+
+One finding as a verifier is handed it: its id, claim, rule and every location with the text as it
+reads now. The argument is `f`, the finding. Returns the dictionary.
+"""
+finding_dict(f::Model.Finding) = Dict{String,Any}(
+    "id" => f.id, "claim" => f.draft.claim, "fix" => f.draft.fix,
+    "rule" => f.draft.rule === nothing ? nothing : String(f.draft.rule),
+    "locations" => [Dict{String,Any}("file" => l.file, "node" => l.node, "text" => l.text, "line" => l.line,
+                                     "found" => String(Symbol(l.found))) for l in f.draft.locations])
+
+"""
+    write_arguments(root, run, cfg; roles, extras = Dict(), io = stdout) -> String
 
 Writes what the session needs to launch one stage. The arguments are:
 
 - `root` — the package root.
 - `run` — the run.
 - `cfg` — the package's config.
-- `roles` — the agent roles this stage launches.
+- `roles` — the agent roles this stage launches, readers or verifiers.
+- `extras` — per role id, what a verifier needs beyond a reader: `kind`, `finding`, `diff`, `verdicts`.
 - `io` — where the handoff is described.
 
 Returns the path written.
@@ -99,11 +116,12 @@ Every role is launched: nothing caps launches, as ruled 2026-09-21 — the panel
 relaunch each and the pass cap bound a run by design, and a run cut short by an outage is continued.
 """
 function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config;
-                         roles::Vector{Model.AgentRole}, io::IO = stdout)
+                         roles::Vector{Model.AgentRole}, extras::AbstractDict = Dict{Symbol,Any}(), io::IO = stdout)
     args = Dict{String,Any}(
         "run" => run.id,
         "instrument" => String(run.instrument),
         "stage" => String(run.stage),
+        "pass" => run.passes,
         "package" => cfg.package,
         "root" => root,
         "results_dir" => results_dir(root, run.id),
@@ -111,15 +129,21 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
                                        "locations" => [Dict("file" => l.file, "text" => l.text) for l in s.locations])
                       for s in ConfigIO.read_settled(root)],
         "surfaces" => Dict{String,Any}(name => files for (name, files) in surfaces(cfg, root)),
-        "roles" => [Dict{String,Any}("key" => String(r.id),
-                                     "reads" => [lowercase(String(Symbol(fs))) for fs in r.reads],
-                                     "site" => r.site, "kept_from_code" => r.kept_from_code,
-                                     "description" => r.description,
-                                     "rules" => [String(x) for x in r.rules],
-                                     "strength" => lowercase(String(Symbol(r.strength))),
-                                     "cap" => r.cap,
-                                     "result_file" => joinpath(results_dir(root, run.id), String(r.id) * ".json"))
-                    for r in roles])
+        "roles" => [begin
+                        x = get(extras, r.id, Dict{String,Any}())
+                        Dict{String,Any}("key" => String(r.id),
+                                         "kind" => get(x, "kind", "reader"),
+                                         "reads" => [lowercase(String(Symbol(fs))) for fs in r.reads],
+                                         "site" => r.site, "kept_from_code" => r.kept_from_code,
+                                         "description" => r.description,
+                                         "rules" => [String(y) for y in r.rules],
+                                         "strength" => lowercase(String(Symbol(r.strength))),
+                                         "cap" => r.cap,
+                                         "finding" => get(x, "finding", nothing),
+                                         "diff" => get(x, "diff", ""),
+                                         "verdicts" => get(x, "verdicts", String[]),
+                                         "result_file" => joinpath(results_dir(root, run.id), String(r.id) * ".json"))
+                    end for r in roles])
     path = arguments_path(root, run.id)
     mkpath(dirname(path)); mkpath(results_dir(root, run.id))
     open(path, "w") do f; JSON3.pretty(f, JSON3.write(args)); end
@@ -130,16 +154,18 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
 end
 
 """
-    collect_results(root, id) -> (findings, silent, arrived)
+    collect_results(root, id) -> (findings, verdicts, silent, arrived, wrote)
 
 Reads what the agents wrote for the current stage. The arguments are `root`, the package root, and `id`,
-the run's id. Returns the findings, each with the role that made it; the roles that count as having
-written nothing; and how many result files arrived at all.
+the run's id. Returns the findings, each with the role that made it; the verdicts, one per verifier role
+that answered, as `(verdict, quote)`; the roles that count as having written nothing; how many result
+files arrived at all; and how many roles wrote something that counts.
 
-A role counts as SILENT when its file is missing, when it does not parse, or when it reports no finding
+A role counts as SILENT when its file is missing, when it does not parse, when a reader reports no finding
 and an empty `checked` list — the brief says an empty `checked` reads as a reader that did nothing, and
-this is where that is kept. A crashed agent and a careful one that found nothing are the same empty set
-to a reader, and the design relaunches a silent one once and then names it.
+this is where that is kept — or when a verifier gives no verdict. A crashed agent and a careful one that
+found nothing are the same empty set to a reader, and the design relaunches a silent one once and then
+names it.
 
 The LINE is filled in here, never taken from an agent: an agent reports the file, the quote and the node
 it read, and a line it also reported would be its count of the text it was shown, not the file's.
@@ -147,15 +173,16 @@ it read, and a line it also reported would be its count of the text it was shown
 function collect_results(root::AbstractString, id::AbstractString)
     dir = results_dir(root, id)
     args_path = arguments_path(root, id)
-    expected = String[]
+    expected = Dict{String,String}()                            # role key => kind
     if isfile(args_path)
         args = JSON3.read(read(args_path, String), Dict{String,Any})
-        expected = [String(r["key"]) for r in get(args, "roles", [])]
+        for r in get(args, "roles", []); expected[String(r["key"])] = String(get(r, "kind", "reader")); end
     end
     findings = Tuple{String,Model.FindingDraft}[]
+    verdicts = Dict{String,Tuple{String,String}}()
     wrote = String[]
     arrived = 0
-    for role in expected
+    for (role, kind) in sort(collect(expected))
         path = joinpath(dir, role * ".json")
         isfile(path) || continue
         arrived += 1
@@ -163,6 +190,13 @@ function collect_results(root::AbstractString, id::AbstractString)
             JSON3.read(read(path, String), Dict{String,Any})
         catch
             continue                                   # malformed: silent, as if nothing had arrived
+        end
+        if kind == "verifier"
+            v = String(get(payload, "verdict", ""))
+            isempty(v) && continue
+            verdicts[role] = (v, String(get(payload, "quote", "")))
+            push!(wrote, role)
+            continue
         end
         found = get(payload, "findings", [])
         checked = get(payload, "checked", [])
@@ -182,7 +216,7 @@ function collect_results(root::AbstractString, id::AbstractString)
                 maybe_code = get(f, "maybe_code", false))))
         end
     end
-    return (findings, setdiff(expected, wrote), arrived)
+    return (findings, verdicts, setdiff(collect(keys(expected)), wrote), arrived, length(wrote))
 end
 
 end # module Agents

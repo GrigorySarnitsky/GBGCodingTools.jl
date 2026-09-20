@@ -728,6 +728,7 @@ One execution of one instrument on one package, stored beside its report. The fi
 - `stop` — why it ended.
 
 - `readers` — which readers it launches: `:bound`, `:open` or `:both`.
+- `passes` — how many fix passes it has begun; the cap is `budget.fix_passes`.
 
 A bound reader carries rules; an open one carries a standpoint and no rule. Bound is the default, and
 runs most often.
@@ -747,6 +748,7 @@ Base.@kwdef struct Run
     tokens::Union{Int,Nothing} = nothing
     stop::Stop.T = Stop.DONE
     readers::Symbol = :bound
+    passes::Int = 0
 end
 
 end # module Model

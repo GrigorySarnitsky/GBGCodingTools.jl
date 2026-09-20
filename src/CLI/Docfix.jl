@@ -57,7 +57,7 @@ function rulings(root::AbstractString; generated::AbstractDict = Dict{String,Str
 end
 
 """
-    commit(root, message; io = stdout, generated = Dict{String,String}()) -> Int
+    commit(root, message; io = stdout, generated = Dict(), finding = "") -> Int
 
 Commits every changed file of the working tree at `root` when the guard calls all of them documentation,
 and commits nothing otherwise. The arguments are:
@@ -66,12 +66,14 @@ and commits nothing otherwise. The arguments are:
 - `message` — the commit message.
 - `io` — where the report goes.
 - `generated` — the current output of each generated path's generator.
+- `finding` — the id of the finding this commit fixes, written as a trailer so the run's verifiers can
+  find the diff and revert it; empty outside a fix pass.
 
 Exit 0 when it committed, 1 when a file was code and nothing was committed, 2 when there was nothing to
 commit or the config could not be read. Returns the exit code.
 """
 function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
-                generated::AbstractDict = Dict{String,String}())
+                generated::AbstractDict = Dict{String,String}(), finding::AbstractString = "")
     Git.is_repo(root) || (println(io, "docfix: $root is not a git working tree"); return 2)
     # An open run's own record — its stage file, its draft — sits untracked in the tree while the run
     # works, and is the session's to commit at close, not the fixer's now.
@@ -86,7 +88,8 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
     end
     Git.run(root, "add", "--", [r.path for r in rs]...) === nothing && (println(io, "docfix: git add failed"); return 3)
     # The trailer is the mark a run's close trusts: a commit carrying it passed this guard.
-    Git.run(root, "commit", "-m", message * "\n\n" * Orchestration.Runs.GUARD_TRAILER) === nothing &&
+    trailers = Orchestration.Runs.GUARD_TRAILER * (isempty(finding) ? "" : "\n" * Orchestration.Runs.FINDING_TRAILER * finding)
+    Git.run(root, "commit", "-m", message * "\n\n" * trailers) === nothing &&
         (println(io, "docfix: git commit failed"); return 3)
     println(io, "docfix: committed ", length(rs), " documentation file(s).")
     for r in rs; println(io, "  - ", r.path); end
@@ -115,7 +118,7 @@ function check(root::AbstractString; io::IO = stdout)
 end
 
 function cmd_docfix(args)
-    o = parse_options(args; valued = ["message"])
+    o = parse_options(args; valued = ["message", "finding"])
     root = ConfigIO.require_root("docfix")
     root === nothing && return 2
     sub = isempty(o.positional) ? "" : o.positional[1]
@@ -123,10 +126,10 @@ function cmd_docfix(args)
         return check(root)
     elseif sub == "commit"
         msg = get(o.values, "message", "")
-        isempty(msg) && (println(stderr, "usage: gbg docfix commit --message \"…\""); return 2)
-        return commit(root, msg)
+        isempty(msg) && (println(stderr, "usage: gbg docfix commit --message \"…\" [--finding <id>]"); return 2)
+        return commit(root, msg; finding = get(o.values, "finding", ""))
     end
-    println(stderr, "usage: gbg docfix check | gbg docfix commit --message \"…\"")
+    println(stderr, "usage: gbg docfix check | gbg docfix commit --message \"…\" [--finding <id>]")
     return 2
 end
 VERBS["docfix"] = cmd_docfix

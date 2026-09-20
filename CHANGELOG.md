@@ -22,7 +22,19 @@ its access tag names; or an instruction to the session, followed while working a
 The reader panel is derived from the rules (`Roles.derive`); one rule names a discipline
 (COORD_FREE, differential geometry); a declared discipline is an open expert. No launch budget. The
 stage machine advances by position. Agents' files under `.gbg/scratch/<run>/`, deleted at close.
-The other changes since rc.5 are in the commits from `71993cc`.
+
+**The review's fix half runs.** A documentation review's pass is `fix → verify → collect → diff →
+collect`, up to four passes: `gbg run next` at `fix` re-anchors the open findings and writes them for the
+session, which commits each through `gbg docfix commit --finding <id>` (a trailer the run reads back);
+at `verify` one blind verifier per open finding, given what the reader that found it was given and never
+the diff, answers `FIXED`, `NOT_FIXED`, `HIDES_CODE_DEFECT` or `NOT_A_DEFECT` with a quote; at `diff` a
+second verifier, at economy, reads the diff of each fix called fixed and answers `FIXED`, `LINE_ONLY` or
+`MADE_WORSE`. `gbg run collect` grades: a verdict whose quote is not in the text is `NOT_FIXED`;
+`MADE_WORSE` reverts the fix with a guarded revert; `HIDES_CODE_DEFECT` reverts it, puts a question to
+the owner and parks the finding, which no pass touches again; a fifth pass is refused and what is open
+goes to `.claude/WORK_QUEUE.md`, one line each under the heading the hook does not count. `collect` now
+moves the run to its `collect` stage itself and is refused a second time; the driver relaunches a silent
+agent once before the collect names it. The other changes since rc.5 are in the commits from `71993cc`.
 
 ## 2.0.0-rc.5 — 2026-09-18
 
