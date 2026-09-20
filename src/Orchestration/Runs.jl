@@ -575,6 +575,24 @@ function fix_commits(root::AbstractString, since::AbstractString, id::AbstractSt
 end
 
 """
+    guarded_commits(root, since) -> Vector{String}
+
+The commits since `since` that passed the change guard, newest first. The arguments are `root`, the
+package root, and `since`, the run's first commit. Returns the shas.
+
+These are the run's own edits: what close undoes when it has to put the documentation back.
+"""
+function guarded_commits(root::AbstractString, since::AbstractString)
+    (isempty(since) || since == "unknown") && return String[]
+    out = try
+        readchomp(pipeline(setenv(`git -C $root log --format=%H --grep=$GUARD_TRAILER $since..HEAD`; dir = root); stderr = devnull))
+    catch
+        return String[]
+    end
+    return [String(l) for l in split(out, '\n') if !isempty(l)]
+end
+
+"""
     revert!(root, sha) -> Bool
 
 Reverts one guarded commit with a guarded revert, so close's classification sees a documentation change

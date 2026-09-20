@@ -518,11 +518,19 @@ Writes the run's record and its report, and ends it. The arguments are:
 
 Exit 0 when it closed clean, 1 when it closed with findings open, 2 when it could not be evaluated.
 
-Close runs one program before it writes anything: it classifies every commit since the run's first
-commit, and a code change made outside `gbg docfix commit` ends the run `CANNOT_EVALUATE` with the owner
-asked to keep or revert it. A review that edited code behind its own guard has not been reviewed. What
-is still open goes to the owner's work queue, one line each, under the heading the end-of-turn hook does
-not count.
+Close runs two programs before it writes anything.
+
+It BUILDS. A red docs build must not be left on the branch by a run whose whole subject was the
+documentation, so close reverts the run's last guarded commit and builds again, and where that is still
+red reverts every guarded commit of the run. Each revert goes through the guard like any other edit of
+the run. What was reverted is named in the report and its findings stay open, which carries them.
+
+It CLASSIFIES every commit since the run's first commit, and a code change made outside `gbg docfix
+commit` ends the run `CANNOT_EVALUATE` with the owner asked to keep or revert it. A review that edited
+code behind its own guard has not been reviewed.
+
+What is still open goes to the owner's work queue, one line each, under the heading the end-of-turn hook
+does not count.
 """
 function close_run(root::AbstractString; io::IO = stdout)
     id = open_run(root)
@@ -532,18 +540,23 @@ function close_run(root::AbstractString; io::IO = stdout)
     run = Runs.load(root, id)
     cfg = ConfigIO.read_config(root)
 
+    undone, red = restore_green(root, run, cfg; io)
     unguarded = Runs.unguarded_code(root, run.first_commit)
     stop = isempty(unguarded) ? run.stop : Model.Stop.CANNOT_EVALUATE
+    isempty(undone) || println(io, "run: ", length(undone), " fix(es) were undone to get the build back; the run cannot be evaluated on them.")
     if !isempty(unguarded)
         println(io, "run: code changed outside `gbg docfix commit` since this run started:")
         for c in unguarded; println(io, "  ", c); end
         println(io, "The run ends CANNOT_EVALUATE; keeping or reverting that is the owner's to answer.")
     end
 
+    # Fixes undone are fixes nobody can be said to have verified; a build red for an older reason is
+    # not this run's, and the report says so instead.
+    stop = isempty(undone) ? stop : Model.Stop.CANNOT_EVALUATE
     closed = with(run; stage = :close, stop = stop)
     queued = stop === Model.Stop.DONE ? queue_leftovers(root, closed) : 0
     dir = Runs.dir(root, id)
-    write(joinpath(dir, "report.md"), Render.report(closed, cfg; root, queued))
+    write(joinpath(dir, "report.md"), Render.report(closed, cfg; root, queued, undone = length(undone), red))
     open(joinpath(dir, "run.json"), "w") do f
         GBGCodingTools.JSON3.pretty(f, GBGCodingTools.JSON3.write(Runs.as_dict(closed)))
     end
@@ -589,6 +602,48 @@ function abandon(root::AbstractString; io::IO = stdout)
     Runs.write_stage(root, id, length(get(Runs.STAGES, run.instrument, Symbol[])))
     println(io, "run: ", id, " abandoned at ", run.stage, "; ", length(run.findings), " finding(s) dropped.")
     return 0
+end
+
+"""
+    restore_green(root, run, cfg; io = stdout) -> Vector{String}
+
+Puts the documentation back where the run left the build red. The arguments are:
+
+- `root` — the package root.
+- `run` — the run being closed.
+- `cfg` — the package's config.
+- `io` — where the restoring is described.
+
+Returns the commits it reverted and whether the build is still red after the reverting.
+
+The last fix first, because the last fix is what most often broke it and reverting one keeps the rest;
+if the build is still red after that, every guarded commit of the run goes, because a run that cannot
+say which of its edits broke the build has no business choosing one to keep. A build that fails for a
+reason older than the run is not this run's to repair: where reverting everything leaves it red, the
+edits are restored and the owner is told the build was already broken.
+"""
+function restore_green(root::AbstractString, run::Model.Run, cfg::Model.Config; io::IO = stdout)
+    Site.build(root, cfg; io = devnull) === nothing || return (String[], false)
+    mine = Runs.guarded_commits(root, run.first_commit)
+    if isempty(mine)
+        println(io, "run: the docs build is red and this run committed nothing, so it was red before the run; the owner reads the build")
+        return (String[], true)
+    end
+    println(io, "run: the docs build is red at close; the documentation is going back.")
+    Runs.revert!(root, first(mine)) || return (String[], true)
+    if Site.build(root, cfg; io = devnull) !== nothing
+        println(io, "run: reverted the last fix, ", first(first(mine), 8), ", and the build passes again")
+        return ([first(mine)], false)
+    end
+    undone = [first(mine)]
+    for sha in mine[2:end]
+        Runs.revert!(root, sha) && push!(undone, sha)
+    end
+    still = Site.build(root, cfg; io = devnull) === nothing
+    println(io, still ?
+        "run: still red with every fix of this run undone, so the build was broken before it; the owner reads the build" :
+        "run: every fix of this run is undone, $(length(undone)) commit(s), and the build passes again")
+    return (undone, still)
 end
 
 "The heading of the work queue's section the end-of-turn hook does not count."

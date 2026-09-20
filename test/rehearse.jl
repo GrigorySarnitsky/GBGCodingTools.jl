@@ -72,6 +72,16 @@ function write_site(root, cfg; io = devnull)
     return dir
 end
 
+"""
+A build that refuses a page holding `BREAKS THE BUILD`, so a fix can be made to leave the site red.
+"""
+function picky_site(root, cfg; io = devnull)
+    for page in G.Texts.files(cfg, root, G.Model.FileSet.PAGES)
+        occursin("BREAKS THE BUILD", read(joinpath(root, page), String)) && return nothing
+    end
+    return write_site(root, cfg; io)
+end
+
 """The reader given the home page alone: the key a result file of that launch is named by."""
 const HOME_READER = "withheld@home"
 
@@ -319,6 +329,58 @@ end
             G.Run.collect(root; io = devnull)
             @test RUNS.stage_of(root, id) === :collect
             @test G.Run.collect(root; io = devnull) == 2               # a stage is collected once
+        end
+    end
+
+    # A red docs build must not be left on the branch by a run whose whole subject was the documentation.
+    @testset "close puts the documentation back when the build is red" begin
+        package() do root, gg
+            id, fid = with_one_finding(root)
+            SITE.BUILDER[] = picky_site
+            try
+                G.Run.next(root; io = devnull)                       # fix
+                fixed_as(root, fid, "BREAKS THE BUILD.")
+                @test occursin("BREAKS THE BUILD", read(joinpath(root, "docs", "src", "index.md"), String))
+                @test length(RUNS.guarded_commits(root, RUNS.load(root, id).first_commit)) == 1
+                # the verifier stage cannot build either, so the run goes to close through abandonment
+                # of the pass: drive it to close and let close do the restoring
+                RUNS.write_stage(root, id, length(RUNS.STAGES[:documentation_review]))
+                @test G.Run.close_run(root; io = devnull) == 2       # reverted, and not evaluable
+                @test !occursin("BREAKS THE BUILD", read(joinpath(root, "docs", "src", "index.md"), String))
+                @test occursin("The grid is spectral.", read(joinpath(root, "docs", "src", "index.md"), String))
+                record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
+                @test record["stop"] == "CANNOT_EVALUATE"
+                @test occursin("The documentation was put back", read(joinpath(RUNS.dir(root, id), "report.md"), String))
+                # the revert went through the guard, so close does not also call it unguarded code
+                @test isempty(RUNS.unguarded_code(root, RUNS.load(root, id).first_commit))
+            finally
+                SITE.BUILDER[] = write_site
+            end
+        end
+    end
+
+    # A build that was red before the run is not the run's to repair.
+    @testset "a build red before the run is not undone by it" begin
+        package() do root, gg
+            write(joinpath(root, "docs", "src", "notation.md"),
+                  read(joinpath(root, "docs", "src", "notation.md"), String) * "\nBREAKS THE BUILD\n")
+            gg("add", "--all", "."); gg("commit", "-q", "-m", "a page that will not build")
+            G.Run.start(root, :documentation_review; io = devnull)
+            id = G.Run.open_run(root)
+            all_clean(root, id); G.Run.collect(root; io = devnull)
+            SITE.BUILDER[] = picky_site
+            try
+                to_close(root, id)
+                @test G.Run.close_run(root; io = devnull) == 0       # the run found nothing and broke nothing
+                # nothing of the package was reverted: the run committed nothing
+                @test occursin("BREAKS THE BUILD", read(joinpath(root, "docs", "src", "notation.md"), String))
+                rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
+                @test occursin("The site does not build", rep)       # and the report says so
+                record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
+                @test record["stop"] == "DONE"                       # the red build is older than the run
+            finally
+                SITE.BUILDER[] = write_site
+            end
         end
     end
 

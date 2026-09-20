@@ -947,7 +947,8 @@ with — read the same.
 It keeps no second list of leftovers. What is owed goes to the package's work queue, one line each, and
 the report says how many went and names the record, so the two cannot disagree about the count.
 """
-function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", queued::Int = 0)
+function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", queued::Int = 0,
+                undone::Int = 0, red::Bool = false)
     io = IOBuffer()
     println(io, "# ", titlecase(replace(String(run.instrument), "_" => " ")), " — ", run.id)
     println(io)
@@ -969,6 +970,13 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
             run.passes, " of ", run.budget.fix_passes, " fix pass(es).",
             queued > 0 ? " $queued finding(s) still open went to the work queue, one line each, under the heading the end-of-turn hook does not count." : "")
     println(io)
+    if undone > 0
+        println(io, "!!! warning \"The documentation was put back\"\n    The docs build was red when this run closed, so ",
+                undone, " of its fixes were reverted through the guard. What they were for is open again.\n")
+    end
+    if red
+        println(io, "!!! warning \"The site does not build\"\n    The docs build was red at close and no fix of this run accounts for it. Nothing here was judged against a built site.\n")
+    end
 
     # What no reader of this package could judge, before the findings: a report with no finding under
     # a rule nobody read must not read as a pass of that rule.
