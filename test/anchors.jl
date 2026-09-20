@@ -247,3 +247,35 @@ end
         end
     end
 end
+
+# A quote read somewhere that is not a file — a built page — is placed by searching the documentation
+# for it. One file holding it is an answer; two is a coin toss, and the honest answer is none.
+@testset "placing a quote across the documentation" begin
+    root = mktempdir(; cleanup = true)
+    mkpath(joinpath(root, ".gbg")); mkpath(joinpath(root, "docs", "src")); mkpath(joinpath(root, "src"))
+    write(joinpath(root, ".gbg", "config.jl"), """Config(package = "Sample", tool = :dev)""")
+    write(joinpath(root, "docs", "src", "index.md"), "# Home\n\nThe grid is spectral.\n")
+    write(joinpath(root, "docs", "src", "guide.md"), "# Guide\n\nA sentence the build\nre-wrapped over two lines.\n")
+    write(joinpath(root, "src", "Sample.jl"), """
+    module Sample
+    \"\"\"
+        f(x) -> Int
+
+    The one place this exact sentence is written. The argument is `x`. Returns one.
+    \"\"\"
+    f(x) = 1
+    end
+    """)
+    cfg = G.ConfigIO.read_config(root)
+
+    @test G.Texts.place(cfg, root, "The one place this exact sentence is written.").file == joinpath("src", "Sample.jl")
+    @test G.Texts.place(cfg, root, "The one place this exact sentence is written.").node == "f"
+    # a sentence the build re-wrapped is still found, and the line is where it starts
+    wrapped = G.Texts.place(cfg, root, "A sentence the build re-wrapped over two lines.")
+    @test wrapped.file == joinpath("docs", "src", "guide.md") && wrapped.line == 3
+    # nothing holds it, or two files do: not placed
+    @test G.Texts.place(cfg, root, "words nobody wrote") === nothing
+    write(joinpath(root, "docs", "src", "notation.md"), "# Notation\n\nThe grid is spectral.\n")
+    @test G.Texts.place(G.ConfigIO.read_config(root), root, "The grid is spectral.") === nothing
+    @test G.Texts.place(cfg, root, "   ") === nothing
+end

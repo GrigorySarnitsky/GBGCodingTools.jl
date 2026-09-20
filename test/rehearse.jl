@@ -17,23 +17,74 @@ include("helpers.jl")
 const RUNS = G.Orchestration.Runs
 const AGENTS = G.Orchestration.Agents
 const MRun = G.Model
+const SITE = G.Orchestration.Site
 
-"""A package with a docs surface, a source file and one commit, in a temporary directory."""
+"""
+A git-initialised copy of the TRACKED FIXTURE, with one sentence of our own on its home page and the
+site builder replaced. Returns its root and a `git` command for it.
+
+The fixture rather than a package invented here: its config, its pages and its source are the ones a
+consumer really has, so the units a reader is given are real pages and a quote found on one of them is
+in a real file. The one seam is the BUILD — Documenter is not installed for the fixture, and a rehearsal
+that built a site at every stage would cost minutes a test cannot spend — so `Site.BUILDER` renders each
+configured page into the article body Documenter would have put it in. Everything after the build is the
+run's own code: the pages, the units, one launch each, and the source a quote is placed in.
+"""
 function package(f)
-    root = mktempdir(; cleanup = true)
-    mkpath(joinpath(root, ".gbg")); mkpath(joinpath(root, "docs", "src")); mkpath(joinpath(root, "src"))
+    root = fixture_copy("rehearse-" * string(hash(f), base = 16))
     gg(a...) = Base.run(pipeline(setenv(Cmd(["git", "-C", root, a...]); dir = root);
                                  stdout = devnull, stderr = devnull))
+    write(joinpath(root, "docs", "src", "index.md"), HOME_PAGE)
     gg("init", "-q"); gg("config", "user.name", "t"); gg("config", "user.email", "t@t")
-    write(joinpath(root, ".gbg", "config.jl"), """Config(package = "Sample", tool = :dev)""")
-    write(joinpath(root, "docs", "src", "guide.md"), "# Guide\n\nThe grid is spectral.\n")
-    write(joinpath(root, "src", "Sample.jl"), "module Sample\nend\n")
-    gg("add", "--all", "."); gg("commit", "-q", "-m", "first")
-    f(root, gg)
+    gg("add", "--all", "."); gg("commit", "-q", "-m", "the fixture, as it stands")
+    old = SITE.BUILDER[]
+    SITE.BUILDER[] = write_site
+    try
+        f(root, gg)
+    finally
+        SITE.BUILDER[] = old
+    end
 end
 
+const HOME_PAGE = """
+# GBG Fixture
+
+!!! info "Written by AI, not regularly reviewed"
+    This page is written by AI and is not reviewed regularly by a human.
+
+The grid is spectral.
+"""
+
+"""
+The site a build would have produced: every configured page as an article body, where the run's own
+code then finds the pages, cuts them into units and maps each back to the file it was written in.
+"""
+function write_site(root, cfg; io = devnull)
+    dir = joinpath(root, "docs", "build")
+    src = joinpath(root, "docs", "src")
+    for page in G.Texts.files(cfg, root, G.Model.FileSet.PAGES)
+        stem = replace(relpath(joinpath(root, page), src), r"\.md$" => "")
+        out = stem == "index" ? joinpath(dir, "index.html") : joinpath(dir, stem, "index.html")
+        mkpath(dirname(out))
+        body = replace(read(joinpath(root, page), String), "&" => "&amp;", "<" => "&lt;")
+        write(out, "<html><body><nav>side bar</nav><article class=\"content\">" * body * "</article></body></html>")
+    end
+    return dir
+end
+
+"""The reader given the home page alone: the key a result file of that launch is named by."""
+const HOME_READER = "withheld@home"
+
+"""Where the sentence the readers report sits in the home page: the line a program must find for itself."""
+const HOME_LINE = findfirst(l -> occursin("The grid is spectral.", l), split(HOME_PAGE, '\n'))
+
+"""A real change to code, which the guard must never call documentation: a new statement, not a comment."""
+code_change(root) = write(joinpath(root, "src", "FixtureA.jl"),
+    replace(read(joinpath(root, "src", "FixtureA.jl"), String),
+            "end # module FixtureA" => "shadow(x) = x\n\nend # module FixtureA"))
+
 """Write what one reader found, as the driver would have written it, into the current stage's results."""
-function reader_found(root, id, role, claim; file = "docs/src/guide.md", quote_ = "The grid is spectral.")
+function reader_found(root, id, role, claim; file = "docs/src/index.md", quote_ = "The grid is spectral.")
     mkpath(AGENTS.results_dir(root, id))
     write(joinpath(AGENTS.results_dir(root, id), role * ".json"),
           """{"findings":[{"claim":"$claim","fix":"say which","locations":[{"file":"$file","text":"$quote_"}]}],"checked":["$file"]}""")
@@ -46,12 +97,15 @@ function verifier_said(root, id, stage, finding, verdict; quote_ = "")
           """{"verdict":"$verdict","quote":"$quote_"}""")
 end
 
-"""The other two bound readers report clean, so a collect is not exit 2 for their silence."""
-function others_clean(root, id; but = "withheld")
-    for role in ("withheld", "full", "rendered")
-        role == but && continue
-        write(joinpath(AGENTS.results_dir(root, id), role * ".json"),
-              """{"findings":[],"checked":["docs/src/guide.md"]}""")
+"""Every launched reader but the named ones reports clean, so a collect is not exit 2 for their silence."""
+function all_clean(root, id; except = String[])
+    args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+    mkpath(AGENTS.results_dir(root, id))
+    for r in args["roles"]
+        key = String(r["key"])
+        key in except && continue
+        write(joinpath(AGENTS.results_dir(root, id), key * ".json"),
+              """{"findings":[],"checked":["docs/src/index.md"]}""")
     end
 end
 
@@ -59,15 +113,15 @@ end
 function with_one_finding(root)
     G.Run.start(root, :documentation_review; io = devnull)
     id = G.Run.open_run(root)
-    reader_found(root, id, "withheld", "the grid is named but not said to be a lattice")
-    others_clean(root, id)
+    reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+    all_clean(root, id; except = [HOME_READER])
     @test G.Run.collect(root; io = devnull) == 1
     return id, only(RUNS.load(root, id).findings).id
 end
 
 """Commit a documentation edit as the fixer would, through the guard, for one finding."""
 function fixed_as(root, fid, text)
-    write(joinpath(root, "docs", "src", "guide.md"), "# Guide\n\n$text\n")
+    write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => text))
     @test G.Docfix.commit(root, "fix for " * fid; io = devnull, finding = fid) == 0
 end
 
@@ -103,24 +157,134 @@ end
             @test all(r -> r["launch"] === true, args["roles"])       # a fresh stage launches everyone
             @test args["commit"] == RUNS.load(root, id).first_commit
 
-            reader_found(root, id, "withheld", "a term is used before it is defined")
+            reader_found(root, id, HOME_READER, "a term is used before it is defined")
             @test G.Run.collect(root; io = devnull) == 2          # other readers wrote nothing: NOT clean
             run = RUNS.load(root, id)
             @test run.agent_launches == 1                          # what arrived, not the panel's size
-            @test only(run.findings).source === :withheld          # the finding names its reader
+            @test only(run.findings).source === Symbol(HOME_READER)          # the finding names its reader
             @test to_close(root, id) === :close
             @test G.Run.close_run(root; io = devnull) == 1        # closed, with a finding
 
             rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
             @test occursin("used before it is defined", rep)
-            @test occursin("Reported by `withheld`", rep)
+            @test occursin("Reported by `" * HOME_READER * "`", rep)
             @test occursin("Written by AI", rep)                  # a report is a page like any other
-            @test occursin("docs/src/guide.md", rep)
+            @test occursin("docs/src/index.md", rep)
             @test isfile(joinpath(RUNS.dir(root, id), "run.json"))
             @test !isfile(joinpath(RUNS.dir(root, id), "run.draft.json"))
             @test !isdir(AGENTS.scratch_dir(root, id))            # the agents' files went with the run
             @test sort(readdir(RUNS.dir(root, id))) == ["report.md", "run.json", "stage"]
             @test G.Run.open_run(root) === nothing                # and it is no longer open
+        end
+    end
+
+    # The withheld bundle is ONE PAGE: a single agent handed every page at once would be the reader with
+    # siblings that the rules tagged for this bundle were kept away from.
+    @testset "the reader given a page alone is launched once per built page" begin
+        package() do root, gg
+            @test G.Run.start(root, :documentation_review; io = devnull) == 0
+            id = G.Run.open_run(root)
+            args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+            cfg = G.ConfigIO.read_config(root)
+            built = SITE.pages(joinpath(root, "docs", "build"))
+            @test length(built) == length(G.Texts.files(cfg, root, G.Model.FileSet.PAGES))
+            @test args["site"] == joinpath(root, "docs", "build")
+
+            units = [r for r in args["roles"] if !isempty(String(r["unit"]))]
+            @test length(units) == length(built)                     # one launch per page
+            @test Set(String(r["key"]) for r in units) == Set("withheld@" * p.key for p in built)
+            for r in units
+                @test isfile(String(r["unit"]))
+                @test r["kept_from_code"] === true
+                text = read(String(r["unit"]), String)
+                @test !occursin("side bar", text)                    # the article body, not the furniture
+                @test !isempty(strip(text))
+            end
+            home = only(filter(r -> String(r["key"]) == HOME_READER, units))
+            @test occursin("The grid is spectral.", read(String(home["unit"]), String))
+            @test String(home["unit_source"]) == joinpath("docs", "src", "index.md")
+
+            # the reader of the WHOLE site is one launch, with no unit
+            whole = only(filter(r -> String(r["key"]) == "rendered", args["roles"]))
+            @test isempty(String(whole["unit"])) && whole["site"] === true
+            # and the reader with the source is neither
+            full = only(filter(r -> String(r["key"]) == "full", args["roles"]))
+            @test isempty(String(full["unit"])) && full["site"] === false
+        end
+    end
+
+    # What judged the package is part of the record, and so is how its agents were launched.
+    @testset "the model and the launch order are the run's own, and are recorded" begin
+        package() do root, gg
+            @test G.Run.start(root, :documentation_review; io = devnull, model = "opus", sequential = true) == 0
+            id = G.Run.open_run(root)
+            args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+            @test args["sequential"] === true
+            @test args["models"]["full"] == "opus" && args["models"]["economy"] == AGENTS.ECONOMY_MODEL
+            all_clean(root, id)
+            G.Run.collect(root; io = devnull)
+            to_close(root, id); G.Run.close_run(root; io = devnull)
+            record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
+            @test record["model"] == "opus" && record["sequential"] === true
+        end
+        package() do root, gg
+            G.Run.start(root, :documentation_review; io = devnull)     # named none: the session's own
+            id = G.Run.open_run(root)
+            args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+            @test args["models"]["full"] == "session" && args["sequential"] === false
+        end
+    end
+
+    # A panel launched without its rendered readers is not the panel the rules were tagged for.
+    @testset "a build that fails leaves the run where it stood" begin
+        package() do root, gg
+            SITE.BUILDER[] = (r, c; io = devnull) -> nothing
+            try
+                @test G.Run.start(root, :documentation_review; io = devnull) == 2
+                id = G.Run.open_run(root)
+                @test RUNS.stage_of(root, id) === :start              # not at find with nothing written
+                SITE.BUILDER[] = write_site
+                @test G.Run.next(root; io = devnull) == 0             # and the build fixed, it goes on
+                @test RUNS.stage_of(root, id) === :find
+            finally
+                SITE.BUILDER[] = write_site
+            end
+        end
+    end
+
+    # A verifier is given what the reader was given: for a reader given one page, that page as it now
+    # stands, rebuilt after the fix.
+    @testset "a verifier of a page reader is given that page, rebuilt" begin
+        package() do root, gg
+            id, fid = with_one_finding(root)
+            G.Run.next(root; io = devnull)                            # fix
+            fixed_as(root, fid, "The grid is a lattice.")
+            G.Run.next(root; io = devnull)                            # verify
+            args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+            v = only(args["roles"])
+            @test v["kind"] == "verifier" && !isempty(String(v["unit"]))
+            page = read(String(v["unit"]), String)
+            @test occursin("The grid is a lattice.", page)            # the page as it now stands
+            @test !occursin("The grid is spectral.", page)
+        end
+    end
+
+    # A reader given one built page quotes the PAGE, and the words may have been rendered from a
+    # docstring in the source. The collector searches the documentation for them, so the fixer is sent
+    # to the file the sentence is written in rather than to the page it was read on.
+    @testset "a quote rendered from a docstring is placed in the file it is written in" begin
+        package() do root, gg
+            G.Run.start(root, :documentation_review; io = devnull)
+            id = G.Run.open_run(root)
+            reader_found(root, id, "withheld@api-FixtureA", "the allocating form does not say what it allocates";
+                         file = "docs/src/api/FixtureA.md",
+                         quote_ = "Allocating form of")
+            all_clean(root, id; except = ["withheld@api-FixtureA"])
+            @test G.Run.collect(root; io = devnull) == 1
+            loc = only(only(RUNS.load(root, id).findings).draft.locations)
+            @test loc.file == joinpath("src", "FixtureA.jl")          # not the page it was read on
+            @test loc.found !== MRun.Anchor.OUTDATED
+            @test occursin("scale", loc.node)                          # and the binding it sits in
         end
     end
 
@@ -131,13 +295,13 @@ end
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
             mkpath(AGENTS.results_dir(root, id))
-            write(joinpath(AGENTS.results_dir(root, id), "withheld.json"), "{not json")
+            write(joinpath(AGENTS.results_dir(root, id), HOME_READER * ".json"), "{not json")
             write(joinpath(AGENTS.results_dir(root, id), "full.json"), """{"findings":[],"checked":[]}""")
-            write(joinpath(AGENTS.results_dir(root, id), "rendered.json"), """{"findings":[],"checked":["docs/src/guide.md"]}""")
-            _, _, silent, arrived, wrote = AGENTS.collect_results(root, id)
+            write(joinpath(AGENTS.results_dir(root, id), "rendered.json"), """{"findings":[],"checked":["docs/src/index.md"]}""")
+            _, _, silent, arrived, wrote = AGENTS.collect_results(root, id, G.ConfigIO.read_config(root))
             @test wrote == 1
             @test arrived == 3
-            @test "withheld" in silent && "full" in silent && !("rendered" in silent)
+            @test HOME_READER in silent && "full" in silent && !("rendered" in silent)
             @test G.Run.collect(root; io = devnull) == 2
         end
     end
@@ -170,7 +334,7 @@ end
             @test record["stop"] == "OWNER_STOPPED" && isempty(record["findings"])
             @test occursin("The owner stopped it.", read(joinpath(RUNS.dir(root, id), "report.md"), String))
             @test !isdir(AGENTS.scratch_dir(root, id))
-            @test !isfile(joinpath(root, ".claude", "WORK_QUEUE.md"))
+            @test !occursin(fid, read(joinpath(root, ".claude", "WORK_QUEUE.md"), String))
             @test G.Run.abandon(root; io = devnull) == 2                # nothing open now
             @test G.Run.start(root, :documentation_review; io = devnull) == 0
             @test G.Run.open_run(root) != id                             # the id is never reused
@@ -184,24 +348,25 @@ end
         package() do root, gg
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
-            reader_found(root, id, "withheld", "one")
+            reader_found(root, id, HOME_READER, "one")
             reader_found(root, id, "full", "two")
-            @test G.Run.next(root; io = devnull) == 0                    # continue: rendered is missing
+            before = length(G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})["roles"])
+            @test G.Run.next(root; io = devnull) == 0                    # continue: the rest are missing
             args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
-            launch = Dict(r["key"] => r["launch"] for r in args["roles"])
-            @test launch == Dict("withheld" => false, "full" => false, "rendered" => true)
-            @test length(args["roles"]) == 3                             # the collect still expects everyone
-            reader_found(root, id, "rendered", "three")
+            launch = Dict(String(r["key"]) => r["launch"] for r in args["roles"])
+            @test launch[HOME_READER] === false && launch["full"] === false && launch["rendered"] === true
+            @test length(args["roles"]) == before                        # the collect still expects everyone
+            all_clean(root, id; except = [HOME_READER, "full"])
             @test G.Run.next(root; io = devnull) == 2                    # every agent wrote: collect
             @test G.Run.collect(root; io = devnull) == 1
-            @test length(RUNS.load(root, id).findings) == 3              # each collected once
-            @test RUNS.load(root, id).agent_launches == 3
+            @test length(RUNS.load(root, id).findings) == 2              # each collected once
+            @test RUNS.load(root, id).agent_launches == before
         end
         package() do root, gg
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
-            reader_found(root, id, "withheld", "one")
-            write(joinpath(root, "docs", "src", "guide.md"), "# Guide\n\nThe grid is a lattice.\n")
+            reader_found(root, id, HOME_READER, "one")
+            write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
             gg("add", "--all", "."); gg("commit", "-q", "-m", "the tree moves under the run")
             @test G.Run.next(root; io = devnull) == 2                    # moved: the owner decides
             @test RUNS.stage_of(root, id) === :find                      # and nothing was taken
@@ -214,8 +379,8 @@ end
         package() do root, gg
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
-            reader_found(root, id, "withheld", "one"); others_clean(root, id)
-            write(joinpath(root, "src", "Sample.jl"), "module Sample\ng() = 2\nend\n")
+            reader_found(root, id, HOME_READER, "one"); all_clean(root, id; except = [HOME_READER])
+            code_change(root)
             @test G.Run.collect(root; io = devnull) == 2                 # an uncommitted edit
             @test RUNS.stage_of(root, id) === :find && isempty(RUNS.load(root, id).findings)
             gg("add", "src"); gg("commit", "-q", "-m", "committed under the readers")
@@ -237,13 +402,15 @@ end
             end
             G.Run.next(root; io = devnull)
             @test G.Run.close_run(root; io = devnull) == 1
+            # the session commits the closed run and the queue line it wrote, as it commits any run
+            gg("add", "--all", "."); gg("commit", "-q", "-m", "the first run, closed")
             @test G.Run.start(root, :documentation_review; io = devnull) == 0
             id2 = G.Run.open_run(root)
             @test id2 != id
             second = RUNS.load(root, id2)
             @test [f.id for f in second.findings] == [fid]                # carried, under its old id
-            @test only(second.findings).source === :withheld
-            @test only(only(second.findings).draft.locations).line == 3   # re-anchored
+            @test only(second.findings).source === Symbol(HOME_READER)
+            @test only(only(second.findings).draft.locations).line == HOME_LINE   # re-anchored
             @test to_close(root, id2) === :close
             @test G.Run.close_run(root; io = devnull) == 1
             rep = read(joinpath(RUNS.dir(root, id2), "report.md"), String)
@@ -251,8 +418,10 @@ end
             queue = read(joinpath(root, ".claude", "WORK_QUEUE.md"), String)
             @test count("- [ ] " * fid, queue) == 1                        # one line, not one per run
             # a third start after an abandoned run carries nothing: the owner dropped them
+            gg("add", "--all", "."); gg("commit", "-q", "-m", "the second run, closed")
             G.Run.start(root, :documentation_review; io = devnull)
             @test G.Run.abandon(root; io = devnull) == 0
+            gg("add", "--all", "."); gg("commit", "-q", "-m", "the abandoned run")
             G.Run.start(root, :documentation_review; io = devnull)
             @test isempty(RUNS.load(root, G.Run.open_run(root)).findings)
         end
@@ -261,11 +430,11 @@ end
     # A tracked change already in the tree would be committed by the fixer under the guard's name.
     @testset "a start on a dirty tree is refused" begin
         package() do root, gg
-            write(joinpath(root, "src", "Sample.jl"), "module Sample\nf() = 1\nend\n")
+            code_change(root)
             @test G.Run.start(root, :documentation_review; io = devnull) == 2
             @test G.Run.open_run(root) === nothing
             write(joinpath(root, "docs", "src", "untracked.md"), "# New\n")     # untracked does not count
-            gg("checkout", "--", "src/Sample.jl")
+            gg("checkout", "--", "src/FixtureA.jl")
             @test G.Run.start(root, :documentation_review; io = devnull) == 0
         end
     end
@@ -318,7 +487,7 @@ end
             RUNS.save(root, MRun.Run(id = run.id, instrument = run.instrument, tool_version = run.tool_version,
                                      first_commit = run.first_commit, budget = run.budget, stage = run.stage,
                                      questions = [q], readers = run.readers))
-            reader_found(root, id, "withheld", "something")
+            reader_found(root, id, HOME_READER, "something")
             G.Run.collect(root; io = devnull)
             G.Run.next(root; io = devnull)
             again = RUNS.load(root, id)
@@ -336,7 +505,7 @@ end
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
             G.Run.collect(root; io = devnull)                            # the readers are in; the change comes after
-            write(joinpath(root, "src", "Sample.jl"), "module Sample\nf() = 1\nend\n")
+            code_change(root)
             gg("add", "--all", "."); gg("commit", "-q", "-m", "a code change nobody guarded")
             to_close(root, id)
             @test G.Run.close_run(root; io = devnull) == 2
@@ -350,7 +519,7 @@ end
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
             G.Run.collect(root; io = devnull)
-            write(joinpath(root, "docs", "src", "guide.md"), "# Guide\n\nThe grid is a lattice.\n")
+            write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
             gg("add", "--all", "."); gg("commit", "-q", "-m", "prose only")
             to_close(root, id)
             @test G.Run.close_run(root; io = devnull) == 0             # nothing found, nothing unguarded
@@ -365,7 +534,7 @@ end
         package() do root, gg
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
-            write(joinpath(root, "docs", "src", "guide.md"), "# Guide\n\nThe grid is a lattice.\n")
+            write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
             @test G.Docfix.commit(root, "a prose fix"; io = devnull) == 0
             log = readchomp(setenv(`git -C $root log -1 --format=%B`; dir = root))
             @test occursin(RUNS.GUARD_TRAILER, log)
@@ -388,7 +557,7 @@ end
             @test run.passes == 1
             todo = G.JSON3.read(read(joinpath(AGENTS.stage_dir(root, id), "findings.json"), String))
             @test length(todo) == 1 && todo[1]["id"] == fid
-            @test todo[1]["locations"][1]["line"] == 3                # re-anchored before the fixer sees it
+            @test todo[1]["locations"][1]["line"] == HOME_LINE       # re-anchored before the fixer sees it
 
             fixed_as(root, fid, "The grid is a lattice.")
             @test RUNS.fix_commits(root, run.first_commit, fid) |> length == 1
@@ -419,7 +588,7 @@ end
             rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
             @test occursin("pass 1: blind verifier `FIXED`, with the diff `FIXED`", rep)
             @test occursin("1 of 4 fix pass", rep)
-            @test !isfile(joinpath(root, ".claude", "WORK_QUEUE.md"))   # nothing was left over
+            @test !occursin(fid, read(joinpath(root, ".claude", "WORK_QUEUE.md"), String))  # nothing left over
             record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
             @test record["passes"] == 1 && length(record["fixes"]) == 1
         end
@@ -467,8 +636,8 @@ end
             @test G.Run.close_run(root; io = devnull) == 1
             queue = read(joinpath(root, ".claude", "WORK_QUEUE.md"), String)
             @test occursin("## From the last review", queue)
-            @test occursin("- [ ] " * fid * " the grid is named but not said to be a lattice — `docs/src/guide.md`", queue)
-            @test count("- [ ]", queue) == 1
+            @test occursin("- [ ] " * fid * " the grid is named but not said to be a lattice — `docs/src/index.md`", queue)
+            @test count("- [ ] " * fid, queue) == 1
             rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
             @test occursin("$cap of $cap fix pass", rep)
             @test count("blind verifier `NOT_FIXED`", rep) == cap
@@ -493,7 +662,7 @@ end
             G.Run.next(root; io = devnull)
             verifier_said(root, id, "diff", fid, "MADE_WORSE"; quote_ = "The grid is a lattice.")
             @test G.Run.collect(root; io = devnull) == 1
-            @test occursin("spectral", read(joinpath(root, "docs", "src", "guide.md"), String))
+            @test occursin("spectral", read(joinpath(root, "docs", "src", "index.md"), String))
             @test only(RUNS.load(root, id).fixes).with_diff === MRun.Verdict.MADE_WORSE
             @test isempty(RUNS.unguarded_code(root, RUNS.load(root, id).first_commit))
             @test length(RUNS.open_findings(RUNS.load(root, id))) == 1
@@ -511,7 +680,7 @@ end
             verifier_said(root, id, "verify", fid, "HIDES_CODE_DEFECT"; quote_ = "The grid is a lattice.")
             @test G.Run.collect(root; io = devnull) == 1
             run = RUNS.load(root, id)
-            @test occursin("spectral", read(joinpath(root, "docs", "src", "guide.md"), String))
+            @test occursin("spectral", read(joinpath(root, "docs", "src", "index.md"), String))
             @test length(run.questions) == 1 && occursin("code right", run.questions[1].decision)
             @test RUNS.parked(run, fid)
             @test G.Run.next(root; io = devnull) == 0                    # nothing workable: straight to close
@@ -542,12 +711,12 @@ end
         package() do root, gg
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
-            reader_found(root, id, "withheld", "a claim about line three")
+            reader_found(root, id, HOME_READER, "a claim about line three")
             G.Run.collect(root; io = devnull)
             run = RUNS.load(root, id)
             @test length(run.findings) == 1
             loc = only(run.findings[1].draft.locations)
-            @test loc.line == 3                                       # where the quote actually is
+            @test loc.line == HOME_LINE                               # where the quote actually is
             @test loc.found !== MRun.Anchor.OUTDATED
         end
     end

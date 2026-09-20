@@ -74,6 +74,9 @@ Opens a run of `instrument` in the package at `root`. The arguments are:
 
 - `instrument` — the instrument to run.
 - `root` — the package root.
+- `readers` — which readers it launches: `:bound`, `:open` or `:both`.
+- `model` — the careful model its readers run on, or `"session"` for the session's own.
+- `sequential` — whether its agents are launched one at a time rather than together.
 - `io` — where a refusal is reported.
 
 Returns the run, or `nothing` when one may not start: the instrument is unknown or switched off, it has
@@ -89,7 +92,8 @@ already in the tree when the run started would be committed by the fixer under t
 code change would pass as documentation. Untracked files do not count — a built site, a scratch
 directory — since nothing commits them unasked.
 """
-function start(instrument::Symbol, root::AbstractString; readers::Symbol = :bound, io::IO = stdout)
+function start(instrument::Symbol, root::AbstractString; readers::Symbol = :bound,
+               model::AbstractString = "session", sequential::Bool = false, io::IO = stdout)
     readers in (:bound, :open, :both) ||
         (println(io, "run: readers is bound, open or both, not $readers"); return nothing)
     i = findfirst(x -> x.id === instrument, Catalogue.INSTRUMENTS)
@@ -114,6 +118,8 @@ function start(instrument::Symbol, root::AbstractString; readers::Symbol = :boun
     run = Model.Run(id = new_id(instrument, root), instrument = instrument,
                     tool_version = string(GBG_VERSION[]), first_commit = head_commit(root),
                     budget = inst.budget, stage = :start, readers = readers,
+                    model = model, sequential = sequential,
+                    already_failing = failing_now(cfg, root),
                     findings = carry_over(root, instrument))
     isempty(run.findings) || println(io, "run: ", length(run.findings), " finding(s) carried over from ",
                                      first(run.findings).id[1:something(findlast('-', first(run.findings).id), 1)-1])
@@ -125,6 +131,19 @@ end
 
 # The version that ran, recorded so a record says what judged it. Set by the package at load.
 const GBG_VERSION = Ref{Any}("dev")
+
+"""
+    failing_now(cfg, root) -> Vector{Symbol}
+
+The documentation rules a program finds a violation of right now. The arguments are `cfg`, the package's
+config, and `root`, the package root. Returns their ids, without repetition.
+
+A run records these when it starts, so `gbg docfix check` can tell a rule the FIX broke from one that was
+already broken when the run opened. Without that baseline a fixer is held to a standard the package did
+not meet before it touched anything, and the honest report of a rule it did not break reads as its fault.
+"""
+failing_now(cfg::Model.Config, root::AbstractString) =
+    unique(id for (id, _) in Engine.Checks.run_all(cfg, root; intention = Model.Intention.DOCUMENTATION))
 
 """
     carry_over(root, instrument) -> Vector{Model.Finding}
@@ -360,6 +379,8 @@ as_dict(r::Model.Run) = Dict{String,Any}(
     "id" => r.id, "instrument" => String(r.instrument), "tool_version" => r.tool_version,
     "first_commit" => r.first_commit, "stage" => String(r.stage),
     "budget" => Dict("fix_passes" => r.budget.fix_passes),
+    "model" => r.model, "sequential" => r.sequential,
+    "already_failing" => [String(x) for x in r.already_failing],
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
     "readers" => String(r.readers), "passes" => r.passes,
     "questions" => [question_dict(q) for q in r.questions],
@@ -428,7 +449,9 @@ function from_dict(d::AbstractDict)
                      passes = get(d, "passes", 0),
                      agent_launches = get(d, "agent_launches", 0), tokens = get(d, "tokens", nothing),
                      stop = getfield(Model.Stop, Symbol(get(d, "stop", "DONE"))),
-                     readers = Symbol(get(d, "readers", "bound")))
+                     readers = Symbol(get(d, "readers", "bound")),
+                     model = get(d, "model", "session"), sequential = get(d, "sequential", false),
+                     already_failing = Symbol[Symbol(x) for x in get(d, "already_failing", [])])
 end
 
 

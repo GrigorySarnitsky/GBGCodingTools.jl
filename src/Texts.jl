@@ -824,6 +824,68 @@ function reanchor(root::AbstractString, loc::Model.Location)
     return outdated(loc)
 end
 
+"""
+    place(cfg, root, text) -> Union{Model.Location,Nothing}
+
+Where a quote is written, searched across the package's documentation. The arguments are:
+
+- `cfg` — the package's config, which says where its documentation is.
+- `root` — the package root.
+- `text` — the quote, as it was read.
+
+Returns the one location that holds it, or `nothing` when no file holds it or more than one does.
+
+This is for a quote read somewhere that is not a file: a reader given one BUILT page quotes the page,
+and the words may have been rendered from a docstring in the source rather than written on the page.
+Searching the documentation for them is what puts the finding in the file a fixer can edit.
+
+Two files holding the same words is NOT placed. A fixer sent to one of two identical sentences is a
+fixer sent to a coin toss, and the report naming the quote as unplaced is the honest answer. Whitespace
+is flattened before the search, so a sentence the build re-wrapped is still found.
+"""
+function place(cfg::Model.Config, root::AbstractString, text::AbstractString)
+    needle = flatten(text)
+    isempty(needle) && return nothing
+    hits = Model.Location[]
+    for fileset in (Model.FileSet.PAGES, Model.FileSet.DOCSTRINGS, Model.FileSet.LITERATE, Model.FileSet.RATIONALE)
+        for file in files(cfg, root, fileset)
+            any(h -> h.file == file, hits) && continue
+            line = flattened_line(joinpath(root, file), needle)
+            line === nothing && continue
+            push!(hits, Model.Location(; file, node = node_at(root, file, line), text = String(text),
+                                        line = line, found = Model.Anchor.BY_QUOTE))
+        end
+    end
+    return length(hits) == 1 ? only(hits) : nothing
+end
+
+# One run of whitespace is one space, so a sentence the build re-wrapped still matches the source.
+flatten(text::AbstractString) = strip(replace(String(text), r"\s+" => " "))
+
+# The line a flattened quote starts on, or nothing where the file does not hold it.
+function flattened_line(path::AbstractString, needle::AbstractString)
+    isfile(path) || return nothing
+    lines = try
+        readlines(path)
+    catch
+        return nothing
+    end
+    io = IOBuffer(); at = Int[]
+    for (i, l) in pairs(lines)
+        piece = flatten(l)
+        isempty(piece) && continue
+        position(io) == 0 || (write(io, " "); push!(at, i))
+        for _ in 1:length(piece); push!(at, i); end
+        write(io, piece)
+    end
+    hay = String(take!(io))
+    r = findfirst(needle, hay)
+    r === nothing && return nothing
+    # `findfirst` indexes bytes; the map is per character, so count characters up to the hit.
+    chars = length(SubString(hay, 1, prevind(hay, first(r)))) + 1
+    return at[min(chars, length(at))]
+end
+
 outdated(loc) = Model.Location(; file = loc.file, node = loc.node, text = loc.text, line = loc.line,
                                found = Model.Anchor.OUTDATED)
 

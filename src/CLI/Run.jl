@@ -10,6 +10,13 @@ the session needs and exits, the session runs the one fixed driver, and `collect
 wrote. `Runs` refuses any stage but the next, which is what stops a session from grading findings that
 were never collected.
 
+Two of the three reader bundles are RENDERED, so a run builds the site itself, from the package's own
+`docs/make.jl`, before it launches them, and again before each verifier stage that needs one: what the
+build made of a comment or a docstring is visible nowhere else. A reader of the withheld bundle is
+launched once per built page, each given that page's text and nothing else. A build that fails leaves
+the run where it stood, since a panel launched without its rendered readers is not the panel the rules
+were tagged for.
+
 A documentation review's pass is four stages. At `fix` the open findings are re-anchored and written
 for the session, which edits and commits each through `gbg docfix commit --finding <id>`. At `verify`
 one blind verifier per open finding, given what the reader that found it was given and never the diff,
@@ -27,6 +34,7 @@ using ..GBGCodingTools: GBGCodingTools, Catalogue, ConfigIO, Engine, Git, Model,
 
 const Runs = Orchestration.Runs
 const Agents = Orchestration.Agents
+const Site = Orchestration.Site
 
 "What the blind verifier may answer."
 const BLIND_VERDICTS = ["FIXED", "NOT_FIXED", "HIDES_CODE_DEFECT", "NOT_A_DEFECT"]
@@ -59,12 +67,15 @@ Opens a run and writes its first stage's arguments. The arguments are:
 - `root` — the package root.
 - `instrument` — the instrument to run.
 - `readers` — which readers the run launches: `:bound`, `:open` or `:both`.
+- `model` — the careful model its readers run on, or `"session"` for the session's own.
+- `sequential` — whether its agents are launched one at a time, so a crash loses one and not the stage.
 - `io` — where the handoff is described.
 
 Exit 0 when it opened, 2 when it did not.
 """
-function start(root::AbstractString, instrument::Symbol; readers::Symbol = :bound, io::IO = stdout)
-    run = Runs.start(instrument, root; readers, io)
+function start(root::AbstractString, instrument::Symbol; readers::Symbol = :bound,
+               model::AbstractString = "session", sequential::Bool = false, io::IO = stdout)
+    run = Runs.start(instrument, root; readers, model, sequential, io)
     run === nothing && return 2
     println(io, "run: opened ", run.id, ".")
     return next(root; io)
@@ -76,7 +87,7 @@ with(run::Model.Run; kw...) = Model.Run(; id = run.id, instrument = run.instrume
     first_commit = run.first_commit, budget = run.budget, stage = run.stage, findings = run.findings,
     fixes = run.fixes, questions = run.questions, code_fixes = run.code_fixes,
     agent_launches = run.agent_launches, tokens = run.tokens, stop = run.stop, readers = run.readers,
-    passes = run.passes, kw...)
+    passes = run.passes, model = run.model, sequential = run.sequential, kw...)
 
 """
     next(root; io = stdout) -> Int
@@ -114,15 +125,27 @@ function next(root::AbstractString; io::IO = stdout)
             to = run.passes < run.budget.fix_passes ? :fix : :close
         end
     end
-    Runs.advance!(root, id, to; io) || return 2
     cfg = ConfigIO.read_config(root)
+    # The site is built BEFORE the run moves: a build that failed must leave the run at the stage it was
+    # at, rather than at one whose arguments were never written.
+    site = ""
+    if to === :find || to === :verify || to === :diff
+        panel = first(Catalogue.panel(run.instrument, cfg))
+        if any(r -> r.site, panel) && !(to === :diff)
+            built = Site.build(root, cfg; io)
+            built === nothing && return 2
+            site = built
+        end
+    end
+    Runs.advance!(root, id, to; io) || return 2
     moved = with(run; stage = to)
     to === :fix && (moved = with(moved; passes = run.passes + 1))
     Runs.save(root, moved)
     to === :close && (println(io, "run: ", id, " is ready to close: gbg run close"); return 0)
     to === :fix && return fix_stage(root, moved; io)
-    (to === :verify || to === :diff) && return verifier_stage(root, moved, cfg, to; io)
-    Agents.write_arguments(root, moved, cfg; roles = Catalogue.roles_of(run.instrument, cfg; readers = run.readers), io)
+    (to === :verify || to === :diff) && return verifier_stage(root, moved, cfg, to, site; io)
+    roles, extras = reader_roles(root, moved, cfg, site; io)
+    Agents.write_arguments(root, moved, cfg; roles, extras, site, io)
     # What no reader of this package can judge is said at every launch, not only in the report: a
     # discipline rule in a package that declares no discipline is a gap the session should see now.
     gaps = vcat(last(Catalogue.panel(run.instrument, cfg)), Catalogue.missing_documents(cfg, root))
@@ -165,6 +188,57 @@ function continue_stage(root::AbstractString, id::AbstractString, stage::Symbol;
     println(io, "  then: gbg run collect")
     return 0
 end
+
+"""
+    reader_roles(root, run, cfg, site; io = stdout) -> (roles, extras)
+
+The agents a reading stage launches, with what each needs beyond its derived reader. The arguments are:
+
+- `root` — the package root.
+- `run` — the run, at the stage being launched.
+- `cfg` — the package's config.
+- `site` — the built site's directory, or `""` where none was built.
+- `io` — where the expansion is described.
+
+Returns the roles and their extras, ready for the arguments.
+
+A reader of the WITHHELD bundle is expanded into ONE LAUNCH PER BUILT PAGE, each given that page's text
+and nothing else: the bundle is defined as one page alone, and a single agent handed every page at once
+would be the reader with siblings that the rules tagged for that bundle were kept away from.
+"""
+function reader_roles(root::AbstractString, run::Model.Run, cfg::Model.Config, site::AbstractString; io::IO = stdout)
+    panel = Catalogue.roles_of(run.instrument, cfg; readers = run.readers)
+    roles = Model.AgentRole[]
+    extras = Dict{Symbol,Any}()
+    units = isempty(site) ? typeof(Site.write_units("", []))() :
+            Site.write_units(Agents.stage_dir(root, run.id), Site.pages(site))
+    for r in panel
+        if r.site && r.kept_from_code
+            isempty(units) && (println(io, "run: `", r.id, "` reads one built page at a time and the site has none; it is not launched"); continue)
+            for u in units
+                id = Symbol(string(r.id, UNIT_MARK, u.key))
+                push!(roles, unit_role(r, id))
+                extras[id] = Dict{String,Any}("unit" => u.file, "unit_source" => Site.source_of(root, u.path))
+            end
+        else
+            push!(roles, r)
+        end
+    end
+    isempty(units) || println(io, "run: ", length(units), " built page(s), one launch each for the reader given a page alone.")
+    return roles, extras
+end
+
+"What separates a reader's id from the unit it was given, in the key a result file is named by."
+const UNIT_MARK = "@"
+
+"The bundle a reader key belongs to: `withheld@guide` is the withheld reader's."
+bundle_of(key::Symbol) = Symbol(first(split(String(key), UNIT_MARK)))
+
+# One reader, re-keyed for the unit it is given; everything else about it is the derived reader's.
+unit_role(r::Model.AgentRole, id::Symbol) =
+    Model.AgentRole(; id, instrument = r.instrument, reads = r.reads, site = r.site,
+                    kept_from_code = r.kept_from_code, description = r.description, rules = r.rules,
+                    strength = r.strength, cap = r.cap)
 
 """
     fix_stage(root, run; io = stdout) -> Int
@@ -223,6 +297,7 @@ diff; one per finding the blind stage called fixed at `diff`, given the fix's di
 - `run` — the run.
 - `cfg` — the package's config.
 - `stage` — `:verify` or `:diff`.
+- `site` — the site built for this stage, or `""`.
 - `io` — where the handoff is described.
 
 Exit 0.
@@ -232,19 +307,30 @@ verified on the page alone, the full reader's with the source, a discipline's fr
 finding whose reader no longer exists is verified on the full bundle. The blind verifier runs at that
 reader's strength; the one reading the diff, a narrower question, at economy.
 """
-function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config, stage::Symbol; io::IO = stdout)
+function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config, stage::Symbol,
+                        site::AbstractString; io::IO = stdout)
     panel = first(Catalogue.panel(run.instrument, cfg))
     by_id = Dict(r.id => r for r in panel)
     full = get(by_id, :full, nothing)
     roles = Model.AgentRole[]
     extras = Dict{Symbol,Any}()
+    units = isempty(site) ? Dict{String,Any}() :
+            Dict(u.key => u for u in Site.write_units(Agents.stage_dir(root, run.id), Site.pages(site)))
     for f in Runs.workable(run)
         if stage === :diff
             k = findlast(x -> x.finding == f.id && x.pass == run.passes, run.fixes)
             (k === nothing || run.fixes[k].blind !== Model.Verdict.FIXED) && continue
         end
-        reader = get(by_id, f.source, full)
+        reader = get(by_id, bundle_of(f.source), full)
         reader === nothing && continue
+        # A verifier is given what the reader was given. For a reader given ONE PAGE that is the page as
+        # it now stands, rebuilt: a page the fix deleted has no verifier, and the finding stays open.
+        unit = ""
+        if stage === :verify && reader.site && reader.kept_from_code
+            key = String(last(split(String(f.source), UNIT_MARK)))
+            haskey(units, key) || (println(io, "run: ", f.id, " was found on a page the site no longer has; it stays open"); continue)
+            unit = units[key].file
+        end
         commits = Runs.fix_commits(root, run.first_commit, f.id)
         diff = stage === :diff && !isempty(commits) ? something(Git.run(root, "show", "--format=", first(commits)), "") : ""
         id = Symbol(string(stage, "-", f.id))
@@ -263,9 +349,10 @@ function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config,
                                      rules = f.draft.rule === nothing ? Symbol[] : [f.draft.rule],
                                      strength = stage === :verify ? reader.strength : Model.Strength.ECONOMY, cap = 1))
         extras[id] = Dict{String,Any}("kind" => "verifier", "finding" => Agents.finding_dict(f), "diff" => diff,
+                                      "unit" => unit,
                                       "verdicts" => stage === :verify ? BLIND_VERDICTS : DIFF_VERDICTS)
     end
-    Agents.write_arguments(root, run, cfg; roles, extras, io)
+    Agents.write_arguments(root, run, cfg; roles, extras, site, io)
     isempty(roles) && println(io, "run: no finding needs this stage; collect it to move on")
     return 0
 end
@@ -310,7 +397,8 @@ function collect(root::AbstractString; io::IO = stdout)
         println(io, "  Restore the tree and collect, or: gbg run abandon")
         return 2
     end
-    drafts, verdicts, silent, arrived, wrote = Agents.collect_results(root, id)
+    cfg = ConfigIO.read_config(root)
+    drafts, verdicts, silent, arrived, wrote = Agents.collect_results(root, id, cfg)
     Runs.advance!(root, id, :collect; io) || return 2
     if launched === :verify || launched === :diff
         run = grade(root, run, launched, verdicts; io)
@@ -548,16 +636,17 @@ function queue_leftovers(root::AbstractString, run::Model.Run)
 end
 
 function cmd_run(args)
-    o = parse_options(args; valued = ["readers"])
+    o = parse_options(args; valued = ["readers", "model"])
     root = ConfigIO.require_root("run")
     root === nothing && return 2
-    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] | gbg run next|collect|close|abandon"); return 2)
+    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--model <name>] [--sequential] | gbg run next|collect|close|abandon"); return 2)
     what = o.positional[1]
     what == "next" && return next(root)
     what == "collect" && return collect(root)
     what == "close" && return close_run(root)
     what == "abandon" && return abandon(root)
-    return start(root, Symbol(replace(what, "-" => "_")); readers = Symbol(get(o.values, "readers", "bound")))
+    return start(root, Symbol(replace(what, "-" => "_")); readers = Symbol(get(o.values, "readers", "bound")),
+                 model = get(o.values, "model", "session"), sequential = "sequential" in o.flags)
 end
 VERBS["run"] = cmd_run
 

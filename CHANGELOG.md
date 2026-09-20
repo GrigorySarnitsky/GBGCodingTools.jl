@@ -41,7 +41,16 @@ to launch again, and the tree having moved since the launch is the one case it s
 the session block in `CLAUDE.md` gains the instruction to continue such a run first and say so. A
 collect over a tree that changed under the agents, by a commit or an uncommitted edit, is exit 2 and
 reads nothing. What a run leaves open the next run of the same instrument carries, re-anchored and
-under the old id, which the report says. The other changes since rc.5 are in the commits from `71993cc`.
+under the old id, which the report says.
+
+**A run builds the site it reads.** Two of the three reader bundles are rendered, so `gbg run next`
+runs the package's own `docs/make.jl` before the reading stages and before each blind verifier stage,
+and a build that fails leaves the run where it stood. The reader of the withheld bundle is launched
+ONCE PER BUILT PAGE, each given that page's article body in a file of its own and no surface list; its
+verifier is given the same page, rebuilt after the fix. A quote that page carried but does not hold —
+one the build rendered from a docstring — is searched for across the documentation, and a quote exactly
+one file holds is placed there, so the fixer is sent to the file the sentence is written in. The other
+changes since rc.5 are in the commits from `71993cc`.
 
 ## 2.0.0-rc.5 — 2026-09-18
 

@@ -16,6 +16,10 @@ Two kinds of agent are launched through the same arguments: a READER, given surf
 returning findings, and a VERIFIER, given one finding and returning a verdict on its fix. Every role
 carries the same keys — a reader's `finding` is empty — so the driver reads one shape.
 
+A reader of the WITHHELD bundle is launched once per UNIT: its `unit` names a file holding one built
+page's text and nothing else, and its surfaces are not listed, because a reader that is given the whole
+documentation is not the reader the rule was tagged for.
+
 Everything the agents write, and the arguments they are given, lives under `.gbg/scratch/<run>/`, one
 directory per stage instance — git-ignored, so it is never committed, and inside the package, so a run
 interrupted in one session is continued in the next (ruled 2026-09-21): the arguments record the commit
@@ -31,6 +35,15 @@ using ...Catalogue
 using ...Texts
 using ...ConfigIO
 using ..Runs
+
+"""
+    ECONOMY_MODEL
+
+The model an agent of `ECONOMY` strength runs on. The careful model is the run's own, named when it was
+started and `"session"` where nobody named one, since the session's model is then the honest answer;
+this one is named here because no run chooses it — the economy tier is what the tool calls economy.
+"""
+const ECONOMY_MODEL = "sonnet"
 
 """
     scratch_dir(root, id) -> String
@@ -101,7 +114,7 @@ finding_dict(f::Model.Finding) = Dict{String,Any}(
                                      "found" => String(Symbol(l.found))) for l in f.draft.locations])
 
 """
-    write_arguments(root, run, cfg; roles, extras = Dict(), io = stdout) -> String
+    write_arguments(root, run, cfg; roles, extras, site, io) -> String
 
 Writes what the session needs to launch one stage. The arguments are:
 
@@ -109,7 +122,10 @@ Writes what the session needs to launch one stage. The arguments are:
 - `run` — the run.
 - `cfg` — the package's config.
 - `roles` — the agent roles this stage launches, readers or verifiers.
-- `extras` — per role id, what a verifier needs beyond a reader: `kind`, `finding`, `diff`, `verdicts`.
+- `extras` — per role id, what a role needs beyond the derived reader: `kind`, `finding`, `diff` and
+  `verdicts` for a verifier; `unit` and `unit_source` for a reader given one built page.
+- `site` — the built site's directory, for the reader that reads the whole of it; empty where none was
+  built.
 - `io` — where the handoff is described.
 
 Returns the path written.
@@ -118,7 +134,8 @@ Every role is launched: nothing caps launches, as ruled 2026-09-21 — the panel
 relaunch each and the pass cap bound a run by design, and a run cut short by an outage is continued.
 """
 function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config;
-                         roles::Vector{Model.AgentRole}, extras::AbstractDict = Dict{Symbol,Any}(), io::IO = stdout)
+                         roles::Vector{Model.AgentRole}, extras::AbstractDict = Dict{Symbol,Any}(),
+                         site::AbstractString = "", io::IO = stdout)
     args = Dict{String,Any}(
         "run" => run.id,
         "commit" => head(root),
@@ -128,6 +145,9 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
         "package" => cfg.package,
         "root" => root,
         "results_dir" => results_dir(root, run.id),
+        "site" => String(site),
+        "sequential" => run.sequential,
+        "models" => Dict{String,Any}("full" => run.model, "economy" => ECONOMY_MODEL),
         "settled" => [Dict{String,Any}("question" => s.question, "text" => s.text,
                                        "locations" => [Dict("file" => l.file, "text" => l.text) for l in s.locations])
                       for s in ConfigIO.read_settled(root)],
@@ -143,6 +163,8 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
                                          "rules" => [String(y) for y in r.rules],
                                          "strength" => lowercase(String(Symbol(r.strength))),
                                          "cap" => r.cap,
+                                         "unit" => get(x, "unit", ""),
+                                         "unit_source" => get(x, "unit_source", ""),
                                          "finding" => get(x, "finding", nothing),
                                          "diff" => get(x, "diff", ""),
                                          "verdicts" => get(x, "verdicts", String[]),
@@ -206,10 +228,15 @@ function continue_stage(root::AbstractString, id::AbstractString)
 end
 
 """
-    collect_results(root, id) -> (findings, verdicts, silent, arrived, wrote)
+    collect_results(root, id, cfg) -> (findings, verdicts, silent, arrived, wrote)
 
-Reads what the agents wrote for the current stage. The arguments are `root`, the package root, and `id`,
-the run's id. Returns the findings, each with the role that made it; the verdicts, one per verifier role
+Reads what the agents wrote for the current stage. The arguments are:
+
+- `root` — the package root.
+- `id` — the run's id.
+- `cfg` — the package's config, which says where its documentation is.
+
+Returns the findings, each with the role that made it; the verdicts, one per verifier role
 that answered, as `(verdict, quote)`; the roles that count as having written nothing; how many result
 files arrived at all; and how many roles wrote something that counts.
 
@@ -221,8 +248,13 @@ names it.
 
 The LINE is filled in here, never taken from an agent: an agent reports the file, the quote and the node
 it read, and a line it also reported would be its count of the text it was shown, not the file's.
+
+The FILE may be corrected here too. A reader given one built page names the file that page is written
+in, which is right for the page's own prose and wrong for a sentence the build rendered from a docstring
+in the source; where the named file does not hold the quote, the documentation is searched for it, and a
+quote exactly one file holds is placed there.
 """
-function collect_results(root::AbstractString, id::AbstractString)
+function collect_results(root::AbstractString, id::AbstractString, cfg::Model.Config)
     dir = results_dir(root, id)
     args_path = arguments_path(root, id)
     expected = Dict{String,String}()                            # role key => kind
@@ -259,7 +291,12 @@ function collect_results(root::AbstractString, id::AbstractString)
             for l in get(f, "locations", [])
                 file = String(get(l, "file", "")); quote_ = String(get(l, "text", ""))
                 node = String(get(l, "node", ""))
-                push!(locs, Texts.reanchor(root, Model.Location(; file, node, text = quote_, line = 0)))
+                found = Texts.reanchor(root, Model.Location(; file, node, text = quote_, line = 0))
+                if found.found === Model.Anchor.OUTDATED
+                    placed = Texts.place(cfg, root, quote_)
+                    placed === nothing || (found = placed)
+                end
+                push!(locs, found)
             end
             push!(findings, (role, Model.FindingDraft(
                 rule = get(f, "rule", nothing) === nothing ? nothing : Symbol(f["rule"]),

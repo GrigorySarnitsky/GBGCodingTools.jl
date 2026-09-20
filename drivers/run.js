@@ -74,6 +74,9 @@ function verifierBrief(role) {
   const withheld = role.kept_from_code
     ? 'The SOURCE and the design documents are withheld from you, as they were from the reader: judge the text alone.'
     : '';
+  const unit = role.unit
+    ? `\nThe page as it now stands is the file ${role.unit}, and it is the whole of what you may read.`
+    : '';
   return [
     `You are verifying one fix in the Julia package ${args.package}, pass ${args.pass} of a ${args.instrument.replace(/_/g, ' ')}.`,
     '',
@@ -83,6 +86,7 @@ function verifierBrief(role) {
     '',
     `The finding ${f.id}${f.rule ? ` (rule ${f.rule})` : ''}: ${f.claim}`,
     f.fix ? `What the reader proposed: ${f.fix}` : '',
+    unit,
     'Where it was found:',
     where,
     role.diff ? `\nThe change made for it:\n${role.diff}` : '',
@@ -90,6 +94,34 @@ function verifierBrief(role) {
     `Answer with ONE verdict from: ${(role.verdicts || []).join(', ')} — and the decisive QUOTE (at most 25`,
     'words, exactly as it appears in the current text or the diff). A verdict without a quote that is in',
     'the text counts as NOT_FIXED.',
+  ].join('\n');
+}
+
+// A reader given ONE UNIT: one built page's text, in a file of its own, and nothing else. It never
+// sees the surface lists — a reader handed every page at once is not the reader this bundle is for.
+function unitBrief(role, checks, settled) {
+  return [
+    `You are reading ONE PAGE of the built documentation of the Julia package ${args.package}, as a visitor meets it.`,
+    '',
+    role.description,
+    '',
+    `The page is the file ${role.unit}. It is the WHOLE of what you may read: do not open the source, the`,
+    'other pages, the design documents or the repository. A reader who can see those cannot judge whether',
+    'this page stands on its own, which is the only question you are here to answer.',
+    checks,
+    settled,
+    '',
+    role.unit_source
+      ? `Report each place as the file \`${role.unit_source}\`, which is where this page is written, with`
+      : 'Report each place as the file this page is built from, with',
+    'the QUOTE you read (at most 25 words, exactly as it appears on the page). A quote that was rendered',
+    'from a docstring is looked for across the documentation, so quote the words themselves and never a',
+    'line number.',
+    '',
+    `REPORT CLASSES, NEVER ONE FINDING PER SITE. Your budget is ${role.cap} findings, counted in classes.`,
+    '',
+    'If the page is clean, return an empty `findings` list and a NON-EMPTY `checked` list naming it. An',
+    'empty `checked` reads as a reader that did nothing, and is treated as one.',
   ].join('\n');
 }
 
@@ -108,7 +140,10 @@ function brief(role) {
     );
   }
   if (role.site) {
-    withheld.push('Read the BUILT site as a reader meets it, not only the source it was built from.');
+    withheld.push(
+      `Read the BUILT site, at ${args.site || `${args.root}/docs/build`}, as a reader meets it, and not ` +
+      'only the source it was built from.',
+    );
   }
 
   // The rules this reader checks are named, never quoted. Their statements live in the rendered
@@ -124,6 +159,8 @@ function brief(role) {
     ? '\n\nALREADY SETTLED by the owner — do not report these again:\n' +
       args.settled.map((s) => `- ${s.text}`).join('\n')
     : '';
+
+  if (role.unit) return unitBrief(role, checks, settled);
 
   return [
     `You are reading the Julia package ${args.package} for a ${args.instrument.replace(/_/g, ' ')}.`,
@@ -155,24 +192,41 @@ phase('Read');
 // over the units, one relaunch each, and the pass cap bound them by design. A stage continued after
 // an interruption carries the mark only on the roles whose result did not arrive.
 const roles = args.roles.filter((role) => role.launch !== false);
-log(`${args.stage}: ${roles.length} of ${args.roles.length} role(s) to launch, at commit ${String(args.commit).slice(0, 8)}`);
-
-const wrote = await parallel(
-  roles.map((role) => async () => {
-    const launch = (again) => agent(brief(role), {
-      label: `${args.stage}:${role.key}${again ? ':again' : ''}`,
-      phase: 'Read',
-      schema: role.kind === 'verifier' ? VERDICT : FINDINGS,
-      model: role.strength === 'full' ? undefined : 'sonnet',
-    });
-    // A silent agent is relaunched ONCE; what is still silent is named by the collect.
-    let out = await launch(false);
-    if (!out) { log(`${role.key} wrote nothing; launching it once more`); out = await launch(true); }
-    if (!out) return { key: role.key, wrote: false };
-    await writeResult(role.result_file, out);
-    return { key: role.key, wrote: true };
-  }),
+log(
+  `${args.stage}: ${roles.length} of ${args.roles.length} role(s) to launch, ` +
+  `${args.sequential ? 'one at a time' : 'together'}, at commit ${String(args.commit).slice(0, 8)}`,
 );
+
+// The model each strength runs on. `full` empty means the session's own model, which is what a run
+// that named none records: naming a model it did not choose would be a record of something else.
+function modelFor(role) {
+  const named = role.strength === 'full' ? args.models.full : args.models.economy;
+  return !named || named === 'session' ? undefined : named;
+}
+
+const one = async (role) => {
+  const launch = (again) => agent(brief(role), {
+    label: `${args.stage}:${role.key}${again ? ':again' : ''}`,
+    phase: 'Read',
+    schema: role.kind === 'verifier' ? VERDICT : FINDINGS,
+    model: modelFor(role),
+  });
+  // A silent agent is relaunched ONCE; what is still silent is named by the collect.
+  let out = await launch(false);
+  if (!out) { log(`${role.key} wrote nothing; launching it once more`); out = await launch(true); }
+  if (!out) return { key: role.key, wrote: false };
+  await writeResult(role.result_file, out);
+  return { key: role.key, wrote: true };
+};
+
+// Together by default; ONE AT A TIME when the run asked for it, so an outage costs one agent's work
+// rather than the whole stage's.
+const wrote = [];
+if (args.sequential) {
+  for (const role of roles) wrote.push(await one(role));
+} else {
+  wrote.push(...(await parallel(roles.map((role) => () => one(role)))));
+}
 
 // A reader that wrote nothing is NAMED. A crashed agent and a careful one that found nothing are the
 // same empty set to whoever reads the report, and the run refuses to treat silence as a clean result.

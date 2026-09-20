@@ -99,22 +99,70 @@ end
 """
     check(root; io = stdout) -> Int
 
-Prints what the guard says about the working tree and changes nothing: the same rulings `commit` would
-act on. The arguments are:
+Says what the guard makes of the working tree, and what the documentation rules make of it, and changes
+nothing. The arguments are:
 
 - `root` — the package root.
+- `build` — whether to run the docs build too, which is where the doctests and the rendered rules are;
+  `true` by default.
 - `io` — where the report goes.
 
-Exit 0 when every changed file is documentation, 1 when any is code, 2 when nothing has changed. Returns
-the exit code.
+Exit 1 when a changed file is code, or when a documentation rule that was clean at the run's first commit
+is broken now, or when the build fails; 2 when nothing has changed; 0 otherwise. The build runs only when
+something has changed, since a tree nobody touched was built as it stands.
+
+Outside a run there is no first commit to compare with, so a broken rule is reported and not counted: what
+the change caused cannot be told from what it inherited, and saying so is the honest answer.
+
+A rule already broken when the run opened is NAMED AND NOT COUNTED. The fixer is answerable for what its
+edit broke; holding it to a defect it inherited would make every pass of every run red from the first,
+and a signal that is always red is not read.
 """
-function check(root::AbstractString; io::IO = stdout)
+function check(root::AbstractString; build::Bool = true, io::IO = stdout)
     rs = rulings(root)
-    isempty(rs) && (println(io, "docfix: nothing has changed"); return 2)
     for r in rs
         println(io, "  ", r.documentation ? "DOC " : "CODE", "  ", rpad(r.path, 44), r.reason)
     end
-    return any(r -> !r.documentation, rs) ? 1 : 0
+    isempty(rs) && println(io, "docfix: the working tree has no change to classify")
+    bad = any(r -> !r.documentation, rs)
+
+    cfg = ConfigIO.read_config(root)
+    before = baseline(root)
+    now = unique(id for (id, _) in Engine.Checks.run_all(cfg, root; intention = Model.Intention.DOCUMENTATION))
+    if before === nothing
+        # No run is open, so nothing says which of these the change caused. They are reported and not
+        # counted: a verb that blamed a fixer for what it inherited would be read as noise and ignored.
+        isempty(now) || println(io, "docfix: no run is open, so nothing says whether the change caused these: ",
+                                join(sort(now), ", "))
+    else
+        broke = sort(setdiff(now, before))
+        inherited = sort(intersect(now, before))
+        isempty(inherited) || println(io, "docfix: already broken when the run opened, and not this fix's: ",
+                                      join(inherited, ", "))
+        if !isempty(broke)
+            println(io, "docfix: broken by the change —")
+            for id in broke; println(io, "  ", id); end
+            bad = true
+        end
+    end
+
+    if build && !isempty(rs)
+        Orchestration.Site.build(root, cfg; io) === nothing &&
+            (println(io, "docfix: the docs build does not pass"); bad = true)
+    end
+    return bad ? 1 : isempty(rs) ? 2 : 0
+end
+
+# What a program already found when the open run started, or `nothing` where no run is open.
+function baseline(root::AbstractString)
+    dir = joinpath(root, ".gbg", "runs")
+    isdir(dir) || return nothing
+    for d in sort(readdir(dir); rev = true)
+        isfile(joinpath(dir, d, "stage")) && !isfile(joinpath(dir, d, "run.json")) || continue
+        run = Orchestration.Runs.load(root, d)
+        return run === nothing ? nothing : run.already_failing
+    end
+    return nothing
 end
 
 function cmd_docfix(args)
@@ -123,13 +171,13 @@ function cmd_docfix(args)
     root === nothing && return 2
     sub = isempty(o.positional) ? "" : o.positional[1]
     if sub == "check"
-        return check(root)
+        return check(root; build = !("no-build" in o.flags))
     elseif sub == "commit"
         msg = get(o.values, "message", "")
         isempty(msg) && (println(stderr, "usage: gbg docfix commit --message \"…\" [--finding <id>]"); return 2)
         return commit(root, msg; finding = get(o.values, "finding", ""))
     end
-    println(stderr, "usage: gbg docfix check | gbg docfix commit --message \"…\" [--finding <id>]")
+    println(stderr, "usage: gbg docfix check [--no-build] | gbg docfix commit --message \"…\" [--finding <id>]")
     return 2
 end
 VERBS["docfix"] = cmd_docfix
