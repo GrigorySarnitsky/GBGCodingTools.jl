@@ -166,4 +166,33 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
     @testset "an unchanged file is documentation, trivially" begin
         @test doc("src/M.jl", "f(x) = x\n", "f(x) = x\n")
     end
+    # CLAUSE 6, ruled 2026-09-21: no edit inside a math span is made automatically. A program has no
+    # oracle for whether a formula is true — only the code it documents, and code that is itself wrong
+    # would then certify prose matching it — so a changed symbol, number or sign becomes a question.
+    @testset "mathematics changed is the owner's to answer" begin
+        cfg = G.Model.Config(package = "Sample", tool = :dev)
+        page(body) = "# Page\n\n" * body * "\n"
+        rule(before, after) = G.Engine.Guard.classify(cfg, "docs/src/index.md", page(before), page(after))
+
+        # prose around a formula may change freely
+        @test rule(raw"The energy is $E = \tfrac12 h \sum_i u_i^2$ here.",
+                   raw"The discrete energy is $E = \tfrac12 h \sum_i u_i^2$ at every node.").documentation
+        # a sign, a factor or a symbol inside one does not
+        for (was, now) in ((raw"$E = \tfrac12 h \sum_i u_i^2$", raw"$E = \tfrac13 h \sum_i u_i^2$"),
+                           (raw"$d_i = \alpha s_i$",             raw"$d_i = -\alpha s_i$"),
+                           (raw"$\bar u$",                       raw"$\hat u$"))
+            r = rule("Take $was.", "Take $now.")
+            @test !r.documentation
+            @test occursin("mathematics changed", r.reason)
+        end
+        # a formula ADDED where there was none is the same question
+        @test !rule("Take the mean.", raw"Take the mean $\bar u$.").documentation
+        # one removed is not: nothing new is asserted
+        @test rule(raw"Take the mean $\bar u$.", "Take the mean.").documentation
+        # re-wrapping a formula across a line is not a change to it
+        @test G.Engine.Guard.math_changed(raw"$E = \tfrac12 h$", raw"$E =  \tfrac12   h$") == []
+        # and a year in a citation is not mathematics
+        @test rule("Cooley and Tukey (1965).", "Cooley and Tukey (1965), as cited.").documentation
+    end
+
 end

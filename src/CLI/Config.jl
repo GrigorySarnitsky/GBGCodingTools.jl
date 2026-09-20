@@ -150,7 +150,7 @@ function glob_files(root::AbstractString, pattern::AbstractString)
     base = isempty(prefix) ? root : joinpath(root, prefix)
     isdir(base) || return String[]
     hits = String[]
-    for (dir, _, files) in walkdir(base; follow_symlinks = false)
+    for (dir, _, files) in walkdir(base; follow_symlinks = false, onerror = _ -> nothing)
         for f in files
             rel = relpath(joinpath(dir, f), root)
             occursin(re, rel) && push!(hits, rel)

@@ -184,7 +184,7 @@ function sources(root::AbstractString, cfg)
     isempty(files) || return files
     written = Set(vcat(cfg.generated, first.(cfg.copies)))
     out = String[]
-    for (dir, _, fs) in walkdir(root)
+    for (dir, _, fs) in walkdir(root; onerror = _ -> nothing)
         rel = relpath(dir, root)
         startswith(rel, ".git") && continue
         for f in fs

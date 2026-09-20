@@ -10,7 +10,7 @@ list.
 """
 function tool_sub_envs(root::AbstractString)
     envs = String[]
-    for (dir, subdirs, files) in walkdir(root; follow_symlinks = false)
+    for (dir, subdirs, files) in walkdir(root; follow_symlinks = false, onerror = _ -> nothing)
         filter!(d -> !(d in (".git", ".gbg", "node_modules", "build")) && !startswith(d, "."), subdirs)
         dir == root && continue
         "Project.toml" in files || continue

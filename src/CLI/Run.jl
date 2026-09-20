@@ -291,6 +291,7 @@ function fix_stage(root::AbstractString, run::Model.Run, cfg::Model.Config; io::
                                 join([f.id for f in waiting], ", "))
     println(io, "  the findings: ", relpath(path, root))
     println(io, "  fix each, then: gbg docfix commit --message \"…\" --finding <id>; when all are committed: gbg run next")
+    println(io, "  an edit that changes mathematics is refused by the guard and put to the owner with `gbg ask`; do not make it")
     return 0
 end
 

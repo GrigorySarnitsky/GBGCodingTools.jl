@@ -49,6 +49,41 @@ end
 const LITERATE_MARKS = ("#src", "#md", "#jl", "#nb")
 
 """
+    math_spans(text) -> Vector{String}
+
+Every mathematical expression a text writes between single dollars, in order and with repetition. The
+argument is `text`. Returns the expressions, whitespace flattened so that a re-wrapped line is the same
+expression it was.
+"""
+math_spans(text::AbstractString) =
+    [strip(replace(m.captures[1], r"\s+" => " ")) for m in eachmatch(r"(?<!\$)\$([^\$\n]+)\$(?!\$)", String(text))]
+
+"""
+    math_changed(before, after) -> Vector{String}
+
+The mathematics this change adds or alters. The arguments are `before` and `after`, the file's text on
+each side. Returns the expressions that are in `after` and were not in `before`, empty when the
+mathematics is untouched.
+
+CLAUSE 6, and the owner's ruling of 2026-09-21: **no edit inside a math span is made automatically**.
+A program has no oracle for whether a formula is true — only the code it documents has that, and code
+that is itself wrong then certifies prose that matches it — so a changed symbol, number or sign is put
+to the owner as a question rather than committed. Whitespace alone is not a change, and a year in a
+citation is not mathematics: it is not inside a math span to begin with.
+"""
+function math_changed(before::AbstractString, after::AbstractString)
+    was = math_spans(before)
+    now = math_spans(after)
+    left = copy(was)
+    out = String[]
+    for span in now
+        i = findfirst(==(span), left)
+        i === nothing ? push!(out, String(span)) : deleteat!(left, i)
+    end
+    return out
+end
+
+"""
     on_documentation_list(cfg, path) -> Bool
 
 Whether the path is one where documentation can live at all: a `.jl` file under `src/` or `ext/`,
@@ -119,6 +154,10 @@ function classify(cfg::Model.Config, path::AbstractString, before, after; genera
 
     fenced_kept(before, after) ||
         return Ruling(path, false, "a doctest or an `@` block changed: those are run, not read (clause 5)")
+    changed = math_changed(before, after)
+    isempty(changed) ||
+        return Ruling(path, false, "mathematics changed, which is the owner's to answer (clause 6): " *
+                                   join("`" .* first.(changed, 60) .* "`", ", "))
     rule_prose && return Ruling(path, true, "the prose of a rule — its statement or why — and nothing else (clause 3)")
     return Ruling(path, true, "docstrings, comments or prose only")
 end

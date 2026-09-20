@@ -173,7 +173,7 @@ function default_files(root::AbstractString, cfg)
     written = Set(vcat(cfg.generated, first.(cfg.copies)))
     skip = Texts.ignored(root)
     out = String[]
-    for (dir, _, fs) in walkdir(root)
+    for (dir, _, fs) in walkdir(root; onerror = _ -> nothing)
         rel = relpath(dir, root)
         startswith(rel, ".git") && continue
         for f in fs

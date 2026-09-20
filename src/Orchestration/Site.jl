@@ -86,7 +86,7 @@ A file with no article body is not a page a reader reads — the search page, an
 function pages(dir::AbstractString)
     out = NamedTuple{(:path, :key, :text),Tuple{String,String,String}}[]
     isdir(dir) || return out
-    for (here, _, files) in walkdir(dir)
+    for (here, _, files) in walkdir(dir; onerror = _ -> nothing)
         for f in files
             f == "index.html" || continue
             full = joinpath(here, f)

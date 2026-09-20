@@ -195,15 +195,15 @@ run the owner asked for, and then fixes and verifies without asking again [R1, R
    commits all of them on the current branch if every classified path came back documentation, else exits 1 and commits
    nothing; the session then pushes. This is the one verb that commits, because the guard must run before a commit
    exists, replacing the old rule that no verb commits [a code edit committed before the guard ran would be pushed].
-3. **Formula and rule-statement edits.** An edit that changes mathematics — inside a math span: a symbol, a number or a
-   sign; years in citations do not count — is made automatically only when the fixer both quotes an expression from the
-   body of the documented method that agrees with the new text and supplies a numeric check: a few lines of Julia, run
-   by the program in scratch, that evaluate the new formula and the method on several inputs drawn across the
-   documented domain, all of which must agree [one input of the fixer's choosing passes where a sign or factor error
-   survives]. Otherwise the finding becomes a question. A reworded rule statement (§4.2 clause 3) is treated the same
-   way, because no program compares a statement with the check it names. Both kinds are verified blind on the careful
-   model — the verifier of a statement is given the rule's check and its examples — and listed in the report [a docstring was
-   "fixed" to contradict code that was itself wrong; a fix wrote false mathematics].
+3. **Formula and rule-statement edits.** An edit that changes mathematics — inside a math span: a symbol, a number or
+   a sign; years in citations do not count — is **never made automatically**: the change guard refuses it (clause 6) and
+   the finding becomes a question for the owner [ruled 2026-09-21]. The rule considered before that, and declined, was
+   an automatic edit backed by a quote from the documented method's body plus a numeric check the program ran; the
+   reason it was declined is that both halves make the CODE the oracle, so code that is itself wrong certifies prose
+   matching it, and the tool would be executing Julia an agent had just written. A reworded rule statement (§4.2
+   clause 3) stays automatic but is verified blind on the careful model, the verifier being given the rule's check and
+   its examples, because no program compares a statement with the check it names. Both kinds are listed in the report
+   [a docstring was "fixed" to contradict code that was itself wrong; a fix wrote false mathematics].
 4. **Checks.** `gbg docfix check` runs the documentation checks, doctests and docs build; a check that passed at the
    run's first commit and fails now is exit 1.
 5. **Verifier, blind first.** `gbg run next` re-anchors the findings (§4.5) and writes the blind stage's arguments from
@@ -572,8 +572,8 @@ first examples, and `test/rules.jl` must pass on them.
 
 ## 8. Asking the owner
 
-`Question` is the one form for asking a person anything [R9]: the documentation fixer's (a possible code defect; a
-formula edit without agreement and a numeric check), Bug hunt's, Change audit's concerns, the code fixer's approvals
+`Question` is the one form for asking a person anything [R9]: the documentation fixer's (a possible code defect; any
+edit that would change mathematics), Bug hunt's, Change audit's concerns, the code fixer's approvals
 and the attempts that hit its cap, the keep-or-revert a run's close puts when code changed outside the guarded commit
 (§10), rule counterexamples, and proposed program checks. The wiring check regenerates, or exits 2 when it cannot read
 the config, and the session then asks through a `Question` kept outside a run.

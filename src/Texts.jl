@@ -25,6 +25,12 @@ using AbstractTrees: PreOrderDFS
 
 const JS = Base.JuliaSyntax
 
+# A directory that disappears while a walk is running is SKIPPED, not thrown over. Every walk here is
+# over a working tree, and a working tree has git in it: git packs and removes its own object
+# directories while it commits, and a walk that started before a commit and finished after one died
+# with ENOENT on `.git/objects/81` — on CI, where the tests commit far faster than a person does.
+const SKIP_VANISHED = _ -> nothing
+
 """
     DEFAULT_PATTERNS
 
@@ -75,7 +81,7 @@ function expand(root::AbstractString, pattern::AbstractString)
     rx = Regex("^" * replace(replace(replace(pattern, "." => "\\."), "**/" => "\0"), "*" => "[^/]*") * "\$")
     rx = Regex(replace(rx.pattern, "\0" => "(?:.*/)?"))
     out = String[]
-    for (dir, _, fs) in walkdir(root)
+    for (dir, _, fs) in walkdir(root; onerror = SKIP_VANISHED)
         rel = relpath(dir, root)
         for f in fs
             p = rel == "." ? f : joinpath(rel, f)
@@ -502,7 +508,7 @@ function ignored(root::AbstractString)
     # ignores 129 files that way. A deeper file overrides a shallower one, and within one file the last
     # matching line wins, as git decides it.
     levels = Tuple{String,Vector{Tuple{Regex,Bool}}}[]
-    for (dir, _, fs) in walkdir(root)
+    for (dir, _, fs) in walkdir(root; onerror = SKIP_VANISHED)
         rel = relpath(dir, root)
         startswith(rel, ".git") && continue
         ".gitignore" in fs || continue
