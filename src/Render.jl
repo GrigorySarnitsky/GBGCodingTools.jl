@@ -556,7 +556,7 @@ end
     claude_block(cfg) -> String
 
 The block this package owns at the top of a package's `CLAUDE.md`: the import of the rulebook, and the
-two standing instructions a session needs before it has read anything. The argument is `cfg`, the
+three standing instructions a session needs before it has read anything. The argument is `cfg`, the
 package's config. Returns the block, marked at both ends so the rest of the file is the package's own.
 
 It imports and does not restate. A block that listed the rules, or what this package has switched off,
@@ -574,6 +574,10 @@ function claude_block(cfg::Model.Config)
 
     Unasked, run `Pkg.test()` and nothing else. What a rule finds is reported, never fixed silently:
     documentation may be fixed without asking, and anything else waits for an answer.
+
+    The readers of a review are derived from the rules and the tool's catalogue of disciplines. A
+    reader or a discipline this package needs and the tool lacks is requested from the tool's own
+    session, never written here.
     <!-- $END_MARK -->
     """
 end
@@ -846,8 +850,21 @@ function report(run::Model.Run, cfg::Model.Config)
             run.stop === Model.Stop.CANNOT_EVALUATE ? "**It could not be evaluated.** A step exited 2 or 3, and an instrument is never repaired inside a run." :
             "**The owner stopped it.**"
     println(io, ended, " It launched ", run.agent_launches, " of ", run.budget.agent_launches,
-            " agent(s) it was allowed.")
+            " agent(s) it was allowed, with the ", run.readers === :both ? "bound and open" : String(run.readers),
+            " readers.")
     println(io)
+
+    # What no reader of this package could judge, before the findings: a report with no finding under
+    # a rule nobody read must not read as a pass of that rule.
+    gaps = last(Catalogue.panel(run.instrument, cfg))
+    if !isempty(gaps)
+        println(io, "## Not judged — ", length(gaps))
+        println(io)
+        println(io, "No reader of this package was given what these need. Nothing below says anything about them.")
+        println(io)
+        for g in gaps; println(io, "- ", g); end
+        println(io)
+    end
 
     if isempty(run.findings)
         println(io, "## Nothing was found")

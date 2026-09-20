@@ -19,7 +19,8 @@ const STYLE = Model.Rule(
     why = "Keep enough surnames to disambiguate two works that would otherwise collide. An eponymous method name takes no year unless the work is actually cited.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    check = Model.AgentCheck("An in-text citation is author–year. An author-prominent citation puts the year in parentheses. Up to three authors are named in full; four or more are written 'First et al.'. The author count is read from the package's reference list, the file RULE.CIT.FULL_INLINE's `references` names.", Model.WhyAgent.MEANING))
+    check = Model.AgentCheck("An in-text citation is author–year. An author-prominent citation puts the year in parentheses. Up to three authors are named in full; four or more are written 'First et al.'. The author count is read from the package's reference list, the file RULE.CIT.FULL_INLINE's `references` names.", Model.WhyAgent.MEANING),
+    access = [Model.Access.OTHER_DOCUMENTS])
 
 const NO_INACCESSIBLE = Model.Rule(
     id = Symbol("RULE.CIT.NO_INACCESSIBLE"),
@@ -27,7 +28,8 @@ const NO_INACCESSIBLE = Model.Rule(
     why = "A citation the reader cannot follow is the author telling themselves where they got it; the reader is left with an assertion and nowhere to check it.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.LITERATE],
-    check = Model.AgentCheck("Does every source this text cites exist somewhere the reader can open it? A gitignored monograph, an accompanying thesis, an appendix, a figure or a set of working notes is not such a place.", Model.WhyAgent.MEANING))
+    check = Model.AgentCheck("Does every source this text cites exist somewhere the reader can open it? A gitignored monograph, an accompanying thesis, an appendix, a figure or a set of working notes is not such a place.", Model.WhyAgent.MEANING),
+    access = [Model.Access.CITED_WORK, Model.Access.OTHER_DOCUMENTS])
 
 """
     RULES

@@ -156,21 +156,44 @@ const RULES = Model.Rule[Rendering.RULES..., Docstrings.RULES..., Arguments.RULE
 
 
 """
-    ROLES
+    DISCIPLINES
 
-Every agent role of every instrument, as values. A role says WHO reads and what is withheld from them;
-what they are asked comes from the rulebook and the instrument, so a reworded rule reaches every role
-without a second copy of it being edited.
+The fields of expertise a package may declare it needs a reader to have, catalogued once for the
+fleet; `DocumentationReview.DISCIPLINES` holds them.
 """
-const ROLES = Model.AgentRole[DocumentationReview.ROLES...]
+const DISCIPLINES = DocumentationReview.DISCIPLINES
 
 """
-    roles_of(instrument) -> Vector{Model.AgentRole}
+    panel(instrument, cfg) -> (roles, gaps)
 
-The roles one instrument launches. The argument is `instrument`, the instrument's id. Returns its roles,
-in the order they are declared.
+The readers one instrument launches for the package configured by `cfg`, and what they cannot judge.
+The arguments are `instrument`, the instrument's id, and `cfg`, the package's config. Returns the
+readers — derived from the rules' access tags and the package's declared disciplines, never listed —
+and one line per gap: a rule no reader is given, or the discipline rules where no discipline is
+declared. An instrument without derived readers returns none.
+
+A role says WHO reads and what is withheld from them; what they are asked comes from the rulebook and
+the instrument, so a reworded rule reaches every role without a second copy of it being edited.
 """
-roles_of(instrument::Symbol) = filter(r -> r.instrument === instrument, ROLES)
+function panel(instrument::Symbol, cfg::Model.Config)
+    instrument === :documentation_review || return (Model.AgentRole[], String[])
+    return DocumentationReview.derive(RULES, cfg)
+end
+
+"""
+    roles_of(instrument, cfg; readers = :both) -> Vector{Model.AgentRole}
+
+The readers one run launches. The arguments are:
+
+- `instrument` — the instrument's id.
+- `cfg` — the package's config.
+- `readers` — the run's choice: `:bound` for the readers carrying rules, `:open` for those carrying a
+  standpoint and none, `:both`.
+
+Returns the selection from [`panel`](@ref), in its order.
+"""
+roles_of(instrument::Symbol, cfg::Model.Config; readers::Symbol = :both) =
+    DocumentationReview.select(first(panel(instrument, cfg)), readers)
 
 """
     GENERATED
@@ -218,6 +241,7 @@ function known_ids()
         for r in i.roles; push!(ids, r.id); end
     end
     for a in ALWAYS_ON; push!(ids, a.id); end
+    union!(ids, DocumentationReview.READER_IDS)              # a derived reader is switched off by name too
     return ids
 end
 

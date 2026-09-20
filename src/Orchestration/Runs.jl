@@ -75,7 +75,9 @@ Returns the run, or `nothing` when one may not start.
 The budget is fixed HERE, from the instrument's own value, and nothing later raises it. Inside a run the
 program stops the work, from this number; across runs the owner does, by asking or not.
 """
-function start(instrument::Symbol, root::AbstractString; io::IO = stdout)
+function start(instrument::Symbol, root::AbstractString; readers::Symbol = :bound, io::IO = stdout)
+    readers in (:bound, :open, :both) ||
+        (println(io, "run: readers is bound, open or both, not $readers"); return nothing)
     i = findfirst(x -> x.id === instrument, Catalogue.INSTRUMENTS)
     i === nothing && (println(io, "run: no instrument is called $instrument"); return nothing)
     inst = Catalogue.INSTRUMENTS[i]
@@ -87,7 +89,7 @@ function start(instrument::Symbol, root::AbstractString; io::IO = stdout)
     isempty(open) || (println(io, "run: ", first(open), " is still open; a run never starts another"); return nothing)
     run = Model.Run(id = new_id(instrument, root), instrument = instrument,
                     tool_version = string(GBG_VERSION[]), first_commit = head_commit(root),
-                    budget = inst.budget, stage = :start)
+                    budget = inst.budget, stage = :start, readers = readers)
     mkpath(dir(root, run.id))
     write(joinpath(dir(root, run.id), "stage"), "start")
     save(root, run)
@@ -205,6 +207,7 @@ as_dict(r::Model.Run) = Dict{String,Any}(
     "first_commit" => r.first_commit, "stage" => String(r.stage),
     "budget" => Dict("fix_passes" => r.budget.fix_passes, "agent_launches" => r.budget.agent_launches),
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
+    "readers" => String(r.readers),
     "findings" => [Dict{String,Any}("id" => f.id, "source" => String(f.source),
                                     "decider" => String(Symbol(f.decider)),
                                     "claim" => f.draft.claim, "evidence" => f.draft.evidence,
@@ -236,7 +239,8 @@ function from_dict(d::AbstractDict)
                      budget = Model.Budget(fix_passes = b["fix_passes"], agent_launches = b["agent_launches"]),
                      stage = Symbol(get(d, "stage", "start")), findings = findings,
                      agent_launches = get(d, "agent_launches", 0), tokens = get(d, "tokens", nothing),
-                     stop = getfield(Model.Stop, Symbol(get(d, "stop", "DONE"))))
+                     stop = getfield(Model.Stop, Symbol(get(d, "stop", "DONE"))),
+                     readers = Symbol(get(d, "readers", "bound")))
 end
 
 

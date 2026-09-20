@@ -7,6 +7,10 @@ rule that will be reworded in one.
 
 Unasked, run `Pkg.test()` and nothing else. What a rule finds is reported, never fixed silently:
 documentation may be fixed without asking, and anything else waits for an answer.
+
+The readers of a review are derived from the rules and the tool's catalogue of disciplines. A
+reader or a discipline this package needs and the tool lacks is requested from the tool's own
+session, never written here.
 <!-- gbg:managed end -->
 
 # CLAUDE.md — GBGCodingTools

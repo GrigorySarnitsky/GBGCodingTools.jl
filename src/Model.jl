@@ -45,6 +45,14 @@ module Input; @enum T SOURCE_TEXT FILE_TREE LOADED_MODULE BUILT_SITE QUESTION; e
 "A named set of a package's files, found by default patterns the config may override."
 module FileSet; @enum T DOCSTRINGS PAGES RATIONALE LITERATE CODE TESTS; end
 
+"""
+What deciding one rule requires beyond the unit it is about — the material a reader must be GIVEN.
+`NOTHING` is exclusive: the unit alone decides, and more material would change the answer (a term
+undefined on the page may be defined in the source, and the rule asks about the page). The others
+combine. Tagged on each rule from its own text by three blind readers, 2026-09-19.
+"""
+module Access; @enum T NOTHING SIBLINGS OTHER_DOCUMENTS SOURCE RENDERED HISTORY CITED_WORK; end
+
 "Which model an agent runs on: the cheaper default, or the most capable."
 module Strength; @enum T ECONOMY FULL; end
 
@@ -391,6 +399,14 @@ examples that show the check matches the statement. The fields are:
 - `parameters` — the values a package may set.
 - `examples` — texts, trees, sources, pages or questions the check must judge a known way.
 
+- `access` — what a reader must be given beyond the unit; empty where a program decides it or a
+  session keeps it as a habit.
+- `needs_discipline` — whether deciding it takes the package's field; unset, any careful reader.
+
+A rule with an access tag is a READER'S rule: the readers of a documentation review are derived from
+these tags rather than listed. A rule needing a discipline goes to a reader with one of the package's
+declared disciplines, and to nobody — said in the report — where none is declared.
+
 A file set is shared and some rules are not, which is what `files_parameter` answers. Which pages must
 carry the provenance banner differs per package and has nothing to do with which pages are rationale.
 
@@ -408,6 +424,8 @@ Base.@kwdef struct Rule
     unchecked_reason::String = ""
     parameters::Vector{Parameter} = Parameter[]
     examples::Vector{Example} = Example[]
+    access::Vector{Access.T} = Access.T[]
+    needs_discipline::Bool = false
 end
 
 # ────────────────────────────────────────────────────────────────────── who reads, and what runs
@@ -438,6 +456,24 @@ Base.@kwdef struct AgentRole
     rules::Vector{Symbol} = Symbol[]
     strength::Strength.T = Strength.ECONOMY
     cap::Int
+end
+
+"""
+    Discipline
+
+A field of expertise a package may declare it needs a reader to have, catalogued once in this package
+and shared: a fluid-dynamics theoretician serves two of the science packages. The fields are:
+
+- `id` — its stable identifier, which a package names in its config's `disciplines`.
+- `description` — who the reader is, in two or three sentences.
+
+A reader with a discipline is the same model with a standpoint, not a different model. It is derived
+into the panel as a BOUND reader carrying every rule tagged `needs_discipline`, and may be launched
+open as well when asked.
+"""
+Base.@kwdef struct Discipline
+    id::Symbol
+    description::String
 end
 
 """
@@ -572,8 +608,13 @@ The fields are:
 - `generated` — pages written at build time; no rule reads one.
 - `switches` — what is off here, with reasons.
 - `settings` — its values for rule parameters.
-- `roles` — its own expert readers.
 - `code_areas` — its code in named areas, one hunter each.
+
+- `roles` — its own expert readers, rarely.
+- `disciplines` — the catalogued disciplines its documentation needs read by.
+
+A reader or a discipline a package needs and the tool's catalogue lacks is requested from the tool's
+own session, which adds it for the whole fleet; it is not written in a config.
 """
 Base.@kwdef struct Config
     package::String
@@ -588,6 +629,7 @@ Base.@kwdef struct Config
     switches::Vector{Switch} = Switch[]
     settings::Vector{Setting} = Setting[]
     roles::Vector{AgentRole} = AgentRole[]
+    disciplines::Vector{Symbol} = Symbol[]
     code_areas::Vector{Pair{Symbol,Vector{String}}} = Pair{Symbol,Vector{String}}[]
 end
 
@@ -684,6 +726,11 @@ One execution of one instrument on one package, stored beside its report. The fi
 - `agent_launches` — how many agents it launched.
 - `tokens` — what they cost, where the platform reports it.
 - `stop` — why it ended.
+
+- `readers` — which readers it launches: `:bound`, `:open` or `:both`.
+
+A bound reader carries rules; an open one carries a standpoint and no rule. Bound is the default, and
+runs most often.
 """
 Base.@kwdef struct Run
     id::String
@@ -699,6 +746,7 @@ Base.@kwdef struct Run
     agent_launches::Int = 0
     tokens::Union{Int,Nothing} = nothing
     stop::Stop.T = Stop.DONE
+    readers::Symbol = :bound
 end
 
 end # module Model

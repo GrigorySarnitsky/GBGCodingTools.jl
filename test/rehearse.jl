@@ -62,7 +62,7 @@ end
             @test all(r -> haskey(r, "result_file") && haskey(r, "cap"), args["roles"])
             @test args["launches_left"] == args["launches_left"]   # present, and a number
 
-            reader_found(root, id, "cold_reader", "a term is used before it is defined")
+            reader_found(root, id, "withheld", "a term is used before it is defined")
             @test G.Run.collect(root; io = devnull) == 2          # other readers wrote nothing: NOT clean
             @test to_close(root, id) === :close
             @test G.Run.close_run(root; io = devnull) == 1        # closed, with a finding
@@ -104,7 +104,7 @@ end
             id = G.Run.open_run(root)
             first_left = G.JSON3.read(read(AGENTS.arguments_path(root, id), String),
                                       Dict{String,Any})["launches_left"]
-            reader_found(root, id, "cold_reader", "something")
+            reader_found(root, id, "withheld", "something")
             G.Run.collect(root; io = devnull)
             G.Run.next(root; io = devnull)
             later = G.JSON3.read(read(AGENTS.arguments_path(root, id), String),
@@ -147,7 +147,7 @@ end
         package() do root, gg
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
-            reader_found(root, id, "cold_reader", "a claim about line three")
+            reader_found(root, id, "withheld", "a claim about line three")
             G.Run.collect(root; io = devnull)
             run = RUNS.load(root, id)
             @test length(run.findings) == 1

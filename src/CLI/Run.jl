@@ -39,18 +39,19 @@ function open_run(root::AbstractString)
 end
 
 """
-    start(root, instrument; io = stdout) -> Int
+    start(root, instrument; readers = :bound, io = stdout) -> Int
 
 Opens a run and writes its first stage's arguments. The arguments are:
 
 - `root` — the package root.
 - `instrument` — the instrument to run.
+- `readers` — which readers the run launches: `:bound`, `:open` or `:both`.
 - `io` — where the handoff is described.
 
 Exit 0 when it opened, 2 when it did not.
 """
-function start(root::AbstractString, instrument::Symbol; io::IO = stdout)
-    run = Runs.start(instrument, root; io)
+function start(root::AbstractString, instrument::Symbol; readers::Symbol = :bound, io::IO = stdout)
+    run = Runs.start(instrument, root; readers, io)
     run === nothing && return 2
     println(io, "run: opened ", run.id, ".")
     return next(root; io)
@@ -83,10 +84,18 @@ function next(root::AbstractString; io::IO = stdout)
     cfg = ConfigIO.read_config(root)
     moved = Model.Run(id = run.id, instrument = run.instrument, tool_version = run.tool_version,
                       first_commit = run.first_commit, budget = run.budget, stage = to,
-                      findings = run.findings, agent_launches = run.agent_launches, stop = run.stop)
+                      findings = run.findings, agent_launches = run.agent_launches, stop = run.stop,
+                      readers = run.readers)
     Runs.save(root, moved)
     to === :close && (println(io, "run: ", id, " is ready to close: gbg run close"); return 0)
-    Agents.write_arguments(root, moved, cfg; roles = Catalogue.roles_of(run.instrument), io)
+    Agents.write_arguments(root, moved, cfg; roles = Catalogue.roles_of(run.instrument, cfg; readers = run.readers), io)
+    # What no reader of this package can judge is said at every launch, not only in the report: a
+    # discipline rule in a package that declares no discipline is a gap the session should see now.
+    gaps = last(Catalogue.panel(run.instrument, cfg))
+    if !isempty(gaps)
+        println(io, "run: not judged here —")
+        for g in gaps; println(io, "  ", g); end
+    end
     return 0
 end
 
@@ -109,6 +118,8 @@ function collect(root::AbstractString; io::IO = stdout)
     id === nothing && (println(io, "run: nothing is open here"); return 2)
     drafts, silent = Agents.collect_results(root, id)
     run = Runs.load(root, id)
+    cfg = ConfigIO.read_config(root)
+    launched = length(Catalogue.roles_of(run.instrument, cfg; readers = run.readers))
     findings = Model.Finding[]
     for (i, d) in pairs(drafts)
         push!(findings, Model.Finding(string(id, "-", lpad(i, 3, '0')), :agent,
@@ -117,11 +128,11 @@ function collect(root::AbstractString; io::IO = stdout)
     collected = Model.Run(id = run.id, instrument = run.instrument, tool_version = run.tool_version,
                           first_commit = run.first_commit, budget = run.budget, stage = run.stage,
                           findings = vcat(run.findings, findings),
-                          agent_launches = run.agent_launches + length(Catalogue.roles_of(run.instrument)),
-                          stop = run.stop)
+                          agent_launches = run.agent_launches + launched,
+                          stop = run.stop, readers = run.readers)
     Runs.save(root, collected)
     println(io, "run: collected ", length(findings), " finding(s) from ",
-            length(Catalogue.roles_of(run.instrument)) - length(silent), " reader(s).")
+            launched - length(silent), " reader(s).")
     if !isempty(silent)
         println(io, "run: these wrote nothing, and are not clean — relaunch them once, then name them:")
         for s in silent; println(io, "  ", s); end
@@ -163,7 +174,7 @@ function close_run(root::AbstractString; io::IO = stdout)
     closed = Model.Run(id = run.id, instrument = run.instrument, tool_version = run.tool_version,
                        first_commit = run.first_commit, budget = run.budget, stage = :close,
                        findings = run.findings, questions = run.questions,
-                       agent_launches = run.agent_launches, stop = stop)
+                       agent_launches = run.agent_launches, stop = stop, readers = run.readers)
     dir = Runs.dir(root, id)
     write(joinpath(dir, "report.md"), Render.report(closed, cfg))
     open(joinpath(dir, "run.json"), "w") do f
@@ -177,15 +188,15 @@ function close_run(root::AbstractString; io::IO = stdout)
 end
 
 function cmd_run(args)
-    o = parse_options(args)
+    o = parse_options(args; valued = ["readers"])
     root = ConfigIO.require_root("run")
     root === nothing && return 2
-    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> | gbg run next|collect|close"); return 2)
+    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] | gbg run next|collect|close"); return 2)
     what = o.positional[1]
     what == "next" && return next(root)
     what == "collect" && return collect(root)
     what == "close" && return close_run(root)
-    return start(root, Symbol(replace(what, "-" => "_")))
+    return start(root, Symbol(replace(what, "-" => "_")); readers = Symbol(get(o.values, "readers", "bound")))
 end
 VERBS["run"] = cmd_run
 

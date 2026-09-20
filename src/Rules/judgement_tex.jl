@@ -19,7 +19,8 @@ const NO_HSCROLL = Model.Rule(
     why = "Neither a rendered code block nor display math auto-wraps; inline math reflows and is exempt. Never pack several equations on one line behind `\\quad`.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps")
+    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    access = [Model.Access.RENDERED])
 
 const CODE_SPAN_JULIA = Model.Rule(
     id = Symbol("RULE.TEX.CODE_SPAN_JULIA"),
@@ -27,7 +28,8 @@ const CODE_SPAN_JULIA = Model.Rule(
     why = "A half-open interval, an inequality, a product, a lone `≤` or `·` glyph is LaTeX; the real operators `×`, `⋅` and `≈` backticked are code and stay.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps")
+    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    access = [Model.Access.NOTHING])
 
 const IMAGINARY = Model.Rule(
     id = Symbol("RULE.TEX.IMAGINARY"),
@@ -35,7 +37,8 @@ const IMAGINARY = Model.Rule(
     why = "Never a bare italic `i`, never `\\imath` or `\\mathbb{i}`; the differential is likewise upright, `\\,\\mathrm{d}x`.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    check = Model.AgentCheck("The imaginary unit is upright \\mathrm{i}; i, j, k are indices.", Model.WhyAgent.DERIVATION))
+    check = Model.AgentCheck("The imaginary unit is upright \\mathrm{i}; i, j, k are indices.", Model.WhyAgent.DERIVATION),
+    access = [Model.Access.NOTHING])
 
 const GREEK_AB = Model.Rule(
     id = Symbol("RULE.TEX.GREEK_AB"),
@@ -43,7 +46,8 @@ const GREEK_AB = Model.Rule(
     why = "A hand-written operation spelling them `alpha`/`beta` is drift; a flag naming the α/β variant and an external window-shape `beta` in an English-register block are the recorded exceptions.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps")
+    unchecked_reason = "no program decides it yet: it is a habit the rulebook states and a reader keeps",
+    access = [Model.Access.OTHER_DOCUMENTS])
 
 """
     RULES

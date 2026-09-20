@@ -357,6 +357,10 @@ function validate(cfg::Model.Config, root::AbstractString)
         judge_names && !(st.rule in known) &&
             push!(problems, "the setting is for $(st.rule), which is not a rule")
     end
+    for d in cfg.disciplines
+        judge_names && !any(x -> x.id === d, Catalogue.DISCIPLINES) &&
+            push!(problems, "the discipline $d is not in the catalogue; one the tool lacks is requested from its session, not written here")
+    end
     for n in cfg.normative
         isfile(joinpath(root, n)) || push!(problems, "the normative document $n is not a file here")
     end

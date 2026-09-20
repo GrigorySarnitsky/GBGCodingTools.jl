@@ -22,7 +22,7 @@ function written_keys()
     cfg = G.ConfigIO.read_config(root)
     run = G.Orchestration.Runs.start(:documentation_review, root; io = devnull)
     path = G.Orchestration.Agents.write_arguments(root, run, cfg;
-                roles = G.Catalogue.roles_of(:documentation_review), io = devnull)
+                roles = G.Catalogue.roles_of(:documentation_review, cfg), io = devnull)
     args = G.JSON3.read(read(path, String), Dict{String,Any})
     role_keys = isempty(args["roles"]) ? String[] : sort(collect(keys(args["roles"][1])))
     return (sort(collect(keys(args))), role_keys)
