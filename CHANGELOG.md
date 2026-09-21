@@ -49,8 +49,18 @@ and a build that fails leaves the run where it stood. The reader of the withheld
 ONCE PER BUILT PAGE, each given that page's article body in a file of its own and no surface list; its
 verifier is given the same page, rebuilt after the fix. A quote that page carried but does not hold —
 one the build rendered from a docstring — is searched for across the documentation, and a quote exactly
-one file holds is placed there, so the fixer is sent to the file the sentence is written in. The other
-changes since rc.5 are in the commits from `71993cc`.
+one file holds is placed there, so the fixer is sent to the file the sentence is written in. **The six disciplines were attacked and then rebuilt as experts** (Phase 4f): seven rounds of
+adversarial lenses took the descriptions from thirty-two substantive objections to none, and the owner
+judged the survivors auditors — checkers of stated claims against a fixed standard, with no judgement of
+whether the model, method, estimator or decomposition was the right one. The six were rewritten with an
+explicit licence to judge appropriateness, each judgement naming the standard applied, the alternative
+and what the stated reason leaves unanswered so that the owner can disagree; in two blind comparisons
+against the seven-round texts, judges reading the real packages chose the expert text in every field, on
+findings that change what is computed or decided rather than a sentence. The seams between neighbouring
+readers stay in the texts. The sentence the derivation appends to every discipline routes a defect a rule
+names to that rule's id rather than asking the reader to withhold it, and says the code is context and
+never the thing under review. `docs/design-record/08-discipline-attack.md` is the record.
+The other changes since rc.5 are in the commits from `71993cc`.
 
 ## 2.0.0-rc.5 — 2026-09-18
 

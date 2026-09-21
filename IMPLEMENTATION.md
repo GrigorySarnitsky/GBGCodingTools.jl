@@ -174,9 +174,13 @@ owner's answers of 2026-09-21. The phase is five pieces:
   verifier names its finding's reader's bundle; a guarded commit succeeds while a run is open, with the trailer; nothing
   under `.gbg/runs/` but the record, the report and the open-run files; `test/guard.jl` holds clause 3 in both
   directions; `Wire` refuses to overwrite a skill the package owns.
-- **4f — the six disciplines attacked** (three sessions, one commit): each description put to three lenses — a scientist
-  of that field, a reader of the rule it would carry, a plain-language reader — until a round has no objection of
-  substance; the survivors put to the owner (decision 28 of the amendment). Before any package declares one.
+- **4f — the six disciplines attacked** (three sessions, one commit). **Done 2026-09-21**, in one session:
+  seven rounds of eight lenses took the descriptions from thirty-two substantive objections to none — and
+  produced six auditors, which the owner ruled were not experts. The six were rewritten as experts with a
+  licence to judge appropriateness, accountable through the standard, the alternative and what the stated
+  reason leaves unanswered, and beat the seven-round texts in two blind, package-grounded comparisons in
+  every field. Adopted by the owner as decision 28; `spectral_numerics` keeps its id; filed as
+  `docs/design-record/08-discipline-attack.md`. Before any package declares one.
 - **Release `v2.0.0-rc.6`** after 4b and 4f, with a CHANGELOG entry covering everything since rc.5, which holds no
   Phase 4 commit; `docs/PF-WIRING.md` rewritten for it. **Then PF**, in its own session and on its own pin: it proposes
   its disciplines, sets `formalization` and confirms the other three parameters, declares `copies` for its five built
@@ -194,7 +198,7 @@ owner's answers of 2026-09-21. The phase is five pieces:
   **Gate**: the arithmetic over the filed fixtures reproduces round 1 — 0.90 / 0.91, 8 flagged, 3 splits — and
   `test/driver.jl`'s one-driver assertion still holds.
 
-**Owner:** the decisions of the amendment's §6, all answered on 2026-09-21 except 28 (after 4f).
+**Owner:** the decisions of the amendment's §6, all answered on 2026-09-21.
 
 ### Phase 5 — The rest of the rulebook, and GBGCloudPhysics (amended 2026-09-21)
 
@@ -256,6 +260,17 @@ message and `Manifest.toml` path, the `PUBLICATION` intention, its `Instrument` 
 called by every writer of a tracked file (run record, report, question store, settled rulings, work queue) and exiting 2 on
 text from a publication run.
 **Gate** `bash -e -o pipefail -c 'tools/floor.sh && julia --project test/leak.jl'`, which asserts that a publication run writes no tracked file.
+
+### Phase 10 — The code review (on request; not designed)
+Asked for by the owner on 2026-09-21, beside the leak scan: an instrument that reads the CODE of a package for the
+classical habits of bad design — duplication as a flag of a missing abstraction, optimization made before its cost
+was measured, control flow the field has long advised against, and their kin — from a computer scientist's
+perspective and not the physical domain's. It is not the documentation review's architect, who reads the design as
+the documentation states it and never the code. Its shape by the design's principles: intention code; whatever a
+program can decide is a rule with a check (exact duplication, forbidden constructs), and only the judgement half —
+whether a duplication is a missing abstraction or a deliberate specialization — is an agent's; every finding ends as
+a question to the owner, since code changes only on his answer. A design decision recorded before it is built; its
+row joins §3's table marked future when the decision is taken.
 
 ## 3. Stop anywhere
 
