@@ -4,6 +4,20 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## Unreleased — toward 2.0.0-rc.8
+
+**The design review is deferred to Phase 11, on request.** It stood at the end of Phase 8; the owner moved it on
+2026-09-21 to reach PF and HT sooner. Nothing depends on it and deferring it leaves nothing unchecked: the rulebook's
+TEXT is the rule wording study's subject, not an attack's. Two conditions are recorded on it for whenever it is built,
+both from a measured failure rather than a preference — it attacks a MECHANISM and never prose, and every attacker owes
+a concrete evading example, the defect that gets through and why each part of the mechanism misses it. An attack that
+only collects objections converges by narrowing what the thing under attack claims, which is what seven rounds over the
+six discipline texts did.
+
+**Phase 4e is renamed the rule wording study**, because calling it an attack imported the convergence reading of a
+method this project has now measured as harmful. It converges on nothing: blind taggers are given only a rule's text
+and their agreement is the result. Phase 4b is marked done, which it has been since 2026-09-21.
+
 ## 2.0.0-rc.7 — 2026-09-21
 
 PATCH. **The question channel is wired at both ends.** A question a RUN puts lives in that run's own

@@ -771,17 +771,23 @@ carried over, agent launches used and, where the platform reports it, tokens.
 **One thing about the rulebook is measured**: whether a rule's text says one thing. Three blind readers, given only the
 rules' text, tag what deciding each needs; their agreement (Fleiss' kappa) and the rules they flag as underspecified
 are reported, and the majority becomes the tag. Round 0 → 1 on 2026-09-19: material 0.74 → 0.90, flags 18 → 8, splits 9
-→ 3. `gbg attack rules` (Phase 4e) is the procedure as a verb; it proposes, and a tag changes only on an answer.
+The rule wording study (Phase 4e) is that procedure as a verb; it proposes, and a tag changes only on an answer.
 
 ## 13. Change control and growth
 
 A rule, agent role, discipline or instrument is code in GBGCodingTools, apart from the prose fields of §4.2: it changes
 through the code fixer on the owner's answer to a finding, or by the session on the owner's direct answer, is released as a tag that is never moved, and reaches a package through `gbg bump`
-[R2]; it never changes during a run. A **design review** is not an instrument and has no row in §3: `gbg attack` runs
-agents over this design and over the rulebook's text (§12) and produces proposals, never findings, and each proposal becomes a question to the owner or is
-dismissed with its reason. It writes no tracked file — no run record, no report, no work-queue line — so it has no row in
-§6 either: its proposals reach the owner as questions in the session that ran it, the way a leak scan's findings do [as
-ruled].
+[R2]; it never changes during a run. A **design review** is FUTURE WORK, not an instrument, and has no row in §3: `gbg
+attack` would run agents over this design and produce proposals, never findings, each becoming a question to the owner or
+dismissed with its reason. It would write no tracked file — no run record, no report, no work-queue line — so it has no
+row in §6 either: its proposals reach the owner as questions in the session that ran it, the way a leak scan's findings do
+[as ruled]. Deferred on 2026-09-21 so that this package reaches its consumers sooner; nothing depends on it, and nothing
+it would check is unchecked meanwhile, because the rulebook's TEXT is the subject of the rule wording study (§12) and not
+of an attack. Two things are asked of it whenever it is built. It attacks a MECHANISM — a reader panel, a guard, a lens
+set — and never prose, and it demands of every attacker a concrete EVADING EXAMPLE: the defect that passes, where it
+sits, and why each part of the mechanism misses it. An attack that only collects objections converges by narrowing what
+the thing under attack claims, which is a measured failure of this project and not a hypothetical one [the six discipline
+texts, seven rounds to no objection, filed in `docs/design-record/08-discipline-attack.md`].
 
 **Retiring a rule.** A rule leaves the rulebook by having its value removed, which is a code change like any other: the
 owner's answer names the id and why the rule is no longer worth keeping, `Catalogue.RETIRED` and the `CHANGELOG` entry

@@ -142,7 +142,7 @@ owner's answers of 2026-09-21. The phase is five pieces:
   discipline tags (`Roles.derive`), the hand-written roles deleted; `--readers bound|open|both`; thirteen rules retired
   on the record and every rule given its cover (a program, a reader, an instruction); fourteen defects of the find half
   fixed; no launch budget; the stage machine by position; agents' files under `.gbg/scratch/<run>/`.
-- **4b — the review made whole** (50–70 commits, 6–9 sessions). **In progress 2026-09-21**; built so far:
+- **4b — the review made whole** (50–70 commits, 6–9 sessions). **Done 2026-09-21**, in fifteen commits:
   the pass stages (fix, blind verifier, diff verifier) graded by a program with the quote rule, `DocFix`
   records, reverts and the four-pass cap; the work-queue lines at close; `gbg docfix commit --finding`;
   `gbg run abandon`; a start refused on a dirty tree and a collect refused when the tree moved under the
@@ -192,7 +192,10 @@ owner's answers of 2026-09-21. The phase is five pieces:
   one edited docstring, one added sibling, one edited notation page, one edited hand page and one edited function body
   produce exactly the set the mapping gives, and nothing else; a paused or `CANNOT_EVALUATE` run is no base; a tool bump
   reads full. Release `-rc.7`.
-- **4e — `gbg attack rules`** (8 commits, 1 session): the tagging procedure as the first piece of the design review,
+- **4e — the rule wording study** (8 commits, 1 session): whether a rule's text says what deciding it requires,
+  MEASURED and not argued — blind taggers are given only the text and their agreement is the result, so it converges on
+  nothing and there is nothing to converge. Formerly called an attack on rules, renamed 2026-09-21 because that name
+  imports the convergence reading of a method this project has since measured as harmful. Run
   through the one driver with a second output schema; kappa, splits and flags as a program over the round-1 fixtures
   filed under `test/`; a drift between the majority and a rule's tag reported as a proposal that becomes a question.
   **Gate**: the arithmetic over the filed fixtures reproduces round 1 — 0.90 / 0.91, 8 flagged, 3 splits — and
@@ -244,10 +247,9 @@ instrument runs, the fixing each produces, and three owner readings the plan can
 **Gate** `bash -e -o pipefail -c 'for P in "$@"; do tools/floor.sh "$P"; test -z "$(git -C "$P" ls-files -- .claude/commands .claude/doc-review .claude/audit-changes .claude/bug-hunt)"; done' _ "$PF" "$CP" "$HT" "$SS"`
 
 ### Phase 8 — GBGCodingTools as its fifth consumer, and the design review (20 commits, 3–4 sessions)
-**Ends with** the tool checked by itself and `gbg attack` available (§13: agents over the design, producing proposals that
-become questions or are dismissed with a reason). Last on purpose: the machinery has run on four packages, so its own defects
+**Ends with** the tool checked by itself. The design review that stood here is deferred to Phase 11 (§13). Last on purpose: the machinery has run on four packages, so its own defects
 arrive as ordinary findings rather than as the work. **Depends on** Phase 7. **Creates** this package's full `.gbg/config.jl`
-— the switches §9 names, its settings, `tool = :dev` — its generated skill and hook, `src/CLI/Attack.jl`, and
+— the switches §9 names, its settings, `tool = :dev` — its generated skill and hook, and
 `test/switches.jl` (§9's own test: a page built with a rendering fault under this package's switches must fail the build).
 `docs/make.jl` here switches to the wrapper and `test/runtests.jl` to `Harness.test`, and the three self-application lines
 leave `test/architecture.jl` in that same commit — the one commit that turns self-application on, visibly. **Owner:**
@@ -272,6 +274,19 @@ whether a duplication is a missing abstraction or a deliberate specialization �
 a question to the owner, since code changes only on his answer. A design decision recorded before it is built; its
 row joins §3's table marked future when the decision is taken.
 
+### Phase 11 — The design review (on request; deferred 2026-09-21)
+It stood at the end of Phase 8 and the owner moved it here, to reach PF and HT sooner: nothing depends on it, and
+deferring it leaves nothing unchecked, because the rulebook's TEXT is 4e's subject and not an attack's. What it would
+be (§13): `gbg attack` runs agents over this design, producing proposals that become questions to the owner or are
+dismissed with a reason, and writing no tracked file. **Creates** `src/CLI/Attack.jl`.
+
+Two conditions are on it, and both come from a measured failure rather than a preference. It attacks a MECHANISM — a
+reader panel, a guard, a lens set — never prose. And every attacker owes a concrete EVADING EXAMPLE: the defect that
+gets through, where it sits, and why each part of the mechanism misses it. The one round the deleted machinery ran
+worked that way and returned eighteen gaps, two of them fatal, each with a real file and line; the seven rounds of
+objections over the six discipline texts converged on nothing useful and narrowed every one of them, which is what
+`docs/design-record/08-discipline-attack.md` records.
+
 ## 3. Stop anywhere
 
 | Stop after | What the owner has |
@@ -284,7 +299,7 @@ row joins §3's table marked future when the decision is taken.
 | 5 | The complete rulebook on two science packages, one machine in the tree, released as `2.0.0`. |
 | 6 | The code half: hunts that prove defects with failing tests, and graded fixes. |
 | 7 | Four science packages on one version, no legacy machinery left. |
-| 8 | The tool checked by itself, and a design review he can run. |
+| 8 | The tool checked by itself. |
 
 He stops between sessions, not phases: every commit leaves the floor green, so a stop costs a capability, not the tree.
 
@@ -448,4 +463,4 @@ assumptions come from.
 - `gbg init` never overwrites a file the package wrote itself; it prints the difference and exits 1 (§11) — the
   refusal §4 relies on when wiring PF.
 - The design review writes no tracked file; its proposals reach the owner as questions (§13) — which is why
-  Phase 8 carries it in three commits and nothing else changes.
+  deferring it to Phase 11 costs nothing that another phase has to carry.
