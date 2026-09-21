@@ -4,6 +4,28 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.7 — 2026-09-21
+
+PATCH. **The question channel is wired at both ends.** A question a RUN puts lives in that run's own
+record, and `gbg answer` read only `.gbg/questions.json`, so the instruction every run's report printed
+— answer this with `gbg answer` — replied that no question had that id. The one escape hatch for a
+documentation fix that would hide a code defect therefore ended nowhere: the fix reverted, the finding
+parked, and the question written where nobody could act on it. `answer` now tries the standalone store
+and then the run records, newest first, open and closed alike, and writes back to the file the record
+came from, since `save` always writes the draft and `load` prefers the final record. Answering that the
+reader was wrong records a settled ruling without the flag, carrying the finding's own locations, so a
+later run's readers are not sent to raise it again.
+
+And nothing in `src/` ever called `Questions.put`: only the tests did. The standalone store was written
+by no verb and no instrument, so `gbg ask` always answered that nothing was waiting, `gbg answer` had
+nothing to answer, and every instrument's rendered skill told a session to put a question with `gbg
+ask`, which lists them. `gbg ask` now puts one when given a decision and lists when given none; its
+options arrive as one value cut on `|`, because the shared option parser keeps one value per name.
+Fewer than two options is refused, a notification not being a decision.
+
+`docs/PF-WIRING.md` is rewritten for this line and targets rc.7: PF was wired at rc.5 and is clean, so
+it is an upgrade document, not a wiring one.
+
 ## 2.0.0-rc.6 — 2026-09-21
 
 MAJOR. **92 rules.** `RULE.CIT.RESOLVES` is new: every DOI or Open Library link on a title answers,

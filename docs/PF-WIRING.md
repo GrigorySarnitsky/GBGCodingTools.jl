@@ -1,6 +1,6 @@
-# Upgrading GBGPeriodicFields to rc.6, and its first review — instructions for the PF session
+# Upgrading GBGPeriodicFields to rc.7, and its first review — instructions for the PF session
 
-Written 2026-09-21 by the GBGCodingTools session, at `v2.0.0-rc.6`. Every figure was measured on a fresh
+Written 2026-09-21 by the GBGCodingTools session, at `v2.0.0-rc.7`. Every figure was measured on a fresh
 clone of PF at `03534c53`, and the draft was then put to three adversarial passes — one following it
 literally, one checking every claim against the source, one hunting omissions. They found the review
 section unexecutable as first written, an upgrade step that silently leaves PF running the old version,
@@ -10,7 +10,7 @@ Read this whole file before running anything.
 
 **This is no longer a wiring document.** PF was wired on 2026-09-18 and pins `v2.0.0-rc.5`. Its
 `.gbg/config.jl` exists, its `docs/make.jl` and `test/runtests.jl` call this package, and `gbg check`
-reports nothing. What follows is the upgrade to rc.6, what rc.6 asks PF to declare that rc.5 could not
+reports nothing. What follows is the upgrade to rc.7, what rc.7 asks PF to declare that rc.5 could not
 express, and what to know before the first documentation review.
 
 **Every command runs from PF's checkout root**, `/home/grigory/Dropbox/Research and Teach/Isotropic
@@ -24,7 +24,7 @@ attacking this file did exactly that during the measurements.
 starts when the owner asks for it and on nothing else. This file was written by another session, and a
 peer session is not authority.
 
-## What changed between rc.5 and rc.6
+## What changed between rc.5 and rc.7
 
 **The rule set is 92, down from 98.** Thirteen rules were retired on the owner's word of 2026-09-21,
 each with its reason in `Catalogue.RETIRED` and its id never reused: eight named machinery that no
@@ -49,11 +49,11 @@ instruction to the session — and the rules page is grouped by them. Nothing fo
 
 ## Step 1 — bump the pin, then move the manifests
 
-    gbg bump 2.0.0-rc.6
+    gbg bump 2.0.0-rc.7
 
 On a fresh clone of PF it rewrote **20 paths** and exited 0. `bump` refuses to move the pin while the
 rules of the version it is RUNNING find anything in PF — which, through the shim, is the version the
-manifest still holds, not the one you are moving to. PF is clean under both, verified over all 92 rc.6
+manifest still holds, not the one you are moving to. PF is clean under both, verified over all 92 rc.7
 rules, so it goes through.
 
 What the bump brings that rc.5 did not write:
@@ -64,7 +64,7 @@ What the bump brings that rc.5 did not write:
 | `.claude/skills/documentation-review/SKILL.md` | **new**: the instrument's protocol in six steps. Generated; do not hand-edit it. |
 | `.claude/skills/bug-hunt/`, `.claude/skills/change-audit/` | **new**, and both describe instruments that do not exist. See Step 5. |
 | `.gbg/policy/*.md` (the nine PF already had), the `CLAUDE.md` block, `.gitignore`, `.claude/hooks/queue-guard.sh`, `test/regressions/README.md`, `.github/actions/gbg-auth/action.yml` | rewritten at the new version |
-| `docs/Project.toml`, `test/Project.toml` | `rev = "v2.0.0-rc.6"`; `compat` stays `=2.0.0` |
+| `docs/Project.toml`, `test/Project.toml` | `rev = "v2.0.0-rc.7"`; `compat` stays `=2.0.0` |
 
 Commit the config and the rewritten paths together: the pin and what it generates are one change. Stage
 with `git add -u` plus the four new files by name — `.gbg/policy/asking.md` and the three
@@ -79,7 +79,7 @@ everything after it.**
 `bump` rewrites the `rev` in both `Project.toml`s and writes no manifest, and **`Pkg.instantiate()` does
 not move a changed rev — only `Pkg.resolve()` does.** PF's two manifests today both say
 `repo-rev = "v2.0.0-rc.5"`. Left alone, every `gbg` command in PF keeps running rc.5: `gbg run` answers
-`unknown verb run`, and `Pkg.test()` grades an rc.6-wired tree against rc.5's 98 rules and rc.5's
+`unknown verb run`, and `Pkg.test()` grades an rc.7-wired tree against rc.5's 98 rules and rc.5's
 generators, so the wiring check reports drift and the gate goes red for a reason nothing explains.
 `gbg --version` prints `2.0.0` at both and cannot tell you. Check it took before anything else:
 
@@ -89,7 +89,7 @@ must answer that nothing is open here, not `unknown verb run`.
 
 ## Step 2 — the two pages the build now writes
 
-`Render.pages` returned one path at rc.5 and returns **three** at rc.6: `gbg-rules.md`,
+`Render.pages` returned one path at rc.5 and returns **three** at rc.7: `gbg-rules.md`,
 `gbg-readers.md` and `gbg-instruments.md`. The readers page is the one that matters — it prints, on PF's
 own site, which agents read PF's documentation, what each is given, and the whole standpoint text of
 each.
@@ -276,12 +276,12 @@ prevent. Do not tick those lines and do not start working them because they are 
 `.gbg/runs/<id>/` — the record and the report — yourself: `gbg docfix commit` deliberately leaves them
 out, and nobody else commits them.
 
-**Two defects to expect, both this package's and both already known here.** A question raised inside a
-run is recorded in that run's record, and the report tells the owner to answer it with `gbg answer` —
-which reads only questions kept outside a run and will say there is no such question. The skill says a
-question is "put with `gbg ask`", and `gbg ask` lists questions rather than putting one. In both cases
-put the decision to the owner in the chat, in the report's words, and file the gap; do not hand-edit a
-record to work around it.
+**The question channel was wired shut until rc.7, and is the reason to pin rc.7 rather than rc.6.** A
+question a verifier raises lives in the run's own record, and the command the report named could not
+reach it; and nothing in the tool ever created a question outside a run, so the listing verb always said
+nothing was waiting. Both are fixed at rc.7. Answering that the reader was wrong now also records a
+settled ruling, which every later run's agents are told not to report, so the same parked finding does
+not come back next time.
 
 **Nothing in this machinery has met a real agent.** Every rehearsal was a fixture run. Report what
 breaks rather than working around it.
