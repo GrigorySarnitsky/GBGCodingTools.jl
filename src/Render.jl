@@ -797,7 +797,7 @@ function skill(cfg::Model.Config, instrument::Symbol)
        documentation and commit it with `gbg docfix commit --message "…" --finding <id>`, which asks the
        change guard first. `gbg docfix check` says what the change broke. Never edit code here, and never
        change what is inside a math span: a finding that needs either becomes a question for the owner,
-       put with `gbg ask`.
+       put with `gbg ask "<decision>" --options "<one> | <another>"`.
     6. `gbg run close` — writes the record and the report, and puts what is still open on the owner's
        work queue.""")
     else

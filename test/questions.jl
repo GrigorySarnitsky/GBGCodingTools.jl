@@ -5,7 +5,7 @@
 # runner around them: that it selects the rules rather than holding a list, that a package can switch one
 # off, that a setting moves a limit, and that the agent-decided rule is not run by a program pretending
 # to decide it.
-using Test, GBGCodingTools
+using Test, GBGCodingTools, Dates, JSON3
 include("helpers.jl")
 
 const Q = G.Engine.Questions
@@ -125,5 +125,84 @@ plain_cfg() = MQ.Config(package = "Example", tool = :dev)
         @test G.Answer.ask(root; io = devnull) == 1                           # one item still open
         @test G.Answer.answer(root, "q-two", "drop"; item = "the second one", io = devnull) == 0
         @test G.Answer.ask(root; io = devnull) == 0
+    end
+end
+
+# The two ends of the channel, wired 2026-09-21. Before that `Questions.put` was called by nothing in
+# `src/`, so `.gbg/questions.json` was never written by any verb: `ask` always said nothing was waiting,
+# and `answer` had nothing to answer. And a question a RUN put lived in that run's record, where `answer`
+# could not reach it, while the report of every run that parked a finding told the owner to use it.
+@testset "the CLI puts a question, and answers one a run put" begin
+
+    @testset "gbg ask puts one, and lists it" begin
+        root = mktempdir(; cleanup = true); mkpath(joinpath(root, ".gbg"))
+        write(joinpath(root, ".gbg", "config.jl"), """Config(package = "Sample", tool = :dev)""")
+        @test G.Answer.ask(root; io = devnull) == 0                          # nothing waiting yet
+        @test G.Answer.put(root, "Should the floor move to 1.13?";
+                           options = ["keep 1.12", "move to 1.13"], io = devnull) == 0
+        @test G.Answer.ask(root; io = devnull) == 1                          # now one is
+        ids = [q["id"] for q in Q.open_questions(root)]
+        @test length(ids) == 1 && startswith(only(ids), string(Dates.today()))
+        # A second on the same day gets its own id rather than colliding with the first.
+        @test G.Answer.put(root, "Should the examples move too?";
+                           options = ["yes", "no"], io = devnull) == 0
+        @test length(Q.open_questions(root)) == 2
+        @test G.Answer.answer(root, last([q["id"] for q in Q.open_questions(root)]), "no"; io = devnull) == 0
+    end
+
+    @testset "a question with one answer is refused" begin
+        root = mktempdir(; cleanup = true); mkpath(joinpath(root, ".gbg"))
+        write(joinpath(root, ".gbg", "config.jl"), """Config(package = "Sample", tool = :dev)""")
+        @test G.Answer.put(root, "Is this fine?"; options = ["yes"], io = devnull) == 2
+        @test G.Answer.put(root, ""; options = ["yes", "no"], io = devnull) == 2
+        @test isempty(Q.open_questions(root))
+    end
+
+    @testset "a run's question is answered, and 'not a defect' settles it" begin
+        root = mktempdir(; cleanup = true); mkpath(joinpath(root, ".gbg"))
+        write(joinpath(root, ".gbg", "config.jl"), """Config(package = "Sample", tool = :dev)""")
+        loc = MQ.Location(file = "src/A.jl", node = "f", text = "the claim", line = 3)
+        finding = MQ.Finding("F1", :full, MQ.Decider.AGENT,
+                             MQ.FindingDraft(rule = Symbol("RULE.DOC.SHAPE"),
+                                             claim = "the docstring is wrong", locations = [loc]))
+        q = MQ.Question(id = "r1-F1-code", decision = "Is the code right here, or the documentation?",
+                        options = [MQ.Option("fix the code", "the code is changed", true),
+                                   MQ.Option("fix the documentation instead", "the edit stands", false),
+                                   MQ.Option(G.Answer.NOT_A_DEFECT, "the finding is closed", false)])
+        run = MQ.Run(id = "r1", instrument = :documentation_review, tool_version = "vdev",
+                     first_commit = "abc", budget = MQ.Budget(), stage = :close,
+                     findings = [finding], questions = [q])
+        G.Orchestration.Runs.save(root, run)
+
+        # It is not in `.gbg/questions.json`, and before this it could not be answered at all.
+        @test isempty(Q.open_questions(root))
+        @test G.Answer.answer(root, "r1-F1-code", "no such option"; io = devnull) == 2
+        @test G.Answer.answer(root, "r1-F1-code", G.Answer.NOT_A_DEFECT; io = devnull) == 0
+
+        back = G.Orchestration.Runs.load(root, "r1")
+        @test only(back.questions).answer == G.Answer.NOT_A_DEFECT
+        @test G.Answer.answer(root, "r1-F1-code", "fix the code"; io = devnull) == 2   # answered once
+
+        # "not a defect" settles it without the flag, carrying the finding's own locations, so the next
+        # run's readers are told not to raise it again.
+        settled = G.ConfigIO.read_settled(root)
+        @test length(settled) == 1
+        @test only(settled).question == "r1-F1-code"
+        @test only(settled).locations == [loc]
+    end
+
+    @testset "a closed run's record is amended, not shadowed by a draft" begin
+        root = mktempdir(; cleanup = true); mkpath(joinpath(root, ".gbg"))
+        write(joinpath(root, ".gbg", "config.jl"), """Config(package = "Sample", tool = :dev)""")
+        q = MQ.Question(id = "r2-F9-code", decision = "Which half is right?",
+                        options = [MQ.Option("the code", "", true), MQ.Option("the documentation", "", false)])
+        run = MQ.Run(id = "r2", instrument = :documentation_review, tool_version = "vdev",
+                     first_commit = "abc", budget = MQ.Budget(), stage = :close, questions = [q])
+        # A CLOSED run: its record is `run.json`, which `load` prefers over any draft beside it.
+        d = joinpath(root, ".gbg", "runs", "r2"); mkpath(d)
+        write(joinpath(d, "run.json"), JSON3.write(G.Orchestration.Runs.as_dict(run)))
+        @test G.Answer.answer(root, "r2-F9-code", "the code"; io = devnull) == 0
+        @test only(G.Orchestration.Runs.load(root, "r2").questions).answer == "the code"
+        @test !isfile(joinpath(d, "run.draft.json"))
     end
 end

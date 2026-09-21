@@ -340,6 +340,97 @@ run's order.
 """
 workable(run::Model.Run) = [f for f in open_findings(run) if !parked(run, f.id)]
 
+"""
+    question_of(root, id) -> Union{Tuple{String,Model.Run,Model.Question},Nothing}
+
+The run holding the question `id`, with the question. The arguments are `root`, the package root, and
+`id`, the question's id. Returns the run's id, the run and the question, or `nothing` where no run here
+has one.
+
+Runs are searched newest first, open and closed alike: a question raised by a verifier is answered from
+the report, and the report is read after the run has closed as often as during it.
+"""
+function question_of(root::AbstractString, id::AbstractString)
+    d = joinpath(root, ".gbg", "runs")
+    isdir(d) || return nothing
+    for name in sort(readdir(d); rev = true)
+        run = load(root, name)
+        run === nothing && continue
+        k = findfirst(q -> q.id == id, run.questions)
+        k === nothing || return (name, run, run.questions[k])
+    end
+    return nothing
+end
+
+"""
+    answer!(root, id, option; item = "", direction = "") -> Union{String,Nothing}
+
+Records the owner's answer on a question a RUN put, or the reason it could not be. The arguments are:
+
+- `root` — the package root.
+- `id` — the question's id.
+- `option` — the label he chose.
+- `item` — the item it answers, empty for a question with none.
+- `direction` — how he wants it done, where his answer carried that.
+
+Returns the refusal in words, or `nothing` when the answer was recorded.
+
+It writes back to the file the record was read from, so answering a closed run's question amends that
+run's record rather than leaving a draft beside it. The refusals are [`Engine.Questions.answer!`](@ref)'s,
+in the same words, because the owner types one command and should not have to know which of the two
+stores his question came from.
+"""
+function answer!(root::AbstractString, id::AbstractString, option::AbstractString;
+                 item::AbstractString = "", direction::AbstractString = "")
+    found = question_of(root, id)
+    found === nothing && return "no question here is called $id"
+    run_id, run, q = found
+    labels = [o.label for o in q.options]
+    isempty(labels) || option in labels ||
+        return "$option is not one of its options: " * join(labels, ", ")
+    if isempty(item)
+        isempty(q.items) || return "it is asked per item; name the item"
+        q.answer === nothing || return "it was already answered: " * string(q.answer)
+        answered = Model.Question(id = q.id, decision = q.decision, context = q.context,
+                                  options = q.options, items = q.items, exhibit = q.exhibit,
+                                  answer = option, direction = direction)
+    else
+        j = findfirst(i -> i.text == item, q.items)
+        j === nothing && return "no item of $id reads: $item"
+        q.items[j].answer === nothing || return "that item was already answered"
+        items = copy(q.items)
+        items[j] = Model.Item(text = items[j].text, recommended = items[j].recommended,
+                              sources = items[j].sources, answer = option, direction = direction)
+        answered = Model.Question(id = q.id, decision = q.decision, context = q.context,
+                                  options = q.options, items = items, exhibit = q.exhibit,
+                                  answer = q.answer, direction = q.direction)
+    end
+    qs = copy(run.questions)
+    qs[findfirst(x -> x.id == id, qs)] = answered
+    write_record(root, with_questions(run, qs))
+    return nothing
+end
+
+# The record carries eighteen fields and an answer changes one of them. Rebuilt here rather than through
+# the CLI's `with`, which is a verb's helper and above this module.
+with_questions(r::Model.Run, qs::Vector{Model.Question}) =
+    Model.Run(id = r.id, instrument = r.instrument, tool_version = r.tool_version,
+              first_commit = r.first_commit, budget = r.budget, stage = r.stage,
+              findings = r.findings, fixes = r.fixes, questions = qs, code_fixes = r.code_fixes,
+              agent_launches = r.agent_launches, tokens = r.tokens, stop = r.stop,
+              readers = r.readers, passes = r.passes, model = r.model, sequential = r.sequential,
+              already_failing = r.already_failing)
+
+# The record is written back where it was read: `run.json` for a closed run, the draft for an open one.
+# `save` always writes the draft, and `load` prefers `run.json`, so saving a closed run's answer through
+# it would write a file nothing reads.
+function write_record(root::AbstractString, run::Model.Run)
+    final = joinpath(dir(root, run.id), "run.json")
+    isfile(final) || return save(root, run)
+    open(final, "w") do f; JSON3.pretty(f, JSON3.write(as_dict(run))); end
+    return final
+end
+
 # ────────────────────────────────────────────────────────────────── the record on disk
 
 """
