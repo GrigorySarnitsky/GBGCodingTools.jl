@@ -4,7 +4,7 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
-## Unreleased — toward 2.0.0-rc.6
+## 2.0.0-rc.6 — 2026-09-21
 
 MAJOR. **92 rules.** `RULE.CIT.RESOLVES` is new: every DOI or Open Library link on a title answers,
 and with the work the title names — a program that reaches the network and runs only under `gbg check
