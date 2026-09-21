@@ -977,12 +977,14 @@ Writes the site pages that show a package what it is held to, and returns the pa
 `docs/src/`, which is the form a `docs/make.jl` lists in its `pages`. The arguments are `cfg`, the
 package's config, and `root`, the package root.
 
-Today that is one page: every rule of the rulebook, and what this package has switched off with its
-reason. A switch is answerable because a reader can see it, and the rendered rulebook under `.gbg/` is
-not somewhere a reader of the documentation goes.
+Three pages. The rules page carries every rule of the rulebook and what this package has switched off
+with its reason; the readers page, which readers a review derives for this package and the whole
+standpoint text of each; the instruments page, what an instrument is and what ends one. A switch and a
+reader are both answerable because a reader of the site can see them, and the rendered rulebook under
+`.gbg/` is not somewhere a reader of the documentation goes.
 
-This page is written at BUILD time and belongs in the package's `generated` list, so that no rule reads
-it. A page that states the rules is by construction full of text that breaks them — it quotes the
+All three are written at BUILD time and belong in the package's `generated` list, so that no rule reads
+them. A page that states the rules is by construction full of text that breaks them — it quotes the
 banned spellings in order to ban them — and a reader sent to fix it would spend its whole budget there.
 """
 function pages(cfg::Model.Config, root::AbstractString)
