@@ -213,9 +213,10 @@ in the end-of-turn hook or a verb — never in a build); whether the four harnes
 harvested into `Engine.Harness` and wired, or their rules restated; and, if the owner asks, any instruction restated as
 a principle of the design. Each is a question in §8's form; unanswered means unchanged. **Creates** what those answers
 say; `gbg release --counts`, which prints for `v2.0.0` alone what still holds it and refuses nothing (ruled 2026-09-16);
-`Main.jl` rewritten and the last old verbs; a `CP-WIRING.md` (CP's `[extras]`/`[targets]` test declaration becomes a
-`test/Project.toml` the pin can land in; the disciplines CP may propose); CP wired by CP's own session on the last
-candidate after 4d. **Deletes** the third stroke (§7) in full — `Scan.jl`, `Reflection.jl`, `DocLints.jl`,
+`Main.jl` rewritten and the last old verbs; an `HT-WIRING.md` (the disciplines HT may propose — turbulence theory
+certainly, and the Fourier discipline it shares with PF); HT wired by HT's own session on the last candidate after 4d.
+HT moved here from Phase 7 on the owner's word of 2026-09-21: he wants PF and HT on the package first, and nothing in
+the order was a dependency. **Deletes** the third stroke (§7) in full — `Scan.jl`, `Reflection.jl`, `DocLints.jl`,
 `HtmlWalker.jl`, `TreeHash.jl`, `CLI/Config.jl`, `CLI/Ledger.jl`, `.gbg/config.toml` here and in the fixture, the
 fixture's `.gbg/hats/`, `.gbg/rounds/.keep`, `catalog/scans.toml`, `TestHarness.jl` harvested or wired as answered —
 with what reads them: this repository's `docs/make.jl`, the extension's `makedocs(cfg::AbstractDict)` and
@@ -224,7 +225,7 @@ treehash,coverage}.jl`, `test/architecture.jl`'s `config.toml` line, `test/runte
 `api/{Reflection,TestHarness,Config}.md` and `guide/install.md`'s `config.toml` lines. `LAYERS` gains
 `GBGCodingTools.jl`, `CLI/{Main,Bump,Release,Fleet,Install,Self,Git}.jl` and, if kept, `TestHarness.jl`;
 `LEGACY_CEILING` falls to 1 (`Witnesses.jl`), and rests there while Phase 6 is deferred. **`v2.0.0` is cut here.**
-**Gate** `bash -e -o pipefail -c 'tools/floor.sh && tools/floor.sh "$1" && tools/floor.sh "$2" && test -z "$(git ls-files -- src/Scans policy catalog .gbg/config.toml .gbg/rounds "fixture/GBG Fixture/.gbg/config.toml" "fixture/GBG Fixture/.gbg/hats" src/Scan.jl src/Reflection.jl src/DocLints.jl src/HtmlWalker.jl src/TreeHash.jl src/CLI/Config.jl src/CLI/Ledger.jl)" && julia --project test/conversion.jl && test "$(gbg release --counts)" = "0"' _ "$PF" "$CP"` — the last a printed count, the checklist's to read, not a refusal.
+**Gate** `bash -e -o pipefail -c 'tools/floor.sh && tools/floor.sh "$1" && tools/floor.sh "$2" && test -z "$(git ls-files -- src/Scans policy catalog .gbg/config.toml .gbg/rounds "fixture/GBG Fixture/.gbg/config.toml" "fixture/GBG Fixture/.gbg/hats" src/Scan.jl src/Reflection.jl src/DocLints.jl src/HtmlWalker.jl src/TreeHash.jl src/CLI/Config.jl src/CLI/Ledger.jl)" && julia --project test/conversion.jl && test "$(gbg release --counts)" = "0"' _ "$PF" "$HT"` — the last a printed count, the checklist's to read, not a refusal.
 
 ### Phase 6 — Bug hunt, the code fixer and Change audit (45 commits, 5–6 sessions; on request; deferred 2026-09-21)
 Deferred on the owner's word so that the documentation half reaches the four science packages first: it is the largest
@@ -244,9 +245,10 @@ the witnesses stage; `test/witnesses.jl` goes. **Owner:** none. Its release is a
 asked for: deferring it handed `v2.1.0` to Phase 7.
 **Gate** `bash -e -o pipefail -c 'tools/floor.sh && julia --project test/hunt.jl'` — over the fixture with a planted defect and recorded agent output: the witness goes failing then passing; the loop stops at three failed attempts and writes a question; an attempt editing the frozen test does not count; a change under `test/` is named first to the audit; `Pkg.test()` does not run `escalated/`; the audit starts once and never after itself.
 
-### Phase 7 — GBGHomogeneousTurbulence, GBGStreamingStatistics, and the legacy deletions (40 commits, 6–7 sessions)
+### Phase 7 — GBGStreamingStatistics, GBGCloudPhysics, and the legacy deletions (40 commits, 6–7 sessions)
 **Ends with** all four science packages wired and on one version, and no legacy instruments left in any of them. **Depends
-on** Phase 6. **Creates** HT's and SS's `.gbg/`. **Deletes**, each in its own package's commit and only after a real
+on** Phase 6. **Creates** SS's and CP's `.gbg/`, and a `CP-WIRING.md` (CP's `[extras]`/`[targets]` test declaration becomes a
+`test/Project.toml` the pin can land in). **Deletes**, each in its own package's commit and only after a real
 documentation review has run there and the owner has read its report: PF's, HT's and SS's legacy instrument directories,
 their round folders moving to that package's `docs/design-record/`. **Why it is not three sessions**: two wirings, three full
 instrument runs, the fixing each produces, and three owner readings the plan cannot schedule. **Owner:** decision 12. Release
@@ -312,10 +314,13 @@ He stops between sessions, not phases: every commit leaves the floor green, so a
 
 ## 4. The fleet
 
-Order: **PF, then CP, then HT, then SS**; he may reorder by whatever he is working on. PF first (Phase 3): most active,
-heaviest documentation, the only one with Literate examples and live doctests. CP second (Phase 5): sharing none of PF's
-habits and holding no legacy machinery, it proves the config is a config. HT and SS last (Phase 7): both are mostly
-deletions. Wiring writes more than a config: `.gbg/{config.jl,settled.jl,questions.json,policy/*.md}`, the pin in both
+Order: **PF, then HT, then SS, then CP**, set by the owner on 2026-09-21; he may reorder again by whatever he is working
+on, since nothing in the order is a dependency — every wiring needs the rulebook and the review, and both exist. PF
+first (Phase 3): most active, heaviest documentation, the only one with Literate examples and live doctests. HT second
+(Phase 5), because it is the package he works in beside PF and the two share a discipline. SS and CP last (Phase 7). The
+earlier order put CP second to prove the config is a config on a package sharing none of PF's habits; that argument is
+now Phase 7's to make, and the cost of losing it early is that PF and HT are alike enough for a PF-shaped assumption to
+survive both. Wiring writes more than a config: `.gbg/{config.jl,settled.jl,questions.json,policy/*.md}`, the pin in both
 environments, `.claude/{settings.json,WORK_QUEUE.md}`, a skill file per instrument, the tooling block in `.gitignore` and
 `CLAUDE.md`, the CI workflow files, and `test/regressions/`. **Wiring refuses to overwrite** an existing
 `.github/workflows/*`, `.claude/settings.json`, `WORK_QUEUE.md` or a skill of the same name, printing the diff instead [PF

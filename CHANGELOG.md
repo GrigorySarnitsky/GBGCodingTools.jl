@@ -14,6 +14,13 @@ a concrete evading example, the defect that gets through and why each part of th
 only collects objections converges by narrowing what the thing under attack claims, which is what seven rounds over the
 six discipline texts did.
 
+**The fleet order is PF, HT, SS, CP.** Set by the owner on 2026-09-21, who wants the periodic fields and turbulence
+packages on this one first. Phase 5 now wires HT, with an `HT-WIRING.md`, and Phase 7 takes SS and CP with the
+`CP-WIRING.md`. Nothing in the order was ever a dependency: every wiring needs the rulebook and the documentation
+review, and both exist. What the old order bought is recorded rather than dropped — CP was second because it shares
+none of PF's habits and would expose a config assumption shaped around one package, and with HT second the two are
+alike enough for such an assumption to survive both. That argument is now Phase 7's to make.
+
 **The bug hunt, the code fixer and the change audit are deferred to a phase on request.** Phase 6 was the largest
 remaining phase and nothing before or after it depends on what it builds, so Phase 7 — the last two science packages
 wired, and the legacy deletions — now follows Phase 5 directly; those deletions always waited on a real documentation
