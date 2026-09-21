@@ -14,6 +14,15 @@ a concrete evading example, the defect that gets through and why each part of th
 only collects objections converges by narrowing what the thing under attack claims, which is what seven rounds over the
 six discipline texts did.
 
+**The bug hunt, the code fixer and the change audit are deferred to a phase on request.** Phase 6 was the largest
+remaining phase and nothing before or after it depends on what it builds, so Phase 7 — the last two science packages
+wired, and the legacy deletions — now follows Phase 5 directly; those deletions always waited on a real documentation
+review having run in each package, never on a hunt. What the deferral costs is recorded where it falls: this package
+changes no code until the phase is built, so a code defect an instrument meets stays a question to the owner;
+`Witnesses.jl` stays, so the legacy ceiling rests at 1; `gbg release` prints neither of its two code lines; and the
+design's table marks the Bug hunt and Change audit rows future, beside the leak scan, which is how the table test reads
+them.
+
 **Phase 4e is renamed the rule wording study**, because calling it an attack imported the convergence reading of a
 method this project has now measured as harmful. It converges on nothing: blind taggers are given only a rule's text
 and their agreement is the result. Phase 4b is marked done, which it has been since 2026-09-21.

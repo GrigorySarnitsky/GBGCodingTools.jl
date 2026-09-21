@@ -223,10 +223,16 @@ with what reads them: this repository's `docs/make.jl`, the extension's `makedoc
 treehash,coverage}.jl`, `test/architecture.jl`'s `config.toml` line, `test/runtests.jl`'s legacy includes, the site's
 `api/{Reflection,TestHarness,Config}.md` and `guide/install.md`'s `config.toml` lines. `LAYERS` gains
 `GBGCodingTools.jl`, `CLI/{Main,Bump,Release,Fleet,Install,Self,Git}.jl` and, if kept, `TestHarness.jl`;
-`LEGACY_CEILING` falls to 1 (`Witnesses.jl`, Phase 6's). **`v2.0.0` is cut here.**
+`LEGACY_CEILING` falls to 1 (`Witnesses.jl`), and rests there while Phase 6 is deferred. **`v2.0.0` is cut here.**
 **Gate** `bash -e -o pipefail -c 'tools/floor.sh && tools/floor.sh "$1" && tools/floor.sh "$2" && test -z "$(git ls-files -- src/Scans policy catalog .gbg/config.toml .gbg/rounds "fixture/GBG Fixture/.gbg/config.toml" "fixture/GBG Fixture/.gbg/hats" src/Scan.jl src/Reflection.jl src/DocLints.jl src/HtmlWalker.jl src/TreeHash.jl src/CLI/Config.jl src/CLI/Ledger.jl)" && julia --project test/conversion.jl && test "$(gbg release --counts)" = "0"' _ "$PF" "$CP"` — the last a printed count, the checklist's to read, not a refusal.
 
-### Phase 6 — Bug hunt, the code fixer and Change audit (45 commits, 5–6 sessions)
+### Phase 6 — Bug hunt, the code fixer and Change audit (45 commits, 5–6 sessions; on request; deferred 2026-09-21)
+Deferred on the owner's word so that the documentation half reaches the four science packages first: it is the largest
+remaining phase and nothing before or after it depends on what it builds. Phase 7 now follows Phase 5 directly. What
+deferring costs, precisely: this package changes no code until it is built, so a code defect an instrument meets stays
+what it is today, a question to the owner; `Witnesses.jl` stays in the tree, so `LEGACY_CEILING` rests at 1 rather than
+0; `gbg release` prints neither of its two code lines; and the §3 rows for Bug hunt and Change audit are marked future,
+which is how the table test reads them.
 **Ends with** the code half: hunters per code area, agents writing failing tests, `gbg run witnesses`,
 `test/regressions/escalated/`, the fixer's three-attempt loop on the frozen failing test, and the single audit that follows
 an approved fix with its grade. **Depends on** Phase 5 [a hunt without a question store, an answer, an attempt cap and an
@@ -243,7 +249,7 @@ on** Phase 6. **Creates** HT's and SS's `.gbg/`. **Deletes**, each in its own pa
 documentation review has run there and the owner has read its report: PF's, HT's and SS's legacy instrument directories,
 their round folders moving to that package's `docs/design-record/`. **Why it is not three sessions**: two wirings, three full
 instrument runs, the fixing each produces, and three owner readings the plan cannot schedule. **Owner:** decision 12. Release
-`v2.1.1`.
+`v2.1.0`.
 **Gate** `bash -e -o pipefail -c 'for P in "$@"; do tools/floor.sh "$P"; test -z "$(git -C "$P" ls-files -- .claude/commands .claude/doc-review .claude/audit-changes .claude/bug-hunt)"; done' _ "$PF" "$CP" "$HT" "$SS"`
 
 ### Phase 8 — GBGCodingTools as its fifth consumer, and the design review (20 commits, 3–4 sessions)
@@ -297,7 +303,7 @@ objections over the six discipline texts converged on nothing useful and narrowe
 | 3 | PF's build and tests run fifteen rules, so what they name cannot return unnoticed — over whatever PF has switched off, with its reasons on its site. |
 | 4 | He can ask for a documentation review of PF and get fixed, verified text, a report, and questions he can answer. |
 | 5 | The complete rulebook on two science packages, one machine in the tree, released as `2.0.0`. |
-| 6 | The code half: hunts that prove defects with failing tests, and graded fixes. |
+| 6 | *(on request)* The code half: hunts that prove defects with failing tests, and graded fixes. |
 | 7 | Four science packages on one version, no legacy machinery left. |
 | 8 | The tool checked by itself. |
 
