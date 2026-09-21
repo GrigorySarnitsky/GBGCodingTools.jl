@@ -240,7 +240,8 @@ audit is the unreviewed-code-change failure the design exists to prevent]. **Cre
 the two `Instrument` values and their roles, `src/CLI/CodeFix.jl`, `test/hunt.jl`, `escalated/` under the existing
 `test/regressions/`, `gbg release`'s two printed lines (open keep-or-revert questions; confirmed failing tests awaiting an
 answer), and the extension of the §3 table test to `INSTRUMENTS`, the leak-scan row read as future. `Witnesses.jl` moves into
-the witnesses stage; `test/witnesses.jl` goes. **Owner:** none. Release `v2.1.0`.
+the witnesses stage; `test/witnesses.jl` goes. **Owner:** none. Its release is a MINOR one, numbered when it is
+asked for: deferring it handed `v2.1.0` to Phase 7.
 **Gate** `bash -e -o pipefail -c 'tools/floor.sh && julia --project test/hunt.jl'` — over the fixture with a planted defect and recorded agent output: the witness goes failing then passing; the loop stops at three failed attempts and writes a question; an attempt editing the frozen test does not count; a change under `test/` is named first to the audit; `Pkg.test()` does not run `escalated/`; the audit starts once and never after itself.
 
 ### Phase 7 — GBGHomogeneousTurbulence, GBGStreamingStatistics, and the legacy deletions (40 commits, 6–7 sessions)
@@ -252,7 +253,7 @@ instrument runs, the fixing each produces, and three owner readings the plan can
 `v2.1.0`.
 **Gate** `bash -e -o pipefail -c 'for P in "$@"; do tools/floor.sh "$P"; test -z "$(git -C "$P" ls-files -- .claude/commands .claude/doc-review .claude/audit-changes .claude/bug-hunt)"; done' _ "$PF" "$CP" "$HT" "$SS"`
 
-### Phase 8 — GBGCodingTools as its fifth consumer, and the design review (20 commits, 3–4 sessions)
+### Phase 8 — GBGCodingTools as its fifth consumer (20 commits, 3–4 sessions)
 **Ends with** the tool checked by itself. The design review that stood here is deferred to Phase 11 (§13). Last on purpose: the machinery has run on four packages, so its own defects
 arrive as ordinary findings rather than as the work. **Depends on** Phase 7. **Creates** this package's full `.gbg/config.jl`
 — the switches §9 names, its settings, `tool = :dev` — its generated skill and hook, and
@@ -330,8 +331,9 @@ The eleven `v1.0.0-rc.*` tags stay where they are and are never moved. **`1.0.0`
 named does not survive Phase 0, and `Project.toml` names a release that does not exist, so Phase 0 sets it to `2.0.0-DEV` —
 MAJOR by any reading, since the config format, the verbs and both entry points change. A candidate is cut at each phase that
 changes what a consumer sees: `v2.0.0-rc.1` (Phase 3, the first moment a package can pin anything), `-rc.2` to `-rc.5` (Phases 3 and 4's
-first half, cut as PF needed them), `-rc.6` (4b), `-rc.7` (4d), **`v2.0.0` at the end of Phase 5**, where the rulebook is complete and two packages are wired, then `v2.1.0` (6), `v2.1.1` (7), `v2.2.0`
-(8). Until the first candidate no package pins anything, as none does today; this checkout carries `tool = :dev`.
+first half, cut as PF needed them), `-rc.6` (4b and 4f), `-rc.7` (the question channel, cut 2026-09-21 before PF upgraded), **`v2.0.0` at the end of
+Phase 5**, where the rulebook is complete and two packages are wired, then `v2.1.0` (7) and `v2.2.0` (8). A phase on
+request is numbered when it is asked for. Until the first candidate no package pins anything, as none does today; this checkout carries `tool = :dev`.
 `CHANGELOG.md` gains one MAJOR `## 2.0.0`: rates are not comparable and nothing re-measures them (§12).
 
 ## 6. The content conversion, and its ratchet
