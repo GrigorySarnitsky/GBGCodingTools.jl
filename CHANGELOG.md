@@ -6,6 +6,25 @@ being rebuilt, and nothing measures a recall rate any more.
 
 ## Unreleased — toward 2.0.0-rc.11
 
+**A Literate example was readable and unfixable.** Two rules judge one, and the change guard's path list admitted
+no file under `examples/`, so every finding on one could only park on the owner's queue. Reported by
+GBGPeriodicFields, which had a verified fix it could not commit. The hole was not its own: the DEFAULT pattern is
+`examples/**/*.jl`, so every package with an examples directory had it whether or not it declared the set. The path
+list now matches the Literate patterns, and NOTHING downstream changed, because nothing downstream was wrong — a
+Literate file is not a third kind of thing beside documentation and code, it is a `.jl` file, and the clauses after
+the path already decide per CHANGE: clause 2 parses both versions and refuses any change to the code itself, clause 4
+refuses a change that moves a Literate mark, clause 5 an executed block. A comment may be edited in such a file and a
+statement may not, and that is settled by Julia's own parser rather than by guessing what a `#` means.
+
+**The stop hook holds a session open while a RUN is open**, not only while the work queue is. A run is walked stage
+by stage BY THE SESSION, since Julia cannot launch an agent, so a session that stops in the middle has spent its
+agents for nothing and left a run that blocks the next one — and the queue cannot catch it, because a run writes its
+queue lines at CLOSE, the point it has not reached. The hook's own comment had recorded the general failure for
+months: stopping to narrate is stopping. Abandoning is NOT offered as the way out, and the message warns against it:
+it drops the findings, and a session looking for a way to end its turn would take it. A session that cannot go on
+leaves the run OPEN and says where it stands; the next one continues it, and a stage whose agents answered is not
+relaunched. The loop guard is untouched, so a session already held is never blocked twice.
+
 **The built-page walk could not hear what the package had declared**, and that one omission caused three faults at
 once. It took a directory and no config, while the file surfaces dropped both generated pages and declared copies in
 a single filter with the reason written beside them. Found on GBGPeriodicFields's first real run: 26 readers, 142

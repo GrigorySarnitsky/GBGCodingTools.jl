@@ -954,3 +954,41 @@ end
         @test !occursin("Nothing was read", read(joinpath(G.Orchestration.Runs.dir(root, id), "report.md"), String))
     end
 end
+
+# The stop hook holds a session open while a RUN is open, not only while the work queue is. A run is
+# walked stage by stage by the session, so stopping in the middle spends its agents for nothing and
+# leaves a run that blocks the next one — and the queue cannot catch it, because a run writes its queue
+# lines at CLOSE, the point it has not reached. Added 2026-09-22, after the first real review stopped
+# between stages to report.
+@testset "the stop hook holds a session open while a run is" begin
+    root = mktempdir(; cleanup = true)
+    mkpath(joinpath(root, ".claude")); write(joinpath(root, ".claude", "WORK_QUEUE.md"), "# queue\n")
+    sh = joinpath(root, "hook.sh")
+    write(sh, G.Render.hook(G.Model.Config(package = "P", tool = :dev))); chmod(sh, 0o755)
+
+    function fire(payload)
+        err = IOBuffer()
+        cmd = setenv(`bash $sh`, ["CLAUDE_PROJECT_DIR" => root]; dir = root)
+        p = run(pipeline(cmd; stdin = IOBuffer(payload), stdout = devnull, stderr = err); wait = false)
+        wait(p)
+        return p.exitcode, String(take!(err))
+    end
+
+    @test first(fire("{}")) == 0                       # nothing open: the turn may end
+    d = joinpath(root, ".gbg", "runs", "2026-09-22-documentation-review-01")
+    mkpath(d); write(joinpath(d, "stage"), "4")        # a stage and no run.json is an open run
+
+    code, msg = fire("{}")
+    @test code == 2                                    # held open
+    @test occursin("A RUN IS OPEN", msg) && occursin("documentation-review-01", msg)
+    @test occursin("stage 4", msg)                     # and says where it stands
+    # Abandoning drops the findings, so it is never offered as the way to end a turn.
+    @test occursin("Do NOT abandon", msg)
+    @test occursin("leave it OPEN", msg)
+
+    # A harness, not a cage: a session already being held open is not blocked a second time.
+    @test first(fire("{\"stop_hook_active\": true}")) == 0
+
+    write(joinpath(d, "run.json"), "{}")               # closed or abandoned
+    @test first(fire("{}")) == 0
+end

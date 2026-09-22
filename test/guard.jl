@@ -218,3 +218,26 @@ end
     bare = G.Model.Config(package = "Sample", tool = :dev)
     @test doc(bare, "docs/src/gbg-rules.md")
 end
+
+# A Literate example is a `.jl` file that both runs and renders. Two rules judge it, and until
+# 2026-09-22 no path here admitted it, so every finding on one could only park on the owner's queue —
+# raisable and unfixable. Reported by PF on its first real run; the hole belonged to every package with
+# an examples directory, since the DEFAULT pattern is `examples/**/*.jl` whether or not it is declared.
+@testset "a Literate example is a path where documentation lives" begin
+    doc = G.Engine.Guard.on_documentation_list
+    declared = G.Model.Config(package = "P", tool = :dev,
+                              filesets = Dict(G.Model.FileSet.LITERATE => ["examples/HIST_CPU.jl"]))
+    bare = G.Model.Config(package = "P", tool = :dev)
+
+    @test doc(declared, "examples/HIST_CPU.jl")           # named by the package
+    @test !doc(declared, "examples/other.jl")             # and a narrowed set stays narrow
+    @test doc(bare, "examples/HIST_CPU.jl")               # the default pattern, at the top
+    @test doc(bare, "examples/gpu/rocm/HIST_ROCm.jl")     # and nested, since `**` spans directories
+    @test !doc(bare, "benchmark/run.jl")                  # not an example at all
+
+    # Nothing downstream changed, and this is why: the clauses after the path decide per CHANGE. A
+    # comment may be edited; a statement may not; a Literate mark may not move.
+    prose = "# a comment\nf(x) = x\n"
+    @test G.Engine.Guard.classify(bare, "examples/HIST_CPU.jl", prose, "# a better comment\nf(x) = x\n").documentation
+    @test !G.Engine.Guard.classify(bare, "examples/HIST_CPU.jl", prose, "# a comment\nf(x) = x + 1\n").documentation
+end

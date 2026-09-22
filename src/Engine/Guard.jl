@@ -110,7 +110,33 @@ function on_documentation_list(cfg::Model.Config, path::AbstractString)
     endswith(p, ".jl") && (startswith(p, "src/") || startswith(p, "ext/")) && return true
     p == "README.md" && return true
     startswith(p, "docs/src/") && endswith(p, ".md") && return true
+    literate(cfg, p) && return true
     return rationale(cfg, p)
+end
+
+# A LITERATE example is a `.jl` file that both runs and renders, and it was readable and unfixable until
+# 2026-09-22: two rules judge it, and no path here admitted it, so every finding on one could only park
+# on the owner's queue. Reported by GBGPeriodicFields on its first real run — and the hole was not its
+# alone, since the DEFAULT pattern is `examples/**/*.jl`, so every package with an examples directory had
+# it whether or not it declared the set.
+#
+# Nothing downstream needed changing, which is why this is one line. A Literate file is not a third kind
+# of thing beside documentation and code: it is a `.jl` file, and the clauses after this one already
+# decide per CHANGE rather than per file. Clause 2 parses both versions and refuses any change to the
+# code itself, so a comment may be edited and a statement may not; clause 4 refuses a change that moves a
+# Literate mark, which is what makes a comment render as prose; clause 5 refuses an executed block.
+literate(cfg::Model.Config, p) =
+    any(pat -> glob_matches(pat, p), get(cfg.filesets, Model.FileSet.LITERATE,
+                                         Texts.DEFAULT_PATTERNS[Model.FileSet.LITERATE]))
+
+# `**` spans directories, `*` stays within one name — the same two wildcards `Texts.expand` resolves,
+# matched here against ONE path rather than walked over a tree, because the guard is given a path and no
+# root and has no business touching disk to classify a change.
+function glob_matches(pattern::AbstractString, path::AbstractString)
+    pat = replace(pattern, '\\' => '/')
+    rx = "^" * replace(replace(replace(replace(pat, "." => "\\."), "**/" => "\0ANY\0"),
+                               "*" => "[^/]*"), "\0ANY\0" => "(?:.*/)?") * "\$"
+    return occursin(Regex(rx), path)
 end
 
 rationale(cfg::Model.Config, p) = any(r -> replace(r, '\\' => '/') == p, get(cfg.filesets, Model.FileSet.RATIONALE, String[]))
