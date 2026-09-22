@@ -546,10 +546,15 @@ end
             @test occursin("carried over from an earlier run", rep)
             queue = read(joinpath(root, ".claude", "WORK_QUEUE.md"), String)
             @test count("- [ ] " * fid, queue) == 1                        # one line, not one per run
-            # a third start after an abandoned run carries nothing: the owner dropped them
+            # A third start after an abandoned run carries nothing: the owner dropped them. This run
+            # launched nothing, but it was CARRYING the finding, so `abandon` keeps its record — the
+            # record is what makes the drop stick. Delete it and the next start reads past it to the run
+            # before, and the findings he dropped come back (ruled 2026-09-22).
             gg("add", "--all", "."); gg("commit", "-q", "-m", "the second run, closed")
             G.Run.start(root, :documentation_review; io = devnull)
+            kept = RUNS.dir(root, G.Run.open_run(root))
             @test G.Run.abandon(root; io = devnull) == 0
+            @test isfile(joinpath(kept, "run.json"))
             gg("add", "--all", "."); gg("commit", "-q", "-m", "the abandoned run")
             G.Run.start(root, :documentation_review; io = devnull)
             @test isempty(RUNS.load(root, G.Run.open_run(root)).findings)
@@ -890,5 +895,62 @@ end
         never_ran = G.Model.Run(; id = "r-never", base..., stage = :close, agent_launches = 0,
                                 stop = G.Model.Stop.CANNOT_EVALUATE)
         @test occursin("Nothing was read", G.Render.report(never_ran, cfg))
+    end
+end
+
+# What `gbg run abandon` leaves behind, which turns on whether an agent ever ran — the same line the
+# report draws between "nothing was read" and "nothing was found" (ruled 2026-09-22).
+@testset "abandoning leaves evidence, or leaves nothing" begin
+    function opened(; launches::Int)
+        root = mktempdir(; cleanup = true); mkpath(joinpath(root, ".gbg"))
+        write(joinpath(root, ".gbg", "config.jl"), """Config(package = "Sample", tool = :dev)""")
+        id = "2026-09-22-documentation-review-01"
+        run = G.Model.Run(id = id, instrument = :documentation_review, tool_version = "vdev",
+                          first_commit = "abc", budget = G.Model.Budget(), stage = :find,
+                          agent_launches = launches)
+        mkpath(G.Orchestration.Runs.dir(root, id))
+        G.Orchestration.Runs.save(root, run)
+        G.Orchestration.Runs.write_stage(root, id, 2)
+        return root, id
+    end
+
+    @testset "a run that launched nothing and carried nothing is deleted, id and all" begin
+        root, id = opened(launches = 0)
+        @test isdir(G.Orchestration.Runs.dir(root, id))
+        out = IOBuffer()
+        @test G.Run.abandon(root; io = out) == 0
+        @test occursin("its record is deleted", String(take!(out)))
+        @test !isdir(G.Orchestration.Runs.dir(root, id))      # nothing to keep and nothing to commit
+        @test G.Run.open_run(root) === nothing                # and nothing is open any more
+    end
+
+    # A run that launched nothing but was CARRYING findings keeps its record: abandoning it DROPS those
+    # findings, and the record is what makes the drop stick. Without it the next run reads past to the
+    # run before and the dropped findings come back — caught by the rehearsal the hour this was written.
+    @testset "a run carrying findings keeps its record even having launched nothing" begin
+        root, id = opened(launches = 0)
+        run = G.Orchestration.Runs.load(root, id)
+        carried = G.Model.Finding("F1", :full, G.Model.Decider.AGENT,
+                                  G.Model.FindingDraft(claim = "carried in from the last run"))
+        G.Orchestration.Runs.save(root, G.Orchestration.Runs.with_questions(run, run.questions))
+        G.Orchestration.Runs.save(root, G.Model.Run(id = run.id, instrument = run.instrument,
+            tool_version = run.tool_version, first_commit = run.first_commit, budget = run.budget,
+            stage = run.stage, findings = [carried], agent_launches = 0))
+        out = IOBuffer()
+        @test G.Run.abandon(root; io = out) == 0
+        @test occursin("Commit .gbg/runs/", String(take!(out)))
+        @test isfile(joinpath(G.Orchestration.Runs.dir(root, id), "run.json"))
+    end
+
+    @testset "a run whose agents ran keeps its record, to be committed" begin
+        root, id = opened(launches = 5)
+        out = IOBuffer()
+        @test G.Run.abandon(root; io = out) == 0
+        text = String(take!(out))
+        @test occursin("Commit .gbg/runs/", text)
+        @test isfile(joinpath(G.Orchestration.Runs.dir(root, id), "run.json"))
+        @test isfile(joinpath(G.Orchestration.Runs.dir(root, id), "report.md"))
+        # Its agents read the package, so the report may not say the package was never read.
+        @test !occursin("Nothing was read", read(joinpath(G.Orchestration.Runs.dir(root, id), "report.md"), String))
     end
 end

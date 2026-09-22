@@ -14,14 +14,20 @@ never read is worse than no document. The report now says "Nothing was read", an
 package: not that it is clean, not that it is not. The distinction is drawn on whether an AGENT RAN, not on how the
 run ended, since a run stopped after its readers reported is a different thing from one that never launched.
 
-**An abandoned run's record and report are committed, like a closed run's** (ruled 2026-09-22, on
-GBGPeriodicFields's question after two abandoned runs left it with no rule to follow). Whether a package was ever
-reviewed and what came of it is answered from the repository or not at all, and an attempt that leaves no trace reads
-as an attempt nobody made; it is also what keeps a run's id unreusable in every clone, and what lets another machine
-see that attempts were made and why they failed. An escape that leaves a committed artifact survives; one that leaves
-nothing gets quietly disabled the first time it is inconvenient. Accumulation is answered where it arises: `gbg run
-abandon` deletes the run's scratch, the bulky half, and says what to commit; the generated protocol states the rule
-for both endings.
+**What abandoning a run leaves behind now turns on whether there is anything in it** (ruled 2026-09-22, on
+GBGPeriodicFields's question after two abandoned runs left it with no rule to follow). A run that launched NO agent
+and was CARRYING nothing is deleted outright, record and all, and its id is free again: it read nothing, carried
+nothing and changed nothing, so what it would leave is a record saying a run happened beside a page saying nothing
+happened in it. Everything else keeps its record and report, and the session commits them like a closed run's —
+whether a package was reviewed and what came of it is answered from the repository or not at all, and an escape that
+leaves a committed artifact survives while one that leaves nothing gets quietly disabled.
+
+**Two cases keep the record, and the second is the one that nearly went wrong.** A run whose AGENTS RAN: they read
+the package, and that they were stopped, with whatever they had found, is evidence about it. And a run that launched
+nothing but was CARRYING findings from the last closed run: abandoning it DROPS those findings, and the record is what
+makes the drop stick — delete it and the next run reads past it to the run before, and the dropped findings come
+back. The first draft of this rule deleted on launches alone and the rehearsal caught exactly that, within the hour.
+`gbg run abandon` says which case it took; the generated protocol states both.
 
 ## 2.0.0-rc.9 — 2026-09-22
 

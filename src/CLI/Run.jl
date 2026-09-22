@@ -681,9 +681,17 @@ function abandon(root::AbstractString; io::IO = stdout)
     id === nothing && (println(io, "run: nothing is open here"); return 2)
     run = Runs.load(root, id)
     cfg = ConfigIO.read_config(root)
+    dir = Runs.dir(root, id)
+    if run.agent_launches == 0 && isempty(run.findings)
+        rm(Agents.scratch_dir(root, id); force = true, recursive = true)
+        rm(dir; force = true, recursive = true)
+        println(io, "run: ", id, " abandoned at ", run.stage, " having launched nothing; its record is deleted.")
+        println(io, "  It read nothing, carried nothing and changed nothing, so there is nothing to keep")
+        println(io, "  and nothing to commit. The id is free again.")
+        return 0
+    end
     stopped = with(run; stage = :close, stop = Model.Stop.OWNER_STOPPED, findings = Model.Finding[],
                    fixes = Model.DocFix[])
-    dir = Runs.dir(root, id)
     write(joinpath(dir, "report.md"), Render.report(stopped, cfg; root))
     open(joinpath(dir, "run.json"), "w") do f
         GBGCodingTools.JSON3.pretty(f, GBGCodingTools.JSON3.write(Runs.as_dict(stopped)))
@@ -692,9 +700,8 @@ function abandon(root::AbstractString; io::IO = stdout)
     rm(Agents.scratch_dir(root, id); force = true, recursive = true)
     Runs.write_stage(root, id, length(get(Runs.STAGES, run.instrument, Symbol[])))
     println(io, "run: ", id, " abandoned at ", run.stage, "; ", length(run.findings), " finding(s) dropped.")
-    println(io, "  Commit .gbg/runs/", id, "/ — the record and the report. An attempt that leaves no")
-    println(io, "  trace reads as an attempt nobody made, and the id must stay unreusable in every clone.")
-    println(io, "  Its scratch is deleted; what stays is one record and one page.")
+    println(io, "  Commit .gbg/runs/", id, "/ — the record and the report. Its agents read this package,")
+    println(io, "  and that they were stopped is evidence about it. Its scratch is deleted.")
     return 0
 end
 
