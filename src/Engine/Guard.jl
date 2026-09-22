@@ -96,11 +96,17 @@ Returns whether documentation may live there.
 """
 function on_documentation_list(cfg::Model.Config, path::AbstractString)
     p = replace(path, '\\' => '/')
-    # The two refusals come first, before any path rule can admit the file: a normative document and a
-    # declared build-time copy both LOOK like ordinary prose and neither is. A copy's text belongs to the
-    # source it is copied from, and a fix landing in the copy is overwritten by the next build.
+    # THREE refusals come first, before any path rule can admit the file. A normative document, a declared
+    # build-time copy and a GENERATED page all LOOK like ordinary prose and none of them is. A copy's text
+    # belongs to the source it is copied from and a fix landing in it is overwritten by the next build;
+    # the same is true of a generated page, which is written from this package's own values, and which is
+    # additionally full of text that breaks the rules it states — the rulebook page quotes every banned
+    # spelling in order to ban it. Generated was missing here until 2026-09-22, when a reader launched
+    # against three such pages on GBGPeriodicFields's first real run and the guard would have let their
+    # fixes through.
     any(n -> replace(n, '\\' => '/') == p, cfg.normative) && return false
     any(f -> replace(first(f), '\\' => '/') == p, cfg.copies) && return false
+    any(g -> replace(g, '\\' => '/') == p, cfg.generated) && return false
     endswith(p, ".jl") && (startswith(p, "src/") || startswith(p, "ext/")) && return true
     p == "README.md" && return true
     startswith(p, "docs/src/") && endswith(p, ".md") && return true

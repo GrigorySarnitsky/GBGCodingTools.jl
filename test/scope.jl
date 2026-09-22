@@ -281,3 +281,60 @@ end
         @test isempty(got.pages)
     end
 end
+
+# Which BUILT pages a reader is given, and under what name a finding in one is reported. Until
+# 2026-09-22 this walk took a directory and no config, so it could honour neither the generated list nor
+# the copies — while the file surfaces dropped both in one filter. On GBGPeriodicFields's first real run
+# that cost three readers launched against pages that state the rulebook (17 findings nobody should act
+# on), and 31 findings citing a rationale document and its build-time copy as two separate places.
+@testset "the built-page walk hears what the package declared" begin
+    SITE = G.Orchestration.Site
+
+    function built(root, pages)
+        for (rel, body) in pages
+            dir = joinpath(root, "docs", "build", dirname(rel)); mkpath(dir)
+            write(joinpath(root, "docs", "build", rel),
+                  "<html><body><nav>side bar</nav><article class=\"content\">" * body * "</article></body></html>")
+        end
+        return joinpath(root, "docs", "build")
+    end
+
+    root = mktempdir(; cleanup = true)
+    mkpath(joinpath(root, ".gbg")); mkpath(joinpath(root, "docs", "src"))
+    write(joinpath(root, ".gbg", "config.jl"), """Config(package = "Sample", tool = :dev)""")
+    for f in ("index.md", "tutorial.md", "gbg-rules.md", "architecture.md")
+        write(joinpath(root, "docs", "src", f), "# $f\n")
+    end
+    write(joinpath(root, "docs", "ARCHITECTURE.md"), "# the source\n")
+    site = built(root, ["index.html" => "home prose", "tutorial/index.html" => "tutorial prose",
+                        "gbg-rules/index.html" => "the rulebook, quoting every banned spelling",
+                        "architecture/index.html" => "the architecture prose"])
+
+    plain = G.Model.Config(package = "Sample", tool = :dev)
+    declared = G.Model.Config(package = "Sample", tool = :dev,
+                              generated = ["docs/src/gbg-rules.md"],
+                              copies = ["docs/src/architecture.md" => "docs/ARCHITECTURE.md"])
+
+    @testset "a package that declared nothing is given every page" begin
+        keys_ = Set(p.key for p in SITE.pages(site, plain, root))
+        @test keys_ == Set(["home", "tutorial", "gbg-rules", "architecture"])
+    end
+
+    @testset "a generated page is not handed to a reader" begin
+        keys_ = Set(p.key for p in SITE.pages(site, declared, root))
+        @test !("gbg-rules" in keys_)
+        @test "tutorial" in keys_ && "home" in keys_
+    end
+
+    @testset "a copy's page is not read again beside its source" begin
+        @test !("architecture" in Set(p.key for p in SITE.pages(site, declared, root)))
+    end
+
+    @testset "a finding in a copy is reported under its source" begin
+        # Without the config the old answer stands, which is what every other caller still gets.
+        @test SITE.source_of(root, "architecture/index.html") == joinpath("docs", "src", "architecture.md")
+        # With it, the file the text is actually written in — the one a fix survives in.
+        @test SITE.source_of(root, "architecture/index.html"; cfg = declared) == "docs/ARCHITECTURE.md"
+        @test SITE.source_of(root, "tutorial/index.html"; cfg = declared) == joinpath("docs", "src", "tutorial.md")
+    end
+end

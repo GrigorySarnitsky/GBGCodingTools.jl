@@ -235,7 +235,7 @@ function reader_roles(root::AbstractString, run::Model.Run, cfg::Model.Config, s
     roles = Model.AgentRole[]
     extras = Dict{Symbol,Any}()
     units = isempty(site) ? typeof(Site.write_units("", []))() :
-            Site.write_units(Agents.stage_dir(root, run.id), Site.pages(site))
+            Site.write_units(Agents.stage_dir(root, run.id), Site.pages(site, cfg, root))
     narrow = run.scope === :changed && !isempty(run.base)
     sets, added = if narrow
         changed = Orchestration.Scope.changed_since(root, run.base)
@@ -256,7 +256,7 @@ function reader_roles(root::AbstractString, run::Model.Run, cfg::Model.Config, s
             for u in mine
                 id = Symbol(string(r.id, UNIT_MARK, u.key))
                 push!(roles, unit_role(r, id))
-                extras[id] = Dict{String,Any}("unit" => u.file, "unit_source" => Site.source_of(root, u.path))
+                extras[id] = Dict{String,Any}("unit" => u.file, "unit_source" => Site.source_of(root, u.path; cfg))
             end
         else
             push!(roles, r)
@@ -397,7 +397,7 @@ function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config,
     roles = Model.AgentRole[]
     extras = Dict{Symbol,Any}()
     units = isempty(site) ? Dict{String,Any}() :
-            Dict(u.key => u for u in Site.write_units(Agents.stage_dir(root, run.id), Site.pages(site)))
+            Dict(u.key => u for u in Site.write_units(Agents.stage_dir(root, run.id), Site.pages(site, cfg, root)))
     for f in Runs.workable(run)
         if stage === :diff
             k = findlast(x -> x.finding == f.id && x.pass == run.passes, run.fixes)

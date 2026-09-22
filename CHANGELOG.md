@@ -4,6 +4,27 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## Unreleased — toward 2.0.0-rc.11
+
+**The built-page walk could not hear what the package had declared**, and that one omission caused three faults at
+once. It took a directory and no config, while the file surfaces dropped both generated pages and declared copies in
+a single filter with the reason written beside them. Found on GBGPeriodicFields's first real run: 26 readers, 142
+findings.
+
+**Readers were launched against the pages that state the rulebook.** Three of them, returning seventeen findings
+against text that quotes every banned spelling in order to ban it — the exact waste `generated` exists to prevent,
+and which the file surfaces had always prevented.
+
+**A rationale document and its build-time copy were read as two places.** Thirty-one findings of that run cited a
+source and its copy as separate locations, so the corpus was read twice and a reader's cap spent twice on one page;
+four cited ONLY the copy, where a fix lands in output the next build overwrites. The walk now skips a copy's page,
+and where a copy is read through the site anyway, a finding is reported under the SOURCE — the file the text is
+written in, and the one a fix survives in.
+
+**The change guard now refuses a generated path**, as it already refused a copy and a normative document, and for
+both of that pair's reasons: a fix there is gone at the next build, and the page is by construction full of the
+violations it documents. It was missing, so a fix to one of those three pages would have been accepted.
+
 ## 2.0.0-rc.10 — 2026-09-22
 
 **A run that launched nothing said the package was clean.** Both runs GBGPeriodicFields abandoned wrote "Every reader

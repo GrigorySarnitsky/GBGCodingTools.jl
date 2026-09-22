@@ -73,8 +73,9 @@ BUILDER[] = build_with_make
 """
     pages(dir) -> Vector{NamedTuple}
 
-The built pages of the site at `dir`, each with the text a reader meets. The argument is `dir`, the
-built site's directory. Returns one entry per page, sorted by path, with:
+The built pages of the site at `dir` a reader may be given, each with the text a reader meets. The
+arguments are `dir`, the built site's directory, `cfg`, the package's config, and `root`, the package
+root. Returns one entry per page, sorted by path, with:
 
 - `path` — the page's `index.html`, relative to the site.
 - `key` — a name for the page that is safe in a file name and in an agent's label.
@@ -82,8 +83,23 @@ built site's directory. Returns one entry per page, sorted by path, with:
   footer the build puts on every page alike.
 
 A file with no article body is not a page a reader reads — the search page, an asset — and is left out.
+
+TWO KINDS OF PAGE ARE LEFT OUT because the package said so, and this walk could not hear it until
+2026-09-22: it took a directory and no config, while the file surfaces dropped both in one filter with
+the reason beside them.
+
+A GENERATED page — the rulebook, the readers, the instruments — is by construction full of text that
+breaks the rules it states, since it quotes every banned spelling in order to ban it, and a reader sent
+to one spends its whole budget there. Three were, on [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)'s first real
+run, and returned seventeen findings nobody should act on.
+
+A declared COPY's page is left out because its content is already read as its source, under the source's
+own name: reading both is the corpus read twice, a reader's cap spent twice on one page, and a count
+inflated by the duplication — thirty-one findings of that run cited a source and its copy as two places.
+Where a copy is read anyway, through the built site as a whole, [`source_of`](@ref) names the source, so
+a fix lands where the next build will not overwrite it.
 """
-function pages(dir::AbstractString)
+function pages(dir::AbstractString, cfg::Model.Config, root::AbstractString)
     out = NamedTuple{(:path, :key, :text),Tuple{String,String,String}}[]
     isdir(dir) || return out
     for (here, _, files) in walkdir(dir; onerror = _ -> nothing)
@@ -98,6 +114,7 @@ function pages(dir::AbstractString)
                 nothing                              # an unparseable page is not a page a reader reads
             end
             article === nothing && continue
+            written(cfg, source_of(root, rel)) && continue      # generated, or a copy read as its source
             text = strip(Texts.text_of(article))
             isempty(text) && continue
             push!(out, (path = rel, key = key_of(rel), text = String(text)))
@@ -105,6 +122,12 @@ function pages(dir::AbstractString)
     end
     return sort!(out; by = p -> p.path)
 end
+
+# Whether the package said this path is not a reader's to read: written by a generator, or a copy whose
+# text belongs to the source it was copied from. The same list the file surfaces filter on.
+written(cfg::Model.Config, path::AbstractString) =
+    !isempty(path) && (any(g -> replace(g, '\\' => '/') == path, cfg.generated) ||
+                       any(c -> replace(first(c), '\\' => '/') == path, cfg.copies))
 
 # A page's name, safe in a file name and in an agent's label: the directories it sits in, joined.
 function key_of(rel::AbstractString)
@@ -118,19 +141,30 @@ end
 
 The tracked file a built page was made from, by Documenter's own convention: `guide/config/index.html`
 is `docs/src/guide/config.md`, and the home page is `docs/src/index.md`. The arguments are `root`, the
-package root, and `path`, the page's path inside the site. Returns the path relative to the package, or
-`""` where no such file exists.
+package root, `path`, the page's path inside the site, and `cfg`, the package's config where the caller
+has one. Returns the path relative to the package, or `""` where no such file exists.
+
+Where `cfg` is given and the page was built from a declared COPY, the SOURCE is named instead. A fix
+landing in a copy is gone at the next build, and a finding that names the copy sends its fixer to a file
+the guard will refuse — so it names the file the text is actually written in.
 
 It is a HINT, not an answer. A page also carries docstrings collected from the source, and a quote read
 in one of those is not in this file at all; the collector searches the documentation for the quote and
 reports what it cannot place. The hint is what makes the common case — a defect in a page's own prose —
 land in the right file without a search.
 """
-function source_of(root::AbstractString, path::AbstractString)
+function source_of(root::AbstractString, path::AbstractString; cfg::Union{Model.Config,Nothing} = nothing)
     parts = filter(p -> p != "index.html", filter(!isempty, split(replace(path, '\\' => '/'), '/')))
     stem = isempty(parts) ? "index" : join(parts, "/")
     for candidate in (joinpath("docs", "src", stem * ".md"), joinpath("docs", "src", stem, "index.md"))
-        isfile(joinpath(root, candidate)) && return candidate
+        isfile(joinpath(root, candidate)) || continue
+        here = replace(candidate, '\\' => '/')
+        cfg === nothing && return candidate
+        # A declared COPY is written by the build from a tracked source, and a fix landing in the copy is
+        # gone at the next build. Name the source instead: the guard refuses the copy either way, but a
+        # finding that names the copy sends its fixer to a file nobody may edit.
+        k = findfirst(c -> replace(first(c), '\\' => '/') == here, cfg.copies)
+        return k === nothing ? candidate : last(cfg.copies[k])
     end
     return ""
 end

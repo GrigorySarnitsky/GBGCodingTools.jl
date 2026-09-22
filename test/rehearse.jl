@@ -204,7 +204,7 @@ end
             id = G.Run.open_run(root)
             args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
             cfg = G.ConfigIO.read_config(root)
-            built = SITE.pages(joinpath(root, "docs", "build"))
+            built = SITE.pages(joinpath(root, "docs", "build"), G.ConfigIO.read_config(root), root)
             @test length(built) == length(G.Texts.files(cfg, root, G.Model.FileSet.PAGES))
             @test args["site"] == joinpath(root, "docs", "build")
 
