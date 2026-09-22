@@ -29,13 +29,14 @@ The managed block above imports the shared policy; this file holds only what is 
 
 ## Where the rebuild stands
 
-**Phase 4b of `IMPLEMENTATION.md` is in progress** (2026-09-21). The new tree stands whole:
-`Model`, `Texts`, `Catalogue`, `ConfigIO`, `Engine` (`Checks`, `Guard`, `Harness`), `Render` and
-`Orchestration` (`Runs`, `Site`, `Agents`), with `Wire`, `Check`, `Docfix`, `Run` and `Release` above
-them. A documentation review runs end to end in the rehearsal: `gbg run` opens it, builds the site,
-launches the readers through the one driver, collects, fixes through the guard, verifies blind and
-then with the diff, and closes with a report and the owner's work queue. What is NOT yet built of
-Phase 4b is listed there; a run has never been launched over real agents.
+**Phase 4 of `IMPLEMENTATION.md` is COMPLETE** (2026-09-22); **Phase 5 is next**, and it cuts `v2.0.0`.
+The new tree stands whole: `Model`, `Texts`, `Catalogue`, `ConfigIO`, `Engine` (`Checks`, `Guard`,
+`Harness`), `Render`, `Study` and `Orchestration` (`Runs`, `Site`, `Scope`, `Agents`), with `Wire`,
+`Check`, `Docfix`, `Run`, `StudyCmd` and `Release` above them. A documentation review runs end to end in
+the rehearsal: `gbg run` opens it, builds the site, launches the readers through the one driver,
+collects, fixes through the guard, verifies blind and then with the diff, and closes with a report and
+the owner's work queue. `--scope changed` reads only what moved since the last run like it. **A run has
+never been launched over real agents**, so what breaks first is reported here rather than worked around.
 
 Every rule is a `Rule` value under `src/Rules/`, each with its check and the examples that show the
 check matches its statement (`test/rules.jl`). There are NO scans: `catalog/scans.toml` and `src/Scans/`
