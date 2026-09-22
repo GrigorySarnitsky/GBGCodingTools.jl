@@ -96,7 +96,40 @@ function bump(root::AbstractString, version::VersionNumber; io::IO = stdout)
     println(io, "bump: pinned at v", version, "; ", length(changed), " path(s) rewritten.")
     for p in changed; println(io, "  ", p); end
     println(io, "Commit the config and the rewritten paths together: the pin and what it generates are one change.")
+    stale_warning(io, version)
     return 0
+end
+
+"""
+    stale_warning(io, version)
+
+Says that what was just written is the RUNNING version's, not the pinned one's. The arguments are `io`,
+where it goes, and `version`, the version just pinned.
+
+The pin moves first and the regeneration follows, and the regeneration runs on the code that is LOADED —
+which is the version the environment's manifest still holds, not the one just pinned. So every generated file it writes is the
+old version's content under the new version's banner: a file the new version would add is absent, and a
+file it would word differently is worded the old way. [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) met this on 2026-09-22 going
+from rc.5 to rc.7 — sixteen paths where twenty were due, with the new rulebook file and three skills
+missing — and the drift is invisible until the next build runs the wiring check.
+
+It cannot be fixed by regenerating harder: the right content does not exist in this process. What closes
+it is resolving the environments onto the new tag and running `gbg sync` again, under the new code.
+"""
+function stale_warning(io::IO, version::AbstractString)
+    println(io, "")
+    println(io, "NOT FINISHED. What was just written is this version's content under a v", version, " banner:")
+    println(io, "`bump` regenerates with the code that is RUNNING, and the running code is whatever the")
+    println(io, "environments' manifests still hold — not what you have just pinned. Move them, then")
+    println(io, "regenerate under the new code:")
+    println(io, "")
+    println(io, "    julia --project=docs -e 'using Pkg; Pkg.update(\"GBGCodingTools\")'")
+    println(io, "    julia --project=test -e 'using Pkg; Pkg.update(\"GBGCodingTools\")'")
+    println(io, "    gbg sync")
+    println(io, "")
+    println(io, "`Pkg.update` and not `Pkg.resolve`: a resolve writes the new rev while keeping the old")
+    println(io, "tree hash where the clone has never fetched the tag, which leaves the old code running")
+    println(io, "under the new revision — seen twice, at rc.4 and at rc.7.")
 end
 
 function cmd_bump(args)

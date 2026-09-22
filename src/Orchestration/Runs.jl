@@ -428,7 +428,7 @@ with_questions(r::Model.Run, qs::Vector{Model.Question}) =
               findings = r.findings, fixes = r.fixes, questions = qs, code_fixes = r.code_fixes,
               agent_launches = r.agent_launches, tokens = r.tokens, stop = r.stop,
               readers = r.readers, passes = r.passes, model = r.model, sequential = r.sequential,
-              already_failing = r.already_failing)
+              scope = r.scope, base = r.base, driver = r.driver, already_failing = r.already_failing)
 
 # The record is written back where it was read: `run.json` for a closed run, the draft for an open one.
 # `save` always writes the draft, and `load` prefers `run.json`, so saving a closed run's answer through
@@ -483,7 +483,7 @@ as_dict(r::Model.Run) = Dict{String,Any}(
     "already_failing" => [String(x) for x in r.already_failing],
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
     "readers" => String(r.readers), "passes" => r.passes,
-    "scope" => String(r.scope), "base" => r.base,
+    "scope" => String(r.scope), "base" => r.base, "driver" => r.driver,
     "questions" => [question_dict(q) for q in r.questions],
     "fixes" => [Dict{String,Any}("finding" => f.finding, "pass" => f.pass, "commit" => f.commit,
                                   "formula_edit" => f.formula_edit, "blind" => String(Symbol(f.blind)),
@@ -552,6 +552,7 @@ function from_dict(d::AbstractDict)
                      stop = getfield(Model.Stop, Symbol(get(d, "stop", "DONE"))),
                      readers = Symbol(get(d, "readers", "bound")),
                      scope = Symbol(get(d, "scope", "full")), base = get(d, "base", ""),
+                     driver = get(d, "driver", ""),
                      model = get(d, "model", "session"), sequential = get(d, "sequential", false),
                      already_failing = Symbol[Symbol(x) for x in get(d, "already_failing", [])])
 end

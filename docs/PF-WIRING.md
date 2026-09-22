@@ -1,4 +1,4 @@
-# Upgrading GBGPeriodicFields to rc.7, and its first review — instructions for the PF session
+# Upgrading GBGPeriodicFields to rc.8, and its first review — instructions for the PF session
 
 Written 2026-09-21 by the GBGCodingTools session, at `v2.0.0-rc.7`. Every figure was measured on a fresh
 clone of PF at `03534c53`, and the draft was then put to three adversarial passes — one following it
@@ -49,7 +49,7 @@ instruction to the session — and the rules page is grouped by them. Nothing fo
 
 ## Step 1 — bump the pin, then move the manifests
 
-    gbg bump 2.0.0-rc.7
+    gbg bump 2.0.0-rc.8
 
 On a fresh clone of PF it rewrote **20 paths** and exited 0. `bump` refuses to move the pin while the
 rules of the version it is RUNNING find anything in PF — which, through the shim, is the version the
@@ -64,7 +64,7 @@ What the bump brings that rc.5 did not write:
 | `.claude/skills/documentation-review/SKILL.md` | **new**: the instrument's protocol in six steps. Generated; do not hand-edit it. |
 | `.claude/skills/bug-hunt/`, `.claude/skills/change-audit/` | **new**, and both describe instruments that do not exist. See Step 5. |
 | `.gbg/policy/*.md` (the nine PF already had), the `CLAUDE.md` block, `.gitignore`, `.claude/hooks/queue-guard.sh`, `test/regressions/README.md`, `.github/actions/gbg-auth/action.yml` | rewritten at the new version |
-| `docs/Project.toml`, `test/Project.toml` | `rev = "v2.0.0-rc.7"`; `compat` stays `=2.0.0` |
+| `docs/Project.toml`, `test/Project.toml` | `rev = "v2.0.0-rc.8"`; `compat` stays `=2.0.0` |
 
 Commit the config and the rewritten paths together: the pin and what it generates are one change. Stage
 with `git add -u` plus the four new files by name — `.gbg/policy/asking.md` and the three
@@ -73,19 +73,31 @@ with `git add -u` plus the four new files by name — `.gbg/policy/asking.md` an
 **Then move both sub-environments onto the new tag. This is the step that is easy to miss and breaks
 everything after it.**
 
-    julia --project=docs -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
-    julia --project=test -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
+    julia --project=docs -e 'using Pkg; Pkg.update("GBGCodingTools")'
+    julia --project=test -e 'using Pkg; Pkg.update("GBGCodingTools")'
+    gbg sync
 
-`bump` rewrites the `rev` in both `Project.toml`s and writes no manifest, and **`Pkg.instantiate()` does
-not move a changed rev — only `Pkg.resolve()` does.** PF's two manifests today both say
-`repo-rev = "v2.0.0-rc.5"`. Left alone, every `gbg` command in PF keeps running rc.5: `gbg run` answers
-`unknown verb run`, and `Pkg.test()` grades an rc.7-wired tree against rc.5's 98 rules and rc.5's
-generators, so the wiring check reports drift and the gate goes red for a reason nothing explains.
-`gbg --version` prints `2.0.0` at both and cannot tell you. Check it took before anything else:
+**`Pkg.update`, not `Pkg.resolve`, and then `gbg sync` again.** Three separate traps, and PF met all
+three on 2026-09-22 going from rc.5 to rc.7.
+
+`bump` rewrites the `rev` in both `Project.toml`s and writes no manifest, and `Pkg.instantiate()` does
+not move a changed rev. That much a resolve fixes. But a resolve writes the new rev while KEEPING the
+old tree hash where Pkg's clone has never fetched the tag — so the manifest reads `v2.0.0-rc.7` and the
+code that loads is still rc.5. Only `Pkg.update` fetches. This has now happened twice, at rc.4 and at
+rc.7.
+
+And `bump` regenerates with the code that is RUNNING, which at that moment is still the old version. So
+the files it wrote are the old version's content under the new version's banner: PF got sixteen paths
+where twenty were due, without the new rulebook file or the three skills. `gbg sync` again, after the
+environments have moved, is what repairs it. `gbg bump` says all of this when it finishes, since
+rc.8.
+
+Check it took before anything else:
 
     gbg run next
 
-must answer that nothing is open here, not `unknown verb run`.
+must answer that nothing is open here, not `unknown verb run`. That one line is what exposed both
+version traps; it is load-bearing, not a formality.
 
 ## Step 2 — the two pages the build now writes
 
@@ -212,12 +224,17 @@ and `software_architecture` — the two open experts Step 3 exists to declare. P
 run.
 
 **The verb never launches an agent.** `gbg run documentation-review` opens the run, builds the site and
-writes the first stage's arguments, then stops and prints the arguments path and `then: gbg run
-collect`. Launching is this session's: the ONE driver, `drivers/run.js` of the pinned GBGCodingTools,
-through the `Workflow` tool, over that arguments file. Julia cannot launch an agent, which is why the
-verb stopped. Then `gbg run collect`, then `gbg run next` for the next stage, and launch again. A
-session that types `next`, `collect`, `close` and never launches anything sits at the first stage
-forever and then collects nothing.
+writes the first stage's arguments, then stops. Launching is this session's: Julia cannot launch an
+agent, which is why the verb stopped. Then `gbg run collect`, then `gbg run next` for the next stage,
+and launch again. A session that types `next`, `collect`, `close` and never launches anything sits at
+the first stage forever and then collects nothing.
+
+**The verb puts the driver where you can launch it**, and prints the path and the call. Since rc.8 it
+copies `drivers/run.js` out of the pinned package into the run's own scratch and prints the
+`Workflow({scriptPath: …})` line to use. Before that it named the pinned path under
+`~/.julia/packages/`, which the `Workflow` tool refuses because it lies outside the working directory —
+so every consumer had to discover that and copy the file by hand, as PF did. The run also records the
+driver's SHA-256, so its record says which driver its agents actually went through.
 
 **`gbg run next` at a collect position exits 2**, saying every agent wrote and to run `gbg run collect`.
 That is the signal to collect, not a failure.

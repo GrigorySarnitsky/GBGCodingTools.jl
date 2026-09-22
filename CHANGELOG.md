@@ -4,6 +4,29 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## Unreleased — toward 2.0.0-rc.9
+
+**The three findings GBGPeriodicFields reported with the driver defect are fixed.** All three were met on the first
+real upgrade and the first real run, and each would have met every other consumer in turn.
+
+**A run places its own driver, and records which one it used.** The `Workflow` tool refuses a script outside the
+working directory, so the pinned `~/.julia/packages/…/drivers/run.js` could never be named directly — every consumer
+would have discovered that and copied the file by hand, as PF did, with nothing recording which driver had actually
+run. `gbg run` now copies it byte for byte into the run's own scratch, prints the path and the `Workflow({scriptPath:
+…})` call to make, and writes the driver's SHA-256 into the run record.
+
+**`gbg bump` says that it has not finished.** The pin moves first and the regeneration follows, but the regeneration
+runs on the code that is LOADED — still the old version, since the manifests have not moved — so every file it writes
+is the old version's content under the new version's banner. PF got sixteen paths where twenty were due, without the
+new rulebook file or three skills, and the drift is invisible until a build runs the wiring check. It cannot be fixed
+by regenerating harder: the right content does not exist in that process. `bump` now prints the two commands that move
+the environments and tells the session to sync again under the new code.
+
+**`Pkg.update`, not `Pkg.resolve`.** A resolve writes the new rev while KEEPING the old tree hash wherever Pkg's clone
+has never fetched the tag, so the manifest reads the new version and the old code loads. Only an update fetches. Twice
+now, at rc.4 and at rc.7. `docs/PF-WIRING.md` said to resolve, which is how PF met it; it now says update, is
+retargeted to rc.8, and records that asking `gbg run next` for its state is what exposed both version traps.
+
 ## 2.0.0-rc.8 — 2026-09-22
 
 **The design review is deferred to Phase 11, on request.** It stood at the end of Phase 8; the owner moved it on

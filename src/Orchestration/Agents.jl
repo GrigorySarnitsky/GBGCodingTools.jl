@@ -29,6 +29,7 @@ role whose result already arrived. Closing the run deletes it.
 module Agents
 
 using JSON3
+import SHA
 
 using ...Model
 using ...Catalogue
@@ -173,10 +174,34 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
     path = arguments_path(root, run.id)
     mkpath(dirname(path)); mkpath(results_dir(root, run.id))
     open(path, "w") do f; JSON3.pretty(f, JSON3.write(args)); end
+    driver, sha = place_driver(root, run.id)
     println(io, "run: ", run.id, " is at ", run.stage, "; ", length(roles), " agent(s) to launch.")
     println(io, "  arguments: ", relpath(path, root))
-    println(io, "  then: gbg run collect ", run.id)
+    println(io, "  driver:    ", relpath(driver, root), "  (", first(sha, 12), ")")
+    println(io, "  launch it: Workflow({scriptPath: \"", relpath(driver, root), "\", args: <the arguments file>})")
+    println(io, "  then: gbg run collect")
     return path
+end
+
+"""
+    place_driver(root, id) -> Tuple{String,String}
+
+Puts the driver where the session can launch it from, and says which one it put. The arguments are
+`root`, the package root, and `id`, the run's id. Returns the path it wrote and the SHA-256 of the file,
+which is what a record means by "which driver this run used".
+
+The pinned driver lives under `~/.julia/packages/`, and the `Workflow` tool refuses a script outside the
+working directory — so naming the pinned path directly cannot work, in any consumer, ever. Every package
+would otherwise discover that and copy the file by hand, as [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) did on 2026-09-22, and no
+record would say which driver the run had actually used. The copy is byte for byte, into the run's own
+scratch, which is gitignored and deleted at close.
+"""
+function place_driver(root::AbstractString, id::AbstractString)
+    src = joinpath(pkgdir(Model), "drivers", "run.js")
+    dest = joinpath(scratch_dir(root, id), "run.js")
+    mkpath(dirname(dest))
+    cp(src, dest; force = true)
+    return dest, bytes2hex(SHA.sha256(read(dest)))
 end
 
 # The commit the package is at, or "" outside a repository; what a continued stage is compared against.

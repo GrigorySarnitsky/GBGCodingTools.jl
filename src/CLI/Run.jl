@@ -109,7 +109,7 @@ with(run::Model.Run; kw...) = Model.Run(; id = run.id, instrument = run.instrume
     fixes = run.fixes, questions = run.questions, code_fixes = run.code_fixes,
     agent_launches = run.agent_launches, tokens = run.tokens, stop = run.stop, readers = run.readers,
     passes = run.passes, model = run.model, sequential = run.sequential, scope = run.scope,
-    base = run.base, already_failing = run.already_failing, kw...)
+    base = run.base, driver = run.driver, already_failing = run.already_failing, kw...)
 
 """
     next(root; io = stdout) -> Int
@@ -168,6 +168,8 @@ function next(root::AbstractString; io::IO = stdout)
     (to === :verify || to === :diff) && return verifier_stage(root, moved, cfg, to, site; io)
     roles, extras = reader_roles(root, moved, cfg, site; io)
     Agents.write_arguments(root, moved, cfg; roles, extras, site, io)
+    moved = with(moved; driver = last(Agents.place_driver(root, moved.id)))
+    Runs.save(root, moved)                       # the record says which driver these agents went through
     # What no reader of this package can judge is said at every launch, not only in the report: a
     # discipline rule in a package that declares no discipline is a gap the session should see now.
     gaps = vcat(last(Catalogue.panel(run.instrument, cfg)), Catalogue.missing_documents(cfg, root))

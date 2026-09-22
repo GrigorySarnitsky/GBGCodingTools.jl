@@ -732,9 +732,8 @@ One execution of one instrument on one package, stored beside its report. The fi
 - `model` — the careful model its readers ran on, or `"session"` where they ran on whatever model the
   session itself was on, which is the default and the only honest answer when nobody named one.
 - `sequential` — whether its agents were launched one at a time rather than together.
-- `scope`, `base` — `:changed` read what moved since `base`; `:full` read everything.
-- `already_failing` — the documentation rules already violated when the run opened, so a fix is held
-  to what it broke and not to what it inherited.
+- `scope`, `base`, `driver` — `:changed` read what moved since `base`; the SHA-256 of the driver used.
+- `already_failing` — the rules already violated when it opened, so a fix is held to what it broke.
 
 A bound reader carries rules; an open one carries a standpoint and no rule. Bound is the default, and
 runs most often.
@@ -759,6 +758,7 @@ Base.@kwdef struct Run
     sequential::Bool = false
     scope::Symbol = :full
     base::String = ""
+    driver::String = ""
     already_failing::Vector{Symbol} = Symbol[]
 end
 
