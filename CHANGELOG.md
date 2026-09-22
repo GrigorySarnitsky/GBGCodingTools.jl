@@ -4,7 +4,7 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
-## Unreleased — toward 2.0.0-rc.10
+## 2.0.0-rc.10 — 2026-09-22
 
 **A run that launched nothing said the package was clean.** Both runs GBGPeriodicFields abandoned wrote "Every reader
 wrote its file and none of them reported a defect" three lines below a sentence saying 0 agents had launched. That is
