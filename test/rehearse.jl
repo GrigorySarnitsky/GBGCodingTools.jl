@@ -669,11 +669,39 @@ end
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
             write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
-            @test G.Docfix.commit(root, "a prose fix"; io = devnull) == 0
+            # Not without a finding, while a run is open: the verifiers find a fix by that trailer, so
+            # one committed without it is never verified and its finding stays open with nothing saying
+            # why. Nothing is committed, so the edit is still there to commit properly.
+            @test G.Docfix.commit(root, "a prose fix"; io = devnull) == 2
+            @test !occursin(RUNS.GUARD_TRAILER, readchomp(setenv(`git -C $root log -1 --format=%B`; dir = root)))
+            @test G.Docfix.commit(root, "a prose fix"; io = devnull, finding = id * "-f1") == 0
             log = readchomp(setenv(`git -C $root log -1 --format=%B`; dir = root))
             @test occursin(RUNS.GUARD_TRAILER, log)
+            @test occursin(RUNS.FINDING_TRAILER * id * "-f1", log)
             tracked = readchomp(setenv(`git -C $root ls-files .gbg/runs`; dir = root))
             @test isempty(tracked)                                     # the run's record was not staged
+            @test isempty(RUNS.unguarded_code(root, RUNS.load(root, id).first_commit))
+        end
+    end
+
+    # The queue is the session's note of what it still owes, and the hook that reads it is what keeps a
+    # session walking a run to its end — so it is at its most useful while a run is open. Until
+    # 2026-09-23 writing one line into it made every remaining fix of the pass uncommittable, because
+    # the fixer classifies the whole tree and refuses if one file is code. The session had to choose
+    # between the machine that keeps it working and the machine that lets it work.
+    @testset "the work queue does not block a fix commit" begin
+        package() do root, gg
+            G.Run.start(root, :documentation_review; io = devnull)
+            id = G.Run.open_run(root)
+            mkpath(joinpath(root, ".claude"))
+            write(joinpath(root, ".claude", "WORK_QUEUE.md"), "# Work queue\n\n- [ ] keep going\n")
+            gg("add", "--all", "."); gg("commit", "-q", "-m", "a queue to keep")
+            write(joinpath(root, ".claude", "WORK_QUEUE.md"), "# Work queue\n\n- [x] keep going\n")
+            write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
+            @test G.Docfix.commit(root, "a prose fix"; io = devnull, finding = id * "-f1") == 0
+            # committed the prose, left the queue for the close
+            @test occursin("WORK_QUEUE", readchomp(setenv(`git -C $root status --porcelain`; dir = root)))
+            @test !occursin("WORK_QUEUE", readchomp(setenv(`git -C $root show --name-only --format= HEAD`; dir = root)))
             @test isempty(RUNS.unguarded_code(root, RUNS.load(root, id).first_commit))
         end
     end

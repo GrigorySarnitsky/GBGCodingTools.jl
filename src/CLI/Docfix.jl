@@ -56,6 +56,17 @@ function rulings(root::AbstractString; generated::AbstractDict = Dict{String,Str
     return out
 end
 
+# The run open in this package, or `nothing`. Read from the files rather than through `CLI.Run`, which
+# is a sibling verb and no verb may call another.
+function open_run_id(root::AbstractString)
+    dir = joinpath(root, ".gbg", "runs")
+    isdir(dir) || return nothing
+    for d in sort(readdir(dir); rev = true)
+        isfile(joinpath(dir, d, "stage")) && !isfile(joinpath(dir, d, "run.json")) && return d
+    end
+    return nothing
+end
+
 """
     commit(root, message; io = stdout, generated = Dict(), finding = "") -> Int
 
@@ -70,11 +81,28 @@ and commits nothing otherwise. The arguments are:
   find the diff and revert it; empty outside a fix pass.
 
 Exit 0 when it committed, 1 when a file was code and nothing was committed, 2 when there was nothing to
-commit or the config could not be read. Returns the exit code.
+commit or the config could not be read, or a run is open and no finding was named. Returns the exit code.
+
+WHILE A RUN IS OPEN THE FINDING IS REQUIRED. Everything the pass machinery does afterwards is keyed on
+that trailer: the verifier reading the diff is handed the diff of the commits that name its finding, and
+a fix a verifier calls worse is reverted by reverting them. A fix committed without it is invisible to
+both — it is never verified, its finding stays open into the next pass, and nothing says why. That is
+not a fault a message can warn about after the fact, because by then the commit exists and the trailer
+cannot be added without rewriting history the run has already read.
 """
 function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
                 generated::AbstractDict = Dict{String,String}(), finding::AbstractString = "")
     Git.is_repo(root) || (println(io, "docfix: $root is not a git working tree"); return 2)
+    if isempty(finding)
+        open_id = open_run_id(root)
+        if open_id !== nothing
+            println(io, "docfix: refused — run ", open_id, " is open and this commit names no finding.")
+            println(io, "  Commit each fix with --finding <id>. The verifiers find a fix by that trailer,")
+            println(io, "  so one committed without it is never verified and its finding stays open.")
+            println(io, "  A change that belongs to no finding waits until the run is closed.")
+            return 2
+        end
+    end
     # An open run's own record — its stage file, its draft — sits untracked in the tree while the run
     # works, and is the session's to commit at close, not the fixer's now.
     rs = filter(r -> !Orchestration.Runs.own_record(r.path), rulings(root; generated))

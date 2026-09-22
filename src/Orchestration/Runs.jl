@@ -637,9 +637,19 @@ results appear in the history between its first commit and its close. Counted as
 every run `CANNOT_EVALUATE` on its own artefacts, which is a check that fires on itself and on nothing
 else. The package's own `.gbg/config.jl` is NOT excluded: that is the owner's file, and a change to it
 during a run is exactly the kind of thing worth asking about.
+
+THE WORK QUEUE IS ON THIS LIST for the same reason and one more. It is the session's note of what it
+still owes, read by the end-of-turn hook, and that hook is what holds a session to a run it would
+otherwise stop in the middle of. So the queue is most useful exactly while a run is open.
+
+But the fixer classifies every changed file in the tree and refuses the whole commit if one is code, so
+writing a single line into the queue made every remaining fix of that pass uncommittable. The session
+had to choose between the machine that keeps it working and the machine that lets it work. The queue is
+not the package's prose and never was; like the run's record it is the session's to commit at the close.
 """
 own_record(path::AbstractString) =
-    startswith(path, ".gbg/runs/") || startswith(path, ".gbg/scratch/") || path == ".gbg/questions.json"
+    startswith(path, ".gbg/runs/") || startswith(path, ".gbg/scratch/") ||
+    path == ".gbg/questions.json" || path == ".claude/WORK_QUEUE.md"
 
 """
     GUARD_TRAILER

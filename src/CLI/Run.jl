@@ -331,7 +331,11 @@ function fix_stage(root::AbstractString, run::Model.Run, cfg::Model.Config; io::
     isempty(waiting) || println(io, "  waiting on the owner's answer, not to be worked on: ",
                                 join([f.id for f in waiting], ", "))
     println(io, "  the findings: ", relpath(path, root))
-    println(io, "  fix each, then: gbg docfix commit --message \"…\" --finding <id>; when all are committed: gbg run next")
+    println(io, "  fix each, then: gbg docfix check   (what the guard and the rules make of the edit, committing nothing)")
+    println(io, "                  gbg docfix commit --message \"…\" --finding <id>")
+    println(io, "  when all are committed: gbg run next")
+    println(io, "  check BEFORE each commit, not after the pass: a refused commit costs one edit to")
+    println(io, "  understand, and a pass of them costs the pass")
     println(io, "  an edit that changes mathematics is refused by the guard and put to the owner with `gbg ask`; do not make it")
     return 0
 end
@@ -660,6 +664,14 @@ function close_run(root::AbstractString; io::IO = stdout)
     println(io, "run: ", id, " closed. ", length(closed.findings), " finding(s), ", length(left), " open",
             queued > 0 ? "; $queued line(s) went to the work queue." : ".")
     println(io, "  ", relpath(joinpath(dir, "report.md"), root))
+    # What the session must commit, named because two files are left dirty by design and only one of
+    # them is obvious. The queue is exempt from the fixer's guard while a run is open, so whatever went
+    # into it during the run is still uncommitted here.
+    queue_dirty = !isempty(something(Git.run(root, "status", "--porcelain", "--", ".claude/WORK_QUEUE.md"), ""))
+    println(io, "  Commit .gbg/runs/", id, "/",
+            queue_dirty ? " and .claude/WORK_QUEUE.md" : "",
+            " — the record and the report",
+            queue_dirty ? ", and what this run left on the queue." : ".")
     stop === Model.Stop.CANNOT_EVALUATE && return 2
     return isempty(left) ? 0 : 1
 end
