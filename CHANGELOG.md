@@ -4,7 +4,7 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
-## Unreleased — toward 2.0.0-rc.8
+## 2.0.0-rc.8 — 2026-09-22
 
 **The design review is deferred to Phase 11, on request.** It stood at the end of Phase 8; the owner moved it on
 2026-09-21 to reach PF and HT sooner. Nothing depends on it and deferring it leaves nothing unchecked: the rulebook's
