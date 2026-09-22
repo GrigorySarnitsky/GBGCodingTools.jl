@@ -735,6 +735,13 @@ One execution of one instrument on one package, stored beside its report. The fi
 - `scope`, `base`, `driver` — `:changed` read what moved since `base`; the SHA-256 of the driver used.
 - `already_failing` — the rules already violated when it opened, so a fix is held to what it broke.
 
+- `dropped` — how many findings the owner's stop threw away, `0` for every other run.
+
+That last count is what keeps an abandoned record honest. Stopping a run empties its list of findings
+and leaves its launch count alone, and those two read together say that every reader wrote its file and
+none of them found anything — of a run that found a hundred. What was thrown away is part of what
+happened, and belongs where the run is written down rather than only in a line nobody keeps.
+
 A bound reader carries rules; an open one carries a standpoint and no rule. Bound is the default, and
 runs most often.
 """
@@ -760,6 +767,7 @@ Base.@kwdef struct Run
     base::String = ""
     driver::String = ""
     already_failing::Vector{Symbol} = Symbol[]
+    dropped::Int = 0
 end
 
 end # module Model

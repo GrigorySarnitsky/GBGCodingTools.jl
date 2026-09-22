@@ -206,7 +206,9 @@ only in their prose have the same shape and any other difference shows.
 
 A docstring whose target is a CALL, or a macro call that does not define anything, is left in: Julia then
 documents the call instead of running it, so removing it would hide a change in what the file does. So is
-one built by interpolation, whose text is a program.
+one built by interpolation, whose text is a program. A docstring on a bare NAME comes out — that is how a
+whole generic is documented where its methods are written one per backend — because what is left is the
+name alone, which runs nothing.
 
 The arguments are `src`, the file's content, and `rule_prose`, whether the plain string literals given to
 `statement` or `why` inside a `Rule(…)` call are elided too (clause 3). Returns the shape, or `nothing`
@@ -273,12 +275,37 @@ is_kwdef_struct(node) = JS.kind(node) === JS.K"macrocall" &&
                         occursin(r"@kwdef\b", String(JS.sourcetext(node))) &&
                         occursin(r"\bstruct\b", String(JS.sourcetext(node)))
 
-# A docstring may be dropped only when it is a plain literal AND documents something Julia would define.
+# A docstring may be dropped only when it is a plain literal AND its target is something the file can
+# keep without it: a definition, or a bare name.
 function removable_doc(text_node, target)
     JS.kind(text_node) in (JS.K"string", JS.K"String") || return false
     kids = [c for c in something(JS.children(text_node), ()) if JS.kind(c) !== JS.K"String"]
     isempty(kids) || return false                           # interpolation: the text is a program
-    return defining(target)
+    return defining(target) || naming(target)
+end
+
+"""
+Whether this docstring target is a NAME — an identifier, a dotted path, or a quoted symbol.
+
+A docstring on a bare name is how a whole generic is documented where its methods are written one per
+backend and no single one of them is the place: `\"\"\"…\"\"\" mean` above the module's methods of `mean`.
+Removing the docstring leaves the name standing alone, which evaluates to the binding and does nothing,
+so the shape is the same before and after and an edit to the prose is documentation.
+
+Until 2026-09-23 this returned nothing and those docstrings were code. The count says why it went
+unnoticed here and hurt elsewhere: NINETEEN targets in
+[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) — every operator of its
+field algebra and every reduction — and NONE in this package, which documents no generic that way. A
+guard clause is exercised by the shapes the package it was written in happens to use.
+"""
+function naming(node)
+    k = JS.kind(node)
+    k === JS.K"Identifier" && return true
+    cs = something(JS.children(node), ())
+    # `Base.:+` and `:+`: a field access off a name, and a quoted operator. Neither runs anything.
+    k === JS.K"quote" && return length(cs) == 1 && naming(only(cs))
+    k === JS.K"." && return length(cs) == 2 && naming(cs[1]) && naming(cs[2])
+    return false
 end
 
 const DEFINING_KINDS = (JS.K"function", JS.K"macro", JS.K"struct", JS.K"abstract", JS.K"primitive",

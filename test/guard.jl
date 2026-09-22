@@ -84,6 +84,23 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         @test !doc("src/M.jl", m_before, m_after)
     end
 
+    @testset "clause 2 — a docstring on a bare name IS documentation" begin
+        # The other half of the same distinction, and the one this package had no example of: a whole
+        # generic documented above methods written one per backend. Removing the docstring leaves the
+        # name alone, which runs nothing, so rewording its prose is a documentation change. Nineteen
+        # targets in GBGPeriodicFields were refused as code until 2026-09-23.
+        before = "\"the sum of two fields\"\n+\n\nf(a, b) = a\n"
+        after  = "\"adds two fields, componentwise\"\n+\n\nf(a, b) = a\n"
+        @test doc("src/M.jl", before, after)
+
+        # a dotted name and a quoted operator are names too
+        @test doc("src/M.jl", "\"one\"\nBase.mean\n", "\"another\"\nBase.mean\n")
+        @test doc("src/M.jl", "\"one\"\nBase.:+\n", "\"another\"\nBase.:+\n")
+
+        # and changing the NAME itself is still code, docstring or not
+        @test !doc("src/M.jl", "\"the sum\"\n+\n", "\"the sum\"\n-\n")
+    end
+
     @testset "clause 2 — an interpolated docstring is never dropped" begin
         before = "\"\"\"\n\$(SOME_TEXT)\n\"\"\"\nf(x) = x\n"
         after  = "\"\"\"\n\$(OTHER_TEXT)\n\"\"\"\nf(x) = x\n"

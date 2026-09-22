@@ -147,10 +147,13 @@ end
         @test isempty(js_string_defects(driver))
 
         # The scan is worth only what it catches, so it is shown catching the real thing: the 2026-09-22
-        # line as it stood, which the harness refused before any agent started.
-        broke = replace(driver, "read the changed regions of that file" => "read the file's changed regions")
-        @test broke != driver                       # the line is still there to break
-        @test !isempty(js_string_defects(broke))
+        # line VERBATIM, as the driver carried it when the harness refused the file before any agent
+        # started. It is quoted here rather than made by editing the driver, because the line it was
+        # made from has since been rewritten away — a gate that borrows its specimen from the file it
+        # guards loses the specimen the moment that file changes, and then proves nothing while still
+        # passing.
+        @test !isempty(js_string_defects(
+            raw"""  const note = l.found === 'OUTDATED' ? '  [not found again — read the file's changed regions]' : '';"""))
 
         # And shown NOT firing on the shapes that surround it, or it would be noise rather than a gate.
         @test isempty(js_string_defects(raw"const a = 'one', b = 'two';"))

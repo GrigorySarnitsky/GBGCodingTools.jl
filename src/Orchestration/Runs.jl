@@ -420,7 +420,7 @@ function answer!(root::AbstractString, id::AbstractString, option::AbstractStrin
     return nothing
 end
 
-# The record carries eighteen fields and an answer changes one of them. Rebuilt here rather than through
+# The record carries nineteen fields and an answer changes one of them. Rebuilt here rather than through
 # the CLI's `with`, which is a verb's helper and above this module.
 with_questions(r::Model.Run, qs::Vector{Model.Question}) =
     Model.Run(id = r.id, instrument = r.instrument, tool_version = r.tool_version,
@@ -428,7 +428,8 @@ with_questions(r::Model.Run, qs::Vector{Model.Question}) =
               findings = r.findings, fixes = r.fixes, questions = qs, code_fixes = r.code_fixes,
               agent_launches = r.agent_launches, tokens = r.tokens, stop = r.stop,
               readers = r.readers, passes = r.passes, model = r.model, sequential = r.sequential,
-              scope = r.scope, base = r.base, driver = r.driver, already_failing = r.already_failing)
+              scope = r.scope, base = r.base, driver = r.driver, already_failing = r.already_failing,
+              dropped = r.dropped)
 
 # The record is written back where it was read: `run.json` for a closed run, the draft for an open one.
 # `save` always writes the draft, and `load` prefers `run.json`, so saving a closed run's answer through
@@ -483,7 +484,7 @@ as_dict(r::Model.Run) = Dict{String,Any}(
     "already_failing" => [String(x) for x in r.already_failing],
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
     "readers" => String(r.readers), "passes" => r.passes,
-    "scope" => String(r.scope), "base" => r.base, "driver" => r.driver,
+    "scope" => String(r.scope), "base" => r.base, "driver" => r.driver, "dropped" => r.dropped,
     "questions" => [question_dict(q) for q in r.questions],
     "fixes" => [Dict{String,Any}("finding" => f.finding, "pass" => f.pass, "commit" => f.commit,
                                   "formula_edit" => f.formula_edit, "blind" => String(Symbol(f.blind)),
@@ -554,7 +555,8 @@ function from_dict(d::AbstractDict)
                      scope = Symbol(get(d, "scope", "full")), base = get(d, "base", ""),
                      driver = get(d, "driver", ""),
                      model = get(d, "model", "session"), sequential = get(d, "sequential", false),
-                     already_failing = Symbol[Symbol(x) for x in get(d, "already_failing", [])])
+                     already_failing = Symbol[Symbol(x) for x in get(d, "already_failing", [])],
+                     dropped = get(d, "dropped", 0))
 end
 
 

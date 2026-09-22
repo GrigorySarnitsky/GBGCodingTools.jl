@@ -90,6 +90,12 @@ const TAGS = {
   required: ['tags'],
 };
 
+// The standpoint a role was given, resolved from the shared table. A stage's instruction to its
+// verifiers is one paragraph and does not vary; a reader's standpoint is a page shared by every unit
+// that reader is launched over. Written once per role they filled the arguments file the session has to
+// type into the launching call, which is what every byte of that file costs.
+const standpoint = (role) => (args.briefs || {})[role.brief] || '';
+
 function taggerBrief(role) {
   return [
     'You are one of three readers answering the same questions about the same rules, independently. You',
@@ -114,10 +120,6 @@ function taggerBrief(role) {
 }
 
 function verifierBrief(role) {
-  const f = role.finding || {};
-  const where = (f.locations || [])
-    .map((l) => `- ${l.file}${l.node ? ` (${l.node})` : ''}: "${l.text}"${l.found === 'OUTDATED' ? '  [not found again — read the changed regions of that file]' : ''}`)
-    .join('\n');
   const withheld = role.kept_from_code
     ? 'The SOURCE and the design documents are withheld from you, as they were from the reader: judge the text alone.'
     : '';
@@ -127,16 +129,18 @@ function verifierBrief(role) {
   return [
     `You are verifying one fix in the Julia package ${args.package}, pass ${args.pass} of a ${args.instrument.replace(/_/g, ' ')}.`,
     '',
-    role.description,
+    standpoint(role),
     '',
     withheld,
     '',
-    `The finding ${f.id}${f.rule ? ` (rule ${f.rule})` : ''}: ${f.claim}`,
-    f.fix ? `What the reader proposed: ${f.fix}` : '',
+    // The finding is a FILE, not a paragraph pasted here: it carries the text quoted at every location,
+    // and a hundred of those is most of what the session has to type to launch this stage. Read it FIRST
+    // — a verdict reached without it is a verdict about nothing, and the quote it owes cannot be found.
+    `READ THIS FIRST: ${role.finding_file}`,
+    `It is the finding ${role.finding} as the reader wrote it — the claim, the rule, the fix proposed, and`,
+    'every location with the text quoted as the reader read it. Nothing below repeats it.',
     unit,
-    'Where it was found:',
-    where,
-    role.diff ? `\nThe change made for it:\n${role.diff}` : '',
+    role.diff_file ? `\nThe change made for it is the diff in ${role.diff_file}. Read that too.` : '',
     '',
     `Answer with ONE verdict from: ${(role.verdicts || []).join(', ')} — and the decisive QUOTE (at most 25`,
     'words, exactly as it appears in the current text or the diff). A verdict without a quote that is in',
@@ -150,7 +154,7 @@ function unitBrief(role, checks, settled) {
   return [
     `You are reading ONE PAGE of the built documentation of the Julia package ${args.package}, as a visitor meets it.`,
     '',
-    role.description,
+    standpoint(role),
     '',
     `The page is the file ${role.unit}. It is the WHOLE of what you may read: do not open the source, the`,
     'other pages, the design documents or the repository. A reader who can see those cannot judge whether',
@@ -213,7 +217,7 @@ function brief(role) {
   return [
     `You are reading the Julia package ${args.package} for a ${args.instrument.replace(/_/g, ' ')}.`,
     '',
-    role.description,
+    standpoint(role),
     '',
     withheld.join(' '),
     '',

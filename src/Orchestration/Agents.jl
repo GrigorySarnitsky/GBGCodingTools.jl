@@ -133,6 +133,22 @@ Returns the path written.
 
 Every role is launched: nothing caps launches, as ruled 2026-09-21 — the panel over the units, one
 relaunch each and the pass cap bound a run by design, and a run cut short by an outage is continued.
+
+WHAT THIS FILE COSTS IS WHY IT IS SHAPED THIS WAY. A workflow script has no filesystem, so the session
+cannot hand the driver a path: it types the arguments into the launching call, and every byte here is a
+byte of the session's context. Two things made that file large and neither had to be in it.
+
+The first is the same brief written out once per role. A stage's instruction to its verifiers is one
+paragraph and does not vary; the standpoint a reader carries is a page and is shared by every unit that
+reader is launched over. Written per role, one paragraph becomes a hundred and forty copies. They go
+into `briefs`, each once, and a role names the one it was given.
+
+The second is the material a verifier judges — the finding, with the text quoted at every location, and
+the diff of the fix made for it. That is the bulk of the file and no part of it is the script's to read:
+the script only names it in a brief, and the agent has file tools. So each is written beside the
+arguments and passed as a PATH, which is what a reader given one built page has always been given. The
+file shrank by roughly four hundred kilobytes on the first real review, and a diff of any size now costs
+the session the length of its path.
 """
 function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config;
                          roles::Vector{Model.AgentRole}, extras::AbstractDict = Dict{Symbol,Any}(),
@@ -152,25 +168,48 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
         "settled" => [Dict{String,Any}("question" => s.question, "text" => s.text,
                                        "locations" => [Dict("file" => l.file, "text" => l.text) for l in s.locations])
                       for s in ConfigIO.read_settled(root)],
-        "surfaces" => Dict{String,Any}(name => files for (name, files) in surfaces(cfg, root)),
-        "roles" => [begin
-                        x = get(extras, r.id, Dict{String,Any}())
-                        Dict{String,Any}("key" => String(r.id),
-                                         "kind" => get(x, "kind", "reader"),
-                                         "launch" => true,
-                                         "reads" => [lowercase(String(Symbol(fs))) for fs in r.reads],
-                                         "site" => r.site, "kept_from_code" => r.kept_from_code,
-                                         "description" => r.description,
-                                         "rules" => [String(y) for y in r.rules],
-                                         "strength" => lowercase(String(Symbol(r.strength))),
-                                         "cap" => r.cap,
-                                         "unit" => get(x, "unit", ""),
-                                         "unit_source" => get(x, "unit_source", ""),
-                                         "finding" => get(x, "finding", nothing),
-                                         "diff" => get(x, "diff", ""),
-                                         "verdicts" => get(x, "verdicts", String[]),
-                                         "result_file" => joinpath(results_dir(root, run.id), String(r.id) * ".json"))
-                    end for r in roles])
+        "surfaces" => Dict{String,Any}(name => files for (name, files) in surfaces(cfg, root)))
+    briefs = Dict{String,String}()          # the text, once, under the key a role names
+    keys_of = Dict{String,String}()         # the text seen before, and the key it was given
+    side = joinpath(scratch_dir(root, run.id), "material")
+    isempty(roles) || mkpath(side)
+    args["briefs"] = briefs
+    args["roles"] = [begin
+        x = get(extras, r.id, Dict{String,Any}())
+        brief = get!(keys_of, r.description) do
+            k = "b" * string(length(keys_of) + 1)
+            briefs[k] = r.description
+            k
+        end
+        found = get(x, "finding", nothing)
+        finding_file = ""
+        if found !== nothing
+            finding_file = joinpath(side, String(r.id) * ".json")
+            open(finding_file, "w") do f; JSON3.pretty(f, JSON3.write(found)); end
+        end
+        diff = String(get(x, "diff", ""))
+        diff_file = ""
+        if !isempty(diff)
+            diff_file = joinpath(side, String(r.id) * ".diff")
+            write(diff_file, diff)
+        end
+        Dict{String,Any}("key" => String(r.id),
+                         "kind" => get(x, "kind", "reader"),
+                         "launch" => true,
+                         "reads" => [lowercase(String(Symbol(fs))) for fs in r.reads],
+                         "site" => r.site, "kept_from_code" => r.kept_from_code,
+                         "brief" => brief,
+                         "rules" => [String(y) for y in r.rules],
+                         "strength" => lowercase(String(Symbol(r.strength))),
+                         "cap" => r.cap,
+                         "unit" => get(x, "unit", ""),
+                         "unit_source" => get(x, "unit_source", ""),
+                         "finding" => get(x, "finding_id", ""),
+                         "finding_file" => finding_file,
+                         "diff_file" => diff_file,
+                         "verdicts" => get(x, "verdicts", String[]),
+                         "result_file" => joinpath(results_dir(root, run.id), String(r.id) * ".json"))
+    end for r in roles]
     path = arguments_path(root, run.id)
     mkpath(dirname(path)); mkpath(results_dir(root, run.id))
     open(path, "w") do f; JSON3.pretty(f, JSON3.write(args)); end

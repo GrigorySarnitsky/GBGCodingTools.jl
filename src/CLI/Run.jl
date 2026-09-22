@@ -109,7 +109,8 @@ with(run::Model.Run; kw...) = Model.Run(; id = run.id, instrument = run.instrume
     fixes = run.fixes, questions = run.questions, code_fixes = run.code_fixes,
     agent_launches = run.agent_launches, tokens = run.tokens, stop = run.stop, readers = run.readers,
     passes = run.passes, model = run.model, sequential = run.sequential, scope = run.scope,
-    base = run.base, driver = run.driver, already_failing = run.already_failing, kw...)
+    base = run.base, driver = run.driver, already_failing = run.already_failing, dropped = run.dropped,
+    kw...)
 
 """
     next(root; io = stdout) -> Int
@@ -430,7 +431,8 @@ function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config,
                                      description = text * " The reader's standpoint: " * reader.description,
                                      rules = f.draft.rule === nothing ? Symbol[] : [f.draft.rule],
                                      strength = stage === :verify ? reader.strength : Model.Strength.ECONOMY, cap = 1))
-        extras[id] = Dict{String,Any}("kind" => "verifier", "finding" => Agents.finding_dict(f), "diff" => diff,
+        extras[id] = Dict{String,Any}("kind" => "verifier", "finding" => Agents.finding_dict(f),
+                                      "finding_id" => f.id, "diff" => diff,
                                       "unit" => unit,
                                       "verdicts" => stage === :verify ? BLIND_VERDICTS : DIFF_VERDICTS)
     end
@@ -677,6 +679,11 @@ The findings are DROPPED, not queued: the owner stopping a run is the owner sayi
 wanted, and a leftover line from a run nobody finished would be read as a finding somebody stood behind.
 What the run committed through the guard stays; a fix already verified is not undone by stopping.
 
+HOW MANY were dropped is kept, in `dropped`. The list goes and the launch count stays, so a record
+holding only those two says twenty-six readers wrote their files and none of them found anything — of a
+run that found a hundred and was stopped. The count is the difference between the two readings, and a
+report is written from the record, so a record that cannot tell them apart makes a report that lies.
+
 ITS RECORD AND REPORT ARE COMMITTED, like a closed run's [ruled 2026-09-22, on
 [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)'s question, after two
 abandoned runs left it with no rule to follow]. "Was this package ever reviewed, and
@@ -701,7 +708,7 @@ function abandon(root::AbstractString; io::IO = stdout)
         return 0
     end
     stopped = with(run; stage = :close, stop = Model.Stop.OWNER_STOPPED, findings = Model.Finding[],
-                   fixes = Model.DocFix[])
+                   fixes = Model.DocFix[], dropped = length(run.findings))
     write(joinpath(dir, "report.md"), Render.report(stopped, cfg; root))
     open(joinpath(dir, "run.json"), "w") do f
         GBGCodingTools.JSON3.pretty(f, GBGCodingTools.JSON3.write(Runs.as_dict(stopped)))

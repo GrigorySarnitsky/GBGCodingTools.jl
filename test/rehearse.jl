@@ -701,7 +701,11 @@ end
             @test length(args["roles"]) == 1
             v = args["roles"][1]
             @test v["kind"] == "verifier" && v["key"] == "verify-" * fid
-            @test v["finding"]["id"] == fid && v["diff"] == ""        # blind: no diff
+            # The finding is a PATH, and the diff is absent: the blind verifier is not shown the change,
+            # and what it IS shown is a file it reads rather than a paragraph in the arguments.
+            @test v["finding"] == fid && v["diff_file"] == ""
+            @test isfile(v["finding_file"])
+            @test G.JSON3.read(read(v["finding_file"], String), Dict{String,Any})["id"] == fid
             @test v["kept_from_code"] == true                        # what the withheld reader was given
             @test "HIDES_CODE_DEFECT" in v["verdicts"]
             verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a lattice.")
@@ -711,7 +715,10 @@ end
             @test G.Run.next(root; io = devnull) == 0                  # → diff: the same finding, with its diff
             args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
             d = only(args["roles"])
-            @test d["key"] == "diff-" * fid && occursin("lattice", d["diff"]) && d["strength"] == "economy"
+            @test d["key"] == "diff-" * fid && d["strength"] == "economy"
+            @test occursin("lattice", read(d["diff_file"], String))
+            # The standpoint is in the shared table under the key the role names, not written out here.
+            @test haskey(args["briefs"], d["brief"]) && !isempty(args["briefs"][d["brief"]])
             verifier_said(root, id, "diff", fid, "FIXED"; quote_ = "The grid is a lattice.")
             @test G.Run.collect(root; io = devnull) == 0              # nothing open
             fix = only(RUNS.load(root, id).fixes)
@@ -896,6 +903,28 @@ end
                                 stop = G.Model.Stop.CANNOT_EVALUATE)
         @test occursin("Nothing was read", G.Render.report(never_ran, cfg))
     end
+
+    # The third reading, and the one the fix above left standing: `abandon` empties the list and leaves
+    # the launch count alone, so a run that found a hundred and was stopped looked, in the record, exactly
+    # like a run that looked and found nothing. `dropped` is what separates them.
+    @testset "findings thrown away are not findings absent" begin
+        stopped = G.Model.Run(; id = "r-dropped", base..., stage = :close, agent_launches = 26,
+                              stop = G.Model.Stop.OWNER_STOPPED, dropped = 142)
+        text = G.Render.report(stopped, cfg)
+        @test occursin("142 finding(s) were thrown away", text)
+        @test occursin("says NOTHING about Sample", text)
+        @test !occursin("Nothing was found", text)
+        @test !occursin("none of them reported a defect", text)
+    end
+
+    # And a run stopped with nothing in hand still reads as clean-but-unstood-behind, not as dropped:
+    # the count is the evidence, and zero is no evidence.
+    @testset "a stopped run that found nothing is not reported as dropping anything" begin
+        empty_handed = G.Model.Run(; id = "r-empty", base..., stage = :close, agent_launches = 4,
+                                   stop = G.Model.Stop.OWNER_STOPPED, dropped = 0)
+        @test occursin("Nothing was found", G.Render.report(empty_handed, cfg))
+        @test !occursin("thrown away", G.Render.report(empty_handed, cfg))
+    end
 end
 
 # What `gbg run abandon` leaves behind, which turns on whether an agent ever ran — the same line the
@@ -991,4 +1020,31 @@ end
 
     write(joinpath(d, "run.json"), "{}")               # closed or abandoned
     @test first(fire("{}")) == 0
+end
+
+# A record is written as JSON and read back, and the two halves are written by hand, side by side, in
+# one file. Nothing made them agree. Twice now a field reached the record and not the reader, and the
+# symptom is the same both times and invisible: the value is silently the default on the next load, so
+# a run remembers less of itself at every stage boundary and no test fails. The questions went that way
+# once; `dropped` would have gone the same way. This walks `fieldnames` rather than a list, so the
+# NEXT field is covered by a test written before it existed.
+@testset "every field of a record survives being written and read" begin
+    run = G.Model.Run(id = "roundtrip-01", instrument = :documentation_review, tool_version = "v9.9.9",
+                      first_commit = "0123456789abcdef", budget = G.Model.Budget(fix_passes = 2),
+                      stage = :verify, agent_launches = 26, tokens = 4242,
+                      stop = G.Model.Stop.OWNER_STOPPED, readers = :both, passes = 3,
+                      model = "opus", sequential = true, scope = :changed, base = "feedface",
+                      driver = "e3b0c44298fc1c14", already_failing = [:PROSE_SHAPE, :ARGS_FORM],
+                      dropped = 142)
+    back = RUNS.from_dict(G.JSON3.read(G.JSON3.write(RUNS.as_dict(run)), Dict{String,Any}))
+    for f in fieldnames(G.Model.Run)
+        # The four list-valued fields carry their own types and are round-tripped by the suites that
+        # build them; every scalar is compared here, and a new scalar joins this loop by being declared.
+        f in (:findings, :fixes, :questions, :code_fixes) && continue
+        @test getfield(back, f) == getfield(run, f)
+    end
+    # And the default is never mistaken for a value that was written: a record with no `dropped` key —
+    # every record written before this field existed — reads as zero, not as missing.
+    old = RUNS.as_dict(run); delete!(old, "dropped")
+    @test RUNS.from_dict(G.JSON3.read(G.JSON3.write(old), Dict{String,Any})).dropped == 0
 end
