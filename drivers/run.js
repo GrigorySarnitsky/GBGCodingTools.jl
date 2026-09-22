@@ -116,7 +116,7 @@ function taggerBrief(role) {
 function verifierBrief(role) {
   const f = role.finding || {};
   const where = (f.locations || [])
-    .map((l) => `- ${l.file}${l.node ? ` (${l.node})` : ''}: "${l.text}"${l.found === 'OUTDATED' ? '  [not found again — read the file's changed regions]' : ''}`)
+    .map((l) => `- ${l.file}${l.node ? ` (${l.node})` : ''}: "${l.text}"${l.found === 'OUTDATED' ? '  [not found again — read the changed regions of that file]' : ''}`)
     .join('\n');
   const withheld = role.kept_from_code
     ? 'The SOURCE and the design documents are withheld from you, as they were from the reader: judge the text alone.'

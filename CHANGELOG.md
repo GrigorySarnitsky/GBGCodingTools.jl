@@ -14,6 +14,21 @@ a concrete evading example, the defect that gets through and why each part of th
 only collects objections converges by narrowing what the thing under attack claims, which is what seven rounds over the
 six discipline texts did.
 
+**BLOCKER FIXED: the driver did not parse, so no instrument could launch an agent.** One apostrophe inside a
+single-quoted string — "read the file's changed regions" — ended the literal early, and the harness refused the script
+before any agent started. Every instrument and every stage went through that one file, so all of them were dead at
+rc.7. Found by the GBGPeriodicFields session on the first real run, which is the first time the driver had ever been
+handed to the harness; it declined to patch a pinned file and reported it instead.
+
+**The gate that was missing is worth more than the fix.** `test/driver.jl` read the driver for the keys it mentions
+and never asked whether it was JavaScript, and no fixture run could have caught it either, since a fixture run
+launches no agent. It now lexes the file for the defect's class: a single-quoted literal ended early, or left open on
+its line. Not a parser — the only one available here refuses top-level `await`, which the driver legitimately uses, so
+a gate built on it would reject correct files — and not a regex, which reported thirteen defects in a file that had
+none, because a regex cannot tell two adjacent literals from one that closed in the wrong place. The test shows it
+catching the real line and staying silent on an escaped apostrophe, an apostrophe in a comment, adjacent literals and
+a template with holes.
+
 **Phase 5's three open questions are answered** (owner, 2026-09-22), so the phase that cuts `2.0.0` builds rulings
 rather than asking them. The seven git instructions split three ways: three become programs in the test suite, three
 become programs in the end-of-turn hook because they read git state and so may never run in a build, and one stays an

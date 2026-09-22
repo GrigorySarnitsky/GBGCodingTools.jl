@@ -8,10 +8,83 @@
 # Neither failure shows up in a Julia test of the Julia half, or in a review of either file alone. What
 # is held here is the JOIN, which is the only place it can be held — `node` is not installed on every
 # machine the suite runs on, so the driver is read as text rather than executed.
+#
+# It is also held that the file PARSES, for one defect class. On 2026-09-22 an apostrophe inside a
+# single-quoted string — `'…read the file's changed regions'` — ended the literal early, and the
+# harness refused the script before any agent started. Every instrument and every stage was dead, in
+# the one file all of them go through, and nothing here noticed: this test read the driver for the keys
+# it mentions and never asked whether it was JavaScript. The fixture runs could not have caught it
+# either, since they launch no agent. Reported by the GBGPeriodicFields session, which met it on the
+# first real run.
 using Test, GBGCodingTools
 include("helpers.jl")
 
 const DRIVER = joinpath(TOOL, "drivers", "run.js")
+
+"""
+A scan over JavaScript for the defect class of 2026-09-22: a single-quoted literal ended early by an
+apostrophe inside it, leaving bare identifiers where an expression belongs.
+
+It LEXES rather than greps, because a regex cannot tell `'a', b: 'c'` — two literals with code between
+them — from one literal that closed in the wrong place; a regex tried first reported thirteen defects in
+a file that had none. It is not a parser: it knows strings, template literals, comments and the `\${…}`
+holes templates open, and nothing else about the language. A real parser was tried and rejected — the
+one available here refuses top-level `await`, which this driver uses and which is valid — so a gate
+built on it would fail on correct files, which is worse than the defect.
+"""
+function js_string_defects(text::AbstractString)
+    out = String[]
+    line_of(i) = count(==('\n'), text[1:prevind(text, i)]) + 1
+    stack = Any[(:code, 0)]                       # (kind, brace depth inside a `${…}`)
+    i, n = firstindex(text), lastindex(text)
+    while i <= n
+        c = text[i]
+        kind, depth = last(stack)
+        if kind === :template
+            if c == '\\';                    i = min(n + 1, nextind(text, i, 2))
+            elseif c == '`';                   pop!(stack); i = nextind(text, i)
+            elseif c == '$' && i < n && text[nextind(text, i)] == '{'
+                push!(stack, (:code, 0));      i = nextind(text, i, 2)
+            else                               i = nextind(text, i)
+            end
+            continue
+        end
+        if c == '/' && i < n && text[nextind(text, i)] == '/'
+            while i <= n && text[i] != '\n'; i = nextind(text, i); end
+        elseif c == '/' && i < n && text[nextind(text, i)] == '*'
+            i = nextind(text, i, 2)
+            while i <= n && !(text[i] == '*' && i < n && text[nextind(text, i)] == '/'); i = nextind(text, i); end
+            i = min(n + 1, nextind(text, i, 2))
+        elseif c == '`'
+            push!(stack, (:template, 0));      i = nextind(text, i)
+        elseif c == '"' || c == '\''
+            q, at = c, i
+            i = nextind(text, i)
+            closed = false
+            while i <= n
+                if text[i] == '\\';    i = min(n + 1, nextind(text, i, 2))
+                elseif text[i] == q;     closed = true; i = nextind(text, i); break
+                elseif text[i] == '\n';  break
+                else                     i = nextind(text, i)
+                end
+            end
+            if !closed
+                push!(out, "line $(line_of(at)): a $q literal is not closed on its line")
+            elseif i <= n && (isletter(text[i]) || isdigit(text[i]) || text[i] == '_')
+                push!(out, "line $(line_of(at)): a $q literal ends immediately before `$(text[i])`, " *
+                           "which is what an apostrophe inside it looks like")
+            end
+        elseif c == '{' && length(stack) > 1
+            stack[end] = (:code, depth + 1);   i = nextind(text, i)
+        elseif c == '}' && length(stack) > 1
+            depth == 0 ? pop!(stack) : (stack[end] = (:code, depth - 1))
+            i = nextind(text, i)
+        else
+            i = nextind(text, i)
+        end
+    end
+    return out
+end
 
 """Every key the Julia side writes into a stage's arguments, at the top level and inside a role."""
 function written_keys()
@@ -29,6 +102,25 @@ function written_keys()
 end
 
 @testset "the driver and the Julia side read one set of arguments" begin
+
+    # The cheapest gate on the one file every instrument goes through, and the one that was missing.
+    @testset "the driver is JavaScript, for the class that stopped every instrument" begin
+        driver = read(DRIVER, String)
+        @test isempty(js_string_defects(driver))
+
+        # The scan is worth only what it catches, so it is shown catching the real thing: the 2026-09-22
+        # line as it stood, which the harness refused before any agent started.
+        broke = replace(driver, "read the changed regions of that file" => "read the file's changed regions")
+        @test broke != driver                       # the line is still there to break
+        @test !isempty(js_string_defects(broke))
+
+        # And shown NOT firing on the shapes that surround it, or it would be noise rather than a gate.
+        @test isempty(js_string_defects(raw"const a = 'one', b = 'two';"))
+        @test isempty(js_string_defects(raw"const s = 'it\'s fine';"))          # an escaped apostrophe
+        @test isempty(js_string_defects(raw"// a reader's comment, not code"))
+        @test isempty(js_string_defects(raw"const t = `a ${x ? 'y' : ''} b`;")) # a template with holes
+        @test !isempty(js_string_defects(raw"const s = 'the file's name';"))
+    end
     @test isfile(DRIVER)
     driver = read(DRIVER, String)
     top, role = written_keys()
