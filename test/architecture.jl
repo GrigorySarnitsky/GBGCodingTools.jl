@@ -18,7 +18,7 @@ const LAYERS = Dict("src/Model.jl" => 1, "src/Texts.jl" => 2, "src/ConfigIO.jl" 
                     "src/Rules/judgement_api.jl" => 3, "src/Rules/judgement_cit.jl" => 3, "src/Rules/judgement_doc.jl" => 3, "src/Rules/judgement_git.jl" => 3, "src/Rules/judgement_inst.jl" => 3, "src/Rules/judgement_test.jl" => 3, "src/Rules/judgement_tex.jl" => 3,
                     "src/Rules/questions.jl" => 3, "src/Rules/citations.jl" => 3, "src/Engine/Questions.jl" => 5, "src/CLI/Answer.jl" => 8,
                     "src/Orchestration.jl" => 7, "src/Orchestration/Runs.jl" => 7, "src/Orchestration/Agents.jl" => 7,
-                    "src/Orchestration/Scope.jl" => 7,
+                    "src/Orchestration/Scope.jl" => 7, "src/Study.jl" => 6, "src/CLI/StudyCmd.jl" => 8,
                     "src/Roles/documentation_review.jl" => 3, "src/CLI/Run.jl" => 8,
                     "src/Engine.jl" => 5, "src/Engine/Guard.jl" => 5,
                     "src/CLI/Docfix.jl" => 8, "src/CLI/Check.jl" => 8, "src/CLI/Wire.jl" => 8,

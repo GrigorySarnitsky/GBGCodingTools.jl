@@ -50,6 +50,12 @@ The round verbs and the two design checks stood here until 2026-09-17. The machi
 filed under `docs/design-record/machinery-v1/`, and what replaces it — a run, its stages and its report —
 is `docs/ARCHITECTURE.md` §10.
 
+## The rulebook, measured
+
+```@docs
+GBGCodingTools.StudyCmd.rules
+```
+
 ## Fleet and release
 
 ```@docs

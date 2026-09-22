@@ -14,6 +14,23 @@ a concrete evading example, the defect that gets through and why each part of th
 only collects objections converges by narrowing what the thing under attack claims, which is what seven rounds over the
 six discipline texts did.
 
+**A run can read only what changed** (Phase 4d). `gbg run <instrument> --scope changed` measures from the commit that
+added the record of the last finished run with the same readers — per reader combination, since a bound run says nothing
+about what an open reader would find. Five conditions send it back to full and each is printed rather than silently
+applied: no such closed run, one that stopped short, an uncommitted record, a moved pin, an edited config. Which readers
+a change reaches follows from the reader's own two fields, the sets it reads and whether code is kept from it, so an
+edited function body reaches the reader with the source beside it and not the reader given one page. A `.jl` file is
+DOCSTRINGS and CODE at once, so its docstrings are compared between the base and the head: a file whose prose did not
+move is a code change only.
+
+**The rule wording study is a program** (Phase 4e), and is no longer called an attack. Three readers are given a rule's
+text alone and answer what deciding it needs, whether it needs a discipline, and whether the wording left them guessing;
+their agreement is the result, measured as Fleiss' kappa. A rule they split on is reported; a rule whose majority answer
+differs from the tag the rulebook carries becomes a question to the owner, because a tag is code and changes on his
+answer and never on a measurement. `gbg study rules --votes <file>` reports a round, exit 1 while anything is open. The
+votes of the two rounds of 2026-09-19 had never been filed — the four numbers in the plan rested on a session transcript
+— and are now `test/tagging/`, where the suite reproduces both.
+
 **The fleet order is PF, HT, SS, CP.** Set by the owner on 2026-09-21, who wants the periodic fields and turbulence
 packages on this one first. Phase 5 now wires HT, with an `HT-WIRING.md`, and Phase 7 takes SS and CP with the
 `CP-WIRING.md`. Nothing in the order was ever a dependency: every wiring needs the rulebook and the documentation

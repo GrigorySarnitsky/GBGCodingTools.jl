@@ -66,6 +66,7 @@ include("Catalogue.jl")      # what this package knows, as values: the table, th
 include("ConfigIO.jl")       # a package's own settings, read as data and never evaluated
 include("Engine.jl")         # what runs the rules; for now, the change guard
 include("Render.jl")
+include("Study.jl")                 # the rule wording study: agreement, measured
 include("Orchestration.jl")         # every file that connects a package to this one
 include("TreeHash.jl")
 include("HtmlWalker.jl")
@@ -80,6 +81,7 @@ include("Scan.jl")
 include("CLI/Self.jl")
 include("CLI/Install.jl")
 include("CLI/Git.jl")
+include("CLI/StudyCmd.jl")
 include("CLI/Wire.jl")
 include("CLI/Check.jl")
 include("CLI/Docfix.jl")

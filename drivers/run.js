@@ -66,6 +66,53 @@ const VERDICT = {
   required: ['verdict', 'quote'],
 };
 
+// What a TAGGER returns: one answer per rule, from the rule's TEXT alone. The study measures agreement,
+// so a tagger is never shown another tagger's answer, the rulebook's own tag, or the package — any of
+// those turns three independent answers into one answer repeated three times.
+const TAGS = {
+  type: 'object',
+  properties: {
+    tags: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          rule: { type: 'string' },
+          needs: { type: 'array', items: { type: 'string' } },
+          discipline: { type: 'boolean' },
+          flagged: { type: 'boolean' },
+          why: { type: 'string' },
+        },
+        required: ['rule', 'needs', 'discipline'],
+      },
+    },
+  },
+  required: ['tags'],
+};
+
+function taggerBrief(role) {
+  return [
+    'You are one of three readers answering the same questions about the same rules, independently. You',
+    'will not see the others\' answers, and they will not see yours: the study measures whether the rules',
+    'are WORDED so that three careful readers answer alike, so an answer influenced by another is worth',
+    'nothing. Judge each rule from its TEXT ALONE. Do not open the package, the code, or any file.',
+    '',
+    'For each rule below, answer three questions.',
+    '',
+    '1. NEEDS — what must a reader be given to decide whether this rule is broken? Choose from:',
+    '   SIBLINGS (other documents of the same kind), OTHER_DOCUMENTS (a different kind: the reference',
+    '   list, the notation page), SOURCE (the code), RENDERED (the built site), HISTORY (earlier',
+    '   versions), CITED_WORK (the paper a citation names). Answer with an empty list where the one',
+    '   page or docstring the rule is about decides it by itself.',
+    '2. DISCIPLINE — does deciding it need a field of expertise, rather than a careful generalist?',
+    '3. FLAGGED — did the wording leave you guessing between two readings? Say which in `why`.',
+    '',
+    'Answer for every rule, in the order given. A rule you find obvious is still answered.',
+    '',
+    (role.rules || []).map((r) => `${r.id}\n${r.statement}`).join('\n\n'),
+  ].filter(Boolean).join('\n');
+}
+
 function verifierBrief(role) {
   const f = role.finding || {};
   const where = (f.locations || [])
@@ -127,6 +174,7 @@ function unitBrief(role, checks, settled) {
 
 function brief(role) {
   if (role.kind === 'verifier') return verifierBrief(role);
+  if (role.kind === 'tagger') return taggerBrief(role);
   const surfaces = (role.reads || [])
     .map((name) => `${name}:\n${(args.surfaces[name] || []).join('\n')}`)
     .join('\n\n');
@@ -208,7 +256,7 @@ const one = async (role) => {
   const launch = (again) => agent(brief(role), {
     label: `${args.stage}:${role.key}${again ? ':again' : ''}`,
     phase: 'Read',
-    schema: role.kind === 'verifier' ? VERDICT : FINDINGS,
+    schema: role.kind === 'verifier' ? VERDICT : role.kind === 'tagger' ? TAGS : FINDINGS,
     model: modelFor(role),
   });
   // A silent agent is relaunched ONCE; what is still silent is named by the collect.

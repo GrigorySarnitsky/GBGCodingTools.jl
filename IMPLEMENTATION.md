@@ -186,20 +186,25 @@ owner's answers of 2026-09-21. The phase is five pieces:
   its disciplines, sets `formalization` and confirms the other three parameters, declares `copies` for its five built
   rationale documents, narrows its `literate` set, bumps, adds the two page entries, and runs the review. PF's legacy
   `.claude` commands stay until Phase 7.
-- **4d — scope** (10 commits, 1–2 sessions): `--scope full|changed`, the base per reader combination — the commit that
+- **4d — scope**. **Done 2026-09-22**: `--scope full|changed`, the base per reader combination — the commit that
   added the last finished run's record with that `readers` value — invalidated by a tool bump or a config or switch
   change since; the diff-to-units mapping per access tag. **Gate**: replayed from recorded files over the fixture copy,
   one edited docstring, one added sibling, one edited notation page, one edited hand page and one edited function body
   produce exactly the set the mapping gives, and nothing else; a paused or `CANNOT_EVALUATE` run is no base; a tool bump
-  reads full. Release `-rc.7`.
-- **4e — the rule wording study** (8 commits, 1 session): whether a rule's text says what deciding it requires,
+  reads full. `test/scope.jl` holds it. One thing the plan did not foresee: a `.jl` file is DOCSTRINGS and CODE at once,
+  so by name an edited body and an edited docstring are one event and the reader the code is kept from would be launched
+  for both; the file's docstrings are extracted at the base and at the head and compared.
+- **4e — the rule wording study**. **Done 2026-09-22**: whether a rule's text says what deciding it requires,
   MEASURED and not argued — blind taggers are given only the text and their agreement is the result, so it converges on
   nothing and there is nothing to converge. Formerly called an attack on rules, renamed 2026-09-21 because that name
   imports the convergence reading of a method this project has since measured as harmful. Run
   through the one driver with a second output schema; kappa, splits and flags as a program over the round-1 fixtures
   filed under `test/`; a drift between the majority and a rule's tag reported as a proposal that becomes a question.
   **Gate**: the arithmetic over the filed fixtures reproduces round 1 — 0.90 / 0.91, 8 flagged, 3 splits — and
-  `test/driver.jl`'s one-driver assertion still holds.
+  `test/driver.jl`'s one-driver assertion still holds. The votes of both rounds had never been filed and the four
+  numbers rested on a session transcript; they were recovered from it into `test/tagging/`, and `test/study.jl`
+  reproduces round 0 (0.74 / 0.93, 9 splits) as well. Over today's rulebook the round proposes exactly one tag change,
+  which is the machinery working rather than a defect.
 
 **Owner:** the decisions of the amendment's §6, all answered on 2026-09-21.
 

@@ -62,7 +62,10 @@ end
     @testset "the driver asks for what the collector reads, and not for a line" begin
         @test occursin("'file'", driver) && occursin("'text'", driver)
         @test occursin("required: ['file', 'text']", driver)
-        @test !occursin("line:", driver)                     # a line an agent reported is not the file's
+        # A WORD boundary, not a substring: the tagger's `discipline:` ends in `line:`, and the bare
+        # substring failed on it the day that field was added (2026-09-22). What is forbidden is a
+        # `line` PROPERTY — a line an agent reported is its count of the text it was shown, not the file's.
+        @test !occursin(r"\bline:", driver)
         for key in ("claim", "evidence", "fix", "rule", "maybe_code", "locations", "node")
             @test occursin(key, driver)
         end
