@@ -32,6 +32,24 @@ holes templates open, and nothing else about the language. A real parser was tri
 one available here refuses top-level `await`, which this driver uses and which is valid — so a gate
 built on it would fail on correct files, which is worse than the defect.
 """
+function js_code_only(text::AbstractString)
+    out = IOBuffer()
+    i, n = firstindex(text), lastindex(text)
+    while i <= n
+        c = text[i]
+        if c == '/' && i < n && text[nextind(text, i)] == '/'
+            while i <= n && text[i] != '\n'; i = nextind(text, i); end
+        elseif c == '/' && i < n && text[nextind(text, i)] == '*'
+            i = nextind(text, i, 2)
+            while i <= n && !(text[i] == '*' && i < n && text[nextind(text, i)] == '/'); i = nextind(text, i); end
+            i = min(n + 1, nextind(text, i, 2))
+        else
+            print(out, c); i = nextind(text, i)
+        end
+    end
+    return String(take!(out))
+end
+
 function js_string_defects(text::AbstractString)
     out = String[]
     line_of(i) = count(==('\n'), text[1:prevind(text, i)]) + 1
@@ -102,6 +120,26 @@ function written_keys()
 end
 
 @testset "the driver and the Julia side read one set of arguments" begin
+
+    # What this SANDBOX allows, which is a different question from whether the file is JavaScript — and
+    # the one that let a second launch-blocking defect through a candidate that parsed. A workflow script
+    # has no filesystem and no Node API; `import()` is refused; and `Date.now()`, `Math.random()` and an
+    # argless `new Date()` throw, because they would break resume. None is visible from Julia, none is
+    # visible to a parser, and a fixture run reaches none of them. So they are listed.
+    @testset "the driver uses nothing the workflow sandbox refuses" begin
+        driver = read(DRIVER, String)
+        # Comments are stripped first: this file EXPLAINS what the sandbox refuses, and a check that
+        # read its own explanation as a violation would be unusable — the same collision as `discipline:`
+        # against a ban on `line:`, met the same week.
+        code = js_code_only(driver)
+        for refused in ("import(", "require(", "'node:", "\"node:", "process.", "Date.now()",
+                        "Math.random()", "new Date()")
+            @test !occursin(refused, code)
+        end
+        # And the reason the first of those is not there any more: the agent writes its own result file.
+        @test occursin("result_file", driver)
+        @test occursin("write your answer as JSON", driver)
+    end
 
     # The cheapest gate on the one file every instrument goes through, and the one that was missing.
     @testset "the driver is JavaScript, for the class that stopped every instrument" begin

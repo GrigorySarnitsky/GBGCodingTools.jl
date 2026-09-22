@@ -4,7 +4,29 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
-## Unreleased — toward 2.0.0-rc.9
+## 2.0.0-rc.9 — 2026-09-22
+
+**SECOND BLOCKER FIXED: the driver could not write a result file.** rc.8 parsed and then failed at the next step —
+`const fs = await import('node:fs/promises')`, which a workflow script may not do: it has no filesystem and no Node
+API, and `import()` is refused outright, so there is no spelling of that function that works. It was the only
+filesystem use in the file and the load-bearing one: every role's findings went through it, so the collector read
+files the driver was structurally unable to write, and no stage of any instrument could ever have completed. Found by
+GBGPeriodicFields at rc.8, which again declined to patch a pinned file.
+
+**The agent writes its own result file**, which is what that session proposed and is better than returning the
+findings up to the session. The property the old code protected is kept: the collector stays a separate program
+reading files minutes later, and a session carrying every finding out of a workflow's return value would be the
+courier for the thing the guard exists to check. The agent has file tools; the driver hands it the path, and it both
+WRITES the file and RETURNS the object, so a role returning nothing is still named silent and a file that never
+appeared is named by the collect.
+
+**A gate for what the SANDBOX refuses, which is a different question from whether the file is JavaScript.** Both
+launch-blocking defects of this week lived in that gap: one was invalid JavaScript, the other was valid JavaScript
+the sandbox will not run. `test/driver.jl` now checks the driver, with comments stripped, for `import(`, `require(`,
+a `node:` specifier, `process.`, and the three constructs that break resume — `Date.now()`, `Math.random()` and an
+argless `new Date()`. Comments are stripped because this file explains those restrictions and would otherwise flag
+its own explanation, the same collision as a field named `discipline` against a ban on `line:`. The three
+resume-breaking constructs are absent, so no third blocker of that kind is waiting.
 
 **The three findings GBGPeriodicFields reported with the driver defect are fixed.** All three were met on the first
 real upgrade and the first real run, and each would have met every other consumer in turn.

@@ -253,7 +253,7 @@ function modelFor(role) {
 }
 
 const one = async (role) => {
-  const launch = (again) => agent(brief(role), {
+  const launch = (again) => agent(`${brief(role)}\n\n${deliver(role)}`, {
     label: `${args.stage}:${role.key}${again ? ':again' : ''}`,
     phase: 'Read',
     schema: role.kind === 'verifier' ? VERDICT : role.kind === 'tagger' ? TAGS : FINDINGS,
@@ -263,7 +263,6 @@ const one = async (role) => {
   let out = await launch(false);
   if (!out) { log(`${role.key} wrote nothing; launching it once more`); out = await launch(true); }
   if (!out) return { key: role.key, wrote: false };
-  await writeResult(role.result_file, out);
   return { key: role.key, wrote: true };
 };
 
@@ -289,10 +288,30 @@ return {
   silent,
 };
 
-// The result files are what `gbg run collect` reads. Written here rather than returned, because the
-// return value of a workflow is read by a session and the collector is a separate program minutes later.
-async function writeResult(path, value) {
-  const fs = await import('node:fs/promises');
-  await fs.mkdir(path.replace(/\/[^/]+$/, ''), { recursive: true });
-  await fs.writeFile(path, JSON.stringify(value, null, 2));
+// The result files are what `gbg run collect` reads, and the AGENT writes its own. This script cannot:
+// a workflow script has no filesystem and no Node API, and `import()` is refused outright, so there is
+// no spelling of a write that works here — found at v2.0.0-rc.8, which parsed and then failed at the
+// next step (GBGPeriodicFields, 2026-09-22).
+//
+// The property the old comment protected is kept, and it is the reason not to return the findings up to
+// the session instead: the collector is a separate program reading files minutes later, and a session
+// that carried every finding from a workflow's return value into a file would be the courier for the
+// thing the guard exists to check. The agent has file tools; this script hands it the path.
+//
+// The agent both WRITES the file and RETURNS the object. The return is what `schema` validates, so a
+// role that returns nothing is still named as silent even if it wrote something unreadable, and a file
+// that never appeared is named by the collect. Two statements of the same result, and the run believes
+// the file.
+function deliver(role) {
+  return [
+    'BEFORE you finish, write your answer as JSON to this exact path, creating the directories if they',
+    'are not there:',
+    '',
+    `    ${role.result_file}`,
+    '',
+    'It must be the SAME object you return, in the shape you were given, and nothing else in the file —',
+    'no prose around it, no code fence. That file is what the run reads; your return value is only',
+    'checked against it. A file that is not there is read as an agent that did nothing, and is treated',
+    'as one.',
+  ].join('\n');
 }

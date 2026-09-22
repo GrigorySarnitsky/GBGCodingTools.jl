@@ -1,4 +1,4 @@
-# Upgrading GBGPeriodicFields to rc.8, and its first review — instructions for the PF session
+# Upgrading GBGPeriodicFields to rc.9, and its first review — instructions for the PF session
 
 Written 2026-09-21 by the GBGCodingTools session, at `v2.0.0-rc.7`. Every figure was measured on a fresh
 clone of PF at `03534c53`, and the draft was then put to three adversarial passes — one following it
@@ -49,7 +49,7 @@ instruction to the session — and the rules page is grouped by them. Nothing fo
 
 ## Step 1 — bump the pin, then move the manifests
 
-    gbg bump 2.0.0-rc.8
+    gbg bump 2.0.0-rc.9
 
 On a fresh clone of PF it rewrote **20 paths** and exited 0. `bump` refuses to move the pin while the
 rules of the version it is RUNNING find anything in PF — which, through the shim, is the version the
@@ -64,7 +64,7 @@ What the bump brings that rc.5 did not write:
 | `.claude/skills/documentation-review/SKILL.md` | **new**: the instrument's protocol in six steps. Generated; do not hand-edit it. |
 | `.claude/skills/bug-hunt/`, `.claude/skills/change-audit/` | **new**, and both describe instruments that do not exist. See Step 5. |
 | `.gbg/policy/*.md` (the nine PF already had), the `CLAUDE.md` block, `.gitignore`, `.claude/hooks/queue-guard.sh`, `test/regressions/README.md`, `.github/actions/gbg-auth/action.yml` | rewritten at the new version |
-| `docs/Project.toml`, `test/Project.toml` | `rev = "v2.0.0-rc.8"`; `compat` stays `=2.0.0` |
+| `docs/Project.toml`, `test/Project.toml` | `rev = "v2.0.0-rc.9"`; `compat` stays `=2.0.0` |
 
 Commit the config and the rewritten paths together: the pin and what it generates are one change. Stage
 with `git add -u` plus the four new files by name — `.gbg/policy/asking.md` and the three
