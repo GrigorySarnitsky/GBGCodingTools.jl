@@ -613,6 +613,16 @@ code behind its own guard has not been reviewed.
 
 What is still open goes to the owner's work queue, one line each, under the heading the end-of-turn hook
 does not count.
+
+A RE-BASELINE IS A CLOSING STEP, never a fix pass's (ruled 2026-09-23). Some fixes ADD information that
+no rewording returns — binding a term defined nowhere, writing a form out because the compressed one was
+not valid code — and those raise the prose-shape numbers a package is held to.
+
+Those numbers are a tracked file, so raising one inside a run is a code change and would end the run
+unevaluable; and the ratchet exists so that a raise is deliberate. The run closes first, and the raise
+is a SEPARATE commit with its reason: one diff a person reads, rather than a number slipped through
+under cover of a fix. Most such findings need no raise at all — of the 28 that tripped on the first real
+review, four fifths were the fixer's own verbosity and came back inside budget by writing tersely.
 """
 function close_run(root::AbstractString; io::IO = stdout)
     id = open_run(root)

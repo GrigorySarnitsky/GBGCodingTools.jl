@@ -125,22 +125,43 @@ const VERIFIED = Model.Rule(
     check = Model.AgentCheck("Every formula, normalization, adjoint relation and cross-scheme equivalence stated in the documentation is true of what the code computes, established by expanding the statement against the code, never taken on the docstring's word.", Model.WhyAgent.MEANING),
     access = [Model.Access.SOURCE])
 
+"""
+    ARCHITECTURE_DOC
+
+The one rationale document that must read self-contained, which is the exception the two cold-read rules
+carry. Empty where a package has none, and then no rationale document is held to a cold read.
+
+WHY THE OTHERS ARE EXEMPT (ruled 2026-09-23, from [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)'s first real review). A cold read
+asks whether a text stands alone, which is the right question for a docstring — somebody genuinely meets
+one at the REPL — and for a page a reader arrives at from outside. It is the WRONG question for a design
+document, which exists to explain one architecture and assumes the rest of itself: satisfying it means
+re-binding the same vocabulary on every page, against the one-home rule the same packages follow. The
+volume says the same thing: of that review's locations, the rationale documents carried 75 of 194 for
+one rule and 159 of 272 for the other.
+
+It is a DEFAULT and not a switch each package writes, because every package that opts its design
+documents in meets this, and a default nobody finds until it hurts is not a default.
+"""
+const ARCHITECTURE_DOC = Model.Parameter(:architecture_doc, "docs/ARCHITECTURE.md")
+
 const SELF_CONTAINED = Model.Rule(
     id = Symbol("RULE.DOC.SELF_CONTAINED"),
-    statement = "A rationale doc reads top to bottom without another file: every symbol is bound in plain language at first use.",
-    why = "Later uses may be bare; universally standard mathematics may stand unglossed. A decision-log entry browsed on its own meets the same bar.",
+    statement = "A docstring, a page, and the one rationale document this rule's `architecture_doc` names read top to bottom without another file: every symbol is bound in plain language at first use. Every other rationale document is exempt, since it explains one architecture and may assume the rest of itself.",
+    why = "Later uses may be bare; universally standard mathematics may stand unglossed. The exemption is not indulgence: holding a design document to a cold read means re-binding the same vocabulary on every page, which is what the one-home rule forbids.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    check = Model.AgentCheck("A rationale doc reads top to bottom without another file: every symbol is bound in plain language at first use.", Model.WhyAgent.READING_ORDER),
+    check = Model.AgentCheck("A docstring, a page, and the one rationale document this rule's `architecture_doc` names read top to bottom without another file: every symbol is bound in plain language at first use. Every other rationale document is exempt, since it explains one architecture and may assume the rest of itself.", Model.WhyAgent.READING_ORDER),
+    parameters = Model.Parameter[ARCHITECTURE_DOC],
     access = [Model.Access.NOTHING])
 
 const TERMS_DEFINED = Model.Rule(
     id = Symbol("RULE.DOC.TERMS_DEFINED"),
-    statement = "A term of art is defined in a clause, or @ref-linked to its definition, before its first use on the same page. The test is a cold read of that page alone.",
-    why = "A docstring can bind every symbol and still be unreadable to someone who has not read the module, because its terms of art are nouns, not symbols; parse it with the module's context withheld, and a noun that silently assumes the package's context is the defect.",
+    statement = "A term of art is defined in a clause, or @ref-linked to its definition, before its first use on the same page. The test is a cold read of that page alone, and it is asked of docstrings, of pages, and of the one rationale document this rule's `architecture_doc` names; every other rationale document is exempt.",
+    why = "A docstring can bind every symbol and still be unreadable to someone who has not read the module, because its terms of art are nouns, not symbols; parse it with the module's context withheld, and a noun that silently assumes the package's context is the defect. A design document is read the other way round, by someone who has the architecture in hand, and holding it to a cold read means defining the same nouns on every page.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
-    check = Model.AgentCheck("A term of art is defined in a clause, or @ref-linked to its definition, before its first use on the same page. The test is a cold read of that page alone.", Model.WhyAgent.MEANING),
+    check = Model.AgentCheck("A term of art is defined in a clause, or @ref-linked to its definition, before its first use on the same page. The test is a cold read of that page alone, and it is asked of docstrings, of pages, and of the one rationale document this rule's `architecture_doc` names; every other rationale document is exempt.", Model.WhyAgent.MEANING),
+    parameters = Model.Parameter[ARCHITECTURE_DOC],
     access = [Model.Access.NOTHING])
 
 const CLASS_SWEEP = Model.Rule(

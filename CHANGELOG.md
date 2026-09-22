@@ -6,6 +6,25 @@ being rebuilt, and nothing measures a recall rate any more.
 
 ## Unreleased — toward 2.0.0-rc.11
 
+**The two cold-read rules no longer hold a design document to a cold read** (ruled 2026-09-23, from GBGPeriodicFields's
+first real review). `RULE.DOC.TERMS_DEFINED` and `RULE.DOC.SELF_CONTAINED` ask whether a text stands alone, which is
+the right question for a docstring — somebody genuinely meets one at the REPL — and for a page a reader arrives at
+from outside. It is the wrong question for a document that exists to explain one architecture and may assume the rest
+of itself: satisfying it means re-binding the same vocabulary on every page, which is what the one-home rule forbids.
+Both now name a parameter, `architecture_doc`, defaulting to `docs/ARCHITECTURE.md`: that one rationale document is
+still held to a cold read, since it carries the requirement itself, and every other is exempt. A DEFAULT rather than
+a switch each package writes, because every package that opts its design documents in meets this, and a default
+nobody finds until it hurts is not a default. The volume says the same: of that review's locations, the rationale
+documents carried 75 of 194 for one rule and 159 of 272 for the other.
+
+**A RE-BASELINE IS A CLOSING STEP, never a fix pass's** (ruled 2026-09-23). Some of a review's fixes ADD information
+no rewording returns — binding a term defined nowhere, writing a form out because the compressed one was not valid
+code — and those raise the prose-shape numbers a package is held to. Those numbers are a tracked file, so raising one
+inside a run is a code change that would end the run unevaluable, and the ratchet exists so a raise is deliberate. So
+the run closes first and the raise is a separate commit with its reason: one diff a person reads, rather than a
+number slipped through under cover of a fix. Most such findings need no raise — of the 28 that tripped on the first
+real review, four fifths were the fixer's own verbosity and came back inside budget by writing tersely.
+
 **A Literate example was readable and unfixable.** Two rules judge one, and the change guard's path list admitted
 no file under `examples/`, so every finding on one could only park on the owner's queue. Reported by
 GBGPeriodicFields, which had a verified fix it could not commit. The hole was not its own: the DEFAULT pattern is

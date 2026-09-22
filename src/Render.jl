@@ -834,7 +834,9 @@ function skill(cfg::Model.Config, instrument::Symbol)
        put with `gbg ask "<decision>" --options "<one> | <another>"`.
     6. `gbg run close` — writes the record and the report, and puts what is still open on the owner's
        work queue. COMMIT `.gbg/runs/<id>/` yourself: `gbg docfix commit` leaves it out on purpose, and
-       nothing else commits it. A run ENDED EARLY with `gbg run abandon` keeps its
+       nothing else commits it. Where a fix ADDED information and so raised a prose-shape number, the
+       re-baseline is a SEPARATE commit AFTER the close, with its reason — never inside a fix pass,
+       where it would be a code change ending the run and would let a raise pass as a fix. A run ENDED EARLY with `gbg run abandon` keeps its
        record only if it LAUNCHED something, and is committed the same way; one that launched nothing AND
        carried nothing is deleted by the verb, id and all, because there is nothing to keep.""")
     else
