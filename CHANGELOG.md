@@ -14,6 +14,24 @@ a concrete evading example, the defect that gets through and why each part of th
 only collects objections converges by narrowing what the thing under attack claims, which is what seven rounds over the
 six discipline texts did.
 
+**Phase 5's three open questions are answered** (owner, 2026-09-22), so the phase that cuts `2.0.0` builds rulings
+rather than asking them. The seven git instructions split three ways: three become programs in the test suite, three
+become programs in the end-of-turn hook because they read git state and so may never run in a build, and one stays an
+instruction because what counts as a backward-compatibility shim is judgement. The four harness contracts stop being
+fleet law in their present form — the fleet law is that SOME testing exists, while its structure, type, size and
+robustness are the package's — and are reworded to bind a package that has declared the capability. The eleven
+remaining instructions stay rules, the two instrument ones included.
+
+**A third state beside applies and switched off: the DEFERRAL.** A switch says a rule does not apply, and is an
+answer. A deferral says a package means to meet a rule and has not yet, and is a question with a condition on it.
+Recording "not yet" as a switch buries an intention in a file nobody revisits and publishes "does not apply" where the
+truth is "owed". A deferral is rendered beside the switches, printed by a verb, and never fails a build. Any rule a
+package means to meet later has this shape, not only a testing one.
+
+**A retired rule will say where its content went**, MOVED to a named design section with a test that the section
+exists, or OBSOLETE and held by nothing. Today a retirement records an id, a date and a reason; eleven of the thirteen
+reasons name a section and nothing asserts one is there.
+
 **A run can read only what changed** (Phase 4d). `gbg run <instrument> --scope changed` measures from the commit that
 added the record of the last finished run with the same readers — per reader combination, since a bound run says nothing
 about what an open reader would find. Five conditions send it back to full and each is printed rather than silently

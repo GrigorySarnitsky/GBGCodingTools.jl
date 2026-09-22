@@ -212,11 +212,34 @@ owner's answers of 2026-09-21. The phase is five pieces:
 
 **Ends with** the rulebook finished — every rule checked by a program, judged by a reader, or an instruction the session
 is given (ruled 2026-09-21), and nothing else remaining — a second science package wired, and one machine in the tree.
-**Depends on** Phase 4. The coverage sittings the plan foresaw (decisions 9–11) shrank to specific items once the covers
-were derived: whether the seven git instructions get programs (four over the tree in `Pkg.test()`, three over git state
-in the end-of-turn hook or a verb — never in a build); whether the four harness contracts (`TestHarness.*`) are
-harvested into `Engine.Harness` and wired, or their rules restated; and, if the owner asks, any instruction restated as
-a principle of the design. Each is a question in §8's form; unanswered means unchanged. **Creates** what those answers
+**Depends on** Phase 4. The coverage sittings the plan foresaw (decisions 9–11) were settled by the owner on
+2026-09-22, and Phase 5 builds his answers rather than asking them:
+
+- **The seven git instructions split three ways.** Three are decidable from the FILES and become programs in
+  `Pkg.test()`: `CI_MANUAL` (the workflow triggers), `MANIFEST_TRACKED` (the ignore file), `REQUESTS` (a request's
+  name and its status paragraph). Three ask about commits and branches — `BRANCH`, `PUSH`, `TRAILER` — and so may
+  never run in a build [§5.1: a fresh clone and CI must answer alike]; they become programs in the end-of-turn hook,
+  and the rulebook SAYS that a hook check is weaker than a build check, since a hook can be skipped and a failing
+  test cannot. `NO_SHIMS` stays an instruction: what counts as a shim is judgement. The earlier "four over the tree"
+  was one too many, and this is the correction.
+- **The four harness contracts are not fleet law in their present form** (owner: the fleet law is that SOME testing
+  exists; its structure, type, size and robustness are the package's). Each states one package's method as though it
+  were a floor. They are reworded to bind a package that has DECLARED the capability, which is what their own
+  `unchecked_reason` already says, and the wiring of any package's contracts belongs to the phase that touches that
+  package, with the owner watching — not to a commit here that turns three builds red at once.
+- **A third state, the DEFERRAL.** A switch says a rule does not apply and is an answer; a deferral says a package
+  means to meet a rule and has not yet, and is a question with a condition on it. Recording "not yet" as a switch
+  buries an intention in a file nobody revisits and publishes "does not apply" where the truth is "owed". A deferral
+  declares the rule, records what would close it, is rendered beside the switches on the package's own site and
+  printed by a verb, and never fails a build. It is not about testing: any rule a package means to meet later has
+  this shape, and today the only honest choices are to switch it off or to fail.
+- **The eleven remaining instructions stay rules**, the two `INST` ones included (owner: keep them). They tell a
+  session working in any package how to behave, which is what a rule is for; the design holds what the TOOL does.
+- **A retired rule says where its content went.** `Catalogue.RETIRED` records an id, a date and a reason, and eleven
+  of the thirteen reasons name a design section — but nothing asserts the section exists, and two name a test
+  instead. A retired rule now declares one of two fates: MOVED, naming the section that holds it, with a test that
+  the section is there; or OBSOLETE, held by nothing because nothing needs to hold it (owner: "a rule could become
+  just completely obsolete"). The thirteen already retired are classified in the same commit. **Creates** what those answers
 say; `gbg release --counts`, which prints for `v2.0.0` alone what still holds it and refuses nothing (ruled 2026-09-16);
 `Main.jl` rewritten and the last old verbs; an `HT-WIRING.md` (the disciplines HT may propose — turbulence theory
 certainly, and the Fourier discipline it shares with PF); HT wired by HT's own session on the last candidate after 4d.
@@ -300,6 +323,15 @@ gets through, where it sits, and why each part of the mechanism misses it. The o
 worked that way and returned eighteen gaps, two of them fatal, each with a real file and line; the seven rounds of
 objections over the six discipline texts converged on nothing useful and narrowed every one of them, which is what
 `docs/design-record/08-discipline-attack.md` records.
+
+### Phase 12 — A package's own rules (on request; to study, 2026-09-22)
+A question the owner raised and deferred rather than answered: should a package's OWN rules live in the same format
+as the fleet's, and be read by the same mechanism? The relevant fact is that the mechanism half exists and does
+nothing — a `PatternRule` in a package's config carries a statement, a file set, a pattern and examples, is rendered
+onto the switches page, and is executed by NOTHING. A package that moves a live convention into one has traded
+enforcement for a promise. One decision settles it: either a package's own rules are first-class, and a `PatternRule`
+gets a check and a place in the test run, or they are documentation and should stop looking like rules. Deferred past
+`2.0.0` because it changes what a config IS, and Phase 5 is the release.
 
 ## 3. Stop anywhere
 
