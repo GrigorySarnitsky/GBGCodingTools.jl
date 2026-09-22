@@ -77,7 +77,12 @@ Opens a run of `instrument` in the package at `root`. The arguments are:
 - `readers` — which readers it launches: `:bound`, `:open` or `:both`.
 - `model` — the careful model its readers run on, or `"session"` for the session's own.
 - `sequential` — whether its agents are launched one at a time rather than together.
+- `scope` — `:full`, every reader's whole corpus, or `:changed`, only what moved since `base`.
+- `base` — the commit a `:changed` run measures from, empty for a full one.
 - `io` — where a refusal is reported.
+
+The base is DECIDED above this module and passed in, because deciding it reads run records through
+`Scope`, which is included after this one and may reach back into it; the arrow goes one way.
 
 Returns the run, or `nothing` when one may not start: the instrument is unknown or switched off, it has
 no readers, another run is open, or a tracked file is changed and uncommitted.
@@ -93,9 +98,12 @@ code change would pass as documentation. Untracked files do not count — a buil
 directory — since nothing commits them unasked.
 """
 function start(instrument::Symbol, root::AbstractString; readers::Symbol = :bound,
-               model::AbstractString = "session", sequential::Bool = false, io::IO = stdout)
+               model::AbstractString = "session", sequential::Bool = false, scope::Symbol = :full,
+               base::AbstractString = "", io::IO = stdout)
     readers in (:bound, :open, :both) ||
         (println(io, "run: readers is bound, open or both, not $readers"); return nothing)
+    scope in (:full, :changed) ||
+        (println(io, "run: scope is full or changed, not $scope"); return nothing)
     i = findfirst(x -> x.id === instrument, Catalogue.INSTRUMENTS)
     i === nothing && (println(io, "run: no instrument is called $instrument"); return nothing)
     inst = Catalogue.INSTRUMENTS[i]
@@ -119,6 +127,7 @@ function start(instrument::Symbol, root::AbstractString; readers::Symbol = :boun
                     tool_version = string(GBG_VERSION[]), first_commit = head_commit(root),
                     budget = inst.budget, stage = :start, readers = readers,
                     model = model, sequential = sequential,
+                    scope = scope, base = base,
                     already_failing = failing_now(cfg, root),
                     findings = carry_over(root, instrument))
     isempty(run.findings) || println(io, "run: ", length(run.findings), " finding(s) carried over from ",
@@ -474,6 +483,7 @@ as_dict(r::Model.Run) = Dict{String,Any}(
     "already_failing" => [String(x) for x in r.already_failing],
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
     "readers" => String(r.readers), "passes" => r.passes,
+    "scope" => String(r.scope), "base" => r.base,
     "questions" => [question_dict(q) for q in r.questions],
     "fixes" => [Dict{String,Any}("finding" => f.finding, "pass" => f.pass, "commit" => f.commit,
                                   "formula_edit" => f.formula_edit, "blind" => String(Symbol(f.blind)),
@@ -541,6 +551,7 @@ function from_dict(d::AbstractDict)
                      agent_launches = get(d, "agent_launches", 0), tokens = get(d, "tokens", nothing),
                      stop = getfield(Model.Stop, Symbol(get(d, "stop", "DONE"))),
                      readers = Symbol(get(d, "readers", "bound")),
+                     scope = Symbol(get(d, "scope", "full")), base = get(d, "base", ""),
                      model = get(d, "model", "session"), sequential = get(d, "sequential", false),
                      already_failing = Symbol[Symbol(x) for x in get(d, "already_failing", [])])
 end

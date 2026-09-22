@@ -69,13 +69,34 @@ Opens a run and writes its first stage's arguments. The arguments are:
 - `readers` — which readers the run launches: `:bound`, `:open` or `:both`.
 - `model` — the careful model its readers run on, or `"session"` for the session's own.
 - `sequential` — whether its agents are launched one at a time, so a crash loses one and not the stage.
+- `scope` — `:full`, every reader's whole corpus, or `:changed`, only what moved since the last run
+  like this one.
 - `io` — where the handoff is described.
 
 Exit 0 when it opened, 2 when it did not.
+
+A `:changed` run that has no base READS FULL and says which of the five reasons it is — no closed run of
+this reader combination, one that stopped short, an uncommitted record, a moved pin, an edited config —
+rather than refusing. The reason is printed because a silent fall back to full is a run whose cost the
+session cannot explain, and the owner asked for the cheap run and got the dear one.
 """
 function start(root::AbstractString, instrument::Symbol; readers::Symbol = :bound,
-               model::AbstractString = "session", sequential::Bool = false, io::IO = stdout)
-    run = Runs.start(instrument, root; readers, model, sequential, io)
+               model::AbstractString = "session", sequential::Bool = false, scope::Symbol = :full,
+               io::IO = stdout)
+    base = ""
+    if scope === :changed
+        cfg = ConfigIO.read_config(root)
+        found = Orchestration.Scope.base(root, instrument, readers, cfg)
+        if found === nothing
+            why = Orchestration.Scope.why_full(root, instrument, readers, cfg)
+            println(io, "run: reading everything — ", why, ".")
+            scope = :full
+        else
+            base = first(found)
+            println(io, "run: reading what changed since ", first(base, 8), ", which ", last(found), " read.")
+        end
+    end
+    run = Runs.start(instrument, root; readers, model, sequential, scope, base, io)
     run === nothing && return 2
     println(io, "run: opened ", run.id, ".")
     return next(root; io)
@@ -87,7 +108,8 @@ with(run::Model.Run; kw...) = Model.Run(; id = run.id, instrument = run.instrume
     first_commit = run.first_commit, budget = run.budget, stage = run.stage, findings = run.findings,
     fixes = run.fixes, questions = run.questions, code_fixes = run.code_fixes,
     agent_launches = run.agent_launches, tokens = run.tokens, stop = run.stop, readers = run.readers,
-    passes = run.passes, model = run.model, sequential = run.sequential, kw...)
+    passes = run.passes, model = run.model, sequential = run.sequential, scope = run.scope,
+    base = run.base, already_failing = run.already_failing, kw...)
 
 """
     next(root; io = stdout) -> Int
@@ -212,10 +234,24 @@ function reader_roles(root::AbstractString, run::Model.Run, cfg::Model.Config, s
     extras = Dict{Symbol,Any}()
     units = isempty(site) ? typeof(Site.write_units("", []))() :
             Site.write_units(Agents.stage_dir(root, run.id), Site.pages(site))
+    narrow = run.scope === :changed && !isempty(run.base)
+    sets, added = if narrow
+        changed = Orchestration.Scope.changed_since(root, run.base)
+        Orchestration.Scope.sets_of(cfg, root, changed, run.base), Orchestration.Scope.added_since(root, run.base)
+    else
+        Dict{Model.FileSet.T,Vector{String}}(), String[]
+    end
+    skipped = 0
     for r in panel
+        if narrow && !Orchestration.Scope.reaches(r, sets)
+            skipped += 1
+            continue
+        end
         if r.site && r.kept_from_code
             isempty(units) && (println(io, "run: `", r.id, "` reads one built page at a time and the site has none; it is not launched"); continue)
-            for u in units
+            mine = narrow ? filter(u -> Orchestration.Scope.unit_touched(root, u, sets, added), units) : units
+            skipped += length(units) - length(mine)
+            for u in mine
                 id = Symbol(string(r.id, UNIT_MARK, u.key))
                 push!(roles, unit_role(r, id))
                 extras[id] = Dict{String,Any}("unit" => u.file, "unit_source" => Site.source_of(root, u.path))
@@ -225,6 +261,8 @@ function reader_roles(root::AbstractString, run::Model.Run, cfg::Model.Config, s
         end
     end
     isempty(units) || println(io, "run: ", length(units), " built page(s), one launch each for the reader given a page alone.")
+    narrow && println(io, "run: reading what changed since ", first(run.base, 8), "; ", skipped,
+                      " launch(es) the change does not reach are not made.")
     return roles, extras
 end
 
@@ -733,16 +771,17 @@ function queue_leftovers(root::AbstractString, run::Model.Run)
 end
 
 function cmd_run(args)
-    o = parse_options(args; valued = ["readers", "model"])
+    o = parse_options(args; valued = ["readers", "model", "scope"])
     root = ConfigIO.require_root("run")
     root === nothing && return 2
-    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--model <name>] [--sequential] | gbg run next|collect|close|abandon"); return 2)
+    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--scope full|changed] [--model <name>] [--sequential] | gbg run next|collect|close|abandon"); return 2)
     what = o.positional[1]
     what == "next" && return next(root)
     what == "collect" && return collect(root)
     what == "close" && return close_run(root)
     what == "abandon" && return abandon(root)
     return start(root, Symbol(replace(what, "-" => "_")); readers = Symbol(get(o.values, "readers", "bound")),
+                 scope = Symbol(get(o.values, "scope", "full")),
                  model = get(o.values, "model", "session"), sequential = "sequential" in o.flags)
 end
 VERBS["run"] = cmd_run
