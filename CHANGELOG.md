@@ -4,6 +4,25 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## Unreleased — toward 2.0.0-rc.10
+
+**A run that launched nothing said the package was clean.** Both runs GBGPeriodicFields abandoned wrote "Every reader
+wrote its file and none of them reported a defect" three lines below a sentence saying 0 agents had launched. That is
+the dead-lane-read-as-clean failure the instrument exists to prevent, in the instrument's own output, under the
+provenance banner, on a page anyone may open — a document asserting a package was read and found clean when it was
+never read is worse than no document. The report now says "Nothing was read", and says the run says NOTHING about the
+package: not that it is clean, not that it is not. The distinction is drawn on whether an AGENT RAN, not on how the
+run ended, since a run stopped after its readers reported is a different thing from one that never launched.
+
+**An abandoned run's record and report are committed, like a closed run's** (ruled 2026-09-22, on
+GBGPeriodicFields's question after two abandoned runs left it with no rule to follow). Whether a package was ever
+reviewed and what came of it is answered from the repository or not at all, and an attempt that leaves no trace reads
+as an attempt nobody made; it is also what keeps a run's id unreusable in every clone, and what lets another machine
+see that attempts were made and why they failed. An escape that leaves a committed artifact survives; one that leaves
+nothing gets quietly disabled the first time it is inconvenient. Accumulation is answered where it arises: `gbg run
+abandon` deletes the run's scratch, the bulky half, and says what to commit; the generated protocol states the rule
+for both endings.
+
 ## 2.0.0-rc.9 — 2026-09-22
 
 **SECOND BLOCKER FIXED: the driver could not write a result file.** rc.8 parsed and then failed at the next step —

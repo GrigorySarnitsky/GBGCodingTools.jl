@@ -850,3 +850,45 @@ end
         end
     end
 end
+
+# A run that launched nothing must not report a clean package. This is the dead-lane-read-as-clean
+# failure the instrument exists to prevent, and until 2026-09-22 it appeared in the instrument's own
+# output: both runs GBGPeriodicFields abandoned wrote "Every reader wrote its file and none of them
+# reported a defect", three lines under a sentence saying 0 agents had launched. A report is a
+# publishable page carrying the provenance banner, so a document asserting that a package was read and
+# found clean when it was never read is worse than no document at all.
+@testset "a run that read nothing does not report a clean package" begin
+    cfg = G.Model.Config(package = "Sample", tool = :dev)
+    base = (instrument = :documentation_review, tool_version = "vdev", first_commit = "abc",
+            budget = G.Model.Budget())
+
+    @testset "nothing launched says nothing was READ" begin
+        run = G.Model.Run(; id = "r-none", base..., stage = :close, agent_launches = 0,
+                          stop = G.Model.Stop.OWNER_STOPPED)
+        text = G.Render.report(run, cfg)
+        @test occursin("Nothing was read", text)
+        @test occursin("says NOTHING about Sample", text)
+        @test !occursin("Nothing was found", text)
+        @test !occursin("none of them reported a defect", text)
+    end
+
+    @testset "agents launched and nothing found says so, and says which readers" begin
+        run = G.Model.Run(; id = "r-clean", base..., stage = :close, agent_launches = 7,
+                          stop = G.Model.Stop.DONE)
+        text = G.Render.report(run, cfg)
+        @test occursin("Nothing was found", text)
+        @test occursin("Every reader that was launched", text)
+        @test !occursin("Nothing was read", text)
+    end
+
+    # The two are told apart by whether an agent ran, not by how the run ended: a run the owner stopped
+    # AFTER its readers had reported is a different thing from one that never launched.
+    @testset "the distinction is the launches, not the ending" begin
+        stopped_late = G.Model.Run(; id = "r-late", base..., stage = :close, agent_launches = 4,
+                                   stop = G.Model.Stop.OWNER_STOPPED)
+        @test occursin("Nothing was found", G.Render.report(stopped_late, cfg))
+        never_ran = G.Model.Run(; id = "r-never", base..., stage = :close, agent_launches = 0,
+                                stop = G.Model.Stop.CANNOT_EVALUATE)
+        @test occursin("Nothing was read", G.Render.report(never_ran, cfg))
+    end
+end

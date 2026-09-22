@@ -799,7 +799,9 @@ function skill(cfg::Model.Config, instrument::Symbol)
        change what is inside a math span: a finding that needs either becomes a question for the owner,
        put with `gbg ask "<decision>" --options "<one> | <another>"`.
     6. `gbg run close` — writes the record and the report, and puts what is still open on the owner's
-       work queue.""")
+       work queue. COMMIT `.gbg/runs/<id>/` yourself: `gbg docfix commit` leaves it out on purpose, and
+       nothing else commits it. A run ENDED EARLY with `gbg run abandon` is committed the same way — an
+       attempt that leaves no trace reads as an attempt nobody made.""")
     else
         println(io, "5. `gbg run close` — writes the record and the report.")
     end
@@ -1161,10 +1163,23 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
         println(io)
     end
 
-    if isempty(run.findings)
+    if isempty(run.findings) && run.agent_launches == 0
+        # NOTHING READ is not NOTHING FOUND. A run that launched no agent has no evidence about this
+        # package at all, and a report saying its documentation was read and found clean — under the
+        # banner, on a page anyone may open — is worse than no report. This is the dead-lane-read-as-clean
+        # failure the instrument exists to prevent, appearing in the instrument's own output; the driver
+        # already refuses to read silence as a clean result one level down, and the close did not apply
+        # that rule to a run whose silence was total. Found by GBGPeriodicFields on two abandoned runs,
+        # 2026-09-22.
+        println(io, "## Nothing was read")
+        println(io)
+        println(io, "No agent was launched, so this run says NOTHING about ", cfg.package,
+                    ": not that it is clean, not that it is not. Whatever it was")
+        println(io, "opened to look for has not been looked for.")
+    elseif isempty(run.findings)
         println(io, "## Nothing was found")
         println(io)
-        println(io, "Every reader wrote its file and none of them reported a defect.")
+        println(io, "Every reader that was launched wrote its file, and none of them reported a defect.")
     else
         println(io, "## Findings — ", length(run.findings))
         println(io)

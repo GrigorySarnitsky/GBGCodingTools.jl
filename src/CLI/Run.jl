@@ -666,6 +666,15 @@ Exit 0 when a run was abandoned, 2 when none was open.
 The findings are DROPPED, not queued: the owner stopping a run is the owner saying its findings are not
 wanted, and a leftover line from a run nobody finished would be read as a finding somebody stood behind.
 What the run committed through the guard stays; a fix already verified is not undone by stopping.
+
+ITS RECORD AND REPORT ARE COMMITTED, like a closed run's [ruled 2026-09-22, on
+[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)'s question, after two
+abandoned runs left it with no rule to follow]. "Was this package ever reviewed, and
+what came of it?" is answered from the repository or not at all, and an attempt that leaves no trace
+reads as an attempt that was never made — which is also how an id stays unreusable across a clone, and
+how another machine can see that three attempts were made here and why they failed. The argument against
+is accumulation, and it is answered where it arises: this verb deletes the run's scratch, which is the
+bulky half, and what stays is a record and a page.
 """
 function abandon(root::AbstractString; io::IO = stdout)
     id = open_run(root)
@@ -683,6 +692,9 @@ function abandon(root::AbstractString; io::IO = stdout)
     rm(Agents.scratch_dir(root, id); force = true, recursive = true)
     Runs.write_stage(root, id, length(get(Runs.STAGES, run.instrument, Symbol[])))
     println(io, "run: ", id, " abandoned at ", run.stage, "; ", length(run.findings), " finding(s) dropped.")
+    println(io, "  Commit .gbg/runs/", id, "/ — the record and the report. An attempt that leaves no")
+    println(io, "  trace reads as an attempt nobody made, and the id must stay unreusable in every clone.")
+    println(io, "  Its scratch is deleted; what stays is one record and one page.")
     return 0
 end
 
