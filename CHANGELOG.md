@@ -4,7 +4,48 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
-## Unreleased — toward 2.0.0-rc.11
+## 2.0.0-rc.11 — 2026-09-23
+
+PATCH, and everything in it comes from GBGPeriodicFields running the documentation review over real
+agents. **Upgrade if you are going to run one.**
+
+**A stopped run reported itself clean.** Abandoning empties a run's list of findings and leaves its
+launch count alone, so a run that found a hundred and forty-two and was stopped looked, in its own
+record, exactly like one that read everything and found nothing — and its report said so, under the
+provenance banner, on a page anyone may open. This is the THIRD reading of the same failure; the first
+two were fixed in rc.10 and this one was left standing. The record now carries `dropped`, the count
+that was thrown away, and the report has a branch that says what happened. The record's round trip is
+gated too: its writer and its reader are written by hand side by side, nothing made them agree, and a
+field that reaches one and not the other is silently the default on the next load with no test failing.
+
+**A docstring on a bare name was code.** The change guard dropped a docstring only when its target was
+a definition, so `"""…""" mean` above methods written one per backend — the way a whole generic is
+documented — made every edit to that prose wait for the owner. Nineteen targets in GBGPeriodicFields,
+every operator of its field algebra and every reduction; NONE in GBGCodingTools, which documents no
+generic that way. Removing such a docstring leaves the name alone, which runs nothing, so the edit is
+documentation. A docstring on a CALL still is not, for the reason it never was.
+
+**Launching a stage cost the session half a megabyte.** A workflow script has no filesystem, so the
+session cannot hand the driver a path: it types the arguments into the launching call, and every byte
+of that file is a byte of its context. A stage's instruction to its verifiers and the standpoint a
+reader carries are the same text for every role that shares them, and written per role one paragraph
+became a hundred and forty copies; they move to a table, each once. The finding a verifier judges and
+the diff of the fix made for it are the bulk of the file and no part of it is the script's to read, so
+both are now written beside the arguments and passed as PATHS, which is what a reader given one built
+page has always been given.
+
+**The work queue and the fixer were fighting.** The queue is the session's note of what it still owes,
+and the end-of-turn hook reads it to keep a session walking a run to its end — so it is most useful
+while a run is open. But `gbg docfix commit` classifies every changed file and refuses the whole commit
+if one is code, and the queue was code, so writing one line into it made every remaining fix of that
+pass uncommittable. The queue joins the run's own record on the list the fixer looks past, and the
+close now names it when it is dirty.
+
+**A fix committed without its finding is never verified.** The pass machinery is keyed on that trailer:
+the diff verifier is handed the diff of the commits naming its finding, and a fix called worse is
+reverted by reverting them. So while a run is open `gbg docfix commit` REFUSES without `--finding`; a
+change belonging to no finding waits for the close. The fix stage also now prints `gbg docfix check`
+above the commit — a refused commit costs one edit to understand, and a pass of them costs the pass.
 
 **The two cold-read rules no longer hold a design document to a cold read** (ruled 2026-09-23, from GBGPeriodicFields's
 first real review). `RULE.DOC.TERMS_DEFINED` and `RULE.DOC.SELF_CONTAINED` ask whether a text stands alone, which is
