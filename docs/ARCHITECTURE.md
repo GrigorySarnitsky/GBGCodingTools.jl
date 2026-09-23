@@ -161,19 +161,17 @@ returns documentation only when all of these hold, and code otherwise:
    merely follows whatever else the commit changed, and any other content there is code. This is what lets a reworded
    rule statement be committed with the policy files it feeds (§4.3 step 2);
 1. the path is on the documentation list;
-2. for `.jl`: both versions parse, and they are byte for byte the same OUTSIDE what the fixer may change — apart
-   from blank lines and trailing spaces outside strings — with the same statement structure (which strings are loose
-   statements and which docstrings are attached). What it may change is exactly: the text of a docstring the parser
-   attached at top level or directly in a module; a field docstring directly in a top-level struct's body; and
-   comments, a block comment keeping its delimiters. A docstring may be ADDED or REMOVED only on a function, struct,
-   abstract or primitive type or macro that is not its block's last statement; on a bare name, a module, a `const`,
-   or anything under a macro (`@kwdef`, `@enum`, Base's annotations) it may only be reworded, since its presence
-   changes what loads. In a Literate example a run of Markdown comment lines — `#` then a space or the line's end,
-   never `##` — may be rewritten but not moved, split or joined to code, and a mark, its `#!` negation, a separator
-   or a `#=` block is code (clause 4 lives here). A file that reads its own line numbers keeps them. [Inverted
-   2026-09-23: four review passes found ways past every guard that recognised CODE; this one recognises the few
-   regions that may change. Measured on GBGPeriodicFields: 231 reworded docstrings and 530 added comments refused 0
-   times; its 51 real fix commits refused only where mathematics changed.]
+2. for `.jl`: both versions parse, and they are byte for byte the same, whitespace included, except the TEXT inside
+   docstrings the file already has and the text of comments it already has [the simple rule, ruled 2026-09-23]. A
+   docstring or a comment is never added, removed or moved by the fixer: a missing docstring comes to the owner as a
+   question with the proposed text. A docstring's text is the string tokens of a string the parser attached as one,
+   anywhere but inside a `quote` or a macro call's arguments, where a string is data (`Base.@kwdef` excepted, unless
+   the file defines its own). In a Literate example a comment keeps its kind — a Markdown line (`#` then a space, or
+   `#` alone) stays one, a mark or a `#=` block stays exactly as it is — and a prose run may not leave a fence open
+   (clause 4 lives here). A file that reads its own line numbers keeps every line break. [Every earlier guard judged
+   when a docstring's presence or a comment's place changes what loads, and five review passes found fifty ways past
+   those judgements; with structure fixed there is nothing to judge. Measured on GBGPeriodicFields: 231 reworded
+   docstrings refused 0 times; its 51 real fix commits refused only where mathematics changed.]
 3. in GBGCodingTools only, differences confined to plain string literals given to the keywords `statement` or `why` of
    a `Rule(…)` call are documentation — any number of them, in any number of files — with the parsed trees identical at
    every other node; a moved, added or removed argument, a changed id, check, example or parameter, or an interpolated

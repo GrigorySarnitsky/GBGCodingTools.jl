@@ -93,11 +93,9 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         after  = "\"adds two fields, componentwise\"\n+\n\nf(a, b) = a\n"
         @test doc("src/M.jl", before, after)
 
-        # a DOTTED name is not: `t.v` is a property read, which a docstring turns into an error at load
-        # when `t` is not a module (the review of 2026-09-23); a bare name that is a block's last statement
-        # is not either, since the docstring changes what the block returns
-        @test !doc("src/M.jl", "\"one\"\nBase.mean\n", "\"another\"\nBase.mean\n")
-        @test !doc("src/M.jl", "x = 1\n\"one\"\nx\n", "x = 1\n\"another\"\nx\n")
+        # rewording an existing docstring is prose wherever it stands: nothing structural moves
+        @test doc("src/M.jl", "\"one\"\nBase.mean\n", "\"another\"\nBase.mean\n")
+        @test doc("src/M.jl", "x = 1\n\"one\"\nx\n", "x = 1\n\"another\"\nx\n")
 
         # and changing the NAME itself is still code, docstring or not
         @test !doc("src/M.jl", "\"the sum\"\n+\n", "\"the sum\"\n-\n")
@@ -150,7 +148,8 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         @test !g("const T = quote\n    struct S\n        \"alpha\"\n        x::Int\n    end\nend\n", "const T = quote\n    struct S\n        \"beta\"\n        x::Int\n    end\nend\n")
         # a comment in ordinary source is prose, wherever it stands
         @test g("f(x) = x   # old\n", "f(x) = x   # new, and longer\n")
-        @test g("f(x) = x\n", "# a note added\nf(x) = x\n")
+        # the simple rule (ruled 2026-09-23): a comment's text may change, a comment may not be added
+        @test !g("f(x) = x\n", "# a note added\nf(x) = x\n")
         # an interpolated string standing alone runs code
         @test !g("function f()\n    1\nend\n", "function f()\n    \"\$(rm(\"x\"))\"\n    1\nend\n")
         @test !g("x = 1\n", "x = 1\n\"\$(run(`true`))\"\n")
@@ -175,11 +174,12 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         @test !g("macro kwdef(e) e end\n@kwdef struct P\n    \"velocity\"\n    u::Int\nend\n", "macro kwdef(e) e end\n@kwdef struct P\n    \"the velocity\"\n    u::Int\nend\n")
         @test g("Base.@kwdef struct P\n    \"velocity\"\n    u::Int = 1\nend\n", "Base.@kwdef struct P\n    \"the velocity\"\n    u::Int = 1\nend\n")
         @test !g("function f(x::tick())\n    x\nend\ng() = 1\n", "\"Documented.\"\nfunction f(x::tick())\n    x\nend\ng() = 1\n")
-        @test g("function f(x::Int)\n    x\nend\ng() = 1\n", "\"Documented.\"\nfunction f(x::Int)\n    x\nend\ng() = 1\n")
+        @test !g("function f(x::Int)\n    x\nend\ng() = 1\n", "\"Documented.\"\nfunction f(x::Int)\n    x\nend\ng() = 1\n")
         @test g("\"Colours.\"\n@enum Colour red blue\n", "\"The colours.\"\n@enum Colour red blue\n")
         @test !g("g() = 1\nf(x) = x\n", "g() = 1\n\"The identity.\"\nf(x) = x\n")          # the file's last statement
-        @test g("f(x) = x\ng() = 1\n", "\"The identity.\"\nf(x) = x\ng() = 1\n")            # a docstring added: fine
-        @test g("\"The identity.\"\nf(x) = x\ng() = 1\n", "f(x) = x\ng() = 1\n")            # and removed
+        # the simple rule (ruled 2026-09-23): a docstring added or removed is the owner's to approve
+        @test !g("f(x) = x\ng() = 1\n", "\"The identity.\"\nf(x) = x\ng() = 1\n")
+        @test !g("\"The identity.\"\nf(x) = x\ng() = 1\n", "f(x) = x\ng() = 1\n")
         # tokens either side of a block comment, whitespace in a `var` name
         @test !g("v = [10]\n", "v = [1#= =#0]\n")
         @test g("v = [1 #= old =# 0]\n", "v = [1 #= new, longer =# 0]\n")
@@ -258,14 +258,15 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         @test !L("# ```math\n# E = m c^2\n#md # + 0\n# ```\ny = 1\n", "# ```math\n# E = m c^3\n#md # + 0\n# ```\ny = 1\n")
         before = "x = 1      #src\ny = 2\n# a plain comment\n"
         @test L(before, "x = 1      #src\ny = 2\n# a plain comment, reworded\n")
-        @test L(before, "x = 1      #src\ny = 2\n# a plain comment,\n# over two lines\n")
+        @test !L(before, "x = 1      #src\ny = 2\n# a plain comment,\n# over two lines\n")   # a comment line added
         @test !L(before, "x = 1\ny = 2      #src\n# a plain comment\n")
         @test !L("x = 1\n#!nb x = 1\n", "x = 1\n#!nb run(`true`)\n")
         @test !L("x = [1,2,3]\ny = x .+ 1\n", "x = [1,2,3]\n#-\ny = x .+ 1\n")
         @test !L("x = [1,2,3]\ny = x .+ 1\n", "x = [1,2,3]\n# a note\ny = x .+ 1\n")
         @test !L("#=\nold\n=#\nx = 1\n", "#=\nnew\n=#\nx = 1\n")
-        # and in ordinary source the same comments are only comments
-        @test doc("src/M.jl", "x = 1      #src\ny = 2\n", "x = 1\ny = 2      #src\n")
+        # in ordinary source a comment's text may change, but not where it stands
+        @test doc("src/M.jl", "x = 1      #src\ny = 2\n", "x = 1      #src, reworded\ny = 2\n")
+        @test !doc("src/M.jl", "x = 1      #src\ny = 2\n", "x = 1\ny = 2      #src\n")
     end
 
     @testset "clause 5 — a doctest and an `@` block are run, not read" begin

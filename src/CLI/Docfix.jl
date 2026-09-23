@@ -31,7 +31,15 @@ changed_files(root::AbstractString) = sort!(unique(p for (_, p) in Git.porcelain
 The file's content at `HEAD`, or `nothing` where the commit does not hold it — a file the working tree
 has added. The arguments are `root`, the package root, and `path`, the file. Returns the content.
 """
-at_head(root::AbstractString, path::AbstractString) = Git.run(root, "show", "HEAD:" * path)
+function at_head(root::AbstractString, path::AbstractString)
+    # EXACTLY as committed: `Git.run` strips trailing newlines, and the guard compares bytes, so every
+    # file read that way looked changed at its last line (found 2026-09-23, with the byte-exact rule)
+    try
+        read(pipeline(`git -C $root -c core.quotePath=false show HEAD:$path`; stderr = devnull), String)
+    catch
+        nothing
+    end
+end
 
 """
     rulings(root; generated = Dict{String,String}()) -> Vector{Engine.Guard.Ruling}

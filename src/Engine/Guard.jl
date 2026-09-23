@@ -246,108 +246,76 @@ end
 A Julia file split into what the documentation fixer may change and everything else. The arguments are:
 
 - `src` — the file's content.
-- `literate` — whether it is a Literate example, whose comments are Markdown and whose comment lines
-  divide what runs.
-- `rule_prose` — whether the plain strings given as a `Rule(…)` call's own `statement` and `why`
-  keywords count as prose too (clause 3, GBGCodingTools only).
+- `literate` — whether it is a Literate example, whose comments are Markdown and decide what runs.
+- `rule_prose` — whether the plain strings given as a top-level `Rule(…)` constant's own `statement`
+  and `why` keywords count as prose too (clause 3, GBGCodingTools only).
 
-Returns `(outer, texts)` — the file with every changeable region taken out, and the text of each region
-— or `nothing` when the source does not parse.
+Returns `(outer, texts)` — the file with the changeable TEXT taken out, and each docstring's value and
+each Literate prose run — or `nothing` when the source does not parse.
 
-INVERTED, 2026-09-23. Three review passes found thirty-five ways past a guard that decided which parts
-of a changed file were CODE; each fix exposed a form it had not anticipated. This decides the opposite
-question: what may change.
+THE SIMPLE RULE [ruled 2026-09-23]. A Julia file must be the same byte for byte, whitespace included,
+except the text INSIDE docstrings it already has and the text of comments it already has. A docstring
+or a comment cannot be added, removed or moved by the fixer — that is the owner's to approve — because
+every hole the review passes found in earlier guards came from judging when a docstring's presence, or
+a comment's place, changes what loads: attaching a loose string to a call, a docstring above `@enum`,
+on a bare name or a `baremodule`, a comment line splitting a Literate chunk. With structure fixed, none
+of that can happen, and nothing needs judging.
 
-Exactly three things. The text of a docstring the parser attached, at top level or directly in a
-module, on a function, a struct, an abstract or primitive type, a macro, a module, a `const`, a bare
-name that is not the block's last statement, or a Base annotation or `@kwdef`/`@enum` around one of
-those. A field docstring directly in the body of such a struct. And comments.
-
-Everything else must be byte for byte the same — whitespace included, since `[1 - 1]` is not `[1 -1]`
-— apart from blank lines and trailing spaces outside strings. In a Literate example a run of prose
-comment lines may be rewritten but not moved, split or joined to code, and a line carrying a Literate
-mark, a chunk separator or a `#=` block is code.
-
-Line numbers move when a docstring grows, and a program can read them; that is accepted, as it is for
-every edit, except in a file that names `@__LINE__` or `__source__`, where a moved line is code.
+What counts as a docstring's text: the string tokens of a string the parser attached as a docstring,
+anywhere except inside a `quote` or a macro call's arguments, where a string is data — `Base.@kwdef`
+excepted, unless the file defines its own `kwdef`. In a Literate example a comment's KIND is kept too:
+a Markdown line stays one (`#` then a space, or `#` alone), a mark stays exactly as it is, and a prose
+run may not leave a fence open.
 """
 function regions(src::AbstractString; literate::Bool = false, rule_prose::Bool = false)
     s = String(src)
     tree = try JS.parseall(JS.SyntaxNode, s; filename = "regions.jl") catch; return nothing end
     any_error(tree) && return nothing
-    cut = UnitRange{Int}[]; texts = String[]; sig = String[]
-    OWN_MACROS[] = Dict(m => occursin(Regex("\\bmacro\\s+" * String(m)[2:end] * "\\b"), s)
-                        for m in vcat([Symbol("@kwdef"), Symbol("@enum")], ANNOTATING))
-    walk_regions!(cut, texts, sig, s, tree, :top, false; rule_prose)
     toks = collect(JS.tokenize(s))
-    # bytes whose whitespace is part of a value: string and command text, a character literal, and a
-    # name written `var"…"` — whitespace there is never dropped
-    instr = falses(ncodeunits(s))
+    strings = [(Int(first(t.range)):Int(last(t.range))) for t in toks if JS.kind(t) === JS.K"String"]
+    cut = UnitRange{Int}[]; texts = String[]; sig = String[]
+    own_kwdef = occursin(r"\bmacro\s+kwdef\b", s)
+    walk_docs!(cut, texts, s, tree, strings; rule_prose, own_kwdef, top = true)
     for t in toks
-        k = JS.kind(t)
-        k in (JS.K"Whitespace", JS.K"NewlineWs", JS.K"Comment") && continue
-        r = Int(first(t.range)):Int(last(t.range)); isempty(r) && continue
-        (k in (JS.K"String", JS.K"CmdString", JS.K"Char") || any(isspace, sub(s, r))) && (instr[r] .= true)
+        JS.kind(t) === JS.K"Comment" || continue
+        r = Int(first(t.range)):Int(last(t.range)); c = sub(s, r)
+        if !literate && startswith(c, "#=")
+            push!(cut, (first(r) + 2):(last(r) - 2))            # the delimiters stay, the text may change
+        elseif !literate
+            push!(cut, (first(r) + 1):last(r))                  # the `#` stays, the text may change
+        elseif occursin(r"^#( |$)", c) && !startswith(c, "##") && !any(m -> occursin(m, c), LITERATE_MARKS)
+            push!(cut, (first(r) + 2):last(r))                  # a Markdown line: `# ` stays, prose may change
+        end                                                      # a mark or a code comment: exactly as it is
     end
-    comments = [(Int(first(t.range)):Int(last(t.range))) for t in toks if JS.kind(t) === JS.K"Comment"]
     if literate
-        literate_comments!(cut, texts, sig, s, comments)
-        push!(texts, literate_markdown(s))
-    else
-        for r in comments
-            # a block comment keeps its delimiters, so deleting one cannot fuse the tokens either side
-            # (`[1#= =#0]` is two elements, `[10]` one); its text may change
-            startswith(sub(s, r), "#=") ? push!(cut, (first(r) + 2):(last(r) - 2)) : push!(cut, r)
+        # a prose run that leaves a fence open swallows the next code chunk into it
+        for run in prose_runs(s, toks)
+            open_fence(run) && push!(sig, "open-fence")
         end
+        md = literate_markdown(s); push!(texts, md)
+        any(m -> occursin(m, md), LITERATE_MARKS) && push!(sig, "mark-in-prose")
     end
-    lines_matter = occursin("@__LINE__", s) || occursin("__source__", s)
-    outer = assemble(s, cut, instr; keep_blank = literate || lines_matter, keep_lines = lines_matter)
-    # the statement structure goes with the outer text: which strings are loose statements and which
-    # docstrings are attached, so that no edit — a blank line removed, a comment moved — attaches a
-    # loose string to what follows it or detaches a docstring from it
-    return (outer = outer * "\0" * join(sig, ","), texts = texts)
+    # a file that reads its own line numbers keeps every line break, the ones inside docstrings included
+    keep_lines = occursin("@__LINE__", s) || occursin("__source__", s)
+    return (outer = without(s, cut; keep_lines) * "\0" * join(sig, ","), texts = texts)
 end
 
 any_error(node) = JS.kind(node) === JS.K"error" || any(any_error, something(JS.children(node), ()))
 brange(n) = Int(first(JS.byte_range(n))):Int(last(JS.byte_range(n)))
 
-function walk_regions!(cut, texts, sig, s, n, level::Symbol, last_stmt::Bool; rule_prose::Bool)
+function walk_docs!(cut, texts, s, n, strings; rule_prose::Bool, own_kwdef::Bool, top::Bool)
     k = JS.kind(n); cs = something(JS.children(n), ())
-    if k === JS.K"doc" && level === :top && length(cs) == 2 && plain(cs[1])
-        how = attachable(cs[2], last_stmt)
-        if how === :whole
-            # added, removed or reworded freely: removing it leaves the same definition
-            push!(cut, first(brange(cs[1])):(first(brange(cs[2])) - 1)); push!(texts, value(s, cs[1]))
-            walk_regions!(cut, texts, sig, s, cs[2], :top, last_stmt; rule_prose)
-            return
-        elseif how === :text
-            # reworded only: its presence changes what loads (a bare name evaluated, a baremodule's
-            # imports, a package's own `@enum`), so the docstring stays and only its text may change
-            r = brange(cs[1]); d = startswith(sub(s, r), "\"\"\"") ? 3 : 1
-            push!(cut, (first(r) + d):(last(r) - d)); push!(texts, value(s, cs[1])); push!(sig, "doc-text")
-            walk_regions!(cut, texts, sig, s, cs[2], :top, last_stmt; rule_prose)
-            return
-        end
+    # quoted code and a macro's arguments are data — a string there is read by whatever receives it
+    k === JS.K"quote" && return
+    if k === JS.K"macrocall"
+        name = isempty(cs) ? Symbol("") : macro_name(cs[1])
+        (name === Symbol("@kwdef") && !own_kwdef) || return
     end
-    k === JS.K"doc" && push!(sig, "doc")
-    if level === :top && (k === JS.K"struct" || (k === JS.K"macrocall" && kwdef(n)))
-        st = k === JS.K"struct" ? n : something(findfirst(c -> JS.kind(c) === JS.K"struct", cs) |> i -> i === nothing ? nothing : cs[i], nothing)
-        if st !== nothing
-            body = something(findfirst(c -> JS.kind(c) === JS.K"block", something(JS.children(st), ())) |> i -> i === nothing ? nothing : JS.children(st)[i], nothing)
-            if body !== nothing
-                for f in something(JS.children(body), ())
-                    fc = something(JS.children(f), ())
-                    if JS.kind(f) === JS.K"doc" && length(fc) == 2 && plain(fc[1])
-                        push!(cut, first(brange(fc[1])):(first(brange(fc[2])) - 1)); push!(texts, value(s, fc[1]))
-                    end
-                end
-            end
-        end
-        return
+    if k === JS.K"doc" && !isempty(cs) && JS.kind(cs[1]) === JS.K"string"
+        cut_text!(cut, strings, brange(cs[1])); push!(texts, value(s, cs[1]))
     end
-    # clause 3: a rule's prose is the `statement` and `why` of a Rule(…) that IS a top-level constant's
-    # value — never a Rule(…) nested in code that may read its fields
-    if rule_prose && level === :top && k in (JS.K"const", JS.K"=")
+    # clause 3: the statement and why of a Rule(…) that IS a top-level constant's value
+    if rule_prose && top && k in (JS.K"const", JS.K"=")
         asg = k === JS.K"const" ? (isempty(cs) ? nothing : cs[1]) : n
         ac = asg === nothing ? () : something(JS.children(asg), ())
         if asg !== nothing && JS.kind(asg) === JS.K"=" && length(ac) == 2 && JS.kind(ac[2]) === JS.K"call" &&
@@ -356,51 +324,28 @@ function walk_regions!(cut, texts, sig, s, n, level::Symbol, last_stmt::Bool; ru
                 for kwn in (JS.kind(c) === JS.K"parameters" ? something(JS.children(c), ()) : (c,))
                     kc = something(JS.children(kwn), ())
                     if JS.kind(kwn) === JS.K"=" && length(kc) == 2 && JS.kind(kc[1]) === JS.K"Identifier" &&
-                       strip(String(JS.sourcetext(kc[1]))) in ("statement", "why") && plain(kc[2])
-                        r = brange(kc[2]); push!(cut, (first(r) + 1):(last(r) - 1)); push!(texts, value(s, kc[2]))
+                       strip(String(JS.sourcetext(kc[1]))) in ("statement", "why") && JS.kind(kc[2]) === JS.K"string"
+                        cut_text!(cut, strings, brange(kc[2])); push!(texts, value(s, kc[2]))
                     end
                 end
             end
         end
     end
-    stmt_level = k === JS.K"toplevel" || k === JS.K"block"
-    inner = k === JS.K"toplevel" || (k === JS.K"block" && level === :module)
-    for (i, c) in enumerate(cs)
-        stmt_level && JS.kind(c) === JS.K"string" && push!(sig, "string")
-        next = inner ? :top : (k === JS.K"module" ? :module : :other)
-        walk_regions!(cut, texts, sig, s, c, next, inner && i == length(cs); rule_prose)
+    inner = k === JS.K"toplevel" || (k === JS.K"block" && top)
+    for c in cs
+        walk_docs!(cut, texts, s, c, strings; rule_prose, own_kwdef, top = inner || k === JS.K"module")
     end
 end
 
-plain(n) = JS.kind(n) === JS.K"string" && all(c -> JS.kind(c) === JS.K"String", something(JS.children(n), ()))
+# The string tokens inside one string literal: its text, and never its delimiters or an interpolation.
+cut_text!(cut, strings, within) = append!(cut, (r for r in strings if first(r) >= first(within) && last(r) <= last(within)))
+
 value(s, n) = (v = try Meta.parse(sub(s, brange(n))) catch; nothing end; v isa AbstractString ? String(v) : "")
 
 # A byte range of `s` as a string: the tokenizer's ranges end on a byte, which in a multi-byte character
 # is not a valid string index.
 sub(s, r) = String(codeunits(s)[max(first(r), 1):min(last(r), ncodeunits(s))])
-kwdef(n) = (cs = something(JS.children(n), ()); !isempty(cs) && macro_name(cs[1]) === Symbol("@kwdef") &&
-             !OWN_MACROS[][Symbol("@kwdef")])
 
-# The macros this package trusts by name, and whether the file being read defines its own of that name —
-# a package's `@kwdef` may read its field strings as data, and its `@enum` fail to be documented. Set per
-# file by `regions`.
-const OWN_MACROS = Ref(Dict{Symbol,Bool}())
-
-# Whether a method's signature calls anything in a type annotation or a `where` bound.
-function calls_in_signature(f)
-    cs = something(JS.children(f), ()); isempty(cs) && return false
-    found = Ref(false)
-    function walk(n, in_type)
-        k = JS.kind(n)
-        in_type && k === JS.K"call" && (found[] = true; return)
-        c = something(JS.children(n), ())
-        for (i, x) in enumerate(c)
-            walk(x, in_type || (k === JS.K"::" && i == length(c)) || (k === JS.K"where" && i > 1))
-        end
-    end
-    walk(cs[1], false)
-    return found[]
-end
 function macro_name(n)
     t = strip(String(JS.sourcetext(n)))
     t = split(t, '.')[end]
@@ -408,76 +353,31 @@ function macro_name(n)
 end
 is_rule_callee(n) = (t = strip(String(JS.sourcetext(n))); t == "Rule" || endswith(t, ".Rule"))
 
-# What may be done to a docstring on this target: `:whole` — added, removed or reworded, since removing
-# it leaves the same definition evaluated; `:text` — reworded only, since its presence changes what
-# loads; `:none` — nothing. Plain definitions are `:whole` unless they are the block's last statement,
-# whose value the docstring would change. A bare name, a module, a `const`, and anything under a macro
-# — `@kwdef`, `@enum`, Base's annotations — are `:text` at most: a docstring on a bare name evaluates
-# it before it may exist, one on a `baremodule` imports `@doc` into it, and a package may define its
-# own `@enum` or `@inline` (all found in review, 2026-09-23).
-function attachable(t, last_stmt::Bool)
-    k = JS.kind(t)
-    # A docstring on a method builds its signature again, so annotations that CALL something run
-    # twice: such a definition's docstring may be reworded, not added or removed (review, 2026-09-23).
-    k === JS.K"function" && calls_in_signature(t) && return :text
-    k in (JS.K"function", JS.K"struct", JS.K"abstract", JS.K"primitive", JS.K"macro") &&
-        return last_stmt ? :text : :whole
-    k in (JS.K"module", JS.K"const") && return :text
-    k === JS.K"Identifier" && return last_stmt ? :none : :text
-    if k === JS.K"macrocall"
-        cs = something(JS.children(t), ()); isempty(cs) && return :none
-        name = macro_name(cs[1])
-        get(OWN_MACROS[], name, false) && return :none
-        name in (Symbol("@kwdef"), Symbol("@enum")) && return :text
-        name in ANNOTATING && JS.kind(cs[end]) in (JS.K"function", JS.K"macrocall") &&
-            attachable(cs[end], true) !== :none && return :text
+# The file with the cut ranges removed, every other byte kept.
+function without(s, cut; keep_lines::Bool = false)
+    drop = falses(ncodeunits(s))
+    for r in cut
+        r2 = max(first(r), 1):min(last(r), ncodeunits(s)); isempty(r2) || (drop[r2] .= true)
     end
-    return :none
+    bytes = codeunits(s)
+    keep_lines && (drop .&= bytes .!= UInt8('\n'))
+    return String(bytes[.!drop])
 end
 
-# Base's macros that only ANNOTATE a function definition. A named list: a package's own macro may
-# rewrite what it wraps, and `@deprecate` or `@nospecialize` do not wrap a definition at all.
-const ANNOTATING = Symbol.(["@inline", "@noinline", "@generated", "@propagate_inbounds", "@constprop",
-                            "@assume_effects"])
-
-# In a Literate example a comment line is Markdown, and where comment lines stand decides what runs. A
-# run of prose comment lines is one region; its line count may change, its place may not. A line with a
-# mark — `#src` `#md` `#jl` `#nb`, their `#!` negations, a `#-` or `#+` separator — and a `#=` block
-# stay in the outer text, so a change to one is code.
-function literate_comments!(cut, texts, sig, s, comments)
-    run = UnitRange{Int}[]
-    # the run is cut after its first `#`, which stays: the outer text keeps one line where prose stands,
-    # so prose cannot replace a blank line, or a blank line prose, without the outer text changing
-    # A run that leaves a fence OPEN swallows the code chunk after it into the fence — Literate's output
-    # then never runs that chunk — so an open fence is part of the structure, not of the prose.
-    flush!() = (isempty(run) && return;
-                push!(cut, (first(run[1]) + 1):last(run[end]));
-                t = join((strip_hash(sub(s, r)) for r in run), '\n'); push!(texts, t);
-                open_fence(t) && push!(sig, "open-fence");
-                empty!(run))
-    for r in comments
-        c = sub(s, r)
-        whole = line_only(s, r)
-        # Literate's own test for a Markdown line: `#` then a space or the end of the line, never `##`
-        # (a SPACE, not any whitespace: `#` then a tab is code to Literate, found in review 2026-09-23)
-        prose = occursin(r"^#( |$)", c) && !startswith(c, "##")
-        mark = !prose || startswith(c, "#=") || occursin(r"^#\s*[-+]", c) ||
-               any(m -> occursin(m, c), LITERATE_MARKS)
-        if mark && whole
-            flush!()
-        elseif mark
-            flush!()
-        elseif whole
-            if !isempty(run) && only_space(s, (last(run[end]) + 1):(first(r) - 1))
-                push!(run, r)
-            else
-                flush!(); push!(run, r)
-            end
+# The Literate prose runs: consecutive lines that are Markdown comments, each run's text with `# ` off.
+function prose_runs(s, toks)
+    out = String[]; cur = String[]; last_line = -1
+    lines = split(s, '\n')
+    for (i, l) in enumerate(lines)
+        m = match(r"^[ \t]*#( (.*)|)$", l)
+        if m !== nothing && !startswith(lstrip(l), "##")
+            push!(cur, something(m.captures[2], ""))
         else
-            flush!(); push!(cut, r)                         # a trailing comment on a code line
+            isempty(cur) || push!(out, join(cur, '\n')); empty!(cur)
         end
     end
-    flush!()
+    isempty(cur) || push!(out, join(cur, '\n'))
+    return out
 end
 
 strip_hash(c) = replace(c, r"^#[ \t]?" => "")
@@ -508,43 +408,6 @@ function literate_markdown(s)
         push!(out, m !== nothing && !startswith(lstrip(t), "##") ? something(m.captures[1], "") : "")
     end
     return join(out, '\n')
-end
-only_space(s, r) = isempty(r) || all(isspace, sub(s, r))
-function line_only(s, r)
-    a = first(r); while a > 1 && s[prevind(s, a)] in (' ', '\t'); a = prevind(s, a); end
-    return a == 1 || s[prevind(s, a)] == '\n'
-end
-
-# The file with the cut ranges removed; outside strings, trailing spaces go and blank lines go too
-# unless they carry meaning (a Literate example, a file reading its own line numbers).
-function assemble(s, cut, instr; keep_blank::Bool, keep_lines::Bool = false)
-    drop = falses(ncodeunits(s))
-    for r in cut
-        r2 = max(first(r), 1):min(last(r), ncodeunits(s)); isempty(r2) || (drop[r2] .= true)
-    end
-    bytes = codeunits(s)
-    out = IOBuffer(); line = UInt8[]; line_str = Bool[]
-    function emit()
-        # trailing whitespace outside strings
-        while !isempty(line) && (line[end] == UInt8(' ') || line[end] == UInt8('\t')) && !line_str[end]
-            pop!(line); pop!(line_str)
-        end
-        blank = isempty(line)
-        (blank && !keep_blank) || (write(out, line); write(out, UInt8('\n')))
-        empty!(line); empty!(line_str)
-    end
-    for i in eachindex(bytes)
-        # in a file that reads its own line numbers, a cut region keeps its line breaks, so a docstring
-        # that grew by a line moves every line below it in the outer text too
-        drop[i] && (keep_lines && bytes[i] == UInt8('\n') && emit(); continue)
-        if bytes[i] == UInt8('\n') && !instr[i]
-            emit()
-        else
-            push!(line, bytes[i]); push!(line_str, instr[i])
-        end
-    end
-    isempty(line) || emit()
-    return String(take!(out))
 end
 
 """
