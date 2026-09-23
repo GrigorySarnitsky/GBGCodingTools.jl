@@ -161,20 +161,22 @@ returns documentation only when all of these hold, and code otherwise:
    merely follows whatever else the commit changed, and any other content there is code. This is what lets a reworded
    rule statement be committed with the policy files it feeds (§4.3 step 2);
 1. the path is on the documentation list;
-2. for `.jl`: both versions parse, and Julia's own parse trees are equal once exactly what Julia treats as
-   documentation is taken out — a docstring the parser ATTACHED (a `Core.@doc` node) at top level or directly in a
-   module, whose text is a plain or `raw"…"` literal, on a definition, an assignment, a bare name, or one of Base's
-   macros that only annotates a definition (`@inline`, `@propagate_inbounds`, …); and a plain string standing directly
-   in a struct's body (a field docstring). No other string is removed: one a blank line separates is a statement, one
-   inside a block is its value or its data, and one ending a Literate chunk is displayed. Line numbers are dropped,
-   except in a file that reads its own (`@__LINE__`, `__source__`). A docstring on a call or another macro makes the
-   change code: it replaces what runs. [Rebuilt on the parser 2026-09-23, after two review passes found twenty-six
-   ways past a guard that recognised documentation by its shape in the text.]
+2. for `.jl`: both versions parse, and they are byte for byte the same OUTSIDE what the fixer may change — apart
+   from blank lines and trailing spaces outside strings. What it may change is exactly: the text of a docstring the
+   parser attached, at top level or directly in a module, on a function, struct, abstract or primitive type, macro,
+   module, `const`, a bare name that is not its block's last statement, or one of Base's annotations (`@inline`, …)
+   or `@kwdef`/`@enum` around one; a field docstring directly in such a struct's body; and comments. In a Literate
+   example a run of prose comment lines may be rewritten but not moved, split or joined to code, and a mark, its
+   `#!` negation, a `#-`/`#+` separator or a `#=` block is code (clause 4 lives here). A file that reads its own
+   line numbers (`@__LINE__`, `__source__`) keeps them. [Inverted 2026-09-23: three review passes found thirty-five
+   ways past a guard that recognised CODE and removed the rest; this one recognises the few regions that may change
+   and compares everything else exactly. Measured on GBGPeriodicFields: 231 synthetic prose edits refused 0 times,
+   and its 51 real fix commits refused only where mathematics changed.]
 3. in GBGCodingTools only, differences confined to plain string literals given to the keywords `statement` or `why` of
    a `Rule(…)` call are documentation — any number of them, in any number of files — with the parsed trees identical at
    every other node; a moved, added or removed argument, a changed id, check, example or parameter, or an interpolated
    string in those fields, is code;
-4. no changed comment contains a Literate mark (`#src`, `#md`, `#jl`, `#nb`);
+4. in a Literate example, no mark, separator or `#=` block moved or changed (decided within clause 2);
 5. in every removed docstring and every changed page, every fenced block whose info string starts with `jldoctest` or
    `@` is identical, info string included, and in the same order — as Julia's Markdown parser reads the page, each
    string literal's value and each Literate comment (so in a blockquote or a list item too), and as found by pattern

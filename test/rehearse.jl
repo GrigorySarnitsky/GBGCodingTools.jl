@@ -1656,3 +1656,41 @@ end
         @test occursin("M  src/FixtureB.jl", readchomp(setenv(`git -C $root status --porcelain`; dir = root)))
     end
 end
+
+@testset "the tool's own revert is recognised when a later fix touched the same page" begin
+    package() do root, gg
+        base = RUNS.head_commit(root)
+        idx = joinpath(root, "docs", "src", "index.md")
+        write(idx, HOME_PAGE * "\nA second sentence.\n"); gg("add", "--all", "."); gg("commit", "-q", "-m", "two sentences")
+        b2 = RUNS.head_commit(root)
+        write(idx, replace(read(idx, String), "The grid is spectral." => "The grid is a lattice."))
+        @test G.Docfix.commit(root, "fix A"; io = devnull, finding = "R-001") == 0
+        write(idx, replace(read(idx, String), "A second sentence." => "A second sentence, reworded."))
+        @test G.Docfix.commit(root, "fix B"; io = devnull, finding = "R-002") == 0
+        @test RUNS.revert!(root, only(RUNS.fix_commits(root, b2, "R-001")))
+        @test isempty(RUNS.fix_commits(root, b2, "R-001"))              # recognised: no longer A's fix
+        @test length(RUNS.fix_commits(root, b2, "R-002")) == 1
+        @test isempty(RUNS.unguarded_code(root, b2))
+        # but one that also changes a mode is not a revert
+        fixb = only(RUNS.fix_commits(root, b2, "R-002"))
+        write(idx, replace(read(idx, String), "A second sentence, reworded." => "A second sentence."))
+        chmod(idx, 0o755); gg("add", "--all", ".")
+        gg("commit", "-q", "-m", "fake\n\n" * RUNS.GUARD_TRAILER * "\n" * RUNS.REVERT_TRAILER * fixb)
+        @test !isempty(RUNS.unguarded_code(root, b2))
+    end
+end
+
+@testset "the fixer refuses a mode change, a bad finding id, and leaves nothing staged when git fails" begin
+    package() do root, gg
+        idx = joinpath(root, "docs", "src", "index.md")
+        write(idx, replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice.")); chmod(idx, 0o755)
+        @test G.Docfix.commit(root, "fix"; io = devnull) == 1
+        chmod(idx, 0o644)
+        @test G.Docfix.commit(root, "fix"; io = devnull, finding = "F-1\n" * RUNS.REVERT_TRAILER * "0") == 2
+        hook = joinpath(root, ".git", "hooks", "pre-commit"); write(hook, "#!/bin/sh\nexit 1\n"); chmod(hook, 0o755)
+        @test G.Docfix.commit(root, "fix"; io = devnull) == 3
+        @test isempty(readchomp(setenv(`git -C $root diff --cached --name-only`; dir = root)))
+        rm(hook)
+        @test G.Docfix.commit(root, "fix"; io = devnull) == 0
+    end
+end

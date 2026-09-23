@@ -115,6 +115,10 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
             return 2
         end
     end
+    # A finding id is a name, not text: one carrying a newline wrote a revert trailer into the commit,
+    # after which close could never undo that fix (found in review, 2026-09-23).
+    isempty(finding) || occursin(r"^[A-Za-z0-9][A-Za-z0-9._:@+-]*$", finding) ||
+        (println(io, "docfix: refused — `", escape_string(finding), "` is not a finding id"); return 2)
     # The run's marks are the tool's to write. A message typing one — a guard or revert trailer — could
     # otherwise make the close skip a commit or hide another fix (found in review, 2026-09-23).
     occursin("GBG-Docfix", message) &&
@@ -164,17 +168,31 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
         have = something(Git.run(root, "rev-parse", ":" * r.path), "")
         (isempty(want) || want != have) && push!(moved, r.path)
     end
+    # a mode change or a symlink, which the close would call code, is refused here, not after
+    raw = something(Git.run(root, "diff", "--cached", "--raw", "--no-renames", "--", [r.path for r in rs]...), "")
+    for l in split(raw, '\n')
+        m = match(r"^:(\d{6}) (\d{6}) \S+ \S+ \S+\t(.*)$", l)
+        m === nothing && continue
+        was, now = m.captures[1], m.captures[2]
+        if (was != now && was != "000000" && now != "000000") || now in ("120000", "160000")
+            push!(moved, String(m.captures[3]))
+        end
+    end
     if !isempty(moved)
         Git.run(root, "reset", "-q", "--", [r.path for r in rs]...)
         println(io, "docfix: refused — what was staged is not what was classified: ", join(moved, ", "))
-        println(io, "Nothing was committed. Another writer changed it, or git would store it differently")
-        println(io, "(a symlink, a line-ending filter); run it again once nothing else is writing the tree.")
+        println(io, "Nothing was committed. Another writer changed it, or it is a symlink or its mode")
+        println(io, "changed, which is never prose; run it again once nothing else is writing the tree.")
         return 1
     end
     # The trailer is the mark a run's close trusts: a commit carrying it passed this guard.
     trailers = Orchestration.Runs.GUARD_TRAILER * (isempty(finding) ? "" : "\n" * Orchestration.Runs.FINDING_TRAILER * finding)
-    Git.run(root, "commit", "-m", message * "\n\n" * trailers, "--", [r.path for r in rs]...) === nothing &&
-        (println(io, "docfix: git commit failed"); return 3)
+    if Git.run(root, "commit", "-m", message * "\n\n" * trailers, "--", [r.path for r in rs]...) === nothing
+        # unstage what this call staged, or every later fix and revert refuses on it
+        Git.run(root, "reset", "-q", "--", [r.path for r in rs]...)
+        println(io, "docfix: git commit failed; nothing is left staged")
+        return 3
+    end
     println(io, "docfix: committed ", length(rs), " documentation file(s).")
     for r in rs; println(io, "  - ", r.path); end
     return 0

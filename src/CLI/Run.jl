@@ -649,6 +649,11 @@ review, four fifths were the fixer's own verbosity and came back inside budget b
 function close_run(root::AbstractString; io::IO = stdout)
     id = open_run(root)
     id === nothing && (println(io, "run: nothing is open here"); return 2)
+    # Nothing staged: the close reverts through `revert!`, which refuses over staged work, and a refusal
+    # read as "the build was red before" left a breaking fix on the branch (found in review, 2026-09-23).
+    staged = something(Git.run(root, "diff", "--cached", "--name-only"), "x")
+    isempty(strip(staged)) ||
+        (println(io, "run: something is staged; unstage it first (`git restore --staged .`), then close"); return 2)
     Runs.stage_of(root, id) === :close ||
         (println(io, "run: ", id, " is at ", Runs.stage_of(root, id), ", not close"); return 2)
     run = Runs.load(root, id)

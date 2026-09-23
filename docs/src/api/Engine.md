@@ -17,9 +17,11 @@ GBGCodingTools.Engine.Checks.run_rule
 GBGCodingTools.Engine.Guard
 GBGCodingTools.Engine.Guard.Ruling
 GBGCodingTools.Engine.Guard.classify
-GBGCodingTools.Engine.Guard.code_shape
+GBGCodingTools.Engine.Guard.regions
+GBGCodingTools.Engine.Guard.texts_of
 GBGCodingTools.Engine.Guard.fenced_kept
-GBGCodingTools.Engine.Guard.literate_changed
+GBGCodingTools.Engine.Guard.math_spans
+GBGCodingTools.Engine.Guard.math_changed
 GBGCodingTools.Engine.Guard.on_documentation_list
 ```
 

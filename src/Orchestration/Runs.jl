@@ -680,8 +680,19 @@ end
 # A forged trailer naming a commit outside the run, a dangling one, or a revert differing by whitespace
 # — which a patch id forgives and Julia does not — is classified like any other commit.
 function exact_reverts(root::AbstractString, since::AbstractString)
+    (isempty(since) || since == "unknown") && return Dict{String,String}()
+    key = (String(root), String(since), something(git_out(root, "rev-parse", "HEAD"), ""))
+    # computed once per state of the history: a verify stage asks once per finding, and recomputing it
+    # each time cost minutes at a hundred and fifty (found in review, 2026-09-23)
+    return get!(REVERTS_SEEN, key) do
+        compute_exact_reverts(root, since)
+    end
+end
+
+const REVERTS_SEEN = Dict{Tuple{String,String,String},Dict{String,String}}()
+
+function compute_exact_reverts(root::AbstractString, since::AbstractString)
     out = Dict{String,String}()
-    (isempty(since) || since == "unknown") && return out
     log = git_out(root, "log", "--reverse", "--format=%H%x1f%b%x1e", "$since..HEAD")
     log === nothing && return out
     seen_fixes = Set{String}()
@@ -699,15 +710,42 @@ function exact_reverts(root::AbstractString, since::AbstractString)
     return out
 end
 
+# Whether commit `sha` undoes commit `orig` exactly: the same files, no symlink, submodule or mode change
+# on either, and hunk for hunk the lines `orig` added are the lines `sha` removes and the reverse —
+# compared byte for byte, whitespace kept, wherever later fixes to OTHER parts of the file moved them.
+# Whole files are not compared: a later fix elsewhere in the same page is not part of the revert
+# (found in review, 2026-09-23: that made the tool's own reverts unrecognisable).
 function inverse(root, sha, orig)
-    mine = [(s, f) for (s, f, _) in touched(root, sha)]
-    theirs = [(s, f) for (s, f, _) in touched(root, orig)]
-    Set(f for (_, f) in mine) == Set(f for (_, f) in theirs) || return false
-    for (_, f) in mine
-        git_file(root, sha, f) == git_file(root, orig * "^", f) || return false
-        git_file(root, sha * "^", f) == git_file(root, orig, f) || return false
+    mine = touched(root, sha); theirs = touched(root, orig)
+    (any(x -> x[3], mine) || any(x -> x[3], theirs)) && return false
+    Set(f for (_, f, _) in mine) == Set(f for (_, f, _) in theirs) || return false
+    for (_, f, _) in mine
+        a = hunks(root, sha * "^", sha, f); b = hunks(root, orig * "^", orig, f)
+        (a === nothing || b === nothing) && return false
+        a == [(added, removed) for (removed, added) in b] || return false
     end
     return true
+end
+
+# The hunks of one file's change, each as (removed lines, added lines), in order, with no context.
+function hunks(root, from, to, path)
+    d = git_out(root, "diff", "--no-color", "--no-ext-diff", "-U0", from, to, "--", path)
+    d === nothing && return nothing
+    out = Tuple{Vector{String},Vector{String}}[]
+    cur = nothing
+    for l in split(d, '\n')
+        if startswith(l, "@@")
+            cur === nothing || push!(out, cur); cur = (String[], String[])
+        elseif cur !== nothing && startswith(l, "-") && !startswith(l, "---")
+            push!(cur[1], String(l[2:end]))
+        elseif cur !== nothing && startswith(l, "+") && !startswith(l, "+++")
+            push!(cur[2], String(l[2:end]))
+        elseif cur !== nothing && startswith(l, "\\")
+            push!(cur[1], "\\ no newline")                     # the marker counts too
+        end
+    end
+    cur === nothing || push!(out, cur)
+    return out
 end
 
 """

@@ -93,9 +93,11 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         after  = "\"adds two fields, componentwise\"\n+\n\nf(a, b) = a\n"
         @test doc("src/M.jl", before, after)
 
-        # a dotted name and a quoted operator are names too
-        @test doc("src/M.jl", "\"one\"\nBase.mean\n", "\"another\"\nBase.mean\n")
-        @test doc("src/M.jl", "\"one\"\nBase.:+\n", "\"another\"\nBase.:+\n")
+        # a DOTTED name is not: `t.v` is a property read, which a docstring turns into an error at load
+        # when `t` is not a module (the review of 2026-09-23); a bare name that is a block's last statement
+        # is not either, since the docstring changes what the block returns
+        @test !doc("src/M.jl", "\"one\"\nBase.mean\n", "\"another\"\nBase.mean\n")
+        @test !doc("src/M.jl", "x = 1\n\"one\"\nx\n", "x = 1\n\"another\"\nx\n")
 
         # and changing the NAME itself is still code, docstring or not
         @test !doc("src/M.jl", "\"the sum\"\n+\n", "\"the sum\"\n-\n")
@@ -136,8 +138,19 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         # a Rule METHOD's keyword default is code, not a rule's prose
         @test !G.Engine.Guard.classify(G.Model.Config(package = "GBGCodingTools", tool = :dev), "src/M.jl",
                   "Rule(; statement = \"fallback\") = make(statement)\n", "Rule(; statement = \"other\") = make(statement)\n").documentation
-        # and the opposite direction: a raw docstring written with `@doc` is prose
-        @test g("@doc raw\"\"\"\nThe \\alpha.\n\"\"\"\nf(x) = x\n", "@doc raw\"\"\"\nThe \\alpha, reworded.\n\"\"\"\nf(x) = x\n")
+        # an explicit `@doc` is left to the owner: a package may define its own `@doc` that runs its text
+        @test !g("@doc raw\"\"\"\nThe \\alpha.\n\"\"\"\nf(x) = x\n", "@doc raw\"\"\"\nThe \\alpha, reworded.\n\"\"\"\nf(x) = x\n")
+        # the review's third pass: each of these changed what runs, and each was called documentation
+        @test !g("new() = 1\n@deprecate old new\n", "new() = 1\n\"Deprecated.\"\n@deprecate old new\n")
+        @test !g("@nospecialize f\n", "\"doc\"\n@nospecialize f\n")
+        @test !g("x = 5\n", "\"doc\"\nx = 5\n")
+        @test !g("macro doc(s, ex); :(println(\$s); \$(esc(ex))); end\n@doc \"alpha\" x = 1\n",
+                 "macro doc(s, ex); :(println(\$s); \$(esc(ex))); end\n@doc \"beta\" x = 1\n")
+        @test !g("@labels struct S\n    \"alpha\"\n    x::Int\nend\n", "@labels struct S\n    \"beta\"\n    x::Int\nend\n")
+        @test !g("const T = quote\n    struct S\n        \"alpha\"\n        x::Int\n    end\nend\n", "const T = quote\n    struct S\n        \"beta\"\n        x::Int\n    end\nend\n")
+        # a comment in ordinary source is prose, wherever it stands
+        @test g("f(x) = x   # old\n", "f(x) = x   # new, and longer\n")
+        @test g("f(x) = x\n", "# a note added\nf(x) = x\n")
         # an interpolated string standing alone runs code
         @test !g("function f()\n    1\nend\n", "function f()\n    \"\$(rm(\"x\"))\"\n    1\nend\n")
         @test !g("x = 1\n", "x = 1\n\"\$(run(`true`))\"\n")
@@ -190,13 +203,21 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         @test !doc("src/M.jl", before, after)          # its text is a program, and the program changed
     end
 
+    # In a Literate example, and only there, a comment is Markdown and where comment lines stand decides
+    # what runs. A mark is code; so are its `#!` negations, a `#-` separator, a `#=` block, and a prose
+    # comment line moved into or out of a code chunk (the review of 2026-09-23).
     @testset "clause 4 — a Literate mark moves what runs" begin
+        L(b, a) = doc("examples/x.jl", b, a)
         before = "x = 1      #src\ny = 2\n# a plain comment\n"
-        after   = "x = 1      #src\ny = 2\n# a plain comment, reworded\n"
-        moved   = "x = 1\ny = 2      #src\n# a plain comment\n"
-        @test doc("src/M.jl", before, after)
-        @test !doc("src/M.jl", before, moved)
-        @test occursin("clause 4", why("src/M.jl", before, moved))
+        @test L(before, "x = 1      #src\ny = 2\n# a plain comment, reworded\n")
+        @test L(before, "x = 1      #src\ny = 2\n# a plain comment,\n# over two lines\n")
+        @test !L(before, "x = 1\ny = 2      #src\n# a plain comment\n")
+        @test !L("x = 1\n#!nb x = 1\n", "x = 1\n#!nb run(`true`)\n")
+        @test !L("x = [1,2,3]\ny = x .+ 1\n", "x = [1,2,3]\n#-\ny = x .+ 1\n")
+        @test !L("x = [1,2,3]\ny = x .+ 1\n", "x = [1,2,3]\n# a note\ny = x .+ 1\n")
+        @test !L("#=\nold\n=#\nx = 1\n", "#=\nnew\n=#\nx = 1\n")
+        # and in ordinary source the same comments are only comments
+        @test doc("src/M.jl", "x = 1      #src\ny = 2\n", "x = 1\ny = 2      #src\n")
     end
 
     @testset "clause 5 — a doctest and an `@` block are run, not read" begin
