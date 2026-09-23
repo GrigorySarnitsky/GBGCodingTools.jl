@@ -172,6 +172,11 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         @test !g("@enum Colour red blue\n", "\"Colours.\"\n@enum Colour red blue\n")
         # a package's own `@kwdef` may read its field strings; an annotation that calls runs twice
         @test !g("macro kwdef(e) e end\n@kwdef struct P\n    \"velocity\"\n    u::Int\nend\n", "macro kwdef(e) e end\n@kwdef struct P\n    \"the velocity\"\n    u::Int\nend\n")
+        @test !g("@kwdef struct P\n    \"velocity\"\n    u::Int\nend\n", "@kwdef struct P\n    \"the velocity\"\n    u::Int\nend\n")    # a bare `@kwdef` may be a package's
+        # a string inside a docstring's interpolation runs at load; the docstring's own text is prose
+        @test !g("\"\"\"\n\$(parse(Int, \"1\"))\nReturns it.\n\"\"\"\nf() = 1\n", "\"\"\"\n\$(parse(Int, \"42\"))\nReturns it.\n\"\"\"\nf() = 1\n")
+        @test g("\"\"\"\n\$(SIGNATURES)\nReturns it.\n\"\"\"\nf() = 1\n", "\"\"\"\n\$(SIGNATURES)\nReturns the value.\n\"\"\"\nf() = 1\n")
+        @test !g("\"\"\"\n\$(SIGNATURES)\n```jldoctest\njulia> f()\n1\n```\n\"\"\"\nf() = 1\n", "\"\"\"\n\$(SIGNATURES)\n```jldoctest\njulia> f()\n2\n```\n\"\"\"\nf() = 1\n")
         @test g("Base.@kwdef struct P\n    \"velocity\"\n    u::Int = 1\nend\n", "Base.@kwdef struct P\n    \"the velocity\"\n    u::Int = 1\nend\n")
         @test !g("function f(x::tick())\n    x\nend\ng() = 1\n", "\"Documented.\"\nfunction f(x::tick())\n    x\nend\ng() = 1\n")
         @test !g("function f(x::Int)\n    x\nend\ng() = 1\n", "\"Documented.\"\nfunction f(x::Int)\n    x\nend\ng() = 1\n")

@@ -262,8 +262,12 @@ on a bare name or a `baremodule`, a comment line splitting a Literate chunk. Wit
 of that can happen, and nothing needs judging.
 
 What counts as a docstring's text: the string tokens of a string the parser attached as a docstring,
-anywhere except inside a `quote` or a macro call's arguments, where a string is data — `Base.@kwdef`
-excepted, unless the file defines its own `kwdef`. In a Literate example a comment's KIND is kept too:
+anywhere except inside a `quote` or a macro call's arguments, where a string is data — `Base.@kwdef`,
+written out, excepted — and never a string inside an interpolation.
+
+Line numbers move when a docstring grows by a line, and a log location, a stack trace or `functionloc`
+reports them: that is accepted, as it is for every edit, except in a file that names `@__LINE__` or
+`__source__`, where every line break is kept. In a Literate example a comment's KIND is kept too:
 a Markdown line stays one (`#` then a space, or `#` alone), a mark stays exactly as it is, and a prose
 run may not leave a fence open.
 """
@@ -272,10 +276,8 @@ function regions(src::AbstractString; literate::Bool = false, rule_prose::Bool =
     tree = try JS.parseall(JS.SyntaxNode, s; filename = "regions.jl") catch; return nothing end
     any_error(tree) && return nothing
     toks = collect(JS.tokenize(s))
-    strings = [(Int(first(t.range)):Int(last(t.range))) for t in toks if JS.kind(t) === JS.K"String"]
     cut = UnitRange{Int}[]; texts = String[]; sig = String[]
-    own_kwdef = occursin(r"\bmacro\s+kwdef\b", s)
-    walk_docs!(cut, texts, s, tree, strings; rule_prose, own_kwdef, top = true)
+    walk_docs!(cut, texts, s, tree; rule_prose, top = true)
     for t in toks
         JS.kind(t) === JS.K"Comment" || continue
         r = Int(first(t.range)):Int(last(t.range)); c = sub(s, r)
@@ -303,16 +305,17 @@ end
 any_error(node) = JS.kind(node) === JS.K"error" || any(any_error, something(JS.children(node), ()))
 brange(n) = Int(first(JS.byte_range(n))):Int(last(JS.byte_range(n)))
 
-function walk_docs!(cut, texts, s, n, strings; rule_prose::Bool, own_kwdef::Bool, top::Bool)
+function walk_docs!(cut, texts, s, n; rule_prose::Bool, top::Bool)
     k = JS.kind(n); cs = something(JS.children(n), ())
     # quoted code and a macro's arguments are data — a string there is read by whatever receives it
     k === JS.K"quote" && return
     if k === JS.K"macrocall"
-        name = isempty(cs) ? Symbol("") : macro_name(cs[1])
-        (name === Symbol("@kwdef") && !own_kwdef) || return
+        # only Base's own, written out: a bare `@kwdef` may be a package's, defined in another file this
+        # guard never reads, that takes a field's string as its default (review, 2026-09-23)
+        (!isempty(cs) && strip(String(JS.sourcetext(cs[1]))) == "Base.@kwdef") || return
     end
     if k === JS.K"doc" && !isempty(cs) && JS.kind(cs[1]) === JS.K"string"
-        cut_text!(cut, strings, brange(cs[1])); push!(texts, value(s, cs[1]))
+        cut_text!(cut, cs[1]); push!(texts, value(s, cs[1]))
     end
     # clause 3: the statement and why of a Rule(…) that IS a top-level constant's value
     if rule_prose && top && k in (JS.K"const", JS.K"=")
@@ -325,7 +328,7 @@ function walk_docs!(cut, texts, s, n, strings; rule_prose::Bool, own_kwdef::Bool
                     kc = something(JS.children(kwn), ())
                     if JS.kind(kwn) === JS.K"=" && length(kc) == 2 && JS.kind(kc[1]) === JS.K"Identifier" &&
                        strip(String(JS.sourcetext(kc[1]))) in ("statement", "why") && JS.kind(kc[2]) === JS.K"string"
-                        cut_text!(cut, strings, brange(kc[2])); push!(texts, value(s, kc[2]))
+                        cut_text!(cut, kc[2]); push!(texts, value(s, kc[2]))
                     end
                 end
             end
@@ -333,14 +336,23 @@ function walk_docs!(cut, texts, s, n, strings; rule_prose::Bool, own_kwdef::Bool
     end
     inner = k === JS.K"toplevel" || (k === JS.K"block" && top)
     for c in cs
-        walk_docs!(cut, texts, s, c, strings; rule_prose, own_kwdef, top = inner || k === JS.K"module")
+        walk_docs!(cut, texts, s, c; rule_prose, top = inner || k === JS.K"module")
     end
 end
 
-# The string tokens inside one string literal: its text, and never its delimiters or an interpolation.
-cut_text!(cut, strings, within) = append!(cut, (r for r in strings if first(r) >= first(within) && last(r) <= last(within)))
+# The literal text pieces of one string: its OWN String children, never its delimiters and never a
+# string inside an interpolation — `$(parse(Int, "1"))` runs at load, and cutting its "1" as text let a
+# changed argument through (found in review, 2026-09-23).
+cut_text!(cut, n) = append!(cut, (brange(c) for c in something(JS.children(n), ()) if JS.kind(c) === JS.K"String"))
 
-value(s, n) = (v = try Meta.parse(sub(s, brange(n))) catch; nothing end; v isa AbstractString ? String(v) : "")
+# A string's value as Markdown: the whole value when it is plain, and its literal pieces when it
+# interpolates — so a doctest in a docstring that opens with `$(SIGNATURES)` is still compared.
+function value(s, n)
+    v = try Meta.parse(sub(s, brange(n))) catch; nothing end
+    v isa AbstractString && return String(v)
+    v isa Expr && v.head === :string && return join((a for a in v.args if a isa AbstractString), "")
+    return ""
+end
 
 # A byte range of `s` as a string: the tokenizer's ranges end on a byte, which in a multi-byte character
 # is not a valid string index.
