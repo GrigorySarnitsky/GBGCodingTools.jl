@@ -51,36 +51,56 @@ const LITERATE_MARKS = ("#src", "#md", "#jl", "#nb")
 """
     math_spans(text) -> Vector{String}
 
-Every mathematical expression a text writes between single dollars, in order and with repetition. The
-argument is `text`. Returns the expressions, whitespace flattened so that a re-wrapped line is the same
+Every mathematical expression a text writes, in order and with repetition: a double-backtick span
+(the spelling the rulebook requires), a fenced math block, a display between doubled dollar signs,
+and a span between single dollar signs. The argument is `text`. Returns the expressions, whitespace flattened and a doubled
+backslash read singly, so that a re-wrapped line, or the same formula in a Julia docstring, is the same
 expression it was.
+
+Until 2026-09-23 only the single-dollar spelling was seen, which the rulebook forbids: every formula in
+a package written as the rulebook requires was invisible to clause 6, and the fixer of
+[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) edited eight of them unasked.
 """
-math_spans(text::AbstractString) =
-    [strip(replace(m.captures[1], r"\s+" => " ")) for m in eachmatch(r"(?<!\$)\$([^\$\n]+)\$(?!\$)", String(text))]
+function math_spans(text::AbstractString)
+    t = String(text)
+    out = String[]
+    norm(x) = strip(replace(replace(x, "\\\\" => "\\"), r"\s+" => " "))
+    rx = r"^[ \t]*(?:#[ \t]?)?(```+|~~~+)[ \t]*math[ \t]*\n(.*?)^[ \t]*(?:#[ \t]?)?\1[ \t]*$"ms
+    for m in eachmatch(rx, t); push!(out, norm(m.captures[2])); end
+    t = replace(t, rx => "")
+    for m in eachmatch(r"\$\$(.+?)\$\$"s, t); push!(out, norm(m.captures[1])); end
+    t = replace(t, r"\$\$(.+?)\$\$"s => "")
+    for m in eachmatch(r"(?<!`)``(?!`)(.+?)(?<!`)``(?!`)"s, t); push!(out, norm(m.captures[1])); end
+    t = replace(t, r"(?<!`)``(?!`)(.+?)(?<!`)``(?!`)"s => "")
+    for m in eachmatch(r"(?<!\$)\$([^\$\n]+)\$(?!\$)", t); push!(out, norm(m.captures[1])); end
+    return out
+end
 
 """
     math_changed(before, after) -> Vector{String}
 
-The mathematics this change adds or alters. The arguments are `before` and `after`, the file's text on
-each side. Returns the expressions that are in `after` and were not in `before`, empty when the
+The mathematics this change adds, alters, removes or reorders. The arguments are `before` and `after`,
+the file's text on each side. Returns the expressions that differ — those added, then those removed —
+and, where the same expressions now stand in a different order, all of them; empty when the
 mathematics is untouched.
 
 CLAUSE 6, and the owner's ruling of 2026-09-21: **no edit inside a math span is made automatically**.
 A program has no oracle for whether a formula is true — only the code it documents has that, and code
 that is itself wrong then certifies prose that matches it — so a changed symbol, number or sign is put
-to the owner as a question rather than committed. Whitespace alone is not a change, and a year in a
-citation is not mathematics: it is not inside a math span to begin with.
+to the owner as a question rather than committed. Deleting a formula and swapping two are edits too.
+Whitespace alone is not a change, and a year in a citation is not mathematics.
 """
 function math_changed(before::AbstractString, after::AbstractString)
     was = math_spans(before)
     now = math_spans(after)
-    left = copy(was)
-    out = String[]
+    was == now && return String[]
+    left = copy(was); added = String[]
     for span in now
         i = findfirst(==(span), left)
-        i === nothing ? push!(out, String(span)) : deleteat!(left, i)
+        i === nothing ? push!(added, String(span)) : deleteat!(left, i)
     end
-    return out
+    out = vcat(added, String.(left))
+    return isempty(out) ? String.(now) : out                  # same expressions, a different order
 end
 
 """
@@ -159,6 +179,10 @@ function classify(cfg::Model.Config, path::AbstractString, before, after; genera
 
     rule_prose = false
     if endswith(path, ".jl")
+        # A file that reads its own line numbers runs differently when a docstring above grows a line,
+        # and the shape holds no line numbers, so such a file is code whenever a line moved.
+        occursin("@__LINE__", before * after) && count('\n', before) != count('\n', after) &&
+            return Ruling(path, false, "the file reads its own line numbers (`@__LINE__`) and a line moved (clause 2)")
         shape_before = code_shape(before)
         shape_after = code_shape(after)
         shape_before === nothing && return Ruling(path, false, "the file did not parse before the change (clause 2)")
@@ -201,8 +225,12 @@ whole generic is documented where its methods are written one per backend — be
 name alone, which runs nothing.
 
 The arguments are `src`, the file's content, and `rule_prose`, whether the plain string literals given to
-`statement` or `why` inside a `Rule(…)` call are elided too (clause 3). Returns the shape, or `nothing`
-when the source does not parse.
+`statement` or `why` as the Rule call's own keywords are elided too (clause 3). Returns the shape, or
+`nothing` when the source does not parse.
+
+A string standing alone is documentation only where it is not a block's value, and a string inside a
+struct only when it stands directly in the struct's body; an interpolated string is never
+documentation. Every leaf keeps its exact text, whitespace included.
 """
 function code_shape(src::AbstractString; rule_prose::Bool = false)
     tree = try
@@ -212,48 +240,90 @@ function code_shape(src::AbstractString; rule_prose::Bool = false)
     end
     any_error(tree) && return nothing
     io = IOBuffer()
-    shape!(io, tree, false; rule_prose, in_rule = false)
+    shape!(io, tree; rule_prose)
     return String(take!(io))
 end
 
 any_error(node) = JS.kind(node) === JS.K"error" ||
                   any(any_error, something(JS.children(node), ()))
 
-# `in_struct` says whether a bare string here is a field docstring, which is documentation like any other.
-# `in_rule` says whether this node sits inside a `Rule(…)` call, where — with `rule_prose` — the plain
-# string literal of a `statement = "…"` or `why = "…"` keyword is elided as that rule's prose.
-function shape!(io, node, in_struct; rule_prose::Bool = false, in_rule::Bool = false)
+# What counts as documentation inside the code is exactly three things, and each is recognised by its
+# PLACE, never inherited by a subtree (found in review, 2026-09-23 — an inherited flag made every string
+# anywhere inside a struct, defaults and constructor arguments included, a "field docstring"):
+#
+# - a plain literal docstring on a definition or a name (`removable_doc`);
+# - a plain string standing DIRECTLY in a struct's body block: a field docstring;
+# - a plain string standing alone as a statement of a block that is NOT that block's value — at top
+#   level, in a module, or before the last statement of a function, `let`, `begin` or branch body. The
+#   last statement of such a block is what it returns, so a string there is code: `f() = "hello"`
+#   changed to "goodbye" changes what `f()` returns.
+#
+# An interpolated string is never documentation anywhere: its text is a program. Every leaf is printed
+# with `repr`, so the shape cannot be forged by a literal that spells another shape, and a string's
+# whitespace is part of its value.
+function shape!(io, node; rule_prose::Bool = false)
     k = JS.kind(node)
     cs = something(JS.children(node), ())
 
     if k === JS.K"doc" && length(cs) >= 2 && removable_doc(cs[1], cs[2])
-        shape!(io, cs[2], in_struct; rule_prose, in_rule)    # the docstring goes; what it documents stays
+        shape!(io, cs[2]; rule_prose)                       # the docstring goes; what it documents stays
         return
-    end
-    if rule_prose && in_rule && k === JS.K"=" && length(cs) == 2 && is_prose_keyword(cs[1]) && plain_string(cs[2])
-        print(io, "(= ", strip(String(JS.sourcetext(cs[1]))), " <prose>)")
-        return
-    end
-    if (k === JS.K"string" || k === JS.K"String") && in_struct
-        return                                              # a field docstring
     end
     if isempty(cs)
-        print(io, "(", k, " ", strip(String(JS.sourcetext(node))), ")")
+        print(io, "(", k, " ", repr(String(JS.sourcetext(node))), ")")
         return
     end
     print(io, "(", k)
-    nested = in_struct || k === JS.K"struct" || is_kwdef_struct(node)
-    inside = in_rule || (k === JS.K"call" && !isempty(cs) && is_rule_callee(cs[1]))
-    for c in cs
-        # a bare string standing alone in a block is an unattached docstring, not code
-        if JS.kind(c) === JS.K"string" && (k === JS.K"toplevel" || k === JS.K"block" || k === JS.K"module")
+    rule_call = rule_prose && k === JS.K"call" && is_rule_callee(cs[1])
+    struct_body = k === JS.K"struct"
+    for (i, c) in enumerate(cs)
+        ck = JS.kind(c)
+        # a field docstring: a plain string directly in the struct's own body block
+        if struct_body && ck === JS.K"block"
+            print(io, " (block")
+            for g in something(JS.children(c), ())
+                plain_string(g) && continue
+                # a field docstring parses as a docstring on the field: the text goes, the field stays
+                gc = something(JS.children(g), ())
+                if JS.kind(g) === JS.K"doc" && length(gc) >= 2 && plain_string(gc[1])
+                    print(io, " "); shape!(io, gc[2]; rule_prose); continue
+                end
+                print(io, " "); shape!(io, g; rule_prose)
+            end
+            print(io, ")")
+            continue
+        end
+        # an unattached docstring: a plain string standing alone where it is not the block's value
+        if plain_string(c) && standalone(k, i, length(cs))
+            continue
+        end
+        # clause 3: the Rule call's OWN statement and why keywords, never anything nested inside it
+        if rule_call && prose_kw(c)
+            print(io, " (= ", strip(String(JS.sourcetext(something(JS.children(c), ())[1]))), " <prose>)")
+            continue
+        end
+        if rule_call && ck === JS.K"parameters"
+            print(io, " (parameters")
+            for g in something(JS.children(c), ())
+                prose_kw(g) ? print(io, " (= ", strip(String(JS.sourcetext(something(JS.children(g), ())[1]))), " <prose>)") :
+                              (print(io, " "); shape!(io, g; rule_prose))
+            end
+            print(io, ")")
             continue
         end
         print(io, " ")
-        shape!(io, c, nested && k !== JS.K"toplevel"; rule_prose, in_rule = inside)
+        shape!(io, c; rule_prose)
     end
     print(io, ")")
 end
+
+# A child of `parent` at position `i` of `n` standing alone as a statement that is not the value of its
+# block: anywhere at top level or in a module, and anywhere but last in a block.
+standalone(parent, i, n) = parent === JS.K"toplevel" || parent === JS.K"module" ||
+                           (parent === JS.K"block" && i < n)
+
+prose_kw(node) = JS.kind(node) === JS.K"=" && (cs = something(JS.children(node), ()); length(cs) == 2 &&
+                 is_prose_keyword(cs[1]) && plain_string(cs[2]))
 
 # `Rule(` or `Model.Rule(`: the one constructor whose statement and why are prose (clause 3).
 is_rule_callee(node) = (t = strip(String(JS.sourcetext(node))); t == "Rule" || endswith(t, ".Rule"))
@@ -261,9 +331,6 @@ is_prose_keyword(node) = JS.kind(node) === JS.K"Identifier" && strip(String(JS.s
 plain_string(node) = JS.kind(node) === JS.K"string" &&
                      all(c -> JS.kind(c) === JS.K"String", something(JS.children(node), ()))
 
-is_kwdef_struct(node) = JS.kind(node) === JS.K"macrocall" &&
-                        occursin(r"@kwdef\b", String(JS.sourcetext(node))) &&
-                        occursin(r"\bstruct\b", String(JS.sourcetext(node)))
 
 # A docstring may be dropped only when it is a plain literal AND its target is something the file can
 # keep without it: a definition, or a bare name.
@@ -284,7 +351,7 @@ so the shape is the same before and after and an edit to the prose is documentat
 
 Until 2026-09-23 this returned nothing and those docstrings were code. The count says why it went
 unnoticed here and hurt elsewhere: NINETEEN targets in
-[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) — every operator of its
+GBGPeriodicFields — every operator of its
 field algebra and every reduction — and NONE in this package, which documents no generic that way. A
 guard clause is exercised by the shapes the package it was written in happens to use.
 """
@@ -345,17 +412,42 @@ end
 
 function run_blocks(src::AbstractString)
     out = Tuple{String,String}[]
-    info = nothing
+    # Three readings of the text, since a block Documenter runs can be written in any of them: as it
+    # stands; with a comment's `# ` removed, which is how Literate turns a comment into Markdown; and,
+    # in a Julia file, each string literal's VALUE, where a one-line docstring spells its newlines `\n`.
+    for text in (String(src), uncommented(src), literal_values(src))
+        append!(out, blocks_of(text))
+    end
+    return out
+end
+
+uncommented(src) = join((replace(l, r"^([ \t]*)#[ \t]?" => s"\1") for l in split(String(src), '\n')), '\n')
+
+function literal_values(src)
+    tree = try JS.parseall(JS.SyntaxNode, String(src); filename = "values.jl") catch; return "" end
+    io = IOBuffer()
+    walk(n) = (plain_string(n) && (v = try Meta.parse(String(JS.sourcetext(n))) catch; nothing end;
+                                   v isa AbstractString && println(io, v));
+               foreach(walk, something(JS.children(n), ())))
+    walk(tree)
+    return String(take!(io))
+end
+
+# ``` and ~~~ fences alike, as Julia's Markdown parser reads them: a fence closes on the same character.
+function blocks_of(text::AbstractString)
+    out = Tuple{String,String}[]
+    fence = nothing; info = nothing
     buf = IOBuffer()
-    for line in split(src, '\n')
-        m = match(r"^\s*```+\s*(.*?)\s*$", line)
-        if m !== nothing
-            if info === nothing
-                tag = String(m.captures[1])
+    for line in split(text, '\n')
+        m = match(r"^\s*(```+|~~~+)\s*(.*?)\s*$", line)
+        if m !== nothing && (fence === nothing || (first(m.captures[1]) == first(fence) &&
+                                                   length(m.captures[1]) >= length(fence) && isempty(m.captures[2])))
+            if fence === nothing
+                fence = String(m.captures[1]); tag = String(m.captures[2])
                 info = startswith(tag, "jldoctest") || startswith(tag, "@") ? tag : ""
             else
                 info == "" || push!(out, (info, String(take!(buf))))
-                take!(buf); info = nothing
+                take!(buf); fence = nothing; info = nothing
             end
             continue
         end

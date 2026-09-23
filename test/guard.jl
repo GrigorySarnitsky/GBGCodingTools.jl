@@ -101,6 +101,50 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         @test !doc("src/M.jl", "\"the sum\"\n+\n", "\"the sum\"\n-\n")
     end
 
+    # Found in review, 2026-09-23: each of these is a behaviour change the guard called documentation.
+    @testset "clause 2 — what only LOOKS like documentation inside code" begin
+        g(before, after) = doc("src/M.jl", before, after)
+        # a string default in a struct, and a string an inner constructor passes, are values
+        @test !g("Base.@kwdef struct S\n    sep::String = \", \"\nend\n", "Base.@kwdef struct S\n    sep::String = \"; \"\nend\n")
+        @test !g("struct S\n    x::String\n    S() = new(\"default\")\nend\n", "struct S\n    x::String\n    S() = new(\"other\")\nend\n")
+        # while a field docstring, standing directly in the body, is still prose
+        @test g("struct S\n    \"the separator\"\n    sep::String\nend\n", "struct S\n    \"what separates\"\n    sep::String\nend\n")
+        # a string that is a block's value is what the block returns
+        @test !g("function greet()\n    \"hello\"\nend\n", "function greet()\n    \"goodbye\"\nend\n")
+        @test !g("const X = begin\n    \"a\"\nend\n", "const X = begin\n    \"b\"\nend\n")
+        @test !g("f(c) = if c\n    \"yes\"\nelse\n    \"no\"\nend\n", "f(c) = if c\n    \"no\"\nelse\n    \"yes\"\nend\n")
+        # one standing alone before the value is an unattached note, as before
+        @test g("function f()\n    \"a note\"\n    1\nend\n", "function f()\n    \"another note\"\n    1\nend\n")
+        # an interpolated string standing alone runs code
+        @test !g("function f()\n    1\nend\n", "function f()\n    \"\$(rm(\"x\"))\"\n    1\nend\n")
+        @test !g("x = 1\n", "x = 1\n\"\$(run(`true`))\"\n")
+        # whitespace inside a literal is its value
+        @test !g("s(xs) = join(xs, \", \")\n", "s(xs) = join(xs, \",\")\n")
+        # a literal cannot spell another shape
+        @test !g("f(\"a\", \"b\")\n", "f(\"a)) (string (String b\")\n")
+        # a file that reads its own line numbers is code when a line moves
+        @test !g("\"\"\"doc\"\"\"\nf() = 1\nconst L = @__LINE__\n", "\"\"\"doc\nmore\"\"\"\nf() = 1\nconst L = @__LINE__\n")
+    end
+
+    @testset "clause 3 — only the Rule call's own keywords are its prose" begin
+        cfg3 = G.Model.Config(package = "GBGCodingTools", tool = :dev)
+        r(b, a) = G.Engine.Guard.classify(cfg3, "src/Rules/x.jl", b, a).documentation
+        @test r("R = Rule(id = :a, statement = \"old\", check = c)\n", "R = Rule(id = :a, statement = \"new\", check = c)\n")
+        @test !r("R = Rule(id = :a, statement = \"s\", check = t -> report(t; why = \"old\"))\n",
+                 "R = Rule(id = :a, statement = \"s\", check = t -> report(t; why = \"new\"))\n")
+        @test !r("R = Rule(id = :a, check = t -> (statement = \"x\"; occursin(statement, t)))\n",
+                 "R = Rule(id = :a, check = t -> (statement = \"y\"; occursin(statement, t)))\n")
+    end
+
+    @testset "clause 5 — every spelling of a block that runs" begin
+        @test !doc("docs/src/a.md", "~~~jldoctest\njulia> 1+1\n2\n~~~\n", "~~~jldoctest\njulia> 1+1\n3\n~~~\n")
+        @test !doc("docs/src/a.md", "~~~@example\nrun(`ls`)\n~~~\n", "~~~@example\nrun(`rm x`)\n~~~\n")
+        @test !doc("src/M.jl", "\"f\\n```jldoctest\\njulia> f()\\n1\\n```\"\nf() = 1\n",
+                               "\"f\\n```jldoctest\\njulia> f()\\n2\\n```\"\nf() = 1\n")
+        @test !doc("examples/x.jl", "# ```jldoctest\n# julia> 1\n# 2\n# ```\nx = 1\n",
+                                    "# ```jldoctest\n# julia> 1\n# 3\n# ```\nx = 1\n")
+    end
+
     @testset "clause 2 — an interpolated docstring is never dropped" begin
         before = "\"\"\"\n\$(SOME_TEXT)\n\"\"\"\nf(x) = x\n"
         after  = "\"\"\"\n\$(OTHER_TEXT)\n\"\"\"\nf(x) = x\n"
@@ -204,8 +248,21 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         end
         # a formula ADDED where there was none is the same question
         @test !rule("Take the mean.", raw"Take the mean $\bar u$.").documentation
-        # one removed is not: nothing new is asserted
-        @test rule(raw"Take the mean $\bar u$.", "Take the mean.").documentation
+        # one REMOVED is the same question too, and so is a swap: taking away a condition or reversing
+        # an inequality changes what the text asserts as surely as adding one (reversed 2026-09-23, from
+        # the review: "one removed is not, nothing new is asserted" let both through)
+        @test !rule(raw"Take the mean $\bar u$.", "Take the mean.").documentation
+        @test !rule(raw"Here $a<b$ and $b<a$.", raw"Here $b<a$ and $a<b$.").documentation
+        # every spelling of mathematics is seen, the one the rulebook requires first
+        for (was, now) in (("``E = mc^2``", "``E = mc^3``"),
+                           (":\n\n```math\nE = mc^2\n```\n", ":\n\n```math\nE = mc^3\n```\n"),
+                           (raw"$$E = mc^2$$", raw"$$E = mc^3$$"))
+            @test !rule("Take $was.", "Take $now.").documentation
+        end
+        # and in a docstring, where the backslash is doubled
+        jl(d) = "\"\"\"\n    f(k)\n\nThe wavenumber " * d * ".\n\"\"\"\nf(k) = k\n"
+        @test !G.Engine.Guard.classify(cfg, "src/M.jl", jl("``k^2``"), jl("``k^3``")).documentation
+        @test G.Engine.Guard.classify(cfg, "src/M.jl", jl("``k^2`` squared"), jl("``k^2``, squared")).documentation
         # re-wrapping a formula across a line is not a change to it
         @test G.Engine.Guard.math_changed(raw"$E = \tfrac12 h$", raw"$E =  \tfrac12   h$") == []
         # and a year in a citation is not mathematics

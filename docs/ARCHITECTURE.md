@@ -161,9 +161,12 @@ returns documentation only when all of these hold, and code otherwise:
    merely follows whatever else the commit changed, and any other content there is code. This is what lets a reworded
    rule statement be committed with the policy files it feeds (§4.3 step 2);
 1. the path is on the documentation list;
-2. for `.jl`: both versions parse; removing line numbers, plain string literals standing alone at top level or in a
-   struct body (unattached and field docstrings), and docstrings whose text is a plain or `raw"…"` literal and whose
-   target is a definition, leaves the same parsed code. A docstring whose target is a call, or a macro call other than
+2. for `.jl`: both versions parse; removing line numbers, plain string literals standing alone where they are not a
+   block's value (at top level, in a module, or before the last statement of a block — the last is what the block
+   returns), plain strings standing directly in a struct's body (field docstrings, and nothing deeper: a default or a
+   constructor argument is a value), and docstrings whose text is a plain or `raw"…"` literal and whose target is a
+   definition or a bare name, leaves the same parsed code, every literal compared with its exact text. An interpolated
+   string is never removed anywhere. A docstring whose target is a call, or a macro call other than
    a defining one (`@kwdef`, `@enum`), makes the change code: Julia then documents the call instead of running it. A
    docstring with `$(…)`, or a computed `@doc` argument, is never removed;
 3. in GBGCodingTools only, differences confined to plain string literals given to the keywords `statement` or `why` of
@@ -172,7 +175,8 @@ returns documentation only when all of these hold, and code otherwise:
    string in those fields, is code;
 4. no changed comment contains a Literate mark (`#src`, `#md`, `#jl`, `#nb`);
 5. in every removed docstring and every changed page, every fenced block whose info string starts with `jldoctest` or
-   `@` is identical, info string included, and in the same order — doctest input and output, `@example`, `@eval`,
+   `@` is identical, info string included, and in the same order — fenced with backticks or tildes, written in a
+   string literal whose newlines are escapes, or in a comment Literate turns into Markdown — doctest input and output, `@example`, `@eval`,
    `@setup`, `@meta`, `@raw`, and the signatures and filters of `@docs`, `@autodocs`, `@index` and `@contents`.
 
 Clause 3 is narrower than "the prose of a rule and of an agent role". An agent role's or a discipline's `description`, like the
@@ -181,8 +185,8 @@ and no program compares it with anything, so it stays code. A rule's `statement`
 simply documentation either: it is the one code-like text the fixer may touch, and only under §4.3 step 3, listed in
 the report.
 
-Accepted limit: a longer docstring shifts what `@__LINE__` returns — the same shift that moves every line below an
-edit, which is why a finding is anchored to a node and a quote (§4.5). `test/guard.jl` holds one example per clause, in
+A file that reads its own line numbers with `@__LINE__` is code whenever a line moved: a longer docstring shifts what
+it returns [until 2026-09-23 an accepted limit; the review showed it changes a value the program reads]. `test/guard.jl` holds one example per clause, in
 both directions [parsed code alone passed changed doctest output, a `@autodocs` filter, and a docstring that stopped a
 call from running]. For clause 3: two reworded `statement`s and a reworded `why` in one file (documentation); a changed
 check, id, tag or argument order, an interpolated statement and a reworded `description` (code); and the same rewording
@@ -202,8 +206,9 @@ run the owner asked for, and then fixes and verifies without asking again [R1, R
    commits all of them on the current branch if every classified path came back documentation, else exits 1 and commits
    nothing; the session then pushes. This is the one verb that commits, because the guard must run before a commit
    exists, replacing the old rule that no verb commits [a code edit committed before the guard ran would be pushed].
-3. **Formula and rule-statement edits.** An edit that changes mathematics — inside a math span: a symbol, a number or
-   a sign; years in citations do not count — is **never made automatically**: the change guard refuses it (clause 6) and
+3. **Formula and rule-statement edits.** An edit that changes mathematics — inside a math span, in any spelling: a
+   double-backtick span, a fenced math block, a doubled-dollar display or a single-dollar span; a symbol, a number or a
+   sign changed, a formula added, removed or reordered; years in citations do not count — is **never made automatically**: the change guard refuses it (clause 6) and
    the finding becomes a question for the owner [ruled 2026-09-21]. The rule considered before that, and declined, was
    an automatic edit backed by a quote from the documented method's body plus a numeric check the program ran; the
    reason it was declined is that both halves make the CODE the oracle, so code that is itself wrong certifies prose

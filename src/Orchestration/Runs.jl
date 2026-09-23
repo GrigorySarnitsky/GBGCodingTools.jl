@@ -596,37 +596,38 @@ A review that edited code behind its own guard has not been reviewed: the guard 
 change is documentation and may be committed without asking, so a code change made around it is exactly
 the thing nobody looked at. The run ends `CANNOT_EVALUATE` and the owner is asked to keep or revert.
 
-A commit `gbg docfix commit` made is recognised by the trailer it writes, not by its subject line: a
-subject can be typed by anyone, and the point here is to find changes that did not pass the guard.
+Every commit is classified, the guard's own included: the trailer `gbg docfix commit` writes is typed
+text, and a code change amended into a guarded commit, or a plain commit carrying the trailer, would
+otherwise go unread. The one commit not classified is a revert this run made, and only when it is
+exactly the inverse of the commit its trailer names.
 """
 function unguarded_code(root::AbstractString, since::AbstractString)
     (isempty(since) || since == "unknown") && return String[]
     cfg = try ConfigIO.read_config(root) catch; return String[] end
-    log = try
-        readchomp(pipeline(setenv(`git -C $root log --format=%H%x1f%s%x1f%b%x1e $since..HEAD`; dir = root); stderr = devnull))
-    catch
-        return String[]
-    end
+    log = git_out(root, "log", "--format=%H%x1f%s%x1f%b%x1e", "$since..HEAD")
+    log === nothing && return String[]
     out = String[]
     for entry in split(log, '\x1e'; keepempty = false)
         parts = split(strip(entry, ['\n']), '\x1f')
         length(parts) >= 2 || continue
         sha, subject = String(parts[1]), String(parts[2])
         body = length(parts) >= 3 ? String(parts[3]) : ""
-        occursin(GUARD_TRAILER, body) && continue          # it passed the guard
+        # EVERY commit is classified; the trailer is typed text and proves nothing (found in review,
+        # 2026-09-23: a code change amended into a guarded commit, or a plain commit carrying the
+        # trailer, was never looked at). The one exception is a revert this run made, and it is not
+        # taken on its word either: it must be exactly the inverse of the commit it names.
+        m = match(Regex(REVERT_TRAILER * "([0-9a-f]{7,40})"), body)
+        m !== nothing && exact_revert(root, sha, String(m.captures[1])) && continue
         code = String[]
-        for f in changed_files(root, sha)
+        for (status, f) in touched(root, sha)
             own_record(f) && continue
-            at(rev) = try
-                readchomp(pipeline(setenv(`git -C $root show $rev:$f`; dir = root); stderr = devnull))
-            catch
-                ""
-            end
-            # `Guard.classify`, not `on_documentation_list`. The list says only where documentation MAY
-            # live; whether one change IS documentation is what the guard decides, by reading both
-            # versions. Asking the list instead called every edit to a `.jl` file documentation — which
-            # is the one answer this program exists to refuse.
-            Engine.Guard.classify(cfg, f, at(sha * "^"), at(sha)).documentation || push!(code, f)
+            before = status == "A" ? nothing : git_file(root, sha * "^", f)
+            after = status == "D" ? nothing : git_file(root, sha, f)
+            # a side git could not read, where the status says it exists, is code: an unreadable file
+            # is not one anybody checked
+            ((status != "A" && before === nothing) || (status != "D" && after === nothing)) &&
+                (push!(code, f); continue)
+            Engine.Guard.classify(cfg, f, before, after).documentation || push!(code, f)
         end
         isempty(code) && continue
         push!(out, first(sha, 8) * "  " * subject * "  [" * join(first(code, 4), ", ") *
@@ -635,20 +636,50 @@ function unguarded_code(root::AbstractString, since::AbstractString)
     return out
 end
 
+# git, its output exactly as git wrote it — no stripping — or `nothing` where git failed.
+function git_out(root::AbstractString, args...)
+    try
+        read(pipeline(setenv(`git -C $root -c core.quotePath=false $(collect(args))`; dir = root); stderr = devnull), String)
+    catch
+        nothing
+    end
+end
+
+git_file(root, rev, path) = git_out(root, "show", "$rev:$path")
+
+# Each file a commit touched, with its status (A, M, D; a rename is read as its delete and its add), NUL
+# separated so that no name is quoted — a quoted name read back failed on both sides and was called
+# unchanged, so a code change in `Kernels ä.jl` was invisible to the close.
+function touched(root::AbstractString, sha::AbstractString)
+    raw = git_out(root, "show", "--no-renames", "--name-status", "-z", "--format=", sha)
+    raw === nothing && return Tuple{String,String}[]
+    parts = [p for p in split(raw, '\0') if !isempty(strip(p))]
+    out = Tuple{String,String}[]
+    i = 1
+    while i < length(parts)
+        push!(out, (String(first(strip(parts[i]), 1)), String(parts[i+1])))
+        i += 2
+    end
+    return out
+end
+
+# Whether commit `sha` is exactly the inverse of commit `orig`: the same change, undone, whatever line
+# numbers the context moved to. By patch id, which git computes from the change itself.
+function exact_revert(root::AbstractString, sha::AbstractString, orig::AbstractString)
+    pid(a, b) = (d = git_out(root, "diff", "--binary", a, b); d === nothing || isempty(d) ? nothing :
+                 (p = try read(pipeline(IOBuffer(d), `git -C $root patch-id --stable`), String) catch; "" end;
+                  isempty(p) ? nothing : first(split(p))))
+    x = pid(sha * "^", sha); y = pid(orig, orig * "^")
+    return x !== nothing && x == y
+end
+
 """
     changed_files(root, sha) -> Vector{String}
 
 The files one commit touched. The arguments are `root`, the package root, and `sha`, the commit. Returns
-the paths, empty where git cannot say.
+the paths, unquoted, empty where git cannot say.
 """
-function changed_files(root::AbstractString, sha::AbstractString)
-    out = try
-        readchomp(pipeline(setenv(`git -C $root show --name-only --format= $sha`; dir = root); stderr = devnull))
-    catch
-        return String[]
-    end
-    return [String(f) for f in split(out, '\n') if !isempty(f)]
-end
+changed_files(root::AbstractString, sha::AbstractString) = [f for (_, f) in touched(root, sha)]
 
 """
     own_record(path) -> Bool
@@ -693,6 +724,14 @@ verifier called worse.
 const FINDING_TRAILER = "GBG-Docfix-Finding: "
 
 """
+    REVERT_TRAILER
+
+The trailer a revert this package makes carries, naming the commit it undoes. A close skips such a
+commit only when it is exactly that commit's inverse, so the trailer alone buys nothing.
+"""
+const REVERT_TRAILER = "GBG-Docfix-Revert: "
+
+"""
     fix_commits(root, since, id) -> Vector{String}
 
 The commits that `gbg docfix commit --finding` made for one finding, newest first. The arguments are:
@@ -705,12 +744,23 @@ Returns the shas.
 """
 function fix_commits(root::AbstractString, since::AbstractString, id::AbstractString)
     (isempty(since) || since == "unknown") && return String[]
-    out = try
-        readchomp(pipeline(setenv(`git -C $root log --format=%H --grep=$(FINDING_TRAILER * id) $since..HEAD`; dir = root); stderr = devnull))
-    catch
-        return String[]
+    # The WHOLE trailer line, not a substring: `…-100` is a prefix of `…-1000`, and a substring match
+    # handed one finding's diff to another's verifier and reverted the wrong fix (found in review,
+    # 2026-09-23). A finding's own commits, less any this run already reverted.
+    log = git_out(root, "log", "--format=%H%x1f%b%x1e", "$since..HEAD")
+    log === nothing && return String[]
+    mine = String[]; undone = Set{String}()
+    for entry in split(log, '\x1e'; keepempty = false)
+        parts = split(strip(entry, ['\n']), '\x1f')
+        length(parts) >= 1 || continue
+        sha = String(parts[1]); body = length(parts) >= 2 ? String(parts[2]) : ""
+        lines = strip.(split(body, '\n'))
+        (FINDING_TRAILER * id) in lines && push!(mine, sha)
+        for l in lines
+            startswith(l, REVERT_TRAILER) && push!(undone, String(strip(l[length(REVERT_TRAILER)+1:end])))
+        end
     end
-    return [String(l) for l in split(out, '\n') if !isempty(l)]
+    return [c for c in mine if !any(u -> startswith(c, u) || startswith(u, c), undone)]
 end
 
 """
@@ -723,30 +773,45 @@ These are the run's own edits: what close undoes when it has to put the document
 """
 function guarded_commits(root::AbstractString, since::AbstractString)
     (isempty(since) || since == "unknown") && return String[]
-    out = try
-        readchomp(pipeline(setenv(`git -C $root log --format=%H --grep=$GUARD_TRAILER $since..HEAD`; dir = root); stderr = devnull))
-    catch
-        return String[]
+    # A fix commit, not a revert: close undoes the run's EDITS, and undoing a revert would put back a
+    # fix a verifier rejected (found in review, 2026-09-23).
+    log = git_out(root, "log", "--format=%H%x1f%b%x1e", "$since..HEAD")
+    log === nothing && return String[]
+    out = String[]; undone = Set{String}()
+    for entry in split(log, '\x1e'; keepempty = false)
+        parts = split(strip(entry, ['\n']), '\x1f')
+        sha = String(parts[1]); body = length(parts) >= 2 ? String(parts[2]) : ""
+        lines = strip.(split(body, '\n'))
+        for l in lines
+            startswith(l, REVERT_TRAILER) && push!(undone, String(strip(l[length(REVERT_TRAILER)+1:end])))
+        end
+        GUARD_TRAILER in lines && !any(l -> startswith(l, REVERT_TRAILER), lines) && push!(out, sha)
     end
-    return [String(l) for l in split(out, '\n') if !isempty(l)]
+    return [c for c in out if !any(u -> startswith(c, u) || startswith(u, c), undone)]
 end
 
 """
     revert!(root, sha) -> Bool
 
-Reverts one guarded commit with a guarded revert, so close's classification sees a documentation change
-and not code around the guard. The arguments are `root`, the package root, and `sha`, the commit.
-Returns whether it reverted.
+Reverts one guarded commit, marking the revert with the commit it undoes, so a close can check that it
+is exactly that commit's inverse. The arguments are `root`, the package root, `sha`, the commit, and
+`why`, the reason written into the message. Returns whether it reverted; a revert that does not apply
+is aborted and leaves the tree as it was.
 """
-function revert!(root::AbstractString, sha::AbstractString)
-    ok = try
-        run(pipeline(setenv(`git -C $root revert --no-edit $sha`; dir = root); stdout = devnull, stderr = devnull))
-        run(pipeline(setenv(`git -C $root commit --amend -q -m "Revert $(first(sha, 8)): a verifier called the fix worse\n\n$GUARD_TRAILER"`; dir = root); stdout = devnull, stderr = devnull))
-        true
+function revert!(root::AbstractString, sha::AbstractString; why::AbstractString = "a verifier called the fix worse")
+    # The message is a real string with real newlines — a `\n` inside a backtick command is two
+    # characters, and put the trailer in the subject — and a revert that does not apply is ABORTED, so
+    # no conflict markers are left for the next fix to commit (both found in review, 2026-09-23).
+    msg = "Revert " * first(sha, 8) * ": " * why * "\n\n" * GUARD_TRAILER * "\n" * REVERT_TRAILER * sha
+    try
+        run(pipeline(setenv(`git -C $root revert --no-commit $sha`; dir = root); stdout = devnull, stderr = devnull))
+        run(pipeline(setenv(`git -C $root commit -q -m $msg`; dir = root); stdout = devnull, stderr = devnull))
+        return true
     catch
-        false
+        try run(pipeline(setenv(`git -C $root revert --abort`; dir = root); stdout = devnull, stderr = devnull)) catch end
+        try run(pipeline(setenv(`git -C $root reset -q --merge`; dir = root); stdout = devnull, stderr = devnull)) catch end
+        return false
     end
-    return ok
 end
 
 # ──────────────────────────────────────────────────────────── finding a location again

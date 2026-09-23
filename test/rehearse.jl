@@ -1509,3 +1509,92 @@ end
         @test Dict(AGENTS.surfaces(cfg, root))["rationale"] == ["docs/ARCHITECTURE.md"]
     end
 end
+
+# ── the commit path under the guard, found in review 2026-09-23 ──────────────────────────────────────
+
+@testset "the close classifies every commit, and the guard's mark proves nothing" begin
+    package() do root, gg
+        base = RUNS.head_commit(root)
+        a = joinpath(root, "src", "FixtureA.jl")
+        # a code change amended into a guarded documentation commit
+        write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
+        @test G.Docfix.commit(root, "a prose fix"; io = devnull) == 0
+        write(a, read(a, String) * "\nevil() = 1\n")
+        gg("add", "--all", "."); gg("commit", "-q", "--amend", "--no-edit")
+        @test !isempty(RUNS.unguarded_code(root, base))
+        # a plain commit that types the trailer itself
+        gg("reset", "-q", "--hard", base)
+        write(a, read(a, String) * "\nevil() = 2\n")
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "refactor\n\n" * RUNS.GUARD_TRAILER)
+        @test !isempty(RUNS.unguarded_code(root, base))
+        # and a genuinely guarded prose commit is still clean
+        gg("reset", "-q", "--hard", base)
+        write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
+        @test G.Docfix.commit(root, "a prose fix"; io = devnull) == 0
+        @test isempty(RUNS.unguarded_code(root, base))
+    end
+end
+
+@testset "a file with a non-ASCII or spaced name is seen, and fixed" begin
+    package() do root, gg
+        k = joinpath(root, "src", "Kernels ä.jl")
+        write(k, "k() = 1\n"); gg("add", "--all", "."); gg("commit", "-q", "-m", "a kernel")
+        base = RUNS.head_commit(root)
+        write(k, "k() = 2\n"); gg("add", "--all", "."); gg("commit", "-q", "-m", "change it")
+        @test any(l -> occursin("Kernels ä.jl", l), RUNS.unguarded_code(root, base))
+        # a documentation page with a space and one with a non-ASCII letter can be fixed
+        for name in ("two words.md", "Schrödinger.md")
+            p = joinpath(root, "docs", "src", name)
+            write(p, "# P\n\nOne sentence.\n"); gg("add", "--all", "."); gg("commit", "-q", "-m", "a page")
+            write(p, "# P\n\nAnother sentence.\n")
+            @test G.Docfix.commit(root, "fix " * name; io = devnull) == 0
+        end
+    end
+end
+
+@testset "a revert that conflicts is aborted, and a revert is recognised only as the exact inverse" begin
+    package() do root, gg
+        base = RUNS.head_commit(root)
+        idx = joinpath(root, "docs", "src", "index.md")
+        write(idx, replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
+        @test G.Docfix.commit(root, "fix one"; io = devnull) == 0
+        first_fix = RUNS.head_commit(root)
+        write(idx, replace(HOME_PAGE, "The grid is spectral." => "The grid is a periodic lattice."))
+        @test G.Docfix.commit(root, "fix two"; io = devnull) == 0
+        @test RUNS.revert!(root, first_fix) == false                      # conflicts with fix two
+        status = readchomp(setenv(`git -C $root status --porcelain`; dir = root))
+        @test isempty(status)                                             # aborted: no markers, no REVERT_HEAD
+        @test !occursin("<<<<<<<", read(idx, String))
+        # a clean revert carries a real trailer in its body, and the close reads it as what it is
+        @test RUNS.revert!(root, RUNS.head_commit(root))
+        body = readchomp(setenv(`git -C $root log -1 --format=%b`; dir = root))
+        @test occursin(RUNS.GUARD_TRAILER, body) && occursin(RUNS.REVERT_TRAILER, body)
+        @test !occursin("\\n", readchomp(setenv(`git -C $root log -1 --format=%s`; dir = root)))
+        @test isempty(RUNS.unguarded_code(root, base))
+        # and a revert of a fix that REMOVED a formula, which puts mathematics back, is still the run's own
+        gg("reset", "-q", "--hard", base)
+        write(idx, HOME_PAGE * "\nEnergy ``E = mc^2`` holds.\n"); gg("add", "--all", "."); gg("commit", "-q", "-m", "a formula")
+        b2 = RUNS.head_commit(root)
+        gg("commit", "-q", "--allow-empty", "-m", "marker")
+        write(idx, HOME_PAGE * "\nEnergy holds.\n"); gg("add", "--all", "."); gg("commit", "-q", "-m", "drop it\n\n" * RUNS.GUARD_TRAILER)
+        dropped = RUNS.head_commit(root)
+        @test RUNS.revert!(root, dropped)
+        @test length(RUNS.unguarded_code(root, b2)) == 1                  # the drop itself; its revert is exact
+    end
+end
+
+@testset "a finding's commits are found by the whole trailer line, less those reverted" begin
+    package() do root, gg
+        base = RUNS.head_commit(root)
+        idx = joinpath(root, "docs", "src", "index.md")
+        for (id, text) in (("R-100", "a lattice"), ("R-1000", "a periodic lattice"))
+            write(idx, replace(HOME_PAGE, "The grid is spectral." => "The grid is $text."))
+            gg("add", "--all", "."); gg("commit", "-q", "-m", "fix $id\n\n" * RUNS.GUARD_TRAILER * "\n" * RUNS.FINDING_TRAILER * id)
+        end
+        @test length(RUNS.fix_commits(root, base, "R-100")) == 1
+        @test length(RUNS.fix_commits(root, base, "R-1000")) == 1
+        @test RUNS.revert!(root, only(RUNS.fix_commits(root, base, "R-1000")))
+        @test isempty(RUNS.fix_commits(root, base, "R-1000"))               # reverted: no longer its fix
+        @test length(RUNS.guarded_commits(root, base)) == 1                 # the revert is not an edit to undo
+    end
+end

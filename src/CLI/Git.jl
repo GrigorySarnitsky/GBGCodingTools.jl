@@ -83,14 +83,22 @@ repository (the fixture inside the tool's) they are translated and paths outside
 dropped — the tool's own modified files are not the fixture's. Empty outside a repository.
 """
 function porcelain(root; untracked::Bool = true)
-    out = run(root, "status", "--porcelain", untracked ? "--untracked-files=all" : "--untracked-files=no")
+    # NUL separated, so no path is quoted: a quoted path read back as a path named a file that does not
+    # exist, and every fix to a page whose name holds a space or a non-ASCII letter was refused as new
+    # (found in review, 2026-09-23). Renames are off, so every entry is one path.
+    out = try
+        read(pipeline(addenv(`git -C $root status --porcelain -z --no-renames $(untracked ? "--untracked-files=all" : "--untracked-files=no")`,
+                             "LC_ALL" => "C"); stderr = devnull), String)
+    catch
+        nothing
+    end
     out === nothing && return Tuple{String,String}[]
     top = run(root, "rev-parse", "--show-toplevel")
     prefix = (top === nothing || realpath(top) == realpath(root)) ? "" : relpath(realpath(root), realpath(top)) * "/"
     pairs = Tuple{String,String}[]
-    for l in split(out, '\n')
-        isempty(l) && continue
-        path = String(strip(l[4:end]))
+    for l in split(out, '\0')
+        length(l) < 4 && continue
+        path = String(l[4:end])
         if !isempty(prefix)
             startswith(path, prefix) || continue
             path = path[length(prefix)+1:end]

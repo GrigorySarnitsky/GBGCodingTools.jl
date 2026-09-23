@@ -41,15 +41,18 @@ What the guard says about every changed file of the working tree at `root`. The 
 - `root` — the package root.
 - `generated` — the current output of each generated path's generator, which the caller supplies because
   the generators live above the guard.
+- `contents` — each changed file's content as the caller read it, so what is classified is exactly what
+  is then staged; read from disk when not given.
 
 Returns one ruling per changed file.
 """
-function rulings(root::AbstractString; generated::AbstractDict = Dict{String,String}())
+function rulings(root::AbstractString; generated::AbstractDict = Dict{String,String}(),
+                 contents::Union{AbstractDict,Nothing} = nothing)
     cfg = ConfigIO.read_config(root)
     out = Engine.Guard.Ruling[]
     for path in changed_files(root)
         full = joinpath(root, path)
-        after = isfile(full) ? read(full, String) : nothing
+        after = contents !== nothing ? get(contents, path, nothing) : isfile(full) ? read(full, String) : nothing
         push!(out, Engine.Guard.classify(cfg, path, at_head(root, path), after;
                                          generated = get(generated, path, nothing)))
     end
@@ -112,9 +115,17 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
             return 2
         end
     end
+    # The bytes classified are the bytes committed. Each file is read ONCE, classified from that read,
+    # and after staging the index is compared with it: a file another writer changed in between is
+    # refused, where before the guard read one version and `git add` staged another (found in review,
+    # 2026-09-23).
+    snap = Dict{String,String}()
+    for p in changed_files(root)
+        f = joinpath(root, p); isfile(f) && (snap[p] = read(f, String))
+    end
     # An open run's own record — its stage file, its draft — sits untracked in the tree while the run
     # works, and is the session's to commit at close, not the fixer's now.
-    rs = filter(r -> !Orchestration.Runs.own_record(r.path), rulings(root; generated))
+    rs = filter(r -> !Orchestration.Runs.own_record(r.path), rulings(root; generated, contents = snap))
     isempty(rs) && (println(io, "docfix: nothing has changed"); return 2)
     # While a run is open, a rationale document that is not a TARGET of the review is not the fixer's
     # either (ruled 2026-09-23): the guard rightly calls an edit to it documentation, but the run was
@@ -136,6 +147,17 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
         return 1
     end
     Git.run(root, "add", "--", [r.path for r in rs]...) === nothing && (println(io, "docfix: git add failed"); return 3)
+    moved = String[]
+    for r in rs
+        staged = try read(pipeline(`git -C $root show :$(r.path)`; stderr = devnull), String) catch; nothing end
+        staged == get(snap, r.path, nothing) || push!(moved, r.path)
+    end
+    if !isempty(moved)
+        Git.run(root, "reset", "-q", "--", [r.path for r in rs]...)
+        println(io, "docfix: refused — changed while it was being classified: ", join(moved, ", "))
+        println(io, "Nothing was committed. Run it again once nothing else is writing the tree.")
+        return 1
+    end
     # The trailer is the mark a run's close trusts: a commit carrying it passed this guard.
     trailers = Orchestration.Runs.GUARD_TRAILER * (isempty(finding) ? "" : "\n" * Orchestration.Runs.FINDING_TRAILER * finding)
     Git.run(root, "commit", "-m", message * "\n\n" * trailers) === nothing &&
