@@ -336,7 +336,8 @@ Returns one location per link, with what the resolver said.
 function links_resolve(text::AbstractString, cfg)
     out = Model.Location[]
     for (i, line) in Texts.unwrapped(text)
-        for m in eachmatch(r"\[([^\]]*)\]\((https://(?:doi\.org|openlibrary\.org)/[^)\s]+)\)", Texts.mask_code_spans(line))
+        for m in eachmatch(r"\[([^\]]*)\]\((https://(?:doi\.org|openlibrary\.org)/[^)\s]+)\)",
+                           Texts.mask_math_spans(Texts.mask_code_spans(line)))
             linked = strip(String(m.captures[1]), ['*', '_', ' '])
             url = String(m.captures[2])
             status, title = RESOLVER[](url)
@@ -371,6 +372,11 @@ const RESOLVES = Model.Rule(
             [Model.Location(; file = "docs/src/page.md", line = 3)], "answers with the work the title names"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\n- Kolmogorov, [*The local structure of turbulence in incompressible viscous fluid*](https://doi.org/10.1098/rspa.1991.0075), Proc. R. Soc. A (1991)\n",
+            Model.Location[], "answers with the work the title names"),
+        # A `[` inside a math span, eighteen lines and a paragraph break before a correct reference,
+        # is not a link opening: the shape GBGPeriodicFields met on the rule's first real run.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe box is ``[o_a, o_a + L_a)`` per axis — origin-aware, and so on.\nMore prose here.\n\nAnother paragraph.\n\n- C. C. Lalescu, B. Teaca, D. Carati, [*Implementation of high order spline interpolations for tracking test particles in discretized fields*](https://doi.org/10.1016/j.jcp.2009.10.046), J. Comput. Phys. **229**(17) (2010) 5862–5869.\n",
             Model.Location[], "answers with the work the title names"),
     ])
 

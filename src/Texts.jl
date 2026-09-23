@@ -122,15 +122,28 @@ Prose is hard-wrapped, and almost nothing in a docstring can be assumed to fit o
 whose title crosses a wrap reads, line by line, as `[*Computer Simulation Using` — an opening bracket
 with no link — so a rule matching a bracketed construct line by line reports a correct reference as
 having no DOI. The same assumption cost `RULE.DOC.ARGS_FORM` a wrapped signature.
+
+Two bounds on the joining, both from one false positive
+[[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/), 2026-09-22]. A BLANK LINE
+ends a logical line whatever the brackets say: a paragraph break is a break, and a bracket left open
+before one is unmatched, not wrapped. And brackets inside a code or math span do not count: the `[`
+of a half-open interval written ``[a, b)`` has no `]` and never will. Without either bound, that one
+`[` absorbed eighteen lines, across two paragraphs, up to the `]` of the next reference, and the rule
+reported a correct DOI as resolving to the wrong title.
 """
 function unwrapped(text::AbstractString)
     out = Tuple{Int,String}[]
     current = ""; start = 0
     for (i, raw) in pairs(split(text, '\n'))
         line = String(raw)
+        if isempty(strip(line))
+            isempty(current) || (push!(out, (start, current)); current = "")
+            continue
+        end
         isempty(current) ? (current = line; start = i) : (current *= " " * strip(line))
-        balanced = count(==('['), current) == count(==(']'), current) &&
-                   count(==('('), current) == count(==(')'), current)
+        seen = mask_math_spans(mask_code_spans(current))
+        balanced = count(==('['), seen) == count(==(']'), seen) &&
+                   count(==('('), seen) == count(==(')'), seen)
         balanced && (push!(out, (start, current)); current = "")
     end
     isempty(current) || push!(out, (start, current))
@@ -477,6 +490,19 @@ about MATHEMATICS does not match a code span that merely looks like it. The argu
 to mask. Returns the masked line, whose length and column positions are unchanged.
 """
 mask_code_spans(line::AbstractString) = replace(String(line), r"(?<!`)`[^`\n]+`(?!`)" => m -> " "^length(m))
+
+"""
+    mask_math_spans(line) -> String
+
+The line with every double-backtick span blanked to spaces of the same length, so a bracket inside a
+math span is not read as prose. The argument is `line`. Returns it, length preserved.
+
+Kept APART from [`mask_code_spans`](@ref) on purpose: the LaTeX rules read their mathematics inside
+exactly these spans, and masking them everywhere blinded eleven rules at once. Only what counts
+brackets or scans for links wants them gone — the `[` of a half-open interval written ``[a, b)`` has
+no `]` and never will.
+"""
+mask_math_spans(line::AbstractString) = replace(String(line), r"``[^`\n]+?``" => m -> " "^length(m))
 
 """
     single_escapes(line) -> String

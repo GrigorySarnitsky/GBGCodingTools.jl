@@ -46,6 +46,7 @@ function materialise(rule, example)
         G.Catalogue.Citations.RESOLVER[] = url ->
             occursin("10.1017/CBO9780511840531", url) ? (200, "Turbulent Flows") :
             occursin("10.1098/rspa.1991.0075", url) ? (200, "The local structure of turbulence in incompressible viscous fluid for very large Reynolds numbers") :
+            occursin("10.1016/j.jcp.2009.10.046", url) ? (200, "Implementation of high order spline interpolations for tracking test particles in discretized fields") :
             (404, "")
         try
             return CK.run_rule(r, cfg, dir; network = true)
