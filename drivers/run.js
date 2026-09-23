@@ -165,7 +165,8 @@ function unitBrief(role, checks, settled) {
       ]
     : [
         `You are reading ONE PAGE of the built documentation of the Julia package ${args.package}, as a visitor meets it.`,
-        'Code is shown between backticks and mathematics between dollar signs, as the page renders them.',
+        'Code is shown between backticks, inline mathematics between dollar signs and displayed mathematics',
+        'between \\[ and \\], as the page renders them.',
       ];
   return [
     ...what,
@@ -173,9 +174,11 @@ function unitBrief(role, checks, settled) {
     standpoint(role),
     '',
     `The ${role.source_unit ? 'example' : 'page'} is the file ${role.unit}. It is the WHOLE of what you may read: do not open the`,
-    'source, the other pages, the design documents or anything else in the repository — the rulebook',
-    'named below excepted, which states the rules and says nothing about this package. A reader who can',
-    'see the rest cannot judge whether this stands on its own, which is the only question you are here to answer.',
+    'source, the other pages, the design documents or anything else in the repository' +
+      ((role.rules || []).length
+        ? ' — the rulebook named below excepted, which states the rules and says nothing about this package.'
+        : '.'),
+    'A reader who can see the rest cannot judge whether this stands on its own, which is the only question you are here to answer.',
     checks,
     settled,
     '',

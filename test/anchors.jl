@@ -460,3 +460,85 @@ end
     @test T.formulas("``a_1`` and then ``b_2``") == ["a_1", "b_2"]      # closed pairs are not reopened
     @test isempty(T.formulas("plain prose, with ``code`` only"))
 end
+
+# ── The source's own spelling comes first (review, 2026-09-24) ───────────────────────────────────────
+#
+# Tried first, the reading form lost 1769 of a real package's quotes spelled as the source spells them,
+# sent a decision-log sentence to a code comment, listed text already written right as a copy of a markup
+# defect, and let a verifier ground a verdict in a file that was never fixed.
+
+function spelled_tree()
+    root = mktempdir(; cleanup = true)
+    for d in (".gbg", "docs/src", "src"); mkpath(joinpath(root, d)); end
+    write(joinpath(root, ".gbg", "config.jl"),
+          """Config(package = "Sample", tool = :dev, filesets = Dict(FileSet.RATIONALE => ["docs/DECISIONS.md"]))""")
+    write(joinpath(root, "docs", "src", "a.md"), "# A\n\nThe method was published by Rogallo in\n1981. The truncation removes the corner modes.\n\nThe **same** layout holds.\n")
+    write(joinpath(root, "docs", "src", "b.md"), "# B\n\nThe same layout holds.\n\nSee [§10](@ref \"10. The layer (grid to points)\"). Same fibers, different base.\n")
+    write(joinpath(root, "docs", "DECISIONS.md"), "# Decisions\n\nTwo fields of one concrete type hold identical values by construction.\n")
+    write(joinpath(root, "src", "S.jl"), """
+    module S
+    \"\"\"
+        f(x)
+
+    The size of the box in each spatial direction.
+    - `domain_size::NTuple{3, T}` — the lengths.
+
+    ```math
+    a \\\\\\\\ b
+    ```
+    \"\"\"
+    f(x) = 1
+    # Two fields of one concrete type hold identical values
+    # by construction.
+    g(x) = 2
+    end
+    """)
+    return root
+end
+
+@testset "a quote spelled as the source spells it is found across a wrap" begin
+    root = spelled_tree(); cfg = G.ConfigIO.read_config(root)
+    p = T.place(cfg, root, "in each spatial direction. - `domain_size::NTuple{3, T}` — the lengths.")
+    @test p !== nothing && p.file == joinpath("src", "S.jl") && p.line == 5
+    q = T.place(cfg, root, "published by Rogallo in 1981. The truncation removes")
+    @test q !== nothing && q.file == joinpath("docs", "src", "a.md") && q.line == 3
+end
+
+@testset "a decision-log sentence is the log's, not a code comment that reads like it" begin
+    root = spelled_tree(); cfg = G.ConfigIO.read_config(root)
+    p = T.place(cfg, root, "Two fields of one concrete type hold identical values by construction.")
+    @test p !== nothing && p.file == joinpath("docs", "DECISIONS.md")
+end
+
+@testset "a copy is the same spelling, and a verifier's quote is the text as written" begin
+    root = spelled_tree(); cfg = G.ConfigIO.read_config(root)
+    @test [l.file for l in T.occurrences(cfg, root, "The **same** layout holds.")] == [joinpath("docs", "src", "a.md")]
+    # the fixed spelling does not hold in a file that still has the old one
+    strict = T.reanchor(root, M.Location(; file = "docs/src/a.md", text = "The same layout holds."); loose = false)
+    @test strict.found == M.Anchor.OUTDATED
+    @test T.reanchor(root, M.Location(; file = "docs/src/a.md", text = "The same layout holds.")).found == M.Anchor.BY_QUOTE
+end
+
+@testset "the page's reading of an escaped backslash, a link with parentheses, and a Literate filter" begin
+    root = spelled_tree(); cfg = G.ConfigIO.read_config(root)
+    # a docstring's `\\\\` is the page's `\\`, a LaTeX line break
+    @test T.reanchor(root, M.Location(; file = "src/S.jl", text = "\\[a \\\\ b\\]")).found != M.Anchor.OUTDATED
+    p = T.place(cfg, root, "See §10. Same fibers, different base.")
+    @test p !== nothing && p.file == joinpath("docs", "src", "b.md")
+    @test T.reading_line("#md # the autocorrelation, read off") == "the autocorrelation, read off"
+    @test T.reading_line("x = 1 #src") == "x = 1"
+end
+
+@testset "an EditURL that leaves the package is not followed" begin
+    root = mktempdir(; cleanup = true)
+    mkpath(joinpath(root, "docs", "src", "examples"))
+    write(joinpath(dirname(root), "outside.jl"), "# outside\n")
+    write(joinpath(root, "docs", "src", "examples", "ex.md"), "```@meta\nEditURL = \"../../../../outside.jl\"\n```\n")
+    @test G.Orchestration.Site.source_of(root, "examples/ex/index.html") == joinpath("docs", "src", "examples", "ex.md")
+end
+
+@testset "a quote cut open pairs its formulas from the pieces, not from the left" begin
+    @test T.formulas("\\hat f(k)`` holds, and ``u_k`` is the velocity") == ["\\hat f(k)", "u_k"]
+    @test T.formulas("\\hat f(k)`` where N = 2 and ``u_k^2`` is the energy") == ["\\hat f(k)", "u_k^2"]
+    @test T.formulas("then \$|u|\$ and \$a + b + c\$") == ["|u|", "a + b + c"]
+end

@@ -4,6 +4,40 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.17 — 2026-09-24
+
+PATCH. **Upgrade before running a review.** A run record gains `rulebook`, and a location gains `at`;
+older records read as before. Nothing a consumer must change in its config.
+
+**The run path, reviewed and fixed** — about fifty defects found by a review of every step a review run
+takes, each reproduced, most of them on GBGPeriodicFields; then a second review of those fixes, whose
+nineteen findings are fixed here too.
+
+- *The change guard* follows two simple rules the owner chose: mathematics is what Documenter renders as
+  a formula, and a `.jl` file may change only inside the text of its existing docstrings and comments.
+- *The stage machine* loses nothing between steps:
+  - A finding the owner asked to have fixed in the code goes on the owner's list in the work queue.
+  - An answer is checked before anything is recorded, and re-making reverted edits is all or none.
+  - "Not a defect" for the open run's own question is settled when the run closes, and any other answer
+    that would write the settled list waits for the close.
+  - A silent agent is launched again once per stage and pass, a later pass never reads an earlier one's
+    results, and a silent reader leaves the run unevaluated.
+  - A waiting question stays on the queue whether or not the run ended evaluated.
+- *Placing a finding* finds a quote first as the source spells it and then as the built page reads it
+  (markup, wraps, escaped backslashes, Literate's comment marks):
+  - A Literate page is its example, through Documenter's `EditURL`.
+  - The node walker names every definition by its callee.
+  - A line is mapped through git once, from the commit it was read at, and never from line 0.
+  - On twenty real page quotes, 8 were placed right before and 20 are now.
+- *What each agent is given*:
+  - A Literate example's source is a unit of its own for `RULE.DOC.LITERATE`.
+  - The page text keeps code and blocks.
+  - A verifier is given what its reader was, and a diff verifier every commit of the fix.
+  - Per-file switches reach readers.
+  - Duplicate findings under one rule at one quote are merged, every reader's claim and fix kept.
+  - `--scope changed` sees deletions and build-script changes, and compares a digest of the rulebook, the
+    readers and the driver instead of a version.
+
 ## 2.0.0-rc.16 — 2026-09-23
 
 PATCH, one ruling.

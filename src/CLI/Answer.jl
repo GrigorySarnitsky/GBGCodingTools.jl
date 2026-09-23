@@ -103,6 +103,20 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
     R = Orchestration.Runs
     found = R.question_of(root, id)
     of_run = found !== nothing && !any(q -> get(q, "id", "") == id, Engine.Questions.open_questions(root))
+    # The settled list is a tracked file, and one changed while a run is open blocks that run's collect
+    # and every fix it commits (found in review, 2026-09-24). The open run's own question is recorded now
+    # and settled when it closes; any other that would write the list waits for the close.
+    open_here = open_run_here(root)
+    deferred = false
+    remade = false
+    if open_here !== nothing && (settled || (of_run && option == NOT_A_DEFECT))
+        if of_run && first(found) == open_here && !settled
+            deferred = true
+        else
+            println(io, "answer: refused — a run is open, and this answer writes the settled list, which would block it; answer it once the run has closed")
+            return 2
+        end
+    end
     if of_run
         run_id, run, q = found
         # refused on its own terms first, so nothing is re-made for an answer that is then refused
@@ -120,9 +134,18 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
             open_run_here(root) === nothing ||
                 (println(io, "answer: refused — a run is open; answer this once it has closed, since re-making the edit commits"); return 2)
             undone = R.reverts_of(root, run.first_commit, fid)
+            # All or none: a revert made before one that failed is taken back, or the answer that said
+            # nothing was recorded left HEAD moved and every retry failing (found in review, 2026-09-24).
+            saved = R.head_commit(root)
             ok = all(r -> R.revert!(root, r; why = "the owner: fix the documentation instead"), undone)
-            ok || (println(io, "answer: the reverted edit of ", fid, " could NOT be made again (the page has moved, or something is staged);",
-                           " nothing was recorded, and the question stands"); return 2)
+            if !ok
+                back = R.head_commit(root) == saved || GBGCodingTools.Git.run(root, "reset", "--keep", saved) !== nothing
+                println(io, "answer: the reverted edit of ", fid, " could NOT be made again (the page has moved, or something is staged);",
+                        back ? " nothing was recorded, and the question stands" :
+                               " the part already made could not be taken back — `git reset --keep $(saved)` does it; nothing was recorded")
+                return 2
+            end
+            remade = !isempty(undone)
         end
     end
     why = Engine.Questions.answer!(root, id, option; item, direction)
@@ -130,7 +153,8 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
     why === nothing || (println(io, "answer: ", why); return 2)
     println(io, "answer: ", id, isempty(item) ? "" : " / " * item, " answered `", option, "`.")
     if of_run && option == R.DOCS_ANSWER
-        println(io, "answer: the reverted edit is made again and stands; the finding is closed.")
+        println(io, remade ? "answer: the reverted edit is made again and stands; the finding is closed." :
+                             "answer: no reverted edit of it was found to make again; the finding is closed.")
     elseif of_run && option == R.CODE_ANSWER
         # onto the OWNER's list, which no close rewrites: the finding lives only in its run's record, and
         # a line on the tool's section was erased at the next close (review, 2026-09-23)
@@ -139,21 +163,37 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
         owner_line!(root, "- [ ] " * f.id * " " * one_line(f.draft.claim) * (isempty(direction) ? "" : " — " * one_line(direction)))
         println(io, "answer: the finding is on the owner's list in .claude/WORK_QUEUE.md, under \"", OWNER_HEADING, "\".")
     end
-    where_ = of_run ? settled_locations(root, id) : Model.Location[]
-    if settled || (of_run && option == NOT_A_DEFECT)
-        path = ConfigIO.append_settled(root, Model.Settled(question = id,
-                                                           text = isempty(direction) ? option : direction,
-                                                           date = string(Dates.today()),
-                                                           locations = where_))
+    if deferred
+        println(io, "answer: it goes into the settled list when the run closes — agents are then told not to report it again.")
+    elseif settled || (of_run && option == NOT_A_DEFECT)
+        path = settle!(root, id, isempty(direction) ? option : direction)
         println(io, "answer: recorded in ", relpath(path, root), " — agents are told not to report it again.")
     end
     return 0
 end
 
+"""
+    settle!(root, id, text) -> String
+
+Records one answered question in the package's settled list, with the locations of the finding it was
+about, so no agent reports it again. The arguments are:
+
+- `root` — the package root.
+- `id` — the question's id.
+- `text` — what is settled, in the owner's words or the option chosen.
+
+Returns the path written. A question already in the list is not written twice.
+"""
+function settle!(root::AbstractString, id::AbstractString, text::AbstractString)
+    any(s -> s.question == id, ConfigIO.read_settled(root)) && return joinpath(root, ".gbg", "settled.jl")
+    return ConfigIO.append_settled(root, Model.Settled(question = id, text = text, date = string(Dates.today()),
+                                                       locations = settled_locations(root, id)))
+end
+
 "The heading of the owner's own list on the work queue: code he asked for, which no close rewrites and the end-of-turn hook does not count."
 const OWNER_HEADING = "## Code the owner asked for"
 
-one_line(t) = replace(strip(String(t)), r"\s*\n\s*" => " ")
+one_line(t) = replace(strip(String(t)), r"\s*[\r\n]+\s*" => " ")
 
 function owner_line!(root::AbstractString, line::AbstractString)
     path = joinpath(root, ".claude", "WORK_QUEUE.md")

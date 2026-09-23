@@ -244,6 +244,10 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
                                                  found === nothing ? "" : String(get(found, "id", "")))))
     end for r in roles]
     path = arguments_path(root, run.id)
+    # A stage sits at the same place every pass, so its results directory still held the last pass's
+    # files: a verifier that wrote nothing this pass was graded on its old verdict and never named
+    # silent (found in review, 2026-09-24). Writing a stage's arguments starts it, so its results go.
+    rm(results_dir(root, run.id); recursive = true, force = true)
     mkpath(dirname(path)); mkpath(results_dir(root, run.id))
     write(path, JSON3.write(args))   # compact: nobody reads this file, the session TYPES it
     driver, sha = place_driver(root, run.id)

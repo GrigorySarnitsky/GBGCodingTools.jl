@@ -161,7 +161,11 @@ function next(root::AbstractString; io::IO = stdout)
     site = ""
     if to === :find || to === :verify || to === :diff
         panel = first(Catalogue.panel(run.instrument, cfg))
-        if any(r -> r.site, panel) && !(to === :diff)
+        # The diff stage builds the site only for a finding its reader made on the built pages: that
+        # verifier judges a rendering, and the diff alone does not show one (found in review, 2026-09-24).
+        on_site(f) = (k = findfirst(r -> r.id === bundle_of(f.source), panel);
+                      k !== nothing && panel[k].site && !panel[k].kept_from_code)
+        if to === :diff ? any(on_site, Runs.workable(run)) : any(r -> r.site, panel)
             built = Site.build(root, cfg; io)
             built === nothing && return 2
             site = built
@@ -330,8 +334,10 @@ end
 const SOURCE_UNIT = "source-"
 
 # Every Literate example as a unit of its own: the file itself, which is where the rule is judged.
+# The key carries a digest of the path, so `a-b.jl` and `a.b.jl` are two units, not one result file.
 source_units(cfg::Model.Config, root::AbstractString) =
-    [(path = f, key = SOURCE_UNIT * replace(f, r"[^A-Za-z0-9_]+" => "-"), file = joinpath(root, f))
+    [(path = f, key = SOURCE_UNIT * replace(f, r"[^A-Za-z0-9_]+" => "-") * "-" * first(bytes2hex(GBGCodingTools.SHA.sha1(f)), 6),
+      file = joinpath(root, f))
      for f in Texts.files(cfg, root, Model.FileSet.LITERATE)]
 
 """
@@ -505,7 +511,9 @@ function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config,
             "Quote the decisive current text; a verdict without a quote counts as NOT_FIXED."
         end
         push!(roles, Model.AgentRole(; id, instrument = run.instrument, reads = reader.reads, site = reader.site,
-                                     kept_from_code = stage === :verify ? reader.kept_from_code : false,
+                                     # the example's source IS the unit: telling its verifier the source is withheld
+                                     # contradicted the line naming it (found in review, 2026-09-24)
+                                     kept_from_code = stage === :verify ? reader.kept_from_code && !of_source : false,
                                      description = text * " The reader's standpoint: " * reader.description,
                                      rules = f.draft.rule === nothing ? Symbol[] : [f.draft.rule],
                                      strength = stage === :verify ? reader.strength : Model.Strength.ECONOMY, cap = 1))
@@ -612,7 +620,7 @@ function collect(root::AbstractString; io::IO = stdout)
     # the report said every reader wrote).
     # Once per STAGE — verifier keys repeat across passes — and a relaunched agent that then writes is
     # not silent (both found in review, 2026-09-23). The relaunched set lives in the stage's own scratch.
-    mark = joinpath(Agents.stage_dir(root, id), "relaunched")
+    mark = joinpath(Agents.stage_dir(root, id), "relaunched-" * string(run.passes))
     again = isfile(mark) ? String[strip(l) for l in eachline(mark) if !isempty(strip(l))] : String[]
     fresh = setdiff(silent, again)
     if !isempty(fresh)
@@ -628,7 +636,7 @@ function collect(root::AbstractString; io::IO = stdout)
     if launched === :verify || launched === :diff
         run = grade(root, run, launched, verdicts; io)
         run = with(run; stage = :collect, agent_launches = run.agent_launches + n_launched,
-                   silent = vcat(run.silent, silent))
+                   silent = unique(vcat(run.silent, silent)))
         Runs.save(root, run)
         println(io, "run: collected ", length(verdicts), " verdict(s) from ", wrote, " verifier(s); ",
                 length(Runs.open_findings(run)), " finding(s) open.")
@@ -647,7 +655,7 @@ function collect(root::AbstractString; io::IO = stdout)
                                           Model.Decider.AGENT, d))
         end
         run = with(run; stage = :collect, findings = vcat(run.findings, findings),
-                   agent_launches = run.agent_launches + n_launched, silent = vcat(run.silent, silent))
+                   agent_launches = run.agent_launches + n_launched, silent = unique(vcat(run.silent, silent)))
         Runs.save(root, run)
         println(io, "run: collected ", length(findings), " finding(s) from ", wrote, " reader(s).")
     end
@@ -669,22 +677,27 @@ switched_off(cfg::Model.Config, d::Model.FindingDraft) =
 """
     merge_same(drafts, cfg) -> Vector{Tuple{String,Model.FindingDraft}}
 
-One finding per defect: drafts under the same rule — or under none — that share a placed location are
-merged into the first of them. The arguments are `drafts`, each with the reader that made it, and `cfg`,
-the package's config, which says whether the merged locations are working notes. Returns the
-merged list, in the order the first of each group came.
+One finding per defect: two drafts are merged into the first when they are under the same rule and
+quote the same words at the same place — and, under no rule, make the same claim. The arguments are
+`drafts`, each with the reader that made it, and `cfg`, the package's config, which says whether the
+merged locations are working notes. Returns the merged list, in the order the first of each group came.
 
 Several readers see the same sentence, and each filed it: one defect became three findings, three
 verifiers and one fix commit, which left two verifiers with no change of their own to read (found in
-review, 2026-09-23). The merged finding keeps every location and names the other readers and their
-claims in its evidence, so nothing a reader said is lost. Drafts under DIFFERENT rules stay apart: two
-rules broken in one sentence are two defects.
+review, 2026-09-23). What merges is narrow on purpose. A shared LINE is not a shared defect: a paragraph
+is often one line, one reader's two classes under one rule share a site, and two open readers can say
+two different things of one sentence — merging those lost the second fix (found in review,
+2026-09-24). The merged finding keeps every location, and the other readers' claims, evidence and
+fixes in its evidence.
 """
 function merge_same(drafts::AbstractVector, cfg::Model.Config)
     out = Tuple{String,Model.FindingDraft}[]
-    placed(d) = Set((l.file, l.line) for l in d.locations if l.found !== Model.Anchor.OUTDATED)
+    quoted(d) = Set((l.file, l.line, Texts.flatten(l.text)) for l in d.locations
+                    if l.found !== Model.Anchor.OUTDATED && !isempty(strip(l.text)))
+    same(a, b) = a.rule == b.rule && !isempty(intersect(quoted(a), quoted(b))) &&
+                 (a.rule !== nothing || Texts.flatten(a.claim) == Texts.flatten(b.claim))
     for (role, d) in drafts
-        k = findfirst(x -> last(x).rule == d.rule && !isempty(intersect(placed(last(x)), placed(d))), out)
+        k = findfirst(x -> same(last(x), d), out)
         if k === nothing
             push!(out, (String(role), d))
             continue
@@ -694,7 +707,9 @@ function merge_same(drafts::AbstractVector, cfg::Model.Config)
         for l in d.locations
             any(m -> (m.file, m.line, m.text) == (l.file, l.line, l.text), locs) || push!(locs, l)
         end
-        also = "Also reported by `" * String(role) * "`: " * d.claim
+        also = "Also reported by `" * String(role) * "`: " * d.claim *
+               (isempty(d.evidence) ? "" : " Evidence: " * d.evidence) *
+               (isempty(d.fix) ? "" : " Fix proposed: " * d.fix)
         out[k] = (r0, Model.FindingDraft(rule = d0.rule, locations = locs, claim = d0.claim,
                                          evidence = isempty(d0.evidence) ? also : d0.evidence * "\n\n" * also,
                                          fix = d0.fix, maybe_code = d0.maybe_code || d.maybe_code,
@@ -883,6 +898,12 @@ function close_run(root::AbstractString; io::IO = stdout)
         GBGCodingTools.JSON3.pretty(f, GBGCodingTools.JSON3.write(Runs.as_dict(closed)))
     end
     rm(joinpath(dir, "run.draft.json"); force = true)
+    # A "not a defect" the owner gave this run's question while it was open is settled now that it has
+    # closed: written then, the settled list blocked the run's own collect and fixes.
+    for q in closed.questions
+        q.answer == GBGCodingTools.Answer.NOT_A_DEFECT || continue
+        GBGCodingTools.Answer.settle!(root, q.id, isempty(q.direction) ? q.answer : q.direction)
+    end
     rm(Agents.scratch_dir(root, id); force = true, recursive = true)   # the agents' files go with the run
     left = Runs.open_findings(closed)
     notes = Runs.in_material(closed)
@@ -1063,7 +1084,9 @@ the owner reads it. The section is the last review's and is replaced whole; the 
 stay as they were.
 """
 function queue_leftovers(root::AbstractString, run::Model.Run; open_too::Bool = true)
-    open = open_too ? Runs.open_findings(run) : Model.Finding[]
+    # A finding waiting on the owner's answer is carried by no run, and its line is the only place the
+    # queue names its question: it is listed whether or not the run ended DONE (found in review, 2026-09-24).
+    open = [f for f in Runs.open_findings(run) if open_too || Runs.parked(run, f.id)]
     notes = Runs.in_material(run)
     waiting = [(rid, q) for (rid, q) in Runs.open_questions(root) if rid != run.id]
     path = joinpath(root, ".claude", "WORK_QUEUE.md")

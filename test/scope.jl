@@ -34,7 +34,7 @@ end
 
 # A finished run of `readers`, its record committed, as a closed run leaves it.
 function close_a_run(root, id, readers; stop = G.Model.Stop.DONE, tool = "2.0.0-rc.7",
-                     rulebook = G.Catalogue.digest())
+                     rulebook = RN.rulebook_digest(G.ConfigIO.read_config(root), :documentation_review))
     run_ = G.Model.Run(id = id, instrument = :documentation_review, tool_version = tool,
                        first_commit = "abc", budget = G.Model.Budget(), stage = :close,
                        readers = readers, stop = stop, rulebook = rulebook)
@@ -80,7 +80,7 @@ end
         cfg = G.ConfigIO.read_config(root)
         close_a_run(root, "2026-09-22-c", :bound; rulebook = "0"^64)   # the run read an older rulebook
         @test SC.base(root, :documentation_review, :bound, cfg) === nothing
-        @test occursin("the rules moved", SC.why_full(root, :documentation_review, :bound, cfg))
+        @test occursin("the rules or the readers moved", SC.why_full(root, :documentation_review, :bound, cfg))
         # the version is not what is compared: an unchanged rulebook under another version is a base
         root = scope_repo()
         close_a_run(root, "2026-09-22-c", :bound; tool = "2.0.0-rc.6")

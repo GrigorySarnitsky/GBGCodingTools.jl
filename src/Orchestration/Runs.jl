@@ -22,6 +22,8 @@ using ...Catalogue
 using ...Texts
 using ...ConfigIO
 using ...Engine
+using ...Render
+import SHA
 
 """
     STAGES
@@ -126,7 +128,7 @@ function start(instrument::Symbol, root::AbstractString; readers::Symbol = :boun
     end
     run = Model.Run(id = new_id(instrument, root), instrument = instrument,
                     tool_version = string(GBG_VERSION[]), first_commit = head_commit(root),
-                    rulebook = Catalogue.digest(),
+                    rulebook = rulebook_digest(cfg, instrument),
                     budget = inst.budget, stage = :start, readers = readers,
                     model = model, sequential = sequential,
                     scope = scope, base = base,
@@ -138,6 +140,33 @@ function start(instrument::Symbol, root::AbstractString; readers::Symbol = :boun
     save(root, run)
     write_stage(root, run.id, 1)                # after the record, which the stage file is read against
     return run
+end
+
+"""
+    rulebook_digest(cfg, instrument) -> String
+
+The SHA-256 of what a run's agents are given to judge by: every rule's section of the rendered
+rulebook, the readers the package's panel derives — each one's id, standpoint, rules and material —
+and the driver that writes their briefs. The arguments are `cfg`, the package's config, and
+`instrument`, the instrument. Returns the hex digest.
+
+A later `--scope changed` run reads everything again when its own differs: the silence of a run judged
+by other rules, or read by other readers, says nothing about these. A digest of the rule statements
+alone missed a reworded `why`, a rule moved from a program to a reader, and a reader added (found in
+review, 2026-09-24); the version number, compared before, does not move on a development checkout.
+"""
+function rulebook_digest(cfg::Model.Config, instrument::Symbol)
+    io = IOBuffer()
+    for r in Catalogue.RULES
+        println(io, Render.rule_section(r))
+    end
+    for r in first(Catalogue.panel(instrument, cfg))
+        println(io, r.id, '\t', r.description, '\t', join(string.(r.rules), ","), '\t',
+                join(string.(r.reads), ","), '\t', r.site, '\t', r.kept_from_code, '\t', r.cap)
+    end
+    driver = joinpath(pkgdir(Model), "drivers", "run.js")
+    isfile(driver) && write(io, read(driver))
+    return bytes2hex(SHA.sha256(take!(io)))
 end
 
 # The version that ran, recorded so a record says what judged it. Set by the package at load.

@@ -854,7 +854,7 @@ The arguments are `root`, the package root, and `loc`, the location to find agai
 neither node nor quote is the file itself and comes back unchanged while the file exists. Returns the
 located copy.
 """
-function reanchor(root::AbstractString, loc::Model.Location)
+function reanchor(root::AbstractString, loc::Model.Location; loose::Bool = true)
     path = joinpath(root, loc.file)
     isfile(path) || return outdated(loc)
     isempty(loc.node) && isempty(loc.text) && return loc
@@ -867,11 +867,13 @@ function reanchor(root::AbstractString, loc::Model.Location)
     end
     isempty(loc.text) && return outdated(loc)
 
-    # The quote as written on one line, then as it READS: a quote copied from the built page lost the
-    # source's markup, and one the source wraps is on no single line. Either way it is the same text,
-    # and until 2026-09-24 eleven of twenty real quotes were lost to exactly this (found in review).
+    # The quote as written on one line; as written, across the lines the source wraps it over; and, only
+    # where both fail, as it READS on the built page, whose quote lost the source's markup. The reading
+    # comes last because it erases differences: tried first, it lost 1769 quotes spelled as the source
+    # spells them and found text the finding was not about (both found in review, 2026-09-24).
     exact = [i for (i, l) in pairs(lines) if occursin(loc.text, l)]
-    hits = isempty(exact) ? flattened_lines(path, reading(loc.text)) : exact
+    hits = !isempty(exact) ? exact : flattened_lines(path, loc.text; form = :written)
+    loose && isempty(hits) && (hits = flattened_lines(path, loc.text; form = :read))
     isempty(hits) && return outdated(loc)
     inside = [i for i in hits if any(sp -> i in sp, spans)]
     if !isempty(inside)
@@ -907,21 +909,24 @@ quote, so a sentence a decision log repeats is still the docstring's. Whitespace
 is flattened before the search, so a sentence the build re-wrapped is still found.
 """
 function place(cfg::Model.Config, root::AbstractString, text::AbstractString)
-    needle = reading(text)
-    isempty(needle) && return nothing
-    # The text a user reads first, the rationale documents only where none of it holds the quote: a
-    # docstring whose sentence a decision log also records is the docstring's, and treating the two as a
-    # coin toss lost a real finding (found in review, 2026-09-23).
-    for tier in ((Model.FileSet.PAGES, Model.FileSet.DOCSTRINGS, Model.FileSet.LITERATE), (Model.FileSet.RATIONALE,))
-        hits = Model.Location[]
-        for fileset in tier, file in files(cfg, root, fileset)
-            any(h -> h.file == file, hits) && continue
-            line = flattened_line(joinpath(root, file), needle)
-            line === nothing && continue
-            push!(hits, Model.Location(; file, node = node_at(root, file, line), text = String(text),
-                                        line = line, found = Model.Anchor.BY_QUOTE))
+    isempty(flatten(text)) && return nothing
+    # As the source writes it first, across every file; as the page reads it only where no file holds it
+    # so. Within each, the text a user reads first and the rationale documents only where none of it holds
+    # the quote: a docstring whose sentence a decision log also records is the docstring's (found in
+    # review, 2026-09-23), while a decision-log sentence a code comment merely READS like is the log's.
+    for form in (:written, :read)
+        for tier in ((Model.FileSet.PAGES, Model.FileSet.DOCSTRINGS, Model.FileSet.LITERATE), (Model.FileSet.RATIONALE,))
+            hits = Model.Location[]
+            for fileset in tier, file in files(cfg, root, fileset)
+                any(h -> h.file == file, hits) && continue
+                found = flattened_lines(joinpath(root, file), text; form)
+                isempty(found) && continue
+                line = first(found)
+                push!(hits, Model.Location(; file, node = node_at(root, file, line), text = String(text),
+                                            line = line, found = Model.Anchor.BY_QUOTE))
+            end
+            isempty(hits) || return length(hits) == 1 ? only(hits) : nothing
         end
-        isempty(hits) || return length(hits) == 1 ? only(hits) : nothing
     end
     return nothing
 end
@@ -947,14 +952,18 @@ nothing, while one kept on one side loses it.
 """
 reading(text::AbstractString) = flatten(join((reading_line(l) for l in split(String(text), '\n')), " "))
 
-function reading_line(line::AbstractString)
+# One line as the page reads it. `escaped` is for a line of a Julia file, whose docstrings double every
+# backslash the page shows once; a quote copied from the page is never escaped.
+function reading_line(line::AbstractString; escaped::Bool = false)
     l = String(line)
     occursin(r"^\s*```", l) && return ""                         # a fence line renders as nothing
     l = replace(l, r"^\s*!!!\s+\w+(?:\s+\"(.*)\")?\s*$" => s"\1")  # an admonition renders as its title
+    l = replace(l, r"\s+#src\s*$" => "")                          # Literate's end-of-line filter
+    l = replace(l, r"^\s*#!?(?:md|jl|nb|src)\s+" => "")           # Literate's line filters, `#md # …`
     l = replace(l, r"^\s*#+\s?" => "")                            # a heading's, or a Literate line's, marks
     l = replace(l, r"^\s*(?:[-*+]|\d+[.)]|>)\s+" => "")            # a list item's or a quotation's leader
-    l = replace(l, r"\]\([^)]*\)" => "")                          # a link's target
-    l = replace(l, "\\\\" => "\\")                                  # a docstring's escaped backslash
+    l = replace(l, r"\]\((?:[^()]|\([^()]*\))*\)" => "")          # a link's target, one level of ( ) inside
+    escaped && (l = replace(l, "\\\\" => "\\"))                     # a docstring's escaped backslash
     l = replace(l, r"\\[\[\]()]" => "")                          # display and inline delimiters, \[ … \]
     return replace(l, r"[`$*\[\]]" => "")
 end
@@ -975,15 +984,17 @@ formula, is often written in several places, and a fix made where the reader hap
 others standing. A fourth copy of a corrected formula once survived a whole run that way.
 """
 function occurrences(cfg::Model.Config, root::AbstractString, text::AbstractString)
-    needle = reading(text)
-    isempty(needle) && return Model.Location[]
+    # As WRITTEN only: a copy is the same spelling. The reading form erases exactly the difference a
+    # markup rule is about, and listed text already written right as a copy of the defect (found in
+    # review, 2026-09-24).
+    isempty(flatten(text)) && return Model.Location[]
     out = Model.Location[]
     seen = Set{String}()
     for fileset in (Model.FileSet.PAGES, Model.FileSet.DOCSTRINGS, Model.FileSet.LITERATE, Model.FileSet.RATIONALE)
         for file in files(cfg, root, fileset)
             file in seen && continue
             push!(seen, file)
-            for line in flattened_lines(joinpath(root, file), needle)
+            for line in flattened_lines(joinpath(root, file), text; form = :written)
                 push!(out, Model.Location(; file, node = node_at(root, file, line), text = String(text),
                                            line = line, found = Model.Anchor.BY_QUOTE))
             end
@@ -1008,35 +1019,43 @@ finds every page and means nothing.
 function formulas(text::AbstractString)
     out = String[]
     t = String(text)
-    for rx in (r"(?<!`)``(?!`)(.{2,}?)(?<!`)``(?!`)"s, r"(?<!\$)\$([^\$\n]{2,})\$(?!\$)")
-        for m in eachmatch(rx, t)
-            f = strip(m.captures[1])
-            # A quote cut mid-formula pairs the wrong delimiters and takes the prose between two
-            # formulas for one; prose has none of the characters mathematics is written with.
-            occursin(r"[\\^_={}]", f) || continue
-            isempty(f) || f in out || push!(out, String(f))
+    add(f) = (f = strip(f); length(f) >= 2 && !(f in out) && push!(out, String(f)))
+    # Between double backticks. A quote the reader cut at a line end leaves a formula open at one of its
+    # ends, so the delimiters cannot be paired from the left: `` ``\hat f(k)`` holds, and ``u_k`` ``
+    # paired that way made one formula of the two and prose of the rest (found in review, 2026-09-24).
+    # The pieces between delimiters alternate prose and formula; which alternation is right is read off
+    # the pieces themselves — the one whose formulas look like mathematics and whose prose like words.
+    pieces = split(t, r"(?<!`)``(?!`)")
+    if length(pieces) > 1
+        score(k) = sum((isodd(i) == isodd(k) ? (mathlike(p) - wordlike(p)) : (wordlike(p) - mathlike(p)))
+                       for (i, p) in pairs(pieces))
+        k = iseven(length(pieces)) && score(1) > score(2) ? 1 : 2   # an odd count is balanced: formulas at even places
+        for (i, p) in pairs(pieces)
+            isodd(i) == isodd(k) || continue
+            wordlike(p) > mathlike(p) && continue
+            add(p)
         end
     end
-    # A quote the reader cut at a line end leaves a formula open at one of its ends; the part it holds
-    # is how every copy of that formula begins or ends, and is searched for as one.
-    rest = replace(t, r"(?<!`)``(?!`).{2,}?(?<!`)``(?!`)"s => " ")
-    for rx in (r"(?<!`)``(?!`)([^`]{2,})$", r"^([^`]{2,}?)(?<!`)``(?!`)")
-        m = match(rx, rest)
-        m === nothing && continue
-        f = strip(m.captures[1])
-        occursin(r"[\\^_={}]", f) && !(f in out) && push!(out, String(f))
+    # Between single dollars, as a quote copied from the page spells them.
+    for m in eachmatch(r"(?<!\$)\$([^\$\n]{2,})\$(?!\$)", t)
+        wordlike(m.captures[1]) > mathlike(m.captures[1]) && continue
+        add(m.captures[1])
     end
     return out
 end
 
-# The line a flattened quote starts on, or nothing where the file does not hold it.
-function flattened_line(path::AbstractString, needle::AbstractString)
-    hits = flattened_lines(path, needle)
-    return isempty(hits) ? nothing : first(hits)
-end
+# How much a piece reads like mathematics, and how much like prose: a macro, a sub- or superscript, a
+# brace; and a run of two ordinary words.
+mathlike(p) = count(c -> c in ('\\', '^', '_', '{', '}', '='), p)
+wordlike(p) = length(collect(eachmatch(r"\b[a-z]{3,}\b", p)))
 
-# Every line a flattened quote starts on, in order.
-function flattened_lines(path::AbstractString, needle::AbstractString)
+# Every line a quote starts on, in order, with whitespace flattened on both sides. `form = :written`
+# compares the text as the source spells it; `:read` compares both as the page reads them, a Julia
+# file's escaped backslashes unescaped on the source side alone.
+function flattened_lines(path::AbstractString, text::AbstractString; form::Symbol = :written)
+    needle = form === :read ? reading(text) : flatten(text)
+    isempty(needle) && return Int[]
+    escaped = endswith(path, ".jl")
     isfile(path) || return Int[]
     lines = try
         readlines(path)
@@ -1045,7 +1064,7 @@ function flattened_lines(path::AbstractString, needle::AbstractString)
     end
     io = IOBuffer(); at = Int[]
     for (i, l) in pairs(lines)
-        piece = reading(l)
+        piece = form === :read ? flatten(reading_line(l; escaped)) : flatten(l)
         isempty(piece) && continue
         position(io) == 0 || (write(io, " "); push!(at, i))
         for _ in 1:length(piece); push!(at, i); end

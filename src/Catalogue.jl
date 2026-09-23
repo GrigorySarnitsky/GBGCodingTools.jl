@@ -17,7 +17,6 @@ module Catalogue
 
 using ..Model
 using ..Texts
-import SHA
 
 """
     ALWAYS_ON
@@ -443,24 +442,6 @@ identifier. Returns the rule.
 """
 rule(id::Symbol) = findfirst(r -> r.id === id, RULES) === nothing ? nothing : RULES[findfirst(r -> r.id === id, RULES)]
 
-"""
-    digest() -> String
-
-The SHA-256 of the rulebook as a reader meets it: each rule's id, statement, file sets, access and
-discipline, in order. Takes no arguments. Returns the hex digest.
-
-A run records it, and a later `--scope changed` run reads everything again when its own differs: the
-silence of a run judged by other rules says nothing about these. The version number was compared
-before, and it does not move while a development checkout's rules do (found in review, 2026-09-23).
-"""
-function digest()
-    io = IOBuffer()
-    for r in RULES
-        println(io, r.id, '\t', r.statement, '\t', join(string.(r.filesets), ","), '\t',
-                join(string.(r.access), ","), '\t', something(r.discipline, ""))
-    end
-    return bytes2hex(SHA.sha256(take!(io)))
-end
 
 # `ALWAYS_ON_RULES` stood here until 2026-09-17: the rules no package could switch off. The owner ruled
 # the concept away, and the reasoning is in the design's §9 — the rulebook is the DEFAULT, and a package

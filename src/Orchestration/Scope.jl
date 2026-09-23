@@ -121,21 +121,13 @@ function why_full(root::AbstractString, instrument::Symbol, readers::Symbol, cfg
     return "no $readers run of $instrument has closed here"
 end
 
-# The invalidations, in the order they are cheapest to decide. Returns the reason or `nothing`.
+# The invalidations, the most precise reason first. Returns the reason or `nothing`.
 #
 # The rules are compared by what they SAY: the digest the run recorded against the rulebook running now.
 # A record from before the digest compares the version that ran with the version running — the pin was
 # compared before, and a run records the running version, so a development checkout never matched and
 # a tool whose rules moved under an unchanged pin kept its base (found in review, 2026-09-23).
 function invalid(root::AbstractString, run::Model.Run, commit::AbstractString, cfg::Model.Config)
-    if !isempty(run.rulebook)
-        run.rulebook == Catalogue.digest() ||
-            return "the rules moved since $(run.id), so its silence was about other rules"
-    else
-        now = string(Runs.GBG_VERSION[])
-        run.tool_version == now ||
-            return "the tool moved from $(run.tool_version) to $now, so the rules are not the ones that run read"
-    end
     git_ok(root, "merge-base", "--is-ancestor", commit, "HEAD") ||
         return "$(first(commit, 8)) is not an ancestor of HEAD, so a diff against it is not this history"
     isempty(changed_in(root, commit, CONFIG)) ||
@@ -145,6 +137,15 @@ function invalid(root::AbstractString, run::Model.Run, commit::AbstractString, c
     script = build_script(cfg)
     isempty(script) || isempty(changed_in(root, commit, script)) ||
         return "$script changed since $(first(commit, 8)), so what the site is built from may have moved"
+    # Last, since a config change moves the panel and so the digest too, and is the more precise reason.
+    if !isempty(run.rulebook)
+        run.rulebook == Runs.rulebook_digest(cfg, run.instrument) ||
+            return "the rules or the readers moved since $(run.id), so its silence was about others"
+    else
+        now = string(Runs.GBG_VERSION[])
+        run.tool_version == now ||
+            return "the tool moved from $(run.tool_version) to $now, so the rules are not the ones that run read"
+    end
     return nothing
 end
 

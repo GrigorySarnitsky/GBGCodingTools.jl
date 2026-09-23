@@ -100,10 +100,13 @@ The payload goes through `JSON3.write` rather than string interpolation: a quote
 which any quote of a formula does — is not JSON until it is escaped, and a file that does not parse is
 read as a reader that wrote nothing, so the test would pass by testing nothing.
 """
-function reader_found(root, id, role, claim; file = "docs/src/index.md", quote_ = "The grid is spectral.")
+function reader_found(root, id, role, claim; file = "docs/src/index.md", quote_ = "The grid is spectral.",
+                      rule = nothing)
     mkpath(AGENTS.results_dir(root, id))
-    payload = Dict("findings" => [Dict("claim" => claim, "fix" => "say which",
-                                       "locations" => [Dict("file" => file, "text" => quote_)])],
+    f = Dict{String,Any}("claim" => claim, "fix" => "say which",
+                         "locations" => [Dict("file" => file, "text" => quote_)])
+    rule === nothing || (f["rule"] = rule)
+    payload = Dict("findings" => [f],
                    "checked" => [file])
     write(joinpath(AGENTS.results_dir(root, id), role * ".json"), G.JSON3.write(payload))
 end
@@ -1475,8 +1478,7 @@ end
         G.Run.collect(root; io = devnull)
         by = Dict(f.draft.claim => f for f in RUNS.load(root, id).findings)
         @test !by["absolute"].draft.in_material && only(by["absolute"].draft.locations).file == "docs/src/index.md"
-        # the same sentence under a second spelling of its path is the same place, and merges into it
-        @test !haskey(by, "dotted") && occursin("dotted", by["absolute"].draft.evidence)
+        @test !by["dotted"].draft.in_material && only(by["dotted"].draft.locations).file == "docs/src/index.md"
         @test !by["readme"].draft.in_material
         @test !by["test"].draft.in_material
         @test by["notes"].draft.in_material
@@ -1933,10 +1935,103 @@ end
         G.Run.start(root, :documentation_review; io = devnull)             # a run is open
         @test G.Answer.answer(root, qid, "fix the documentation instead"; io = devnull) == 2
         @test RUNS.answer_of(RUNS.load(root, id), fid) === nothing          # nothing recorded
-        # "not a defect" commits nothing, so it may be given while the run is open, and does not block it
-        @test G.Answer.answer(root, qid, "not a defect"; io = devnull) == 0
+        # "not a defect" writes the settled list, a tracked file that would block the open run's collect
+        # and every fix it commits: refused while another run is open (found in review, 2026-09-24)
+        @test G.Answer.answer(root, qid, "not a defect"; io = devnull) == 2
+        @test RUNS.answer_of(RUNS.load(root, id), fid) === nothing
+        @test !isfile(joinpath(root, ".gbg", "settled.jl"))
         id2 = G.Run.open_run(root); all_clean(root, id2)
         @test collect_twice(root) in (0, 1)
+    end
+end
+
+@testset "the open run's own question answered \"not a defect\" is settled when it closes" begin
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        G.Run.next(root; io = devnull)
+        fixed_as(root, fid, "The grid is a lattice.")
+        G.Run.next(root; io = devnull)
+        verifier_said(root, id, "verify", fid, "HIDES_CODE_DEFECT"; quote_ = "The grid is a lattice.")
+        G.Run.collect(root; io = devnull)
+        qid = RUNS.code_question_id(RUNS.load(root, id), fid)
+        @test G.Answer.answer(root, qid, "not a defect"; io = devnull) == 0
+        @test !isfile(joinpath(root, ".gbg", "settled.jl"))                 # not while the run is open
+        @test RUNS.answer_of(RUNS.load(root, id), fid) == "not a defect"
+        to_close(root, id); G.Run.close_run(root; io = devnull)
+        @test occursin(qid, read(joinpath(root, ".gbg", "settled.jl"), String))
+    end
+end
+
+@testset "a question of a run that could not be evaluated is on the queue" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        all_clean(root, id; except = [HOME_READER, "full"])            # `full` stays silent
+        @test collect_twice(root) == 2
+        fid = only(RUNS.load(root, id).findings).id
+        G.Run.next(root; io = devnull)
+        fixed_as(root, fid, "The grid is a lattice.")
+        G.Run.next(root; io = devnull)
+        verifier_said(root, id, "verify", fid, "HIDES_CODE_DEFECT"; quote_ = "The grid is a lattice.")
+        G.Run.collect(root; io = devnull)
+        to_close(root, id)
+        @test G.Run.close_run(root; io = devnull) == 2                    # a silent reader: not evaluated
+        qid = RUNS.code_question_id(RUNS.load(root, id), fid)
+        @test occursin(qid, read(joinpath(root, ".claude", "WORK_QUEUE.md"), String))
+    end
+end
+
+@testset "a later pass reads only its own results" begin
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        G.Run.next(root; io = devnull)
+        fixed_as(root, fid, "The grid is a lattice.")
+        G.Run.next(root; io = devnull)
+        verifier_said(root, id, "verify", fid, "NOT_FIXED")
+        G.Run.collect(root; io = devnull)
+        order = RUNS.STAGES[:documentation_review]
+        for _ in 1:6                                                      # through the empty diff stage
+            (RUNS.load(root, id).passes == 2 && RUNS.stage_of(root, id) === :fix) && break
+            order[RUNS.stage_index(root, id) + 1] === :collect ? G.Run.collect(root; io = devnull) : G.Run.next(root; io = devnull)
+        end
+        @test RUNS.load(root, id).passes == 2
+        fixed_as(root, fid, "The grid is a periodic lattice.")
+        G.Run.next(root; io = devnull)                                    # its verify stage
+        @test !isfile(joinpath(AGENTS.results_dir(root, id), "verify-" * fid * ".json"))   # pass 1's is gone
+        @test G.Run.collect(root; io = devnull) == 2                      # silent: launched again, in pass 2 too
+    end
+end
+
+@testset "an answer that re-makes an edit makes all of it or none" begin
+    # Two fixes of one finding reverted; the owner then changes what one of them touched, so re-making
+    # that one fails. Whichever is tried first, the tree is left where it was and the question stands,
+    # and once the conflict is gone the same answer succeeds (found in review, 2026-09-24).
+    for clash in ("# GBG Fixture", "The grid is spectral.")
+        package() do root, gg
+            id, fid = with_one_finding(root)
+            G.Run.next(root; io = devnull)
+            idx = joinpath(root, "docs", "src", "index.md")
+            fixed_as(root, fid, "The grid is a lattice.")
+            write(idx, replace(read(idx, String), "# GBG Fixture" => "# GBG Fixture, a toy"))
+            @test G.Docfix.commit(root, "second fix for " * fid; io = devnull, finding = fid) == 0
+            G.Run.next(root; io = devnull)
+            verifier_said(root, id, "verify", fid, "HIDES_CODE_DEFECT"; quote_ = "The grid is a lattice.")
+            G.Run.collect(root; io = devnull)
+            to_close(root, id); G.Run.close_run(root; io = devnull)
+            qid = RUNS.code_question_id(RUNS.load(root, id), fid)
+            gg("add", ".gbg", ".claude"); gg("commit", "-q", "-m", "the record")
+            before = read(idx, String)
+            write(idx, replace(before, clash => clash == "# GBG Fixture" ? "# The fixture" : "The grid is odd."))
+            gg("add", "-u"); gg("commit", "-q", "-m", "the owner's own edit")
+            head = RUNS.head_commit(root)
+            @test G.Answer.answer(root, qid, "fix the documentation instead"; io = devnull) == 2
+            @test RUNS.head_commit(root) == head
+            @test RUNS.answer_of(RUNS.load(root, id), fid) === nothing
+            gg("revert", "--no-edit", "HEAD")                              # the owner takes his edit back
+            @test G.Answer.answer(root, qid, "fix the documentation instead"; io = devnull) == 0
+            @test occursin("lattice", read(idx, String)) && occursin("a toy", read(idx, String))
+        end
     end
 end
 
@@ -1985,20 +2080,29 @@ end
     package() do root, gg
         G.Run.start(root, :documentation_review; io = devnull)
         id = G.Run.open_run(root)
-        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
-        reader_found(root, id, "full", "the grid's kind is unstated")
+        rule = "RULE.DOC.TERMS_DEFINED"
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice"; rule)
+        reader_found(root, id, "full", "the grid's kind is unstated"; rule)
         all_clean(root, id; except = [HOME_READER, "full"])
         @test G.Run.collect(root; io = devnull) == 1
         f = only(RUNS.load(root, id).findings)
         said = f.draft.claim * "\n" * f.draft.evidence
         @test occursin("the grid's kind is unstated", said) && occursin("not said to be a lattice", said)
+        @test occursin("Fix proposed: say which", f.draft.evidence)      # the second reader's fix is kept
     end
-    # under two different rules, one sentence is two defects
-    loc = G.Model.Location(file = "docs/src/index.md", text = "x", line = 3, found = G.Model.Anchor.BY_QUOTE)
-    d(rule) = G.Model.FindingDraft(rule = rule, locations = [loc], claim = "c", evidence = "", fix = "")
+    loc(text; line = 3) = G.Model.Location(file = "docs/src/index.md", text = text, line = line, found = G.Model.Anchor.BY_QUOTE)
+    d(rule, claim = "c"; text = "x") = G.Model.FindingDraft(rule = rule, locations = [loc(text)], claim = claim, evidence = "", fix = "")
     cfg = G.Model.Config(package = "P", tool = :dev)
+    # under two different rules, one sentence is two defects
     @test length(G.Run.merge_same([("a", d(:R1)), ("b", d(:R2))], cfg)) == 2
     @test length(G.Run.merge_same([("a", d(:R1)), ("b", d(:R1))], cfg)) == 1
+    # one line is not one defect: two quotes of one long paragraph under one rule are two classes
+    @test length(G.Run.merge_same([("a", d(:R1; text = "term A")), ("b", d(:R1; text = "term B"))], cfg)) == 2
+    # under no rule, two readers saying two things of one sentence are two findings (review, 2026-09-24)
+    @test length(G.Run.merge_same([("a", d(nothing, "E is undefined")), ("b", d(nothing, "the law is wrong"))], cfg)) == 2
+    @test length(G.Run.merge_same([("a", d(nothing, "E is undefined")), ("b", d(nothing, "E is  undefined"))], cfg)) == 1
+    # a whole-file finding, with no quote, merges with nothing
+    @test length(G.Run.merge_same([("a", d(:R1; text = "")), ("b", d(:R1; text = ""))], cfg)) == 2
 end
 
 @testset "a finding under a rule switched off for its files is the switch's" begin
@@ -2028,4 +2132,40 @@ end
         none = G.Run.fix_diff(root, run, other)
         @test startswith(none, "# No commit names this finding") && occursin("second half of", none)
     end
+end
+
+@testset "a finding on an example's source is verified on that file, which is not withheld from it" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+        src = only(String(r["key"]) for r in args["roles"] if whole(args, r)["source_unit"] === true)
+        reader_found(root, id, src, "a full-line comment inside the code is prose that will not render";
+                     file = "examples/scaling.jl", quote_ = "is scaled in place by", rule = "RULE.DOC.LITERATE")
+        all_clean(root, id; except = [src])
+        @test G.Run.collect(root; io = devnull) == 1
+        fid = only(RUNS.load(root, id).findings).id
+        G.Run.next(root; io = devnull)                                    # fix
+        ex = joinpath(root, "examples", "scaling.jl")
+        write(ex, replace(read(ex, String), "is scaled in place by" => "is scaled, in place, by"))
+        @test G.Docfix.commit(root, "fix for " * fid; io = devnull, finding = fid) == 0
+        G.Run.next(root; io = devnull)                                    # verify
+        v = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+        role = whole(v, only(v["roles"]))
+        @test role["source_unit"] === true && role["kept_from_code"] === false
+        @test String(role["unit"]) == ex
+    end
+end
+
+@testset "two examples are two units, and the fingerprint moves with the readers" begin
+    root = mktempdir(; cleanup = true)
+    mkpath(joinpath(root, "examples"))
+    write(joinpath(root, "examples", "a-b.jl"), "# a\n"); write(joinpath(root, "examples", "a.b.jl"), "# b\n")
+    cfg = G.Model.Config(package = "P", tool = :dev)
+    keys_ = [u.key for u in G.Run.source_units(cfg, root)]
+    @test length(keys_) == 2 && allunique(keys_)
+    # a declared discipline adds a reader, and a changed-scope base read without it no longer stands
+    with_expert = G.Model.Config(package = "P", tool = :dev, disciplines = [:differential_geometry])
+    @test RUNS.rulebook_digest(cfg, :documentation_review) != RUNS.rulebook_digest(with_expert, :documentation_review)
+    @test RUNS.rulebook_digest(cfg, :documentation_review) == RUNS.rulebook_digest(cfg, :documentation_review)
 end
