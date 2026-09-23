@@ -629,102 +629,6 @@ end
 const BANNER = "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human.\n"
 
 """
-    readers_page(cfg) -> String
-
-The site page describing the readers a documentation review of this package would launch. The argument
-is `cfg`, the package's config. Returns the page.
-
-The readers are DERIVED, so this page is derived too: it is what `Roles.derive` returns for this config,
-not a list kept beside it. What it is for is the owner's question "who read my documentation, and what
-were they allowed to see?", which a report answers for one run and this answers for the package.
-"""
-function readers_page(cfg::Model.Config)
-    roles, gaps = Catalogue.panel(:documentation_review, cfg)
-    io = IOBuffer()
-    println(io, "# [The readers of ", cfg.package, "](@id gbg-readers)\n")
-    println(io, BANNER)
-    if !Engine.Checks.applies(cfg, :documentation_review)
-        why = only(s.reason for s in cfg.switches if s.target === :documentation_review)
-        println(io, "!!! warning \"The review is switched off here\"\n    ",
-                uppercase(first(why, 1)) * SubString(why, 2), ".\n")
-    end
-    println(io, """
-    A documentation review is read by agents, and which agents they are is not a list anybody keeps: it
-    follows from the rules. A rule no program can decide carries a tag saying what a reader must be given
-    to judge it — nothing beyond the one page, the sibling pages, the source, the built site — and the
-    readers below are the bundles those tags fall into. A rule that names a field of expertise goes to a
-    reader of that field, which the package declares in its config.\n""")
-    println(io, "| Reader | Given | Rules it carries |")
-    println(io, "|---|---|---|")
-    for r in roles
-        given = r.kept_from_code ? "one built page, and nothing else" :
-                r.site ? "the built site" : "every document and the source"
-        println(io, "| `", r.id, "` | ", given, " | ", isempty(r.rules) ? "none: it reports what no rule names" :
-                string(length(r.rules)), " |")
-    end
-    println(io)
-    for r in roles
-        println(io, "## `", r.id, "`\n")
-        println(io, r.description, "\n")
-        isempty(r.rules) && continue
-        println(io, "It is given these rules to check:\n")
-        for id in sort(r.rules; by = String); println(io, "- [`", id, "`](@ref ", id, ")"); end
-        println(io)
-    end
-    println(io, "## What no reader here can judge\n")
-    if isempty(gaps)
-        println(io, "Every rule a reader decides reaches one of the readers above.\n")
-    else
-        println(io, "These rules reach nobody in this package. A review says so at every launch and first in its report, ")
-        println(io, "because a pass from a reader that cannot recognise the defect is indistinguishable from not looking.\n")
-        for g in gaps; println(io, "- ", g); end
-        println(io)
-    end
-    return String(take!(io))
-end
-
-"""
-    instruments_page(cfg) -> String
-
-The site page describing the instruments: what each is for, what starts it, what ends it, and who fixes
-what it finds. The argument is `cfg`, the package's config. Returns the page.
-"""
-function instruments_page(cfg::Model.Config)
-    io = IOBuffer()
-    println(io, "# [The instruments](@id gbg-instruments)\n")
-    println(io, BANNER)
-    println(io, """
-    An instrument is one procedure with one question, run only when the owner asks for it. Each is a value
-    in GBGCodingTools carrying its purpose, what ends it and how many times it may hand a finding back to
-    be fixed; `gbg run <instrument>` executes one, a stage at a time, and `.claude/skills/` holds the
-    file that tells a session the order of the steps.\n""")
-    println(io, "| Instrument | Finds a defect in | Decided by | Fixed by | Fix passes | Here |")
-    println(io, "|---|---|---|---|---|---|")
-    for i in Catalogue.INSTRUMENTS
-        on = Engine.Checks.applies(cfg, i.id)
-        println(io, "| `", replace(String(i.id), "_" => "-"), "` | ",
-                i.intention === Model.Intention.DOCUMENTATION ? "documentation" : "code", " | ",
-                i.decider === Model.Decider.AGENT ? "an agent" :
-                i.decider === Model.Decider.PROGRAM ? "a program" : "a failing test", " | ",
-                lowercase(replace(String(Symbol(i.fixer)), "_" => " ")), " | ",
-                i.budget.fix_passes, " | ", on ? "runs" : "switched off", " |")
-    end
-    println(io)
-    for i in Catalogue.INSTRUMENTS
-        println(io, "## `", replace(String(i.id), "_" => "-"), "`\n")
-        println(io, i.purpose, ".\n")
-        println(io, "- **Starts**: ", lowercase(first(i.when, 1)) * SubString(i.when, 2), ".")
-        println(io, "- **Ends**: ", lowercase(first(i.ends, 1)) * SubString(i.ends, 2), ".")
-        if !Engine.Checks.applies(cfg, i.id)
-            why = only(s.reason for s in cfg.switches if s.target === i.id)
-            println(io, "- **Switched off here**: ", uppercase(first(why, 1)) * SubString(why, 2), ".")
-        end
-        println(io)
-    end
-    return String(take!(io))
-end
-
-"""
     collisions(cfg, root) -> Vector{Pair{String,String}}
 
 Every generated path the package at `root` already holds and did not get from a generator. The
@@ -1001,32 +905,85 @@ function switches(cfg::Model.Config)
 end
 
 """
+    TOOLING_PAGE
+
+Where `pages` writes the one page a consumer's site carries about this tool, relative to the package
+root.
+"""
+const TOOLING_PAGE = "docs/src/gbg.md"
+
+"""
     RULES_PAGE
 
-Where `pages` writes the rulebook into a consumer's site, relative to the package root.
+Where `rulebook_page` writes the rulebook, relative to the package root. Only this package's own site
+calls it; a consumer's page links here instead.
 """
 const RULES_PAGE = "docs/src/gbg-rules.md"
-const READERS_PAGE = "docs/src/gbg-readers.md"
-const INSTRUMENTS_PAGE = "docs/src/gbg-instruments.md"
+
+"The address of this package's own site, which a consumer's tooling page links to."
+const TOOL_SITE = "https://grigorysarnitsky.github.io/GBGCodingTools.jl/"
 
 """
     pages(cfg, root) -> Vector{String}
 
-Writes the site pages that show a package what it is held to, and returns the paths written relative to
+Writes the ONE page a consumer's site carries about this tool, and returns its path relative to
 `docs/src/`, which is the form a `docs/make.jl` lists in its `pages`. The arguments are `cfg`, the
 package's config, and `root`, the package root.
 
-Three pages. The rules page carries every rule of the rulebook and what this package has switched off
-with its reason; the readers page, which readers a review derives for this package and the whole
-standpoint text of each; the instruments page, what an instrument is and what ends one. A switch and a
-reader are both answerable because a reader of the site can see them, and the rendered rulebook under
-`.gbg/` is not somewhere a reader of the documentation goes.
+The page is small by ruling [2026-09-23]: a line saying what the documentation is held to, a link to
+this package's own site where the rulebook lives, and what this package has customised against the
+defaults — every switch with its reason, and any rule it adds for itself. Nothing else. This tool is
+the instrument of the package's developer, and its workings are of no concern to the package's users;
+the page exists only so that an override is on the record where a reader of the documentation can find
+it, and it belongs under the site's design or internals section, never among the main pages.
 
-All three are written at BUILD time and belong in the package's `generated` list, so that no rule reads
-them. A page that states the rules is by construction full of text that breaks them — it quotes the
-banned spellings in order to ban them — and a reader sent to fix it would spend its whole budget there.
+Until that ruling the generator wrote three pages — the whole rulebook with an anchor per rule, a
+readers page and an instruments page — and a physics library's site had three of its ten top-level
+entries describing review tooling. The rulebook is still rendered, by [`rulebook_page`](@ref), on this
+package's own site alone, which is what the link here points at.
+
+The page is written at BUILD time and belongs in the package's `generated` list, so that no rule reads
+it and no fixer edits it.
 """
 function pages(cfg::Model.Config, root::AbstractString)
+    io = IOBuffer()
+    println(io, "# [Documentation tooling](@id gbg)\n")
+    println(io, BANNER)
+    println(io, "The documentation of ", cfg.package, " is held to the rulebook of ",
+                "[GBGCodingTools](", TOOL_SITE, ") ", version_tag(cfg), ": a documentation rubric, the")
+    println(io, "LaTeX idiom, the citation style, and a testing protocol. The rules themselves are on")
+    println(io, "[that package's site](", TOOL_SITE, "gbg-rules/), each under a stable id. What follows is only")
+    println(io, "what this package does differently from the defaults.\n")
+    # The switches and the package's own rules, from the same generator that writes them into the
+    # rulebook a session loads, so the page and the rulebook cannot disagree; its markers are dropped
+    # and its heading sits under this page's own.
+    for line in split(switches(cfg), '\n')
+        (occursin(BEGIN_MARK, line) || occursin(END_MARK, line)) && continue
+        println(io, startswith(line, "# ") ? "#" * line : line)
+    end
+    full = joinpath(root, TOOLING_PAGE)
+    mkpath(dirname(full))
+    write(full, String(take!(io)))
+    return [relpath(TOOLING_PAGE, "docs/src")]
+end
+
+"""
+    rulebook_page(cfg, root) -> Vector{String}
+
+Writes the rulebook as a page — every rule with its statement, reason and check, grouped by what covers
+it, each under an anchor named by its id, with the glossary and this package's switches — and returns
+its path relative to `docs/src/`. The arguments are `cfg`, the package's config, and `root`, the
+package root.
+
+Only this package's own `docs/make.jl` calls it [ruled 2026-09-23]: the rulebook is this tool's to
+publish, and a consumer's site links here rather than carrying a copy. The anchors are what make a rule
+id linkable from anywhere, and keeping them in one place is what keeps the links from multiplying.
+
+A page that states the rules is by construction full of text that breaks them — it quotes the banned
+spellings in order to ban them — so it is written at BUILD time and is in this package's `generated`
+list, where no rule reads it.
+"""
+function rulebook_page(cfg::Model.Config, root::AbstractString)
     io = IOBuffer()
     println(io, "# [The rules ", cfg.package, " is held to](@id gbg-rules)\n")
     println(io, "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human.\n")
@@ -1070,12 +1027,7 @@ function pages(cfg::Model.Config, root::AbstractString)
     full = joinpath(root, RULES_PAGE)
     mkpath(dirname(full))
     write(full, String(take!(io)))
-    written = [RULES_PAGE]
-    for (path, body) in (READERS_PAGE => readers_page(cfg), INSTRUMENTS_PAGE => instruments_page(cfg))
-        write(joinpath(root, path), body)
-        push!(written, path)
-    end
-    return [relpath(p, "docs/src") for p in written]
+    return [relpath(RULES_PAGE, "docs/src")]
 end
 
 # ─────────────────────────────────────────────────────────────────────────── the register and the check

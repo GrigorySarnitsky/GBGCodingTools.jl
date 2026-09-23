@@ -4,6 +4,18 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## Unreleased — toward 2.0.0-rc.12
+
+**Nothing of the tool on a consumer's main pages** (ruled 2026-09-23). GBGCodingTools is the instrument of the
+packages' developer, and its workings are of no concern to the packages' users — yet three of the ten top-level
+entries on GBGPeriodicFields' site were the rulebook, a reader roster and an instrument list, and the first was 45 KB
+of tooling prose on a physics library's site. `Render.pages` now writes ONE small page, `gbg.md`, for the site's design
+or internals section: what the documentation is held to, a link to this package's own site where the rulebook lives, and
+the package's switches with their reasons. The readers page and the instruments page are deleted. The rulebook is still
+published, by the new `Render.rulebook_page`, on this package's own site alone, where a consumer's page and any finding
+link to a rule by its id. **A consumer's `docs/make.jl`, `generated` list and `.gitignore` change on upgrade**;
+`docs/PF-WIRING.md` Step 2 says exactly how.
+
 ## 2.0.0-rc.11 — 2026-09-23
 
 PATCH, and everything in it comes from GBGPeriodicFields running the documentation review over real

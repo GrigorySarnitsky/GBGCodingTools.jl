@@ -14,7 +14,12 @@ cp(joinpath(ROOT, "docs", "ARCHITECTURE.md"), joinpath(@__DIR__, "src", "archite
 # 2026-09-18; a consumer could not have copied that, which is the whole reason it is a generator now.
 # The instruments page was generated here from instruments/<name>/PROTOCOL.md until 2026-09-17; the new
 # design generates one per instrument from `Instrument` values, in IMPLEMENTATION.md Phase 4.
-GBGCodingTools.Render.pages(GBGCodingTools.ConfigIO.read_config(ROOT), ROOT)
+# This site carries BOTH: the one small page every consumer gets, and the full rulebook, which only this
+# package publishes and every consumer's page links to (ruled 2026-09-23).
+let cfg = GBGCodingTools.ConfigIO.read_config(ROOT)
+    GBGCodingTools.Render.pages(cfg, ROOT)
+    GBGCodingTools.Render.rulebook_page(cfg, ROOT)
+end
 
 result = GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
     sitename = "GBGCodingTools",
@@ -31,8 +36,7 @@ result = GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
         "Home" => "index.md",
         # The guide reads as a sequence first (set up, run a review, see what it produces, read what it judges
         # against), then the four reference tables, most consulted first (2026-09-09, the owner's ruling).
-        "Guide" => ["guide/install.md", "gbg-rules.md", "gbg-readers.md", "gbg-instruments.md",
-                    "guide/verbs.md", "guide/config.md"],
+        "Guide" => ["guide/install.md", "gbg-rules.md", "gbg.md", "guide/verbs.md", "guide/config.md"],
         # The new tree in its own order — a module may name only the modules above it — then what is
         # left of the old one.
         "API" => ["api/Model.md", "api/Texts.md", "api/Catalogue.md", "api/ConfigIO.md", "api/Engine.md",

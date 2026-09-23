@@ -539,7 +539,8 @@ is, with the three rows marked future read as future.
 | agents' arguments and output schemas, under `.gbg/scratch/<run>/` | the Workflow tool, agents | `Agents`; the driver itself is this package's tracked `drivers/run.js` |
 | the pin in `docs/Project.toml` and `test/Project.toml` | Pkg | `Render.pin` |
 | the tooling package's block in `.gitignore`, the CI workflow files, the end-of-turn hook | git, GitHub, Claude Code | `Render.gitignore`, `Render.ci`, `Render.hook` |
-| the rules page of each site, grouped by cover, with its switches section; a readers page and an instruments page are Phase 4b's | readers | `Render.pages`, called by `docs/make.jl` |
+| one small page on each consumer's site, under its design or internals section: what the documentation is held to, a link to this package's site, and the switches with their reasons — nothing else of the tool [ruled 2026-09-23; the rulebook, readers and instruments pages it replaced are §3 of the decision log] | readers of a consumer's site | `Render.pages`, called by `docs/make.jl` |
+| the rulebook as a page, grouped by cover, an anchor per rule, with the glossary — on this package's own site alone | readers of this site | `Render.rulebook_page`, called by this package's `docs/make.jl` only |
 
 `Catalogue.GENERATED` lists every generated path or part — a whole file, a marked block, or the entries of a TOML
 table — with its generator; a package's declared copies count as generated. Run records, reports and the question store
@@ -615,8 +616,8 @@ the package's documentation site; an unknown target or a missing reason is exit 
 DEFAULT, and a package overrides any part of it by saying so where a reader can see it. An earlier draft marked some
 rules — the ones catching text that renders wrongly, and the docstring-structure rules — as always on, and that mark was
 never set, because the two things it would have bought are already bought by the switch itself. A switch cannot be
-silent: it names the rule, gives the reason, and is rendered into the package's own rulebook and onto its site, so the
-escape is on the record either way. What the mark added was only the refusal — and its cost is a package with a red
+silent: it names the rule, gives the reason, and is rendered into the package's own rulebook and onto the one small
+tooling page of its site, so the escape is on the record either way. What the mark added was only the refusal — and its cost is a package with a red
 build and no way out but a MAJOR release of this one, which makes this package the obstacle rather than the help.
 
 Off in GBGCodingTools, with reasons — the second and third are its declared deviations today, the first and fourth new:

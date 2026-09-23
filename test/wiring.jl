@@ -145,54 +145,54 @@ end
         @test isempty(RN.ci_drift(pinned, dir))                    # a package with no workflows is told nothing
     end
 
-    # The page a consumer's build writes so a reader can see the rules and what the package turned off.
-    # Not compared by the wiring check: it is written at build time, and it is in every package's
-    # `generated` list precisely so that no rule reads it.
-    @testset "the rules page carries every rule, with an anchor each" begin
+    # The ONE page a consumer's site carries about this tool (ruled 2026-09-23): what the documentation is
+    # held to, a link to where the rulebook lives, and what this package has customised — nothing else.
+    # This tool is the instrument of the package's developer, and its workings are no concern of the
+    # package's users. Not compared by the wiring check: it is written at build time, and it is in every
+    # package's `generated` list precisely so that no rule reads it.
+    @testset "a consumer's page is small: the link and the switches, and no rulebook" begin
         dir, cfg = wired_package()
         written = RN.pages(cfg, dir)
-        @test written == ["gbg-rules.md", "gbg-readers.md", "gbg-instruments.md"]
+        @test written == ["gbg.md"]
+        text = read(joinpath(dir, RN.TOOLING_PAGE), String)
+        @test occursin(RN.TOOL_SITE, text)                          # where the rulebook lives
+        @test occursin("Written by AI", text)
+        @test !occursin("(@id RULE.", text)                        # no rule is rendered here
+        @test count("\n", text) < 40                               # and it stays small
+        for r in G.Catalogue.RULES
+            @test !occursin(r.statement, text)
+        end
+        @test !occursin(RN.BEGIN_MARK, text)                       # the managed markers do not leak onto a page
+
+        # what the package has switched off is on it, with the reason and the scope
+        off = G.Model.Config(package = cfg.package, tool = cfg.tool, filesets = cfg.filesets,
+                             switches = [G.Model.Switch(target = :documentation_review,
+                                                        reason = "the tool reviews itself last"),
+                                         G.Model.Switch(target = Symbol("RULE.CIT.DOI"),
+                                                        reason = "the references are preprints",
+                                                        files = ["docs/src/notes.md"])])
+        RN.pages(off, dir)
+        text = read(joinpath(dir, RN.TOOLING_PAGE), String)
+        @test occursin("the tool reviews itself last", text)
+        @test occursin("the references are preprints", text)
+        @test occursin("`docs/src/notes.md`", text)
+        # and the two pages that used to be written are not
+        @test !isfile(joinpath(dir, "docs", "src", "gbg-readers.md"))
+        @test !isfile(joinpath(dir, "docs", "src", "gbg-instruments.md"))
+    end
+
+    # The rulebook is still published, on this package's own site alone, with an anchor per rule so a
+    # consumer's page and a finding anywhere can link to the rule by its id.
+    @testset "the rulebook page carries every rule, with an anchor each" begin
+        dir, cfg = wired_package()
+        @test RN.rulebook_page(cfg, dir) == ["gbg-rules.md"]
         text = read(joinpath(dir, RN.RULES_PAGE), String)
         for r in G.Catalogue.RULES
             @test occursin("(@id " * String(r.id) * ")", text)     # linkable from a finding elsewhere
             @test occursin(r.statement, text)                      # and the statement itself is on it
         end
         @test occursin("(@id glossary)", text)                     # the terms the rules use
-        @test !occursin(RN.BEGIN_MARK, text)                       # the managed markers do not leak onto a page
-    end
-
-    # Who read the documentation, and what were they allowed to see? The report answers that for one run;
-    # this page answers it for the package, and is derived from the same rules the readers are.
-    @testset "the readers page and the instruments page are derived too" begin
-        dir, cfg = wired_package()
-        RN.pages(cfg, dir)
-        readers = read(joinpath(dir, RN.READERS_PAGE), String)
-        roles, gaps = G.Catalogue.panel(:documentation_review, cfg)
-        for r in roles
-            @test occursin("## `" * String(r.id) * "`", readers)
-            @test occursin(r.description, readers)
-            for id in r.rules; @test occursin("[`" * String(id) * "`](@ref " * String(id) * ")", readers); end
-        end
-        for g in gaps; @test occursin(g, readers); end
-        @test occursin("Written by AI", readers)
-
-        instruments = read(joinpath(dir, RN.INSTRUMENTS_PAGE), String)
-        for i in G.Catalogue.INSTRUMENTS
-            @test occursin("## `" * replace(String(i.id), "_" => "-") * "`", instruments)
-            @test occursin(i.purpose, instruments)
-            @test occursin(i.ends, instruments) || occursin(lowercase(first(i.ends, 1)) * SubString(i.ends, 2), instruments)
-        end
-        @test occursin("| 4 |", instruments)                       # the review's four fix passes
-        @test occursin("Written by AI", instruments)
-
-        # a switched-off instrument says so on both pages, with the package's own reason
-        off = G.Model.Config(package = cfg.package, tool = cfg.tool, filesets = cfg.filesets,
-                             switches = [G.Model.Switch(target = :documentation_review,
-                                                        reason = "the tool reviews itself last")])
-        RN.pages(off, dir)
-        @test occursin("switched off", read(joinpath(dir, RN.INSTRUMENTS_PAGE), String))
-        @test occursin("The tool reviews itself last", read(joinpath(dir, RN.INSTRUMENTS_PAGE), String))
-        @test occursin("The review is switched off here", read(joinpath(dir, RN.READERS_PAGE), String))
+        @test !occursin(RN.BEGIN_MARK, text)
     end
 
     # A generated file silently replacing a hand-written workflow is the one wiring mistake that is

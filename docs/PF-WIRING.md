@@ -99,26 +99,28 @@ Check it took before anything else:
 must answer that nothing is open here, not `unknown verb run`. That one line is what exposed both
 version traps; it is load-bearing, not a formality.
 
-## Step 2 — the two pages the build now writes
+## Step 2 — one small page, out of the main navigation
 
-`Render.pages` returned one path at rc.5 and returns **three** at rc.7: `gbg-rules.md`,
-`gbg-readers.md` and `gbg-instruments.md`. The readers page is the one that matters — it prints, on PF's
-own site, which agents read PF's documentation, what each is given, and the whole standpoint text of
-each.
+The three pages are gone (ruled 2026-09-23). This tool is the instrument of the packages' developer,
+and its workings are of no concern to the packages' users: nothing of it belongs among a site's main
+pages. `Render.pages` now writes ONE page, `gbg.md` — a line saying what the documentation is held to, a
+link to GBGCodingTools' own site where the rulebook lives, and PF's switches with their reasons — and
+returns `["gbg.md"]`.
 
-PF's `docs/make.jl` already calls the generator and lists only the rules page. Its `pages` vector holds
+In PF's `docs/make.jl`, the `pages` vector holds, from line 319:
 
         "Rules" => "gbg-rules.md",
-
-at line 319, indented four spaces; add two siblings directly after it, at the same indentation:
-
         "Readers" => "gbg-readers.md",
         "Instruments" => "gbg-instruments.md",
 
-Add both to `generated` in `.gbg/config.jl`, and both to `.gitignore` beside `docs/src/gbg-rules.md` —
-in PF's own section, **not** inside the `gbg:managed` block, which `gbg sync` rewrites. A generated page
-that is not in `generated` is read by every rule, and a page that states the rulebook quotes every
-banned spelling in order to ban it.
+Delete all three. Add the one page INSIDE the `"Design & Internals"` group, last:
+
+        "Documentation tooling" => "gbg.md",
+
+In `.gbg/config.jl`, `generated` names the three old paths; replace them with `"docs/src/gbg.md"`. In
+`.gitignore`, PF's own section lists the three; replace them with `docs/src/gbg.md`. Then delete the three
+old files under `docs/src/` — the build no longer writes them, and a stale copy left there would be read
+as a hand-written page.
 
 Leave the generator call where it is, at line 284. It runs before `makedocs` and after what remains of
 PF's own lint block, and the ordering was reasoned once; nothing here needs it moved.
