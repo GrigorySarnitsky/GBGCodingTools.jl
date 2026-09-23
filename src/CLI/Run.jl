@@ -709,6 +709,12 @@ The findings are DROPPED, not queued: the owner stopping a run is the owner sayi
 wanted, and a leftover line from a run nobody finished would be read as a finding somebody stood behind.
 What the run committed through the guard stays; a fix already verified is not undone by stopping.
 
+A RUN THAT LAUNCHED NOTHING IS DELETED WHOLE, the findings carried into it included [ruled 2026-09-23,
+decision 14 of the plan, superseding the ruling of 2026-09-22 that its record made the drop stick]. Such
+a run has no standing over findings it never looked at: every finding it holds was carried from the run
+that found them, and with its record gone the next start reads past it to that run and carries them
+again. Its id is free again.
+
 HOW MANY were dropped is kept, in `dropped`, and a finding a verdict had already CLOSED — fixed and
 verified twice, or called no defect — stays on the record with its pass, since the fix stays in the
 history and nobody threw it away. Without the count, a record whose open findings are gone and whose
@@ -731,12 +737,21 @@ function abandon(root::AbstractString; io::IO = stdout)
     run = Runs.load(root, id)
     cfg = ConfigIO.read_config(root)
     dir = Runs.dir(root, id)
-    if run.agent_launches == 0 && isempty(run.findings)
+    # A run that launched nothing is deleted WHOLE, findings carried into it included (ruled 2026-09-23,
+    # decision 14, superseding 2026-09-22): it has no standing over findings it never looked at, and
+    # with its record gone the next start reads past it to the run that found them, which carries them
+    # again. A finding of its own it cannot have — nothing ran — so the second test is a guard, not a case.
+    if run.agent_launches == 0 && all(f -> !startswith(f.id, run.id), run.findings)
         rm(Agents.scratch_dir(root, id); force = true, recursive = true)
         rm(dir; force = true, recursive = true)
         println(io, "run: ", id, " abandoned at ", run.stage, " having launched nothing; its record is deleted.")
-        println(io, "  It read nothing, carried nothing and changed nothing, so there is nothing to keep")
-        println(io, "  and nothing to commit. The id is free again.")
+        if isempty(run.findings)
+            println(io, "  It read nothing, carried nothing and changed nothing, so there is nothing to keep")
+            println(io, "  and nothing to commit. The id is free again.")
+        else
+            println(io, "  It read nothing. The ", length(run.findings), " finding(s) it was carrying go back to the run")
+            println(io, "  that found them and are carried again by the next start. The id is free again.")
+        end
         return 0
     end
     # What the stop throws away is the OPEN findings and the ones in the working notes. A finding fixed

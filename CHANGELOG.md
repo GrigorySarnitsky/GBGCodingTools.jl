@@ -4,6 +4,14 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## Unreleased — toward 2.0.0-rc.16
+
+**Abandoning a run that launched nothing deletes it whole, carried findings included** (ruled 2026-09-23, decision 14;
+supersedes 2026-09-22). Such a run has no standing over findings it never looked at: every finding it holds was carried
+from the run that found them, and with its record gone the next start reads past it to that run and carries them
+again. Before, the record stayed and its `dropped` count ended the chain — the previous run's leftovers were lost by a
+run that had read nothing, and the report said something had been seen and nobody stood behind it.
+
 ## 2.0.0-rc.15 — 2026-09-23
 
 PATCH. **Upgrade before running a review**: rc.13 and rc.14 do not route a working-notes finding correctly past the
