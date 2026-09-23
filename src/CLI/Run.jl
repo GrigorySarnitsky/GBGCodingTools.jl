@@ -110,7 +110,7 @@ with(run::Model.Run; kw...) = Model.Run(; id = run.id, instrument = run.instrume
     agent_launches = run.agent_launches, tokens = run.tokens, stop = run.stop, readers = run.readers,
     passes = run.passes, model = run.model, sequential = run.sequential, scope = run.scope,
     base = run.base, driver = run.driver, already_failing = run.already_failing, dropped = run.dropped,
-    unreverted = run.unreverted, kw...)
+    unreverted = run.unreverted, silent = run.silent, kw...)
 
 """
     next(root; io = stdout) -> Int
@@ -141,6 +141,13 @@ function next(root::AbstractString; io::IO = stdout)
     at == length(order) && (println(io, "run: ", id, " is at ", order[at], ", its last stage; close it"); return 2)
     to = order[at + 1]
     to === :collect && return continue_stage(root, id, order[at]; io)
+    # Verifiers read the tree as committed: launched over an uncommitted edit they judge text that is in
+    # no commit, and the collect then refuses the dirty tree with no way forward (review, 2026-09-23).
+    if order[at] === :fix || to in (:verify, :diff)
+        dirty = [p for p in Runs.changed_tracked(root) if !Runs.own_record(p)]
+        isempty(dirty) || (println(io, "run: tracked files are changed and not committed: ", join(dirty, ", "),
+                                    ". Commit each fix with `gbg docfix commit --finding <id>`, or discard it, then gbg run next"); return 2)
+    end
     if order[at] === :collect
         if isempty(Runs.workable(run))
             to = :close
@@ -501,10 +508,21 @@ function collect(root::AbstractString; io::IO = stdout)
     Agents.stale_arguments(root, id) && return stale(io, id, launched)
     cfg = ConfigIO.read_config(root)
     drafts, verdicts, silent, arrived, wrote = Agents.collect_results(root, id, cfg)
+    # A role that wrote nothing readable is launched ONCE more before the stage moves on, and then named:
+    # a silent reader is not a clean one (found in review, 2026-09-23: the stage moved on at once, and
+    # the report said every reader wrote).
+    fresh = setdiff(silent, run.silent)
+    if !isempty(fresh)
+        for k in fresh; rm(joinpath(Agents.results_dir(root, id), k * ".json"); force = true); end
+        Runs.save(root, with(run; silent = vcat(run.silent, fresh)))
+        println(io, "run: ", length(fresh), " agent(s) wrote nothing readable: ", join(fresh, ", "), ".")
+        println(io, "  Launch them once more — gbg run next marks exactly them — then collect again.")
+        return 2
+    end
     Runs.advance!(root, id, :collect; io) || return 2
     if launched === :verify || launched === :diff
         run = grade(root, run, launched, verdicts; io)
-        run = with(run; stage = :collect, agent_launches = run.agent_launches + arrived)
+        run = with(run; stage = :collect, agent_launches = run.agent_launches + arrived + length(silent))
         Runs.save(root, run)
         println(io, "run: collected ", length(verdicts), " verdict(s) from ", wrote, " verifier(s); ",
                 length(Runs.open_findings(run)), " finding(s) open.")
@@ -518,14 +536,13 @@ function collect(root::AbstractString; io::IO = stdout)
                                           Model.Decider.AGENT, d))
         end
         run = with(run; stage = :collect, findings = vcat(run.findings, findings),
-                   agent_launches = run.agent_launches + arrived)
+                   agent_launches = run.agent_launches + arrived + length(silent))
         Runs.save(root, run)
         println(io, "run: collected ", length(findings), " finding(s) from ", wrote, " reader(s).")
     end
     if !isempty(silent)
-        println(io, "run: these wrote nothing, and are not clean; the report names them:")
+        println(io, "run: these wrote nothing even launched twice, and are not clean; the report names them:")
         for s in silent; println(io, "  ", s); end
-        return 2
     end
     # 1 when something was FOUND, a finding in the working notes included: it is not open — no pass
     # works on it — but it is the owner's to read, and a collect that answered 0 would have hidden it.
@@ -670,6 +687,13 @@ function close_run(root::AbstractString; io::IO = stdout)
     cfg = ConfigIO.read_config(root)
 
     undone, red, failed = restore_green(root, run, cfg; io)
+    # a fix the close undid is no longer a fix: its finding is open again, and is carried
+    for sha in undone
+        fid = Runs.finding_of(root, sha)
+        fid === nothing && continue
+        run = with(run; fixes = vcat(run.fixes, [Model.DocFix(finding = fid, pass = run.passes, commit = sha,
+                                                               blind = Model.Verdict.NOT_FIXED)]))
+    end
     unguarded = Runs.unguarded_code(root, run.first_commit)
     stop = isempty(unguarded) ? run.stop : Model.Stop.CANNOT_EVALUATE
     if failed || !isempty(run.unreverted)
@@ -761,7 +785,10 @@ function abandon(root::AbstractString; io::IO = stdout)
     # decision 14, superseding 2026-09-22): it has no standing over findings it never looked at, and
     # with its record gone the next start reads past it to the run that found them, which carries them
     # again. A finding of its own it cannot have — nothing ran — so the second test is a guard, not a case.
-    if run.agent_launches == 0 && all(f -> !startswith(f.id, run.id), run.findings)
+    # Launched means an agent RAN: a stage interrupted before its collect has results on disk and no
+    # launches counted yet, and deleting it threw away what its readers wrote (review, 2026-09-23).
+    ran = run.agent_launches > 0 || (isdir(Agents.results_dir(root, id)) && !isempty(readdir(Agents.results_dir(root, id))))
+    if !ran && all(f -> !startswith(f.id, run.id), run.findings)
         rm(Agents.scratch_dir(root, id); force = true, recursive = true)
         rm(dir; force = true, recursive = true)
         println(io, "run: ", id, " abandoned at ", run.stage, " having launched nothing; its record is deleted.")
@@ -781,6 +808,8 @@ function abandon(root::AbstractString; io::IO = stdout)
     kept = [f for f in run.findings if Runs.closed(run, f.id)]
     stopped = with(run; stage = :close, stop = Model.Stop.OWNER_STOPPED, findings = kept,
                    fixes = [x for x in run.fixes if any(f -> f.id == x.finding, kept)],
+                   # a question about a dropped finding goes with it: answered later it settled nothing
+                   questions = [q for q in run.questions if any(f -> Runs.code_question_id(run, f.id) == q.id, kept)],
                    dropped = length(Runs.open_findings(run)) + length(Runs.in_material(run)))
     write(joinpath(dir, "report.md"), Render.report(stopped, cfg; root))
     open(joinpath(dir, "run.json"), "w") do f
@@ -838,8 +867,16 @@ function restore_green(root::AbstractString, run::Model.Run, cfg::Model.Config; 
         Runs.revert!(root, sha; why = "the docs build was red at close") ? push!(undone, sha) : (failed = true)
     end
     still = Site.build(root, cfg; io = devnull) === nothing
+    if still && !failed
+        # Red with every fix undone: the build was broken before the run, and the fixes were not the
+        # cause. They are put back, as the docstring says (review, 2026-09-23: they were left undone).
+        back = Runs.reverted_by(root, run.first_commit, undone)
+        restored = all(r -> Runs.revert!(root, r; why = "the build was red before the run; the fix is restored"), back)
+        println(io, restored ? "run: still red with every fix of this run undone, so the build was broken before it; the fixes are restored and the owner reads the build" :
+                               "run: still red with every fix undone, and the fixes could not all be restored; the run cannot be evaluated")
+        return (restored ? String[] : undone, true, !restored)
+    end
     println(io, failed ? "run: some fixes of this run could not be reverted; the run cannot be evaluated" :
-            still ? "run: still red with every fix of this run undone, so the build was broken before it; the owner reads the build" :
             "run: every fix of this run is undone, $(length(undone)) commit(s), and the build passes again")
     return (undone, still, failed)
 end
@@ -861,9 +898,10 @@ stay as they were.
 function queue_leftovers(root::AbstractString, run::Model.Run)
     open = Runs.open_findings(run)
     notes = Runs.in_material(run)
-    isempty(open) && isempty(notes) && return 0
+    owner = Runs.to_owner(run)
+    waiting = [(rid, q) for (rid, q) in Runs.open_questions(root) if rid != run.id]
     path = joinpath(root, ".claude", "WORK_QUEUE.md")
-    text = isfile(path) ? read(path, String) : "# Work queue\n\n"
+    text = isfile(path) ? read(path, String) : ""
     lines = String[]
     # What a reader found in the working notes it was given to consult: the owner's, never the fixer's,
     # and listed first because it may be the formula three docstrings copy.
@@ -871,6 +909,11 @@ function queue_leftovers(root::AbstractString, run::Model.Run)
         l = isempty(f.draft.locations) ? nothing : f.draft.locations[1]
         push!(lines, "- [ ] " * f.id * " IN THE WORKING NOTES, for the owner: " * f.draft.claim *
                      (l === nothing ? "" : " — `" * l.file * "`" * (isempty(l.text) ? "" : " \"" * l.text * "\"")))
+    end
+    for f in owner
+        q = run.questions[findfirst(x -> x.id == Runs.code_question_id(run, f.id), run.questions)]
+        push!(lines, "- [ ] " * f.id * " FIX THE CODE, as the owner answered: " * f.draft.claim *
+                     (isempty(q.direction) ? "" : " — " * q.direction))
     end
     for f in open
         where_ = ""
@@ -880,19 +923,31 @@ function queue_leftovers(root::AbstractString, run::Model.Run)
                      (isempty(l.text) ? "" : " \"" * l.text * "\"")
         end
         push!(lines, "- [ ] " * f.id * " " * f.draft.claim * where_ *
-                     (Runs.parked(run, f.id) ? " — waits on the owner's answer to the run's question" : ""))
+                     (Runs.parked(run, f.id) ? " — waits on the owner's answer: `gbg answer " * Runs.code_question_id(run, f.id) * " \"<option>\"`" : ""))
     end
-    block = join(lines, "\n") * "\n"
-    if occursin(QUEUE_HEADING, text)
-        head, rest = split(text, QUEUE_HEADING; limit = 2)
-        m = match(r"\n## ", rest)
-        tail = m === nothing ? "" : rest[m.offset:end]
-        text = head * QUEUE_HEADING * "\n\n" * block * tail
+    # a question an EARLIER run put, still unanswered: its finding is carried nowhere, so it stays here
+    for (rid, q) in waiting
+        push!(lines, "- [ ] " * q.id * " waits on the owner's answer (run " * rid * "): `gbg answer " * q.id * " \"<option>\"`")
+    end
+    # The section is the EXACT heading line to the next heading of any level, and it is rewritten every
+    # close — emptied when nothing is left — so an earlier run's lines never outlive their findings, and
+    # no text of the owner's around it is touched (found in review, 2026-09-23).
+    ls = split(text, '\n')
+    i = findfirst(==(QUEUE_HEADING), rstrip.(ls))
+    before, after = if i === nothing
+        (ls, String[])
     else
-        text = rstrip(text) * "\n\n" * QUEUE_HEADING * "\n\n" * block
+        j = findnext(l -> startswith(l, "#"), ls, i + 1)
+        (ls[1:i-1], j === nothing ? String[] : ls[j:end])
     end
+    while !isempty(before) && isempty(strip(before[end])); pop!(before); end
+    section = isempty(lines) ? String[] : vcat([QUEUE_HEADING, ""], lines, [""])
+    isempty(before) && isempty(section) && isempty(after) && return 0
+    head = isempty(before) ? ["# Work queue", ""] : vcat(before, [""])
+    out = join(vcat(head, section, after), '\n')
+    endswith(out, '\n') || (out *= "\n")
     mkpath(dirname(path))
-    write(path, text)
+    write(path, out)
     return length(lines)
 end
 

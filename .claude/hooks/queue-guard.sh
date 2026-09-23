@@ -62,8 +62,12 @@ fi
 queue="${CLAUDE_PROJECT_DIR:-.}/.claude/WORK_QUEUE.md"
 [[ -f "$queue" ]] || exit 0
 
-counted=$(awk '/^## From the last review/{skip=1; next} /^## /{skip=0} !skip' "$queue")
-open_items=$(grep -nE '^[[:space:]]*- \[ \]' <<<"$counted" || true)
+# The leftovers section is the EXACT heading line, up to the next heading of ANY level, and the
+# lines printed carry their number in the file (found in review, 2026-09-23: a section of the
+# owner's under a `#` heading, or one whose name began with the leftovers', went uncounted).
+open_items=$(awk '$0 == "## From the last review" {skip=1; next}
+                    /^#/ {skip=0}
+                    !skip && /^[[:space:]]*- \[ \]/ {print NR ":" $0}' "$queue")
 [[ -z "$open_items" ]] && exit 0
 
 {

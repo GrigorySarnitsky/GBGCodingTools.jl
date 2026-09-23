@@ -33,8 +33,19 @@ than the text.
 """
 function ask(root::AbstractString; io::IO = stdout)
     qs = Engine.Questions.open_questions(root)
-    isempty(qs) && (println(io, "Nothing is waiting for an answer."); return 0)
+    # The questions RUNS put, which live in their records: until 2026-09-23 this read only the standalone
+    # store and said nothing was waiting while a run's question stood.
+    runs_q = Orchestration.Runs.open_questions(root)
+    isempty(qs) && isempty(runs_q) && (println(io, "Nothing is waiting for an answer."); return 0)
     open_ones = 0
+    for (run_id, q) in runs_q
+        open_ones += 1
+        println(io, "\n", q.id, "  ", q.decision, "   (from run ", run_id, ")")
+        isempty(q.context) || println(io, "  ", q.context)
+        for o in q.options
+            println(io, "    - ", o.label, o.recommended ? "  (recommended)" : "", "  — ", o.consequence)
+        end
+    end
     for q in qs
         items = get(q, "items", [])
         answered = isempty(items) ? q["answer"] !== nothing :
@@ -94,6 +105,22 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
     of_run && (why = Orchestration.Runs.answer!(root, id, option; item, direction))
     why === nothing || (println(io, "answer: ", why); return 2)
     println(io, "answer: ", id, isempty(item) ? "" : " / " * item, " answered `", option, "`.")
+    # "The reverted edit is made again and stands": the answer does what its option says (found in
+    # review, 2026-09-23 — every option recorded the answer and changed nothing).
+    if of_run && option == Orchestration.Runs.DOCS_ANSWER
+        run_id, run, _ = Orchestration.Runs.question_of(root, id)
+        fid = replace(replace(id, Regex("^" * run_id * "-") => ""), r"-code$" => "")
+        undone = Orchestration.Runs.reverts_of(root, run.first_commit, fid)
+        if isempty(undone)
+            println(io, "answer: no reverted edit of ", fid, " was found to make again; the finding is closed as it stands")
+        else
+            ok = all(r -> Orchestration.Runs.revert!(root, r; why = "the owner: fix the documentation instead"), undone)
+            println(io, ok ? "answer: the reverted edit of $(fid) is made again and stands." :
+                             "answer: the reverted edit of $(fid) could NOT be made again (the page has moved since); make it by hand")
+        end
+    elseif of_run && option == Orchestration.Runs.CODE_ANSWER
+        println(io, "answer: the finding goes to the owner's work queue with the direction given; no pass works on it.")
+    end
     where_ = of_run ? settled_locations(root, id) : Model.Location[]
     if settled || (of_run && option == NOT_A_DEFECT)
         path = ConfigIO.append_settled(root, Model.Settled(question = id,

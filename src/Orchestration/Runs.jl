@@ -324,9 +324,45 @@ Whether the finding `id` of `run` is closed: a verifier called it not a defect, 
 called it fixed and the diff verifier agreed. The arguments are `run` and the finding's id. Returns the
 answer; a finding with no verdict yet is open.
 """
-closed(run::Model.Run, id::AbstractString) = any(f -> f.finding == id &&
-    (f.blind === Model.Verdict.NOT_A_DEFECT ||
-     (f.blind === Model.Verdict.FIXED && f.with_diff === Model.Verdict.FIXED)), run.fixes)
+function closed(run::Model.Run, id::AbstractString)
+    # The owner's answer closes it — the reader was wrong, or the documentation stands as fixed.
+    answer_of(run, id) in (NOT_A_DEFECT_ANSWER, DOCS_ANSWER) && return true
+    # Otherwise the LATEST verdict does. An earlier FIXED is not the finding's state once a later pass,
+    # or a close that reverted the fix to get the build back, has said otherwise (found in review,
+    # 2026-09-23: a fix undone at close left its finding "closed", carried nowhere and lost).
+    k = findlast(f -> f.finding == id, run.fixes)
+    k === nothing && return false
+    f = run.fixes[k]
+    return f.blind === Model.Verdict.NOT_A_DEFECT ||
+           (f.blind === Model.Verdict.FIXED && f.with_diff === Model.Verdict.FIXED)
+end
+
+"The options of a code question, as the owner answers them."
+const CODE_ANSWER = "fix the code"
+const DOCS_ANSWER = "fix the documentation instead"
+const NOT_A_DEFECT_ANSWER = "not a defect"
+
+"""
+    answer_of(run, id) -> Union{String,Nothing}
+
+The owner's answer to the code question a run put about finding `id`, or `nothing` while none is
+given. The arguments are `run` and the finding's `id`. Returns the option he chose.
+"""
+function answer_of(run::Model.Run, id::AbstractString)
+    k = findfirst(q -> q.id == code_question_id(run, id), run.questions)
+    return k === nothing ? nothing : run.questions[k].answer
+end
+
+"The id of the code question a run puts about one of its findings."
+code_question_id(run::Model.Run, id::AbstractString) = string(run.id, "-", id, "-code")
+
+"""
+    to_owner(run) -> Vector{Model.Finding}
+
+The findings the owner answered "fix the code" on: no pass works on them and none is carried; each is
+his, with the direction he gave. The argument is `run`. Returns them in the run's order.
+"""
+to_owner(run::Model.Run) = [f for f in run.findings if answer_of(run, f.id) == CODE_ANSWER]
 
 """
     open_findings(run) -> Vector{Model.Finding}
@@ -338,7 +374,8 @@ A finding in material is never open in this sense: no pass works on it, no verif
 it is not a leftover and is not carried into the next run. It is the owner's from the moment it is
 collected, and [`in_material`](@ref) is where it is read.
 """
-open_findings(run::Model.Run) = [f for f in run.findings if !closed(run, f.id) && !f.draft.in_material]
+open_findings(run::Model.Run) = [f for f in run.findings if !closed(run, f.id) && !f.draft.in_material &&
+                                                             answer_of(run, f.id) != CODE_ANSWER]
 
 """
     in_material(run) -> Vector{Model.Finding}
@@ -359,8 +396,102 @@ back to describe code the verifier believes wrong, and no verifier is asked abou
 owner has said which half is right.
 """
 function parked(run::Model.Run, id::AbstractString)
+    answer_of(run, id) === nothing || return false          # answered: no longer waiting
     k = findlast(x -> x.finding == id, run.fixes)
     return k !== nothing && run.fixes[k].blind === Model.Verdict.HIDES_CODE_DEFECT
+end
+
+"""
+    open_questions(root) -> Vector{Tuple{String,Model.Question}}
+
+Every question a run in the package at `root` put and the owner has not answered, newest run first,
+with that run's id. The argument is `root`. Returns the pairs.
+
+A parked finding is not carried into the next run, since the question stands; so the question itself
+is what must stay in sight — listed by `gbg ask` and on the work queue after every close — or the
+finding is lost once the queue's section is rewritten (found in review, 2026-09-23).
+"""
+function open_questions(root::AbstractString)
+    d = joinpath(root, ".gbg", "runs")
+    out = Tuple{String,Model.Question}[]
+    isdir(d) || return out
+    for name in sort(readdir(d); rev = true)
+        run = load(root, name)
+        run === nothing && continue
+        for q in run.questions
+            q.answer === nothing && push!(out, (name, q))
+        end
+    end
+    return out
+end
+
+"""
+    finding_of(root, sha) -> Union{String,Nothing}
+
+The finding a guarded fix commit names in its trailer, or `nothing`. The arguments are `root` and the
+commit `sha`. Returns the finding's id.
+"""
+function finding_of(root::AbstractString, sha::AbstractString)
+    body = git_out(root, "log", "-1", "--format=%b", sha)
+    body === nothing && return nothing
+    for l in strip.(split(body, '\n'))
+        startswith(l, FINDING_TRAILER) && return String(strip(l[length(FINDING_TRAILER)+1:end]))
+    end
+    return nothing
+end
+
+"""
+    reverted_by(root, since, fixes) -> Vector{String}
+
+The reverts this package made of the given fix commits since `since`, newest first. The arguments are:
+
+- `root` — the package root.
+- `since` — the run's first commit.
+- `fixes` — the fix commits' full shas.
+
+Returns the revert shas — what puts those fixes back.
+"""
+function reverted_by(root::AbstractString, since::AbstractString, fixes::AbstractVector)
+    log = git_out(root, "log", "--format=%H%x1f%b%x1e", "$since..HEAD")
+    log === nothing && return String[]
+    out = String[]
+    for e in split(log, '\x1e'; keepempty = false)
+        p = split(strip(e, ['\n']), '\x1f')
+        for l in strip.(split(length(p) >= 2 ? String(p[2]) : "", '\n'))
+            startswith(l, REVERT_TRAILER) && String(strip(l[length(REVERT_TRAILER)+1:end])) in fixes && push!(out, String(p[1]))
+        end
+    end
+    return out
+end
+
+"""
+    reverts_of(root, since, id) -> Vector{String}
+
+The reverts this package made of finding `id`'s fixes since `since`, newest first. The arguments are:
+
+- `root` — the package root.
+- `since` — the run's first commit.
+- `id` — the finding's id.
+
+Returns the shas — what re-applies the documentation when the owner answers that it was right after
+all.
+"""
+function reverts_of(root::AbstractString, since::AbstractString, id::AbstractString)
+    log = git_out(root, "log", "--format=%H%x1f%b%x1e", "$since..HEAD")
+    log === nothing && return String[]
+    mine = Set{String}(); out = String[]
+    entries = [split(strip(e, ['\n']), '\x1f') for e in split(log, '\x1e'; keepempty = false)]
+    for p in entries
+        lines = strip.(split(length(p) >= 2 ? String(p[2]) : "", '\n'))
+        (FINDING_TRAILER * id) in lines && push!(mine, String(p[1]))
+    end
+    for p in entries
+        lines = strip.(split(length(p) >= 2 ? String(p[2]) : "", '\n'))
+        for l in lines
+            startswith(l, REVERT_TRAILER) && String(strip(l[length(REVERT_TRAILER)+1:end])) in mine && push!(out, String(p[1]))
+        end
+    end
+    return out
 end
 
 """
@@ -442,7 +573,7 @@ function answer!(root::AbstractString, id::AbstractString, option::AbstractStrin
     return nothing
 end
 
-# The record carries twenty fields and an answer changes one of them. Rebuilt here rather than through
+# The record carries twenty-one fields and an answer changes one of them. Rebuilt here rather than through
 # the CLI's `with`, which is a verb's helper and above this module.
 with_questions(r::Model.Run, qs::Vector{Model.Question}) =
     Model.Run(id = r.id, instrument = r.instrument, tool_version = r.tool_version,
@@ -451,7 +582,7 @@ with_questions(r::Model.Run, qs::Vector{Model.Question}) =
               agent_launches = r.agent_launches, tokens = r.tokens, stop = r.stop,
               readers = r.readers, passes = r.passes, model = r.model, sequential = r.sequential,
               scope = r.scope, base = r.base, driver = r.driver, already_failing = r.already_failing,
-              dropped = r.dropped, unreverted = r.unreverted)
+              dropped = r.dropped, unreverted = r.unreverted, silent = r.silent)
 
 # The record is written back where it was read: `run.json` for a closed run, the draft for an open one.
 # `save` always writes the draft, and `load` prefers `run.json`, so saving a closed run's answer through
@@ -506,7 +637,7 @@ as_dict(r::Model.Run) = Dict{String,Any}(
     "already_failing" => [String(x) for x in r.already_failing],
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
     "readers" => String(r.readers), "passes" => r.passes,
-    "scope" => String(r.scope), "base" => r.base, "driver" => r.driver, "dropped" => r.dropped, "unreverted" => r.unreverted,
+    "scope" => String(r.scope), "base" => r.base, "driver" => r.driver, "dropped" => r.dropped, "unreverted" => r.unreverted, "silent" => r.silent,
     "questions" => [question_dict(q) for q in r.questions],
     "fixes" => [Dict{String,Any}("finding" => f.finding, "pass" => f.pass, "commit" => f.commit,
                                   "formula_edit" => f.formula_edit, "blind" => String(Symbol(f.blind)),
@@ -581,7 +712,8 @@ function from_dict(d::AbstractDict)
                      model = get(d, "model", "session"), sequential = get(d, "sequential", false),
                      already_failing = Symbol[Symbol(x) for x in get(d, "already_failing", [])],
                      dropped = get(d, "dropped", 0),
-                     unreverted = String[String(x) for x in get(d, "unreverted", [])])
+                     unreverted = String[String(x) for x in get(d, "unreverted", [])],
+                     silent = String[String(x) for x in get(d, "silent", [])])
 end
 
 

@@ -140,8 +140,12 @@ function hook(cfg::Model.Config)
     queue="\${CLAUDE_PROJECT_DIR:-.}/.claude/WORK_QUEUE.md"
     [[ -f "\$queue" ]] || exit 0
 
-    counted=\$(awk '/^## From the last review/{skip=1; next} /^## /{skip=0} !skip' "\$queue")
-    open_items=\$(grep -nE '^[[:space:]]*- \\[ \\]' <<<"\$counted" || true)
+    # The leftovers section is the EXACT heading line, up to the next heading of ANY level, and the
+    # lines printed carry their number in the file (found in review, 2026-09-23: a section of the
+    # owner's under a `#` heading, or one whose name began with the leftovers', went uncounted).
+    open_items=\$(awk '\$0 == "## From the last review" {skip=1; next}
+                        /^#/ {skip=0}
+                        !skip && /^[[:space:]]*- \\[ \\]/ {print NR ":" \$0}' "\$queue")
     [[ -z "\$open_items" ]] && exit 0
 
     {
@@ -741,8 +745,8 @@ function skill(cfg::Model.Config, instrument::Symbol)
        nothing else commits it. Where a fix ADDED information and so raised a prose-shape number, the
        re-baseline is a SEPARATE commit AFTER the close, with its reason — never inside a fix pass,
        where it would be a code change ending the run and would let a raise pass as a fix. A run ENDED EARLY with `gbg run abandon` keeps its
-       record only if it LAUNCHED something, and is committed the same way; one that launched nothing AND
-       carried nothing is deleted by the verb, id and all, because there is nothing to keep.""")
+       record only if an agent RAN, and is committed the same way; one that launched nothing is deleted by the
+       verb, id and all, and any findings it was carrying go back to the run that found them.""")
     else
         println(io, "5. `gbg run close` — writes the record and the report.")
     end
@@ -1129,8 +1133,15 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
     println(io, ended, " It launched ", run.agent_launches, " agent(s), with the ",
             run.readers === :both ? "bound and open" : String(run.readers), " readers, and made ",
             run.passes, " of ", run.budget.fix_passes, " fix pass(es).",
-            queued > 0 ? " $queued finding(s) still open went to the work queue, one line each, under the heading the end-of-turn hook does not count." : "")
+            queued > 0 ? " $queued line(s) went to the work queue, under the heading the end-of-turn hook does not count." : "")
     println(io)
+    if !isempty(run.silent)
+        # A reader that wrote nothing is not a clean reader, and the report says which (found in review,
+        # 2026-09-23: collect said the report would name them, and it did not).
+        println(io, "!!! warning \"Readers that wrote nothing\"\n    ", length(run.silent),
+                " agent(s) wrote nothing readable, even launched a second time: ", join(run.silent, ", "),
+                ". What they were to judge was not judged.\n")
+    end
     if undone > 0
         println(io, "!!! warning \"The documentation was put back\"\n    The docs build was red when this run closed, so ",
                 undone, " of its fixes were reverted through the guard. What they were for is open again.\n")
@@ -1189,7 +1200,8 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
     elseif isempty(run.findings)
         println(io, "## Nothing was found")
         println(io)
-        println(io, "Every reader that was launched wrote its file, and none of them reported a defect.")
+        println(io, isempty(run.silent) ? "Every reader that was launched wrote its file, and none of them reported a defect." :
+                    "Every reader that wrote reported no defect; the ones named above wrote nothing, so this is not a clean result.")
     else
         # What was found in the WORKING NOTES comes first and apart (ruled 2026-09-23): a reader given
         # the design documents as material to consult found something there. It was never a fixer's —
@@ -1273,7 +1285,9 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
                 println(io, "  * ", i.text)
             end
             println(io)
-            println(io, "Answer with: `gbg answer ", q.id, " \"<option>\"`")
+            # an answered question says what the owner decided, and stops asking
+            q.answer === nothing ? println(io, "Answer with: `gbg answer ", q.id, " \"<option>\"`") :
+                                   println(io, "**Answered:** ", q.answer, isempty(q.direction) ? "" : " — " * q.direction)
             println(io)
         end
     end

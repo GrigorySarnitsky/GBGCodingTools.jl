@@ -351,7 +351,11 @@ function continue_stage(root::AbstractString, id::AbstractString)
     args = JSON3.read(read(path, String), Dict{String,Any})
     missing = String[]
     for r in get(args, "roles", [])
-        r["launch"] = !isfile(result_file(args, r))
+        # a result that is there but not readable is no result: it is launched again (found in review,
+        # 2026-09-23 — a file holding prose around its JSON was taken as written, and the reader as clean)
+        f = result_file(args, r)
+        readable = isfile(f) && (try JSON3.read(read(f, String)); true catch; false end)
+        r["launch"] = !readable
         r["launch"] && push!(missing, String(r["key"]))
     end
     write(path, JSON3.write(args))   # compact: nobody reads this file, the session TYPES it
