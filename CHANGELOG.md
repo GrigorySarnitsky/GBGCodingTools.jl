@@ -4,7 +4,9 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
-## Unreleased — toward 2.0.0-rc.12
+## 2.0.0-rc.12 — 2026-09-23
+
+PATCH, one ruling. **Upgrade before the next docs build**: the three pages a consumer's `docs/make.jl` lists are gone.
 
 **Nothing of the tool on a consumer's main pages** (ruled 2026-09-23). GBGCodingTools is the instrument of the
 packages' developer, and its workings are of no concern to the packages' users — yet three of the ten top-level
