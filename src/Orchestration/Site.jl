@@ -21,6 +21,7 @@ module Site
 
 using ...Model
 using ...Texts
+using ...Catalogue
 
 """
     BUILDER
@@ -93,11 +94,11 @@ breaks the rules it states, since it quotes every banned spelling in order to ba
 to one spends its whole budget there. Three were, on [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)'s first real
 run, and returned seventeen findings nobody should act on.
 
-A declared COPY's page is left out because its content is already read as its source, under the source's
-own name: reading both is the corpus read twice, a reader's cap spent twice on one page, and a count
-inflated by the duplication — thirty-one findings of that run cited a source and its copy as two places.
-Where a copy is read anyway, through the built site as a whole, [`source_of`](@ref) names the source, so
-a fix lands where the next build will not overwrite it.
+A page built from a declared COPY is kept or dropped by its SOURCE: kept, under the source's name, where
+the source is a target — the architecture document — and dropped where it is not, which is every other
+rationale document, whose text no reader is given. A finding on a kept copy names the source through
+[`source_of`](@ref), so a fix lands where the next build will not overwrite it, and the count is not
+inflated by a copy and its source read as two places — thirty-one findings of one run were.
 """
 function pages(dir::AbstractString, cfg::Model.Config, root::AbstractString)
     out = NamedTuple{(:path, :key, :text),Tuple{String,String,String}}[]
@@ -114,7 +115,14 @@ function pages(dir::AbstractString, cfg::Model.Config, root::AbstractString)
                 nothing                              # an unparseable page is not a page a reader reads
             end
             article === nothing && continue
-            written(cfg, source_of(root, rel)) && continue      # generated, or a copy read as its source
+            # A page is kept by what it was WRITTEN FROM (ruled 2026-09-23): a generated page is nobody's;
+            # a copy resolves to its source, and stays only if that source is a target — so the
+            # architecture document's page is read, under the source's name, and the copies of the
+            # package's working notes are not. Until now every copy was dropped, so the one rationale
+            # document the owner holds to a cold read was the one built page no reader was launched over.
+            src = source_of(root, rel; cfg)
+            written(cfg, src) && continue
+            Catalogue.target(cfg, src) || continue
             text = strip(Texts.text_of(article))
             isempty(text) && continue
             push!(out, (path = rel, key = key_of(rel), text = String(text)))

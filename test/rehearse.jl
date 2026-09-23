@@ -1087,8 +1087,141 @@ end
         f in (:findings, :fixes, :questions, :code_fixes) && continue
         @test getfield(back, f) == getfield(run, f)
     end
+    # A finding goes round too, its newest flag included: a flag that reached the writer and not the
+    # reader would silently make every finding in the working notes a fixer's on the next load.
+    loc = G.Model.Location(file = "docs/ROADMAP.md", node = "", text = "we decided", line = 3)
+    draft = G.Model.FindingDraft(rule = nothing, locations = [loc], claim = "the notes contradict the page",
+                                 evidence = "e", fix = "f", maybe_code = true, in_material = true)
+    withf = G.Model.Run(id = "roundtrip-02", instrument = :documentation_review, tool_version = "v9",
+                        first_commit = "abc", budget = G.Model.Budget(), stage = :collect,
+                        findings = [G.Model.Finding("roundtrip-02-f1", :full, G.Model.Decider.AGENT, draft)])
+    back2 = RUNS.from_dict(G.JSON3.read(G.JSON3.write(RUNS.as_dict(withf)), Dict{String,Any}))
+    f2 = only(back2.findings)
+    @test f2.draft.in_material && f2.draft.maybe_code && f2.draft.claim == draft.claim
+    @test only(f2.draft.locations).text == "we decided"
+
     # And the default is never mistaken for a value that was written: a record with no `dropped` key —
     # every record written before this field existed — reads as zero, not as missing.
     old = RUNS.as_dict(run); delete!(old, "dropped")
     @test RUNS.from_dict(G.JSON3.read(G.JSON3.write(old), Dict{String,Any})).dropped == 0
+end
+
+
+# ── targets and material (ruled 2026-09-23) ─────────────────────────────────────────────────────────
+#
+# The review is for the text a user reads. A reader is GIVEN targets — docstrings, hand-written pages,
+# Literate examples, the one architecture document — and, if the package lists any, material it may open
+# and never report on. The other rationale documents are read by nobody. On GBGPeriodicFields the withheld
+# reader had been launched over a 72,000-token decision log as "one page", under two rules that had that
+# day been ruled not to apply to it; 72% of what it read was the package's working notes.
+
+"""The fixture's config with the roadmap declared a rationale document, and optionally listed as material."""
+function notes_config(; material = String[])
+    return """
+    Config(
+        package = "GBGFixture",
+        tool = :dev,
+        docs_build = ["julia", "--project=docs", "docs/make.jl"],
+        test = ["julia", "--project", "-e", "using Pkg; Pkg.test()"],
+        filesets = Dict(
+            FileSet.CODE => ["src/FixtureA.jl", "src/FixtureB.jl", "src/FixtureC.jl", "src/GBGFixture.jl"],
+            FileSet.PAGES => ["docs/src/index.md", "docs/src/notation.md", "docs/src/api/FixtureA.md", "docs/src/api/FixtureB.md", "docs/src/api/FixtureC.md"],
+            FileSet.RATIONALE => ["docs/ARCHITECTURE.md", "docs/ROADMAP.md"],
+            FileSet.LITERATE => ["examples/scaling.jl"],
+        ),
+        material = $(repr(material)),
+    )
+    """
+end
+
+@testset "what is a target, and what is read by nobody" begin
+    package() do root, gg
+        write(joinpath(root, ".gbg", "config.jl"), notes_config())
+        cfg = G.ConfigIO.read_config(root)
+        @test G.Catalogue.architecture_doc(cfg) == "docs/ARCHITECTURE.md"
+        @test G.Catalogue.target(cfg, "docs/ARCHITECTURE.md")          # the one rationale document that is
+        @test !G.Catalogue.target(cfg, "docs/ROADMAP.md")              # working notes
+        @test G.Catalogue.target(cfg, "docs/src/index.md")
+        @test G.Catalogue.target(cfg, "src/FixtureA.jl")
+        @test G.Catalogue.target(cfg, "examples/scaling.jl")
+        @test !G.Catalogue.target(cfg, "test/runtests.jl")
+        @test !G.Catalogue.target(cfg, "")
+
+        # the surfaces an agent is handed: of the rationale set, the architecture document alone
+        sur = Dict(AGENTS.surfaces(cfg, root))
+        @test sur["rationale"] == ["docs/ARCHITECTURE.md"]
+        @test AGENTS.material(cfg, root) == String[]                   # nothing listed, nothing given
+
+        # listed as material, it is given as material — and still not a target
+        write(joinpath(root, ".gbg", "config.jl"), notes_config(material = ["docs/ROADMAP.md", "docs/MISSING.md"]))
+        cfg = G.ConfigIO.read_config(root)
+        @test AGENTS.material(cfg, root) == ["docs/ROADMAP.md"]         # a listed path that is no file is not handed out
+        @test Dict(AGENTS.surfaces(cfg, root))["rationale"] == ["docs/ARCHITECTURE.md"]
+        @test !G.Catalogue.target(cfg, "docs/ROADMAP.md")
+    end
+end
+
+@testset "the site walk keeps only target pages" begin
+    package() do root, gg
+        cfg = G.Model.Config(package = "GBGFixture", tool = :dev,
+                             filesets = Dict(G.Model.FileSet.PAGES => ["docs/src/index.md"],
+                                             G.Model.FileSet.RATIONALE => ["docs/ARCHITECTURE.md", "docs/ROADMAP.md"]),
+                             copies = ["docs/src/architecture.md" => "docs/ARCHITECTURE.md",
+                                       "docs/src/roadmap.md" => "docs/ROADMAP.md"])
+        dir = write_site(root, cfg)
+        # the build's copies of both rationale documents, as pages of the site
+        for stem in ("architecture", "roadmap")
+            mkpath(joinpath(dir, stem))
+            write(joinpath(dir, stem, "index.html"),
+                  "<html><body><article class=\"content\"><p>The $stem, copied.</p></article></body></html>")
+        end
+        keys_ = Set(p.key for p in SITE.pages(dir, cfg, root))
+        @test "home" in keys_
+        @test "architecture" in keys_                                  # its source is the one target
+        @test !("roadmap" in keys_)                                    # its source is working notes
+    end
+end
+
+@testset "a finding in the working notes goes to the owner, not the fixer" begin
+    package() do root, gg
+        write(joinpath(root, ".gbg", "config.jl"), notes_config(material = ["docs/ROADMAP.md"]))
+        write(joinpath(root, "docs", "ROADMAP.md"), "# Roadmap\n\nWe decided the grid is a lattice.\n")
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "notes as material")
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+        @test args["material"] == ["docs/ROADMAP.md"]
+        @test !any(r -> occursin("roadmap", String(r["key"])), args["roles"])   # no launch over it
+
+        # the full reader, given the notes as material, finds something only there
+        reader_found(root, id, "full", "the notes say lattice and the page says spectral";
+                     file = "docs/ROADMAP.md", quote_ = "We decided the grid is a lattice.")
+        all_clean(root, id; except = ["full"])
+        @test G.Run.collect(root; io = devnull) == 1                   # it is a finding
+        run = RUNS.load(root, id)
+        f = only(run.findings)
+        @test f.draft.in_material
+        @test isempty(RUNS.workable(run))                              # and nobody's to fix
+        @test isempty(RUNS.open_findings(run))                         # nor a leftover, nor carried
+        @test only(RUNS.in_material(run)).id == f.id
+
+        # the fixer may not touch the notes while the run is open; the architecture document it may
+        write(joinpath(root, "docs", "ROADMAP.md"), "# Roadmap\n\nWe decided the grid is spectral.\n")
+        @test G.Docfix.commit(root, "tidy the notes"; io = devnull, finding = f.id) == 1
+        gg("checkout", "--", "docs/ROADMAP.md")
+        arch = joinpath(root, "docs", "ARCHITECTURE.md")
+        write(arch, read(arch, String) * "\nOne more sentence of design.\n")
+        @test G.Docfix.commit(root, "the design"; io = devnull, finding = f.id) == 0
+
+        @test to_close(root, id) === :close
+        @test G.Run.close_run(root; io = devnull) == 0                 # nothing open in the targets
+        rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
+        @test occursin("## In the working notes — 1", rep)
+        @test occursin("the notes say lattice", rep)
+        @test occursin("## Findings — 0", rep)
+        @test !occursin("Nothing was found", rep)                      # something WAS found
+        queue = read(joinpath(root, ".claude", "WORK_QUEUE.md"), String)
+        @test occursin("IN THE WORKING NOTES, for the owner", queue)
+        @test occursin(f.id, queue)
+    end
 end

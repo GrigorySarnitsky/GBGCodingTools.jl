@@ -4,6 +4,26 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## Unreleased — toward 2.0.0-rc.13
+
+**Targets and material** (ruled 2026-09-23). The review is for the text a user reads. Agents are now given TARGETS —
+docstrings, the hand-written pages, the Literate examples, and the one document `architecture_doc` names — and a
+finding may be located only there; only a target is ever handed to the fixer. MATERIAL is what a reader may open to
+judge a target and never report on: the source, plus what a package lists in the new config field `material`, empty by
+default. Every other rationale document is read by nobody unless listed. The site walk keeps only target pages, so the
+copies a build makes of the working notes are never launched over; the collect marks a finding located only in
+material and routes it to the owner in its own section of the report, unfixed and unverified, because it may be the
+formula three docstrings copy; `gbg docfix commit --finding` refuses an edit to such a document. Program checks are
+untouched. On GBGPeriodicFields the withheld reader goes from 23 launches over about 212,000 tokens of pages to 18
+over about 35,000, and the two cold-read rules stop being applied to 72 percent of a corpus they had been ruled not to
+apply to. `docs/PF-WIRING.md` Step 3 says what, if anything, a consumer adds.
+
+**The launch's arguments carry only what is each role's own.** The shared fields of a stage's roles go once into a
+`kinds` table, the two directories once into `dirs`, and the file is written compact; a role is six short fields and
+about 95 bytes. A verify stage of 142 findings is 14 KB whether the findings are 40 characters or 40,000, and
+`test/driver.jl` now holds both properties — the size does not depend on what the agents read, and a role's marginal
+cost is bounded — so this cannot grow back unnoticed. The gate found the pretty-printing on its first run.
+
 ## 2.0.0-rc.12 — 2026-09-23
 
 PATCH, one ruling. **Upgrade before the next docs build**: the three pages a consumer's `docs/make.jl` lists are gone.

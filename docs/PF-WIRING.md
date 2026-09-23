@@ -122,6 +122,23 @@ In `.gbg/config.jl`, `generated` names the three old paths; replace them with `"
 old files under `docs/src/` — the build no longer writes them, and a stale copy left there would be read
 as a hand-written page.
 
+## Step 3 — the rationale documents are no longer read, except the architecture
+
+From rc.13 the readers are given TARGETS — docstrings, the hand-written pages, the Literate examples and
+`docs/ARCHITECTURE.md` — and nothing else. `DECISIONS.md`, `PERFORMANCE.md`, `TESTING.md` and
+`FORMALIZATION.md` are read by nobody: not launched over, not handed to the full reader or the
+disciplines, not walked on the site. Nothing in PF's config needs to change for that; the `RATIONALE`
+fileset stays as it is, because the program checks (the provenance banner among them) still run over it.
+
+If PF wants the geometer or the spectral analyst to be able to CONSULT the formalization while judging
+the API, add one field to `.gbg/config.jl`:
+
+        material = ["docs/FORMALIZATION.md"],
+
+A reader may then open it; a defect it finds only there is reported in its own section of the report,
+routed to the owner and never fixed. If PF wants that document JUDGED like a page, it is not material:
+put it among the pages and it is a target.
+
 Leave the generator call where it is, at line 284. It runs before `makedocs` and after what remains of
 PF's own lint block, and the ordering was reasoned once; nothing here needs it moved.
 

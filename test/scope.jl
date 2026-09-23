@@ -326,8 +326,28 @@ end
         @test "tutorial" in keys_ && "home" in keys_
     end
 
-    @testset "a copy's page is not read again beside its source" begin
-        @test !("architecture" in Set(p.key for p in SITE.pages(site, declared, root)))
+    # A copy is kept or dropped by its SOURCE (ruled 2026-09-23): the architecture document is the one
+    # rationale document that is a target, so its page is read under the source's name; a copy of the
+    # working notes is not read at all. Until that ruling every copy was dropped, and the one document the
+    # owner holds to a cold read was the one built page no reader was launched over.
+    @testset "a copy's page follows its source: the architecture stays, the working notes go" begin
+        @test "architecture" in Set(p.key for p in SITE.pages(site, declared, root))
+        write(joinpath(root, "docs", "DECISIONS.md"), "# decided\n")
+        write(joinpath(root, "docs", "src", "decisions.md"), "# decided\n")
+        mkpath(joinpath(root, "docs", "build", "decisions"))
+        write(joinpath(root, "docs", "build", "decisions", "index.html"),
+              "<html><body><article class=\"content\">we decided</article></body></html>")
+        notes = G.Model.Config(package = "Sample", tool = :dev,
+                               generated = ["docs/src/gbg-rules.md"],
+                               filesets = Dict(G.Model.FileSet.RATIONALE => ["docs/ARCHITECTURE.md", "docs/DECISIONS.md"]),
+                               copies = ["docs/src/architecture.md" => "docs/ARCHITECTURE.md",
+                                         "docs/src/decisions.md" => "docs/DECISIONS.md"])
+        keys_ = Set(p.key for p in SITE.pages(site, notes, root))
+        @test "architecture" in keys_
+        @test !("decisions" in keys_)
+        @test "tutorial" in keys_ && "home" in keys_ && !("gbg-rules" in keys_)
+        rm(joinpath(root, "docs", "build", "decisions"); recursive = true)   # the fixture the tests below share
+        rm(joinpath(root, "docs", "src", "decisions.md")); rm(joinpath(root, "docs", "DECISIONS.md"))
     end
 
     @testset "a finding in a copy is reported under its source" begin

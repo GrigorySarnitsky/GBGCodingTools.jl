@@ -321,10 +321,22 @@ closed(run::Model.Run, id::AbstractString) = any(f -> f.finding == id &&
 """
     open_findings(run) -> Vector{Model.Finding}
 
-The findings of `run` still open: not closed by a verdict. The argument is `run`. Returns them in the
-run's order.
+The findings of `run` still open: not closed by a verdict, and not in material. The argument is `run`.
+Returns them in the run's order.
+
+A finding in material is never open in this sense: no pass works on it, no verifier is asked about it,
+it is not a leftover and is not carried into the next run. It is the owner's from the moment it is
+collected, and [`in_material`](@ref) is where it is read.
 """
-open_findings(run::Model.Run) = [f for f in run.findings if !closed(run, f.id)]
+open_findings(run::Model.Run) = [f for f in run.findings if !closed(run, f.id) && !f.draft.in_material]
+
+"""
+    in_material(run) -> Vector{Model.Finding}
+
+The findings of `run` located only in material: what a reader given the working notes to consult found
+there. The argument is `run`. Returns them in the run's order.
+"""
+in_material(run::Model.Run) = [f for f in run.findings if f.draft.in_material]
 
 """
     parked(run, id) -> Bool
@@ -495,6 +507,7 @@ as_dict(r::Model.Run) = Dict{String,Any}(
                                     "decider" => String(Symbol(f.decider)),
                                     "claim" => f.draft.claim, "evidence" => f.draft.evidence,
                                     "fix" => f.draft.fix, "maybe_code" => f.draft.maybe_code,
+                                    "in_material" => f.draft.in_material,
                                     "rule" => f.draft.rule === nothing ? nothing : String(f.draft.rule),
                                     "locations" => [loc_dict(l) for l in f.draft.locations]) for f in r.findings])
 
@@ -531,7 +544,8 @@ function from_dict(d::AbstractDict)
             rule = get(f, "rule", nothing) === nothing ? nothing : Symbol(f["rule"]),
             locations = [loc_of(l) for l in get(f, "locations", [])],
             claim = get(f, "claim", ""), evidence = get(f, "evidence", ""),
-            fix = get(f, "fix", ""), maybe_code = get(f, "maybe_code", false))
+            fix = get(f, "fix", ""), maybe_code = get(f, "maybe_code", false),
+            in_material = get(f, "in_material", false))
         push!(findings, Model.Finding(get(f, "id", ""), Symbol(get(f, "source", "")),
                                       getfield(Model.Decider, Symbol(get(f, "decider", "PROGRAM"))), draft))
     end

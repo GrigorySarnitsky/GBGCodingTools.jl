@@ -349,6 +349,7 @@ Base.@kwdef struct FindingDraft
     rule::Union{Symbol,Nothing}; locations::Vector{Location}   # every site, each with its own quote
     claim::String; evidence::String; fix::String               # evidence: a failing test's path, or a reason
     maybe_code::Bool = false                                   # the agent thinks the code, not the text, is wrong
+    in_material::Bool = false     # located only in material a reader was given to consult: the owner's, never the fixer's (§10)
 end
 "One defect in a run: the draft, its id, and who reported it."
 struct Finding; id::String; source::Symbol; decider::Decider.T; draft::FindingDraft; end
@@ -449,6 +450,19 @@ requested from the tooling session. Every reader runs on the careful model; `gbg
 chooses which are launched, `bound` by default. An open reader's findings name no rule, so the reason for trusting it is
 its standpoint, and a finding that recurs becomes a rule (§7).
 
+**Targets and material** [ruled 2026-09-23]. What a reader is GIVEN is decided by audience, not by file type. A
+**target** is what a user reads — a docstring, a hand-written page under `docs/src/`, a Literate example, and the one
+document `architecture_doc` names — and is the only place a finding may be located and the only thing the fixer is ever
+handed. **Material** is what a reader may open to judge a target and never report on: the source, plus whatever the
+package lists in `Config.material`, empty by default. Every other rationale document is read by nobody unless listed:
+not launched over, not handed to the full reader or a discipline, not walked on the site — the site walk keeps only a
+page whose source is a target, so a build-time copy of the working notes drops out by construction. A finding located
+only in material is kept, marked `in_material` at collect, reported in its own section and routed to the owner,
+unfixed and unverified [it may be the formula three docstrings copy]; `gbg docfix commit --finding` refuses an edit to
+such a document. Program checks are untouched and run over the file sets they declare. `Catalogue.target` is the one
+predicate. [On GBGPeriodicFields the withheld reader had been launched over a 72,000-token decision log as one page,
+under two rules that had that day been ruled not to apply to it; 72% of what it read was working notes.]
+
 ```julia
 "Turns one rule, agent role or instrument off in one package, or in some of its files, with the reason."
 Base.@kwdef struct Switch; target::Symbol; reason::String; files::Vector{String} = String[]; end
@@ -466,6 +480,7 @@ Base.@kwdef struct Config
     copies::Vector{Pair{String,String}} = Pair{String,String}[]  # build-time copy => tracked source
     generated::Vector{String} = String[]      # pages written at build time; no rule reads one
     switches::Vector{Switch} = Switch[]; settings::Vector{Setting} = Setting[]
+    material::Vector{String} = String[]       # documents a reader may consult and never report on (§10)
     disciplines::Vector{Symbol} = Symbol[]    # the catalogued disciplines its readers need; never a reader of its own
     code_areas::Vector{Pair{Symbol,Vector{String}}} = Pair{Symbol,Vector{String}}[]  # one hunter per area (§10)
 end

@@ -16,6 +16,7 @@ document and the code cannot quietly disagree about what an instrument is for.
 module Catalogue
 
 using ..Model
+using ..Texts
 
 """
     ALWAYS_ON
@@ -239,6 +240,55 @@ Returns the selection from [`panel`](@ref), in its order.
 """
 roles_of(instrument::Symbol, cfg::Model.Config; readers::Symbol = :both) =
     DocumentationReview.select(first(panel(instrument, cfg)), readers)
+
+"""
+    architecture_doc(cfg) -> String
+
+The one rationale document the review holds to a cold read and reads as a target: the value of the
+`architecture_doc` parameter, `docs/ARCHITECTURE.md` unless the package's settings say otherwise. The
+argument is `cfg`, the package's config. Returns the path, relative to the package root.
+"""
+function architecture_doc(cfg::Model.Config)
+    value = ""
+    for rule in RULES, p in rule.parameters
+        p.name === :architecture_doc || continue
+        value = String(p.default)
+        for s in cfg.settings
+            s.rule === rule.id && s.name === p.name && s.value isa AbstractString && (value = String(s.value))
+        end
+        break
+    end
+    return replace(value, '\\' => '/')
+end
+
+"""
+    target(cfg, path) -> Bool
+
+Whether a path is a TARGET of the documentation review: something a user reads, which a reader is given
+to judge and a finding may be located in. The arguments are `cfg`, the package's config, and `path`,
+relative to the package root. Returns the answer, without touching disk.
+
+The targets are exactly [ruled 2026-09-23]: the docstrings, the hand-written pages, the Literate
+examples, and the one document [`architecture_doc`](@ref) names. A generated page or a declared copy is
+not one, whatever pattern it matches. Every other rationale document is at most MATERIAL — something a
+reader may open to judge a target — and only when the package lists it in `material`; by default nobody
+is given it.
+
+The review is for the text a user meets. The working notes a package keeps for the sessions that build
+it are not that text, however many of them there are: on the first real review they were 72% of what
+the readers were handed, under two rules that had just been ruled not to apply to them.
+"""
+function target(cfg::Model.Config, path::AbstractString)
+    p = replace(path, '\\' => '/')
+    isempty(p) && return false
+    any(g -> replace(g, '\\' => '/') == p, cfg.generated) && return false
+    any(c -> replace(first(c), '\\' => '/') == p, cfg.copies) && return false
+    p == architecture_doc(cfg) && return true
+    for fs in (Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.LITERATE)
+        any(pat -> Texts.glob_matches(pat, p), get(cfg.filesets, fs, Texts.DEFAULT_PATTERNS[fs])) && return true
+    end
+    return false
+end
 
 """
     missing_documents(cfg, root) -> Vector{String}

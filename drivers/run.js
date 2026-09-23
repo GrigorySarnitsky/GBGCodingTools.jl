@@ -197,6 +197,17 @@ function brief(role) {
       'only the source it was built from.',
     );
   }
+  // MATERIAL is what a reader may open to judge the targets and never report on: the package's own
+  // working notes, listed by it. A defect found only there is still reported — with its location — and
+  // is routed to the owner by the collect, never to the fixer; the reader is told so, not told to
+  // stay silent. A reader kept from the code is kept from these too.
+  if (!role.kept_from_code && (args.material || []).length) {
+    withheld.push(
+      'MATERIAL, which you may open to judge the surfaces above and which is NOT under review: ' +
+      args.material.join(', ') + '. Report a defect you find only there with its file and quote; it ' +
+      'goes to the owner and is never fixed by this run.',
+    );
+  }
 
   // The rules this reader checks are named, never quoted. Their statements live in the rendered
   // rulebook under `.gbg/policy/`, written from the rule values themselves, so a reworded rule reaches

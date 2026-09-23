@@ -108,6 +108,8 @@ What an agent or a check reports, before a run gives it an id. The fields are:
 - `evidence` — a failing test's path, or the reason to believe the claim.
 - `fix` — what would put it right.
 - `maybe_code` — the agent believes the code, not the text, is wrong.
+- `in_material` — every location is in material a reader was given to consult, not in a target of the
+  review; such a finding goes to the owner and never to the fixer.
 """
 Base.@kwdef struct FindingDraft
     rule::Union{Symbol,Nothing} = nothing
@@ -116,6 +118,7 @@ Base.@kwdef struct FindingDraft
     evidence::String = ""
     fix::String = ""
     maybe_code::Bool = false
+    in_material::Bool = false
 end
 
 """
@@ -613,6 +616,8 @@ The fields are:
 - `code_areas` — its code in named areas, one hunter each.
 
 - `disciplines` — the catalogued disciplines its documentation needs read by.
+- `material` — documents a reader may open to judge the targets and never report on: the rationale
+  documents beyond the one `architecture_doc` names, which no reader is given unless listed here.
 
 A reader or a discipline a package needs and the tool's catalogue lacks is requested from the tool's
 own session, which adds it for the whole fleet; it is not written in a config.
@@ -631,6 +636,7 @@ Base.@kwdef struct Config
     settings::Vector{Setting} = Setting[]
     disciplines::Vector{Symbol} = Symbol[]
     code_areas::Vector{Pair{Symbol,Vector{String}}} = Pair{Symbol,Vector{String}}[]
+    material::Vector{String} = String[]
 end
 
 """

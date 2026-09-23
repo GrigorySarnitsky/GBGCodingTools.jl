@@ -513,7 +513,9 @@ function collect(root::AbstractString; io::IO = stdout)
         for s in silent; println(io, "  ", s); end
         return 2
     end
-    return isempty(Runs.open_findings(run)) ? 0 : 1
+    # 1 when something was FOUND, a finding in the working notes included: it is not open — no pass
+    # works on it — but it is the owner's to read, and a collect that answered 0 would have hidden it.
+    return isempty(Runs.open_findings(run)) && isempty(Runs.in_material(run)) ? 0 : 1
 end
 
 """
@@ -661,7 +663,9 @@ function close_run(root::AbstractString; io::IO = stdout)
     rm(joinpath(dir, "run.draft.json"); force = true)
     rm(Agents.scratch_dir(root, id); force = true, recursive = true)   # the agents' files go with the run
     left = Runs.open_findings(closed)
+    notes = Runs.in_material(closed)
     println(io, "run: ", id, " closed. ", length(closed.findings), " finding(s), ", length(left), " open",
+            isempty(notes) ? "" : ", $(length(notes)) in the working notes for the owner",
             queued > 0 ? "; $queued line(s) went to the work queue." : ".")
     println(io, "  ", relpath(joinpath(dir, "report.md"), root))
     # What the session must commit, named because two files are left dirty by design and only one of
@@ -792,10 +796,18 @@ stay as they were.
 """
 function queue_leftovers(root::AbstractString, run::Model.Run)
     open = Runs.open_findings(run)
-    isempty(open) && return 0
+    notes = Runs.in_material(run)
+    isempty(open) && isempty(notes) && return 0
     path = joinpath(root, ".claude", "WORK_QUEUE.md")
     text = isfile(path) ? read(path, String) : "# Work queue\n\n"
     lines = String[]
+    # What a reader found in the working notes it was given to consult: the owner's, never the fixer's,
+    # and listed first because it may be the formula three docstrings copy.
+    for f in notes
+        l = isempty(f.draft.locations) ? nothing : f.draft.locations[1]
+        push!(lines, "- [ ] " * f.id * " IN THE WORKING NOTES, for the owner: " * f.draft.claim *
+                     (l === nothing ? "" : " — `" * l.file * "`" * (isempty(l.text) ? "" : " \"" * l.text * "\"")))
+    end
     for f in open
         where_ = ""
         if !isempty(f.draft.locations)

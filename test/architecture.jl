@@ -166,7 +166,7 @@ legacy_files() = sort([relpath(joinpath(r, f), TOOL) for (r, _, fs) in walkdir(j
             @test isdefined(G.Model, name)
         end
         for (name, fields) in (:Location => [:file, :node, :text, :line, :found],
-                               :FindingDraft => [:rule, :locations, :claim, :evidence, :fix, :maybe_code],
+                               :FindingDraft => [:rule, :locations, :claim, :evidence, :fix, :maybe_code, :in_material],
                                :Finding => [:id, :source, :decider, :draft],
                                :Option => [:label, :consequence, :recommended],
                                :Switch => [:target, :reason, :files])

@@ -97,10 +97,23 @@ function surfaces(cfg::Model.Config, root::AbstractString)
     out = Pair{String,Vector{String}}[]
     for fs in (Model.FileSet.RATIONALE, Model.FileSet.PAGES, Model.FileSet.DOCSTRINGS, Model.FileSet.LITERATE)
         files = Texts.files(cfg, root, fs)
+        # Of the rationale documents only the one the review holds to a cold read is a TARGET (ruled
+        # 2026-09-23); the rest are read by nobody unless listed as material, and then as material.
+        fs === Model.FileSet.RATIONALE && filter!(f -> Catalogue.target(cfg, f), files)
         isempty(files) || push!(out, lowercase(String(Symbol(fs))) => files)
     end
     return out
 end
+
+"""
+    material(cfg, root) -> Vector{String}
+
+The documents a reader may open to judge the targets and never report on: what the package lists in
+`material`, those that are files here. The arguments are `cfg`, the package's config, and `root`, the
+package root. Returns the paths.
+"""
+material(cfg::Model.Config, root::AbstractString) =
+    [replace(m, '\\' => '/') for m in cfg.material if isfile(joinpath(root, m))]
 
 """
     finding_dict(f) -> Dict
@@ -173,7 +186,8 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
         "settled" => [Dict{String,Any}("question" => s.question, "text" => s.text,
                                        "locations" => [Dict("file" => l.file, "text" => l.text) for l in s.locations])
                       for s in ConfigIO.read_settled(root)],
-        "surfaces" => Dict{String,Any}(name => files for (name, files) in surfaces(cfg, root)))
+        "surfaces" => Dict{String,Any}(name => files for (name, files) in surfaces(cfg, root)),
+        "material" => material(cfg, root))
     briefs = Dict{String,String}()          # the text, once, under the key a role names
     keys_of = Dict{String,String}()         # the text seen before, and the key it was given
     kinds = Dict{String,Any}()              # the fields shared by every role of one shape, once
@@ -386,11 +400,14 @@ function collect_results(root::AbstractString, id::AbstractString, cfg::Model.Co
                 end
                 push!(locs, found)
             end
+            # A finding located nowhere in a target is IN MATERIAL: a reader given the working notes
+            # to consult found something there. It is kept and goes to the owner, never to the fixer.
             push!(findings, (role, Model.FindingDraft(
                 rule = get(f, "rule", nothing) === nothing ? nothing : Symbol(f["rule"]),
                 locations = locs, claim = String(get(f, "claim", "")),
                 evidence = String(get(f, "evidence", "")), fix = String(get(f, "fix", "")),
-                maybe_code = get(f, "maybe_code", false))))
+                maybe_code = get(f, "maybe_code", false),
+                in_material = !isempty(locs) && !any(l -> Catalogue.target(cfg, l.file), locs))))
         end
     end
     return (findings, verdicts, setdiff(collect(keys(expected)), wrote), arrived, length(wrote))

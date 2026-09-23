@@ -74,6 +74,24 @@ function files(cfg::Model.Config, root::AbstractString, fileset::Model.FileSet.T
 end
 
 
+"""
+    glob_matches(pattern, path) -> Bool
+
+Whether one path matches one file-set pattern, without touching disk. The arguments are `pattern`, with
+`**` spanning directories and `*` staying within one name — the same two wildcards [`expand`](@ref)
+walks — and `path`, relative to the package root. Returns the answer.
+
+The change guard is given a path and no root and has no business reading disk to classify a change, and
+the question "is this path a target of the review" is asked of paths the walk never produced, such as
+the file a reader names. Both ask this.
+"""
+function glob_matches(pattern::AbstractString, path::AbstractString)
+    pat = replace(pattern, '\\' => '/')
+    rx = "^" * replace(replace(replace(replace(pat, "." => "\\."), "**/" => "\0ANY\0"),
+                               "*" => "[^/]*"), "\0ANY\0" => "(?:.*/)?") * "\$"
+    return occursin(Regex(rx), replace(path, '\\' => '/'))
+end
+
 # `**` matches any run of directories, `*` anything within one name. Written out rather than taken from a
 # package: the patterns are few and the walk is over a source tree, not a corpus.
 function expand(root::AbstractString, pattern::AbstractString)

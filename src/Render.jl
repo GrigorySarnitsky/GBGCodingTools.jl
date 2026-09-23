@@ -1182,9 +1182,34 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
         println(io)
         println(io, "Every reader that was launched wrote its file, and none of them reported a defect.")
     else
-        println(io, "## Findings — ", length(run.findings))
+        # What was found in the WORKING NOTES comes first and apart (ruled 2026-09-23): a reader given
+        # the design documents as material to consult found something there. It was never a fixer's —
+        # those documents are not targets of the review — and it may be the most valuable line on the
+        # page, a formula the API's docstrings copy. It is the owner's to read.
+        notes = [f for f in run.findings if f.draft.in_material]
+        if !isempty(notes)
+            println(io, "## In the working notes — ", length(notes))
+            println(io)
+            println(io, "Found in documents the readers were given to consult and not to judge. Nothing here was")
+            println(io, "fixed or verified; each is for the owner, with the reader's own words.")
+            println(io)
+            for f in notes
+                println(io, "### ", f.id, "  ", f.draft.claim)
+                println(io)
+                println(io, "Reported by `", f.source, "`.")
+                println(io)
+                isempty(f.draft.evidence) || (println(io, f.draft.evidence); println(io))
+                for l in f.draft.locations
+                    println(io, "- `", l.file, "`", isempty(l.text) ? "" : "  \"" * l.text * "\"")
+                end
+                println(io)
+            end
+        end
+        judged = [f for f in run.findings if !f.draft.in_material]
+        println(io, "## Findings — ", length(judged))
         println(io)
-        for f in run.findings
+        isempty(judged) && println(io, "None in the targets: every reader that was launched wrote its file, and none reported a defect in a document under review.\n")
+        for f in judged
             println(io, "### ", f.id, "  ", f.draft.claim)
             println(io)
             f.draft.rule === nothing || println(io, "Rule: `", f.draft.rule, "`.  ")

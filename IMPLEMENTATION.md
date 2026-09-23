@@ -239,7 +239,16 @@ is given (ruled 2026-09-21), and nothing else remaining — a second science pac
   of the thirteen reasons name a design section — but nothing asserts the section exists, and two name a test
   instead. A retired rule now declares one of two fates: MOVED, naming the section that holds it, with a test that
   the section is there; or OBSOLETE, held by nothing because nothing needs to hold it (owner: "a rule could become
-  just completely obsolete"). The thirteen already retired are classified in the same commit. **Creates** what those answers
+  just completely obsolete"). The thirteen already retired are classified in the same commit.
+- **Targets and material** (ruled 2026-09-23, built the same day, ahead of the rest of this phase). Agents read two kinds
+  of document: a TARGET — a docstring, a hand-written page, a Literate example, the one document `architecture_doc` names —
+  which is what a user reads, where a finding may be located and the only thing a fixer is handed; and MATERIAL — the source,
+  plus what a package lists in the new config field `material`, empty by default — which a reader may open to judge a target
+  and never report on. The other rationale documents are read by nobody unless listed. The site walk keeps only target
+  pages; the collect marks a finding located only in material and routes it to the owner, unfixed, in its own section of the
+  report; program checks are untouched. On GBGPeriodicFields this took the withheld reader from 23 launches over ~212k
+  tokens of pages to 18 over ~35k, and it dissolves the append-only-log problem of `--scope changed`, since material is not
+  launched over at all. **Creates** what those answers
 say; `gbg release --counts`, which prints for `v2.0.0` alone what still holds it and refuses nothing (ruled 2026-09-16);
 `Main.jl` rewritten and the last old verbs; an `HT-WIRING.md` (the disciplines HT may propose — turbulence theory
 certainly, and the Fourier discipline it shares with PF); HT wired by HT's own session on the last candidate after 4d.

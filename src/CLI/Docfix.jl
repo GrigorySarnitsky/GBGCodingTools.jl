@@ -15,7 +15,7 @@ whether what it did was documentation.
 """
 module Docfix
 
-using ..GBGCodingTools: GBGCodingTools, ConfigIO, Engine, Git, Model, Orchestration, parse_options, VERBS
+using ..GBGCodingTools: GBGCodingTools, Catalogue, ConfigIO, Engine, Git, Model, Orchestration, Texts, parse_options, VERBS
 
 """
     changed_files(root) -> Vector{String}
@@ -107,6 +107,20 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
     # works, and is the session's to commit at close, not the fixer's now.
     rs = filter(r -> !Orchestration.Runs.own_record(r.path), rulings(root; generated))
     isempty(rs) && (println(io, "docfix: nothing has changed"); return 2)
+    # While a run is open, a rationale document that is not a TARGET of the review is not the fixer's
+    # either (ruled 2026-09-23): the guard rightly calls an edit to it documentation, but the run was
+    # never about it, and a fix landing there is a pass spent on the package's working notes.
+    if !isempty(finding)
+        cfg = ConfigIO.read_config(root)
+        notes = [r.path for r in rs if !Catalogue.target(cfg, r.path) &&
+                 r.path in Texts.files(cfg, root, Model.FileSet.RATIONALE)]
+        if !isempty(notes)
+            println(io, "docfix: refused — ", length(notes), " changed file(s) are working notes, not targets of the review:")
+            for n in notes; println(io, "  - ", n); end
+            println(io, "Nothing was committed. A finding located there is the owner's, never the fixer's.")
+            return 1
+        end
+    end
     code = [r for r in rs if !r.documentation]
     if !isempty(code)
         println(io, "docfix: refused — ", length(code), " of ", length(rs), " changed file(s) are code:")

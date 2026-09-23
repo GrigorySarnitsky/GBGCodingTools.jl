@@ -126,18 +126,8 @@ end
 # code itself, so a comment may be edited and a statement may not; clause 4 refuses a change that moves a
 # Literate mark, which is what makes a comment render as prose; clause 5 refuses an executed block.
 literate(cfg::Model.Config, p) =
-    any(pat -> glob_matches(pat, p), get(cfg.filesets, Model.FileSet.LITERATE,
-                                         Texts.DEFAULT_PATTERNS[Model.FileSet.LITERATE]))
-
-# `**` spans directories, `*` stays within one name — the same two wildcards `Texts.expand` resolves,
-# matched here against ONE path rather than walked over a tree, because the guard is given a path and no
-# root and has no business touching disk to classify a change.
-function glob_matches(pattern::AbstractString, path::AbstractString)
-    pat = replace(pattern, '\\' => '/')
-    rx = "^" * replace(replace(replace(replace(pat, "." => "\\."), "**/" => "\0ANY\0"),
-                               "*" => "[^/]*"), "\0ANY\0" => "(?:.*/)?") * "\$"
-    return occursin(Regex(rx), path)
-end
+    any(pat -> Texts.glob_matches(pat, p), get(cfg.filesets, Model.FileSet.LITERATE,
+                                               Texts.DEFAULT_PATTERNS[Model.FileSet.LITERATE]))
 
 rationale(cfg::Model.Config, p) = any(r -> replace(r, '\\' => '/') == p, get(cfg.filesets, Model.FileSet.RATIONALE, String[]))
 
