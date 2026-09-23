@@ -442,7 +442,7 @@ function answer!(root::AbstractString, id::AbstractString, option::AbstractStrin
     return nothing
 end
 
-# The record carries nineteen fields and an answer changes one of them. Rebuilt here rather than through
+# The record carries twenty fields and an answer changes one of them. Rebuilt here rather than through
 # the CLI's `with`, which is a verb's helper and above this module.
 with_questions(r::Model.Run, qs::Vector{Model.Question}) =
     Model.Run(id = r.id, instrument = r.instrument, tool_version = r.tool_version,
@@ -451,7 +451,7 @@ with_questions(r::Model.Run, qs::Vector{Model.Question}) =
               agent_launches = r.agent_launches, tokens = r.tokens, stop = r.stop,
               readers = r.readers, passes = r.passes, model = r.model, sequential = r.sequential,
               scope = r.scope, base = r.base, driver = r.driver, already_failing = r.already_failing,
-              dropped = r.dropped)
+              dropped = r.dropped, unreverted = r.unreverted)
 
 # The record is written back where it was read: `run.json` for a closed run, the draft for an open one.
 # `save` always writes the draft, and `load` prefers `run.json`, so saving a closed run's answer through
@@ -506,7 +506,7 @@ as_dict(r::Model.Run) = Dict{String,Any}(
     "already_failing" => [String(x) for x in r.already_failing],
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
     "readers" => String(r.readers), "passes" => r.passes,
-    "scope" => String(r.scope), "base" => r.base, "driver" => r.driver, "dropped" => r.dropped,
+    "scope" => String(r.scope), "base" => r.base, "driver" => r.driver, "dropped" => r.dropped, "unreverted" => r.unreverted,
     "questions" => [question_dict(q) for q in r.questions],
     "fixes" => [Dict{String,Any}("finding" => f.finding, "pass" => f.pass, "commit" => f.commit,
                                   "formula_edit" => f.formula_edit, "blind" => String(Symbol(f.blind)),
@@ -580,7 +580,8 @@ function from_dict(d::AbstractDict)
                      driver = get(d, "driver", ""),
                      model = get(d, "model", "session"), sequential = get(d, "sequential", false),
                      already_failing = Symbol[Symbol(x) for x in get(d, "already_failing", [])],
-                     dropped = get(d, "dropped", 0))
+                     dropped = get(d, "dropped", 0),
+                     unreverted = String[String(x) for x in get(d, "unreverted", [])])
 end
 
 
@@ -598,8 +599,8 @@ the thing nobody looked at. The run ends `CANNOT_EVALUATE` and the owner is aske
 
 Every commit is classified, the guard's own included: the trailer `gbg docfix commit` writes is typed
 text, and a code change amended into a guarded commit, or a plain commit carrying the trailer, would
-otherwise go unread. The one commit not classified is a revert this run made, and only when it is
-exactly the inverse of the commit its trailer names.
+otherwise go unread. A revert this package made is classified too; only a refusal for mathematics alone
+is not counted on it, since a revert may put back a formula its fix removed and mathematics is not code.
 """
 function unguarded_code(root::AbstractString, since::AbstractString)
     (isempty(since) || since == "unknown") && return String[]
@@ -607,16 +608,18 @@ function unguarded_code(root::AbstractString, since::AbstractString)
     log = git_out(root, "log", "--format=%H%x1f%s%x1f%b%x1e", "$since..HEAD")
     log === nothing && return String[]
     out = String[]
-    undone = exact_reverts(root, since)
     for entry in split(log, '\x1e'; keepempty = false)
         parts = split(strip(entry, ['\n']), '\x1f')
         length(parts) >= 2 || continue
         sha, subject = String(parts[1]), String(parts[2])
-        # EVERY commit is classified; the trailer is typed text and proves nothing (found in review,
-        # 2026-09-23: a code change amended into a guarded commit, or a plain commit carrying the
-        # trailer, was never looked at). The one exception is a revert this run made, and it is not
-        # taken on its word either: see `exact_reverts`.
-        haskey(undone, sha) && continue
+        body = length(parts) >= 3 ? String(parts[3]) : ""
+        # EVERY commit is classified, the guard's and its reverts included; a trailer is typed text and
+        # proves nothing. What this looks for is CODE changed around the guard. A revert this package
+        # made may put a formula back that its fix had taken out, so for a commit carrying the revert
+        # mark a refusal for mathematics alone is not counted — mathematics is not code, and a forged
+        # mark buys nothing else (simplified 2026-09-23: recognising "exact" reverts took four review
+        # passes and still had holes; this needs no recognition).
+        revert = any(l -> startswith(strip(l), REVERT_TRAILER), split(body, '\n'))
         code = String[]
         for (status, f, odd) in touched(root, sha)
             own_record(f) && continue
@@ -627,7 +630,8 @@ function unguarded_code(root::AbstractString, since::AbstractString)
             # is not one anybody checked
             ((status != "A" && before === nothing) || (status != "D" && after === nothing)) &&
                 (push!(code, f); continue)
-            Engine.Guard.classify(cfg, f, before, after).documentation || push!(code, f)
+            r = Engine.Guard.classify(cfg, f, before, after)
+            r.documentation || (revert && occursin("(clause 6)", r.reason)) || push!(code, f)
         end
         isempty(code) && continue
         push!(out, first(sha, 8) * "  " * subject * "  [" * join(first(code, 4), ", ") *
@@ -674,77 +678,20 @@ function touched(root::AbstractString, sha::AbstractString)
     return out
 end
 
-# The reverts this run made, each checked rather than trusted: its body names, by full sha, a guarded
-# fix commit of THIS run that comes before it, and every file it touches holds exactly, byte for byte,
-# what that file held before the fix, having held what the fix left. Returns revert sha => reverted sha.
-# A forged trailer naming a commit outside the run, a dangling one, or a revert differing by whitespace
-# — which a patch id forgives and Julia does not — is classified like any other commit.
-function exact_reverts(root::AbstractString, since::AbstractString)
-    (isempty(since) || since == "unknown") && return Dict{String,String}()
-    key = (String(root), String(since), something(git_out(root, "rev-parse", "HEAD"), ""))
-    # computed once per state of the history: a verify stage asks once per finding, and recomputing it
-    # each time cost minutes at a hundred and fifty (found in review, 2026-09-23)
-    return get!(REVERTS_SEEN, key) do
-        compute_exact_reverts(root, since)
-    end
-end
-
-const REVERTS_SEEN = Dict{Tuple{String,String,String},Dict{String,String}}()
-
-function compute_exact_reverts(root::AbstractString, since::AbstractString)
-    out = Dict{String,String}()
-    log = git_out(root, "log", "--reverse", "--format=%H%x1f%b%x1e", "$since..HEAD")
+# The fixes a revert this package made has undone, by the full sha its mark names. Bookkeeping, not a
+# boundary: every commit is classified anyway, and `docfix commit` refuses a message typing the mark.
+function reverted(root::AbstractString, since::AbstractString)
+    out = Set{String}()
+    (isempty(since) || since == "unknown") && return out
+    log = git_out(root, "log", "--format=%b%x1e", "$since..HEAD")
     log === nothing && return out
-    seen_fixes = Set{String}()
-    for entry in split(log, '\x1e'; keepempty = false)
-        parts = split(strip(entry, ['\n']), '\x1f')
-        sha = String(parts[1]); lines = strip.(split(length(parts) >= 2 ? String(parts[2]) : "", '\n'))
-        rev = [String(strip(l[length(REVERT_TRAILER)+1:end])) for l in lines if startswith(l, REVERT_TRAILER)]
-        if length(rev) == 1 && occursin(r"^[0-9a-f]{40}$", rev[1]) && rev[1] in seen_fixes &&
-           !(rev[1] in values(out)) && inverse(root, sha, rev[1])
-            out[sha] = rev[1]
-        elseif isempty(rev) && GUARD_TRAILER in lines
-            push!(seen_fixes, sha)
+    for body in split(log, '\x1e'; keepempty = false)
+        lines = strip.(split(body, '\n'))
+        GUARD_TRAILER in lines || continue
+        for l in lines
+            startswith(l, REVERT_TRAILER) && push!(out, String(strip(l[length(REVERT_TRAILER)+1:end])))
         end
     end
-    return out
-end
-
-# Whether commit `sha` undoes commit `orig` exactly: the same files, no symlink, submodule or mode change
-# on either, and hunk for hunk the lines `orig` added are the lines `sha` removes and the reverse —
-# compared byte for byte, whitespace kept, wherever later fixes to OTHER parts of the file moved them.
-# Whole files are not compared: a later fix elsewhere in the same page is not part of the revert
-# (found in review, 2026-09-23: that made the tool's own reverts unrecognisable).
-function inverse(root, sha, orig)
-    mine = touched(root, sha); theirs = touched(root, orig)
-    (any(x -> x[3], mine) || any(x -> x[3], theirs)) && return false
-    Set(f for (_, f, _) in mine) == Set(f for (_, f, _) in theirs) || return false
-    for (_, f, _) in mine
-        a = hunks(root, sha * "^", sha, f); b = hunks(root, orig * "^", orig, f)
-        (a === nothing || b === nothing) && return false
-        a == [(added, removed) for (removed, added) in b] || return false
-    end
-    return true
-end
-
-# The hunks of one file's change, each as (removed lines, added lines), in order, with no context.
-function hunks(root, from, to, path)
-    d = git_out(root, "diff", "--no-color", "--no-ext-diff", "-U0", from, to, "--", path)
-    d === nothing && return nothing
-    out = Tuple{Vector{String},Vector{String}}[]
-    cur = nothing
-    for l in split(d, '\n')
-        if startswith(l, "@@")
-            cur === nothing || push!(out, cur); cur = (String[], String[])
-        elseif cur !== nothing && startswith(l, "-") && !startswith(l, "---")
-            push!(cur[1], String(l[2:end]))
-        elseif cur !== nothing && startswith(l, "+") && !startswith(l, "+++")
-            push!(cur[2], String(l[2:end]))
-        elseif cur !== nothing && startswith(l, "\\")
-            push!(cur[1], "\\ no newline")                     # the marker counts too
-        end
-    end
-    cur === nothing || push!(out, cur)
     return out
 end
 
@@ -821,11 +768,10 @@ function fix_commits(root::AbstractString, since::AbstractString, id::AbstractSt
     (isempty(since) || since == "unknown") && return String[]
     # The WHOLE trailer line, not a substring: `…-100` is a prefix of `…-1000`, and a substring match
     # handed one finding's diff to another's verifier and reverted the wrong fix (found in review,
-    # 2026-09-23). A finding's own commits, less any an EXACT revert of this run undid; a trailer typed
-    # into another message removes nothing.
+    # 2026-09-23). A finding's own commits, less any a revert this package made has undone.
     log = git_out(root, "log", "--format=%H%x1f%b%x1e", "$since..HEAD")
     log === nothing && return String[]
-    undone = Set(values(exact_reverts(root, since)))
+    undone = reverted(root, since)
     mine = String[]
     for entry in split(log, '\x1e'; keepempty = false)
         parts = split(strip(entry, ['\n']), '\x1f')
@@ -846,15 +792,15 @@ These are the run's own edits: what close undoes when it has to put the document
 function guarded_commits(root::AbstractString, since::AbstractString)
     (isempty(since) || since == "unknown") && return String[]
     # A fix commit, not a revert: close undoes the run's EDITS, and undoing a revert would put back a
-    # fix a verifier rejected (found in review, 2026-09-23). Nor one an exact revert already undid.
+    # fix a verifier rejected (found in review, 2026-09-23). Nor one a revert already undid.
     log = git_out(root, "log", "--format=%H%x1f%b%x1e", "$since..HEAD")
     log === nothing && return String[]
-    reverts = exact_reverts(root, since)
+    undone = reverted(root, since)
     out = String[]
     for entry in split(log, '\x1e'; keepempty = false)
         parts = split(strip(entry, ['\n']), '\x1f')
         sha = String(parts[1]); lines = strip.(split(length(parts) >= 2 ? String(parts[2]) : "", '\n'))
-        GUARD_TRAILER in lines && !haskey(reverts, sha) && !(sha in values(reverts)) &&
+        GUARD_TRAILER in lines && !(sha in undone) &&
             !any(l -> startswith(l, REVERT_TRAILER), lines) && push!(out, sha)
     end
     return out

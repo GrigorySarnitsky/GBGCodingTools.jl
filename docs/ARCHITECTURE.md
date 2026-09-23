@@ -162,16 +162,18 @@ returns documentation only when all of these hold, and code otherwise:
    rule statement be committed with the policy files it feeds (§4.3 step 2);
 1. the path is on the documentation list;
 2. for `.jl`: both versions parse, and they are byte for byte the same OUTSIDE what the fixer may change — apart
-   from blank lines and trailing spaces outside strings. What it may change is exactly: the text of a docstring the
-   parser attached, at top level or directly in a module, on a function, struct, abstract or primitive type, macro,
-   module, `const`, a bare name that is not its block's last statement, or one of Base's annotations (`@inline`, …)
-   or `@kwdef`/`@enum` around one; a field docstring directly in such a struct's body; and comments. In a Literate
-   example a run of prose comment lines may be rewritten but not moved, split or joined to code, and a mark, its
-   `#!` negation, a `#-`/`#+` separator or a `#=` block is code (clause 4 lives here). A file that reads its own
-   line numbers (`@__LINE__`, `__source__`) keeps them. [Inverted 2026-09-23: three review passes found thirty-five
-   ways past a guard that recognised CODE and removed the rest; this one recognises the few regions that may change
-   and compares everything else exactly. Measured on GBGPeriodicFields: 231 synthetic prose edits refused 0 times,
-   and its 51 real fix commits refused only where mathematics changed.]
+   from blank lines and trailing spaces outside strings — with the same statement structure (which strings are loose
+   statements and which docstrings are attached). What it may change is exactly: the text of a docstring the parser
+   attached at top level or directly in a module; a field docstring directly in a top-level struct's body; and
+   comments, a block comment keeping its delimiters. A docstring may be ADDED or REMOVED only on a function, struct,
+   abstract or primitive type or macro that is not its block's last statement; on a bare name, a module, a `const`,
+   or anything under a macro (`@kwdef`, `@enum`, Base's annotations) it may only be reworded, since its presence
+   changes what loads. In a Literate example a run of Markdown comment lines — `#` then a space or the line's end,
+   never `##` — may be rewritten but not moved, split or joined to code, and a mark, its `#!` negation, a separator
+   or a `#=` block is code (clause 4 lives here). A file that reads its own line numbers keeps them. [Inverted
+   2026-09-23: four review passes found ways past every guard that recognised CODE; this one recognises the few
+   regions that may change. Measured on GBGPeriodicFields: 231 reworded docstrings and 530 added comments refused 0
+   times; its 51 real fix commits refused only where mathematics changed.]
 3. in GBGCodingTools only, differences confined to plain string literals given to the keywords `statement` or `why` of
    a `Rule(…)` call are documentation — any number of them, in any number of files — with the parsed trees identical at
    every other node; a moved, added or removed argument, a changed id, check, example or parameter, or an interpolated
@@ -210,11 +212,13 @@ run the owner asked for, and then fixes and verifies without asking again [R1, R
    commits all of them on the current branch if every classified path came back documentation, else exits 1 and commits
    nothing; the session then pushes. This is the one verb that commits, because the guard must run before a commit
    exists, replacing the old rule that no verb commits [a code edit committed before the guard ran would be pushed].
-3. **Formula and rule-statement edits.** An edit that changes mathematics — inside a math span, in any spelling: a
-   double-backtick span, a fenced math block, a doubled-dollar display or a single-dollar span, read both by Julia's
-   Markdown parser and by pattern; a symbol, a number or a sign changed, a formula added, removed or reordered;
-   respelling an inline code span as a math span with the same text, or back, and years in citations do not count — is
-   **never made automatically**: the change guard refuses it (clause 6) and
+3. **Formula and rule-statement edits.** An edit that changes mathematics is **never made automatically**. Mathematics
+   is what Documenter renders as a formula: whatever Julia's Markdown parser reads as one — a double-backtick span, a
+   fenced math block, a dollar-sign span or display — in a page, a docstring or a Literate comment, and nothing else
+   [ruled 2026-09-23: the rule protects rendered formulas, not every spelling of one]. A symbol, number or sign
+   changed, a formula added, removed, reordered or moved to another docstring are all changes; respelling an inline
+   code span as a math span with the same text, in the same place, is not. A formula the parser reads but that does
+   not render — a broken brace — is still mathematics: fixing it is the owner's: the change guard refuses it (clause 6) and
    the finding becomes a question for the owner [ruled 2026-09-21]. The rule considered before that, and declined, was
    an automatic edit backed by a quote from the documented method's body plus a numeric check the program ran; the
    reason it was declined is that both halves make the CODE the oracle, so code that is itself wrong certifies prose

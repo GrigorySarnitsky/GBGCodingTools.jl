@@ -110,7 +110,7 @@ with(run::Model.Run; kw...) = Model.Run(; id = run.id, instrument = run.instrume
     agent_launches = run.agent_launches, tokens = run.tokens, stop = run.stop, readers = run.readers,
     passes = run.passes, model = run.model, sequential = run.sequential, scope = run.scope,
     base = run.base, driver = run.driver, already_failing = run.already_failing, dropped = run.dropped,
-    kw...)
+    unreverted = run.unreverted, kw...)
 
 """
     next(root; io = stdout) -> Int
@@ -553,6 +553,7 @@ finding open, with `NOT_FIXED` recorded so the report shows it was asked.
 function grade(root::AbstractString, run::Model.Run, stage::Symbol, verdicts; io::IO = stdout)
     fixes = copy(run.fixes)
     questions = copy(run.questions)
+    unreverted = copy(run.unreverted)
     allowed = stage === :verify ? BLIND_VERDICTS : DIFF_VERDICTS
     for f in Runs.workable(run)
         key = string(stage, "-", f.id)
@@ -569,9 +570,11 @@ function grade(root::AbstractString, run::Model.Run, stage::Symbol, verdicts; io
             push!(fixes, Model.DocFix(finding = f.id, pass = run.passes,
                                       commit = isempty(commits) ? "" : first(commits), blind = verdict))
             if verdict === Model.Verdict.HIDES_CODE_DEFECT
-                isempty(commits) || Runs.revert!(root, first(commits))
+                failed = [c for c in commits if !Runs.revert!(root, c; why = "the verifier believes the code is wrong")]
+                append!(unreverted, failed)
                 push!(questions, code_question(f, run))
-                println(io, "run: ", f.id, " — the fix is reverted and a question stands for the owner")
+                println(io, "run: ", f.id, isempty(failed) ? " — the fix is reverted and a question stands for the owner" :
+                            " — the fix could NOT be reverted (a later fix conflicts), so the edit stays; a question stands for the owner and the run cannot end as evaluated")
             end
         else
             answered || continue                             # the diff stage asked only about the fixed
@@ -582,12 +585,14 @@ function grade(root::AbstractString, run::Model.Run, stage::Symbol, verdicts; io
                                     formula_edit = old.formula_edit, blind = old.blind, with_diff = verdict,
                                     agreeing_code = old.agreeing_code)
             if verdict === Model.Verdict.MADE_WORSE && !isempty(commits)
-                Runs.revert!(root, first(commits))
-                println(io, "run: ", f.id, " — the fix made things worse and is reverted")
+                failed = [c for c in commits if !Runs.revert!(root, c)]
+                append!(unreverted, failed)
+                println(io, "run: ", f.id, isempty(failed) ? " — the fix made things worse and is reverted" :
+                            " — the fix made things worse and could NOT be reverted (a later fix conflicts); the edit stays and the run cannot end as evaluated")
             end
         end
     end
-    return with(run; fixes = fixes, questions = questions)
+    return with(run; fixes = fixes, questions = questions, unreverted = unreverted)
 end
 
 # Whether a verifier's quote is in the current text of a file the finding names.
@@ -656,12 +661,22 @@ function close_run(root::AbstractString; io::IO = stdout)
         (println(io, "run: something is staged; unstage it first (`git restore --staged .`), then close"); return 2)
     Runs.stage_of(root, id) === :close ||
         (println(io, "run: ", id, " is at ", Runs.stage_of(root, id), ", not close"); return 2)
+    # Nor anything changed and uncommitted: a revert refuses over it, and a change nobody committed is
+    # one the close cannot classify (found in review, 2026-09-23).
+    dirty = [p for p in Runs.changed_tracked(root) if !Runs.own_record(p)]
+    isempty(dirty) ||
+        (println(io, "run: tracked files are changed and not committed: ", join(dirty, ", "), "; commit or discard them, then close"); return 2)
     run = Runs.load(root, id)
     cfg = ConfigIO.read_config(root)
 
-    undone, red = restore_green(root, run, cfg; io)
+    undone, red, failed = restore_green(root, run, cfg; io)
     unguarded = Runs.unguarded_code(root, run.first_commit)
     stop = isempty(unguarded) ? run.stop : Model.Stop.CANNOT_EVALUATE
+    if failed || !isempty(run.unreverted)
+        stop = Model.Stop.CANNOT_EVALUATE
+        isempty(run.unreverted) || println(io, "run: ", length(run.unreverted), " rejected fix(es) could not be reverted and are still in the tree: ",
+                                           join(first.(run.unreverted, 8), ", "), ". The run cannot be evaluated; the owner decides.")
+    end
     isempty(undone) || println(io, "run: ", length(undone), " fix(es) were undone to get the build back; the run cannot be evaluated on them.")
     if !isempty(unguarded)
         println(io, "run: code changed outside `gbg docfix commit` since this run started:")
@@ -782,7 +797,7 @@ function abandon(root::AbstractString; io::IO = stdout)
 end
 
 """
-    restore_green(root, run, cfg; io = stdout) -> Vector{String}
+    restore_green(root, run, cfg; io = stdout) -> (undone, red, failed)
 
 Puts the documentation back where the run left the build red. The arguments are:
 
@@ -791,7 +806,8 @@ Puts the documentation back where the run left the build red. The arguments are:
 - `cfg` — the package's config.
 - `io` — where the restoring is described.
 
-Returns the commits it reverted and whether the build is still red after the reverting.
+Returns the commits it reverted, whether the build is still red after the reverting, and whether a
+revert failed — which is never read as the build having been red before the run.
 
 The last fix first, because the last fix is what most often broke it and reverting one keeps the rest;
 if the build is still red after that, every guarded commit of the run goes, because a run that cannot
@@ -800,27 +816,32 @@ reason older than the run is not this run's to repair: where reverting everythin
 edits are restored and the owner is told the build was already broken.
 """
 function restore_green(root::AbstractString, run::Model.Run, cfg::Model.Config; io::IO = stdout)
-    Site.build(root, cfg; io = devnull) === nothing || return (String[], false)
+    Site.build(root, cfg; io = devnull) === nothing || return (String[], false, false)
     mine = Runs.guarded_commits(root, run.first_commit)
     if isempty(mine)
         println(io, "run: the docs build is red and this run committed nothing, so it was red before the run; the owner reads the build")
-        return (String[], true)
+        return (String[], true, false)
     end
     println(io, "run: the docs build is red at close; the documentation is going back.")
-    Runs.revert!(root, first(mine)) || return (String[], true)
+    # A revert that does not apply is a FAILURE, never evidence that the build was red before the run:
+    # reading it that way left a breaking fix on the branch (found in review, 2026-09-23).
+    if !Runs.revert!(root, first(mine); why = "the docs build was red at close")
+        println(io, "run: the last fix, ", first(first(mine), 8), ", could not be reverted; the build is still red and the run cannot be evaluated")
+        return (String[], true, true)
+    end
     if Site.build(root, cfg; io = devnull) !== nothing
         println(io, "run: reverted the last fix, ", first(first(mine), 8), ", and the build passes again")
-        return ([first(mine)], false)
+        return ([first(mine)], false, false)
     end
-    undone = [first(mine)]
+    undone = [first(mine)]; failed = false
     for sha in mine[2:end]
-        Runs.revert!(root, sha) && push!(undone, sha)
+        Runs.revert!(root, sha; why = "the docs build was red at close") ? push!(undone, sha) : (failed = true)
     end
     still = Site.build(root, cfg; io = devnull) === nothing
-    println(io, still ?
-        "run: still red with every fix of this run undone, so the build was broken before it; the owner reads the build" :
-        "run: every fix of this run is undone, $(length(undone)) commit(s), and the build passes again")
-    return (undone, still)
+    println(io, failed ? "run: some fixes of this run could not be reverted; the run cannot be evaluated" :
+            still ? "run: still red with every fix of this run undone, so the build was broken before it; the owner reads the build" :
+            "run: every fix of this run is undone, $(length(undone)) commit(s), and the build passes again")
+    return (undone, still, failed)
 end
 
 "The heading of the work queue's section the end-of-turn hook does not count."

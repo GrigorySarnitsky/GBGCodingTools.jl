@@ -1694,3 +1694,36 @@ end
         @test G.Docfix.commit(root, "fix"; io = devnull) == 0
     end
 end
+
+@testset "a revert that cannot apply is reported, and the run cannot end as evaluated" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        idx = joinpath(root, "docs", "src", "index.md")
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        all_clean(root, id; except = [HOME_READER])
+        G.Run.collect(root; io = devnull)
+        fid = only(RUNS.load(root, id).findings).id
+        G.Run.next(root; io = devnull)                                  # → fix
+        fixed_as(root, fid, "The grid is a lattice.")
+        # a later edit to the same line, outside any finding, so the revert of the fix conflicts
+        write(idx, replace(read(idx, String), "The grid is a lattice." => "The grid is a periodic lattice."))
+        gg("add", "docs/src/index.md"); gg("commit", "-q", "-m", "later\n\n" * RUNS.GUARD_TRAILER * "\n" * RUNS.FINDING_TRAILER * "OTHER")
+        G.Run.next(root; io = devnull)                                  # → verify
+        verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a periodic lattice.")
+        G.Run.collect(root; io = devnull)
+        G.Run.next(root; io = devnull)                                  # → diff
+        verifier_said(root, id, "diff", fid, "MADE_WORSE"; quote_ = "The grid is a periodic lattice.")
+        out = IOBuffer(); G.Run.collect(root; io = out)
+        @test occursin("could NOT be reverted", String(take!(out)))
+        @test !isempty(RUNS.load(root, id).unreverted)
+        # a dirty tree refuses the close outright
+        @test to_close(root, id) === :close
+        write(idx, read(idx, String) * "\nstray\n")
+        @test G.Run.close_run(root; io = devnull) == 2
+        gg("checkout", "--", "docs/src/index.md")
+        @test G.Run.close_run(root; io = devnull) == 2                   # CANNOT_EVALUATE
+        record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
+        @test record["stop"] == "CANNOT_EVALUATE" && !isempty(record["unreverted"])
+    end
+end

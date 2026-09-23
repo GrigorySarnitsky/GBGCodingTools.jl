@@ -757,6 +757,9 @@ One execution of one instrument on one package, stored beside its report. The fi
 
 - `dropped` — how many findings the owner's stop threw away, `0` for every other run.
 
+- `unreverted` — the fix commits a verdict said to revert and git could not, because a later fix
+  conflicts; each leaves a rejected edit in the tree, and the run cannot end as evaluated.
+
 That last count is what keeps an abandoned record honest. Stopping a run removes its open findings
 from the list — what a verdict had closed stays — and leaves its launch count alone, and those two read
 together say that every reader wrote its file and none of them found anything — of a run that found a
@@ -789,6 +792,7 @@ Base.@kwdef struct Run
     driver::String = ""
     already_failing::Vector{Symbol} = Symbol[]
     dropped::Int = 0
+    unreverted::Vector{String} = String[]
 end
 
 end # module Model

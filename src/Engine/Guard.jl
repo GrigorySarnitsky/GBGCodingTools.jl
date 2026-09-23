@@ -49,36 +49,6 @@ end
 
 const LITERATE_MARKS = ("#src", "#md", "#jl", "#nb")
 
-"""
-    math_spans(text) -> Vector{String}
-
-Every mathematical expression a text spells, found by PATTERN, in order and with repetition: a
-double-backtick span (the spelling the rulebook requires), a fenced math block, a display between
-doubled dollar signs, a span between single dollar signs, and a bracketed display or inline span in the
-LaTeX spelling. The argument is `text`, a page or ONE docstring's value — never a whole Julia file,
-where a dollar sign in one error message pairs with the next and every docstring between reads as a
-formula (a third of the prose fixes of [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)
-were refused that way). Returns the expressions,
-whitespace flattened so that a re-wrapped line is the same expression.
-
-This is half of what clause 6 reads; the other half is what Julia's Markdown parser — the one
-Documenter uses — reads as mathematics. A change either half sees is refused.
-"""
-function math_spans(text::AbstractString)
-    t = String(text)
-    out = String[]
-    flat(x) = strip(replace(x, r"\s+" => " "))
-    rx = r"^[ \t>]*(?:(?:[-*+]|\d+[.)])[ \t]+)?(```+|~~~+)[ \t]*math[ \t]*\n(.*?)^[ \t>]*\1[ \t]*$"ms
-    for m in eachmatch(rx, t); push!(out, flat(m.captures[2])); end
-    t = replace(t, rx => "")
-    for r in (r"\$\$(.+?)\$\$"s, r"(?<!`)``(?!`)(.+?)(?<!`)``(?!`)"s, r"\\\[(.+?)\\\]"s, r"\\\((.+?)\\\)"s,
-              r"(?<![\$\\])\$([^\$]+?)\$(?!\$)"s)
-        for m in eachmatch(r, t); push!(out, flat(m.captures[1])); end
-        t = replace(t, r => "")
-    end
-    return out
-end
-
 # What Julia's Markdown parser reads in one text, in document order: every formula, and the sequence of
 # inline spans — code or mathematics — with their text, which is what a respelling is judged on.
 function parsed_math(text::AbstractString)
@@ -93,11 +63,6 @@ function parsed_math(text::AbstractString)
     end
     return math, spans
 end
-
-# The same inline sequence found by pattern.
-pattern_spans(text) = [(startswith(m.match, "``") || startswith(m.match, "\$") ? :math : :code,
-                        strip(replace(something(m.captures[1], m.captures[2], m.captures[3], m.captures[4]), r"\s+" => " ")))
-                       for m in eachmatch(r"(?<!`)``(?!`)(.+?)(?<!`)``(?!`)|(?<!`)`(?!`)([^`]+?)(?<!`)`(?!`)|\$\$(.+?)\$\$|(?<![\$\\])\$([^\$]+?)\$(?!\$)"s, String(text))]
 
 # Every node of a parsed Markdown tree, depth first, in document order.
 function md_walk(f, x)
@@ -140,22 +105,20 @@ function math_changed(before::AbstractString, after::AbstractString; jl::Bool = 
 end
 
 function math_diff_texts(tb::Vector{String}, ta::Vector{String})
-    pb = [parsed_math(t) for t in tb]; pa = [parsed_math(t) for t in ta]
-    mb = reduce(vcat, first.(pb); init = String[]); ma = reduce(vcat, first.(pa); init = String[])
-    qb = reduce(vcat, math_spans.(tb); init = String[]); qa = reduce(vcat, math_spans.(ta); init = String[])
-    mb == ma && qb == qa && return String[]
-    # a respelling: the same inline texts in the same order, kinds flipped, and nothing else
-    sb = reduce(vcat, last.(pb); init = Tuple{Symbol,String}[]); sa = reduce(vcat, last.(pa); init = Tuple{Symbol,String}[])
-    rb = reduce(vcat, pattern_spans.(tb); init = Tuple{Symbol,String}[]); ra = reduce(vcat, pattern_spans.(ta); init = Tuple{Symbol,String}[])
-    respelled = last.(sb) == last.(sa) && last.(rb) == last.(ra) &&
-                [m for (k, m) in sb if k === :math] != [m for (k, m) in sa if k === :math] &&
-                multiset_minus(mb, [m for (k, m) in sb if k === :math]) == multiset_minus(ma, [m for (k, m) in sa if k === :math])
-    respelled && return String[]
+    # text by text where the texts correspond — the same docstrings in the same order — so a formula
+    # moved from one function's docstring to another's is a change; pooled where docstrings came or went
+    pairs = length(tb) == length(ta) ? collect(zip(tb, ta)) : [(join(tb, "\n\n"), join(ta, "\n\n"))]
     out = String[]
-    for (was, now) in ((mb, ma), (qb, qa))
-        was == now && continue
-        d = vcat(multiset_minus(now, was), multiset_minus(was, now))
-        append!(out, isempty(d) ? now : d)
+    for (b, a) in pairs
+        (mb, sb) = parsed_math(b); (ma, sa) = parsed_math(a)
+        mb == ma && continue
+        # a respelling: the same inline texts in the same order, kinds flipped, displays unchanged
+        inline_math(sq) = [t for (k, t) in sq if k === :math]
+        respelled = last.(sb) == last.(sa) &&
+                    multiset_minus(mb, inline_math(sb)) == multiset_minus(ma, inline_math(sa))
+        respelled && continue
+        d = vcat(multiset_minus(ma, mb), multiset_minus(mb, ma))
+        append!(out, isempty(d) ? ma : d)
     end
     return unique(String.(out))
 end
@@ -312,37 +275,59 @@ function regions(src::AbstractString; literate::Bool = false, rule_prose::Bool =
     s = String(src)
     tree = try JS.parseall(JS.SyntaxNode, s; filename = "regions.jl") catch; return nothing end
     any_error(tree) && return nothing
-    cut = UnitRange{Int}[]; texts = String[]
-    walk_regions!(cut, texts, s, tree, :top, false; rule_prose)
+    cut = UnitRange{Int}[]; texts = String[]; sig = String[]
+    walk_regions!(cut, texts, sig, s, tree, :top, false; rule_prose)
     toks = collect(JS.tokenize(s))
-    instr = falses(ncodeunits(s))                          # bytes inside a string literal's text
+    # bytes whose whitespace is part of a value: string and command text, a character literal, and a
+    # name written `var"…"` — whitespace there is never dropped
+    instr = falses(ncodeunits(s))
     for t in toks
-        JS.kind(t) in (JS.K"String", JS.K"CmdString") || continue
-        r = Int(first(t.range)):Int(last(t.range)); isempty(r) || (instr[r] .= true)
+        k = JS.kind(t)
+        k in (JS.K"Whitespace", JS.K"NewlineWs", JS.K"Comment") && continue
+        r = Int(first(t.range)):Int(last(t.range)); isempty(r) && continue
+        (k in (JS.K"String", JS.K"CmdString", JS.K"Char") || any(isspace, sub(s, r))) && (instr[r] .= true)
     end
     comments = [(Int(first(t.range)):Int(last(t.range))) for t in toks if JS.kind(t) === JS.K"Comment"]
     if literate
         literate_comments!(cut, texts, s, comments)
+        push!(texts, literate_markdown(s))
     else
         for r in comments
-            push!(cut, r)
+            # a block comment keeps its delimiters, so deleting one cannot fuse the tokens either side
+            # (`[1#= =#0]` is two elements, `[10]` one); its text may change
+            startswith(sub(s, r), "#=") ? push!(cut, (first(r) + 2):(last(r) - 2)) : push!(cut, r)
         end
     end
     lines_matter = occursin("@__LINE__", s) || occursin("__source__", s)
-    return (outer = assemble(s, cut, instr; keep_blank = literate || lines_matter, keep_lines = lines_matter), texts = texts)
+    outer = assemble(s, cut, instr; keep_blank = literate || lines_matter, keep_lines = lines_matter)
+    # the statement structure goes with the outer text: which strings are loose statements and which
+    # docstrings are attached, so that no edit — a blank line removed, a comment moved — attaches a
+    # loose string to what follows it or detaches a docstring from it
+    return (outer = outer * "\0" * join(sig, ","), texts = texts)
 end
 
 any_error(node) = JS.kind(node) === JS.K"error" || any(any_error, something(JS.children(node), ()))
 brange(n) = Int(first(JS.byte_range(n))):Int(last(JS.byte_range(n)))
 
-function walk_regions!(cut, texts, s, n, level::Symbol, last_stmt::Bool; rule_prose::Bool)
+function walk_regions!(cut, texts, sig, s, n, level::Symbol, last_stmt::Bool; rule_prose::Bool)
     k = JS.kind(n); cs = something(JS.children(n), ())
-    if k === JS.K"doc" && level === :top && length(cs) == 2 && plain(cs[1]) && attachable(cs[2], last_stmt)
-        push!(cut, first(brange(cs[1])):(first(brange(cs[2])) - 1))    # the docstring and the gap after it
-        push!(texts, value(s, cs[1]))
-        walk_regions!(cut, texts, s, cs[2], :top, last_stmt; rule_prose)
-        return
+    if k === JS.K"doc" && level === :top && length(cs) == 2 && plain(cs[1])
+        how = attachable(cs[2], last_stmt)
+        if how === :whole
+            # added, removed or reworded freely: removing it leaves the same definition
+            push!(cut, first(brange(cs[1])):(first(brange(cs[2])) - 1)); push!(texts, value(s, cs[1]))
+            walk_regions!(cut, texts, sig, s, cs[2], :top, last_stmt; rule_prose)
+            return
+        elseif how === :text
+            # reworded only: its presence changes what loads (a bare name evaluated, a baremodule's
+            # imports, a package's own `@enum`), so the docstring stays and only its text may change
+            r = brange(cs[1]); d = startswith(sub(s, r), "\"\"\"") ? 3 : 1
+            push!(cut, (first(r) + d):(last(r) - d)); push!(texts, value(s, cs[1])); push!(sig, "doc-text")
+            walk_regions!(cut, texts, sig, s, cs[2], :top, last_stmt; rule_prose)
+            return
+        end
     end
+    k === JS.K"doc" && push!(sig, "doc")
     if level === :top && (k === JS.K"struct" || (k === JS.K"macrocall" && kwdef(n)))
         st = k === JS.K"struct" ? n : something(findfirst(c -> JS.kind(c) === JS.K"struct", cs) |> i -> i === nothing ? nothing : cs[i], nothing)
         if st !== nothing
@@ -358,28 +343,39 @@ function walk_regions!(cut, texts, s, n, level::Symbol, last_stmt::Bool; rule_pr
         end
         return
     end
-    if rule_prose && k === JS.K"call" && !isempty(cs) && is_rule_callee(cs[1])
-        for c in cs[2:end]
-            for kwn in (JS.kind(c) === JS.K"parameters" ? something(JS.children(c), ()) : (c,))
-                kc = something(JS.children(kwn), ())
-                if JS.kind(kwn) === JS.K"=" && length(kc) == 2 && JS.kind(kc[1]) === JS.K"Identifier" &&
-                   strip(String(JS.sourcetext(kc[1]))) in ("statement", "why") && plain(kc[2])
-                    r = brange(kc[2]); push!(cut, (first(r) + 1):(last(r) - 1)); push!(texts, value(s, kc[2]))
+    # clause 3: a rule's prose is the `statement` and `why` of a Rule(…) that IS a top-level constant's
+    # value — never a Rule(…) nested in code that may read its fields
+    if rule_prose && level === :top && k in (JS.K"const", JS.K"=")
+        asg = k === JS.K"const" ? (isempty(cs) ? nothing : cs[1]) : n
+        ac = asg === nothing ? () : something(JS.children(asg), ())
+        if asg !== nothing && JS.kind(asg) === JS.K"=" && length(ac) == 2 && JS.kind(ac[2]) === JS.K"call" &&
+           !isempty(something(JS.children(ac[2]), ())) && is_rule_callee(JS.children(ac[2])[1])
+            for c in JS.children(ac[2])[2:end]
+                for kwn in (JS.kind(c) === JS.K"parameters" ? something(JS.children(c), ()) : (c,))
+                    kc = something(JS.children(kwn), ())
+                    if JS.kind(kwn) === JS.K"=" && length(kc) == 2 && JS.kind(kc[1]) === JS.K"Identifier" &&
+                       strip(String(JS.sourcetext(kc[1]))) in ("statement", "why") && plain(kc[2])
+                        r = brange(kc[2]); push!(cut, (first(r) + 1):(last(r) - 1)); push!(texts, value(s, kc[2]))
+                    end
                 end
             end
         end
     end
+    stmt_level = k === JS.K"toplevel" || k === JS.K"block"
     inner = k === JS.K"toplevel" || (k === JS.K"block" && level === :module)
     for (i, c) in enumerate(cs)
-        # a function's SIGNATURE is not a call: `Rule(; statement = "…") = …` defines a method
-        sig = (k === JS.K"function" || k === JS.K"macro") && i == 1
+        stmt_level && JS.kind(c) === JS.K"string" && push!(sig, "string")
         next = inner ? :top : (k === JS.K"module" ? :module : :other)
-        walk_regions!(cut, texts, s, c, next, inner && i == length(cs); rule_prose = rule_prose && !sig)
+        walk_regions!(cut, texts, sig, s, c, next, inner && i == length(cs); rule_prose)
     end
 end
 
 plain(n) = JS.kind(n) === JS.K"string" && all(c -> JS.kind(c) === JS.K"String", something(JS.children(n), ()))
-value(s, n) = (v = try Meta.parse(s[brange(n)]) catch; nothing end; v isa AbstractString ? String(v) : "")
+value(s, n) = (v = try Meta.parse(sub(s, brange(n))) catch; nothing end; v isa AbstractString ? String(v) : "")
+
+# A byte range of `s` as a string: the tokenizer's ranges end on a byte, which in a multi-byte character
+# is not a valid string index.
+sub(s, r) = String(codeunits(s)[max(first(r), 1):min(last(r), ncodeunits(s))])
 kwdef(n) = (cs = something(JS.children(n), ()); !isempty(cs) && macro_name(cs[1]) === Symbol("@kwdef"))
 function macro_name(n)
     t = strip(String(JS.sourcetext(n)))
@@ -388,19 +384,27 @@ function macro_name(n)
 end
 is_rule_callee(n) = (t = strip(String(JS.sourcetext(n))); t == "Rule" || endswith(t, ".Rule"))
 
-# A docstring on this target may be edited, added or removed without changing what the file does.
+# What may be done to a docstring on this target: `:whole` — added, removed or reworded, since removing
+# it leaves the same definition evaluated; `:text` — reworded only, since its presence changes what
+# loads; `:none` — nothing. Plain definitions are `:whole` unless they are the block's last statement,
+# whose value the docstring would change. A bare name, a module, a `const`, and anything under a macro
+# — `@kwdef`, `@enum`, Base's annotations — are `:text` at most: a docstring on a bare name evaluates
+# it before it may exist, one on a `baremodule` imports `@doc` into it, and a package may define its
+# own `@enum` or `@inline` (all found in review, 2026-09-23).
 function attachable(t, last_stmt::Bool)
     k = JS.kind(t)
-    k in (JS.K"function", JS.K"struct", JS.K"abstract", JS.K"primitive", JS.K"macro", JS.K"module", JS.K"const") &&
-        return !(k === JS.K"const" && last_stmt)
-    k === JS.K"Identifier" && return !last_stmt
+    k in (JS.K"function", JS.K"struct", JS.K"abstract", JS.K"primitive", JS.K"macro") &&
+        return last_stmt ? :text : :whole
+    k in (JS.K"module", JS.K"const") && return :text
+    k === JS.K"Identifier" && return last_stmt ? :none : :text
     if k === JS.K"macrocall"
-        cs = something(JS.children(t), ()); isempty(cs) && return false
+        cs = something(JS.children(t), ()); isempty(cs) && return :none
         name = macro_name(cs[1])
-        name in (Symbol("@kwdef"), Symbol("@enum")) && return true
-        name in ANNOTATING && return JS.kind(cs[end]) in (JS.K"function", JS.K"macrocall") && attachable(cs[end], true)
+        name in (Symbol("@kwdef"), Symbol("@enum")) && return :text
+        name in ANNOTATING && JS.kind(cs[end]) in (JS.K"function", JS.K"macrocall") &&
+            attachable(cs[end], true) !== :none && return :text
     end
-    return false
+    return :none
 end
 
 # Base's macros that only ANNOTATE a function definition. A named list: a package's own macro may
@@ -414,15 +418,21 @@ const ANNOTATING = Symbol.(["@inline", "@noinline", "@generated", "@propagate_in
 # stay in the outer text, so a change to one is code.
 function literate_comments!(cut, texts, s, comments)
     run = UnitRange{Int}[]
+    # the run is cut after its first `#`, which stays: the outer text keeps one line where prose stands,
+    # so prose cannot replace a blank line, or a blank line prose, without the outer text changing
     flush!() = (isempty(run) && return;
-                push!(cut, first(run[1]):last(run[end])); push!(texts, join((strip_hash(s[r]) for r in run), '\n'));
+                push!(cut, (first(run[1]) + 1):last(run[end])); push!(texts, join((strip_hash(sub(s, r)) for r in run), '\n'));
                 empty!(run))
     for r in comments
-        c = s[r]
+        c = sub(s, r)
         whole = line_only(s, r)
-        mark = startswith(c, "#=") || occursin(r"^#\s*[-+]", c) || startswith(c, "#!") ||
+        # Literate's own test for a Markdown line: `#` then a space or the end of the line, never `##`
+        prose = occursin(r"^#(\s|$)", c) && !startswith(c, "##")
+        mark = !prose || startswith(c, "#=") || occursin(r"^#\s*[-+]", c) ||
                any(m -> occursin(m, c), LITERATE_MARKS)
-        if mark
+        if mark && whole
+            flush!()
+        elseif mark
             flush!()
         elseif whole
             if !isempty(run) && only_space(s, (last(run[end]) + 1):(first(r) - 1))
@@ -438,7 +448,20 @@ function literate_comments!(cut, texts, s, comments)
 end
 
 strip_hash(c) = replace(c, r"^#[ \t]?" => "")
-only_space(s, r) = isempty(r) || all(isspace, s[r])
+
+# The Markdown Literate writes from an example, whole, as far as mathematics and run blocks go: prose
+# lines and `#md` lines with their marks taken off, code as blank lines. A block that spans a mark line
+# is seen here whole, where each half of it was not.
+function literate_markdown(s)
+    out = String[]
+    for l in split(s, '\n')
+        t = replace(l, r"^[ \t]*#md[ \t]?" => "")
+        m = match(r"^[ \t]*#(?:[ \t](.*))?$", t)
+        push!(out, m !== nothing && !startswith(lstrip(t), "##") ? something(m.captures[1], "") : "")
+    end
+    return join(out, '\n')
+end
+only_space(s, r) = isempty(r) || all(isspace, sub(s, r))
 function line_only(s, r)
     a = first(r); while a > 1 && s[prevind(s, a)] in (' ', '\t'); a = prevind(s, a); end
     return a == 1 || s[prevind(s, a)] == '\n'

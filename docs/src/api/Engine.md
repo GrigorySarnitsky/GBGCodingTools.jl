@@ -20,7 +20,6 @@ GBGCodingTools.Engine.Guard.classify
 GBGCodingTools.Engine.Guard.regions
 GBGCodingTools.Engine.Guard.texts_of
 GBGCodingTools.Engine.Guard.fenced_kept
-GBGCodingTools.Engine.Guard.math_spans
 GBGCodingTools.Engine.Guard.math_changed
 GBGCodingTools.Engine.Guard.on_documentation_list
 ```

@@ -162,6 +162,28 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         @test !g("\"\"\"doc\"\"\"\nf() = 1\nconst L = @__LINE__\n", "\"\"\"doc\nmore\"\"\"\nf() = 1\nconst L = @__LINE__\n")
     end
 
+    # The fourth review pass, 2026-09-23: each changed what runs and was called documentation.
+    @testset "clause 2 — attaching, detaching, and what a docstring's presence does" begin
+        g(b, a) = doc("src/M.jl", b, a)
+        @test !g("\"note\"\n\nprintln(\"ran\")\n", "\"note\"\nprintln(\"ran\")\n")          # attached by a blank line
+        @test !g("\"note\"\n# c\nprintln(\"ran\")\n", "\"note\" # c\nprintln(\"ran\")\n")      # or by moving a comment
+        @test !g("module M\n\"The fast path.\"\nfast\nf() = 1\nend\n", "module M\nfast\nf() = 1\nend\n")   # a bare name's docstring removed
+        @test g("module M\n\"The fast path.\"\nfast\nf() = 1\nend\n", "module M\n\"The quick path.\"\nfast\nf() = 1\nend\n")  # reworded: fine
+        @test !g("baremodule B\nend\n", "\"The bare core.\"\nbaremodule B\nend\n")
+        @test !g("@enum Colour red blue\n", "\"Colours.\"\n@enum Colour red blue\n")
+        @test g("\"Colours.\"\n@enum Colour red blue\n", "\"The colours.\"\n@enum Colour red blue\n")
+        @test !g("g() = 1\nf(x) = x\n", "g() = 1\n\"The identity.\"\nf(x) = x\n")          # the file's last statement
+        @test g("f(x) = x\ng() = 1\n", "\"The identity.\"\nf(x) = x\ng() = 1\n")            # a docstring added: fine
+        @test g("\"The identity.\"\nf(x) = x\ng() = 1\n", "f(x) = x\ng() = 1\n")            # and removed
+        # tokens either side of a block comment, whitespace in a `var` name
+        @test !g("v = [10]\n", "v = [1#= =#0]\n")
+        @test g("v = [1 #= old =# 0]\n", "v = [1 #= new, longer =# 0]\n")
+        @test !g("var\"a \n\nb\" = 1\n", "var\"a\nb\" = 1\n")
+        # a non-ASCII file: byte ranges end inside characters
+        @test g("\"The α.\"\nf(α) = α\ng() = 1\n", "\"The α, reworded.\"\nf(α) = α\ng() = 1\n")
+        @test !g("\"The α.\"\nf(α) = α\ng() = 1\n", "\"The α.\"\nf(α) = 2α\ng() = 1\n")
+    end
+
     @testset "clause 3 — only the Rule call's own keywords are its prose" begin
         cfg3 = G.Model.Config(package = "GBGCodingTools", tool = :dev)
         r(b, a) = G.Engine.Guard.classify(cfg3, "src/Rules/x.jl", b, a).documentation
@@ -170,6 +192,8 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
                  "R = Rule(id = :a, statement = \"s\", check = t -> report(t; why = \"new\"))\n")
         @test !r("R = Rule(id = :a, check = t -> (statement = \"x\"; occursin(statement, t)))\n",
                  "R = Rule(id = :a, check = t -> (statement = \"y\"; occursin(statement, t)))\n")
+        # a Rule(…) nested in code, whose statement the code reads, is not a rule's prose
+        @test !r("limit() = length(Rule(id = :y, statement = \"abc\").statement)\n", "limit() = length(Rule(id = :y, statement = \"abcd\").statement)\n")
     end
 
     @testset "clause 5 and 6 — what the Markdown parser reads, wherever it stands" begin
@@ -182,6 +206,14 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         @test !md("```julia\ns = \"``\"\n```\n\nThen ``E = mc^2``.\n", "```julia\ns = \"``\"\n```\n\nThen ``E = mc^3``.\n")
         @test !md("`a``b` ``E = mc^2``\n", "`a``b` ``E = mc^3``\n")
         @test !doc("src/M.jl", "const OPEN = \"``\"\n\"The ``k^2`` term.\"\nf() = 1\n", "const OPEN = \"``\"\n\"The ``k^3`` term.\"\nf() = 1\n")
+        # a formula moved from one function's docstring to another's is a change
+        @test !doc("src/M.jl", "\"The energy ``E = m c^2``.\"\nenergy() = 1\n\"The momentum.\"\nmomentum() = 1\ng() = 1\n",
+                               "\"The energy.\"\nenergy() = 1\n\"The momentum ``E = m c^2``.\"\nmomentum() = 1\ng() = 1\n")
+        # swapping a formula's text with a code span's is not a respelling
+        @test !md("The energy is ``E = m c^2``; the code writes `E = m c^3`.\n", "The energy is ``E = m c^3``; the code writes `E = m c^2`.\n")
+        # mathematics is what the parser reads as mathematics: a dollar sign in code prose is not
+        @test doc("src/M.jl", "\"Errors name \\\$x in their text.\"\nf() = error(\"\$(1) and \$(2)\")\ng() = 1\n",
+                              "\"Errors name \\\$x in their message.\"\nf() = error(\"\$(1) and \$(2)\")\ng() = 1\n")
         # respelling a code span as a math span with the same text is the LaTeX rules' own fix, not mathematics
         @test md("The cost is `O(N^2)`.\n", "The cost is ``O(N^2)``.\n")
         @test md("The cost is ``O(N^2)``.\n", "The cost is `O(N^2)`.\n")
@@ -208,6 +240,13 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
     # comment line moved into or out of a code chunk (the review of 2026-09-23).
     @testset "clause 4 — a Literate mark moves what runs" begin
         L(b, a) = doc("examples/x.jl", b, a)
+        # Literate's own test for a Markdown line: `## x` and `#x` are code, and changing one into prose splits a chunk
+        @test !L("for i in 1:2\n    ## print it\n    println(i)\nend\n", "for i in 1:2\n    # print it\n    println(i)\nend\n")
+        @test !L("x = 1\n# prose\ny = 2\n", "x = 1\n\ny = 2\n")                   # prose made a blank line
+        @test !L("f(1,\n\n2)\n", "f(1,\n# prose\n2)\n")                            # a blank line made prose
+        # a run block or a formula spanning a mark line is seen whole
+        @test !L("# ```@example\n# x = 1 + 1\n#md # println(x)\n# ```\ny = 1\n", "# ```@example\n# x = error(\"boom\")\n#md # println(x)\n# ```\ny = 1\n")
+        @test !L("# ```math\n# E = m c^2\n#md # + 0\n# ```\ny = 1\n", "# ```math\n# E = m c^3\n#md # + 0\n# ```\ny = 1\n")
         before = "x = 1      #src\ny = 2\n# a plain comment\n"
         @test L(before, "x = 1      #src\ny = 2\n# a plain comment, reworded\n")
         @test L(before, "x = 1      #src\ny = 2\n# a plain comment,\n# over two lines\n")
