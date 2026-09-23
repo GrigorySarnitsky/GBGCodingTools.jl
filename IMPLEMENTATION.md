@@ -464,6 +464,7 @@ recall and the ledger survive in no form [recall measured nothing after the seed
 | 11 | Should the rules about commits and branches be checked by a program at all, now that they are instructions? | 5 | the three statements and what the end-of-turn hook could see | Give all three the hook check | They stay instructions; nothing holds. |
 | 12 | May a package's old review machinery be deleted now that a real review has run there? | 7 | that package's report and its legacy directories | Yes, once he has read the report | Both machineries stay there; the phase cannot end. |
 | 13 | Should the tool be wired to check itself? | 8 | its own switches and settings | Yes, last, so its defects arrive as ordinary findings | The tool stays unchecked by its own rules; nothing else blocks. |
+| 14 | When a run that carried the previous run's open findings is abandoned before it launched an agent, are those findings dropped too? Today they are: `abandon` drops every open finding and the carry-over reads only the newest record, so a run that read nothing ends the chain (found in review, 2026-09-23). | 5 | an old record with one open finding, a run started and abandoned at `start`, the next run's empty carry | A run that launched nothing has no standing over findings it never looked at: delete its record whole, as when it also had no findings, so the earlier run's leftovers are carried again. | Leftovers reaching a run that is abandoned before launch are lost, and nothing says so. |
 
 ## 9. Risks
 
