@@ -4,6 +4,15 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.14 — 2026-09-23
+
+PATCH. **`RULE.CIT.RESOLVES` no longer reads a `[` inside a math span as a link opening**, the last open item of
+GBGPeriodicFields' request of 2026-09-22. The unwrapper joined hard-wrapped lines until brackets balanced and counted
+brackets it had not masked, so the `[` of a half-open interval written ``[a, b)`` absorbed eighteen lines across two
+paragraphs, up to the next reference's `]`, and a correct DOI was reported as resolving to the wrong title. A blank
+line now ends a logical line, and brackets inside code and math spans do not count. The math-span mask is separate
+from the code-span mask, because the LaTeX rules read their mathematics inside exactly those spans.
+
 ## 2.0.0-rc.13 — 2026-09-23
 
 PATCH. Nothing a consumer must change; `material` is optional and empty by default.
