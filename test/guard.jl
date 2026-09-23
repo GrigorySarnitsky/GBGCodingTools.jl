@@ -171,6 +171,11 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         @test g("module M\n\"The fast path.\"\nfast\nf() = 1\nend\n", "module M\n\"The quick path.\"\nfast\nf() = 1\nend\n")  # reworded: fine
         @test !g("baremodule B\nend\n", "\"The bare core.\"\nbaremodule B\nend\n")
         @test !g("@enum Colour red blue\n", "\"Colours.\"\n@enum Colour red blue\n")
+        # a package's own `@kwdef` may read its field strings; an annotation that calls runs twice
+        @test !g("macro kwdef(e) e end\n@kwdef struct P\n    \"velocity\"\n    u::Int\nend\n", "macro kwdef(e) e end\n@kwdef struct P\n    \"the velocity\"\n    u::Int\nend\n")
+        @test g("Base.@kwdef struct P\n    \"velocity\"\n    u::Int = 1\nend\n", "Base.@kwdef struct P\n    \"the velocity\"\n    u::Int = 1\nend\n")
+        @test !g("function f(x::tick())\n    x\nend\ng() = 1\n", "\"Documented.\"\nfunction f(x::tick())\n    x\nend\ng() = 1\n")
+        @test g("function f(x::Int)\n    x\nend\ng() = 1\n", "\"Documented.\"\nfunction f(x::Int)\n    x\nend\ng() = 1\n")
         @test g("\"Colours.\"\n@enum Colour red blue\n", "\"The colours.\"\n@enum Colour red blue\n")
         @test !g("g() = 1\nf(x) = x\n", "g() = 1\n\"The identity.\"\nf(x) = x\n")          # the file's last statement
         @test g("f(x) = x\ng() = 1\n", "\"The identity.\"\nf(x) = x\ng() = 1\n")            # a docstring added: fine
@@ -244,6 +249,10 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         @test !L("for i in 1:2\n    ## print it\n    println(i)\nend\n", "for i in 1:2\n    # print it\n    println(i)\nend\n")
         @test !L("x = 1\n# prose\ny = 2\n", "x = 1\n\ny = 2\n")                   # prose made a blank line
         @test !L("f(1,\n\n2)\n", "f(1,\n# prose\n2)\n")                            # a blank line made prose
+        # the fifth pass: a trailing negated mark, a tab after `#`, and a prose fence left open
+        @test !L("y = x + 41 # the answer\n", "y = x + 41 # the answer #!md\n")
+        @test !L("for i in 1:2\n    #\tadd it\n    s = i\nend\n", "for i in 1:2\n    # add it\n    s = i\nend\n")
+        @test !L("# Now the answer.\ny = 42\n", "# Now the answer:\n#\n# ````text\ny = 42\n")
         # a run block or a formula spanning a mark line is seen whole
         @test !L("# ```@example\n# x = 1 + 1\n#md # println(x)\n# ```\ny = 1\n", "# ```@example\n# x = error(\"boom\")\n#md # println(x)\n# ```\ny = 1\n")
         @test !L("# ```math\n# E = m c^2\n#md # + 0\n# ```\ny = 1\n", "# ```math\n# E = m c^3\n#md # + 0\n# ```\ny = 1\n")

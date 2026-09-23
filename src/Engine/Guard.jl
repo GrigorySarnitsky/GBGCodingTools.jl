@@ -47,7 +47,7 @@ struct Ruling
     reason::String
 end
 
-const LITERATE_MARKS = ("#src", "#md", "#jl", "#nb")
+const LITERATE_MARKS = ("#src", "#md", "#jl", "#nb", "#!md", "#!jl", "#!nb")
 
 # What Julia's Markdown parser reads in one text, in document order: every formula, and the sequence of
 # inline spans — code or mathematics — with their text, which is what a respelling is judged on.
@@ -276,6 +276,8 @@ function regions(src::AbstractString; literate::Bool = false, rule_prose::Bool =
     tree = try JS.parseall(JS.SyntaxNode, s; filename = "regions.jl") catch; return nothing end
     any_error(tree) && return nothing
     cut = UnitRange{Int}[]; texts = String[]; sig = String[]
+    OWN_MACROS[] = Dict(m => occursin(Regex("\\bmacro\\s+" * String(m)[2:end] * "\\b"), s)
+                        for m in vcat([Symbol("@kwdef"), Symbol("@enum")], ANNOTATING))
     walk_regions!(cut, texts, sig, s, tree, :top, false; rule_prose)
     toks = collect(JS.tokenize(s))
     # bytes whose whitespace is part of a value: string and command text, a character literal, and a
@@ -289,7 +291,7 @@ function regions(src::AbstractString; literate::Bool = false, rule_prose::Bool =
     end
     comments = [(Int(first(t.range)):Int(last(t.range))) for t in toks if JS.kind(t) === JS.K"Comment"]
     if literate
-        literate_comments!(cut, texts, s, comments)
+        literate_comments!(cut, texts, sig, s, comments)
         push!(texts, literate_markdown(s))
     else
         for r in comments
@@ -376,7 +378,29 @@ value(s, n) = (v = try Meta.parse(sub(s, brange(n))) catch; nothing end; v isa A
 # A byte range of `s` as a string: the tokenizer's ranges end on a byte, which in a multi-byte character
 # is not a valid string index.
 sub(s, r) = String(codeunits(s)[max(first(r), 1):min(last(r), ncodeunits(s))])
-kwdef(n) = (cs = something(JS.children(n), ()); !isempty(cs) && macro_name(cs[1]) === Symbol("@kwdef"))
+kwdef(n) = (cs = something(JS.children(n), ()); !isempty(cs) && macro_name(cs[1]) === Symbol("@kwdef") &&
+             !OWN_MACROS[][Symbol("@kwdef")])
+
+# The macros this package trusts by name, and whether the file being read defines its own of that name —
+# a package's `@kwdef` may read its field strings as data, and its `@enum` fail to be documented. Set per
+# file by `regions`.
+const OWN_MACROS = Ref(Dict{Symbol,Bool}())
+
+# Whether a method's signature calls anything in a type annotation or a `where` bound.
+function calls_in_signature(f)
+    cs = something(JS.children(f), ()); isempty(cs) && return false
+    found = Ref(false)
+    function walk(n, in_type)
+        k = JS.kind(n)
+        in_type && k === JS.K"call" && (found[] = true; return)
+        c = something(JS.children(n), ())
+        for (i, x) in enumerate(c)
+            walk(x, in_type || (k === JS.K"::" && i == length(c)) || (k === JS.K"where" && i > 1))
+        end
+    end
+    walk(cs[1], false)
+    return found[]
+end
 function macro_name(n)
     t = strip(String(JS.sourcetext(n)))
     t = split(t, '.')[end]
@@ -393,6 +417,9 @@ is_rule_callee(n) = (t = strip(String(JS.sourcetext(n))); t == "Rule" || endswit
 # own `@enum` or `@inline` (all found in review, 2026-09-23).
 function attachable(t, last_stmt::Bool)
     k = JS.kind(t)
+    # A docstring on a method builds its signature again, so annotations that CALL something run
+    # twice: such a definition's docstring may be reworded, not added or removed (review, 2026-09-23).
+    k === JS.K"function" && calls_in_signature(t) && return :text
     k in (JS.K"function", JS.K"struct", JS.K"abstract", JS.K"primitive", JS.K"macro") &&
         return last_stmt ? :text : :whole
     k in (JS.K"module", JS.K"const") && return :text
@@ -400,6 +427,7 @@ function attachable(t, last_stmt::Bool)
     if k === JS.K"macrocall"
         cs = something(JS.children(t), ()); isempty(cs) && return :none
         name = macro_name(cs[1])
+        get(OWN_MACROS[], name, false) && return :none
         name in (Symbol("@kwdef"), Symbol("@enum")) && return :text
         name in ANNOTATING && JS.kind(cs[end]) in (JS.K"function", JS.K"macrocall") &&
             attachable(cs[end], true) !== :none && return :text
@@ -416,18 +444,23 @@ const ANNOTATING = Symbol.(["@inline", "@noinline", "@generated", "@propagate_in
 # run of prose comment lines is one region; its line count may change, its place may not. A line with a
 # mark — `#src` `#md` `#jl` `#nb`, their `#!` negations, a `#-` or `#+` separator — and a `#=` block
 # stay in the outer text, so a change to one is code.
-function literate_comments!(cut, texts, s, comments)
+function literate_comments!(cut, texts, sig, s, comments)
     run = UnitRange{Int}[]
     # the run is cut after its first `#`, which stays: the outer text keeps one line where prose stands,
     # so prose cannot replace a blank line, or a blank line prose, without the outer text changing
+    # A run that leaves a fence OPEN swallows the code chunk after it into the fence — Literate's output
+    # then never runs that chunk — so an open fence is part of the structure, not of the prose.
     flush!() = (isempty(run) && return;
-                push!(cut, (first(run[1]) + 1):last(run[end])); push!(texts, join((strip_hash(sub(s, r)) for r in run), '\n'));
+                push!(cut, (first(run[1]) + 1):last(run[end]));
+                t = join((strip_hash(sub(s, r)) for r in run), '\n'); push!(texts, t);
+                open_fence(t) && push!(sig, "open-fence");
                 empty!(run))
     for r in comments
         c = sub(s, r)
         whole = line_only(s, r)
         # Literate's own test for a Markdown line: `#` then a space or the end of the line, never `##`
-        prose = occursin(r"^#(\s|$)", c) && !startswith(c, "##")
+        # (a SPACE, not any whitespace: `#` then a tab is code to Literate, found in review 2026-09-23)
+        prose = occursin(r"^#( |$)", c) && !startswith(c, "##")
         mark = !prose || startswith(c, "#=") || occursin(r"^#\s*[-+]", c) ||
                any(m -> occursin(m, c), LITERATE_MARKS)
         if mark && whole
@@ -448,6 +481,21 @@ function literate_comments!(cut, texts, s, comments)
 end
 
 strip_hash(c) = replace(c, r"^#[ \t]?" => "")
+
+# Whether a Markdown text leaves a fence open at its end: an opening ``` or ~~~ line with no closing one.
+function open_fence(t)
+    fence = nothing
+    for l in split(t, '\n')
+        m = match(r"^\s*(```+|~~~+)\s*(.*?)\s*$", l)
+        m === nothing && continue
+        if fence === nothing
+            fence = String(m.captures[1])
+        elseif first(m.captures[1]) == first(fence) && length(m.captures[1]) >= length(fence) && isempty(m.captures[2])
+            fence = nothing
+        end
+    end
+    return fence !== nothing
+end
 
 # The Markdown Literate writes from an example, whole, as far as mathematics and run blocks go: prose
 # lines and `#md` lines with their marks taken off, code as blank lines. A block that spans a mark line
