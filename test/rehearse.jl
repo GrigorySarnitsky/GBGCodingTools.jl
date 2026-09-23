@@ -1169,8 +1169,10 @@ end
                              copies = ["docs/src/architecture.md" => "docs/ARCHITECTURE.md",
                                        "docs/src/roadmap.md" => "docs/ROADMAP.md"])
         dir = write_site(root, cfg)
-        # the build's copies of both rationale documents, as pages of the site
+        # the build's copies of both rationale documents — the copied file under docs/src, which a clean
+        # checkout does not have, and the page built from it
         for stem in ("architecture", "roadmap")
+            write(joinpath(root, "docs", "src", stem * ".md"), "# $stem, copied\n")
             mkpath(joinpath(dir, stem))
             write(joinpath(dir, stem, "index.html"),
                   "<html><body><article class=\"content\"><p>The $stem, copied.</p></article></body></html>")
