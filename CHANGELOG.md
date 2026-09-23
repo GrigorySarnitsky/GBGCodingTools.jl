@@ -4,7 +4,9 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
-## Unreleased — toward 2.0.0-rc.13
+## 2.0.0-rc.13 — 2026-09-23
+
+PATCH. Nothing a consumer must change; `material` is optional and empty by default.
 
 **Targets and material** (ruled 2026-09-23). The review is for the text a user reads. Agents are now given TARGETS —
 docstrings, the hand-written pages, the Literate examples, and the one document `architecture_doc` names — and a
