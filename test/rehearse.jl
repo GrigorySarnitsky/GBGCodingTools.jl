@@ -127,6 +127,20 @@ function all_clean(root, id; except = String[])
     end
 end
 
+"""
+One role as the driver sees it: the wire entry, its kind's shared fields, and the three paths built from
+the key and a directory. The tests read roles this way so they see what an agent is given, not the wire.
+"""
+function whole(args, r)
+    k = args["kinds"][r["kind"]]
+    out = merge(Dict{String,Any}(k), Dict{String,Any}(r))
+    out["kind"] = k["kind"]
+    out["result_file"] = joinpath(args["dirs"]["results"], r["key"] * ".json")
+    out["finding_file"] = isempty(r["finding"]) ? "" : joinpath(args["dirs"]["material"], r["key"] * ".json")
+    out["diff_file"] = k["diff"] ? joinpath(args["dirs"]["material"], r["key"] * ".diff") : ""
+    return out
+end
+
 """A run with one finding collected, at its first collect: the pass machinery starts here."""
 function with_one_finding(root)
     G.Run.start(root, :documentation_review; io = devnull)
@@ -170,7 +184,8 @@ end
             args = G.JSON3.read(read(args_path, String), Dict{String,Any})
             @test args["run"] == id
             @test !isempty(args["roles"])
-            @test all(r -> haskey(r, "result_file") && haskey(r, "cap"), args["roles"])
+            @test all(r -> haskey(whole(args, r), "result_file") && haskey(whole(args, r), "cap"), args["roles"])
+            @test all(r -> !haskey(r, "result_file") && !haskey(r, "cap"), args["roles"])   # and the wire carries neither
             @test !haskey(args, "launches_left")                   # nothing caps launches (ruled 2026-09-21)
             @test all(r -> r["launch"] === true, args["roles"])       # a fresh stage launches everyone
             @test args["commit"] == RUNS.load(root, id).first_commit
@@ -208,7 +223,7 @@ end
             @test length(built) == length(G.Texts.files(cfg, root, G.Model.FileSet.PAGES))
             @test args["site"] == joinpath(root, "docs", "build")
 
-            units = [r for r in args["roles"] if !isempty(String(r["unit"]))]
+            units = [whole(args, r) for r in args["roles"] if !isempty(String(r["unit"]))]
             @test length(units) == length(built)                     # one launch per page
             @test Set(String(r["key"]) for r in units) == Set("withheld@" * p.key for p in built)
             for r in units
@@ -223,10 +238,10 @@ end
             @test String(home["unit_source"]) == joinpath("docs", "src", "index.md")
 
             # the reader of the WHOLE site is one launch, with no unit
-            whole = only(filter(r -> String(r["key"]) == "rendered", args["roles"]))
-            @test isempty(String(whole["unit"])) && whole["site"] === true
+            site_reader = whole(args, only(filter(r -> String(r["key"]) == "rendered", args["roles"])))
+            @test isempty(String(site_reader["unit"])) && site_reader["site"] === true
             # and the reader with the source is neither
-            full = only(filter(r -> String(r["key"]) == "full", args["roles"]))
+            full = whole(args, only(filter(r -> String(r["key"]) == "full", args["roles"])))
             @test isempty(String(full["unit"])) && full["site"] === false
         end
     end
@@ -279,7 +294,7 @@ end
             fixed_as(root, fid, "The grid is a lattice.")
             G.Run.next(root; io = devnull)                            # verify
             args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
-            v = only(args["roles"])
+            v = whole(args, only(args["roles"]))
             @test v["kind"] == "verifier" && !isempty(String(v["unit"]))
             page = read(String(v["unit"]), String)
             @test occursin("The grid is a lattice.", page)            # the page as it now stands
@@ -727,7 +742,7 @@ end
             @test G.Run.next(root; io = devnull) == 0                  # → verify: one blind verifier
             args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
             @test length(args["roles"]) == 1
-            v = args["roles"][1]
+            v = whole(args, args["roles"][1])
             @test v["kind"] == "verifier" && v["key"] == "verify-" * fid
             # The finding is a PATH, and the diff is absent: the blind verifier is not shown the change,
             # and what it IS shown is a file it reads rather than a paragraph in the arguments.
@@ -742,11 +757,12 @@ end
 
             @test G.Run.next(root; io = devnull) == 0                  # → diff: the same finding, with its diff
             args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
-            d = only(args["roles"])
+            d = whole(args, only(args["roles"]))
             @test d["key"] == "diff-" * fid && d["strength"] == "economy"
             @test occursin("lattice", read(d["diff_file"], String))
             # The standpoint is in the shared table under the key the role names, not written out here.
             @test haskey(args["briefs"], d["brief"]) && !isempty(args["briefs"][d["brief"]])
+            @test length(args["roles"][1]) == 6                      # a role carries only what is its own
             verifier_said(root, id, "diff", fid, "FIXED"; quote_ = "The grid is a lattice.")
             @test G.Run.collect(root; io = devnull) == 0              # nothing open
             fix = only(RUNS.load(root, id).fixes)

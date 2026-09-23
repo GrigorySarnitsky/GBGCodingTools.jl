@@ -243,7 +243,23 @@ phase('Read');
 // Every marked reader of the stage is launched: nothing caps launches (ruled 2026-09-21) — the panel
 // over the units, one relaunch each, and the pass cap bound them by design. A stage continued after
 // an interruption carries the mark only on the roles whose result did not arrive.
-const roles = args.roles.filter((role) => role.launch !== false);
+// A role on the wire carries only what is its own: its key, the name of its kind, its unit and its
+// finding. Everything shared by the roles of one shape sits once under `args.kinds`, and the three
+// paths are the key with a directory around it. Rehydrated here, once, so the rest of this file reads
+// a whole role — and so the arguments the session types stay the size of the stage's VARIETY, not of
+// its findings (measured at 435 bytes per role before, 57 of them the role's own).
+const whole = (role) => {
+  const kind = (args.kinds || {})[role.kind] || {};
+  return {
+    ...kind,
+    ...role,
+    kind: kind.kind,
+    result_file: `${args.dirs.results}/${role.key}.json`,
+    finding_file: role.finding ? `${args.dirs.material}/${role.key}.json` : '',
+    diff_file: kind.diff ? `${args.dirs.material}/${role.key}.diff` : '',
+  };
+};
+const roles = args.roles.filter((role) => role.launch !== false).map(whole);
 log(
   `${args.stage}: ${roles.length} of ${args.roles.length} role(s) to launch, ` +
   `${args.sequential ? 'one at a time' : 'together'}, at commit ${String(args.commit).slice(0, 8)}`,

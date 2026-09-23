@@ -115,8 +115,44 @@ function written_keys()
     path = G.Orchestration.Agents.write_arguments(root, run, cfg;
                 roles = G.Catalogue.roles_of(:documentation_review, cfg), io = devnull)
     args = G.JSON3.read(read(path, String), Dict{String,Any})
-    role_keys = isempty(args["roles"]) ? String[] : sort(collect(keys(args["roles"][1])))
+    # A role as the DRIVER sees it, after it rehydrates one from the wire: the role's own keys, the
+    # keys of its kind, and the three paths it builds from the key and a directory.
+    role_keys = if isempty(args["roles"])
+        String[]
+    else
+        r = args["roles"][1]
+        sort(unique(vcat(collect(keys(r)), collect(keys(args["kinds"][r["kind"]])),
+                         ["result_file", "finding_file", "diff_file"])))
+    end
     return (sort(collect(keys(args))), role_keys)
+end
+
+"""
+Write one verify stage of `n` findings, each finding and each diff of `size` characters, into a fresh
+package, and return the size in bytes of the arguments file the session would have to type.
+"""
+function arguments_bytes(n::Int, size::Int)
+    root = mktempdir(; cleanup = true)
+    mkpath(joinpath(root, ".gbg")); mkpath(joinpath(root, "docs", "src"))
+    write(joinpath(root, ".gbg", "config.jl"), """Config(package = "Sample", tool = :dev)""")
+    write(joinpath(root, "docs", "src", "guide.md"), "# Guide\n\nProse.\n")
+    cfg = G.ConfigIO.read_config(root)
+    run = G.Orchestration.Runs.start(:documentation_review, root; io = devnull)
+    text = repeat("w ", size ÷ 2)
+    roles = G.Model.AgentRole[]; extras = Dict{Symbol,Any}()
+    for i in 1:n
+        id = Symbol("verify-f$i")
+        push!(roles, G.Model.AgentRole(; id, instrument = :documentation_review,
+                                       reads = [G.Model.FileSet.PAGES], site = true, kept_from_code = true,
+                                       description = "the one standpoint", rules = [:RULE_X],
+                                       strength = G.Model.Strength.FULL, cap = 1))
+        extras[id] = Dict{String,Any}("kind" => "verifier", "finding_id" => "f$i", "unit" => "u.txt",
+                                      "finding" => Dict("id" => "f$i", "claim" => text,
+                                                        "locations" => [Dict("file" => "a.md", "text" => text)]),
+                                      "diff" => text, "verdicts" => ["FIXED", "NOT_FIXED"])
+    end
+    path = G.Orchestration.Agents.write_arguments(root, run, cfg; roles, extras, io = devnull)
+    return filesize(path)
 end
 
 @testset "the driver and the Julia side read one set of arguments" begin
@@ -178,6 +214,22 @@ end
         for key in role
             @test occursin("role." * key, driver) || occursin("role[\"" * key * "\"]", driver)
         end
+    end
+
+    # THE GATE ON WHAT A LAUNCH COSTS THE SESSION. A workflow script has no filesystem, so the session
+    # TYPES the arguments into the launching call, and every byte is a byte of its context. The first
+    # real review paid 733 KB for one verify stage, because each role carried its finding, its diff and
+    # its brief in full. Two properties hold it down now, and both are asserted rather than trusted: the
+    # file's size does not depend on the size of what the agents will read, and a role costs a bounded
+    # number of bytes over the stage's fixed part. Neither number is a measurement of this machine; both
+    # are the SHAPE, which is what a regression would change.
+    @testset "the arguments file does not grow with what the agents read" begin
+        small = arguments_bytes(40, 40)
+        large = arguments_bytes(40, 40_000)
+        @test small == large                                      # findings and diffs are paths, not values
+        # the marginal cost of a role: everything a role carries that is its own, and nothing else
+        per_role = (arguments_bytes(80, 40) - arguments_bytes(40, 40)) / 40
+        @test per_role < 120
     end
 
     # The other direction: the driver must not read a key nobody writes. `undefined` at the moment a

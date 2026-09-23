@@ -147,8 +147,13 @@ The second is the material a verifier judges — the finding, with the text quot
 the diff of the fix made for it. That is the bulk of the file and no part of it is the script's to read:
 the script only names it in a brief, and the agent has file tools. So each is written beside the
 arguments and passed as a PATH, which is what a reader given one built page has always been given. The
-file shrank by roughly four hundred kilobytes on the first real review, and a diff of any size now costs
-the session the length of its path.
+file's size no longer depends on the size of a finding or a diff, and `test/driver.jl` holds it there.
+
+The third is the rest of a role. Nine of its fields were the same for every role of one shape and three
+were the key with a directory around it, so a role cost about 435 bytes of which 57 were its own. The
+shared fields go into `kinds`, keyed by their value so nothing is classified by hand, and the two
+directories go into `dirs`; the driver rehydrates each role once from those. What is left per role is
+what is its own, and the test bounds it.
 """
 function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config;
                          roles::Vector{Model.AgentRole}, extras::AbstractDict = Dict{Symbol,Any}(),
@@ -171,9 +176,13 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
         "surfaces" => Dict{String,Any}(name => files for (name, files) in surfaces(cfg, root)))
     briefs = Dict{String,String}()          # the text, once, under the key a role names
     keys_of = Dict{String,String}()         # the text seen before, and the key it was given
+    kinds = Dict{String,Any}()              # the fields shared by every role of one shape, once
+    kind_of = Dict{Any,String}()            # the shape seen before, and the key it was given
     side = joinpath(scratch_dir(root, run.id), "material")
     isempty(roles) || mkpath(side)
     args["briefs"] = briefs
+    args["kinds"] = kinds
+    args["dirs"] = Dict{String,Any}("results" => results_dir(root, run.id), "material" => side)
     args["roles"] = [begin
         x = get(extras, r.id, Dict{String,Any}())
         brief = get!(keys_of, r.description) do
@@ -182,37 +191,35 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
             k
         end
         found = get(x, "finding", nothing)
-        finding_file = ""
-        if found !== nothing
-            finding_file = joinpath(side, String(r.id) * ".json")
-            open(finding_file, "w") do f; JSON3.pretty(f, JSON3.write(found)); end
+        found === nothing || open(joinpath(side, String(r.id) * ".json"), "w") do f
+            JSON3.pretty(f, JSON3.write(found))
         end
         diff = String(get(x, "diff", ""))
-        diff_file = ""
-        if !isempty(diff)
-            diff_file = joinpath(side, String(r.id) * ".diff")
-            write(diff_file, diff)
+        isempty(diff) || write(joinpath(side, String(r.id) * ".diff"), diff)
+        # Everything identical across the roles of one shape, keyed by its VALUE so the table is as
+        # small as the stage's variety and no field has to be classified by hand: a reader's shape is
+        # its own, a verifier's is shared by every finding under the same rule and reader.
+        shape = Dict{String,Any}("kind" => get(x, "kind", "reader"),
+                                 "reads" => [lowercase(String(Symbol(fs))) for fs in r.reads],
+                                 "site" => r.site, "kept_from_code" => r.kept_from_code,
+                                 "brief" => brief,
+                                 "rules" => [String(y) for y in r.rules],
+                                 "strength" => lowercase(String(Symbol(r.strength))),
+                                 "cap" => r.cap,
+                                 "diff" => !isempty(diff),
+                                 "verdicts" => get(x, "verdicts", String[]))
+        kind = get!(kind_of, shape) do
+            k = "k" * string(length(kind_of) + 1)
+            kinds[k] = shape
+            k
         end
-        Dict{String,Any}("key" => String(r.id),
-                         "kind" => get(x, "kind", "reader"),
-                         "launch" => true,
-                         "reads" => [lowercase(String(Symbol(fs))) for fs in r.reads],
-                         "site" => r.site, "kept_from_code" => r.kept_from_code,
-                         "brief" => brief,
-                         "rules" => [String(y) for y in r.rules],
-                         "strength" => lowercase(String(Symbol(r.strength))),
-                         "cap" => r.cap,
-                         "unit" => get(x, "unit", ""),
-                         "unit_source" => get(x, "unit_source", ""),
-                         "finding" => get(x, "finding_id", ""),
-                         "finding_file" => finding_file,
-                         "diff_file" => diff_file,
-                         "verdicts" => get(x, "verdicts", String[]),
-                         "result_file" => joinpath(results_dir(root, run.id), String(r.id) * ".json"))
+        Dict{String,Any}("key" => String(r.id), "kind" => kind, "launch" => true,
+                         "unit" => get(x, "unit", ""), "unit_source" => get(x, "unit_source", ""),
+                         "finding" => get(x, "finding_id", ""))
     end for r in roles]
     path = arguments_path(root, run.id)
     mkpath(dirname(path)); mkpath(results_dir(root, run.id))
-    open(path, "w") do f; JSON3.pretty(f, JSON3.write(args)); end
+    write(path, JSON3.write(args))   # compact: nobody reads this file, the session TYPES it
     driver, sha = place_driver(root, run.id)
     println(io, "run: ", run.id, " is at ", run.stage, "; ", length(roles), " agent(s) to launch.")
     println(io, "  arguments: ", relpath(path, root))
@@ -253,6 +260,23 @@ function head(root::AbstractString)
 end
 
 """
+    result_file(args, role) -> String
+    kind_of_role(args, role) -> String
+
+What a role's result path and kind are, read back from the arguments as the driver reads them. The
+arguments are `args`, the parsed arguments file, and `role`, one entry of its `roles`. Returns the
+path a role's agent writes its result to, and the role's kind (`reader`, `verifier`, `tagger`).
+
+A role carries only what is its own — its key, its kind's name, its unit and its finding — and the
+rest is looked up: the shared fields under `kinds`, the two directories under `dirs`. These two are
+the Julia side of that lookup, and `test/driver.jl` holds the driver to reading the same keys.
+"""
+result_file(args::AbstractDict, role::AbstractDict) =
+    joinpath(String(args["dirs"]["results"]), String(role["key"]) * ".json")
+kind_of_role(args::AbstractDict, role::AbstractDict) =
+    String(get(get(get(args, "kinds", Dict()), String(role["kind"]), Dict()), "kind", "reader"))
+
+"""
     launched_at(root, id) -> Union{String,Nothing}
 
 The commit the current stage's arguments were written at, or `nothing` where none were. The arguments
@@ -283,10 +307,10 @@ function continue_stage(root::AbstractString, id::AbstractString)
     args = JSON3.read(read(path, String), Dict{String,Any})
     missing = String[]
     for r in get(args, "roles", [])
-        r["launch"] = !isfile(String(r["result_file"]))
+        r["launch"] = !isfile(result_file(args, r))
         r["launch"] && push!(missing, String(r["key"]))
     end
-    open(path, "w") do f; JSON3.pretty(f, JSON3.write(args)); end
+    write(path, JSON3.write(args))   # compact: nobody reads this file, the session TYPES it
     moved = String(get(args, "commit", "")) != head(root)
     return (missing = missing, total = length(get(args, "roles", [])), moved = moved)
 end
@@ -324,7 +348,7 @@ function collect_results(root::AbstractString, id::AbstractString, cfg::Model.Co
     expected = Dict{String,String}()                            # role key => kind
     if isfile(args_path)
         args = JSON3.read(read(args_path, String), Dict{String,Any})
-        for r in get(args, "roles", []); expected[String(r["key"])] = String(get(r, "kind", "reader")); end
+        for r in get(args, "roles", []); expected[String(r["key"])] = kind_of_role(args, r); end
     end
     findings = Tuple{String,Model.FindingDraft}[]
     verdicts = Dict{String,Tuple{String,String}}()
