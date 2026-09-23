@@ -126,6 +126,7 @@ function start(instrument::Symbol, root::AbstractString; readers::Symbol = :boun
     end
     run = Model.Run(id = new_id(instrument, root), instrument = instrument,
                     tool_version = string(GBG_VERSION[]), first_commit = head_commit(root),
+                    rulebook = Catalogue.digest(),
                     budget = inst.budget, stage = :start, readers = readers,
                     model = model, sequential = sequential,
                     scope = scope, base = base,
@@ -638,7 +639,7 @@ as_dict(r::Model.Run) = Dict{String,Any}(
     "already_failing" => [String(x) for x in r.already_failing],
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
     "readers" => String(r.readers), "passes" => r.passes,
-    "scope" => String(r.scope), "base" => r.base, "driver" => r.driver, "dropped" => r.dropped, "unreverted" => r.unreverted, "silent" => r.silent,
+    "scope" => String(r.scope), "base" => r.base, "driver" => r.driver, "dropped" => r.dropped, "unreverted" => r.unreverted, "silent" => r.silent, "rulebook" => r.rulebook,
     "questions" => [question_dict(q) for q in r.questions],
     "fixes" => [Dict{String,Any}("finding" => f.finding, "pass" => f.pass, "commit" => f.commit,
                                   "formula_edit" => f.formula_edit, "blind" => String(Symbol(f.blind)),
@@ -714,7 +715,8 @@ function from_dict(d::AbstractDict)
                      already_failing = Symbol[Symbol(x) for x in get(d, "already_failing", [])],
                      dropped = get(d, "dropped", 0),
                      unreverted = String[String(x) for x in get(d, "unreverted", [])],
-                     silent = String[String(x) for x in get(d, "silent", [])])
+                     silent = String[String(x) for x in get(d, "silent", [])],
+                     rulebook = get(d, "rulebook", ""))
 end
 
 

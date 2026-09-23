@@ -143,7 +143,7 @@ Writes what the session needs to launch one stage. The arguments are:
 - `cfg` — the package's config.
 - `roles` — the agent roles this stage launches, readers or verifiers.
 - `extras` — per role id, what a role needs beyond the derived reader: `kind`, `finding`, `diff` and
-  `verdicts` for a verifier; `unit` and `unit_source` for a reader given one built page.
+  `verdicts` for a verifier; `unit`, `unit_source` and `source_unit` for a reader given one unit.
 - `site` — the built site's directory, for the reader that reads the whole of it; empty where none was
   built.
 - `site_pages` — the built pages a site reader may read: the target pages the walk kept, by path.
@@ -231,6 +231,7 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
                                  "strength" => lowercase(String(Symbol(r.strength))),
                                  "cap" => r.cap,
                                  "diff" => !isempty(diff),
+                                 "source_unit" => get(x, "source_unit", false),
                                  "verdicts" => get(x, "verdicts", String[]))
         kind = get!(kind_of, shape) do
             k = "k" * string(length(kind_of) + 1)

@@ -123,8 +123,13 @@ function verifierBrief(role) {
   const withheld = role.kept_from_code
     ? 'The SOURCE and the design documents are withheld from you, as they were from the reader: judge the text alone.'
     : '';
-  const unit = role.unit
-    ? `\nThe page as it now stands is the file ${role.unit}, and it is the whole of what you may read.`
+  const unit = !role.unit ? ''
+    : role.source_unit
+      ? `\nThe example's source as it now stands is the file ${role.unit}, and it is the whole of what you may read.`
+      : `\nThe page as it now stands is the file ${role.unit}, and it is the whole of what you may read.`;
+  // A verifier of a finding made on the built site is given the site, as its reader was.
+  const site = role.site && !role.unit && (args.site_pages || []).length
+    ? '\nThe BUILT site as it now stands — these pages and NO other file under it:\n' + args.site_pages.join('\n')
     : '';
   return [
     `You are verifying one fix in the Julia package ${args.package}, pass ${args.pass} of a ${args.instrument.replace(/_/g, ' ')}.`,
@@ -140,6 +145,7 @@ function verifierBrief(role) {
     `It is the finding ${role.finding} as the reader wrote it — the claim, the rule, the fix proposed, and`,
     'every location with the text quoted as the reader read it. Nothing below repeats it.',
     unit,
+    site,
     role.diff_file ? `\nThe change made for it is the diff in ${role.diff_file}. Read that too.` : '',
     '',
     `Answer with ONE verdict from: ${(role.verdicts || []).join(', ')} — and the decisive QUOTE (at most 25`,
@@ -148,24 +154,35 @@ function verifierBrief(role) {
   ].join('\n');
 }
 
-// A reader given ONE UNIT: one built page's text, in a file of its own, and nothing else. It never
-// sees the surface lists — a reader handed every page at once is not the reader this bundle is for.
+// A reader given ONE UNIT: one built page's text, in a file of its own, or one Literate example's source
+// file, and nothing else. It never sees the surface lists — a reader handed every page at once is not the
+// reader this bundle is for.
 function unitBrief(role, checks, settled) {
+  const what = role.source_unit
+    ? [
+        `You are reading the SOURCE FILE of one Literate example of the Julia package ${args.package}: the`,
+        'script its page is generated from, where every full-line comment becomes prose on its page.',
+      ]
+    : [
+        `You are reading ONE PAGE of the built documentation of the Julia package ${args.package}, as a visitor meets it.`,
+        'Code is shown between backticks and mathematics between dollar signs, as the page renders them.',
+      ];
   return [
-    `You are reading ONE PAGE of the built documentation of the Julia package ${args.package}, as a visitor meets it.`,
+    ...what,
     '',
     standpoint(role),
     '',
-    `The page is the file ${role.unit}. It is the WHOLE of what you may read: do not open the source, the`,
-    'other pages, the design documents or the repository. A reader who can see those cannot judge whether',
-    'this page stands on its own, which is the only question you are here to answer.',
+    `The ${role.source_unit ? 'example' : 'page'} is the file ${role.unit}. It is the WHOLE of what you may read: do not open the`,
+    'source, the other pages, the design documents or anything else in the repository — the rulebook',
+    'named below excepted, which states the rules and says nothing about this package. A reader who can',
+    'see the rest cannot judge whether this stands on its own, which is the only question you are here to answer.',
     checks,
     settled,
     '',
     role.unit_source
-      ? `Report each place as the file \`${role.unit_source}\`, which is where this page is written, with`
+      ? `Report each place as the file \`${role.unit_source}\`, which is where this ${role.source_unit ? 'example' : 'page'} is written, with`
       : 'Report each place as the file this page is built from, with',
-    'the QUOTE you read (at most 25 words, exactly as it appears on the page). A quote that was rendered',
+    'the QUOTE you read (at most 25 words, exactly as it appears in the file you read). A quote that was rendered',
     'from a docstring is looked for across the documentation, so quote the words themselves and never a',
     'line number.',
     '',

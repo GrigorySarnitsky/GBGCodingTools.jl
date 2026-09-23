@@ -1165,8 +1165,8 @@ end
     page_text(node) -> String
 
 The text of `node` as a reader of the page meets it: every text node in order, with a line break where
-a block — a paragraph, a heading, a list item, a table cell — begins or ends. The argument is `node`.
-Returns the string.
+a block — a paragraph, a heading, a list item, a table cell — begins or ends, inline code between
+backticks and a code block between fences. The argument is `node`. Returns the string.
 
 Documenter writes no whitespace between tags, so the bare concatenation [`text_of`](@ref) gives runs a
 heading into the paragraph after it (`…of the same field.The parts are:`): a reader shown that quotes
@@ -1183,15 +1183,23 @@ const BLOCK_TAGS = Set([:p, :h1, :h2, :h3, :h4, :h5, :h6, :li, :ul, :ol, :div, :
                         :dt, :dd, :dl, :br, :section, :article, :header, :footer, :blockquote, :details,
                         :summary, :hr, :figure, :figcaption])
 
-function page_text!(io::IO, n)
+# Code is kept visible as code: an inline span between backticks, a block between fences. A reader
+# judging whether a backtick span holds Julia was shown the span's words with nothing around them.
+function page_text!(io::IO, n; in_pre::Bool = false)
     if n isa HTMLText
         write(io, n.text)
     elseif n isa HTMLElement
-        block = tagname(n) in BLOCK_TAGS
+        t = tagname(n)
+        block = t in BLOCK_TAGS
+        mark = t === :pre ? "```" : (t === :code && !in_pre ? "`" : "")
         block && write(io, '\n')
+        t === :pre && write(io, mark, '\n')
+        t === :code && !in_pre && write(io, mark)
         for c in children(n)
-            page_text!(io, c)
+            page_text!(io, c; in_pre = in_pre || t === :pre)
         end
+        t === :code && !in_pre && write(io, mark)
+        t === :pre && write(io, '\n', mark)
         block && write(io, '\n')
     end
     return io

@@ -766,6 +766,8 @@ One execution of one instrument on one package, stored beside its report. The fi
   conflicts; each leaves a rejected edit in the tree, and the run cannot end as evaluated.
 - `silent` — the agents that wrote nothing, or nothing readable, after being launched again once; the
   report names each, and none is read as a clean result.
+- `rulebook` — the digest of the rules it judged by, which a later `--scope changed` run compares with
+  its own: a version number does not move when a development checkout's rules do.
 
 That last count is what keeps an abandoned record honest. Stopping a run removes its open findings
 from the list — what a verdict had closed stays — and leaves its launch count alone, and those two read
@@ -801,6 +803,7 @@ Base.@kwdef struct Run
     dropped::Int = 0
     unreverted::Vector{String} = String[]
     silent::Vector{String} = String[]
+    rulebook::String = ""
 end
 
 end # module Model

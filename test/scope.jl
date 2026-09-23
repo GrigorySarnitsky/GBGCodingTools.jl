@@ -33,10 +33,11 @@ commit_all(root, msg) = for args in (("add", "-A"), ("commit", "-q", "--allow-em
 end
 
 # A finished run of `readers`, its record committed, as a closed run leaves it.
-function close_a_run(root, id, readers; stop = G.Model.Stop.DONE, tool = "2.0.0-rc.7")
+function close_a_run(root, id, readers; stop = G.Model.Stop.DONE, tool = "2.0.0-rc.7",
+                     rulebook = G.Catalogue.digest())
     run_ = G.Model.Run(id = id, instrument = :documentation_review, tool_version = tool,
                        first_commit = "abc", budget = G.Model.Budget(), stage = :close,
-                       readers = readers, stop = stop)
+                       readers = readers, stop = stop, rulebook = rulebook)
     d = joinpath(root, ".gbg", "runs", id); mkpath(d)
     write(joinpath(d, "run.json"), JSON3.write(RN.as_dict(run_)))
     commit_all(root, "close $id")
@@ -74,12 +75,37 @@ end
         end
     end
 
-    @testset "a tool bump reads full" begin
+    @testset "the rules moving reads full" begin
         root = scope_repo()
         cfg = G.ConfigIO.read_config(root)
-        close_a_run(root, "2026-09-22-c", :bound; tool = "2.0.0-rc.6")   # the run read an older rulebook
+        close_a_run(root, "2026-09-22-c", :bound; rulebook = "0"^64)   # the run read an older rulebook
         @test SC.base(root, :documentation_review, :bound, cfg) === nothing
-        @test occursin("the pin moved", SC.why_full(root, :documentation_review, :bound, cfg))
+        @test occursin("the rules moved", SC.why_full(root, :documentation_review, :bound, cfg))
+        # the version is not what is compared: an unchanged rulebook under another version is a base
+        root = scope_repo()
+        close_a_run(root, "2026-09-22-c", :bound; tool = "2.0.0-rc.6")
+        @test SC.base(root, :documentation_review, :bound, cfg) !== nothing
+    end
+
+    @testset "a record from before the digest compares the version that ran" begin
+        root = scope_repo()
+        cfg = G.ConfigIO.read_config(root)
+        close_a_run(root, "2026-09-22-g", :bound; tool = "2.0.0-rc.6", rulebook = "")
+        @test occursin("the tool moved", SC.why_full(root, :documentation_review, :bound, cfg))
+        root = scope_repo()
+        close_a_run(root, "2026-09-22-g", :bound; tool = string(RN.GBG_VERSION[]), rulebook = "")
+        @test SC.base(root, :documentation_review, :bound, cfg) !== nothing
+    end
+
+    @testset "a change to the docs build's script reads full" begin
+        root = scope_repo(Dict("docs/make.jl" => "# builds the site\n"))
+        cfg = G.ConfigIO.read_config(root)
+        close_a_run(root, "2026-09-22-h", :bound)
+        @test SC.base(root, :documentation_review, :bound, cfg) !== nothing
+        write(joinpath(root, "docs", "make.jl"), "# builds the site, with Literate now\n")
+        commit_all(root, "build the examples")
+        @test SC.base(root, :documentation_review, :bound, cfg) === nothing
+        @test occursin("docs/make.jl changed", SC.why_full(root, :documentation_review, :bound, cfg))
     end
 
     @testset "a config change reads full" begin
@@ -143,6 +169,30 @@ end
         @test haskey(sets, G.Model.FileSet.PAGES)
         @test SC.reaches(byid[:full], sets)
         @test SC.reaches(byid[:withheld], sets)
+    end
+
+    # Code reaches a bound reader only through a rule that needs the source (found in review, 2026-09-23).
+    @testset "an edited function body does not reach the reader of the built site" begin
+        rendered = G.Model.AgentRole(id = :rendered, instrument = :documentation_review,
+                                     reads = [G.Model.FileSet.PAGES], site = true, description = "r",
+                                     rules = [Symbol("RULE.TEX.NO_HSCROLL")], cap = 1)
+        sets = Dict(G.Model.FileSet.CODE => ["src/A.jl"])
+        @test !SC.reaches(rendered, sets)
+        open_reader = G.Model.AgentRole(id = :logician, instrument = :documentation_review,
+                                        reads = [G.Model.FileSet.PAGES], description = "l", cap = 1)
+        @test SC.reaches(open_reader, sets)
+    end
+
+    @testset "a deleted page reaches the readers of pages" begin
+        root2 = scope_repo(files)
+        cfg2 = G.ConfigIO.read_config(root2)
+        close_a_run(root2, "2026-09-22-k", :bound)
+        c2 = first(SC.base(root2, :documentation_review, :bound, cfg2))
+        rm(joinpath(root2, "docs", "src", "notation.md"))
+        commit_all(root2, "delete the notation page")
+        sets = SC.sets_of(cfg2, root2, SC.changed_since(root2, c2), c2)
+        @test get(sets, G.Model.FileSet.PAGES, String[]) == ["docs/src/notation.md"]
+        @test SC.reaches(byid[:full], sets)
     end
 
     @testset "nothing changed reaches nobody" begin

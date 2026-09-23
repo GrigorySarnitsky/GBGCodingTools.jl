@@ -133,7 +133,7 @@ function pages(dir::AbstractString, cfg::Model.Config, root::AbstractString)
             # could edit; one that says where it came from was resolved above.
             !isempty(src) && ignored(src) && continue
             text = strip(Texts.page_text(article))
-            text = replace(text, r"[ \t]*\n[ \t\n]*" => "\n")
+            text = replace(text, r"[ \t]*\n(?:[ \t]*\n)*" => "\n")   # blank runs, never a code line's indent
             isempty(text) && continue
             push!(out, (path = rel, key = key_of(rel), text = String(text)))
         end

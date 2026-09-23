@@ -677,9 +677,11 @@ continued by the next session on its own, which says so in the chat and waits on
 an unfinished stage is taken. `gbg run abandon` ends one the owner does not want continued, as `OWNER_STOPPED`, its
 findings dropped [ruled 2026-09-21]. `gbg run <instrument> --readers bound|open|both` says which readers (§5.2), bound
 by default; `--scope full|changed` (Phase 4d) whether the whole corpus is read or what changed since the last finished
-run of that combination, a tool bump or a config or switch change since making the next run full [ruled 2026-09-21].
+run of that combination, a tool bump or a config or switch change since making the next run full [ruled 2026-09-21];
+the "tool bump" is read as the rules moving, by a digest of the rulebook the run records, and a change to the docs
+build's script counts as a config change, since it decides what every page is built from.
 `gbg run start` exits 2 when the working tree is not clean, another run is open, or the instrument has no readers, and
-records the version of GBGCodingTools, the first commit, the readers and the pass budget.
+records the version of GBGCodingTools, the digest of its rulebook, the first commit, the readers and the pass budget.
 
 **Carried findings, and the two places they live.** Open findings carry over, as ruled. The run record keeps them with
 their ids and anchored locations: the machine's copy, which the next run of that instrument starts from, before its own

@@ -16,10 +16,15 @@ twenty others launched beside it.
 tree it names is the tree that run read. A run that stopped short says nothing about the corpus it never
 finished reading, so only `DONE` is a base.
 
-**Three things invalidate a base**, and each is a case where the last run's silence stops meaning
-"clean": a tool bump, because the rules themselves moved; a change to `.gbg/config.jl`, because a switch
-or a file set or a declared discipline decides what is read and by whom; and a base that is not an
-ancestor of HEAD, after a rebase or a reset, because a diff against it is not the history that happened.
+**Four things invalidate a base**, and each is a case where the last run's silence stops meaning
+"clean":
+
+- the rules moved, which the run's recorded digest of the rulebook says;
+- `.gbg/config.jl` changed, because a switch, a file set or a declared discipline decides what is read
+  and by whom;
+- the docs build's script changed, which decides what every page is built from;
+- the base is not an ancestor of HEAD, after a rebase or a reset, so a diff against it is not the
+  history that happened.
 An invalidated base reads `full`, which is the safe direction: the cost is a run nobody needed, and the
 cost the other way is a defect nobody looked for.
 """
@@ -116,16 +121,38 @@ function why_full(root::AbstractString, instrument::Symbol, readers::Symbol, cfg
     return "no $readers run of $instrument has closed here"
 end
 
-# The three invalidations, in the order they are cheapest to decide. Returns the reason or `nothing`.
+# The invalidations, in the order they are cheapest to decide. Returns the reason or `nothing`.
+#
+# The rules are compared by what they SAY: the digest the run recorded against the rulebook running now.
+# A record from before the digest compares the version that ran with the version running — the pin was
+# compared before, and a run records the running version, so a development checkout never matched and
+# a tool whose rules moved under an unchanged pin kept its base (found in review, 2026-09-23).
 function invalid(root::AbstractString, run::Model.Run, commit::AbstractString, cfg::Model.Config)
-    now = string(cfg.tool)
-    run.tool_version == now ||
-        return "the pin moved from $(run.tool_version) to $now, so the rules are not the ones that run read"
+    if !isempty(run.rulebook)
+        run.rulebook == Catalogue.digest() ||
+            return "the rules moved since $(run.id), so its silence was about other rules"
+    else
+        now = string(Runs.GBG_VERSION[])
+        run.tool_version == now ||
+            return "the tool moved from $(run.tool_version) to $now, so the rules are not the ones that run read"
+    end
     git_ok(root, "merge-base", "--is-ancestor", commit, "HEAD") ||
         return "$(first(commit, 8)) is not an ancestor of HEAD, so a diff against it is not this history"
     isempty(changed_in(root, commit, CONFIG)) ||
         return "$CONFIG changed since $(first(commit, 8)), so what is read and by whom may have moved"
+    # The build script decides which pages exist, what Literate makes of an example and how mathematics
+    # renders; a change to it can move every page at once, and no page's own source says so.
+    script = build_script(cfg)
+    isempty(script) || isempty(changed_in(root, commit, script)) ||
+        return "$script changed since $(first(commit, 8)), so what the site is built from may have moved"
     return nothing
+end
+
+# The docs build's script, as the config's command names it — the one `.jl` argument — or Documenter's
+# own convention where the command names none.
+function build_script(cfg::Model.Config)
+    k = findfirst(a -> endswith(a, ".jl"), cfg.docs_build)
+    return k === nothing ? "docs/make.jl" : replace(cfg.docs_build[k], '\\' => '/')
 end
 
 """
@@ -190,9 +217,14 @@ base; pass `""` and every source file counts as both, the safe direction.
 function sets_of(cfg::Model.Config, root::AbstractString, changed::AbstractVector{<:AbstractString},
                  commit::AbstractString = "")
     want = Set(replace(f, '\\' => '/') for f in changed)
+    # A file the diff DELETED is in no listing of the tree, and was dropped here: the notation page gone
+    # relaunched nobody, though a rule reads every other page against it (found in review, 2026-09-23).
+    gone = [f for f in want if !isfile(joinpath(root, f))]
     out = Dict{Model.FileSet.T,Vector{String}}()
     for fs in instances(Model.FileSet.T)
         hits = filter(f -> replace(f, '\\' => '/') in want, Texts.files(cfg, root, fs))
+        pats = get(cfg.filesets, fs, Texts.DEFAULT_PATTERNS[fs])
+        append!(hits, [f for f in gone if any(p -> Texts.glob_matches(p, f), pats)])
         fs === Model.FileSet.DOCSTRINGS && !isempty(commit) &&
             (hits = filter(f -> prose_moved(root, f, commit), hits))
         # A rationale document that is not a target is read by nobody, so a change to it reaches
@@ -239,17 +271,25 @@ end
 Whether anything in `sets` reaches `role`. The arguments are `role`, a derived reader, and `sets`, what
 [`sets_of`](@ref) returned. Returns the answer.
 
-The rule is the role's own two fields and nothing else: a change reaches it when the set it falls in is
-one the role READS, or when it is code and the code is not kept from the role. That is why an edited
-function body reaches the reader with the source beside it and not the reader given one page alone,
-without either being named here.
+A change reaches a role when the set it falls in is one the role READS, or when it is code, the code is
+not kept from the role, and the role is an open reader or carries a rule that needs the source. That is
+why an edited function body reaches the reader with the source beside it and neither the reader given
+one page alone nor the reader of the built site, without any of them being named here.
 """
 function reaches(role::Model.AgentRole, sets::AbstractDict)
     for fs in role.reads
         isempty(get(sets, fs, String[])) || return true
     end
     role.kept_from_code && return false
-    return !isempty(get(sets, Model.FileSet.CODE, String[]))
+    isempty(get(sets, Model.FileSet.CODE, String[])) && return false
+    # Code reaches a bound reader only through a rule that needs the source: the reader of the built
+    # site is not kept from the code, but nothing it judges can move when a function body does (found
+    # in review, 2026-09-23). An open reader reads with the source beside it, and is reached.
+    isempty(role.rules) && return true
+    return any(role.rules) do id
+        r = Catalogue.rule(id)
+        r === nothing || Model.Access.SOURCE in r.access
+    end
 end
 
 """

@@ -241,9 +241,16 @@ end
             # the site reader is handed the kept pages by name, and no other file under the site
             @test Set(args["site_pages"]) == Set(joinpath(root, "docs", "build", p.path) for p in built)
 
-            units = [whole(args, r) for r in args["roles"] if !isempty(String(r["unit"]))]
+            all_units = [whole(args, r) for r in args["roles"] if !isempty(String(r["unit"]))]
+            units = [r for r in all_units if r["source_unit"] !== true]
             @test length(units) == length(built)                     # one launch per page
             @test Set(String(r["key"]) for r in units) == Set("withheld@" * p.key for p in built)
+            # and one per Literate example's SOURCE, carrying only the rule judged there, which no
+            # built page can show (found in review, 2026-09-23)
+            sources = [r for r in all_units if r["source_unit"] === true]
+            @test [String(r["unit_source"]) for r in sources] == G.Texts.files(cfg, root, G.Model.FileSet.LITERATE)
+            @test all(r -> r["rules"] == ["RULE.DOC.LITERATE"], sources)
+            @test all(r -> !("RULE.DOC.LITERATE" in r["rules"]), units)
             for r in units
                 @test isfile(String(r["unit"]))
                 @test r["kept_from_code"] === true
@@ -511,7 +518,7 @@ end
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
             reader_found(root, id, HOME_READER, "one")
-            reader_found(root, id, "full", "two")
+            reader_found(root, id, "full", "two"; quote_ = "an options record")   # a second defect, elsewhere
             before = length(G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})["roles"])
             @test G.Run.next(root; io = devnull) == 0                    # continue: the rest are missing
             args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
@@ -1468,7 +1475,8 @@ end
         G.Run.collect(root; io = devnull)
         by = Dict(f.draft.claim => f for f in RUNS.load(root, id).findings)
         @test !by["absolute"].draft.in_material && only(by["absolute"].draft.locations).file == "docs/src/index.md"
-        @test !by["dotted"].draft.in_material && only(by["dotted"].draft.locations).file == "docs/src/index.md"
+        # the same sentence under a second spelling of its path is the same place, and merges into it
+        @test !haskey(by, "dotted") && occursin("dotted", by["absolute"].draft.evidence)
         @test !by["readme"].draft.in_material
         @test !by["test"].draft.in_material
         @test by["notes"].draft.in_material
@@ -1969,4 +1977,55 @@ end
     sh = joinpath(root, "hook.sh"); write(sh, G.Render.hook(G.Model.Config(package = "P", tool = :dev))); chmod(sh, 0o755)
     p = run(pipeline(setenv(`bash $sh`, ["CLAUDE_PROJECT_DIR" => root]; dir = root); stdin = IOBuffer("{}"), stdout = devnull, stderr = devnull); wait = false); wait(p)
     @test p.exitcode == 0
+end
+
+# ── What each agent is given: a review of 2026-09-23, each case the shape it was found in ────────────
+
+@testset "one defect several readers filed is one finding, and every reader's claim is kept" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        reader_found(root, id, "full", "the grid's kind is unstated")
+        all_clean(root, id; except = [HOME_READER, "full"])
+        @test G.Run.collect(root; io = devnull) == 1
+        f = only(RUNS.load(root, id).findings)
+        said = f.draft.claim * "\n" * f.draft.evidence
+        @test occursin("the grid's kind is unstated", said) && occursin("not said to be a lattice", said)
+    end
+    # under two different rules, one sentence is two defects
+    loc = G.Model.Location(file = "docs/src/index.md", text = "x", line = 3, found = G.Model.Anchor.BY_QUOTE)
+    d(rule) = G.Model.FindingDraft(rule = rule, locations = [loc], claim = "c", evidence = "", fix = "")
+    cfg = G.Model.Config(package = "P", tool = :dev)
+    @test length(G.Run.merge_same([("a", d(:R1)), ("b", d(:R2))], cfg)) == 2
+    @test length(G.Run.merge_same([("a", d(:R1)), ("b", d(:R1))], cfg)) == 1
+end
+
+@testset "a finding under a rule switched off for its files is the switch's" begin
+    loc(f) = G.Model.Location(file = f, text = "x", line = 1)
+    d(files) = G.Model.FindingDraft(rule = Symbol("RULE.DOC.TERMS_DEFINED"), locations = loc.(files),
+                                    claim = "c", evidence = "", fix = "")
+    cfg = G.Model.Config(package = "P", tool = :dev,
+                         switches = [G.Model.Switch(target = Symbol("RULE.DOC.TERMS_DEFINED"),
+                                                    files = ["docs/src/index.md"], reason = "r")])
+    @test G.Run.switched_off(cfg, d(["docs/src/index.md"]))
+    @test !G.Run.switched_off(cfg, d(["docs/src/index.md", "docs/src/guide.md"]))   # one file still judged
+    @test !G.Run.switched_off(G.Model.Config(package = "P", tool = :dev), d(["docs/src/index.md"]))
+end
+
+@testset "the diff verifier is shown every commit of the fix, or every fix when it has none" begin
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        run = RUNS.load(root, id)
+        @test G.Run.fix_diff(root, run, run.findings[1]) == ""          # nothing committed yet
+        fixed_as(root, fid, "The grid is a spectral lattice.")
+        write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a periodic spectral lattice."))
+        @test G.Docfix.commit(root, "second half of " * fid; io = devnull, finding = fid) == 0
+        both = G.Run.fix_diff(root, run, run.findings[1])
+        @test occursin("fix for", both) && occursin("second half of", both)
+        other = G.Model.Finding("other-001", :full, G.Model.Decider.AGENT,
+                                G.Model.FindingDraft(rule = nothing, locations = G.Model.Location[], claim = "c", evidence = "", fix = ""))
+        none = G.Run.fix_diff(root, run, other)
+        @test startswith(none, "# No commit names this finding") && occursin("second half of", none)
+    end
 end

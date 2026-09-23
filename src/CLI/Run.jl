@@ -260,13 +260,40 @@ function reader_roles(root::AbstractString, run::Model.Run, cfg::Model.Config, s
             continue
         end
         if r.site && r.kept_from_code
-            isempty(units) && (println(io, "run: `", r.id, "` reads one built page at a time and the site has none; it is not launched"); continue)
-            mine = narrow ? filter(u -> Orchestration.Scope.unit_touched(root, cfg, u, sets, added), units) : units
-            skipped += length(units) - length(mine)
-            for u in mine
-                id = Symbol(string(r.id, UNIT_MARK, u.key))
-                push!(roles, unit_role(r, id))
-                extras[id] = Dict{String,Any}("unit" => u.file, "unit_source" => Site.source_of(root, u.path; cfg))
+            # A rule judged on a Literate example's SOURCE goes to a reader given that file alone; a built
+            # page cannot show a comment's habits, and an example with no page was read by nobody (found
+            # in review, 2026-09-23). The rest are the page's.
+            on_page = filter(!on_source, r.rules)
+            of_source = filter(on_source, r.rules)
+            if isempty(r.rules) || !isempty(on_page)
+                if isempty(units)
+                    println(io, "run: `", r.id, "` reads one built page at a time and the site has none; it is not launched")
+                else
+                    mine = narrow ? filter(u -> Orchestration.Scope.unit_touched(root, cfg, u, sets, added), units) : units
+                    skipped += length(units) - length(mine)
+                    for u in mine
+                        src = Site.source_of(root, u.path; cfg)
+                        # A switch naming this page's file turns its rule off for this launch.
+                        rules = filter(x -> Engine.Checks.applies(cfg, x; file = src), on_page)
+                        !isempty(r.rules) && isempty(rules) && (skipped += 1; continue)
+                        id = Symbol(string(r.id, UNIT_MARK, u.key))
+                        push!(roles, unit_role(r, id; rules))
+                        extras[id] = Dict{String,Any}("unit" => u.file, "unit_source" => src)
+                    end
+                end
+            end
+            if !isempty(of_source)
+                srcs = source_units(cfg, root)
+                touched(u) = u.path in get(sets, Model.FileSet.LITERATE, String[]) || u.path in added
+                mine = narrow ? filter(touched, srcs) : srcs
+                skipped += length(srcs) - length(mine)
+                for u in mine
+                    rules = filter(x -> Engine.Checks.applies(cfg, x; file = u.path), of_source)
+                    isempty(rules) && (skipped += 1; continue)
+                    id = Symbol(string(r.id, UNIT_MARK, u.key))
+                    push!(roles, unit_role(r, id; rules))
+                    extras[id] = Dict{String,Any}("unit" => u.file, "unit_source" => u.path, "source_unit" => true)
+                end
             end
         else
             push!(roles, r)
@@ -284,11 +311,28 @@ const UNIT_MARK = "@"
 "The bundle a reader key belongs to: `withheld@guide` is the withheld reader's."
 bundle_of(key::Symbol) = Symbol(first(split(String(key), UNIT_MARK)))
 
-# One reader, re-keyed for the unit it is given; everything else about it is the derived reader's.
-unit_role(r::Model.AgentRole, id::Symbol) =
+# One reader, re-keyed for the unit it is given, with the rules that apply to that unit; everything else
+# about it is the derived reader's.
+unit_role(r::Model.AgentRole, id::Symbol; rules::Vector{Symbol} = r.rules) =
     Model.AgentRole(; id, instrument = r.instrument, reads = r.reads, site = r.site,
-                    kept_from_code = r.kept_from_code, description = r.description, rules = r.rules,
+                    kept_from_code = r.kept_from_code, description = r.description, rules,
                     strength = r.strength, cap = r.cap)
+
+# Whether a rule is judged on a Literate example's source file rather than on a page: it runs over the
+# examples and nothing else. `RULE.DOC.LITERATE` says so in its statement; its sibling, judged on the
+# built page, needs the site and never reaches the reader given nothing.
+function on_source(id::Symbol)
+    r = Catalogue.rule(id)
+    return r !== nothing && r.filesets == [Model.FileSet.LITERATE]
+end
+
+"The key prefix of a unit that is a Literate example's source file rather than a built page."
+const SOURCE_UNIT = "source-"
+
+# Every Literate example as a unit of its own: the file itself, which is where the rule is judged.
+source_units(cfg::Model.Config, root::AbstractString) =
+    [(path = f, key = SOURCE_UNIT * replace(f, r"[^A-Za-z0-9_]+" => "-"), file = joinpath(root, f))
+     for f in Texts.files(cfg, root, Model.FileSet.LITERATE)]
 
 """
     fix_stage(root, run; io = stdout) -> Int
@@ -412,8 +456,10 @@ function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config,
     full = get(by_id, :full, nothing)
     roles = Model.AgentRole[]
     extras = Dict{Symbol,Any}()
-    units = isempty(site) ? Dict{String,Any}() :
-            Dict(u.key => u for u in Site.write_units(Agents.stage_dir(root, run.id), Site.pages(site, cfg, root)))
+    built = isempty(site) ? typeof(Site.pages("", cfg, root))() : Site.pages(site, cfg, root)
+    units = Dict{String,Any}(u.key => u for u in Site.write_units(Agents.stage_dir(root, run.id), built))
+    for u in source_units(cfg, root); units[u.key] = u; end
+    site_pages = [joinpath(site, p.path) for p in built]
     for f in Runs.workable(run)
         if stage === :diff
             k = findlast(x -> x.finding == f.id && x.pass == run.passes, run.fixes)
@@ -424,23 +470,40 @@ function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config,
         # A verifier is given what the reader was given. For a reader given ONE PAGE that is the page as
         # it now stands, rebuilt: a page the fix deleted has no verifier, and the finding stays open.
         unit = ""
+        of_source = false
         if stage === :verify && reader.site && reader.kept_from_code
             key = String(last(split(String(f.source), UNIT_MARK)))
+            of_source = startswith(key, SOURCE_UNIT)
             haskey(units, key) || (println(io, "run: ", f.id, " was found on a page the site no longer has; it stays open"); continue)
             unit = units[key].file
         end
-        commits = Runs.fix_commits(root, run.first_commit, f.id)
-        diff = stage === :diff && !isempty(commits) ? something(Git.run(root, "show", "--format=", first(commits)), "") : ""
+        diff = stage === :diff ? fix_diff(root, run, f) : ""
         id = Symbol(string(stage, "-", f.id))
-        text = stage === :verify ?
+        text = if stage === :diff && isempty(diff)
+            "You VERIFY one fix. The blind verifier called it FIXED, and this run committed no change at all, so there is no diff to show you. " *
+            "Read the current text at every location and answer FIXED (the defect is gone everywhere), LINE_ONLY (gone at some locations and not others) " *
+            "or MADE_WORSE (the text is now wrong where it was right). Quote the decisive words of the current text."
+        elseif stage === :diff
+            "You VERIFY one fix with the diff in front of you. The blind verifier called it FIXED; you check the change itself. " *
+            "Answer FIXED, LINE_ONLY (fixed at some locations and not others) or MADE_WORSE (the change broke something the old text had right). " *
+            "Quote the decisive words of the diff or of the current text."
+        elseif !isempty(unit)
+            # The reader had one unit and nothing else, and so has this verifier: the finding's other
+            # locations, copies the fix pass added, are the diff verifier's, who sees them all (found in
+            # review, 2026-09-23: told the unit was all it could read, and asked about every location).
+            "You VERIFY one fix, blind: you are not shown the change, only the text as it now stands. " *
+            "The finding below was made by the reader `$(f.source)` from one unit alone, and you are given that unit as it now stands and nothing else. " *
+            "Judge the defect on this unit: locations the finding names outside it are checked by the verifier who reads the diff. " *
+            "Answer FIXED (the defect is gone from this unit), NOT_FIXED, " *
+            "HIDES_CODE_DEFECT (the documentation now describes code that looks wrong) or NOT_A_DEFECT (the finding was mistaken). " *
+            "Quote the decisive current text of the unit; a verdict without a quote counts as NOT_FIXED."
+        else
             "You VERIFY one fix, blind: you are not shown the change, only the text as it now stands. " *
             "The finding below was made by the reader `$(f.source)`, and you are given what that reader was given. " *
             "Read the current text at every location and answer FIXED (the defect is gone everywhere), NOT_FIXED, " *
             "HIDES_CODE_DEFECT (the documentation now describes code that looks wrong) or NOT_A_DEFECT (the finding was mistaken). " *
-            "Quote the decisive current text; a verdict without a quote counts as NOT_FIXED." :
-            "You VERIFY one fix with the diff in front of you. The blind verifier called it FIXED; you check the change itself. " *
-            "Answer FIXED, LINE_ONLY (fixed at some locations and not others) or MADE_WORSE (the change broke something the old text had right). " *
-            "Quote the decisive words of the diff or of the current text."
+            "Quote the decisive current text; a verdict without a quote counts as NOT_FIXED."
+        end
         push!(roles, Model.AgentRole(; id, instrument = run.instrument, reads = reader.reads, site = reader.site,
                                      kept_from_code = stage === :verify ? reader.kept_from_code : false,
                                      description = text * " The reader's standpoint: " * reader.description,
@@ -449,11 +512,38 @@ function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config,
         extras[id] = Dict{String,Any}("kind" => "verifier", "finding" => Agents.finding_dict(f),
                                       "finding_id" => f.id, "diff" => diff,
                                       "unit" => unit,
+                                      "source_unit" => of_source,
                                       "verdicts" => stage === :verify ? BLIND_VERDICTS : DIFF_VERDICTS)
     end
-    Agents.write_arguments(root, run, cfg; roles, extras, site, io)
+    Agents.write_arguments(root, run, cfg; roles, extras, site, site_pages, io)
     isempty(roles) && println(io, "run: no finding needs this stage; collect it to move on")
     return 0
+end
+
+"""
+    fix_diff(root, run, f) -> String
+
+The change a diff verifier is shown for one finding. The arguments are:
+
+- `root` — the package root.
+- `run` — the run.
+- `f` — the finding.
+
+Returns the diff text, empty where the run has committed no fix at all.
+
+Every commit that names the finding, oldest first, and not only the newest: a fix made in two commits
+was shown half of it. A finding with no commit of its own was fixed, if at all, by another's — a copy or
+a duplicate — and is shown every fix the run has made, with a line saying so; until 2026-09-24 it was
+told it had a diff and given none (found in review, 2026-09-23).
+"""
+function fix_diff(root::AbstractString, run::Model.Run, f::Model.Finding)
+    mine = Runs.fix_commits(root, run.first_commit, f.id)
+    shas = isempty(mine) ? Runs.guarded_commits(root, run.first_commit) : mine
+    isempty(shas) && return ""
+    body = something(Git.run(root, "show", "--format=commit %H%n%n%B", reverse(shas)...), "")
+    isempty(mine) || return body
+    return "# No commit names this finding. Below is every fix this run has made: the defect may have\n" *
+           "# been fixed by another finding's change, or not at all.\n\n" * body
 end
 
 # A stage whose arguments predate the wire shape of v2.0.0-rc.13 is neither continued nor collected here:
@@ -545,6 +635,11 @@ function collect(root::AbstractString; io::IO = stdout)
     else
         findings = Model.Finding[]
         offset = length(run.findings)
+        # A finding under a rule the package switched off for every file it names is the switch's, not
+        # the fixer's: a reader is not told which files a switch names (found in review, 2026-09-23).
+        off = [x for x in drafts if switched_off(cfg, last(x))]
+        isempty(off) || println(io, "run: ", length(off), " finding(s) under a rule switched off for the files they name are dropped")
+        drafts = merge_same(setdiff(drafts, off), cfg)
         for (i, (role, d)) in pairs(drafts)
             # The finding names the reader that made it: with readers derived, the id is what says which
             # bundle and which standpoint stood behind the claim.
@@ -564,6 +659,48 @@ function collect(root::AbstractString; io::IO = stdout)
     # 1 when something was FOUND, a finding in the working notes included: it is not open — no pass
     # works on it — but it is the owner's to read, and a collect that answered 0 would have hidden it.
     return isempty(Runs.open_findings(run)) && isempty(Runs.in_material(run)) ? 0 : 1
+end
+
+# Whether a draft's rule is switched off for every file the draft names, or for the whole package.
+switched_off(cfg::Model.Config, d::Model.FindingDraft) =
+    d.rule !== nothing && !isempty(d.locations) &&
+    all(l -> !Engine.Checks.applies(cfg, d.rule; file = l.file), d.locations)
+
+"""
+    merge_same(drafts, cfg) -> Vector{Tuple{String,Model.FindingDraft}}
+
+One finding per defect: drafts under the same rule — or under none — that share a placed location are
+merged into the first of them. The arguments are `drafts`, each with the reader that made it, and `cfg`,
+the package's config, which says whether the merged locations are working notes. Returns the
+merged list, in the order the first of each group came.
+
+Several readers see the same sentence, and each filed it: one defect became three findings, three
+verifiers and one fix commit, which left two verifiers with no change of their own to read (found in
+review, 2026-09-23). The merged finding keeps every location and names the other readers and their
+claims in its evidence, so nothing a reader said is lost. Drafts under DIFFERENT rules stay apart: two
+rules broken in one sentence are two defects.
+"""
+function merge_same(drafts::AbstractVector, cfg::Model.Config)
+    out = Tuple{String,Model.FindingDraft}[]
+    placed(d) = Set((l.file, l.line) for l in d.locations if l.found !== Model.Anchor.OUTDATED)
+    for (role, d) in drafts
+        k = findfirst(x -> last(x).rule == d.rule && !isempty(intersect(placed(last(x)), placed(d))), out)
+        if k === nothing
+            push!(out, (String(role), d))
+            continue
+        end
+        r0, d0 = out[k]
+        locs = copy(d0.locations)
+        for l in d.locations
+            any(m -> (m.file, m.line, m.text) == (l.file, l.line, l.text), locs) || push!(locs, l)
+        end
+        also = "Also reported by `" * String(role) * "`: " * d.claim
+        out[k] = (r0, Model.FindingDraft(rule = d0.rule, locations = locs, claim = d0.claim,
+                                         evidence = isempty(d0.evidence) ? also : d0.evidence * "\n\n" * also,
+                                         fix = d0.fix, maybe_code = d0.maybe_code || d.maybe_code,
+                                         in_material = Catalogue.in_material(cfg, locs)))
+    end
+    return out
 end
 
 """
