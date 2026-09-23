@@ -134,7 +134,7 @@ finding_dict(f::Model.Finding) = Dict{String,Any}(
                                      "found" => String(Symbol(l.found))) for l in f.draft.locations])
 
 """
-    write_arguments(root, run, cfg; roles, extras, site, io) -> String
+    write_arguments(root, run, cfg; roles, extras, site, site_pages, io) -> String
 
 Writes what the session needs to launch one stage. The arguments are:
 
@@ -146,6 +146,7 @@ Writes what the session needs to launch one stage. The arguments are:
   `verdicts` for a verifier; `unit` and `unit_source` for a reader given one built page.
 - `site` — the built site's directory, for the reader that reads the whole of it; empty where none was
   built.
+- `site_pages` — the built pages a site reader may read: the target pages the walk kept, by path.
 - `io` — where the handoff is described.
 
 Returns the path written.

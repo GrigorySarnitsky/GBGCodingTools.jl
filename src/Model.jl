@@ -757,9 +757,10 @@ One execution of one instrument on one package, stored beside its report. The fi
 
 - `dropped` — how many findings the owner's stop threw away, `0` for every other run.
 
-That last count is what keeps an abandoned record honest. Stopping a run empties its list of findings
-and leaves its launch count alone, and those two read together say that every reader wrote its file and
-none of them found anything — of a run that found a hundred. What was thrown away is part of what
+That last count is what keeps an abandoned record honest. Stopping a run removes its open findings
+from the list — what a verdict had closed stays — and leaves its launch count alone, and those two read
+together say that every reader wrote its file and none of them found anything — of a run that found a
+hundred. What was thrown away is part of what
 happened, and belongs where the run is written down rather than only in a line nobody keeps.
 
 A bound reader carries rules; an open one carries a standpoint and no rule. Bound is the default, and

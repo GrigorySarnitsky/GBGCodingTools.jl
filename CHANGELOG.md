@@ -22,7 +22,8 @@ while a run was open because it did not look past the run's record and the queue
 share one list; an arguments file written before rc.13's wire shape was misread as silence rather than refused; and the
 driver key-coverage test passed for one field by substring. **The figures in rc.13's entry were wrong**: measured on
 GBGPeriodicFields' build, the withheld reader launches over 16 pages, not 18, and what each whole-corpus reader stops
-being handed is about 164,000 tokens; "35,000" measured nothing.
+being handed is about 164,000 tokens; "35,000", "212,000" and "72 percent" measured nothing, and a role costs about
+130 bytes with a real run id, not 95. The rc.13 entry is corrected in place.
 
 ## 2.0.0-rc.14 — 2026-09-23
 
@@ -45,13 +46,15 @@ default. Every other rationale document is read by nobody unless listed. The sit
 copies a build makes of the working notes are never launched over; the collect marks a finding located only in
 material and routes it to the owner in its own section of the report, unfixed and unverified, because it may be the
 formula three docstrings copy; `gbg docfix commit --finding` refuses an edit to such a document. Program checks are
-untouched. On GBGPeriodicFields the withheld reader goes from 23 launches over about 212,000 tokens of pages to 18
-over about 35,000, and the two cold-read rules stop being applied to 72 percent of a corpus they had been ruled not to
-apply to. `docs/PF-WIRING.md` Step 3 says what, if anything, a consumer adds.
+untouched. On GBGPeriodicFields, measured through the walk on its build: the withheld reader launches over 16 pages, the
+architecture page among them, and the full reader and each discipline stop being handed four documents of about
+164,000 tokens under two cold-read rules that had been ruled not to apply to them. [Figures corrected in rc.15; this
+entry first said 18 launches and 35,000 tokens, which measured nothing.] `docs/PF-WIRING.md` Step 3 says what, if anything, a consumer adds.
 
 **The launch's arguments carry only what is each role's own.** The shared fields of a stage's roles go once into a
 `kinds` table, the two directories once into `dirs`, and the file is written compact; a role is six short fields and
-about 95 bytes. A verify stage of 142 findings is 14 KB whether the findings are 40 characters or 40,000, and
+about 130 bytes with a real run id in its keys. A verify stage of 142 findings is about 19 KB whether the findings are
+40 characters or 40,000, and
 `test/driver.jl` now holds both properties — the size does not depend on what the agents read, and a role's marginal
 cost is bounded — so this cannot grow back unnoticed. The gate found the pretty-printing on its first run.
 

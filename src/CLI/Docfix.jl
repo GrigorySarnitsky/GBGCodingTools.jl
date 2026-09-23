@@ -88,8 +88,9 @@ and commits nothing otherwise. The arguments are:
 - `finding` — the id of the finding this commit fixes, written as a trailer so the run's verifiers can
   find the diff and revert it; empty outside a fix pass.
 
-Exit 0 when it committed, 1 when a file was code and nothing was committed, 2 when there was nothing to
-commit or the config could not be read, or a run is open and no finding was named. Returns the exit code.
+Exit 0 when it committed; 1 when a file was code, or was working notes while a run is open, and nothing
+was committed; 2 when there was nothing to commit, or a run is open and no finding was named; 3 when git
+failed. An unreadable config throws, which the CLI reports as exit 2. Returns the exit code.
 
 WHILE A RUN IS OPEN THE FINDING IS REQUIRED. Everything the pass machinery does afterwards is keyed on
 that trailer: the verifier reading the diff is handed the diff of the commits that name its finding, and
@@ -145,7 +146,7 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
 end
 
 """
-    check(root; io = stdout) -> Int
+    check(root; build = true, io = stdout) -> Int
 
 Says what the guard makes of the working tree, and what the documentation rules make of it, and changes
 nothing. The arguments are:

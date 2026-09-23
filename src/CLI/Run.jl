@@ -709,10 +709,12 @@ The findings are DROPPED, not queued: the owner stopping a run is the owner sayi
 wanted, and a leftover line from a run nobody finished would be read as a finding somebody stood behind.
 What the run committed through the guard stays; a fix already verified is not undone by stopping.
 
-HOW MANY were dropped is kept, in `dropped`. The list goes and the launch count stays, so a record
-holding only those two says twenty-six readers wrote their files and none of them found anything — of a
-run that found a hundred and was stopped. The count is the difference between the two readings, and a
-report is written from the record, so a record that cannot tell them apart makes a report that lies.
+HOW MANY were dropped is kept, in `dropped`, and a finding a verdict had already CLOSED — fixed and
+verified twice, or called no defect — stays on the record with its pass, since the fix stays in the
+history and nobody threw it away. Without the count, a record whose open findings are gone and whose
+launch count stays says twenty-six readers wrote their files and none of them found anything — of a
+run that found a hundred and was stopped. A report is written from the record, so a record that cannot
+tell the two apart makes a report that lies.
 
 ITS RECORD AND REPORT ARE COMMITTED, like a closed run's [ruled 2026-09-22, on
 [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)'s question, after two
@@ -753,7 +755,7 @@ function abandon(root::AbstractString; io::IO = stdout)
     rm(Agents.scratch_dir(root, id); force = true, recursive = true)
     Runs.write_stage(root, id, length(get(Runs.STAGES, run.instrument, Symbol[])))
     println(io, "run: ", id, " abandoned at ", run.stage, "; ", stopped.dropped, " finding(s) dropped",
-            isempty(kept) ? "." : ", $(length(kept)) fixed and verified kept on the record.")
+            isempty(kept) ? "." : ", $(length(kept)) closed by a verdict and kept on the record.")
     println(io, "  Commit .gbg/runs/", id, "/ — the record and the report. Its agents read this package,")
     println(io, "  and that they were stopped is evidence about it. Its scratch is deleted.")
     return 0

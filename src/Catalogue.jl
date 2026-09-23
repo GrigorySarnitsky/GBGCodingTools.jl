@@ -269,7 +269,8 @@ function architecture_settings(cfg::Model.Config)
         p.name === :architecture_doc || continue
         for s in cfg.settings
             s.rule === rule.id && s.name === p.name && s.value isa AbstractString || continue
-            v = replace(String(s.value), '\\' => '/')
+            v = norm_rel(s.value)
+            isempty(v) && continue                  # an empty setting is no setting, not a document named ""
             v in out || push!(out, v)
         end
     end
@@ -277,11 +278,16 @@ function architecture_settings(cfg::Model.Config)
 end
 
 """
-    normal_path(root, path) -> String
+    normal_path(cfg, root, path) -> String
 
 A path as the rest of this package spells one: forward slashes, relative to `root`, no leading `./`,
-and a declared copy resolved to its source. The arguments are `root`, the package root, and `path` as
-a reader or a tool wrote it. Returns the spelling every predicate here compares against.
+and a declared copy resolved to its source. The arguments are:
+
+- `cfg` — the package's config, which names the copies.
+- `root` — the package root.
+- `path` — the path as a reader or a tool wrote it.
+
+Returns the spelling every predicate here compares against.
 
 A reader names a file in whatever form it read it, and an absolute path or a `./` prefix is the same
 file; comparing the raw string routed a finding on a target page to the owner as "in the working
@@ -290,9 +296,9 @@ nothing this package documents, and a location with no file is anchored nowhere 
 wherever it points.
 """
 function normal_path(cfg::Model.Config, root::AbstractString, path::AbstractString)
-    p = replace(replace(String(path), '\\' => '/'), r"/{2,}" => "/")
+    p = norm_rel(path)
     isempty(p) && return p
-    r = rstrip(replace(replace(String(root), '\\' => '/'), r"/{2,}" => "/"), '/')
+    r = rstrip(norm_rel(root), '/')
     if isabspath(p)
         # under the root means under it as a DIRECTORY: `/x/repo-other/…` is not inside `/x/repo`. An
         # absolute path outside the package names nothing this package documents, and is not read.
@@ -300,9 +306,23 @@ function normal_path(cfg::Model.Config, root::AbstractString, path::AbstractStri
         startswith(p, r * "/") || return ""
         p = p[length(r)+2:end]
     end
+    # `..` is resolved before anything is compared, and a path that climbs out of the package names
+    # nothing here either: `docs/../../x.md` was let through and read (found in review, 2026-09-23).
+    (p == ".." || startswith(p, "../")) && return ""
+    k = findfirst(c -> norm_rel(first(c)) == p, cfg.copies)
+    return k === nothing ? p : norm_rel(last(cfg.copies[k]))
+end
+
+# One spelling for a path this module compares: forward slashes, repeated slashes collapsed, `.` and
+# `..` segments resolved, no leading `./`, and `.` alone is the empty name. Applied to what a reader
+# names AND to what a config names, or the two never meet: a setting spelled `./docs/ARCHITECTURE.md`
+# made the architecture document material (found in review, 2026-09-23).
+function norm_rel(path::AbstractString)
+    p = replace(replace(String(path), '\\' => '/'), r"/{2,}" => "/")
+    isempty(p) && return p
+    p = normpath(p)
     while startswith(p, "./"); p = p[3:end]; end
-    k = findfirst(c -> replace(first(c), '\\' => '/') == p, cfg.copies)
-    return k === nothing ? p : replace(last(cfg.copies[k]), '\\' => '/')
+    return p == "." ? "" : p
 end
 
 """
@@ -319,11 +339,11 @@ spelled as a glob is one thing here and in the fixer's refusal alike; comparing 
 made `docs/*.md` material to nobody and refused to the fixer (found in review, 2026-09-23).
 """
 function material_doc(cfg::Model.Config, path::AbstractString)
-    p = replace(path, '\\' => '/')
+    p = norm_rel(path)
     isempty(p) && return false
     target(cfg, p) && return false
-    any(g -> replace(g, '\\' => '/') == p, cfg.generated) && return true
-    any(m -> replace(m, '\\' => '/') == p, cfg.material) && return true
+    any(g -> norm_rel(g) == p, cfg.generated) && return true
+    any(m -> norm_rel(m) == p, cfg.material) && return true
     return any(pat -> Texts.glob_matches(pat, p), get(cfg.filesets, Model.FileSet.RATIONALE, String[]))
 end
 
@@ -345,19 +365,20 @@ relative to the package root. Returns the answer, without touching disk.
 
 The targets are exactly [ruled 2026-09-23]: the docstrings, the hand-written pages, the Literate
 examples, and the one document [`architecture_doc`](@ref) names. A generated page or a declared copy is
-not one, whatever pattern it matches. Every other rationale document is at most MATERIAL — something a
-reader may open to judge a target — and only when the package lists it in `material`; by default nobody
-is given it.
+not one, whatever pattern it matches. Every other rationale document, and every generated page, is
+MATERIAL — something a reader may open to judge a target and never report on — whether or not the
+package lists it; a reader is GIVEN a material document only when the package lists it in `material`,
+and by default nobody is given any.
 
 The review is for the text a user meets. The working notes a package keeps for the sessions that build
 it are not that text, however many of them there are: on the first real review they were over half of
 the page text the readers were handed, under two rules that had just been ruled not to apply to them.
 """
 function target(cfg::Model.Config, path::AbstractString)
-    p = replace(path, '\\' => '/')
+    p = norm_rel(path)
     isempty(p) && return false
-    any(g -> replace(g, '\\' => '/') == p, cfg.generated) && return false
-    any(c -> replace(first(c), '\\' => '/') == p, cfg.copies) && return false
+    any(g -> norm_rel(g) == p, cfg.generated) && return false
+    any(c -> norm_rel(first(c)) == p, cfg.copies) && return false
     p == architecture_doc(cfg) && return true
     for fs in (Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.LITERATE)
         any(pat -> Texts.glob_matches(pat, p), get(cfg.filesets, fs, Texts.DEFAULT_PATTERNS[fs])) && return true
@@ -383,6 +404,7 @@ function missing_documents(cfg::Model.Config, root::AbstractString)
         for s in cfg.settings
             s.rule === rule.id && s.name === p.name && s.value isa AbstractString && (value = s.value)
         end
+        value = norm_rel(value)
         isempty(value) && continue
         (endswith(value, ".md") || occursin('/', value)) || continue
         isfile(joinpath(root, value)) ||

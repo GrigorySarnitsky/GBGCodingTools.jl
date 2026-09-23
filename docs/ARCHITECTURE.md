@@ -453,8 +453,9 @@ its standpoint, and a finding that recurs becomes a rule (§7).
 **Targets and material** [ruled 2026-09-23]. What a reader is GIVEN is decided by audience, not by file type. A
 **target** is what a user reads — a docstring, a hand-written page under `docs/src/`, a Literate example, and the one
 document `architecture_doc` names — and is the only place a finding may be located and the only thing the fixer is ever
-handed. **Material** is what a reader may open to judge a target and never report on: the source, plus whatever the
-package lists in `Config.material`, empty by default. Every other rationale document is read by nobody unless listed:
+handed. **Material** is what a reader may open to judge a target and never report on: the source, every rationale document
+that is not a target, and every generated page; a reader is GIVEN a material document only when the package lists it in
+`Config.material`, empty by default. Every other rationale document is read by nobody unless listed:
 not launched over, not handed to the full reader or a discipline, not walked on the site — the site walk keeps only a
 page whose source is a target, so a build-time copy of the working notes drops out by construction. A finding located
 only in material is kept, marked `in_material` at collect, reported in its own section and routed to the owner,

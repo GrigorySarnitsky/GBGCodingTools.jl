@@ -20,7 +20,7 @@ attacking this file did exactly that during the measurements.
 
 **`gbg`, not `gbg --dev`.** PF's pin is a tag, so the installed shim runs in PF.
 
-**Steps 1 to 3 are this session's, and are one change. Step 4 is not this session's at all.** A run
+**Steps 1 to 4 are this session's, and are one change. Step 5 is not this session's at all.** A run
 starts when the owner asks for it and on nothing else. This file was written by another session, and a
 peer session is not authority.
 
@@ -40,12 +40,12 @@ answer, and answer with the work the title names. It reaches the network, so it 
 check --network`, never in a build or a test; run it, and fix and commit what it reports, before a
 review opens, since a fix made afterwards is a commit landing under the agents. The seventh is
 `RULE.DOC.LITERATE_RENDERED`, judged on what the build made of a Literate example's comments — read it
-before narrowing the Literate set in Step 3.
+before narrowing the Literate set in Step 4.
 
 **Every rule now carries one of three covers** — checked by a program, judged by a reader, or an
 instruction to the session — and the rules page is grouped by them. Nothing for PF to do.
 
-**The documentation review exists.** rc.5 had no instrument at all. Step 4 is about it.
+**The documentation review exists.** rc.5 had no instrument at all. Step 5 is about it.
 
 ## Step 1 — bump the pin, then move the manifests
 
@@ -62,7 +62,7 @@ What the bump brings that rc.5 did not write:
 |---|---|
 | `.gbg/policy/asking.md` | **new**: the five `RULE.ASK.*` rules. The rulebook is nine files, not eight. |
 | `.claude/skills/documentation-review/SKILL.md` | **new**: the instrument's protocol in six steps. Generated; do not hand-edit it. |
-| `.claude/skills/bug-hunt/`, `.claude/skills/change-audit/` | **new**, and both describe instruments that do not exist. See Step 5. |
+| `.claude/skills/bug-hunt/`, `.claude/skills/change-audit/` | **new**, and both describe instruments that do not exist. See Step 6. |
 | `.gbg/policy/*.md` (the nine PF already had), the `CLAUDE.md` block, `.gitignore`, `.claude/hooks/queue-guard.sh`, `test/regressions/README.md`, `.github/actions/gbg-auth/action.yml` | rewritten at the new version |
 | `docs/Project.toml`, `test/Project.toml` | `rev = "v2.0.0-rc.10"`; `compat` stays `=2.0.0` |
 
@@ -151,7 +151,8 @@ needs a reader for. With none declared, the derivation reports a gap and nobody 
 
     RULE.DOC.COORD_FREE needs a differential_geometry reader and GBGPeriodicFields declares none, so nobody judges it
 
-That is PF's only such gap today. The catalogue holds six disciplines: differential geometry, Fourier
+That was PF's only such gap before it declared; its config today declares the three below, and `Catalogue.panel`
+reports eight readers and no gap. The catalogue holds six disciplines: differential geometry, Fourier
 pseudo-spectral numerics, turbulence theory, cloud microphysics, statistical estimation and software
 architecture. The three that look like PF's are
 
@@ -164,7 +165,7 @@ their field that no rule names.
 **Which of the six is the owner's to settle, not this session's.** It is a question about PF's science,
 not about its tooling: a declared discipline is an expert reading the whole corpus from that field, and
 a wrong one spends a panel on the wrong questions. Put it to him with the six standpoints in front of
-him, which the readers page prints. Those standpoints were rewritten on 2026-09-21 as experts with a
+him, which `DISCIPLINES` in `src/Roles/documentation_review.jl` holds in full. Those standpoints were rewritten on 2026-09-21 as experts with a
 licence to judge whether the method, the model or the decomposition is the right one, each judgement
 naming the standard applied and the alternative preferred, so that PF can disagree with a finding rather
 than only accept or ignore it. He adopted them after a blind comparison over the real packages.
@@ -175,7 +176,7 @@ in PF.
 ### The four file parameters, of which PF sets one
 
 `RULE.DOC.COORD_FREE` bans matrix and flattening machinery outside the one document where it belongs,
-and takes that file as a parameter. PF has the document, so name it — as a new entry **inside the
+and takes that file as a parameter. PF names it already; confirm the entry is still there, **inside the
 existing `settings = [ … ]` list**, beside the `RULE.TEX.MATHBF` setting:
 
         Setting(rule = Symbol("RULE.DOC.COORD_FREE"), name = :formalization, value = "docs/FORMALIZATION.md"),
@@ -223,11 +224,11 @@ whether it belongs in the set rather than losing it to a narrowing aimed at the 
 
 ### Then commit
 
-Steps 1 to 3 are one change and are committed together, with the docs build green. `gbg run` refuses a
+Steps 1 to 4 are one change and are committed together, with the docs build green. `gbg run` refuses a
 tree with uncommitted changes to tracked files, so an unfinished upgrade blocks the review — and a run
 that opened on a dirty tree could not tell its own edits from yours.
 
-## Step 4 — the review, when the owner asks for it
+## Step 5 — the review, when the owner asks for it
 
 **The protocol is `.claude/skills/documentation-review/SKILL.md`, which Step 1 wrote.** It is generated
 from the instrument's own value, it is six numbered steps, and it is the thing to follow. This section
@@ -239,7 +240,7 @@ follows is what the skill does not say and PF needs to know.
     gbg run documentation-review --readers both
 
 `--readers` defaults to `bound`, which on PF launches four readers and leaves out `spectral_numerics`
-and `software_architecture` — the two open experts Step 3 exists to declare. Pass `both`, or they never
+and `software_architecture` — the two open experts Step 4 exists to declare. Pass `both`, or they never
 run.
 
 **The verb never launches an agent.** `gbg run documentation-review` opens the run, builds the site and
@@ -260,8 +261,8 @@ That is the signal to collect, not a failure.
 
 **Eight readers is eight standpoints, not eight agents.** Two of them — the reader given one built page
 with everything else withheld, and the plain-sense standpoint beside it — are launched once per built
-page. PF's site is twenty-three pages after Step 2, so the reading stage is roughly fifty agents at
-`--readers both`. Each verifier stage then launches one per open finding, for up to four passes. There
+page. Sixteen of PF's built pages are targets after Steps 2 and 3, so the reading stage is 16 × 2 + 6 = 38 agents
+at `--readers both`. Each verifier stage then launches one per open finding, for up to four passes. There
 is no launch budget; the owner removed it on 2026-09-21. **Put the count and its cost to the owner
 before the first run**, and let him choose whether the first one is the whole panel or the bound half.
 
@@ -322,7 +323,7 @@ not come back next time.
 **Nothing in this machinery has met a real agent.** Every rehearsal was a fixture run. Report what
 breaks rather than working around it.
 
-## Step 5 — what PF owns and what this package now owns
+## Step 6 — what PF owns and what this package now owns
 
 **This step applies to every package.** Whoever adapts this file for the next one carries it over.
 

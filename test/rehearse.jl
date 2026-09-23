@@ -1171,6 +1171,30 @@ end
         @test np("/etc/passwd") == ""                                  # outside the package: names nothing here
         @test np(root) == ""
         @test np("") == ""
+        @test np(".") == ""
+        @test np("docs/../src/FixtureA.jl") == "src/FixtureA.jl"       # `..` resolved, a target again
+        @test np("../escape.md") == ""                                  # climbing out names nothing here
+        @test np("docs/../../escape.md") == ""
+        @test np(joinpath(root, "..", "escape.md")) == ""
+        @test G.Catalogue.target(cfg, "docs/../src/FixtureA.jl")
+
+        # a setting is normalised the way a reader's path is, and an empty one is no setting
+        dotted = G.Model.Config(package = "GBGFixture", tool = :dev,
+                                settings = [G.Model.Setting(rule = Symbol("RULE.DOC.SELF_CONTAINED"), name = :architecture_doc, value = "./docs/ARCHITECTURE.md")])
+        @test G.Catalogue.architecture_doc(dotted) == "docs/ARCHITECTURE.md" && G.Catalogue.target(dotted, "docs/ARCHITECTURE.md")
+        @test isempty(G.Catalogue.missing_documents(dotted, root))
+        backslashed = G.Model.Config(package = "GBGFixture", tool = :dev,
+                                     settings = [G.Model.Setting(rule = Symbol("RULE.DOC.SELF_CONTAINED"), name = :architecture_doc, value = "docs\\ARCHITECTURE.md")])
+        @test isempty(G.Catalogue.missing_documents(backslashed, root))
+        blank = G.Model.Config(package = "GBGFixture", tool = :dev,
+                               settings = [G.Model.Setting(rule = Symbol("RULE.DOC.SELF_CONTAINED"), name = :architecture_doc, value = ""),
+                                           G.Model.Setting(rule = Symbol("RULE.DOC.TERMS_DEFINED"), name = :architecture_doc, value = "docs/ARCHITECTURE.md")])
+        @test G.Catalogue.architecture_doc(blank) == "docs/ARCHITECTURE.md"
+        @test !any(m -> occursin("different documents", m), G.Catalogue.missing_documents(blank, root))
+
+        # a glob pattern is literal but for its two wildcards
+        @test G.Texts.glob_matches("docs/a+b.md", "docs/a+b.md") && !G.Texts.glob_matches("docs/a+b.md", "docs/ab.md")
+        @test G.Texts.glob_matches("docs/(x).md", "docs/(x).md") && !G.Texts.glob_matches("docs/(x).md", "docs/x.md")
 
         # material by pattern, as the fixer and the scope see it; a generated page is nobody's to fix
         glob = G.Model.Config(package = "GBGFixture", tool = :dev,

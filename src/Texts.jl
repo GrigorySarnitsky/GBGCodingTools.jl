@@ -87,8 +87,10 @@ the file a reader names. Both ask this.
 """
 function glob_matches(pattern::AbstractString, path::AbstractString)
     pat = replace(pattern, '\\' => '/')
-    rx = "^" * replace(replace(replace(replace(pat, "." => "\\."), "**/" => "\0ANY\0"),
-                               "*" => "[^/]*"), "\0ANY\0" => "(?:.*/)?") * "\$"
+    # Every regex metacharacter but the two wildcards is literal: `docs/a+b.md` matched `docs/ab.md` and
+    # not itself while only the dot was escaped (found in review, 2026-09-23).
+    lit = replace(pat, r"([.^$|?()\[\]{}+\\])" => s"\\\1")
+    rx = "^" * replace(replace(replace(lit, "**/" => "\0ANY\0"), "*" => "[^/]*"), "\0ANY\0" => "(?:.*/)?") * "\$"
     return occursin(Regex(rx), replace(path, '\\' => '/'))
 end
 

@@ -72,11 +72,16 @@ end
 BUILDER[] = build_with_make
 
 """
-    pages(dir) -> Vector{NamedTuple}
+    pages(dir, cfg, root) -> Vector{NamedTuple}
 
 The built pages of the site at `dir` a reader may be given, each with the text a reader meets. The
-arguments are `dir`, the built site's directory, `cfg`, the package's config, and `root`, the package
-root. Returns one entry per page, sorted by path, with:
+arguments are:
+
+- `dir` — the built site's directory.
+- `cfg` — the package's config, which names the generated pages and the copies.
+- `root` — the package root.
+
+Returns one entry per page, sorted by path, with:
 
 - `path` — the page's `index.html`, relative to the site.
 - `key` — a name for the page that is safe in a file name and in an agent's label.
