@@ -465,6 +465,13 @@ function stale(io::IO, id::AbstractString, stage::Symbol)
     return 2
 end
 
+# How many roles this stage's arguments hold: each was launched at least once.
+function stage_roles(root, id)
+    path = Agents.arguments_path(root, id)
+    isfile(path) || return 0
+    return length(get(GBGCodingTools.JSON3.read(read(path, String), Dict{String,Any}), "roles", []))
+end
+
 """
     collect(root; io = stdout) -> Int
 
@@ -497,7 +504,9 @@ function collect(root::AbstractString; io::IO = stdout)
     (at < length(order) && order[at + 1] === :collect) ||
         (println(io, "run: ", id, " is at ", launched, ", which launches nothing to collect; gbg run next"); return 2)
     since = Agents.launched_at(root, id)
-    dirty = Runs.changed_tracked(root)
+    # the run's own records and the queue are the session's, and an answer to an older run's question
+    # amends that run's record: neither is the tree the agents read (review, 2026-09-23)
+    dirty = [p for p in Runs.changed_tracked(root) if !Runs.own_record(p)]
     if (since !== nothing && since != Agents.head(root)) || !isempty(dirty)
         println(io, "run: the tree changed under the agents of ", launched, "; nothing is collected.")
         isempty(dirty) || println(io, "  changed and not committed: ", join(dirty, ", "))
@@ -511,18 +520,25 @@ function collect(root::AbstractString; io::IO = stdout)
     # A role that wrote nothing readable is launched ONCE more before the stage moves on, and then named:
     # a silent reader is not a clean one (found in review, 2026-09-23: the stage moved on at once, and
     # the report said every reader wrote).
-    fresh = setdiff(silent, run.silent)
+    # Once per STAGE — verifier keys repeat across passes — and a relaunched agent that then writes is
+    # not silent (both found in review, 2026-09-23). The relaunched set lives in the stage's own scratch.
+    mark = joinpath(Agents.stage_dir(root, id), "relaunched")
+    again = isfile(mark) ? String[strip(l) for l in eachline(mark) if !isempty(strip(l))] : String[]
+    fresh = setdiff(silent, again)
     if !isempty(fresh)
         for k in fresh; rm(joinpath(Agents.results_dir(root, id), k * ".json"); force = true); end
-        Runs.save(root, with(run; silent = vcat(run.silent, fresh)))
+        mkpath(dirname(mark)); write(mark, join(vcat(again, fresh), '\n'))
         println(io, "run: ", length(fresh), " agent(s) wrote nothing readable: ", join(fresh, ", "), ".")
         println(io, "  Launch them once more — gbg run next marks exactly them — then collect again.")
         return 2
     end
+    # every role of the stage was launched at least once, and the relaunched ones once more
+    n_launched = stage_roles(root, id) + length(again)
     Runs.advance!(root, id, :collect; io) || return 2
     if launched === :verify || launched === :diff
         run = grade(root, run, launched, verdicts; io)
-        run = with(run; stage = :collect, agent_launches = run.agent_launches + arrived + length(silent))
+        run = with(run; stage = :collect, agent_launches = run.agent_launches + n_launched,
+                   silent = vcat(run.silent, silent))
         Runs.save(root, run)
         println(io, "run: collected ", length(verdicts), " verdict(s) from ", wrote, " verifier(s); ",
                 length(Runs.open_findings(run)), " finding(s) open.")
@@ -536,13 +552,14 @@ function collect(root::AbstractString; io::IO = stdout)
                                           Model.Decider.AGENT, d))
         end
         run = with(run; stage = :collect, findings = vcat(run.findings, findings),
-                   agent_launches = run.agent_launches + arrived + length(silent))
+                   agent_launches = run.agent_launches + n_launched, silent = vcat(run.silent, silent))
         Runs.save(root, run)
         println(io, "run: collected ", length(findings), " finding(s) from ", wrote, " reader(s).")
     end
     if !isempty(silent)
-        println(io, "run: these wrote nothing even launched twice, and are not clean; the report names them:")
+        println(io, "run: these wrote nothing even launched again, and are not clean; the report names them:")
         for s in silent; println(io, "  ", s); end
+        return 2                                  # a role that wrote NOTHING is exit 2, never a quiet zero
     end
     # 1 when something was FOUND, a finding in the working notes included: it is not open — no pass
     # works on it — but it is the owner's to read, and a collect that answered 0 would have hidden it.
@@ -696,6 +713,13 @@ function close_run(root::AbstractString; io::IO = stdout)
     end
     unguarded = Runs.unguarded_code(root, run.first_commit)
     stop = isempty(unguarded) ? run.stop : Model.Stop.CANNOT_EVALUATE
+    # A silent READER leaves part of the package unjudged, so the run cannot end as evaluated. A silent
+    # verifier does not: its fix is graded NOT_FIXED, and its finding stays open and is carried.
+    silent_readers = [k for k in run.silent if !startswith(k, "verify-") && !startswith(k, "diff-")]
+    if !isempty(silent_readers)
+        stop = Model.Stop.CANNOT_EVALUATE
+        println(io, "run: ", length(silent_readers), " reader(s) wrote nothing, so what they were to judge was not judged; the run cannot end as evaluated.")
+    end
     if failed || !isempty(run.unreverted)
         stop = Model.Stop.CANNOT_EVALUATE
         isempty(run.unreverted) || println(io, "run: ", length(run.unreverted), " rejected fix(es) could not be reverted and are still in the tree: ",
@@ -712,7 +736,10 @@ function close_run(root::AbstractString; io::IO = stdout)
     # not this run's, and the report says so instead.
     stop = isempty(undone) ? stop : Model.Stop.CANNOT_EVALUATE
     closed = with(run; stage = :close, stop = stop)
-    queued = stop === Model.Stop.DONE ? queue_leftovers(root, closed) : 0
+    # Always: findings in the working notes and questions waiting are carried by no run, so a close
+    # that did not end DONE must not lose them; open findings go to the queue only on DONE, since a run
+    # that could not be evaluated carries them instead (review, 2026-09-23).
+    queued = queue_leftovers(root, closed; open_too = stop === Model.Stop.DONE)
     dir = Runs.dir(root, id)
     write(joinpath(dir, "report.md"), Render.report(closed, cfg; root, queued, undone = length(undone), red))
     open(joinpath(dir, "run.json"), "w") do f
@@ -805,7 +832,7 @@ function abandon(root::AbstractString; io::IO = stdout)
     # and stood behind by two verifiers was not thrown away by anyone: it stays in the record with its
     # pass, since the fix stays in the history, and the report says so rather than "nobody stood behind
     # it" (found in review, 2026-09-23).
-    kept = [f for f in run.findings if Runs.closed(run, f.id)]
+    kept = [f for f in run.findings if Runs.closed(run, f.id) || Runs.answer_of(run, f.id) == Runs.CODE_ANSWER]
     stopped = with(run; stage = :close, stop = Model.Stop.OWNER_STOPPED, findings = kept,
                    fixes = [x for x in run.fixes if any(f -> f.id == x.finding, kept)],
                    # a question about a dropped finding goes with it: answered later it settled nothing
@@ -881,6 +908,9 @@ function restore_green(root::AbstractString, run::Model.Run, cfg::Model.Config; 
     return (undone, still, failed)
 end
 
+# An agent's text on one line: a newline in a claim would start a new queue item, or a heading, of its own
+one_line(t) = replace(String(t), r"\s*[\r\n]+\s*" => " ")
+
 "The heading of the work queue's section the end-of-turn hook does not count."
 const QUEUE_HEADING = "## From the last review"
 
@@ -895,10 +925,9 @@ Each line names the file, the node and the quote rather than a line number, whic
 the owner reads it. The section is the last review's and is replaced whole; the owner's own sections
 stay as they were.
 """
-function queue_leftovers(root::AbstractString, run::Model.Run)
-    open = Runs.open_findings(run)
+function queue_leftovers(root::AbstractString, run::Model.Run; open_too::Bool = true)
+    open = open_too ? Runs.open_findings(run) : Model.Finding[]
     notes = Runs.in_material(run)
-    owner = Runs.to_owner(run)
     waiting = [(rid, q) for (rid, q) in Runs.open_questions(root) if rid != run.id]
     path = joinpath(root, ".claude", "WORK_QUEUE.md")
     text = isfile(path) ? read(path, String) : ""
@@ -907,13 +936,8 @@ function queue_leftovers(root::AbstractString, run::Model.Run)
     # and listed first because it may be the formula three docstrings copy.
     for f in notes
         l = isempty(f.draft.locations) ? nothing : f.draft.locations[1]
-        push!(lines, "- [ ] " * f.id * " IN THE WORKING NOTES, for the owner: " * f.draft.claim *
-                     (l === nothing ? "" : " — `" * l.file * "`" * (isempty(l.text) ? "" : " \"" * l.text * "\"")))
-    end
-    for f in owner
-        q = run.questions[findfirst(x -> x.id == Runs.code_question_id(run, f.id), run.questions)]
-        push!(lines, "- [ ] " * f.id * " FIX THE CODE, as the owner answered: " * f.draft.claim *
-                     (isempty(q.direction) ? "" : " — " * q.direction))
+        push!(lines, "- [ ] " * f.id * " IN THE WORKING NOTES, for the owner: " * one_line(f.draft.claim) *
+                     (l === nothing ? "" : one_line(" — `" * l.file * "`" * (isempty(l.text) ? "" : " \"" * l.text * "\""))))
     end
     for f in open
         where_ = ""
@@ -922,7 +946,7 @@ function queue_leftovers(root::AbstractString, run::Model.Run)
             where_ = " — `" * l.file * "`" * (isempty(l.node) ? "" : " (" * l.node * ")") *
                      (isempty(l.text) ? "" : " \"" * l.text * "\"")
         end
-        push!(lines, "- [ ] " * f.id * " " * f.draft.claim * where_ *
+        push!(lines, "- [ ] " * f.id * " " * one_line(f.draft.claim) * one_line(where_) *
                      (Runs.parked(run, f.id) ? " — waits on the owner's answer: `gbg answer " * Runs.code_question_id(run, f.id) * " \"<option>\"`" : ""))
     end
     # a question an EARLIER run put, still unanswered: its finding is carried nowhere, so it stays here

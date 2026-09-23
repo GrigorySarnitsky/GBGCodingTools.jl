@@ -100,26 +100,44 @@ same rulebook and would otherwise raise it again and spend another pass on it.
 function answer(root::AbstractString, id::AbstractString, option::AbstractString;
                 item::AbstractString = "", direction::AbstractString = "",
                 settled::Bool = false, io::IO = stdout)
+    R = Orchestration.Runs
+    found = R.question_of(root, id)
+    of_run = found !== nothing && !any(q -> get(q, "id", "") == id, Engine.Questions.open_questions(root))
+    if of_run
+        run_id, run, q = found
+        # refused on its own terms first, so nothing is re-made for an answer that is then refused
+        q.answer === nothing || (println(io, "answer: it was already answered: ", q.answer); return 2)
+        isempty(q.options) || option in [o.label for o in q.options] ||
+            (println(io, "answer: ", option, " is not one of its options: ", join([o.label for o in q.options], ", ")); return 2)
+        fid = replace(replace(id, Regex("^" * run_id * "-") => ""), r"-code$" => "")
+        # "do not report it again" is a ruling that the READER was wrong; it is refused on an answer that
+        # wants the code or the documentation changed (review, 2026-09-23)
+        settled && option != NOT_A_DEFECT &&
+            (println(io, "answer: refused — --settled means the reader was wrong, which `", option, "` does not say"); return 2)
+        if option == R.DOCS_ANSWER
+            # the edit is made again BEFORE the answer is recorded, so an edit that cannot be made leaves
+            # the question standing; and never while a run is open, whose collect the commit would block
+            open_run_here(root) === nothing ||
+                (println(io, "answer: refused — a run is open; answer this once it has closed, since re-making the edit commits"); return 2)
+            undone = R.reverts_of(root, run.first_commit, fid)
+            ok = all(r -> R.revert!(root, r; why = "the owner: fix the documentation instead"), undone)
+            ok || (println(io, "answer: the reverted edit of ", fid, " could NOT be made again (the page has moved, or something is staged);",
+                           " nothing was recorded, and the question stands"); return 2)
+        end
+    end
     why = Engine.Questions.answer!(root, id, option; item, direction)
-    of_run = why !== nothing && Orchestration.Runs.question_of(root, id) !== nothing
-    of_run && (why = Orchestration.Runs.answer!(root, id, option; item, direction))
+    of_run && (why = R.answer!(root, id, option; item, direction))
     why === nothing || (println(io, "answer: ", why); return 2)
     println(io, "answer: ", id, isempty(item) ? "" : " / " * item, " answered `", option, "`.")
-    # "The reverted edit is made again and stands": the answer does what its option says (found in
-    # review, 2026-09-23 — every option recorded the answer and changed nothing).
-    if of_run && option == Orchestration.Runs.DOCS_ANSWER
-        run_id, run, _ = Orchestration.Runs.question_of(root, id)
-        fid = replace(replace(id, Regex("^" * run_id * "-") => ""), r"-code$" => "")
-        undone = Orchestration.Runs.reverts_of(root, run.first_commit, fid)
-        if isempty(undone)
-            println(io, "answer: no reverted edit of ", fid, " was found to make again; the finding is closed as it stands")
-        else
-            ok = all(r -> Orchestration.Runs.revert!(root, r; why = "the owner: fix the documentation instead"), undone)
-            println(io, ok ? "answer: the reverted edit of $(fid) is made again and stands." :
-                             "answer: the reverted edit of $(fid) could NOT be made again (the page has moved since); make it by hand")
-        end
-    elseif of_run && option == Orchestration.Runs.CODE_ANSWER
-        println(io, "answer: the finding goes to the owner's work queue with the direction given; no pass works on it.")
+    if of_run && option == R.DOCS_ANSWER
+        println(io, "answer: the reverted edit is made again and stands; the finding is closed.")
+    elseif of_run && option == R.CODE_ANSWER
+        # onto the OWNER's list, which no close rewrites: the finding lives only in its run's record, and
+        # a line on the tool's section was erased at the next close (review, 2026-09-23)
+        _, run, _ = found
+        f = run.findings[findfirst(x -> R.code_question_id(run, x.id) == id, run.findings)]
+        owner_line!(root, "- [ ] " * f.id * " " * one_line(f.draft.claim) * (isempty(direction) ? "" : " — " * one_line(direction)))
+        println(io, "answer: the finding is on the owner's list in .claude/WORK_QUEUE.md, under \"", OWNER_HEADING, "\".")
     end
     where_ = of_run ? settled_locations(root, id) : Model.Location[]
     if settled || (of_run && option == NOT_A_DEFECT)
@@ -130,6 +148,35 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
         println(io, "answer: recorded in ", relpath(path, root), " — agents are told not to report it again.")
     end
     return 0
+end
+
+"The heading of the owner's own list on the work queue: code he asked for, which no close rewrites and the end-of-turn hook does not count."
+const OWNER_HEADING = "## Code the owner asked for"
+
+one_line(t) = replace(strip(String(t)), r"\s*\n\s*" => " ")
+
+function owner_line!(root::AbstractString, line::AbstractString)
+    path = joinpath(root, ".claude", "WORK_QUEUE.md")
+    text = isfile(path) ? read(path, String) : "# Work queue\n"
+    ls = split(text, '\n')
+    i = findfirst(l -> rstrip(l) == OWNER_HEADING, ls)
+    if i === nothing
+        text = rstrip(text) * "\n\n" * OWNER_HEADING * "\n\n" * line * "\n"
+    else
+        j = something(findnext(l -> startswith(l, "#"), ls, i + 1), length(ls) + 1)
+        k = j - 1; while k > i && isempty(strip(ls[k])); k -= 1; end
+        text = join(vcat(ls[1:k], k == i ? [""] : String[], [line], ls[k+1:end]), '\n')
+    end
+    mkpath(dirname(path)); write(path, text)
+end
+
+function open_run_here(root)
+    d = joinpath(root, ".gbg", "runs")
+    isdir(d) || return nothing
+    for x in sort(readdir(d); rev = true)
+        isfile(joinpath(d, x, "stage")) && !isfile(joinpath(d, x, "run.json")) && return x
+    end
+    return nothing
 end
 
 "The option of a run's question that says the reader was wrong; answering it settles the matter."

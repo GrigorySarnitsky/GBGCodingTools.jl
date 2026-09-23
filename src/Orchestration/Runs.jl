@@ -117,7 +117,8 @@ function start(instrument::Symbol, root::AbstractString; readers::Symbol = :boun
     open = [d for d in (isdir(joinpath(root, ".gbg", "runs")) ? readdir(joinpath(root, ".gbg", "runs")) : String[])
             if isfile(joinpath(root, ".gbg", "runs", d, "stage")) && !isfile(joinpath(root, ".gbg", "runs", d, "run.json"))]
     isempty(open) || (println(io, "run: ", first(open), " is still open; a run never starts another"); return nothing)
-    dirty = changed_tracked(root)
+    # the run records and the work queue are the session's, looked past by the fixer and the close alike
+    dirty = [p for p in changed_tracked(root) if !own_record(p)]
     if !isempty(dirty)
         println(io, "run: the tree is not clean; commit or stash these first, or close cannot tell the run's changes from yours:")
         for d in dirty; println(io, "  ", d); end

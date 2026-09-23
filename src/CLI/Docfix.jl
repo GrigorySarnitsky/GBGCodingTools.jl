@@ -127,6 +127,16 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
     # after which close could never undo that fix (found in review, 2026-09-23).
     isempty(finding) || occursin(r"^[A-Za-z0-9][A-Za-z0-9._:@+-]*$", finding) ||
         (println(io, "docfix: refused — `", escape_string(finding), "` is not a finding id"); return 2)
+    # A finding the open run closed, or never had, is not this pass's to fix: a commit for one was never
+    # verified and left it closed over an unverified edit (review, 2026-09-23).
+    if !isempty(finding)
+        rid = open_run_id(root)
+        if rid !== nothing
+            r = Orchestration.Runs.load(root, rid)
+            r === nothing || finding in [f.id for f in Orchestration.Runs.workable(r)] ||
+                (println(io, "docfix: refused — ", finding, " is not a finding this pass of ", rid, " works on"); return 2)
+        end
+    end
     # The run's marks are the tool's to write. A message typing one — a guard or revert trailer — could
     # otherwise make the close skip a commit or hide another fix (found in review, 2026-09-23).
     occursin("GBG-Docfix", message) &&

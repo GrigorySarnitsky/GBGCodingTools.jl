@@ -104,7 +104,8 @@ function hook(cfg::Model.Config)
     # stage whose agents already answered is not relaunched. Abandoning is the owner's call, for a run he
     # does not want continued.
     #
-    # THE UNCOUNTED HEADING. Lines under "## From the last review" are NOT counted, up to the next
+    # THE UNCOUNTED HEADINGS. Lines under "## From the last review", and under "## Code the owner asked
+    # for" — his list of code to change, which no session is held to — are NOT counted, up to the next
     # heading: a run's leftovers are the owner's list to act on when he chooses, and holding a session to
     # them would be a review setting a session to work nobody asked for. A section the owner adds below
     # it is his, and counted.
@@ -143,7 +144,8 @@ function hook(cfg::Model.Config)
     # The leftovers section is the EXACT heading line, up to the next heading of ANY level, and the
     # lines printed carry their number in the file (found in review, 2026-09-23: a section of the
     # owner's under a `#` heading, or one whose name began with the leftovers', went uncounted).
-    open_items=\$(awk '\$0 == "## From the last review" {skip=1; next}
+    open_items=\$(awk '{ h = \$0; sub(/[ \t\r]+\$/, "", h) }
+                        h == "## From the last review" || h == "## Code the owner asked for" {skip=1; next}
                         /^#/ {skip=0}
                         !skip && /^[[:space:]]*- \\[ \\]/ {print NR ":" \$0}' "\$queue")
     [[ -z "\$open_items" ]] && exit 0
