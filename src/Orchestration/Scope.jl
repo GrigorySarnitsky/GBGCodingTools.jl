@@ -26,6 +26,7 @@ cost the other way is a defect nobody looked for.
 module Scope
 
 using ...Model
+using ...Catalogue
 using ...Texts
 using ...ConfigIO
 
@@ -194,6 +195,10 @@ function sets_of(cfg::Model.Config, root::AbstractString, changed::AbstractVecto
         hits = filter(f -> replace(f, '\\' => '/') in want, Texts.files(cfg, root, fs))
         fs === Model.FileSet.DOCSTRINGS && !isempty(commit) &&
             (hits = filter(f -> prose_moved(root, f, commit), hits))
+        # A rationale document that is not a target is read by nobody, so a change to it reaches
+        # nobody: without this, appending one line to a decision log relaunched every reader whose
+        # sets name rationale, to read everything but that log.
+        fs === Model.FileSet.RATIONALE && (hits = filter(f -> Catalogue.target(cfg, f), hits))
         isempty(hits) || (out[fs] = hits)
     end
     return out
@@ -248,11 +253,12 @@ function reaches(role::Model.AgentRole, sets::AbstractDict)
 end
 
 """
-    unit_touched(root, unit, sets, added) -> Bool
+    unit_touched(root, cfg, unit, sets, added) -> Bool
 
 Whether the built page `unit` must be read again. The arguments are:
 
 - `root` — the package root.
+- `cfg` — the package's config, which names the copies a built page may have been made from.
 - `unit` — one of [`Site.write_units`](@ref)'s pages.
 - `sets` — what [`sets_of`](@ref) returned.
 - `added` — the files added since the base.
@@ -264,8 +270,11 @@ docstring changed and this page collects docstrings — which is decided by read
 an `@docs` block, the only statement in the tree of which docstrings a page gathers. A page with no
 source at all is read again: it was built from something this cannot see.
 """
-function unit_touched(root::AbstractString, unit, sets::AbstractDict, added::AbstractVector{<:AbstractString})
-    src = Site.source_of(root, unit.path)
+function unit_touched(root::AbstractString, cfg::Model.Config, unit, sets::AbstractDict,
+                      added::AbstractVector{<:AbstractString})
+    # With the config, so a page built from a declared copy is judged by its SOURCE — the architecture
+    # document's page was never re-read under a changed scope while this resolved to the copy.
+    src = Site.source_of(root, unit.path; cfg)
     isempty(src) && return true
     here = replace(src, '\\' => '/')
     here in (replace(a, '\\' => '/') for a in added) && return true

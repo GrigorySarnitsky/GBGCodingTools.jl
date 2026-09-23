@@ -460,8 +460,9 @@ page whose source is a target, so a build-time copy of the working notes drops o
 only in material is kept, marked `in_material` at collect, reported in its own section and routed to the owner,
 unfixed and unverified [it may be the formula three docstrings copy]; `gbg docfix commit --finding` refuses an edit to
 such a document. Program checks are untouched and run over the file sets they declare. `Catalogue.target` is the one
-predicate. [On GBGPeriodicFields the withheld reader had been launched over a 72,000-token decision log as one page,
-under two rules that had that day been ruled not to apply to it; 72% of what it read was working notes.]
+predicate, and a change to a non-target rationale document reaches no reader under a changed scope. [On
+GBGPeriodicFields the full reader and each discipline had been handed four working-notes documents, ~164,000 tokens,
+under two rules that had that day been ruled not to apply to them.]
 
 ```julia
 "Turns one rule, agent role or instrument off in one package, or in some of its files, with the reason."

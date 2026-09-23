@@ -141,7 +141,7 @@ function arguments_bytes(n::Int, size::Int)
     text = repeat("w ", size ÷ 2)
     roles = G.Model.AgentRole[]; extras = Dict{Symbol,Any}()
     for i in 1:n
-        id = Symbol("verify-f$i")
+        id = Symbol("verify-" * run.id * "-" * lpad(i, 3, '0'))     # a real key carries the run's id
         push!(roles, G.Model.AgentRole(; id, instrument = :documentation_review,
                                        reads = [G.Model.FileSet.PAGES], site = true, kept_from_code = true,
                                        description = "the one standpoint", rules = [:RULE_X],
@@ -211,8 +211,12 @@ end
     end
 
     @testset "every key of a role is read by the driver" begin
+        # WORD-BOUNDED: `role.diff` is a prefix of `role.diff_file`, and the bare substring passed for
+        # a field nobody read (found in review, 2026-09-23). A key of the kind is read as `kind.<key>`
+        # where the driver rehydrates, so both spellings count.
         for key in role
-            @test occursin("role." * key, driver) || occursin("role[\"" * key * "\"]", driver)
+            @test occursin(Regex("\\b(?:role|kind)\\.\\Q" * key * "\\E\\b"), driver) ||
+                  occursin("role[\"" * key * "\"]", driver)
         end
     end
 
@@ -229,7 +233,7 @@ end
         @test small == large                                      # findings and diffs are paths, not values
         # the marginal cost of a role: everything a role carries that is its own, and nothing else
         per_role = (arguments_bytes(80, 40) - arguments_bytes(40, 40)) / 40
-        @test per_role < 120
+        @test per_role < 200                                      # six short fields, two carrying the run's id
     end
 
     # The other direction: the driver must not read a key nobody writes. `undefined` at the moment a
@@ -238,7 +242,7 @@ end
         for m in eachmatch(r"\bargs\.([a-z_]+)", driver)
             @test String(m.captures[1]) in top
         end
-        for m in eachmatch(r"\brole\.([a-z_]+)", driver)
+        for m in eachmatch(r"\b(?:role|kind)\.([a-z_]+)", driver)
             @test String(m.captures[1]) in role
         end
     end

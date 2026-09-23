@@ -167,8 +167,8 @@ function next(root::AbstractString; io::IO = stdout)
     to === :close && (println(io, "run: ", id, " is ready to close: gbg run close"); return 0)
     to === :fix && return fix_stage(root, moved, cfg; io)
     (to === :verify || to === :diff) && return verifier_stage(root, moved, cfg, to, site; io)
-    roles, extras = reader_roles(root, moved, cfg, site; io)
-    Agents.write_arguments(root, moved, cfg; roles, extras, site, io)
+    roles, extras, site_pages = reader_roles(root, moved, cfg, site; io)
+    Agents.write_arguments(root, moved, cfg; roles, extras, site, site_pages, io)
     moved = with(moved; driver = last(Agents.place_driver(root, moved.id)))
     Runs.save(root, moved)                       # the record says which driver these agents went through
     # What no reader of this package can judge is said at every launch, not only in the report: a
@@ -195,6 +195,7 @@ Exit 0 when there is something to launch again, 2 when every role wrote (collect
 moved since the launch, or when the stage was never written.
 """
 function continue_stage(root::AbstractString, id::AbstractString, stage::Symbol; io::IO = stdout)
+    Agents.stale_arguments(root, id) && return stale(io, id, stage)
     c = Agents.continue_stage(root, id)
     c === nothing && (println(io, "run: ", id, " is at ", stage, " with no arguments written; abandon it"); return 2)
     if c.moved
@@ -215,7 +216,7 @@ function continue_stage(root::AbstractString, id::AbstractString, stage::Symbol;
 end
 
 """
-    reader_roles(root, run, cfg, site; io = stdout) -> (roles, extras)
+    reader_roles(root, run, cfg, site; io = stdout) -> (roles, extras, site_pages)
 
 The agents a reading stage launches, with what each needs beyond its derived reader. The arguments are:
 
@@ -235,8 +236,9 @@ function reader_roles(root::AbstractString, run::Model.Run, cfg::Model.Config, s
     panel = Catalogue.roles_of(run.instrument, cfg; readers = run.readers)
     roles = Model.AgentRole[]
     extras = Dict{Symbol,Any}()
-    units = isempty(site) ? typeof(Site.write_units("", []))() :
-            Site.write_units(Agents.stage_dir(root, run.id), Site.pages(site, cfg, root))
+    built = isempty(site) ? typeof(Site.pages("", cfg, root))() : Site.pages(site, cfg, root)
+    units = Site.write_units(Agents.stage_dir(root, run.id), built)
+    site_pages = [joinpath(site, p.path) for p in built]
     narrow = run.scope === :changed && !isempty(run.base)
     sets, added = if narrow
         changed = Orchestration.Scope.changed_since(root, run.base)
@@ -252,7 +254,7 @@ function reader_roles(root::AbstractString, run::Model.Run, cfg::Model.Config, s
         end
         if r.site && r.kept_from_code
             isempty(units) && (println(io, "run: `", r.id, "` reads one built page at a time and the site has none; it is not launched"); continue)
-            mine = narrow ? filter(u -> Orchestration.Scope.unit_touched(root, u, sets, added), units) : units
+            mine = narrow ? filter(u -> Orchestration.Scope.unit_touched(root, cfg, u, sets, added), units) : units
             skipped += length(units) - length(mine)
             for u in mine
                 id = Symbol(string(r.id, UNIT_MARK, u.key))
@@ -266,7 +268,7 @@ function reader_roles(root::AbstractString, run::Model.Run, cfg::Model.Config, s
     isempty(units) || println(io, "run: ", length(units), " built page(s), one launch each for the reader given a page alone.")
     narrow && println(io, "run: reading what changed since ", first(run.base, 8), "; ", skipped,
                       " launch(es) the change does not reach are not made.")
-    return roles, extras
+    return roles, extras, site_pages
 end
 
 "What separates a reader's id from the unit it was given, in the key a result file is named by."
@@ -306,9 +308,7 @@ function fix_stage(root::AbstractString, run::Model.Run, cfg::Model.Config; io::
         more = other_copies(root, cfg, locs)
         copies += length(more)
         append!(locs, more)
-        push!(anchored, Model.Finding(f.id, f.source, f.decider,
-              Model.FindingDraft(rule = f.draft.rule, locations = locs, claim = f.draft.claim,
-                                 evidence = f.draft.evidence, fix = f.draft.fix, maybe_code = f.draft.maybe_code)))
+        push!(anchored, Model.Finding(f.id, f.source, f.decider, Model.relocated(f.draft, locs)))
     end
     run = with(run; findings = anchored)
     Runs.save(root, run)
@@ -365,6 +365,7 @@ function other_copies(root::AbstractString, cfg::Model.Config, locations::Vector
         for needle in vcat([l.text], Texts.formulas(l.text))
             length(strip(needle)) >= 8 || continue     # a fragment shorter than this is not a copy of anything
             for hit in Texts.occurrences(cfg, root, needle)
+                Catalogue.target(cfg, hit.file) || continue     # a copy in the working notes is nobody's to fix
                 (hit.file, hit.line) in have && continue
                 push!(have, (hit.file, hit.line))
                 push!(out, hit)
@@ -445,6 +446,15 @@ function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config,
     return 0
 end
 
+# A stage whose arguments predate the wire shape of v2.0.0-rc.13 is neither continued nor collected here:
+# read by this version its verdicts would be taken for silence, and a stage is collected once.
+function stale(io::IO, id::AbstractString, stage::Symbol)
+    println(io, "run: ", id, " is at ", stage, " with arguments written by an older GBGCodingTools, which")
+    println(io, "  this version cannot read. Finish the stage with the version that launched it — pin it back,")
+    println(io, "  collect, then upgrade — or the owner abandons the run. Nothing was read.")
+    return 2
+end
+
 """
     collect(root; io = stdout) -> Int
 
@@ -485,6 +495,7 @@ function collect(root::AbstractString; io::IO = stdout)
         println(io, "  Restore the tree and collect, or: gbg run abandon")
         return 2
     end
+    Agents.stale_arguments(root, id) && return stale(io, id, launched)
     cfg = ConfigIO.read_config(root)
     drafts, verdicts, silent, arrived, wrote = Agents.collect_results(root, id, cfg)
     Runs.advance!(root, id, :collect; io) || return 2
@@ -723,8 +734,14 @@ function abandon(root::AbstractString; io::IO = stdout)
         println(io, "  and nothing to commit. The id is free again.")
         return 0
     end
-    stopped = with(run; stage = :close, stop = Model.Stop.OWNER_STOPPED, findings = Model.Finding[],
-                   fixes = Model.DocFix[], dropped = length(run.findings))
+    # What the stop throws away is the OPEN findings and the ones in the working notes. A finding fixed
+    # and stood behind by two verifiers was not thrown away by anyone: it stays in the record with its
+    # pass, since the fix stays in the history, and the report says so rather than "nobody stood behind
+    # it" (found in review, 2026-09-23).
+    kept = [f for f in run.findings if Runs.closed(run, f.id)]
+    stopped = with(run; stage = :close, stop = Model.Stop.OWNER_STOPPED, findings = kept,
+                   fixes = [x for x in run.fixes if any(f -> f.id == x.finding, kept)],
+                   dropped = length(Runs.open_findings(run)) + length(Runs.in_material(run)))
     write(joinpath(dir, "report.md"), Render.report(stopped, cfg; root))
     open(joinpath(dir, "run.json"), "w") do f
         GBGCodingTools.JSON3.pretty(f, GBGCodingTools.JSON3.write(Runs.as_dict(stopped)))
@@ -732,7 +749,8 @@ function abandon(root::AbstractString; io::IO = stdout)
     rm(joinpath(dir, "run.draft.json"); force = true)
     rm(Agents.scratch_dir(root, id); force = true, recursive = true)
     Runs.write_stage(root, id, length(get(Runs.STAGES, run.instrument, Symbol[])))
-    println(io, "run: ", id, " abandoned at ", run.stage, "; ", length(run.findings), " finding(s) dropped.")
+    println(io, "run: ", id, " abandoned at ", run.stage, "; ", stopped.dropped, " finding(s) dropped",
+            isempty(kept) ? "." : ", $(length(kept)) fixed and verified kept on the record.")
     println(io, "  Commit .gbg/runs/", id, "/ — the record and the report. Its agents read this package,")
     println(io, "  and that they were stopped is evidence about it. Its scratch is deleted.")
     return 0

@@ -99,7 +99,13 @@ function surfaces(cfg::Model.Config, root::AbstractString)
         files = Texts.files(cfg, root, fs)
         # Of the rationale documents only the one the review holds to a cold read is a TARGET (ruled
         # 2026-09-23); the rest are read by nobody unless listed as material, and then as material.
-        fs === Model.FileSet.RATIONALE && filter!(f -> Catalogue.target(cfg, f), files)
+        if fs === Model.FileSet.RATIONALE
+            filter!(f -> Catalogue.target(cfg, f), files)
+            # and the architecture document is a target whether or not the package's rationale set
+            # names it — the set's default is empty, and the predicate's word is the one that counts
+            a = Catalogue.architecture_doc(cfg)
+            !isempty(a) && isfile(joinpath(root, a)) && !(a in files) && push!(files, a)
+        end
         isempty(files) || push!(out, lowercase(String(Symbol(fs))) => files)
     end
     return out
@@ -170,7 +176,7 @@ what is its own, and the test bounds it.
 """
 function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config;
                          roles::Vector{Model.AgentRole}, extras::AbstractDict = Dict{Symbol,Any}(),
-                         site::AbstractString = "", io::IO = stdout)
+                         site::AbstractString = "", site_pages::Vector{String} = String[], io::IO = stdout)
     args = Dict{String,Any}(
         "run" => run.id,
         "commit" => head(root),
@@ -187,7 +193,10 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
                                        "locations" => [Dict("file" => l.file, "text" => l.text) for l in s.locations])
                       for s in ConfigIO.read_settled(root)],
         "surfaces" => Dict{String,Any}(name => files for (name, files) in surfaces(cfg, root)),
-        "material" => material(cfg, root))
+        "material" => material(cfg, root),
+        # the built pages a site reader may read — the target pages the walk kept, and no other; the
+        # directory alone would hand it the rendered working notes beside them
+        "site_pages" => site_pages)
     briefs = Dict{String,String}()          # the text, once, under the key a role names
     keys_of = Dict{String,String}()         # the text seen before, and the key it was given
     kinds = Dict{String,Any}()              # the fields shared by every role of one shape, once
@@ -229,7 +238,8 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
         end
         Dict{String,Any}("key" => String(r.id), "kind" => kind, "launch" => true,
                          "unit" => get(x, "unit", ""), "unit_source" => get(x, "unit_source", ""),
-                         "finding" => get(x, "finding_id", ""))
+                         "finding" => String(get(x, "finding_id",
+                                                 found === nothing ? "" : String(get(found, "id", "")))))
     end for r in roles]
     path = arguments_path(root, run.id)
     mkpath(dirname(path)); mkpath(results_dir(root, run.id))
@@ -271,6 +281,25 @@ function head(root::AbstractString)
     catch
         ""
     end
+end
+
+"""
+    stale_arguments(root, id) -> Bool
+
+Whether the current stage's arguments were written by a version of this package before the wire shape
+of `v2.0.0-rc.13` — no `kinds` table, no `dirs` — and so cannot be continued or collected by this one.
+The arguments are `root` and the run's `id`. Returns the answer; `false` where no arguments exist.
+
+A stage launched under the old shape and collected under the new one read every verifier's verdict as
+a reader's empty result and marked it silent, and a continue threw; neither said why. A stage is
+collected once, so a verdict lost that way is lost. The verbs refuse instead and say which version to
+finish the stage with.
+"""
+function stale_arguments(root::AbstractString, id::AbstractString)
+    path = arguments_path(root, id)
+    isfile(path) || return false
+    args = JSON3.read(read(path, String), Dict{String,Any})
+    return !isempty(get(args, "roles", [])) && !(haskey(args, "kinds") && haskey(args, "dirs"))
 end
 
 """
@@ -391,7 +420,8 @@ function collect_results(root::AbstractString, id::AbstractString, cfg::Model.Co
         for f in found
             locs = Model.Location[]
             for l in get(f, "locations", [])
-                file = String(get(l, "file", "")); quote_ = String(get(l, "text", ""))
+                file = Catalogue.normal_path(cfg, root, String(get(l, "file", "")))
+                quote_ = String(get(l, "text", ""))
                 node = String(get(l, "node", ""))
                 found = Texts.reanchor(root, Model.Location(; file, node, text = quote_, line = 0))
                 if found.found === Model.Anchor.OUTDATED
@@ -407,7 +437,7 @@ function collect_results(root::AbstractString, id::AbstractString, cfg::Model.Co
                 locations = locs, claim = String(get(f, "claim", "")),
                 evidence = String(get(f, "evidence", "")), fix = String(get(f, "fix", "")),
                 maybe_code = get(f, "maybe_code", false),
-                in_material = !isempty(locs) && !any(l -> Catalogue.target(cfg, l.file), locs))))
+                in_material = Catalogue.in_material(cfg, locs))))
         end
     end
     return (findings, verdicts, setdiff(collect(keys(expected)), wrote), arrived, length(wrote))

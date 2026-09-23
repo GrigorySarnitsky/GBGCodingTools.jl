@@ -222,6 +222,8 @@ end
             built = SITE.pages(joinpath(root, "docs", "build"), G.ConfigIO.read_config(root), root)
             @test length(built) == length(G.Texts.files(cfg, root, G.Model.FileSet.PAGES))
             @test args["site"] == joinpath(root, "docs", "build")
+            # the site reader is handed the kept pages by name, and no other file under the site
+            @test Set(args["site_pages"]) == Set(joinpath(root, "docs", "build", p.path) for p in built)
 
             units = [whole(args, r) for r in args["roles"] if !isempty(String(r["unit"]))]
             @test length(units) == length(built)                     # one launch per page
@@ -1225,5 +1227,173 @@ end
         queue = read(joinpath(root, ".claude", "WORK_QUEUE.md"), String)
         @test occursin("IN THE WORKING NOTES, for the owner", queue)
         @test occursin(f.id, queue)
+    end
+end
+
+
+# ── what the review of 2026-09-23 found in the day's own work, each reproduced, each held here ─────
+
+@testset "a finding in the working notes survives the fix stage, and the fixer is never sent there" begin
+    package() do root, gg
+        write(joinpath(root, ".gbg", "config.jl"), notes_config(material = ["docs/ROADMAP.md"]))
+        # the notes quote the home page's sentence, so the copy-finder WOULD extend a finding into them
+        write(joinpath(root, "docs", "ROADMAP.md"), "# Roadmap\n\nThe grid is spectral.\n\nWe decided the grid is a lattice.\n")
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "notes")
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        reader_found(root, id, "full", "the notes say lattice and the page says spectral";
+                     file = "docs/ROADMAP.md", quote_ = "We decided the grid is a lattice.")
+        all_clean(root, id; except = [HOME_READER, "full"])
+        @test G.Run.collect(root; io = devnull) == 1
+        run = RUNS.load(root, id)
+        target_id = only(f.id for f in run.findings if !f.draft.in_material)
+        notes_id = only(f.id for f in run.findings if f.draft.in_material)
+
+        @test G.Run.next(root; io = devnull) == 0                     # → fix
+        todo = G.JSON3.read(read(joinpath(AGENTS.stage_dir(root, id), "findings.json"), String))
+        @test [String(t["id"]) for t in todo] == [target_id]          # the notes finding is not handed out
+        @test all(!occursin("ROADMAP", String(l["file"])) for l in only(todo)["locations"])   # nor is its copy
+        run = RUNS.load(root, id)
+        @test only(f for f in run.findings if f.id == notes_id).draft.in_material   # the flag survived re-anchoring
+        @test [f.id for f in RUNS.workable(run)] == [target_id]
+
+        fixed_as(root, target_id, "The grid is a lattice.")
+        @test G.Run.next(root; io = devnull) == 0                     # → verify: one verifier, for the target
+        args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+        @test [String(r["key"]) for r in args["roles"]] == ["verify-" * target_id]
+        verifier_said(root, id, "verify", target_id, "FIXED"; quote_ = "The grid is a lattice.")
+        G.Run.collect(root; io = devnull)
+        @test G.Run.next(root; io = devnull) == 0                     # → diff
+        verifier_said(root, id, "diff", target_id, "FIXED"; quote_ = "The grid is a lattice.")
+        G.Run.collect(root; io = devnull)
+        @test to_close(root, id) === :close
+        @test G.Run.close_run(root; io = devnull) == 0
+        rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
+        @test occursin("## In the working notes — 1", rep) && occursin("## Findings — 1", rep)
+        queue = read(joinpath(root, ".claude", "WORK_QUEUE.md"), String)
+        @test occursin(notes_id * " IN THE WORKING NOTES", queue) && !occursin(target_id, queue)
+    end
+end
+
+@testset "a record written before the ruling is re-classified when carried" begin
+    package() do root, gg
+        write(joinpath(root, ".gbg", "config.jl"), notes_config())
+        write(joinpath(root, "docs", "ROADMAP.md"), "# Roadmap\n\nWe decided the grid is a lattice.\n")
+        old_id = "documentation-review-2026-09-20-01"
+        loc = G.Model.Location(file = "docs/ROADMAP.md", text = "We decided the grid is a lattice.", line = 3)
+        prev = G.Model.Run(id = old_id, instrument = :documentation_review, tool_version = "v2.0.0-rc.10",
+                           first_commit = "abc", budget = G.Model.Budget(), stage = :close,
+                           findings = [G.Model.Finding(old_id * "-001", :full, G.Model.Decider.AGENT,
+                                       G.Model.FindingDraft(claim = "the notes say lattice", locations = [loc]))])
+        mkpath(RUNS.dir(root, old_id))
+        write(joinpath(RUNS.dir(root, old_id), "run.json"), G.JSON3.write(RUNS.as_dict(prev)))
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "an old record")
+        G.Run.start(root, :documentation_review; io = devnull)
+        run = RUNS.load(root, G.Run.open_run(root))
+        carried = only(run.findings)
+        @test carried.id == old_id * "-001"
+        @test carried.draft.in_material                              # decided again, against today's config
+        @test isempty(RUNS.workable(run))
+    end
+end
+
+@testset "abandon keeps what was fixed and verified, and counts only what it throws away" begin
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        G.Run.next(root; io = devnull)                                # → fix
+        fixed_as(root, fid, "The grid is a lattice.")
+        G.Run.next(root; io = devnull)                                # → verify
+        verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a lattice.")
+        G.Run.collect(root; io = devnull)
+        G.Run.next(root; io = devnull)                                # → diff
+        verifier_said(root, id, "diff", fid, "FIXED"; quote_ = "The grid is a lattice.")
+        @test G.Run.collect(root; io = devnull) == 0
+        @test G.Run.abandon(root; io = devnull) == 0
+        record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
+        @test record["dropped"] == 0
+        @test length(record["findings"]) == 1 && length(record["fixes"]) == 1
+        rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
+        @test occursin("## Findings — 1", rep) && !occursin("thrown away", rep) && !occursin("Nothing was found", rep)
+    end
+end
+
+@testset "in material means in material: a path's spelling, a test file or the README do not route to the owner" begin
+    package() do root, gg
+        write(joinpath(root, ".gbg", "config.jl"), notes_config(material = ["docs/ROADMAP.md"]))
+        write(joinpath(root, "docs", "ROADMAP.md"), "# Roadmap\n\nWe decided the grid is a lattice.\n")
+        write(joinpath(root, "README.md"), "# Fixture\n\nA readme sentence.\n")
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "notes and a readme")
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        mkpath(AGENTS.results_dir(root, id))
+        cases = [("absolute", joinpath(root, "docs", "src", "index.md"), "The grid is spectral."),
+                 ("dotted", "./docs/src/index.md", "The grid is spectral."),
+                 ("readme", "README.md", "A readme sentence."),
+                 ("test", "test/runtests.jl", "using Test"),
+                 ("notes", "docs/ROADMAP.md", "We decided the grid is a lattice.")]
+        payload = Dict("findings" => [Dict("claim" => name, "fix" => "x",
+                                           "locations" => [Dict("file" => file, "text" => text)]) for (name, file, text) in cases],
+                       "checked" => ["docs/src/index.md"])
+        write(joinpath(AGENTS.results_dir(root, id), "full.json"), G.JSON3.write(payload))
+        all_clean(root, id; except = ["full"])
+        G.Run.collect(root; io = devnull)
+        by = Dict(f.draft.claim => f for f in RUNS.load(root, id).findings)
+        @test !by["absolute"].draft.in_material && only(by["absolute"].draft.locations).file == "docs/src/index.md"
+        @test !by["dotted"].draft.in_material && only(by["dotted"].draft.locations).file == "docs/src/index.md"
+        @test !by["readme"].draft.in_material
+        @test !by["test"].draft.in_material
+        @test by["notes"].draft.in_material
+    end
+end
+
+@testset "docfix check sees the tree commit sees" begin
+    package() do root, gg
+        write(joinpath(root, ".gbg", "config.jl"), notes_config())
+        write(joinpath(root, "docs", "ROADMAP.md"), "# Roadmap\n\nNotes.\n")
+        mkpath(joinpath(root, ".claude")); write(joinpath(root, ".claude", "WORK_QUEUE.md"), "# Work queue\n")
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "notes")
+        G.Run.start(root, :documentation_review; io = devnull)
+        write(joinpath(root, ".claude", "WORK_QUEUE.md"), "# Work queue\n\n- [ ] keep going\n")
+        write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
+        io = IOBuffer()
+        @test G.Docfix.check(root; build = false, io) == 0            # the record and the queue are looked past
+        out = String(take!(io))
+        @test !occursin("WORK_QUEUE", out) && !occursin(".gbg/runs", out)
+        write(joinpath(root, "docs", "ROADMAP.md"), "# Roadmap\n\nTidier notes.\n")
+        io = IOBuffer()
+        @test G.Docfix.check(root; build = false, io) == 1            # the notes are not the fixer's while a run is open
+        @test occursin("NOTE", String(take!(io)))
+    end
+end
+
+@testset "a stage launched under the old wire shape is refused, not misread" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        path = AGENTS.arguments_path(root, id)
+        write(path, G.JSON3.write(Dict("run" => id, "commit" => AGENTS.head(root), "roles" =>
+              [Dict("key" => "verify-x", "kind" => "verifier", "launch" => true, "result_file" => "r.json")])))
+        io = IOBuffer()
+        @test G.Run.next(root; io) == 2
+        @test occursin("older GBGCodingTools", String(take!(io)))
+        io = IOBuffer()
+        @test G.Run.collect(root; io) == 2
+        @test occursin("older GBGCodingTools", String(take!(io)))
+        @test RUNS.stage_of(root, id) === :find                      # nothing advanced, nothing read
+    end
+end
+
+@testset "the architecture document is a target on either rule's setting, and is handed out by default" begin
+    package() do root, gg
+        for rule in ("RULE.DOC.SELF_CONTAINED", "RULE.DOC.TERMS_DEFINED")
+            cfg = G.Model.Config(package = "GBGFixture", tool = :dev,
+                                 settings = [G.Model.Setting(rule = Symbol(rule), name = :architecture_doc, value = "docs/DESIGN.md")])
+            @test G.Catalogue.architecture_doc(cfg) == "docs/DESIGN.md"
+            @test G.Catalogue.target(cfg, "docs/DESIGN.md")
+        end
+        # no rationale set declared: the architecture document is handed to the readers even so
+        cfg = G.Model.Config(package = "GBGFixture", tool = :dev)
+        @test Dict(AGENTS.surfaces(cfg, root))["rationale"] == ["docs/ARCHITECTURE.md"]
     end
 end

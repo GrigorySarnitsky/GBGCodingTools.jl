@@ -172,9 +172,30 @@ end
         commit_all(root, "edit the notation page")
         changed = SC.changed_since(root, commit)
         sets, added = SC.sets_of(cfg, root, changed, commit), SC.added_since(root, commit)
-        @test SC.unit_touched(root, notation, sets, added)
-        @test !SC.unit_touched(root, home, sets, added)
-        @test !SC.unit_touched(root, api, sets, added)
+        @test SC.unit_touched(root, cfg, notation, sets, added)
+        @test !SC.unit_touched(root, cfg, home, sets, added)
+        @test !SC.unit_touched(root, cfg, api, sets, added)
+    end
+
+    # A rationale document that is not a target is read by nobody, so a change to it reaches nobody;
+    # and the architecture page — built from a declared copy — is judged by its SOURCE, which the
+    # walk without the config never did (both found in review, 2026-09-23).
+    @testset "the working notes reach no reader; the architecture page is re-read from its source" begin
+        write(joinpath(root, "docs", "ROADMAP.md"), "# Roadmap\n\nNotes.\n")
+        write(joinpath(root, "docs", "ARCHITECTURE.md"), "# Design\n\nThe design.\n")
+        write(joinpath(root, "docs", "src", "architecture.md"), "# Design\n\nThe design.\n")
+        write(joinpath(root, ".gbg", "config.jl"), """
+            Config(package = "Sample", tool = :dev,
+                   filesets = Dict(FileSet.RATIONALE => ["docs/ARCHITECTURE.md", "docs/ROADMAP.md"]),
+                   copies = ["docs/src/architecture.md" => "docs/ARCHITECTURE.md"])
+            """)
+        commit_all(root, "notes, a design, and its copy")
+        cfg2 = G.ConfigIO.read_config(root)
+        @test !haskey(SC.sets_of(cfg2, root, ["docs/ROADMAP.md"]), G.Model.FileSet.RATIONALE)
+        sets = SC.sets_of(cfg2, root, ["docs/ARCHITECTURE.md"])
+        @test sets[G.Model.FileSet.RATIONALE] == ["docs/ARCHITECTURE.md"]
+        @test SC.unit_touched(root, cfg2, unit("architecture/index.html"), sets, String[])
+        @test !SC.unit_touched(root, cfg2, home, sets, String[])
     end
 
     @testset "an edited docstring is every page that collects docstrings, and only those" begin
@@ -187,9 +208,9 @@ end
         sets = SC.sets_of(cfg2, root2, SC.changed_since(root2, c2), c2)
         added = SC.added_since(root2, c2)
         @test haskey(sets, G.Model.FileSet.DOCSTRINGS)    # the prose did move
-        @test SC.unit_touched(root2, api, sets, added)        # it has an @docs block
-        @test !SC.unit_touched(root2, home, sets, added)      # it has none
-        @test !SC.unit_touched(root2, notation, sets, added)
+        @test SC.unit_touched(root2, cfg2, api, sets, added)        # it has an @docs block
+        @test !SC.unit_touched(root2, cfg2, home, sets, added)      # it has none
+        @test !SC.unit_touched(root2, cfg2, notation, sets, added)
     end
 
     @testset "an added sibling is read, having been read by nobody" begin
@@ -202,13 +223,13 @@ end
         sets = SC.sets_of(cfg3, root3, SC.changed_since(root3, c3), c3)
         added = SC.added_since(root3, c3)
         @test "docs/src/guide.md" in added
-        @test SC.unit_touched(root3, unit("guide/index.html"), sets, added)
-        @test !SC.unit_touched(root3, home, sets, added)
+        @test SC.unit_touched(root3, G.ConfigIO.read_config(root3), unit("guide/index.html"), sets, added)
+        @test !SC.unit_touched(root3, G.ConfigIO.read_config(root3), home, sets, added)
     end
 
     @testset "a page whose source cannot be found is read" begin
         sets = SC.sets_of(cfg, root, String[])
-        @test SC.unit_touched(root, unit("generated/thing/index.html"), sets, String[])
+        @test SC.unit_touched(root, cfg, unit("generated/thing/index.html"), sets, String[])
     end
 end
 
@@ -239,7 +260,7 @@ end
         added = SC.added_since(root, commit)
         panel = G.Catalogue.roles_of(:documentation_review, cfg; readers = :bound)
         whole = Set(r.id for r in panel if !(r.site && r.kept_from_code) && SC.reaches(r, sets))
-        pages = Set(u.key for u in units if SC.unit_touched(root, u, sets, added))
+        pages = Set(u.key for u in units if SC.unit_touched(root, cfg, u, sets, added))
         per_page = any(r -> r.site && r.kept_from_code && SC.reaches(r, sets), panel) ? pages : Set{String}()
         return (whole = whole, pages = per_page)
     end

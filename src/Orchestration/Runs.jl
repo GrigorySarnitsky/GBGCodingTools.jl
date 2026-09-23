@@ -171,12 +171,20 @@ function carry_over(root::AbstractString, instrument::Symbol)
         isfile(joinpath(runs, d, "run.json")) || continue
         prev = load(root, d)
         (prev === nothing || prev.instrument !== instrument) && continue
-        return [Model.Finding(f.id, f.source, f.decider,
-                    Model.FindingDraft(rule = f.draft.rule,
-                        locations = [reanchor(root, l; since = prev.first_commit) for l in f.draft.locations],
-                        claim = f.draft.claim, evidence = f.draft.evidence, fix = f.draft.fix,
-                        maybe_code = f.draft.maybe_code))
-                for f in workable(prev)]
+        # Re-anchored through `relocated`, so no field is dropped on the way; and `in_material` is
+        # decided AGAIN against the config as it stands, because a record written before the ruling
+        # of 2026-09-23 carries findings in the working notes with the flag unset, and carrying those
+        # as workable sent the fixer to a file it may not touch, pass after pass, run after run.
+        cfg = ConfigIO.read_config(root)
+        out = Model.Finding[]
+        for f in workable(prev)
+            locs = [reanchor(root, l; since = prev.first_commit) for l in f.draft.locations]
+            d = Model.relocated(f.draft, locs)
+            Catalogue.in_material(cfg, locs) && (d = Model.FindingDraft(rule = d.rule, locations = d.locations,
+                claim = d.claim, evidence = d.evidence, fix = d.fix, maybe_code = d.maybe_code, in_material = true))
+            push!(out, Model.Finding(f.id, f.source, f.decider, d))
+        end
+        return out
     end
     return Model.Finding[]
 end

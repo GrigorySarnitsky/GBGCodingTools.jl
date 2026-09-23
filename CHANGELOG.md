@@ -4,6 +4,26 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## Unreleased — toward 2.0.0-rc.15
+
+**Twelve defects in rc.11–rc.14, found by three independent reviewers of that day's diff and each reproduced.** The
+targets-and-material design of rc.13 did not hold where it mattered most: the fix stage and the carry-over rebuilt a
+finding field by field and dropped `in_material`, so a finding in the working notes became the fixer's on the first
+pass (`Model.relocated` now carries every field, and a pre-ruling record's findings are re-classified when carried);
+the copy-finder still extended a finding into the working notes; `--scope changed` still relaunched every whole-corpus
+reader when a decision log changed, and never re-read the architecture page; `architecture_doc` honoured a setting on
+only one of its two rules; `in_material` meant "in no target", so an absolute path, a `./` prefix, a README or a test
+file routed a finding to the owner as working notes (paths are normalised now, a copy resolves to its source, and
+material means material); the architecture document was a target the readers were not handed unless the rationale set
+named it; the rendered reader was pointed at the whole built site, working notes included, and now gets the kept pages
+by name. Elsewhere: `abandon` counted a fixed and twice-verified finding as thrown away (it keeps those on the record
+now); `gbg docfix check`, which the fix stage tells the session to run before every commit, was red for every edit
+while a run was open because it did not look past the run's record and the queue as `commit` does, and the two now
+share one list; an arguments file written before rc.13's wire shape was misread as silence rather than refused; and the
+driver key-coverage test passed for one field by substring. **The figures in rc.13's entry were wrong**: measured on
+GBGPeriodicFields' build, the withheld reader launches over 16 pages, not 18, and what each whole-corpus reader stops
+being handed is about 164,000 tokens; "35,000" measured nothing.
+
 ## 2.0.0-rc.14 — 2026-09-23
 
 PATCH. **`RULE.CIT.RESOLVES` no longer reads a `[` inside a math span as a link opening**, the last open item of

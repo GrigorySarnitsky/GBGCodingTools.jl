@@ -56,6 +56,14 @@ function rulings(root::AbstractString; generated::AbstractDict = Dict{String,Str
     return out
 end
 
+# The changed paths that are working notes — rationale documents that are not targets of the review —
+# which the fixer may not touch while a run is open. One list for `commit` and `check`, so the two agree.
+function working_notes(root::AbstractString, rs)
+    cfg = ConfigIO.read_config(root)
+    rationale = Texts.files(cfg, root, Model.FileSet.RATIONALE)
+    return [r.path for r in rs if !Catalogue.target(cfg, r.path) && r.path in rationale]
+end
+
 # The run open in this package, or `nothing`. Read from the files rather than through `CLI.Run`, which
 # is a sibling verb and no verb may call another.
 function open_run_id(root::AbstractString)
@@ -111,9 +119,7 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
     # either (ruled 2026-09-23): the guard rightly calls an edit to it documentation, but the run was
     # never about it, and a fix landing there is a pass spent on the package's working notes.
     if !isempty(finding)
-        cfg = ConfigIO.read_config(root)
-        notes = [r.path for r in rs if !Catalogue.target(cfg, r.path) &&
-                 r.path in Texts.files(cfg, root, Model.FileSet.RATIONALE)]
+        notes = working_notes(root, rs)
         if !isempty(notes)
             println(io, "docfix: refused — ", length(notes), " changed file(s) are working notes, not targets of the review:")
             for n in notes; println(io, "  - ", n); end
@@ -161,12 +167,18 @@ edit broke; holding it to a defect it inherited would make every pass of every r
 and a signal that is always red is not read.
 """
 function check(root::AbstractString; build::Bool = true, io::IO = stdout)
-    rs = rulings(root)
+    # The same tree `commit` sees: the run's own record and the work queue are the session's to commit
+    # at the close and are looked past here too, or the check the fixer is told to run before every
+    # commit is red for every edit while a run is open (found in review, 2026-09-23).
+    rs = filter(r -> !Orchestration.Runs.own_record(r.path), rulings(root))
+    run_open = open_run_id(root) !== nothing
+    notes = run_open ? working_notes(root, rs) : String[]
     for r in rs
-        println(io, "  ", r.documentation ? "DOC " : "CODE", "  ", rpad(r.path, 44), r.reason)
+        println(io, "  ", r.path in notes ? "NOTE" : r.documentation ? "DOC " : "CODE", "  ", rpad(r.path, 44),
+                r.path in notes ? "working notes, not a target of the open run" : r.reason)
     end
     isempty(rs) && println(io, "docfix: the working tree has no change to classify")
-    bad = any(r -> !r.documentation, rs)
+    bad = any(r -> !r.documentation, rs) || !isempty(notes)
 
     cfg = ConfigIO.read_config(root)
     before = baseline(root)

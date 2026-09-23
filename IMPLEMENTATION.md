@@ -246,9 +246,10 @@ is given (ruled 2026-09-21), and nothing else remaining — a second science pac
   plus what a package lists in the new config field `material`, empty by default — which a reader may open to judge a target
   and never report on. The other rationale documents are read by nobody unless listed. The site walk keeps only target
   pages; the collect marks a finding located only in material and routes it to the owner, unfixed, in its own section of the
-  report; program checks are untouched. On GBGPeriodicFields this took the withheld reader from 23 launches over ~212k
-  tokens of pages to 18 over ~35k, and it dissolves the append-only-log problem of `--scope changed`, since material is not
-  launched over at all. **Creates** what those answers
+  report; program checks are untouched; a change to a non-target rationale document reaches no reader under `--scope
+  changed`. Measured on GBGPeriodicFields' built site: the withheld reader launches over 16 pages (the architecture page
+  among them, which the rc.9 walk had dropped with every other copy), and the full reader and each discipline stop being
+  handed four documents of ~164k tokens. **Creates** what those answers
 say; `gbg release --counts`, which prints for `v2.0.0` alone what still holds it and refuses nothing (ruled 2026-09-16);
 `Main.jl` rewritten and the last old verbs; an `HT-WIRING.md` (the disciplines HT may propose — turbulence theory
 certainly, and the Fourier discipline it shares with PF); HT wired by HT's own session on the last candidate after 4d.

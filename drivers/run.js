@@ -192,9 +192,15 @@ function brief(role) {
     );
   }
   if (role.site) {
+    // The pages the walk kept — every page whose source is a target — and no other. The directory
+    // alone would hand this reader the rendered working notes beside them, which nobody reads.
+    const kept = args.site_pages || [];
     withheld.push(
-      `Read the BUILT site, at ${args.site || `${args.root}/docs/build`}, as a reader meets it, and not ` +
-      'only the source it was built from.',
+      kept.length
+        ? 'Read the BUILT site as a reader meets it, and not only the source it was built from — these ' +
+          'pages and NO other file under the site:\n' + kept.join('\n')
+        : `Read the BUILT site, at ${args.site || `${args.root}/docs/build`}, as a reader meets it, and not ` +
+          'only the source it was built from.',
     );
   }
   // MATERIAL is what a reader may open to judge the targets and never report on: the package's own

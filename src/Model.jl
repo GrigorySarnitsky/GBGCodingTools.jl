@@ -122,6 +122,20 @@ Base.@kwdef struct FindingDraft
 end
 
 """
+    relocated(draft, locations) -> FindingDraft
+
+The same draft with its locations replaced and EVERY other field carried. The arguments are `draft` and
+the new `locations`. Returns the copy.
+
+Two places rebuilt a draft field by field to re-anchor it — the fix stage and the carry-over — and
+both silently dropped `in_material` the day it was added, so a finding in the working notes became a
+fixer's on the first pass. A field added to the draft is carried here or nowhere.
+"""
+relocated(d::FindingDraft, locations::Vector{Location}) =
+    FindingDraft(rule = d.rule, locations = locations, claim = d.claim, evidence = d.evidence, fix = d.fix,
+                 maybe_code = d.maybe_code, in_material = d.in_material)
+
+"""
     Finding
 
 One defect in a run: the draft, the id the run gave it, and who reported it. The fields are:

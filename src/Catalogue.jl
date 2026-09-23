@@ -249,17 +249,66 @@ The one rationale document the review holds to a cold read and reads as a target
 argument is `cfg`, the package's config. Returns the path, relative to the package root.
 """
 function architecture_doc(cfg::Model.Config)
-    value = ""
+    default = ""
+    # The parameter belongs to TWO rules and a setting is per rule, so every rule carrying it is asked
+    # and a setting on any of them wins; reading the first rule alone left a setting on the second
+    # ignored by the one predicate that decides what is a target (found in review, 2026-09-23).
     for rule in RULES, p in rule.parameters
         p.name === :architecture_doc || continue
-        value = String(p.default)
+        default = String(p.default)
         for s in cfg.settings
-            s.rule === rule.id && s.name === p.name && s.value isa AbstractString && (value = String(s.value))
+            s.rule === rule.id && s.name === p.name && s.value isa AbstractString &&
+                return replace(String(s.value), '\\' => '/')
         end
-        break
     end
-    return replace(value, '\\' => '/')
+    return replace(default, '\\' => '/')
 end
+
+"""
+    normal_path(root, path) -> String
+
+A path as the rest of this package spells one: forward slashes, relative to `root`, no leading `./`,
+and a declared copy resolved to its source. The arguments are `root`, the package root, and `path` as
+a reader or a tool wrote it. Returns the spelling every predicate here compares against.
+
+A reader names a file in whatever form it read it, and an absolute path or a `./` prefix is the same
+file; comparing the raw string routed a finding on a target page to the owner as "in the working
+notes" (found in review, 2026-09-23).
+"""
+function normal_path(cfg::Model.Config, root::AbstractString, path::AbstractString)
+    p = replace(String(path), '\\' => '/')
+    isempty(p) && return p
+    r = replace(String(root), '\\' => '/')
+    isabspath(p) && startswith(p, r) && (p = lstrip(p[length(r)+1:end], '/'))
+    while startswith(p, "./"); p = p[3:end]; end
+    k = findfirst(c -> replace(first(c), '\\' => '/') == p, cfg.copies)
+    return k === nothing ? p : replace(last(cfg.copies[k]), '\\' => '/')
+end
+
+"""
+    material_doc(cfg, path) -> Bool
+
+Whether a path is MATERIAL: a document a reader may consult and never report on — one the package
+lists in `material`, or a rationale document that is not a target. The arguments are `cfg` and `path`,
+normalised. Returns the answer. A path that is neither target nor material — a test file, the README, an
+empty name — is neither, and a finding there is an ordinary finding.
+"""
+function material_doc(cfg::Model.Config, path::AbstractString)
+    p = replace(path, '\\' => '/')
+    isempty(p) && return false
+    target(cfg, p) && return false
+    any(m -> replace(m, '\\' => '/') == p, cfg.material) && return true
+    return any(r -> replace(r, '\\' => '/') == p, get(cfg.filesets, Model.FileSet.RATIONALE, String[]))
+end
+
+"""
+    in_material(cfg, locations) -> Bool
+
+Whether a finding is IN MATERIAL: it has locations and every one of them is in a material document.
+The arguments are `cfg` and the finding's `locations`, their files normalised. Returns the answer.
+"""
+in_material(cfg::Model.Config, locations::AbstractVector) =
+    !isempty(locations) && all(l -> material_doc(cfg, l.file), locations)
 
 """
     target(cfg, path) -> Bool
