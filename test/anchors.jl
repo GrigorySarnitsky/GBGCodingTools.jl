@@ -279,3 +279,184 @@ end
     @test G.Texts.place(G.ConfigIO.read_config(root), root, "The grid is spectral.") === nothing
     @test G.Texts.place(cfg, root, "   ") === nothing
 end
+
+# ── What a review of 2026-09-23 found placing findings, each case the shape it was found in ──────────
+
+@testset "a line the finding never had is not carried" begin
+    # An unplaced finding is OUTDATED at line 0; with no edit since, git's empty diff said "unmoved" and
+    # it came back BY_DIFF at line 0, so the fixer was sent to a place that was never one.
+    in_git() do dir, gg, base
+        loc = M.Location(; file = "docs/page.md", text = "words nobody wrote", line = 0)
+        @test RN.reanchor(dir, loc; since = base).found == M.Anchor.OUTDATED
+        @test RN.mapped_line(dir, loc, base) === nothing
+    end
+end
+
+@testset "an insertion right after the line does not move it" begin
+    in_git() do dir, gg, base
+        lines = readlines(joinpath(dir, "docs", "page.md"))
+        write(joinpath(dir, "docs", "page.md"), join(vcat(lines[1:7], ["one", "two", "three"], lines[8:end]), "\n") * "\n")
+        @test RN.mapped_line(dir, M.Location(; file = "docs/page.md", line = 7), base) == 7
+        @test RN.mapped_line(dir, M.Location(; file = "docs/page.md", line = 8), base) == 11
+    end
+end
+
+@testset "a line found again on a later pass is not shifted a second time" begin
+    in_git() do dir, gg, base
+        page = joinpath(dir, "docs", "page.md")
+        write(page, "# Title\n\n1\n2\n3\n4\n5\n\nalpha\n\nbeta\n\nthe decisive line\n\ngamma\n")
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "pass 1")
+        first_pass = RN.reanchor(dir, M.Location(; file = "docs/page.md", text = "the decisive line", line = 7); since = base)
+        @test first_pass.found == M.Anchor.BY_QUOTE && first_pass.line == 13
+        @test !isempty(first_pass.at)                          # stamped with the tree it was read in
+        # the record round trip keeps the stamp
+        @test RN.loc_of(RN.loc_dict(first_pass)).at == first_pass.at
+        write(page, replace(read(page, String), "the decisive line" => "rewritten entirely"))
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "pass 2")
+        second = RN.reanchor(dir, first_pass; since = base)
+        @test second.found == M.Anchor.BY_DIFF && second.line == 13
+    end
+end
+
+@testset "every definition of a scope is a node, named by its callee" begin
+    dir = mktempdir(; cleanup = true)
+    write(joinpath(dir, "M.jl"), """
+    module M
+    @inline helper(x) = x
+    \"\"\"
+        after(x)
+
+    The one after the helper.
+    \"\"\"
+    after(x) = 1
+    \"\"\"
+        f(x::T) where {T}
+
+    A method with a where clause.
+    \"\"\"
+    function f(x::T) where {T}
+        return x
+    end
+    g(x)::Int = 1
+    end
+    """)
+    names = [s.name for s in T.definitions(joinpath(dir, "M.jl"))]
+    @test "after" in names && "helper" in names
+    @test "f" in names && "g" in names
+    @test !any(n -> occursin("where", n) || occursin("(", n), names)
+    @test !isempty(T.find_node(dir, "M.jl", "f"))
+end
+
+@testset "a quote is looked for in every method the node names" begin
+    dir = mktempdir(; cleanup = true)
+    write(joinpath(dir, "M.jl"), """
+    module M
+    \"\"\"
+        k(x)
+
+    The shared sentence.
+    \"\"\"
+    k(x) = 1
+    \"\"\"
+        h(x::Int)
+
+    The first method.
+    \"\"\"
+    h(x::Int) = 1
+    \"\"\"
+        h(x::Float64)
+
+    The shared sentence.
+    \"\"\"
+    h(x::Float64) = 2
+    end
+    """)
+    got = T.reanchor(dir, M.Location(; file = "M.jl", node = "h", text = "The shared sentence."))
+    @test got.found == M.Anchor.BY_NODE && got.line == 17
+end
+
+@testset "a quote as the page reads it is found in the source that wrote it" begin
+    root = mktempdir(; cleanup = true)
+    mkpath(joinpath(root, ".gbg")); mkpath(joinpath(root, "docs", "src")); mkpath(joinpath(root, "src"))
+    write(joinpath(root, ".gbg", "config.jl"), """Config(package = "Sample", tool = :dev)""")
+    write(joinpath(root, "docs", "src", "guide.md"), """
+    # Guide
+
+    The layout is [`RealFourierLayout`](@ref), and the **same** layout
+    holds for ``\\hat f(k)`` on every grid.
+
+    - A list item whose sentence
+      wraps.
+    """)
+    write(joinpath(root, "src", "Sample.jl"), """
+    module Sample
+    \"\"\"
+        f(x)
+
+    Rotates by ``\\\\alpha`` about the axis.
+    \"\"\"
+    f(x) = 1
+    end
+    """)
+    cfg = G.ConfigIO.read_config(root)
+    page = "The layout is RealFourierLayout, and the same layout holds for \$\\hat f(k)\$ on every grid."
+    p = T.place(cfg, root, page)
+    @test p !== nothing && p.file == joinpath("docs", "src", "guide.md") && p.line == 3
+    # the file named, the quote spelled as on the page, and wrapped in the source
+    got = T.reanchor(root, M.Location(; file = "docs/src/guide.md", text = page))
+    @test got.found == M.Anchor.BY_QUOTE && got.line == 3
+    @test T.reanchor(root, M.Location(; file = "docs/src/guide.md", text = "A list item whose sentence wraps.")).line == 6
+    # a docstring's escaped backslash reads as one
+    d = T.place(cfg, root, "Rotates by \$\\alpha\$ about the axis.")
+    @test d !== nothing && d.file == joinpath("src", "Sample.jl") && d.node == "f"
+end
+
+@testset "a Literate page is its example, and its comment marks are not text" begin
+    root = mktempdir(; cleanup = true)
+    mkpath(joinpath(root, ".gbg")); mkpath(joinpath(root, "docs", "src", "examples")); mkpath(joinpath(root, "examples"))
+    write(joinpath(root, ".gbg", "config.jl"), """Config(package = "Sample", tool = :dev)""")
+    write(joinpath(root, "examples", "EX.jl"), "# # The example\n#\n# A sentence the example\n# wraps over two comment lines.\nx = 1\n")
+    write(joinpath(root, "docs", "src", "examples", "ex.md"),
+          "```@meta\nEditURL = \"../../../examples/EX.jl\"\n```\n\n# The example\n\nA sentence the example\nwraps over two comment lines.\n")
+    @test G.Orchestration.Site.source_of(root, "examples/ex/index.html") == "examples/EX.jl"
+    got = T.reanchor(root, M.Location(; file = "examples/EX.jl", text = "A sentence the example wraps over two comment lines."))
+    @test got.found == M.Anchor.BY_QUOTE && got.line == 3
+    # an EditURL that leaves the package, or is a web address, is not followed
+    write(joinpath(root, "docs", "src", "examples", "ex.md"), "```@meta\nEditURL = \"https://example.org/EX.jl\"\n```\n")
+    @test G.Orchestration.Site.source_of(root, "examples/ex/index.html") == joinpath("docs", "src", "examples", "ex.md")
+end
+
+@testset "the page text keeps its blocks apart" begin
+    doc = T.parsehtml("<html><body><article class=\"content\"><h2>Fields</h2><p>One field.</p><ul><li>Grid</li><li>Layout</li></ul></article></body></html>")
+    t = T.page_text(T.article_of(doc))
+    @test !occursin("FieldsOne", t) && !occursin("field.Grid", t) && !occursin("GridLayout", t)
+    @test T.reading(t) == "Fields One field. Grid Layout"
+end
+
+@testset "the formulas of a quote are found however they are delimited" begin
+    @test T.formulas("a real field's coefficients satisfy ``\\hat f(-k) = \\overline{\\hat f(k)}``, always") ==
+          ["\\hat f(-k) = \\overline{\\hat f(k)}"]
+    @test T.formulas("so \$\\hat u_k\$ holds") == ["\\hat u_k"]
+    # a quote cut mid-formula does not make the prose between two formulas one
+    @test !("for the velocity," in T.formulas("\\hat{\\cdot}\$ for the velocity, \$u\$"))
+end
+
+@testset "a sentence a rationale document repeats is still the docstring's" begin
+    root = mktempdir(; cleanup = true)
+    mkpath(joinpath(root, ".gbg")); mkpath(joinpath(root, "docs")); mkpath(joinpath(root, "src"))
+    write(joinpath(root, ".gbg", "config.jl"),
+          """Config(package = "Sample", tool = :dev, filesets = Dict(FileSet.RATIONALE => ["docs/DECISIONS.md"]))""")
+    write(joinpath(root, "docs", "DECISIONS.md"), "# Decisions\n\nThe spectrum is stored in half.\n")
+    write(joinpath(root, "src", "Sample.jl"), "module Sample\n\"\"\"\n    f(x)\n\nThe spectrum is stored in half.\n\"\"\"\nf(x) = 1\nend\n")
+    p = T.place(G.ConfigIO.read_config(root), root, "The spectrum is stored in half.")
+    @test p !== nothing && p.file == joinpath("src", "Sample.jl")
+    # alone in the rationale document, it is placed there
+    @test T.place(G.ConfigIO.read_config(root), root, "Decisions").file == joinpath("docs", "DECISIONS.md")
+end
+
+@testset "a formula the quote cut open is still searched for" begin
+    @test T.formulas("a real field's coefficients satisfy ``\\hat f(-k) =") == ["\\hat f(-k) ="]
+    @test T.formulas("\\overline{\\hat f(k)}``, so only half is stored") == ["\\overline{\\hat f(k)}"]
+    @test T.formulas("``a_1`` and then ``b_2``") == ["a_1", "b_2"]      # closed pairs are not reopened
+    @test isempty(T.formulas("plain prose, with ``code`` only"))
+end

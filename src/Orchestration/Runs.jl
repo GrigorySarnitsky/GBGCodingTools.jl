@@ -180,7 +180,7 @@ function carry_over(root::AbstractString, instrument::Symbol)
         out = Model.Finding[]
         for f in workable(prev)
             locs = [reanchor(root, Model.Location(file = Catalogue.normal_path(cfg, root, l.file), node = l.node,
-                                                  text = l.text, line = l.line, found = l.found);
+                                                  text = l.text, line = l.line, found = l.found, at = l.at);
                              since = prev.first_commit) for l in f.draft.locations]
             d = Model.relocated(f.draft, locs)
             Catalogue.in_material(cfg, locs) && (d = Model.FindingDraft(rule = d.rule, locations = d.locations,
@@ -654,11 +654,11 @@ as_dict(r::Model.Run) = Dict{String,Any}(
                                     "locations" => [loc_dict(l) for l in f.draft.locations]) for f in r.findings])
 
 loc_dict(l::Model.Location) = Dict{String,Any}("file" => l.file, "node" => l.node, "text" => l.text,
-                                               "line" => l.line, "found" => String(Symbol(l.found)))
+                                               "line" => l.line, "found" => String(Symbol(l.found)), "at" => l.at)
 
 loc_of(d) = Model.Location(; file = get(d, "file", ""), node = get(d, "node", ""),
                             text = get(d, "text", ""), line = get(d, "line", 0),
-                            found = getfield(Model.Anchor, Symbol(get(d, "found", "FRESH"))))
+                            found = getfield(Model.Anchor, Symbol(get(d, "found", "FRESH"))), at = get(d, "at", ""))
 
 question_dict(q::Model.Question) = Dict{String,Any}(
     "id" => q.id, "decision" => q.decision, "context" => q.context, "exhibit" => q.exhibit,
@@ -983,7 +983,9 @@ report names it, the fixer is not sent there, and a verifier that needs it is gi
 """
 function reanchor(root::AbstractString, loc::Model.Location; since::AbstractString = "")
     found = Texts.reanchor(root, loc)
-    found.found === Model.Anchor.OUTDATED || return found
+    now = head_commit(root)
+    found.found === Model.Anchor.OUTDATED || return stamped(found, now)
+    since = isempty(loc.at) ? since : loc.at             # the tree the line was last read in
     isempty(since) && return found
     # A file that is GONE is outdated whatever git says. `git diff` over a path that no longer exists
     # prints nothing, and an empty patch otherwise means "nothing moved" — so without this the deleted
@@ -992,8 +994,13 @@ function reanchor(root::AbstractString, loc::Model.Location; since::AbstractStri
     line = mapped_line(root, loc, since)
     line === nothing && return found
     return Model.Location(; file = loc.file, node = Texts.node_at(root, loc.file, line), text = loc.text,
-                           line = line, found = Model.Anchor.BY_DIFF)
+                           line = line, found = Model.Anchor.BY_DIFF, at = now == "unknown" ? "" : String(now))
 end
+
+# The location with the commit its line was read at. Re-anchoring runs where the tree is clean — a run
+# starts and collects only on one, and a fix pass follows commits — so HEAD is the tree the line is in.
+stamped(l::Model.Location, now::AbstractString) = now in ("", "unknown") ? l :
+    Model.Location(; file = l.file, node = l.node, text = l.text, line = l.line, found = l.found, at = String(now))
 
 """
     mapped_line(root, loc, since) -> Union{Int,Nothing}
@@ -1022,6 +1029,7 @@ function mapped_line(root::AbstractString, loc::Model.Location, since::AbstractS
     catch
         return nothing
     end
+    loc.line >= 1 || return nothing                     # line 0 was never a place; there is nothing to carry
     isempty(patch) && return loc.line
     offset = 0
     for m in eachmatch(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@"m, patch)
@@ -1029,7 +1037,9 @@ function mapped_line(root::AbstractString, loc::Model.Location, since::AbstractS
         old_len = m.captures[2] === nothing ? 1 : parse(Int, m.captures[2])
         new_start = parse(Int, m.captures[3])
         new_len = m.captures[4] === nothing ? 1 : parse(Int, m.captures[4])
-        old_start > loc.line && break                       # the hunk is below the line; it cannot move it
+        # The hunk is below the line and cannot move it. A pure insertion (`-n,0`) is AFTER line n, so
+        # one right after the finding's line is below it too.
+        (old_len == 0 ? old_start >= loc.line : old_start > loc.line) && break
         if old_len > 0 && old_start <= loc.line < old_start + old_len
             new_len == 0 && return nothing                  # the span was deleted outright
             return new_start

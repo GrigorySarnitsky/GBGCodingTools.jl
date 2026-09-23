@@ -88,6 +88,10 @@ them, and the line is only a hint. The fields are:
 - `text` — the quote: the decisive text as it read when the finding was made.
 - `line` — the line it was on then, kept as a hint and never taken from an agent.
 - `found` — how it was anchored the last time it was looked for.
+- `at` — the commit `line` was read at, empty for the commit the run began at.
+
+A line found again on a later pass is a line of that later tree; mapped from the run's first commit, it
+was moved a second time.
 """
 Base.@kwdef struct Location
     file::String
@@ -95,6 +99,7 @@ Base.@kwdef struct Location
     text::String = ""
     line::Int = 0
     found::Anchor.T = Anchor.FRESH
+    at::String = ""
 end
 
 """

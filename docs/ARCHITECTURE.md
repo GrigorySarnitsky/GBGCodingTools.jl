@@ -287,9 +287,13 @@ the line, kept only as a hint.
 `Texts.reanchor` does the two steps that need only files: **the node** — parse the file with Julia's own parser
 (JuliaSyntax, part of Julia 1.12) and find the named definition, or scan the Markdown headings — and then the quote
 inside it (`BY_NODE`); failing that, **the quote alone**, nearest the old line when there are several (`BY_QUOTE`).
+A quote is compared with the source as both READ on the built page (`Texts.reading`): markup the page renders away —
+link targets, backticks, dollars, emphasis, a docstring's escaped backslash, Literate's comment marks — is taken
+from both, and whitespace flattened, so a quote copied from the page, or one the source wraps, is found in its file.
 `Runs.reanchor` is the wrapper a run calls: it tries `Texts.reanchor` first and, when that fails, maps **the old line**
-by `git` through the changes since the finding was made (`BY_DIFF`) — which is why the git step lives there, not in
-`Texts` (§5.1). If all three fail the location is `OUTDATED`, never pointed at whatever now sits on that line: the
+by `git` through the changes since the line was read (`BY_DIFF`) — which is why the git step lives there, not in
+`Texts` (§5.1). A location records the commit its line was read at, so a line found again on a later pass is not
+carried through the same diff twice; a line of 0 was never a place, and is not mapped. If all three fail the location is `OUTDATED`, never pointed at whatever now sits on that line: the
 report names it, the fixer is not sent there, and a verifier that needs it is given the file's changed regions.
 
 ## 5. The Julia object model
@@ -356,6 +360,7 @@ module Anchor;    @enum T FRESH BY_NODE BY_QUOTE BY_DIFF OUTDATED; end
 Base.@kwdef struct Location       # node: for `.jl` the binding, method or field of a constant documented
     file::String; node::String = ""; text::String = ""   # (`ARGS_FORM.statement`), for `.md` the heading path;
     line::Int = 0; found::Anchor.T = Anchor.FRESH        # text: the quote. The line is a hint, `found` its anchoring
+    at::String = ""                  # the commit `line` was read at; empty is the run's first commit
 end
 "What an agent or a check reports, before a run gives it an id."
 Base.@kwdef struct FindingDraft

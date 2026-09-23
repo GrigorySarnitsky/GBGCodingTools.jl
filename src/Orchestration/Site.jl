@@ -108,6 +108,7 @@ inflated by a copy and its source read as two places — thirty-one findings of 
 function pages(dir::AbstractString, cfg::Model.Config, root::AbstractString)
     out = NamedTuple{(:path, :key, :text),Tuple{String,String,String}}[]
     isdir(dir) || return out
+    ignored = Texts.ignored(root)
     for (here, _, files) in walkdir(dir; onerror = _ -> nothing)
         for f in files
             f == "index.html" || continue
@@ -128,7 +129,11 @@ function pages(dir::AbstractString, cfg::Model.Config, root::AbstractString)
             src = source_of(root, rel; cfg)
             written(cfg, src) && continue
             Catalogue.target(cfg, src) || continue
-            text = strip(Texts.text_of(article))
+            # A page whose only source is a file the build writes and git ignores has no text a fixer
+            # could edit; one that says where it came from was resolved above.
+            !isempty(src) && ignored(src) && continue
+            text = strip(Texts.page_text(article))
+            text = replace(text, r"[ \t]*\n[ \t\n]*" => "\n")
             isempty(text) && continue
             push!(out, (path = rel, key = key_of(rel), text = String(text)))
         end
@@ -171,6 +176,11 @@ function source_of(root::AbstractString, path::AbstractString; cfg::Union{Model.
     stem = isempty(parts) ? "index" : join(parts, "/")
     for candidate in (joinpath("docs", "src", stem * ".md"), joinpath("docs", "src", stem, "index.md"))
         isfile(joinpath(root, candidate)) || continue
+        # A page Literate writes says what it was written from, in Documenter's own `EditURL`; the
+        # generated Markdown is a build output, and a finding sent there is overwritten at the next
+        # build (found in review, 2026-09-23, on a real example page).
+        edit = edit_url(root, candidate)
+        edit === nothing || return edit
         here = replace(candidate, '\\' => '/')
         cfg === nothing && return candidate
         # A declared COPY is written by the build from a tracked source, and a fix landing in the copy is
@@ -180,6 +190,24 @@ function source_of(root::AbstractString, path::AbstractString; cfg::Union{Model.
         return k === nothing ? candidate : last(cfg.copies[k])
     end
     return ""
+end
+
+# The file a page's `@meta` block names in `EditURL`, relative to the package, when it is one inside it.
+function edit_url(root::AbstractString, page::AbstractString)
+    text = try
+        read(joinpath(root, page), String)
+    catch
+        return nothing
+    end
+    m = match(r"^```@meta\s*\n(.*?)^```"ms, text)
+    m === nothing && return nothing
+    u = match(r"^\s*EditURL\s*=\s*\"([^\"]+)\""m, m.captures[1])
+    u === nothing && return nothing
+    occursin("://", u.captures[1]) && return nothing
+    full = normpath(joinpath(root, dirname(page), u.captures[1]))
+    rel = relpath(full, root)
+    (startswith(rel, "..") || !isfile(full)) && return nothing
+    return replace(rel, '\\' => '/')
 end
 
 """

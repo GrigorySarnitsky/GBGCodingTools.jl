@@ -240,7 +240,7 @@ function bound_name(node)
     cs === nothing && return nothing
     if k in (JS.K"function", JS.K"macro")
         isempty(cs) && return nothing
-        sig = first(cs)
+        sig = signature(first(cs))
         return JS.kind(sig) === JS.K"call" && !isempty(JS.children(sig)) ? node_text(first(JS.children(sig))) : node_text(sig)
     elseif k === JS.K"struct"
         isempty(cs) && return nothing
@@ -256,7 +256,7 @@ function bound_name(node)
         return node_text(inner)
     elseif k === JS.K"="
         isempty(cs) && return nothing
-        lhs = first(cs)
+        lhs = signature(first(cs))
         JS.kind(lhs) === JS.K"call" && !isempty(JS.children(lhs)) && return node_text(first(JS.children(lhs)))
         return nothing
     elseif k === JS.K"macrocall"
@@ -277,6 +277,16 @@ function bound_name(node)
 end
 
 node_text(node) = strip(String(JS.sourcetext(node)))
+
+# The call inside a signature: `f(x::T) where {T}` and `f(x)::Int` name `f`, not their whole text, which
+# no reader writes and no lookup by name can match (found in review, 2026-09-23: 63 of a real package's
+# node names were whole signatures).
+function signature(sig)
+    while JS.kind(sig) in (JS.K"where", JS.K"::") && !isempty(something(JS.children(sig), ()))
+        sig = first(JS.children(sig))
+    end
+    return sig
+end
 
 """
     definitions(path) -> Vector{NodeSpan}
@@ -332,15 +342,7 @@ function walk!(out, node, src, prefix)
             push!(out, span)
             if k === JS.K"const"                             # the keyword fields of a constant value
                 keyword_fields!(out, c, src, span.name)
-            elseif k === JS.K"macrocall"
-        # A defining macro call binds what it wraps: `Base.@kwdef struct S` is a struct named S, and
-        # treating it as anonymous sent every keyword-default type down the weaker anchoring path.
-        for c in cs
-            n = bound_name(c)
-            n === nothing || return n
-        end
-        return nothing
-    elseif k === JS.K"module"
+            elseif k === JS.K"module"
                 walk!(out, c, src, "")                       # a module's own contents keep their bare names
             end
             continue
@@ -823,13 +825,17 @@ The arguments are:
 Returns the line range.
 """
 function find_node(root::AbstractString, file::AbstractString, node::AbstractString)
-    isempty(node) && return 1:0
+    spans = find_nodes(root, file, node)
+    return isempty(spans) ? (1:0) : first(spans)
+end
+
+# Every span the name has: a generic's methods each carry a docstring, and a heading may repeat, so a
+# quote is looked for in all of them before it is looked for in the whole file.
+function find_nodes(root::AbstractString, file::AbstractString, node::AbstractString)
+    isempty(node) && return UnitRange{Int}[]
     path = joinpath(root, file)
     spans = endswith(file, ".jl") ? definitions(path) : headings(path)
-    for s in spans
-        s.name == node && return s.lines
-    end
-    return 1:0
+    return [s.lines for s in spans if s.name == node]
 end
 
 """
@@ -854,27 +860,30 @@ function reanchor(root::AbstractString, loc::Model.Location)
     isempty(loc.node) && isempty(loc.text) && return loc
     lines = readlines(path)
 
-    span = find_node(root, loc.file, loc.node)
-    if !isempty(span)
+    spans = find_nodes(root, loc.file, loc.node)
+    if !isempty(spans)
         isempty(loc.text) && return Model.Location(; file = loc.file, node = loc.node, text = loc.text,
-                                                    line = first(span), found = Model.Anchor.BY_NODE)
-        for i in span
-            i <= length(lines) && occursin(loc.text, lines[i]) &&
-                return Model.Location(; file = loc.file, node = loc.node, text = loc.text,
-                                       line = i, found = Model.Anchor.BY_NODE)
-        end
+                                                    line = first(first(spans)), found = Model.Anchor.BY_NODE, at = loc.at)
     end
+    isempty(loc.text) && return outdated(loc)
 
-    if !isempty(loc.text)
-        hits = [i for (i, l) in pairs(lines) if occursin(loc.text, l)]
-        if !isempty(hits)
-            i = argmin(abs.(hits .- loc.line))
-            return Model.Location(; file = loc.file, node = node_at(root, loc.file, hits[i]), text = loc.text,
-                                   line = hits[i], found = Model.Anchor.BY_QUOTE)
-        end
+    # The quote as written on one line, then as it READS: a quote copied from the built page lost the
+    # source's markup, and one the source wraps is on no single line. Either way it is the same text,
+    # and until 2026-09-24 eleven of twenty real quotes were lost to exactly this (found in review).
+    exact = [i for (i, l) in pairs(lines) if occursin(loc.text, l)]
+    hits = isempty(exact) ? flattened_lines(path, reading(loc.text)) : exact
+    isempty(hits) && return outdated(loc)
+    inside = [i for i in hits if any(sp -> i in sp, spans)]
+    if !isempty(inside)
+        return Model.Location(; file = loc.file, node = loc.node, text = loc.text,
+                               line = nearest(inside, loc.line), found = Model.Anchor.BY_NODE, at = loc.at)
     end
-    return outdated(loc)
+    i = nearest(hits, loc.line)
+    return Model.Location(; file = loc.file, node = node_at(root, loc.file, i), text = loc.text,
+                           line = i, found = Model.Anchor.BY_QUOTE, at = loc.at)
 end
+
+nearest(hits, line) = hits[argmin(abs.(hits .- line))]
 
 """
     place(cfg, root, text) -> Union{Model.Location,Nothing}
@@ -892,27 +901,63 @@ and the words may have been rendered from a docstring in the source rather than 
 Searching the documentation for them is what puts the finding in the file a fixer can edit.
 
 Two files holding the same words is NOT placed. A fixer sent to one of two identical sentences is a
-fixer sent to a coin toss, and the report naming the quote as unplaced is the honest answer. Whitespace
+fixer sent to a coin toss, and the report naming the quote as unplaced is the honest answer. The pages,
+docstrings and examples are searched first and the rationale documents only when none of them holds the
+quote, so a sentence a decision log repeats is still the docstring's. Whitespace
 is flattened before the search, so a sentence the build re-wrapped is still found.
 """
 function place(cfg::Model.Config, root::AbstractString, text::AbstractString)
-    needle = flatten(text)
+    needle = reading(text)
     isempty(needle) && return nothing
-    hits = Model.Location[]
-    for fileset in (Model.FileSet.PAGES, Model.FileSet.DOCSTRINGS, Model.FileSet.LITERATE, Model.FileSet.RATIONALE)
-        for file in files(cfg, root, fileset)
+    # The text a user reads first, the rationale documents only where none of it holds the quote: a
+    # docstring whose sentence a decision log also records is the docstring's, and treating the two as a
+    # coin toss lost a real finding (found in review, 2026-09-23).
+    for tier in ((Model.FileSet.PAGES, Model.FileSet.DOCSTRINGS, Model.FileSet.LITERATE), (Model.FileSet.RATIONALE,))
+        hits = Model.Location[]
+        for fileset in tier, file in files(cfg, root, fileset)
             any(h -> h.file == file, hits) && continue
             line = flattened_line(joinpath(root, file), needle)
             line === nothing && continue
             push!(hits, Model.Location(; file, node = node_at(root, file, line), text = String(text),
                                         line = line, found = Model.Anchor.BY_QUOTE))
         end
+        isempty(hits) || return length(hits) == 1 ? only(hits) : nothing
     end
-    return length(hits) == 1 ? only(hits) : nothing
+    return nothing
 end
 
 # One run of whitespace is one space, so a sentence the build re-wrapped still matches the source.
 flatten(text::AbstractString) = strip(replace(String(text), r"\s+" => " "))
+
+"""
+    reading(text) -> String
+
+A text as the built page reads it: what the source's markup renders away is taken away, and whitespace is
+flattened. The argument is `text`, a quote or a stretch of source. Returns the reading.
+
+A reader given a built page quotes the page, where a cross-reference is its label alone, `**same**` is
+`same`, a formula written between double backticks stands between dollars, a docstring's doubled
+backslash is a single one, and a Literate example has no comment marks. Both the quote and the source are put in this form before
+one is searched for in the other, so the two spellings of one sentence meet; the source's line numbers
+are kept, since the reading is taken line by line.
+
+It is a comparison form and nothing is ever written in it. It deletes more than a renderer would — every
+backtick, dollar, asterisk and bracket — because a character deleted from both sides costs a match
+nothing, while one kept on one side loses it.
+"""
+reading(text::AbstractString) = flatten(join((reading_line(l) for l in split(String(text), '\n')), " "))
+
+function reading_line(line::AbstractString)
+    l = String(line)
+    occursin(r"^\s*```", l) && return ""                         # a fence line renders as nothing
+    l = replace(l, r"^\s*!!!\s+\w+(?:\s+\"(.*)\")?\s*$" => s"\1")  # an admonition renders as its title
+    l = replace(l, r"^\s*#+\s?" => "")                            # a heading's, or a Literate line's, marks
+    l = replace(l, r"^\s*(?:[-*+]|\d+[.)]|>)\s+" => "")            # a list item's or a quotation's leader
+    l = replace(l, r"\]\([^)]*\)" => "")                          # a link's target
+    l = replace(l, "\\\\" => "\\")                                  # a docstring's escaped backslash
+    l = replace(l, r"\\[\[\]()]" => "")                          # display and inline delimiters, \[ … \]
+    return replace(l, r"[`$*\[\]]" => "")
+end
 
 """
     occurrences(cfg, root, text) -> Vector{Model.Location}
@@ -930,7 +975,7 @@ formula, is often written in several places, and a fix made where the reader hap
 others standing. A fourth copy of a corrected formula once survived a whole run that way.
 """
 function occurrences(cfg::Model.Config, root::AbstractString, text::AbstractString)
-    needle = flatten(text)
+    needle = reading(text)
     isempty(needle) && return Model.Location[]
     out = Model.Location[]
     seen = Set{String}()
@@ -962,9 +1007,24 @@ finds every page and means nothing.
 """
 function formulas(text::AbstractString)
     out = String[]
-    for m in eachmatch(r"(?<!\$)\$([^\$\n]{2,})\$(?!\$)", String(text))
+    t = String(text)
+    for rx in (r"(?<!`)``(?!`)(.{2,}?)(?<!`)``(?!`)"s, r"(?<!\$)\$([^\$\n]{2,})\$(?!\$)")
+        for m in eachmatch(rx, t)
+            f = strip(m.captures[1])
+            # A quote cut mid-formula pairs the wrong delimiters and takes the prose between two
+            # formulas for one; prose has none of the characters mathematics is written with.
+            occursin(r"[\\^_={}]", f) || continue
+            isempty(f) || f in out || push!(out, String(f))
+        end
+    end
+    # A quote the reader cut at a line end leaves a formula open at one of its ends; the part it holds
+    # is how every copy of that formula begins or ends, and is searched for as one.
+    rest = replace(t, r"(?<!`)``(?!`).{2,}?(?<!`)``(?!`)"s => " ")
+    for rx in (r"(?<!`)``(?!`)([^`]{2,})$", r"^([^`]{2,}?)(?<!`)``(?!`)")
+        m = match(rx, rest)
+        m === nothing && continue
         f = strip(m.captures[1])
-        isempty(f) || f in out || push!(out, String(f))
+        occursin(r"[\\^_={}]", f) && !(f in out) && push!(out, String(f))
     end
     return out
 end
@@ -985,7 +1045,7 @@ function flattened_lines(path::AbstractString, needle::AbstractString)
     end
     io = IOBuffer(); at = Int[]
     for (i, l) in pairs(lines)
-        piece = flatten(l)
+        piece = reading(l)
         isempty(piece) && continue
         position(io) == 0 || (write(io, " "); push!(at, i))
         for _ in 1:length(piece); push!(at, i); end
@@ -1008,7 +1068,7 @@ function flattened_lines(path::AbstractString, needle::AbstractString)
 end
 
 outdated(loc) = Model.Location(; file = loc.file, node = loc.node, text = loc.text, line = loc.line,
-                               found = Model.Anchor.OUTDATED)
+                               found = Model.Anchor.OUTDATED, at = loc.at)
 
 """
     node_at(root, file, line) -> String
@@ -1099,6 +1159,42 @@ function text_of(node)
         n isa HTMLText && write(io, n.text)
     end
     return String(take!(io))
+end
+
+"""
+    page_text(node) -> String
+
+The text of `node` as a reader of the page meets it: every text node in order, with a line break where
+a block — a paragraph, a heading, a list item, a table cell — begins or ends. The argument is `node`.
+Returns the string.
+
+Documenter writes no whitespace between tags, so the bare concatenation [`text_of`](@ref) gives runs a
+heading into the paragraph after it (`…of the same field.The parts are:`): a reader shown that quotes
+words no source holds, and a quote across the boundary could never be placed (found in review,
+2026-09-23).
+"""
+function page_text(node)
+    io = IOBuffer()
+    page_text!(io, node)
+    return String(take!(io))
+end
+
+const BLOCK_TAGS = Set([:p, :h1, :h2, :h3, :h4, :h5, :h6, :li, :ul, :ol, :div, :pre, :table, :tr, :td, :th,
+                        :dt, :dd, :dl, :br, :section, :article, :header, :footer, :blockquote, :details,
+                        :summary, :hr, :figure, :figcaption])
+
+function page_text!(io::IO, n)
+    if n isa HTMLText
+        write(io, n.text)
+    elseif n isa HTMLElement
+        block = tagname(n) in BLOCK_TAGS
+        block && write(io, '\n')
+        for c in children(n)
+            page_text!(io, c)
+        end
+        block && write(io, '\n')
+    end
+    return io
 end
 
 """
