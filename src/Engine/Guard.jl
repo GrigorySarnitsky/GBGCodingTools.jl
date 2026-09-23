@@ -28,8 +28,7 @@ module Guard
 
 using ..Model
 using ..Texts
-
-const JS = Base.JuliaSyntax
+using Markdown
 
 """
     Ruling
@@ -51,56 +50,140 @@ const LITERATE_MARKS = ("#src", "#md", "#jl", "#nb")
 """
     math_spans(text) -> Vector{String}
 
-Every mathematical expression a text writes, in order and with repetition: a double-backtick span
-(the spelling the rulebook requires), a fenced math block, a display between doubled dollar signs,
-and a span between single dollar signs. The argument is `text`. Returns the expressions, whitespace flattened and a doubled
-backslash read singly, so that a re-wrapped line, or the same formula in a Julia docstring, is the same
-expression it was.
+Every mathematical expression a text spells, found by PATTERN, in order and with repetition: a
+double-backtick span (the spelling the rulebook requires), a fenced math block, a display between
+doubled dollar signs, a span between single dollar signs, and a bracketed display or inline span in the
+LaTeX spelling. The argument is
+`text`. Returns the expressions, whitespace flattened so that a re-wrapped line is the same expression.
 
-Until 2026-09-23 only the single-dollar spelling was seen, which the rulebook forbids: every formula in
-a package written as the rulebook requires was invisible to clause 6, and the fixer of
-[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) edited eight of them unasked.
+This is half of what clause 6 reads. The other half is [`parsed_math`](@ref), what Julia's Markdown
+parser — the one Documenter uses — reads as mathematics; a change either half sees is refused, so a
+formula one of them misses is caught by the other.
 """
 function math_spans(text::AbstractString)
     t = String(text)
     out = String[]
-    norm(x) = strip(replace(replace(x, "\\\\" => "\\"), r"\s+" => " "))
-    rx = r"^[ \t]*(?:#[ \t]?)?(```+|~~~+)[ \t]*math[ \t]*\n(.*?)^[ \t]*(?:#[ \t]?)?\1[ \t]*$"ms
-    for m in eachmatch(rx, t); push!(out, norm(m.captures[2])); end
-    t = replace(t, rx => "")
-    for m in eachmatch(r"\$\$(.+?)\$\$"s, t); push!(out, norm(m.captures[1])); end
-    t = replace(t, r"\$\$(.+?)\$\$"s => "")
-    for m in eachmatch(r"(?<!`)``(?!`)(.+?)(?<!`)``(?!`)"s, t); push!(out, norm(m.captures[1])); end
-    t = replace(t, r"(?<!`)``(?!`)(.+?)(?<!`)``(?!`)"s => "")
-    for m in eachmatch(r"(?<!\$)\$([^\$\n]+)\$(?!\$)", t); push!(out, norm(m.captures[1])); end
+    flat(x) = strip(replace(x, r"\s+" => " "))
+    for rx in (r"^[ \t>]*(?:[-*+][ \t]+)?(?:#[ \t]?)?(```+|~~~+)[ \t]*math[ \t]*\n(.*?)^[ \t>]*(?:#[ \t]?)?\1[ \t]*$"ms,)
+        for m in eachmatch(rx, t); push!(out, flat(m.captures[2])); end
+        t = replace(t, rx => "")
+    end
+    for rx in (r"\$\$(.+?)\$\$"s, r"(?<!`)``(?!`)(.+?)(?<!`)``(?!`)"s, r"\\\[(.+?)\\\]"s, r"\\\((.+?)\\\)"s,
+               r"(?<![\$\\])\$([^\$]+?)\$(?!\$)"s)
+        for m in eachmatch(rx, t); push!(out, flat(m.captures[1])); end
+        t = replace(t, rx => "")
+    end
     return out
 end
 
 """
-    math_changed(before, after) -> Vector{String}
+    parsed_math(src; jl = false) -> (math, code)
 
-The mathematics this change adds, alters, removes or reorders. The arguments are `before` and `after`,
-the file's text on each side. Returns the expressions that differ — those added, then those removed —
-and, where the same expressions now stand in a different order, all of them; empty when the
-mathematics is untouched.
+What Julia's Markdown parser reads as mathematics in a text, and the inline code spans beside it. The
+arguments are:
+
+- `src` — the file's content.
+- `jl` — whether it is a Julia file, whose Markdown is the value of each string literal and, for
+  Literate, each comment with its `# ` taken off.
+
+Returns the formulas in order, and the contents of the inline code spans.
+
+A blockquote, a list item, a formula wrapped across a line, a stray pair of backticks before a formula:
+the parser reads each as Documenter will, which no pattern over the text did.
+"""
+function parsed_math(src::AbstractString; jl::Bool = false)
+    math = String[]; code = String[]
+    for text in markdown_texts(src; jl)
+        md = try Markdown.parse(text) catch; nothing end
+        md === nothing || md_walk(md) do x
+            if x isa Markdown.LaTeX
+                push!(math, strip(replace(x.formula, r"\s+" => " ")))
+            elseif x isa Markdown.Code && isempty(x.language)
+                push!(code, strip(replace(x.code, r"\s+" => " ")))
+            end
+        end
+    end
+    return math, code
+end
+
+# Every node of a parsed Markdown tree, depth first, in document order.
+function md_walk(f, x)
+    f(x)
+    if x isa AbstractVector
+        foreach(y -> md_walk(f, y), x)
+    elseif !(x isa AbstractString || x isa Symbol || x isa Number || x === nothing)
+        for n in fieldnames(typeof(x))
+            v = getfield(x, n)
+            (v isa AbstractVector || parentmodule(typeof(v)) === Markdown) && md_walk(f, v)
+        end
+    end
+end
+
+# The Markdown a file holds: a page is Markdown; a Julia file's is each string literal's VALUE, and the
+# comments, which Literate renders as Markdown once their `# ` is taken off.
+function markdown_texts(src::AbstractString; jl::Bool = false)
+    jl || return [String(src)]
+    out = string_values(src)
+    comments = [replace(l, r"^[ \t]*#[ \t]?" => "") for l in split(String(src), '\n') if occursin(r"^[ \t]*#(?!=)", l)]
+    isempty(comments) || push!(out, join(comments, '\n'))
+    return out
+end
+
+function string_values(src::AbstractString)
+    ex = try Meta.parseall(String(src)) catch; return String[] end
+    out = String[]
+    walk(x) = x isa String ? push!(out, x) : x isa Expr ? foreach(walk, x.args) : nothing
+    walk(ex)
+    return out
+end
+
+"""
+    math_changed(before, after; jl = false) -> Vector{String}
+
+The mathematics this change adds, alters, removes or reorders. The arguments are:
+
+- `before` and `after` — the file's text on each side.
+- `jl` — whether it is a Julia file.
+
+Returns the expressions that differ — those added, then those removed — and, where the same expressions
+now stand in a different order, all of them; empty when the mathematics is untouched.
 
 CLAUSE 6, and the owner's ruling of 2026-09-21: **no edit inside a math span is made automatically**.
 A program has no oracle for whether a formula is true — only the code it documents has that, and code
 that is itself wrong then certifies prose that matches it — so a changed symbol, number or sign is put
 to the owner as a question rather than committed. Deleting a formula and swapping two are edits too.
-Whitespace alone is not a change, and a year in a citation is not mathematics.
+
+One change is spelling and not mathematics: an inline code span made a math span with the same text,
+or back — the fix the LaTeX rules ask for. Whitespace alone is not a change, and a year in a citation
+is not mathematics.
 """
-function math_changed(before::AbstractString, after::AbstractString)
-    was = math_spans(before)
-    now = math_spans(after)
+function math_changed(before::AbstractString, after::AbstractString; jl::Bool = false)
+    pm_b, pc_b = parsed_math(before; jl); pm_a, pc_a = parsed_math(after; jl)
+    code_spans(t) = [strip(replace(m.captures[1], r"\s+" => " ")) for m in eachmatch(r"(?<!`)`(?!`)([^`]+?)(?<!`)`(?!`)", String(t))]
+    one = math_diff(pm_b, pm_a, pc_b, pc_a)
+    two = math_diff(math_spans(before), math_spans(after), code_spans(before), code_spans(after))
+    return unique(vcat(one, two))
+end
+
+function math_diff(was, now, code_was, code_now)
     was == now && return String[]
-    left = copy(was); added = String[]
-    for span in now
-        i = findfirst(==(span), left)
-        i === nothing ? push!(added, String(span)) : deleteat!(left, i)
+    added = multiset_minus(now, was); removed = multiset_minus(was, now)
+    # respelled, not changed: what appeared as mathematics left the code spans, and what left the
+    # mathematics appeared among them
+    isempty(multiset_minus(added, multiset_minus(code_was, code_now))) &&
+        isempty(multiset_minus(removed, multiset_minus(code_now, code_was))) &&
+        (!isempty(added) || !isempty(removed)) && return String[]
+    out = vcat(added, removed)
+    return isempty(out) ? String.(now) : String.(out)     # the same expressions, in another order
+end
+
+function multiset_minus(xs, ys)
+    left = collect(ys); out = String[]
+    for x in xs
+        i = findfirst(==(x), left)
+        i === nothing ? push!(out, String(x)) : deleteat!(left, i)
     end
-    out = vcat(added, String.(left))
-    return isempty(out) ? String.(now) : out                  # same expressions, a different order
+    return out
 end
 
 """
@@ -179,10 +262,6 @@ function classify(cfg::Model.Config, path::AbstractString, before, after; genera
 
     rule_prose = false
     if endswith(path, ".jl")
-        # A file that reads its own line numbers runs differently when a docstring above grows a line,
-        # and the shape holds no line numbers, so such a file is code whenever a line moved.
-        occursin("@__LINE__", before * after) && count('\n', before) != count('\n', after) &&
-            return Ruling(path, false, "the file reads its own line numbers (`@__LINE__`) and a line moved (clause 2)")
         shape_before = code_shape(before)
         shape_after = code_shape(after)
         shape_before === nothing && return Ruling(path, false, "the file did not parse before the change (clause 2)")
@@ -198,9 +277,9 @@ function classify(cfg::Model.Config, path::AbstractString, before, after; genera
             return Ruling(path, false, "a comment carrying a Literate mark changed, which moves what runs (clause 4)")
     end
 
-    fenced_kept(before, after) ||
+    fenced_kept(before, after; jl = endswith(path, ".jl")) ||
         return Ruling(path, false, "a doctest or an `@` block changed: those are run, not read (clause 5)")
-    changed = math_changed(before, after)
+    changed = math_changed(before, after; jl = endswith(path, ".jl"))
     isempty(changed) ||
         return Ruling(path, false, "mathematics changed, which is the owner's to answer (clause 6): " *
                                    join("`" .* first.(changed, 60) .* "`", ", "))
@@ -211,174 +290,118 @@ end
 # ────────────────────────────────────────────────────────────────────── clause 2: the code itself
 
 """
-    code_shape(src) -> Union{String,Nothing}
+    code_shape(src; rule_prose = false) -> Union{Expr,Nothing}
 
-The Julia source with everything that is documentation taken out of it: docstrings whose text is a plain
-literal and whose target is a definition, and string literals standing alone at top level or in a struct
-body. What is left is written out in a canonical form that holds no line numbers, so two versions differing
-only in their prose have the same shape and any other difference shows.
+The Julia source as Julia's own parser reads it, with exactly what Julia treats as documentation taken
+out, and nothing else. The arguments are:
 
-A docstring whose target is a CALL, or a macro call that does not define anything, is left in: Julia then
-documents the call instead of running it, so removing it would hide a change in what the file does. So is
-one built by interpolation, whose text is a program. A docstring on a bare NAME comes out — that is how a
-whole generic is documented where its methods are written one per backend — because what is left is the
-name alone, which runs nothing.
+- `src` — the file's content.
+- `rule_prose` — whether the plain strings given as a `Rule(…)` call's own `statement` and `why`
+  keywords are elided too (clause 3).
 
-The arguments are `src`, the file's content, and `rule_prose`, whether the plain string literals given to
-`statement` or `why` as the Rule call's own keywords are elided too (clause 3). Returns the shape, or
-`nothing` when the source does not parse.
+Returns the parsed tree, or `nothing` when the source does not parse.
 
-A string standing alone is documentation only where it is not a block's value, and a string inside a
-struct only when it stands directly in the struct's body; an interpolated string is never
-documentation. Every leaf keeps its exact text, whitespace included.
+What comes out is decided by the parser, not by patterns over the text [rebuilt 2026-09-23: two review
+passes found twenty-six ways past a guard that recognised documentation by its shape in the source,
+each fix exposing the next shape it had not anticipated]:
+
+- a docstring the parser ATTACHED — a `Core.@doc` node — at top level or directly in a module, whose
+  text is a plain string or a `raw"…"` literal, on a definition, an assignment or a bare name. Inside
+  any other block a docstring changes the block's value, and on a call or a non-defining macro it
+  replaces what runs, so both stay;
+- a plain string standing directly in a struct's body: a field docstring.
+
+No other string is ever removed. A string separated from what follows by a blank line is not attached,
+so it is a statement like any other, and one ending a Literate chunk is that chunk's displayed output.
+Line numbers are dropped, except in a file that reads its own with `@__LINE__` or `__source__`, where
+they are kept and a moved line is code.
 """
 function code_shape(src::AbstractString; rule_prose::Bool = false)
-    tree = try
-        JS.parseall(JS.SyntaxNode, src; filename = "shape.jl")
+    ex = try
+        Meta.parseall(String(src); filename = "shape.jl")
     catch
         return nothing
     end
-    any_error(tree) && return nothing
-    io = IOBuffer()
-    shape!(io, tree; rule_prose)
-    return String(take!(io))
+    broken(ex) && return nothing
+    lines = occursin("@__LINE__", src) || occursin("__source__", src)
+    return shape(ex, :top; rule_prose, lines)
 end
 
-any_error(node) = JS.kind(node) === JS.K"error" ||
-                  any(any_error, something(JS.children(node), ()))
+broken(x) = x isa Expr && (x.head in (:error, :incomplete) || any(broken, x.args))
 
-# What counts as documentation inside the code is exactly three things, and each is recognised by its
-# PLACE, never inherited by a subtree (found in review, 2026-09-23 — an inherited flag made every string
-# anywhere inside a struct, defaults and constructor arguments included, a "field docstring"):
-#
-# - a plain literal docstring on a definition or a name (`removable_doc`);
-# - a plain string standing DIRECTLY in a struct's body block: a field docstring;
-# - a plain string standing alone as a statement of a block that is NOT that block's value — at top
-#   level, in a module, or before the last statement of a function, `let`, `begin` or branch body. The
-#   last statement of such a block is what it returns, so a string there is code: `f() = "hello"`
-#   changed to "goodbye" changes what `f()` returns.
-#
-# An interpolated string is never documentation anywhere: its text is a program. Every leaf is printed
-# with `repr`, so the shape cannot be forged by a literal that spells another shape, and a string's
-# whitespace is part of its value.
-function shape!(io, node; rule_prose::Bool = false)
-    k = JS.kind(node)
-    cs = something(JS.children(node), ())
-
-    if k === JS.K"doc" && length(cs) >= 2 && removable_doc(cs[1], cs[2])
-        shape!(io, cs[2]; rule_prose)                       # the docstring goes; what it documents stays
-        return
+function shape(x, level::Symbol; rule_prose::Bool, lines::Bool)
+    x isa LineNumberNode && return lines ? x : nothing
+    x isa Expr || return x
+    kw = (; rule_prose, lines)
+    if level === :top && is_doc(x) && removable_text(x.args[3]) && removable_target(x.args[4])
+        return shape(x.args[4], :top; kw...)                 # the docstring goes; what it documents stays
     end
-    if isempty(cs)
-        print(io, "(", k, " ", repr(String(JS.sourcetext(node))), ")")
-        return
+    if x.head === :toplevel
+        return Expr(:toplevel, keep(shape(a, :top; kw...) for a in x.args)...)
     end
-    print(io, "(", k)
-    rule_call = rule_prose && k === JS.K"call" && is_rule_callee(cs[1])
-    struct_body = k === JS.K"struct"
-    for (i, c) in enumerate(cs)
-        ck = JS.kind(c)
-        # a field docstring: a plain string directly in the struct's own body block
-        if struct_body && ck === JS.K"block"
-            print(io, " (block")
-            for g in something(JS.children(c), ())
-                plain_string(g) && continue
-                # a field docstring parses as a docstring on the field: the text goes, the field stays
-                gc = something(JS.children(g), ())
-                if JS.kind(g) === JS.K"doc" && length(gc) >= 2 && plain_string(gc[1])
-                    print(io, " "); shape!(io, gc[2]; rule_prose); continue
-                end
-                print(io, " "); shape!(io, g; rule_prose)
-            end
-            print(io, ")")
-            continue
-        end
-        # an unattached docstring: a plain string standing alone where it is not the block's value
-        if plain_string(c) && standalone(k, i, length(cs))
-            continue
-        end
-        # clause 3: the Rule call's OWN statement and why keywords, never anything nested inside it
-        if rule_call && prose_kw(c)
-            print(io, " (= ", strip(String(JS.sourcetext(something(JS.children(c), ())[1]))), " <prose>)")
-            continue
-        end
-        if rule_call && ck === JS.K"parameters"
-            print(io, " (parameters")
-            for g in something(JS.children(c), ())
-                prose_kw(g) ? print(io, " (= ", strip(String(JS.sourcetext(something(JS.children(g), ())[1]))), " <prose>)") :
-                              (print(io, " "); shape!(io, g; rule_prose))
-            end
-            print(io, ")")
-            continue
-        end
-        print(io, " ")
-        shape!(io, c; rule_prose)
+    if x.head === :module
+        body = x.args[3]
+        return Expr(:module, x.args[1], x.args[2],
+                    Expr(:block, keep(shape(a, :top; kw...) for a in body.args)...))
     end
-    print(io, ")")
+    if x.head === :struct
+        body = x.args[3]
+        return Expr(:struct, x.args[1], shape(x.args[2], :other; kw...),
+                    Expr(:block, keep(shape(a, :other; kw...) for a in body.args if !(a isa String))...))
+    end
+    # A signature is not a call: `Rule(; statement = "…") = …` defines a method, and its defaults are code.
+    if x.head in (:function, :(=), :macro) && length(x.args) == 2
+        return Expr(x.head, shape(x.args[1], :sig; kw...), shape(x.args[2], :other; kw...))
+    end
+    if rule_prose && level !== :sig && x.head === :call && is_rule_callee(x.args[1])
+        return Expr(:call, (prose_elided(a, kw) for a in x.args)...)
+    end
+    return Expr(x.head, keep(shape(a, :other; kw...) for a in x.args)...)
 end
 
-# A child of `parent` at position `i` of `n` standing alone as a statement that is not the value of its
-# block: anywhere at top level or in a module, and anywhere but last in a block.
-standalone(parent, i, n) = parent === JS.K"toplevel" || parent === JS.K"module" ||
-                           (parent === JS.K"block" && i < n)
+keep(xs) = Any[y for y in xs if y !== nothing]
 
-prose_kw(node) = JS.kind(node) === JS.K"=" && (cs = something(JS.children(node), ()); length(cs) == 2 &&
-                 is_prose_keyword(cs[1]) && plain_string(cs[2]))
+is_doc(x) = x isa Expr && x.head === :macrocall && length(x.args) == 4 &&
+            (x.args[1] == GlobalRef(Core, Symbol("@doc")) || x.args[1] === Symbol("@doc"))
 
-# `Rule(` or `Model.Rule(`: the one constructor whose statement and why are prose (clause 3).
-is_rule_callee(node) = (t = strip(String(JS.sourcetext(node))); t == "Rule" || endswith(t, ".Rule"))
-is_prose_keyword(node) = JS.kind(node) === JS.K"Identifier" && strip(String(JS.sourcetext(node))) in ("statement", "why")
-plain_string(node) = JS.kind(node) === JS.K"string" &&
-                     all(c -> JS.kind(c) === JS.K"String", something(JS.children(node), ()))
+removable_text(t) = t isa String ||
+    (t isa Expr && t.head === :macrocall && t.args[1] === Symbol("@raw_str") && count(a -> a isa String, t.args) == 1)
 
-
-# A docstring may be dropped only when it is a plain literal AND its target is something the file can
-# keep without it: a definition, or a bare name.
-function removable_doc(text_node, target)
-    JS.kind(text_node) in (JS.K"string", JS.K"String") || return false
-    kids = [c for c in something(JS.children(text_node), ()) if JS.kind(c) !== JS.K"String"]
-    isempty(kids) || return false                           # interpolation: the text is a program
-    return defining(target) || naming(target)
-end
-
-"""
-Whether this docstring target is a NAME — an identifier, a dotted path, or a quoted symbol.
-
-A docstring on a bare name is how a whole generic is documented where its methods are written one per
-backend and no single one of them is the place: `\"\"\"…\"\"\" mean` above the module's methods of `mean`.
-Removing the docstring leaves the name standing alone, which evaluates to the binding and does nothing,
-so the shape is the same before and after and an edit to the prose is documentation.
-
-Until 2026-09-23 this returned nothing and those docstrings were code. The count says why it went
-unnoticed here and hurt elsewhere: NINETEEN targets in
-GBGPeriodicFields — every operator of its
-field algebra and every reduction — and NONE in this package, which documents no generic that way. A
-guard clause is exercised by the shapes the package it was written in happens to use.
-"""
-function naming(node)
-    k = JS.kind(node)
-    k === JS.K"Identifier" && return true
-    cs = something(JS.children(node), ())
-    # `Base.:+` and `:+`: a field access off a name, and a quoted operator. Neither runs anything.
-    k === JS.K"quote" && return length(cs) == 1 && naming(only(cs))
-    k === JS.K"." && return length(cs) == 2 && naming(cs[1]) && naming(cs[2])
-    return false
-end
-
-const DEFINING_KINDS = (JS.K"function", JS.K"macro", JS.K"struct", JS.K"abstract", JS.K"primitive",
-                        JS.K"const", JS.K"module", JS.K"=")
-
-function defining(node)
-    k = JS.kind(node)
-    k in DEFINING_KINDS && return true
-    if k === JS.K"macrocall"
-        # `@kwdef`, `@enum` and their kind define; any other macro call is a call, and documenting a call
-        # replaces it rather than running it.
-        t = String(JS.sourcetext(node))
-        return occursin(r"@(?:Base\.)?kwdef\b", t) || occursin(r"@enum\b", t) ||
-               any(defining, something(JS.children(node), ()))
+# A definition, an assignment or a name: removing the docstring from one of these leaves the same thing
+# evaluated. A call, an indexing or a non-defining macro call does not.
+function removable_target(t)
+    t isa Symbol && return true
+    t isa Expr || return false
+    t.head === :. && return all(a -> a isa Symbol || a isa QuoteNode, t.args)
+    t.head in (:function, :(=), :struct, :abstract, :primitive, :module, :const, :macro, :global) && return true
+    if t.head === :macrocall
+        m = t.args[1]
+        name = m isa Symbol ? m : (m isa Expr && m.head === :. ? m.args[end] : nothing)
+        name isa QuoteNode && (name = name.value)
+        name in (Symbol("@kwdef"), Symbol("@enum")) &&
+            return any(a -> a isa Expr && a.head in (:struct, :block) || a isa Symbol, t.args[3:end])
+        # Base's macros that only ANNOTATE a definition — the form fast code documents most — around a
+        # definition. A named list, not any macro: a package's own macro may rewrite what it wraps into a
+        # call, and a docstring on it then stops the call from running.
+        name in ANNOTATING && return removable_target(t.args[end])
     end
     return false
+end
+
+const ANNOTATING = Symbol.(["@inline", "@noinline", "@generated", "@propagate_inbounds", "@constprop",
+                            "@assume_effects", "@nospecialize", "@specialize", "@deprecate"])
+
+# `Rule` or `Model.Rule`: the one constructor whose statement and why are prose (clause 3).
+is_rule_callee(f) = f === :Rule || (f isa Expr && f.head === :. && f.args[end] == QuoteNode(:Rule))
+
+function prose_elided(a, kw)
+    if a isa Expr && a.head === :kw && a.args[1] in (:statement, :why) && a.args[2] isa String
+        return Expr(:kw, a.args[1], "<prose>")
+    end
+    if a isa Expr && a.head === :parameters
+        return Expr(:parameters, (prose_elided(p, kw) for p in a.args)...)
+    end
+    return shape(a, :other; kw...)
 end
 
 # ─────────────────────────────────────────────────────────── clauses 4 and 5: marks and fenced blocks
@@ -404,34 +427,32 @@ starts with `@` (`@example`, `@eval`, `@setup`, `@meta`, `@raw`, `@docs`, `@auto
 `@contents`). Their content is executed or collected at build time, so an edit to one is a code change
 however much it looks like prose.
 
-The arguments are the two versions. Returns whether they all survived unchanged.
+The arguments are the two versions and `jl`, whether it is a Julia file. Returns whether they all
+survived unchanged.
 """
-function fenced_kept(before::AbstractString, after::AbstractString)
-    return run_blocks(before) == run_blocks(after)
+function fenced_kept(before::AbstractString, after::AbstractString; jl::Bool = false)
+    return run_blocks(before; jl) == run_blocks(after; jl)
 end
 
-function run_blocks(src::AbstractString)
+function run_blocks(src::AbstractString; jl::Bool = false)
     out = Tuple{String,String}[]
-    # Three readings of the text, since a block Documenter runs can be written in any of them: as it
-    # stands; with a comment's `# ` removed, which is how Literate turns a comment into Markdown; and,
-    # in a Julia file, each string literal's VALUE, where a one-line docstring spells its newlines `\n`.
-    for text in (String(src), uncommented(src), literal_values(src))
+    # What the parser reads as a run block, wherever it stands — in a blockquote, on a list bullet, in a
+    # docstring's value, in a Literate comment — and, beside it, every fence found by pattern in the text
+    # as it stands and with comment marks taken off.
+    for text in markdown_texts(src; jl)
+        md = try Markdown.parse(text) catch; nothing end
+        md === nothing || md_walk(md) do x
+            x isa Markdown.Code && (startswith(x.language, "jldoctest") || startswith(x.language, "@")) &&
+                push!(out, (x.language, x.code))
+        end
+    end
+    for text in (String(src), uncommented(src))
         append!(out, blocks_of(text))
     end
     return out
 end
 
 uncommented(src) = join((replace(l, r"^([ \t]*)#[ \t]?" => s"\1") for l in split(String(src), '\n')), '\n')
-
-function literal_values(src)
-    tree = try JS.parseall(JS.SyntaxNode, String(src); filename = "values.jl") catch; return "" end
-    io = IOBuffer()
-    walk(n) = (plain_string(n) && (v = try Meta.parse(String(JS.sourcetext(n))) catch; nothing end;
-                                   v isa AbstractString && println(io, v));
-               foreach(walk, something(JS.children(n), ())))
-    walk(tree)
-    return String(take!(io))
-end
 
 # ``` and ~~~ fences alike, as Julia's Markdown parser reads them: a fence closes on the same character.
 function blocks_of(text::AbstractString)

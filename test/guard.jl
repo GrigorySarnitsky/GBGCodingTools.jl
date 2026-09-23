@@ -113,8 +113,31 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
         @test !g("function greet()\n    \"hello\"\nend\n", "function greet()\n    \"goodbye\"\nend\n")
         @test !g("const X = begin\n    \"a\"\nend\n", "const X = begin\n    \"b\"\nend\n")
         @test !g("f(c) = if c\n    \"yes\"\nelse\n    \"no\"\nend\n", "f(c) = if c\n    \"no\"\nelse\n    \"yes\"\nend\n")
-        # one standing alone before the value is an unattached note, as before
-        @test g("function f()\n    \"a note\"\n    1\nend\n", "function f()\n    \"another note\"\n    1\nend\n")
+        # and one standing alone before the value is code too: no string Julia does not attach is removed,
+        # since the same form in a macro's argument block or a `quote` is data (the review of 2026-09-23)
+        @test !g("function f()\n    \"a note\"\n    1\nend\n", "function f()\n    \"another note\"\n    1\nend\n")
+        @test !g("const S = @strs begin\n    \"a\"\n\n    1\nend\n", "const S = @strs begin\n    \"b\"\n\n    1\nend\n")
+        @test !g("const Q = quote\n    \"a\"\n\n    1\nend\n", "const Q = quote\n    \"b\"\n\n    1\nend\n")
+        # a docstring inside a block is the block's value, not documentation
+        @test !g("y = begin\n    x = 1\n    x\nend\n", "y = begin\n    x = 1\n    \"doc\"\n    x\nend\n")
+        # a docstring on a macro call that defines nothing replaces what runs
+        @test !g("@eval x = 1\n", "\"doc\"\n@eval x = 1\n")
+        @test !g("@reg x = 1\n", "\"doc\"\n@reg x = 1\n")
+        # while Base's annotating macros around a definition are the form fast code documents most
+        @test g("\"old\"\n@inline f(x) = x\n", "\"new\"\n@inline f(x) = x\n")
+        @test g("\"old\"\nBase.@propagate_inbounds function f(x)\n    x\nend\n", "\"new\"\nBase.@propagate_inbounds function f(x)\n    x\nend\n")
+        @test !g("\"old\"\n@inline f(x) = x\n", "\"old\"\n@inline f(x) = x + 1\n")
+        # the last string of a Literate chunk is its displayed output, and of a file what `include` returns
+        @test !doc("examples/x.jl", "# Text\nx = 1\n\"answer: 1\"\n# More\n", "# Text\nx = 1\n\"answer: 2\"\n# More\n")
+        # a macro reading its own source line, and a line moved with the count unchanged
+        @test !g("macro here() __source__.line end\n\"\"\"doc\"\"\"\nf() = 1\nconst L = @here\n",
+                 "macro here() __source__.line end\n\"\"\"doc\nmore\"\"\"\nf() = 1\nconst L = @here\n")
+        @test !g("\"\"\"doc\"\"\"\nf() = 1\nconst L = @__LINE__\n# a\n# b\n", "\"\"\"doc\nmore\"\"\"\nf() = 1\nconst L = @__LINE__\n# a b\n")
+        # a Rule METHOD's keyword default is code, not a rule's prose
+        @test !G.Engine.Guard.classify(G.Model.Config(package = "GBGCodingTools", tool = :dev), "src/M.jl",
+                  "Rule(; statement = \"fallback\") = make(statement)\n", "Rule(; statement = \"other\") = make(statement)\n").documentation
+        # and the opposite direction: a raw docstring written with `@doc` is prose
+        @test g("@doc raw\"\"\"\nThe \\alpha.\n\"\"\"\nf(x) = x\n", "@doc raw\"\"\"\nThe \\alpha, reworded.\n\"\"\"\nf(x) = x\n")
         # an interpolated string standing alone runs code
         @test !g("function f()\n    1\nend\n", "function f()\n    \"\$(rm(\"x\"))\"\n    1\nend\n")
         @test !g("x = 1\n", "x = 1\n\"\$(run(`true`))\"\n")
@@ -134,6 +157,22 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
                  "R = Rule(id = :a, statement = \"s\", check = t -> report(t; why = \"new\"))\n")
         @test !r("R = Rule(id = :a, check = t -> (statement = \"x\"; occursin(statement, t)))\n",
                  "R = Rule(id = :a, check = t -> (statement = \"y\"; occursin(statement, t)))\n")
+    end
+
+    @testset "clause 5 and 6 — what the Markdown parser reads, wherever it stands" begin
+        md(b, a) = doc("docs/src/a.md", b, a)
+        @test !md("> ```jldoctest\n> julia> 1+1\n> 2\n> ```\n", "> ```jldoctest\n> julia> 1+1\n> 3\n> ```\n")
+        @test !md("- ```jldoctest\n  julia> 1+1\n  2\n  ```\n", "- ```jldoctest\n  julia> 1+1\n  3\n  ```\n")
+        @test !md("> ```math\n> E = mc^2\n> ```\n", "> ```math\n> E = mc^3\n> ```\n")
+        @test !md("Energy \$E =\nmc^2\$ holds.\n", "Energy \$E =\nmc^3\$ holds.\n")
+        @test !md("A ``a \\\\ b`` break.\n", "A ``a \\ b`` break.\n")
+        @test !md("```julia\ns = \"``\"\n```\n\nThen ``E = mc^2``.\n", "```julia\ns = \"``\"\n```\n\nThen ``E = mc^3``.\n")
+        @test !md("`a``b` ``E = mc^2``\n", "`a``b` ``E = mc^3``\n")
+        @test !doc("src/M.jl", "const OPEN = \"``\"\n\"The ``k^2`` term.\"\nf() = 1\n", "const OPEN = \"``\"\n\"The ``k^3`` term.\"\nf() = 1\n")
+        # respelling a code span as a math span with the same text is the LaTeX rules' own fix, not mathematics
+        @test md("The cost is `O(N^2)`.\n", "The cost is ``O(N^2)``.\n")
+        @test md("The cost is ``O(N^2)``.\n", "The cost is `O(N^2)`.\n")
+        @test !md("The cost is `O(N^2)`.\n", "The cost is ``O(N^3)``.\n")
     end
 
     @testset "clause 5 — every spelling of a block that runs" begin

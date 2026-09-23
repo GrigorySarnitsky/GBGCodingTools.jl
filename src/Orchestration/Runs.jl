@@ -607,20 +607,20 @@ function unguarded_code(root::AbstractString, since::AbstractString)
     log = git_out(root, "log", "--format=%H%x1f%s%x1f%b%x1e", "$since..HEAD")
     log === nothing && return String[]
     out = String[]
+    undone = exact_reverts(root, since)
     for entry in split(log, '\x1e'; keepempty = false)
         parts = split(strip(entry, ['\n']), '\x1f')
         length(parts) >= 2 || continue
         sha, subject = String(parts[1]), String(parts[2])
-        body = length(parts) >= 3 ? String(parts[3]) : ""
         # EVERY commit is classified; the trailer is typed text and proves nothing (found in review,
         # 2026-09-23: a code change amended into a guarded commit, or a plain commit carrying the
         # trailer, was never looked at). The one exception is a revert this run made, and it is not
-        # taken on its word either: it must be exactly the inverse of the commit it names.
-        m = match(Regex(REVERT_TRAILER * "([0-9a-f]{7,40})"), body)
-        m !== nothing && exact_revert(root, sha, String(m.captures[1])) && continue
+        # taken on its word either: see `exact_reverts`.
+        haskey(undone, sha) && continue
         code = String[]
-        for (status, f) in touched(root, sha)
+        for (status, f, odd) in touched(root, sha)
             own_record(f) && continue
+            odd && (push!(code, f); continue)          # a symlink, a submodule, a mode change: never prose
             before = status == "A" ? nothing : git_file(root, sha * "^", f)
             after = status == "D" ? nothing : git_file(root, sha, f)
             # a side git could not read, where the status says it exists, is code: an unreadable file
@@ -647,30 +647,67 @@ end
 
 git_file(root, rev, path) = git_out(root, "show", "$rev:$path")
 
-# Each file a commit touched, with its status (A, M, D; a rename is read as its delete and its add), NUL
-# separated so that no name is quoted — a quoted name read back failed on both sides and was called
-# unchanged, so a code change in `Kernels ä.jl` was invisible to the close.
+# Each file a commit touched, with its status (A, M, D, T; a rename is read as its delete and its add)
+# and whether it is ODD — a symlink or a submodule on either side, or a mode change — which is never
+# prose, since the docs build follows a link and runs what it finds (found in review, 2026-09-23). NUL
+# separated, so no name is quoted: a quoted name read back failed on both sides and was called unchanged.
 function touched(root::AbstractString, sha::AbstractString)
-    raw = git_out(root, "show", "--no-renames", "--name-status", "-z", "--format=", sha)
-    raw === nothing && return Tuple{String,String}[]
-    parts = [p for p in split(raw, '\0') if !isempty(strip(p))]
-    out = Tuple{String,String}[]
+    raw = git_out(root, "show", "--raw", "--no-renames", "-z", "--format=", sha)
+    raw === nothing && return Tuple{String,String,Bool}[]
+    parts = split(raw, '\0')
+    out = Tuple{String,String,Bool}[]
     i = 1
-    while i < length(parts)
-        push!(out, (String(first(strip(parts[i]), 1)), String(parts[i+1])))
-        i += 2
+    while i <= length(parts)
+        rec = lstrip(parts[i], '\n')
+        if startswith(rec, ":") && i + 1 <= length(parts)
+            fields = split(lstrip(rec, ':'))
+            modes = [m for m in fields if occursin(r"^[0-7]{6}$", m)]
+            status = String(first(last(fields), 1))
+            live = [m for m in modes if m != "000000"]
+            odd = any(m -> m in ("120000", "160000"), live) || length(unique(live)) > 1 || status == "T"
+            push!(out, (status == "T" ? "M" : status, String(parts[i+1]), odd))
+            i += 2
+        else
+            i += 1
+        end
     end
     return out
 end
 
-# Whether commit `sha` is exactly the inverse of commit `orig`: the same change, undone, whatever line
-# numbers the context moved to. By patch id, which git computes from the change itself.
-function exact_revert(root::AbstractString, sha::AbstractString, orig::AbstractString)
-    pid(a, b) = (d = git_out(root, "diff", "--binary", a, b); d === nothing || isempty(d) ? nothing :
-                 (p = try read(pipeline(IOBuffer(d), `git -C $root patch-id --stable`), String) catch; "" end;
-                  isempty(p) ? nothing : first(split(p))))
-    x = pid(sha * "^", sha); y = pid(orig, orig * "^")
-    return x !== nothing && x == y
+# The reverts this run made, each checked rather than trusted: its body names, by full sha, a guarded
+# fix commit of THIS run that comes before it, and every file it touches holds exactly, byte for byte,
+# what that file held before the fix, having held what the fix left. Returns revert sha => reverted sha.
+# A forged trailer naming a commit outside the run, a dangling one, or a revert differing by whitespace
+# — which a patch id forgives and Julia does not — is classified like any other commit.
+function exact_reverts(root::AbstractString, since::AbstractString)
+    out = Dict{String,String}()
+    (isempty(since) || since == "unknown") && return out
+    log = git_out(root, "log", "--reverse", "--format=%H%x1f%b%x1e", "$since..HEAD")
+    log === nothing && return out
+    seen_fixes = Set{String}()
+    for entry in split(log, '\x1e'; keepempty = false)
+        parts = split(strip(entry, ['\n']), '\x1f')
+        sha = String(parts[1]); lines = strip.(split(length(parts) >= 2 ? String(parts[2]) : "", '\n'))
+        rev = [String(strip(l[length(REVERT_TRAILER)+1:end])) for l in lines if startswith(l, REVERT_TRAILER)]
+        if length(rev) == 1 && occursin(r"^[0-9a-f]{40}$", rev[1]) && rev[1] in seen_fixes &&
+           !(rev[1] in values(out)) && inverse(root, sha, rev[1])
+            out[sha] = rev[1]
+        elseif isempty(rev) && GUARD_TRAILER in lines
+            push!(seen_fixes, sha)
+        end
+    end
+    return out
+end
+
+function inverse(root, sha, orig)
+    mine = [(s, f) for (s, f, _) in touched(root, sha)]
+    theirs = [(s, f) for (s, f, _) in touched(root, orig)]
+    Set(f for (_, f) in mine) == Set(f for (_, f) in theirs) || return false
+    for (_, f) in mine
+        git_file(root, sha, f) == git_file(root, orig * "^", f) || return false
+        git_file(root, sha * "^", f) == git_file(root, orig, f) || return false
+    end
+    return true
 end
 
 """
@@ -679,7 +716,7 @@ end
 The files one commit touched. The arguments are `root`, the package root, and `sha`, the commit. Returns
 the paths, unquoted, empty where git cannot say.
 """
-changed_files(root::AbstractString, sha::AbstractString) = [f for (_, f) in touched(root, sha)]
+changed_files(root::AbstractString, sha::AbstractString) = [f for (_, f, _) in touched(root, sha)]
 
 """
     own_record(path) -> Bool
@@ -746,21 +783,18 @@ function fix_commits(root::AbstractString, since::AbstractString, id::AbstractSt
     (isempty(since) || since == "unknown") && return String[]
     # The WHOLE trailer line, not a substring: `…-100` is a prefix of `…-1000`, and a substring match
     # handed one finding's diff to another's verifier and reverted the wrong fix (found in review,
-    # 2026-09-23). A finding's own commits, less any this run already reverted.
+    # 2026-09-23). A finding's own commits, less any an EXACT revert of this run undid; a trailer typed
+    # into another message removes nothing.
     log = git_out(root, "log", "--format=%H%x1f%b%x1e", "$since..HEAD")
     log === nothing && return String[]
-    mine = String[]; undone = Set{String}()
+    undone = Set(values(exact_reverts(root, since)))
+    mine = String[]
     for entry in split(log, '\x1e'; keepempty = false)
         parts = split(strip(entry, ['\n']), '\x1f')
-        length(parts) >= 1 || continue
-        sha = String(parts[1]); body = length(parts) >= 2 ? String(parts[2]) : ""
-        lines = strip.(split(body, '\n'))
-        (FINDING_TRAILER * id) in lines && push!(mine, sha)
-        for l in lines
-            startswith(l, REVERT_TRAILER) && push!(undone, String(strip(l[length(REVERT_TRAILER)+1:end])))
-        end
+        sha = String(parts[1]); lines = strip.(split(length(parts) >= 2 ? String(parts[2]) : "", '\n'))
+        (FINDING_TRAILER * id) in lines && !(sha in undone) && push!(mine, sha)
     end
-    return [c for c in mine if !any(u -> startswith(c, u) || startswith(u, c), undone)]
+    return mine
 end
 
 """
@@ -774,20 +808,18 @@ These are the run's own edits: what close undoes when it has to put the document
 function guarded_commits(root::AbstractString, since::AbstractString)
     (isempty(since) || since == "unknown") && return String[]
     # A fix commit, not a revert: close undoes the run's EDITS, and undoing a revert would put back a
-    # fix a verifier rejected (found in review, 2026-09-23).
+    # fix a verifier rejected (found in review, 2026-09-23). Nor one an exact revert already undid.
     log = git_out(root, "log", "--format=%H%x1f%b%x1e", "$since..HEAD")
     log === nothing && return String[]
-    out = String[]; undone = Set{String}()
+    reverts = exact_reverts(root, since)
+    out = String[]
     for entry in split(log, '\x1e'; keepempty = false)
         parts = split(strip(entry, ['\n']), '\x1f')
-        sha = String(parts[1]); body = length(parts) >= 2 ? String(parts[2]) : ""
-        lines = strip.(split(body, '\n'))
-        for l in lines
-            startswith(l, REVERT_TRAILER) && push!(undone, String(strip(l[length(REVERT_TRAILER)+1:end])))
-        end
-        GUARD_TRAILER in lines && !any(l -> startswith(l, REVERT_TRAILER), lines) && push!(out, sha)
+        sha = String(parts[1]); lines = strip.(split(length(parts) >= 2 ? String(parts[2]) : "", '\n'))
+        GUARD_TRAILER in lines && !haskey(reverts, sha) && !(sha in values(reverts)) &&
+            !any(l -> startswith(l, REVERT_TRAILER), lines) && push!(out, sha)
     end
-    return [c for c in out if !any(u -> startswith(c, u) || startswith(u, c), undone)]
+    return out
 end
 
 """
@@ -795,21 +827,23 @@ end
 
 Reverts one guarded commit, marking the revert with the commit it undoes, so a close can check that it
 is exactly that commit's inverse. The arguments are `root`, the package root, `sha`, the commit, and
-`why`, the reason written into the message. Returns whether it reverted; a revert that does not apply
-is aborted and leaves the tree as it was.
+`why`, the reason written into the message. Returns whether it reverted: refused while anything is
+staged, and a revert that does not apply is aborted and leaves the tree as it was.
 """
 function revert!(root::AbstractString, sha::AbstractString; why::AbstractString = "a verifier called the fix worse")
-    # The message is a real string with real newlines — a `\n` inside a backtick command is two
-    # characters, and put the trailer in the subject — and a revert that does not apply is ABORTED, so
-    # no conflict markers are left for the next fix to commit (both found in review, 2026-09-23).
-    msg = "Revert " * first(sha, 8) * ": " * why * "\n\n" * GUARD_TRAILER * "\n" * REVERT_TRAILER * sha
+    # Never over staged work: a revert commits the index, and an abort resets it, so work staged by
+    # someone else was either committed inside the revert or destroyed (found in review, 2026-09-23).
+    staged = git_out(root, "diff", "--cached", "--name-only")
+    (staged === nothing || !isempty(strip(staged))) && return false
+    full = something(git_out(root, "rev-parse", sha), sha) |> strip
+    msg = "Revert " * first(full, 8) * ": " * why * "\n\n" * GUARD_TRAILER * "\n" * REVERT_TRAILER * full
     try
-        run(pipeline(setenv(`git -C $root revert --no-commit $sha`; dir = root); stdout = devnull, stderr = devnull))
+        run(pipeline(setenv(`git -C $root revert --no-commit $full`; dir = root); stdout = devnull, stderr = devnull))
         run(pipeline(setenv(`git -C $root commit -q -m $msg`; dir = root); stdout = devnull, stderr = devnull))
         return true
     catch
+        # the index was clean, so aborting touches only what the revert itself staged
         try run(pipeline(setenv(`git -C $root revert --abort`; dir = root); stdout = devnull, stderr = devnull)) catch end
-        try run(pipeline(setenv(`git -C $root reset -q --merge`; dir = root); stdout = devnull, stderr = devnull)) catch end
         return false
     end
 end

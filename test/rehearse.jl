@@ -1598,3 +1598,61 @@ end
         @test length(RUNS.guarded_commits(root, base)) == 1                 # the revert is not an edit to undo
     end
 end
+
+@testset "a revert is skipped only when it is exactly this run's revert of this run's fix" begin
+    package() do root, gg
+        a = joinpath(root, "src", "FixtureA.jl")
+        # an old code commit, from before the run, undone by a commit that names it
+        write(a, read(a, String) * "\nevil() = 1\n"); gg("add", "--all", "."); gg("commit", "-q", "-m", "old code")
+        old = readchomp(setenv(`git -C $root rev-parse HEAD`; dir = root))
+        base = RUNS.head_commit(root)
+        write(a, replace(read(a, String), "\nevil() = 1\n" => "")); gg("add", "--all", ".")
+        gg("commit", "-q", "-m", "undo old\n\n" * RUNS.GUARD_TRAILER * "\n" * RUNS.REVERT_TRAILER * old)
+        @test !isempty(RUNS.unguarded_code(root, base))
+        # a fake revert that differs only in whitespace — `[1 - 1]` against `[1 -1]` is two elements
+        gg("reset", "-q", "--hard", base)
+        write(a, read(a, String) * "\nconst OFF = [1 - 1]  # the offset\n"); gg("add", "--all", "."); gg("commit", "-q", "-m", "setup")
+        b2 = RUNS.head_commit(root)
+        write(a, replace(read(a, String), "# the offset" => "# the shift"))
+        @test G.Docfix.commit(root, "comment"; io = devnull) == 0
+        fix = readchomp(setenv(`git -C $root rev-parse HEAD`; dir = root))
+        write(a, replace(read(a, String), "[1 - 1]  # the shift" => "[1 -1]  # the offset")); gg("add", "--all", ".")
+        gg("commit", "-q", "-m", "fake\n\n" * RUNS.GUARD_TRAILER * "\n" * RUNS.REVERT_TRAILER * fix)
+        @test !isempty(RUNS.unguarded_code(root, b2))
+        # a typed revert trailer in a fix message is refused, and hides no other fix
+        idx = joinpath(root, "docs", "src", "index.md")
+        write(idx, replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
+        @test G.Docfix.commit(root, "fix\n\n" * RUNS.REVERT_TRAILER * "a"; io = devnull) == 2
+    end
+end
+
+@testset "a symlink or a mode change is never prose" begin
+    package() do root, gg
+        base = RUNS.head_commit(root)
+        idx = joinpath(root, "docs", "src", "index.md")
+        write(joinpath(root, "docs", "src", "other.md"), "# Other\n\n```@example\nrun(`true`)\n```\n")
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "a page"); b2 = RUNS.head_commit(root)
+        rm(idx); symlink("other.md", idx); gg("add", "--all", "."); gg("commit", "-q", "-m", "link\n\n" * RUNS.GUARD_TRAILER)
+        @test !isempty(RUNS.unguarded_code(root, b2))
+        gg("reset", "-q", "--hard", b2)
+        chmod(idx, 0o755); gg("add", "--all", "."); gg("commit", "-q", "-m", "mode")
+        @test !isempty(RUNS.unguarded_code(root, b2))
+    end
+end
+
+@testset "nobody's staged work is swept into a fix or a revert, or lost" begin
+    package() do root, gg
+        b = joinpath(root, "src", "FixtureB.jl")
+        idx = joinpath(root, "docs", "src", "index.md")
+        write(idx, replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
+        @test G.Docfix.commit(root, "fix"; io = devnull) == 0
+        fix = readchomp(setenv(`git -C $root rev-parse HEAD`; dir = root))
+        write(b, read(b, String) * "\nstaged() = 9\n"); gg("add", "src/FixtureB.jl")
+        @test RUNS.revert!(root, fix) == false                          # refused: something is staged
+        @test occursin("staged() = 9", read(b, String))
+        @test occursin("M  src/FixtureB.jl", readchomp(setenv(`git -C $root status --porcelain`; dir = root)))
+        write(idx, replace(HOME_PAGE, "The grid is spectral." => "The grid is periodic."))
+        @test G.Docfix.commit(root, "another"; io = devnull) == 2          # refused too, work kept staged
+        @test occursin("M  src/FixtureB.jl", readchomp(setenv(`git -C $root status --porcelain`; dir = root)))
+    end
+end

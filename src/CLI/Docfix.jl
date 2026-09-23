@@ -115,6 +115,15 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
             return 2
         end
     end
+    # The run's marks are the tool's to write. A message typing one — a guard or revert trailer — could
+    # otherwise make the close skip a commit or hide another fix (found in review, 2026-09-23).
+    occursin("GBG-Docfix", message) &&
+        (println(io, "docfix: refused — the message carries a GBG-Docfix trailer, which only the tool writes"); return 2)
+    # Nothing staged beforehand: the commit below commits exactly what the guard ruled on, and a refusal
+    # resets exactly that, so nobody's staged work is swept in or lost.
+    pre = Git.run(root, "diff", "--cached", "--name-only")
+    (pre === nothing || !isempty(strip(pre))) &&
+        (println(io, "docfix: refused — something is already staged; unstage it first (`git restore --staged .`)"); return 2)
     # The bytes classified are the bytes committed. Each file is read ONCE, classified from that read,
     # and after staging the index is compared with it: a file another writer changed in between is
     # refused, where before the guard read one version and `git add` staged another (found in review,
@@ -149,18 +158,22 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
     Git.run(root, "add", "--", [r.path for r in rs]...) === nothing && (println(io, "docfix: git add failed"); return 3)
     moved = String[]
     for r in rs
-        staged = try read(pipeline(`git -C $root show :$(r.path)`; stderr = devnull), String) catch; nothing end
-        staged == get(snap, r.path, nothing) || push!(moved, r.path)
+        haskey(snap, r.path) || continue                    # a deletion: nothing to compare
+        # compared as git would store the bytes read, so a file git normalises on staging is not "moved"
+        want = try readchomp(pipeline(IOBuffer(snap[r.path]), `git -C $root hash-object --path=$(r.path) --stdin`)) catch; "" end
+        have = something(Git.run(root, "rev-parse", ":" * r.path), "")
+        (isempty(want) || want != have) && push!(moved, r.path)
     end
     if !isempty(moved)
         Git.run(root, "reset", "-q", "--", [r.path for r in rs]...)
-        println(io, "docfix: refused — changed while it was being classified: ", join(moved, ", "))
-        println(io, "Nothing was committed. Run it again once nothing else is writing the tree.")
+        println(io, "docfix: refused — what was staged is not what was classified: ", join(moved, ", "))
+        println(io, "Nothing was committed. Another writer changed it, or git would store it differently")
+        println(io, "(a symlink, a line-ending filter); run it again once nothing else is writing the tree.")
         return 1
     end
     # The trailer is the mark a run's close trusts: a commit carrying it passed this guard.
     trailers = Orchestration.Runs.GUARD_TRAILER * (isempty(finding) ? "" : "\n" * Orchestration.Runs.FINDING_TRAILER * finding)
-    Git.run(root, "commit", "-m", message * "\n\n" * trailers) === nothing &&
+    Git.run(root, "commit", "-m", message * "\n\n" * trailers, "--", [r.path for r in rs]...) === nothing &&
         (println(io, "docfix: git commit failed"); return 3)
     println(io, "docfix: committed ", length(rs), " documentation file(s).")
     for r in rs; println(io, "  - ", r.path); end
