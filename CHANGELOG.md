@@ -4,7 +4,9 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
-## Unreleased — toward 2.0.0-rc.16
+## 2.0.0-rc.16 — 2026-09-23
+
+PATCH, one ruling.
 
 **Abandoning a run that launched nothing deletes it whole, carried findings included** (ruled 2026-09-23, decision 14;
 supersedes 2026-09-22). Such a run has no standing over findings it never looked at: every finding it holds was carried
