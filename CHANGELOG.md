@@ -4,7 +4,10 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
-## Unreleased — toward 2.0.0-rc.15
+## 2.0.0-rc.15 — 2026-09-23
+
+PATCH. **Upgrade before running a review**: rc.13 and rc.14 do not route a working-notes finding correctly past the
+first fix pass. Nothing a consumer must change in its config.
 
 **Twelve defects in rc.11–rc.14, found by three independent reviewers of that day's diff and each reproduced.** The
 targets-and-material design of rc.13 did not hold where it mattered most: the fix stage and the carry-over rebuilt a
