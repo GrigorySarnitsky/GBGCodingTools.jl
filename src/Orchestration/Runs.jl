@@ -178,7 +178,9 @@ function carry_over(root::AbstractString, instrument::Symbol)
         cfg = ConfigIO.read_config(root)
         out = Model.Finding[]
         for f in workable(prev)
-            locs = [reanchor(root, l; since = prev.first_commit) for l in f.draft.locations]
+            locs = [reanchor(root, Model.Location(file = Catalogue.normal_path(cfg, root, l.file), node = l.node,
+                                                  text = l.text, line = l.line, found = l.found);
+                             since = prev.first_commit) for l in f.draft.locations]
             d = Model.relocated(f.draft, locs)
             Catalogue.in_material(cfg, locs) && (d = Model.FindingDraft(rule = d.rule, locations = d.locations,
                 claim = d.claim, evidence = d.evidence, fix = d.fix, maybe_code = d.maybe_code, in_material = true))

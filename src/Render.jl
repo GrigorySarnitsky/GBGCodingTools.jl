@@ -1152,18 +1152,27 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
         println(io)
     end
 
-    if isempty(run.findings) && run.dropped > 0
-        # STOPPED IS NOT CLEAN, and the record alone cannot tell them apart without this number: the
-        # list is empty because the owner threw it away, and the launch count is untouched. Read
-        # together they say every reader wrote its file and found nothing. Same failure as the one
-        # below, one step further along — a run that read and found, reported as a run that read and
-        # found nothing.
+    if run.dropped > 0
+        # STOPPED IS NOT CLEAN, and the record alone cannot tell them apart without this number: what
+        # was open when the owner stopped is gone from the list and the launch count is untouched.
+        # Reported whenever anything was thrown away, kept findings or not — an abandon that kept one
+        # fixed finding and dropped another said nothing about the second (found in review, 2026-09-23).
         println(io, "## ", run.dropped, " finding(s) were thrown away")
         println(io)
-        println(io, "The owner stopped this run, so what its readers reported was dropped and none of it")
-        println(io, "is written down here. This page says NOTHING about ", cfg.package,
-                    ": it was looked at, something was")
-        println(io, "seen, and nobody stood behind it. Whatever it was opened to look for is still open.")
+        if isempty(run.findings)
+            println(io, "The owner stopped this run, so what its readers reported was dropped and none of it")
+            println(io, "is written down here. This page says NOTHING about ", cfg.package,
+                        ": it was looked at, something was")
+            println(io, "seen, and nobody stood behind it. Whatever it was opened to look for is still open.")
+        else
+            println(io, "The owner stopped this run. What its readers reported and nobody had yet stood behind")
+            println(io, "was dropped and is not written down here; what follows is only what had been fixed and")
+            println(io, "verified before the stop.")
+        end
+        println(io)
+    end
+    if isempty(run.findings) && run.dropped > 0
+        nothing                                             # said above; nothing was kept to list
     elseif isempty(run.findings) && run.agent_launches == 0
         # NOTHING READ is not NOTHING FOUND. A run that launched no agent has no evidence about this
         # package at all, and a report saying its documentation was read and found clean — under the

@@ -198,9 +198,8 @@ function brief(role) {
     withheld.push(
       kept.length
         ? 'Read the BUILT site as a reader meets it, and not only the source it was built from — these ' +
-          'pages and NO other file under the site:\n' + kept.join('\n')
-        : `Read the BUILT site, at ${args.site || `${args.root}/docs/build`}, as a reader meets it, and not ` +
-          'only the source it was built from.',
+          'pages and NO other file under the site:\n' + kept.join('\n') + '\n'
+        : `The built site at ${args.site || `${args.root}/docs/build`} has no page under review. Do not open it; read the source surfaces above.`,
     );
   }
   // MATERIAL is what a reader may open to judge the targets and never report on: the package's own
@@ -236,7 +235,7 @@ function brief(role) {
     '',
     standpoint(role),
     '',
-    withheld.join(' '),
+    withheld.join('\n\n'),
     '',
     `Your surfaces, at ${args.root}:`,
     surfaces,

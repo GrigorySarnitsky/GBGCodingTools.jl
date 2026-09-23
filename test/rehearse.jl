@@ -1160,8 +1160,97 @@ end
         @test AGENTS.material(cfg, root) == ["docs/ROADMAP.md"]         # a listed path that is no file is not handed out
         @test Dict(AGENTS.surfaces(cfg, root))["rationale"] == ["docs/ARCHITECTURE.md"]
         @test !G.Catalogue.target(cfg, "docs/ROADMAP.md")
+
+        # the path a reader names, in every spelling a reader has used (found in review, 2026-09-23)
+        np(x) = G.Catalogue.normal_path(cfg, root, x)
+        @test np(joinpath(root, "docs", "src", "index.md")) == "docs/src/index.md"
+        @test np("./docs/src/index.md") == "docs/src/index.md"
+        @test np(".//docs/src/index.md") == "docs/src/index.md"
+        @test np("docs\\src\\index.md") == "docs/src/index.md"
+        @test np(root * "-other/docs/x.md") == ""                     # a sibling whose name begins with the root's
+        @test np("/etc/passwd") == ""                                  # outside the package: names nothing here
+        @test np(root) == ""
+        @test np("") == ""
+
+        # material by pattern, as the fixer and the scope see it; a generated page is nobody's to fix
+        glob = G.Model.Config(package = "GBGFixture", tool = :dev,
+                              filesets = Dict(G.Model.FileSet.RATIONALE => ["docs/*.md"]),
+                              generated = ["docs/src/gbg-rules.md"])
+        @test G.Catalogue.material_doc(glob, "docs/ROADMAP.md")
+        @test !G.Catalogue.material_doc(glob, "docs/ARCHITECTURE.md")   # the one target among them
+        @test G.Catalogue.material_doc(glob, "docs/src/gbg-rules.md")
+        @test !G.Catalogue.material_doc(glob, "README.md") && !G.Catalogue.material_doc(glob, "")
+
+        # two rules set to different documents: the first wins, and the disagreement is reported
+        split_ = G.Model.Config(package = "GBGFixture", tool = :dev,
+                                settings = [G.Model.Setting(rule = Symbol("RULE.DOC.TERMS_DEFINED"), name = :architecture_doc, value = "docs/ARCHITECTURE.md"),
+                                            G.Model.Setting(rule = Symbol("RULE.DOC.SELF_CONTAINED"), name = :architecture_doc, value = "docs/ROADMAP.md")])
+        @test G.Catalogue.architecture_doc(split_) in ("docs/ARCHITECTURE.md", "docs/ROADMAP.md")
+        @test any(m -> occursin("set to different documents", m), G.Catalogue.missing_documents(split_, root))
+        @test !any(m -> occursin("set to different documents", m), G.Catalogue.missing_documents(cfg, root))
     end
 end
+
+@testset "an abandoned run that kept a fixed finding still says what it threw away" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        reader_found(root, id, "full", "the notation page is silent on the grid"; file = "docs/src/notation.md", quote_ = "")
+        all_clean(root, id; except = [HOME_READER, "full"])
+        G.Run.collect(root; io = devnull)
+        run = RUNS.load(root, id)
+        fid = only(f.id for f in run.findings if f.source === Symbol(HOME_READER))
+        G.Run.next(root; io = devnull)                                # → fix
+        fixed_as(root, fid, "The grid is a lattice.")
+        G.Run.next(root; io = devnull)                                # → verify (two verifiers)
+        for f in RUNS.workable(RUNS.load(root, id))
+            verifier_said(root, id, "verify", f.id, f.id == fid ? "FIXED" : "NOT_FIXED"; quote_ = f.id == fid ? "The grid is a lattice." : "")
+        end
+        G.Run.collect(root; io = devnull)
+        G.Run.next(root; io = devnull)                                # → diff, for the one called fixed
+        verifier_said(root, id, "diff", fid, "FIXED"; quote_ = "The grid is a lattice.")
+        G.Run.collect(root; io = devnull)
+        @test G.Run.abandon(root; io = devnull) == 0
+        record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
+        @test record["dropped"] == 1 && length(record["findings"]) == 1
+        rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
+        @test occursin("## 1 finding(s) were thrown away", rep)       # said even though one was kept
+        @test occursin("## Findings — 1", rep)
+        @test !occursin("says NOTHING", rep)                          # something WAS stood behind
+    end
+end
+
+@testset "a pre-ruling record naming a copy is carried as working notes, and the fix stage leaves it alone" begin
+    package() do root, gg
+        write(joinpath(root, ".gbg", "config.jl"), replace(notes_config(),
+              "material = String[]," => "material = String[], copies = [\"docs/src/roadmap.md\" => \"docs/ROADMAP.md\"],"))
+        write(joinpath(root, "docs", "ROADMAP.md"), "# Roadmap\n\nThe grid is spectral.\n")
+        write(joinpath(root, "docs", "src", "roadmap.md"), "# Roadmap\n\nThe grid is spectral.\n")
+        old_id = "documentation-review-2026-09-20-02"
+        loc = G.Model.Location(file = "docs/src/roadmap.md", text = "The grid is spectral.", line = 3)   # the COPY, as pre-rc.13 collects wrote
+        prev = G.Model.Run(id = old_id, instrument = :documentation_review, tool_version = "v2.0.0-rc.10",
+                           first_commit = "abc", budget = G.Model.Budget(), stage = :close,
+                           findings = [G.Model.Finding(old_id * "-001", :full, G.Model.Decider.AGENT,
+                                       G.Model.FindingDraft(claim = "in the notes", locations = [loc]))])
+        mkpath(RUNS.dir(root, old_id))
+        write(joinpath(RUNS.dir(root, old_id), "run.json"), G.JSON3.write(RUNS.as_dict(prev)))
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "an old record naming a copy")
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        carried = only(RUNS.load(root, id).findings)
+        @test carried.draft.in_material
+        @test only(carried.draft.locations).file == "docs/ROADMAP.md"    # the source, not the copy
+        # a target finding beside it, so the fix stage runs; the notes finding must not grow a target location
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        all_clean(root, id; except = [HOME_READER])
+        G.Run.collect(root; io = devnull)
+        G.Run.next(root; io = devnull)                                # → fix: re-anchors everything
+        after = only(f for f in RUNS.load(root, id).findings if f.id == carried.id)
+        @test after.draft.in_material && all(l -> l.file == "docs/ROADMAP.md", after.draft.locations)
+    end
+end
+
 
 @testset "the site walk keeps only target pages" begin
     package() do root, gg

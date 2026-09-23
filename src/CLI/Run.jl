@@ -305,7 +305,10 @@ function fix_stage(root::AbstractString, run::Model.Run, cfg::Model.Config; io::
     for f in run.findings
         Runs.closed(run, f.id) && (push!(anchored, f); continue)
         locs = [Runs.reanchor(root, l; since = run.first_commit) for l in f.draft.locations]
-        more = other_copies(root, cfg, locs)
+        # A finding in the working notes is re-anchored and left alone: extending it to a target page
+        # that quotes the same sentence would put a target under a finding that is, by definition,
+        # nowhere in one (found in review, 2026-09-23).
+        more = f.draft.in_material ? Model.Location[] : other_copies(root, cfg, locs)
         copies += length(more)
         append!(locs, more)
         push!(anchored, Model.Finding(f.id, f.source, f.decider, Model.relocated(f.draft, locs)))

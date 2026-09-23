@@ -157,6 +157,9 @@ function main(args::AbstractVector{<:AbstractString})::Int
         # below. Without that, this arm reported the tool's own defect as the consumer's bad config and
         # dropped its backtrace (2026-09-12-audit-changes-01, four lanes).
         err isa Config.ConfigError && (println(stderr, "gbg ", key, ": ", sprint(showerror, err)); return 2)
+        # The rebuilt reader's error is a different type from the old module's, and reached the crash
+        # arm with a backtrace where the contract promises 2 (found in review, 2026-09-23).
+        err isa GBGCodingTools.ConfigIO.ConfigError && (println(stderr, "gbg ", key, ": ", sprint(showerror, err)); return 2)
         # the same for the consumer's ledger: an unparsable, invalid or unevaluable `.gbg/exemptions.toml`
         err isa Ledger.LedgerError && (println(stderr, "gbg ", key, ": ", sprint(showerror, err)); return 2)
         println(stderr, "gbg ", key, ": crashed — ", sprint(showerror, err))

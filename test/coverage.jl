@@ -23,6 +23,15 @@ include("helpers.jl")
         write(cp_, good * "\n[[[not toml\n")
         redirect_stderr(devnull) do
             @test G.main(["config", "show"]) == 2                          # the consumer's mistake: cannot evaluate
+            # The rebuilt reader's error is its own type, and reached the crash arm — exit 3 with a
+            # backtrace — where the contract promises 2 (found in review, 2026-09-23).
+            cj = joinpath(root, ".gbg", "config.jl"); had = isfile(cj) ? read(cj, String) : nothing
+            write(cj, "Config(package = f())\n")                             # a call, not data
+            try
+                @test G.main(["docfix", "check"]) == 2
+            finally
+                had === nothing ? rm(cj) : write(cj, had)
+            end
             G.VERBS["__reads_what_it_wrote"] = args -> (G.Config.read_written(root); 0)
             try
                 @test G.main(["__reads_what_it_wrote"]) == 3               # the tool's own write: a crash

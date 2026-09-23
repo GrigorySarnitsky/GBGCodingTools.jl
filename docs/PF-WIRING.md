@@ -142,7 +142,7 @@ put it among the pages and it is a target.
 Leave the generator call where it is, at line 284. It runs before `makedocs` and after what remains of
 PF's own lint block, and the ordering was reasoned once; nothing here needs it moved.
 
-## Step 3 — declare what rc.5 could not express
+## Step 4 — declare what rc.5 could not express
 
 ### The disciplines — a proposal for the owner, not a decision for this session
 
