@@ -4,6 +4,15 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.19 — 2026-09-24
+
+PATCH. **`gbg bump` crashed after doing its work.** It wrote the pin and every generated file, printed the list, and
+then died on its closing message — the one saying what is not yet finished — with a `MethodError` and exit 3, because
+the message was written for a version string and handed a version number. Every bump from rc.9 to rc.18 did this; no test ran
+`bump` to its end, and one does now. Found rehearsing GBGPeriodicFields' upgrade on a clone. A bump RUN BY an older
+version still crashes this way, since the running code is the one it is moving away from: the files are written, and
+the upgrade goes on.
+
 ## 2.0.0-rc.18 — 2026-09-24
 
 PATCH, one ruling. **In a Literate example, `#` and `##` may be turned into each other by a documentation fix**

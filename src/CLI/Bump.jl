@@ -116,7 +116,7 @@ missing — and the drift is invisible until the next build runs the wiring chec
 It cannot be fixed by regenerating harder: the right content does not exist in this process. What closes
 it is resolving the environments onto the new tag and running `gbg sync` again, under the new code.
 """
-function stale_warning(io::IO, version::AbstractString)
+function stale_warning(io::IO, version)
     println(io, "")
     println(io, "NOT FINISHED. What was just written is this version's content under a v", version, " banner:")
     println(io, "`bump` regenerates with the code that is RUNNING, and the running code is whatever the")

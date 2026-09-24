@@ -2169,3 +2169,16 @@ end
     @test RUNS.rulebook_digest(cfg, :documentation_review) != RUNS.rulebook_digest(with_expert, :documentation_review)
     @test RUNS.rulebook_digest(cfg, :documentation_review) == RUNS.rulebook_digest(cfg, :documentation_review)
 end
+
+# `bump` wrote every file and the pin, then crashed on its closing message with a MethodError, exit 3,
+# from the day the message was added: nothing ran it end to end (found upgrading GBGPeriodicFields,
+# 2026-09-24).
+@testset "bump runs to its end" begin
+    package() do root, gg
+        out = IOBuffer()
+        @test G.Bump.bump(root, v"2.0.0-rc.99"; io = out) == 0
+        text = String(take!(out))
+        @test occursin("pinned at v2.0.0-rc.99", text) && occursin("NOT FINISHED", text)
+        @test occursin("v\"2.0.0-rc.99\"", read(joinpath(root, ".gbg", "config.jl"), String))
+    end
+end
