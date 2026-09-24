@@ -41,7 +41,11 @@ const DEFAULT_PATTERNS = Dict{Model.FileSet.T,Vector{String}}(
     Model.FileSet.DOCSTRINGS => ["src/**/*.jl", "ext/**/*.jl"],
     Model.FileSet.CODE       => ["src/**/*.jl", "ext/**/*.jl"],
     Model.FileSet.PAGES      => ["docs/src/**/*.md"],
-    Model.FileSet.RATIONALE  => String[],
+    # Every design document a package keeps directly under `docs/` — the site's pages live in `docs/src/`
+    # and history deeper down. Deterministic checks are cheap and carry no risk of an agent's misreading,
+    # so they read these by default [ruled 2026-09-24]; which of them a READER is given is a separate
+    # question, answered by `architecture_doc` and `material`.
+    Model.FileSet.RATIONALE  => ["docs/*.md"],
     Model.FileSet.LITERATE   => ["examples/**/*.jl"],
     Model.FileSet.TESTS      => ["test/**/*.jl"],
 )

@@ -4,6 +4,20 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.23 — 2026-09-24
+
+MINOR, one ruling. **The program checks read a package's design documents by default** (ruled 2026-09-24): the
+rationale set's default is every Markdown file directly under `docs/`, where it was none. Deterministic checks are cheap
+and carry no risk of an agent's misreading, so a package that declares nothing now has its design documents held to the
+LaTeX, citation and structure rules, where only the reader agents saw its architecture document before. Which of them a
+READER is given is unchanged: `architecture_doc` and `material` decide it. **A package that declares no rationale set
+may meet new findings at its next build**, in its own design documents; one that declares a set is unaffected. Here,
+35 were found in `docs/ARCHITECTURE.md` and `docs/PF-WIRING.md`: six fixed, and the paragraph lengths re-baselined.
+
+**The guard refused a fix to `docs/ARCHITECTURE.md` in every package that declared no rationale set**, although that
+document is a target of the review: it compared the set's raw entries, with no default. It reads the set by pattern and
+with its default now, as every other file set is read.
+
 ## 2.0.0-rc.22 — 2026-09-24
 
 MINOR, one ruling. **`gbg run park <id> --why "…"` hands a finding to the owner at the fix stage** (ruled

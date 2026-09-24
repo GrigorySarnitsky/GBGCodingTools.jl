@@ -178,7 +178,12 @@ literate(cfg::Model.Config, p) =
     any(pat -> Texts.glob_matches(pat, p), get(cfg.filesets, Model.FileSet.LITERATE,
                                                Texts.DEFAULT_PATTERNS[Model.FileSet.LITERATE]))
 
-rationale(cfg::Model.Config, p) = any(r -> replace(r, '\\' => '/') == p, get(cfg.filesets, Model.FileSet.RATIONALE, String[]))
+# The rationale set by its PATTERNS and with its default, as every other file set is read: comparing the
+# raw entries, with no default, refused a fix to `docs/ARCHITECTURE.md` in every package that declared no
+# set, although that document is a target of the review (found 2026-09-24).
+rationale(cfg::Model.Config, p) =
+    any(pat -> Texts.glob_matches(pat, p), get(cfg.filesets, Model.FileSet.RATIONALE,
+                                               Texts.DEFAULT_PATTERNS[Model.FileSet.RATIONALE]))
 
 """
     classify(cfg, path, before, after; generated = nothing) -> Ruling

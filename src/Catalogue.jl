@@ -344,7 +344,8 @@ function material_doc(cfg::Model.Config, path::AbstractString)
     target(cfg, p) && return false
     any(g -> norm_rel(g) == p, cfg.generated) && return true
     any(m -> norm_rel(m) == p, cfg.material) && return true
-    return any(pat -> Texts.glob_matches(pat, p), get(cfg.filesets, Model.FileSet.RATIONALE, String[]))
+    return any(pat -> Texts.glob_matches(pat, p),
+               get(cfg.filesets, Model.FileSet.RATIONALE, Texts.DEFAULT_PATTERNS[Model.FileSet.RATIONALE]))
 end
 
 """

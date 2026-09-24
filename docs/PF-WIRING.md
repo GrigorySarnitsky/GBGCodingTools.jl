@@ -1,4 +1,4 @@
-# Upgrading GBGPeriodicFields from rc.10 to rc.22 — instructions for the PF session
+# Upgrading [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) from rc.10 to rc.22 — instructions for the PF session
 
 Written 2026-09-24 by the GBGCodingTools session. Every step below was run, in order, on a clone of PF
 at `9c8a555b` on `Aiporetne`, given PF's own manifests (a bare clone has none, and `gbg` refuses to run
@@ -67,8 +67,10 @@ and the 20 files are already written when it happens. So:
 
 - **Go on to Step 2.** Ignore the bump's own line "Commit the config and the rewritten paths
   together…": the commit is Step 4's.
-- **Do not bump again.** A second bump to the version already pinned is refused with the misleading
-  message ``bump: no `tool = …` line in .gbg/config.jl to move``, exit 2.
+- **Do not bump again.** A second bump to the version already pinned is refused, exit 2, with a
+  misleading message:
+
+      bump: no `tool = …` line in .gbg/config.jl to move
 
 The 20 paths are:
 - `.gitignore`, `CLAUDE.md`, `test/regressions/README.md`, `.claude/hooks/queue-guard.sh` and
@@ -103,7 +105,7 @@ old code writes the old files again, under the new banner. Once both read it:
 
     gbg sync
 
-`bump` regenerated with the code that was running, rc.10, so this sync is what writes rc.22's own
+The bump regenerated with the code that was running, rc.10, so this sync is what writes rc.22's own
 content. Measured, it rewrites **6 paths**:
 - `.claude/hooks/queue-guard.sh`;
 - `.gbg/policy/switches.md` and `.gbg/policy/docs-rubric.md`;
@@ -236,8 +238,8 @@ Put these to him before a review is opened. Opening one is his word in any case.
      - The 15 waiting on a switch are answered by the `architecture_doc` default (rc.11), and the
        documents they were on are no longer read by any reader (rc.13).
      - Of the 4 blocked on the tool, three are unblocked. `014` and `004` are in
-       `examples/HIST_CPU.jl`, which is fixable since rc.11; `004`, the Lamb vector written `u × ω`
-       where the name denotes `ω × u`, is a real error and still goes to the owner if the fix touches a
+       `examples/HIST_CPU.jl`, which is fixable since rc.11; `004`, the Lamb vector written ``u \times \omega``
+       where the name denotes ``\omega \times u``, is a real error and still goes to the owner if the fix touches a
        formula. `033` is docstrings on a bare name, which are documentation since rc.11. `011`, a
        switch, is still the owner's: in a run it is parked, with `gbg run park`.
      - The 2 withdrawn wait for the re-baseline the close allows (rc.11).

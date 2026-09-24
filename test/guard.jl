@@ -436,3 +436,23 @@ end
     @test G.Engine.Guard.classify(bare, "examples/HIST_CPU.jl", prose, "# a better comment\nf(x) = x\n").documentation
     @test !G.Engine.Guard.classify(bare, "examples/HIST_CPU.jl", prose, "# a comment\nf(x) = x + 1\n").documentation
 end
+
+# The rationale set's default is `docs/*.md` [ruled 2026-09-24], and the guard reads it as every other file
+# set is read — by pattern, with its default. Comparing raw entries with no default refused a fix to
+# `docs/ARCHITECTURE.md` in every package that declared no set, though that document is a target.
+@testset "a design document under docs/ is where documentation lives, declared or not" begin
+    bare = G.Model.Config(package = "P", tool = :dev)
+    @test GD.on_documentation_list(bare, "docs/ARCHITECTURE.md")
+    @test GD.on_documentation_list(bare, "docs/DECISIONS.md")
+    @test !GD.on_documentation_list(bare, "docs/design-record/OLD.md")     # history, deeper down
+    globbed = G.Model.Config(package = "P", tool = :dev, filesets = Dict(G.Model.FileSet.RATIONALE => ["notes/*.md"]))
+    @test GD.on_documentation_list(globbed, "notes/plan.md")               # a declared glob, matched as a glob
+    @test !GD.on_documentation_list(globbed, "docs/ARCHITECTURE.md")       # a declared set replaces the default
+    # the program checks read them, and the readers are given only the architecture document
+    root = mktempdir(; cleanup = true)
+    mkpath(joinpath(root, "docs", "design-record"))
+    for f in ("ARCHITECTURE.md", "DECISIONS.md", "design-record/OLD.md"); write(joinpath(root, "docs", f), "# x\n"); end
+    @test G.Texts.files(bare, root, G.Model.FileSet.RATIONALE) == ["docs/ARCHITECTURE.md", "docs/DECISIONS.md"]
+    @test G.Catalogue.target(bare, "docs/ARCHITECTURE.md") && !G.Catalogue.target(bare, "docs/DECISIONS.md")
+    @test G.Catalogue.material_doc(bare, "docs/DECISIONS.md")
+end

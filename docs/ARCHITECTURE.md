@@ -378,7 +378,9 @@ end
 struct Finding; id::String; source::Symbol; decider::Decider.T; draft::FindingDraft; end
 ```
 
-A **file set** is a named set of a package's files, found by default patterns the config may override. A check's
+A **file set** is a named set of a package's files, found by default patterns the config may override; the rationale
+set defaults to `docs/*.md` [ruled 2026-09-24], and which of those a reader is given, `architecture_doc` and `material`
+decide. A check's
 **input** is what it reads: a source text, a small file tree, the loaded package, the built site, or a question.
 
 ```julia
@@ -769,7 +771,7 @@ GBGCodingTools.makedocs(GBGCodingTools.ConfigIO.read_config(path); sitename = "M
 ```
 
 The package's own preparation (Literate output, copied rationale pages) runs in `docs/make.jl` before `makedocs`; its
-outputs are declared copies or generated paths. `makedocs` runs the documentation rules over the source, then
+outputs are declared copies or generated paths. The wrapper `makedocs` runs the documentation rules over the source, then
 `Documenter.makedocs`, then the rules over the built site, and throws on any finding. Both entry points are
 deterministic and offline, agree on a fresh clone and on CI, and never read run records, questions, settled rulings or
 git state. A used file set matching no file is exit 2, and literal docstrings in the source must match the loaded
