@@ -2182,3 +2182,51 @@ end
         @test occursin("v\"2.0.0-rc.99\"", read(joinpath(root, ".gbg", "config.jl"), String))
     end
 end
+
+# A finding whose fix only the owner may make — the config, code, a formula — could not be committed or
+# verified, cost a verifier every pass, and reached him only at close. `gbg run park` hands it to him at
+# the fix stage, through the same question a verifier's code verdict puts (ruled 2026-09-24).
+@testset "a finding only the owner may fix is parked at the fix stage, and reaches him at once" begin
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        @test G.Run.park(root, fid; why = "a switch in .gbg/config.jl", io = devnull) == 2   # not at a fix stage
+        G.Run.next(root; io = devnull)                                    # fix
+        @test G.Run.park(root, fid; io = devnull) == 2                    # no reason given
+        @test G.Run.park(root, "no-such-finding"; why = "x", io = devnull) == 2
+        out = IOBuffer()
+        @test G.Run.park(root, fid; why = "a switch in .gbg/config.jl", io = out) == 0
+        run = RUNS.load(root, id)
+        qid = RUNS.code_question_id(run, fid)
+        @test occursin(qid, String(take!(out)))
+        @test RUNS.parked(run, fid) && isempty(RUNS.workable(run))
+        @test G.Run.park(root, fid; why = "again", io = devnull) == 2     # already waiting on the owner
+        # no verifier is launched on it
+        G.Run.next(root; io = devnull)
+        args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+        @test isempty(args["roles"])
+        # his answer does what it does to a code question: on his list, and out of the run
+        @test G.Answer.answer(root, qid, "fix the code"; io = devnull) == 0
+        run = RUNS.load(root, id)
+        @test !RUNS.parked(run, fid) && fid in [f.id for f in RUNS.to_owner(run)]
+        @test occursin(fid, read(joinpath(root, ".claude", "WORK_QUEUE.md"), String))
+    end
+end
+
+# Two helpers rebuilt the record field by field from a list written by hand, and both dropped `rulebook`,
+# added after them: every stage and every answer erased the digest a changed-scope run compares
+# (found 2026-09-24). They read the fields off the type now; this holds them to every field there is.
+@testset "rebuilding the record keeps every field" begin
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        run = RUNS.load(root, id)
+        @test !isempty(run.rulebook)                                      # survived the collect's save
+        again = G.Run.with(run; stage = :fix)
+        for f in fieldnames(G.Model.Run)
+            f === :stage || @test getfield(again, f) == getfield(run, f)
+        end
+        qs = RUNS.with_questions(run, G.Model.Question[])
+        for f in fieldnames(G.Model.Run)
+            f === :questions || @test getfield(qs, f) == getfield(run, f)
+        end
+    end
+end

@@ -419,18 +419,41 @@ in_material(run::Model.Run) = [f for f in run.findings if f.draft.in_material]
 """
     parked(run, id) -> Bool
 
-Whether the finding `id` waits on the owner: its last blind verdict was `HIDES_CODE_DEFECT`, the fix is
-reverted, and a question stands. The arguments are `run` and the finding's id. Returns the answer.
+Whether the finding `id` waits on the owner: a question about it stands, unanswered. The arguments are
+`run` and the finding's id. Returns the answer.
 
-A parked finding is open — it is nobody's leftover — and is worked on by no pass: the fixer is not sent
-back to describe code the verifier believes wrong, and no verifier is asked about it again until the
-owner has said which half is right.
+Two things put one. A blind verifier's `HIDES_CODE_DEFECT`, where the fix is reverted and the owner is
+asked which half is right; and the fixer's `gbg run park`, for a finding whose fix only the owner may
+make — a change to the config, to code or to a formula. Before the second existed such a finding stayed
+open, a verifier was launched on it every pass to find nothing changed, and it reached the owner only at
+close (found reviewing [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)' first run, 2026-09-24).
+
+A parked finding is open — it is nobody's leftover — and is worked on by no pass: no fixer is sent to it
+and no verifier is asked about it again until the owner has answered.
 """
 function parked(run::Model.Run, id::AbstractString)
     answer_of(run, id) === nothing || return false          # answered: no longer waiting
-    k = findlast(x -> x.finding == id, run.fixes)
-    return k !== nothing && run.fixes[k].blind === Model.Verdict.HIDES_CODE_DEFECT
+    return any(q -> q.id == code_question_id(run, id), run.questions)
 end
+
+"""
+    owner_question(run, f, why) -> Model.Question
+
+The question `gbg run park` puts: the finding needs a change only the owner may make. The arguments are:
+
+- `run` — the run.
+- `f` — the finding.
+- `why` — the fixer's reason.
+
+Returns the question, under the finding's own question id, so every answer does what the same answer
+does to a verifier's code question.
+"""
+owner_question(run::Model.Run, f::Model.Finding, why::AbstractString) = Model.Question(
+    id = code_question_id(run, f.id),
+    decision = "This finding needs a change only you may make. Will you make it?",
+    context = String(strip(why)),
+    options = [Model.Option(CODE_ANSWER, "the change is yours: the finding goes on your list, and the run leaves it", true),
+               Model.Option(NOT_A_DEFECT_ANSWER, "nothing changes, and the finding is closed", false)])
 
 """
     open_questions(root) -> Vector{Tuple{String,Model.Question}}
@@ -604,16 +627,10 @@ function answer!(root::AbstractString, id::AbstractString, option::AbstractStrin
     return nothing
 end
 
-# The record carries twenty-one fields and an answer changes one of them. Rebuilt here rather than through
-# the CLI's `with`, which is a verb's helper and above this module.
+# An answer changes one field of the record, and every other is carried over by name off the type: the
+# list written out here by hand dropped `rulebook` on every answer (found 2026-09-24).
 with_questions(r::Model.Run, qs::Vector{Model.Question}) =
-    Model.Run(id = r.id, instrument = r.instrument, tool_version = r.tool_version,
-              first_commit = r.first_commit, budget = r.budget, stage = r.stage,
-              findings = r.findings, fixes = r.fixes, questions = qs, code_fixes = r.code_fixes,
-              agent_launches = r.agent_launches, tokens = r.tokens, stop = r.stop,
-              readers = r.readers, passes = r.passes, model = r.model, sequential = r.sequential,
-              scope = r.scope, base = r.base, driver = r.driver, already_failing = r.already_failing,
-              dropped = r.dropped, unreverted = r.unreverted, silent = r.silent)
+    Model.Run(; (f => (f === :questions ? qs : getfield(r, f)) for f in fieldnames(Model.Run))...)
 
 # The record is written back where it was read: `run.json` for a closed run, the draft for an open one.
 # `save` always writes the draft, and `load` prefers `run.json`, so saving a closed run's answer through

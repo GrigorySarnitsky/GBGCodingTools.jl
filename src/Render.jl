@@ -740,10 +740,11 @@ function skill(cfg::Model.Config, instrument::Symbol)
         println(io, """
     5. At a FIX stage it writes the open findings instead of launching agents. Fix each in the
        documentation and commit it with `gbg docfix commit --message "…" --finding <id>`, which asks the
-       change guard first. `gbg docfix check` says what the change broke. Never edit code here, and never
-       change a formula — what the page renders as mathematics; turning a code span into a math span
-       with the same text, or back, is the one respelling allowed. A finding that needs either becomes a
-       question for the owner, put with `gbg ask "<decision>" --options "<one> | <another>"`.
+       change guard first. `gbg docfix check` says what the change broke. Never edit code or the config
+       here, and never change a formula — what the page renders as mathematics; turning a code span into
+       a math span with the same text, or back, is the one respelling allowed. A finding whose fix needs
+       any of those is PARKED for the owner with `gbg run park <id> --why "<what it would change>"`: a
+       question about it stands, and no pass works on it until he answers.
     6. `gbg run close` — writes the record and the report, and puts what is still open on the owner's
        work queue. COMMIT `.gbg/runs/<id>/` yourself: `gbg docfix commit` leaves it out on purpose, and
        nothing else commits it. Where a fix ADDED information and so raised a prose-shape number, the

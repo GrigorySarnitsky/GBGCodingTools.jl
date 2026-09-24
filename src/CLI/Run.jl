@@ -103,14 +103,10 @@ function start(root::AbstractString, instrument::Symbol; readers::Symbol = :boun
 end
 
 # The run rebuilt with some fields changed. Every verb writes the record this way, so no field is
-# dropped on the way through a stage — the questions were, once.
-with(run::Model.Run; kw...) = Model.Run(; id = run.id, instrument = run.instrument, tool_version = run.tool_version,
-    first_commit = run.first_commit, budget = run.budget, stage = run.stage, findings = run.findings,
-    fixes = run.fixes, questions = run.questions, code_fixes = run.code_fixes,
-    agent_launches = run.agent_launches, tokens = run.tokens, stop = run.stop, readers = run.readers,
-    passes = run.passes, model = run.model, sequential = run.sequential, scope = run.scope,
-    base = run.base, driver = run.driver, already_failing = run.already_failing, dropped = run.dropped,
-    unreverted = run.unreverted, silent = run.silent, kw...)
+# dropped on the way through a stage — the questions were, once, and `rulebook` was, from the day it was
+# added until this read the fields off the type instead of a list written by hand (2026-09-24).
+with(run::Model.Run; kw...) =
+    Model.Run(; (f => (haskey(kw, f) ? kw[f] : getfield(run, f)) for f in fieldnames(Model.Run))...)
 
 """
     next(root; io = stdout) -> Int
@@ -393,7 +389,9 @@ function fix_stage(root::AbstractString, run::Model.Run, cfg::Model.Config; io::
     println(io, "  the findings: ", relpath(path, root))
     println(io, "  fix each, then: gbg docfix check   (what the guard and the rules make of the edit, committing nothing)")
     println(io, "                  gbg docfix commit --message \"…\" --finding <id>")
-    println(io, "  when all are committed: gbg run next")
+    println(io, "  one whose fix only the owner may make (the config, code, a formula):")
+    println(io, "                  gbg run park <id> --why \"…\"")
+    println(io, "  when all are committed or parked: gbg run next")
     println(io, "  check BEFORE each commit, not after the pass: a refused commit costs one edit to")
     println(io, "  understand, and a pass of them costs the pass")
     println(io, "  an edit that changes mathematics is refused by the guard and put to the owner with `gbg ask`; do not make it")
@@ -1135,16 +1133,53 @@ function queue_leftovers(root::AbstractString, run::Model.Run; open_too::Bool = 
     return length(lines)
 end
 
+"""
+    park(root, id; why, io = stdout) -> Int
+
+Hands one finding to the owner, at a fix stage: a question about it is put, and no pass works on it
+again until he answers. The arguments are:
+
+- `root` — the package root.
+- `id` — the finding.
+- `why` — what the fix would change that the fixer may not, in a sentence.
+- `io` — where the outcome is written.
+
+Exit 0 when it parked the finding, 2 when it could not: no run is open, the run is not at a fix stage,
+the finding is not one the run can work on, or no reason was given.
+
+A finding whose fix is a change to the config, to code or to a formula cannot be committed by the fixer
+and cannot be verified, since nothing changes. Left open it cost a verifier every pass and reached the
+owner only at close. Parked, it reaches him now, and his answer does what the same answer does to a
+verifier's code question: "fix the code" puts it on his own list, "not a defect" closes it.
+"""
+function park(root::AbstractString, id::AbstractString; why::AbstractString = "", io::IO = stdout)
+    rid = open_run(root)
+    rid === nothing && (println(io, "run: nothing is open here"); return 2)
+    run = Runs.load(root, rid)
+    Runs.stage_of(root, rid) === :fix ||
+        (println(io, "run: park a finding at a fix stage; ", rid, " is at ", Runs.stage_of(root, rid)); return 2)
+    isempty(strip(why)) && (println(io, "run: say what the fix would change that you may not: --why \"…\""); return 2)
+    k = findfirst(f -> f.id == id, Runs.workable(run))
+    k === nothing && (println(io, "run: ", id, " is not a finding this run can work on — closed, in material, already waiting on the owner, or unknown"); return 2)
+    f = Runs.workable(run)[k]
+    q = Runs.owner_question(run, f, why)
+    Runs.save(root, with(run; questions = vcat(run.questions, [q])))
+    println(io, "run: ", id, " is parked; no pass works on it until the owner answers:")
+    println(io, "  gbg answer ", q.id, " \"", Runs.CODE_ANSWER, "\"   or   \"", Runs.NOT_A_DEFECT_ANSWER, "\"")
+    return 0
+end
+
 function cmd_run(args)
-    o = parse_options(args; valued = ["readers", "model", "scope"])
+    o = parse_options(args; valued = ["readers", "model", "scope", "why"])
     root = ConfigIO.require_root("run")
     root === nothing && return 2
-    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--scope full|changed] [--model <name>] [--sequential] | gbg run next|collect|close|abandon"); return 2)
+    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--scope full|changed] [--model <name>] [--sequential] | gbg run next|collect|close|abandon | gbg run park <finding> --why \"…\""); return 2)
     what = o.positional[1]
     what == "next" && return next(root)
     what == "collect" && return collect(root)
     what == "close" && return close_run(root)
     what == "abandon" && return abandon(root)
+    what == "park" && return park(root, length(o.positional) >= 2 ? o.positional[2] : ""; why = get(o.values, "why", ""))
     return start(root, Symbol(replace(what, "-" => "_")); readers = Symbol(get(o.values, "readers", "bound")),
                  scope = Symbol(get(o.values, "scope", "full")),
                  model = get(o.values, "model", "session"), sequential = "sequential" in o.flags)

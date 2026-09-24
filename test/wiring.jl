@@ -308,5 +308,6 @@ end
     text = RN.skill(cfg, :documentation_review)
     @test occursin("the `Workflow` call the verb just printed", text)
     @test !occursin("run the ONE driver, `drivers/run.js` of the pinned", text)
-    @test occursin("turning a code span into a math span", text)
+    @test occursin("a math span with the same text, or back", text)
+    @test occursin("gbg run park <id> --why", text)            # a finding only the owner may fix is parked
 end

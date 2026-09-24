@@ -225,6 +225,10 @@ run the owner asked for, and then fixes and verifies without asking again [R1, R
    clause 3) stays automatic but is verified blind on the careful model, the verifier being given the rule's check and
    its examples, because no program compares a statement with the check it names. Both kinds are listed in the report
    [a docstring was "fixed" to contradict code that was itself wrong; a fix wrote false mathematics].
+   A finding whose fix only the owner may make — the config, code, a formula — is PARKED by the fixer with
+   `gbg run park <id> --why "…"`: the same question a `HIDES_CODE_DEFECT` puts stands on it, no pass or verifier
+   works on it, and his answer does what it does there [ruled 2026-09-24; left open, such a finding cost a verifier
+   every pass and reached the owner only at close].
 4. **Checks.** `gbg docfix check` runs the documentation checks, doctests and docs build; a check that passed at the
    run's first commit and fails now is exit 1.
 5. **Verifier, blind first.** `gbg run next` re-anchors the findings (§4.5) and writes the blind stage's arguments from
