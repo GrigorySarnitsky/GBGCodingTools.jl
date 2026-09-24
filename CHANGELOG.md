@@ -4,6 +4,14 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.18 — 2026-09-24
+
+PATCH, one ruling. **In a Literate example, `#` and `##` may be turned into each other by a documentation fix**
+(ruled 2026-09-24). `RULE.DOC.LITERATE` asks for a comment inside a loop to be written `##`, and under the simple
+rule that change of a comment's kind was code, so every such finding went to the owner. Which one a line is decides
+only whether it shows on the page; a code chunk it splits is caught by the docs build, which a run must pass to close.
+The first `#` stays, so a comment can be neither removed nor turned into a mark such as `#md` or `#src`.
+
 ## 2.0.0-rc.17 — 2026-09-24
 
 PATCH. **Upgrade before running a review.** A run record gains `rulebook`, and a location gains `at`;

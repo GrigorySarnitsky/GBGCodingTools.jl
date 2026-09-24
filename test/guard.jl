@@ -250,8 +250,15 @@ why(path, before, after) = GD.classify(cfg(), path, before, after).reason
     # comment line moved into or out of a code chunk (the review of 2026-09-23).
     @testset "clause 4 — a Literate mark moves what runs" begin
         L(b, a) = doc("examples/x.jl", b, a)
-        # Literate's own test for a Markdown line: `## x` and `#x` are code, and changing one into prose splits a chunk
-        @test !L("for i in 1:2\n    ## print it\n    println(i)\nend\n", "for i in 1:2\n    # print it\n    println(i)\nend\n")
+        # `#` and `##` trade places [ruled 2026-09-24]: RULE.DOC.LITERATE's fix is a comment inside a loop
+        # made `##`, and which one a line is decides only whether it shows on the page. A chunk it splits
+        # is the docs build's to catch, which a run must pass before it closes.
+        loop(m) = "for i in 1:2\n    $m print it\n    println(i)\nend\n"
+        @test L(loop("#"), loop("##")) && L(loop("##"), loop("#"))
+        @test L(loop("##"), "for i in 1:2\n    ## print each\n    println(i)\nend\n")    # a comment's words, as anywhere
+        @test !L(loop("#"), loop("###"))                                  # not a third kind
+        @test !L(loop("#"), loop("#md"))                                  # not a mark
+        @test !L(loop("##"), "for i in 1:2\n    \n    println(i)\nend\n")      # not removed
         @test !L("x = 1\n# prose\ny = 2\n", "x = 1\n\ny = 2\n")                   # prose made a blank line
         @test !L("f(1,\n\n2)\n", "f(1,\n# prose\n2)\n")                            # a blank line made prose
         # the fifth pass: a trailing negated mark, a tab after `#`, and a prose fence left open

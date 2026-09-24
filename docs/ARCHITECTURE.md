@@ -166,9 +166,10 @@ returns documentation only when all of these hold, and code otherwise:
    docstring or a comment is never added, removed or moved by the fixer: a missing docstring comes to the owner as a
    question with the proposed text. A docstring's text is the string tokens of a string the parser attached as one,
    anywhere but inside a `quote` or a macro call's arguments, where a string is data (`Base.@kwdef` excepted, unless
-   the file defines its own). In a Literate example a comment keeps its kind — a Markdown line (`#` then a space, or
-   `#` alone) stays one, a mark or a `#=` block stays exactly as it is — and a prose run may not leave a fence open
-   (clause 4 lives here). A file that reads its own line numbers keeps every line break. [Every earlier guard judged
+   the file defines its own). In a Literate example a Markdown line (`#` then a space, or `#` alone) and a code
+   comment (`##`) may be turned into each other, which decides only whether the comment shows on the page [ruled
+   2026-09-24]; a mark or a `#=` block stays exactly as it is, and a prose run may not leave a fence open (clause 4
+   lives here). A file that reads its own line numbers keeps every line break. [Every earlier guard judged
    when a docstring's presence or a comment's place changes what loads, and five review passes found fifty ways past
    those judgements; with structure fixed there is nothing to judge. Measured on GBGPeriodicFields: 231 reworded
    docstrings refused 0 times; its 51 real fix commits refused only where mathematics changed.]

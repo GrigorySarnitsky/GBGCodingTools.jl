@@ -267,9 +267,10 @@ written out, excepted — and never a string inside an interpolation.
 
 Line numbers move when a docstring grows by a line, and a log location, a stack trace or `functionloc`
 reports them: that is accepted, as it is for every edit, except in a file that names `@__LINE__` or
-`__source__`, where every line break is kept. In a Literate example a comment's KIND is kept too:
-a Markdown line stays one (`#` then a space, or `#` alone), a mark stays exactly as it is, and a prose
-run may not leave a fence open.
+`__source__`, where every line break is kept. In a Literate example a Markdown line (`# `) and a code
+comment (`## `) may be turned into each other [ruled 2026-09-24] — which decides only whether the
+comment shows on the page — while a mark stays exactly as it is and a prose run may not leave a fence
+open.
 """
 function regions(src::AbstractString; literate::Bool = false, rule_prose::Bool = false)
     s = String(src)
@@ -285,9 +286,12 @@ function regions(src::AbstractString; literate::Bool = false, rule_prose::Bool =
             push!(cut, (first(r) + 2):(last(r) - 2))            # the delimiters stay, the text may change
         elseif !literate
             push!(cut, (first(r) + 1):last(r))                  # the `#` stays, the text may change
-        elseif occursin(r"^#( |$)", c) && !startswith(c, "##") && !any(m -> occursin(m, c), LITERATE_MARKS)
-            push!(cut, (first(r) + 2):last(r))                  # a Markdown line: `# ` stays, prose may change
-        end                                                      # a mark or a code comment: exactly as it is
+        elseif occursin(r"^##?( |$)", c) && !any(m -> occursin(m, c), LITERATE_MARKS)
+            # A Markdown line (`# `) or a code comment (`## `): the first `#` stays, so the comment can be
+            # neither removed nor turned into a mark; the rest may change, the second `#` included — which
+            # is the fix RULE.DOC.LITERATE asks for, a comment inside a loop made `##` [ruled 2026-09-24].
+            push!(cut, (first(r) + 1):last(r))
+        end                                                      # a mark: exactly as it is
     end
     if literate
         # a prose run that leaves a fence open swallows the next code chunk into it
