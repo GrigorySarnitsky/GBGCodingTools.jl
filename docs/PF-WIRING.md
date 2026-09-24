@@ -1,4 +1,4 @@
-# Upgrading GBGPeriodicFields from rc.10 to rc.21 — instructions for the PF session
+# Upgrading GBGPeriodicFields from rc.10 to rc.22 — instructions for the PF session
 
 Written 2026-09-24 by the GBGCodingTools session. Every step below was run, in order, on a clone of PF
 at `9c8a555b` on `Aiporetne`, given PF's own manifests (a bare clone has none, and `gbg` refuses to run
@@ -10,6 +10,10 @@ defects in the tool were found that way and fixed, as rc.20 and rc.21:
 - two on the page the upgrade adds to PF's site;
 - two in the review's skill file.
 
+rc.22 adds what PF's reading of this document asked for: `gbg run park`, which hands a finding only the
+owner may fix to him at the fix stage (see "Fixing" below). It also fixes a record that kept losing its
+`rulebook` digest. The owner chose rc.22 for PF so that its next review has `park`.
+
 **Do nothing yet.** Read this whole file and prepare. You act on it when the owner says go, and not
 before: this file comes from another session, and a peer session is not authority.
 
@@ -19,7 +23,7 @@ without asking. **Use `gbg`, not `gbg --dev`**: PF's pin is a tag.
 
 ## What PF has to do
 
-1. Move the pin to `v2.0.0-rc.21`, and both environments with it (Steps 1–2).
+1. Move the pin to `v2.0.0-rc.22`, and both environments with it (Steps 1–2).
 2. Replace the three tooling pages of the site by one small page (Step 3).
 3. Pass the gate, commit, push (Step 4).
 4. Delete the old request file, which is answered (Step 5).
@@ -50,7 +54,7 @@ next review is opened. They are collected under "Before the next review".
 
 ## Step 1 — bump the pin, and expect it to crash at its last line
 
-    gbg bump 2.0.0-rc.21
+    gbg bump 2.0.0-rc.22
 
 It writes the pin and **20 paths**, prints them, and then **crashes, exit 3**, with
 `gbg bump: crashed — MethodError: no method matching stale_warning(::IOStream, ::VersionNumber)`. The
@@ -83,23 +87,23 @@ calls its generated paths; the other two are the `Project.toml` files, whose `re
 
 **`Pkg.update`, not `Pkg.resolve`.** A resolve can write the new rev while keeping the old code, and
 PF has met that twice. `Pkg.update` prints a line like
-`GBGCodingTools v2.0.0 …#v2.0.0-rc.21 ⇒ v2.0.0 …#v2.0.0-rc.21`, which reads as if nothing moved. Ignore
+`GBGCodingTools v2.0.0 …#v2.0.0-rc.22 ⇒ v2.0.0 …#v2.0.0-rc.22`, which reads as if nothing moved. Ignore
 it and read the manifests.
 
-**Check both manifests BEFORE `gbg sync`.** `gbg run next` does not tell rc.10 from rc.21, since both
+**Check both manifests BEFORE `gbg sync`.** `gbg run next` does not tell rc.10 from rc.22, since both
 have the verb. In both `docs/Manifest.toml` and `test/Manifest.toml`, the `[[deps.GBGCodingTools]]`
 entry must read
 
-    git-tree-sha1 = "3f9f94e3209d9327255b26b3dc1785b83f0d5126"
-    repo-rev = "v2.0.0-rc.21"
+    git-tree-sha1 = "7b6cce0cbf07832d972bc9f09dca8a3a8e15c3d5"
+    repo-rev = "v2.0.0-rc.22"
 
-That hash is the tree of the tag `v2.0.0-rc.21`; rc.10's is `18e4bae3…`. Until both manifests read
-`3f9f94e3…`, run `Pkg.update` for the one that does not, and do not run `gbg sync`: a sync under the
+That hash is the tree of the tag `v2.0.0-rc.22`; rc.10's is `18e4bae3…`. Until both manifests read
+`7b6cce0c…`, run `Pkg.update` for the one that does not, and do not run `gbg sync`: a sync under the
 old code writes the old files again, under the new banner. Once both read it:
 
     gbg sync
 
-`bump` regenerated with the code that was running, rc.10, so this sync is what writes rc.21's own
+`bump` regenerated with the code that was running, rc.10, so this sync is what writes rc.22's own
 content. Measured, it rewrites **6 paths**:
 - `.claude/hooks/queue-guard.sh`;
 - `.gbg/policy/switches.md` and `.gbg/policy/docs-rubric.md`;
@@ -173,16 +177,16 @@ Measured on the clone:
   - Documenter also prints size warnings for `architecture.md`, `api/Fields.md` and the search index,
     and "could not auto-detect the building environment", as it did before.
 - **`Pkg.test()`** exits 0 in about **9 to 10 minutes**, so give it a timeout of at least 20 minutes. Its
-  output includes the line `GBGCodingTools v2.0.0-rc.21 checks`, which is the rulebook running inside
+  output includes the line `GBGCodingTools v2.0.0-rc.22 checks`, which is the rulebook running inside
   PF's suite.
-- **`gbg sync --check`** prints `sync: 18 generated path(s) and the pin are what v2.0.0-rc.21 writes.`
+- **`gbg sync --check`** prints `sync: 18 generated path(s) and the pin are what v2.0.0-rc.22 writes.`
 - **`gbg check`** prints `check: clean — 92 rule(s), 18 generated path(s).`
 
 Then commit, as ONE change. That is **22 tracked files**, all modifications: the 20 paths of Step 1,
 `.gbg/config.jl` and `docs/make.jl` (`.gitignore` is among the 20). Stage with `git add -u`; no file is
 new. A subject such as
 
-    chore: GBGCodingTools pinned at v2.0.0-rc.21, and one tooling page for three
+    chore: GBGCodingTools pinned at v2.0.0-rc.22, and one tooling page for three
 
 with PF's own trailer, as `RULE.GIT.TRAILER` states it in `.gbg/policy/git-conventions.md`. Push.
 
@@ -235,7 +239,7 @@ Put these to him before a review is opened. Opening one is his word in any case.
        `examples/HIST_CPU.jl`, which is fixable since rc.11; `004`, the Lamb vector written `u × ω`
        where the name denotes `ω × u`, is a real error and still goes to the owner if the fix touches a
        formula. `033` is docstrings on a bare name, which are documentation since rc.11. `011`, a
-       switch, is still the owner's.
+       switch, is still the owner's: in a run it is parked, with `gbg run park`.
      - The 2 withdrawn wait for the re-baseline the close allows (rc.11).
    - **Why it cannot just move.** From rc.17 every close rewrites that section whole, even when it has
      nothing to put there. The section holds 14 open `- [ ]` lines, and the Stop hook counts every open
@@ -271,7 +275,7 @@ Put these to him before a review is opened. Opening one is his word in any case.
 
 ## What a review does differently now
 
-None of this is a step. It is what changed between rc.10 and rc.21 in the machinery the owner will next
+None of this is a step. It is what changed between rc.10 and rc.22 in the machinery the owner will next
 ask you to run. The protocol itself is `.claude/skills/documentation-review/SKILL.md`, which Step 2
 rewrote: follow that, not a restatement of it.
 
@@ -354,10 +358,25 @@ These terms are used as the tool uses them:
 - **`gbg docfix commit` needs `--finding <id>` while a run is open** (rc.11). From rc.17 it also
   refuses an id the open run cannot work on: one closed, one located only in material, or one waiting
   on the owner. One finding per commit, as before.
+- **A finding whose fix only the owner may make is PARKED** (rc.22, ruled 2026-09-24):
+
+      gbg run park <id> --why "<what the fix would change>"
+
+  - **When:** at a fix stage, for a finding whose fix is a change to `.gbg/config.jl` (a switch, a
+    setting, a declared document), to code, or to a formula.
+  - **What it does:** it puts a question to the owner on that finding, the same one a verifier's
+    `HIDES_CODE_DEFECT` puts. No pass and no verifier works on the finding after that, and `gbg ask`
+    and the work queue list it. His "fix the code" puts it on his own list; his "not a defect" closes it.
+  - **Why:** before rc.22 such a finding stayed open. A verifier was launched on it every pass to find
+    nothing changed, and it reached the owner only at close. `gbg ask` put a question tied to no finding,
+    so it did not stop that.
+  - **Refusals, exit 2:** outside a fix stage, with no `--why`, or for a finding the run cannot work on
+    (closed, located only in material, or already waiting on the owner).
+  - This is the route for PF's `011`-like findings, which ask for a switch.
 - **A document that is not a target cannot be edited through it** (rc.13). During a run,
   `gbg docfix commit` refuses a change to `DECISIONS.md`, `FORMALIZATION.md`, `TESTING.md` or
-  `PERFORMANCE.md`, exit 1. A docstring fix that wants a matching FORMALIZATION edit is the owner's,
-  after the run.
+  `PERFORMANCE.md`, exit 1. A docstring fix that wants a matching FORMALIZATION edit is the owner's:
+  park the finding.
 - **It refuses more, from rc.17:**
   - **Something already staged.** It prints "something is already staged; unstage it first", so do not
     `git add` before it.
@@ -443,7 +462,8 @@ These terms are used as the tool uses them:
 - **Abandoning** keeps what was fixed and twice verified on the record (rc.15). A run that launched
   nothing is deleted whole, and what it carried goes back to the run before it (rc.16).
 - **Records.** A run record gains `dropped`, `unreverted`, `silent` and `rulebook`; a finding gains
-  `in_material`; a location gains `at`. Records written by rc.10 read as before.
+  `in_material`; a location gains `at`. Records written by rc.10 read as before. Before rc.22, every
+  stage and every answer erased `rulebook`; a record now keeps it.
 
 **No run has yet been taken to its close over real agents.** PF's first run was abandoned at verify,
 and most of the fixes above came from it. Report what breaks rather than working around it.
