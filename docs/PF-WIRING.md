@@ -1,4 +1,4 @@
-# Upgrading [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) from rc.10 to rc.22 — instructions for the PF session
+# Upgrading [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) from rc.10 to rc.23 — instructions for the PF session
 
 Written 2026-09-24 by the GBGCodingTools session. Every step below was run, in order, on a clone of PF
 at `9c8a555b` on `Aiporetne`, given PF's own manifests (a bare clone has none, and `gbg` refuses to run
@@ -14,6 +14,10 @@ rc.22 adds what PF's reading of this document asked for: `gbg run park`, which h
 owner may fix to him at the fix stage (see "Fixing" below). It also fixes a record that kept losing its
 `rulebook` digest. The owner chose rc.22 for PF so that its next review has `park`.
 
+rc.23 makes the program checks read every design document directly under `docs/` by default (ruled
+2026-09-24). PF's five are exactly that set, so its own entry for them goes, and nothing about what is
+checked changes (Step 3, edit 6).
+
 **Do nothing yet.** Read this whole file and prepare. You act on it when the owner says go, and not
 before: this file comes from another session, and a peer session is not authority.
 
@@ -23,12 +27,12 @@ without asking. **Use `gbg`, not `gbg --dev`**: PF's pin is a tag.
 
 ## What PF has to do
 
-1. Move the pin to `v2.0.0-rc.22`, and both environments with it (Steps 1–2).
+1. Move the pin to `v2.0.0-rc.23`, and both environments with it (Steps 1–2).
 2. Replace the three tooling pages of the site by one small page (Step 3).
 3. Pass the gate, commit, push (Step 4).
 4. Delete the old request file, which is answered (Step 5).
 
-Nothing else in `.gbg/config.jl` has to change for the upgrade. The disciplines, the copies, the
+Nothing else in `.gbg/config.jl` has to change beyond Step 3's two edits to it. The disciplines, the copies, the
 Literate set and the settings PF declared at rc.7 stand as they are, and with them the reader panel
 reports no gap.
 
@@ -54,7 +58,7 @@ next review is opened. They are collected under "Before the next review".
 
 ## Step 1 — bump the pin, and expect it to crash at its last line
 
-    gbg bump 2.0.0-rc.22
+    gbg bump 2.0.0-rc.23
 
 It writes the pin and **20 paths**, prints them, and then **crashes, exit 3**, with
 `gbg bump: crashed — MethodError: no method matching stale_warning(::IOStream, ::VersionNumber)`. The
@@ -89,23 +93,23 @@ calls its generated paths; the other two are the `Project.toml` files, whose `re
 
 **`Pkg.update`, not `Pkg.resolve`.** A resolve can write the new rev while keeping the old code, and
 PF has met that twice. `Pkg.update` prints a line like
-`GBGCodingTools v2.0.0 …#v2.0.0-rc.22 ⇒ v2.0.0 …#v2.0.0-rc.22`, which reads as if nothing moved. Ignore
+`GBGCodingTools v2.0.0 …#v2.0.0-rc.23 ⇒ v2.0.0 …#v2.0.0-rc.23`, which reads as if nothing moved. Ignore
 it and read the manifests.
 
-**Check both manifests BEFORE `gbg sync`.** `gbg run next` does not tell rc.10 from rc.22, since both
+**Check both manifests BEFORE `gbg sync`.** `gbg run next` does not tell rc.10 from rc.23, since both
 have the verb. In both `docs/Manifest.toml` and `test/Manifest.toml`, the `[[deps.GBGCodingTools]]`
 entry must read
 
-    git-tree-sha1 = "7b6cce0cbf07832d972bc9f09dca8a3a8e15c3d5"
-    repo-rev = "v2.0.0-rc.22"
+    git-tree-sha1 = "1c6e43a4c320067804c49acea1091528345681ea"
+    repo-rev = "v2.0.0-rc.23"
 
-That hash is the tree of the tag `v2.0.0-rc.22`; rc.10's is `18e4bae3…`. Until both manifests read
-`7b6cce0c…`, run `Pkg.update` for the one that does not, and do not run `gbg sync`: a sync under the
+That hash is the tree of the tag `v2.0.0-rc.23`; rc.10's is `18e4bae3…`. Until both manifests read
+`1c6e43a4…`, run `Pkg.update` for the one that does not, and do not run `gbg sync`: a sync under the
 old code writes the old files again, under the new banner. Once both read it:
 
     gbg sync
 
-The bump regenerated with the code that was running, rc.10, so this sync is what writes rc.22's own
+The bump regenerated with the code that was running, rc.10, so this sync is what writes rc.23's own
 content. Measured, it rewrites **6 paths**:
 - `.claude/hooks/queue-guard.sh`;
 - `.gbg/policy/switches.md` and `.gbg/policy/docs-rubric.md`;
@@ -116,7 +120,7 @@ content. Measured, it rewrites **6 paths**:
 From rc.12 the tool writes ONE page, `docs/src/gbg.md`, and no longer the rules, readers and instruments
 pages (ruled 2026-09-23: nothing of the tool belongs among a science package's main pages). The page
 says what PF's documentation is held to, links to the rulebook on GBGCodingTools' site, and lists PF's
-switches with their reasons. Five edits:
+switches with their reasons. Six edits, the last of them the rationale entry:
 
 1. **`docs/make.jl`, the `pages` vector.** Delete these three lines, currently lines 319–321:
 
@@ -160,6 +164,21 @@ switches with their reasons. Five edits:
    change. But the build no longer writes them, and a stale copy left there would be read as a
    hand-written page.
 
+6. **`.gbg/config.jl`, the rationale entry and its comment.** Since rc.23 the rationale set's default is
+   every Markdown file directly under `docs/`, which for PF is exactly its five documents. The owner's
+   direction is that PF uses the default. Delete the two comment lines and the `FileSet.RATIONALE` entry
+   that open the `filesets` block, keeping `filesets = Dict(` and the `FileSet.LITERATE` entry:
+
+       # The four rationale documents are where this package's mathematics lives, so they are in scope
+       # deliberately rather than by the default, which reads none of them.
+       filesets = Dict(                                              ← stays
+           FileSet.RATIONALE => ["docs/ARCHITECTURE.md", "docs/DECISIONS.md",
+                                 "docs/FORMALIZATION.md", "docs/TESTING.md",
+                                 "docs/PERFORMANCE.md"],
+
+   Measured: the program rules then read the same five documents as before, and `gbg check` is still
+   clean. The readers are unchanged either way: they get only `docs/ARCHITECTURE.md`.
+
 ## Step 4 — the gate, then one commit
 
     julia --project=docs docs/make.jl
@@ -179,16 +198,16 @@ Measured on the clone:
   - Documenter also prints size warnings for `architecture.md`, `api/Fields.md` and the search index,
     and "could not auto-detect the building environment", as it did before.
 - **`Pkg.test()`** exits 0 in about **9 to 10 minutes**, so give it a timeout of at least 20 minutes. Its
-  output includes the line `GBGCodingTools v2.0.0-rc.22 checks`, which is the rulebook running inside
+  output includes the line `GBGCodingTools v2.0.0-rc.23 checks`, which is the rulebook running inside
   PF's suite.
-- **`gbg sync --check`** prints `sync: 18 generated path(s) and the pin are what v2.0.0-rc.22 writes.`
+- **`gbg sync --check`** prints `sync: 18 generated path(s) and the pin are what v2.0.0-rc.23 writes.`
 - **`gbg check`** prints `check: clean — 92 rule(s), 18 generated path(s).`
 
 Then commit, as ONE change. That is **22 tracked files**, all modifications: the 20 paths of Step 1,
 `.gbg/config.jl` and `docs/make.jl` (`.gitignore` is among the 20). Stage with `git add -u`; no file is
 new. A subject such as
 
-    chore: GBGCodingTools pinned at v2.0.0-rc.22, and one tooling page for three
+    chore: GBGCodingTools pinned at v2.0.0-rc.23, and one tooling page for three
 
 with PF's own trailer, as `RULE.GIT.TRAILER` states it in `.gbg/policy/git-conventions.md`. Push.
 
@@ -249,35 +268,21 @@ Put these to him before a review is opened. Opening one is his word in any case.
      heading it would hold every session to them.
    - **The owner's call:** where it goes — a file of its own, for instance, which nothing counts — and
      whether `004` becomes a finding of the next run or a question now.
-2. **The rationale fileset entry in `.gbg/config.jl`.** PF lists five documents under
-   `FileSet.RATIONALE`; the default lists none.
-   - **Readers.** Since rc.13 the readers get only `docs/ARCHITECTURE.md` from that set, whether the
-     entry is there or not; `DECISIONS.md`, `FORMALIZATION.md`, `TESTING.md` and `PERFORMANCE.md` are
-     read by no reader either way. The config's comment, "The four rationale documents are where this
-     package's mathematics lives, so they are in scope deliberately", is no longer true of the readers.
-   - **Program checks.** The entry is what makes the program rules read those documents. Measured with
-     PF's config: 49 program rules read all five documents, ARCHITECTURE included. Measured with the
-     entry removed: one rule does, the AI-banner check, through its own list of pages; ARCHITECTURE loses
-     the other 48, LaTeX, citations and structure among them.
-   - **The owner's call:** keep the entry and reword its comment to say it is for the program checks,
-     or remove it and use the default. (A reader can also be allowed to CONSULT one of the four while
-     judging the docstrings and pages, through the config field `material`, for instance
-     `material = ["docs/FORMALIZATION.md"]`. That is a separate choice, and only if he asks.)
-3. **`2026-09-22-2`**, whether the wrapping of the example's over-wide code lines goes in as a code
+2. **`2026-09-22-2`**, whether the wrapping of the example's over-wide code lines goes in as a code
    change. **The owner's direction, 2026-09-24:** it goes in as a code change, which he grants when you
    ask him before making it. The question's premise has moved — since rc.11 a documentation fix may
    touch the example's comments — but a code line is still code. When he has granted it, record it with
 
        gbg answer 2026-09-22-2 "apply it as a code change"
 
-4. **`2026-09-22-3`**, whether docstrings on a bare name are fixed as code changes, **no longer has a
+3. **`2026-09-22-3`**, whether docstrings on a bare name are fixed as code changes, **no longer has a
    premise**: since rc.11 the guard reads such a docstring as documentation. Neither of its options
    ("apply them as code changes", "leave them on the queue") says that, and `gbg answer` has no verb to
    withdraw a question. Tell the owner, and close it the way he says.
 
 ## What a review does differently now
 
-None of this is a step. It is what changed between rc.10 and rc.22 in the machinery the owner will next
+None of this is a step. It is what changed between rc.10 and rc.23 in the machinery the owner will next
 ask you to run. The protocol itself is `.claude/skills/documentation-review/SKILL.md`, which Step 2
 rewrote: follow that, not a restatement of it.
 
@@ -316,7 +321,8 @@ These terms are used as the tool uses them:
 ### What is read, and by whom
 
 - **Targets only** (rc.13). A finding may be placed in a target or, failing that, in material; only a
-  target is ever handed to the fixer. See question 2 above.
+  target is ever handed to the fixer. The program checks read every design document under `docs/`
+  (rc.23); the readers do not.
 - **Each Literate example's source is a unit of its own** (rc.17), for `RULE.DOC.LITERATE`: `withheld`
   reads `examples/HIST_CPU.jl` alone, and `examples/gpu/rocm/HIST_ROCm.jl` alone. The ROCm example has
   no page, so no reader judged it by that rule before. The built example page is attributed to

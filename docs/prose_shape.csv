@@ -244,21 +244,21 @@ unit,words,longest_paragraph,admonitions
 "PF-WIRING.md § Answering, abandoning, closing",416,255,0
 "PF-WIRING.md § Before the next review — for the owner",17,17,0
 "PF-WIRING.md § Before the next review — for the owner / item 1",392,392,0
-"PF-WIRING.md § Before the next review — for the owner / item 2",193,193,0
-"PF-WIRING.md § Before the next review — for the owner / item 3",79,70,0
-"PF-WIRING.md § Before the next review — for the owner / item 4",64,64,0
+"PF-WIRING.md § Before the next review — for the owner / item 2",79,70,0
+"PF-WIRING.md § Before the next review — for the owner / item 3",64,64,0
 "PF-WIRING.md § Before you start",160,88,0
 "PF-WIRING.md § Fixing",717,647,0
 "PF-WIRING.md § Placing and verifying",264,264,0
 "PF-WIRING.md § Reporting a defect in this package",57,57,0
 "PF-WIRING.md § Step 1 — bump the pin, and expect it to crash at its last li",210,60,0
 "PF-WIRING.md § Step 2 — move both environments, check them, then regenerate",178,50,0
-"PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals'",55,55,0
+"PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals'",62,62,0
 "PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals' / item ",54,29,0
 "PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals' / item  (2)",78,57,0
 "PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals' / item  (3)",93,46,0
 "PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals' / item  (4)",22,22,0
 "PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals' / item  (5)",41,41,0
+"PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals' / item  (6)",128,60,0
 "PF-WIRING.md § Step 4 — the gate, then one commit",253,174,0
 "PF-WIRING.md § Step 5 — the open request is answered; delete it",24,24,0
 "PF-WIRING.md § Step 5 — the open request is answered; delete it / item 1",58,58,0
@@ -268,13 +268,13 @@ unit,words,longest_paragraph,admonitions
 "PF-WIRING.md § Step 5 — the open request is answered; delete it / item 5",18,18,0
 "PF-WIRING.md § Step 5 — the open request is answered; delete it / item 6",89,49,0
 "PF-WIRING.md § Terms",319,260,0
-"PF-WIRING.md § Upgrading [GBGPeriodicFields](https://grigorysarnitsky.githu",235,68,0
+"PF-WIRING.md § Upgrading [GBGPeriodicFields](https://grigorysarnitsky.githu",275,68,0
 "PF-WIRING.md § What PF has to do / item 1",13,13,0
 "PF-WIRING.md § What PF has to do / item 2",15,15,0
 "PF-WIRING.md § What PF has to do / item 3",8,8,0
-"PF-WIRING.md § What PF has to do / item 4",78,37,0
+"PF-WIRING.md § What PF has to do / item 4",82,41,0
 "PF-WIRING.md § What a review does differently now",41,41,0
-"PF-WIRING.md § What is read, and by whom",406,210,0
+"PF-WIRING.md § What is read, and by whom",416,210,0
 "Questions.jl :: Questions",100,56,0
 "Questions.jl :: answer!(root, id, option; item = '', direction = '') -> Unio",121,45,0
 "Questions.jl :: check(q, cfg) -> Vector{Tuple{Symbol,Model.Location}}",126,65,0
