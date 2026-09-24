@@ -4,6 +4,20 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.22 — 2026-09-24
+
+MINOR, one ruling. **`gbg run park <id> --why "…"` hands a finding to the owner at the fix stage** (ruled
+2026-09-24). A finding whose fix only the owner may make — a change to the config, to code or to a formula — could be
+neither committed nor verified. Left open, it cost a verifier every pass and reached the owner only at close; and the
+fixer's `gbg ask` put a question that was tied to no finding. Parking puts the question a `HIDES_CODE_DEFECT` verdict
+puts, under the finding's own id: no pass works on it, `gbg ask` and the work queue list it, and "fix the code" puts it
+on the owner's list while "not a defect" closes it. The review's skill and the fix stage's handoff name the verb.
+
+**The run record kept losing its `rulebook` digest.** Two helpers rebuilt the record from a list of fields written by
+hand, and neither named `rulebook`, added in rc.17, so every stage and every answer erased the digest that
+`--scope changed` compares, and such a run fell back to comparing versions. Both take the fields from the type now, and
+a test holds them to every field.
+
 ## 2.0.0-rc.21 — 2026-09-24
 
 PATCH. **The review's skill said two things the tool no longer does**, and a session follows the skill.
