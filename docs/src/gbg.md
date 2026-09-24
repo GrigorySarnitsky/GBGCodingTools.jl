@@ -5,7 +5,7 @@
 
 The documentation of GBGCodingTools is held to the rulebook of [GBGCodingTools](https://grigorysarnitsky.github.io/GBGCodingTools.jl/) vdev: a documentation rubric, the
 LaTeX idiom, the citation style, and a testing protocol. The rules themselves are on
-[that package's site](https://grigorysarnitsky.github.io/GBGCodingTools.jl/gbg-rules/), each under a stable id. What follows is only
+[that package's site](https://grigorysarnitsky.github.io/GBGCodingTools.jl/dev/gbg-rules/), each under a stable id. What follows is only
 what this package does differently from the defaults.
 
 ## What GBGCodingTools has switched off
