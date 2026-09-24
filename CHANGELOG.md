@@ -4,6 +4,18 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.21 — 2026-09-24
+
+PATCH. **The review's skill said two things the tool no longer does**, and a session follows the skill.
+
+- **Its launch step named the pinned package's `drivers/run.js`**, which `Workflow` refuses because it lies outside the
+  working directory; since rc.9 a run copies the driver into its own scratch and prints the call to make. The step now
+  says to make the call the verb printed.
+- **Its formula rule said never to change what is inside a math span**, without the one respelling the guard allows:
+  a code span turned into a math span with the same text, or back.
+
+Found by the adversarial passes over GBGPeriodicFields' upgrade document.
+
 ## 2.0.0-rc.20 — 2026-09-24
 
 PATCH. Two defects on the one tooling page a consumer's site carries, found rehearsing GBGPeriodicFields'
@@ -125,7 +137,7 @@ formula three docstrings copy; `gbg docfix commit --finding` refuses an edit to 
 untouched. On GBGPeriodicFields, measured through the walk on its build: the withheld reader launches over 16 pages, the
 architecture page among them, and the full reader and each discipline stop being handed four documents of about
 164,000 tokens under two cold-read rules that had been ruled not to apply to them. [Figures corrected in rc.15; this
-entry first said 18 launches and 35,000 tokens, which measured nothing.] `docs/PF-WIRING.md` Step 3 says what, if anything, a consumer adds.
+entry first said 18 launches and 35,000 tokens, which measured nothing.] `docs/PF-WIRING.md` says what, if anything, a consumer adds.
 
 **The launch's arguments carry only what is each role's own.** The shared fields of a stage's roles go once into a
 `kinds` table, the two directories once into `dirs`, and the file is written compact; a role is six short fields and
@@ -146,7 +158,7 @@ or internals section: what the documentation is held to, a link to this package'
 the package's switches with their reasons. The readers page and the instruments page are deleted. The rulebook is still
 published, by the new `Render.rulebook_page`, on this package's own site alone, where a consumer's page and any finding
 link to a rule by its id. **A consumer's `docs/make.jl`, `generated` list and `.gitignore` change on upgrade**;
-`docs/PF-WIRING.md` Step 2 says exactly how.
+`docs/PF-WIRING.md` says exactly how.
 
 ## 2.0.0-rc.11 — 2026-09-23
 

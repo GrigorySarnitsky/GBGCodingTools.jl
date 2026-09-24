@@ -728,9 +728,10 @@ function skill(cfg::Model.Config, instrument::Symbol)
     1. `gbg run $name` — opens the run and writes the first stage's arguments. Add `--readers open` or
        `--readers both` for the open readers, `--model <name>` to name the careful model, `--sequential`
        to launch one agent at a time. It refuses a tree with uncommitted changes to tracked files.
-    2. Launch the agents: run the ONE driver, `drivers/run.js` of the pinned GBGCodingTools, through the
-       `Workflow` tool, with the arguments file the verb just named. Julia cannot launch an agent and
-       only this session can, which is why the verb stopped here.
+    2. Launch the agents with the `Workflow` call the verb just printed: the driver at the path it names,
+       copied into the run's own scratch, with the arguments file beside it. Never the pinned package's
+       own `drivers/run.js`, which `Workflow` refuses because it lies outside the working directory. Julia
+       cannot launch an agent and only this session can, which is why the verb stopped here.
     3. `gbg run collect` — reads what the agents wrote. Exit 2 means a role wrote nothing, or the tree
        moved under them; the first is relaunched once, the second is the owner's to answer.
     4. `gbg run next` — moves to the next stage and says what it wants. Repeat 2 to 4 until it says the
@@ -740,8 +741,9 @@ function skill(cfg::Model.Config, instrument::Symbol)
     5. At a FIX stage it writes the open findings instead of launching agents. Fix each in the
        documentation and commit it with `gbg docfix commit --message "…" --finding <id>`, which asks the
        change guard first. `gbg docfix check` says what the change broke. Never edit code here, and never
-       change what is inside a math span: a finding that needs either becomes a question for the owner,
-       put with `gbg ask "<decision>" --options "<one> | <another>"`.
+       change a formula — what the page renders as mathematics; turning a code span into a math span
+       with the same text, or back, is the one respelling allowed. A finding that needs either becomes a
+       question for the owner, put with `gbg ask "<decision>" --options "<one> | <another>"`.
     6. `gbg run close` — writes the record and the report, and puts what is still open on the owner's
        work queue. COMMIT `.gbg/runs/<id>/` yourself: `gbg docfix commit` leaves it out on purpose, and
        nothing else commits it. Where a fix ADDED information and so raised a prose-shape number, the

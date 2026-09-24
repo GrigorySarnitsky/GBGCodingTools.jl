@@ -298,3 +298,15 @@ end
         @test isempty(RN.wiring(G.ConfigIO.read_config(TOOL), TOOL))
     end
 end
+
+# The skill is what a session follows, and it still named the pinned driver after rc.9 made a run copy
+# its own and print the call, so the step it gave was the one `Workflow` refuses; and it stated the
+# formula rule without the one respelling the guard allows (both found preparing GBGPeriodicFields'
+# upgrade, 2026-09-24).
+@testset "the review's skill launches what the verb prints, and states the formula rule whole" begin
+    _, cfg = wired_package()
+    text = RN.skill(cfg, :documentation_review)
+    @test occursin("the `Workflow` call the verb just printed", text)
+    @test !occursin("run the ONE driver, `drivers/run.js` of the pinned", text)
+    @test occursin("turning a code span into a math span", text)
+end
