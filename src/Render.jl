@@ -930,6 +930,16 @@ const RULES_PAGE = "docs/src/gbg-rules.md"
 const TOOL_SITE = "https://grigorysarnitsky.github.io/GBGCodingTools.jl/"
 
 """
+    RULES_URL
+
+The published rulebook on this package's site, which a consumer's tooling page links to. Documenter
+publishes under a version directory — `dev/` from `master`, and `stable/` only once a release is
+tagged, which none yet is — so the page is under `dev/`; the address without it answered 404 on every
+consumer's site (found upgrading [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/), 2026-09-24).
+"""
+const RULES_URL = TOOL_SITE * "dev/gbg-rules/"
+
+"""
     pages(cfg, root) -> Vector{String}
 
 Writes the ONE page a consumer's site carries about this tool, and returns its path relative to
@@ -958,7 +968,7 @@ function pages(cfg::Model.Config, root::AbstractString)
     println(io, "The documentation of ", cfg.package, " is held to the rulebook of ",
                 "[GBGCodingTools](", TOOL_SITE, ") ", version_tag(cfg), ": a documentation rubric, the")
     println(io, "LaTeX idiom, the citation style, and a testing protocol. The rules themselves are on")
-    println(io, "[that package's site](", TOOL_SITE, "gbg-rules/), each under a stable id. What follows is only")
+    println(io, "[that package's site](", RULES_URL, "), each under a stable id. What follows is only")
     println(io, "what this package does differently from the defaults.\n")
     # The switches and the package's own rules, from the same generator that writes them into the
     # rulebook a session loads, so the page and the rulebook cannot disagree; its markers are dropped

@@ -168,3 +168,21 @@ end
     @test G.ConfigIO.find_root(other) === nothing
     @test cd(() -> G.Check.cmd_check(String[]), other) == 2    # a named refusal, not a crash
 end
+
+# A string's value is what Julia evaluates it to. The source text was unquoted before, so a reason
+# written over several lines with `\`-newline continuations kept every `\` and the indent after it, and
+# reached a consumer's public page that way (found upgrading GBGPeriodicFields, 2026-09-24).
+@testset "a string in the config means what Julia makes of it" begin
+    body = join([
+        "Config(package = \"P\", tool = v\"2.0.0\",",
+        "       switches = [Switch(target = Symbol(\"RULE.DOC.RETIRED_CLAIMS\"), files = [\"docs/DECISIONS.md\"],",
+        "                          reason = \"A decision log QUOTES a retired claim \\",
+        "                                    in order to record it; a \\\"quoted\\\" word\\nand a new line.\"),",
+        "                   Switch(target = Symbol(\"RULE.DOC.GRAMMAR\"),",
+        "                          reason = \"\"\"",
+        "                              Indented, triple-quoted \\",
+        "                              and continued.\"\"\")])"], "\n")
+    cfg = CIO.read_config(in_config(body))
+    @test cfg.switches[1].reason == "A decision log QUOTES a retired claim in order to record it; a \"quoted\" word\nand a new line."
+    @test cfg.switches[2].reason == "Indented, triple-quoted and continued."
+end

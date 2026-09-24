@@ -214,7 +214,11 @@ function build(node, path, problems)
         kids = [c for c in cs if JS.kind(c) !== JS.K"String"]
         isempty(kids) || (push!(problems, "line $line: an interpolated string is not data: $(first(text, 60))"); return nothing)
         occursin("\$", text) && (push!(problems, "line $line: an interpolated string is not data: $(first(text, 60))"); return nothing)
-        return unquote(text)
+        # The value the PARSER gives each piece, joined: a `\`-newline continuation, a triple-quoted
+        # string's indent and every escape come out as Julia evaluates them. Unquoting the source text
+        # kept the continuations, and a switch's reason reached a consumer's public page with a `\` and
+        # a run of spaces at every line end (found upgrading GBGPeriodicFields, 2026-09-24).
+        return k === JS.K"String" ? String(node.val) : join(String(c.val) for c in cs)
     elseif k === JS.K"Integer"
         return parse(Int, replace(text, "_" => ""))
     elseif k === JS.K"Float"

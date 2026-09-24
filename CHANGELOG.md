@@ -4,6 +4,18 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.20 — 2026-09-24
+
+PATCH. Two defects on the one tooling page a consumer's site carries, found rehearsing GBGPeriodicFields'
+upgrade. **Upgrade before the next docs build is published.**
+
+- **Its link to the rulebook answered 404.** It pointed at the site's root, and Documenter publishes under a version
+  directory: `dev/` from `master`, and `stable/` only once a release is tagged. It points at `dev/gbg-rules/` now.
+- **A switch's reason kept its line continuations.** A string in `.gbg/config.jl` was read by unquoting its source
+  text, so a reason written over several lines with `\`-newline kept every `\` and the indent after it — on the
+  consumer's page and in its `switches.md`. A string's value is now what the parser gives, which is what Julia
+  evaluates; triple-quoted strings, which the old reading also got wrong, come out right too.
+
 ## 2.0.0-rc.19 — 2026-09-24
 
 PATCH. **`gbg bump` crashed after doing its work.** It wrote the pin and every generated file, printed the list, and

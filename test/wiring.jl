@@ -156,6 +156,9 @@ end
         @test written == ["gbg.md"]
         text = read(joinpath(dir, RN.TOOLING_PAGE), String)
         @test occursin(RN.TOOL_SITE, text)                          # where the rulebook lives
+        # under the version directory Documenter publishes to, at the page the rulebook is built as
+        @test occursin("(" * RN.RULES_URL * ")", text)
+        @test RN.RULES_URL == RN.TOOL_SITE * "dev/" * splitext(basename(RN.RULES_PAGE))[1] * "/"
         @test occursin("Written by AI", text)
         @test !occursin("(@id RULE.", text)                        # no rule is rendered here
         @test count("\n", text) < 40                               # and it stays small
