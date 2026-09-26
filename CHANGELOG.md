@@ -4,6 +4,14 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.29 — 2026-09-27
+
+PATCH, two false positives in `RULE.DOC.XLINK`, found by the first run of the rules the review brought to
+life over a real package (GBGPeriodicFields, 173 findings at rc.28). The file's module was taken from any
+line reading `module <word>`, so a docstring's prose "module for what …" named a module `for`; and a
+standard-library generic a package module extends (`norm`, `dot`, `mul!`) was credited to that module,
+so every sibling's mention of `norm` was reported. PF's count falls to 112, each read as genuine.
+
 ## 2.0.0-rc.28 — 2026-09-27
 
 MINOR: **the full code review.** Eight independent reviewers read the whole tree; 143 findings, each

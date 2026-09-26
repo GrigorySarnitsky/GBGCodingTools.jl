@@ -37,6 +37,11 @@ function owners(pkg::Module, cfg)
         isdefined(mod, n) || continue
         v = getfield(mod, n)
         parent = (v isa Function || v isa Type) ? nameof(parentmodule(v)) : nameof(mod)
+        # A generic of Base or a standard library that a package module extends and re-exports — `norm`,
+        # `dot`, `mul!` — is owned by no module of the package: a reader meeting it knows it already, and
+        # crediting it to the extending module reported every mention of `norm` in a sibling as foreign
+        # (found upgrading GBGPeriodicFields, 2026-09-27).
+        (v isa Function || v isa Type) && !(parent in modnames) && continue
         out[s] = parent in modnames ? parent : nameof(mod)
     end
     return out
@@ -61,7 +66,10 @@ function xlink(loaded, cfg)
     for f in Texts.files(cfg, loaded.root, Model.FileSet.CODE)
         path = joinpath(loaded.root, f)
         src = read(path, String)
-        m = match(r"^\s*(?:bare)?module\s+([A-Za-z_][A-Za-z0-9_]*)"m, src)
+        # The declaration line holds the name and nothing after it but a comment: matched loosely, a
+        # docstring's prose line "module for what the point layer provides" named the module `for`, and
+        # every function of that module was reported as foreign to it (found upgrading PF, 2026-09-27).
+        m = match(r"^(?:bare)?module\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:#.*)?$"m, src)
         m === nothing && continue
         me = Symbol(m.captures[1])
         for d in Texts.docstrings_of(src)

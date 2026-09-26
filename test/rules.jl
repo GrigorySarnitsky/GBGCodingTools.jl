@@ -536,3 +536,47 @@ end
     G.Catalogue.Shape.write_baseline(root, G.ConfigIO.read_config(root))
     @test isempty(G.Catalogue.Shape.changes(root, G.ConfigIO.read_config(root)))
 end
+
+# A docstring's prose line that begins "module for …" is not the module's declaration: read as one, it
+# named the module `for`, and every function of the real module was reported as foreign to it
+# (found upgrading GBGPeriodicFields, 2026-09-27).
+@testset "the module a file declares is its declaration line, not prose" begin
+    src = """
+    \"\"\"
+        Algebra
+
+    The operations of the algebra; see the point
+    module for what the point layer provides. Uses `helper`.
+    \"\"\"
+    module Algebra
+    helper(x) = x
+    end
+    """
+    m = match(r"^(?:bare)?module\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:#.*)?$"m, src)
+    @test m !== nothing && m.captures[1] == "Algebra"
+    body = read(joinpath(TOOL, "src", "Rules", "modules.jl"), String)
+    @test occursin("(?:#.*)?\$\"m, src)", body)            # the rule reads it the same way
+end
+
+# A standard-library generic a package module extends and re-exports is owned by no package module, so
+# a sibling's docstring mentioning it is not reported (found upgrading GBGPeriodicFields, 2026-09-27).
+@testset "an extended Base generic is nobody's in the package" begin
+    holder = Module(:XlinkHolder)
+    Base.include_string(holder, """
+    module P
+    module A
+    import Base: length                            # a standard generic, as LinearAlgebra's `norm` is in PF
+    export length, mine
+    struct T end
+    length(::T) = 0
+    mine(x) = x
+    end
+    using .A
+    export length, mine
+    end
+    """)
+    P = Base.invokelatest(getfield, holder, :P)
+    own = Base.invokelatest(G.Catalogue.Modules.owners, P, MR.Config(package = "P", tool = :dev))
+    @test !haskey(own, "length")                   # Base's, extended here
+    @test get(own, "mine", nothing) === :A         # the package's own function keeps its owner
+end

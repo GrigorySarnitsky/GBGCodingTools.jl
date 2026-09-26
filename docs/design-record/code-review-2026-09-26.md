@@ -1347,3 +1347,21 @@ everything else they confirmed.
 - V-15: `indented_table` and `rendered_math` fence only on ```, not `~~~`. · fate: fixed in the verification commit (`~~~` fences recognised by both rules)
 - V-16: the differential lookahead also exempts `a\,d_k` and `a\,dk`. · fate: fixed in the verification commit (`a\,d_k` is reported; `a\,dk` stays exempt, indistinguishable from `\,dx`)
 - V-17: a prose-shape collision between two docstrings sharing a 60-character signature prefix tells the author to add a heading, which a docstring cannot have. · fate: fixed in the verification commit (a collision between docstrings appends `(line N)` to the later key; the heading advice is for page sections only)
+
+## Found rehearsing GBGPeriodicFields' upgrade to rc.28 (2026-09-27)
+
+The first run of the now-live `RULE.DOC.XLINK`, `SIGNATURE_FIDELITY` and `ARGCOV` over a real package
+(PF, 173 findings) showed two false-positive classes in XLINK, both fixed with tests:
+
+- V-18: the file's module was taken from the first line matching `module <word>`, and a docstring's
+  prose line "module for what the point layer provides" named PF's `FieldAlgebra` module `for`, so every
+  function of it was foreign to itself (8 findings). · fate: fixed in the rc.29 commit (only a declaration
+  line: the name and nothing after it but a comment)
+- V-19: a Base or standard-library generic a package module extends and re-exports (`norm`, `dot`,
+  `mul!`, `tr`, `det`, `cross`) was credited to that module, so every sibling's mention of `norm` was
+  foreign (53 findings). · fate: fixed in the rc.29 commit (such a generic is owned by no package module)
+
+The 112 findings left in PF were sampled and read as genuine: 90 bare first mentions of a sibling
+module's own types and functions, 16 displayed signatures whose names no longer match the method, 5
+arguments no bullet documents, 1 formula in a code span. They are PF's to fix or switch off, on the
+owner's word.
