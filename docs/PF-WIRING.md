@@ -138,8 +138,9 @@ launch's `usage.subagent_tokens` field is not used anywhere.
   commit with the record. More than that is refused, as before.
 - `RULE.TEX.CODE_SPAN_JULIA` is reworded (Step 3).
 
-- Before `gbg run next` at a fix stage, run `gbg docfix check` WITH the build (item 7): a cross reference
-  only the build resolves is otherwise found at the verify stage, after every commit of the pass.
+- A red build at `gbg run next` names the pass's commits that touched the files it complains about, and
+  `docfix check` and `commit` warn of every `@ref` they cannot resolve — a warning, never a refusal
+  (item 7, ruled 2026-09-26). A build per commit was declined: two hours per pass on PF.
 
 ### Verbs (items 26, 31, 33)
 

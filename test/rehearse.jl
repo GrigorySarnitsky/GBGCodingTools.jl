@@ -2393,3 +2393,35 @@ end
         @test G.Catalogue.Shape.allowance(20) == 10 && G.Catalogue.Shape.allowance(400) == 20
     end
 end
+
+# A red build at `gbg run next` names the pass's commits that touched the files it complains about, and
+# `docfix check` warns of a reference it cannot resolve without refusing (ruled 2026-09-26, PF's item 7).
+@testset "a red build after a fix stage names the commits to look at; a dead reference is a warning" begin
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        G.Run.next(root; io = devnull)
+        write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a [`no_such_thing`](@ref) lattice."))
+        out = IOBuffer()
+        @test G.Docfix.check(root; build = false, io = out) in (0, 1)
+        @test occursin("cannot resolve", String(take!(out))) && occursin("no_such_thing", String(take!(out)) * "no_such_thing")
+        out = IOBuffer()
+        @test G.Docfix.commit(root, "fix for " * fid; io = out, finding = fid) == 0   # a warning, not a refusal
+        @test occursin("no_such_thing", String(take!(out)))
+        # a resolvable reference draws no warning
+        write(joinpath(root, "docs", "src", "notation.md"), read(joinpath(root, "docs", "src", "notation.md"), String) * "\nSee [`Grid`](@ref).\n")
+        out = IOBuffer(); G.Docfix.check(root; build = false, io = out)
+        @test !occursin("cannot resolve", String(take!(out)))
+        write(joinpath(root, "docs", "src", "notation.md"), read(joinpath(root, "docs", "src", "notation.md"), String) * "\nBREAKS THE BUILD\n")
+        @test G.Docfix.commit(root, "second fix for " * fid; io = devnull, finding = fid) == 0
+        old = SITE.BUILDER[]; SITE.BUILDER[] = (r, c; io = devnull) -> (println(io, "ERROR: docs/src/notation.md: no such thing"); nothing)
+        try
+            out = IOBuffer()
+            @test G.Run.next(root; io = out) == 2                          # the build is red: the run stays at fix
+            text = String(take!(out))
+            @test occursin("these commits of pass 1 touched", text) && occursin("docs/src/notation.md", text) && occursin(fid, text)
+            @test RUNS.stage_of(root, id) === :fix
+        finally
+            SITE.BUILDER[] = old
+        end
+    end
+end

@@ -167,8 +167,16 @@ function next(root::AbstractString; io::IO = stdout)
     if to === :find || to === :verify
         panel = first(Catalogue.panel(run.instrument, cfg))
         if any(r -> r.site, panel)
-            built = Site.build(root, cfg; io)
-            built === nothing && return 2
+            # The build's output is kept, so a red build after a fix stage can name the pass's commits
+            # that touched the files it complains about (ruled 2026-09-26: nine dead references once
+            # surfaced together after eighty commits, with no word on which made them).
+            log = IOBuffer()
+            built = Site.build(root, cfg; io = log)
+            print(io, String(take!(copy(log))))
+            if built === nothing
+                order[at] === :fix && blame_build(root, run, String(take!(log)); io)
+                return 2
+            end
             site = built
         end
     end
@@ -315,6 +323,39 @@ end
 # The commit a pass's fixes are counted from: where the pass began, or the run's first commit for a
 # record written before that was recorded.
 pass_start(run::Model.Run) = isempty(run.pass_since) ? run.first_commit : run.pass_since
+
+"""
+    blame_build(root, run, log; io = stdout) -> Vector{String}
+
+Names the pass's commits that touched the files a failed docs build complains about. The arguments are:
+
+- `root` — the package root.
+- `run` — the run.
+- `log` — the build's output.
+- `io` — where the names are written.
+
+Returns the lines written, empty where the log names no file the pass touched.
+
+The build runs once per pass and is the one judge of a cross-reference; what it lacked was a pointer
+from its complaint back to the commit that made it.
+"""
+function blame_build(root::AbstractString, run::Model.Run, log::AbstractString; io::IO = stdout)
+    named = Set{String}(replace(m.match, '\\' => '/') for m in eachmatch(r"(?:docs|src|ext|examples)/[A-Za-z0-9_./-]+\.(?:md|jl)", log))
+    isempty(named) && return String[]
+    out = String[]
+    for sha in reverse(Runs.guarded_commits(root, pass_start(run)))
+        files = something(Git.run(root, "show", "--format=", "--name-only", sha), "")
+        hit = [f for f in split(files, '\n') if !isempty(f) && any(n -> endswith(n, f) || endswith(f, n), named)]
+        isempty(hit) && continue
+        fid = something(Runs.finding_of(root, sha), "no finding")
+        push!(out, first(sha, 8) * "  " * fid * "  " * join(hit, ", "))
+    end
+    if !isempty(out)
+        println(io, "run: the build complains about files these commits of pass ", run.passes, " touched — fix through `gbg docfix commit --finding <id>`:")
+        for l in out; println(io, "  ", l); end
+    end
+    return out
+end
 
 "What separates a reader's id from the unit it was given, in the key a result file is named by."
 const UNIT_MARK = "@"

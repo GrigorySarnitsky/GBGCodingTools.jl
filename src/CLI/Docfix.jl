@@ -187,6 +187,7 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
         println(io, "Nothing was committed. Fix the text so that it passes, or park the finding.")
         return 1
     end
+    warn_refs(root, [r.path for r in rs]; io)
     Git.run(root, "add", "--", [r.path for r in rs]...) === nothing && (println(io, "docfix: git add failed"); return 3)
     moved = String[]
     for r in rs
@@ -260,6 +261,7 @@ function check(root::AbstractString; build::Bool = true, io::IO = stdout)
                 r.path in notes ? "working notes, not a target of the open run" : r.reason)
     end
     isempty(rs) && println(io, "docfix: the working tree has no change to classify")
+    warn_refs(root, [r.path for r in rs]; io)
     bad = any(r -> !r.documentation, rs) || !isempty(notes)
 
     cfg = ConfigIO.read_config(root)
@@ -287,6 +289,57 @@ function check(root::AbstractString; build::Bool = true, io::IO = stdout)
             (println(io, "docfix: the docs build does not pass"); bad = true)
     end
     return bad ? 1 : isempty(rs) ? 2 : 0
+end
+
+"""
+    unresolved_refs(root, paths) -> Vector{Tuple{String,String}}
+
+Every `@ref` in the given files whose target is found among none of the package's documented names,
+the `@id`s and the headings of its pages. The arguments are `root`, the package root, and `paths`, the
+files to read, relative to it. Returns `(file, target)` pairs.
+
+A WARNING'S evidence, never a refusal's: only Documenter resolves a reference exactly, with the modules
+loaded, and this reads the text alone. It exists because nine references to nothing were committed over
+eighty fixes and surfaced together at the build ([GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/), 2026-09-24); a build per commit was
+declined as too costly [ruled 2026-09-26].
+"""
+function unresolved_refs(root::AbstractString, paths::AbstractVector{<:AbstractString})
+    cfg = ConfigIO.read_config(root)
+    known = Set{String}()
+    for fs in (Model.FileSet.DOCSTRINGS, Model.FileSet.LITERATE), f in Texts.files(cfg, root, fs)
+        for d in Texts.definitions(joinpath(root, f))
+            push!(known, d.name); push!(known, String(last(split(d.name, '.'))))
+        end
+        for m in eachmatch(r"@id\s+([^\s)\]]+)", read(joinpath(root, f), String)); push!(known, String(m.captures[1])); end
+    end
+    for fs in (Model.FileSet.PAGES, Model.FileSet.RATIONALE), f in Texts.files(cfg, root, fs)
+        text = read(joinpath(root, f), String)
+        for h in Texts.headings(joinpath(root, f)); push!(known, String(last(split(h.name, " / ")))); end
+        for m in eachmatch(r"@id\s+([^\s)\]]+)", text); push!(known, String(m.captures[1])); end
+    end
+    out = Tuple{String,String}[]
+    for p in paths
+        full = joinpath(root, p)
+        (isfile(full) && (endswith(p, ".md") || endswith(p, ".jl"))) || continue
+        text = read(full, String)
+        for m in eachmatch(r"\[([^\]]+)\]\(@ref(?:\s+([^)]+))?\)", text)
+            target = strip(replace(String(something(m.captures[2], m.captures[1])), '`' => '"'), ['"', ' '])
+            target = strip(replace(target, '"' => ""))
+            isempty(target) && continue
+            bare = String(last(split(target, '.')))
+            (target in known || bare in known || any(k -> endswith(k, "." * bare), known)) && continue
+            push!(out, (p, target))
+        end
+    end
+    return unique(out)
+end
+
+# Prints the references the change leaves unresolved, as a warning the build will decide.
+function warn_refs(root::AbstractString, paths; io::IO = stdout)
+    refs = try unresolved_refs(root, paths) catch; Tuple{String,String}[] end
+    isempty(refs) && return
+    println(io, "docfix: ", length(refs), " cross-reference(s) I cannot resolve — the docs build decides; if it fails, look here first:")
+    for (f, t) in refs; println(io, "  ", f, ": [", t, "](@ref)"); end
 end
 
 # The documentation rules the change broke: found now and not when the open run started. Empty where no

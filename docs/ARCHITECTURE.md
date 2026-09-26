@@ -208,8 +208,10 @@ run the owner asked for, and then fixes and verifies without asking again [R1, R
 2. **Guarded commit.** The fixer edits, then `gbg docfix commit` regenerates every generated part whose generator reads
    the prose that changed — the policy files and the tooling package's block in `CLAUDE.md` — and classifies every
    changed path in the working tree with the change guard, which leaves those regenerated parts out by its clause 0. It
-   commits all of them on the current branch if every classified path came back documentation, else exits 1 and commits
-   nothing; the session then pushes. This is the one verb that commits, because the guard must run before a commit
+   commits all of them on the current branch if every classified path came back documentation and no documentation
+   rule the run opened clean on breaks, else exits 1 and commits nothing; it warns of a cross-reference it cannot
+   resolve, refusing nothing on that; the session then pushes. The build runs once per pass, at `gbg run next`, and a
+   red one names the pass's commits that touched the files it complains about [ruled 2026-09-26]. This is the one verb that commits, because the guard must run before a commit
    exists, replacing the old rule that no verb commits [a code edit committed before the guard ran would be pushed].
 3. **Formula and rule-statement edits.** An edit that changes mathematics is **never made automatically**. Mathematics
    is what Documenter renders as a formula: whatever Julia's Markdown parser reads as one — a double-backtick span, a

@@ -4,6 +4,15 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.26 — 2026-09-26
+
+PATCH, one ruling on PF's item 7: nine cross-references that resolve to nothing were committed under
+`docfix check --no-build` over eighty commits and surfaced together at the verify stage's build, with no word on which
+commits made them. **A red build at `gbg run next` now names the pass's commits that touched the files it complains
+about.** And **`docfix check` and `commit` warn of every `@ref` they cannot resolve** among the package's documented
+names, headings and `@id`s — a warning, never a refusal, since only Documenter resolves a reference exactly. A build
+per commit was considered and declined: a minute per fix, two hours per pass on GBGPeriodicFields.
+
 ## 2.0.0-rc.25 — 2026-09-26
 
 PATCH, one ruling. **Inside a run, a unit of prose may grow by a small allowance** (ruled 2026-09-26, PF's item 5): ten
