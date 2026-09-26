@@ -23,9 +23,66 @@ module TestHarness
 
 using Test, TOML
 import ..GBGCodingTools
-import ..GBGCodingTools: Reflection
 
 export @alloc_below, CountingArray, Traffic, counting, audit, run_regressions
+
+# ────────────────────────────────────────────── the public surface, derived from the loaded package
+
+"""
+    package_operations(pkg, modules) -> Set{Symbol}
+
+The derived public surface: every exported function of the umbrella `pkg` and of its owned `modules`,
+plus every external generic a package module extends (found by walking the loaded modules and asking
+each function whether a package module owns one of its methods — a method defined under a qualified
+name creates no binding, so a namespace scan cannot see it). Internal helpers and closures never
+enter it. The arguments are `pkg`, the umbrella module, and `modules`, the owned modules. Returns the
+names. Harvested from `Reflection.jl` in Phase 5; the completeness checks below derive their
+required sets from it, so a new operation fails them until it is audited.
+"""
+function package_operations(pkg::Module, modules::AbstractVector{Module})
+    owned = Set(vcat(modules, [pkg]))
+    found = Set{Symbol}()
+    # the package's own public surface: the exported (public) names of the umbrella and of every owned
+    # module that are functions — internals and closures never enter it
+    for mod in owned, n in names(mod)
+        isdefined(mod, n) || continue
+        f = try getfield(mod, n) catch; continue end
+        f isa Function && !startswith(String(n), "#") && push!(found, n)
+    end
+    # plus every EXTERNAL generic the package extends: a method defined under a qualified name
+    # (`Base.show(io, ::T) = …`) creates no binding in the package, so the loaded modules are walked and
+    # each function asked whether a package module owns one of its methods
+    for mod in Base.loaded_modules_array()
+        mod in owned && continue
+        for name in names(mod; all = true, imported = true)
+            startswith(String(name), "#") && continue
+            isdefined(mod, name) || continue
+            f = try getfield(mod, name) catch; continue end
+            f isa Function || continue
+            nameof(f) === :kwcall && continue
+            any(m -> m.module in owned, methods(f)) && push!(found, nameof(f))
+        end
+    end
+    return found
+end
+
+"""
+    all_package_functions(pkg, modules) -> Set{Symbol}
+
+Every function name a package module owns methods of, internal helpers included — the wider set a
+guard's own bookkeeping may name. Returns the set.
+"""
+function all_package_functions(pkg::Module, modules::AbstractVector{Module})
+    owned = Set(modules)
+    found = Set{Symbol}()
+    for mod in modules, name in names(mod; all = true, imported = true)
+        isdefined(mod, name) || continue
+        f = getfield(mod, name)
+        f isa Function || continue
+        any(m -> m.module in owned, methods(f)) && push!(found, name)
+    end
+    return union(found, package_operations(pkg, modules))
+end
 
 # ─────────────────────────────────────────────────────────────────────── allocation audit
 
@@ -98,12 +155,12 @@ vanished operation; every recorded callee is a real package function. Runs as a 
 """
 function allocation_completeness(pkg::Module, modules::AbstractVector{Module}; exempt::AbstractDict = Dict{Symbol,String}())
     @testset "every exported in-place operation has an allocation row" begin
-        required = Set(n for n in Reflection.package_operations(pkg, modules) if endswith(String(n), "!"))
+        required = Set(n for n in package_operations(pkg, modules) if endswith(String(n), "!"))
         uncovered = setdiff(required, AUDITED_ALLOCATION_OPS, keys(exempt))
         isempty(uncovered) || @error "in-place operations with no allocation row — add one, or exempt it with a reason" uncovered
         @test isempty(uncovered)
         @test isempty(setdiff(keys(exempt), required))
-        phantoms = setdiff(AUDITED_ALLOCATION_OPS, Reflection.all_package_functions(pkg, modules))
+        phantoms = setdiff(AUDITED_ALLOCATION_OPS, all_package_functions(pkg, modules))
         isempty(phantoms) || @error "audited names that match no real function" phantoms
         @test isempty(phantoms)
     end
@@ -226,12 +283,12 @@ Runs as a `@testset`. Returns `nothing`.
 """
 function traffic_completeness(pkg::Module, modules::AbstractVector{Module}; exempt::AbstractDict = Dict{Symbol,String}())
     @testset "every exported in-place operation has a traffic row" begin
-        required = Set(n for n in Reflection.package_operations(pkg, modules) if endswith(String(n), "!"))
+        required = Set(n for n in package_operations(pkg, modules) if endswith(String(n), "!"))
         uncovered = setdiff(required, AUDITED_TRAFFIC_OPS, keys(exempt))
         isempty(uncovered) || @error "in-place operations with no traffic row — add one, or exempt it with a reason" uncovered
         @test isempty(uncovered)
         @test isempty(setdiff(keys(exempt), required))
-        phantoms = setdiff(AUDITED_TRAFFIC_OPS, Reflection.all_package_functions(pkg, modules))
+        phantoms = setdiff(AUDITED_TRAFFIC_OPS, all_package_functions(pkg, modules))
         isempty(phantoms) || @error "row labels that parse to no real operation — fix the label" phantoms
         @test isempty(phantoms)
     end
@@ -300,11 +357,10 @@ The function object a surface name denotes. The arguments are:
 - `modules` — the package modules.
 - `externals` — the external modules whose generics the package extends, searched last.
 
-A package module that OWNS the name is searched before anything else, so `read` and `run` denote
-`Config.read` and `Git.run` and not the `Base` exports they collide with — the first owning module in
-`modules` wins when two own a name, as `Config` and `Ledger` both own `read`; ordering the
-externals last does not achieve that on its own, because `isdefined(pkg, :read)` is already true through
-the implicit `using Base`.
+A package module that OWNS the name is searched before anything else, so `run` and `diff` denote
+`Git.run` and `Git.diff` and not the `Base` exports they collide with — the first owning module in
+`modules` wins when two own a name; ordering the externals last does not achieve that on its own,
+because `isdefined(pkg, :run)` is already true through the implicit `using Base`.
 
 Returns the function, or `nothing`.
 """
@@ -336,7 +392,7 @@ Returns the count.
 """
 function module_method_count(mod::Module, pkg::Module, modules::AbstractVector{Module}; externals = (Base,))
     total = 0
-    for name in Reflection.all_package_functions(pkg, modules)
+    for name in all_package_functions(pkg, modules)
         f = resolve_function(name, pkg, modules; externals)
         f === nothing && continue
         total += count(m -> m.module === mod, methods(f))
@@ -408,7 +464,7 @@ Returns `nothing`.
 function oracle_registry(pkg::Module, modules::AbstractVector{Module}, registry::AbstractDict, testdir::AbstractString)
     entries = Dict(Symbol(e["name"]) => (String(e["class"]), String(e["evidence"])) for e in get(registry, "operation", Any[]))
     @testset "oracle provenance is classified for every public operation" begin
-        public_ops = Set(n for n in Reflection.package_operations(pkg, modules) if !endswith(String(n), "!"))
+        public_ops = Set(n for n in package_operations(pkg, modules) if !endswith(String(n), "!"))
         unclassified = setdiff(public_ops, keys(entries))
         isempty(unclassified) || @error "a public operation has no recorded oracle provenance — classify it; if the honest answer is relational, that is the finding" unclassified
         @test isempty(unclassified)

@@ -6,7 +6,7 @@ using GBGFixture
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 cp(joinpath(ROOT, "docs", "ARCHITECTURE.md"), joinpath(@__DIR__, "src", "architecture.md"); force = true)
 
-GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
+GBGCodingTools.makedocs(ROOT;
     sitename = "GBGFixture",
     modules = [GBGFixture, GBGFixture.FixtureA, GBGFixture.FixtureB, GBGFixture.FixtureC],
     checkdocs = :exports,

@@ -35,3 +35,10 @@ GBGCodingTools.TestHarness.thread_digest
 ```@docs
 GBGCodingTools.TestHarness.run_regressions
 ```
+
+## The derived surface
+
+```@docs
+GBGCodingTools.TestHarness.package_operations
+GBGCodingTools.TestHarness.all_package_functions
+```

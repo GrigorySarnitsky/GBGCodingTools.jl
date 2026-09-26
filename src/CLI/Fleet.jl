@@ -11,7 +11,7 @@ The fleet scorecard: [`Fleet.rows`](@ref) computes one row per package of `Catal
 module Fleet
 
 using TOML, Dates, JSON3
-using ..GBGCodingTools: GBGCodingTools, Config, Git, parse_options, VERBS, running_dev, git_stamp
+using ..GBGCodingTools: GBGCodingTools, Git, parse_options, VERBS, running_dev, git_stamp
 
 const WINDOW = Day(7)
 

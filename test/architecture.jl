@@ -18,18 +18,23 @@ const LAYERS = Dict("src/Model.jl" => 1, "src/Texts.jl" => 2, "src/ConfigIO.jl" 
                     "src/Rules/judgement_api.jl" => 3, "src/Rules/judgement_cit.jl" => 3, "src/Rules/judgement_doc.jl" => 3, "src/Rules/judgement_git.jl" => 3, "src/Rules/judgement_inst.jl" => 3, "src/Rules/judgement_test.jl" => 3, "src/Rules/judgement_tex.jl" => 3,
                     "src/Rules/questions.jl" => 3, "src/Rules/citations.jl" => 3, "src/Engine/Questions.jl" => 5, "src/CLI/Answer.jl" => 8,
                     "src/Orchestration.jl" => 7, "src/Orchestration/Runs.jl" => 7, "src/Orchestration/Agents.jl" => 7,
-                    "src/Orchestration/Scope.jl" => 7, "src/Study.jl" => 6, "src/CLI/StudyCmd.jl" => 8,
+                    "src/Orchestration/Scope.jl" => 7, "src/Orchestration/Site.jl" => 7, "src/Study.jl" => 6, "src/CLI/StudyCmd.jl" => 8,
                     "src/Roles/documentation_review.jl" => 3, "src/CLI/Run.jl" => 8,
                     "src/Engine.jl" => 5, "src/Engine/Guard.jl" => 5,
                     "src/CLI/Docfix.jl" => 8, "src/CLI/Check.jl" => 8, "src/CLI/Wire.jl" => 8,
-                    "src/Catalogue.jl" => 3, "src/Engine/Checks.jl" => 5, "src/Engine/Harness.jl" => 5, "src/Render.jl" => 6)
+                    "src/Catalogue.jl" => 3, "src/Engine/Checks.jl" => 5, "src/Engine/Harness.jl" => 5, "src/Render.jl" => 6,
+                    # Phase 5: the module file, the command line's remaining files and the test harness, kept
+                    "src/GBGCodingTools.jl" => 8, "src/CLI/Main.jl" => 8, "src/CLI/Bump.jl" => 8, "src/CLI/Release.jl" => 8,
+                    "src/CLI/Fleet.jl" => 8, "src/CLI/Install.jl" => 8, "src/CLI/Self.jl" => 8, "src/CLI/Git.jl" => 8,
+                    "src/TestHarness.jl" => 5)
 
 const RANK_OF_MODULE = Dict("Model" => 1, "Texts" => 2, "Catalogue" => 3, "ConfigIO" => 4,
                             "Engine" => 5, "Render" => 6, "Orchestration" => 7, "CLI" => 8)
 
 # The tree being replaced. This number only falls; a commit that raises it fails here, which is what
-# makes "two machines in one tree" a measured state rather than a feeling.
-const LEGACY_CEILING = 18
+# makes "two machines in one tree" a measured state rather than a feeling. Phase 5 deleted the third
+# stroke; what is left is `Witnesses.jl`, which rests here while Phase 6 is deferred.
+const LEGACY_CEILING = 1
 
 # The table as the document holds it: one named tuple per row, the leading `**name**` and six cells.
 function table_rows(path)
@@ -87,7 +92,7 @@ legacy_files() = sort([relpath(joinpath(r, f), TOOL) for (r, _, fs) in walkdir(j
     # review state, because CI and a fresh clone must give the same answer. It is checked over the whole
     # tree, old and new, since the extension and the harness are what a consumer actually runs.
     @testset "nothing a build or a test runs reads review state" begin
-        for f in ("ext/GBGCodingToolsDocumenterExt.jl", "src/TestHarness.jl", "src/DocLints.jl")
+        for f in ("ext/GBGCodingToolsDocumenterExt.jl", "src/TestHarness.jl")
             text = read(joinpath(TOOL, f), String)
             for forbidden in (".gbg/runs", ".gbg/rounds", "questions.json", "settled.jl", "Orchestration.")
                 @test !occursin(forbidden, text)
@@ -122,8 +127,6 @@ legacy_files() = sort([relpath(joinpath(r, f), TOOL) for (r, _, fs) in walkdir(j
     # stay off. The wrapper is that deterministic half, so it stays; what must not come back early is an
     # instrument.
     @testset "this package is its own last consumer, not its first" begin
-        cfg = TOML.parsefile(joinpath(TOOL, ".gbg", "config.toml"))
-        @test !haskey(cfg, "instruments")                               # no instrument is configured here
         skills = joinpath(TOOL, ".claude", "skills")
         # A skill per instrument that applies, and NOT ONE MORE. `gbg-doctor` outlived the doctor by a
         # day: nothing rendered it after `Sync` went, and it told a session to run `gbg doctor`,

@@ -2,7 +2,7 @@
 # wiring check, then Documenter, then the rules that read the built site. It holds here as in every
 # consumer. Run as `julia --project=docs docs/make.jl`.
 using Documenter, GBGCodingTools
-using GBGCodingTools: TestHarness, Reflection, Witnesses, Config
+using GBGCodingTools: TestHarness, Witnesses
 
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 
@@ -21,9 +21,9 @@ let cfg = GBGCodingTools.ConfigIO.read_config(ROOT)
     GBGCodingTools.Render.rulebook_page(cfg, ROOT)
 end
 
-result = GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
+result = GBGCodingTools.makedocs(ROOT;
     sitename = "GBGCodingTools",
-    modules = [GBGCodingTools, TestHarness, Reflection, Witnesses, Config,
+    modules = [GBGCodingTools, TestHarness, Witnesses,
                GBGCodingTools.Model, GBGCodingTools.Texts, GBGCodingTools.Catalogue,
                GBGCodingTools.ConfigIO, GBGCodingTools.Render, GBGCodingTools.Engine.Checks,
                GBGCodingTools.Engine.Guard, GBGCodingTools.Engine.Harness],
@@ -37,11 +37,10 @@ result = GBGCodingTools.makedocs(GBGCodingTools.Config.read(ROOT);
         # The guide reads as a sequence first (set up, run a review, see what it produces, read what it judges
         # against), then the four reference tables, most consulted first (2026-09-09, the owner's ruling).
         "Guide" => ["guide/install.md", "gbg-rules.md", "gbg.md", "guide/verbs.md", "guide/config.md"],
-        # The new tree in its own order — a module may name only the modules above it — then what is
-        # left of the old one.
+        # The tree in its own order — a module may name only the modules above it — then the two
+        # engines a consumer's tests call, then the command line.
         "API" => ["api/Model.md", "api/Texts.md", "api/Catalogue.md", "api/ConfigIO.md", "api/Engine.md",
-                  "api/Render.md", "api/TestHarness.md", "api/Reflection.md", "api/Witnesses.md",
-                  "api/Config.md", "api/CLI.md"],
+                  "api/Render.md", "api/TestHarness.md", "api/Witnesses.md", "api/CLI.md"],
         "Architecture" => "architecture.md",
     ],
 )

@@ -1,4 +1,4 @@
-# Main.jl — argument parsing, `--dev`, `--version`, `probe`, the verb table, the try/catch → 3.
+# Main.jl — argument parsing, `--dev`, `--version`, the verb table, the try/catch → 3.
 
 """
     VERBS
@@ -124,10 +124,8 @@ finding, 2 cannot evaluate, 3 crash. A `--dev` first argument sets `GBG_DEV=1` s
 Output is never truncated.
 
 An exception escaping a verb is printed with its backtrace to `stderr` and returns 3, so a crash is
-never read as a finding. The exceptions are the consumer's own files failing to read or validate — a
-[`Config.ConfigError`](@ref) or a `Ledger.LedgerError` — the documented exit 2, printed without a
-backtrace. A config the verb has itself just written failing to read back is not that case; it raises
-[`Config.ConfigWrittenError`](@ref) and returns 3.
+never read as a finding. The exception is the consumer's own config failing to read or validate — a
+[`ConfigIO.ConfigError`](@ref) — the documented exit 2, printed without a backtrace.
 """
 function main(args::AbstractVector{<:AbstractString})::Int
     args = String.(args)
@@ -149,36 +147,14 @@ function main(args::AbstractVector{<:AbstractString})::Int
     try
         return Int(VERBS[key](rest))
     catch err
-        # A structurally bad consumer config is the documented exit 2 — "cannot evaluate" — and not a
-        # crash: an unknown key, a missing required key, an unknown enum member or a path that does not
-        # exist. Only three verbs caught it themselves. Caught once here, it is caught for every verb — but
-        # only because the two places a verb re-reads a config it has JUST WRITTEN (bump, new) read through
-        # Config.read_written, whose ConfigWrittenError is not a ConfigError and so reaches the crash path
-        # below. Without that, this arm reported the tool's own defect as the consumer's bad config and
-        # dropped its backtrace (2026-09-12-audit-changes-01, four lanes).
-        err isa Config.ConfigError && (println(stderr, "gbg ", key, ": ", sprint(showerror, err)); return 2)
-        # The rebuilt reader's error is a different type from the old module's, and reached the crash
-        # arm with a backtrace where the contract promises 2 (found in review, 2026-09-23).
+        # A consumer config that cannot be read — a call where data was expected, an unknown field, a
+        # switch naming no rule — is the documented exit 2, "cannot evaluate", and not a crash. Caught
+        # once here, it is caught for every verb; the old reader's error was caught the same way until
+        # Phase 5, and the rebuilt reader's reached the crash arm with a backtrace where the contract
+        # promises 2 (found in review, 2026-09-23).
         err isa GBGCodingTools.ConfigIO.ConfigError && (println(stderr, "gbg ", key, ": ", sprint(showerror, err)); return 2)
-        # the same for the consumer's ledger: an unparsable, invalid or unevaluable `.gbg/exemptions.toml`
-        err isa Ledger.LedgerError && (println(stderr, "gbg ", key, ": ", sprint(showerror, err)); return 2)
         println(stderr, "gbg ", key, ": crashed — ", sprint(showerror, err))
         Base.show_backtrace(stderr, catch_backtrace()); println(stderr)
         return 3
     end
 end
-
-"""
-    cmd_probe(args) -> Int
-
-`gbg probe [--fail]`: exists for the platform verification V2 and nothing else. Prints `PROBE OK` and
-returns 0; with `--fail` prints `PROBE FAIL` to `stderr` and returns 2. Reads and writes no file.
-"""
-function cmd_probe(args)
-    o = parse_options(args)
-    if "fail" in o.flags
-        println(stderr, "PROBE FAIL"); return 2
-    end
-    println("PROBE OK"); return 0
-end
-VERBS["probe"] = cmd_probe

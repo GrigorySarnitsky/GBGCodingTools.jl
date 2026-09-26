@@ -1,5 +1,4 @@
-# The toy consumer's settings, in the format the rebuilt package reads: data, never evaluated.
-# .gbg/config.toml stays beside it until the tree being replaced is gone.
+# The toy consumer's settings: data, never evaluated.
 Config(
     package = "GBGFixture",
     tool = :dev,

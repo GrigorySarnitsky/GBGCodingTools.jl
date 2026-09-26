@@ -41,9 +41,9 @@ function require_root end
 The package root at or above `start`: the nearest directory holding `.gbg/config.jl`. The argument is
 `start`, where to begin. Returns the root, or `nothing` where no package encloses it.
 
-Every verb of the new tree finds its package this way. The old reader looks for `.gbg/config.toml`
-instead, and a package wired by `gbg init` has never had one — which made every new verb fail with a
-`MethodError` on `nothing` when run from a real consumer, though each worked when handed a root.
+Every verb finds its package this way. The old reader looked for `.gbg/config.toml` instead, and a
+package wired by `gbg init` has never had one — which made every new verb fail with a `MethodError` on
+`nothing` when run from a real consumer, though each worked when handed a root.
 """
 function require_root(verb::AbstractString)
     root = find_root()

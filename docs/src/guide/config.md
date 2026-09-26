@@ -14,12 +14,3 @@ sentence leads, which admonitions need a title, the retired claims, the banner p
 
 It also names the disciplines its readers need, from the tool's catalogue, its own pattern rules, and its code
 areas. It writes no readers: one it needs and the tool lacks is requested from the tool's session.
-
-The old reader of `.gbg/config.toml` remains until Phase 5:
-
-```@docs
-GBGCodingTools.Config.read
-GBGCodingTools.Config.parse
-GBGCodingTools.Config.surface_files
-GBGCodingTools.Config.resolve_anchor
-```

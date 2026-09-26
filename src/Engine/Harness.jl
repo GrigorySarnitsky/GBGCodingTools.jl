@@ -14,7 +14,7 @@ order and the harness reaches no further than its own layer, so the wiring check
 whoever calls this. That is what `checks` is for, and it is how a consumer's suite gets both without this
 module knowing what a generator is.
 
-The contract engines still live in `TestHarness`, the module of the tree being replaced; a package passes
+The contract engines live in `TestHarness`, which a consumer's suite calls directly; a package passes
 its own contract runner as `contracts` until those are harvested.
 """
 module Harness

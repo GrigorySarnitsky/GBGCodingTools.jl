@@ -16,10 +16,6 @@ GBGCodingTools.VERBS
 
 ```@docs
 GBGCodingTools.Wire
-GBGCodingTools.Ledger
-GBGCodingTools.Ledger.read
-GBGCodingTools.Ledger.entries
-GBGCodingTools.Ledger.matches
 GBGCodingTools.Git
 GBGCodingTools.Git.run
 GBGCodingTools.Git.head
@@ -27,19 +23,6 @@ GBGCodingTools.Git.is_ancestor
 GBGCodingTools.Git.porcelain
 GBGCodingTools.Git.diff
 GBGCodingTools.Git.log
-GBGCodingTools.HtmlWalker
-GBGCodingTools.HtmlWalker.parse_page
-GBGCodingTools.HtmlWalker.tagname
-GBGCodingTools.HtmlWalker.classes
-GBGCodingTools.HtmlWalker.attr
-GBGCodingTools.HtmlWalker.elements
-GBGCodingTools.HtmlWalker.text_of
-GBGCodingTools.HtmlWalker.article_of
-GBGCodingTools.Hit
-GBGCodingTools.ScanResult
-GBGCodingTools.register_scan!
-GBGCodingTools.prose_lines
-GBGCodingTools.TreeHash
-GBGCodingTools.TreeHash.tree_hash
-GBGCodingTools.TreeHash.blob_hash
+GBGCodingTools.tree_hash
+GBGCodingTools.blob_hash
 ```

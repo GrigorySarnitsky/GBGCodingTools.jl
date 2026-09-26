@@ -1,5 +1,5 @@
-# Shared helpers of the self-tests: a fresh copy of the fixture under a system temporary directory, the
-# derived config that adds the defects corpus to the surfaces, and a quiet IO.
+# Shared helpers of the self-tests: the tool's root, the fixture, and a fresh copy of the fixture under a
+# system temporary directory.
 #
 # The scratch is NEVER inside the repository. Every repository here lives in Dropbox, and this scratch
 # once grew to 61,057 directories — the fixture is copied per test and only runtests.jl cleaned up, so an
@@ -38,36 +38,4 @@ function fixture_copy(name)
     # they stand, which is what the copy's own `gbg sync` would do
     G.Wire.sync(dst; io = devnull)
     return dst
-end
-
-fixture_config(root = FIXTURE; check = false) = G.Config.parse(read(joinpath(FIXTURE, ".gbg", "config.toml"), String); root, check)
-
-"""The fixture's config with the defects corpus added to every surface it belongs to."""
-function defects_config(root = FIXTURE)
-    cfg = fixture_config(root)
-    push!(cfg["surfaces"]["src"], "defects/Defects.jl")
-    append!(cfg["surfaces"]["pages"], ["defects/page.md", "defects/api/defects.md"])
-    push!(cfg["surfaces"]["rationale"], "defects/RATIONALE.md")
-    push!(cfg["surfaces"]["literate"], "defects/literate-no-banner.jl")
-    cfg["surfaces"]["data"] = ["defects/data-*.toml"]      # the optional data surface, on for the corpus
-    return cfg
-end
-
-# The planted defect classes went with the scans they were planted for (2026-09-17); the file is kept as
-# the record of what it held, and holds no rows.
-const DEFECTS = TOML.parsefile(joinpath(FIXTURE, "defects.toml"))
-const CATALOG = Dict(r["id"] => r for r in G.scan_catalog())
-# The scans that must load the package. SCAN.SIGNATURE_FIDELITY was the last of them and went on
-# 2026-09-17; the tuple is empty rather than gone, because the next scan converted is read here too.
-const REFLECTION = ()
-
-quiet(f) = f(devnull)
-
-# A ROUND.toml as `preflight` writes it, for a test that needs a round in a given state without paying
-# for one. The banner line is what `RoundFiles` and the doctor read past.
-function write_round(dir, rec)
-    open(joinpath(dir, "ROUND.toml"), "w") do f
-        println(f, "# ROUND.toml — written by gbg preflight; the CLI's marker, never edited by hand (ARCHITECTURE §6.1)")
-        TOML.print(f, rec)
-    end
 end

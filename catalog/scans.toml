@@ -1,9 +1,0 @@
-# catalog/scans.toml — the register of the deterministic text scans.
-#
-# It is EMPTY. Every scan it held was converted into a `Rule` value under src/Rules/, each beside the
-# check that decides it and the examples that show the check matches the statement; the last of them,
-# SCAN.DOI_CROSSCHECK, went on 2026-09-17. A rule's enforcement is no longer a row in a table pointing
-# at a function in another file — it is one value, and `policy/RULES.toml`'s `check` field says which.
-#
-# The file stays because the scan engine still reads it, and reads it as the list of what to run: with
-# no rows there is nothing to run, which is the truth. It goes with the engine in Phase 2.

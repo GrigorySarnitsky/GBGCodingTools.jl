@@ -39,9 +39,8 @@ the owner's work queue. `--scope changed` reads only what moved since the last r
 never been launched over real agents**, so what breaks first is reported here rather than worked around.
 
 Every rule is a `Rule` value under `src/Rules/`, each with its check and the examples that show the
-check matches its statement (`test/rules.jl`). There are NO scans: `catalog/scans.toml` and `src/Scans/`
-are empty, and `policy/` is deleted — the rulebook a session loads, `.gbg/policy/`, is written by
-`Render.policy` from the rule values. What a package switches off is a `Switch` in its `.gbg/config.jl`,
+check matches its statement (`test/rules.jl`). There are NO scans and no `policy/` — the rulebook a
+session loads, `.gbg/policy/`, is written by `Render.policy` from the rule values. What a package switches off is a `Switch` in its `.gbg/config.jl`,
 not a ledger entry.
 
 Gone with Phase 2: the old `Sync`, `Init`, `Doctor`, `Selftest`, `Consolidate` and `Schema`, with
@@ -52,8 +51,11 @@ request. The documentation review is SWITCHED OFF here until Phase 8, with the r
 in the middle of writing. `.claude/skills/` holds one file per instrument that applies, written by
 `Render.skill`; do not hand-edit one, and do not re-create an instrument outside its phase.
 
-What is left of the old tree, all of it Phase 5's to delete: `Scan.jl`, `Reflection`, `DocLints`,
-`HtmlWalker`, `TreeHash`, the old `Config` and `Ledger`, and `.gbg/config.toml`.
+The third stroke is deleted (Phase 5, 2026-09-26): `Scan.jl`, `Reflection`, `DocLints`, `HtmlWalker`,
+`TreeHash`, the old `Config` and `Ledger`, `.gbg/config.toml`, `catalog/` and the fixture's hats. What
+they still had a reader for was harvested: the derived public surface into `TestHarness`, the tree hash
+into `Self.jl`, the `makedocs` declaration into the module file. `Witnesses.jl` is the one file of the
+old tree left, and rests until Phase 6.
 
 ## Modules and wiring
 

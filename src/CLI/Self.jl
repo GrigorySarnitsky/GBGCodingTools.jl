@@ -1,4 +1,69 @@
-# Self.jl — `gbg self verify`: the running copy re-hashed against the manifests (PIN.SELF).
+# Self.jl — `gbg self verify`: the running copy re-hashed against the manifests (PIN.SELF), and git's
+# content hashing on the SHA stdlib that the re-hash needs (harvested from `TreeHash.jl`, Phase 5).
+
+"""
+    blob_hash(path) -> String
+
+The git blob id of the file at `path`: SHA-1 over `"blob <size>\\0"` followed by the content (a symlink
+hashes its target path, as git does). Returns the 40-character lowercase hex id.
+"""
+function blob_hash(path::AbstractString)
+    data = islink(path) ? Vector{UInt8}(readlink(path)) : read(path)
+    ctx = SHA1_CTX()
+    update!(ctx, Vector{UInt8}("blob $(length(data))\0"))
+    update!(ctx, data)
+    return bytes2hex(digest!(ctx))
+end
+
+_mode(path) = islink(path) ? "120000" : (filemode(path) & 0o111) != 0 ? "100755" : "100644"
+_sortkey(name, isdir) = isdir ? name * "/" : name
+
+"""
+    tree_hash(dir; skip = (".git",)) -> String
+
+The git tree id of a directory, computed as `git write-tree` would over every file below it: entries
+sorted by git's rule (a directory name compares with a trailing `/`), modes `100644`, `100755`,
+`120000` and `40000`, empty directories omitted. It is what Pkg records as `git-tree-sha1` in a manifest
+and reports as `tree_hash` from `Pkg.dependencies()`, so the running copy can re-hash itself without
+`git`. The arguments are:
+
+- `dir` — the directory to hash.
+- `skip` — entry names ignored at any level, `.git` by default, so a working tree hashes the same as
+  the tree its `HEAD` names when it is clean.
+
+Returns the hex id; an empty tree returns git's well-known empty-tree id.
+"""
+function tree_hash(dir::AbstractString; skip = (".git",))
+    entries = Tuple{String,Bool,String}[]              # (name, isdir, hexid)
+    for name in readdir(dir)
+        name in skip && continue
+        path = joinpath(dir, name)
+        if isdir(path) && !islink(path)
+            _nonempty(path, skip) || continue                # git tracks no empty directory
+            push!(entries, (name, true, tree_hash(path; skip)))
+        else
+            push!(entries, (name, false, blob_hash(path)))
+        end
+    end
+    sort!(entries; by = e -> _sortkey(e[1], e[2]))
+    body = IOBuffer()
+    for (name, isdir_, hex) in entries
+        write(body, isdir_ ? "40000" : _mode(joinpath(dir, name)), ' ', name, '\0', hex2bytes(hex))
+    end
+    payload = take!(body)
+    ctx = SHA1_CTX()
+    update!(ctx, Vector{UInt8}("tree $(length(payload))\0"))
+    update!(ctx, payload)
+    return bytes2hex(digest!(ctx))
+end
+
+# true when `dir` holds at least one file (git records no empty directories)
+function _nonempty(dir, skip)
+    for (_, _, files) in walkdir(dir; follow_symlinks = false)
+        isempty(files) || return true
+    end
+    return false
+end
 
 """
     tool_sub_envs(root) -> Vector{String}
@@ -37,10 +102,10 @@ function manifest_tree_sha(manifest_path::AbstractString)
 end
 
 """
-    self_verify(root = Config.find_root(); io = stdout) -> Int
+    self_verify(root = ConfigIO.find_root(); io = stdout) -> Int
 
 Recomputes the git tree hash of the copy this process runs from (`pkgdir(GBGCodingTools)`, through
-[`TreeHash.tree_hash`](@ref)) and compares it with what `Pkg.dependencies()` reports for the tool in the
+[`tree_hash`](@ref)) and compares it with what `Pkg.dependencies()` reports for the tool in the
 active environment and with the `git-tree-sha1` every sub-environment manifest under `root` records;
 asserts the dependency entry is `is_tracking_repo && !is_tracking_path` (a `Pkg.develop`'d copy lives
 inside the depot, so only the flags tell it apart). The arguments are:
@@ -53,13 +118,13 @@ Returns 0 when every comparison agrees, 0 with a WARN when the running copy is a
 at `dev`) or no manifest exists to compare against, and 2 for a disagreement or a developed copy — an
 edited pinned tree is never allowed to grade a round.
 """
-function self_verify(root = Config.find_root(); io::IO = stdout)
+function self_verify(root = ConfigIO.find_root(); io::IO = stdout)
     dir = pkgdir(GBGCodingTools)
     if running_dev()
         println(io, "PIN.SELF  WARN  dev pin: running from the working tree $dir ($(tool_version())); nothing to verify against")
         return 0
     end
-    computed = TreeHash.tree_hash(dir)
+    computed = tree_hash(dir)
     code = 0
     entry = get(Pkg.dependencies(), PKG_UUID, nothing)
     if entry === nothing
@@ -98,8 +163,8 @@ end
 """
     cmd_self_verify(args) -> Int
 
-`gbg self verify`: the command-line face of [`self_verify`](@ref); run by every `gbg round` verb and by
-`gbg gate` before anything else. Returns its code: 0, or 2 for an edited or developed pinned copy.
+`gbg self verify`: the command-line face of [`self_verify`](@ref). Returns its code: 0, or 2 for an
+edited or developed pinned copy.
 """
 cmd_self_verify(args) = self_verify()
 VERBS["self verify"] = cmd_self_verify

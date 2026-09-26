@@ -22,7 +22,6 @@ GBGCodingTools.Options
 GBGCodingTools.cmd_install
 GBGCodingTools.self_verify
 GBGCodingTools.cmd_self_verify
-GBGCodingTools.cmd_probe
 ```
 
 ## Consumer setup
@@ -30,17 +29,12 @@ GBGCodingTools.cmd_probe
 ```@docs
 GBGCodingTools.Wire.init
 GBGCodingTools.Wire.sync
-GBGCodingTools.cmd_config
 ```
 
-## Checks and scans
+## Checks
 
 ```@docs
 GBGCodingTools.Check.run
-GBGCodingTools.cmd_scan
-GBGCodingTools.scan_docs
-GBGCodingTools.scan_html
-GBGCodingTools.write_public_surface
 ```
 
 The doctor's verbs stood here until 2026-09-17: `gbg doctor` judged a package's wiring, and the wiring

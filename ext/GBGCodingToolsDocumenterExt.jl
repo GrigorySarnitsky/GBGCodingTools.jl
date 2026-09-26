@@ -67,13 +67,9 @@ function rules_and_wiring(root::AbstractString; site = nothing)
     return 1
 end
 
-# A package wired by `gbg init` has `.gbg/config.jl` and NO `.gbg/config.toml`, so it cannot produce the
-# dictionary this once required — and `Model.Config` carries no root to take one from. Passing the root
-# is what a new consumer can actually do, and what its `docs/make.jl` already has to hand.
-makedocs(root::AbstractString; kwargs...) = makedocs_at(root, nothing; kwargs...)
-makedocs(cfg::AbstractDict; kwargs...) = makedocs_at(cfg["root"], cfg; kwargs...)
-
-function makedocs_at(root::AbstractString, cfg; kwargs...)
+# The wrapper takes the package ROOT, which is what a consumer's `docs/make.jl` has to hand. It took the
+# old config's dictionary until Phase 5, when that reader was deleted.
+function makedocs(root::AbstractString; kwargs...)
     println("GBGCodingTools v", GBGCodingTools.tool_version(), " makedocs")
     # The quick doctor set and the hard scans ran here until 2026-09-17. The doctor is deleted and the
     # scan catalogue is empty: every one of them is a rule now, and `rules_and_wiring` runs them all.
@@ -81,9 +77,6 @@ function makedocs_at(root::AbstractString, cfg; kwargs...)
     # Nothing here reads review state any more: a build reports what its checks find and nothing
     # else, and no round can freeze it (docs/ARCHITECTURE.md §5.1, §10 — the closure gate went with the
     # round machinery on 2026-09-17).
-    # The public-surface file belongs to the tree being replaced and is written only where the old
-    # config exists to describe it; a package wired by `gbg init` needs none of it.
-    cfg === nothing || GBGCodingTools.write_public_surface(cfg)
     result = Documenter.makedocs(; kwargs...)
     build_dir = get(Dict(kwargs), :build, joinpath(root, "docs", "build"))
     isabspath(build_dir) || (build_dir = joinpath(root, "docs", build_dir))
