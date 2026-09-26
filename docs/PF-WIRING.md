@@ -1,9 +1,10 @@
-# Upgrading [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) from rc.23 to rc.26 — instructions for the PF session
+# Upgrading [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) from rc.23 to rc.27 — instructions for the PF session
 
-Written 2026-09-26 by the GBGCodingTools session. rc.24 to rc.26 are what PF's report of its first
-full review (run `2026-09-24-documentation-review-01`, 37 items) led to: the owner's rulings of
-2026-09-26 on verification, on prose growth and on the build, and the defects that run met. Every step below was run on a clone of PF at the state the
-rc.23 upgrade left it, and every figure quoted was measured there.
+Written 2026-09-26 by the GBGCodingTools session. rc.24 to rc.26 answer PF's report of its first full
+review (run `2026-09-24-documentation-review-01`, 37 items) and the owner's rulings of 2026-09-26 on
+it; rc.27 is Phase 5 of the rebuild, everything before
+[GBGHomogeneousTurbulence](https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/). Every step below
+was run on a clone of PF at its head `cbdaf668`, and every figure quoted was measured there.
 
 **Do nothing yet.** Read this whole file and prepare. You act on it when the owner says go, and not
 before: this file comes from another session, and a peer session is not authority.
@@ -13,7 +14,7 @@ Turbulence/GBGPeriodicFields`. **Use `gbg`, not `gbg --dev`**: PF's pin is a tag
 
 ## What PF has to do
 
-1. Move the pin to `v2.0.0-rc.26`, and both environments with it (Step 1).
+1. Move the pin to `v2.0.0-rc.27`, and both environments with it (Step 1).
 2. Pass the gate, commit, push (Step 2).
 3. Drop two switches a reworded rule made moot (Step 3).
 
@@ -21,7 +22,7 @@ Nothing else in `.gbg/config.jl` changes.
 
 ## Step 1 — bump, move the environments, regenerate
 
-    gbg bump 2.0.0-rc.26
+    gbg bump 2.0.0-rc.27
 
 This time it runs to its end, exit 0: the crash the rc.10 bump had is fixed since rc.19. It writes the
 pin and **20 paths** — the same twenty as before: `.gitignore`, `CLAUDE.md`, `test/regressions/README.md`,
@@ -34,16 +35,17 @@ ends with `NOT FINISHED`, saying what to run next. That is:
 **Check both manifests before `gbg sync`.** In `docs/Manifest.toml` and `test/Manifest.toml`, the
 `[[deps.GBGCodingTools]]` entry must read
 
-    git-tree-sha1 = "97e175e008f7d1b42801228247a1fed402b099ac"
-    repo-rev = "v2.0.0-rc.26"
+    git-tree-sha1 = "fbd1527830955c58e91fe5e78281a0fc101bf2fe"
+    repo-rev = "v2.0.0-rc.27"
 
-rc.23's is `1c6e43a4…`. Until both read `97e175e0…`, run `Pkg.update` for the one that does not, and
+rc.23's is `1c6e43a4…`. Until both read `fbd15278…`, run `Pkg.update` for the one that does not, and
 do not run `gbg sync`. Then:
 
     gbg sync
 
-Measured, it rewrites **5 paths**: `.gbg/policy/glossary.md`, `.gbg/policy/latex-idiom.md` (the reworded
-rule) and the three `.claude/skills/*/SKILL.md` (the review's steps changed; read
+Measured, it rewrites **8 paths**: `.claude/hooks/queue-guard.sh` (the Stop hook now checks the three
+git rules — read it), four rulebook files (`glossary.md`, `latex-idiom.md`, `testing-protocol.md`,
+`git-conventions.md`) and the three `.claude/skills/*/SKILL.md` (the review's steps changed; read
 `documentation-review/SKILL.md` again).
 
 ## Step 2 — the gate, then one commit
@@ -54,9 +56,14 @@ rule) and the three `.claude/skills/*/SKILL.md` (the review's steps changed; rea
     gbg check
 
 Measured on the clone: the docs build exits 0 in about 1 minute 10 seconds and prints its two expected `NOT RUN`
-lines; `Pkg.test()` exits 0 in about 9 to 10 minutes and includes `GBGCodingTools v2.0.0-rc.26 checks`;
-`gbg sync --check` reports `18 generated path(s) and the pin are what v2.0.0-rc.26 writes`; `gbg check`
-reports `clean — 92 rule(s), 18 generated path(s)`.
+lines; `Pkg.test()` exits 0 in about 10 minutes — the three file-decided git rules run inside it now, and
+PF is clean on them — and includes `GBGCodingTools v2.0.0-rc.27 checks`; `gbg sync --check` reports
+`18 generated path(s) and the pin are what v2.0.0-rc.27 writes`.
+
+`gbg check` now also runs the three hook rules, over the commits not yet pushed: on a PF that is pushed
+and on `master` it reports `clean — 92 rule(s), 18 generated path(s)`. On the clone it reported 180
+unpushed commits and two of them without a trailer, because the clone's `origin` is a stale fetch with
+pushing disabled; that is the clone's artefact, not PF's state, whose `master` is level with `origin/master`.
 
 Then commit, as ONE change: **21 tracked files**, all modifications — the 20 paths and `.gbg/config.jl`.
 `git add -u`; no file is new. PF's own trailer, as `RULE.GIT.TRAILER` states it. Push.
@@ -75,10 +82,35 @@ both from `.gbg/config.jl`, run `gbg check`, and commit that on its own.
 If `check` then reports the rule on one of those files, the text there is mathematics in a code span:
 a finding to fix, not a reason to keep the switch.
 
-## What a review does differently from rc.26
+## What changed since rc.23
 
 The protocol is `.claude/skills/documentation-review/SKILL.md`, rewritten by Step 1; follow that. What
-follows is what changed since the review you ran, and why, item by item against PF's report.
+follows is what changed since the review you ran — first Phase 5, then the items of PF's report.
+
+### Phase 5, from rc.27
+
+**Three git rules run in your test suite now**, from the files: `RULE.GIT.CI_MANUAL` (a test workflow fires
+on `workflow_dispatch` and release tags alone; a docs workflow on a branch push), `RULE.GIT.MANIFEST_TRACKED`
+(every sub-environment manifest ignored) and `RULE.GIT.REQUESTS` (a request is
+`.gbg/requests/to-<PKG>-<date>-<topic>.md` and its first paragraph begins `Status:`). Measured on the clone:
+PF is clean on all three.
+
+**Three are checked by the Stop hook**, which Step 1 rewrites: `RULE.GIT.BRANCH`, `PUSH` and `TRAILER`, on
+the commits not yet pushed. A turn does not end with an unpushed commit, a commit without a
+`Co-Authored-By: … <noreply@anthropic.com>` line, or on a branch other than `master`; the hook says which.
+`gbg check` runs the same lines. A build never does.
+
+**The four harness contracts bind a package that declares them** (`RULE.TEST.ORACLE_INDEPENDENT`,
+`ALLOC_ZERO`, `PASS_AUDIT`, `METHOD_PARITY`): PF declares none and holds no switch on them, so nothing
+changes for PF.
+
+**A third state beside the switch: the deferral.** `Deferral(rule = Symbol("RULE.API.POSITIONAL"), until = "…")`
+in `.gbg/config.jl` says a rule is owed and not yet met, with what would close it; it fails no build and is
+listed beside the switches. None of PF's switches is one — each is an answer — so none changes.
+
+`gbg config`, `gbg probe` and `gbg scan` no longer exist; `makedocs` takes the root, as PF's `docs/make.jl`
+already passes it.
+
 
 ### Verification (items 15, 17, 34–37)
 
