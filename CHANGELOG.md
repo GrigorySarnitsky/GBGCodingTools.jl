@@ -4,6 +4,28 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.28 — 2026-09-27
+
+MINOR: **the full code review.** Eight independent reviewers read the whole tree; 143 findings, each
+recorded with its fate in `docs/design-record/code-review-2026-09-26.md`: 138 fixed, 1 refused, 4 left to
+the owner. Four verifiers then re-ran every fix's failing input: 12 fixes were incomplete and 17 more
+defects were found, all fixed. What a consumer meets:
+
+- **Rules that had been blind now read:** `RULE.DOC.API_GROUPING` (it looked for markup Documenter 1.x
+  does not emit), `RULE.DOC.XLINK` and `RULE.DOC.SIGNATURE_FIDELITY` (they read no file under a real
+  config). A package may see new findings from them: a docstring's displayed signature that no longer
+  matches its method is one, fixed as documentation.
+- **`gbg sync` and `gbg init` no longer overwrite a package's own file** at a generated path; they list it
+  and exit 1. `write_pin` keeps `[targets]`; a broken `settings.json` is exit 2.
+- **A review run:** the find stage's driver carries its arguments (it did not since rc.24); cost counts
+  each message once; a relaunched stage relaunches only the missing roles; questions put inside a run pass
+  the language rules; the prose allowance inside a run reaches the site build.
+- **Config:** positional constructor calls, repeated keywords, bad `v"…"`/`r"…"`, a setting naming a
+  parameter its rule lacks, are each one ConfigError line (exit 2). A ruling containing `$` no longer
+  makes `.gbg/settled.jl` unreadable. A package's `PatternRule`s now run.
+- `Harness.test(root; extra = …)` adds rules to the rulebook's instead of replacing them.
+- The gitignore grammar reads `**`, escapes and nested files as git does.
+
 ## 2.0.0-rc.27 — 2026-09-26
 
 MINOR: **Phase 5, everything before GBGHomogeneousTurbulence.** The third stroke is deleted — `Scan.jl`,
