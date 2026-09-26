@@ -133,7 +133,11 @@ launch's `usage.subagent_tokens` field is not used anywhere.
   reported it and `commit` went ahead.
 - The prose of a Literate `#md # …` line may change, as any Markdown line's may; its mark stays.
 - `RULE.DOC.SHAPE` counts a formula as one word however it is laid out, and no lone dash.
+- Inside a run a unit may grow by ten words, or five percent of its recorded count where that is more
+  (item 5, ruled 2026-09-26); the close re-records what grew in `docs/prose_shape.csv`, which you
+  commit with the record. More than that is refused, as before.
 - `RULE.TEX.CODE_SPAN_JULIA` is reworded (Step 3).
+
 - Before `gbg run next` at a fix stage, run `gbg docfix check` WITH the build (item 7): a cross reference
   only the build resolves is otherwise found at the verify stage, after every commit of the pass.
 

@@ -758,9 +758,9 @@ function skill(cfg::Model.Config, instrument::Symbol)
        nothing closes the run instead.
     6. `gbg run close` — writes the record and the report, and puts what is still open on the owner's
        work queue. COMMIT `.gbg/runs/<id>/` yourself: `gbg docfix commit` leaves it out on purpose, and
-       nothing else commits it. Where a fix ADDED information and so raised a prose-shape number, the
-       re-baseline is a SEPARATE commit AFTER the close, with its reason — never inside a fix pass,
-       where it would be a code change ending the run and would let a raise pass as a fix. A run ENDED EARLY with `gbg run abandon` keeps its
+       nothing else commits it. A fix may grow a unit of prose by a small allowance — ten words, or five
+       percent — and the close re-records what grew in the prose-shape baseline: commit that file with
+       the record. More than the allowance is refused inside a run, as a code change would be. A run ENDED EARLY with `gbg run abandon` keeps its
        record only if an agent RAN, and is committed the same way; one that launched nothing is deleted by the
        verb, id and all, and any findings it was carrying go back to the run that found them.""")
     else

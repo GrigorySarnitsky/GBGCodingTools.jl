@@ -2359,3 +2359,37 @@ end
         @test !isempty(grew) && all(k -> occursin("index.md", k), grew)
     end
 end
+
+# Inside a run a unit may grow by a small allowance — ten words, or five percent — and the close records
+# what grew; outside a run the ratchet is strict (ruled 2026-09-26, PF's item 5).
+@testset "a fix may grow a unit a little inside a run, and the close records it" begin
+    package() do root, gg
+        cfg = G.ConfigIO.read_config(root)
+        G.Catalogue.Shape.write_baseline(root, cfg)
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "baseline")
+        idx = joinpath(root, "docs", "src", "index.md")
+        grow(n) = write(idx, replace(HOME_PAGE, "The grid is spectral." => "The grid is spectral, " * join(fill("truly", n), " ") * "."))
+        shape() = [l.text for l in G.Catalogue.Shape.prose_shape(root, cfg) if occursin("index.md", l.text)]
+        grow(6)
+        @test !isempty(shape())                                          # no run open: strict
+        write(idx, HOME_PAGE)
+        id, fid = with_one_finding(root)
+        G.Run.next(root; io = devnull)
+        grow(6)
+        @test isempty(shape())                                           # within the allowance
+        grow(14)
+        @test !isempty(shape())                                          # past it
+        write(idx, HOME_PAGE); grow(6)
+        @test G.Docfix.commit(root, "fix for " * fid; io = devnull, finding = fid) == 0
+        G.Run.next(root; io = devnull)
+        verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "truly truly")
+        G.Run.collect(root; io = devnull)
+        to_close(root, id)
+        out = IOBuffer()
+        @test G.Run.close_run(root; io = out) == 0
+        @test occursin("grew within the allowance", String(take!(out)))
+        after = G.Catalogue.Shape.baseline(root)
+        @test isempty(shape())                                           # recorded: strict again, and clean
+        @test G.Catalogue.Shape.allowance(20) == 10 && G.Catalogue.Shape.allowance(400) == 20
+    end
+end

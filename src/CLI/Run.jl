@@ -900,6 +900,13 @@ function close_run(root::AbstractString; io::IO = stdout)
         q.answer == GBGCodingTools.Answer.NOT_A_DEFECT || continue
         GBGCodingTools.Answer.settle!(root, q.id, isempty(q.direction) ? q.answer : q.direction)
     end
+    # What the run's fixes grew within the ratchet's allowance is recorded now, with the record, so the
+    # growth is one visible commit rather than a refusal at the next build [ruled 2026-09-26].
+    grown = Catalogue.Shape.record_grown(root, cfg)
+    if !isempty(grown)
+        println(io, "run: ", length(grown), " unit(s) of prose grew within the allowance and are re-recorded in ", Catalogue.Shape.BASELINE, "; commit it with the record:")
+        for g in grown; println(io, "  ", g); end
+    end
     rm(Agents.scratch_dir(root, id); force = true, recursive = true)   # the agents' files go with the run
     left = Runs.open_findings(closed)
     notes = Runs.in_material(closed)

@@ -4,6 +4,13 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.25 — 2026-09-26
+
+PATCH, one ruling. **Inside a run, a unit of prose may grow by a small allowance** (ruled 2026-09-26, PF's item 5): ten
+words, or five percent of its recorded count where that is more, on the unit and on its longest paragraph. A fix that
+had to ADD a qualifier to be correct was refused for one word and paid for it by cutting elsewhere. Outside a run the
+ratchet is strict, and the close re-records what grew, with the run's record, so the growth is one visible commit.
+
 ## 2.0.0-rc.24 — 2026-09-26
 
 MINOR. **Verification rebuilt on the measurements of GBGPeriodicFields' first full review** (run

@@ -146,17 +146,73 @@ end
 csvkey(k) = replace(k, "\"" => "'")
 
 """
+    allowance(n) -> Int
+
+How many words a unit recorded at `n` may grow by inside a run: ten, or five percent of `n` where that
+is more. The argument is `n`, the recorded count. Returns the allowance.
+
+A fix that must ADD a qualifier to be correct was refused for one word, and paid for it by cutting
+elsewhere; the first wording that fit read badly ([GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)' finding 005, 2026-09-24). Outside
+a run the ratchet is strict, and the close records what grew within the allowance [ruled 2026-09-26].
+"""
+allowance(n::Integer) = max(10, ceil(Int, 0.05 * n))
+
+# Whether a run is open here: its stage file is there and its record is not. Decided from the files,
+# since the runs live above this module.
+function run_open(root::AbstractString)
+    dir = joinpath(root, ".gbg", "runs")
+    isdir(dir) || return false
+    return any(d -> isfile(joinpath(dir, d, "stage")) && !isfile(joinpath(dir, d, "run.json")), readdir(dir))
+end
+
+"""
+    record_grown(root, cfg) -> Vector{String}
+
+Re-records every unit that grew past its recorded numbers, and only those, leaving every other row as
+it was. The arguments are `root`, the package root, and `cfg`, the package's config. Returns one line
+per unit re-recorded.
+
+The close calls it: what a run's fixes grew within the allowance is written to the baseline with the
+run's record, so the growth is deliberate and visible in one commit rather than refused at the next
+build [ruled 2026-09-26].
+"""
+function record_grown(root::AbstractString, cfg)
+    base = something(baseline(root), Dict{String,NTuple{3,Int}}())
+    us = units(root, files_of(root, cfg))
+    grown = String[]
+    for k in sort!(collect(keys(us)))
+        u = us[k]; key = csvkey(k); now = (u.words, u.longest, u.admonitions)
+        b = get(base, key, nothing)
+        (b !== nothing && any(now .> b)) || continue
+        base[key] = (max(now[1], b[1]), max(now[2], b[2]), max(now[3], b[3]))
+        push!(grown, "$key: words $(b[1])→$(now[1]), longest paragraph $(b[2])→$(now[2])")
+    end
+    isempty(grown) && return grown
+    path = joinpath(root, BASELINE)
+    open(path, "w") do io
+        println(io, "unit,words,longest_paragraph,admonitions")
+        for k in sort!(collect(keys(base)))
+            w, l, a = base[k]
+            println(io, "\"", k, "\",", w, ",", l, ",", a)
+        end
+    end
+    return grown
+end
+
+"""
     prose_shape(root, cfg) -> Vector{Model.Location}
 
 Every unit of prose that breaks its cap or has grown past its recorded numbers. The arguments are `root`,
 the package root, and `cfg`, the package's config, which names the files. Returns one location per unit.
 
-A unit the baseline does not hold is NEW and is held to the caps; one it holds may fall and never rise.
+A unit the baseline does not hold is NEW and is held to the caps; one it holds may fall and never rise,
+except by the [`allowance`](@ref) while a run is open.
 """
 function prose_shape(root::AbstractString, cfg)
     cat = parentmodule(@__MODULE__)
     files = files_of(root, cfg)
     base = baseline(root)
+    slack = run_open(root) ? allowance : (n -> 0)
     out = Model.Location[]
     owners = Dict{String,String}()
     for (key, u) in sort!(collect(units(root, files, owners)))
@@ -169,7 +225,8 @@ function prose_shape(root::AbstractString, cfg)
                 text = "$key: longest paragraph $(u.longest) > $PARAGRAPH_CAP words"))
             u.admonitions > ADMONITION_CAP && push!(out, Model.Location(; file = where_, line = 0,
                 text = "$key: $(u.admonitions) admonitions > $ADMONITION_CAP"))
-        elseif u.words > recorded[1] || u.longest > recorded[2] || u.admonitions > recorded[3]
+        elseif u.words > recorded[1] + slack(recorded[1]) || u.longest > recorded[2] + slack(recorded[2]) ||
+               u.admonitions > recorded[3]
             push!(out, Model.Location(; file = where_, line = 0,
                 text = "$key GREW: words $(recorded[1])→$(u.words), longest paragraph $(recorded[2])→$(u.longest) — rewrite, do not append"))
         end

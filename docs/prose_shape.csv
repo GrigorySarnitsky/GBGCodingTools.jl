@@ -673,7 +673,7 @@ unit,words,longest_paragraph,admonitions
 "shape.jl :: changes(root, cfg) -> Vector{String}",72,48,0
 "shape.jl :: files_of(root, cfg) -> Vector{String}",39,35,0
 "shape.jl :: metrics(text) -> NamedTuple",39,36,0
-"shape.jl :: prose_shape(root, cfg) -> Vector{Model.Location}",63,36,0
+"shape.jl :: prose_shape(root, cfg) -> Vector{Model.Location}",72,36,0
 "shape.jl :: units(root, files) -> Dict{String,NamedTuple}",82,46,0
 "shape.jl :: write_baseline(root, cfg) -> Int",62,30,0
 "site.jl :: RULES",42,41,0
