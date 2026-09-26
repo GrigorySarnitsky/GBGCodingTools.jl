@@ -1,8 +1,8 @@
-# Upgrading [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) from rc.23 to rc.24 — instructions for the PF session
+# Upgrading [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) from rc.23 to rc.25 — instructions for the PF session
 
-Written 2026-09-26 by the GBGCodingTools session. rc.24 is what PF's report of its first full review
-(run `2026-09-24-documentation-review-01`, 37 items) led to: the owner's rulings of 2026-09-26 on
-verification, and the defects that run met. Every step below was run on a clone of PF at the state the
+Written 2026-09-26 by the GBGCodingTools session. rc.24 and rc.25 are what PF's report of its first
+full review (run `2026-09-24-documentation-review-01`, 37 items) led to: the owner's rulings of
+2026-09-26 on verification and on prose growth, and the defects that run met. Every step below was run on a clone of PF at the state the
 rc.23 upgrade left it, and every figure quoted was measured there.
 
 **Do nothing yet.** Read this whole file and prepare. You act on it when the owner says go, and not
@@ -13,7 +13,7 @@ Turbulence/GBGPeriodicFields`. **Use `gbg`, not `gbg --dev`**: PF's pin is a tag
 
 ## What PF has to do
 
-1. Move the pin to `v2.0.0-rc.24`, and both environments with it (Step 1).
+1. Move the pin to `v2.0.0-rc.25`, and both environments with it (Step 1).
 2. Pass the gate, commit, push (Step 2).
 3. Drop two switches a reworded rule made moot (Step 3).
 
@@ -21,7 +21,7 @@ Nothing else in `.gbg/config.jl` changes.
 
 ## Step 1 — bump, move the environments, regenerate
 
-    gbg bump 2.0.0-rc.24
+    gbg bump 2.0.0-rc.25
 
 This time it runs to its end, exit 0: the crash the rc.10 bump had is fixed since rc.19. It writes the
 pin and **20 paths** — the same twenty as before: `.gitignore`, `CLAUDE.md`, `test/regressions/README.md`,
@@ -34,10 +34,10 @@ ends with `NOT FINISHED`, saying what to run next. That is:
 **Check both manifests before `gbg sync`.** In `docs/Manifest.toml` and `test/Manifest.toml`, the
 `[[deps.GBGCodingTools]]` entry must read
 
-    git-tree-sha1 = "02fde07756f7cec7235065622bca818bd7131643"
-    repo-rev = "v2.0.0-rc.24"
+    git-tree-sha1 = "ef881ca8e10430ee4385800c1fd1c8e9e8b0e9cf"
+    repo-rev = "v2.0.0-rc.25"
 
-rc.23's is `1c6e43a4…`. Until both read `02fde077…`, run `Pkg.update` for the one that does not, and
+rc.23's is `1c6e43a4…`. Until both read `ef881ca8…`, run `Pkg.update` for the one that does not, and
 do not run `gbg sync`. Then:
 
     gbg sync
@@ -54,8 +54,8 @@ rule) and the three `.claude/skills/*/SKILL.md` (the review's steps changed; rea
     gbg check
 
 Measured on the clone: the docs build exits 0 in about 1 minute 10 seconds and prints its two expected `NOT RUN`
-lines; `Pkg.test()` exits 0 in about 9 to 10 minutes and includes `GBGCodingTools v2.0.0-rc.24 checks`;
-`gbg sync --check` reports `18 generated path(s) and the pin are what v2.0.0-rc.24 writes`; `gbg check`
+lines; `Pkg.test()` exits 0 in about 9 to 10 minutes and includes `GBGCodingTools v2.0.0-rc.25 checks`;
+`gbg sync --check` reports `18 generated path(s) and the pin are what v2.0.0-rc.25 writes`; `gbg check`
 reports `clean — 92 rule(s), 18 generated path(s)`.
 
 Then commit, as ONE change: **21 tracked files**, all modifications — the 20 paths and `.gbg/config.jl`.
@@ -75,7 +75,7 @@ both from `.gbg/config.jl`, run `gbg check`, and commit that on its own.
 If `check` then reports the rule on one of those files, the text there is mathematics in a code span:
 a finding to fix, not a reason to keep the switch.
 
-## What a review does differently from rc.24
+## What a review does differently from rc.25
 
 The protocol is `.claude/skills/documentation-review/SKILL.md`, rewritten by Step 1; follow that. What
 follows is what changed since the review you ran, and why, item by item against PF's report.
