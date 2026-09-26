@@ -226,7 +226,7 @@ unit,words,longest_paragraph,admonitions
 "PF-WIRING.md § Parked findings (items 1, 2, 27, 30)",58,58,0
 "PF-WIRING.md § Phase 5, from rc.27",217,59,0
 "PF-WIRING.md § Reporting a defect in this package",57,57,0
-"PF-WIRING.md § Step 1 — bump, move the environments, regenerate",157,62,0
+"PF-WIRING.md § Step 1 — bump, move the environments, regenerate",158,62,0
 "PF-WIRING.md § Step 2 — the gate, then one commit",180,72,0
 "PF-WIRING.md § Step 3 — two switches come out",124,50,0
 "PF-WIRING.md § The grade and the record (items 9, 10, 16, 29, 32)",100,100,0
@@ -235,8 +235,9 @@ unit,words,longest_paragraph,admonitions
 "PF-WIRING.md § Verbs (items 26, 31, 33)",45,45,0
 "PF-WIRING.md § Verification (items 15, 17, 34–37)",187,65,0
 "PF-WIRING.md § What PF has to do / item 1",13,13,0
-"PF-WIRING.md § What PF has to do / item 2",8,8,0
-"PF-WIRING.md § What PF has to do / item 3",16,11,0
+"PF-WIRING.md § What PF has to do / item 2",16,16,0
+"PF-WIRING.md § What PF has to do / item 3",8,8,0
+"PF-WIRING.md § What PF has to do / item 4",49,38,0
 "PF-WIRING.md § What a verifier could not see (items 18, 19, 20)",97,97,0
 "PF-WIRING.md § What changed since rc.23",29,29,0
 "Questions.jl :: Questions",100,56,0

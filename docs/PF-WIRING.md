@@ -1,4 +1,4 @@
-# Upgrading [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) from rc.23 to rc.27 — instructions for the PF session
+# Upgrading [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) from rc.23 to rc.29 — instructions for the PF session
 
 Written 2026-09-26 by the GBGCodingTools session. rc.24 to rc.26 answer PF's report of its first full
 review (run `2026-09-24-documentation-review-01`, 37 items) and the owner's rulings of 2026-09-26 on
@@ -14,15 +14,17 @@ Turbulence/GBGPeriodicFields`. **Use `gbg`, not `gbg --dev`**: PF's pin is a tag
 
 ## What PF has to do
 
-1. Move the pin to `v2.0.0-rc.27`, and both environments with it (Step 1).
-2. Pass the gate, commit, push (Step 2).
-3. Drop two switches a reworded rule made moot (Step 3).
+1. Move the pin to `v2.0.0-rc.29`, and both environments with it (Step 1).
+2. Meet the 112 findings the docs build now reports (Step 2), as the owner decides.
+3. Pass the gate, commit, push (Step 3).
+4. Drop two switches a reworded rule made moot (Step 4).
 
-Nothing else in `.gbg/config.jl` changes.
+rc.28 is the full code review of this package. Three rules had been blind — they read no file in any
+real package — and now read PF: that, not a change in PF, is where the 112 come from.
 
 ## Step 1 — bump, move the environments, regenerate
 
-    gbg bump 2.0.0-rc.27
+    gbg bump 2.0.0-rc.29
 
 This time it runs to its end, exit 0: the crash the rc.10 bump had is fixed since rc.19. It writes the
 pin and **20 paths** — the same twenty as before: `.gitignore`, `CLAUDE.md`, `test/regressions/README.md`,
@@ -35,40 +37,74 @@ ends with `NOT FINISHED`, saying what to run next. That is:
 **Check both manifests before `gbg sync`.** In `docs/Manifest.toml` and `test/Manifest.toml`, the
 `[[deps.GBGCodingTools]]` entry must read
 
-    git-tree-sha1 = "fbd1527830955c58e91fe5e78281a0fc101bf2fe"
-    repo-rev = "v2.0.0-rc.27"
+    git-tree-sha1 = "55e763ef0c407573a02f5c1210edab6a54c7987a"
+    repo-rev = "v2.0.0-rc.29"
 
-rc.23's is `1c6e43a4…`. Until both read `fbd15278…`, run `Pkg.update` for the one that does not, and
+rc.23's is `1c6e43a4…`. Until both read `55e763ef…`, run `Pkg.update` for the one that does not, and
 do not run `gbg sync`. Then:
 
     gbg sync
 
-Measured, it rewrites **8 paths**: `.claude/hooks/queue-guard.sh` (the Stop hook now checks the three
-git rules — read it), four rulebook files (`glossary.md`, `latex-idiom.md`, `testing-protocol.md`,
-`git-conventions.md`) and the three `.claude/skills/*/SKILL.md` (the review's steps changed; read
-`documentation-review/SKILL.md` again).
+Measured, it rewrites **9 paths**: `.claude/hooks/queue-guard.sh` (the Stop hook now checks the three
+git rules — read it), five rulebook files (`glossary.md`, `docs-rubric.md`, `latex-idiom.md`,
+`testing-protocol.md`, `git-conventions.md`) and the three `.claude/skills/*/SKILL.md` (the review's
+steps changed; read `documentation-review/SKILL.md` again).
 
-## Step 2 — the gate, then one commit
+## Step 2 — 112 findings the rules could not see before
+
+Run `julia --project=docs docs/make.jl`. Measured on the clone, it stops before building, in about 30
+seconds, on 112 findings:
+
+- **90 × `RULE.DOC.XLINK`** — the first mention of a name another of PF's modules owns, left bare in a
+  docstring: `FiberTensor2` (17), `FiberVector` (13), `spectral_cutoff` (9), `Grid3D` (9), `PointSet`
+  (8), and others. Fixed by making the mention a link to its docstring. Standard-library generics (`norm`,
+  `dot`, `mul!`) are not reported; 17 of the 90 are in docstrings of `_`-prefixed internals.
+
+- **16 × `RULE.DOC.SIGNATURE_FIDELITY`** — a displayed signature whose names or keywords no longer match
+  the method: `norm!` shows `u` and `A` where the method names others; `interpolate!`, `interpolate`,
+  `anterpolate!` and `anterpolate` define a `traversal` keyword no signature shows; `Grid3D`'s `origin`
+  and the field constructors' `array_type` likewise. Fixed by correcting the docstring to the method.
+
+- **5 × `RULE.DOC.ARGCOV`** — `mul!`'s docstring documents "the two operands" together, so `A`, `u`,
+  `a` and `B` have no bullet of their own; and `map!`'s `source`.
+
+- **1 × `RULE.TEX.RENDERED_MATH`** — the inner product of `f` and `g` written in a code span, at
+  `docs/ARCHITECTURE.md:387`; written as math it renders.
+
+By file: FieldAlgebra 23, FiberSections 18, Reductions 15, Convolution 13, Fields 12, Interpolation 10,
+Points 9, GBGPeriodicFields 7, DifferentialOperators 4, ARCHITECTURE.md 1.
+
+Each is either fixed (they are all documentation: no code changes) or switched off in `.gbg/config.jl`
+with a reason, per file where only some files should be exempt.
+
+**Ask the owner which before you start** — fix all 112 now, switch a rule off with a reason, or fix some
+and switch the rest; the upgrade cannot be committed with the build red. Two things he should know when
+he answers: the link fixes are mechanical and many, and a displayed signature that disagrees with its
+method misleads a reader at the REPL.
+
+## Step 3 — the gate, then one commit
 
     julia --project=docs docs/make.jl
     julia --project -e 'using Pkg; Pkg.test()'
     gbg sync --check
     gbg check
 
-Measured on the clone: the docs build exits 0 in about 1 minute 10 seconds and prints its two expected `NOT RUN`
-lines; `Pkg.test()` exits 0 in about 10 minutes — the three file-decided git rules run inside it now, and
-PF is clean on them — and includes `GBGCodingTools v2.0.0-rc.27 checks`; `gbg sync --check` reports
-`18 generated path(s) and the pin are what v2.0.0-rc.27 writes`.
+Measured on the clone before Step 2: `Pkg.test()` exits 0 in about 10 minutes — the three file-decided
+git rules run inside it now, and PF is clean on them — and prints `GBGCodingTools v2.0.0 checks — the
+config pins v2.0.0-rc.29` (the banner names the version that ran and the pin beside it); `gbg sync
+--check` reports `18 generated path(s) and the pin are what v2.0.0-rc.29 writes`. The docs build exits 0
+once Step 2 is done, and prints its expected `NOT RUN` line.
 
 `gbg check` now also runs the three hook rules, over the commits not yet pushed: on a PF that is pushed
 and on `master` it reports `clean — 92 rule(s), 18 generated path(s)`. On the clone it reported 180
 unpushed commits and two of them without a trailer, because the clone's `origin` is a stale fetch with
 pushing disabled; that is the clone's artefact, not PF's state, whose `master` is level with `origin/master`.
 
-Then commit, as ONE change: **21 tracked files**, all modifications — the 20 paths and `.gbg/config.jl`.
+Then commit the upgrade: **21 tracked files**, all modifications — the 20 paths and `.gbg/config.jl` —
+with whatever Step 2 changed, or Step 2's fixes as their own commits before it, as the owner prefers.
 `git add -u`; no file is new. PF's own trailer, as `RULE.GIT.TRAILER` states it. Push.
 
-## Step 3 — two switches come out
+## Step 4 — two switches come out
 
 `RULE.TEX.CODE_SPAN_JULIA` now reads: "A code span holds literal code or input in some language —
 Julia, shell, TOML, a path, LaTeX source — and never mathematics, which is written as math." Its old
