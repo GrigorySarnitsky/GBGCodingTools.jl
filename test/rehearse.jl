@@ -545,6 +545,10 @@ end
         package() do root, gg
             G.Run.start(root, :documentation_review; io = devnull)
             id = G.Run.open_run(root)
+            # the FRESH find stage's driver carries its arguments too: `next` placed the driver a second
+            # time without them, so every first launch read an undefined `args` (found verifying, 2026-09-27)
+            @test occursin("globalThis.args = {", read(joinpath(AGENTS.scratch_dir(root, id), "run.js"), String))
+            @test RUNS.load(root, id).driver == AGENTS.driver_sha(root, id)
             reader_found(root, id, HOME_READER, "one")
             reader_found(root, id, "full", "two"; quote_ = "an options record")   # a second defect, elsewhere
             before = length(G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})["roles"])
@@ -2467,6 +2471,9 @@ end
         @test count(q -> q.id == qid, run.questions) == 1            # replaced, not appended
         @test RUNS.parked(run, fid) && isempty(RUNS.workable(run))    # and the finding waits again
         @test RUNS.answer_of(run, fid) === nothing
+        # and the ruling the fix was made on is carried into the new question, not lost (verified 2026-09-27)
+        q = only(x for x in run.questions if x.id == qid)
+        @test occursin("fix it on my ruling", q.context) && occursin("write lattice", q.context)
     end
 end
 

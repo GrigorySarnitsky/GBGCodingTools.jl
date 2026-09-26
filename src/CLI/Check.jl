@@ -63,8 +63,14 @@ function run(root::AbstractString; intention = nothing, network::Bool = false, i
     end
     skipped = [id for id in Engine.Checks.not_run(cfg; network)
                if intention === nothing || Catalogue.rule(id).intention === intention]
-    isempty(skipped) || println(io, "  NOT RUN HERE ", join(String.(skipped), ", "),
+    # A rule that reaches the network is neither the build's nor the suite's, which never allow it: saying
+    # they run it sent the reader to a place it is never checked (found verifying the review, 2026-09-27).
+    online = [id for id in skipped if Catalogue.rule(id).check.network]
+    offline = setdiff(skipped, online)
+    isempty(offline) || println(io, "  NOT RUN HERE ", join(String.(offline), ", "),
                                 " — the docs build and the test suite run these")
+    isempty(online) || println(io, "  NOT RUN HERE ", join(String.(online), ", "),
+                               " — only `gbg check --network` runs these")
     drift = intention === Model.Intention.DOCUMENTATION ? Model.Location[] : Render.wiring(cfg, root)
 
     if isempty(found) && isempty(drift)

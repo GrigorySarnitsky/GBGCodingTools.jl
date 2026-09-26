@@ -676,7 +676,7 @@ SKIPPED: src/Render.jl (report rendering, another group), src/CLI/Answer.jl beyo
 - evidence: `r"\b[A-Za-z_][A-Za-z0-9_]*\.[a-z][A-Za-z0-9_]*\b" => "a qualified name"`.
 - failure: reproduced: decision `Should the cap stay, e.g. at 120 words?` → `["a qualified name in the decision: e.g"]`. An ordinary English abbreviation — which `one_decision` (questions.jl:35) explicitly allows for — is reported as a code coordinate on every question that uses it; `put` prints the failed rule to the owner.
 - fix: exclude `e.g`, `i.e` (and require the first segment to be at least two characters, or a capital) in the qualified-name pattern.
-- verified: yes, by reading (2026-09-26) · fate: fixed in the review commit — e.g., i.e., etc., vs., cf. excluded; two characters needed before the dot.
+- verified: yes, by reading (2026-09-26) · fate: fixed in the review commit — e.g., i.e., etc., vs., cf. excluded (the "two characters needed before the dot" this line first said was never the program; corrected at verification).
 
 ### F-19: a package-added house term is compiled as a regular expression, unescaped
 - file: src/Rules/questions.jl:145
@@ -1300,3 +1300,50 @@ SKIPPED: src/Rules/*.jl (the rule values themselves — another group's), src/Re
 
 READ: src/Rules/rendering.jl, src/Rules/latex.jl, src/Rules/docstrings.jl, src/Rules/arguments.jl, src/Rules/reflection.jl, src/Rules/modules.jl, src/Engine/Checks.jl (whole); src/Texts.jl lines 36-110, 130-210, 236-310, 395-530, 636-790 (the helpers the rules call: files/expand, unwrapped/wrapped_lines, NAME, bound_name, docstrings_of, prose_text, doc_span, mask_*/single_escapes, signature_line(s), argument_list, parameters, slots, arity); test/rules.jl 25-80 (how examples are materialised); the rendered statements in .gbg/policy/docs-rubric.md and latex-idiom.md; fixture/GBG Fixture/defects/Defects.jl (as a corpus).
 SKIPPED: the rest of src/Texts.jl (HTML, reanchoring, headings), Model.jl beyond Config/Setting, the other Rules files (pages, site, shape, citations, questions, judgement_*), Render/Orchestration/CLI — other groups; the fixture's src and GBGPeriodicFields were run over as corpora (both clean under their own configs, so no false positive was measured there) but not read.
+
+## Verification of the fixes (2026-09-27)
+
+"Fixed in the verification commit" is the commit titled "Verifying the code review's fixes".
+Four independent verifiers, read-only, re-ran each `fixed` finding's failure input against the review
+commit, and confirmed each `refused`/`owner` reason. What they found is recorded here with its own fate;
+everything else they confirmed.
+
+### Groups A and C — 30 confirmed, 2 regressions, 2 owner reasons hold
+- A-15 REGRESSION: `harness_called` accepted `GBGCodingTools.Harness.test` and `using GBGCodingTools: Harness`, neither of which names a binding, so a suite written that way passed the wiring check and threw. · fate: fixed in the verification commit (both refused; tested)
+- C-2 REGRESSION: AT-PIN was asked before BEHIND, so a stale released pin outside the sweep window graded 0. · fate: fixed in the verification commit (BEHIND first)
+- V-1: `runs_hook` matched any command ending in `queue-guard.sh`, so a package's own `my-queue-guard.sh` Stop hook would be deleted by the merge. · fate: fixed in the verification commit
+- V-2: the `ci_drift` docstring named CompatHelper as a workflow with no Julia step; it runs Julia and is reported. · fate: fixed in the verification commit (docstring)
+- noted: after C-9 the floor refuses whenever the newest CI run is not at HEAD, which under manual CI is nearly always · fate: owner — keep the refusal (dispatch CI before each commit) or warn when behind and refuse only when red?
+
+### Groups G and H — 26 confirmed, 1 regression, H-11's refusal holds
+- G-6 REGRESSION: the shared grammar made `?` and `[…]` wildcards in FILE-SET patterns, which escaped them deliberately on 2026-09-23 (`glob_matches("docs/[x].md", "docs/[x].md")` became false). · fate: fixed in the verification commit (`classes = false` for file-set patterns)
+- V-3 (older than the review, from the rc.24 splice): `Run.next` placed the driver a second time WITHOUT its arguments after `write_arguments` spliced them, so every fresh find stage handed the session a driver whose `args` was undefined. Only the continued and verify stages were tested. · fate: fixed in the verification commit (`Agents.driver_sha`; tested on the fresh stage)
+- V-4: H-6's replacement overwrites the owner's earlier RULED answer and direction with the new question, keeping it nowhere. · fate: fixed in the verification commit (the earlier answer and direction are carried into the new question's context; tested)
+- V-5: POSIX classes (`[[:alpha:]]`) in a `.gitignore` are not read as git reads them. · fate: refused — no consumer uses one; noted for when one does
+- V-6: H-5 prints the failed language rules to the terminal only; `report.md` does not name them. · fate: fixed in the verification commit (the report prints them under the question)
+
+### Groups B and D — 33 confirmed, 1 regression, 2 not fixed, D-20's owner reason holds
+- B-11 REGRESSION: a formula in a Markdown table cell is read as display, so respelling an inline code span as inline math inside a table cell is refused (clause 6); the old tree accepted it. · fate: fixed in the verification commit (a formula in a table cell is inline; tested)
+- D-6 NOT FIXED: a positional-only constructor call is still accepted, though §5.2 admits keyword calls only. · fate: fixed in the verification commit (every constructor refuses positional arguments; no real config writes one)
+- D-22 NOT FIXED: the token is visible to the witness, so a witness can forge the tokened counts line and `exit(0)` after a failing test. · fate: fixed in the verification commit (the token removed; `exit`, `ccall`, `ARGS`, `__gbg_*`, methods on another module's function and `import M: f` are refused; the verdict is the exit code)
+- V-7 (D-21 residue): `const inc = include; inc(…)` and `invokelatest(include, …)` get past `refusal`. · fate: fixed in the verification commit (the loader names are refused anywhere, aliased, passed, qualified or quoted)
+- V-8 (D-24's class): a declared discipline switched off drops its rules with no gap line. · fate: fixed in the verification commit (one gap line per rule of a switched-off discipline)
+- V-9: a package cannot switch off its own PatternRule — `validate` refuses the switch. · fate: fixed in the verification commit (`validate` accepts a switch or deferral naming one of the package's own rules)
+- V-10: `Check.run` lists the network rule under what builds and suites run. · fate: fixed in the verification commit (network rules listed on their own line)
+- V-11: `append_settled` rewriting the file whole deletes the owner's comments. · fate: fixed in the verification commit (the leading comment block is kept byte for byte; the docstring says comments between rulings are not)
+- V-12: `Harness.test` prints a PatternRule finding without its rule id. · fate: fixed in the verification commit (every finding printed with its rule id)
+- D-7 residue: a bare `[]` setting dumps a raw MethodError. · fate: fixed in the verification commit (a bare `[]` is one ConfigError line)
+- D-13 residue: one stale comment, src/Catalogue.jl:127. · fate: fixed in the verification commit (reworded)
+- V-13 (the session's own): `driver_sha`'s docstring was placed between `place_driver`'s docstring and its function, so the tree did not load. Caught by the verifier before any commit. · fate: fixed in the verification commit
+
+### Groups E and F — 37 confirmed, 6 regressions, E-4's owner reason holds
+- E-3 REGRESSION: signatures keyed by (name, file) — one function whose methods are documented in two files now gives false "defined keyword appears in no displayed signature". · fate: fixed in the verification commit (keys grouped by the function they resolve to; the union checked per function; findings keep file and line)
+- E-7 REGRESSION: the whole `_`/`^` group is dropped before the word test, so `e^{-maxiter}`, `u_{grid_size}` are no longer reported. · fate: fixed in the verification commit (a sub/superscript group is dropped only if it holds no name (five letters, or an underscored word))
+- F-1 REGRESSION: the allowance is granted only inside `docfix`; the site build a run launches is a child process and strict, so a fix within the allowance turns the fix→verify build red and is reverted at close. · fate: fixed in the verification commit (`Site.build` starts its child with `GBG_RUN_ALLOWANCE=1`; a CI or plain build never sets it)
+- F-3 REGRESSION: the new unit keys do not match GBGPeriodicFields' recorded rows (`… (2)`, `… (3)`), so PF's docs build turns red on upgrade. · fate: fixed in the verification commit (units fall back to the key the old algorithm gave; `prose_shape` over PF reports 0 again)
+- F-4 REGRESSION: a plain reference with neither an italic title nor pages after the year is no longer reported as lacking a DOI. · fate: fixed in the verification commit (an author list, year and capitalised title is a reference line again)
+- F-18 REGRESSION: the fix says two characters before the dot are needed; `io.write` is still reported, so the program is not the claim. · fate: fixed in the verification commit (the pattern is any `a.b` except e.g./i.e./etc./vs./cf.; `io.write` is reported, as a coordinate should be. F-18's first fate line misdescribed the fix)
+- V-14: `Docstrings.body_line` misreads an `@doc raw"""` opener, reporting a line early. · fate: fixed in the verification commit (`body_line` reads past `@doc ` before the opener)
+- V-15: `indented_table` and `rendered_math` fence only on ```, not `~~~`. · fate: fixed in the verification commit (`~~~` fences recognised by both rules)
+- V-16: the differential lookahead also exempts `a\,d_k` and `a\,dk`. · fate: fixed in the verification commit (`a\,d_k` is reported; `a\,dk` stays exempt, indistinguishable from `\,dx`)
+- V-17: a prose-shape collision between two docstrings sharing a 60-character signature prefix tells the author to add a heading, which a docstring cannot have. · fate: fixed in the verification commit (a collision between docstrings appends `(line N)` to the later key; the heading advice is for page sections only)

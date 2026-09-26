@@ -15,6 +15,13 @@ using ...Model
 using ...Texts
 using ...Texts
 
+# The character of a line that opens or closes a fenced block — ``` or `~~~`, both CommonMark fences —
+# or `nothing` for any other line.
+function fence_char(line::AbstractString)
+    s = strip(line)
+    return startswith(s, "```") ? '`' : startswith(s, "~~~") ? '~' : nothing
+end
+
 """
     matching(pattern; mask = true) -> Function
 
@@ -98,13 +105,15 @@ with two spellings.
 """
 function rendered_math(text::AbstractString, cfg)
     out = Model.Location[]
-    fenced = false
+    fenced = nothing                   # the open fence's character
     for (i, line) in pairs(split(text, '\n'))
         raw = String(line)
         # A fenced block is code, and a code span is code: an interpolation such as `"\$(a)_\$(b)"` has
         # two dollars with an underscore between them and is not a formula. Both were read as one.
-        startswith(strip(raw), "```") && (fenced = !fenced; continue)
-        fenced && continue
+        # `~~~` fences as ``` does, and a fence closes only on its own character.
+        c = fence_char(raw)
+        c === nothing || ((fenced = fenced === nothing ? c : c == fenced ? nothing : fenced); continue)
+        fenced === nothing || continue
         if occursin(DOLLAR_MATH, Texts.mask_code_spans(raw))
             push!(out, Model.Location(; file = "", line = i, text = strip(raw)))
             continue
@@ -156,13 +165,18 @@ const RENDERED_MATH = Model.Rule(
             "\"\"\"\n    f(x)\n\nWrites `\"\\\$(a)_\\\$(b)\"`:\n\n```julia\nname = \"\\\$(a)_\\\$(b).h5\"\n```\n\"\"\"\nf(x) = x\n",
             Model.Location[], "never between dollar signs"),
         Model.TextExample(Model.FileSet.DOCSTRINGS,
+            "\"\"\"\n    f(x)\n\nWrites `\"\\\$(a)_\\\$(b)\"`:\n\n~~~julia\nname = \"\\\$(a)_\\\$(b).h5\"\n~~~\n\"\"\"\nf(x) = x\n",
+            Model.Location[], "never between dollar signs"),
+        Model.TextExample(Model.FileSet.DOCSTRINGS,
             "\"\"\"\n    f(x)\n\nThe bound \\\$\\\\varepsilon_0\\\$ here.\n\"\"\"\nf(x) = x\n",
             [Model.Location(; file = "src/Example.jl", line = 4)], "never between dollar signs"),
     ])
 
 # The thin space before a differential is the one the statement excepts, in every spelling of the
-# differential: `\\,\\mathrm{d}x`, `\\, \\mathrm{d}x` and `\\,dx`.
-const DIFFERENTIAL = r"\\,(?!\s*(?:\\mathrm\s*[{ ]?\s*d|d(?![A-Za-z]{2})))"
+# differential: `\\,\\mathrm{d}x`, `\\, \\mathrm{d}x`, `\\,dx` and `\\,d^3x`. A differential is `d`
+# and ONE variable — a letter or a control word such as `\\theta` — and then no letter: `a\\,d_k` is
+# a product with an index, and reading any `d` as a differential let it through.
+const DIFFERENTIAL = r"\\,(?!\s*(?:\\mathrm\s*\{\s*d\s*\}|\\mathrm\s+d|d)\s*(?:\^\{?\d+\}?)?\s*(?:\\[A-Za-z]+|[A-Za-z])(?![A-Za-z]))"
 const SPACING_PATTERNS = [
     (DIFFERENTIAL, "a thin space by hand", "The integral ``\\int f \\, g`` converges.", "The integral ``\\int f g`` converges."),
     (r"\\[;:](?![a-zA-Z])", "a medium or thick space by hand", "The product ``a \\; b`` is associative.", "The product ``a b`` is associative."),
@@ -211,6 +225,12 @@ const SPACING = Model.Rule(
                         Model.Location[], "except before a differential"),
                      Model.TextExample(Model.FileSet.PAGES,
                         "# A page\n\nThe integral ``\\int f \\, g \\, \\mathrm{d}x`` converges.\n",
+                        [Model.Location(; file = "docs/src/page.md", line = 3)], "except before a differential"),
+                     Model.TextExample(Model.FileSet.PAGES,
+                        "# A page\n\nThe integrals ``\\int f\\,dx^2``, ``\\int g\\,d\\theta`` and ``\\int h\\,\\mathrm{d}^3x`` converge.\n",
+                        Model.Location[], "except before a differential"),
+                     Model.TextExample(Model.FileSet.PAGES,
+                        "# A page\n\nThe product ``a\\,d_k`` here.\n",
                         [Model.Location(; file = "docs/src/page.md", line = 3)], "except before a differential")],
                     # The same rule on the other surface, where every LaTeX backslash is doubled. Both
                     # directions: a hand-spaced formula in a docstring is still reported, and the

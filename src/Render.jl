@@ -260,7 +260,7 @@ end
 
 # Whether a hook command runs this package's hook, whatever its quoting: the entry's spelling changed
 # once already, and a merge matching one literal spelling kept the old entry and added the new one.
-runs_hook(command) = command isa AbstractString && endswith(rstrip(command, ['"', '\'', ' ']), "queue-guard.sh")
+runs_hook(command) = command isa AbstractString && occursin(r"(^|[/\"'\s])queue-guard\.sh$", rstrip(command, ['"', '\'', ' ']))
 
 """
     write_settings(root) -> Bool
@@ -516,8 +516,8 @@ The arguments are `cfg`, the package's config, and `root`, the package root. Ret
 workflow.
 
 Nothing is reported for a package pinned to a checkout, which needs no credential, or for one with no
-workflows at all. A workflow that runs no Julia step — TagBot, CompatHelper, a linter — resolves nothing
-and is not told to authenticate.
+workflows at all. A workflow that runs no Julia step — TagBot, a linter — resolves nothing and is not told to
+authenticate; one that runs Julia for any reason, CompatHelper included, is.
 """
 function ci_drift(cfg::Model.Config, root::AbstractString)
     cfg.tool isa VersionNumber || return Model.Location[]
@@ -565,7 +565,9 @@ Both are the same call. A check that knew the full spelling alone reported a sui
 as running none (found in review, 2026-09-26).
 """
 function harness_called(live::AbstractString)
-    (occursin("GBGCodingTools.Engine.Harness.test", live) || occursin("GBGCodingTools.Harness.test", live)) && return true
+    # `GBGCodingTools.Harness.test` is NOT accepted: no such binding exists, and accepting it passed the
+    # wiring check for a suite that then threw (found verifying the review's fixes, 2026-09-27).
+    occursin("GBGCodingTools.Engine.Harness.test", live) && return true
     occursin("Harness.test", live) || return false
     return any(eachsplit(live, '\n')) do l
         m = match(r"^\s*(?:using|import)\s+(.*)$", l)
@@ -573,7 +575,7 @@ function harness_called(live::AbstractString)
         spec = m.captures[1]
         k = findfirst(':', spec)
         k === nothing ? occursin(r"\bGBGCodingTools\.Engine\b", spec) :
-            occursin(r"\bGBGCodingTools(?:\.Engine)?\s*$", spec[1:prevind(spec, k)]) && occursin(r"\bHarness\b", spec[k+1:end])
+            occursin(r"\bGBGCodingTools\.Engine\s*$", spec[1:prevind(spec, k)]) && occursin(r"\bHarness\b", spec[k+1:end])
     end
 end
 
@@ -1488,6 +1490,10 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
             for i in q.items
                 println(io, "  * ", i.text)
             end
+            # §8: a question that fails the language rules is shown with the failed rule named, in the
+            # report the owner reads and not only in the terminal it was put from (verified 2026-09-27)
+            failed = Engine.Questions.report(q, cfg)
+            isempty(failed) || (println(io); println(io, "This question does not read as the rules ask:"); println(io); println(io, "```"); print(io, failed); println(io, "```"))
             println(io)
             # an answered question says what the owner decided, and stops asking
             q.answer === nothing ? println(io, "Answer with: `gbg answer ", q.id, " \"<option>\"`") :

@@ -300,6 +300,16 @@ function place_driver(root::AbstractString, id::AbstractString; arguments::Abstr
     return dest, sha
 end
 
+"""
+    driver_sha(root, id) -> String
+
+The SHA-256 of the driver a run's agents go through, before its arguments are spliced in: what
+[`place_driver`](@ref) returns, without writing anything. The arguments are `root` and `id`, the
+package root and the run. Returns the hex digest.
+"""
+driver_sha(root::AbstractString, id::AbstractString) =
+    bytes2hex(SHA.sha256(read(joinpath(pkgdir(Model), "drivers", "run.js"), String)))
+
 # The commit the package is at, or "" outside a repository; what a continued stage is compared against.
 function head(root::AbstractString)
     try

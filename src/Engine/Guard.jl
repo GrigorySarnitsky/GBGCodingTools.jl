@@ -52,8 +52,8 @@ const LITERATE_MARKS = ("#src", "#md", "#jl", "#nb", "#!md", "#!jl", "#!nb")
 
 # What Julia's Markdown parser reads in one text, in document order: every formula, and the sequence of
 # spans — inline code, inline mathematics, or a DISPLAY formula — with their text, which is what a
-# respelling is judged on. A formula is inline when it stands inside a paragraph or a heading, and
-# display anywhere else; the two were one kind, so a display formula made a plain code fence with the
+# respelling is judged on. A formula is inline when it stands inside a paragraph, a heading or a table
+# cell (a cell holds inline content only), and display anywhere else; the two were one kind, so a display formula made a plain code fence with the
 # same text passed as a respelling (found in review, 2026-09-26).
 function parsed_math(text::AbstractString)
     math = String[]; spans = Tuple{Symbol,String}[]
@@ -68,10 +68,11 @@ function parsed_math(text::AbstractString)
     return math, spans
 end
 
-# `md_walk` with the one thing it does not carry: whether the node stands inside a paragraph or heading.
+# `md_walk` with the one thing it does not carry: whether the node stands inside a paragraph, heading or
+# table cell.
 function math_walk!(f, x, inline::Bool)
     f(x, inline)
-    inline |= x isa Markdown.Paragraph || x isa Markdown.Header
+    inline |= x isa Markdown.Paragraph || x isa Markdown.Header || x isa Markdown.Table
     if x isa AbstractVector
         foreach(y -> math_walk!(f, y, inline), x)
     elseif !(x isa AbstractString || x isa Symbol || x isa Number || x === nothing)

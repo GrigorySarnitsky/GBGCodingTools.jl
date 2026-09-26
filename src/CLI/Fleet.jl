@@ -80,14 +80,18 @@ function rows()
             push!(out, (name = c.name, pin = stamp, status = st, detail = st == "OK" ? detail : detail * "; " * join(fails, ", ")))
             st == "RED" && (code = max(code, 1)); continue
         end
-        if !isempty(fails) && cfg.tool isa VersionNumber
+        # BEHIND is asked first: a pin behind the newest release is that whatever its files say, and
+        # asking AT-PIN first graded a stale pin outside the sweep window 0 (found verifying, 2026-09-27).
+        # A released pin's generated files are judged by ITS OWN build, at its pin; this tree cannot
+        # tell a hand edit there from a newer generator, so AT-PIN says only that they differ.
+        if newest !== nothing && haskey(pins, c.name) && pins[c.name] < newest
+            push!(out, (name = c.name, pin = pin, status = "BEHIND", detail = "pinned at $pin, newest $newest — $window"))
+            window == "within window" || (code = max(code, 1))
+        elseif !isempty(fails) && cfg.tool isa VersionNumber
             push!(out, (name = c.name, pin = pin, status = "AT-PIN",
                         detail = "the dev tree writes its generated files differently; its own build judges them at $pin"))
         elseif !isempty(fails)
             push!(out, (name = c.name, pin = pin, status = "RED", detail = join(fails, ", "))); code = max(code, 1)
-        elseif newest !== nothing && haskey(pins, c.name) && pins[c.name] < newest
-            push!(out, (name = c.name, pin = pin, status = "BEHIND", detail = "pinned at $pin, newest $newest — $window"))
-            window == "within window" || (code = max(code, 1))
         else
             push!(out, (name = c.name, pin = pin, status = "OK", detail = "wired"))
         end

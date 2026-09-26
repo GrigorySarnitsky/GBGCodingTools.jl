@@ -4,7 +4,7 @@
 
 Reading a package's own two Julia files — `.gbg/config.jl`, its settings, and `.gbg/settled.jl`, the
 rulings its owner has already given — WITHOUT EVALUATING THEM. Both are parsed, and only literals and
-calls to the constructors of [`Model`](@ref) are accepted: a function call, an interpolation, an unknown
+keyword calls to the constructors of [`Model`](@ref) are accepted: a function call, an interpolation, an unknown
 keyword or an unknown constructor is refused.
 
 The reason is not tidiness. A config that is `include`d is a program, and a module holding nothing but a
@@ -146,17 +146,25 @@ the package root, and `s`, the ruling. Returns the path written.
 The file is written whole, from the rulings it already holds — read back as data first, so a file that
 cannot be read is a [`ConfigError`](@ref) and nothing is written into it — with the new one last. Text
 appended to the owner's file put a ruling inside a trailing comment and left the record unreadable
-(found in review, 2026-09-26); what is written here is exactly what `read_settled` reads.
+(found in review, 2026-09-26); what is written here is exactly what `read_settled` reads. The comment
+block above the vector is kept byte for byte; a comment between or after the rulings is not kept.
 """
 function append_settled(root::AbstractString, s::Model.Settled)
     path = joinpath(root, ".gbg", "settled.jl")
+    rulings = vcat(read_settled(root), [s])      # a file that cannot be read throws before anything is written
     io = IOBuffer()
-    println(io, "# .gbg/settled.jl — what the owner has already decided, and agents are told not to report.")
-    println(io, "#")
-    println(io, "# Read as data by ConfigIO, which evaluates nothing. Written by `gbg answer`; no build, test")
-    println(io, "# or check reads it, and only the agents of a run are shown it.")
+    if isfile(path)
+        # every blank or line comment before the line that opens the vector, as the owner left them; a
+        # `#=` block ends the run, since half of one kept would not parse
+        print(io, match(r"\A(?:[ \t]*(?:#(?!=)[^\n]*)?\r?\n)*", read(path, String)).match)
+    else
+        println(io, "# .gbg/settled.jl — what the owner has already decided, and agents are told not to report.")
+        println(io, "#")
+        println(io, "# Read as data by ConfigIO, which evaluates nothing. Written by `gbg answer`; no build, test")
+        println(io, "# or check reads it, and only the agents of a run are shown it.")
+    end
     println(io, "[")
-    for r in vcat(read_settled(root), [s])
+    for r in rulings
         println(io, "    Settled(question = ", repr(r.question), ",")
         println(io, "            text = ", repr(r.text), ",")
         println(io, "            date = ", repr(r.date), ",")
@@ -299,9 +307,10 @@ function build(node, path, problems)
         end
         haskey(CONSTRUCTORS, name) ||
             (push!(problems, "line $line: $name is not a constructor a config may call"); return nothing)
-        # Each keyword once, and never a positional argument beside one: the positional vanished without
-        # a word, and a repeated keyword took the last value where Julia refuses it (found in review,
-        # 2026-09-26). A call that is positional throughout is read as Julia would read it.
+        # Each keyword once, and never a positional argument: §5.2 admits keyword calls only. A positional
+        # beside keywords vanished without a word, a repeated keyword took the last value where Julia
+        # refuses it, and a call positional throughout bound its values by field order, which a new field
+        # silently re-binds (found in review, 2026-09-26). No config of the fleet writes one.
         kwargs = Dict{Symbol,Any}()
         positional = Any[]
         refused = length(problems)
@@ -321,11 +330,11 @@ function build(node, path, problems)
                 push!(positional, build(a, path, problems))
             end
         end
-        isempty(positional) || isempty(kwargs) ||
-            (push!(problems, "line $line: $name(…) mixes positional arguments with keywords; name every one"); return nothing)
+        isempty(positional) ||
+            (push!(problems, "line $line: $name(…) is given a positional argument; name every one, `field = value`"); return nothing)
         # an argument already refused was said once, on its own line; the call around it says nothing more
         length(problems) > refused && return nothing
-        return construct(CONSTRUCTORS[name], name, positional, kwargs, line, problems)
+        return construct(CONSTRUCTORS[name], name, kwargs, line, problems)
     end
     push!(problems, "line $line: $(lowercase(string(k))) is not data: $(first(text, 60))")
     return nothing
@@ -334,12 +343,17 @@ end
 node_name(node) = strip(String(JS.sourcetext(node)))
 
 # The constructor is called with what the file gave it, and a wrong keyword or a wrong type is a refusal
-# naming the line rather than a stack trace: the reader of this message is a person editing a config.
-function construct(T, name, positional, kwargs, line, problems)
+# naming the line rather than a stack trace: the reader of this message is a person editing a config. One
+# line: a `MethodError` prints its candidate list beneath, and a bare `[]` given to a list-valued setting
+# dumped that whole list where the fix is to name the element type (found in review, 2026-09-26).
+function construct(T, name, kwargs, line, problems)
     try
-        return isempty(kwargs) ? T(positional...) : T(; kwargs...)
+        return T(; kwargs...)
     catch err
-        push!(problems, "line $line: $name(…) does not accept what it was given — " * sprint(showerror, err))
+        bare = [k for (k, v) in kwargs if v isa Vector{Any} && isempty(v)]
+        msg = isempty(bare) ? first(split(sprint(showerror, err), '\n')) :
+              "`$(first(bare)) = []` has no element type; an empty list is written `String[]`"
+        push!(problems, "line $line: $name(…) does not accept what it was given — " * msg)
         return nothing
     end
 end
@@ -386,7 +400,10 @@ function validate(cfg::Model.Config, root::AbstractString)
     # these would make that claim unreadable: one naming nothing, and one giving no reason to show on the
     # package's own site. There is no third: every rule is switchable, and the rulebook is the default
     # rather than a set a package may not escape (ruled 2026-09-17).
-    known = Catalogue.known_ids()
+    # A package's own pattern rules are rules too: `run_patterns` honours a switch against one, and
+    # refusing that switch here left a package no way to turn off a rule of its own making.
+    own = Set(r.id for r in cfg.rules)
+    known = union(Catalogue.known_ids(), own)
     for s in cfg.switches
         isempty(strip(s.reason)) && push!(problems, "the switch against $(s.target) gives no reason")
         s.target in known ||
@@ -396,7 +413,7 @@ function validate(cfg::Model.Config, root::AbstractString)
     # And a rule cannot be both switched off and deferred, for the whole package or for some of its files.
     for d in cfg.deferrals
         isempty(strip(d.until)) && push!(problems, "the deferral of $(d.rule) says nothing of what would close it")
-        any(r -> r.id === d.rule, Catalogue.RULES) ||
+        (d.rule in own || any(r -> r.id === d.rule, Catalogue.RULES)) ||
             push!(problems, "the deferral names $(d.rule), which is not a rule")
         any(s -> s.target === d.rule, cfg.switches) &&
             push!(problems, "$(d.rule) is both switched off and deferred; it is one or the other")

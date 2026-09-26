@@ -90,7 +90,7 @@ the question "is this path a target of the review" is asked of paths the walk ne
 the file a reader names. Both ask this.
 """
 glob_matches(pattern::AbstractString, path::AbstractString) =
-    occursin(Regex("^" * wildcard_source(pattern) * "\$"), replace(path, '\\' => '/'))
+    occursin(Regex("^" * wildcard_source(pattern; classes = false) * "\$"), replace(path, '\\' => '/'))
 
 # ONE grammar for every pattern this module matches. A file-set pattern and a `.gitignore` line share
 # git's wildcards, and the walk, the guard's test and the ignore predicate each had a rewrite of their
@@ -100,8 +100,10 @@ glob_matches(pattern::AbstractString, path::AbstractString) =
 # `?` one character, `[…]` a class (`[!…]` negated, as git writes it), and `**` any run of directories —
 # `**/` at the start or `/**/` in the middle matching none as well, a trailing `/**` everything below.
 # A backslash makes the character after it literal, which is how a name holding a space, a `#` or a
-# `!` is written in a `.gitignore`.
-function wildcard_source(pattern::AbstractString)
+# `!` is written in a `.gitignore`. A FILE-SET pattern (`classes = false`) has the two wildcards `*` and
+# `**` alone: a `?` or a `[` there is literal, as it was on 2026-09-23, because a path may hold them
+# (found verifying the review's fixes, 2026-09-27).
+function wildcard_source(pattern::AbstractString; classes::Bool = true)
     s = String(pattern)
     io = IOBuffer()
     literal(c) = c in ".^\$|()[]{}+?*\\" ? "\\" * c : string(c)
@@ -124,9 +126,9 @@ function wildcard_source(pattern::AbstractString)
             continue
         elseif c == '*'
             write(io, "[^/]*")
-        elseif c == '?'
+        elseif c == '?' && classes
             write(io, "[^/]")
-        elseif c == '['
+        elseif c == '[' && classes
             close_ = findnext(']', s, min(nextind(s, i, 2), n))    # a `]` right after the `[` is literal
             if close_ === nothing
                 write(io, "\\[")
@@ -149,7 +151,7 @@ end
 # walk is over a source tree, not a corpus.
 function expand(root::AbstractString, pattern::AbstractString)
     isfile(joinpath(root, pattern)) && return [String(pattern)]
-    rx = Regex("^" * wildcard_source(pattern) * "\$")
+    rx = Regex("^" * wildcard_source(pattern; classes = false) * "\$")
     out = String[]
     for (dir, _, fs) in walkdir(root; onerror = SKIP_VANISHED)
         rel = relpath(dir, root)

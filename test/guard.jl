@@ -489,5 +489,8 @@ end
     # a display formula made a plain code fence is a formula removed; an inline one respelled is not
     @test !doc("docs/src/i.md", "```math\nE = h\n```\n", "```\nE = h\n```\n")
     @test doc("docs/src/i.md", "Take ``E = h``.\n", "Take `E = h`.\n")
+    # a table cell holds inline content only: its formula respelled is not a formula removed
+    @test doc("docs/src/i.md", "| a | b |\n|---|---|\n| `E = h` | x |\n", "| a | b |\n|---|---|\n| \$E = h\$ | x |\n")
+    @test !doc("docs/src/i.md", "| a | b |\n|---|---|\n| `E = h` | x |\n", "| a | b |\n|---|---|\n| \$E = 2h\$ | x |\n")
 end
 

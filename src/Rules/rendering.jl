@@ -15,6 +15,13 @@ module Rendering
 using ...Model
 using ...Texts
 
+# The character of a line that opens or closes a fenced block — ``` or `~~~`, both CommonMark fences —
+# or `nothing` for any other line.
+function fence_char(line::AbstractString)
+    s = strip(line)
+    return startswith(s, "```") ? '`' : startswith(s, "~~~") ? '~' : nothing
+end
+
 # ─────────────────────────────────────────────────────────────────── a table indented into a list
 
 const INDENTED_TABLE = r"^[ \t]+\|[-:| ]+\|"
@@ -31,12 +38,14 @@ the literal pipes and dashes a reader sees in the source rather than as a table.
 """
 function indented_table(text::AbstractString, cfg)
     out = Model.Location[]
-    fenced = false
+    fenced = nothing                   # the open fence's character
     for (i, line) in pairs(split(text, '\n'))
         # A fenced block is not the page's own markup: a page showing an example of Markdown shows an
         # indented table on purpose, and it renders as the example it is.
-        startswith(strip(line), "```") && (fenced = !fenced; continue)
-        fenced && continue
+        # `~~~` fences as ``` does, and a fence closes only on its own character.
+        c = fence_char(line)
+        c === nothing || ((fenced = fenced === nothing ? c : c == fenced ? nothing : fenced); continue)
+        fenced === nothing || continue
         occursin(INDENTED_TABLE, line) && push!(out, Model.Location(; file = "", line = i, text = strip(String(line))))
     end
     return out
@@ -65,6 +74,9 @@ const TABLE_TOP_LEVEL = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nNot this:\n\n```markdown\n- An item:\n\n  | a | b |\n  |---|---|\n```\n",
             Model.Location[], "never indented inside a list item"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nNot this:\n\n~~~markdown\n- An item:\n\n  | a | b |\n  |---|---|\n~~~\n",
+            Model.Location[], "never indented inside a list item"),
     ])
 
 # ─────────────────────────────────────────────────────────── a code identifier inside a math span
@@ -73,8 +85,12 @@ const MATH_MARKER = r"(?<!`)``(?!`)"
 const MATH_COMMAND_ARGS = r"\\(texttt|text|mathrm|operatorname|mathit|mathsf|mathbf|boldsymbol|label|mathcal)\{[^}]*\}"
 const MATH_CONTROL_WORD = r"\\[a-zA-Z]+"
 # The whole group after `_` or `^`, whatever it holds: `e^{-ikx}` is an exponent, and reading only a
-# group of letters as an index left the plane wave reported as a code identifier.
+# group of letters as an index left the plane wave reported as a code identifier. A group is dropped
+# only when it holds no name, though: `e^{-maxiter}`, `u_{grid_size}` and `x^{n_iter}` are settings set
+# as an exponent, and dropping every group hid them. A name there is a run of five letters, or a word
+# joined to another by an underscore; `x_i` inside `\sigma_{x_i}` is a nested index, not a name.
 const MATH_BRACED_INDEX = r"[_^]\{[^{}]*\}"
+const INDEX_NAME = r"[A-Za-z]{2,}_[A-Za-z]|[A-Za-z]_[A-Za-z]{2,}|[a-z]{5,}"
 # Three letters, not two. A two-letter run in a physics formula is almost always a PRODUCT of single
 # scalars — `ck_a`, `ac - bd`, `dx` — and reading those as code identifiers reported correct mathematics
 # in GBGPeriodicFields. A code identifier short enough to be missed by this is short enough that the
@@ -120,8 +136,8 @@ end
 
 Every math span holding what is almost certainly a code identifier: a run of three or more lowercase
 letters left over once the control words, the arguments of the text-setting commands and the braced
-indices are taken out. The arguments are `text`, the file's content, and `cfg`, the package's config, which this rule
-does not read. Returns one location per span.
+indices holding no name are taken out. The arguments are `text`, the file's content, and `cfg`, which
+this rule does not read. Returns one location per span.
 
 The renderer sets such a run as a product of italic single letters, so `maxiter` comes out as seven
 italic letters multiplied together rather than as the name of a setting.
@@ -130,10 +146,12 @@ function code_in_math(text::AbstractString, cfg)
     out = Model.Location[]
     for (line, span) in math_spans(text)
         stripped = replace(span, MATH_COMMAND_ARGS => " ")
-        stripped = replace(stripped, MATH_CONTROL_WORD => " ", MATH_BRACED_INDEX => " ")
+        stripped = replace(stripped, MATH_CONTROL_WORD => " ")
+        named_index = any(m -> occursin(INDEX_NAME, m.match), eachmatch(MATH_BRACED_INDEX, stripped))
+        stripped = replace(stripped, MATH_BRACED_INDEX => " ")
         grouped = [m.match for m in eachmatch(MATH_GROUP, stripped)]
         rest = replace(stripped, MATH_GROUP => " ")
-        (occursin(BARE_WORD, rest) || any(g -> occursin(GROUPED_WORD, g), grouped)) &&
+        (named_index || occursin(BARE_WORD, rest) || any(g -> occursin(GROUPED_WORD, g), grouped)) &&
             push!(out, Model.Location(; file = "", line, text = "``" * strip(span) * "``"))
     end
     return out
@@ -167,6 +185,12 @@ const CODE_IN_MATH = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe wave ``\\exp(maxiter)`` here.\n",
             [Model.Location(; file = "docs/src/page.md", line = 3)], "never inside a math span"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe decay ``e^{-maxiter}`` here.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "never inside a math span"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe field ``u_{grid_size}`` and ``x^{n_iter}`` here, over ``\\sigma_{x_i}``.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3), Model.Location(; file = "docs/src/page.md", line = 3)], "never inside a math span"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe cap `maxiter` bounds the loop.\n",
             Model.Location[], "never inside a math span"),

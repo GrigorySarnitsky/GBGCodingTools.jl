@@ -334,6 +334,73 @@ end
     @test [b.id for b in Si.page_bindings(joinpath(dir, "a.html"))] == ["M.f"]
 end
 
+# Found in the verification of the review's fixes (2026-09-27): each a fix that broke what it touched.
+@testset "what the verification of 2026-09-27 found" begin
+    S = G.Catalogue.Shape
+
+    # One function documented in two files is held to the union of what both display.
+    dir = mktempdir(; cleanup = true); mkpath(joinpath(dir, "src"))
+    a = "\"\"\"\n    f(x; a = 1)\n\nOne.\n\"\"\"\nf(x; a = 1) = x\n"
+    b = "\"\"\"\n    f(x, y; b = 2)\n\nTwo.\n\"\"\"\nf(x, y; b = 2) = x\n"
+    write(joinpath(dir, "src", "Example.jl"), a); write(joinpath(dir, "src", "b.jl"), b)
+    holder = Module(:SigHolder)
+    Base.include_string(holder, "module Example\nexport f, g\ng() = 1\nend", "Example.jl")
+    ex = Base.invokelatest(getfield, holder, :Example)
+    Base.include_string(ex, a, joinpath(dir, "src", "Example.jl"))
+    Base.include_string(ex, b, joinpath(dir, "src", "b.jl"))
+    cfg = MR.Config(package = "Example", tool = :dev,
+                    filesets = Dict(MR.FileSet.CODE => ["src/Example.jl", "src/b.jl"]))
+    fid = G.Catalogue.Modules.signature_fidelity
+    @test isempty(Base.invokelatest(fid, (pkg = ex, root = dir), cfg))
+    # and a keyword one file shows wrongly is reported at that file's docstring
+    write(joinpath(dir, "src", "b.jl"), replace(b, "    f(x, y; b = 2)" => "    f(x, y; c = 2)"))
+    got = Base.invokelatest(fid, (pkg = ex, root = dir), cfg)
+    @test any(l -> l.file == "src/b.jl" && l.line == 1 && occursin("`c`", l.text), got)
+    @test any(l -> l.file == "src/Example.jl" && occursin("`b` appears in no", l.text), got)
+
+    # The site build a run starts grants the allowance through its environment; nothing else does.
+    dir = mktempdir(; cleanup = true); mkpath(joinpath(dir, "docs", "src"))
+    page = joinpath(dir, "docs", "src", "p.md")
+    write(page, "# P\n\n## Notes\n\none two three\n")
+    pcfg = MR.Config(package = "P", tool = :dev)
+    S.write_baseline(dir, pcfg)
+    write(page, "# P\n\n## Notes\n\n" * join(fill("word", 8), " ") * "\n")
+    @test withenv(() -> !isempty(S.prose_shape(dir, pcfg)), S.RUN_ALLOWANCE => nothing)
+    @test withenv(() -> isempty(S.prose_shape(dir, pcfg)), S.RUN_ALLOWANCE => "1")
+    write(joinpath(dir, "docs", "make.jl"),
+          "mkpath(\"docs/build\"); write(\"docs/build/flag\", get(ENV, \"$(S.RUN_ALLOWANCE)\", \"\"))\n")
+    @test withenv(() -> G.Orchestration.Site.build_with_make(dir, pcfg; io = devnull), S.RUN_ALLOWANCE => nothing) !== nothing
+    @test read(joinpath(dir, "docs", "build", "flag"), String) == "1"
+
+    # A row recorded under the key a unit had before the keys changed still holds it, and a rewrite
+    # records it under the new key.
+    dir = mktempdir(; cleanup = true); mkpath(joinpath(dir, "docs", "src"))
+    long = "A heading long enough that sixty characters end before the item number"
+    write(joinpath(dir, "docs", "src", "p.md"),
+          "# P\n\n## $long\n\nIntro.\n\n1. " * join(fill("word", 130), " ") * "\n")
+    old = "p.md § " * first(long, 60)
+    write(joinpath(dir, "docs", "prose_shape.csv"),
+          "unit,words,longest_paragraph,admonitions\n\"$old\",1,1,0\n\"$old (2)\",200,200,0\n")
+    found = S.prose_shape(dir, pcfg)
+    @test !any(l -> occursin("item 1", l.text), found)                  # held by its `(2)` row
+    @test !any(l -> occursin("DROPPED", l), S.changes(dir, pcfg))
+    S.write_baseline(dir, pcfg)
+    @test any(k -> endswith(k, "/ item 1"), keys(S.baseline(dir)))
+
+    # Two docstrings of one file sharing a key are two units, and neither is told to take a heading.
+    dir = mktempdir(; cleanup = true); mkpath(joinpath(dir, "src"))
+    sig = "    measure(u::AbstractArray{Float64,3}, grid::Grid; tolerance_absolute = 1e-6)"
+    write(joinpath(dir, "src", "M.jl"), "\"\"\"\n$sig\n\nOne.\n\"\"\"\nf(x) = 1\n\n\"\"\"\n$sig\n\nTwo.\n\"\"\"\nf(x, y) = 1\n")
+    S.write_baseline(dir, pcfg)
+    @test length(S.baseline(dir)) == 2
+    @test !any(l -> occursin("heading", l.text), S.prose_shape(dir, pcfg))
+
+    # `@doc raw"""` opens a docstring on the macro's line.
+    src = "x = 1\n@doc raw\"\"\"\n    f(x)\n\nBody.\n\"\"\"\nf(x) = x\n"
+    d = only(G.Texts.docstrings_of(src))
+    @test G.Catalogue.Docstrings.body_line(src, d) == 3
+end
+
 @testset "the rulebook" begin
     @testset "the materialiser judges an example as the rule says" begin
         for rule in (NO_TODO, NO_BARE_URL), example in rule.examples

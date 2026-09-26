@@ -512,14 +512,15 @@ end
         @test G.Wire.sync(dir; check = true, io = devnull) == 0
     end
 
-    # The design's own example writes `GBGCodingTools.Harness.test`, and a suite that brings `Harness` in
-    # with `using` calls it as `Harness.test`: the check knew the full spelling alone.
+    # A suite that brings `Harness` in with `using` calls it as `Harness.test`: the check knew the full
+    # spelling alone. A spelling that names no binding is not a call, however close it looks.
     @testset "the harness is recognised in every spelling a suite may call it by" begin
         @test RN.harness_called("using GBGCodingTools.Engine\nHarness.test(dirname(@__DIR__))")
         @test RN.harness_called("using GBGCodingTools.Engine: Harness, Checks\nHarness.test(dirname(@__DIR__))")
         @test RN.harness_called("import GBGCodingTools.Engine.Harness\nHarness.test(dirname(@__DIR__))")
-        @test RN.harness_called("using GBGCodingTools: Harness\nHarness.test(dirname(@__DIR__))")
-        @test RN.harness_called("GBGCodingTools.Harness.test(dirname(@__DIR__))")
+        # neither names a binding that exists: `Harness` lives in `Engine`, not at the top level
+        @test !RN.harness_called("using GBGCodingTools: Harness\nHarness.test(dirname(@__DIR__))")
+        @test !RN.harness_called("GBGCodingTools.Harness.test(dirname(@__DIR__))")
         @test RN.harness_called(RN.runtests_call())
         @test !RN.harness_called("using GBGCodingTools\nHarness.test(dirname(@__DIR__))")   # nothing brought it in
         @test !RN.harness_called("using GBGCodingTools.Engine\n@test true")

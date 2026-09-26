@@ -49,23 +49,24 @@ function test(root::AbstractString; extra = Model.Rule[], rules = nothing, check
     problems = ConfigIO.validate(cfg, root)
     isempty(problems) || error("the config describes a package this is not:\n  " * join(problems, "\n  "))
 
-    found = Model.Location[]
+    # Each finding with the id of the rule that found it: a line saying only `RULE file:line` left the
+    # reader to guess which rule, and a package's own rule was the hardest to guess (found verifying the
+    # review, 2026-09-27).
+    found = Tuple{Symbol,Model.Location}[]
     # The rulebook always, and the package's own after it: a consumer passing its one extra rule had
     # silently replaced every code rule of the rulebook with it (found in review, 2026-09-26).
     for rule in vcat(Catalogue.RULES, extra, something(rules, Model.Rule[]))
         rule.intention === Model.Intention.CODE || continue
-        append!(found, Checks.run_rule(rule, cfg, root))
+        append!(found, [(rule.id, l) for l in Checks.run_rule(rule, cfg, root)])
     end
-    for (_, l) in Checks.run_patterns(cfg, root; intention = Model.Intention.CODE)
-        push!(found, l)
-    end
+    append!(found, Checks.run_patterns(cfg, root; intention = Model.Intention.CODE))
     others = Model.Location[]
     for check in checks
         append!(others, check(cfg, root))
     end
 
     if !(isempty(found) && isempty(others))
-        lines = vcat(["  RULE   $(l.file):$(l.line)  $(l.text)" for l in found],
+        lines = vcat(["  $(rpad(String(id), 30)) $(l.file):$(l.line)  $(l.text)" for (id, l) in found],
                      ["  CHECK  $(l.file)  $(l.text)" for l in others])
         error("GBGCodingTools found " * string(length(found) + length(others)) * ":\n" * join(lines, "\n"))
     end

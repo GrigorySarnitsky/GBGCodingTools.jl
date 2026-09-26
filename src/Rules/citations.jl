@@ -29,10 +29,15 @@ const DOI_RE = Regex("doi\\.org/" * DOI_PATH)
 const TITLE_LINK = Regex("\\[(\\*[^\\]]+?\\*)\\]\\((https://doi\\.org/" * DOI_PATH * ")\\)")
 const RESOLVABLE_LINK = Regex("\\[([^\\]]*)\\]\\((https://(?:doi\\.org|openlibrary\\.org)/" * DOI_PATH * ")\\)")
 # A line that is a reference rather than prose about one: the lone-citation form, or a bullet with a
-# year that has the SHAPE of a reference — a title in italics, or pages after the year. A bullet that
-# merely cites author–year, as `RULE.CIT.STYLE` asks the prose to, is prose.
+# year that has the SHAPE of a reference — a title in italics, pages after the year, or an author list
+# of surnames with initials followed by the year and then a capitalised title, as in
+# `- Pope, S. B. (2000). Turbulent Flows.` A bullet that merely cites author–year, as `RULE.CIT.STYLE`
+# asks the prose to, is prose: `- Kolmogorov (1941) gives the 5/3 law.` names a surname with no
+# initials and goes on with a verb.
 const YEAR = raw"\((19|20)\d\d[a-z]?\)"
-const REFERENCE_LINE = Regex("^\\s*(Reference:|-\\s+(?=.*" * YEAR * ")(?=.*(?:\\*[^*\\n]+\\*|" * YEAR * "[\\s,.:]*\\d)))")
+const AUTHOR = raw"(?:[A-Z][\w'’-]+,\s+(?:[A-Z]\.[\s-]*)+|(?:[A-Z]\.[\s-]*)+[A-Z][\w'’-]+)"
+const REFERENCE_LINE = Regex("^\\s*(Reference:|-\\s+(?=.*" * YEAR * ")(?=.*(?:\\*[^*\\n]+\\*|" * YEAR * "[\\s,.:]*\\d))|" *
+                             "-\\s+" * AUTHOR * ".*?" * YEAR * "[.,:]?\\s+[A-Z])")
 
 # A DOI is compared decoded and without the punctuation a sentence leaves on it: `10.1017/S0022112096004090.`
 # at the end of a sentence and the same DOI mid-list are one DOI, and a reader following either lands
@@ -90,6 +95,10 @@ const DOI = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\n- Lalescu, Teaca, Carati, Implementation of high order spline interpolations, J. Comput. Phys. 229 (2010) 5862–5869.\n",
             [Model.Location(; file = "docs/src/page.md", line = 3)], "carries a clickable DOI"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Pope, S. B. (2000). Turbulent Flows. Cambridge University Press.\n- Kolmogorov, A. N. (1941). The local structure of turbulence. Dokl. Akad. Nauk SSSR 30, 301–305.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3), Model.Location(; file = "docs/src/page.md", line = 4)],
+            "carries a clickable DOI"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\n- Kolmogorov (1941) gives the 5/3 law.\n- The fix landed (2024).\n",
             Model.Location[], "carries a clickable DOI"),

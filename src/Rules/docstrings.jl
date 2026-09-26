@@ -30,7 +30,8 @@ the body actually opens on, or every docstring that opens with a blank line is r
 function body_line(src::AbstractString, d)
     lines = split(src, '\n')
     d.line <= length(lines) || return d.line + 1
-    opener = replace(lines[d.line], r"^\s*(?:raw)?\"{1,3}" => "")
+    # `@doc raw"""` and `@doc """` open a docstring on the macro's line: read past the macro as well.
+    opener = replace(lines[d.line], r"^\s*(?:(?:Base\.)?@doc\s+)?(?:raw)?\"{1,3}" => "")
     isempty(strip(opener)) || return d.line                   # a one-line docstring opens on its own line
     i = d.line + 1
     while i <= length(lines) && isempty(strip(lines[i])); i += 1; end

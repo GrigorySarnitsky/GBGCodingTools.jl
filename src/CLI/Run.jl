@@ -191,8 +191,11 @@ function next(root::AbstractString; io::IO = stdout)
     to === :fix && return fix_stage(root, moved, cfg; io)
     to === :verify && return verifier_stage(root, moved, cfg, site; io)
     roles, extras, site_pages = reader_roles(root, moved, cfg, site; io)
+    # The sha comes from the placement write_arguments made, WITH the arguments spliced in. A second
+    # placement here, passing none, rewrote the driver without them: every fresh find stage handed the
+    # session a driver whose `args` was undefined (found verifying the review's fixes, 2026-09-27).
     Agents.write_arguments(root, moved, cfg; roles, extras, site, site_pages, io)
-    moved = with(moved; driver = last(Agents.place_driver(root, moved.id)))
+    moved = with(moved; driver = Agents.driver_sha(root, moved.id))
     Runs.save(root, moved)                       # the record says which driver these agents went through
     # What no reader of this package can judge is said at every launch, not only in the report: a
     # discipline rule in a package that declares no discipline is a gap the session should see now.
@@ -813,6 +816,13 @@ function grade(root::AbstractString, run::Model.Run, verdicts; cfg::Model.Config
             # the finding would carry an answered question and an unanswerable second one under the
             # same id, and `parked` read the first.
             k = findfirst(x -> x.id == q.id, questions)
+            if k !== nothing && questions[k].answer !== nothing
+                # the owner's earlier ruling is carried into the new question rather than overwritten:
+                # it is what the fix was made on (found verifying the review's fixes, 2026-09-27)
+                old = questions[k]
+                q = with_context(q, q.context * " Your earlier answer was \"" * old.answer * "\"" *
+                                    (isempty(old.direction) ? "" : ", with the direction \"" * old.direction * "\"") * ".")
+            end
             k === nothing ? push!(questions, q) : (questions[k] = q)
             println(io, "run: ", f.id, isempty(failed) ? " — the fix is reverted and a question stands for the owner" :
                         " — the fix could NOT be reverted (a later fix conflicts), so the edit stays; a question stands for the owner and the run cannot end as evaluated")
@@ -843,6 +853,10 @@ end
 # A question put inside a run passes the language rules like one put outside it (§8): the question is
 # put whatever they find, and what they find is printed with the rule named, as `gbg ask` does. Until
 # 2026-09-26 a parked finding's `--why` reached the owner unjudged, rule ids and paths and all.
+# A copy of `q` with another context; every other field is carried.
+with_context(q::Model.Question, context::AbstractString) =
+    Model.Question(; (f => getfield(q, f) for f in fieldnames(Model.Question) if f !== :context)..., context = String(context))
+
 function put_question(q::Model.Question, cfg::Model.Config; io::IO = stdout)
     failed = Engine.Questions.report(q, cfg)
     isempty(failed) || (println(io, "run: question ", q.id, " does not read as it should, and is put anyway:"); print(io, failed))

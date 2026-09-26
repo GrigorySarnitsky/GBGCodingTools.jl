@@ -53,13 +53,24 @@ read. Returns the units with their metrics.
 
 A heading, a numbered top-level item and a bold lettered finding each open a new unit, which is what lets
 an append-only document grow by NEW units rather than by swelling one. A key is where the unit is, never
-its position among others of its name; two units that would still share one are listed in `collisions`
-and the later is left out, since no number given to it would stay with it.
+its position among others of its name; two sections that would still share one are listed in
+`collisions` and the later is left out. The row each key had before 2026-09-26 goes in `legacy`.
 """
 function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,String}} = nothing,
-               collisions::Vector{String} = String[])
+               collisions::Vector{String} = String[], legacy::Dict{String,String} = Dict{String,String}())
     out = Dict{String,NamedTuple}()
     note_owner!(key, f) = owners === nothing ? nothing : (owners[key] = f)
+    # The key each unit had before 2026-09-26 — the file's basename, the joined heading cut at sixty,
+    # and a positional `(n)` on a repeat — computed in the same walk, so a package's recorded rows
+    # still find their units: GBGPeriodicFields' baseline holds `… (2)` rows, and matching only the
+    # new keys turned its build red on upgrade. It is read where the new key has no row, and never
+    # written.
+    seen = Set{String}()
+    function old_key(k)
+        key = k; n = 2
+        while key in seen; key = k * " ($n)"; n += 1; end
+        push!(seen, key); return key
+    end
     # A file is named by its basename, which every recorded row uses — and by its path where two files
     # read share a basename, or their units would be one.
     shared = Set(b for b in basename.(files) if count(==(b), basename.(files)) > 1)
@@ -67,9 +78,9 @@ function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,St
     # A key that already exists is a DIFFERENT unit with the same name. It used to take a positional
     # suffix, `(2)`, which moved to another unit whenever one of the same name was inserted above it —
     # silently re-pointing a baseline row. It is reported instead, and the author gives it a name.
-    function add!(key, m, f)
+    function add!(key, m, f, was)
         haskey(out, key) && (push!(collisions, key); return)
-        out[key] = m; note_owner!(key, f)
+        out[key] = m; note_owner!(key, f); legacy[key] = was
     end
     for f in files
         path = joinpath(root, f)
@@ -82,7 +93,13 @@ function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,St
                 # one binding and two docstrings, so a key that is only the binding collapses them and
                 # matches neither in a package's recorded baseline.
                 sig = Texts.signature_line(d.text)
-                add!("$(label(f)) :: $(first(isempty(sig) ? d.node : sig, 60))", metrics(d.text), f)
+                name = first(isempty(sig) ? d.node : sig, 60)
+                key = "$(label(f)) :: $name"
+                # Two docstrings of one file sharing a key — two methods whose signatures agree in their
+                # first sixty characters — cannot be told apart by a heading, which a docstring has
+                # none of; the later carries its line instead.
+                haskey(out, key) && (key *= " (line $(d.line))")
+                add!(key, metrics(d.text), f, old_key("$(basename(f)) :: $name"))
             end
         else
             # The heading is cut to sixty characters and the item or finding after it is kept whole:
@@ -90,7 +107,8 @@ function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,St
             section = "(preamble)"; tail = ""; heading = ""; buf = IOBuffer(); fenced = false
             flush!() = begin
                 body = String(take!(buf))
-                isempty(strip(body)) || add!("$(label(f)) § $(first(section, 60))$tail", metrics(body), f)
+                isempty(strip(body)) || add!("$(label(f)) § $(first(section, 60))$tail", metrics(body), f,
+                                             old_key("$(basename(f)) § $(first(section * tail, 60))"))
             end
             for line in split(read(path, String), '\n')
                 # A fenced block is code, a diagram or a doctest — never prose a reader parses, and
@@ -165,6 +183,24 @@ allowance(n::Integer) = max(10, ceil(Int, 0.05 * n))
 # directory from inside every docs build until 2026-09-26.
 const IN_RUN = Ref(false)
 
+# The same grant, to the site build a run starts: `Site.build` runs the package's `docs/make.jl` as a
+# child process, where `IN_RUN` is false, and a fix within the allowance turned the fix→verify build
+# red and was reverted at the close. The run sets this variable on that child alone; CI and a plain
+# docs build never do, so a build on a fresh clone still answers alike.
+const RUN_ALLOWANCE = "GBG_RUN_ALLOWANCE"
+in_run() = IN_RUN[] || get(ENV, RUN_ALLOWANCE, "") == "1"
+
+# The recorded row of a unit: under its key, or under the key it had before 2026-09-26 where the new
+# one has none and no other unit holds the old one.
+function recorded_row(base, key, legacy, us)
+    b = get(base, csvkey(key), nothing)
+    b === nothing || return (b, csvkey(key))
+    was = get(legacy, key, "")
+    (isempty(was) || haskey(us, was)) && return (nothing, "")
+    b = get(base, csvkey(was), nothing)
+    return b === nothing ? (nothing, "") : (b, csvkey(was))
+end
+
 """
     record_grown(root, cfg) -> Vector{String}
 
@@ -178,13 +214,15 @@ build [ruled 2026-09-26]. Growth past it is the build's to refuse, never the clo
 """
 function record_grown(root::AbstractString, cfg)
     base = something(baseline(root), Dict{String,NTuple{3,Int}}())
-    us = units(root, files_of(root, cfg))
+    legacy = Dict{String,String}()
+    us = units(root, files_of(root, cfg), nothing, String[], legacy)
     grown = String[]
     for k in sort!(collect(keys(us)))
         u = us[k]; key = csvkey(k); now = (u.words, u.longest, u.admonitions)
-        b = get(base, key, nothing)
+        b, row = recorded_row(base, k, legacy, us)
         (b !== nothing && any(now .> b)) || continue
         (now[1] <= b[1] + allowance(b[1]) && now[2] <= b[2] + allowance(b[2]) && now[3] <= b[3]) || continue
+        row == key || delete!(base, row)      # re-recorded under its new key
         base[key] = (max(now[1], b[1]), max(now[2], b[2]), max(now[3], b[3]))
         push!(grown, "$key: words $(b[1])→$(now[1]), longest paragraph $(b[2])→$(now[2])")
     end
@@ -214,17 +252,18 @@ function prose_shape(root::AbstractString, cfg)
     cat = parentmodule(@__MODULE__)
     files = files_of(root, cfg)
     base = baseline(root)
-    slack = IN_RUN[] ? allowance : (n -> 0)
+    slack = in_run() ? allowance : (n -> 0)
     out = Model.Location[]
     owners = Dict{String,String}()
     collisions = String[]
-    us = units(root, files, owners, collisions)
+    legacy = Dict{String,String}()
+    us = units(root, files, owners, collisions, legacy)
     for key in unique(collisions)
         push!(out, Model.Location(; file = get(owners, key, ""), line = 0,
             text = "$key: two units share this name, and a number given to the second would move whenever one is inserted above it — give it a heading of its own"))
     end
     for (key, u) in sort!(collect(us))
-        recorded = base === nothing ? nothing : get(base, csvkey(key), nothing)
+        recorded = base === nothing ? nothing : recorded_row(base, key, legacy, us)[1]
         # The finding NAMES its file. It carried an empty one, so a per-file switch could never reach
         # this rule and a reader was left to find the unit from the key alone.
         where_ = get(owners, key, "")
@@ -311,18 +350,21 @@ lines, sorted.
 """
 function changes(root::AbstractString, cfg)
     base = something(baseline(root), Dict{String,NTuple{3,Int}}())
-    us = units(root, files_of(root, cfg))
+    legacy = Dict{String,String}()
+    us = units(root, files_of(root, cfg), nothing, String[], legacy)
     out = String[]
+    carried = Set{String}()           # old rows a unit is still measured against, under its new key
     for k in sort!(collect(keys(us)))
         u = us[k]; now = (u.words, u.longest, u.admonitions); key = csvkey(k)
-        b = get(base, key, nothing)
+        b, row = recorded_row(base, k, legacy, us)
+        push!(carried, row)
         if b === nothing
             push!(out, "NEW      $key: words $(now[1]), longest paragraph $(now[2]), admonitions $(now[3])")
         elseif any(now .> b)
             push!(out, "RAISED   $key: words $(b[1])→$(now[1]), longest paragraph $(b[2])→$(now[2]), admonitions $(b[3])→$(now[3])")
         end
     end
-    kept = Set(csvkey.(keys(us)))
+    kept = union(Set(csvkey.(keys(us))), carried)
     append!(out, ["DROPPED  $k" for k in sort!([k for k in keys(base) if !(k in kept)])])
     return out
 end

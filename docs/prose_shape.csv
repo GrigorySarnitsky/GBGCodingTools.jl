@@ -48,6 +48,7 @@ unit,words,longest_paragraph,admonitions
 "Agents.jl :: arguments_path(root, id) -> String",32,28,0
 "Agents.jl :: collect_results(root, id, cfg) -> (findings, verdicts, silen",276,83,0
 "Agents.jl :: continue_stage(root, id) -> Union{NamedTuple,Nothing}",189,89,0
+"Agents.jl :: driver_sha(root, id) -> String",42,38,0
 "Agents.jl :: finding_dict(f) -> Dict",34,31,0
 "Agents.jl :: launched_at(root, id) -> Union{String,Nothing}",33,29,0
 "Agents.jl :: material(cfg, root) -> Vector{String}",44,40,0
@@ -108,8 +109,8 @@ unit,words,longest_paragraph,admonitions
 "Checks.jl :: run_patterns(cfg, root; intention = nothing) -> Vector{Tuple",123,51,0
 "Checks.jl :: run_rule(rule, cfg, root; network = false, history = false, ",160,102,0
 "ConfigIO.jl :: ConfigError",33,19,0
-"ConfigIO.jl :: ConfigIO",120,51,0
-"ConfigIO.jl :: append_settled(root, s) -> String",99,68,0
+"ConfigIO.jl :: ConfigIO",121,52,0
+"ConfigIO.jl :: append_settled(root, s) -> String",120,89,0
 "ConfigIO.jl :: find_root(start = pwd()) -> Union{String,Nothing}",83,49,0
 "ConfigIO.jl :: narrow(v) -> AbstractVector",59,28,0
 "ConfigIO.jl :: read_config(root) -> Model.Config",42,39,0
@@ -265,7 +266,7 @@ unit,words,longest_paragraph,admonitions
 "Render.jl :: block_spans(lines) -> Vector{UnitRange{Int}}",61,58,0
 "Render.jl :: call_drift(root) -> Vector{Model.Location}",61,58,0
 "Render.jl :: ci(cfg) -> String",135,66,0
-"Render.jl :: ci_drift(cfg, root) -> Vector{Model.Location}",77,41,0
+"Render.jl :: ci_drift(cfg, root) -> Vector{Model.Location}",86,50,0
 "Render.jl :: claude_block(cfg) -> String",103,54,0
 "Render.jl :: collisions(cfg, root) -> Vector{Pair{String,String}}",152,106,0
 "Render.jl :: family_of(id) -> Symbol",24,21,0
@@ -477,12 +478,12 @@ unit,words,longest_paragraph,admonitions
 "Wire.jl :: init(root; io = stdout) -> Int",119,49,0
 "Wire.jl :: package_root(start) -> Union{String,Nothing}",85,51,0
 "Wire.jl :: sync(root; check = false, io = stdout) -> Int",89,36,0
-"Witnesses.jl :: WitnessResult",112,102,0
+"Witnesses.jl :: WitnessResult",107,97,0
 "Witnesses.jl :: Witnesses",89,88,0
 "Witnesses.jl :: blocked_reason(path) -> Union{String,Nothing}",26,23,0
-"Witnesses.jl :: refusal(path, package) -> Union{String,Nothing}",86,82,0
+"Witnesses.jl :: refusal(path, package) -> Union{String,Nothing}",157,153,0
 "Witnesses.jl :: run(dir; expect, package, project, names = String[], io = st",171,71,0
-"Witnesses.jl :: run_one(path; project, package) -> WitnessResult",237,109,0
+"Witnesses.jl :: run_one(path; project, package) -> WitnessResult",257,129,0
 "Witnesses.md § Witnesses",22,22,1
 "arguments.jl :: ARGS_FORM",18,17,0
 "arguments.jl :: RULES",6,5,0
@@ -564,7 +565,7 @@ unit,words,longest_paragraph,admonitions
 "latex.jl :: spacing(text, cfg) -> Vector{Model.Location}",80,58,0
 "modules.jl :: RULES",6,5,0
 "modules.jl :: Rules.Modules",98,49,0
-"modules.jl :: displayed_signatures(root, cfg) -> Tuple",68,64,0
+"modules.jl :: displayed_signatures(root, cfg) -> Tuple",64,60,0
 "modules.jl :: owners(pkg, cfg) -> Dict{String,Symbol}",34,30,0
 "modules.jl :: signature_fidelity(loaded, cfg) -> Vector{Model.Location}",121,59,0
 "modules.jl :: xlink(loaded, cfg) -> Vector{Model.Location}",86,45,0

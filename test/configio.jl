@@ -227,6 +227,13 @@ end
     @test occursin("quoted expression", only(problems("Config(package = \"P\", tool = quote getpid() end)")))
     @test occursin("twice", only(problems(P * "switches = [Switch(target = :a, reason = \"x\", reason = \"y\")])")))
     @test occursin("positional", only(problems(P * "switches = [Switch(:dropped, target = :b, reason = \"r\")])")))
+    # §5.2 admits keyword calls only: a call positional throughout is refused too, for every constructor
+    @test occursin("positional", only(problems(P * "switches = [Switch(:b, \"r\", [\"f\"])])")))
+    @test occursin("positional", only(problems("Config(\"P\", :dev)")))
+    # a bare `[]` is one line naming the fix, not a MethodError's candidate list
+    let p = only(problems(P * "settings = [Setting(rule = Symbol(\"RULE.TEX.MATHBF\"), name = :mathbf_allowed, value = [])])"))
+        @test !occursin('\n', p) && occursin("String[]", p)
+    end
     # a typed list is built as its type, so a list-valued setting can be written, empty or not
     let cfg = CIO.read_config(in_config(P * """settings = [Setting(rule = Symbol("RULE.TEX.MATHBF"), name = :mathbf_allowed, value = String["x"]),
                                                           Setting(rule = Symbol("RULE.TEX.MATHBF"), name = :mathbf_allowed, value = String[])])"""))
@@ -240,6 +247,24 @@ end
         CIO.append_settled(dir, MM.Settled(question = "q3", text = "three", date = "2026-09-26"))
         @test [s.question for s in CIO.read_settled(dir)] == ["q1", "q2", "q3"]
         @test CIO.read_settled(dir)[1].text == "keep the \$x\$ form"
+    end
+    # the owner's comment block above the vector survives an appended ruling, byte for byte
+    let dir = in_config(FULL), f = joinpath(dir, ".gbg", "settled.jl")
+        head = "# My own notes on these rulings.\n#\n\n# second paragraph\n"
+        write(f, head * "[\n]\n")
+        CIO.append_settled(dir, MM.Settled(question = "q1", text = "one", date = "2026-09-27"))
+        @test startswith(read(f, String), head * "[\n")
+        @test [s.question for s in CIO.read_settled(dir)] == ["q1"]
+    end
+    # a package may switch off, or defer, a pattern rule of its own
+    let own = [MM.PatternRule(id = :NO_TODO, statement = "s", fileset = MM.FileSet.PAGES, pattern = r"TODO", forbidden = true)]
+        vv(cfg) = CIO.validate(cfg, mktempdir(; cleanup = true))
+        @test !any(p -> occursin("NO_TODO", p), vv(MM.Config(package = "P", tool = :dev, rules = own,
+                                                          switches = [MM.Switch(target = :NO_TODO, reason = "r")])))
+        @test !any(p -> occursin("NO_TODO", p), vv(MM.Config(package = "P", tool = :dev, rules = own,
+                                                          deferrals = [MM.Deferral(rule = :NO_TODO, until = "x")])))
+        @test any(p -> occursin("NO_TODO", p), vv(MM.Config(package = "P", tool = :dev,
+                                                         switches = [MM.Switch(target = :NO_TODO, reason = "r")])))
     end
     # a setting on a retired rule or naming no parameter, and a deferral beside a file switch, are refused
     v(cfg) = CIO.validate(cfg, mktempdir(; cleanup = true))
@@ -257,6 +282,18 @@ end
     # a reader switched off leaves its rules as gaps, one each, never silence
     let (_, gaps) = G.Catalogue.panel(:documentation_review, MM.Config(package = "P", tool = :dev, switches = [MM.Switch(target = :withheld, reason = "r")]))
         @test any(g -> occursin("withheld reader, which P has switched off", g), gaps)
+    end
+    # `gbg check` does not send a network rule to the build or the suite, which never allow the network
+    let d = in_config("Config(package = \"P\", tool = :dev)")
+        mkpath(joinpath(d, "docs", "src")); write(joinpath(d, "docs", "src", "a.md"), "# A\n\nText.\n")
+        out = sprint(io -> G.Check.run(d; intention = MM.Intention.DOCUMENTATION, io))
+        @test occursin(r"RULE\.CIT\.RESOLVES — only `gbg check --network`", out)
+        @test !occursin(r"RESOLVES[^\n]*the docs build and the test suite", out)
+    end
+    # and so does a declared discipline switched off
+    let (_, gaps) = G.Catalogue.panel(:documentation_review, MM.Config(package = "P", tool = :dev, disciplines = [:differential_geometry],
+                                                                       switches = [MM.Switch(target = :differential_geometry, reason = "r")]))
+        @test any(g -> occursin("RULE.DOC.COORD_FREE", g) && occursin("differential_geometry reader, which P has switched off", g), gaps)
     end
     # the banner names the version that ran, and the pin beside it where they differ
     @test occursin("the config pins v0.0.1", G.Engine.Harness.banner(MM.Config(package = "P", tool = v"0.0.1")))
@@ -278,6 +315,10 @@ end
     @test any(((id, _),) -> id === :no_todo, G.Engine.Checks.run_all(cfg, dir; intention = MM.Intention.DOCUMENTATION))
     # the harness throws on the package's code rule, and a rule passed to it runs BESIDE the rulebook
     @test_throws ErrorException redirect_stdout(devnull) do; G.Engine.Harness.test(dir); end
+    # and names the package's rule on its line, like any other finding
+    let msg = try redirect_stdout(devnull) do; G.Engine.Harness.test(dir); end; "" catch e; sprint(showerror, e) end
+        @test occursin(r"no_fixme\s+src/P\.jl:2", msg)
+    end
     ran = Symbol[]
     spy = MM.Rule(id = :spy, statement = "s", why = "w", intention = MM.Intention.CODE,
                   check = MM.ProgramCheck(MM.Input.FILE_TREE, (r, c) -> (push!(ran, :spy); MM.Location[]), false))

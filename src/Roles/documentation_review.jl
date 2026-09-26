@@ -191,8 +191,14 @@ function derive(rules::Vector{Model.Rule}, cfg::Model.Config)
     end
     for d in DISCIPLINES
         d.id in cfg.disciplines || continue
-        off(cfg, d.id) && continue
         mine = [r.id for r in tagged if r.discipline === d.id && !(AC.NOTHING in r.access)]
+        if off(cfg, d.id)
+            # the same as a switched-off bundle reader: its rules are gaps, one each, never silence
+            for id in mine
+                push!(gaps, "$id needs the $(d.id) reader, which $(cfg.package) has switched off, so nobody judges it")
+            end
+            continue
+        end
         # What no rule names is this reader's; what a rule names is the rule's, and a second report of it
         # under the expert's name is one defect counted twice. The source is in front of this reader
         # because the full bundle carries it, and the sentence says what it is for.

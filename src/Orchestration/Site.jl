@@ -57,8 +57,11 @@ function build_with_make(root::AbstractString, cfg::Model.Config; io::IO = stdou
     make = joinpath(root, "docs", "make.jl")
     isfile(make) || (println(io, "run: ", relpath(make, root), " does not exist; the site cannot be built"); return nothing)
     cmd = `$(Base.julia_cmd()) --startup-file=no --project=$(joinpath(root, "docs")) $make`
+    # The build a run starts grants the prose allowance, which the child cannot learn otherwise: it is
+    # a fresh process, and a fix the run may make would otherwise turn its own verify build red.
+    cmd = addenv(setenv(cmd; dir = root), Catalogue.Shape.RUN_ALLOWANCE => "1")
     ok = try
-        Base.run(pipeline(setenv(cmd; dir = root); stdout = io, stderr = io))
+        Base.run(pipeline(cmd; stdout = io, stderr = io))
         true
     catch
         false

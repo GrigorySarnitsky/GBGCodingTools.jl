@@ -7,4 +7,5 @@
 GBGCodingTools.Witnesses
 GBGCodingTools.Witnesses.WitnessResult
 GBGCodingTools.Witnesses.run
+GBGCodingTools.Witnesses.refusal
 ```

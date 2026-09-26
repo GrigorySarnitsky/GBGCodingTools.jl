@@ -124,7 +124,7 @@ function site_of(slug::AbstractString)
     return "https://" * lowercase(owner) * ".github.io/" * repo * "/"
 end
 
-include("Rules/rendering.jl")     # one file per batch of the conversion
+include("Rules/rendering.jl")     # one file per subject: what a rule reads, or what kind of judgement it asks
 include("Rules/docstrings.jl")
 include("Rules/arguments.jl")
 include("Rules/latex.jl")

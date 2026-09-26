@@ -83,9 +83,10 @@ const COORDINATE = [
     r"\bRULE\.[A-Z]+\.[A-Z_]+" => "a rule id",
     r"\b[A-Za-z0-9_]+/[A-Za-z0-9_./-]+\.(jl|md|toml|json|ya?ml|sh)\b" => "a file path",
     r"\b[a-z][A-Za-z0-9_]*\(\)" => "a function call",
-    # Two characters at least before the dot, and never an English abbreviation: `e.g.` and `i.e.` are
-    # how a sentence gives an example, which `one_decision` already allows for.
-    r"\b(?!(?:e\.g|i\.e|etc|vs|cf)\b)[A-Za-z_][A-Za-z0-9_]+\.[a-z][A-Za-z0-9_]*\b" => "a qualified name",
+    # Any `a.b` is a qualified name — `io.write` as much as `Config.read` — except the English
+    # abbreviations listed here: `e.g.` and `i.e.` are how a sentence gives an example, which
+    # `one_decision` already allows for. The list is the only exception.
+    r"\b(?!(?i:e\.g|i\.e|etc|vs|cf)\b)[A-Za-z_][A-Za-z0-9_]*\.[a-z][A-Za-z0-9_]*\b" => "a qualified name",
 ]
 
 """
@@ -209,10 +210,14 @@ const NO_COORDINATES = Model.Rule(
         Model.QuestionExample(Model.Question(id = "q", decision = "Should the option named `spectral` stay?"),
             Model.Location[], "names no rule, file or code"),
         # An English abbreviation is not a qualified name; a qualified name is.
-        Model.QuestionExample(Model.Question(id = "q", decision = "Should the cap stay, e.g. at 120 words, i.e. as now?"),
+        Model.QuestionExample(Model.Question(id = "q", decision = "Should the cap stay, e.g. at 120 words, i.e. as now, etc.?",
+                                             context = "Pages vs. docstrings, cf. the last run."),
             Model.Location[], "names no rule, file or code"),
         Model.QuestionExample(Model.Question(id = "q", decision = "Should Shape.allowance stay at ten words?"),
             [Model.Location(; file = "", node = "decision")], "names no rule, file or code"),
+        Model.QuestionExample(Model.Question(id = "q", decision = "Should io.write stay?", context = "Config.read is the other."),
+            [Model.Location(; file = "", node = "decision"), Model.Location(; file = "", node = "context")],
+            "names no rule, file or code"),
     ])
 
 const NO_HOUSE_TERMS = Model.Rule(

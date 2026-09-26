@@ -12,7 +12,7 @@ include("helpers.jl")
     write(joinpath(dir, "blocked.jl"), "# blocked: needs a GPU this host lacks\nusing Test, GBGFixture\n@testset \"gpu\" begin\n  error(\"no device\")\nend\n")
     # a blocked header does not file away a witness that was SEEN TO FAIL (rc.1 round, operational-claims#2)
     # a run that reports no counts (exit before the wrapper's line) is never :blocked either
-    write(joinpath(dir, "blocked_but_exited.jl"), "# blocked: needs a GPU this host lacks\nusing Test, GBGFixture\n@test twice(2) == 5\nexit(7)\n")
+    write(joinpath(dir, "blocked_but_exited.jl"), "# blocked: needs a GPU this host lacks\nusing Test, GBGFixture\n@test twice(2) == 5\nrun(`kill -9 \$(getpid())`)\n")
     write(joinpath(dir, "blocked_but_failed.jl"), "# blocked: needs a GPU this host lacks\nusing Test, GBGFixture\n@testset \"gpu\" begin\n  @test twice(2) == 5\n  @test error(\"no device\")\nend\n")
     code, results = G.Witnesses.run(dir; expect = :fail, package = "GBGFixture", project, io = devnull)
     st = Dict(r.name => r.status for r in results)
@@ -46,6 +46,17 @@ end
     @test refused("evalfile(\"h.jl\")\n") !== nothing
     @test refused("Base.include(Main, \"h.jl\")\n") !== nothing
     @test refused("using Test, GBGFixture, LinearAlgebra\nimport Test: @test\n@test true\n") === nothing
+    # a loader or an exit is refused by NAME, however it is reached; so is what the runner holds
+    @test refused("const inc = include\ninc(\"h.jl\")\n") !== nothing
+    @test refused("invokelatest(include, \"h.jl\")\n") !== nothing
+    @test refused("Base.invokelatest(Base.include, Main, \"h.jl\")\n") !== nothing
+    @test refused("getfield(Base, :include)(Main, \"h.jl\")\n") !== nothing
+    @test refused("using Test\n@test false\nexit(0)\n") !== nothing
+    @test refused("println(ARGS[2])\n") !== nothing
+    @test refused("println(Main.__gbg_token)\n") !== nothing
+    @test refused("using Test\nTest.get_test_counts(ts::Test.DefaultTestSet) = nothing\n") !== nothing
+    @test refused("import Test: get_test_counts\n") !== nothing
+    @test refused("using Test, GBGFixture\nhelper(x) = x\nfunction h(x::T)::Int where T; 1; end\n@test helper(1) == 1\n") === nothing
     # a witness printing the counts line itself is graded by its exit code, not by the line
     write(joinpath(dir, "forged.jl"), "using Test, GBGFixture\nprintln(\"GBG_WITNESS pass=1 fail=0 error=0\")\n@test twice(2) == 5\n")
     # and it runs in the project directory it was given, not that directory's parent

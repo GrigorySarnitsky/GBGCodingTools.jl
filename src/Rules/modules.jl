@@ -176,15 +176,15 @@ dehat(a::Symbol) = Symbol(replace(String(a), "̂" => ""))
 """
     displayed_signatures(root, cfg) -> Tuple
 
-Every signature a docstring displays, as the positional and keyword names it shows, keyed by the binding
-and the file of the docstring that shows it, with the keys whose signature elides arguments behind a
-splat. The arguments are `root`, the package root, and `cfg`, the package's config, which names the
-files. Returns `(positional, keyword, elided, shown_in)`, the last giving each key's docstring line.
+Every signature a docstring displays, as the positional and keyword names it shows, keyed by binding
+and file, with the keys whose signature elides arguments behind a splat. The arguments are `root`, the
+package root, and `cfg`, the package's config. Returns `(positional, keyword, elided, shown_in,
+arg_in)`: each key's first docstring line, and the first line showing each `(name, file, argument)`.
 """
 function displayed_signatures(root::AbstractString, cfg)
     Key = Tuple{Symbol,String}
     positional = Dict{Key,Set{Symbol}}(); keyword = Dict{Key,Set{Symbol}}()
-    elided = Set{Key}(); shown_in = Dict{Key,Int}()
+    elided = Set{Key}(); shown_in = Dict{Key,Int}(); arg_in = Dict{Tuple{Symbol,String,Symbol},Int}()
     note!(d, key, args) = union!(get!(d, key, Set{Symbol}()), args)
     function harvest!(ex, file, line)
         ex isa Expr && ex.head === :where && return harvest!(ex.args[1], file, line)
@@ -209,6 +209,9 @@ function displayed_signatures(root::AbstractString, cfg)
         end
         note!(positional, key, dehat.(pos)); note!(keyword, key, kw)
         get!(shown_in, key, line)
+        for a in [dehat.(pos); kw]
+            get!(arg_in, (name, file, a), line)
+        end
     end
     for f in Texts.files(cfg, root, Model.FileSet.CODE)
         path = joinpath(root, f)
@@ -231,7 +234,7 @@ function displayed_signatures(root::AbstractString, cfg)
             end
         end
     end
-    return (positional, keyword, elided, shown_in)
+    return (positional, keyword, elided, shown_in, arg_in)
 end
 
 # Every module of the package, nested ones included: a module two levels down is as much the package's as a
@@ -265,7 +268,7 @@ skipped too.
 """
 function signature_fidelity(loaded, cfg)
     pkg, root = loaded.pkg, loaded.root
-    shown, shown_kw, elided, shown_in = displayed_signatures(root, cfg)
+    shown, shown_kw, elided, shown_in, arg_in = displayed_signatures(root, cfg)
     mods = modules_of(pkg)
     # A module with no package directory — one an example loaded into memory — has methods whose file is
     # not a path at all, so the filter that keeps a package's own methods would reject every one of them.
@@ -300,26 +303,46 @@ function signature_fidelity(loaded, cfg)
 
     exported = Set(names(pkg))
     by_export = length(exported) > 1      # a package that exports nothing publishes through its docstrings
-    out = Model.Location[]
+    # Every docstring held to one function is read together: a function whose methods are documented in
+    # two files shows its keywords across both, and one file's docstring compared alone reported the
+    # other file's keywords as shown nowhere. Grouping by the RESOLVED function, not by name, still
+    # keeps two modules' namesakes apart.
+    groups = Dict{Any,Vector{Tuple{Symbol,String}}}()
     for key in sort!(collect(keys(shown)))
         name, file = key
         (!by_export || name in exported) || continue
         f = resolve(name, file)
         f === nothing && continue
-        def = defined_sets(f)
+        push!(get!(groups, f, Tuple{Symbol,String}[]), key)
+    end
+    out = Model.Location[]
+    for keys_ in sort!(collect(values(groups)); by = first)
+        def = defined_sets(resolve(keys_[1]...))
         def === :extension && continue
-        # At the docstring that displays the signature: a finding with no file could be neither
-        # switched off for that file nor anchored, and sent a fixer nowhere.
-        line = shown_in[key]; node = String(name)
-        for a in sort!(collect(setdiff(shown_kw[key], def.kw)))
+        name = keys_[1][1]; node = String(name)
+        all_kw = union((shown_kw[k] for k in keys_)...)
+        all_pos = union((shown[k] for k in keys_)...)
+        # At the docstring that displays the disagreeing argument; a keyword no signature displays is
+        # reported at the first docstring of the name. A finding with no file could be neither switched
+        # off for that file nor anchored, and sent a fixer nowhere.
+        function at(a)
+            for (n, file) in keys_
+                haskey(arg_in, (n, file, a)) && return (file, arg_in[(n, file, a)])
+            end
+            return (keys_[1][2], shown_in[keys_[1]])
+        end
+        for a in sort!(collect(setdiff(all_kw, def.kw)))
+            file, line = at(a)
             push!(out, Model.Location(; file, line, node,
                 text = "$name: the displayed keyword `$a` matches no defined method"))
         end
-        for a in (key in elided ? Symbol[] : sort!(collect(setdiff(def.kw, shown_kw[key]))))
+        for a in (any(in(elided), keys_) ? Symbol[] : sort!(collect(setdiff(def.kw, all_kw))))
+            file, line = keys_[1][2], shown_in[keys_[1]]
             push!(out, Model.Location(; file, line, node,
                 text = "$name: the defined keyword `$a` appears in no displayed signature"))
         end
-        for a in (def.unnamed ? Symbol[] : sort!(collect(setdiff(shown[key], def.pos, def.kw))))
+        for a in (def.unnamed ? Symbol[] : sort!(collect(setdiff(all_pos, def.pos, def.kw))))
+            file, line = at(a)
             push!(out, Model.Location(; file, line, node,
                 text = "$name: the displayed positional `$a` matches no defined argument name"))
         end
