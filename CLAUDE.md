@@ -29,7 +29,8 @@ The managed block above imports the shared policy; this file holds only what is 
 
 ## Where the rebuild stands
 
-**Phase 4 of `IMPLEMENTATION.md` is COMPLETE** (2026-09-22); **Phase 5 is next**, and it cuts `v2.0.0`.
+**Phase 5 of `IMPLEMENTATION.md` is BUILT** (2026-09-26, everything before HT; `v2.0.0-rc.27`); what remains of it
+is HT wired by its own session and the `v2.0.0` tag, both on the owner's word.
 The new tree stands whole: `Model`, `Texts`, `Catalogue`, `ConfigIO`, `Engine` (`Checks`, `Guard`,
 `Harness`), `Render`, `Study` and `Orchestration` (`Runs`, `Site`, `Scope`, `Agents`), with `Wire`,
 `Check`, `Docfix`, `Run`, `StudyCmd` and `Release` above them. A documentation review runs end to end in

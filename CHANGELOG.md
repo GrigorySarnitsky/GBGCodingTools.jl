@@ -4,6 +4,32 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.27 — 2026-09-26
+
+MINOR: **Phase 5, everything before GBGHomogeneousTurbulence.** The third stroke is deleted — `Scan.jl`,
+`Reflection.jl`, `DocLints.jl`, `HtmlWalker.jl`, `TreeHash.jl`, the old `Config` and `Ledger`, `.gbg/config.toml`,
+`catalog/` — with the verbs `config`, `probe` and `scan`; what still had a reader was harvested (the derived public
+surface into `TestHarness`, the tree hash into `Self.jl`). `makedocs` takes the package ROOT and nothing else.
+
+**The git rules are programs.** `RULE.GIT.CI_MANUAL`, `MANIFEST_TRACKED` and `REQUESTS` run in every test suite from
+the files: a test workflow fires on `workflow_dispatch` and release tags alone, every sub-environment manifest is
+ignored (a tracked root manifest is declared by a file-scoped switch), a request is `to-<PKG>-<date>-<topic>.md`
+opening with `Status:`. `RULE.GIT.BRANCH`, `PUSH` and `TRAILER` are checked by the Stop hook, on what is not yet
+pushed — the hook `gbg sync` writes carries each rule's own lines, and `gbg check` runs the same lines; a build never
+does. The rulebook says beside each that a hook check is weaker than a build check. `TRAILER` now reads "carries a
+`Co-Authored-By: … <noreply@anthropic.com>` trailer". `NO_SHIMS` stays an instruction.
+
+**The four harness contracts bind a package that declares them** by calling the contract from its suite; a package
+that has not is not bound. A package's switches on them that only said "no such storage here" are moot.
+
+**The deferral.** `Deferral(rule = …, until = …)` in `.gbg/config.jl`: the rule is owed here and not yet met, with
+what would close it. It reports nothing in a build or test, fails neither, is rendered beside the switches on the
+package's site and in its rulebook, and printed by `gbg check`. A switch on the same rule is refused.
+
+**A retired rule states its fate**, MOVED to a design section that must exist or OBSOLETE. `gbg release --counts`
+prints what still holds `v2.0.0` — 0. Also fixed: a file under an excluded directory is excluded whatever a nested
+`.gitignore` says, as git decides it.
+
 ## 2.0.0-rc.26 — 2026-09-26
 
 PATCH, one ruling on PF's item 7: nine cross-references that resolve to nothing were committed under

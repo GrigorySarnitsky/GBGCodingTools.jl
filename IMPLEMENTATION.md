@@ -208,10 +208,12 @@ owner's answers of 2026-09-21. The phase is five pieces:
 
 **Owner:** the decisions of the amendment's §6, all answered on 2026-09-21.
 
-### Phase 5 — The rest of the rulebook, and GBGCloudPhysics (amended 2026-09-21)
+### Phase 5 — The rest of the rulebook, and GBGHomogeneousTurbulence (amended 2026-09-21; built before HT 2026-09-26)
 
 **Ends with** the rulebook finished — every rule checked by a program, judged by a reader, or an instruction the session
 is given (ruled 2026-09-21), and nothing else remaining — a second science package wired, and one machine in the tree.
+**Built** 2026-09-26, everything before HT, in three commits and one session (`78b3020`, `b6eb5d0`, `15252a2`) and
+released as `v2.0.0-rc.27`; what remains of the phase is the HT wiring, on the owner's word, and the `v2.0.0` tag.
 **Depends on** Phase 4. The coverage sittings the plan foresaw (decisions 9–11) were settled by the owner on
 2026-09-22, and Phase 5 builds his answers rather than asking them:
 
