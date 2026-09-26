@@ -47,6 +47,8 @@ function materialise(rule, example)
             occursin("10.1017/CBO9780511840531", url) ? (200, "Turbulent Flows") :
             occursin("10.1098/rspa.1991.0075", url) ? (200, "The local structure of turbulence in incompressible viscous fluid for very large Reynolds numbers") :
             occursin("10.1016/j.jcp.2009.10.046", url) ? (200, "Implementation of high order spline interpolations for tracking test particles in discretized fields") :
+            # answers only when asked for whole: a DOI cut at its first `)` is a 404
+            endswith(url, "10.1016/0021-9991(84)90019-3") ? (200, "A method") :
             (404, "")
         try
             return CK.run_rule(r, cfg, dir; network = true)
@@ -200,7 +202,7 @@ end
 # Three shapes real consumers write that the rules misread, each reported by the session wiring one.
 @testset "what a real consumer's source looks like" begin
     # an inner constructor's arguments are spelled like fields and are not fields
-    src = split("""
+    src = """
     struct S
       a::Int
       b::Int
@@ -210,7 +212,7 @@ end
         new(a, b)
       end
     end
-    """, '\n')
+    """
     @test G.Catalogue.Docstrings.struct_fields(src, "S") == ["a", "b"]
 
     # a site's trailing slash is optional in a link to it
@@ -257,6 +259,79 @@ end
     # that follow it, which a positional suffix would.
     @test any(k -> occursin("First / item 1", k), ks)
     @test any(k -> occursin("Second / item 1", k), ks)
+end
+
+# Found in the review of 2026-09-26, each a check that read too little or matched too much; the rule's
+# own examples carry most of them, and these are the ones an example cannot show.
+@testset "what the review of 2026-09-26 found" begin
+    rule(id) = G.Catalogue.RULES[findfirst(x -> String(x.id) == id, G.Catalogue.RULES)]
+    S = G.Catalogue.Shape
+
+    # The close re-records growth within the allowance and nothing past it.
+    dir = mktempdir(; cleanup = true); mkpath(joinpath(dir, "docs", "src"))
+    page = joinpath(dir, "docs", "src", "p.md")
+    write(page, "# P\n\n## Notes\n\none two three\n")
+    cfg = MR.Config(package = "P", tool = :dev)
+    S.write_baseline(dir, cfg)
+    write(page, "# P\n\n## Notes\n\n" * join(fill("word", 500), " ") * "\n")
+    @test isempty(S.record_grown(dir, cfg))                                # 3 → 500 is past the allowance
+    @test any(l -> occursin("GREW", l.text), S.prose_shape(dir, cfg))        # and the build still refuses it
+    write(page, "# P\n\n## Notes\n\n" * join(fill("word", 8), " ") * "\n")
+    @test length(S.record_grown(dir, cfg)) == 1                            # 3 → 8 is within it
+    @test isempty(S.prose_shape(dir, cfg))
+
+    # A unit's key does not move when a section of the same name is inserted above it: the two are
+    # reported as sharing a name, and no row is silently re-pointed.
+    write(page, "# P\n\n## Notes\n\ntwo words\n\n## Other\n\nx\n")
+    S.write_baseline(dir, cfg)
+    before = collect(keys(S.units(dir, ["docs/src/p.md"])))
+    write(page, "# P\n\n## Notes\n\nnew\n\n## Notes\n\ntwo words\n\n## Other\n\nx\n")
+    @test !any(k -> occursin("(2)", k), keys(S.units(dir, ["docs/src/p.md"])))
+    @test any(l -> occursin("share this name", l.text), S.prose_shape(dir, cfg))
+    # a long heading keeps each item's number, which cutting the joined key lost
+    long = "A heading long enough that sixty characters end before the item number"
+    write(page, "# P\n\n## $long\n\n1. one\n\n2. two\n")
+    ks = collect(keys(S.units(dir, ["docs/src/p.md"])))
+    @test any(endswith("/ item 1"), ks) && any(endswith("/ item 2"), ks)
+    # two files of one basename are two files
+    mkpath(joinpath(dir, "docs", "src", "a")); mkpath(joinpath(dir, "docs", "src", "b"))
+    write(joinpath(dir, "docs", "src", "a", "index.md"), "# I\n\nOne.\n")
+    write(joinpath(dir, "docs", "src", "b", "index.md"), "# I\n\nTwo.\n")
+    @test length(S.units(dir, ["docs/src/a/index.md", "docs/src/b/index.md"])) == 2
+
+    # The rules that read the loaded package and the docstring set resolve the config's GLOBS, and a
+    # default config names no file at all.
+    dir = mktempdir(; cleanup = true); mkpath(joinpath(dir, "src", "Public"))
+    write(joinpath(dir, "src", "Public", "a.jl"), "\"\"\"\n    measure(u; tol = 1e-6) -> Float64\n\nThe mean.\n\"\"\"\nmeasure(u; atol = 1e-6) = u\n")
+    for c in (MR.Config(package = "P", tool = :dev),
+              MR.Config(package = "P", tool = :dev, filesets = Dict(MR.FileSet.CODE => ["src/**/*.jl"])))
+        shown, _, _, where_ = G.Catalogue.Modules.displayed_signatures(dir, c)
+        @test haskey(shown, (:measure, "src/Public/a.jl")) && where_[(:measure, "src/Public/a.jl")] == 1
+    end
+    write(joinpath(dir, "src", "other.jl"), "x = 1\n")
+    globbed = MR.Config(package = "P", tool = :dev, filesets = Dict(MR.FileSet.DOCSTRINGS => ["src/Public/**/*.jl"]))
+    @test G.Catalogue.Citations.sources(dir, globbed) == ["src/Public/a.jl"]
+
+    # A setting is its rule's alone: one declared under another rule's id redirects nothing.
+    q = MR.Question(id = "q", decision = "Should the C++ binding stay?")
+    own = MR.Config(package = "P", tool = :dev, settings = [MR.Setting(rule = Symbol("RULE.ASK.NO_HOUSE_TERMS"), name = :house_terms, value = ["C++", "f(x)"])])
+    @test length(G.Catalogue.Questions.no_house_terms(q, own)) == 1        # a literal, never a pattern
+    @test isempty(G.Catalogue.Questions.no_house_terms(MR.Question(id = "q", decision = "Should fx stay?"), own))
+    stray = MR.Config(package = "P", tool = :dev, settings = [MR.Setting(rule = Symbol("RULE.DOC.SIBLING_LINK"), name = :house_terms, value = ["C++"])])
+    @test isempty(G.Catalogue.Questions.no_house_terms(q, stray))
+
+    # A history rule that cannot run says so, rather than reporting clean.
+    dir = mktempdir(; cleanup = true)
+    got = withenv("PATH" => "") do
+        rule("RULE.GIT.PUSH").check.run(dir, MR.Config(package = "P", tool = :dev))
+    end
+    @test length(got) == 1 && startswith(got[1].text, "cannot evaluate: ")
+
+    # Documenter 1.x's markup: a docstring's binding is read from the summary, not from the first link.
+    dir = mktempdir(; cleanup = true)
+    Si = G.Catalogue.Site
+    write(joinpath(dir, "a.html"), Si.page_of(Si.docstring_html("M.f", "See [g](#g).")))
+    @test [b.id for b in Si.page_bindings(joinpath(dir, "a.html"))] == ["M.f"]
 end
 
 @testset "the rulebook" begin

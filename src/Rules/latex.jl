@@ -39,7 +39,7 @@ end
 
 """
     pattern_rule(id, statement, why, pattern, breaking, complying, clause;
-                 mask = true, filesets = …) -> Model.Rule
+                 mask = true, filesets = …, more = …) -> Model.Rule
 
 One rule of this family: a pattern, the two examples that show the check matches the statement, and the
 prose that says why it exists. The arguments are:
@@ -53,23 +53,26 @@ prose that says why it exists. The arguments are:
 - `clause` — the clause of the statement these two are for.
 - `mask` — whether code spans are blanked before matching.
 - `filesets` — the file sets it runs over.
+- `more` — further examples, as `(body, breaks, clause)` triples, for a statement with a second clause.
 
 Returns the rule.
 """
 function pattern_rule(id, statement, why, pattern, breaking, complying, clause;
                       mask::Bool = true,
-                      filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS])
+                      filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
+                      more = Tuple{String,Bool,String}[])
     page(body) = "# A page\n\n" * body * "\n"
+    hit = [Model.Location(; file = "docs/src/page.md", line = 3)]
     return Model.Rule(
         id = Symbol(id), statement = statement, why = why,
         intention = Model.Intention.DOCUMENTATION,
         filesets = filesets,
         check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, matching(pattern; mask), false),
-        examples = [
-            Model.TextExample(Model.FileSet.PAGES, page(breaking),
-                              [Model.Location(; file = "docs/src/page.md", line = 3)], clause),
+        examples = vcat([
+            Model.TextExample(Model.FileSet.PAGES, page(breaking), hit, clause),
             Model.TextExample(Model.FileSet.PAGES, page(complying), Model.Location[], clause),
-        ])
+        ], [Model.TextExample(Model.FileSet.PAGES, page(b), breaks ? hit : Model.Location[], c)
+            for (b, breaks, c) in more]))
 end
 
 const DOLLAR_MATH = r"\$[^$\n]*[\\_^{}][^$\n]*\$"
@@ -95,9 +98,14 @@ with two spellings.
 """
 function rendered_math(text::AbstractString, cfg)
     out = Model.Location[]
+    fenced = false
     for (i, line) in pairs(split(text, '\n'))
         raw = String(line)
-        if occursin(DOLLAR_MATH, raw)
+        # A fenced block is code, and a code span is code: an interpolation such as `"\$(a)_\$(b)"` has
+        # two dollars with an underscore between them and is not a formula. Both were read as one.
+        startswith(strip(raw), "```") && (fenced = !fenced; continue)
+        fenced && continue
+        if occursin(DOLLAR_MATH, Texts.mask_code_spans(raw))
             push!(out, Model.Location(; file = "", line = i, text = strip(raw)))
             continue
         end
@@ -107,7 +115,9 @@ function rendered_math(text::AbstractString, cfg)
             occursin(CODE_SYNTAX, span) && continue                 # a call, an index, an assignment: code
             occursin(DIMENSIONS, strip(span)) && continue           # `64×64×64`, as Julia prints it
             occursin(Regex("^\\s*" * Texts.NAME * "?\\s*\$"), strip(span)) && continue   # one token: an operator named
-            length(split(strip(span))) == 1 && !occursin(r"\s", strip(span)) && continue     # `⋅` and its like
+            # A lone glyph names an operator. A formula written tight — `u×v`, `∇⋅u` — is still a
+            # formula, and skipping every span without whitespace let those through.
+            length(strip(span)) == 1 && continue                    # `⋅` and its like
             push!(out, Model.Location(; file = "", line = i, text = "`" * span * "`"))
             break
         end
@@ -138,10 +148,23 @@ const RENDERED_MATH = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe operator `⋅` contracts a `64×64×64` grid through `dot(u ⋅ v, w)`.\n",
             Model.Location[], "never inside a code span"),
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe cross `u×v` and `∇⋅u` here.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "never inside a code span"),
+        # Dollars in code are not mathematics: a docstring's fenced example and a code span hold
+        # interpolations, and the same text in prose is reported.
+        Model.TextExample(Model.FileSet.DOCSTRINGS,
+            "\"\"\"\n    f(x)\n\nWrites `\"\\\$(a)_\\\$(b)\"`:\n\n```julia\nname = \"\\\$(a)_\\\$(b).h5\"\n```\n\"\"\"\nf(x) = x\n",
+            Model.Location[], "never between dollar signs"),
+        Model.TextExample(Model.FileSet.DOCSTRINGS,
+            "\"\"\"\n    f(x)\n\nThe bound \\\$\\\\varepsilon_0\\\$ here.\n\"\"\"\nf(x) = x\n",
+            [Model.Location(; file = "src/Example.jl", line = 4)], "never between dollar signs"),
     ])
 
+# The thin space before a differential is the one the statement excepts, in every spelling of the
+# differential: `\\,\\mathrm{d}x`, `\\, \\mathrm{d}x` and `\\,dx`.
+const DIFFERENTIAL = r"\\,(?!\s*(?:\\mathrm\s*[{ ]?\s*d|d(?![A-Za-z]{2})))"
 const SPACING_PATTERNS = [
-    (r"\\,(?!\\mathrm[ {]d)", "a thin space by hand", "The integral ``\\int f \\, g`` converges.", "The integral ``\\int f g`` converges."),
+    (DIFFERENTIAL, "a thin space by hand", "The integral ``\\int f \\, g`` converges.", "The integral ``\\int f g`` converges."),
     (r"\\[;:](?![a-zA-Z])", "a medium or thick space by hand", "The product ``a \\; b`` is associative.", "The product ``a b`` is associative."),
     (r"\\!\\[bB]ig[lr]", "a negative thin space before a sized delimiter", "The sum ``\\!\\bigl( a \\bigr)`` is finite.", "The sum ``\\bigl( a \\bigr)`` is finite."),
     (r"\\!\\!", "doubled negative thin spaces", "The integral ``\\int\\!\\! f`` over the domain.", "The integral ``\\int f`` over the domain."),
@@ -171,7 +194,7 @@ end
 
 const SPACING = Model.Rule(
     id = Symbol("RULE.TEX.SPACING"),
-    statement = "Spacing inside a formula is the renderer's: no thin space, no medium or thick space, no negative thin space before a sized delimiter, and none of them doubled.",
+    statement = "Spacing inside a formula is the renderer's: no thin space except before a differential, no medium or thick space, no negative thin space before a sized delimiter, and none of them doubled.",
     why = "Hand spacing is tuned to one renderer at one font size and is wrong in every other setting.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
@@ -181,6 +204,14 @@ const SPACING = Model.Rule(
                       Model.TextExample(Model.FileSet.PAGES, "# A page\n\n" * complying * "\n",
                                         Model.Location[], clause)]
                      for (_, clause, breaking, complying) in SPACING_PATTERNS]...,
+                    # The exception, in each spelling of the differential; the same thin space before
+                    # anything else is the first clause's hit.
+                    [Model.TextExample(Model.FileSet.PAGES,
+                        "# A page\n\nThe integral ``\\int f \\, \\mathrm{d}x + \\int g\\,dx + \\int h\\,\\mathrm{d}x`` converges.\n",
+                        Model.Location[], "except before a differential"),
+                     Model.TextExample(Model.FileSet.PAGES,
+                        "# A page\n\nThe integral ``\\int f \\, g \\, \\mathrm{d}x`` converges.\n",
+                        [Model.Location(; file = "docs/src/page.md", line = 3)], "except before a differential")],
                     # The same rule on the other surface, where every LaTeX backslash is doubled. Both
                     # directions: a hand-spaced formula in a docstring is still reported, and the
                     # differential — which a docstring must write `\\\\,\\\\mathrm{d}x` — is not.
@@ -194,10 +225,13 @@ const SPACING = Model.Rule(
 const MATHBB_DIGIT = pattern_rule("RULE.TEX.MATHBB",
     "A blackboard-bold digit is not a set; the identity is written \\mathbb{1} only where it means one.",
     "A blackboard digit renders as an outline numeral, which means nothing to a reader of mathematics.",
-    r"\\mathbb\s*\{?\s*[0-9]",
+    # Any digit but a lone 1, which the statement grants as the identity.
+    r"\\mathbb\s*\{?\s*(?:[02-9]|1[0-9])",
     "The field ``\\mathbb 2`` of two elements.",
     "The field ``\\mathbb{F}_2`` of two elements.",
-    "a blackboard-bold digit is not a set")
+    "a blackboard-bold digit is not a set";
+    more = [("The identity ``\\mathbb{1}`` acts trivially.", false, "the identity is written \\mathbb{1}"),
+            ("The identity ``\\mathbb{12}`` acts trivially.", true, "the identity is written \\mathbb{1}")])
 
 const FRAC_UNBRACED = pattern_rule("RULE.TEX.FRAC_BRACED",
     "Both arguments of a fraction are braced.",
@@ -245,11 +279,15 @@ thinks: the marker lands inside the formula, and everything to the next marker r
 """
 function inline_math_split(text::AbstractString, cfg)
     out = Model.Location[]
-    inspan = false
+    opened = 0
     for (i, line) in pairs(split(text, '\n'))
-        inspan && occursin(INLINE_LEADER, line) &&
-            push!(out, Model.Location(; file = "", line = i, text = strip(String(line))))
-        isodd(count(TWO_BACKTICK, String(line))) && (inspan = !inspan)
+        # A blank line ends a paragraph, and a span cannot cross one: carried past it, one stray marker
+        # — a docstring quoting the marker, a generated empty span — turned every list in the rest of
+        # the file into findings three hundred lines away from it.
+        isempty(strip(line)) && (opened = 0; continue)
+        opened > 0 && occursin(INLINE_LEADER, line) &&
+            push!(out, Model.Location(; file = "", line = i, text = "the span opened at line $opened: " * strip(String(line))))
+        isodd(count(TWO_BACKTICK, String(line))) && (opened = opened > 0 ? 0 : i)
     end
     return out
 end
@@ -267,6 +305,10 @@ const INLINE_MATH_SPLIT = Model.Rule(
             [Model.Location(; file = "docs/src/page.md", line = 4)], "never across a marker"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe bound ``x \\le y`` holds.\n\n- And a bullet.\n",
+            Model.Location[], "never across a marker"),
+        # A stray marker in one paragraph says nothing about the list after the next blank line.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nUnset, it is ``.\n\n- And a bullet.\n- And another.\n",
             Model.Location[], "never across a marker"),
     ])
 
@@ -292,17 +334,36 @@ it uses, and every other one is a reader's guess.
 function mathbf(text::AbstractString, cfg)
     allowed = Set{String}(["\\mathbf{1}"])
     for s in cfg.settings
-        s.name === :mathbf_allowed && s.value isa Vector{String} && union!(allowed, s.value)
+        s.rule === MATHBF.id && s.name === :mathbf_allowed && s.value isa Vector{String} && union!(allowed, s.value)
     end
     out = Model.Location[]
     for (i, line) in pairs(split(text, '\n'))
-        for m in eachmatch(r"\\mathbf(\{[^}]*\})?", Texts.mask_code_spans(line))
-            m.match in allowed && continue
-            push!(out, Model.Location(; file = "", line = i, text = m.match * " in: " * strip(String(line))))
+        masked = Texts.mask_code_spans(line)
+        for m in eachmatch(r"\\mathbf", masked)
+            use = "\\mathbf" * braced_group(masked, m.offset + ncodeunits(m.match))
+            use in allowed && continue
+            push!(out, Model.Location(; file = "", line = i, text = use * " in: " * strip(String(line))))
         end
     end
     return out
 end
+
+# The brace group opening at `from`, matched by depth, or nothing where none opens there: a package
+# admits `\\mathbf{\\hat{k}}`, and a match that stopped at the first `}` never equalled what it listed.
+function braced_group(line::AbstractString, from::Int)
+    (from <= lastindex(line) && line[from] == '{') || return ""
+    depth = 0; i = from
+    while i <= lastindex(line)
+        line[i] == '{' && (depth += 1)
+        line[i] == '}' && (depth -= 1; depth == 0 && return String(line[from:i]))
+        i = nextind(line, i)
+    end
+    return String(line[from:end])
+end
+
+# The one package setting the nested-brace examples run under.
+const MATHBF_EXAMPLE = [Model.Setting(rule = Symbol("RULE.TEX.MATHBF"), name = :mathbf_allowed,
+                                      value = ["\\mathbf{\\hat{k}}"])]
 
 const MATHBF = Model.Rule(
     id = Symbol("RULE.TEX.MATHBF"),
@@ -317,6 +378,11 @@ const MATHBF = Model.Rule(
             [Model.Location(; file = "docs/src/page.md", line = 3)], "only the strings a package lists"),
         Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe identity ``\\mathbf{1}`` acts trivially.\n",
             Model.Location[], "only the strings a package lists"),
+        # A listed string with nested braces is admitted whole, and an unlisted one beside it is not.
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe unit vector ``\\mathbf{\\hat{k}}`` here.\n",
+            Model.Location[], "only the strings a package lists", MATHBF_EXAMPLE),
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe unit vector ``\\mathbf{\\hat{u}}`` here.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "only the strings a package lists", MATHBF_EXAMPLE),
     ])
 
 """

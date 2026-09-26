@@ -11,11 +11,13 @@ module Arguments
 using ...Model
 using ...Texts
 
-# What tells the two forms apart is the BULLET, not the colon. Both open with the same marker phrase, so
-# a pattern that stops at the phrase matches the prose form too; and one that demands a colon misses a
-# consumer that writes the marker without one, which had three of its field lists read as argument lists
-# and reported for using the wrong argument form.
-const BULLETED = r"The\s+arguments\s+are\b[^\n]*\n\s*\n?\s*[-*]\s"
+# What tells the two forms apart is the BULLET: both open with the same marker phrase, so a pattern that
+# stops at the phrase matches the prose form too. The bulleted form ends its marker line in the colon
+# the statement asks for; the marker followed by bullets and no colon is its own finding, so a consumer
+# who left the colon off is told that and not that the form is wrong. (A field list is not an argument
+# list, and is set aside first.)
+const BULLETED = r"The\s+arguments\s+are\b[^\n]*:\s*\n\s*\n?\s*[-*]\s"
+const BULLETED_NO_COLON = r"The\s+arguments\s+are\b[^\n:]*\n\s*\n?\s*[-*]\s"
 const IN_PROSE = r"The\s+arguments?\s+(is|are)\s+`"
 const FIELDS_LIST = r"The\s+fields\s+are\b[^\n]*\n\s*\n?\s*[-*]\s"
 const WRAPPER_PHRASE = "Allocating form of"
@@ -57,6 +59,11 @@ function args_form(src::AbstractString, cfg)
 
         prosed = occursin(IN_PROSE, d.text)
         bulleted = occursin(BULLETED, d.text)
+        if !bulleted && occursin(BULLETED_NO_COLON, d.text)
+            push!(out, Model.Location(; file = "", line = d.line, node = d.node,
+                text = "`$(d.node)` lists its arguments under the marker phrase with no colon: `The arguments are:`"))
+            continue
+        end
         # The rule's last exemption, and no wider: ONE element-type keyword BOUND IN A PROSE CLAUSE. A
         # docstring that binds nothing at all is not a prose clause, and exempting it would turn a hit
         # into silence — the direction that costs a reader something.
@@ -100,6 +107,12 @@ const ARGS_FORM = Model.Rule(
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b, c)", "Does a thing. The arguments are:\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
             Model.Location[], "three or more use the bulleted form"),
+        Model.TextExample(Model.FileSet.CODE,
+            doc("f(a, b, c)", "Does a thing. The arguments are\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
+            [Model.Location(; file = "src/Example.jl", line = 1)], "led by the marker phrase and a colon"),
+        Model.TextExample(Model.FileSet.CODE,
+            doc("f(a, b, c)", "Does a thing. The arguments are:\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
+            Model.Location[], "led by the marker phrase and a colon"),
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a; opt = 1)", "Does a thing. The arguments are `a`, the first, and `opt`, the option."),
             [Model.Location(; file = "src/Example.jl", line = 1)], "any keyword uses the bulleted form"),

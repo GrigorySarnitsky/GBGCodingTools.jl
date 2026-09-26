@@ -52,20 +52,24 @@ section by its file and heading. The arguments are `root`, the package root, and
 read. Returns the units with their metrics.
 
 A heading, a numbered top-level item and a bold lettered finding each open a new unit, which is what lets
-an append-only document grow by NEW units rather than by swelling one.
+an append-only document grow by NEW units rather than by swelling one. A key is where the unit is, never
+its position among others of its name; two units that would still share one are listed in `collisions`
+and the later is left out, since no number given to it would stay with it.
 """
-function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,String}} = nothing)
+function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,String}} = nothing,
+               collisions::Vector{String} = String[])
     out = Dict{String,NamedTuple}()
     note_owner!(key, f) = owners === nothing ? nothing : (owners[key] = f)
-    # A key that already exists is a DIFFERENT unit with the same name — one document restarting its
-    # numbering under a later heading, so `item 1` occurs three times. Keyed alike they overwrite, and
-    # 28 of GBGPeriodicFields' 144 numbered entries were tracked by nothing at all. The first keeps the
-    # plain name, so a baseline recorded before this still matches everything that never collided.
-    function unique_key(key)
-        haskey(out, key) || return key
-        n = 2
-        while haskey(out, key * " ($n)"); n += 1; end
-        return key * " ($n)"
+    # A file is named by its basename, which every recorded row uses — and by its path where two files
+    # read share a basename, or their units would be one.
+    shared = Set(b for b in basename.(files) if count(==(b), basename.(files)) > 1)
+    label(f) = basename(f) in shared ? f : basename(f)
+    # A key that already exists is a DIFFERENT unit with the same name. It used to take a positional
+    # suffix, `(2)`, which moved to another unit whenever one of the same name was inserted above it —
+    # silently re-pointing a baseline row. It is reported instead, and the author gives it a name.
+    function add!(key, m, f)
+        haskey(out, key) && (push!(collisions, key); return)
+        out[key] = m; note_owner!(key, f)
     end
     for f in files
         path = joinpath(root, f)
@@ -78,17 +82,15 @@ function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,St
                 # one binding and two docstrings, so a key that is only the binding collapses them and
                 # matches neither in a package's recorded baseline.
                 sig = Texts.signature_line(d.text)
-                key = unique_key("$(basename(f)) :: $(first(isempty(sig) ? d.node : sig, 60))")
-                out[key] = metrics(d.text); note_owner!(key, f)
+                add!("$(label(f)) :: $(first(isempty(sig) ? d.node : sig, 60))", metrics(d.text), f)
             end
         else
-            section = "(preamble)"; heading = ""; buf = IOBuffer(); fenced = false
+            # The heading is cut to sixty characters and the item or finding after it is kept whole:
+            # cutting the joined text left `… / item ` for every item under a long heading, one key.
+            section = "(preamble)"; tail = ""; heading = ""; buf = IOBuffer(); fenced = false
             flush!() = begin
                 body = String(take!(buf))
-                if !isempty(strip(body))
-                    key = unique_key("$(basename(f)) § $(first(section, 60))")
-                    out[key] = metrics(body); note_owner!(key, f)
-                end
+                isempty(strip(body)) || add!("$(label(f)) § $(first(section, 60))$tail", metrics(body), f)
             end
             for line in split(read(path, String), '\n')
                 # A fenced block is code, a diagram or a doctest — never prose a reader parses, and
@@ -99,7 +101,7 @@ function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,St
                 end
                 fenced && continue
                 if startswith(line, "#")
-                    flush!(); heading = strip(replace(String(line), r"^#+" => "")); section = heading
+                    flush!(); heading = strip(replace(String(line), r"^#+" => "")); section = heading; tail = ""
                 elseif (m = match(r"^(\d+)\. ", line)) !== nothing
                     # Keyed UNDER its heading. A document restarts its numbering in each section, so
                     # `item 1` occurs three times in one file here; keyed by the number alone they are
@@ -107,10 +109,10 @@ function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,St
                     # also separate them, and would move every later one when an item is inserted —
                     # silently re-pointing the baseline rows. GBGPeriodicFields' own lint carries the
                     # heading for this reason, and it is the better answer.
-                    flush!(); section = (isempty(heading) ? "" : heading * " / ") * "item " * m.captures[1]
+                    flush!(); section = heading; tail = (isempty(heading) ? "" : " / ") * "item " * m.captures[1]
                     println(buf, line)
                 elseif (m = match(r"^\*\*\(([a-z]{1,2})\) ", line)) !== nothing
-                    flush!(); section = (isempty(heading) ? "" : heading * " / ") * "finding (" * m.captures[1] * ")"
+                    flush!(); section = heading; tail = (isempty(heading) ? "" : " / ") * "finding (" * m.captures[1] * ")"
                     println(buf, line)
                 else
                     println(buf, line)
@@ -157,24 +159,22 @@ a run the ratchet is strict, and the close records what grew within the allowanc
 """
 allowance(n::Integer) = max(10, ceil(Int, 0.05 * n))
 
-# Whether a run is open here: its stage file is there and its record is not. Decided from the files,
-# since the runs live above this module.
-function run_open(root::AbstractString)
-    dir = joinpath(root, ".gbg", "runs")
-    isdir(dir) || return false
-    return any(d -> isfile(joinpath(dir, d, "stage")) && !isfile(joinpath(dir, d, "run.json")), readdir(dir))
-end
+# Whether the check runs on behalf of an open run, which grants the allowance: `false` unless a verb that
+# knows a run is open — `gbg docfix` — sets it for the length of its own call. Process-local and never
+# read from disk, because a build's verdict may not depend on review state, and this rule read the run
+# directory from inside every docs build until 2026-09-26.
+const IN_RUN = Ref(false)
 
 """
     record_grown(root, cfg) -> Vector{String}
 
-Re-records every unit that grew past its recorded numbers, and only those, leaving every other row as
-it was. The arguments are `root`, the package root, and `cfg`, the package's config. Returns one line
-per unit re-recorded.
+Re-records every unit that grew past its recorded numbers by no more than the [`allowance`](@ref),
+and only those, leaving every other row as it was. The arguments are `root`, the package root, and
+`cfg`, the package's config. Returns one line per unit re-recorded.
 
 The close calls it: what a run's fixes grew within the allowance is written to the baseline with the
 run's record, so the growth is deliberate and visible in one commit rather than refused at the next
-build [ruled 2026-09-26].
+build [ruled 2026-09-26]. Growth past it is the build's to refuse, never the close's to record.
 """
 function record_grown(root::AbstractString, cfg)
     base = something(baseline(root), Dict{String,NTuple{3,Int}}())
@@ -184,6 +184,7 @@ function record_grown(root::AbstractString, cfg)
         u = us[k]; key = csvkey(k); now = (u.words, u.longest, u.admonitions)
         b = get(base, key, nothing)
         (b !== nothing && any(now .> b)) || continue
+        (now[1] <= b[1] + allowance(b[1]) && now[2] <= b[2] + allowance(b[2]) && now[3] <= b[3]) || continue
         base[key] = (max(now[1], b[1]), max(now[2], b[2]), max(now[3], b[3]))
         push!(grown, "$key: words $(b[1])→$(now[1]), longest paragraph $(b[2])→$(now[2])")
     end
@@ -202,8 +203,9 @@ end
 """
     prose_shape(root, cfg) -> Vector{Model.Location}
 
-Every unit of prose that breaks its cap or has grown past its recorded numbers. The arguments are `root`,
-the package root, and `cfg`, the package's config, which names the files. Returns one location per unit.
+Every unit of prose that breaks its cap or has grown past its recorded numbers, and every name two
+units share. The arguments are `root`, the package root, and `cfg`, the package's config, which names
+the files. Returns one location per unit.
 
 A unit the baseline does not hold is NEW and is held to the caps; one it holds may fall and never rise,
 except by the [`allowance`](@ref) while a run is open.
@@ -212,10 +214,16 @@ function prose_shape(root::AbstractString, cfg)
     cat = parentmodule(@__MODULE__)
     files = files_of(root, cfg)
     base = baseline(root)
-    slack = run_open(root) ? allowance : (n -> 0)
+    slack = IN_RUN[] ? allowance : (n -> 0)
     out = Model.Location[]
     owners = Dict{String,String}()
-    for (key, u) in sort!(collect(units(root, files, owners)))
+    collisions = String[]
+    us = units(root, files, owners, collisions)
+    for key in unique(collisions)
+        push!(out, Model.Location(; file = get(owners, key, ""), line = 0,
+            text = "$key: two units share this name, and a number given to the second would move whenever one is inserted above it — give it a heading of its own"))
+    end
+    for (key, u) in sort!(collect(us))
         recorded = base === nothing ? nothing : get(base, csvkey(key), nothing)
         # The finding NAMES its file. It carried an empty one, so a per-file switch could never reach
         # this rule and a reader was left to find the unit from the key alone.
@@ -256,10 +264,13 @@ function default_files(root::AbstractString, cfg)
 end
 
 """
-    write_baseline(root, cfg) -> Int
+    write_baseline(root, cfg; only = "") -> Int
 
-Writes the baseline from the prose as it stands and returns how many units it recorded. The arguments are
-`root`, the package root, and `cfg`, the package's config.
+Writes the baseline from the prose as it stands and returns how many units it recorded. The arguments are:
+
+- `root` — the package root.
+- `cfg` — the package's config.
+- `only` — a text the units to re-record must hold, every other row kept; empty to write them all.
 
 It is called only by a person asking for it, with a reason — never by a check. A baseline a check could
 rewrite is a ratchet that resets itself.

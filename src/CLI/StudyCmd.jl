@@ -29,12 +29,18 @@ Reports the round of votes in `path`. The arguments are:
 - `io` — where the report goes.
 
 Exit 0 when the readers agreed with the rulebook everywhere, 1 when anything is open — a split, a
-flagged wording, or a tag the readers would move. The exit code is the contract: a session that must
+flagged wording, or a tag the readers would move — and 2 when the file is absent or is not votes. The exit code is the contract: a session that must
 not leave a measurement unread reads it rather than the text.
 """
 function rules(root::AbstractString, path::AbstractString; io::IO = stdout)
     isfile(path) || (println(io, "study: no such file: ", path); return 2)
-    round = Study.read_round(path)
+    # a malformed vote file is the caller's, exit 2 with the sentence, never a crash
+    round = try
+        Study.read_round(path)
+    catch err
+        err isa ArgumentError || rethrow()
+        println(io, "study: ", err.msg); return 2
+    end
     isempty(round.rules) && (println(io, "study: ", path, " holds no votes"); return 2)
     println(io, "study: ", length(round.rules), " rule(s), three readers each.")
     println(io, "  agreement on what must be read : ", round_2(round.needs_kappa))

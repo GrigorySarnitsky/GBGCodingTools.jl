@@ -129,10 +129,10 @@ Base.@kwdef struct FindingDraft
 end
 
 """
-    relocated(draft, locations) -> FindingDraft
+    relocated(d, locations) -> FindingDraft
 
-The same draft with its locations replaced and EVERY other field carried. The arguments are `draft` and
-the new `locations`. Returns the copy.
+The same draft with its locations replaced and EVERY other field carried. The arguments are `d`, the
+draft, and the new `locations`. Returns the copy.
 
 Two places rebuilt a draft field by field to re-anchor it — the fix stage and the carry-over — and
 both silently dropped `in_material` the day it was added, so a finding in the working notes became a

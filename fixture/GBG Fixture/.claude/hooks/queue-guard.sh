@@ -72,14 +72,21 @@ fi
       return 0
     }
     gbg_rule_RULE_GIT_PUSH() {
-      git rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1 || return 0
+      git rev-parse --verify -q HEAD >/dev/null 2>&1 || return 0
+      if ! git rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1; then
+        n=$(git rev-list --count HEAD 2>/dev/null) || return 0
+        [ "$n" = "0" ] || echo "no upstream; $n commit(s) never pushed: commit ⇒ push"
+        return 0
+      fi
       n=$(git rev-list --count '@{upstream}..HEAD' 2>/dev/null) || return 0
       [ "$n" = "0" ] || echo "$n commit(s) not pushed: commit ⇒ push"
       return 0
     }
     gbg_rule_RULE_GIT_TRAILER() {
-      git rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1 || return 0
-      for c in $(git rev-list '@{upstream}..HEAD' 2>/dev/null); do
+      git rev-parse --verify -q HEAD >/dev/null 2>&1 || return 0
+      range='@{upstream}..HEAD'
+      git rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1 || range=HEAD
+      for c in $(git rev-list "$range" 2>/dev/null); do
         msg=$(git log -1 --format=%B "$c")
         printf '%s\n' "$msg" | grep -Eq '^Co-Authored-By: .*<noreply@anthropic\.com>' || echo "$(git log -1 --format=%h "$c") carries no Co-Authored-By trailer"
         printf '%s\n' "$msg" | grep -Fq '[skip ci]' && echo "$(git log -1 --format=%h "$c") says [skip ci]"

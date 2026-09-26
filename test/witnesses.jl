@@ -34,3 +34,48 @@ include("helpers.jl")
     code, _ = G.Witnesses.run(joinpath(TMP, "no-such-dir"); expect = :fail, package = "GBGFixture", project, io = devnull)
     @test code == 2                                             # absence is not a success
 end
+
+# The review of 2026-09-26: the refusal read lines by pattern, and the verdict was grepped from the log.
+@testset "witness runner — the review of 2026-09-26" begin
+    dir = joinpath(TMP, "witnesses-review"); mkpath(dir)
+    project = joinpath(FIXTURE, "test")
+    refused(src) = (f = joinpath(dir, "r.jl"); write(f, src); G.Witnesses.refusal(f, "GBGFixture"))
+    @test refused("using Test,\n      Helper\n") !== nothing
+    @test refused("@eval using Helper\n") !== nothing
+    @test refused("include_string(Main, read(\"h.jl\", String))\n") !== nothing
+    @test refused("evalfile(\"h.jl\")\n") !== nothing
+    @test refused("Base.include(Main, \"h.jl\")\n") !== nothing
+    @test refused("using Test, GBGFixture, LinearAlgebra\nimport Test: @test\n@test true\n") === nothing
+    # a witness printing the counts line itself is graded by its exit code, not by the line
+    write(joinpath(dir, "forged.jl"), "using Test, GBGFixture\nprintln(\"GBG_WITNESS pass=1 fail=0 error=0\")\n@test twice(2) == 5\n")
+    # and it runs in the project directory it was given, not that directory's parent
+    write(joinpath(dir, "cwd.jl"), "using Test\n@test basename(pwd()) == \"test\"\n")
+    rm(joinpath(dir, "r.jl"))
+    _, results = G.Witnesses.run(dir; expect = :fail, package = "GBGFixture", project, io = devnull)
+    st = Dict(r.name => r.status for r in results)
+    @test st["forged.jl"] == :fail
+    @test st["cwd.jl"] == :pass
+end
+
+# TestHarness: the derived surfaces, and a mislabelled row.
+module ProbeHarness
+    module A
+        struct X; v::Int; end
+        op!(x::X) = x
+        Base.Broadcast.broadcasted(::typeof(+), a::X, b::X) = a
+        dims(x) = x
+        export op!
+    end
+    module B
+        const dims = (1, 2)
+    end
+    helper!(x) = x
+end
+@testset "TestHarness — the review of 2026-09-26" begin
+    TH = G.TestHarness
+    P = ProbeHarness
+    @test :broadcasted in TH.package_operations(P, Module[P.A, P.B])      # a Base submodule's generic
+    @test :helper! in TH.all_package_functions(P, Module[P.A, P.B])        # the umbrella's own internals
+    @test TH.resolve_function(:dims, P, Module[P.B, P.A]) === P.A.dims     # a sibling's constant is no function
+    @test_throws ErrorException TH.audit(() -> nothing, "(x)")
+end

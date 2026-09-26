@@ -3,11 +3,11 @@
     Catalogue
 
 What this package knows, as values rather than as files: the always-on checks, the instruments, the
-rulebook, and the register of everything a generator writes.
+rulebook, and the readers derived from it.
 
 It is the third module of the order and holds DATA — a rule sits here beside the check that decides it,
-and nothing here runs anything. What is in it today is the instrument table; the rules arrive with the
-conversion and the agent roles with the instruments that launch them.
+and nothing here runs anything: the instrument table, the rulebook as `RULES`, the retired rules, the
+fleet, and the reader derivation of the documentation review.
 
 The table here and the one in the design are compared cell by cell by `test/architecture.jl`: a row whose
 purpose, intention, decider, fixer, timing or ending drifts from the document fails the suite, so the
@@ -150,9 +150,8 @@ include("Roles/documentation_review.jl")
     RULES
 
 The rulebook: every rule as a value, beside the check that decides it and the examples that show the
-check matches the statement. The ninety-five rules of `policy/RULES.toml` are converted in batches
-, one file of `src/Rules/` per batch; `test/conversion.jl` holds the count still
-outstanding, which may only fall.
+check matches the statement, one file of `src/Rules/` per family. The rulebook a session loads,
+`.gbg/policy/`, is rendered from these values and never edited.
 """
 const RULES = Model.Rule[Rendering.RULES..., Docstrings.RULES..., Arguments.RULES..., Latex.RULES..., Pages.RULES..., Reflection.RULES..., Site.RULES..., Shape.RULES..., Modules.RULES..., Questions.RULES..., Citations.RULES..., JudgementApi.RULES..., JudgementCit.RULES..., JudgementDoc.RULES..., JudgementGit.RULES..., JudgementInst.RULES..., JudgementTest.RULES..., JudgementTex.RULES...]
 
@@ -308,7 +307,7 @@ function normal_path(cfg::Model.Config, root::AbstractString, path::AbstractStri
         # absolute path outside the package names nothing this package documents, and is not read.
         p == r && return ""
         startswith(p, r * "/") || return ""
-        p = p[length(r)+2:end]
+        p = String(chopprefix(p, r * "/"))       # by prefix, never by character count: roots hold non-ASCII
     end
     # `..` is resolved before anything is compared, and a path that climbs out of the package names
     # nothing here either: `docs/../../x.md` was let through and read (found in review, 2026-09-23).
@@ -421,14 +420,8 @@ function missing_documents(cfg::Model.Config, root::AbstractString)
     return out
 end
 
-"""
-    GENERATED
-
-Every path, or part of a path, that a Julia function writes in a package, with the generator that writes
-it. The wiring check regenerates each and compares only that part. It is empty until the generators
-exist.
-"""
-const GENERATED = Model.Generated[]
+# The register of generated paths lives beside the generators that write them, two modules down: an empty
+# `GENERATED` stood here, read by nothing, until 2026-09-26.
 
 """
     axes(x) -> Tuple
@@ -471,14 +464,17 @@ function known_ids()
 end
 
 """
-    doc(x) -> String
+    doc(r::Rule) -> String
+    doc(role::AgentRole) -> String
+    doc(i::Instrument) -> String
+    doc(a::AlwaysOn) -> String
 
 The docstring of a rule, an agent role, an instrument or an always-on check, written from the value
 itself. A rule's prose is written once, in the value, and the docstring a reader sees on the package's own
 site is derived from it — so the two cannot disagree, and a rule reworded in one place is reworded in
 both.
 
-The argument is `x`, the value to describe. Returns the docstring text, which the source attaches with
+The argument is the value to describe. Returns the docstring text, which the source attaches with
 `@doc doc(x) x`.
 """
 function doc(r::Model.Rule)

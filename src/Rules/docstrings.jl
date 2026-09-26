@@ -15,6 +15,28 @@ module Docstrings
 using ...Model
 using ...Texts
 
+const JS = Texts.JS
+
+"""
+    body_line(src, d) -> Int
+
+The line of the source on which a docstring's body — its text as [`Texts.docstrings_of`](@ref) gives
+it — begins. The arguments are `src`, the Julia source, and `d`, the docstring. Returns the line.
+
+The docstring's own `line` is its opening delimiter's, and its text is stripped of the blank lines
+after that delimiter; a rule counting newlines from the body's start to place a finding needs the line
+the body actually opens on, or every docstring that opens with a blank line is reported one line early.
+"""
+function body_line(src::AbstractString, d)
+    lines = split(src, '\n')
+    d.line <= length(lines) || return d.line + 1
+    opener = replace(lines[d.line], r"^\s*(?:raw)?\"{1,3}" => "")
+    isempty(strip(opener)) || return d.line                   # a one-line docstring opens on its own line
+    i = d.line + 1
+    while i <= length(lines) && isempty(strip(lines[i])); i += 1; end
+    return i
+end
+
 # ───────────────────────────────────────────────────────────── an argument bullet set in bold
 
 const BOLD_BULLET = r"^\s*[-*]\s+\*\*`"
@@ -135,7 +157,7 @@ const FIELD_BULLET = r"^\s*[-*]\s"
 const FIELD_NAME = r"`([^`:\s,]+)(?:::[^`]*)?`"
 
 """
-    field_docs(path, cfg) -> Vector{Model.Location}
+    field_docs(src, cfg) -> Vector{Model.Location}
 
 Every documented type whose field list does not match its fields: one that names a field the type does
 not have, one that leaves a field out, and one with fields and no list at all. The arguments are `src`,
@@ -143,14 +165,15 @@ the Julia source, and `cfg`, the package's config, which this rule does not read
 per type, quoting what is wrong.
 
 It reads the parse tree rather than the text, so a keyword-default type — `Base.@kwdef struct` — is the
-same case as any other. Pairing a docstring with the next `struct` by eye is what made an earlier
-version of this check misread every type after one of those.
+same case as any other, an untyped or `const` field is a field, and a docstring is paired with the
+definition under it: an outer constructor's docstring names the type and documents arguments, and
+pairing by name held it to a field list it was right not to have.
 """
 function field_docs(src::AbstractString, cfg)
     out = Model.Location[]
-    lines = split(src, '\n')
+    typed = documented_types(src)
     for d in Texts.docstrings_of(src)
-        fields = struct_fields(lines, d.node)
+        fields = get(typed, d.line, String[])
         isempty(fields) && continue
         documented = documented_fields(d.text)
         if documented === nothing
@@ -168,27 +191,92 @@ function field_docs(src::AbstractString, cfg)
     return out
 end
 
-# The fields a struct declares, by name, read from the lines its node spans.
-function struct_fields(lines, node::AbstractString)
-    isempty(node) && return String[]
-    opened = false
-    out = String[]
-    for line in lines
-        if !opened
-            occursin(Regex("\\bstruct\\s+" * replace(node, "!" => "!") * "\\b"), line) && (opened = true)
-            continue
+# The fields of every documented type, keyed by the line its docstring opens on — which is how the
+# docstring is paired with the definition under it and with nothing else in the file.
+function documented_types(src::AbstractString)
+    out = Dict{Int,Vector{String}}()
+    tree = try
+        JS.parseall(JS.SyntaxNode, src; filename = "source.jl", ignore_errors = true)
+    catch
+        return out
+    end
+    function walk(node)
+        cs = JS.children(node)
+        cs === nothing && return
+        for c in cs
+            if JS.kind(c) === JS.K"doc"
+                kids = something(JS.children(c), ())
+                s = length(kids) >= 2 ? struct_node(kids[2]) : nothing
+                s === nothing || (out[JS.source_line(c)] = fields_of(s))
+            end
+            walk(c)
         end
-        strip(line) == "end" && break
-        # An INNER CONSTRUCTOR ends the field list. Its arguments are indented and spelled `name::Type`
-        # exactly as a field is, so scanning past it counted six of them again: fourteen fields, sixteen
-        # names. A declaration also stands alone — a line ending in a comma is an argument list wrapped.
-        body = strip(line)
-        (startswith(body, "function ") || occursin(Regex("^" * Texts.NAME * "\\s*\\("), body)) && break
-        endswith(body, ",") && continue
-        m = match(Regex("^\\s{2,}(" * Texts.NAME * ")\\s*::"), line)
-        m === nothing || push!(out, String(m.captures[1]))
+    end
+    walk(tree)
+    return out
+end
+
+# The struct a definition declares, through the macro call a keyword-default type is wrapped in, or
+# nothing where the definition is not a type.
+function struct_node(def)
+    JS.kind(def) === JS.K"struct" && return def
+    JS.kind(def) === JS.K"macrocall" || return nothing
+    for c in something(JS.children(def), ())
+        s = struct_node(c)
+        s === nothing || return s
+    end
+    return nothing
+end
+
+# The fields a struct declares, by name: a bare name, a typed one, one with a default, a `const` one
+# and one carrying a docstring of its own are each a field; an inner constructor is not, and neither
+# is anything else in the body.
+function fields_of(node)
+    out = String[]
+    cs = something(JS.children(node), ())
+    body = findfirst(c -> JS.kind(c) === JS.K"block", cs)
+    body === nothing && return out
+    for c in something(JS.children(cs[body]), ())
+        name = field_name(c)
+        name === nothing || push!(out, name)
     end
     return out
+end
+
+function field_name(c)
+    k = JS.kind(c)
+    k === JS.K"Identifier" && return Texts.node_text(c)
+    kids = something(JS.children(c), ())
+    isempty(kids) && return nothing
+    k in (JS.K"::", JS.K"=", JS.K"const") && return field_name(first(kids))
+    k === JS.K"doc" && length(kids) >= 2 && return field_name(kids[2])
+    return nothing
+end
+
+"""
+    struct_fields(src, name) -> Vector{String}
+
+The fields the struct called `name` declares in the Julia source `src`, by name, or none where no such
+struct is defined there. The arguments are `src` and `name`. Returns the names in declaration order.
+"""
+function struct_fields(src::AbstractString, name::AbstractString)
+    tree = try
+        JS.parseall(JS.SyntaxNode, src; filename = "source.jl", ignore_errors = true)
+    catch
+        return String[]
+    end
+    found = Ref{Union{Nothing,Vector{String}}}(nothing)
+    function walk(node)
+        cs = JS.children(node)
+        (cs === nothing || found[] !== nothing) && return
+        for c in cs
+            s = struct_node(c)
+            s !== nothing && Texts.bound_name(s) == name && (found[] = fields_of(s); return)
+            walk(c)
+        end
+    end
+    walk(tree)
+    return something(found[], String[])
 end
 
 # The field names a docstring's list claims, or `nothing` where it holds no list at all.
@@ -228,6 +316,19 @@ const FIELDS = Model.Rule(
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
             Model.Location[], "every field a bullet"),
+        # An outer constructor's docstring is paired with the constructor, not with the type of the
+        # same name: it documents arguments, and owes no field list.
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n\n\"\"\"\n    S(n; scale = 1)\n\nBuilds one from `n`.\n\"\"\"\nS(n; scale = 1) = S(n * scale)\n",
+            Model.Location[], "every field a bullet"),
+        # An untyped field and a `const` one are fields, and a type made of them alone is held to the
+        # rule like any other.
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nmutable struct S\n    const a::Int\n    b\nend\n",
+            Model.Location[], "every field a bullet"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n\"\"\"\nmutable struct S\n    const a::Int\n    b\nend\n",
+            [Model.Location(; file = "src/Example.jl", line = 1)], "every field a bullet"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n- `c` — no such field.\n\"\"\"\nstruct S\n    a::Int\nend\n",
             [Model.Location(; file = "src/Example.jl", line = 1)], "every bullet a real field"),
@@ -236,6 +337,9 @@ const FIELDS = Model.Rule(
             Model.Location[], "every bullet a real field"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing with fields and no list.\n\"\"\"\nstruct S\n    a::Int\nend\n",
+            [Model.Location(; file = "src/Example.jl", line = 1)], "documents them under \"The fields are\""),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing with untyped fields and no list.\n\"\"\"\nBase.@kwdef struct S\n    a = 1\n    b\nend\n",
             [Model.Location(; file = "src/Example.jl", line = 1)], "documents them under \"The fields are\""),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",

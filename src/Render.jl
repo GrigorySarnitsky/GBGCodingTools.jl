@@ -12,11 +12,11 @@ been hand-edited, or that a newer version of this package would write differentl
 than a silent divergence. Regenerating is left to `gbg sync`, `gbg bump` and `gbg release`, so a build
 reports drift and never repairs it.
 
-This is the sixth module of the order: it may name `Model`, `Texts`, `Catalogue` and `ConfigIO`, and
-nothing above. What it writes today is the WIRING — the ignore block, the end-of-turn hook, the settings
-that install it, the regressions note — and the RULEBOOK a session loads, rendered from the rule values
-themselves, so a rule cannot be reworded in the text without being reworded in the program that enforces
-it. The instrument skills wait for the instruments.
+This is the sixth module of the order: it may name `Model`, `Texts`, `Catalogue`, `ConfigIO` and
+`Engine`, and nothing above. What it writes today is the WIRING — the ignore block, the end-of-turn hook,
+the settings that install it, the regressions note — the RULEBOOK a session loads, rendered from the rule
+values themselves, so a rule cannot be reworded in the text without being reworded in the program that
+enforces it, and one SKILL per instrument that applies.
 """
 module Render
 
@@ -24,14 +24,19 @@ using TOML, JSON3
 
 using ..Model
 using ..Catalogue
+using ..ConfigIO
 using ..Engine
 
-# The marker a generated block carries. It is matched anywhere in the line rather than at its start,
-# because the comment syntax differs by file — `#` in a shell script or a `.gitignore`, `<!-- -->` in
-# Markdown — and one marker the reader recognises in every file is worth more than one parser per format.
+# The marker a generated block carries. A marker LINE is the mark at the head of a comment — `#` in a
+# shell script or a `.gitignore`, `<!--` in Markdown — with nothing but whitespace before the opener, so
+# one predicate reads every file. A line that mentions the mark in its prose is not a marker: a
+# `CLAUDE.md` whose own text discussed the marker above the block lost that paragraph on the next sync,
+# when the block was taken to begin at the first line that contained the words (found in review, 2026-09-26).
 const MANAGED_MARK = "gbg:managed"
 const BEGIN_MARK = MANAGED_MARK * " begin"
 const END_MARK = "gbg:managed end"
+is_begin(line::AbstractString) = occursin(r"^\s*(?:#|<!--)\s*gbg:managed begin\b", line)
+is_end(line::AbstractString) = occursin(r"^\s*(?:#|<!--)\s*gbg:managed end\b", line)
 
 """
     version_tag(cfg) -> String
@@ -232,7 +237,9 @@ What `.claude/settings.json` gets wrong about the end-of-turn hook in the packag
 
 Only this package's own Stop hook is looked for. The file is the PACKAGE's — it may hold its own hooks,
 its own permissions and its own settings — so a whole-file comparison would report every one of them as
-drift, and writing the file whole would delete them.
+drift, and writing the file whole would delete them. The hook is recognised by the script it runs, in
+any spelling, and must be installed once in the one spelling written here: a second entry in another
+spelling runs it twice per stop.
 """
 function settings_drift(root::AbstractString)
     path = joinpath(root, ".claude", "settings.json")
@@ -244,29 +251,46 @@ function settings_drift(root::AbstractString)
     end
     # The file is read as JSON rather than as text: the command holds quotes, which JSON escapes, so a
     # substring search over the raw file never matches what was written into it.
-    for entry in get(get(doc, "hooks", Dict{String,Any}()), "Stop", Any[])
-        for h in get(entry, "hooks", Any[])
-            get(h, "command", "") == HOOK_COMMAND && return nothing
-        end
-    end
-    return "no Stop hook runs .claude/hooks/queue-guard.sh"
+    ours = [get(h, "command", "") for entry in get(get(doc, "hooks", Dict{String,Any}()), "Stop", Any[])
+            for h in get(entry, "hooks", Any[]) if runs_hook(get(h, "command", ""))]
+    isempty(ours) && return "no Stop hook runs .claude/hooks/queue-guard.sh"
+    ours == [HOOK_COMMAND] && return nothing
+    return "the Stop hook running .claude/hooks/queue-guard.sh is not written once, as `gbg sync` writes it"
 end
+
+# Whether a hook command runs this package's hook, whatever its quoting: the entry's spelling changed
+# once already, and a merge matching one literal spelling kept the old entry and added the new one.
+runs_hook(command) = command isa AbstractString && endswith(rstrip(command, ['"', '\'', ' ']), "queue-guard.sh")
 
 """
     write_settings(root) -> Bool
 
-Adds this package's Stop hook to `.claude/settings.json` in the package at `root`, keeping every other
-hook and setting the file holds. The argument is `root`, the package root. Returns whether it changed.
+Installs this package's Stop hook in `.claude/settings.json` in the package at `root`, keeping every
+other hook and setting the file holds. The argument is `root`, the package root. Returns whether it
+changed.
 
-The entry is added to the `Stop` list rather than replacing it: a package that has its own stop hook
-keeps it and gets this one as well.
+Every entry running the hook, in whatever spelling, is replaced by the one entry written here; the rest
+of the `Stop` list stays, so a package that has its own stop hook keeps it and gets this one as well. A
+file that does not parse is refused — a [`ConfigIO.ConfigError`](@ref), the consumer's exit 2 — rather
+than rewritten, since the package's own settings would go with it.
 """
 function write_settings(root::AbstractString)
     settings_drift(root) === nothing && return false
     path = joinpath(root, ".claude", "settings.json")
-    doc = isfile(path) ? JSON3.read(read(path, String), Dict{String,Any}) : Dict{String,Any}()
+    doc = Dict{String,Any}()
+    if isfile(path)
+        doc = try
+            JSON3.read(read(path, String), Dict{String,Any})
+        catch err
+            throw(ConfigIO.ConfigError(".claude/settings.json", ["the file does not parse: " * sprint(showerror, err)]))
+        end
+    end
     hooks = get!(doc, "hooks", Dict{String,Any}())
     stops = get!(hooks, "Stop", Any[])
+    for entry in stops
+        entry isa AbstractDict && haskey(entry, "hooks") && filter!(h -> !runs_hook(get(h, "command", "")), entry["hooks"])
+    end
+    filter!(entry -> !(entry isa AbstractDict && haskey(entry, "hooks") && isempty(entry["hooks"])), stops)
     push!(stops, Dict("hooks" => [Dict("type" => "command", "command" => HOOK_COMMAND)]))
     mkpath(dirname(path))
     open(path, "w") do io; JSON3.pretty(io, JSON3.write(doc)); println(io); end
@@ -403,6 +427,9 @@ Pkg's own section order. The arguments are:
 - `envdir` — the sub-environment.
 
 Returns whether the file changed.
+
+The file is written as Pkg writes it, by the TOML writer with Pkg's key order and inline `[sources]`
+tables, so whatever else the environment holds — a `[targets]` list, a `description` — goes back as it came.
 """
 function write_pin(cfg::Model.Config, root::AbstractString, envdir::AbstractString)
     path = joinpath(root, envdir, "Project.toml")
@@ -415,25 +442,12 @@ function write_pin(cfg::Model.Config, root::AbstractString, envdir::AbstractStri
             get!(proj, table, Dict{String,Any}())[PKG] = want[PKG]
         end
     end
-    io = IOBuffer()
-    top = [k for k in ("name", "uuid", "authors", "version") if haskey(proj, k)]
-    for k in top; TOML.print(io, Dict(k => proj[k])); end
-    isempty(top) || println(io)
-    rest = sort!([k for k in keys(proj) if !(k in ("name", "uuid", "authors", "version", "deps", "sources", "compat"))])
-    for sec in vcat(["deps", "sources", "compat"], rest)
-        haskey(proj, sec) || continue
-        println(io, "[", sec, "]")
-        for k in sort!(collect(keys(proj[sec])))
-            v = proj[sec][k]
-            println(io, k, " = ", v isa AbstractDict ?
-                    "{" * join(("$kk = $(repr(String(vv)))" for (kk, vv) in sort!(collect(v); by = first)), ", ") * "}" :
-                    repr(String(v)))
-        end
-        println(io)
-    end
-    # One trailing newline, not the blank line each section loop leaves: a generated file that differs
-    # from the package's own only in trailing whitespace is churn in every diff that touches it.
-    text = rstrip(String(take!(io))) * "\n"
+    inline = Base.IdSet{Dict}()
+    for s in values(get(proj, "sources", Dict{String,Any}())); s isa Dict && push!(inline, s); end
+    order = ["name", "uuid", "keywords", "license", "desc", "version", "workspace", "deps", "weakdeps",
+             "sources", "extensions", "compat"]
+    text = sprint(io -> TOML.print(io, proj; inline_tables = inline, sorted = true,
+                                   by = k -> (something(findfirst(==(k), order), length(order) + 1), k)))
     isfile(path) && read(path, String) == text && return false
     mkpath(dirname(path)); write(path, text)
     return true
@@ -502,7 +516,8 @@ The arguments are `cfg`, the package's config, and `root`, the package root. Ret
 workflow.
 
 Nothing is reported for a package pinned to a checkout, which needs no credential, or for one with no
-workflows at all.
+workflows at all. A workflow that runs no Julia step — TagBot, CompatHelper, a linter — resolves nothing
+and is not told to authenticate.
 """
 function ci_drift(cfg::Model.Config, root::AbstractString)
     cfg.tool isa VersionNumber || return Model.Location[]
@@ -512,7 +527,9 @@ function ci_drift(cfg::Model.Config, root::AbstractString)
     for f in sort!(readdir(dir))
         (endswith(f, ".yml") || endswith(f, ".yaml")) || continue
         path = joinpath(".github", "workflows", f)
-        occursin("./.github/actions/gbg-auth", read(joinpath(dir, f), String)) && continue
+        text = read(joinpath(dir, f), String)
+        (occursin("julia-actions/", text) || occursin("julia ", text)) || continue
+        occursin("./.github/actions/gbg-auth", text) && continue
         push!(out, Model.Location(; file = path,
             text = "does not use `./.github/actions/gbg-auth`, so a runner cannot fetch this package"))
     end
@@ -531,11 +548,34 @@ tree being replaced did. A log grep answers only on the machine that produced th
 answers on every machine, before anything is pushed, and it is the same answer.
 """
 const CALLS = [
-    (path = "test/runtests.jl", names = "Harness.test",
-     want = "GBGCodingTools.Engine.Harness.test", why = "the test suite runs no rule of the rulebook"),
-    (path = "docs/make.jl", names = "GBGCodingTools.makedocs",
-     want = "GBGCodingTools.makedocs", why = "the documentation build runs no rule of the rulebook"),
+    (path = "test/runtests.jl", names = "Harness.test", calls = live -> harness_called(live),
+     why = "the test suite runs no rule of the rulebook"),
+    (path = "docs/make.jl", names = "GBGCodingTools.makedocs", calls = live -> occursin("GBGCodingTools.makedocs", live),
+     why = "the documentation build runs no rule of the rulebook"),
 ]
+
+"""
+    harness_called(live) -> Bool
+
+Whether the uncommented text `live` of a `runtests.jl` calls the harness: by its full name, or as
+`Harness.test` once a `using` or `import` line has brought `GBGCodingTools.Engine`, or `Harness` out of
+it, into scope. The argument is `live`, the text. Returns the answer.
+
+Both are the same call. A check that knew the full spelling alone reported a suite that runs every rule
+as running none (found in review, 2026-09-26).
+"""
+function harness_called(live::AbstractString)
+    (occursin("GBGCodingTools.Engine.Harness.test", live) || occursin("GBGCodingTools.Harness.test", live)) && return true
+    occursin("Harness.test", live) || return false
+    return any(eachsplit(live, '\n')) do l
+        m = match(r"^\s*(?:using|import)\s+(.*)$", l)
+        m === nothing && return false
+        spec = m.captures[1]
+        k = findfirst(':', spec)
+        k === nothing ? occursin(r"\bGBGCodingTools\.Engine\b", spec) :
+            occursin(r"\bGBGCodingTools(?:\.Engine)?\s*$", spec[1:prevind(spec, k)]) && occursin(r"\bHarness\b", spec[k+1:end])
+    end
+end
 
 """
     call_drift(root) -> Vector{Model.Location}
@@ -552,7 +592,7 @@ function call_drift(root::AbstractString)
         isfile(full) || continue
         # A commented-out call is not a call. The line must survive with the name on it, uncommented.
         live = join([l for l in eachline(full) if !startswith(strip(l), "#")], "\n")
-        occursin(c.want, live) && continue
+        c.calls(live) && continue
         push!(out, Model.Location(; file = c.path,
             text = "nothing here calls `$(c.names)`, so $(c.why)"))
     end
@@ -708,11 +748,12 @@ function collisions(cfg::Model.Config, root::AbstractString)
         isfile(full) || continue
         text = read(full, String)
         generated_here(text) && continue              # it came from a generator, and is ours to rewrite
-        first_line = isempty(text) ? "(empty)" : first(split(text, '\n'))
-        push!(out, g.path => String(first_line))
+        push!(out, g.path => opening_line(text))
     end
     return out
 end
+
+opening_line(text::AbstractString) = isempty(text) ? "(empty)" : String(first(split(text, '\n')))
 
 # Whether a file says, in its opening lines, that this package wrote it. The marker is what most
 # generated files carry; the hook is a shell script whose first line must be its shebang, and it says so
@@ -1130,8 +1171,8 @@ end
     GENERATED
 
 Every path this module writes in a package, with how much of it is written. A path is here only when a
-generator writes it today: the instrument skills wait for the instruments and are not in the register, so
-the wiring check does not claim to hold them.
+generator writes it today — the rulebook files from [`POLICY_FILES`](@ref), and one skill per
+instrument of the catalogue — so the wiring check holds exactly what is generated.
 """
 const GENERATED = [
     (path = ".gitignore",                  part = Model.Part.BLOCK,        generator = :gitignore),
@@ -1172,27 +1213,79 @@ function produce(name::Symbol, cfg::Model.Config)
 end
 
 """
+    block_spans(lines) -> Vector{UnitRange{Int}}
+
+Where the marked blocks are in a file this package shares with the package that owns it: one range of
+line numbers per block, from its begin marker to its end marker. The argument is `lines`, the file's
+lines. Returns the ranges, in order; a file holds one block when it is wired, and a second is drift.
+"""
+function block_spans(lines::AbstractVector{<:AbstractString})
+    spans = UnitRange{Int}[]
+    i = 1
+    while (b = findnext(is_begin, lines, i)) !== nothing
+        e = findnext(is_end, lines, b + 1)
+        e === nothing && break
+        push!(spans, b:e); i = e + 1
+    end
+    return spans
+end
+
+"""
     block_of(text) -> Union{String,Nothing}
 
 The marked block inside a file this package shares with the package that owns it, or `nothing` where the
-file holds none. The argument is `text`, the file's content. Returns the block, markers included.
+file holds none. The argument is `text`, the file's content. Returns the first block, markers included.
 """
 function block_of(text::AbstractString)
     lines = split(text, '\n')
-    first_i = findfirst(l -> occursin(BEGIN_MARK, l), lines)
-    last_i = findfirst(l -> occursin(END_MARK, l), lines)
-    (first_i === nothing || last_i === nothing || last_i < first_i) && return nothing
-    return join(lines[first_i:last_i], '\n') * "\n"
+    spans = block_spans(lines)
+    isempty(spans) && return nothing
+    return join(lines[first(spans)], '\n') * "\n"
+end
+
+"""
+    with_block(text, want) -> String
+
+The file `text` with its marked block replaced by `want`, and every further block removed: a block
+this package wrote twice is one block's worth of stale text, not the package's own. The arguments are
+`text`, the file, and `want`, the block to write. Returns the new file; one with no block yet gets it at
+its head.
+
+By lines, never by substring: the block is compared with a trailing newline, and a file whose block
+ended it without one matched nothing and could not be repaired (found in review, 2026-09-26).
+"""
+function with_block(text::AbstractString, want::AbstractString)
+    lines = split(text, '\n')
+    spans = block_spans(lines)
+    # A file that has no block yet gets one at its HEAD, not its foot. `CLAUDE.md`'s block carries the
+    # import of the rulebook, and a session reads that file from the top: appended to a 2,700-line file
+    # it is read last or not at all. `.gitignore` does not care, and the head is right there too.
+    isempty(spans) && return want * "\n" * text
+    out = String[]
+    for (i, l) in enumerate(lines)
+        i == first(first(spans)) && append!(out, split(chomp(want), '\n'))
+        any(s -> i in s, spans) && continue
+        push!(out, l)
+    end
+    return join(out, '\n')
 end
 
 
 # ─────────────────────────────────────────────────────────── what a run hands back to the owner
 
 """
-    report(run, cfg) -> String
+    report(run, cfg; root = "", queued = 0, undone = 0, red = false) -> String
 
-What one run found, as the page the owner reads. The arguments are `run`, the finished run, and `cfg`,
-the package's config. Returns the Markdown.
+What one run found, as the page the owner reads. The arguments are:
+
+- `run` — the finished run.
+- `cfg` — the package's config.
+- `root` — the package root, for the documents no reader was given; empty to skip them.
+- `queued` — how many lines went to the work queue.
+- `undone` — how many fixes were reverted because the docs build was red at close.
+- `red` — whether the build was red at close with no fix to account for it.
+
+Returns the Markdown.
 
 It reports the WHOLE run, the parts that did not work included: a stage that could not be evaluated, a
 location that could not be found again, a budget that ran out with findings still open. A report that
@@ -1419,7 +1512,7 @@ function wiring(cfg::Model.Config, root::AbstractString)
     for g in GENERATED
         full = joinpath(root, g.path)
         if !wanted(cfg, g)
-            isfile(full) && push!(out, Model.Location(; file = g.path,
+            isfile(full) && generated_here(read(full, String)) && push!(out, Model.Location(; file = g.path,
                                    text = "this instrument is switched off here and keeps no skill file"))
             continue
         end
@@ -1429,11 +1522,19 @@ function wiring(cfg::Model.Config, root::AbstractString)
             continue
         end
         text = read(full, String)
+        if g.part === Model.Part.BLOCK
+            n = length(block_spans(split(text, '\n')))
+            n == 0 && (push!(out, Model.Location(; file = g.path, text = "the managed block is absent")); continue)
+            n > 1 && (push!(out, Model.Location(; file = g.path, text = "the managed block appears $n times")); continue)
+        end
         have = g.part === Model.Part.BLOCK ? block_of(text) : text
-        have === nothing && (push!(out, Model.Location(; file = g.path, text = "the managed block is absent")); continue)
-        have == want && continue
-        push!(out, Model.Location(; file = g.path, line = first_difference(have, want),
-                                   text = "this file is not what `gbg sync` writes now"))
+        if have != want
+            push!(out, Model.Location(; file = g.path, line = first_difference(have, want),
+                                       text = "this file is not what `gbg sync` writes now"))
+        elseif g.generator === :hook && !Sys.isexecutable(full)
+            # the mode is part of the file: a hook Claude Code cannot exec guards nothing
+            push!(out, Model.Location(; file = g.path, text = "the hook is not executable"))
+        end
     end
     # The two calls that make any of this run at all, and the one a runner needs.
     append!(out, call_drift(root))
@@ -1455,19 +1556,24 @@ first_difference(a::AbstractString, b::AbstractString) =
                         1:max(count(==('\n'), a), count(==('\n'), b)) + 1), 1)
 
 """
-    write_all(cfg, root) -> Vector{String}
+    write_all(cfg, root) -> (changed, refused)
 
 Writes every generated path of the package at `root`, sets the pin in each sub-environment, and returns
-the paths it changed. The arguments are
+the paths it changed and the paths it refused. The arguments are
 `cfg`, the package's config, and `root`, the package root. A marked block is replaced inside the file that
 holds it and the rest of that file is left alone; anything else is written whole.
+
+A whole file at a generated path that did not come from a generator is the package's own, and is
+refused — returned with its first line, and never written over — as `gbg init` refuses it before
+writing anything. `gbg sync` wrote over it, so a path a newer version generates replaced a hand-written
+file on upgrade (found in review, 2026-09-26).
 """
 function write_all(cfg::Model.Config, root::AbstractString)
-    changed = String[]
+    changed = String[]; refused = Pair{String,String}[]
     for g in GENERATED
         full = joinpath(root, g.path)
         if !wanted(cfg, g)
-            isfile(full) || continue
+            isfile(full) && generated_here(read(full, String)) || continue
             rm(full; force = true)                       # a switched-off instrument keeps no skill
             isdir(dirname(full)) && isempty(readdir(dirname(full))) && rm(dirname(full))
             push!(changed, g.path)
@@ -1477,16 +1583,19 @@ function write_all(cfg::Model.Config, root::AbstractString)
         mkpath(dirname(full))
         if g.part === Model.Part.BLOCK && isfile(full)
             text = read(full, String)
-            have = block_of(text)
-            # A file that has no block yet gets one at its HEAD, not its foot. `CLAUDE.md`'s block
-            # carries the import of the rulebook, and a session reads that file from the top: appended
-            # to a 2,700-line file it is read last or not at all. `.gitignore` does not care, and the
-            # head is right there too.
-            new = have === nothing ? want * "\n" * text : replace(text, have => want)
+            new = with_block(text, want)
             new == text && continue
             write(full, new)
+        elseif isfile(full)
+            have = read(full, String)
+            generated_here(have) || (push!(refused, g.path => opening_line(have)); continue)
+            if have == want
+                # the content is right; the mode may not be, and the hook's mode is part of it
+                (g.generator === :hook && !Sys.isexecutable(full)) || continue
+            else
+                write(full, want)
+            end
         else
-            isfile(full) && read(full, String) == want && continue
             write(full, want)
         end
         g.generator === :hook && chmod(full, 0o755)
@@ -1496,7 +1605,7 @@ function write_all(cfg::Model.Config, root::AbstractString)
     for envdir in SUBENVS
         write_pin(cfg, root, envdir) && push!(changed, joinpath(envdir, "Project.toml"))
     end
-    return changed
+    return (changed = changed, refused = refused)
 end
 
 end # module Render

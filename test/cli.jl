@@ -70,3 +70,23 @@ end
     @test parentmodule(G.TestHarness.resolve_function(:run, G, mods)) === G.Git
     @test parentmodule(G.TestHarness.resolve_function(:report, G, mods)) === G.Render
 end
+
+# The code review of 2026-09-26, group C: each of these failed on the tree it was found in.
+@testset "a missing option value is the user's mistake, exit 2" begin
+    @test_throws G.UsageError G.parse_options(["--v"]; valued = ["v"])
+    @test_throws G.UsageError G.parse_options(["--v", "--", "file.tsv"]; valued = ["v"])   # `--` is not a value
+    @test G.parse_options(["--v", "x", "--", "--y"]; valued = ["v"]).positional == ["--y"]
+    redirect_stderr(devnull) do
+        @test G.main(["install", "--dev-checkout"]) == 2                   # was a crash, 3, with a backtrace
+    end
+end
+
+@testset "tree hash: the owner's execute bit alone, and a directory of skipped names is empty" begin
+    dir = joinpath(TMP, "treehash-review"); rm(dir; recursive = true, force = true); mkpath(joinpath(dir, "sub", ".git"))
+    write(joinpath(dir, "a"), "alpha\n"); chmod(joinpath(dir, "a"), 0o654)            # group execute, not owner
+    write(joinpath(dir, "sub", ".git", "HEAD"), "ref: refs/heads/master\n")
+    git(args...) = strip(read(setenv(`git -C $dir $args`, "GIT_AUTHOR_NAME" => "t", "GIT_AUTHOR_EMAIL" => "t@t",
+                                     "GIT_COMMITTER_NAME" => "t", "GIT_COMMITTER_EMAIL" => "t@t"), String))
+    git("init", "-q"); git("add", "a")
+    @test G.tree_hash(dir) == git("write-tree")
+end

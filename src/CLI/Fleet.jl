@@ -1,12 +1,13 @@
-# Fleet.jl — `gbg fleet [--deep]`: the scorecard over
+# Fleet.jl — `gbg fleet`: the scorecard over
 # `Catalogue.FLEET` (ARCHITECTURE D4), dev checkout only.
 
 """
     Fleet
 
 The fleet scorecard: [`Fleet.rows`](@ref) computes one row per package of `Catalogue.FLEET` — `OK`,
-`NOT-INITIALISED`, `BEHIND` or `RED` with a detail. The exit contract is D4's: 0 when every row is `OK`; 1 on `NOT-INITIALISED`,
-`RED`, or `BEHIND` outside the 7-day sweep window; 2 when a listed path does not exist.
+`NOT-INITIALISED`, `BEHIND`, `AT-PIN`, `RED` or `MISSING` with a detail. The exit contract is D4's: 0
+when every row is `OK` or `AT-PIN`; 1 on `NOT-INITIALISED`, `RED`, or `BEHIND` outside the 7-day sweep
+window; 2 when a listed path does not exist (`MISSING`).
 """
 module Fleet
 
@@ -22,35 +23,23 @@ read_fleet() = isfile(fleet_path()) ? TOML.parsefile(fleet_path()) : Dict{String
 roster() = GBGCodingTools.Catalogue.FLEET
 
 """
-    latest_tag(root) -> Union{VersionNumber,Nothing}
+    Fleet.rows() -> (rows, code)
 
-The newest released `vX.Y.Z` tag of the repository at `root` (prereleases excluded), or `nothing`.
+One row per package of `Catalogue.FLEET`: `(name, pin, status, detail)`. A consumer without
+`.gbg/config.jl` is `NOT-INITIALISED`; one whose generated files are adrift is `RED`; one whose pinned
+version is older than the fleet's newest is `BEHIND` with both versions and the window state; else `OK`.
+A missing path is `MISSING`, exit 2. The tool's own row (`path = "."`) shows `dev+<sha>[-dirty]` with
+`clean at vX.Y.Z` or `off tag`, is `OK`/`RED` by its own wiring and never `BEHIND`. Returns the rows and
+the exit code.
+
+The wiring is judged by THIS copy's generators, which are the dev tree's. That is the right judge of a
+consumer pinned to the checkout, and the wrong one of a consumer pinned to a release: its files are what
+its pin writes, and the dev tree words them differently whenever a generator changed since that tag. So
+a released pin that differs is `AT-PIN`, not `RED` — its own build judges it at its pin — and a
+checkout pin that differs is `RED` (found in review, 2026-09-26: every consumer behind the dev tree was
+graded `RED WIRING`).
 """
-function latest_tag(root)
-    out = Git.run(root, "tag", "--list", "v*")
-    out === nothing && return nothing
-    vs = VersionNumber[]
-    for t in split(out, '\n')
-        m = match(r"^v(\d+\.\d+\.\d+)$", t); m === nothing || push!(vs, VersionNumber(m.captures[1]))
-    end
-    return isempty(vs) ? nothing : maximum(vs)
-end
-
-"""
-    Fleet.rows(; deep = false) -> (rows, code)
-
-One row per package of `Catalogue.FLEET`: `(name, pin, status, detail)`. A consumer without `.gbg/config.jl` is
-`NOT-INITIALISED`; one whose generated files are adrift is `RED`; one whose pinned version
-is older than the fleet's newest is `BEHIND` with both versions and the window state; else `OK`. The
-tool's own row (`path = "."`) shows `dev+<sha>[-dirty]` with `clean at vX.Y.Z` or `off tag`, is
-`OK`/`RED` by its own wiring and never `BEHIND`. A missing path is exit 2. The arguments are:
-
-- `deep` — run every check, the `--deep` ones included, as each consumer's doctor pass instead of the
-  `QUICK` set.
-
-Returns the rows and the exit code.
-"""
-function rows(; deep::Bool = false)
+function rows()
     fleet = read_fleet(); base = dirname(fleet_path())
     out = NamedTuple[]; code = 0
     pins = Dict{String,VersionNumber}()
@@ -91,7 +80,10 @@ function rows(; deep::Bool = false)
             push!(out, (name = c.name, pin = stamp, status = st, detail = st == "OK" ? detail : detail * "; " * join(fails, ", ")))
             st == "RED" && (code = max(code, 1)); continue
         end
-        if !isempty(fails)
+        if !isempty(fails) && cfg.tool isa VersionNumber
+            push!(out, (name = c.name, pin = pin, status = "AT-PIN",
+                        detail = "the dev tree writes its generated files differently; its own build judges them at $pin"))
+        elseif !isempty(fails)
             push!(out, (name = c.name, pin = pin, status = "RED", detail = join(fails, ", "))); code = max(code, 1)
         elseif newest !== nothing && haskey(pins, c.name) && pins[c.name] < newest
             push!(out, (name = c.name, pin = pin, status = "BEHIND", detail = "pinned at $pin, newest $newest — $window"))
@@ -111,7 +103,7 @@ end
 function cmd_fleet(args)
     o = parse_options(args)
     running_dev() || (println(stderr, "fleet: the dev checkout only (gbg --dev fleet)"); return 2)
-    rs, code = rows(; deep = "deep" in o.flags)
+    rs, code = rows()
     for r in rs
         println("  ", rpad(r.name, 26), rpad(r.pin, 22), rpad(r.status, 17), r.detail)
     end

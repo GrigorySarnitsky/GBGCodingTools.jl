@@ -466,3 +466,28 @@ end
     @test !L("x = 1\n#md # The results, plotted.\n", "x = 1\n#jl # The results, plotted.\n")
     @test !L("x = 1\n#md # The results, plotted.\n", "x = 1\n# The results, plotted.\n")
 end
+
+# The code review of 2026-09-26: each of these was called documentation, or refused, wrongly.
+@testset "the review of 2026-09-26" begin
+    tool = MD.Config(package = "GBGCodingTools", tool = :dev)
+    L(b, a) = doc("examples/x.jl", b, a)
+    # clause 3 cuts a PLAIN statement only: the literal pieces of an interpolated one are code
+    @test !GD.classify(tool, "src/Rules/t.jl", "const R = Rule(id = :a, statement = \"one \$(x) two\")\n",
+                       "const R = Rule(id = :a, statement = \"one, reworded \$(x) two\")\n").documentation
+    @test GD.classify(tool, "src/Rules/t.jl", "const R = Rule(id = :a, statement = \"one two\")\n",
+                      "const R = Rule(id = :a, statement = \"one, reworded, two\")\n").documentation
+    # `math_changed` reads a Literate example's comments when told it is one
+    @test !isempty(GD.math_changed("# The energy is \$E = h\$.\nx = 1\n", "# The energy is \$E = 2h\$.\nx = 1\n";
+                                   jl = true, literate = true))
+    # a fence opened inside a `#md` block swallows the code after it
+    @test !L("#md # Text.\n#md # more\nx = 1\n", "#md # Text.\n#md # ```\nx = 1\n")
+    @test L("#md # Text.\n#md # more\nx = 1\n", "#md # Text.\n#md # more, reworded\nx = 1\n")
+    # a mark is a mark at a comment's start or end; mentioned mid-line it is prose
+    @test L("# Prose about #md lines.\n", "# Prose about the #md lines.\n")
+    @test !L("x = 1 #md\n", "x = 1\n")
+    @test !L("# Prose.\n", "# Prose. #md\n")
+    # a display formula made a plain code fence is a formula removed; an inline one respelled is not
+    @test !doc("docs/src/i.md", "```math\nE = h\n```\n", "```\nE = h\n```\n")
+    @test doc("docs/src/i.md", "Take ``E = h``.\n", "Take `E = h`.\n")
+end
+

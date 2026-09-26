@@ -80,3 +80,15 @@ end
         @test !any(f -> occursin("on branch", f), G.release_fails(cfg, root, "2.0.0", "2.0.0", false))
     end
 end
+
+# The code review of 2026-09-26: a refused tag or push was one line with no cause, because every git
+# call discarded stderr. The write commands now say what git said. Shown on a throwaway repository,
+# with a tag that already exists — never on this one.
+@testset "a git command that writes reports git's reason" begin
+    root, gg = repo("2.0.0")
+    gg("tag", "v2.0.0")
+    ok, said = G.Git.said(root, "tag", "v2.0.0")
+    @test !ok && occursin("already exists", said)
+    ok, said = G.Git.said(root, "tag", "v2.0.1")
+    @test ok
+end

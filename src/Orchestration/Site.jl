@@ -155,12 +155,16 @@ function key_of(rel::AbstractString)
 end
 
 """
-    source_of(root, path) -> String
+    source_of(root, path; cfg = nothing) -> String
 
 The tracked file a built page was made from, by Documenter's own convention: `guide/config/index.html`
-is `docs/src/guide/config.md`, and the home page is `docs/src/index.md`. The arguments are `root`, the
-package root, `path`, the page's path inside the site, and `cfg`, the package's config where the caller
-has one. Returns the path relative to the package, or `""` where no such file exists.
+is `docs/src/guide/config.md`, and the home page is `docs/src/index.md`. The arguments are:
+
+- `root` — the package root.
+- `path` — the page's path inside the site.
+- `cfg` — the package's config where the caller has one.
+
+Returns the path relative to the package, or `""` where no such file exists.
 
 Where `cfg` is given and the page was built from a declared COPY, the SOURCE is named instead. A fix
 landing in a copy is gone at the next build, and a finding that names the copy sends its fixer to a file

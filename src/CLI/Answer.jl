@@ -110,7 +110,9 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
     deferred = false
     remade = false
     if open_here !== nothing && (settled || (of_run && option == NOT_A_DEFECT))
-        if of_run && first(found) == open_here && !settled
+        # with or without the flag: on this option the flag adds nothing, and refusing the spelling the
+        # usage line offers was only a trap (found in review, 2026-09-26)
+        if of_run && first(found) == open_here && option == NOT_A_DEFECT
             deferred = true
         else
             println(io, "answer: refused — a run is open, and this answer writes the settled list, which would block it; answer it once the run has closed")

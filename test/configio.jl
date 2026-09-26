@@ -29,7 +29,7 @@ Config(
     filesets = Dict(FileSet.PAGES => ["docs/src/**/*.md"], FileSet.CODE => ["src/**/*.jl"]),
     copies = ["docs/src/architecture.md" => "docs/ARCHITECTURE.md"],
     switches = [Switch(target = Symbol("RULE.TEX.CODE_IN_MATH"), reason = "no mathematics in this package's prose")],
-    settings = [Setting(rule = Symbol("RULE.DOC.TABLE_TOP_LEVEL"), name = :leading, value = "what the operation does")],
+    settings = [Setting(rule = Symbol("RULE.DOC.COORD_FREE"), name = :formalization, value = "what the operation does")],
     rules = [PatternRule(id = :NO_TODO, statement = "No TODO is left in shipped prose.",
                          fileset = FileSet.PAGES, pattern = r"TODO", forbidden = true)],
     code_areas = [:engine => ["src/Engine/*.jl"]],
@@ -203,4 +203,87 @@ end
     cfg = CIO.read_config(in_config(body))
     @test cfg.switches[1].reason == "A decision log QUOTES a retired claim in order to record it; a \"quoted\" word\nand a new line."
     @test cfg.switches[2].reason == "Indented, triple-quoted and continued."
+end
+
+# The code review of 2026-09-26. Each of these was either a backtrace where exit 2 is promised, a value
+# read as something it is not, or a claim the config makes that nothing checked.
+@testset "the review of 2026-09-26" begin
+    problems(body) = try CIO.read_config(in_config(body)); String[] catch e; e isa CIO.ConfigError ? e.problems : rethrow() end
+    P = "Config(package = \"P\", tool = :dev, "
+    # a dollar is a character: only the parser's children decide interpolation
+    @test CIO.read_config(in_config("Config(package = \"a \\\$ b\", tool = :dev)")).package == "a \$ b"
+    # a consumer's bad literal is one refusal naming the line, never an exception
+    @test only(problems("Config(package = \"P\", tool = v\"not a version\")")) == "line 1: v\"not a version\" is not a version"
+    @test occursin("is not a pattern", only(problems(P * "rules = [PatternRule(id = :x, statement = \"s\", fileset = FileSet.PAGES, pattern = r\"(\")])")))
+    @test occursin("is not an integer", only(problems(P * "settings = [Setting(rule = :x, name = :y, value = 99999999999999999999999)])")))
+    # a raw pattern takes no escapes, and keeps its flags
+    let cfg = CIO.read_config(in_config(P * """rules = [PatternRule(id = :x, statement = "s", fileset = FileSet.PAGES, pattern = r"\\\\d"),
+                                                     PatternRule(id = :y, statement = "s", fileset = FileSet.PAGES, pattern = r"x"i)])"""))
+        @test cfg.rules[1].pattern == r"\\d" && !occursin(cfg.rules[1].pattern, "5")
+        @test occursin(cfg.rules[2].pattern, "X")
+    end
+    # a quoted expression is a program; a repeated keyword and a positional beside keywords are refused
+    @test occursin("quoted expression", only(problems("Config(package = \"P\", tool = :(getpid()))")))
+    @test occursin("quoted expression", only(problems("Config(package = \"P\", tool = quote getpid() end)")))
+    @test occursin("twice", only(problems(P * "switches = [Switch(target = :a, reason = \"x\", reason = \"y\")])")))
+    @test occursin("positional", only(problems(P * "switches = [Switch(:dropped, target = :b, reason = \"r\")])")))
+    # a typed list is built as its type, so a list-valued setting can be written, empty or not
+    let cfg = CIO.read_config(in_config(P * """settings = [Setting(rule = Symbol("RULE.TEX.MATHBF"), name = :mathbf_allowed, value = String["x"]),
+                                                          Setting(rule = Symbol("RULE.TEX.MATHBF"), name = :mathbf_allowed, value = String[])])"""))
+        @test cfg.settings[1].value == ["x"] && cfg.settings[2].value == String[]
+    end
+    # the settled list survives a dollar, a second ruling and the owner's trailing comment
+    let dir = in_config(FULL)
+        CIO.append_settled(dir, MM.Settled(question = "q1", text = "keep the \$x\$ form", date = "2026-09-26"))
+        CIO.append_settled(dir, MM.Settled(question = "q2", text = "two", date = "2026-09-26"))
+        f = joinpath(dir, ".gbg", "settled.jl"); write(f, read(f, String) * "# end of rulings\n")
+        CIO.append_settled(dir, MM.Settled(question = "q3", text = "three", date = "2026-09-26"))
+        @test [s.question for s in CIO.read_settled(dir)] == ["q1", "q2", "q3"]
+        @test CIO.read_settled(dir)[1].text == "keep the \$x\$ form"
+    end
+    # a setting on a retired rule or naming no parameter, and a deferral beside a file switch, are refused
+    v(cfg) = CIO.validate(cfg, mktempdir(; cleanup = true))
+    @test any(p -> occursin("not a rule", p), v(MM.Config(package = "P", tool = :dev, settings = [MM.Setting(rule = Symbol("RULE.INST.SEEDS"), name = :x, value = 1)])))
+    @test any(p -> occursin("no parameter `allowed`", p), v(MM.Config(package = "P", tool = :dev, settings = [MM.Setting(rule = Symbol("RULE.TEX.MATHBF"), name = :allowed, value = 1)])))
+    @test any(p -> occursin("one or the other", p), v(MM.Config(package = "P", tool = :dev,
+        deferrals = [MM.Deferral(rule = Symbol("RULE.DOC.GRAMMAR"), until = "x")],
+        switches = [MM.Switch(target = Symbol("RULE.DOC.GRAMMAR"), reason = "r", files = ["docs/x.md"])])))
+    # a per-file switch is the same glob as a file set
+    on(pat, file) = G.Engine.Checks.applies(MM.Config(package = "P", tool = :dev, switches = [MM.Switch(target = :R, reason = "r", files = [pat])]), :R; file)
+    @test !on("src/**/*.jl", "src/a.jl") && on("src/*.jl", "src/a/b.jl")
+    @test on("docs/src/a+b.md", "docs/src/ab.md") && !on("docs/src/a+b.md", "docs/src/a+b.md")
+    # a root holding a non-ASCII character
+    @test G.Catalogue.normal_path(MM.Config(package = "P", tool = :dev), "/tmp/Ünter/pkg", "/tmp/Ünter/pkg/docs/a.md") == "docs/a.md"
+    # a reader switched off leaves its rules as gaps, one each, never silence
+    let (_, gaps) = G.Catalogue.panel(:documentation_review, MM.Config(package = "P", tool = :dev, switches = [MM.Switch(target = :withheld, reason = "r")]))
+        @test any(g -> occursin("withheld reader, which P has switched off", g), gaps)
+    end
+    # the banner names the version that ran, and the pin beside it where they differ
+    @test occursin("the config pins v0.0.1", G.Engine.Harness.banner(MM.Config(package = "P", tool = v"0.0.1")))
+    @test G.Engine.Harness.banner(MM.Config(package = "P", tool = :dev)) == "vdev checks"
+end
+
+# A package's own rules are run, and the harness runs the rulebook whatever it is handed.
+@testset "a package's pattern rules run, and extra rules never replace the rulebook" begin
+    dir = in_config("""Config(package = "P", tool = :dev,
+        rules = [PatternRule(id = :no_todo, statement = "No TODO is left in shipped prose.", fileset = FileSet.PAGES, pattern = r"TODO"),
+                 PatternRule(id = :no_fixme, statement = "No FIXME in the code.", fileset = FileSet.CODE, pattern = r"FIXME")])""")
+    mkpath(joinpath(dir, "docs", "src")); mkpath(joinpath(dir, "src"))
+    write(joinpath(dir, "docs", "src", "index.md"), "# Page\n\nTODO: write this.\n")
+    write(joinpath(dir, "src", "P.jl"), "module P\n# FIXME\nend\n")
+    cfg = CIO.read_config(dir)
+    found = G.Engine.Checks.run_patterns(cfg, dir)
+    @test [(id, l.file, l.line) for (id, l) in found] == [(:no_todo, "docs/src/index.md", 3), (:no_fixme, "src/P.jl", 2)]
+    @test [id for (id, _) in G.Engine.Checks.run_patterns(cfg, dir; intention = MM.Intention.CODE)] == [:no_fixme]
+    @test any(((id, _),) -> id === :no_todo, G.Engine.Checks.run_all(cfg, dir; intention = MM.Intention.DOCUMENTATION))
+    # the harness throws on the package's code rule, and a rule passed to it runs BESIDE the rulebook
+    @test_throws ErrorException redirect_stdout(devnull) do; G.Engine.Harness.test(dir); end
+    ran = Symbol[]
+    spy = MM.Rule(id = :spy, statement = "s", why = "w", intention = MM.Intention.CODE,
+                  check = MM.ProgramCheck(MM.Input.FILE_TREE, (r, c) -> (push!(ran, :spy); MM.Location[]), false))
+    write(joinpath(dir, "src", "P.jl"), "module P\nend\n")
+    redirect_stdout(devnull) do; G.Engine.Harness.test(dir; rules = [spy]); end
+    @test ran == [:spy]
+    code_rules = count(r -> r.intention === MM.Intention.CODE && r.check isa MM.ProgramCheck, G.Catalogue.RULES)
+    @test code_rules > 0                                       # there are rulebook rules the old call dropped
 end

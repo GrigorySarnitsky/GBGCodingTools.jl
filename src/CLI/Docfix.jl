@@ -15,7 +15,8 @@ whether what it did was documentation.
 """
 module Docfix
 
-using ..GBGCodingTools: GBGCodingTools, Catalogue, ConfigIO, Engine, Git, Model, Orchestration, Texts, parse_options, VERBS
+using ..GBGCodingTools: GBGCodingTools, Catalogue, ConfigIO, Engine, Git, Model, Orchestration, Render, Texts, parse_options, VERBS
+using TOML
 
 """
     changed_files(root) -> Vector{String}
@@ -42,7 +43,8 @@ function at_head(root::AbstractString, path::AbstractString)
 end
 
 """
-    rulings(root; generated = Dict{String,String}()) -> Vector{Engine.Guard.Ruling}
+    rulings(root; generated = Dict{String,String}(), contents = nothing)
+        -> Vector{Engine.Guard.Ruling}
 
 What the guard says about every changed file of the working tree at `root`. The arguments are:
 
@@ -84,6 +86,46 @@ function open_run_id(root::AbstractString)
         isfile(joinpath(dir, d, "stage")) && !isfile(joinpath(dir, d, "run.json")) && return d
     end
     return nothing
+end
+
+"""
+    generated_now(root) -> Dict{String,String}
+
+What every generator writes in the package at `root` now, keyed by path, for the guard's clause 0: a
+whole file is its generator's output, and a file holding a managed block is the file as it stands with
+that block replaced, which is what `gbg sync` would leave there. The argument is `root`. Returns the map.
+
+Without it clause 0 was unreachable from the command line, and a reworded rule statement could not be
+committed with the policy files it feeds (found in review, 2026-09-26).
+"""
+function generated_now(root::AbstractString)
+    cfg = ConfigIO.read_config(root)
+    out = Dict{String,String}()
+    for g in Render.GENERATED
+        Render.wanted(cfg, g) || continue
+        want = Render.produce(g.generator, cfg)
+        if g.part === Model.Part.BLOCK
+            full = joinpath(root, g.path)
+            isfile(full) || continue
+            text = read(full, String)
+            have = Render.block_of(text)
+            out[g.path] = have === nothing ? want * "\n" * text : replace(text, have => want)
+        else
+            out[g.path] = want
+        end
+    end
+    return out
+end
+
+# The documentation rules as the fixer is held to them: `RULE.DOC.SHAPE`'s allowance inside a run is a
+# verb's to grant, since this verb knows a run is open and a build must never know (review, 2026-09-26).
+function rules_now(cfg::Model.Config, root::AbstractString)
+    Catalogue.Shape.IN_RUN[] = open_run_id(root) !== nothing
+    try
+        return unique(id for (id, _) in Engine.Checks.run_all(cfg, root; intention = Model.Intention.DOCUMENTATION))
+    finally
+        Catalogue.Shape.IN_RUN[] = false
+    end
 end
 
 """
@@ -214,9 +256,11 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
         println(io, "changed, which is never prose; run it again once nothing else is writing the tree.")
         return 1
     end
-    # The trailer is the mark a run's close trusts: a commit carrying it passed this guard.
+    # The trailer is the mark a run's close trusts: a commit carrying it passed this guard. The INDEX is
+    # committed, with no pathspec: `git commit -- <path>` takes the working tree's bytes, which reopens
+    # the window the comparison above just closed (found in review, 2026-09-26).
     trailers = Orchestration.Runs.GUARD_TRAILER * (isempty(finding) ? "" : "\n" * Orchestration.Runs.FINDING_TRAILER * finding)
-    if Git.run(root, "commit", "-m", message * "\n\n" * trailers, "--", [r.path for r in rs]...) === nothing
+    if Git.run(root, "commit", "-m", message * "\n\n" * trailers) === nothing
         # unstage what this call staged, or every later fix and revert refuses on it
         Git.run(root, "reset", "-q", "--", [r.path for r in rs]...)
         println(io, "docfix: git commit failed; nothing is left staged")
@@ -253,7 +297,7 @@ function check(root::AbstractString; build::Bool = true, io::IO = stdout)
     # The same tree `commit` sees: the run's own record and the work queue are the session's to commit
     # at the close and are looked past here too, or the check the fixer is told to run before every
     # commit is red for every edit while a run is open (found in review, 2026-09-23).
-    rs = filter(r -> !Orchestration.Runs.own_record(r.path), rulings(root))
+    rs = filter(r -> !Orchestration.Runs.own_record(r.path), rulings(root; generated = generated_now(root)))
     run_open = open_run_id(root) !== nothing
     notes = run_open ? working_notes(root, rs) : String[]
     for r in rs
@@ -266,7 +310,7 @@ function check(root::AbstractString; build::Bool = true, io::IO = stdout)
 
     cfg = ConfigIO.read_config(root)
     before = baseline(root)
-    now = unique(id for (id, _) in Engine.Checks.run_all(cfg, root; intention = Model.Intention.DOCUMENTATION))
+    now = rules_now(cfg, root)
     if before === nothing
         # No run is open, so nothing says which of these the change caused. They are reported and not
         # counted: a verb that blamed a fixer for what it inherited would be read as noise and ignored.
@@ -317,15 +361,26 @@ function unresolved_refs(root::AbstractString, paths::AbstractVector{<:AbstractS
         for h in Texts.headings(joinpath(root, f)); push!(known, String(last(split(h.name, " / ")))); end
         for m in eachmatch(r"@id\s+([^\s)\]]+)", text); push!(known, String(m.captures[1])); end
     end
+    # A target whose first component is a module this package does not define — `Base`, `Core`, a
+    # dependency — is Documenter's to resolve with that module loaded, and never named here.
+    foreign = Set(["Base", "Core", "Main"])
+    for proj in (joinpath(root, "Project.toml"), joinpath(root, "docs", "Project.toml"))
+        isfile(proj) || continue
+        d = try TOML.parsefile(proj) catch; Dict{String,Any}() end
+        union!(foreign, keys(get(d, "deps", Dict{String,Any}())))
+    end
     out = Tuple{String,String}[]
     for p in paths
         full = joinpath(root, p)
         (isfile(full) && (endswith(p, ".md") || endswith(p, ".jl"))) || continue
-        text = read(full, String)
+        # the PROSE of a Julia file: a regex literal in its code once matched itself (review, 2026-09-26)
+        text = endswith(p, ".jl") ? Texts.prose_text(full) : read(full, String)
         for m in eachmatch(r"\[([^\]]+)\]\(@ref(?:\s+([^)]+))?\)", text)
             target = strip(replace(String(something(m.captures[2], m.captures[1])), '`' => '"'), ['"', ' '])
             target = strip(replace(target, '"' => ""))
+            target = replace(target, r"\(.*\)$" => "")            # a call form names its binding
             isempty(target) && continue
+            String(first(split(target, '.'))) in foreign && continue
             bare = String(last(split(target, '.')))
             (target in known || bare in known || any(k -> endswith(k, "." * bare), known)) && continue
             push!(out, (p, target))
@@ -348,8 +403,7 @@ function broken_by_change(root::AbstractString)
     before = baseline(root)
     before === nothing && return Symbol[]
     cfg = ConfigIO.read_config(root)
-    now = unique(id for (id, _) in Engine.Checks.run_all(cfg, root; intention = Model.Intention.DOCUMENTATION))
-    return sort(setdiff(now, before))
+    return sort(setdiff(rules_now(cfg, root), before))
 end
 
 # What a program already found when the open run started, or `nothing` where no run is open.
@@ -374,7 +428,7 @@ function cmd_docfix(args)
     elseif sub == "commit"
         msg = get(o.values, "message", "")
         isempty(msg) && (println(stderr, "usage: gbg docfix commit --message \"…\" [--finding <id>]"); return 2)
-        return commit(root, msg; finding = get(o.values, "finding", ""))
+        return commit(root, msg; generated = generated_now(root), finding = get(o.values, "finding", ""))
     end
     println(stderr, "usage: gbg docfix check [--no-build] | gbg docfix commit --message \"…\" [--finding <id>]")
     return 2

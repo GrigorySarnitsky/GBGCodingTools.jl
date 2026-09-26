@@ -130,10 +130,10 @@ function taggerBrief(role) {
   ].filter(Boolean).join('\n');
 }
 
+// Nothing is withheld from a verifier, whatever its reader was kept from: it reads the diff, and a diff
+// of a docstring is the source's (ruled 2026-09-26). Julia writes every verifier so, and a paragraph
+// here for the other case was dead text a reader took as live.
 function verifierBrief(role) {
-  const withheld = role.kept_from_code
-    ? 'The SOURCE and the design documents are withheld from you, as they were from the reader: judge the text alone.'
-    : '';
   const unit = !role.unit ? ''
     : role.source_unit
       ? `\nThe example's source as it now stands is the file ${role.unit}: judge the text on it, and read the diff beside it.`
@@ -147,8 +147,6 @@ function verifierBrief(role) {
     '',
     standpoint(role),
     '',
-    withheld,
-    '',
     // The finding is a FILE, not a paragraph pasted here: it carries the text quoted at every location,
     // and a hundred of those is most of what the session has to type to launch this stage. Read it FIRST
     // — a verdict reached without it is a verdict about nothing, and the quote it owes cannot be found.
@@ -160,9 +158,9 @@ function verifierBrief(role) {
     role.diff_file ? `\nThe change made for it is the diff in ${role.diff_file}. Read that too.` : '',
     '',
     `Answer for EVERY finding in that file, by its id: one verdict from ${(role.verdicts || []).join(', ')},`,
-    'and the decisive QUOTE (at most 25 words, ONE verbatim span exactly as it appears in the current text',
-    'or the diff — never two fragments joined by "…", never a paraphrase). A verdict whose quote is not in',
-    'the text counts as NOT_FIXED. A finding you leave out is graded NOT_FIXED.',
+    'and the decisive QUOTE (at most 25 words, ONE verbatim span exactly as it appears in the CURRENT text',
+    '— never from the diff, never two fragments joined by "…", never a paraphrase). A verdict whose quote',
+    'is not in the text counts as NOT_FIXED. A finding you leave out is graded NOT_FIXED.',
   ].join('\n');
 }
 

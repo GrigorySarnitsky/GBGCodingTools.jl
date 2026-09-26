@@ -28,6 +28,21 @@ struct Options
 end
 
 """
+    UsageError
+
+A command line a verb cannot run: an option missing its value. The fields are:
+
+- `msg` — the sentence printed.
+
+It is the user's mistake, so [`main`](@ref) prints it without a backtrace and returns 2, not the crash
+code 3 (found in review, 2026-09-26).
+"""
+struct UsageError <: Exception
+    msg::String
+end
+Base.showerror(io::IO, e::UsageError) = print(io, e.msg)
+
+"""
     parse_options(args; valued = String[]) -> Options
 
 Parses `args` into an `Options` record. Any `--name=value` is a value whatever `valued` says; an option
@@ -37,7 +52,8 @@ flag; a lone `--` ends option parsing. The arguments are:
 - `args` — the command-line arguments to parse, in order.
 - `valued` — the names, without the dashes, of the options that take a value.
 
-Returns the parsed options; an option that is in `valued` but has no value is an `ArgumentError`.
+Returns the parsed options; an option that is in `valued` but has no value — the end of the arguments,
+or the `--` that ends them — is a [`UsageError`](@ref), which [`main`](@ref) turns into exit 2.
 """
 function parse_options(args::AbstractVector{<:AbstractString}; valued = String[])
     pos = String[]; flags = Set{String}(); vals = Dict{String,String}()
@@ -51,7 +67,7 @@ function parse_options(args::AbstractVector{<:AbstractString}; valued = String[]
             if (k = findfirst('=', body)) !== nothing
                 vals[body[1:k-1]] = body[k+1:end]
             elseif body in valued
-                i == length(args) && throw(ArgumentError("--$body needs a value"))
+                (i == length(args) || args[i+1] == "--") && throw(UsageError("--$body needs a value"))
                 vals[body] = String(args[i+1]); i += 1
             else
                 push!(flags, body)
@@ -124,8 +140,9 @@ finding, 2 cannot evaluate, 3 crash. A `--dev` first argument sets `GBG_DEV=1` s
 Output is never truncated.
 
 An exception escaping a verb is printed with its backtrace to `stderr` and returns 3, so a crash is
-never read as a finding. The exception is the consumer's own config failing to read or validate — a
-[`ConfigIO.ConfigError`](@ref) — the documented exit 2, printed without a backtrace.
+never read as a finding. The exceptions are the consumer's own config failing to read or validate — a
+[`ConfigIO.ConfigError`](@ref) — and a [`UsageError`](@ref), each the documented exit 2, printed
+without a backtrace.
 """
 function main(args::AbstractVector{<:AbstractString})::Int
     args = String.(args)
@@ -152,7 +169,8 @@ function main(args::AbstractVector{<:AbstractString})::Int
         # once here, it is caught for every verb; the old reader's error was caught the same way until
         # Phase 5, and the rebuilt reader's reached the crash arm with a backtrace where the contract
         # promises 2 (found in review, 2026-09-23).
-        err isa GBGCodingTools.ConfigIO.ConfigError && (println(stderr, "gbg ", key, ": ", sprint(showerror, err)); return 2)
+        (err isa GBGCodingTools.ConfigIO.ConfigError || err isa UsageError) &&
+            (println(stderr, "gbg ", key, ": ", sprint(showerror, err)); return 2)
         println(stderr, "gbg ", key, ": crashed — ", sprint(showerror, err))
         Base.show_backtrace(stderr, catch_backtrace()); println(stderr)
         return 3

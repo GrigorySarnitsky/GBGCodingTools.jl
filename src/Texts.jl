@@ -89,21 +89,67 @@ The change guard is given a path and no root and has no business reading disk to
 the question "is this path a target of the review" is asked of paths the walk never produced, such as
 the file a reader names. Both ask this.
 """
-function glob_matches(pattern::AbstractString, path::AbstractString)
-    pat = replace(pattern, '\\' => '/')
-    # Every regex metacharacter but the two wildcards is literal: `docs/a+b.md` matched `docs/ab.md` and
-    # not itself while only the dot was escaped (found in review, 2026-09-23).
-    lit = replace(pat, r"([.^$|?()\[\]{}+\\])" => s"\\\1")
-    rx = "^" * replace(replace(replace(lit, "**/" => "\0ANY\0"), "*" => "[^/]*"), "\0ANY\0" => "(?:.*/)?") * "\$"
-    return occursin(Regex(rx), replace(path, '\\' => '/'))
+glob_matches(pattern::AbstractString, path::AbstractString) =
+    occursin(Regex("^" * wildcard_source(pattern) * "\$"), replace(path, '\\' => '/'))
+
+# ONE grammar for every pattern this module matches. A file-set pattern and a `.gitignore` line share
+# git's wildcards, and the walk, the guard's test and the ignore predicate each had a rewrite of their
+# own: only the dot was escaped in two of them, so `docs/a+b.md` matched `docs/ab.md`, `foo(1).txt`
+# ignored `foo1.txt`, and a line holding `)` threw out of every check (found in review, 2026-09-23 and
+# 2026-09-26). Every regex metacharacter is literal here unless it is a wildcard: `*` within one name,
+# `?` one character, `[…]` a class (`[!…]` negated, as git writes it), and `**` any run of directories —
+# `**/` at the start or `/**/` in the middle matching none as well, a trailing `/**` everything below.
+# A backslash makes the character after it literal, which is how a name holding a space, a `#` or a
+# `!` is written in a `.gitignore`.
+function wildcard_source(pattern::AbstractString)
+    s = String(pattern)
+    io = IOBuffer()
+    literal(c) = c in ".^\$|()[]{}+?*\\" ? "\\" * c : string(c)
+    i = firstindex(s); n = lastindex(s)
+    while i <= n
+        c = s[i]
+        if c == '\\' && i < n
+            i = nextind(s, i)
+            write(io, literal(s[i]))
+        elseif c == '*' && i < n && s[nextind(s, i)] == '*'
+            after = nextind(s, i, 2)                                # the index past the `**`
+            at_edge = i == firstindex(s) || s[prevind(s, i)] == '/'
+            if at_edge && after <= n && s[after] == '/'
+                write(io, "(?:.*/)?"); i = nextind(s, after)       # `**/`: zero or more directories
+            elseif at_edge && after > n
+                write(io, ".+"); i = after                          # a trailing `/**`, or `**` alone
+            else
+                write(io, "[^/]*"); i = after                       # git: other doubled stars are stars
+            end
+            continue
+        elseif c == '*'
+            write(io, "[^/]*")
+        elseif c == '?'
+            write(io, "[^/]")
+        elseif c == '['
+            close_ = findnext(']', s, min(nextind(s, i, 2), n))    # a `]` right after the `[` is literal
+            if close_ === nothing
+                write(io, "\\[")
+            else
+                inner = s[nextind(s, i):prevind(s, close_)]
+                negated = startswith(inner, "!") || startswith(inner, "^")
+                negated && (inner = inner[2:end])
+                write(io, negated ? "[^" : "[", replace(inner, "\\" => "\\\\", "[" => "\\["), "]")
+                i = close_
+            end
+        else
+            write(io, literal(c))
+        end
+        i = nextind(s, i)
+    end
+    return String(take!(io))
 end
 
-# `**` matches any run of directories, `*` anything within one name. Written out rather than taken from a
-# package: the patterns are few and the walk is over a source tree, not a corpus.
+# Every file under `root` the pattern matches, walked rather than globbed: the patterns are few and the
+# walk is over a source tree, not a corpus.
 function expand(root::AbstractString, pattern::AbstractString)
     isfile(joinpath(root, pattern)) && return [String(pattern)]
-    rx = Regex("^" * replace(replace(replace(pattern, "." => "\\."), "**/" => "\0"), "*" => "[^/]*") * "\$")
-    rx = Regex(replace(rx.pattern, "\0" => "(?:.*/)?"))
+    rx = Regex("^" * wildcard_source(pattern) * "\$")
     out = String[]
     for (dir, _, fs) in walkdir(root; onerror = SKIP_VANISHED)
         rel = relpath(dir, root)
@@ -245,25 +291,27 @@ function bound_name(node)
     if k in (JS.K"function", JS.K"macro")
         isempty(cs) && return nothing
         sig = signature(first(cs))
-        return JS.kind(sig) === JS.K"call" && !isempty(JS.children(sig)) ? node_text(first(JS.children(sig))) : node_text(sig)
-    elseif k === JS.K"struct"
+        return JS.kind(sig) === JS.K"call" && !isempty(JS.children(sig)) ? callee_name(first(JS.children(sig))) : node_text(sig)
+    elseif k in (JS.K"struct", JS.K"abstract", JS.K"primitive")
         isempty(cs) && return nothing
-        head = first(cs)
-        JS.kind(head) === JS.K"<:" && !isempty(JS.children(head)) && (head = first(JS.children(head)))
-        JS.kind(head) === JS.K"curly" && !isempty(JS.children(head)) && (head = first(JS.children(head)))
-        return node_text(head)
+        return first_name(first(cs))
     elseif k === JS.K"const" || k === JS.K"global"
         isempty(cs) && return nothing
-        inner = first(cs)
-        JS.kind(inner) === JS.K"=" && !isempty(JS.children(inner)) && (inner = first(JS.children(inner)))
-        JS.kind(inner) === JS.K"::" && !isempty(JS.children(inner)) && (inner = first(JS.children(inner)))
-        return node_text(inner)
+        return first_name(first(cs))
     elseif k === JS.K"="
         isempty(cs) && return nothing
         lhs = signature(first(cs))
-        JS.kind(lhs) === JS.K"call" && !isempty(JS.children(lhs)) && return node_text(first(JS.children(lhs)))
+        JS.kind(lhs) === JS.K"call" && !isempty(JS.children(lhs)) && return callee_name(first(JS.children(lhs)))
         return nothing
     elseif k === JS.K"macrocall"
+        # `@enum E a b` binds E, and no child of the call is a definition: the first identifier after
+        # the macro's name is the one it makes.
+        if !isempty(cs) && macro_name(first(cs)) == "enum"
+            for c in cs[2:end]
+                JS.kind(c) in (JS.K"Identifier", JS.K"::") && return first_name(c)
+            end
+            return nothing
+        end
         # A defining macro call binds what it wraps: `Base.@kwdef struct S` is a struct named S, and
         # treating it as anonymous sent every keyword-default type down the weaker anchoring path.
         for c in cs
@@ -282,6 +330,69 @@ end
 
 node_text(node) = strip(String(JS.sourcetext(node)))
 
+# The name a documented thing goes by, where the docstring sits on something that is not a definition:
+# a bare `f`, a signature `g(::Int)` with no body, a plain `k = 1`. Each of those is documented in the
+# packages this serves, and each anchored to no node at all (found in review, 2026-09-26).
+function doc_target(node)
+    n = bound_name(node)
+    n === nothing || return n
+    k = JS.kind(node)
+    k === JS.K"Identifier" && return node_text(node)
+    cs = something(JS.children(node), ())
+    isempty(cs) && return nothing
+    k === JS.K"call" && return callee_name(first(cs))
+    k === JS.K"=" && return first_name(first(cs))
+    return nothing
+end
+
+# The first name a left-hand side or a type head binds: `x::Int = 1`, `P, Q = 1, 2`, `A{T} <: B`.
+function first_name(node)
+    while JS.kind(node) in (JS.K"=", JS.K"::", JS.K"tuple", JS.K"curly", JS.K"<:", JS.K"parens") &&
+          !isempty(something(JS.children(node), ()))
+        node = first(JS.children(node))
+    end
+    return node_text(node)
+end
+
+# What a call's callee is named: `f`, `Base.show`, and for a callable struct's method `(c::C)(x)` the
+# type `C`, which is the name a location can carry and `c::C` is not.
+function callee_name(node)
+    cs = something(JS.children(node), ())
+    if JS.kind(node) === JS.K"::" && !isempty(cs)
+        return first_name(last(cs))
+    elseif JS.kind(node) === JS.K"parens" && !isempty(cs)
+        return callee_name(first(cs))
+    end
+    return node_text(node)
+end
+
+# A macro's name without its `@`, or `""` for a node that is not one; `Base.@doc` names `doc` too.
+function macro_name(node)
+    k = JS.kind(node)
+    k === JS.K"MacroName" && return lstrip(node_text(node), '@')
+    cs = something(JS.children(node), ())
+    k === JS.K"." && !isempty(cs) && return macro_name(last(cs))
+    return ""
+end
+
+# A docstring and the thing it documents, as a pair, or `nothing` for a node that is not one. Two
+# spellings make one: the parser's own `doc` node, and a call of `@doc` on a string and a definition —
+# `@doc raw"""…""" f(x) = x`, the idiom for a docstring full of backslashes, which read as no docstring
+# at all (found in review, 2026-09-26).
+function doc_parts(node)
+    k = JS.kind(node)
+    cs = something(JS.children(node), ())
+    if k === JS.K"doc"
+        return length(cs) >= 2 ? (cs[1], cs[2]) : nothing
+    elseif k === JS.K"macrocall" && length(cs) >= 3 && macro_name(cs[1]) == "doc"
+        s = cs[2]
+        is_string = JS.kind(s) === JS.K"string" ||
+                    (JS.kind(s) === JS.K"macrocall" && JS.kind(first(something(JS.children(s), (s,)))) === JS.K"StringMacroName")
+        return is_string ? (s, cs[3]) : nothing
+    end
+    return nothing
+end
+
 # The call inside a signature: `f(x::T) where {T}` and `f(x)::Int` name `f`, not their whole text, which
 # no reader writes and no lookup by name can match (found in review, 2026-09-23: 63 of a real package's
 # node names were whole signatures).
@@ -299,9 +410,12 @@ Every named node of the Julia file at `path`, in source order: each function, ma
 constant, and each keyword field of a constant that is written as a keyword call, which is how a
 generated docstring such as `ARGS_FORM.statement` has a node of its own.
 
-The argument is `path`, the file to read. A file that does not parse yields an empty list rather than an
+The argument is `path`, the file to read. A file that does not parse yields what parsed rather than an
 error, since a caller asking where something is must not be stopped by a file that is temporarily broken.
 Returns the spans.
+
+A name is BARE, `g` and not `Inner.g`, inside a submodule as at the top: a location's node is looked up
+by the name a reader writes, and no reader writes the qualified one.
 """
 function definitions(path::AbstractString)
     out = NodeSpan[]
@@ -312,56 +426,60 @@ function definitions(path::AbstractString)
     catch
         return out
     end
-    walk!(out, tree, src, "")
+    walk!(out, tree, src)
     return out
 end
 
-function walk!(out, node, src, prefix)
+function walk!(out, node, src)
     cs = JS.children(node)
     cs === nothing && return
     for c in cs
         k = JS.kind(c)
-        if k === JS.K"doc"
+        parts = doc_parts(c)
+        if parts !== nothing
             # A docstring and what it documents are ONE node here: the parser wraps them together, and a
             # finding is nearly always in the docstring, which sits above the definition and so outside
             # its own byte range. Anchoring to the definition alone would send every such finding down the
             # weaker path, the quote searched over the whole file.
-            kids = something(JS.children(c), ())
-            if length(kids) >= 2 && bound_name(kids[2]) !== nothing
-                name = bound_name(kids[2])
+            documented = last(parts)
+            name = doc_target(documented)
+            if name !== nothing
                 r = JS.byte_range(c)
-                span = NodeSpan(isempty(prefix) ? name : prefix * "." * name, JS.source_line(c), r, line_range(src, r))
+                span = NodeSpan(name, JS.source_line(c), r, line_range(src, r))
                 push!(out, span)
-                JS.kind(kids[2]) === JS.K"const" && keyword_fields!(out, kids[2], src, span.name)
-                JS.kind(kids[2]) === JS.K"module" && walk!(out, kids[2], src, "")
+                JS.kind(documented) === JS.K"const" && keyword_fields!(out, documented, src, span.name)
+                JS.kind(documented) === JS.K"module" && walk!(out, documented, src)
                 continue
             end
-            walk!(out, c, src, prefix)
+            walk!(out, c, src)
             continue
         end
         name = bound_name(c)
         if name !== nothing
             r = JS.byte_range(c)
-            span = NodeSpan(isempty(prefix) ? name : prefix * "." * name, JS.source_line(c), r, line_range(src, r))
+            span = NodeSpan(name, JS.source_line(c), r, line_range(src, r))
             push!(out, span)
             if k === JS.K"const"                             # the keyword fields of a constant value
                 keyword_fields!(out, c, src, span.name)
             elseif k === JS.K"module"
-                walk!(out, c, src, "")                       # a module's own contents keep their bare names
+                walk!(out, c, src)
             end
             continue
         end
-        walk!(out, c, src, prefix)
+        walk!(out, c, src)
     end
 end
 
 # A constant built by a keyword call — `const ARGS_FORM = Rule(id = :x, statement = "…")` — gives each
 # keyword a node of its own, so a finding inside one of those strings anchors to `ARGS_FORM.statement`
-# rather than to a line of a text no file holds whole.
+# rather than to a line of a text no file holds whole. A keyword written after a semicolon sits under a
+# `parameters` child of the call and is the same keyword.
 function keyword_fields!(out, node, src, owner)
     for c in something(JS.children(node), ())
         if JS.kind(c) === JS.K"call"                          # only a call's keywords, never the binding itself
-            for a in something(JS.children(c), ())
+            args = [x for a in something(JS.children(c), ())
+                      for x in (JS.kind(a) === JS.K"parameters" ? something(JS.children(a), ()) : (a,))]
+            for a in args
                 JS.kind(a) === JS.K"=" || continue
                 kids = something(JS.children(a), ())
                 length(kids) >= 2 && JS.kind(first(kids)) === JS.K"Identifier" || continue
@@ -390,7 +508,8 @@ end
 Every docstring of the Julia file at `path`, in source order, each with the name of what it documents.
 A docstring whose text is interpolated is returned as written, since what a rule reads is the source.
 
-The argument is `path`, the file to read. Returns the blocks; a file that does not parse yields none.
+The argument is `path`, the file to read. Returns the blocks; a file that does not parse yields those
+of what parsed.
 """
 function docstrings(path::AbstractString)
     isfile(path) || return DocBlock[]
@@ -423,17 +542,15 @@ function docs!(out, node)
     cs = JS.children(node)
     cs === nothing && return
     for c in cs
-        if JS.kind(c) === JS.K"doc"
-            kids = something(JS.children(c), ())
-            if length(kids) >= 2
-                # The INDENTATION is kept: a docstring opens with its signature, indented, and stripping
-                # the text of leading space hides that line from any rule that reads it. Only the quotes
-                # and the blank lines around the body come off.
-                raw = String(JS.sourcetext(kids[1]))
-                body = strip(replace(raw, r"^(?:raw)?\"{1,3}" => "", r"\"{1,3}$" => ""), '\n')
-                target = something(bound_name(kids[2]), "")
-                push!(out, DocBlock(target, body, JS.source_line(c)))
-            end
+        parts = doc_parts(c)
+        if parts !== nothing
+            # The INDENTATION is kept: a docstring opens with its signature, indented, and stripping
+            # the text of leading space hides that line from any rule that reads it. Only the quotes
+            # and the blank lines around the body come off.
+            raw = String(JS.sourcetext(first(parts)))
+            body = strip(replace(raw, r"^(?:raw)?\"{1,3}" => "", r"\"{1,3}$" => ""), '\n')
+            target = something(doc_target(last(parts)), "")
+            push!(out, DocBlock(target, body, JS.source_line(c)))
         end
         docs!(out, c)
     end
@@ -561,10 +678,10 @@ function ignored(root::AbstractString)
     # matching line wins, as git decides it.
     levels = Tuple{String,Vector{Tuple{Regex,Bool}}}[]
     for (dir, _, fs) in walkdir(root; onerror = SKIP_VANISHED)
-        rel = relpath(dir, root)
-        startswith(rel, ".git") && continue
+        rel = replace(relpath(dir, root), '\\' => '/')
+        (rel == ".git" || startswith(rel, ".git/")) && continue   # git's own directory, not `.github/`
         ".gitignore" in fs || continue
-        prefix = rel == "." ? "" : replace(rel, '\\' => '/') * "/"
+        prefix = rel == "." ? "" : rel * "/"
         push!(levels, (prefix, gitignore_rules(joinpath(dir, ".gitignore"))))
     end
     isempty(levels) && return _ -> false
@@ -574,6 +691,9 @@ function ignored(root::AbstractString)
         for (prefix, rules) in levels
             startswith(f, prefix) || continue
             rest = f[nextind(f, 0, length(prefix) + 1):end]
+            # A `.gitignore` applies strictly below its directory, never to the directory itself: read
+            # against an empty path its `*` excluded the directory whole, re-inclusions and all.
+            isempty(rest) && continue
             for (rx, negated) in rules
                 occursin(rx, rest) && (hit = !negated)
             end
@@ -610,7 +730,8 @@ without a directory. The argument is `text`, the file's content. Returns the rul
 function gitignore_rules_of(text::AbstractString)
     rules = Tuple{Regex,Bool}[]
     for raw in split(text, '\n')
-        line = strip(raw)
+        # Trailing whitespace is not part of a pattern unless a backslash keeps it, as git reads it.
+        line = replace(lstrip(raw), r"(?<!\\)\s+$" => "")
         (isempty(line) || startswith(line, "#")) && continue
         negated = startswith(line, "!")
         negated && (line = line[2:end])
@@ -622,12 +743,9 @@ function gitignore_rules_of(text::AbstractString)
         anchored = startswith(line, "/") || occursin('/', strip(line, '/'))
         line = strip(line, '/')
         isempty(line) && continue
-        # `**` is held aside as a sentinel while `*` is rewritten, or the first pass would eat it.
-        body = replace(line, "." => "\\.", "**" => "\0", "*" => "[^/]*", "?" => "[^/]")
-        body = replace(body, "\0" => ".*")
         # A directory matches everything under it; an unanchored pattern matches at any depth.
         tail = isdir_only ? "/.*" : "(?:/.*)?"
-        push!(rules, (Regex("^" * (anchored ? "" : "(?:.*/)?") * body * tail * "\$"), negated))
+        push!(rules, (Regex("^" * (anchored ? "" : "(?:.*/)?") * wildcard_source(line) * tail * "\$"), negated))
     end
     return rules
 end
@@ -789,10 +907,18 @@ function headings(path::AbstractString)
     lines = readlines(path)
     stack = String[]
     open_ = Tuple{Int,Int,Int}[]          # (index into out, level, start line)
-    fenced = false
+    fence = nothing                       # the open fence's character and length, as CommonMark closes it
     for (i, line) in pairs(lines)
-        startswith(strip(line), "```") && (fenced = !fenced)
-        fenced && continue
+        if fence === nothing
+            f = fence_of(line)
+            f === nothing || (fence = f; continue)
+        else
+            # A fence closes only on a line of its own character at least as long, so a four-backtick
+            # fence holds a three-backtick one and its headings, and `~~~` is a fence too.
+            s = strip(line)
+            !isempty(s) && all(==(first(fence)), s) && length(s) >= last(fence) && (fence = nothing)
+            continue
+        end
         m = match(r"^(#{1,6})\s+(.*?)\s*$", line)
         m === nothing && continue
         level = length(m.captures[1])
@@ -808,15 +934,24 @@ function headings(path::AbstractString)
     return out
 end
 
+# A line that opens a fenced code block: three or more backticks or tildes, indented at most three
+# spaces. Returns the character and how many of it, or `nothing`.
+function fence_of(line::AbstractString)
+    m = match(r"^ {0,3}(`{3,}|~{3,})", line)
+    return m === nothing ? nothing : (m.captures[1][1], length(m.captures[1]))
+end
+
 """
     heading_path(path, line) -> String
 
 The heading path of the section the line `line` of the Markdown file at `path` falls in, empty above the
 first heading. The arguments are `path`, the file, and `line`, the line in it. Returns the path.
 """
-function heading_path(path::AbstractString, line::Integer)
+heading_path(path::AbstractString, line::Integer) = heading_in(headings(path), line)
+
+function heading_in(spans::Vector{NodeSpan}, line::Integer)
     best = ""
-    for h in headings(path)
+    for h in spans
         h.line <= line && (best = h.name)
         h.line > line && break
     end
@@ -846,15 +981,31 @@ end
 
 # Every span the name has: a generic's methods each carry a docstring, and a heading may repeat, so a
 # quote is looked for in all of them before it is looked for in the whole file.
-function find_nodes(root::AbstractString, file::AbstractString, node::AbstractString)
-    isempty(node) && return UnitRange{Int}[]
-    path = joinpath(root, file)
-    spans = endswith(file, ".jl") ? definitions(path) : headings(path)
-    return [s.lines for s in spans if s.name == node]
+find_nodes(root::AbstractString, file::AbstractString, node::AbstractString) =
+    spans_named(nodes_of(joinpath(root, file)), node)
+
+spans_named(spans::Vector{NodeSpan}, node::AbstractString) =
+    isempty(node) ? UnitRange{Int}[] : [s.lines for s in spans if s.name == node]
+
+# Every named node of one file, parsed ONCE: a caller with several lines to place in one file asks
+# this and then `node_in`, since parsing the file again for each of 235 hits cost two seconds where the
+# search itself cost a fifth of one (found in review, 2026-09-26).
+nodes_of(path::AbstractString) = endswith(path, ".jl") ? definitions(path) : headings(path)
+
+function node_in(path::AbstractString, spans::Vector{NodeSpan}, line::Integer)
+    endswith(path, ".jl") || return heading_in(spans, line)
+    best = ""
+    width = typemax(Int)
+    for s in spans
+        if line in s.lines && length(s.lines) < width
+            best = s.name; width = length(s.lines)
+        end
+    end
+    return best
 end
 
 """
-    reanchor(root, loc) -> Model.Location
+    reanchor(root, loc; loose = true) -> Model.Location
 
 The location as it stands now: the same file, the same node and quote, with the line found again and
 `found` saying how. The node is looked for first and the quote inside it (`BY_NODE`); failing that the
@@ -865,8 +1016,13 @@ A node that survives does not anchor a finding whose quote is gone: the finding 
 a fixer sent to a paragraph it was not written about is the failure this exists to prevent. A location
 with a node and no quote is about the node itself and anchors to it.
 
-The arguments are `root`, the package root, and `loc`, the location to find again. A location with
-neither node nor quote is the file itself and comes back unchanged while the file exists. Returns the
+The arguments are:
+
+- `root` — the package root.
+- `loc` — the location to find again.
+- `loose` — whether a quote may, as a last resort, be matched as the built page reads it.
+
+A location with neither node nor quote is the file itself and comes back unchanged while the file exists. Returns the
 located copy.
 """
 function reanchor(root::AbstractString, loc::Model.Location; loose::Bool = true)
@@ -875,7 +1031,8 @@ function reanchor(root::AbstractString, loc::Model.Location; loose::Bool = true)
     isempty(loc.node) && isempty(loc.text) && return loc
     lines = readlines(path)
 
-    spans = find_nodes(root, loc.file, loc.node)
+    nodes = nodes_of(path)
+    spans = spans_named(nodes, loc.node)
     if !isempty(spans)
         isempty(loc.text) && return Model.Location(; file = loc.file, node = loc.node, text = loc.text,
                                                     line = first(first(spans)), found = Model.Anchor.BY_NODE, at = loc.at)
@@ -896,7 +1053,7 @@ function reanchor(root::AbstractString, loc::Model.Location; loose::Bool = true)
                                line = nearest(inside, loc.line), found = Model.Anchor.BY_NODE, at = loc.at)
     end
     i = nearest(hits, loc.line)
-    return Model.Location(; file = loc.file, node = node_at(root, loc.file, i), text = loc.text,
+    return Model.Location(; file = loc.file, node = node_in(path, nodes, i), text = loc.text,
                            line = i, found = Model.Anchor.BY_QUOTE, at = loc.at)
 end
 
@@ -979,7 +1136,7 @@ function reading_line(line::AbstractString; escaped::Bool = false)
     l = replace(l, r"^\s*(?:[-*+]|\d+[.)]|>)\s+" => "")            # a list item's or a quotation's leader
     l = replace(l, r"\]\((?:[^()]|\([^()]*\))*\)" => "")          # a link's target, one level of ( ) inside
     escaped && (l = replace(l, "\\\\" => "\\"))                     # a docstring's escaped backslash
-    l = replace(l, r"\\[\[\]()]" => "")                          # display and inline delimiters, \[ … \]
+    l = replace(l, r"\\+[\[\]()$]" => "")                        # display and inline delimiters, \[ … \], and \$
     return replace(l, r"[`$*\[\]]" => "")
 end
 
@@ -1009,8 +1166,12 @@ function occurrences(cfg::Model.Config, root::AbstractString, text::AbstractStri
         for file in files(cfg, root, fileset)
             file in seen && continue
             push!(seen, file)
-            for line in flattened_lines(joinpath(root, file), text; form = :written)
-                push!(out, Model.Location(; file, node = node_at(root, file, line), text = String(text),
+            path = joinpath(root, file)
+            hits = flattened_lines(path, text; form = :written)
+            isempty(hits) && continue
+            nodes = nodes_of(path)                          # once per file, not once per hit
+            for line in hits
+                push!(out, Model.Location(; file, node = node_in(path, nodes, line), text = String(text),
                                            line = line, found = Model.Anchor.BY_QUOTE))
             end
         end
@@ -1051,8 +1212,8 @@ function formulas(text::AbstractString)
             add(p)
         end
     end
-    # Between single dollars, as a quote copied from the page spells them.
-    for m in eachmatch(r"(?<!\$)\$([^\$\n]{2,})\$(?!\$)", t)
+    # Between single dollars, as a quote copied from the page spells them; an escaped dollar is prose.
+    for m in eachmatch(r"(?<![\$\\])\$([^\$\n]{2,})\$(?!\$)", t)
         wordlike(m.captures[1]) > mathlike(m.captures[1]) && continue
         add(m.captures[1])
     end
@@ -1088,12 +1249,15 @@ function flattened_lines(path::AbstractString, text::AbstractString; form::Symbo
     hay = String(take!(io))
     out = Int[]
     from = 1
+    chars = 0; counted = 1                 # characters before byte `counted`, carried from hit to hit
     while true
         r = findnext(needle, hay, from)
         r === nothing && break
-        # `findnext` indexes bytes; the map is per character, so count characters up to the hit.
-        chars = length(SubString(hay, 1, prevind(hay, first(r)))) + 1
-        line = at[min(chars, length(at))]
+        # `findnext` indexes bytes; the map is per character, so count the characters up to the hit —
+        # from the last hit on, since counting from the start again made a long page quadratic.
+        chars += length(SubString(hay, counted, prevind(hay, first(r))))
+        counted = first(r)
+        line = at[min(chars + 1, length(at))]
         isempty(out) || last(out) == line || push!(out, line)
         isempty(out) && push!(out, line)
         from = nextind(hay, first(r))
@@ -1118,15 +1282,7 @@ Returns the name.
 """
 function node_at(root::AbstractString, file::AbstractString, line::Integer)
     path = joinpath(root, file)
-    endswith(file, ".jl") || return heading_path(path, line)
-    best = ""
-    width = typemax(Int)
-    for s in definitions(path)
-        if line in s.lines && length(s.lines) < width
-            best = s.name; width = length(s.lines)
-        end
-    end
-    return best
+    return node_in(path, nodes_of(path), line)
 end
 
 # ────────────────────────────────────────────────────────────────────────────────── the built site
@@ -1229,7 +1385,7 @@ function page_text!(io::IO, n; in_pre::Bool = false)
         # A link is shown as one, `[text](target)`: with links stripped a term fixed by linking it to its
         # definition read exactly as the unfixed text, and no verifier could pass such a fix (found by PF,
         # 2026-09-24, ten findings).
-        href = t === :a ? String(something(getattr(n, "href", nothing), "")) : ""
+        href = t === :a ? String(attr(n, "href")) : ""
         block && write(io, '\n')
         t === :pre && write(io, mark, '\n')
         t === :code && !in_pre && write(io, mark)

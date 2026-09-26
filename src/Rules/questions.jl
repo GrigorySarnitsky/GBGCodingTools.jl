@@ -66,6 +66,7 @@ limit on them would push the evidence out of the question rather than shortening
 function short(q::Model.Question, cfg)
     dmax = DECISION_WORDS.default; cmax = CONTEXT_WORDS.default
     for s in cfg.settings
+        s.rule === SHORT.id || continue                 # the rule's own settings, as `Checks.reading` asks
         s.name === :decision_words && s.value isa Int && (dmax = s.value)
         s.name === :context_words  && s.value isa Int && (cmax = s.value)
     end
@@ -82,7 +83,9 @@ const COORDINATE = [
     r"\bRULE\.[A-Z]+\.[A-Z_]+" => "a rule id",
     r"\b[A-Za-z0-9_]+/[A-Za-z0-9_./-]+\.(jl|md|toml|json|ya?ml|sh)\b" => "a file path",
     r"\b[a-z][A-Za-z0-9_]*\(\)" => "a function call",
-    r"\b[A-Za-z_][A-Za-z0-9_]*\.[a-z][A-Za-z0-9_]*\b" => "a qualified name",
+    # Two characters at least before the dot, and never an English abbreviation: `e.g.` and `i.e.` are
+    # how a sentence gives an example, which `one_decision` already allows for.
+    r"\b(?!(?:e\.g|i\.e|etc|vs|cf)\b)[A-Za-z_][A-Za-z0-9_]+\.[a-z][A-Za-z0-9_]*\b" => "a qualified name",
 ]
 
 """
@@ -136,13 +139,17 @@ vocabulary is answerable only by someone who has read the tool, which makes the 
 function no_house_terms(q::Model.Question, cfg)
     terms = copy(HOUSE_TERMS.default)
     for s in cfg.settings
-        s.name === :house_terms && s.value isa Vector{String} && append!(terms, s.value)
+        s.rule === NO_HOUSE_TERMS.id && s.name === :house_terms && s.value isa Vector{String} && append!(terms, s.value)
     end
     out = Model.Location[]
     for (field, text) in (("decision", q.decision), ("context", q.context))
         masked = replace(text, r"`[^`]*`" => " ")
         for t in terms
-            occursin(Regex("(?<![A-Za-z])" * replace(t, " " => "\\s+") * "(?![A-Za-z])", "i"), masked) &&
+            # LITERAL, word by word, as `retired_claims` does: a term a package writes — `C++`, `f(x)` —
+            # is never compiled as a pattern.
+            words = [replace(w, r"([\\^$.|?*+()\[\]{}])" => s"\\\1") for w in split(strip(t))]
+            isempty(words) && continue
+            occursin(Regex("(?<![A-Za-z])" * join(words, "\\s+") * "(?![A-Za-z])", "i"), masked) &&
                 push!(out, at(field, "a word of this package's own: " * t))
         end
     end
@@ -201,6 +208,11 @@ const NO_COORDINATES = Model.Rule(
         # Backticked, the name is the question's subject rather than a coordinate the reader must resolve.
         Model.QuestionExample(Model.Question(id = "q", decision = "Should the option named `spectral` stay?"),
             Model.Location[], "names no rule, file or code"),
+        # An English abbreviation is not a qualified name; a qualified name is.
+        Model.QuestionExample(Model.Question(id = "q", decision = "Should the cap stay, e.g. at 120 words, i.e. as now?"),
+            Model.Location[], "names no rule, file or code"),
+        Model.QuestionExample(Model.Question(id = "q", decision = "Should Shape.allowance stay at ten words?"),
+            [Model.Location(; file = "", node = "decision")], "names no rule, file or code"),
     ])
 
 const NO_HOUSE_TERMS = Model.Rule(

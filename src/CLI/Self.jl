@@ -15,7 +15,9 @@ function blob_hash(path::AbstractString)
     return bytes2hex(digest!(ctx))
 end
 
-_mode(path) = islink(path) ? "120000" : (filemode(path) & 0o111) != 0 ? "100755" : "100644"
+# The OWNER's execute bit alone, as git and Pkg's `gitmode` read it: a file with only a group or other
+# bit is `100644` to both, and hashing it as `100755` failed `self verify` on an unedited tree.
+_mode(path) = islink(path) ? "120000" : (filemode(path) & 0o100) != 0 ? "100755" : "100644"
 _sortkey(name, isdir) = isdir ? name * "/" : name
 
 """
@@ -57,10 +59,13 @@ function tree_hash(dir::AbstractString; skip = (".git",))
     return bytes2hex(digest!(ctx))
 end
 
-# true when `dir` holds at least one file (git records no empty directories)
+# true when `dir` holds at least one file that is not skipped (git records no empty directories, and a
+# directory holding only a nested `.git` is empty to it)
 function _nonempty(dir, skip)
-    for (_, _, files) in walkdir(dir; follow_symlinks = false)
-        isempty(files) || return true
+    for name in readdir(dir)
+        name in skip && continue
+        path = joinpath(dir, name)
+        (isdir(path) && !islink(path)) ? (_nonempty(path, skip) && return true) : return true
     end
     return false
 end

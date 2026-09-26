@@ -25,7 +25,12 @@ are:
 - `network` — whether a check that reaches the network may run; `false` everywhere but this verb.
 - `io` — where the report goes.
 
-Returns the exit code: 0 clean, 1 findings, 2 the package could not be read.
+Returns the exit code: 0 clean, 1 findings, 2 the package could not be read or a history rule could
+not be evaluated here.
+
+Clean means clean OVER WHAT RAN HERE. The rules that read the built site or the loaded package are
+the build's and the suite's, and this verb builds and loads nothing; it names them rather than counting
+them into a total, since exit 0 printed as "every rule" was read as every rule (review, 2026-09-26).
 """
 function run(root::AbstractString; intention = nothing, network::Bool = false, io::IO = stdout)
     cfg = try
@@ -45,15 +50,25 @@ function run(root::AbstractString; intention = nothing, network::Bool = false, i
     # The rules that read the history run HERE, never in a build: this verb is a session's, run in a
     # package where git is, and the end-of-turn hook runs the same lines.
     found = Engine.Checks.run_all(cfg, root; intention, network, history = true)
+    # A history rule that could not run says so in its one location, and that is exit 2, not a finding
+    # and not clean: without `bash` or `git` the three git rules have nothing to say either way.
+    for (id, l) in found
+        r = Catalogue.rule(id)
+        r !== nothing && r.check isa Model.ProgramCheck && r.check.input === Model.Input.HISTORY &&
+            startswith(l.text, "cannot evaluate:") && (println(io, "check: ", id, " ", l.text); return 2)
+    end
     # What is owed and not yet met is printed, never counted: a deferral fails no build and no check.
     for d in cfg.deferrals
         println(io, "  DEFERRED ", rpad(String(d.rule), 30), " until ", d.until)
     end
+    skipped = [id for id in Engine.Checks.not_run(cfg; network)
+               if intention === nothing || Catalogue.rule(id).intention === intention]
+    isempty(skipped) || println(io, "  NOT RUN HERE ", join(String.(skipped), ", "),
+                                " — the docs build and the test suite run these")
     drift = intention === Model.Intention.DOCUMENTATION ? Model.Location[] : Render.wiring(cfg, root)
 
     if isempty(found) && isempty(drift)
-        println(io, "check: clean — ", length(Catalogue.RULES), " rule(s), ",
-                length(Render.GENERATED), " generated path(s).")
+        println(io, "check: clean over what ran here, and ", length(Render.GENERATED), " generated path(s) in place.")
         return 0
     end
     for (id, l) in found

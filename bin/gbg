@@ -10,6 +10,9 @@ devpath() {
 }
 if [ "${1:-}" = "--dev" ]; then                       # (1) explicit dev route
   shift; P=$(devpath) || exit 2; GBG_DEV=1; export GBG_DEV
+  # the same question the pinned route asks: a fresh clone has no Manifest (it is git-ignored), and
+  # Julia's package-loading error is not the line that says what to run
+  [ -f "$P/Manifest.toml" ] || { echo "gbg: the dev checkout $P is not instantiated" >&2; echo "run: julia --project=\"$P\" -e 'using Pkg; Pkg.instantiate()'" >&2; exit 2; }
 else
   d=$PWD                                             # (2) walk up to the nearest .gbg/ with a config
   while [ "$d" != "/" ] && [ ! -f "$d/.gbg/config.jl" ]; do d=$(dirname "$d"); done
@@ -21,8 +24,9 @@ else
     echo "     (run it inside a package, or use: gbg --dev <verb> for the dev checkout)" >&2
     exit 2
   else
-    # (3) the pinned version, read from the config as text
-    v=$(awk '/tool[ \t]*=[ \t]*:dev/{print "dev"; exit} /tool[ \t]*=[ \t]*v"/{sub(/^.*v"/,""); sub(/".*$/,""); print; exit}' "$d/.gbg/config.jl")
+    # (3) the pinned version, read from the config as text: the LEFTMOST `tool =` on a line that is not
+    # a comment, so neither a comment above the config nor one trailing the pin line is read as the pin
+    v=$(awk '/^[ \t]*#/ {next} match($0, /(^|[(, \t])tool[ \t]*=[ \t]*(:dev|v"[^"]*")/) {s = substr($0, RSTART, RLENGTH); if (s ~ /:dev$/) print "dev"; else {sub(/^[^"]*"/, "", s); sub(/"$/, "", s); print s}; exit}' "$d/.gbg/config.jl")
     if [ "$v" = "dev" ] && ! grep -q '^name = "GBGCodingTools"' "$d/Project.toml" 2>/dev/null; then   # (4) the fixture: enclosing tool repo
       r=$d; while [ "$r" != "/" ] && ! grep -q '^name = "GBGCodingTools"' "$r/Project.toml" 2>/dev/null; do r=$(dirname "$r"); done
       grep -q '^name = "GBGCodingTools"' "$r/Project.toml" 2>/dev/null || { echo "gbg: pin is dev but no enclosing GBGCodingTools repository" >&2; exit 2; }

@@ -30,8 +30,16 @@ Indentation is what decides it: Markdown reads an indented block as code, so an 
 the literal pipes and dashes a reader sees in the source rather than as a table.
 """
 function indented_table(text::AbstractString, cfg)
-    return [Model.Location(; file = "", line = i, text = strip(String(line)))
-            for (i, line) in pairs(split(text, '\n')) if occursin(INDENTED_TABLE, line)]
+    out = Model.Location[]
+    fenced = false
+    for (i, line) in pairs(split(text, '\n'))
+        # A fenced block is not the page's own markup: a page showing an example of Markdown shows an
+        # indented table on purpose, and it renders as the example it is.
+        startswith(strip(line), "```") && (fenced = !fenced; continue)
+        fenced && continue
+        occursin(INDENTED_TABLE, line) && push!(out, Model.Location(; file = "", line = i, text = strip(String(line))))
+    end
+    return out
 end
 
 """
@@ -53,6 +61,10 @@ const TABLE_TOP_LEVEL = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\n- An item, and its table:\n\n| a | b |\n|---|---|\n| 1 | 2 |\n",
             Model.Location[], "never indented inside a list item"),
+        # Inside a fence the table is an example being shown, not markup being rendered.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nNot this:\n\n```markdown\n- An item:\n\n  | a | b |\n  |---|---|\n```\n",
+            Model.Location[], "never indented inside a list item"),
     ])
 
 # ─────────────────────────────────────────────────────────── a code identifier inside a math span
@@ -60,12 +72,19 @@ const TABLE_TOP_LEVEL = Model.Rule(
 const MATH_MARKER = r"(?<!`)``(?!`)"
 const MATH_COMMAND_ARGS = r"\\(texttt|text|mathrm|operatorname|mathit|mathsf|mathbf|boldsymbol|label|mathcal)\{[^}]*\}"
 const MATH_CONTROL_WORD = r"\\[a-zA-Z]+"
-const MATH_BRACED_INDEX = r"[_^]\{[a-z]+\}"
+# The whole group after `_` or `^`, whatever it holds: `e^{-ikx}` is an exponent, and reading only a
+# group of letters as an index left the plane wave reported as a code identifier.
+const MATH_BRACED_INDEX = r"[_^]\{[^{}]*\}"
 # Three letters, not two. A two-letter run in a physics formula is almost always a PRODUCT of single
 # scalars — `ck_a`, `ac - bd`, `dx` — and reading those as code identifiers reported correct mathematics
 # in GBGPeriodicFields. A code identifier short enough to be missed by this is short enough that the
 # renderer's italic product looks the same as the name anyway.
 const BARE_WORD = r"[a-z]{3,}"
+# Four inside a braced group or a parenthesised argument. `\exp(ikx)` and `\frac{abc}{2}` are products
+# of scalars set as an argument — the commonest exponent in a spectral package — and a code name
+# short enough to hide there is short enough that the italic product reads the same.
+const MATH_GROUP = r"\{[^{}]*\}|\([^()]*\)"
+const GROUPED_WORD = r"[a-z]{4,}"
 
 """
     math_spans(text) -> Vector{Tuple{Int,String}}
@@ -112,7 +131,9 @@ function code_in_math(text::AbstractString, cfg)
     for (line, span) in math_spans(text)
         stripped = replace(span, MATH_COMMAND_ARGS => " ")
         stripped = replace(stripped, MATH_CONTROL_WORD => " ", MATH_BRACED_INDEX => " ")
-        occursin(BARE_WORD, stripped) &&
+        grouped = [m.match for m in eachmatch(MATH_GROUP, stripped)]
+        rest = replace(stripped, MATH_GROUP => " ")
+        (occursin(BARE_WORD, rest) || any(g -> occursin(GROUPED_WORD, g), grouped)) &&
             push!(out, Model.Location(; file = "", line, text = "``" * strip(span) * "``"))
     end
     return out
@@ -138,6 +159,14 @@ const CODE_IN_MATH = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe real part is ``ac - bd`` here.\n",
             Model.Location[], "never inside a math span"),
+        # An exponent, an argument or a numerator holding a product of scalars is mathematics; a name
+        # long enough to be a name is reported wherever it sits.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe wave ``e^{-ikx}`` is ``\\exp(ikx)`` over ``\\frac{abc}{2}``.\n",
+            Model.Location[], "never inside a math span"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe wave ``\\exp(maxiter)`` here.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "never inside a math span"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe cap `maxiter` bounds the loop.\n",
             Model.Location[], "never inside a math span"),
@@ -232,7 +261,9 @@ const REF_ABUT_RULE = Model.Rule(
 # ──────────────────────────────────────────────────── a formula split across two kinds of span
 
 const ABUT_CODE = "(?:\\[`" * Texts.NAME * "`\\]\\([^)\\n]*\\)|`" * Texts.NAME * "`)"
-const ABUT_MATH = raw"``[^`\n]{1,60}``"
+# Bounded by the backticks alone: the longest formulas are the namings — a symbol and then its whole
+# definition — and a length cap dropped exactly those.
+const ABUT_MATH = raw"``[^`\n]+``"
 const ABUT = Regex("(?:" * ABUT_MATH * raw"\s*" * ABUT_CODE * "|" * ABUT_CODE * raw"\s*" * ABUT_MATH * ")")
 const CODE_THEN_MATH = Regex(ABUT_CODE * raw"\s*" * ABUT_MATH)
 const MATH_THEN_CODE = Regex(ABUT_MATH * raw"\s*" * ABUT_CODE)
@@ -243,7 +274,11 @@ const MATH_THEN_CODE = Regex(ABUT_MATH * raw"\s*" * ABUT_CODE)
 # A RELATION, not any operator. `\times` is what closes `` ``\approx 48\times`` ``, a self-contained
 # measurement, and a leading `-` opens `` ``-92.0\%`` ``, a self-contained figure; reading either as an
 # open edge reported fourteen measurement rows of one package as split formulas with no rewrite.
-const RELATION = "(?:=|\\\\equiv|\\\\neq?|\\\\g?eq?|\\\\l?eq?|\\\\to|\\\\mapsto|\\\\sim|\\\\approx|\\\\subset|\\\\in|<|>)"
+#
+# Each control word ends where the word ends. Without the boundary `\\in` matched the front of `\\int`
+# and `\\infty`, `\\le` of `\\left` and `\\ell`, `\\e` — what `\\g?eq?` reduced to — of `\\exp`, `\\eta`
+# and `\\epsilon`, and a finished formula opening with any of them was reported as split.
+const RELATION = "(?:=|<|>|\\\\(?:equiv|neq|ne|geq|ge|leq|le|to|mapsto|sim|approx|subset|in)(?![A-Za-z]))"
 const OPEN_RIGHT = Regex(RELATION * raw"\s*$")
 const OPEN_LEFT = Regex("^" * raw"\s*" * RELATION)
 
@@ -308,6 +343,18 @@ const ONE_SPAN = Model.Rule(
             [Model.Location(; file = "docs/src/page.md", line = 3)], "a connective joins the two"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe tolerance `atol` (``\\varepsilon``) is fixed.\n",
+            Model.Location[], "a connective joins the two"),
+        # The same naming with the whole definition after the symbol, which is the longest a formula gets.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe tolerance `atol` ``\\equiv \\varepsilon_{\\mathrm{abs}} + \\varepsilon_{\\mathrm{rel}} \\lvert u \\rvert + \\delta_{\\mathrm{floor}}`` is fixed.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "a connective joins the two"),
+        # A membership continues out of the name; a formula opening with `\\int`, `\\exp` or `\\infty`
+        # is finished, however alike the first letters look.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe count `n` ``\\in \\mathbb{N}`` is fixed.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "a connective joins the two"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe kernel `kernel` ``\\exp(-r^2)`` and the total `total` ``\\int u\\,dx`` up to `n` ``\\infty``.\n",
             Model.Location[], "a connective joins the two"),
         # The formula says more than the name: one span, the name set as text inside it.
         Model.TextExample(Model.FileSet.PAGES,

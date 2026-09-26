@@ -18,13 +18,21 @@ import Downloads, JSON3
 
 using ...Model
 using ...Texts
+using ..Docstrings: body_line
 
 # A DOI as it is written in prose: the resolver's URL, to whatever the surrounding markup ends it with.
-const DOI_RE = r"doi\.org/[^\s\)\]\"]+"
+# A parenthesised group inside it is part of it — pre-2000 Elsevier DOIs carry `(84)` routinely — and
+# cutting at the first `)` sent the resolver a URL that answers 404 for a correct reference.
+const DOI_PATH = raw"(?:[^\s()\]\"]|\([^\s()]*\))+"
+const DOI_RE = Regex("doi\\.org/" * DOI_PATH)
 # The one admitted citation form: the work's title, italicised, linked to its DOI.
-const TITLE_LINK = r"\[(\*[^\]]+?\*)\]\((https://doi\.org/[^)\s]*)\)"
-# A line that is a reference rather than prose about one: the lone-citation form, or a bullet naming a year.
-const REFERENCE_LINE = r"^\s*(Reference:|-\s+.*\((19|20)\d\d[a-z]?\))"
+const TITLE_LINK = Regex("\\[(\\*[^\\]]+?\\*)\\]\\((https://doi\\.org/" * DOI_PATH * ")\\)")
+const RESOLVABLE_LINK = Regex("\\[([^\\]]*)\\]\\((https://(?:doi\\.org|openlibrary\\.org)/" * DOI_PATH * ")\\)")
+# A line that is a reference rather than prose about one: the lone-citation form, or a bullet with a
+# year that has the SHAPE of a reference — a title in italics, or pages after the year. A bullet that
+# merely cites author–year, as `RULE.CIT.STYLE` asks the prose to, is prose.
+const YEAR = raw"\((19|20)\d\d[a-z]?\)"
+const REFERENCE_LINE = Regex("^\\s*(Reference:|-\\s+(?=.*" * YEAR * ")(?=.*(?:\\*[^*\\n]+\\*|" * YEAR * "[\\s,.:]*\\d)))")
 
 # A DOI is compared decoded and without the punctuation a sentence leaves on it: `10.1017/S0022112096004090.`
 # at the end of a sentence and the same DOI mid-list are one DOI, and a reader following either lands
@@ -77,6 +85,14 @@ const DOI = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\n- Pope, [*Turbulent Flows*](https://doi.org/10.1017/CBO9780511840531), CUP (2000)\n",
             Model.Location[], "carries a clickable DOI"),
+        # A reference with pages after the year and no italic title is a reference; a bullet citing
+        # author–year in passing is prose about one.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Lalescu, Teaca, Carati, Implementation of high order spline interpolations, J. Comput. Phys. 229 (2010) 5862–5869.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "carries a clickable DOI"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Kolmogorov (1941) gives the 5/3 law.\n- The fix landed (2024).\n",
+            Model.Location[], "carries a clickable DOI"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe spectrum is Kolmogorov's [doi:10.1098/rspa.1991.0075].\n",
             [Model.Location(; file = "docs/src/page.md", line = 3)], "on its title"),
@@ -105,7 +121,9 @@ Returns the text from the heading onwards where one is named, and the whole file
 function canonical(root::AbstractString, cfg)
     where_ = REFERENCES.default
     for s in cfg.settings
-        s.name === :references && s.value isa String && (where_ = s.value)
+        # The rule's own setting alone: one declared under another rule's id would let a typo in the
+        # config redirect the canonical list.
+        s.rule === FULL_INLINE.id && s.name === :references && s.value isa String && (where_ = s.value)
     end
     file, _, heading = partition(where_, '#')
     path = joinpath(root, file)
@@ -143,26 +161,28 @@ function full_inline(root::AbstractString, cfg)
 
     out = Model.Location[]
     for file in sources(root, cfg)
-        for d in Texts.docstrings(joinpath(root, file))
+        src = read(joinpath(root, file), String)
+        for d in Texts.docstrings_of(src; filename = file)
             body = d.text
             at = findfirst(r"(?m)^#+\s+References\s*$", body)
+            opens = body_line(src, d)
             for m in eachmatch(TITLE_LINK, body)
-                # The docstring's own line the match sits on, and the file line that is: the body opens
-                # on the line after `d.line`, which is the delimiter's.
+                # The docstring's own line the match sits on, and the file line that is.
                 nth = 1 + count(==('\n'), body[1:prevind(body, m.offset)])
+                line = opens + nth - 1
                 in_section = at !== nothing && m.offset > first(at)
                 title, url = m.captures
                 if !in_section && !occursin(r"^\s*Reference:", split(body, '\n')[nth])
-                    push!(out, Model.Location(; file, line = d.line + nth, node = d.node,
+                    push!(out, Model.Location(; file, line, node = d.node,
                         text = "a full reference in the prose: cite author–year here and put the work under this docstring's `# References` section"))
                     continue
                 end
                 doi = norm_doi(url)
                 if refs === nothing || !(doi in known)
-                    push!(out, Model.Location(; file, line = d.line + nth, node = d.node,
+                    push!(out, Model.Location(; file, line, node = d.node,
                         text = "DOI $doi is cited here but absent from the canonical reference list"))
                 elseif haskey(titles, doi) && join(split(title), " ") != titles[doi]
-                    push!(out, Model.Location(; file, line = d.line + nth, node = d.node,
+                    push!(out, Model.Location(; file, line, node = d.node,
                         text = "the title differs from the canonical entry for $doi: here $(join(split(title), " ")), there $(titles[doi])"))
                 end
             end
@@ -174,27 +194,12 @@ end
 """
     sources(root, cfg) -> Vector{String}
 
-The Julia files whose docstrings this rule reads: what the config's docstring set names, or `src/` and
-`ext/` where it names nothing. The arguments are `root`, the package root, and `cfg`, the package's
-config. Returns the paths, relative to `root`.
+The Julia files whose docstrings this rule reads: the config's docstring set, resolved as every other
+rule resolves it — its globs where the package names them, `src/` and `ext/` where it names nothing,
+and never a file the package ignores or writes at build time. The arguments are `root`, the package
+root, and `cfg`, the package's config. Returns the paths, relative to `root`.
 """
-function sources(root::AbstractString, cfg)
-    named = get(cfg.filesets, Model.FileSet.DOCSTRINGS, String[])
-    files = [p for p in named if isfile(joinpath(root, p))]
-    isempty(files) || return files
-    written = Set(vcat(cfg.generated, first.(cfg.copies)))
-    out = String[]
-    for (dir, _, fs) in walkdir(root; onerror = _ -> nothing)
-        rel = relpath(dir, root)
-        startswith(rel, ".git") && continue
-        for f in fs
-            endswith(f, ".jl") || continue
-            p = replace(rel == "." ? f : joinpath(rel, f), '\\' => '/')
-            (startswith(p, "src/") || startswith(p, "ext/")) && !(p in written) && push!(out, p)
-        end
-    end
-    return sort!(out)
-end
+sources(root::AbstractString, cfg) = Texts.files(cfg, root, Model.FileSet.DOCSTRINGS)
 
 const REFERENCE_ENTRY = "- Pope, [*Turbulent Flows*](https://doi.org/10.1017/CBO9780511840531), CUP (2000)\n"
 
@@ -271,11 +276,6 @@ const FULL_INLINE = Model.Rule(
             Model.Location[], "identical to the canonical entry"),
     ])
 
-"""
-    RULES
-
-The rules of this batch.
-"""
 # ──────────────────────────────────────────────────────────── the link that answers
 
 """
@@ -336,8 +336,7 @@ Returns one location per link, with what the resolver said.
 function links_resolve(text::AbstractString, cfg)
     out = Model.Location[]
     for (i, line) in Texts.unwrapped(text)
-        for m in eachmatch(r"\[([^\]]*)\]\((https://(?:doi\.org|openlibrary\.org)/[^)\s]+)\)",
-                           Texts.mask_math_spans(Texts.mask_code_spans(line)))
+        for m in eachmatch(RESOLVABLE_LINK, Texts.mask_math_spans(Texts.mask_code_spans(line)))
             linked = strip(String(m.captures[1]), ['*', '_', ' '])
             url = String(m.captures[2])
             status, title = RESOLVER[](url)
@@ -378,8 +377,17 @@ const RESOLVES = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe box is ``[o_a, o_a + L_a)`` per axis — origin-aware, and so on.\nMore prose here.\n\nAnother paragraph.\n\n- C. C. Lalescu, B. Teaca, D. Carati, [*Implementation of high order spline interpolations for tracking test particles in discretized fields*](https://doi.org/10.1016/j.jcp.2009.10.046), J. Comput. Phys. **229**(17) (2010) 5862–5869.\n",
             Model.Location[], "answers with the work the title names"),
+        # A DOI holding a parenthesised group is asked for whole.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Canuto, [*A method*](https://doi.org/10.1016/0021-9991(84)90019-3), J. Comput. Phys. (1984)\n",
+            Model.Location[], "answers"),
     ])
 
+"""
+    RULES
+
+The rules of this batch.
+"""
 const RULES = Model.Rule[DOI, FULL_INLINE, RESOLVES]
 
 end # module Citations

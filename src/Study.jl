@@ -87,17 +87,30 @@ A vote is written in the SHORTHAND the readers were offered and read back in the
 names, so `OTHER` and `CITED_WORK` are the same answer written twice. Without that, every rule needing
 another document drifts from the rulebook by spelling alone, and ten questions are put to the owner
 about nothing.
+
+A file that cannot be read as votes is an `ArgumentError` naming what is wrong: no `rule` column, a
+reader without its `<R>_c` column, or a row missing a cell that is not an optional flag. A row short
+only of trailing flag cells — an editor trimming an empty last column on save — is read with them empty;
+a row short of anything else was dropped without a word, and its rule vanished from every count.
 """
 function read_round(path::AbstractString)
     lines = [l for l in split(read(path, String), '\n') if !isempty(strip(l))]
     isempty(lines) && return Round()
-    head = split(strip(lines[1]), '\t')
+    head = split(rstrip(lines[1], ['\r', '\n']), '\t')
     col = Dict(String(h) => i for (i, h) in enumerate(head))
     readers = sort([String(h[1:end-2]) for h in head if endswith(String(h), "_w")])
+    haskey(col, "rule") || throw(ArgumentError("$path has no `rule` column"))
+    for r in readers
+        haskey(col, r * "_c") || throw(ArgumentError("$path has `$(r)_w` and no `$(r)_c` column"))
+    end
     tags, rules = Tag[], String[]
-    for l in lines[2:end]
-        cells = split(strip(l, '\n'), '\t')
-        length(cells) < length(head) && continue
+    for (n, l) in enumerate(lines[2:end])
+        cells = split(rstrip(l, ['\r', '\n']), '\t')
+        if length(cells) < length(head)
+            all(endswith(String(h), "_f") for h in head[length(cells)+1:end]) ||
+                throw(ArgumentError("$path: row $(n + 1) has $(length(cells)) cells where the header has $(length(head))"))
+            append!(cells, fill(SubString(""), length(head) - length(cells)))
+        end
         rule = String(cells[col["rule"]])
         push!(rules, rule)
         for r in readers

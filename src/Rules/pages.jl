@@ -13,6 +13,9 @@ module Pages
 using ...Model
 using ...Texts
 using ..Catalogue: FLEET, site_of
+using ..Docstrings: body_line
+
+const JS = Texts.JS
 
 const BANNER = "!!! info \"Written by AI, not regularly reviewed\"\n    This page is written by AI and is not reviewed regularly by a human."
 
@@ -38,9 +41,11 @@ const LITERATE_HEADING = r"(?m)^#[ \t]+#"
 function ai_banner(text::AbstractString, cfg)
     # A Markdown page is a page. A Julia file is one only if Literate renders it, and what Literate
     # renders is the Markdown structure in its comments — a `# #` heading. Fenced blocks are removed
-    # before looking for code, or a page holding a `julia` example would read as a script itself.
+    # before looking for code, or a page holding a `julia` example would read as a script itself. And
+    # a script PARSES as Julia, which a page of prose never does: a page whose wrapping put `module`
+    # or `const` at the start of a line was taken for a script and let through without its banner.
     unfenced = replace(text, r"(?ms)^```.*?^```" => "")
-    is_script = occursin(r"(?m)^(using|import|function|const|module|struct|macro)\s", unfenced)
+    is_script = occursin(r"(?m)^(using|import|function|const|module|struct|macro)\s", unfenced) && parses(text)
     is_script && !occursin(LITERATE_HEADING, text) && return Model.Location[]
     # Literate renders a full-line `# ` comment as prose, so the banner in a Literate source carries that
     # prefix on every line and MUST: without it the admonition would render as a code block. Comparing
@@ -55,6 +60,14 @@ function ai_banner(text::AbstractString, cfg)
     return [Model.Location(; file = "", line = 1,
                             text = mentions ? "the banner has drifted from the fleet's text — copy it verbatim" :
                                               "no provenance banner on a page that must carry one")]
+end
+
+# Whether the text is Julia the parser accepts whole.
+parses(text::AbstractString) = try
+    JS.parseall(JS.SyntaxNode, text; filename = "source.jl")
+    true
+catch
+    false
 end
 
 """
@@ -81,6 +94,9 @@ const AI_BANNER = Model.Rule(
     parameters = [BANNER_PAGES],
     examples = [
         Model.TextExample(Model.FileSet.RATIONALE, "# A rationale\n\nThe reasoning.\n",
+            [Model.Location(; file = "docs/RATIONALE.md", line = 1)], "carries the banner"),
+        # Prose wrapped so that a line opens with a Julia keyword is prose still.
+        Model.TextExample(Model.FileSet.RATIONALE, "# Design\n\nThe map is what a\nmodule docstring says about itself.\n",
             [Model.Location(; file = "docs/RATIONALE.md", line = 1)], "carries the banner"),
         # A runnable script beside the rendered example: no Literate heading, so no page, so no banner.
         Model.TextExample(Model.FileSet.LITERATE,
@@ -162,8 +178,8 @@ function crammed_citation(src::AbstractString, cfg)
             # windows)" — is one citation's own text, and reading it as two reported a correct reference.
             bare = replace(m.match, r"\([^()]*\)" => " ", r"\[[^\[\]]*\]" => " ")
             occursin(';', bare) || continue
-            offset = count(==('\n'), d.text[1:prevind(d.text, m.offset)]) + 1
-            push!(out, Model.Location(; file = "", line = d.line + offset, node = d.node,
+            at = body_line(src, d) + count(==('\n'), d.text[1:prevind(d.text, m.offset)])
+            push!(out, Model.Location(; file = "", line = at, node = d.node,
                                        text = strip(first(split(m.match, '\n')))))
         end
     end
@@ -213,7 +229,7 @@ end
 
 const NO_DEAD_REFS = Model.Rule(
     id = Symbol("RULE.DOC.NO_DEAD_REFS"),
-    statement = "A docstring or error message cites no section number and no inaccessible source; it reads complete at the REPL.",
+    statement = "A docstring cites no section number and no inaccessible source; it reads complete at the REPL.",
     why = "At the REPL there are no links: a section number cannot be followed, and it is renumbered besides.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS],
@@ -299,8 +315,9 @@ const INTERNAL_API = Model.Rule(
 """
     SIBLING_SITES
 
-The sibling packages a first mention links to, and where their sites are. A package overrides this with a
-[`Model.Setting`](@ref); the default is the fleet as it stands.
+The sibling packages a first mention links to, and where their sites are: the fleet as it stands. No
+package sets it — a config holds no list of pairs, and the rule reads only this — so it is not among
+the rule's parameters.
 
 DERIVED from `Catalogue.FLEET`, which is the fleet's one home, rather than being a second list of the
 same packages: two lists diverge, and this pair diverging is silent both ways.
@@ -313,8 +330,8 @@ const SIBLING_SITES = Model.Parameter(:sibling_sites,
 
 Every first mention of a sibling package that is not a link to that package's site, and every later
 mention that links the site again where a bare name belongs. The arguments are `text`, the file's prose,
-and `cfg`, the package's config, which names the package doing the mentioning. Returns one location per
-mention.
+and `cfg`, the package's config, which names the package doing the mentioning; the sites are the
+fleet's, from [`SIBLING_SITES`](@ref). Returns one location per mention.
 
 A reader meeting a sibling's name for the first time needs to be able to reach it; meeting it a fourth
 time, linked again, learns only that the writer was not reading.
@@ -359,7 +376,6 @@ const SIBLING_LINK = Model.Rule(
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
     check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, sibling_link, false),
-    parameters = Model.Parameter[SIBLING_SITES],
     examples = [
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nAs GBGCloudPhysics does it.\n",
@@ -376,13 +392,6 @@ const SIBLING_LINK = Model.Rule(
             "And again, GBGCloudPhysics, bare.\n",
             Model.Location[], "later mentions are bare"),
     ])
-
-"""
-    RULES
-
-The rules of this batch, in the order they were converted.
-"""
-
 
 # ───────────────────────────────────────────────── a claim this package has retired, said again
 
@@ -412,7 +421,10 @@ compiled as a pattern inside its own docs build.
 function retired_claims(text::AbstractString, cfg)
     entries = Model.RetiredClaim[]
     for s in cfg.settings
-        s.name === :retired_claims && s.value isa Vector{Model.RetiredClaim} && append!(entries, s.value)
+        # The rule's own setting alone: one declared under another rule's id is a mistake in the
+        # config, and honouring it would let a typo redirect a rule.
+        s.rule === RETIRED.id && s.name === :retired_claims && s.value isa Vector{Model.RetiredClaim} &&
+            append!(entries, s.value)
     end
     isempty(entries) && return Model.Location[]
     out = Model.Location[]
@@ -469,6 +481,11 @@ const RETIRED = Model.Rule(
     ],
 )
 
+"""
+    RULES
+
+The rules of this batch, in the order they were converted.
+"""
 const RULES = Model.Rule[AI_BANNER, SIGNATURE_MIRROR, BLOCK_LIST, NO_DEAD_REFS, INTERNAL_API, SIBLING_LINK, RETIRED]
 
 end # module Pages

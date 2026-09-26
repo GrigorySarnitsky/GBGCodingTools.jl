@@ -249,6 +249,9 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
     # files: a verifier that wrote nothing this pass was graded on its old verdict and never named
     # silent (found in review, 2026-09-24). Writing a stage's arguments starts it, so its results go.
     rm(results_dir(root, run.id); recursive = true, force = true)
+    # and what the driver returned last time, beside them: the fallback for a missing file would have
+    # served an older launch's verdict through the other door
+    rm(joinpath(stage_dir(root, run.id), "returned.json"); force = true)
     mkpath(dirname(path)); mkpath(results_dir(root, run.id))
     write(path, JSON3.write(args))   # compact: nobody reads this file
     driver, sha = place_driver(root, run.id; arguments = path)
@@ -261,12 +264,17 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
 end
 
 """
-    place_driver(root, id) -> Tuple{String,String}
+    place_driver(root, id; arguments = "") -> Tuple{String,String}
 
 Puts the driver where the session can launch it from, the stage's arguments spliced in. The arguments
-are `root`, the package root, `id`, the run's id, and `arguments`, the file to splice in, or empty for
-the driver alone. Returns the path written and the SHA-256 of the driver before the splice, which is
-what a record means by "which driver this run used".
+are:
+
+- `root` — the package root.
+- `id` — the run's id.
+- `arguments` — the file to splice in, or empty for the driver alone.
+
+Returns the path written and the SHA-256 of the driver before the splice, which is what a record means
+by "which driver this run used".
 
 The pinned driver lives under `~/.julia/packages/`, and the `Workflow` tool refuses a script outside the
 working directory — so naming the pinned path directly cannot work, in any consumer, ever. Every package
@@ -378,12 +386,17 @@ end
 Prepares the current stage to be launched again after an interruption: every role whose result file
 already arrived has its launch mark cleared, so the driver relaunches only what is missing and the
 collect still expects every role. The arguments are `root`, the package root, and `id`, the run's id.
-Returns `(missing, total, moved)` — the roles still to launch, how many there were, and whether the tree
-is at a different commit than when the stage was written — or `nothing` where no arguments exist.
+Returns `(missing, total, moved, driver)` — the roles still to launch, how many there were, whether the
+tree is at a different commit than when the stage was written, and the driver to launch — or `nothing`
+where no arguments exist.
 
 Nothing of an unfinished stage is taken: a result that arrived stands, one that did not is asked for
 again, and a stage launched against one commit and continued against another is reported as MOVED
 rather than mixed, since the readers would then have read two different packages.
+
+The driver is placed again with the rewritten arguments spliced in, since the driver reads the copy
+and not the file: rewriting the file alone left every role marked to launch where the driver looked,
+and a continued stage launched the whole stage again (found in review, 2026-09-26).
 """
 function continue_stage(root::AbstractString, id::AbstractString)
     path = arguments_path(root, id)
@@ -398,9 +411,10 @@ function continue_stage(root::AbstractString, id::AbstractString)
         r["launch"] = !readable
         r["launch"] && push!(missing, String(r["key"]))
     end
-    write(path, JSON3.write(args))   # compact: nobody reads this file, the session TYPES it
+    write(path, JSON3.write(args))   # compact: nobody reads this file, the driver carries a copy
+    driver = first(place_driver(root, id; arguments = path))
     moved = String(get(args, "commit", "")) != head(root)
-    return (missing = missing, total = length(get(args, "roles", [])), moved = moved)
+    return (missing = missing, total = length(get(args, "roles", [])), moved = moved, driver = driver)
 end
 
 """

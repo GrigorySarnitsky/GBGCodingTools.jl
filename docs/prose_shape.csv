@@ -1,614 +1,550 @@
 unit,words,longest_paragraph,admonitions
-"ARCHITECTURE.md § 1. Purpose and scope",91,87,0
+"ARCHITECTURE.md § 1. Purpose and scope",89,85,0
 "ARCHITECTURE.md § 1. Purpose and scope / item 1",39,39,0
 "ARCHITECTURE.md § 1. Purpose and scope / item 2",17,17,0
 "ARCHITECTURE.md § 1. Purpose and scope / item 3",36,36,0
 "ARCHITECTURE.md § 1. Purpose and scope / item 4",198,107,0
 "ARCHITECTURE.md § 10. How a run starts, works and stops",1365,339,0
-"ARCHITECTURE.md § 11. How GBGCodingTools plugs into a package",402,116,0
-"ARCHITECTURE.md § 12. What is shown to work, and what is not",308,133,0
-"ARCHITECTURE.md § 13. Change control and growth",434,283,0
-"ARCHITECTURE.md § 2. How the checks and instruments differ",263,126,0
-"ARCHITECTURE.md § 3. The table",784,325,0
-"ARCHITECTURE.md § 4. Finding and fixing",248,129,0
+"ARCHITECTURE.md § 11. How GBGCodingTools plugs into a package",399,115,0
+"ARCHITECTURE.md § 12. What is shown to work, and what is not",306,131,0
+"ARCHITECTURE.md § 13. Change control and growth",428,279,0
+"ARCHITECTURE.md § 2. How the checks and instruments differ",255,120,0
+"ARCHITECTURE.md § 3. The table",775,322,0
+"ARCHITECTURE.md § 4. Finding and fixing",247,128,0
 "ARCHITECTURE.md § 4.1 Finding, and the handoff",195,157,0
-"ARCHITECTURE.md § 4.2 What is documentation, and the change guard",229,143,0
+"ARCHITECTURE.md § 4.2 What is documentation, and the change guard",225,141,0
 "ARCHITECTURE.md § 4.2 What is documentation, and the change guard / item 0",53,53,0
 "ARCHITECTURE.md § 4.2 What is documentation, and the change guard / item 1",8,8,0
 "ARCHITECTURE.md § 4.2 What is documentation, and the change guard / item 2",230,230,0
-"ARCHITECTURE.md § 4.2 What is documentation, and the change guard / item 3",65,65,0
+"ARCHITECTURE.md § 4.2 What is documentation, and the change guard / item 3",63,63,0
 "ARCHITECTURE.md § 4.2 What is documentation, and the change guard / item 4",18,18,0
-"ARCHITECTURE.md § 4.2 What is documentation, and the change guard / item 5",288,107,0
+"ARCHITECTURE.md § 4.2 What is documentation, and the change guard / item 5",286,107,0
 "ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks",35,35,0
-"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item ",66,66,0
-"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item  (2)",164,164,0
-"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item  (3)",341,341,0
-"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item  (4)",28,28,0
-"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item  (5)",257,257,0
-"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item  (6)",87,87,0
-"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item  (7)",52,52,0
+"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item 1",66,66,0
+"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item 2",164,164,0
+"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item 3",335,335,0
+"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item 4",28,28,0
+"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item 5",257,257,0
+"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item 6",87,87,0
+"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item 7",52,52,0
+"ARCHITECTURE.md § 4.3 The documentation fixer — automatic, with checks / item 8",52,52,0
 "ARCHITECTURE.md § 4.4 The code fixer — only on the owner's answer",15,15,0
-"ARCHITECTURE.md § 4.4 The code fixer — only on the owner's answer / item 1",80,80,0
-"ARCHITECTURE.md § 4.4 The code fixer — only on the owner's answer / item 2",166,166,0
-"ARCHITECTURE.md § 4.4 The code fixer — only on the owner's answer / item 3",87,87,0
-"ARCHITECTURE.md § 4.4 The code fixer — only on the owner's answer / item 4",121,121,0
+"ARCHITECTURE.md § 4.4 The code fixer — only on the owner's answer / item 1",78,78,0
+"ARCHITECTURE.md § 4.4 The code fixer — only on the owner's answer / item 2",165,165,0
+"ARCHITECTURE.md § 4.4 The code fixer — only on the owner's answer / item 3",86,86,0
+"ARCHITECTURE.md § 4.4 The code fixer — only on the owner's answer / item 4",119,119,0
 "ARCHITECTURE.md § 4.4 The code fixer — only on the owner's answer / item 5",65,65,0
-"ARCHITECTURE.md § 4.5 Where a finding is, while the text moves",369,255,0
-"ARCHITECTURE.md § 5.1 Modules, types first",552,234,0
-"ARCHITECTURE.md § 5.2 Types",1001,303,0
+"ARCHITECTURE.md § 4.5 Where a finding is, while the text moves",362,250,0
+"ARCHITECTURE.md § 5.1 Modules, types first",548,234,0
+"ARCHITECTURE.md § 5.2 Types",995,298,0
 "ARCHITECTURE.md § 5.3 What becomes Julia",112,112,0
-"ARCHITECTURE.md § 6. Generation",520,207,0
-"ARCHITECTURE.md § 7. Deterministic first",322,189,0
-"ARCHITECTURE.md § 8. Asking the owner",405,166,0
+"ARCHITECTURE.md § 6. Generation",514,205,0
+"ARCHITECTURE.md § 7. Deterministic first",317,186,0
+"ARCHITECTURE.md § 8. Asking the owner",402,164,0
 "ARCHITECTURE.md § 9. Applicability",416,157,0
 "ARCHITECTURE.md § GBGCodingTools — architecture",118,96,1
-"Agents.jl :: Agents",297,77,0
-"Agents.jl :: ECONOMY_MODEL",57,56,0
+"Agents.jl :: Agents",294,76,0
+"Agents.jl :: ECONOMY_MODEL",56,55,0
 "Agents.jl :: arguments_path(root, id) -> String",32,28,0
-"Agents.jl :: collect_results(root, id, cfg) -> (findings, verdicts, silen",284,85,0
-"Agents.jl :: continue_stage(root, id) -> Union{NamedTuple,Nothing}",138,86,0
+"Agents.jl :: collect_results(root, id, cfg) -> (findings, verdicts, silen",276,83,0
+"Agents.jl :: continue_stage(root, id) -> Union{NamedTuple,Nothing}",189,89,0
 "Agents.jl :: finding_dict(f) -> Dict",34,31,0
 "Agents.jl :: launched_at(root, id) -> Union{String,Nothing}",33,29,0
 "Agents.jl :: material(cfg, root) -> Vector{String}",44,40,0
-"Agents.jl :: place_driver(root, id) -> Tuple{String,String}",144,76,0
-"Agents.jl :: result_file(args, role) -> String",113,55,0
+"Agents.jl :: place_driver(root, id; arguments = '') -> Tuple{String,Strin",146,76,0
+"Agents.jl :: result_file(args, role) -> String",111,53,0
 "Agents.jl :: results_dir(root, id) -> String",64,34,0
+"Agents.jl :: returned_results(root, id) -> Dict{String,Any}",102,54,0
 "Agents.jl :: scratch_dir(root, id) -> String",25,21,0
 "Agents.jl :: stage_dir(root, id) -> String",42,38,0
-"Agents.jl :: stale_arguments(root, id) -> Bool",115,59,0
+"Agents.jl :: stale_arguments(root, id) -> Bool",113,59,0
 "Agents.jl :: surfaces(cfg, root) -> Vector{Pair{String,Vector{String}}}",77,39,0
-"Agents.jl :: write_arguments(root, run, cfg; roles, extras, site, site_pa",493,109,0
+"Agents.jl :: write_arguments(root, run, cfg; roles, extras, site, site_pa",475,102,0
 "Answer.jl :: Answer",110,58,0
 "Answer.jl :: NOT_A_DEFECT",17,17,0
 "Answer.jl :: OWNER_HEADING",26,26,0
-"Answer.jl :: answer(root, id, option; item, direction, settled, io) -> In",301,84,0
-"Answer.jl :: ask(root; io = stdout) -> Int",68,22,0
-"Answer.jl :: put(root, decision; context, options, exhibit, io) -> Int",238,64,0
-"Answer.jl :: settle!(root, id, text) -> String",72,27,0
-"Bump.jl :: Bump",94,72,0
-"Bump.jl :: bump(root, version; io = stdout) -> Int",202,66,0
+"Answer.jl :: answer(root, id, option; item, direction, settled, io) -> In",284,84,0
+"Answer.jl :: ask(root; io = stdout) -> Int",64,22,0
+"Answer.jl :: put(root, decision; context, options, exhibit, io) -> Int",226,64,0
+"Answer.jl :: settle!(root, id, text) -> String",66,27,0
+"Bump.jl :: Bump",113,91,0
+"Bump.jl :: bump(root, version; io = stdout) -> Int",232,70,0
 "Bump.jl :: counts(cfg, root) -> Vector{Pair{Symbol,Int}}",37,33,0
-"Bump.jl :: set_pin(root, version) -> Bool",83,48,0
-"Bump.jl :: stale_warning(io, version)",175,110,0
+"Bump.jl :: set_pin(root, version) -> Bool",81,46,0
+"Bump.jl :: stale_warning(io, version, running)",180,107,0
 "CLI.md § CLI internals",31,22,1
 "Catalogue.jl :: ALWAYS_ON",39,38,0
-"Catalogue.jl :: Catalogue",126,52,0
-"Catalogue.jl :: Cover",106,105,0
+"Catalogue.jl :: Catalogue",118,48,0
+"Catalogue.jl :: Cover",103,102,0
 "Catalogue.jl :: DISCIPLINES",23,22,0
-"Catalogue.jl :: FLEET",136,102,0
-"Catalogue.jl :: GENERATED",39,38,0
-"Catalogue.jl :: INSTRUMENTS",83,50,0
+"Catalogue.jl :: FLEET",134,101,0
+"Catalogue.jl :: INSTRUMENTS",81,48,0
 "Catalogue.jl :: RETIRED",92,55,0
-"Catalogue.jl :: RULES",50,49,0
+"Catalogue.jl :: RULES",44,43,0
 "Catalogue.jl :: architecture_doc(cfg) -> String",47,44,0
 "Catalogue.jl :: axes(x) -> Tuple",48,45,0
 "Catalogue.jl :: cover(rule) -> Cover.T",23,20,0
 "Catalogue.jl :: cover_words(rule) -> String",39,36,0
-"Catalogue.jl :: doc(x) -> String",83,60,0
+"Catalogue.jl :: doc(r::Rule) -> String",90,59,0
 "Catalogue.jl :: in_material(cfg, locations) -> Bool",37,33,0
 "Catalogue.jl :: known_ids() -> Set{Symbol}",30,27,0
-"Catalogue.jl :: material_doc(cfg, path) -> Bool",139,85,0
-"Catalogue.jl :: missing_documents(cfg, root) -> Vector{String}",83,44,0
-"Catalogue.jl :: normal_path(cfg, root, path) -> String",147,76,0
-"Catalogue.jl :: panel(instrument, cfg) -> (roles, gaps)",115,73,0
-"Catalogue.jl :: roles_of(instrument, cfg; readers = :both) -> Vector{Model.A",56,33,0
+"Catalogue.jl :: material_doc(cfg, path) -> Bool",136,82,0
+"Catalogue.jl :: missing_documents(cfg, root) -> Vector{String}",82,43,0
+"Catalogue.jl :: normal_path(cfg, root, path) -> String",141,76,0
+"Catalogue.jl :: panel(instrument, cfg) -> (roles, gaps)",113,71,0
+"Catalogue.jl :: roles_of(instrument, cfg; readers = :both) -> Vector{Model.A",50,27,0
 "Catalogue.jl :: rule(id) -> Union{Model.Rule,Nothing}",25,22,0
 "Catalogue.jl :: site_of(slug) -> String",43,21,0
-"Catalogue.jl :: target(cfg, path) -> Bool",201,88,0
+"Catalogue.jl :: target(cfg, path) -> Bool",199,86,0
 "Catalogue.md § Catalogue",28,22,1
-"Check.jl :: Check",77,44,0
-"Check.jl :: rebaseline(root; io = stdout) -> Int",134,53,0
-"Check.jl :: run(root; intention = nothing, network = false, io = stdout)",98,51,0
+"Check.jl :: Check",76,44,0
+"Check.jl :: rebaseline(root; only = '', io = stdout) -> Int",145,52,0
+"Check.jl :: run(root; intention = nothing, network = false, io = stdout)",154,55,0
 "Checks.jl :: Checks",80,56,0
 "Checks.jl :: applies(cfg, id; file = '') -> Bool",86,52,0
 "Checks.jl :: not_run(cfg; pkg = nothing, site = nothing, network = false)",135,78,0
-"Checks.jl :: reading(rule, cfg, root) -> Vector{Tuple{Model.FileSet.T,Str",167,75,0
-"Checks.jl :: run_all(cfg, root; intention = nothing, network = false)",125,63,0
-"Checks.jl :: run_rule(rule, cfg, root; network = false) -> Vector{Model.L",118,69,0
-"Config.jl :: Config",225,98,0
-"Config.jl :: Config.parse(text; root, check = true) -> Dict",81,43,0
-"Config.jl :: ConfigError <: Exception",35,23,0
-"Config.jl :: ConfigWrittenError <: Exception",96,72,0
-"Config.jl :: check_paths(cfg) -> Vector{String}",90,87,0
-"Config.jl :: cmd_config(args) -> Int",68,65,0
-"Config.jl :: expand_globs(root, files) -> Vector{String}",119,84,0
-"Config.jl :: find_root(start = pwd()) -> Union{String,Nothing}",34,29,0
-"Config.jl :: glob_files(root, pattern) -> Vector{String}",44,40,0
-"Config.jl :: glob_to_regex(pattern) -> Regex",36,33,0
-"Config.jl :: read(root = find_root(); check = true) -> Dict",74,39,0
-"Config.jl :: read_written(root; check = true) -> Dict",66,29,0
-"Config.jl :: resolve_anchor(root, anchor) -> (file, line, count)",116,110,0
-"Config.jl :: surface_files(cfg, key) -> Vector{String}",60,56,0
-"Config.md § Config",22,22,1
-"ConfigIO.jl :: ConfigError",37,23,0
-"ConfigIO.jl :: ConfigIO",123,53,0
-"ConfigIO.jl :: append_settled(root, s) -> String",88,57,0
-"ConfigIO.jl :: find_root(start = pwd()) -> Union{String,Nothing}",88,54,0
-"ConfigIO.jl :: narrow(v) -> AbstractVector",46,28,0
+"Checks.jl :: reading(rule, cfg, root) -> Vector{Tuple{Model.FileSet.T,Str",160,74,0
+"Checks.jl :: run_all(cfg, root; intention = nothing, network = false, his",148,77,0
+"Checks.jl :: run_patterns(cfg, root; intention = nothing) -> Vector{Tuple",123,51,0
+"Checks.jl :: run_rule(rule, cfg, root; network = false, history = false, ",160,102,0
+"ConfigIO.jl :: ConfigError",33,19,0
+"ConfigIO.jl :: ConfigIO",120,51,0
+"ConfigIO.jl :: append_settled(root, s) -> String",99,68,0
+"ConfigIO.jl :: find_root(start = pwd()) -> Union{String,Nothing}",83,49,0
+"ConfigIO.jl :: narrow(v) -> AbstractVector",59,28,0
 "ConfigIO.jl :: read_config(root) -> Model.Config",42,39,0
 "ConfigIO.jl :: read_settled(root) -> Vector{Model.Settled}",46,43,0
 "ConfigIO.jl :: read_value(path) -> Any",51,48,0
-"ConfigIO.jl :: require_root(verb) -> Union{String,Nothing}",69,34,0
+"ConfigIO.jl :: require_root(verb) -> Union{String,Nothing}",68,33,0
 "ConfigIO.jl :: validate(cfg, root) -> Vector{String}",64,60,0
 "ConfigIO.md § ConfigIO",29,22,1
-"DocLints.jl :: makedocs(cfg; kwargs...)",205,53,0
 "Docfix.jl :: Docfix",121,42,0
-"Docfix.jl :: at_head(root, path) -> Union{String,Nothing}",40,36,0
+"Docfix.jl :: at_head(root, path) -> Union{String,Nothing}",39,35,0
 "Docfix.jl :: changed_files(root) -> Vector{String}",36,33,0
-"Docfix.jl :: check(root; build = true, io = stdout) -> Int",210,54,0
-"Docfix.jl :: commit(root, message; io = stdout, generated = Dict(), findi",266,107,0
-"Docfix.jl :: rulings(root; generated = Dict{String,String}()) -> Vector{E",85,56,0
-"Engine.jl :: Engine",138,49,0
+"Docfix.jl :: check(root; build = true, io = stdout) -> Int",204,54,0
+"Docfix.jl :: commit(root, message; io = stdout, generated = Dict(), findi",255,106,0
+"Docfix.jl :: generated_now(root) -> Dict{String,String}",89,57,0
+"Docfix.jl :: rulings(root; generated = Dict{String,String}(), contents = ",82,50,0
+"Docfix.jl :: unresolved_refs(root, paths) -> Vector{Tuple{String,String}}",102,53,0
+"Engine.jl :: Engine",131,48,0
 "Engine.md § Engine",26,22,1
-"Fleet.jl :: Fleet",51,50,0
-"Fleet.jl :: Fleet.rows(; deep = false) -> (rows, code)",113,79,0
-"Fleet.jl :: latest_tag(root) -> Union{VersionNumber,Nothing}",17,14,0
-"GBGCodingTools.jl :: GBGCodingTools",503,78,0
+"Fleet.jl :: Fleet",55,54,0
+"Fleet.jl :: Fleet.rows() -> (rows, code)",185,97,0
+"GBGCodingTools.jl :: GBGCodingTools",355,68,0
+"GBGCodingTools.jl :: makedocs(root; kwargs...)",184,53,0
 "GBGCodingToolsDocumenterExt.jl :: GBGCodingToolsDocumenterExt",41,40,0
-"GBGCodingToolsDocumenterExt.jl :: check(verb, code)",27,25,0
-"GBGCodingToolsDocumenterExt.jl :: rules_and_wiring(root) -> Int",124,64,0
+"GBGCodingToolsDocumenterExt.jl :: check(what, code)",35,33,0
+"GBGCodingToolsDocumenterExt.jl :: rules_and_wiring(root) -> Int",123,63,0
 "Git.jl :: Git",34,33,0
-"Git.jl :: Git.changed_paths(root, range, paths) -> Vector{String}",53,26,0
-"Git.jl :: Git.diff(root, range, paths) -> String",55,27,0
-"Git.jl :: Git.diffstat(root, range, paths) -> String",53,26,0
+"Git.jl :: Git.changed_paths(root, range, paths) -> Vector{String}",47,20,0
+"Git.jl :: Git.diff(root, range, paths) -> String",49,21,0
+"Git.jl :: Git.diffstat(root, range, paths) -> String",47,20,0
 "Git.jl :: Git.head(root) -> Union{String,Nothing}",13,10,0
-"Git.jl :: Git.is_ancestor(root, a, b) -> Bool",66,37,0
+"Git.jl :: Git.is_ancestor(root, a, b) -> Bool",60,31,0
 "Git.jl :: Git.is_repo(root) -> Bool",3,3,0
 "Git.jl :: Git.log(root, range) -> String",9,5,0
-"Git.jl :: Git.porcelain(root; untracked = true) -> Vector{Tuple{String",103,46,0
-"Git.jl :: Git.run(root, args...) -> Union{String,Nothing}",158,71,0
-"Guard.jl :: Guard",266,90,0
-"Guard.jl :: Ruling",51,37,0
-"Guard.jl :: classify(cfg, path, before, after; generated = nothing) -> R",127,85,0
-"Guard.jl :: fenced_kept(before, after) -> Bool",121,63,0
-"Guard.jl :: math_changed(before, after; jl = false) -> Vector{String}",226,76,0
-"Guard.jl :: on_documentation_list(cfg, path) -> Bool",90,63,0
-"Guard.jl :: regions(src; literate = false, rule_prose = false) -> Union{",365,116,0
-"Guard.jl :: texts_of(src; literate = false) -> Union{Vector{String},Noth",71,28,0
-"Harness.jl :: Harness",168,65,0
-"Harness.jl :: test(root; rules = Catalogue.RULES, checks = (), contracts =",172,92,0
-"HtmlWalker.jl :: HtmlWalker",67,66,0
-"HtmlWalker.jl :: article_of(doc) -> Union{HTMLElement,Nothing}",27,24,0
-"HtmlWalker.jl :: attr(el, name, default = '') -> String",64,42,0
-"HtmlWalker.jl :: classes(el) -> Vector{String}",20,17,0
-"HtmlWalker.jl :: elements(root, pred) -> Vector",24,20,0
-"HtmlWalker.jl :: parse_page(path) -> HTMLDocument",52,49,0
-"HtmlWalker.jl :: tagname(node) -> Symbol",32,29,0
-"HtmlWalker.jl :: text_of(node) -> String",23,20,0
-"Install.jl :: cmd_install(args) -> Int",94,91,0
-"Install.jl :: dev_pointer() -> String",29,26,0
+"Git.jl :: Git.porcelain(root; untracked = true) -> Vector{Tuple{String",98,45,0
+"Git.jl :: Git.run(root, args...) -> Union{String,Nothing}",157,70,0
+"Git.jl :: Git.said(root, args...) -> (ok, said)",73,68,0
+"Guard.jl :: Guard",274,88,0
+"Guard.jl :: Ruling",45,31,0
+"Guard.jl :: classify(cfg, path, before, after; generated = nothing) -> R",119,77,0
+"Guard.jl :: fenced_kept(before, after) -> Bool",120,63,0
+"Guard.jl :: math_changed(before, after; jl = false, literate = false) ->",228,74,0
+"Guard.jl :: on_documentation_list(cfg, path) -> Bool",89,62,0
+"Guard.jl :: regions(src; literate = false, rule_prose = false) -> Union{",351,114,0
+"Guard.jl :: texts_of(src; literate = false) -> Union{Vector{String},Noth",67,28,0
+"Harness.jl :: Harness",164,65,0
+"Harness.jl :: test(root; extra = Model.Rule[], rules = nothing, checks = (",188,96,0
+"Install.jl :: cmd_install(args) -> Int",93,90,0
+"Install.jl :: dev_pointer() -> String",28,25,0
 "Install.jl :: julia_floor_ok() -> Bool",20,17,0
-"Install.jl :: shim_source() -> String",26,23,0
+"Install.jl :: shim_source() -> String",25,22,0
 "Install.jl :: shim_target() -> String",14,11,0
-"Ledger.jl :: Ledger",55,54,0
-"Ledger.jl :: Ledger.entries(ledger, id; scope = nothing, live = true) -> ",71,47,0
-"Ledger.jl :: Ledger.matches(entry, root; file = '', symbol = '',",166,88,0
-"Ledger.jl :: Ledger.read(cfg) -> Vector{Dict{String,Any}}",46,43,0
-"Main.jl :: Options",69,48,0
+"Main.jl :: Options",63,42,0
+"Main.jl :: UsageError",44,24,0
 "Main.jl :: VERBS",64,63,0
-"Main.jl :: cmd_probe(args) -> Int",36,33,0
 "Main.jl :: git_stamp(dir) -> String",32,29,0
-"Main.jl :: main(args) -> Int",157,81,0
-"Main.jl :: parse_options(args; valued = String[]) -> Options",92,44,0
-"Main.jl :: running_dev() -> Bool",89,86,0
+"Main.jl :: main(args) -> Int",134,81,0
+"Main.jl :: parse_options(args; valued = String[]) -> Options",105,44,0
+"Main.jl :: running_dev() -> Bool",86,83,0
 "Main.jl :: tool_version() -> String",38,35,0
 "Main.jl :: usage(io = stderr)",16,13,0
-"Model.jl :: Access",68,68,0
-"Model.jl :: AgentCheck",42,29,0
-"Model.jl :: AgentRole",128,104,0
-"Model.jl :: AlwaysOn",80,59,0
+"Model.jl :: Access",67,67,0
+"Model.jl :: AgentCheck",38,25,0
+"Model.jl :: AgentRole",110,86,0
+"Model.jl :: AlwaysOn",68,47,0
 "Model.jl :: Anchor",18,18,0
 "Model.jl :: Budget",93,63,0
 "Model.jl :: Check",30,29,0
-"Model.jl :: CodeFix",138,117,0
-"Model.jl :: Config",204,107,0
+"Model.jl :: CodeFix",116,95,0
+"Model.jl :: Config",191,98,0
 "Model.jl :: Decider",20,20,0
-"Model.jl :: Discipline",110,50,0
+"Model.jl :: Deferral",96,75,0
+"Model.jl :: Discipline",104,48,0
 "Model.jl :: DocFix",107,89,0
 "Model.jl :: Example",39,38,0
 "Model.jl :: FileSet",15,15,0
-"Model.jl :: Finding",57,36,0
-"Model.jl :: FindingDraft",120,102,0
+"Model.jl :: Finding",49,28,0
+"Model.jl :: FindingDraft",106,88,0
 "Model.jl :: Fixer",13,13,0
-"Model.jl :: Generated",62,40,0
+"Model.jl :: Generated",56,34,0
+"Model.jl :: HistoryExample",73,44,0
 "Model.jl :: Input",85,85,0
-"Model.jl :: Instrument",115,69,0
+"Model.jl :: Instrument",99,53,0
 "Model.jl :: Intention",18,18,0
-"Model.jl :: Item",78,57,0
-"Model.jl :: Location",163,104,0
-"Model.jl :: Model",192,93,0
-"Model.jl :: ModuleExample",54,34,0
-"Model.jl :: Option",50,33,0
-"Model.jl :: Parameter",42,23,0
+"Model.jl :: Item",68,47,0
+"Model.jl :: Location",151,92,0
+"Model.jl :: Model",179,82,0
+"Model.jl :: ModuleExample",48,28,0
+"Model.jl :: Option",44,27,0
+"Model.jl :: Parameter",38,23,0
 "Model.jl :: Part",18,18,0
-"Model.jl :: PatternRule",77,56,0
-"Model.jl :: ProgramCheck",54,39,0
-"Model.jl :: Question",116,94,0
-"Model.jl :: QuestionExample",57,33,0
-"Model.jl :: RetiredClaim",137,69,0
+"Model.jl :: PatternRule",65,44,0
+"Model.jl :: ProgramCheck",48,33,0
+"Model.jl :: Question",100,78,0
+"Model.jl :: QuestionExample",50,27,0
+"Model.jl :: RetiredClaim",131,69,0
 "Model.jl :: Rule",320,133,0
 "Model.jl :: Run",466,140,0
-"Model.jl :: Setting",31,20,0
-"Model.jl :: Settled",60,40,0
-"Model.jl :: SiteExample",54,36,0
+"Model.jl :: Setting",25,14,0
+"Model.jl :: Settled",52,32,0
+"Model.jl :: SiteExample",48,30,0
 "Model.jl :: Stop",13,13,0
 "Model.jl :: Strength",13,13,0
-"Model.jl :: Switch",57,36,0
-"Model.jl :: TextExample",122,60,0
-"Model.jl :: TreeExample",50,35,0
+"Model.jl :: Switch",51,30,0
+"Model.jl :: TextExample",112,50,0
+"Model.jl :: TreeExample",44,29,0
+"Model.jl :: Usage",88,37,0
 "Model.jl :: Verdict",18,18,0
 "Model.jl :: WhyAgent",27,27,0
-"Model.jl :: relocated(draft, locations) -> FindingDraft",81,54,0
+"Model.jl :: relocated(d, locations) -> FindingDraft",81,52,0
 "Model.md § Model",24,22,1
 "Orchestration.jl :: Orchestration",91,65,0
-"PF-WIRING.md § Answering, abandoning, closing",416,255,0
-"PF-WIRING.md § Before the next review — for the owner",17,17,0
-"PF-WIRING.md § Before the next review — for the owner / item 1",392,392,0
-"PF-WIRING.md § Before the next review — for the owner / item 2",79,70,0
-"PF-WIRING.md § Before the next review — for the owner / item 3",64,64,0
-"PF-WIRING.md § Before you start",160,88,0
-"PF-WIRING.md § Fixing",717,647,0
-"PF-WIRING.md § Placing and verifying",264,264,0
+"PF-WIRING.md § Not changed, by the owner's ruling (items 3, 6, 22)",118,76,0
+"PF-WIRING.md § Parked findings (items 1, 2, 27, 30)",58,58,0
+"PF-WIRING.md § Phase 5, from rc.27",217,59,0
 "PF-WIRING.md § Reporting a defect in this package",57,57,0
-"PF-WIRING.md § Step 1 — bump the pin, and expect it to crash at its last li",210,60,0
-"PF-WIRING.md § Step 2 — move both environments, check them, then regenerate",178,50,0
-"PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals'",62,62,0
-"PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals' / item ",54,29,0
-"PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals' / item  (2)",78,57,0
-"PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals' / item  (3)",93,46,0
-"PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals' / item  (4)",22,22,0
-"PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals' / item  (5)",41,41,0
-"PF-WIRING.md § Step 3 — one small page, inside 'Design & Internals' / item  (6)",128,60,0
-"PF-WIRING.md § Step 4 — the gate, then one commit",253,174,0
-"PF-WIRING.md § Step 5 — the open request is answered; delete it",24,24,0
-"PF-WIRING.md § Step 5 — the open request is answered; delete it / item 1",58,58,0
-"PF-WIRING.md § Step 5 — the open request is answered; delete it / item 2",20,20,0
-"PF-WIRING.md § Step 5 — the open request is answered; delete it / item 3",31,31,0
-"PF-WIRING.md § Step 5 — the open request is answered; delete it / item 4",66,66,0
-"PF-WIRING.md § Step 5 — the open request is answered; delete it / item 5",18,18,0
-"PF-WIRING.md § Step 5 — the open request is answered; delete it / item 6",89,49,0
-"PF-WIRING.md § Terms",319,260,0
-"PF-WIRING.md § Upgrading [GBGPeriodicFields](https://grigorysarnitsky.githu",124,69,0
+"PF-WIRING.md § Step 1 — bump, move the environments, regenerate",157,62,0
+"PF-WIRING.md § Step 2 — the gate, then one commit",180,72,0
+"PF-WIRING.md § Step 3 — two switches come out",124,50,0
+"PF-WIRING.md § The grade and the record (items 9, 10, 16, 29, 32)",100,100,0
+"PF-WIRING.md § The guard and the checks (items 4, 7, 21, 23, 24, 25)",159,108,0
+"PF-WIRING.md § Upgrading [GBGPeriodicFields](https://grigorysarnitsky.githu",115,60,0
+"PF-WIRING.md § Verbs (items 26, 31, 33)",45,45,0
+"PF-WIRING.md § Verification (items 15, 17, 34–37)",187,65,0
 "PF-WIRING.md § What PF has to do / item 1",13,13,0
-"PF-WIRING.md § What PF has to do / item 2",15,15,0
+"PF-WIRING.md § What PF has to do / item 2",8,8,0
 "PF-WIRING.md § What PF has to do / item 3",16,11,0
-"PF-WIRING.md § What PF has to do / item 4",82,41,0
-"PF-WIRING.md § What a review does differently now",41,41,0
-"PF-WIRING.md § What is read, and by whom",416,210,0
+"PF-WIRING.md § What a verifier could not see (items 18, 19, 20)",97,97,0
+"PF-WIRING.md § What changed since rc.23",29,29,0
 "Questions.jl :: Questions",100,56,0
-"Questions.jl :: answer!(root, id, option; item = '', direction = '') -> Unio",121,45,0
-"Questions.jl :: check(q, cfg) -> Vector{Tuple{Symbol,Model.Location}}",126,65,0
+"Questions.jl :: answer!(root, id, option; item = '', direction = '') -> Unio",111,35,0
+"Questions.jl :: check(q, cfg) -> Vector{Tuple{Symbol,Model.Location}}",125,64,0
 "Questions.jl :: open_questions(root) -> Vector{Dict{String,Any}}",36,33,0
-"Questions.jl :: put(q, root, cfg; io = stdout) -> Bool",117,60,0
+"Questions.jl :: put(q, root, cfg; io = stdout) -> Bool",109,60,0
 "Questions.jl :: report(q, cfg) -> String",73,35,0
 "Questions.jl :: rules() -> Vector{Model.Rule}",22,19,0
-"Questions.jl :: store(root) -> String",74,51,0
-"Reflection.jl :: ARGS_THRESHOLD",42,41,0
-"Reflection.jl :: ArgcovHit",58,48,0
-"Reflection.jl :: Docstring",70,59,0
-"Reflection.jl :: Reflection",102,101,0
-"Reflection.jl :: WRAPPER_PHRASE",34,33,0
-"Reflection.jl :: all_package_functions(pkg, modules) -> Set{Symbol}",29,25,0
-"Reflection.jl :: argcov(cfg; exempt = (hit -> false)) -> (hits, population, s",148,43,0
-"Reflection.jl :: docstrings(root, files) -> Vector{Docstring}",30,26,0
-"Reflection.jl :: dupref(cfg) -> Vector",41,38,0
-"Reflection.jl :: load_package(cfg) -> Module",41,38,0
-"Reflection.jl :: package_modules(pkg, cfg) -> Vector{Module}",35,31,0
-"Reflection.jl :: package_operations(pkg, modules) -> Set{Symbol}",87,83,0
-"Reflection.jl :: signature_fidelity(cfg; pkg = load_package(cfg),",129,61,0
-"Reflection.jl :: signature_parameters(inside) -> (positional, keyword)",58,54,0
-"Reflection.jl :: signature_types(inside) -> Dict{String,String}",21,18,0
-"Reflection.jl :: xlink(cfg; pkg = load_package(cfg), apply = false) -> Vector",81,37,0
-"Reflection.md § Reflection",22,22,1
-"Release.jl :: ci_verdict(root, sha) -> Union{String,Nothing}",187,92,0
-"Release.jl :: release(ver; io = stdout, skip_tests = false, root = pkgdir(",215,93,0
-"Release.jl :: release_fails(cfg, root, ver, base, rc) -> Vector{String}",148,81,0
-"Render.jl :: CALLS",105,54,0
+"Questions.jl :: store(root) -> String",73,50,0
+"Release.jl :: ci_verdict(root, sha) -> Union{String,Nothing}",185,90,0
+"Release.jl :: counts(; io = stdout, root = pkgdir(GBGCodingTools)) -> Int",96,61,0
+"Release.jl :: release(ver; io = stdout, skip_tests = false, root = pkgdir(",227,102,0
+"Release.jl :: release_fails(cfg, root, ver, base, rc) -> Vector{String}",137,80,0
+"Render.jl :: CALLS",104,54,0
 "Render.jl :: CI_ACTION",13,12,0
-"Render.jl :: GENERATED",50,49,0
+"Render.jl :: GENERATED",49,48,0
 "Render.jl :: HOOK_COMMAND",33,32,0
 "Render.jl :: POLICY_FILES",52,51,0
 "Render.jl :: RULES_PAGE",24,23,0
-"Render.jl :: RULES_URL",58,57,0
-"Render.jl :: Render",207,79,0
+"Render.jl :: RULES_URL",56,55,0
+"Render.jl :: Render",205,77,0
 "Render.jl :: SUBENVS",47,46,0
 "Render.jl :: TOOLING_PAGE",19,18,0
 "Render.jl :: TOOL_SITE",14,14,0
-"Render.jl :: block_of(text) -> Union{String,Nothing}",37,34,0
-"Render.jl :: call_drift(root) -> Vector{Model.Location}",62,59,0
+"Render.jl :: block_of(text) -> Union{String,Nothing}",38,35,0
+"Render.jl :: block_spans(lines) -> Vector{UnitRange{Int}}",61,58,0
+"Render.jl :: call_drift(root) -> Vector{Model.Location}",61,58,0
 "Render.jl :: ci(cfg) -> String",135,66,0
-"Render.jl :: ci_drift(cfg, root) -> Vector{Model.Location}",58,32,0
-"Render.jl :: claude_block(cfg) -> String",104,54,0
-"Render.jl :: collisions(cfg, root) -> Vector{Pair{String,String}}",154,108,0
+"Render.jl :: ci_drift(cfg, root) -> Vector{Model.Location}",77,41,0
+"Render.jl :: claude_block(cfg) -> String",103,54,0
+"Render.jl :: collisions(cfg, root) -> Vector{Pair{String,String}}",152,106,0
 "Render.jl :: family_of(id) -> Symbol",24,21,0
 "Render.jl :: gitignore(cfg) -> String",54,51,0
 "Render.jl :: glossary(cfg) -> String",30,27,0
-"Render.jl :: hook(cfg) -> String",122,88,0
-"Render.jl :: pages(cfg, root) -> Vector{String}",237,107,0
-"Render.jl :: pin_drift(cfg, root, envdir) -> Union{String,Nothing}",79,28,0
-"Render.jl :: pin_entries(cfg, root, envdir) -> Dict{String,Any}",210,80,0
+"Render.jl :: harness_called(live) -> Bool",73,43,0
+"Render.jl :: hook(cfg) -> String",120,86,0
+"Render.jl :: hook_rule_ids() -> Vector{String}",19,16,0
+"Render.jl :: hook_rules(cfg) -> String",47,44,0
+"Render.jl :: pages(cfg, root) -> Vector{String}",234,106,0
+"Render.jl :: pin_drift(cfg, root, envdir) -> Union{String,Nothing}",73,28,0
+"Render.jl :: pin_entries(cfg, root, envdir) -> Dict{String,Any}",202,78,0
 "Render.jl :: policy_file(cfg, entry) -> String",44,40,0
 "Render.jl :: policy_index(cfg) -> String",43,40,0
 "Render.jl :: policy_paths() -> Vector{String}",41,38,0
 "Render.jl :: produce(name, cfg) -> String",29,25,0
 "Render.jl :: regressions_note(cfg) -> String",26,23,0
-"Render.jl :: report(run, cfg) -> String",133,66,0
+"Render.jl :: report(run, cfg; root = '', queued = 0, undone = 0, red = fa",195,64,0
 "Render.jl :: rule_section(rule) -> String",88,50,0
-"Render.jl :: rulebook_page(cfg, root) -> Vector{String}",156,55,0
+"Render.jl :: rulebook_page(cfg, root) -> Vector{String}",152,53,0
 "Render.jl :: runtests_call() -> String",95,47,0
-"Render.jl :: settings_drift(root) -> Union{String,Nothing}",83,49,0
+"Render.jl :: settings_drift(root) -> Union{String,Nothing}",115,81,0
 "Render.jl :: skill(cfg, instrument) -> String",134,93,0
 "Render.jl :: skill_path(instrument) -> String",37,34,0
 "Render.jl :: switches(cfg) -> String",91,52,0
 "Render.jl :: version_tag(cfg) -> String",32,29,0
 "Render.jl :: wanted(cfg, g) -> Bool",85,55,0
 "Render.jl :: wiring(cfg, root) -> Vector{Model.Location}",83,79,0
-"Render.jl :: write_all(cfg, root) -> Vector{String}",62,58,0
-"Render.jl :: write_pin(cfg, root, envdir) -> Bool",51,21,0
-"Render.jl :: write_settings(root) -> Bool",63,32,0
+"Render.jl :: with_block(text, want) -> String",95,58,0
+"Render.jl :: write_all(cfg, root) -> (changed, refused)",128,63,0
+"Render.jl :: write_pin(cfg, root, envdir) -> Bool",81,36,0
+"Render.jl :: write_settings(root) -> Bool",101,66,0
 "Render.md § Render",31,22,1
-"Run.jl :: BLIND_VERDICTS",6,6,0
-"Run.jl :: DIFF_VERDICTS",8,8,0
 "Run.jl :: QUEUE_HEADING",13,13,0
 "Run.jl :: Run",317,122,0
 "Run.jl :: SOURCE_UNIT",18,18,0
 "Run.jl :: UNIT_MARK",20,20,0
-"Run.jl :: abandon(root; io = stdout) -> Int",414,120,0
+"Run.jl :: VERDICTS",8,8,0
+"Run.jl :: VERIFY_CAP",16,16,0
+"Run.jl :: abandon(root; io = stdout) -> Int",406,119,0
+"Run.jl :: blame_build(root, run, log; io = stdout) -> Vector{String}",86,30,0
 "Run.jl :: bundle_of",12,12,0
-"Run.jl :: close_run(root; io = stdout) -> Int",347,96,0
-"Run.jl :: collect(root; io = stdout) -> Int",219,80,0
-"Run.jl :: continue_stage(root, id, stage; io = stdout) -> Int",78,30,0
-"Run.jl :: fix_diff(root, run, f) -> String",124,76,0
-"Run.jl :: fix_stage(root, run; io = stdout) -> Int",98,38,0
-"Run.jl :: grade(root, run, stage, verdicts; io = stdout) -> Model.Run",128,58,0
-"Run.jl :: merge_same(drafts, cfg) -> Vector{Tuple{String,Model.Finding",185,107,0
-"Run.jl :: next(root; io = stdout) -> Int",177,74,0
+"Run.jl :: close_run(root; io = stdout) -> Int",340,95,0
+"Run.jl :: collect(root; io = stdout) -> Int",211,80,0
+"Run.jl :: continue_stage(root, id, stage; io = stdout) -> Int",70,30,0
+"Run.jl :: cost(root, dir; io = stdout) -> Int",150,66,0
+"Run.jl :: fix_diff(root, run, fs) -> String",121,78,0
+"Run.jl :: fix_stage(root, run; io = stdout) -> Int",90,38,0
+"Run.jl :: grade(root, run, verdicts; cfg, io = stdout) -> Model.Run",155,82,0
+"Run.jl :: merge_same(drafts, cfg) -> Vector{Tuple{String,Model.Finding",183,106,0
+"Run.jl :: next(root; io = stdout) -> Int",171,72,0
 "Run.jl :: open_run(root) -> Union{String,Nothing}",68,39,0
-"Run.jl :: other_copies(root, cfg, locations) -> Vector{Model.Location}",132,72,0
-"Run.jl :: park(root, id; why, io = stdout) -> Int",188,77,0
-"Run.jl :: queue_leftovers(root, run) -> Int",91,44,0
-"Run.jl :: reader_roles(root, run, cfg, site; io = stdout) -> (roles, e",137,56,0
-"Run.jl :: restore_green(root, run, cfg; io = stdout) -> (undone, red, ",176,92,0
-"Run.jl :: start(root, instrument; readers = :bound, io = stdout) -> In",198,90,0
-"Run.jl :: verifier_stage(root, run, cfg, stage; io = stdout) -> Int",153,65,0
+"Run.jl :: other_copies(root, cfg, locations) -> Vector{Model.Location}",126,72,0
+"Run.jl :: park(root, id; why, io = stdout) -> Int",180,77,0
+"Run.jl :: queue_leftovers(root, run; open_too = true) -> Int",107,43,0
+"Run.jl :: reader_roles(root, run, cfg, site; io = stdout) -> (roles, e",127,56,0
+"Run.jl :: restore_green(root, run, cfg; io = stdout) -> (undone, red, ",167,92,0
+"Run.jl :: start(root, instrument; readers = :bound, model = 'session',",191,76,0
+"Run.jl :: verifier_stage(root, run, cfg, site; io = stdout) -> Int",158,89,0
 "Runs.jl :: CODE_ANSWER",11,11,0
-"Runs.jl :: FINDING_TRAILER",41,40,0
+"Runs.jl :: FINDING_TRAILER",40,39,0
 "Runs.jl :: GUARD_TRAILER",43,42,0
-"Runs.jl :: REVERT_TRAILER",34,33,0
-"Runs.jl :: Runs",110,45,0
-"Runs.jl :: STAGES",114,80,0
-"Runs.jl :: advance!(root, id, to; io = stdout) -> Bool",103,48,0
-"Runs.jl :: answer!(root, id, option; item = '', direction = '') -> Unio",145,57,0
+"Runs.jl :: OWNER_ANSWER",71,71,0
+"Runs.jl :: REVERT_TRAILER",47,46,0
+"Runs.jl :: Runs",109,44,0
+"Runs.jl :: STAGES",104,70,0
+"Runs.jl :: advance!(root, id, to; io = stdout) -> Bool",95,48,0
+"Runs.jl :: answer!(root, id, option; item = '', direction = '') -> Unio",135,57,0
 "Runs.jl :: answer_of(run, id) -> Union{String,Nothing}",36,32,0
 "Runs.jl :: carry_over(root, instrument) -> Vector{Model.Finding}",85,48,0
 "Runs.jl :: changed_files(root, sha) -> Vector{String}",29,25,0
 "Runs.jl :: changed_tracked(root) -> Vector{String}",30,27,0
-"Runs.jl :: closed(run, id) -> Bool",50,46,0
+"Runs.jl :: closed(run, id) -> Bool",46,42,0
 "Runs.jl :: code_question_id",16,16,0
 "Runs.jl :: dir(root, id) -> String",30,26,0
 "Runs.jl :: failing_now(cfg, root) -> Vector{Symbol}",94,62,0
 "Runs.jl :: finding_of(root, sha) -> Union{String,Nothing}",28,24,0
-"Runs.jl :: fix_commits(root, since, id) -> Vector{String}",48,24,0
+"Runs.jl :: fix_commits(root, since, id) -> Vector{String}",42,18,0
 "Runs.jl :: guarded_commits(root, since) -> Vector{String}",48,27,0
-"Runs.jl :: head_commit(root) -> String",58,33,0
+"Runs.jl :: head_commit(root) -> String",57,32,0
 "Runs.jl :: in_material(run) -> Vector{Model.Finding}",32,29,0
 "Runs.jl :: load(root, id) -> Union{Model.Run,Nothing}",65,35,0
-"Runs.jl :: mapped_line(root, loc, since) -> Union{Int,Nothing}",206,107,0
+"Runs.jl :: mapped_line(root, loc, since) -> Union{Int,Nothing}",199,106,0
 "Runs.jl :: new_id(instrument, root) -> String",76,38,0
 "Runs.jl :: open_findings(run) -> Vector{Model.Finding}",79,51,0
-"Runs.jl :: open_questions(root) -> Vector{Tuple{String,Model.Question}}",86,53,0
-"Runs.jl :: own_record(path) -> Bool",251,87,0
-"Runs.jl :: owner_question(run, f, why) -> Model.Question",63,23,0
-"Runs.jl :: parked(run, id) -> Bool",151,85,0
+"Runs.jl :: open_questions(root) -> Vector{Tuple{String,Model.Question}}",84,51,0
+"Runs.jl :: own_record(path) -> Bool",249,85,0
+"Runs.jl :: owner_question(run, f, why) -> Model.Question",57,23,0
+"Runs.jl :: owner_took",19,19,0
+"Runs.jl :: parked(run, id) -> Bool",145,81,0
 "Runs.jl :: question_of(root, id) -> Union{Tuple{String,Model.Run,Model.",77,38,0
-"Runs.jl :: reanchor(root, loc) -> Model.Location",132,60,0
-"Runs.jl :: revert!(root, sha) -> Bool",71,67,0
-"Runs.jl :: reverted_by(root, since, fixes) -> Vector{String}",53,21,0
-"Runs.jl :: reverts_of(root, since, id) -> Vector{String}",58,19,0
-"Runs.jl :: rulebook_digest(cfg, instrument) -> String",130,70,0
+"Runs.jl :: reanchor(root, loc; since = '') -> Model.Location",150,59,0
+"Runs.jl :: revert!(root, sha; why = 'a verifier called the fix worse') ",86,35,0
+"Runs.jl :: reverted_by(root, since, fixes) -> Vector{String}",46,17,0
+"Runs.jl :: reverts_of(root, since, id) -> Vector{String}",51,17,0
+"Runs.jl :: rulebook_digest(cfg, instrument) -> String",128,70,0
 "Runs.jl :: save(root, run) -> String",58,36,0
 "Runs.jl :: stage_index(root, id) -> Int",95,59,0
 "Runs.jl :: stage_of(root, id) -> Symbol",33,29,0
-"Runs.jl :: start(instrument, root; io = stdout) -> Union{Model.Run,Noth",319,93,0
+"Runs.jl :: start(instrument, root; readers = :bound, model = 'session',",316,77,0
 "Runs.jl :: to_owner(run) -> Vector{Model.Finding}",39,36,0
 "Runs.jl :: unguarded_code(root, since) -> Vector{String}",197,78,0
 "Runs.jl :: workable(run) -> Vector{Model.Finding}",25,22,0
-"Scan.jl :: AI_BANNER",28,27,0
-"Scan.jl :: Hit(file, line, text; symbol = '')",83,59,0
-"Scan.jl :: ProseLine",94,82,0
-"Scan.jl :: SCANS",25,24,0
-"Scan.jl :: ScanResult",104,95,0
-"Scan.jl :: apply_ledger(cfg, ledger, row, hits) -> (kept, exempted, dis",148,73,0
-"Scan.jl :: built_pages(build_dir) -> Vector{String}",37,34,0
-"Scan.jl :: cmd_scan(args) -> Int",44,41,0
-"Scan.jl :: data_prose_lines(kind, lines) -> Vector{ProseLine}",92,88,0
-"Scan.jl :: docstring_blocks(cfg, files) -> Vector",54,50,0
-"Scan.jl :: mask_code_spans(line) -> String",65,62,0
-"Scan.jl :: prose_lines(cfg, file) -> Vector{ProseLine}",64,60,0
-"Scan.jl :: prose_text(cfg, file; history_cut = true) -> String",81,44,0
-"Scan.jl :: regex_scan(cfg, files, re; skip_comments = true, on =:text, ",152,101,0
-"Scan.jl :: register_scan!(id, f)",66,64,0
-"Scan.jl :: report(results; io = stdout) -> Int",112,56,0
-"Scan.jl :: rules_register() -> Vector{Dict}",58,32,0
-"Scan.jl :: run_scan(cfg, row; ledger = Ledger.read(cfg), files = nothin",122,52,0
-"Scan.jl :: scan_docs(cfg; hard_only = false, only = nothing, io = stdou",121,39,0
-"Scan.jl :: scan_html(cfg, build_dir; only = nothing, io = stdout) -> (r",91,35,0
-"Scan.jl :: surface_kind(cfg, file) -> Symbol",22,18,0
-"Scan.jl :: unescape_docstring(line) -> String",36,33,0
-"Scan.jl :: write_public_surface(cfg; pkg = Reflection.load_package(cfg)",65,36,0
 "Scope.jl :: CONFIG",19,19,0
-"Scope.jl :: Scope",282,102,0
+"Scope.jl :: Scope",277,98,0
 "Scope.jl :: added_at(root, path) -> Union{String,Nothing}",33,29,0
 "Scope.jl :: added_since(root, commit) -> Vector{String}",46,42,0
-"Scope.jl :: base(root, instrument, readers, cfg) -> Union{Tuple{String,S",84,42,0
+"Scope.jl :: base(root, instrument, readers, cfg) -> Union{Tuple{String,S",76,34,0
 "Scope.jl :: changed_since(root, commit) -> Vector{String}",37,33,0
-"Scope.jl :: prose_moved(root, path, commit) -> Bool",65,23,0
+"Scope.jl :: prose_moved(root, path, commit) -> Bool",58,22,0
 "Scope.jl :: reaches(role, sets) -> Bool",106,81,0
-"Scope.jl :: sets_of(cfg, root, changed) -> Dict{Model.FileSet.T,Vector{S",165,106,0
-"Scope.jl :: unit_touched(root, cfg, unit, sets, added) -> Bool",139,71,0
-"Scope.jl :: why_full(root, instrument, readers, cfg) -> String",66,29,0
-"Self.jl :: cmd_self_verify(args) -> Int",37,34,0
+"Scope.jl :: sets_of(cfg, root, changed) -> Dict{Model.FileSet.T,Vector{S",155,104,0
+"Scope.jl :: unit_touched(root, cfg, unit, sets, added) -> Bool",128,70,0
+"Scope.jl :: why_full(root, instrument, readers, cfg) -> String",58,21,0
+"Self.jl :: blob_hash(path) -> String",35,32,0
+"Self.jl :: cmd_self_verify(args) -> Int",24,21,0
 "Self.jl :: manifest_tree_sha(manifest_path) -> Union{String,Nothing}",33,30,0
-"Self.jl :: self_verify(root = Config.find_root(); io = stdout) -> Int",156,64,0
-"Self.jl :: tool_sub_envs(root) -> Vector{String}",48,45,0
-"Site.jl :: BUILDER",91,90,0
-"Site.jl :: Site",180,72,0
-"Site.jl :: build(root, cfg; io = stdout) -> Union{String,Nothing}",115,62,0
-"Site.jl :: pages(dir, cfg, root) -> Vector{NamedTuple}",342,94,0
-"Site.jl :: source_of(root, path) -> String",193,70,0
+"Self.jl :: self_verify(root = ConfigIO.find_root(); io = stdout) -> Int",151,64,0
+"Self.jl :: tool_sub_envs(root) -> Vector{String}",46,43,0
+"Self.jl :: tree_hash(dir; skip = ('.git',)) -> String",117,67,0
+"Site.jl :: BUILDER",89,88,0
+"Site.jl :: Site",178,70,0
+"Site.jl :: build(root, cfg; io = stdout) -> Union{String,Nothing}",109,62,0
+"Site.jl :: pages(dir, cfg, root) -> Vector{NamedTuple}",323,91,0
+"Site.jl :: source_of(root, path; cfg = nothing) -> String",192,68,0
 "Site.jl :: write_units(dir, pages) -> Vector{NamedTuple}",53,49,0
-"Study.jl :: Round",85,71,0
+"Study.jl :: Round",73,59,0
 "Study.jl :: SPELLING",15,15,0
-"Study.jl :: Study",220,79,0
-"Study.jl :: Tag",80,70,0
+"Study.jl :: Study",219,79,0
+"Study.jl :: Tag",70,60,0
 "Study.jl :: drift(round, rules) -> Vector{NamedTuple}",82,43,0
 "Study.jl :: fleiss(per_item) -> Float64",81,41,0
 "Study.jl :: measure(tags, rules) -> Round",35,31,0
 "Study.jl :: question_of(entry) -> Model.Question",74,38,0
-"Study.jl :: read_round(path) -> Round",145,68,0
-"StudyCmd.jl :: StudyCmd",141,68,0
-"StudyCmd.jl :: rules(root, path; io = stdout) -> Int",85,49,0
+"Study.jl :: read_round(path) -> Round",221,76,0
+"StudyCmd.jl :: StudyCmd",140,67,0
+"StudyCmd.jl :: rules(root, path; io = stdout) -> Int",89,59,0
 "TestHarness.jl :: @alloc_below bound expr",87,84,0
 "TestHarness.jl :: AUDITED_ALLOCATION_OPS",31,30,0
 "TestHarness.jl :: AUDITED_TRAFFIC_OPS",15,14,0
-"TestHarness.jl :: CountingArray{T,N} <: AbstractArray{T,N}",66,40,0
+"TestHarness.jl :: CountingArray{T,N} <: AbstractArray{T,N}",60,40,0
 "TestHarness.jl :: DIGEST_SOURCE",16,15,0
 "TestHarness.jl :: TestHarness",75,74,0
-"TestHarness.jl :: Traffic",67,56,0
-"TestHarness.jl :: allocation_completeness(pkg, modules; exempt = Dict{Symbol,S",94,46,0
-"TestHarness.jl :: audit(operation!, name, rows...; print = false)",117,56,0
-"TestHarness.jl :: count_expression(text, symbols) -> Int",53,49,0
+"TestHarness.jl :: Traffic",57,46,0
+"TestHarness.jl :: all_package_functions(pkg, modules) -> Set{Symbol}",32,28,0
+"TestHarness.jl :: allocation_completeness(pkg, modules; exempt = Dict{Symbol,S",88,46,0
+"TestHarness.jl :: audit(operation!, name, rows...; print = false)",109,48,0
+"TestHarness.jl :: count_expression(text, symbols) -> Int",51,47,0
 "TestHarness.jl :: counting(data) -> CountingArray",11,8,0
-"TestHarness.jl :: display_gate(modules; no_display = Dict{Symbol,String}, min_",137,97,0
-"TestHarness.jl :: field_threshold(field_bytes; fraction = 16, per_thread = 409",92,65,0
+"TestHarness.jl :: display_gate(modules; no_display = Dict{Symbol,String}, min_",129,89,0
+"TestHarness.jl :: field_threshold(field_bytes; fraction = 16, per_thread = 409",84,57,0
 "TestHarness.jl :: has_display(type, modules) -> Bool",17,13,0
-"TestHarness.jl :: method_parity(pkg, modules, baseline; externals = (Base,))",105,64,0
-"TestHarness.jl :: module_method_count(mod, pkg, modules; externals = (Base,)) ",68,30,0
-"TestHarness.jl :: oracle_registry(pkg, modules, registry, testdir)",104,61,0
+"TestHarness.jl :: method_parity(pkg, modules, baseline; externals = (Base,))",97,64,0
+"TestHarness.jl :: module_method_count(mod, pkg, modules; externals = (Base,)) ",59,29,0
+"TestHarness.jl :: oracle_registry(pkg, modules, registry, testdir)",96,61,0
 "TestHarness.jl :: other_thread_count() -> Int",22,19,0
-"TestHarness.jl :: resolve_function(name, pkg, modules; externals = (Base,)) ->",123,70,0
-"TestHarness.jl :: run_regressions(dir; parent = Main) -> Vector{String}",90,39,0
+"TestHarness.jl :: package_operations(pkg, modules) -> Set{Symbol}",112,108,0
+"TestHarness.jl :: resolve_function(name, pkg, modules; externals = (Base,)) ->",107,62,0
+"TestHarness.jl :: run_regressions(dir; parent = Main) -> Vector{String}",86,39,0
 "TestHarness.jl :: struct_types(modules) -> Dict{Symbol,Any}",65,62,0
-"TestHarness.jl :: thread_digest(probe_source; threads, project = Base.active_p",71,33,0
-"TestHarness.jl :: traffic_completeness(pkg, modules; exempt = Dict{Symbol,Stri",53,25,0
-"TestHarness.jl :: traffic_rows(baseline, name, symbols) -> Vector",75,30,0
+"TestHarness.jl :: thread_digest(probe_source; threads, project = Base.active_p",64,32,0
+"TestHarness.jl :: traffic_completeness(pkg, modules; exempt = Dict{Symbol,Stri",47,19,0
+"TestHarness.jl :: traffic_rows(baseline, name, symbols) -> Vector",69,30,0
 "TestHarness.md § TestHarness",22,22,1
 "Texts.jl :: DEFAULT_PATTERNS",39,38,0
-"Texts.jl :: DocBlock",39,24,0
-"Texts.jl :: NAME",124,105,0
-"Texts.jl :: NodeSpan",64,50,0
-"Texts.jl :: Texts",191,64,0
-"Texts.jl :: argument_list(signature) -> Union{String,Nothing}",87,43,0
+"Texts.jl :: DocBlock",33,18,0
+"Texts.jl :: NAME",122,103,0
+"Texts.jl :: NodeSpan",56,42,0
+"Texts.jl :: Texts",190,64,0
+"Texts.jl :: argument_list(signature) -> Union{String,Nothing}",85,41,0
 "Texts.jl :: arity(inside) -> Tuple{Int,Int}",78,44,0
 "Texts.jl :: article_of(doc) -> Union{HTMLElement,Nothing}",27,24,0
-"Texts.jl :: attr(el, name, default = '') -> String",64,42,0
+"Texts.jl :: attr(el, name, default = '') -> String",58,36,0
 "Texts.jl :: classes(el) -> Vector{String}",20,17,0
-"Texts.jl :: definitions(path) -> Vector{NodeSpan}",94,48,0
-"Texts.jl :: docstrings(path) -> Vector{DocBlock}",59,37,0
-"Texts.jl :: docstrings_of(src; filename = 'source.jl') -> Vector{DocBloc",44,21,0
+"Texts.jl :: definitions(path) -> Vector{NodeSpan}",127,48,0
+"Texts.jl :: docstrings(path) -> Vector{DocBlock}",62,37,0
+"Texts.jl :: docstrings_of(src; filename = 'source.jl') -> Vector{DocBloc",40,21,0
 "Texts.jl :: elements(root, pred) -> Vector",24,20,0
-"Texts.jl :: files(cfg, root, fileset) -> Vector{String}",76,29,0
-"Texts.jl :: find_node(root, file, node) -> UnitRange{Int}",68,35,0
+"Texts.jl :: files(cfg, root, fileset) -> Vector{String}",70,29,0
+"Texts.jl :: find_node(root, file, node) -> UnitRange{Int}",62,35,0
 "Texts.jl :: formulas(text) -> Vector{String}",96,39,0
 "Texts.jl :: gitignore_rules(path) -> Vector{Tuple{Regex,Bool}}",36,33,0
 "Texts.jl :: gitignore_rules_of(text) -> Vector{Tuple{Regex,Bool}}",38,35,0
-"Texts.jl :: glob_matches(pattern, path) -> Bool",95,49,0
+"Texts.jl :: glob_matches(pattern, path) -> Bool",93,49,0
 "Texts.jl :: heading_path(path, line) -> String",41,37,0
-"Texts.jl :: headings(path) -> Vector{NodeSpan}",82,49,0
-"Texts.jl :: ignored(root) -> Function",308,118,0
+"Texts.jl :: headings(path) -> Vector{NodeSpan}",80,47,0
+"Texts.jl :: ignored(root) -> Function",303,117,0
 "Texts.jl :: mask_code_spans(line) -> String",53,50,0
-"Texts.jl :: mask_math_spans(line) -> String",88,52,0
-"Texts.jl :: node_at(root, file, line) -> String",58,29,0
-"Texts.jl :: occurrences(cfg, root, text) -> Vector{Model.Location}",118,57,0
-"Texts.jl :: page_text(node) -> String",108,56,0
-"Texts.jl :: parameters(inside) -> Tuple{Vector{String},Vector{String}}",83,48,0
-"Texts.jl :: place(cfg, root, text) -> Union{Model.Location,Nothing}",205,84,0
-"Texts.jl :: prose_text(path; comments = true) -> String",159,66,0
-"Texts.jl :: reading(text) -> String",169,85,0
-"Texts.jl :: reanchor(root, loc) -> Model.Location",164,68,0
-"Texts.jl :: signature_line(doc) -> String",40,37,0
-"Texts.jl :: signature_lines(doc) -> Vector{String}",104,64,0
-"Texts.jl :: single_escapes(line) -> String",139,80,0
-"Texts.jl :: slots(text) -> Vector{String}",82,50,0
+"Texts.jl :: mask_math_spans(line) -> String",86,50,0
+"Texts.jl :: node_at(root, file, line) -> String",50,27,0
+"Texts.jl :: occurrences(cfg, root, text) -> Vector{Model.Location}",112,57,0
+"Texts.jl :: page_text(node) -> String",106,54,0
+"Texts.jl :: parameters(inside) -> Tuple{Vector{String},Vector{String}}",81,46,0
+"Texts.jl :: place(cfg, root, text) -> Union{Model.Location,Nothing}",199,84,0
+"Texts.jl :: prose_text(path; comments = true) -> String",153,64,0
+"Texts.jl :: reading(text) -> String",167,85,0
+"Texts.jl :: reanchor(root, loc; loose = true) -> Model.Location",183,68,0
+"Texts.jl :: signature_line(doc) -> String",38,35,0
+"Texts.jl :: signature_lines(doc) -> Vector{String}",102,62,0
+"Texts.jl :: single_escapes(line) -> String",138,79,0
+"Texts.jl :: slots(text) -> Vector{String}",81,49,0
 "Texts.jl :: tagname(node) -> Symbol",32,29,0
 "Texts.jl :: text_of(node) -> String",23,20,0
-"Texts.jl :: unwrapped(text) -> Vector{Tuple{Int,String}}",210,99,0
+"Texts.jl :: unwrapped(text) -> Vector{Tuple{Int,String}}",207,98,0
 "Texts.jl :: wrapped_lines(text) -> Vector{Tuple{Int,String}}",124,72,0
 "Texts.md § Texts",32,22,1
-"TreeHash.jl :: TreeHash",54,53,0
-"TreeHash.jl :: blob_hash(path) -> String",35,32,0
-"TreeHash.jl :: tree_hash(dir; skip = ('.git',)) -> String",96,42,0
-"Wire.jl :: CONFIG_SEED",56,55,0
-"Wire.jl :: Wire",137,54,0
-"Wire.jl :: init(root; io = stdout) -> Int",105,49,0
-"Wire.jl :: sync(root; check = false, io = stdout) -> Int",83,30,0
-"Witnesses.jl :: WitnessResult",123,113,0
-"Witnesses.jl :: Witnesses",101,100,0
+"Wire.jl :: Wire",158,75,0
+"Wire.jl :: config_seed(root, name) -> String",98,64,0
+"Wire.jl :: init(root; io = stdout) -> Int",119,49,0
+"Wire.jl :: package_root(start) -> Union{String,Nothing}",85,51,0
+"Wire.jl :: sync(root; check = false, io = stdout) -> Int",89,36,0
+"Witnesses.jl :: WitnessResult",112,102,0
+"Witnesses.jl :: Witnesses",89,88,0
 "Witnesses.jl :: blocked_reason(path) -> Union{String,Nothing}",26,23,0
-"Witnesses.jl :: refusal(path, package) -> Union{String,Nothing}",54,50,0
-"Witnesses.jl :: run(dir; expect, package, project, names = String[], io = st",184,76,0
-"Witnesses.jl :: run_one(path; project, package) -> WitnessResult",185,95,0
-"Witnesses.jl :: witness_project(root, witness_env, package) -> String",48,30,0
+"Witnesses.jl :: refusal(path, package) -> Union{String,Nothing}",86,82,0
+"Witnesses.jl :: run(dir; expect, package, project, names = String[], io = st",171,71,0
+"Witnesses.jl :: run_one(path; project, package) -> WitnessResult",237,109,0
 "Witnesses.md § Witnesses",22,22,1
 "arguments.jl :: ARGS_FORM",18,17,0
 "arguments.jl :: RULES",6,5,0
 "arguments.jl :: Rules.Arguments",43,42,0
-"arguments.jl :: args_form(src, cfg) -> Vector{Model.Location}",129,80,0
+"arguments.jl :: args_form(src, cfg) -> Vector{Model.Location}",128,79,0
 "citations.jl :: REFERENCES",31,30,0
-"citations.jl :: RESOLVER",52,51,0
-"citations.jl :: Rules.Citations",121,67,0
+"citations.jl :: RESOLVER",51,50,0
+"citations.jl :: RULES",6,5,0
+"citations.jl :: Rules.Citations",119,67,0
 "citations.jl :: canonical(root, cfg) -> Union{String,Nothing}",53,49,0
 "citations.jl :: doi_on_title(text, cfg) -> Vector{Model.Location}",73,43,0
-"citations.jl :: full_inline(root, cfg) -> Vector{Model.Location}",95,59,0
+"citations.jl :: full_inline(root, cfg) -> Vector{Model.Location}",94,58,0
 "citations.jl :: links_resolve(text, cfg) -> Vector{Model.Location}",50,46,0
 "citations.jl :: resolve_online(url) -> (status, title)",80,41,0
-"citations.jl :: sources(root, cfg) -> Vector{String}",44,40,0
-"config.md § [The config](@id config)",189,69,1
+"citations.jl :: sources(root, cfg) -> Vector{String}",67,63,0
+"config.md § [The config](@id config)",179,68,1
 "docstrings.jl :: ARG_BULLET",18,17,0
 "docstrings.jl :: FIELDS",16,15,0
 "docstrings.jl :: REGISTER",18,17,0
 "docstrings.jl :: RULES",12,11,0
-"docstrings.jl :: Rules.Docstrings",94,52,0
+"docstrings.jl :: Rules.Docstrings",93,52,0
 "docstrings.jl :: SENTENCE_OPENER",16,15,0
-"docstrings.jl :: arg_bullet(text, cfg) -> Vector{Model.Location}",120,74,0
-"docstrings.jl :: field_docs(path, cfg) -> Vector{Model.Location}",116,63,0
-"docstrings.jl :: register(text, cfg) -> Vector{Model.Location}",68,33,0
+"docstrings.jl :: arg_bullet(text, cfg) -> Vector{Model.Location}",118,72,0
+"docstrings.jl :: body_line(src, d) -> Int",89,54,0
+"docstrings.jl :: field_docs(src, cfg) -> Vector{Model.Location}",133,66,0
+"docstrings.jl :: register(text, cfg) -> Vector{Model.Location}",66,33,0
 "docstrings.jl :: sentence_opener(text, cfg) -> Vector{Model.Location}",143,56,0
+"docstrings.jl :: struct_fields(src, name) -> Vector{String}",39,35,0
 "documentation_review.jl :: DISCIPLINES",77,76,0
 "documentation_review.jl :: DISCIPLINE_IDS",18,18,0
 "documentation_review.jl :: READER_IDS",34,33,0
-"documentation_review.jl :: Roles.DocumentationReview",374,103,0
-"documentation_review.jl :: derive(rules, cfg) -> (roles, gaps)",135,65,0
-"documentation_review.jl :: select(roles, readers) -> Vector{Model.AgentRole}",91,55,0
+"documentation_review.jl :: Roles.DocumentationReview",368,102,0
+"documentation_review.jl :: derive(rules, cfg) -> (roles, gaps)",134,65,0
+"documentation_review.jl :: select(roles, readers) -> Vector{Model.AgentRole}",89,53,0
 "index.md § GBGCodingTools",95,73,2
 "index.md § How a package adopts it",66,66,0
-"index.md § The command-line program `gbg`",150,94,0
-"index.md § The review procedures",85,85,0
+"index.md § The command-line program `gbg`",146,94,0
+"index.md § The review procedures",83,83,0
 "index.md § The written rules",74,74,0
-"index.md § What a package's docs build and tests call",109,109,0
+"index.md § What a package's docs build and tests call",104,104,0
 "index.md § What it is",139,76,0
-"index.md § Where to start",47,47,0
+"index.md § Where to start",42,42,0
 "install.md § The dev checkout",40,40,0
 "install.md § The pinned version",48,28,0
-"install.md § The shim",121,121,0
-"install.md § [Install](@id install)",100,78,1
+"install.md § The shim",118,118,0
+"install.md § [Install](@id install)",99,77,1
 "judgement_api.jl :: RULES",10,9,0
 "judgement_api.jl :: Rules.JudgementApi",75,45,0
 "judgement_cit.jl :: RULES",10,9,0
 "judgement_cit.jl :: Rules.JudgementCit",75,45,0
 "judgement_doc.jl :: ADMONITION_TITLES",14,14,0
-"judgement_doc.jl :: ARCHITECTURE_DOC",183,114,0
+"judgement_doc.jl :: ARCHITECTURE_DOC",181,112,0
 "judgement_doc.jl :: FORMALIZATION",16,16,0
 "judgement_doc.jl :: LEADING_IDENTITY_LEADS",12,12,0
 "judgement_doc.jl :: NOTATION_PAGE",10,10,0
 "judgement_doc.jl :: RULES",10,9,0
-"judgement_doc.jl :: Rules.JudgementDoc",136,61,0
+"judgement_doc.jl :: Rules.JudgementDoc",134,59,0
 "judgement_git.jl :: RULES",19,18,0
 "judgement_git.jl :: Rules.JudgementGit",106,74,0
-"judgement_git.jl :: WORKING_BRANCH",21,21,0
 "judgement_git.jl :: branch_of(cfg) -> String",67,36,0
 "judgement_git.jl :: ci_manual(root, cfg) -> Vector{Model.Location}",68,64,0
-"judgement_git.jl :: hooked(fragment) -> Function",85,47,0
+"judgement_git.jl :: hooked(fragment) -> Function",101,51,0
 "judgement_git.jl :: manifest_tracked(root, cfg) -> Vector{Model.Location}",58,54,0
 "judgement_git.jl :: requests(root, cfg) -> Vector{Model.Location}",36,32,0
 "judgement_inst.jl :: RULES",10,9,0
@@ -621,42 +557,43 @@ unit,words,longest_paragraph,admonitions
 "latex.jl :: RULES",12,11,0
 "latex.jl :: Rules.Latex",82,50,0
 "latex.jl :: inline_math_split(text, cfg) -> Vector{Model.Location}",77,37,0
-"latex.jl :: matching(pattern; mask = true) -> Function",54,19,0
+"latex.jl :: matching(pattern; mask = true) -> Function",50,19,0
 "latex.jl :: mathbf(text, cfg) -> Vector{Model.Location}",65,32,0
-"latex.jl :: pattern_rule(id, statement, why, pattern, breaking, complyin",123,77,0
-"latex.jl :: rendered_math(text, cfg) -> Vector{Model.Location}",91,44,0
+"latex.jl :: pattern_rule(id, statement, why, pattern, breaking, complyin",123,74,0
+"latex.jl :: rendered_math(text, cfg) -> Vector{Model.Location}",89,43,0
 "latex.jl :: spacing(text, cfg) -> Vector{Model.Location}",80,58,0
 "modules.jl :: RULES",6,5,0
 "modules.jl :: Rules.Modules",98,49,0
-"modules.jl :: displayed_signatures(root, cfg) -> Tuple",50,46,0
+"modules.jl :: displayed_signatures(root, cfg) -> Tuple",68,64,0
 "modules.jl :: owners(pkg, cfg) -> Dict{String,Symbol}",34,30,0
-"modules.jl :: signature_fidelity(loaded, cfg) -> Vector{Model.Location}",96,55,0
-"modules.jl :: xlink(loaded, cfg) -> Vector{Model.Location}",87,45,0
-"pages.jl :: BANNER_PAGES",95,64,0
+"modules.jl :: signature_fidelity(loaded, cfg) -> Vector{Model.Location}",121,59,0
+"modules.jl :: xlink(loaded, cfg) -> Vector{Model.Location}",86,45,0
+"pages.jl :: BANNER_PAGES",93,64,0
 "pages.jl :: RETIRED_CLAIMS",24,23,0
-"pages.jl :: Rules.Pages",82,42,0
-"pages.jl :: SIBLING_SITES",59,30,0
+"pages.jl :: RULES",12,11,0
+"pages.jl :: Rules.Pages",80,40,0
+"pages.jl :: SIBLING_SITES",74,43,0
 "pages.jl :: api_structure(text, cfg) -> Vector{Model.Location}",95,49,0
 "pages.jl :: crammed_citation(src, cfg) -> Vector{Model.Location}",71,40,0
 "pages.jl :: dead_reference(text, cfg) -> Vector{Model.Location}",70,37,0
 "pages.jl :: retired_claims(text, cfg) -> Vector{Model.Location}",126,55,0
-"pages.jl :: sibling_link(text, cfg) -> Vector{Model.Location}",90,54,0
+"pages.jl :: sibling_link(text, cfg) -> Vector{Model.Location}",97,61,0
 "pages.jl :: signature_width(src, cfg) -> Vector{Model.Location}",74,36,0
 "questions.jl :: CONTEXT_WORDS",20,19,0
 "questions.jl :: DECISION_WORDS",22,21,0
 "questions.jl :: HOUSE_TERMS",41,40,0
-"questions.jl :: Rules.Questions",106,73,0
+"questions.jl :: Rules.Questions",105,72,0
 "questions.jl :: no_coordinates(q, cfg) -> Vector{Model.Location}",90,47,0
 "questions.jl :: no_house_terms(q, cfg) -> Vector{Model.Location}",80,40,0
 "questions.jl :: one_decision(q, cfg) -> Vector{Model.Location}",64,33,0
 "questions.jl :: short(q, cfg) -> Vector{Model.Location}",76,39,0
 "reflection.jl :: RULES",6,5,0
-"reflection.jl :: Rules.Reflection",85,45,0
-"reflection.jl :: argcov(src, cfg) -> Vector{Model.Location}",101,62,0
+"reflection.jl :: Rules.Reflection",83,45,0
+"reflection.jl :: argcov(src, cfg) -> Vector{Model.Location}",119,80,0
 "reflection.jl :: dupref(src, cfg) -> Vector{Model.Location}",66,34,0
 "reflection.jl :: exported_names(src) -> Set{String}",18,15,0
 "reflection.jl :: id_resolves(text, cfg) -> Vector{Model.Location}",67,38,0
-"reflection.jl :: link_uniformity(src, cfg) -> Vector{Model.Location}",76,38,0
+"reflection.jl :: link_uniformity(root, cfg) -> Vector{Model.Location}",110,69,0
 "reflection.jl :: live_ids() -> Set{String}",27,24,0
 "rendering.jl :: CODE_IN_MATH",16,15,0
 "rendering.jl :: ONE_SPAN",27,26,0
@@ -668,25 +605,27 @@ unit,words,longest_paragraph,admonitions
 "rendering.jl :: code_in_math(text, cfg) -> Vector{Model.Location}",96,61,0
 "rendering.jl :: indented_table(text, cfg) -> Vector{Model.Location}",78,40,0
 "rendering.jl :: math_spans(text) -> Vector{Tuple{Int,String}}",66,35,0
-"rendering.jl :: one_span(text, cfg) -> Vector{Model.Location}",223,67,0
+"rendering.jl :: one_span(text, cfg) -> Vector{Model.Location}",222,66,0
 "rendering.jl :: ref_abut(text, cfg) -> Vector{Model.Location}",67,32,0
 "rendering.jl :: swallowed_escape(text, cfg) -> Vector{Model.Location}",89,43,0
 "shape.jl :: RULES",6,5,0
-"shape.jl :: Rules.Shape",117,58,0
-"shape.jl :: baseline(root) -> Union{Dict{String,NTuple{3,Int}},Nothing}",70,37,0
+"shape.jl :: Rules.Shape",115,58,0
+"shape.jl :: allowance(n) -> Int",88,51,0
+"shape.jl :: baseline(root) -> Union{Dict{String,NTuple{3,Int}},Nothing}",69,36,0
 "shape.jl :: changes(root, cfg) -> Vector{String}",72,48,0
 "shape.jl :: files_of(root, cfg) -> Vector{String}",39,35,0
 "shape.jl :: metrics(text) -> NamedTuple",39,36,0
-"shape.jl :: prose_shape(root, cfg) -> Vector{Model.Location}",72,36,0
-"shape.jl :: units(root, files) -> Dict{String,NamedTuple}",82,46,0
-"shape.jl :: write_baseline(root, cfg) -> Int",62,30,0
-"site.jl :: RULES",42,41,0
+"shape.jl :: prose_shape(root, cfg) -> Vector{Model.Location}",78,42,0
+"shape.jl :: record_grown(root, cfg) -> Vector{String}",100,53,0
+"shape.jl :: units(root, files) -> Dict{String,NamedTuple}",124,74,0
+"shape.jl :: write_baseline(root, cfg; only = '') -> Int",81,29,0
+"site.jl :: RULES",33,32,0
 "site.jl :: Rules.Site",88,48,0
 "site.jl :: api_grouping(build, cfg) -> Vector{Model.Location}",95,47,0
 "site.jl :: article_prose(page) -> String",37,34,0
-"site.jl :: page_bindings(page) -> Vector{NamedTuple}",36,33,0
+"site.jl :: page_bindings(page) -> Vector{NamedTuple}",92,56,0
 "site.jl :: pages_of(build) -> Vector{String}",21,18,0
-"site.jl :: rendered_markup(build, cfg) -> Vector{Model.Location}",50,46,0
-"site.jl :: rendered_math(build, cfg) -> Vector{Model.Location}",82,55,0
-"verbs.md § Checks and scans",68,37,0
+"site.jl :: rendered_markup(build, cfg) -> Vector{Model.Location}",49,45,0
+"site.jl :: rendered_math(build, cfg) -> Vector{Model.Location}",80,53,0
+"verbs.md § Checks",66,35,0
 "verbs.md § [The verbs](@id verbs)",78,56,1

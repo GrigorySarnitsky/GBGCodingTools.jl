@@ -54,7 +54,7 @@ GBGCodingTools.StudyCmd.rules
 
 ```@docs
 GBGCodingTools.Fleet
-GBGCodingTools.Fleet.latest_tag
+GBGCodingTools.UsageError
 GBGCodingTools.Fleet.rows
 GBGCodingTools.Bump.bump
 GBGCodingTools.release

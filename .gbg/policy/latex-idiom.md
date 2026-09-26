@@ -118,7 +118,7 @@ A span that renders as its own source is a formula the reader never sees, and th
 Covered by a program.
 
 ### RULE.TEX.SPACING
-Spacing inside a formula is the renderer's: no thin space, no medium or thick space, no negative thin space before a sized delimiter, and none of them doubled.
+Spacing inside a formula is the renderer's: no thin space except before a differential, no medium or thick space, no negative thin space before a sized delimiter, and none of them doubled.
 
 Hand spacing is tuned to one renderer at one font size and is wrong in every other setting.
 

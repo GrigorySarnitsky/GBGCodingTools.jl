@@ -11,12 +11,13 @@ using GBGCodingTools, Documenter
 import GBGCodingTools: makedocs
 
 """
-    check(verb, code)
+    check(what, code)
 
-Turns the exit code `code` of the verb `verb` into a build failure: returns `nothing` when `code == 0`, else throws
-`ErrorException("gbg <verb> returned <code>")`.
+Turns the exit code `code` of the step `what` into a build failure: returns `nothing` when `code == 0`,
+else throws `ErrorException("<what> returned <code>")`, so the build stops on the lines printed above.
 """
-check(verb::AbstractString, code::Integer) = code == 0 ? nothing : error("gbg $verb returned $code")
+check(what::AbstractString, code::Integer) = code == 0 ? nothing :
+    error("$what returned $code — the findings are printed above; fix them and build again")
 
 """
     rules_and_wiring(root) -> Int
@@ -73,14 +74,16 @@ function makedocs(root::AbstractString; kwargs...)
     println("GBGCodingTools v", GBGCodingTools.tool_version(), " makedocs")
     # The quick doctor set and the hard scans ran here until 2026-09-17. The doctor is deleted and the
     # scan catalogue is empty: every one of them is a rule now, and `rules_and_wiring` runs them all.
-    check("check --only docs", rules_and_wiring(root))
+    check("the rulebook's checks and the wiring check, before the build", rules_and_wiring(root))
     # Nothing here reads review state any more: a build reports what its checks find and nothing
     # else, and no round can freeze it (docs/ARCHITECTURE.md §5.1, §10 — the closure gate went with the
     # round machinery on 2026-09-17).
     result = Documenter.makedocs(; kwargs...)
     build_dir = get(Dict(kwargs), :build, joinpath(root, "docs", "build"))
     isabspath(build_dir) || (build_dir = joinpath(root, "docs", build_dir))
-    check("check --site", rules_and_wiring(root; site = build_dir))
+    # No verb runs these from the command line: the rules that read a rendered page run here, over the
+    # site this build just wrote, and nowhere else.
+    check("the rulebook's checks over the built site", rules_and_wiring(root; site = build_dir))
     # Documenter returns `nothing` unless `debug = true`, so a build that happened says so with `true`
     return something(result, true)
 end

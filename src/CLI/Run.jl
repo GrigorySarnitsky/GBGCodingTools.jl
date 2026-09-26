@@ -62,7 +62,8 @@ function open_run(root::AbstractString)
 end
 
 """
-    start(root, instrument; readers = :bound, io = stdout) -> Int
+    start(root, instrument; readers = :bound, model = "session", sequential = false,
+          scope = :full, io = stdout) -> Int
 
 Opens a run and writes its first stage's arguments. The arguments are:
 
@@ -232,7 +233,9 @@ function continue_stage(root::AbstractString, id::AbstractString, stage::Symbol;
     end
     println(io, "run: continuing ", id, " at ", stage, ": ", c.total - length(c.missing), " of ", c.total,
             " agent(s) wrote before the interruption; launching again: ", join(c.missing, ", "))
-    println(io, "  arguments: ", relpath(Agents.arguments_path(root, id), root))
+    println(io, "  arguments: ", relpath(Agents.arguments_path(root, id), root), "  (spliced into the driver: pass no args)")
+    println(io, "  driver:    ", relpath(c.driver, root))
+    println(io, "  launch it: Workflow({scriptPath: \"", relpath(c.driver, root), "\"})")
     println(io, "  then: gbg run collect")
     return 0
 end
@@ -551,7 +554,9 @@ function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config,
                    "LINE_ONLY (gone at some locations and not others), MADE_WORSE (the change broke something the old text had right), " *
                    "HIDES_CODE_DEFECT (the documentation now describes code that looks wrong) or NOT_A_DEFECT (the finding was mistaken). " *
                    (isempty(diff) ? "This run committed no change for these, so there is no diff: judge the current text. " : "") *
-                   "Quote, for each, the decisive words of the current text or the diff, as ONE verbatim span; a verdict whose quote is not in the text counts as NOT_FIXED."
+                   "Quote, for each, the decisive words of the CURRENT text, as ONE verbatim span — the diff is read, never quoted; a verdict whose quote is not in the text counts as NOT_FIXED."
+            # Never kept from the code, whoever found them: a verifier reads the diff, and a diff of a
+            # docstring is the source's (ruled 2026-09-26). The driver has no withheld paragraph for one.
             push!(roles, Model.AgentRole(; id, instrument = run.instrument, reads = reader.reads, site = reader.site,
                                          kept_from_code = false,
                                          description = text * " The reader's standpoint: " * reader.description,
@@ -676,7 +681,7 @@ function collect(root::AbstractString; io::IO = stdout)
     n_launched = stage_roles(root, id) + length(again)
     Runs.advance!(root, id, :collect; io) || return 2
     if launched === :verify
-        run = grade(root, run, verdicts; io)
+        run = grade(root, run, verdicts; cfg, io)
         run = with(run; stage = :collect, agent_launches = run.agent_launches + n_launched,
                    silent = unique(vcat(run.silent, silent)))
         Runs.save(root, run)
@@ -762,23 +767,25 @@ function merge_same(drafts::AbstractVector, cfg::Model.Config)
 end
 
 """
-    grade(root, run, verdicts; io = stdout) -> Model.Run
+    grade(root, run, verdicts; cfg, io = stdout) -> Model.Run
 
 Applies a verify stage's verdicts. The arguments are:
 
 - `root` — the package root.
 - `run` — the run.
 - `verdicts` — each finding's id to its `(verdict, quote)`.
-- `io` — where a downgraded verdict or a revert is reported.
+- `cfg` — the package's config, which the language rules read when a question is put.
+- `io` — where a downgraded verdict, a revert or a question's failed rule is reported.
 
 Returns the run with its fixes, and on one verdict its questions, updated.
 
 A verdict a program cannot ground is `NOT_FIXED`, and the record says why: a quote not in the text, a
 verdict outside the allowed list, or no verifier answering for the finding. Until 2026-09-26 a demotion
 was one terminal line and nothing durable (found by PF, 2026-09-24). `MADE_WORSE` reverts the finding's
-commits of this pass; `HIDES_CODE_DEFECT` reverts them and puts a question to the owner.
+commits of this pass; `HIDES_CODE_DEFECT` reverts them and puts a question to the owner, replacing an
+answered one of the same finding, so the finding waits again rather than carrying two.
 """
-function grade(root::AbstractString, run::Model.Run, verdicts; io::IO = stdout)
+function grade(root::AbstractString, run::Model.Run, verdicts; cfg::Model.Config = ConfigIO.read_config(root), io::IO = stdout)
     fixes = copy(run.fixes)
     questions = copy(run.questions)
     unreverted = copy(run.unreverted)
@@ -801,7 +808,12 @@ function grade(root::AbstractString, run::Model.Run, verdicts; io::IO = stdout)
         if verdict === Model.Verdict.HIDES_CODE_DEFECT
             failed = [c for c in commits if !Runs.revert!(root, c; why = "the verifier believes the code is wrong")]
             append!(unreverted, failed)
-            push!(questions, code_question(f, run))
+            q = put_question(code_question(f, run), cfg; io)
+            # One question per finding: parked, answered "fix it on my ruling", fixed and judged again,
+            # the finding would carry an answered question and an unanswerable second one under the
+            # same id, and `parked` read the first.
+            k = findfirst(x -> x.id == q.id, questions)
+            k === nothing ? push!(questions, q) : (questions[k] = q)
             println(io, "run: ", f.id, isempty(failed) ? " — the fix is reverted and a question stands for the owner" :
                         " — the fix could NOT be reverted (a later fix conflicts), so the edit stays; a question stands for the owner and the run cannot end as evaluated")
         elseif verdict === Model.Verdict.MADE_WORSE && !isempty(commits)
@@ -826,6 +838,15 @@ function quote_holds(root::AbstractString, f::Model.Finding, quote_::AbstractStr
             Texts.reanchor(root, Model.Location(; file, text = part, line = 0); loose = false).found !== Model.Anchor.OUTDATED
         end
     end
+end
+
+# A question put inside a run passes the language rules like one put outside it (§8): the question is
+# put whatever they find, and what they find is printed with the rule named, as `gbg ask` does. Until
+# 2026-09-26 a parked finding's `--why` reached the owner unjudged, rule ids and paths and all.
+function put_question(q::Model.Question, cfg::Model.Config; io::IO = stdout)
+    failed = Engine.Questions.report(q, cfg)
+    isempty(failed) || (println(io, "run: question ", q.id, " does not read as it should, and is put anyway:"); print(io, failed))
+    return q
 end
 
 # The question a HIDES_CODE_DEFECT verdict puts: the documentation was made to describe code that looks
@@ -1035,7 +1056,11 @@ function abandon(root::AbstractString; io::IO = stdout)
     # findings were kept only as a count, and a triage made of them pointed at nothing. A finding fixed
     # and verified was not thrown away by anyone and stays with its pass (found in review, 2026-09-23).
     gone = vcat([f.id for f in Runs.open_findings(run)], [f.id for f in Runs.in_material(run)])
-    stopped = with(run; stage = :close, stop = Model.Stop.OWNER_STOPPED,
+    # A dropped finding's question goes with it: left standing, every later close asked the owner about
+    # a finding nobody held, and his answer would have re-opened nothing.
+    asked = Set(Runs.code_question_id(run, g) for g in gone)
+    questions = [q for q in run.questions if !(q.answer === nothing && q.id in asked)]
+    stopped = with(run; stage = :close, stop = Model.Stop.OWNER_STOPPED, questions,
                    dropped = length(gone), dropped_ids = unique(vcat(run.dropped_ids, gone)))
     kept = [f for f in stopped.findings if !(f.id in stopped.dropped_ids)]
     write(joinpath(dir, "report.md"), Render.report(stopped, cfg; root))
@@ -1115,11 +1140,16 @@ one_line(t) = replace(String(t), r"\s*[\r\n]+\s*" => " ")
 const QUEUE_HEADING = "## From the last review"
 
 """
-    queue_leftovers(root, run) -> Int
+    queue_leftovers(root, run; open_too = true) -> Int
 
 Writes one line per open finding into `.claude/WORK_QUEUE.md`, under the heading the end-of-turn hook
-does not count, creating the file or the section where there is none. The arguments are `root`, the
-package root, and `run`, the closed run. Returns how many lines went.
+does not count, creating the file or the section where there is none. The arguments are:
+
+- `root` — the package root.
+- `run` — the closed run.
+- `open_too` — whether every open finding goes, or only those parked on the owner's answer.
+
+Returns how many lines went.
 
 Each line names the file, the node and the quote rather than a line number, which is stale by the time
 the owner reads it. The section is the last review's and is replaced whole; the owner's own sections
@@ -1206,7 +1236,7 @@ function park(root::AbstractString, id::AbstractString; why::AbstractString = ""
     k = findfirst(f -> f.id == id, Runs.workable(run))
     k === nothing && (println(io, "run: ", id, " is not a finding this run can work on — closed, in material, already waiting on the owner, or unknown"); return 2)
     f = Runs.workable(run)[k]
-    q = Runs.owner_question(run, f, why)
+    q = put_question(Runs.owner_question(run, f, why), ConfigIO.read_config(root); io)
     Runs.save(root, with(run; questions = vcat(run.questions, [q])))
     println(io, "run: ", id, " is parked; no pass works on it until the owner answers:")
     println(io, "  gbg answer ", q.id, " \"", Runs.OWNER_ANSWER, "\"  |  \"", Runs.RULED_ANSWER, "\" --direction \"…\"  |  \"", Runs.NOT_A_DEFECT_ANSWER, "\"")
@@ -1220,7 +1250,7 @@ Records what the last launched stage's agents cost, summed from their own transc
 
 - `root` — the package root.
 - `dir` — the directory holding the launch's transcripts: every `.jsonl` file under it is read, and
-  each record with a `message.usage` counts.
+  each message with a `usage` counts once, however many lines carry its id.
 - `io` — where the totals are written.
 
 Exit 0 when recorded, 2 when no run is open, the directory holds no usage, or the run is not at a
@@ -1243,10 +1273,16 @@ function cost(root::AbstractString, dir::AbstractString; io::IO = stdout)
     for (here, _, files) in walkdir(dir), f in files
         endswith(f, ".jsonl") || continue
         seen = false
+        # A message with several content blocks — thinking and text, text and a tool call — is written
+        # as one line per block, each carrying the message's whole usage: summed per line, a stage
+        # cost about two and a half times what was paid (measured on a PF transcript, 2026-09-26).
+        ids = Set{String}()
         for line in eachline(joinpath(here, f))
             d = try GBGCodingTools.JSON3.read(line, Dict{String,Any}) catch; continue end
             m = get(d, "message", nothing); m isa AbstractDict || continue
             u = get(m, "usage", nothing); u isa AbstractDict || continue
+            mid = get(m, "id", nothing)
+            mid isa AbstractString && (mid in ids ? continue : push!(ids, String(mid)))
             input += Int(get(u, "input_tokens", 0)); output += Int(get(u, "output_tokens", 0))
             cw += Int(get(u, "cache_creation_input_tokens", 0)); cr += Int(get(u, "cache_read_input_tokens", 0))
             seen = true

@@ -55,9 +55,11 @@ signature, or already linked earlier in the same docstring, is not a mention to 
 function xlink(loaded, cfg)
     own_of = owners(loaded.pkg, cfg)
     out = Model.Location[]
-    for f in get(cfg.filesets, Model.FileSet.CODE, String[])
+    # Through the same resolver every other rule uses. Read as a list of FILES, the config's code set is
+    # a list of globs — empty by default — and both rules here visited nothing and reported clean in
+    # every real package (found in review, 2026-09-26).
+    for f in Texts.files(cfg, loaded.root, Model.FileSet.CODE)
         path = joinpath(loaded.root, f)
-        isfile(path) || continue
         src = read(path, String)
         m = match(r"^\s*(?:bare)?module\s+([A-Za-z_][A-Za-z0-9_]*)"m, src)
         m === nothing && continue
@@ -74,6 +76,9 @@ function xlink(loaded, cfg)
                     isempty(a) || push!(in_signature, String(a))
                 end
             end
+            # A name heading a bullet is the docstring's own field or argument, not a mention: a field
+            # called `audit` is not the function of that name elsewhere.
+            for b in eachmatch(r"(?m)^\s*[-*]\s+`([^`:\s]+)", prose); push!(in_signature, String(b.captures[1])); end
             linked = Set(String.(x.captures[1] for x in eachmatch(r"\[`([^`]+)`\]\(@", prose)))
             seen = Set{String}()
             for x in eachmatch(Regex("`(" * Texts.NAME * ")`"), prose)
@@ -137,6 +142,31 @@ const XLINK = Model.Rule(
             caller(x) = Inner.helper(x)
             end
             """, Model.Location[], "linked at its first mention"),
+        # A field that shares a name with another module's function is the docstring's own field.
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper
+                \"\"\"
+                    helper(x)
+
+                A helper.
+                \"\"\"
+                helper(x) = x
+            end
+            using .Inner
+            \"\"\"
+                Holder
+
+            A holder. The fields are:
+
+            - `helper` — what it holds.
+            \"\"\"
+            struct Holder
+                helper::Int
+            end
+            end
+            """, Model.Location[], "linked at its first mention"),
     ])
 
 # ────────────────────────────────────────── what a docstring shows against what the module defines
@@ -146,40 +176,42 @@ dehat(a::Symbol) = Symbol(replace(String(a), "̂" => ""))
 """
     displayed_signatures(root, cfg) -> Tuple
 
-Every signature a docstring displays, as the positional and keyword names it shows per binding, with the
-bindings whose signature elides arguments behind a splat. The arguments are `root`, the package root, and
-`cfg`, the package's config, which names the files. Returns `(positional, keyword, elided, owners_shown)`.
+Every signature a docstring displays, as the positional and keyword names it shows, keyed by the binding
+and the file of the docstring that shows it, with the keys whose signature elides arguments behind a
+splat. The arguments are `root`, the package root, and `cfg`, the package's config, which names the
+files. Returns `(positional, keyword, elided, shown_in)`, the last giving each key's docstring line.
 """
 function displayed_signatures(root::AbstractString, cfg)
-    positional = Dict{Symbol,Set{Symbol}}(); keyword = Dict{Symbol,Set{Symbol}}()
-    elided = Set{Symbol}(); shown_in = Dict{Symbol,Set{String}}()
-    note!(d, name, args) = union!(get!(d, name, Set{Symbol}()), args)
-    function harvest!(ex, file)
-        ex isa Expr && ex.head === :where && return harvest!(ex.args[1], file)
+    Key = Tuple{Symbol,String}
+    positional = Dict{Key,Set{Symbol}}(); keyword = Dict{Key,Set{Symbol}}()
+    elided = Set{Key}(); shown_in = Dict{Key,Int}()
+    note!(d, key, args) = union!(get!(d, key, Set{Symbol}()), args)
+    function harvest!(ex, file, line)
+        ex isa Expr && ex.head === :where && return harvest!(ex.args[1], file, line)
         (ex isa Expr && ex.head === :call) || return
         name = ex.args[1]; name isa Symbol || return
+        key = (name, file)
         pos, kw = Symbol[], Symbol[]
         for a in ex.args[2:end]
             if a isa Expr && a.head === :parameters
                 for k in a.args
-                    k isa Expr && k.head === :(...) && (push!(elided, name); continue)
+                    k isa Expr && k.head === :(...) && (push!(elided, key); continue)
                     k isa Expr && k.head === :kw && (k = k.args[1])
                     k isa Expr && k.head === :(::) && (k = k.args[1])
                     k isa Symbol && push!(kw, k)
                 end
             else
-                a isa Expr && a.head === :(...) && (push!(elided, name); continue)
+                a isa Expr && a.head === :(...) && (push!(elided, key); continue)
                 a isa Expr && a.head === :kw && (a = a.args[1])
                 a isa Expr && a.head === :(::) && (a = a.args[1])
                 a isa Symbol && push!(pos, a)
             end
         end
-        note!(positional, name, dehat.(pos)); note!(keyword, name, kw)
-        push!(get!(shown_in, name, Set{String}()), file)
+        note!(positional, key, dehat.(pos)); note!(keyword, key, kw)
+        get!(shown_in, key, line)
     end
-    for f in get(cfg.filesets, Model.FileSet.CODE, String[])
+    for f in Texts.files(cfg, root, Model.FileSet.CODE)
         path = joinpath(root, f)
-        isfile(path) || continue
         for d in Texts.docstrings_of(read(path, String))
             header = collect(Iterators.takewhile(l -> startswith(l, "    "), split(d.text, '\n')))
             isempty(header) && continue
@@ -191,12 +223,31 @@ function displayed_signatures(root::AbstractString, cfg)
                 end
             end
             for signature in joined
-                ex = try Meta.parse(replace(signature, r"\s*->.*\$" => "")) catch; nothing end
-                ex === nothing || harvest!(ex, f)
+                # The `-> T` a signature ends in is not part of the call. Written `\$` inside the
+                # pattern it was a literal dollar, nothing was cut, and every signature with a return
+                # annotation parsed as a lambda and was dropped (found in review, 2026-09-26).
+                ex = try Meta.parse(replace(signature, r"\s*->.*$" => "")) catch; nothing end
+                ex === nothing || harvest!(ex, f, d.line)
             end
         end
     end
     return (positional, keyword, elided, shown_in)
+end
+
+# Every module of the package, nested ones included: a module two levels down is as much the package's as a
+# module directly under it, and a search one level deep judged its docstrings against another module's
+# function of the same name.
+function modules_of(pkg::Module)
+    out = Module[pkg]; i = 1
+    while i <= length(out)
+        m = out[i]; i += 1
+        for n in names(m; all = true)
+            isdefined(m, n) || continue
+            v = getfield(m, n)
+            v isa Module && v !== m && parentmodule(v) === m && !(v in out) && push!(out, v)
+        end
+    end
+    return out
 end
 
 """
@@ -205,40 +256,38 @@ end
 Every displayed signature that no longer matches the method table: a keyword shown that no method takes,
 a keyword taken that no signature shows, and a positional name shown that matches no defined argument.
 The arguments are `loaded`, the loaded package with the package root, and `cfg`, the package's config.
-Returns one location per disagreement.
+Returns one location per disagreement, at the docstring.
 
-A name two modules own is skipped rather than compared: the union of two functions' signatures is
-nobody's. A binding whose methods live in an extension that is not loaded is skipped too, and said to be.
+A docstring is held to the function of its name whose methods are defined in its own file; where none
+is, to the one function of that name the package owns, and where several are, it is skipped rather
+than compared with a namesake. A binding whose methods live in an extension that is not loaded is
+skipped too.
 """
 function signature_fidelity(loaded, cfg)
     pkg, root = loaded.pkg, loaded.root
-    shown, shown_kw, elided, _ = displayed_signatures(root, cfg)
-    mods = Module[pkg]
-    for n in names(pkg; all = true)
-        isdefined(pkg, n) || continue
-        v = getfield(pkg, n)
-        v isa Module && v !== pkg && push!(mods, v)
-    end
+    shown, shown_kw, elided, shown_in = displayed_signatures(root, cfg)
+    mods = modules_of(pkg)
     # A module with no package directory — one an example loaded into memory — has methods whose file is
     # not a path at all, so the filter that keeps a package's own methods would reject every one of them.
     home = pkgdir(pkg)
     pkgroot = something(home, root)
     every_method = home === nothing
-    owners_of(name) = [m for m in mods if isdefined(m, name) && Base.which(m, name) === m]
-    function defined_sets(name)
-        f = nothing
-        for m in mods
-            isdefined(m, name) && Base.which(m, name) === m && (f = getfield(m, name); break)
-        end
-        f === nothing && for m in mods
-            isdefined(m, name) && (f = getfield(m, name); break)
-        end
-        (f isa Function || f isa Type) || return nothing
+    ours(m) = every_method || startswith(String(m.file), pkgroot) || occursin(cfg.package, String(m.file))
+    owned(name) = unique!([getfield(m, name) for m in mods if isdefined(m, name) && Base.which(m, name) === m])
+    in_file(f, file) = f isa Function &&
+        any(m -> endswith(replace(String(m.file), '\\' => '/'), "/" * file) || String(m.file) == file, methods(f))
+    function resolve(name, file)
+        cands = filter(f -> f isa Function || f isa Type, owned(name))
+        here = filter(f -> in_file(f, file), cands)
+        length(here) == 1 && return here[1]
+        length(cands) == 1 && return cands[1]
+        return nothing
+    end
+    function defined_sets(f)
         f isa Function && isempty(methods(f)) && return :extension
         pos, kw = Set{Symbol}(), Set{Symbol}(); unnamed = false
         for m in methods(f)
-            file = String(m.file)
-            (every_method || startswith(file, pkgroot) || occursin(cfg.package, file)) || continue
+            ours(m) || continue
             for a in Base.method_argnames(m)[2:end]
                 (a === Symbol("#unused#") || a === Symbol("")) ? (unnamed = true) : push!(pos, dehat(a))
             end
@@ -252,22 +301,26 @@ function signature_fidelity(loaded, cfg)
     exported = Set(names(pkg))
     by_export = length(exported) > 1      # a package that exports nothing publishes through its docstrings
     out = Model.Location[]
-    for name in sort!(collect(keys(shown)))
+    for key in sort!(collect(keys(shown)))
+        name, file = key
         (!by_export || name in exported) || continue
-        length(owners_of(name)) > 1 && continue
-        def = defined_sets(name)
-        def === nothing && continue
+        f = resolve(name, file)
+        f === nothing && continue
+        def = defined_sets(f)
         def === :extension && continue
-        for a in setdiff(shown_kw[name], def.kw)
-            push!(out, Model.Location(; file = "", line = 0,
+        # At the docstring that displays the signature: a finding with no file could be neither
+        # switched off for that file nor anchored, and sent a fixer nowhere.
+        line = shown_in[key]; node = String(name)
+        for a in sort!(collect(setdiff(shown_kw[key], def.kw)))
+            push!(out, Model.Location(; file, line, node,
                 text = "$name: the displayed keyword `$a` matches no defined method"))
         end
-        for a in (name in elided ? Symbol[] : collect(setdiff(def.kw, shown_kw[name])))
-            push!(out, Model.Location(; file = "", line = 0,
+        for a in (key in elided ? Symbol[] : sort!(collect(setdiff(def.kw, shown_kw[key]))))
+            push!(out, Model.Location(; file, line, node,
                 text = "$name: the defined keyword `$a` appears in no displayed signature"))
         end
-        for a in (def.unnamed ? Symbol[] : collect(setdiff(shown[name], def.pos, def.kw)))
-            push!(out, Model.Location(; file = "", line = 0,
+        for a in (def.unnamed ? Symbol[] : sort!(collect(setdiff(shown[key], def.pos, def.kw))))
+            push!(out, Model.Location(; file, line, node,
                 text = "$name: the displayed positional `$a` matches no defined argument name"))
         end
     end
@@ -294,9 +347,36 @@ const SIGNATURE_FIDELITY = Model.Rule(
             end
             """,
             # A renamed keyword disagrees in both directions at once — the shown one no method takes, the
-            # taken one no signature shows — and the rule reports what it found, not one summary of it.
-            [Model.Location(; file = "", line = 0), Model.Location(; file = "", line = 0)],
+            # taken one no signature shows — and the rule reports what it found, not one summary of it,
+            # each at the docstring that displays the signature.
+            [Model.Location(; file = "src/Example.jl", line = 3), Model.Location(; file = "src/Example.jl", line = 3)],
             "argument for argument"),
+        # The standard form carries a return annotation, and the rule reads through it: a signature
+        # written `-> T` is not a lambda to be dropped.
+        Model.ModuleExample("""
+            module Example
+            export measure
+            \"\"\"
+                measure(u; tol = 1e-6) -> Float64
+
+            The mean of `u`, to within `tol`.
+            \"\"\"
+            measure(u; atol = 1e-6) = sum(u) / length(u)
+            end
+            """,
+            [Model.Location(; file = "src/Example.jl", line = 3), Model.Location(; file = "src/Example.jl", line = 3)],
+            "argument for argument"),
+        Model.ModuleExample("""
+            module Example
+            export measure
+            \"\"\"
+                measure(u; atol = 1e-6) -> Float64
+
+            The mean of `u`, to within `atol`.
+            \"\"\"
+            measure(u; atol = 1e-6) = sum(u) / length(u)
+            end
+            """, Model.Location[], "argument for argument"),
         Model.ModuleExample("""
             module Example
             export measure

@@ -175,6 +175,10 @@ end
         # And the reason the first of those is not there any more: the agent writes its own result file.
         @test occursin("result_file", driver)
         @test occursin("write your answer as JSON", driver)
+        # A verifier's quote is of the CURRENT text and nothing else: told it might quote the diff, it
+        # quoted the removed lines of a fix that broke something, and the grade — which searches the
+        # current files alone — demoted a right MADE_WORSE to NOT_FIXED (found in review, 2026-09-26).
+        @test !occursin("or the diff", driver)
     end
 
     # The cheapest gate on the one file every instrument goes through, and the one that was missing.

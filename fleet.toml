@@ -1,10 +1,11 @@
-# fleet.toml — the sweep state, and nothing else. Dev-side only, written by `gbg bump` and read by
-# `gbg fleet`; a checkout without this file still has a fleet.
+# fleet.toml — the sweep state, and nothing else. Dev-side only, read by `gbg fleet` and written by
+# hand: no verb writes it (`gbg bump` runs in a consumer and never opens it); a checkout without this
+# file still has a fleet.
 #
 # The ROSTER used to live here as `[[consumer]]` rows, with the same five packages written a second time
 # in `Rules/pages.jl` as the sibling-site table and nothing comparing the two. It is now one value,
-# `Catalogue.FLEET`, from which the sites are derived. What stays here is state a verb writes, which is
-# not something to declare in code.
+# `Catalogue.FLEET`, from which the sites are derived. What stays here is dated state, which is not
+# something to declare in code.
 
-[sweep]                                  # written by `gbg bump` when a bump leaves the fleet at two versions
+[sweep]                                  # set by hand when a release leaves the fleet at two versions
 # started = 2026-09-20, from = "1.0.0", to = "1.0.1"

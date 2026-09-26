@@ -161,7 +161,7 @@ Covered by a program.
 
 
 #### [`RULE.DOC.NO_DEAD_REFS`](@id RULE.DOC.NO_DEAD_REFS)
-A docstring or error message cites no section number and no inaccessible source; it reads complete at the REPL.
+A docstring cites no section number and no inaccessible source; it reads complete at the REPL.
 
 At the REPL there are no links: a section number cannot be followed, and it is renumbered besides.
 
@@ -215,7 +215,6 @@ The first mention of a sibling package links to that package's site; later menti
 A reader meeting the name for the first time must be able to reach it, and a fourth link teaches nothing.
 
 Covered by a program.
-This package may set `sibling_sites`; unset, it is `["GBGCodingTools" => "https://grigorysarnitsky.github.io/GBGCodingTools.jl/", "GBGPeriodicFields" => "https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/", "GBGHomogeneousTurbulence" => "https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/", "GBGStreamingStatistics" => "https://grigorysarnitsky.github.io/GBGStreamingStatistics.jl/", "GBGCloudPhysics" => "https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/"]`.
 
 
 #### [`RULE.DOC.SIGNATURE_FIDELITY`](@id RULE.DOC.SIGNATURE_FIDELITY)
@@ -397,7 +396,7 @@ Covered by a program.
 
 
 #### [`RULE.TEX.SPACING`](@id RULE.TEX.SPACING)
-Spacing inside a formula is the renderer's: no thin space, no medium or thick space, no negative thin space before a sized delimiter, and none of them doubled.
+Spacing inside a formula is the renderer's: no thin space except before a differential, no medium or thick space, no negative thin space before a sized delimiter, and none of them doubled.
 
 Hand spacing is tuned to one renderer at one font size and is wrong in every other setting.
 

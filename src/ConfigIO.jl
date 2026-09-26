@@ -67,7 +67,8 @@ end
 The vector retyped to its elements where they share a concrete type, and left alone otherwise. The
 argument is `v`, a freshly built list. Returns it, possibly retyped.
 
-A list literal builds as `Vector{Any}`, and every field of `Model` typed `Vector{String}` refuses one.
+A list literal builds as `Vector{Any}`, which a field typed as a union of vectors — `Setting.value` —
+refuses, since there is no one element type to convert it to.
 """
 narrow(v::AbstractVector) = isempty(v) ? v : (T = typeof(first(v)); all(x -> x isa T, v) ? T[x for x in v] : v)
 
@@ -142,32 +143,30 @@ end
 Adds one ruling to `.gbg/settled.jl`, creating the file where there is none. The arguments are `root`,
 the package root, and `s`, the ruling. Returns the path written.
 
-APPENDED, never rewritten. The file is the owner's record of what he has already decided, and a verb
-that regenerated it would put his words through a renderer; what is added is one value, formatted the
-way the rest of the file is, and everything above it is left byte for byte as he last saw it.
+The file is written whole, from the rulings it already holds — read back as data first, so a file that
+cannot be read is a [`ConfigError`](@ref) and nothing is written into it — with the new one last. Text
+appended to the owner's file put a ruling inside a trailing comment and left the record unreadable
+(found in review, 2026-09-26); what is written here is exactly what `read_settled` reads.
 """
 function append_settled(root::AbstractString, s::Model.Settled)
     path = joinpath(root, ".gbg", "settled.jl")
-    existing = isfile(path) ? read(path, String) : ""
     io = IOBuffer()
-    if isempty(strip(existing))
-        println(io, "# .gbg/settled.jl — what the owner has already decided, and agents are told not to report.")
-        println(io, "#")
-        println(io, "# Read as data by ConfigIO, which evaluates nothing. Appended to by `gbg answer`; no build, test")
-        println(io, "# or check reads it, and only the agents of a run are shown it.")
-        println(io, "[")
-    else
-        print(io, rstrip(rstrip(strip(existing), ']')))
+    println(io, "# .gbg/settled.jl — what the owner has already decided, and agents are told not to report.")
+    println(io, "#")
+    println(io, "# Read as data by ConfigIO, which evaluates nothing. Written by `gbg answer`; no build, test")
+    println(io, "# or check reads it, and only the agents of a run are shown it.")
+    println(io, "[")
+    for r in vcat(read_settled(root), [s])
+        println(io, "    Settled(question = ", repr(r.question), ",")
+        println(io, "            text = ", repr(r.text), ",")
+        println(io, "            date = ", repr(r.date), ",")
+        println(io, "            locations = [")
+        for l in r.locations
+            println(io, "                Location(file = ", repr(l.file), ", node = ", repr(l.node),
+                    ", text = ", repr(l.text), ", line = ", l.line, "),")
+        end
+        println(io, "            ]),")
     end
-    println(io, "    Settled(question = ", repr(s.question), ",")
-    println(io, "            text = ", repr(s.text), ",")
-    println(io, "            date = ", repr(s.date), ",")
-    println(io, "            locations = [")
-    for l in s.locations
-        println(io, "                Location(file = ", repr(l.file), ", node = ", repr(l.node),
-                ", text = ", repr(l.text), ", line = ", l.line, "),")
-    end
-    println(io, "            ]),")
     println(io, "]")
     mkpath(dirname(path))
     write(path, String(take!(io)))
@@ -211,22 +210,29 @@ function build(node, path, problems)
     if k === JS.K"string" || k === JS.K"String"
         # A string literal is a `string` node wrapping one `String`; anything else inside it is an
         # interpolation, which is a program and not data.
+        # Decided by the parser's children alone: an escaped `\$` is a dollar in the value, and a scan of
+        # the source text for one refused the owner's own rulings (found in review, 2026-09-26).
         kids = [c for c in cs if JS.kind(c) !== JS.K"String"]
         isempty(kids) || (push!(problems, "line $line: an interpolated string is not data: $(first(text, 60))"); return nothing)
-        occursin("\$", text) && (push!(problems, "line $line: an interpolated string is not data: $(first(text, 60))"); return nothing)
         # The value the PARSER gives each piece, joined: a `\`-newline continuation, a triple-quoted
         # string's indent and every escape come out as Julia evaluates them. Unquoting the source text
         # kept the continuations, and a switch's reason reached a consumer's public page with a `\` and
         # a run of spaces at every line end (found upgrading GBGPeriodicFields, 2026-09-24).
         return k === JS.K"String" ? String(node.val) : join(String(c.val) for c in cs)
     elseif k === JS.K"Integer"
-        return parse(Int, replace(text, "_" => ""))
+        n = tryparse(Int, replace(text, "_" => ""))
+        n === nothing && (push!(problems, "line $line: $text is not an integer this package can hold"); return nothing)
+        return n
     elseif k === JS.K"Float"
         return parse(Float64, text)
     elseif k === JS.K"Bool"
         return text == "true"
-    elseif k === JS.K"quote"                                   # :a_symbol
-        return Symbol(strip(text, ':'))
+    elseif k === JS.K"quote"
+        # `:a_symbol` and nothing else: `:(expr)` and `quote … end` are programs, and were read as a
+        # symbol of their source text (found in review, 2026-09-26)
+        (length(cs) == 1 && JS.kind(cs[1]) === JS.K"Identifier") ||
+            (push!(problems, "line $line: a quoted expression is not data: $(first(text, 60))"); return nothing)
+        return Symbol(node_name(cs[1]))
     elseif k === JS.K"vect"
         # NARROWED to the element type where every element shares one. A `Vector{Any}` is refused by
         # every field typed `Vector{String}` — `Setting.value` among them — so the one documented way to
@@ -234,15 +240,34 @@ function build(node, path, problems)
         return narrow(Any[build(c, path, problems) for c in cs])
     elseif k === JS.K"ref"
         # A typed array literal — `String[]`, `Switch[]` — is data: the type names an element type the
-        # model already has, and an empty one is how a config says "none of these".
+        # model already has, and an empty one is how a config says "none of these". It is built AS that
+        # type: an `Any[]` was refused by every union-typed field, so `value = String[]` could not be
+        # written at all (found in review, 2026-09-26).
         elem = node_name(first(cs))
-        elem in ("String", "Symbol", "Int", "Any") || haskey(CONSTRUCTORS, elem) ||
-            (push!(problems, "line $line: $elem[] is not an element type a config may name"); return nothing)
-        return Any[build(c, path, problems) for c in cs[2:end]]
-    elseif k === JS.K"macrocall" && startswith(text, "v\"")
-        return VersionNumber(unquote(text[2:end]))            # a pinned version, `v"2.0.0"`
-    elseif k === JS.K"macrocall" && startswith(text, "r\"")
-        return Regex(unquote(text[2:end]))                    # a package's own pattern rule
+        T = elem == "String" ? String : elem == "Symbol" ? Symbol : elem == "Int" ? Int : elem == "Any" ? Any :
+            get(CONSTRUCTORS, elem, nothing)
+        T === nothing && (push!(problems, "line $line: $elem[] is not an element type a config may name"); return nothing)
+        items = Any[build(c, path, problems) for c in cs[2:end]]
+        any(x -> x === nothing, items) && return nothing        # already refused, one line each
+        all(x -> x isa T, items) || (push!(problems, "line $line: not every element of $elem[…] is a $elem"); return nothing)
+        return T[x for x in items]
+    elseif k === JS.K"macrocall" && !isempty(cs) && cs[1].val in (Symbol("@v_str"), Symbol("@r_str"))
+        # `v"2.0.0"` is a pinned version and `r"…"` a package's own pattern; each is read from the
+        # parser's string child — a raw string takes no escapes, so unquoting the source text turned
+        # `r"\\d"` into `r"\d"` and dropped the flags of `r"x"i` — and a mistake in either is a refusal
+        # naming the line, not a backtrace (found in review, 2026-09-26).
+        lit = length(cs) >= 2 && JS.kind(cs[2]) === JS.K"string" ? join(String(c.val) for c in something(JS.children(cs[2]), ())) : ""
+        if cs[1].val === Symbol("@v_str")
+            v = tryparse(VersionNumber, lit)
+            v === nothing && (push!(problems, "line $line: $text is not a version"); return nothing)
+            return v
+        end
+        flags = length(cs) >= 3 ? String(cs[3].val) : ""
+        return try
+            Regex(lit, flags)
+        catch err
+            push!(problems, "line $line: $text is not a pattern — " * sprint(showerror, err)); nothing
+        end
     elseif k === JS.K"=>" || (k === JS.K"call" && length(cs) == 3 && node_name(cs[2]) == "=>")
         # `a => b` parses infix: the operator is the middle child of a call.
         parts = k === JS.K"=>" ? (cs[1], cs[2]) : (cs[1], cs[3])
@@ -274,22 +299,32 @@ function build(node, path, problems)
         end
         haskey(CONSTRUCTORS, name) ||
             (push!(problems, "line $line: $name is not a constructor a config may call"); return nothing)
+        # Each keyword once, and never a positional argument beside one: the positional vanished without
+        # a word, and a repeated keyword took the last value where Julia refuses it (found in review,
+        # 2026-09-26). A call that is positional throughout is read as Julia would read it.
         kwargs = Dict{Symbol,Any}()
         positional = Any[]
+        refused = length(problems)
+        keyword!(kw) = begin
+            kid = something(JS.children(kw), ())
+            length(kid) == 2 || return
+            key = Symbol(node_name(kid[1]))
+            haskey(kwargs, key) && push!(problems, "line $line: $name(…) is given `$key` twice")
+            kwargs[key] = build(kid[2], path, problems)
+        end
         for a in cs[2:end]
             if JS.kind(a) === JS.K"="
-                kid = something(JS.children(a), ())
-                length(kid) == 2 || continue
-                kwargs[Symbol(node_name(kid[1]))] = build(kid[2], path, problems)
+                keyword!(a)
             elseif JS.kind(a) === JS.K"parameters"
-                for kw in something(JS.children(a), ())
-                    kid = something(JS.children(kw), ())
-                    length(kid) == 2 && (kwargs[Symbol(node_name(kid[1]))] = build(kid[2], path, problems))
-                end
+                foreach(keyword!, something(JS.children(a), ()))
             else
                 push!(positional, build(a, path, problems))
             end
         end
+        isempty(positional) || isempty(kwargs) ||
+            (push!(problems, "line $line: $name(…) mixes positional arguments with keywords; name every one"); return nothing)
+        # an argument already refused was said once, on its own line; the call around it says nothing more
+        length(problems) > refused && return nothing
         return construct(CONSTRUCTORS[name], name, positional, kwargs, line, problems)
     end
     push!(problems, "line $line: $(lowercase(string(k))) is not data: $(first(text, 60))")
@@ -297,8 +332,6 @@ function build(node, path, problems)
 end
 
 node_name(node) = strip(String(JS.sourcetext(node)))
-
-unquote(s) = replace(strip(s, '"'), "\\\"" => "\"", "\\\\" => "\\", "\\n" => "\n")
 
 # The constructor is called with what the file gave it, and a wrong keyword or a wrong type is a refusal
 # naming the line rather than a stack trace: the reader of this message is a person editing a config.
@@ -354,29 +387,34 @@ function validate(cfg::Model.Config, root::AbstractString)
     # package's own site. There is no third: every rule is switchable, and the rulebook is the default
     # rather than a set a package may not escape (ruled 2026-09-17).
     known = Catalogue.known_ids()
-    # A name can only be judged against a complete rulebook. While the ninety-five rules are being
-    # converted, `RULES` is short by construction, so a switch naming one that has not arrived yet is not
-    # a mistake — this arm turns itself on when the conversion ratchet reaches zero.
-    judge_names = !isempty(Catalogue.RULES)
     for s in cfg.switches
         isempty(strip(s.reason)) && push!(problems, "the switch against $(s.target) gives no reason")
-        judge_names && !(s.target in known) &&
+        s.target in known ||
             push!(problems, "the switch names $(s.target), which is not a rule, a role or an instrument")
     end
     # A deferral is a question with a condition on it: one naming no rule, or no condition, is not one.
+    # And a rule cannot be both switched off and deferred, for the whole package or for some of its files.
     for d in cfg.deferrals
         isempty(strip(d.until)) && push!(problems, "the deferral of $(d.rule) says nothing of what would close it")
-        judge_names && !any(r -> r.id === d.rule, Catalogue.RULES) &&
+        any(r -> r.id === d.rule, Catalogue.RULES) ||
             push!(problems, "the deferral names $(d.rule), which is not a rule")
-        any(s -> s.target === d.rule && isempty(s.files), cfg.switches) &&
+        any(s -> s.target === d.rule, cfg.switches) &&
             push!(problems, "$(d.rule) is both switched off and deferred; it is one or the other")
     end
+    # A setting is read by the one rule it names, by the parameter's name: one on a retired rule, or
+    # naming a parameter the rule does not have, was read by nobody and reported by nobody (found in
+    # review, 2026-09-26).
     for st in cfg.settings
-        judge_names && !(st.rule in known) &&
-            push!(problems, "the setting is for $(st.rule), which is not a rule")
+        rule = Catalogue.rule(st.rule)
+        if rule === nothing
+            push!(problems, "the setting is for $(st.rule), which is not a rule of the rulebook")
+        elseif !any(p -> p.name === st.name, rule.parameters)
+            push!(problems, "$(st.rule) has no parameter `$(st.name)`" *
+                            (isempty(rule.parameters) ? "" : "; it has " * join(("`$(p.name)`" for p in rule.parameters), ", ")))
+        end
     end
     for d in cfg.disciplines
-        judge_names && !any(x -> x.id === d, Catalogue.DISCIPLINES) &&
+        any(x -> x.id === d, Catalogue.DISCIPLINES) ||
             push!(problems, "the discipline $d is not in the catalogue; one the tool lacks is requested from its session, not written here")
     end
     for n in cfg.normative

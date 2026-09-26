@@ -31,11 +31,10 @@ import SHA
 The stages each instrument passes through, in order. A stage out of order is refused: the session
 launches each one, and a session that skipped `collect` would grade findings nobody had read back.
 
-A documentation review's pass is `fix → verify → collect → diff → collect`: the session fixes and commits
-each finding through the guard, a blind verifier per open finding answers without the diff, and for the
-findings it called fixed a second verifier reads the diff. From the last `collect` the run goes back to
-`fix` while findings are open and passes remain, else to `close`; from the first `collect` it goes
-straight to `close` when nothing was found.
+A documentation review has one pass, `fix → verify → collect`: the session fixes and commits each
+finding through the guard, and one verifier per unit holding open findings reads them with the text as
+it stands and the diff of the pass (one verifier, one pass, ruled 2026-09-26). From that `collect` the
+run goes to `close`; from the first `collect` it goes straight to `close` when nothing was found.
 """
 const STAGES = Dict{Symbol,Vector{Symbol}}(
     :documentation_review => [:start, :find, :collect, :fix, :verify, :collect, :close],
@@ -70,7 +69,8 @@ function new_id(instrument::Symbol, root::AbstractString)
 end
 
 """
-    start(instrument, root; io = stdout) -> Union{Model.Run,Nothing}
+    start(instrument, root; readers = :bound, model = "session", sequential = false,
+          scope = :full, base = "", io = stdout) -> Union{Model.Run,Nothing}
 
 Opens a run of `instrument` in the package at `root`. The arguments are:
 
@@ -353,9 +353,9 @@ end
 """
     closed(run, id) -> Bool
 
-Whether the finding `id` of `run` is closed: a verifier called it not a defect, or the blind verifier
-called it fixed and the diff verifier agreed. The arguments are `run` and the finding's id. Returns the
-answer; a finding with no verdict yet is open.
+Whether the finding `id` of `run` is closed: its latest verdict called it fixed or not a defect, or the
+owner's answer did. The arguments are `run` and the finding's id. Returns the answer; a finding with
+no verdict yet is open.
 """
 function closed(run::Model.Run, id::AbstractString)
     # The owner's answer closes it — the reader was wrong, or the documentation stands as fixed.
@@ -439,11 +439,11 @@ in_material(run::Model.Run) = [f for f in run.findings if f.draft.in_material]
 Whether the finding `id` waits on the owner: a question about it stands, unanswered. The arguments are
 `run` and the finding's id. Returns the answer.
 
-Two things put one. A blind verifier's `HIDES_CODE_DEFECT`, where the fix is reverted and the owner is
-asked which half is right; and the fixer's `gbg run park`, for a finding whose fix only the owner may
-make — a change to the config, to code or to a formula. Before the second existed such a finding stayed
-open, a verifier was launched on it every pass to find nothing changed, and it reached the owner only at
-close (found reviewing [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)' first run, 2026-09-24).
+Two things put one. A verifier's `HIDES_CODE_DEFECT`, where the fix is reverted and the owner is asked
+which half is right; and the fixer's `gbg run park`, for a finding whose fix only the owner may make —
+a change to the config, to code or to a formula. Before the second existed such a finding stayed open,
+a verifier was launched on it to find nothing changed, and it reached the owner only at close (found
+reviewing [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)' first run, 2026-09-24).
 
 A parked finding is open — it is nobody's leftover — and is worked on by no pass: no fixer is sent to it
 and no verifier is asked about it again until the owner has answered.
@@ -960,8 +960,9 @@ const FINDING_TRAILER = "GBG-Docfix-Finding: "
 """
     REVERT_TRAILER
 
-The trailer a revert this package makes carries, naming the commit it undoes. A close skips such a
-commit only when it is exactly that commit's inverse, so the trailer alone buys nothing.
+The trailer a revert this package makes carries, naming the commit it undoes. A close classifies a
+revert like every other commit — recognising an exact inverse was tried and dropped (2026-09-23) — and
+tolerates on one only a refusal over mathematics, so the trailer alone buys nothing.
 """
 const REVERT_TRAILER = "GBG-Docfix-Revert: "
 
@@ -1019,12 +1020,17 @@ function guarded_commits(root::AbstractString, since::AbstractString)
 end
 
 """
-    revert!(root, sha) -> Bool
+    revert!(root, sha; why = "a verifier called the fix worse") -> Bool
 
-Reverts one guarded commit, marking the revert with the commit it undoes, so a close can check that it
-is exactly that commit's inverse. The arguments are `root`, the package root, `sha`, the commit, and
-`why`, the reason written into the message. Returns whether it reverted: refused while anything is
-staged, and a revert that does not apply is aborted and leaves the tree as it was.
+Reverts one guarded commit, marking the revert with the commit it undoes; a close classifies the revert
+like any other commit of the run and does not check it against that commit. The arguments are:
+
+- `root` — the package root.
+- `sha` — the commit.
+- `why` — the reason written into the message.
+
+Returns whether it reverted: refused while anything is staged, and a revert that does not apply is aborted and leaves the
+tree as it was.
 """
 function revert!(root::AbstractString, sha::AbstractString; why::AbstractString = "a verifier called the fix worse")
     # Never over staged work: a revert commits the index, and an abort resets it, so work staged by
@@ -1047,10 +1053,15 @@ end
 # ──────────────────────────────────────────────────────────── finding a location again
 
 """
-    reanchor(root, loc) -> Model.Location
+    reanchor(root, loc; since = "") -> Model.Location
 
-Where a finding's location is now. The arguments are `root`, the package root, and `loc`, the location
-made earlier. Returns the located copy, carrying how it was found.
+Where a finding's location is now. The arguments are:
+
+- `root` — the package root.
+- `loc` — the location made earlier.
+- `since` — the commit its line was read at, where `loc` does not record one; empty for none.
+
+Returns the located copy, carrying how it was found.
 
 `Texts.reanchor` is tried first: the node, then the quote, neither of which needs anything but the file.
 Where both fail, the old LINE is mapped through `git` across the changes since — `BY_DIFF`. The git step

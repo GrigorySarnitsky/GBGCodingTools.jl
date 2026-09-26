@@ -100,3 +100,49 @@ dirty(dir) = !isempty(strip(read(setenv(`git -C $dir status --porcelain`, "PATH"
         @test DF.check(sample_repo(); io = devnull) == 2                  # nothing has changed at all
     end
 end
+
+# The code review of 2026-09-26.
+@testset "the review of 2026-09-26" begin
+    @testset "a generated file equal to its generator is committed from the command line (clause 0)" begin
+        dir = sample_repo()
+        path = ".gbg/policy/glossary.md"
+        mkpath(joinpath(dir, dirname(path)))
+        write(joinpath(dir, path), DF.generated_now(dir)[path])
+        before = head_count(dir)
+        @test redirect_stdout(devnull) do; cd(() -> DF.cmd_docfix(["commit", "--message", "regenerated"]), dir); end == 0
+        @test head_count(dir) == before + 1
+        # and a hand edit at the same path is still code
+        write(joinpath(dir, path), read(joinpath(dir, path), String) * "\nA hand edit.\n")
+        @test redirect_stdout(devnull) do; cd(() -> DF.cmd_docfix(["commit", "--message", "edited"]), dir); end == 1
+    end
+
+    @testset "a reference Documenter resolves is not reported" begin
+        dir = sample_repo()
+        write(joinpath(dir, "docs", "src", "guide.md"),
+              "# Guide\n\n[`Base.sum(x)`](@ref), [`sum`](@ref Base.sum), [`measure(u)`](@ref) and [`nowhere`](@ref).\n")
+        write(joinpath(dir, "src", "Refs.jl"), "const RX = r\"\\[([^\\]]+)\\]\\(@ref(?:\\s+([^)]+))?\\)\"\nx = \"[t](@ref\"\n")
+        @test DF.unresolved_refs(dir, ["docs/src/guide.md", "src/Refs.jl"]) == [("docs/src/guide.md", "nowhere")]
+    end
+
+    @testset "gbg check names what it did not run, and claims no total" begin
+        dir = sample_repo()
+        out = sprint(io -> G.Check.run(dir; io))
+        @test occursin("NOT RUN HERE", out)
+        @test !occursin(r"\d+ rule\(s\)", out)
+    end
+
+    @testset "RULE.DOC.SHAPE grants the allowance only when a verb says a run is open" begin
+        dir = mktempdir(; cleanup = true)
+        mkpath(joinpath(dir, "docs", "src"))
+        write(joinpath(dir, "docs", "src", "page.md"), "# A page\n\n" * join(fill("word", 105), " ") * "\n")
+        write(joinpath(dir, "docs", "prose_shape.csv"), "unit,words,longest_paragraph,admonitions\n\"page.md § A page\",100,100,0\n")
+        cfg = G.Model.Config(package = "P", tool = :dev)
+        S = G.Catalogue.Shape
+        @test length(S.prose_shape(dir, cfg)) == 1
+        # an open run's files on disk change nothing in a build: the build never reads them
+        mkpath(joinpath(dir, ".gbg", "runs", "r1")); write(joinpath(dir, ".gbg", "runs", "r1", "stage"), "1 collect")
+        @test length(S.prose_shape(dir, cfg)) == 1
+        S.IN_RUN[] = true
+        try @test isempty(S.prose_shape(dir, cfg)) finally S.IN_RUN[] = false end
+    end
+end

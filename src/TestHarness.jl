@@ -50,9 +50,11 @@ function package_operations(pkg::Module, modules::AbstractVector{Module})
         f isa Function && !startswith(String(n), "#") && push!(found, n)
     end
     # plus every EXTERNAL generic the package extends: a method defined under a qualified name
-    # (`Base.show(io, ::T) = …`) creates no binding in the package, so the loaded modules are walked and
-    # each function asked whether a package module owns one of its methods
-    for mod in Base.loaded_modules_array()
+    # (`Base.show(io, ::T) = …`) creates no binding in the package, so the loaded modules are walked —
+    # their submodules too, since `Base.Broadcast.broadcasted` is as much a generic as `Base.show` and
+    # was missed (found in review, 2026-09-26) — and each function asked whether a package module owns
+    # one of its methods
+    for mod in with_submodules(Base.loaded_modules_array())
         mod in owned && continue
         for name in names(mod; all = true, imported = true)
             startswith(String(name), "#") && continue
@@ -66,16 +68,33 @@ function package_operations(pkg::Module, modules::AbstractVector{Module})
     return found
 end
 
+# The modules and every module defined inside one of them, each once; a module reached by a binding
+# whose parent is another is that other's and is not walked twice.
+function with_submodules(roots)
+    out = Module[]; seen = Set{Module}()
+    visit(m) = begin
+        m in seen && return
+        push!(seen, m); push!(out, m)
+        for n in names(m; all = true)
+            isdefined(m, n) || continue
+            v = try getfield(m, n) catch; continue end
+            v isa Module && v !== m && parentmodule(v) === m && visit(v)
+        end
+    end
+    foreach(visit, roots)
+    return out
+end
+
 """
     all_package_functions(pkg, modules) -> Set{Symbol}
 
-Every function name a package module owns methods of, internal helpers included — the wider set a
-guard's own bookkeeping may name. Returns the set.
+Every function name a package module owns methods of, the umbrella's own and internal helpers included
+— the wider set a guard's own bookkeeping may name. Returns the set.
 """
 function all_package_functions(pkg::Module, modules::AbstractVector{Module})
-    owned = Set(modules)
+    owned = Set(vcat(modules, [pkg]))
     found = Set{Symbol}()
-    for mod in modules, name in names(mod; all = true, imported = true)
+    for mod in owned, name in names(mod; all = true, imported = true)
         isdefined(mod, name) || continue
         f = getfield(mod, name)
         f isa Function || continue
@@ -255,7 +274,9 @@ pair equals the frozen pair exactly; a frozen count differing from its ideal mus
 `nothing`.
 """
 function audit(operation!, name::AbstractString, rows::Traffic...; print::Bool = false)
-    push!(AUDITED_TRAFFIC_OPS, Symbol(match(r"^[^\s(∘]+", name).match))
+    token = match(r"^[^\s(∘]+", name)
+    token === nothing && error("the row name $(repr(name)) opens with no operation token")
+    push!(AUDITED_TRAFFIC_OPS, Symbol(token.match))
     foreach(r -> (r.array.reads[] = 0; r.array.writes[] = 0), rows)
     operation!()
     @testset "$name" begin
@@ -368,7 +389,7 @@ function resolve_function(name::Symbol, pkg::Module, modules::AbstractVector{Mod
     # `pkg` first would decide every colliding name before `modules` is reached: `isdefined(pkg, :read)`
     # is true through the implicit `using Base`, so ordering `externals` last alone changed nothing (421
     # names, zero moved). A package module that OWNS the name wins; `pkg` and the externals follow.
-    owned = [m for m in modules if isdefined(m, name) && parentmodule(getfield(m, name)) === m]
+    owned = [m for m in modules if isdefined(m, name) && getfield(m, name) isa Function && parentmodule(getfield(m, name)) === m]
     for mod in Iterators.flatten((owned, (pkg,), modules, externals))
         isdefined(mod, name) || continue
         c = getfield(mod, name)

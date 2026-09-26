@@ -146,3 +146,23 @@ end
         @test occursin("no tag the readers would move", String(take!(out)))
     end
 end
+
+# The code review of 2026-09-26: a short row vanished from every count without a word, and a file with
+# no `rule` column was a crash, exit 3.
+@testset "a vote file that is not votes is exit 2, and a trimmed flag column is read" begin
+    dir = mktempdir(; cleanup = true)
+    head = "rule\tA_w\tA_c\tA_f\tB_w\tB_c\tB_f\tC_w\tC_c\tC_f\n"
+    trimmed = joinpath(dir, "trimmed.tsv")
+    write(trimmed, head * "DOC.SHAPE\tNOTHING\tG\t0\tNOTHING\tG\t0\tNOTHING\tG\t0\n" *
+                          "DOC.GRAMMAR\tNOTHING\tG\t0\tNOTHING\tG\t0\tNOTHING\tG\n")        # last flag cell trimmed
+    @test ST.read_round(trimmed).rules == ["DOC.SHAPE", "DOC.GRAMMAR"]
+    short = joinpath(dir, "short.tsv")
+    write(short, head * "DOC.GRAMMAR\tNOTHING\tG\t0\tNOTHING\n")                         # a vote missing
+    @test_throws ArgumentError ST.read_round(short)
+    @test G.StudyCmd.rules(TOOL, short; io = devnull) == 2
+    norule = joinpath(dir, "norule.tsv")
+    write(norule, "id\tA_w\tA_c\nDOC.GRAMMAR\tNOTHING\tG\n")
+    out = IOBuffer()
+    @test G.StudyCmd.rules(TOOL, norule; io = out) == 2
+    @test occursin("no `rule` column", String(take!(out)))
+end

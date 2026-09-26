@@ -542,3 +542,103 @@ end
     @test T.formulas("\\hat f(k)`` where N = 2 and ``u_k^2`` is the energy") == ["\\hat f(k)", "u_k^2"]
     @test T.formulas("then \$|u|\$ and \$a + b + c\$") == ["|u|", "a + b + c"]
 end
+
+# ── The review of 2026-09-26: the readers of this module, each case the shape it was found in ────────
+
+@testset "a page's link is text with its target, and a page with one does not throw" begin
+    doc = T.parsehtml("<html><body><article class=\"content\"><h2 id=\"f\"><a class=\"docs-heading-anchor\" href=\"#f\">Fields</a></h2><p>See <a href=\"guide/\">the guide</a>.</p></article></body></html>")
+    t = T.page_text(T.article_of(doc))
+    @test occursin("[the guide](guide/)", t) && occursin("[Fields](#f)", t)
+    @test T.reading(t) == "Fields See the guide."
+end
+
+@testset "a .gitignore is read as git reads it" begin
+    root = mktempdir(; cleanup = true)
+    for d in ("build", "docs/gen", "docs/a/b/gen", "data", ".github", "foo(1)"); mkpath(joinpath(root, d)); end
+    write(joinpath(root, ".gitignore"), "foo(1).txt\nfoo\\ \n[!a]*.md\n**/build\ndocs/**/gen\nout/**\nx)\n")
+    write(joinpath(root, "data", ".gitignore"), "*\n!keep.md\n!.gitignore\n")
+    write(joinpath(root, ".github", ".gitignore"), "secret.md\n")
+    ig = T.ignored(root)
+    # a metacharacter is literal, and a line holding one does not throw out of every check
+    @test ig("foo(1).txt") && !ig("foo1.txt") && ig("x)") && !ig("x")
+    @test ig("foo ") && !ig("foo")                                    # an escaped trailing space is kept
+    @test ig("b.md") && !ig("a.md")                                   # git's negated class
+    @test ig("build") && ig("build/x.o") && ig("src/build/y")         # `**/` matches no directory too
+    @test ig("docs/gen") && ig("docs/gen/z") && ig("docs/a/b/gen") && !ig("docs/genx")
+    @test ig("out/deep/er/z.md") && !ig("out")                        # a trailing `/**` is everything below
+    # a nested file applies strictly below its directory, so the `*` / `!keep` idiom keeps what it says
+    @test !ig("data/keep.md") && !ig("data/.gitignore") && ig("data/other.md")
+    @test ig(".github/secret.md") && !ig(".github/workflow.yml")     # `.github/` is not `.git/`
+end
+
+@testset "the walk and the guard's test read one pattern the same way" begin
+    root = mktempdir(; cleanup = true)
+    for d in ("docs/n (old)", "docs/n old", "docs/a+b", "docs/ab", "docs/deep/er"); mkpath(joinpath(root, d)); end
+    for f in ("docs/n (old)/y.md", "docs/n old/y.md", "docs/a+b/x.md", "docs/ab/x.md", "docs/top.md", "docs/deep/er/z.md")
+        write(joinpath(root, f), "# x\n")
+    end
+    @test T.expand(root, "docs/n (old)/*.md") == ["docs/n (old)/y.md"]
+    @test T.expand(root, "docs/a+b/*.md") == ["docs/a+b/x.md"]
+    @test sort(T.expand(root, "docs/**")) == sort(["docs/n (old)/y.md", "docs/n old/y.md", "docs/a+b/x.md", "docs/ab/x.md", "docs/top.md", "docs/deep/er/z.md"])
+    @test sort(T.expand(root, "docs/**/*.md")) == sort(T.expand(root, "docs/**"))
+    for p in ("docs/n (old)/*.md", "docs/a+b/*.md", "docs/**", "docs/**/*.md", "docs/*.md")
+        for f in T.expand(root, "docs/**")
+            @test T.glob_matches(p, f) == (f in T.expand(root, p))
+        end
+    end
+    @test T.glob_matches("docs/**", "docs/deep/er/z.md") && !T.glob_matches("docs/**", "src/x.jl")
+end
+
+@testset "every documented thing has a node: @doc, an abstract type, a bare name, a signature, a tuple, an enum, a callable" begin
+    dir = mktempdir(; cleanup = true)
+    write(joinpath(dir, "M.jl"), """
+    module M
+    @doc raw\"\"\"
+        h(x)
+
+    Rotates by \\\\alpha.
+    \"\"\" h(x) = x
+    \"\"\"abs\"\"\" abstract type A{T} <: B end
+    \"\"\"prim\"\"\" primitive type P 8 end
+    \"\"\"bare\"\"\" f
+    \"\"\"sig\"\"\" g(::Int)
+    \"\"\"call\"\"\" function (c::C)(x) end
+    \"\"\"tuple\"\"\" const P1, Q1 = 1, 2
+    \"\"\"enum\"\"\" @enum E a b
+    \"\"\"plain\"\"\" k = 1
+    const R1 = Rule(; id = :a, statement = "s")
+    module Inner
+    q(x) = 1
+    end
+    end
+    """)
+    docs = T.docstrings(joinpath(dir, "M.jl"))
+    @test Dict(d.node => d.text for d in docs)["h"] == "    h(x)\n\nRotates by \\\\alpha."
+    @test [d.node for d in docs] == ["h", "A", "P", "f", "g", "C", "P1", "E", "k"]
+    names = [s.name for s in T.definitions(joinpath(dir, "M.jl"))]
+    for n in ("h", "A", "P", "f", "g", "C", "P1", "E", "k", "R1.id", "R1.statement", "q")
+        @test n in names
+    end
+    @test !("c::C" in names) && !("P1, Q1" in names) && !("Inner.q" in names)
+    @test !isempty(T.find_node(dir, "M.jl", "h"))
+    # the @doc docstring is prose to the rules, and the lines keep their numbers
+    prose = split(T.prose_text(joinpath(dir, "M.jl"); comments = false), '\n')
+    @test prose[5] == "Rotates by \\\\alpha." && prose[2] == "@doc raw\"\"\""
+    # a broken file yields what parsed, which is what the docstring promises
+    write(joinpath(dir, "B.jl"), "\"\"\"one\"\"\"\nf(x) = 1\nfunction g(\n")
+    @test [s.name for s in T.definitions(joinpath(dir, "B.jl"))] ⊇ ["f"]
+end
+
+@testset "a heading inside any fence is not a heading" begin
+    dir = mktempdir(; cleanup = true)
+    write(joinpath(dir, "p.md"), "# Top\n\n````markdown\n```\n# not a heading\n```\n````\n\n## Real\n\n~~~\n# also not\n~~~\n\n## Last\n")
+    @test [h.name for h in T.headings(joinpath(dir, "p.md"))] == ["Top", "Top / Real", "Top / Last"]
+end
+
+@testset "an escaped dollar reads as the page shows it, and is not a formula" begin
+    @test T.reading_line("costs \\\$5 here") == "costs 5 here"
+    @test T.reading_line("costs \\\\\\\$5 here"; escaped = true) == "costs 5 here"   # a docstring's three backslashes
+    @test T.reading_line("costs \\\\\$5 here"; escaped = true) == "costs 5 here"
+    @test isempty(T.formulas("costs \\\$5 and \\\$6 today"))
+    @test T.formulas("so \$\\hat u_k\$ holds") == ["\\hat u_k"]
+end

@@ -25,33 +25,39 @@ using ..ConfigIO
 using ..Checks
 
 """
-    test(root; rules = Catalogue.RULES, checks = (), contracts = nothing)
+    test(root; extra = Model.Rule[], rules = nothing, checks = (), contracts = nothing)
 
 Runs the code half of the always-on checks over the package at `root` and throws on anything found, so a
 red suite means a broken contract and a green one means every program that can check this package has.
 The arguments are:
 
 - `root` — the package root; the directory holding `.gbg/config.jl`.
-- `rules` — the rules to run, the whole rulebook by default; only those whose intention is code.
+- `extra` — the package's own rules, run AFTER the whole rulebook and never instead of it; only those
+  whose intention is code. `rules` is accepted as the same thing.
 - `checks` — further checks to run, each `(cfg, root) -> Vector{Model.Location}`. The wiring check is
   passed in this way, because it lives in a module above this one.
 - `contracts` — the function that runs the package's frozen contracts, or `nothing` to run none. It is
   passed the package root and is expected to throw on a broken contract, as a test does.
 
-Prints one banner line naming the version that ran, which a consumer's CI reads to know the suite was
-this package's and not a bare `Pkg.test()`. Returns `nothing`.
+Prints one banner line naming the version that ran — and the pin beside it where the two differ — which
+a consumer's CI reads to know the suite was this package's and not a bare `Pkg.test()`. Returns `nothing`.
 """
-function test(root::AbstractString; rules = Catalogue.RULES, checks = (), contracts = nothing)
+function test(root::AbstractString; extra = Model.Rule[], rules = nothing, checks = (), contracts = nothing)
     cfg = ConfigIO.read_config(root)
-    println("GBGCodingTools ", tool_name(cfg), " checks")
+    println("GBGCodingTools ", banner(cfg))
 
     problems = ConfigIO.validate(cfg, root)
     isempty(problems) || error("the config describes a package this is not:\n  " * join(problems, "\n  "))
 
     found = Model.Location[]
-    for rule in rules
+    # The rulebook always, and the package's own after it: a consumer passing its one extra rule had
+    # silently replaced every code rule of the rulebook with it (found in review, 2026-09-26).
+    for rule in vcat(Catalogue.RULES, extra, something(rules, Model.Rule[]))
         rule.intention === Model.Intention.CODE || continue
         append!(found, Checks.run_rule(rule, cfg, root))
+    end
+    for (_, l) in Checks.run_patterns(cfg, root; intention = Model.Intention.CODE)
+        push!(found, l)
     end
     others = Model.Location[]
     for check in checks
@@ -68,5 +74,14 @@ function test(root::AbstractString; rules = Catalogue.RULES, checks = (), contra
 end
 
 tool_name(cfg::Model.Config) = cfg.tool isa VersionNumber ? "v" * string(cfg.tool) : "vdev"
+
+# The banner names the version that RAN, not the pin: a test manifest resolved to an older release than
+# the config names printed the pin, and CI read the wrong version as having run (found in review,
+# 2026-09-26). Where the two agree, or the pin is `:dev`, it is the pin's spelling, which the workflows grep.
+function banner(cfg::Model.Config)
+    ran = pkgversion(@__MODULE__)
+    (ran === nothing || !(cfg.tool isa VersionNumber) || ran == cfg.tool) && return tool_name(cfg) * " checks"
+    return "v" * string(ran) * " checks — the config pins " * tool_name(cfg)
+end
 
 end # module Harness

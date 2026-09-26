@@ -13,9 +13,10 @@ Everything else is code — other `.jl` files whole, the config, stored data, ge
 files, `CLAUDE.md`, and any document the config declares normative.
 
 For a `.jl` file that is on the documentation list, being on it is not enough: both versions must parse,
-and with the docstrings and the standalone string literals removed, THE CODE MUST BE IDENTICAL. A
-docstring whose target is a call rather than a definition is not documentation at all — Julia then
-documents the call instead of running it — and neither is one built by interpolation.
+and with the text inside the docstrings and comments it already has taken out, THE FILE MUST BE
+IDENTICAL BYTE FOR BYTE — the simple rule of 2026-09-23 that [`regions`](@ref) states. A docstring or a
+comment is never added, removed or moved by the fixer, and the literal pieces of an interpolated
+docstring are its prose while the interpolations are code.
 
 Clause 0, a generated file equal to its generator's output, needs the generators, and the caller passes
 their output in rather than this module reaching for them, since `Engine` may not name `Render`. Clause
@@ -50,18 +51,35 @@ end
 const LITERATE_MARKS = ("#src", "#md", "#jl", "#nb", "#!md", "#!jl", "#!nb")
 
 # What Julia's Markdown parser reads in one text, in document order: every formula, and the sequence of
-# inline spans — code or mathematics — with their text, which is what a respelling is judged on.
+# spans — inline code, inline mathematics, or a DISPLAY formula — with their text, which is what a
+# respelling is judged on. A formula is inline when it stands inside a paragraph or a heading, and
+# display anywhere else; the two were one kind, so a display formula made a plain code fence with the
+# same text passed as a respelling (found in review, 2026-09-26).
 function parsed_math(text::AbstractString)
     math = String[]; spans = Tuple{Symbol,String}[]
     md = try Markdown.parse(String(text)) catch; return math, spans end
-    md_walk(md) do x
+    math_walk!(md, false) do x, inline
         if x isa Markdown.LaTeX
-            f = strip(replace(x.formula, r"\s+" => " ")); push!(math, f); push!(spans, (:math, f))
+            f = strip(replace(x.formula, r"\s+" => " ")); push!(math, f); push!(spans, (inline ? :math : :display, f))
         elseif x isa Markdown.Code && isempty(x.language)
             push!(spans, (:code, strip(replace(x.code, r"\s+" => " "))))
         end
     end
     return math, spans
+end
+
+# `md_walk` with the one thing it does not carry: whether the node stands inside a paragraph or heading.
+function math_walk!(f, x, inline::Bool)
+    f(x, inline)
+    inline |= x isa Markdown.Paragraph || x isa Markdown.Header
+    if x isa AbstractVector
+        foreach(y -> math_walk!(f, y, inline), x)
+    elseif !(x isa AbstractString || x isa Symbol || x isa Number || x === nothing)
+        for n in fieldnames(typeof(x))
+            v = getfield(x, n)
+            (v isa AbstractVector || parentmodule(typeof(v)) === Markdown) && math_walk!(f, v, inline)
+        end
+    end
 end
 
 # Every node of a parsed Markdown tree, depth first, in document order.
@@ -78,13 +96,13 @@ function md_walk(f, x)
 end
 
 """
-    math_changed(before, after; jl = false) -> Vector{String}
+    math_changed(before, after; jl = false, literate = false) -> Vector{String}
 
 The mathematics this change adds, alters, removes or reorders. The arguments are:
 
 - `before` and `after` — the file's text on each side.
-- `jl` — whether it is a Julia file, whose mathematics is read in its docstrings and in the comments
-  Literate renders, never in its code.
+- `jl` — whether it is a Julia file, whose mathematics is read in its docstrings, never in its code.
+- `literate` — whether it is a Literate example, whose comments render and are read too.
 
 Returns the expressions that differ — those added, then those removed — and, where the same expressions
 now stand in a different order, all of them; empty when the mathematics is untouched.
@@ -98,9 +116,9 @@ One change is spelling and not mathematics: an inline code span made a math span
 or back, in the same place — the fix the LaTeX rules ask for. Judged position by position, so swapping
 the texts of a code span and a math span is a change. Whitespace alone is not, nor a year in a citation.
 """
-function math_changed(before::AbstractString, after::AbstractString; jl::Bool = false)
-    tb = jl ? something(texts_of(before), String[String(before)]) : String[String(before)]
-    ta = jl ? something(texts_of(after), String[String(after)]) : String[String(after)]
+function math_changed(before::AbstractString, after::AbstractString; jl::Bool = false, literate::Bool = false)
+    tb = jl ? something(texts_of(before; literate), String[String(before)]) : String[String(before)]
+    ta = jl ? something(texts_of(after; literate), String[String(after)]) : String[String(after)]
     return math_diff_texts(tb, ta)
 end
 
@@ -112,10 +130,10 @@ function math_diff_texts(tb::Vector{String}, ta::Vector{String})
     for (b, a) in pairs
         (mb, sb) = parsed_math(b); (ma, sa) = parsed_math(a)
         mb == ma && continue
-        # a respelling: the same inline texts in the same order, kinds flipped, displays unchanged
-        inline_math(sq) = [t for (k, t) in sq if k === :math]
-        respelled = last.(sb) == last.(sa) &&
-                    multiset_minus(mb, inline_math(sb)) == multiset_minus(ma, inline_math(sa))
+        # a respelling: the same span texts in the same order, inline kinds flipped, and every display
+        # formula still a display formula where it stood
+        displays(sq) = [k === :display for (k, _) in sq]
+        respelled = last.(sb) == last.(sa) && displays(sb) == displays(sa)
         respelled && continue
         d = vcat(multiset_minus(ma, mb), multiset_minus(mb, ma))
         append!(out, isempty(d) ? ma : d)
@@ -291,7 +309,7 @@ function regions(src::AbstractString; literate::Bool = false, rule_prose::Bool =
             push!(cut, (first(r) + 2):(last(r) - 2))            # the delimiters stay, the text may change
         elseif !literate
             push!(cut, (first(r) + 1):last(r))                  # the `#` stays, the text may change
-        elseif occursin(r"^##?( |$)", c) && !any(m -> occursin(m, c), LITERATE_MARKS)
+        elseif occursin(r"^##?( |$)", c) && !has_mark(c)
             # A Markdown line (`# `) or a code comment (`## `): the first `#` stays, so the comment can be
             # neither removed nor turned into a mark; the rest may change, the second `#` included — which
             # is the fix RULE.DOC.LITERATE asks for, a comment inside a loop made `##` [ruled 2026-09-24].
@@ -305,11 +323,11 @@ function regions(src::AbstractString; literate::Bool = false, rule_prose::Bool =
     end
     if literate
         # a prose run that leaves a fence open swallows the next code chunk into it
-        for run in prose_runs(s, toks)
+        for run in prose_runs(s)
             open_fence(run) && push!(sig, "open-fence")
         end
         md = literate_markdown(s); push!(texts, md)
-        any(m -> occursin(m, md), LITERATE_MARKS) && push!(sig, "mark-in-prose")
+        any(has_mark, split(md, '\n')) && push!(sig, "mark-in-prose")
     end
     # a file that reads its own line numbers keeps every line break, the ones inside docstrings included
     keep_lines = occursin("@__LINE__", s) || occursin("__source__", s)
@@ -340,8 +358,11 @@ function walk_docs!(cut, texts, s, n; rule_prose::Bool, top::Bool)
             for c in JS.children(ac[2])[2:end]
                 for kwn in (JS.kind(c) === JS.K"parameters" ? something(JS.children(c), ()) : (c,))
                     kc = something(JS.children(kwn), ())
+                    # a PLAIN string only: an interpolated statement is code, and its literal pieces
+                    # were being cut as prose (found in review, 2026-09-26)
                     if JS.kind(kwn) === JS.K"=" && length(kc) == 2 && JS.kind(kc[1]) === JS.K"Identifier" &&
-                       strip(String(JS.sourcetext(kc[1]))) in ("statement", "why") && JS.kind(kc[2]) === JS.K"string"
+                       strip(String(JS.sourcetext(kc[1]))) in ("statement", "why") && JS.kind(kc[2]) === JS.K"string" &&
+                       all(c -> JS.kind(c) === JS.K"String", something(JS.children(kc[2]), ()))
                         cut_text!(cut, kc[2]); push!(texts, value(s, kc[2]))
                     end
                 end
@@ -390,14 +411,14 @@ function without(s, cut; keep_lines::Bool = false)
     return String(bytes[.!drop])
 end
 
-# The Literate prose runs: consecutive lines that are Markdown comments, each run's text with `# ` off.
-function prose_runs(s, toks)
-    out = String[]; cur = String[]; last_line = -1
-    lines = split(s, '\n')
-    for (i, l) in enumerate(lines)
-        m = match(r"^[ \t]*#( (.*)|)$", l)
-        if m !== nothing && !startswith(lstrip(l), "##")
-            push!(cur, something(m.captures[2], ""))
+# The Literate prose runs: consecutive lines the page renders as Markdown, `#md` lines among them, each
+# run's text with its marks and `# ` off. Formed from raw `# ` lines alone, a fence opened inside a
+# `#md` block was never seen (found in review, 2026-09-26).
+function prose_runs(s)
+    out = String[]; cur = String[]
+    for l in literate_lines(s)
+        if l !== nothing
+            push!(cur, l)
         else
             isempty(cur) || push!(out, join(cur, '\n')); empty!(cur)
         end
@@ -406,7 +427,9 @@ function prose_runs(s, toks)
     return out
 end
 
-strip_hash(c) = replace(c, r"^#[ \t]?" => "")
+# Whether a comment carries a Literate mark where Literate reads one: at its start, or at its end. A
+# mention of `#md` in the middle of a prose line is prose (found in review, 2026-09-26).
+has_mark(c) = occursin(r"^#!?(?:md|jl|nb|src)(?:\s|$)", c) || occursin(r"(?:^|\s)#!?(?:md|jl|nb|src)$", c)
 
 # Whether a Markdown text leaves a fence open at its end: an opening ``` or ~~~ line with no closing one.
 function open_fence(t)
@@ -426,14 +449,17 @@ end
 # The Markdown Literate writes from an example, whole, as far as mathematics and run blocks go: prose
 # lines and `#md` lines with their marks taken off, code as blank lines. A block that spans a mark line
 # is seen here whole, where each half of it was not.
-function literate_markdown(s)
-    out = String[]
+literate_markdown(s) = join((something(l, "") for l in literate_lines(s)), '\n')
+
+# Each line of an example as the page sees it: its prose, or `nothing` for a line of code.
+function literate_lines(s)
+    out = Union{Nothing,String}[]
     for l in split(s, '\n')
         t = replace(l, r"^[ \t]*#md[ \t]?" => "")
         m = match(r"^[ \t]*#(?:[ \t](.*))?$", t)
-        push!(out, m !== nothing && !startswith(lstrip(t), "##") ? something(m.captures[1], "") : "")
+        push!(out, m !== nothing && !startswith(lstrip(t), "##") ? something(m.captures[1], "") : nothing)
     end
-    return join(out, '\n')
+    return out
 end
 
 """

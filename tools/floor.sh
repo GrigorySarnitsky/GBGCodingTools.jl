@@ -25,7 +25,8 @@ cd "${1:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}"
 # routinely a different workflow at a different commit, and reading it as a verdict on this one is how
 # both v2.0.0-rc.2 and v2.0.0-rc.3 went out red.
 #
-# An empty conclusion is a run still going, which the first version counted as success.
+# An empty conclusion is a run still going, which the first version counted as success. A green run at
+# another commit REFUSES too: it said so here and only printed a line until 2026-09-26.
 if [ -z "${FLOOR_IGNORE_CI:-}" ] && [ -z "${1:-}" ]; then
   if command -v gh >/dev/null 2>&1; then
     HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
@@ -62,6 +63,8 @@ if [ -z "${FLOOR_IGNORE_CI:-}" ] && [ -z "${1:-}" ]; then
           echo "floor: the newest $WF run is at a commit this clone does not have — it did not see this work."
         fi
         [ "$WF" = "CI" ] && echo "  CI runs on a tag or a dispatch: gh workflow run CI --ref master"
+        echo "  Wait for a run at HEAD, or, if THIS commit is the fix: FLOOR_IGNORE_CI=1 tools/floor.sh"
+        exit 1
       fi
     done
   else
@@ -88,16 +91,24 @@ julia --project=docs --startup-file=no docs/make.jl
 #
 # So: export the tracked files to a temporary directory and load the package there. It catches the
 # whole class — an untracked file, an empty directory, anything present here and not in the repository.
-# Outside Dropbox, because every repository here is inside it.
-echo "floor: loading from the tracked files alone"
-EXPORT=$(mktemp -d)
-trap 'rm -rf "$EXPORT"' EXIT
-git ls-files -z | xargs -0 tar -cf - | tar -xf - -C "$EXPORT"
-julia --project="$EXPORT" --startup-file=no -e '
-    using Pkg; Pkg.instantiate()
-    using GBGCodingTools
-    isempty(GBGCodingTools.Catalogue.RULES) && error("the rulebook is empty in a clean export")
-    println("floor: loaded ", length(GBGCodingTools.Catalogue.RULES), " rules from the tracked files")'
+# Outside Dropbox, because every repository here is inside it. One `tar` reads the whole path list from
+# stdin: piped through `xargs tar`, past xargs's buffer the list was split into two archives and the
+# extracting tar stopped at the first one's end, so the export silently lacked the last files (found in
+# review, 2026-09-26). Not `git archive HEAD`: the floor runs BEFORE the commit, and HEAD is the last one.
+#
+# This step and the sweep below are THIS repository's: run with a consumer's root, its root environment
+# names no GBGCodingTools, so they are skipped there, as the CI check above is.
+if [ -z "${1:-}" ]; then
+  echo "floor: loading from the tracked files alone"
+  EXPORT=$(mktemp -d)
+  trap 'rm -rf "$EXPORT"' EXIT
+  git ls-files -z | tar --null -T - -cf - | tar -xf - -C "$EXPORT"
+  julia --project="$EXPORT" --startup-file=no -e '
+      using Pkg; Pkg.instantiate()
+      using GBGCodingTools
+      isempty(GBGCodingTools.Catalogue.RULES) && error("the rulebook is empty in a clean export")
+      println("floor: loaded ", length(GBGCodingTools.Catalogue.RULES), " rules from the tracked files")'
+fi
 
 
 # THE FLEET SWEEP, when this change could alter what a rule READS and the packages are on this machine.
@@ -113,7 +124,7 @@ julia --project="$EXPORT" --startup-file=no -e '
 #
 # `~/.gbg/fleet` holds one package root per line. Per-machine, like `~/.gbg/dev`, and never synced.
 READS='^src/Rules/|^src/Texts\.jl$|^src/Engine/Checks\.jl$'
-if git diff --name-only HEAD 2>/dev/null | grep -qE "$READS"; then
+if [ -z "${1:-}" ] && git diff --name-only HEAD 2>/dev/null | grep -qE "$READS"; then
   if [ -f "$HOME/.gbg/fleet" ]; then
     echo "floor: a rule's reading changed — sweeping the fleet"
     # Every consumer path here holds two spaces, so the roots are built as positional parameters one

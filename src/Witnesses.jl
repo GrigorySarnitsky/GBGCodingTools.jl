@@ -10,15 +10,17 @@
 The witness runner of `/bug-hunt`. A witness is a self-contained Julia file asserting the CORRECT
 behaviour of the package, so it FAILS on a defective tree and PASSES once the defect is fixed;
 [`Witnesses.run`](@ref) executes every witness of a directory in a fresh process and holds the set to
-one expectation, reporting each file as a [`WitnessResult`](@ref). The directory is usually a round's — a round being one run of one instrument ([`GBGCodingTools`](@ref) binds the term) over one
-consumer, recorded as a tracked directory under `.gbg/rounds/`. An agent's account of a program that
-fails is not that program; this is.
+one expectation, reporting each file as a [`WitnessResult`](@ref). The directory is usually a run's —
+one run of one instrument over one consumer, recorded under `.gbg/runs/<id>/`. An agent's account of
+a program that fails is not that program; this is.
 """
 module Witnesses
 
 import ..GBGCodingTools
 
 export WitnessResult
+
+const JS = Base.JuliaSyntax
 
 """
     WitnessResult
@@ -50,26 +52,60 @@ const STDLIBS = Set(String.(readdir(Sys.STDLIB)))
 """
     refusal(path, package) -> Union{String,Nothing}
 
-The reason `path` may not run as a witness, or `nothing`: it `include`s a file, or it `using`s /
-`import`s a module other than `package`, `Test`, `Base`, `Core` and the standard library (a witness
-cannot be weakened through a helper it loads). Comments are ignored. Returns the message or `nothing`.
+The reason `path` may not run as a witness, or `nothing`: it loads a file — `include`, `include_string`,
+`evalfile`, `require`, `eval` or `@eval`, however qualified — or it `using`s / `import`s a module other
+than `package`, `Test`, `Base`, `Core` and the standard library (a witness cannot be weakened through a
+helper it loads). Read from the parse tree, so a spelling over several lines or inside a macro is seen;
+a file that does not parse is refused too. Returns the message or `nothing`.
 """
 function refusal(path::AbstractString, package::AbstractString)
-    for (i, raw) in enumerate(eachline(path))
-        line = strip(replace(raw, r"#.*$" => ""))
-        isempty(line) && continue
-        occursin(r"\binclude\s*\(", line) && return "line $i includes a file (`include(` is refused in a witness)"
-        m = match(r"^\s*(?:using|import)\s+(.+)$", line)
-        m === nothing && continue
-        for spec in split(m.captures[1], ',')
-            root = String(first(split(strip(split(strip(spec), ':')[1]), '.')))
-            isempty(root) && continue
+    tree = try
+        JS.parseall(JS.SyntaxNode, read(path, String); filename = path)
+    catch err
+        return "the file does not parse: " * sprint(showerror, err)
+    end
+    return refusal_in(tree, package)
+end
+
+const LOADERS = ("include", "include_string", "evalfile", "require", "eval", "@eval")
+
+function refusal_in(node, package)
+    k = JS.kind(node); cs = something(JS.children(node), ())
+    line = JS.source_line(node)
+    if k === JS.K"using" || k === JS.K"import"
+        for root in import_roots(node)
             root in (package, "Test", "Base", "Core") && continue
             root in STDLIBS && continue
-            return "line $i loads `$root`, which is not the package under test, Test, or a standard library"
+            return "line $line loads `$root`, which is not the package under test, Test, or a standard library"
         end
+    elseif (k === JS.K"call" || k === JS.K"macrocall") && !isempty(cs)
+        callee = String(last(split(strip(String(JS.sourcetext(cs[1]))), '.')))
+        callee in LOADERS && return "line $line calls `$callee`, which loads code a witness may not (refused in a witness)"
+    end
+    for c in cs
+        r = refusal_in(c, package)
+        r === nothing || return r
     end
     return nothing
+end
+
+# The first identifier of every path a `using` or `import` names: `Test, Helper` gives both, `Test: a`
+# gives `Test`, and `A.B` gives `A`.
+function import_roots(node)
+    out = String[]
+    walk(n) = begin
+        if JS.kind(n) === JS.K"importpath"
+            cs = something(JS.children(n), ())
+            isempty(cs) || push!(out, strip(String(JS.sourcetext(cs[1]))))
+        elseif JS.kind(n) === JS.K":"
+            cs = something(JS.children(n), ())
+            isempty(cs) || walk(cs[1])                 # `using A: b, c` loads A alone
+        else
+            foreach(walk, something(JS.children(n), ()))
+        end
+    end
+    walk(node)
+    return out
 end
 
 """
@@ -87,33 +123,13 @@ function blocked_reason(path::AbstractString)
     return nothing
 end
 
-"""
-    witness_project(root, witness_env, package) -> String
-
-The `--project` a witness runs under. The arguments are:
-
-- `root` — the consumer root.
-- `witness_env` — the config's `instruments.bug-hunt.witness_env` (a directory under the root, `test`
-  by default).
-- `package` — the package name the witness may load.
-
-Returns the project path.
-"""
-function witness_project(root::AbstractString, witness_env::AbstractString, package::AbstractString)
-    env = joinpath(root, witness_env)
-    pf = joinpath(env, "Project.toml")
-    if isfile(pf)
-        p = try GBGCodingTools.TOML.parsefile(pf) catch; Dict() end
-        haskey(get(p, "deps", Dict()), package) && return env
-    end
-    return String(root)
-end
-
-# The wrapper the runner executes: it includes the witness inside an outer testset so the counts are
-# reported machine-readably on one line, and an exception outside every @test is reported as such.
+# The wrapper the runner executes: it includes the witness inside an outer testset, exits 0 on a clean
+# run, 1 on a failing assertion and 3 on an exception outside every @test — the exit code is the
+# verdict — and prints the counts on one line marked with the token the runner handed it, as the detail.
 const WRAPPER = raw"""
 using Test
 const __gbg_path = ARGS[1]
+const __gbg_token = ARGS[2]
 __gbg_counts = nothing
 try
     Test.TESTSET_PRINT_ENABLE[] = false
@@ -123,17 +139,17 @@ try
     global __gbg_counts = Test.get_test_counts(__gbg_ts)
 catch err
     if err isa Test.TestSetException
-        println("GBG_WITNESS pass=", err.pass, " fail=", err.fail, " error=", err.error)
+        println("GBG_WITNESS ", __gbg_token, " pass=", err.pass, " fail=", err.fail, " error=", err.error)
         exit(1)
     end
-    println("GBG_WITNESS_EXCEPTION ", sprint(showerror, err))
+    println("GBG_WITNESS_EXCEPTION ", __gbg_token, " ", sprint(showerror, err))
     exit(3)
 end
 if __gbg_counts !== nothing
     c = __gbg_counts
     p = c isa Tuple ? c[1] : c.passes;  f = c isa Tuple ? c[2] : c.fails;  e = c isa Tuple ? c[3] : c.errors
     cp = c isa Tuple ? c[5] : c.cumulative_passes; cf = c isa Tuple ? c[6] : c.cumulative_fails; ce = c isa Tuple ? c[7] : c.cumulative_errors
-    println("GBG_WITNESS pass=", p + cp, " fail=", f + cf, " error=", e + ce)
+    println("GBG_WITNESS ", __gbg_token, " pass=", p + cp, " fail=", f + cf, " error=", e + ce)
     exit((f + cf + e + ce) == 0 ? 0 : 1)
 end
 """
@@ -147,35 +163,45 @@ Runs one witness file in a fresh Julia process and classifies the outcome. The a
 - `project` — the `--project` it runs under.
 - `package` — the package it may load.
 
-The file is first read, never included: a witness that `include`s another file, or that loads
-anything outside `package`, `Test` and the standard library, is REFUSED before it runs. The run wraps
-the file in an outer testset and prints one machine-readable line `GBG_WITNESS pass= fail= error=`.
+The file is first read, never included: a witness that loads another file, or that loads anything
+outside `package`, `Test` and the standard library, is REFUSED before it runs. The run wraps the file
+in an outer testset; THE EXIT CODE IS THE VERDICT — 0 clean, 1 an assertion failed, 3 an exception
+outside every assertion — and the counts line the wrapper prints is the detail. A verdict grepped from
+the log let a witness that printed the line itself pass whatever it did (found in review, 2026-09-26),
+so the line carries a token the witness never sees, and a line that disagrees with the exit code is
+`:broken`.
 
-From that line the result is `:pass` (assertions and none failing), `:fail` (an assertion failed — the
-evidence a hunt wants), `:broken` (an exception outside an assertion, an assertion that threw, or a
-pass with ZERO assertions, which is evidence of nothing), or `:blocked` (it errored, failed nothing,
-and carries a `# blocked: <reason>` header; one that also failed is `:broken`, its reason naming both
-counts, and so is one that reported no counts at all — an exit or a crash — header or not). Returns
-the result with the counts and the reason.
+The result is `:pass` (exit 0 with assertions), `:fail` (exit 1 — the evidence a hunt wants), `:broken`
+(exit 3, an assertion that threw, a pass with ZERO assertions, which is evidence of nothing, or no
+counts at all), or `:blocked` (an assertion threw, none failed, and it carries a `# blocked: <reason>`
+header; one that also failed is `:broken`, its reason naming both counts, and so is one that reported no
+counts at all — an exit or a crash — header or not). Returns the result with the counts and the reason.
 """
 function run_one(path::AbstractString; project::AbstractString, package::AbstractString)
     name = basename(path)
     r = refusal(path, package)
     r === nothing || return WitnessResult(name, :refused, 0, 0, 0, r)
     out = IOBuffer()
-    cmd = `$(Base.julia_cmd()) --startup-file=no --project=$project -e $WRAPPER -- $path`
-    proc = Base.run(pipeline(Cmd(cmd; dir = dirname(project), ignorestatus = true); stdout = out, stderr = out))
+    token = string(rand(UInt64); base = 16)
+    cmd = `$(Base.julia_cmd()) --startup-file=no --project=$project -e $WRAPPER -- $path $token`
+    # the working directory is the project's: a directory as given, or the directory of a project FILE
+    proc = Base.run(pipeline(Cmd(cmd; dir = isdir(project) ? project : dirname(project), ignorestatus = true);
+                             stdout = out, stderr = out))
     text = String(take!(out))
-    m = match(r"GBG_WITNESS pass=(\d+) fail=(\d+) error=(\d+)", text)
+    code = proc.exitcode
+    m = match(Regex("GBG_WITNESS " * token * raw" pass=(\d+) fail=(\d+) error=(\d+)"), text)
     blocked = blocked_reason(path)
     if m === nothing
-        exc = match(r"GBG_WITNESS_EXCEPTION (.*)", text)
+        exc = match(Regex("GBG_WITNESS_EXCEPTION " * token * " (.*)"), text)
         reason = exc === nothing ? first(strip(text), 600) : String(exc.captures[1])
         # no counts were reported (the process exited or crashed before the wrapper's line): whether it
         # failed is unknown, so it is never :blocked — that state needs a report of zero failures
-        return WitnessResult(name, :broken, 0, 0, 0, "no counts reported (the process exited or crashed): " * reason * (blocked === nothing ? "" : "; header: " * blocked))
+        return WitnessResult(name, :broken, 0, 0, 0, "no counts reported (exit $code; the process exited or crashed): " * reason * (blocked === nothing ? "" : "; header: " * blocked))
     end
     p, f, e = parse.(Int, m.captures)
+    # the counts must say what the exit code says, or the line is not the wrapper's
+    (code == 0 && f + e == 0) || (code == 1 && f + e > 0) ||
+        return WitnessResult(name, :broken, p, f, e, "exit $code disagrees with the counts it reported (pass=$p fail=$f error=$e)")
     if e > 0
         # :blocked only when nothing failed: a witness that was seen to fail is evidence, never filed away
         f == 0 && blocked !== nothing && return WitnessResult(name, :blocked, p, f, e, blocked)

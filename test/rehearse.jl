@@ -153,6 +153,14 @@ function whole(args, r)
     return out
 end
 
+"""The launch marks the DRIVER copy carries, read off the arguments spliced into it."""
+function spliced_launches(root, id)
+    text = read(joinpath(AGENTS.scratch_dir(root, id), "run.js"), String)
+    m = match(r"globalThis\.args = (.*);\n", text)
+    args = G.JSON3.read(m.captures[1], Dict{String,Any})
+    return Dict(String(r["key"]) => r["launch"] for r in args["roles"])
+end
+
 """
 Collect the current stage through the one relaunch of silent readers: the first collect asks for them
 again and moves nothing, the second moves on and names whoever is still silent.
@@ -334,6 +342,8 @@ end
             v = whole(args, only(args["roles"]))
             @test v["kind"] == "verifier" && !isempty(String(v["unit"]))
             @test v["kept_from_code"] == false                      # it sees the diff too (ruled 2026-09-26)
+            briefs = [String(b) for b in values(args["briefs"])]
+            @test !any(b -> occursin("or the diff", b), briefs)        # its quote is of the current text alone
             page = read(String(v["unit"]), String)
             @test occursin("The grid is a lattice.", page)            # the page as it now stands
             @test !occursin("The grid is spectral.", page)
@@ -543,6 +553,9 @@ end
             launch = Dict(String(r["key"]) => r["launch"] for r in args["roles"])
             @test launch[HOME_READER] === false && launch["full"] === false && launch["rendered"] === true
             @test length(args["roles"]) == before                        # the collect still expects everyone
+            # and the DRIVER carries the same marks: it reads its spliced copy, not the file, and a copy
+            # left from the launch marked every role again (found in review, 2026-09-26)
+            @test spliced_launches(root, id) == launch
             all_clean(root, id; except = [HOME_READER, "full"])
             @test G.Run.next(root; io = devnull) == 2                    # every agent wrote: collect
             @test G.Run.collect(root; io = devnull) == 1
@@ -2225,7 +2238,11 @@ end
         @test G.Run.park(root, fid; why = "a switch in .gbg/config.jl", io = out) == 0
         run = RUNS.load(root, id)
         qid = RUNS.code_question_id(run, fid)
-        @test occursin(qid, String(take!(out)))
+        printed = String(take!(out))
+        @test occursin(qid, printed)
+        # the question passed the language rules on its way in, and the path it names is reported
+        # with the rule named, as `gbg ask` reports one (§8; found in review, 2026-09-26)
+        @test occursin("RULE.ASK.NO_COORDINATES", printed)
         @test RUNS.parked(run, fid) && isempty(RUNS.workable(run))
         @test G.Run.park(root, fid; why = "again", io = devnull) == 2     # already waiting on the owner
         # nothing to verify and nothing committed: the run goes to its close
@@ -2286,12 +2303,15 @@ end
         all_clean(root, id)
         G.Run.collect(root; io = devnull)
         @test G.Run.cost(root, dir; io = devnull) == 2                    # nothing under it
-        rec(u) = G.JSON3.write(Dict("type" => "assistant", "message" => Dict("usage" => u))) * "\n"
-        write(joinpath(dir, "agent-a.jsonl"), rec(Dict("input_tokens" => 5, "cache_creation_input_tokens" => 100,
-                                                        "cache_read_input_tokens" => 1000, "output_tokens" => 7)) *
+        rec(u; id = nothing) = G.JSON3.write(Dict("type" => "assistant",
+                                                  "message" => id === nothing ? Dict("usage" => u) : Dict("usage" => u, "id" => id))) * "\n"
+        # one message written as two lines — a thinking block and a text block — carries its usage twice
+        # and is paid once (measured on a PF transcript, 2026-09-26: 2.5× the real figure summed per line)
+        twice = Dict("input_tokens" => 5, "cache_creation_input_tokens" => 100, "cache_read_input_tokens" => 1000, "output_tokens" => 7)
+        write(joinpath(dir, "agent-a.jsonl"), rec(twice; id = "msg_1") * rec(twice; id = "msg_1") *
                                                "not json\n" *
                                                rec(Dict("input_tokens" => 1, "cache_creation_input_tokens" => 10,
-                                                        "cache_read_input_tokens" => 200, "output_tokens" => 3)))
+                                                        "cache_read_input_tokens" => 200, "output_tokens" => 3); id = "msg_2"))
         mkpath(joinpath(dir, "sub")); write(joinpath(dir, "sub", "agent-b.jsonl"), rec(Dict("output_tokens" => 2)))
         write(joinpath(dir, "journal.jsonl"), """{"type":"started","key":"x"}\n""")   # no usage: not an agent
         out = IOBuffer()
@@ -2375,10 +2395,14 @@ end
         write(idx, HOME_PAGE)
         id, fid = with_one_finding(root)
         G.Run.next(root; io = devnull)
+        # The allowance is the fixer's verb's to grant, for its own call, never a file a build reads
+        # (F-1, 2026-09-26): what `gbg docfix` sets, set here around the direct call.
+        in_run(f) = (G.Catalogue.Shape.IN_RUN[] = true; try f() finally G.Catalogue.Shape.IN_RUN[] = false end)
         grow(6)
-        @test isempty(shape())                                           # within the allowance
+        @test in_run(() -> isempty(shape()))                            # within the allowance
+        @test !isempty(shape())                                          # a build, run open or not: strict
         grow(14)
-        @test !isempty(shape())                                          # past it
+        @test in_run(() -> !isempty(shape()))                           # past it
         write(idx, HOME_PAGE); grow(6)
         @test G.Docfix.commit(root, "fix for " * fid; io = devnull, finding = fid) == 0
         G.Run.next(root; io = devnull)
@@ -2423,5 +2447,60 @@ end
         finally
             SITE.BUILDER[] = old
         end
+    end
+end
+
+# ── The review of 2026-09-26: the run path, each case the shape it was found in ──────────────────────
+
+@testset "a finding parked, ruled on, fixed and judged again carries one question, not two" begin
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        G.Run.next(root; io = devnull)
+        @test G.Run.park(root, fid; why = "the formula changes", io = devnull) == 0
+        qid = RUNS.code_question_id(RUNS.load(root, id), fid)
+        @test G.Answer.answer(root, qid, "fix it on my ruling"; io = devnull, direction = "write lattice") == 0
+        fixed_as(root, fid, "The grid is a lattice.")
+        G.Run.next(root; io = devnull)
+        verifier_said(root, id, "verify", fid, "HIDES_CODE_DEFECT"; quote_ = "The grid is a lattice.")
+        @test G.Run.collect(root; io = devnull) == 1
+        run = RUNS.load(root, id)
+        @test count(q -> q.id == qid, run.questions) == 1            # replaced, not appended
+        @test RUNS.parked(run, fid) && isempty(RUNS.workable(run))    # and the finding waits again
+        @test RUNS.answer_of(run, fid) === nothing
+    end
+end
+
+@testset "a stage's arguments clear what the driver returned last time" begin
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        G.Run.next(root; io = devnull)
+        fixed_as(root, fid, "The grid is a lattice.")
+        # what an older launch of the verify stage returned, beside where its results will be
+        stale = joinpath(AGENTS.scratch_dir(root, id), "5-verify", "returned.json")
+        mkpath(dirname(stale))
+        write(stale, G.JSON3.write(Dict("results" => Dict("verify-unit-home" =>
+            Dict("verdicts" => [Dict("finding" => fid, "verdict" => "FIXED", "quote" => "The grid is a lattice.")])))))
+        G.Run.next(root; io = devnull)                                   # verify: the arguments are written
+        @test !isfile(stale)
+        @test G.Run.collect(root; io = devnull) == 2                     # the verifier wrote nothing: silent, not graded
+        @test !RUNS.closed(RUNS.load(root, id), fid)
+    end
+end
+
+@testset "abandon takes a dropped finding's question with it" begin
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        G.Run.next(root; io = devnull)
+        @test G.Run.park(root, fid; why = "a formula", io = devnull) == 0
+        qid = RUNS.code_question_id(RUNS.load(root, id), fid)
+        @test G.Run.abandon(root; io = devnull) == 0
+        @test isempty(RUNS.open_questions(root))                        # nobody holds the finding: nobody is asked
+        @test fid in RUNS.load(root, id).dropped_ids
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "the record")
+        G.Run.start(root, :documentation_review; io = devnull)
+        id2 = G.Run.open_run(root); all_clean(root, id2)
+        collect_twice(root); to_close(root, id2); G.Run.close_run(root; io = devnull)
+        q = joinpath(root, ".claude", "WORK_QUEUE.md")
+        @test !isfile(q) || !occursin(qid, read(q, String))
     end
 end

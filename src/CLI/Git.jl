@@ -38,6 +38,25 @@ function run(root::AbstractString, args...)
 end
 
 """
+    Git.said(root, args...) -> (ok, said)
+
+`git -C root args...` for a command that WRITES — a tag, a push — where a failure must be reported with
+git's own reason. The arguments are `root`, the repository, and `args`, git's arguments. Returns whether
+it succeeded and what it printed, stdout and stderr together; a missing identity or a remote refusing a
+push was a line with no cause while [`Git.run`](@ref) discarded stderr (found in review, 2026-09-26).
+"""
+function said(root::AbstractString, args...)
+    argv = String[string(a) for a in args]
+    out = IOBuffer()
+    ok = try
+        success(pipeline(addenv(`git -C $root $argv`, "LC_ALL" => "C"); stdout = out, stderr = out))
+    catch err
+        print(out, sprint(showerror, err)); false
+    end
+    return ok, String(rstrip(String(take!(out))))
+end
+
+"""
     Git.head(root) -> Union{String,Nothing}
 
 The full sha of `HEAD`, or `nothing` outside a repository.

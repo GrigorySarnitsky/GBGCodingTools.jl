@@ -132,14 +132,20 @@ end
     @testset "a released pin needs its workflows to authenticate" begin
         dir, _ = wired_package()
         mkpath(joinpath(dir, ".github", "workflows"))
-        write(joinpath(dir, ".github", "workflows", "CI.yml"), "jobs:\n  test:\n    steps:\n      - uses: actions/checkout@v6\n")
+        write(joinpath(dir, ".github", "workflows", "CI.yml"),
+              "jobs:\n  test:\n    steps:\n      - uses: actions/checkout@v6\n      - uses: julia-actions/julia-runtest@v1\n")
         dev = G.ConfigIO.read_config(dir)
         @test isempty(RN.ci_drift(dev, dir))                       # a checkout needs no credential
         write(joinpath(dir, ".gbg", "config.jl"), """Config(package = "Sample", tool = v"2.0.0")""")
         pinned = G.ConfigIO.read_config(dir)
         @test length(RN.ci_drift(pinned, dir)) == 1                # a release does
+        # a workflow that resolves nothing — TagBot, a linter — is not told to authenticate: it turned
+        # every build and test of a released pin red with nothing to fix (found in review, 2026-09-26)
+        write(joinpath(dir, ".github", "workflows", "TagBot.yml"),
+              "jobs:\n  TagBot:\n    steps:\n      - uses: JuliaRegistries/TagBot@v1\n")
+        @test [l.file for l in RN.ci_drift(pinned, dir)] == [".github/workflows/CI.yml"]
         write(joinpath(dir, ".github", "workflows", "CI.yml"),
-              "jobs:\n  test:\n    steps:\n      - uses: ./.github/actions/gbg-auth\n")
+              "jobs:\n  test:\n    steps:\n      - uses: ./.github/actions/gbg-auth\n      - run: julia --project -e 'using Pkg; Pkg.test()'\n")
         @test isempty(RN.ci_drift(pinned, dir))
         rm(joinpath(dir, ".github"); recursive = true)
         @test isempty(RN.ci_drift(pinned, dir))                    # a package with no workflows is told nothing
@@ -266,23 +272,24 @@ end
                              switches = [G.Model.Switch(target = :documentation_review,
                                                         reason = "not while the tool is being rebuilt")])
         # the switches page changes too, since the switch is now one of them
-        @test RN.write_all(off, dir) == [".gbg/policy/switches.md", RN.skill_path(:documentation_review)]
+        @test RN.write_all(off, dir).changed == [".gbg/policy/switches.md", RN.skill_path(:documentation_review)]
         @test !isfile(joinpath(dir, RN.skill_path(:documentation_review)))
         @test !isdir(dirname(joinpath(dir, RN.skill_path(:documentation_review))))
         @test isempty(RN.wiring(off, dir))                    # and its absence is not drift
-        @test isempty(RN.write_all(off, dir))                 # nothing to do the second time
-        # one left behind after the switch IS drift
+        @test isempty(RN.write_all(off, dir).changed)         # nothing to do the second time
+        # one of OURS left behind after the switch IS drift (a file there without the marker is the
+        # package's own, and neither drift nor ours to delete)
         mkpath(dirname(joinpath(dir, RN.skill_path(:documentation_review))))
-        write(joinpath(dir, RN.skill_path(:documentation_review)), "stale")
+        write(joinpath(dir, RN.skill_path(:documentation_review)), RN.skill(cfg, :documentation_review))
         drift = RN.wiring(off, dir)
         @test length(drift) == 1 && occursin("switched off", first(drift).text)
     end
 
     @testset "write_all is idempotent, and says what it changed" begin
         dir, cfg = wired_package()
-        @test isempty(RN.write_all(cfg, dir))                                  # nothing to do the second time
+        @test isempty(RN.write_all(cfg, dir).changed)                          # nothing to do the second time
         rm(joinpath(dir, ".claude", "settings.json"))
-        @test RN.write_all(cfg, dir) == [".claude/settings.json"]
+        @test RN.write_all(cfg, dir).changed == [".claude/settings.json"]
     end
 
     # A deferral is rendered beside the switches, with what would close it, so "owed" is on the record
@@ -360,4 +367,161 @@ end
     @test !occursin("run the ONE driver, `drivers/run.js` of the pinned", text)
     @test occursin("a math span with the same text, or back", text)
     @test occursin("gbg run park <id> --why", text)            # a finding only the owner may fix is parked
+end
+
+# The code review of 2026-09-26, group A: each of these failed on the tree it was found in.
+@testset "what the review of 2026-09-26 found in the wiring" begin
+
+    # `init` asked about collisions only when a config already existed, so the one run that writes a
+    # package's first wiring was the one that never asked, and wrote over the package's own files.
+    @testset "the FIRST init keeps what the package wrote itself" begin
+        dir = mktempdir(; cleanup = true)
+        write(joinpath(dir, "Project.toml"), "name = \"Sample\"\nuuid = \"7f0c3a5e-1b2d-4c3e-9f4a-5b6c7d8e9f02\"\n")
+        own = joinpath(dir, RN.CI_ACTION); mkpath(dirname(own)); write(own, "name: the package's own action\n")
+        skill = joinpath(dir, RN.skill_path(:bug_hunt)); mkpath(dirname(skill)); write(skill, "# /bug-hunt, the package's\n")
+        @test G.Wire.init(dir; io = devnull) == 1
+        @test !isfile(joinpath(dir, ".gbg", "config.jl"))          # nothing was written, the config included
+        @test read(own, String) == "name: the package's own action\n"
+        @test read(skill, String) == "# /bug-hunt, the package's\n"
+        rm(own); rm(skill)
+        @test G.Wire.init(dir; io = devnull) == 0
+        @test occursin("package = \"Sample\"", read(joinpath(dir, ".gbg", "config.jl"), String))
+    end
+
+    # `sync` wrote over any file at a generated path, so a path a newer version generates replaced a
+    # hand-written file on upgrade, while the same package's re-run `init` refused it.
+    @testset "sync refuses the package's own file at a generated path, and writes the rest" begin
+        dir, cfg = wired_package()
+        note = joinpath(dir, "test", "regressions", "README.md")
+        write(note, "# The package's own note on its regressions\n")
+        rm(joinpath(dir, ".gbg", "policy", "glossary.md"))
+        out = IOBuffer()
+        @test G.Wire.sync(dir; io = out) == 1
+        @test occursin("test/regressions/README.md", String(take!(out)))
+        @test read(note, String) == "# The package's own note on its regressions\n"      # kept
+        @test isfile(joinpath(dir, ".gbg", "policy", "glossary.md"))                     # the rest was written
+        @test [l.file for l in RN.wiring(cfg, dir)] == ["test/regressions/README.md"]    # and it stays reported
+        # a switched-off instrument's skill of the package's own is not deleted either
+        off = G.Model.Config(package = cfg.package, tool = cfg.tool, filesets = cfg.filesets,
+                             switches = [G.Model.Switch(target = :bug_hunt, reason = "the package has its own")])
+        write(joinpath(dir, RN.skill_path(:bug_hunt)), "# /bug-hunt, the package's\n")
+        RN.write_all(off, dir)
+        @test read(joinpath(dir, RN.skill_path(:bug_hunt)), String) == "# /bug-hunt, the package's\n"
+        @test !any(l -> l.file == RN.skill_path(:bug_hunt), RN.wiring(off, dir))
+    end
+
+    # Every consumer's `docs/` holds a `Project.toml`, so `gbg init` run there wired `docs/` as a package
+    # called `docs`; a package is a `Project.toml` that names one.
+    @testset "the package root is the Project.toml that names a package" begin
+        dir = mktempdir(; cleanup = true)
+        write(joinpath(dir, "Project.toml"), "name = \"Sample\"\n")
+        mkpath(joinpath(dir, "docs", "src")); write(joinpath(dir, "docs", "Project.toml"), "[deps]\n")
+        @test G.Wire.package_root(joinpath(dir, "docs", "src")) == dir
+        @test G.Wire.package_root(joinpath(dir, "docs")) == dir
+        @test G.Wire.package_root(dir) == dir
+        @test G.Wire.package_root(mktempdir(; cleanup = true)) === nothing
+    end
+
+    # The pin writer re-serialised the whole file by hand and handled a string and a table of strings:
+    # a `[targets]` list or a top-level `description` was a crash, and `gbg sync` exit 3 with it.
+    @testset "the pin is written into whatever else the environment holds" begin
+        dir, cfg = wired_package()
+        pj = joinpath(dir, "test", "Project.toml")
+        write(pj, "description = \"the tests\"\n\n[deps]\nTest = \"8dfed614-e22c-5e08-85e1-65c5234f0b40\"\n\n[compat]\njulia = \"1.12\"\n\n[targets]\ntest = [\"Test\"]\n")
+        @test RN.write_pin(cfg, dir, "test")
+        back = TOML.parsefile(pj)
+        @test back["description"] == "the tests" && back["targets"]["test"] == ["Test"] && back["compat"]["julia"] == "1.12"
+        @test haskey(back["sources"], RN.PKG) && haskey(back["deps"], RN.PKG)
+        @test RN.pin_drift(cfg, dir, "test") === nothing
+        @test !RN.write_pin(cfg, dir, "test")                       # and it is stable
+        @test !occursin("[sources.", read(pj, String))              # inline, as Pkg writes it
+    end
+
+    # The block was found by substring, with a trailing newline the file did not have, so a block that
+    # ended its file could not be repaired; a marker mentioned in the package's own prose above the
+    # block began the block there, and the prose was eaten; and a block written twice stayed twice.
+    @testset "a managed block is found by its marker lines, once, and repaired wherever it ends" begin
+        dir, cfg = wired_package()
+        ignore = joinpath(dir, ".gitignore")
+        stale = replace(RN.gitignore(cfg), "*.cov" => "*.old")
+        write(ignore, "mine/\n" * chomp(stale))                     # the block ends the file, no newline
+        @test length(RN.wiring(cfg, dir)) == 1
+        @test RN.write_all(cfg, dir).changed == [".gitignore"]
+        @test isempty(RN.wiring(cfg, dir))
+        @test startswith(read(ignore, String), "mine/\n")
+
+        claude = joinpath(dir, "CLAUDE.md")
+        prose = "The `gbg:managed begin` marker below is the tool's; this paragraph is ours.\n\n"
+        write(claude, prose * read(claude, String))
+        @test isempty(RN.wiring(cfg, dir))                          # a mention is not a marker
+        @test isempty(RN.write_all(cfg, dir).changed)
+        @test startswith(read(claude, String), prose)               # and the paragraph survives a sync
+
+        write(ignore, read(ignore, String) * "\n" * stale)          # the block twice
+        drift = RN.wiring(cfg, dir)
+        @test length(drift) == 1 && occursin("appears 2 times", first(drift).text)
+        RN.write_all(cfg, dir)
+        @test count(RN.BEGIN_MARK, read(ignore, String)) == 1
+        @test isempty(RN.wiring(cfg, dir))
+    end
+
+    # The settings merge matched one literal spelling of the hook's command: an entry in any other
+    # spelling was kept and a second one added, and the hook ran twice per stop. A file that does not
+    # parse was a crash, exit 3, where the consumer's bad file is 2.
+    @testset "one Stop entry runs the hook, whatever spelling it was in" begin
+        dir, cfg = wired_package()
+        path = joinpath(dir, ".claude", "settings.json")
+        other = "\$CLAUDE_PROJECT_DIR/.claude/hooks/queue-guard.sh"
+        write(path, JSON3.write(Dict("permissions" => Dict("allow" => ["Bash(ls)"]),
+                                     "hooks" => Dict("Stop" => [Dict("hooks" => [Dict("type" => "command", "command" => other)]),
+                                                                Dict("hooks" => [Dict("type" => "command", "command" => "echo mine")])]))))
+        @test RN.settings_drift(dir) !== nothing
+        @test RN.write_settings(dir)
+        doc = JSON3.read(read(path, String), Dict{String,Any})
+        cmds = [h["command"] for e in doc["hooks"]["Stop"] for h in e["hooks"]]
+        @test count(c -> endswith(c, "queue-guard.sh"), cmds) == 1
+        @test RN.HOOK_COMMAND in cmds && "echo mine" in cmds        # the package's own hook stays
+        @test doc["permissions"]["allow"] == ["Bash(ls)"]           # and so does the rest of the file
+        @test RN.settings_drift(dir) === nothing
+        write(path, "{ not json")
+        @test_throws G.ConfigIO.ConfigError RN.write_settings(dir)
+    end
+
+    # A hook at mode 644 with the right content was neither restored nor reported, and Claude Code
+    # cannot exec it.
+    @testset "a hook that lost its execute bit is reported and restored" begin
+        dir, cfg = wired_package()
+        p = joinpath(dir, ".claude", "hooks", "queue-guard.sh")
+        chmod(p, 0o644)
+        drift = RN.wiring(cfg, dir)
+        @test length(drift) == 1 && occursin("not executable", first(drift).text)
+        @test RN.write_all(cfg, dir).changed == [".claude/hooks/queue-guard.sh"]
+        @test Sys.isexecutable(p)
+        @test isempty(RN.wiring(cfg, dir))
+    end
+
+    # The seed named `docs/make.jl` unconditionally, so `init` on a package with no docs build wrote a
+    # config its own sync then refused.
+    @testset "init on a package with no docs build writes a config its sync accepts" begin
+        dir = mktempdir(; cleanup = true)
+        write(joinpath(dir, "Project.toml"), "name = \"Bare\"\n")
+        mkpath(joinpath(dir, "test")); write(joinpath(dir, "test", "runtests.jl"), RN.runtests_call() * "\n")
+        @test G.Wire.init(dir; io = devnull) == 0
+        text = read(joinpath(dir, ".gbg", "config.jl"), String)
+        @test !occursin("docs_build", text) && occursin("Pkg.test()", text)
+        @test G.Wire.sync(dir; check = true, io = devnull) == 0
+    end
+
+    # The design's own example writes `GBGCodingTools.Harness.test`, and a suite that brings `Harness` in
+    # with `using` calls it as `Harness.test`: the check knew the full spelling alone.
+    @testset "the harness is recognised in every spelling a suite may call it by" begin
+        @test RN.harness_called("using GBGCodingTools.Engine\nHarness.test(dirname(@__DIR__))")
+        @test RN.harness_called("using GBGCodingTools.Engine: Harness, Checks\nHarness.test(dirname(@__DIR__))")
+        @test RN.harness_called("import GBGCodingTools.Engine.Harness\nHarness.test(dirname(@__DIR__))")
+        @test RN.harness_called("using GBGCodingTools: Harness\nHarness.test(dirname(@__DIR__))")
+        @test RN.harness_called("GBGCodingTools.Harness.test(dirname(@__DIR__))")
+        @test RN.harness_called(RN.runtests_call())
+        @test !RN.harness_called("using GBGCodingTools\nHarness.test(dirname(@__DIR__))")   # nothing brought it in
+        @test !RN.harness_called("using GBGCodingTools.Engine\n@test true")
+    end
 end

@@ -206,3 +206,22 @@ end
         @test !isfile(joinpath(d, "run.draft.json"))
     end
 end
+
+# The review of 2026-09-26: `--settled` on the open run's own "not a defect" question was refused, while
+# the same answer without the flag was accepted and deferred to the close. The flag adds nothing there.
+@testset "--settled on the open run's own 'not a defect' question is deferred like the plain answer" begin
+    root = mktempdir(; cleanup = true); mkpath(joinpath(root, ".gbg"))
+    write(joinpath(root, ".gbg", "config.jl"), """Config(package = "Sample", tool = :dev)""")
+    finding = MQ.Finding("F1", :full, MQ.Decider.AGENT, MQ.FindingDraft(claim = "the docstring is wrong"))
+    q = MQ.Question(id = "F1-code", decision = "Is the code right here, or the documentation?",
+                    options = [MQ.Option("fix the code", "", true), MQ.Option(G.Answer.NOT_A_DEFECT, "", false)])
+    run = MQ.Run(id = "r1", instrument = :documentation_review, tool_version = "vdev", first_commit = "abc",
+                 budget = MQ.Budget(), stage = :collect, findings = [finding], questions = [q])
+    G.Orchestration.Runs.save(root, run)
+    write(joinpath(root, ".gbg", "runs", "r1", "stage"), "1 collect")              # the run is OPEN
+    @test G.Answer.answer(root, "F1-code", G.Answer.NOT_A_DEFECT; settled = true, io = devnull) == 0
+    @test only(G.Orchestration.Runs.load(root, "r1").questions).answer == G.Answer.NOT_A_DEFECT
+    @test !isfile(joinpath(root, ".gbg", "settled.jl"))                            # settled at the close
+    # and any OTHER answer that would write the list while a run is open is still refused
+    @test G.Answer.answer(root, "q-none", "x"; settled = true, io = devnull) == 2
+end

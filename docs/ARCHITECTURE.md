@@ -321,13 +321,13 @@ own test files may, since they test it. `test/architecture.jl` parses the source
 or imported, that breaks either rule.
 
 ```
-Model          every struct and enum; no behaviour, no values
+Model          every struct and enum; no values, and no behaviour but `relocated`, the one copy of a draft
 Texts          reading docstrings, pages and the built site, given a Config value; anchoring by node and quote
 Catalogue      RULES (src/Rules/*.jl, each rule beside its checks), INSTRUMENTS, ALWAYS_ON, DISCIPLINES, RETIRED,
-               the reader derivation (Roles), GENERATED — data
-ConfigIO       the literal-only readers of config.jl and settled.jl; validate; applies
-Engine         Checks, Harness, Guard, Questions.check's programs   ← the harness reaches no further
-Render         the generators and the wiring check                  ← the makedocs wrapper reaches no further
+               the reader derivation (Roles), the Cover enum — data
+ConfigIO       the literal-only readers of config.jl and settled.jl; validate
+Engine         Checks (applies), Harness, Guard, Questions.check's programs   ← the harness reaches no further
+Render         the generators, GENERATED and the wiring check                 ← the makedocs wrapper reaches no further
 Orchestration  Agents (arguments), Runs, and Runs.reanchor's git step
 CLI            the gbg verbs, each a function returning an exit code
 ```
@@ -415,7 +415,7 @@ struct AgentCheck   <: Check; question::String; why::WhyAgent.T; end
 "Something a rule's check must judge a known way; `expect` lists the locations it must report, empty if it complies.
 An example's locations carry file and line only: a fixture is built fresh each run, so nothing can drift under it."
 abstract type Example end
-struct TextExample     <: Example; fileset::FileSet.T; text::String; expect::Vector{Location}; clause::String; end
+struct TextExample     <: Example; fileset::FileSet.T; text::String; expect::Vector{Location}; clause::String; settings::Vector{Setting}; end
 struct TreeExample     <: Example; files::Vector{Pair{String,String}}; expect::Vector{Location}; clause::String; end
 struct ModuleExample   <: Example; source::String; expect::Vector{Location}; clause::String; end
 struct SiteExample     <: Example; pages::Vector{Pair{String,String}}; expect::Vector{Location}; clause::String; end
@@ -427,6 +427,7 @@ struct Parameter{T}; name::Symbol; default::T; end
 Base.@kwdef struct Rule
     id::Symbol; statement::String; why::String   # statement: the rule in plain English, its only home
     intention::Intention.T; filesets::Vector{FileSet.T}   # documentation rules run in the docs build, code rules in
+    files_parameter::Union{Symbol,Nothing} = nothing      # a parameter naming this rule's own files, if set
     check::Union{ProgramCheck,AgentCheck,Nothing}         # Pkg.test(); one whose input is QUESTION in neither (§8)
     unchecked_reason::String = ""; hook::String = ""   # reason: required with no check; hook: the lines the end-of-turn
     parameters::Vector{Parameter} = Parameter[]          # hook runs for a HISTORY rule, one program with its check
@@ -535,7 +536,7 @@ end
 (strings, numbers, symbols, enum names, `v"…"`, `r"…"`, vectors, pairs, dictionaries) and keyword calls to the
 constructors above; a function call, interpolation, unknown keyword or unknown id is exit 2 [a module holding only the
 config type still ran `getpid()` through it]. A test round-trips every field type; a package rule needing a function
-lives in the package's own tests as a `Rule` passed to `Harness.test`; new rulings are appended as text.
+lives in the package's own tests as a `Rule` passed to `Harness.test` as `extra`, run after the rulebook's; new rulings are appended as text.
 
 ```julia
 "One documentation-fixer attempt at one finding, with the program and agent judgements of it."
@@ -560,6 +561,11 @@ Base.@kwdef struct Run
     code_fixes::Vector{CodeFix} = CodeFix[]   # the fixes its questions were answered with, added as they land
     agent_launches::Int; tokens::Union{Int,Nothing}; stop::Stop.T   # launches as they arrive: a record, not a cap
     readers::Symbol = :bound                  # which readers this run launches: bound, open or both
+    passes::Int = 0; model::String = "session"; sequential::Bool = false   # passes begun; the readers' model; one at a time
+    scope::Symbol = :full; base::String = ""; driver::String = ""   # :changed reads what moved since base; driver's SHA-256
+    already_failing::Vector{Symbol} = Symbol[]  # rules broken when it opened, so a fix is held to what it broke
+    dropped::Int = 0; unreverted::Vector{String} = String[]; silent::Vector{String} = String[]  # stop, revert, agents
+    rulebook::String = ""                     # the digest of the rules it judged by, for a later --scope changed
     pass_since::String = ""                   # where the current pass began; its fixes are the commits after it
     dropped_ids::Vector{String} = String[]    # what an abandon threw away, kept with its text and carried nowhere
     usage::Vector{Usage} = Usage[]            # what each stage cost, per pass
@@ -602,7 +608,7 @@ is, with the three rows marked future read as future.
 | one small page on each consumer's site, under its design or internals section: what the documentation is held to, a link to this package's site, and the switches with their reasons — nothing else of the tool [ruled 2026-09-23; the rulebook, readers and instruments pages it replaced are §3 of the decision log] | readers of a consumer's site | `Render.pages`, called by `docs/make.jl` |
 | the rulebook as a page, grouped by cover, an anchor per rule, with the glossary — on this package's own site alone | readers of this site | `Render.rulebook_page`, called by this package's `docs/make.jl` only |
 
-`Catalogue.GENERATED` lists every generated path or part — a whole file, a marked block, or the entries of a TOML
+`Render.GENERATED` lists every generated path or part — a whole file, a marked block, or the entries of a TOML
 table — with its generator; a package's declared copies count as generated. Run records, reports and the question store
 are not in it: they record what happened, written by `Runs` and `Render.report`, and nothing regenerates or compares
 them. The wiring check regenerates each part and compares only that part, TOML entries as parsed values since Pkg
@@ -789,7 +795,7 @@ the tooling package's: `test/rules.jl` (which materialises every example), `test
 `test/questions.jl` and `test/architecture.jl`.
 
 ```julia
-GBGCodingTools.Harness.test(MyPackage; rules = MY_RULES)      # test/runtests.jl: contracts, accepted failing tests
+GBGCodingTools.Engine.Harness.test(root; extra = MY_RULES)    # test/runtests.jl: the rulebook, then the package's own
 GBGCodingTools.makedocs(GBGCodingTools.ConfigIO.read_config(path); sitename = "MyPackage", pages = [...])
 ```
 

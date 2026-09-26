@@ -30,16 +30,18 @@ is what the two red tags were. `GBG_RELEASE_IGNORE_CI=1` is the deliberate way p
 function ci_verdict(root::AbstractString, sha::AbstractString)
     get(ENV, "GBG_RELEASE_IGNORE_CI", "") == "" || return nothing
     Sys.which("gh") === nothing && return "no `gh` on this machine, so CI's verdict on $sha cannot be read"
-    runs = try
-        strip(read(setenv(`gh run list --workflow CI --limit 30 --json headSha,status,conclusion
-                           --jq $("[.[] | select(.headSha==\"$sha\")] | map(\"\\(.status) \\(.conclusion)\") | join(\",\")")`;
-                          dir = root), String))
+    # Asked BY COMMIT, and the NEWEST run at it is the verdict: the newest thirty runs of the workflow
+    # could miss an older dispatch at this commit, and any one success among them passed a commit whose
+    # re-run had gone red (found in review, 2026-09-26). `gh` lists the newest first.
+    newest = try
+        strip(read(setenv(`gh run list --workflow CI --commit $sha --limit 1 --json status,conclusion
+                           --jq $(".[0] // empty | \"\\(.status) \\(.conclusion)\"")`; dir = root), String))
     catch
         return "GitHub could not be reached, so CI's verdict on $sha cannot be read"
     end
-    isempty(runs) && return "CI has no run at $sha — dispatch one (`gh workflow run CI --ref master`) and wait for it"
-    occursin("completed success", runs) && return nothing
-    return "CI at $sha is `$runs`, not a completed success"
+    isempty(newest) && return "CI has no run at $sha — dispatch one (`gh workflow run CI --ref master`) and wait for it"
+    newest == "completed success" && return nothing
+    return "the newest CI run at $sha is `$newest`, not a completed success"
 end
 
 """
@@ -91,8 +93,8 @@ Tags and pushes `v<ver>` from the dev checkout. The arguments are:
 
 - `ver` — the version to tag, `X.Y.Z` or `X.Y.Z-rc.N`.
 - `io` — where the checks are reported.
-- `skip_tests` — skips `Pkg.test()`, the docs build and the deep doctor; for the self-tests of this
-  verb only, never set by the CLI.
+- `skip_tests` — skips all four gates after the refusal list: `Pkg.test()`, the docs build, the
+  wiring check and the question to GitHub; for the self-tests of this verb only, never set by the CLI.
 
 - `root` — the checkout to release, the running package directory by default; the CLI never passes it.
   A keyword because the verb read `pkgdir(GBGCodingTools)` directly and so had no test at all. Every
@@ -101,11 +103,10 @@ Tags and pushes `v<ver>` from the dev checkout. The arguments are:
 
 Refused (exit 2) unless: the tree is clean and on the configured branch; the tag is absent; `CHANGELOG.md`
 carries `## <ver> — `; `Project.toml`'s version equals the release version (the base version for a
-prerelease); the CI workflow has a completed, successful run AT THIS COMMIT ([`ci_verdict`](@ref));
-`Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`); `gbg doctor --deep`
-is green at the root. Nothing else holds a release — no review, no open finding, no unanswered
-question, no audit. A tag is never moved or re-issued.
-Returns the exit code.
+prerelease); `Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`); `gbg sync --check`
+is clean at the root; the newest CI run AT THIS COMMIT is a success ([`ci_verdict`](@ref)). Nothing else
+holds a release — no review, no open finding, no unanswered question, no audit. A tag is never moved or
+re-issued. Returns the exit code; a failed gate, tag or push prints the reason its command gave.
 """
 function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
                  root::AbstractString = pkgdir(GBGCodingTools))
@@ -122,8 +123,15 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
         for (label, cmd) in (("Pkg.test()", `$(Base.julia_cmd()) --startup-file=no --project=$root -e "using Pkg; Pkg.test()"`),
                              ("docs build (SELF.DOCS)", `$(Base.julia_cmd()) --startup-file=no --project=$(joinpath(root, "docs")) $(joinpath(root, "docs", "make.jl"))`))
             println(io, "release: running $label …"); flush(io)
-            ok = success(pipeline(setenv(cmd; dir = root); stdout = devnull, stderr = devnull))
-            ok || (println(io, "release: refused — $label failed"); return 2)
+            said = IOBuffer()
+            ok = success(pipeline(setenv(cmd; dir = root); stdout = said, stderr = said))
+            if !ok
+                # the tail of what it printed: the cause sits at the end, and the whole log is thousands of lines
+                lines = split(rstrip(String(take!(said))), '\n')
+                println(io, "release: refused — $label failed; the last of what it printed:")
+                for l in lines[max(1, end - 39):end]; println(io, "    ", l); end
+                return 2
+            end
         end
         # `gbg doctor --deep` was the third gate here until 2026-09-17, when the doctor was deleted.
         # What it checked of a package's wiring is the wiring check, which both commands above already
@@ -136,8 +144,13 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
         why = sha === nothing ? "the commit to tag could not be read" : ci_verdict(root, String(sha))
         why === nothing || (println(io, "release: refused — ", why); return 2)
     end
-    Git.run(root, "tag", "-a", "v$ver", "-m", "GBGCodingTools v$ver") === nothing && (println(io, "release: git tag failed"); return 3)
-    Git.run(root, "push", "origin", "v$ver") === nothing && (println(io, "release: tag created but the push failed — push it by hand: git push origin v$ver"); return 3)
+    # A refused tag or push is a named condition with git's reason, exit 2 — no exception escaped, so
+    # it is not the crash code.
+    ok, said = Git.said(root, "tag", "-a", "v$ver", "-m", "GBGCodingTools v$ver")
+    ok || (println(io, "release: git tag failed:\n    ", replace(said, "\n" => "\n    ")); return 2)
+    ok, said = Git.said(root, "push", "origin", "v$ver")
+    ok || (println(io, "release: tag created but the push failed — push it by hand: git push origin v$ver\n    ",
+                   replace(said, "\n" => "\n    ")); return 2)
     println(io, "release: v$ver tagged and pushed", rc ? " (a prerelease; `gbg bump $ver` pins it)" : "")
     return 0
 end

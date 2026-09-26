@@ -164,7 +164,15 @@ function derive(rules::Vector{Model.Rule}, cfg::Model.Config)
     end
     for b in BUNDLES
         isempty(bound[b.id]) && continue
-        off(cfg, b.id) && continue
+        if off(cfg, b.id)
+            # The rules bound to a reader the package switched off go to nobody, and that is a gap per
+            # rule, not silence: a switch on `withheld` unjudged every NOTHING-tagged rule without a word
+            # (found in review, 2026-09-26).
+            for id in bound[b.id]
+                push!(gaps, "$id is bound to the $(b.id) reader, which $(cfg.package) has switched off, so nobody judges it")
+            end
+            continue
+        end
         push!(roles, role(b, bound[b.id]))
     end
 

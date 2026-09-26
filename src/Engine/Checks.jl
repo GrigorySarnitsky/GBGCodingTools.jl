@@ -41,7 +41,9 @@ function applies(cfg::Model.Config, id::Symbol; file::AbstractString = "")
         s.target === id || continue
         isempty(s.files) && return false
         isempty(file) && continue
-        any(pattern -> occursin(Regex("^" * replace(replace(pattern, "." => "\\."), "*" => ".*") * "\$"), file), s.files) && return false
+        # The same glob every file set is matched by: a switch spelling `src/**/*.jl` meant something else
+        # here, with `**/` needing a slash and every metacharacter live (found in review, 2026-09-26).
+        any(pattern -> Texts.glob_matches(pattern, file), s.files) && return false
     end
     return true
 end
@@ -87,7 +89,8 @@ function reading(rule::Model.Rule, cfg::Model.Config, root::AbstractString)
 end
 
 """
-    run_rule(rule, cfg, root; network = false) -> Vector{Model.Location}
+    run_rule(rule, cfg, root; network = false, history = false, pkg = nothing,
+             site = nothing) -> Vector{Model.Location}
 
 Everywhere the rule is broken in the package at `root`. The arguments are:
 
@@ -98,6 +101,8 @@ Everywhere the rule is broken in the package at `root`. The arguments are:
   run gives the same answer offline.
 - `history` — whether a check that reads the repository's branch and commits may run; `false` inside
   every build and test, `true` under `gbg check`, and the end-of-turn hook runs the same lines itself.
+- `pkg` — the loaded package, which a rule reading the module needs; `nothing` skips such a rule.
+- `site` — the built site's directory, which a rule reading the site needs; `nothing` skips such a rule.
 
 A rule an agent decides, or one with no check at all, reports nothing here: this is the program half.
 Returns the locations, in file and line order.
@@ -138,7 +143,7 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
     elseif check.input === Model.Input.LOADED_MODULE
         # The package itself, loaded. A caller that has not loaded it — `gbg check` run from outside a
         # package's own environment — passes nothing, and the rule is NOT silently skipped: it is the
-        # caller's business to say so, which `run_all` does by returning the rules it could not run.
+        # caller's business to say so, by asking `not_run` which rules it could not reach.
         pkg === nothing && return Model.Location[]
         # A check that reads the loaded package nearly always reads the SOURCE too — what a docstring
         # says against what the module actually holds — so it is handed both.
@@ -166,8 +171,8 @@ function located(loc::Model.Location, file::AbstractString, root::AbstractString
 end
 
 """
-    run_all(cfg, root; intention = nothing, network = false)
-        -> Vector{Tuple{Symbol,Model.Location}}
+    run_all(cfg, root; intention = nothing, network = false, history = false,
+            pkg = nothing, site = nothing) -> Vector{Tuple{Symbol,Model.Location}}
 
 Everywhere any rule of the rulebook is broken in the package at `root`, for the rules of one intention —
 the documentation rules in a docs build, the code rules in a test suite — or for every rule when
@@ -179,6 +184,7 @@ the documentation rules in a docs build, the code rules in a test suite — or f
 - `network` — whether a check that reaches the network may run; `false` inside every build and test.
 - `history` — whether a check that reads the repository's history may run; `false` inside every build
   and test.
+- `pkg`, `site` — the loaded package and the built site's directory, passed on to [`run_rule`](@ref).
 
 Returns the locations, in file and line order.
 """
@@ -194,8 +200,51 @@ function run_all(cfg::Model.Config, root::AbstractString; intention = nothing, n
             push!(out, (rule.id, l))
         end
     end
+    append!(out, run_patterns(cfg, root; intention))
     return out
 end
+
+"""
+    run_patterns(cfg, root; intention = nothing) -> Vector{Tuple{Symbol,Model.Location}}
+
+Everywhere one of the package's OWN rules — each a [`Model.PatternRule`](@ref) in its config — is
+broken, for the rules of one intention or for all of them. The arguments are:
+
+- `cfg` — the package's config, which holds the rules.
+- `root` — the package root.
+- `intention` — the intention to run, or `nothing` for every rule.
+
+Returns the rule id and the location for each, in file and line order.
+
+A pattern rule has no intention of its own: one over the code or the tests is a code rule, run in the
+suite, and one over any documentation set is a documentation rule, run in the build. Until 2026-09-26
+these rules were rendered into the rulebook and run by nothing.
+"""
+function run_patterns(cfg::Model.Config, root::AbstractString; intention = nothing)
+    out = Tuple{Symbol,Model.Location}[]
+    for r in cfg.rules
+        intention === nothing || intention_of(r) === intention || continue
+        applies(cfg, r.id) || continue
+        for file in files(cfg, root, r.fileset)
+            applies(cfg, r.id; file) || continue
+            text = r.fileset === Model.FileSet.DOCSTRINGS ?
+                   Texts.prose_text(joinpath(root, file); comments = false) :
+                   read(joinpath(root, file), String)
+            if r.forbidden
+                for (i, line) in enumerate(split(text, '\n'))
+                    occursin(r.pattern, line) || continue
+                    push!(out, (r.id, located(Model.Location(; file = "", line = i, text = r.statement), file, root)))
+                end
+            elseif !occursin(r.pattern, text)
+                push!(out, (r.id, Model.Location(; file, line = 0, text = r.statement)))
+            end
+        end
+    end
+    return sort!(out; by = ((_, l),) -> (l.file, l.line))
+end
+
+intention_of(r::Model.PatternRule) =
+    r.fileset in (Model.FileSet.CODE, Model.FileSet.TESTS) ? Model.Intention.CODE : Model.Intention.DOCUMENTATION
 
 """
     not_run(cfg; pkg = nothing, site = nothing, network = false) -> Vector{Symbol}

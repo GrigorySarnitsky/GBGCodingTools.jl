@@ -19,11 +19,33 @@ using ...Texts
 
 # The lines of a workflow's `on:` mapping: from the key to the next top-level key. An inline form
 # (`on: [push, pull_request]`) is that one line.
+#
+# The key may be quoted — YAML reads a bare `on` as a boolean, so `"on":` is common — and a comment is
+# not a trigger: a commented-out `# pull_request:` was read as one.
 function trigger_block(lines)
-    i = findfirst(l -> occursin(r"^on:", l), lines)
+    i = findfirst(l -> occursin(r"^[\"']?on[\"']?\s*:", l), lines)
     i === nothing && return 0, String[]
-    j = findnext(l -> occursin(r"^[A-Za-z_-]+:", l), lines, i + 1)
-    return i, lines[i:(j === nothing ? end : j - 1)]
+    j = findnext(l -> occursin(r"^[\"']?[A-Za-z_-]+[\"']?\s*:", l), lines, i + 1)
+    return i, [replace(String(l), r"(^|\s)#.*$" => "") for l in lines[i:(j === nothing ? end : j - 1)]]
+end
+
+# Whether the triggers fire on a branch push: `push` with branches, or `push` with no filter at all —
+# `on: push`, `on: [push]`, or a bare `push:` key — which is every branch. A `push` filtered to tags
+# alone is not a branch push.
+function branch_push(block::AbstractString)
+    occursin(r"\bpush\b", block) || return false
+    occursin("branches", block) && return true
+    m = match(r"(?m)^(\s*)push\s*:\s*$", block)
+    m === nothing && return !occursin(r"\btags\b", block)      # the inline forms
+    ind = length(m.captures[1])
+    after = split(block[m.offset + ncodeunits(m.match):end], '\n')
+    filters = String[]
+    for l in after
+        isempty(strip(l)) && continue
+        length(match(r"^\s*", l).match) > ind || break
+        push!(filters, l)
+    end
+    return !any(l -> occursin(r"\btags(-ignore)?\s*:", l), filters)
 end
 
 """
@@ -53,7 +75,7 @@ function ci_manual(root::AbstractString, cfg::Model.Config)
             isempty(wrong) || push!(out, Model.Location(; file = rel, line = i,
                 text = "the test workflow runs on $wrong; CI is manual-only, `workflow_dispatch` and release tags"))
         elseif occursin(r"docs/make\.jl|julia-docdeploy", text)
-            occursin(r"\bpush\b", block) && occursin("branches", block) ||
+            branch_push(block) ||
                 push!(out, Model.Location(; file = rel, line = i,
                     text = "the docs workflow does not run on a branch push; docs deploy on push"))
         end
@@ -79,6 +101,16 @@ const CI_MANUAL = Model.Rule(
                           [Model.Location(; file = ".github/workflows/docs.yml", line = 3)], "docs deploy on push"),
         Model.TreeExample([".github/workflows/docs.yml" => "name: Docs\n\non:\n  push:\n    branches:\n      - master\n  workflow_dispatch:\n\njobs:\n  build:\n    steps:\n      - run: julia --project=docs docs/make.jl\n"],
                           Model.Location[], "docs deploy on push"),
+        # A bare `push:` is every branch push; one filtered to tags is not a branch push.
+        Model.TreeExample([".github/workflows/docs.yml" => "name: Docs\n\non:\n  push:\n\njobs:\n  build:\n    steps:\n      - run: julia --project=docs docs/make.jl\n"],
+                          Model.Location[], "docs deploy on push"),
+        Model.TreeExample([".github/workflows/docs.yml" => "name: Docs\n\non:\n  push:\n    tags: ['*']\n\njobs:\n  build:\n    steps:\n      - run: julia --project=docs docs/make.jl\n"],
+                          [Model.Location(; file = ".github/workflows/docs.yml", line = 3)], "docs deploy on push"),
+        # A commented-out trigger is not a trigger; a quoted key is still the key.
+        Model.TreeExample([".github/workflows/CI.yml" => "name: CI\n\non:\n  workflow_dispatch:\n  # pull_request:\n  push:\n    tags: [\"*\"]\n\njobs:\n  test:\n    steps:\n      - uses: julia-actions/julia-runtest@v1\n"],
+                          Model.Location[], "CI is manual-only"),
+        Model.TreeExample([".github/workflows/CI.yml" => "name: CI\n\n\"on\":\n  pull_request:\n\njobs:\n  test:\n    steps:\n      - uses: julia-actions/julia-runtest@v1\n"],
+                          [Model.Location(; file = ".github/workflows/CI.yml", line = 3)], "CI is manual-only"),
     ])
 
 """
@@ -187,16 +219,25 @@ b=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || return 0
 return 0
 """
 
+# With no upstream nothing has ever been pushed: every commit on the branch is unpushed, which is the
+# rule's case rather than a reason to be silent.
 const PUSH_HOOK = raw"""
-git rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1 || return 0
+git rev-parse --verify -q HEAD >/dev/null 2>&1 || return 0
+if ! git rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1; then
+  n=$(git rev-list --count HEAD 2>/dev/null) || return 0
+  [ "$n" = "0" ] || echo "no upstream; $n commit(s) never pushed: commit ⇒ push"
+  return 0
+fi
 n=$(git rev-list --count '@{upstream}..HEAD' 2>/dev/null) || return 0
 [ "$n" = "0" ] || echo "$n commit(s) not pushed: commit ⇒ push"
 return 0
 """
 
 const TRAILER_HOOK = raw"""
-git rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1 || return 0
-for c in $(git rev-list '@{upstream}..HEAD' 2>/dev/null); do
+git rev-parse --verify -q HEAD >/dev/null 2>&1 || return 0
+range='@{upstream}..HEAD'
+git rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1 || range=HEAD
+for c in $(git rev-list "$range" 2>/dev/null); do
   msg=$(git log -1 --format=%B "$c")
   printf '%s\n' "$msg" | grep -Eq '^Co-Authored-By: .*<noreply@anthropic\.com>' || echo "$(git log -1 --format=%h "$c") carries no Co-Authored-By trailer"
   printf '%s\n' "$msg" | grep -Fq '[skip ci]' && echo "$(git log -1 --format=%h "$c") says [skip ci]"
@@ -212,15 +253,22 @@ rule — in the package root, with `GBG_BRANCH` set to the configured branch, an
 line it prints. The argument is `fragment`, the lines. Returns `run(root, cfg)::Vector{Model.Location}`.
 
 The hook and this check are ONE program: the hook renderer splices the same lines into the script, so what
-`gbg check` reports and what the hook refuses to end a turn over cannot disagree.
+`gbg check` reports and what the hook refuses to end a turn over cannot disagree. Where `bash` or `git`
+is missing it returns one location whose text begins `cannot evaluate: `.
 """
 function hooked(fragment::AbstractString)
     return function (root::AbstractString, cfg::Model.Config)
+        # Without bash or git the fragment has nothing to say either way, and silence would read as
+        # clean: one location saying so, which `gbg check` turns into exit 2.
+        for tool in ("bash", "git")
+            Sys.which(tool) === nothing &&
+                return [Model.Location(; file = "", line = 0, text = "cannot evaluate: `$tool` is not on the path")]
+        end
         script = "set -u\ncd \"\$1\" || exit 0\nGBG_BRANCH=\"\$2\"\ngbg_rule() {\n" * fragment * "\n}\ngbg_rule\n"
         said = try
             read(pipeline(ignorestatus(`bash -c $script _ $root $(branch_of(cfg))`); stderr = devnull), String)
-        catch
-            ""                                            # no bash: nothing to say
+        catch e
+            return [Model.Location(; file = "", line = 0, text = "cannot evaluate: bash did not run ($(sprint(showerror, e)))")]
         end
         return [Model.Location(; file = "", line = 0, text = String(strip(l)))
                 for l in split(said, '\n') if !isempty(strip(l))]
@@ -279,6 +327,10 @@ const PUSH = Model.Rule(
     examples = [
         Model.HistoryExample(REPO * "git commit -q --allow-empty -m 'second$TRAILER'\n", [Model.Location(; file = "", line = 0)], "commit ⇒ push"),
         Model.HistoryExample(REPO, Model.Location[], "commit ⇒ push"),
+        # No upstream at all is the state in which nothing has ever been pushed.
+        Model.HistoryExample("export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t\n" *
+                             "git init -q -b master && git commit -q --allow-empty -m 'first$TRAILER'\n",
+                             [Model.Location(; file = "", line = 0)], "commit ⇒ push"),
     ])
 
 const TRAILER_RULE = Model.Rule(

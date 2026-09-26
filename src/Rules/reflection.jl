@@ -15,6 +15,7 @@ module Reflection
 
 using ...Model
 using ...Texts
+using ..Docstrings: body_line
 
 const WRAPPER_PHRASE = "Allocating form of"
 const THRESHOLD = 3
@@ -28,7 +29,8 @@ undocumented argument.
 
 It runs FROM THE SIGNATURE, not from the prose: a body that lists three arguments where the signature
 takes four is the case this exists to catch, and a check that reads the prose first cannot see the
-fourth. Exempt, as the rule says: an internal helper, a thin allocating wrapper, and a call short enough
+fourth. Every displayed signature counts, so an argument only the wider form takes is held to the rule
+too. Exempt, as the rule says: an internal helper, a thin allocating wrapper, and a call short enough
 to bind its arguments in prose.
 """
 function argcov(src::AbstractString, cfg)
@@ -36,21 +38,32 @@ function argcov(src::AbstractString, cfg)
     for d in Texts.docstrings_of(src)
         startswith(d.node, "_") && continue
         occursin(WRAPPER_PHRASE, d.text) && continue
-        signature = replace(Texts.signature_line(d.text), r"\s*->.*$" => "")
-        inside = Texts.argument_list(signature)
-        inside === nothing && continue
-        positional, keyword = Texts.parameters(inside)
-        length(positional) + length(keyword) < THRESHOLD && isempty(keyword) && continue
-        for p in vcat(positional, keyword)
+        # The union of every displayed signature's parameters, each remembered with the signature that
+        # introduced it; the widest form decides whether the docstring is short enough for prose.
+        shown = Tuple{String,String}[]; widest = 0; widest_kw = 0
+        for sig in Texts.signature_lines(d.text)
+            signature = replace(sig, r"\s*->.*$" => "")
+            inside = Texts.argument_list(signature)
+            inside === nothing && continue
+            positional, keyword = Texts.parameters(inside)
+            for p in vcat(positional, keyword)
+                any(s -> s[1] == p, shown) || push!(shown, (p, strip(signature)))
+            end
+            n = length(positional) + length(keyword)
+            n > widest && (widest = n; widest_kw = length(keyword))
+        end
+        isempty(shown) && continue
+        widest < THRESHOLD && widest_kw == 0 && continue
+        for (p, signature) in shown
             # A splat may be documented by its base name or with its dots — `rows` or `kwargs...` — and
-            # both are the same argument to a reader.
+            # both are the same argument to a reader; so is a name carrying its type or its default.
             base = replace(p, r"\.\.\.$" => "")
             q = "\\Q" * base * "\\E"
-            documented = occursin(Regex("`" * q * "(?:\\.\\.\\.)?`"), d.text) ||
+            documented = occursin(Regex("`" * q * "(?:\\.\\.\\.)?(?:::[^`]*)?`"), d.text) ||
                          occursin(Regex("`" * q * "\\s*=[^`]*`"), d.text)
             documented && continue
             push!(out, Model.Location(; file = "", line = d.line, node = d.node,
-                                       text = "`$p` of `$(strip(signature))` is undocumented"))
+                                       text = "`$p` of `$signature` is undocumented"))
         end
     end
     return out
@@ -70,6 +83,20 @@ const ARGCOV = Model.Rule(
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(a, b, c)\n\nDoes a thing. The arguments are:\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third.\n\"\"\"\nf(x) = x\n",
             Model.Location[], "every argument is documented"),
+        # A bullet naming the argument with its type documents it.
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(a, b; tol = 1e-6)\n\nDoes a thing. The arguments are:\n\n- `a::Int` — the first.\n- `b` — the second.\n- `tol::Float64` — the tolerance.\n\"\"\"\nf(x) = x\n",
+            Model.Location[], "every argument is documented"),
+        # An argument only the wider of two displayed signatures takes is still an argument.
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(a)\n    f(a, b, c, d)\n\nDoes a thing with `a`.\n\"\"\"\nf(x) = x\n",
+            [Model.Location(; file = "src/Example.jl", line = 1),
+             Model.Location(; file = "src/Example.jl", line = 1),
+             Model.Location(; file = "src/Example.jl", line = 1)],
+            "positional and keyword"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(a)\n    f(a, b, c, d)\n\nDoes a thing with `a`, `b`, `c` and `d`.\n\"\"\"\nf(x) = x\n",
+            Model.Location[], "positional and keyword"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    _helper(a, b, c)\n\nAn internal helper.\n\"\"\"\n_helper(x) = x\n",
             Model.Location[], "an internal helper is exempt"),
@@ -98,9 +125,13 @@ function dupref(src::AbstractString, cfg)
         # finding anchored at its first one sends the fixer to search the whole of it for the repeat.
         seen = Dict{String,Int}()
         repeats = Dict{String,Vector{Int}}()
-        for m in eachmatch(r"\[`([^`]+)`\]\(@ref[^)]*\)", d.text)
-            t = String(m.captures[1])
-            at = d.line + 1 + count(==('\n'), d.text[1:prevind(d.text, m.offset)])   # the body opens after the delimiter
+        opens = body_line(src, d)
+        for m in eachmatch(r"\[`([^`]+)`\]\(@ref\s*([^)]*)\)", d.text)
+            # The TARGET, not the link text: `[`g`](@ref)` and `[`g(x)`](@ref g)` are one target, and
+            # `[`g`](@ref)` and `[`g`](@ref h)` are two.
+            t = strip(String(m.captures[2]))
+            isempty(t) && (t = replace(String(m.captures[1]), r"\(.*$" => ""))
+            at = opens + count(==('\n'), d.text[1:prevind(d.text, m.offset)])
             haskey(seen, t) ? push!(get!(repeats, t, Int[]), at) : (seen[t] = at)
         end
         for t in sort!(collect(keys(repeats)))
@@ -127,6 +158,17 @@ const LINKS = Model.Rule(
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(x)\n\nSee [`g`](@ref), which does the rest.\n\"\"\"\nf(x) = x\n",
             Model.Location[], "linked at most once"),
+        # One target under two link texts is one target; one text sent to two targets is two.
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(x)\n\nSee [`g`](@ref) and then [`g(x)`](@ref g) again.\n\"\"\"\nf(x) = x\n",
+            [Model.Location(; file = "src/Example.jl", line = 4)], "a target is linked at most once"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(x)\n\nSee [`g`](@ref) and then [`g`](@ref h) again.\n\"\"\"\nf(x) = x\n",
+            Model.Location[], "a target is linked at most once"),
+        # A docstring opening with a blank line: the repeat is reported where it stands.
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n\n    f(x)\n\nSee [`g`](@ref) and then [`g`](@ref) again.\n\"\"\"\nf(x) = x\n",
+            [Model.Location(; file = "src/Example.jl", line = 5)], "linked at most once"),
     ])
 
 # ─────────────────────────────────────────────────────── one run of names, linked or bare, not both
@@ -144,33 +186,52 @@ Every name the source exports. The argument is `src`, the Julia source. Returns 
 """
 function exported_names(src::AbstractString)
     names = Set{String}()
-    for block in eachmatch(r"^export\s+(.+?)(?=^\s*\$|^\w)"ms, src)
-        for t in eachmatch(r"[A-Za-z_]\w*!?", block.captures[1]); push!(names, t.match); end
+    lines = split(src, '\n')
+    i = 1
+    while i <= length(lines)
+        m = match(r"^\s*export\s+(.*)$", lines[i])
+        if m !== nothing
+            # The export line and its continuations alone: a line ending in a comma carries on to the
+            # next. Read up to the next blank line instead, the docstring or comment that followed
+            # became a set of "exported names" made of its words.
+            block = replace(String(m.captures[1]), r"#.*$" => "")
+            while endswith(rstrip(block), ",") && i < length(lines)
+                i += 1
+                block *= " " * replace(String(lines[i]), r"#.*$" => "")
+            end
+            for t in eachmatch(r"[A-Za-z_]\w*!?", block); push!(names, t.match); end
+        end
+        i += 1
     end
     return names
 end
 
 """
-    link_uniformity(src, cfg) -> Vector{Model.Location}
+    link_uniformity(root, cfg) -> Vector{Model.Location}
 
-Every run of names in one docstring where some are linked and others are not. The arguments are `src`,
-the Julia source, and `cfg`, the package's config, which this rule does not read. Returns one location
-per run.
+Every run of names in one docstring where some are linked and others are not. The arguments are `root`,
+the package root, and `cfg`, the package's config, which names the code files. Returns one location per
+run.
 
 A list where one name is a link and the next is not reads as though the difference meant something. The
-docstring's own binding is not counted: a docstring does not link to itself.
+docstring's own binding is not counted: a docstring does not link to itself. What is public is gathered
+over every code file first, since the usual layout exports in the module file and documents elsewhere,
+and a name exported in one file is public in all of them.
 """
-function link_uniformity(src::AbstractString, cfg)
-    public = exported_names(src)
+function link_uniformity(root::AbstractString, cfg)
+    files = Texts.files(cfg, root, Model.FileSet.CODE)
+    sources = Dict(f => read(joinpath(root, f), String) for f in files)
+    public = Set{String}()
+    for f in files; union!(public, exported_names(sources[f])); end
     out = Model.Location[]
-    for d in Texts.docstrings_of(src)
+    for f in files, d in Texts.docstrings_of(sources[f])
         doc = join(split(d.text), " ")
         for run in eachmatch(NAME_RUN, doc)
             text = run.match
             linked = [m.captures[1] for m in eachmatch(RUN_LINKED, text)]
             bare = [m.captures[1] for m in eachmatch(RUN_BARE, text) if m.captures[1] in public && m.captures[1] != d.node]
             (isempty(linked) || isempty(bare)) && continue
-            push!(out, Model.Location(; file = "", line = d.line, node = d.node,
+            push!(out, Model.Location(; file = f, line = d.line, node = d.node,
                 text = "linked $(linked) beside bare $(bare) in one run: " * first(String(text), 90)))
         end
     end
@@ -183,13 +244,23 @@ const LINK_UNIFORMITY = Model.Rule(
     why = "A list where one name links and the next does not reads as though the difference meant something.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],
-    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, link_uniformity, false),
+    check = Model.ProgramCheck(Model.Input.FILE_TREE, link_uniformity, false),
     examples = [
         Model.TextExample(Model.FileSet.CODE,
             "export f, g\n\n\"\"\"\n    h(x)\n\nSee [`f`](@ref), `g` and more.\n\"\"\"\nh(x) = x\n",
             [Model.Location(; file = "src/Example.jl", line = 3)], "either every name is linked or none is"),
         Model.TextExample(Model.FileSet.CODE,
             "export f, g\n\n\"\"\"\n    h(x)\n\nSee [`f`](@ref), [`g`](@ref) and more.\n\"\"\"\nh(x) = x\n",
+            Model.Location[], "either every name is linked or none is"),
+        # The exports in the module file, the docstring in another: the run is still reported. And the
+        # docstring after the export line lends it no names.
+        Model.TreeExample(
+            ["src/Example.jl" => "module Example\nexport f,\n    g\n\"\"\"\n    f(x)\n\nA thing, with `x` and `y` given.\n\"\"\"\nf(x) = x\ninclude(\"other.jl\")\nend\n",
+             "src/other.jl" => "\"\"\"\n    h(x)\n\nSee [`f`](@ref), `g` and more.\n\"\"\"\nh(x) = x\n"],
+            [Model.Location(; file = "src/other.jl", line = 1)], "either every name is linked or none is"),
+        Model.TreeExample(
+            ["src/Example.jl" => "module Example\nexport f\n\"\"\"\n    f(x)\n\nA thing, with `x` and `y` given.\n\"\"\"\nf(x) = x\ninclude(\"other.jl\")\nend\n",
+             "src/other.jl" => "\"\"\"\n    h(x)\n\nSee [`f`](@ref), `x` and `y`.\n\"\"\"\nh(x) = x\n"],
             Model.Location[], "either every name is linked or none is"),
     ])
 
@@ -221,7 +292,9 @@ exactly like one that resolves.
 """
 function id_resolves(text::AbstractString, cfg)
     known = live_ids()
-    mention(id) = any(k -> k != id && startswith(k, id), known)
+    # A family cited whole (`RULE.DOC`) resolves; a truncated or lengthened id does not — `RULE.DOC.LINK`
+    # is not a prefix of `RULE.DOC.LINKS` in any sense a reader means.
+    mention(id) = any(k -> startswith(k, id * "."), known)
     out = Model.Location[]
     for (i, line) in pairs(split(text, '\n'))
         for m in eachmatch(r"\bRULE\.[A-Z][A-Z0-9_]*(?:\.[A-Z][A-Z0-9_]*)?", line)
@@ -244,6 +317,11 @@ const CURRENT = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES, "# A page\n\nAs RULE.DOC.NO_SUCH_THING says.\n",
             [Model.Location(; file = "docs/src/page.md", line = 3)], "a rule cited by id exists"),
         Model.TextExample(Model.FileSet.PAGES, "# A page\n\nAs RULE.DOC.ARGCOV says.\n",
+            Model.Location[], "a rule cited by id exists"),
+        # A stale id that a live one happens to begin with is still stale; a family cited whole is not.
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nAs RULE.DOC.LINK says.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "a rule cited by id exists"),
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nAs the RULE.DOC family says.\n",
             Model.Location[], "a rule cited by id exists"),
     ])
 
