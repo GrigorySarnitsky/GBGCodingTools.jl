@@ -520,6 +520,7 @@ Base.@kwdef struct Config
     copies::Vector{Pair{String,String}} = Pair{String,String}[]  # build-time copy => tracked source
     generated::Vector{String} = String[]      # pages written at build time; no rule reads one
     switches::Vector{Switch} = Switch[]; settings::Vector{Setting} = Setting[]
+    deferrals::Vector{Deferral} = Deferral[]  # owed and not yet met, each with what would close it (§9)
     material::Vector{String} = String[]       # documents a reader may consult and never report on (§10)
     disciplines::Vector{Symbol} = Symbol[]    # the catalogued disciplines its readers need; never a reader of its own
     code_areas::Vector{Pair{Symbol,Vector{String}}} = Pair{Symbol,Vector{String}}[]  # one hunter per area (§10)
@@ -671,6 +672,12 @@ A package turns a rule, an agent role or a whole instrument off with a `Switch` 
 sets a variant with a `Setting` [R10]. Every element that is off is listed in the config and shown, with its reason, on
 the package's documentation site; an unknown target or a missing reason is exit 2.
 
+**A third state, the deferral** [Phase 5]. A switch says a rule does not apply and is an answer; a `Deferral` says the
+package means to meet a rule and has not yet, and is a question with a condition on it — `until`, what would close it.
+Recording "not yet" as a switch buries an intention in a file nobody revisits and publishes "does not apply" where the
+truth is "owed". A deferred rule reports nothing in a build or a test — a deferral never fails a build — and is listed
+beside the switches on the package's site and printed by `gbg check`. A rule cannot be both switched off and deferred.
+
 **Every rule is switchable. There is no set a package may not escape** [as ruled 2026-09-17]. The rulebook is the
 DEFAULT, and a package overrides any part of it by saying so where a reader can see it. An earlier draft marked some
 rules — the ones catching text that renders wrongly, and the docstring-structure rules — as always on, and that mark was
@@ -679,10 +686,9 @@ silent: it names the rule, gives the reason, and is rendered into the package's 
 tooling page of its site, so the escape is on the record either way. What the mark added was only the refusal — and its cost is a package with a red
 build and no way out but a MAJOR release of this one, which makes this package the obstacle rather than the help.
 
-Off in GBGCodingTools, with reasons — the second and third are its declared deviations today, the first and fourth new:
+Off in GBGCodingTools, with reasons:
 - the LaTeX notation and spacing rules and the citation rules — its documentation contains no mathematics and cites no
   literature;
-- the allocation and memory-traffic contracts — no operation here writes into array storage whose traffic matters;
 - running Literate examples — it ships none;
 - the documentation review itself, until Phase 8 turns self-application on; what Bug hunt and Change audit derive as
   readers (Phase 6) is switched off here when they exist.

@@ -181,24 +181,28 @@ cover(rule::Model.Rule) = rule.check isa Model.ProgramCheck ? Cover.PROGRAM :
 """
     RETIRED
 
-Every rule that has left the rulebook, with the reason and the day: its id is never reused, and a
-package's switch naming it is still a legal switch. A retirement is on the record here, in the CHANGELOG
-and in the commit that removed the value, as the design's change-control section asks.
+Every rule that has left the rulebook, with the reason, the day and its fate. Its id is never reused,
+and a package's switch naming it is still a legal switch. A retirement is on the record here, in the
+CHANGELOG and in the commit that removed the value, as the design's change-control section asks.
+
+The fate is `:moved`, with the section of the design that now holds what the rule said — the
+conversion test requires that section to exist — or `:obsolete`, held by nothing because nothing
+needs to hold it.
 """
 const RETIRED = [
-    (id = Symbol("RULE.INST.FOUR_OBJECTS"),     date = "2026-09-21", reason = "named four instruments; the design has three, and its §3 table is what says what each audits"),
-    (id = Symbol("RULE.INST.CLOSURE_LOOP"),     date = "2026-09-21", reason = "spoke of banked findings, lanes and a plateau — the v1 round machinery, gone; the one-search-per-run rule is ARCH §10's"),
-    (id = Symbol("RULE.INST.AUDIT_DISPOSED"),   date = "2026-09-21", reason = "spoke of an audit round's staleness check and re-bank — v1 machinery, gone; the change audit's shape is ARCH §4.4's"),
-    (id = Symbol("RULE.INST.FIX_FROM_LANES"),   date = "2026-09-21", reason = "spoke of per-lane findings and a consolidated summary — v1 machinery, gone; a fix pass works from the run's findings by id, ARCH §4.3"),
-    (id = Symbol("RULE.INST.SEEDS"),            date = "2026-09-21", reason = "seeding and recall measurement survive in no form (IMPLEMENTATION §7); nothing plants a seed"),
-    (id = Symbol("RULE.INST.FROZEN_MIDROUND"),  date = "2026-09-21", reason = "spoke of deferred.md, ROUND.toml and replaced verifier scripts — v1 machinery, gone; that a run never changes an instrument is ARCH §10's"),
-    (id = Symbol("RULE.INST.CARRY"),            date = "2026-09-21", reason = "spoke of CARRY_LIMIT, re-rated severities and a draining backlog — v1 machinery, gone; that open findings carry over is ARCH §10's, as ruled 2026-09-16"),
-    (id = Symbol("RULE.INST.ECONOMY"),          date = "2026-09-21", reason = "economy lanes by default: the opposite of the 2026-09-20 ruling that every reader runs on the careful model"),
-    (id = Symbol("RULE.INST.WITNESS"),          date = "2026-09-21", reason = "a statement of how the bug hunt decides (ARCH §4.4, §10), which a consumer's session cannot act on; the design holds it"),
-    (id = Symbol("RULE.INST.SELF_REPORT"),      date = "2026-09-21", reason = "a statement of how a fix is verified — blind, then with the diff (ARCH §4.3 steps 5–6); the design holds it"),
-    (id = Symbol("RULE.INST.AUDIT_AFTER_CODE"), date = "2026-09-21", reason = "a statement of when the change audit runs — once, after an approved code fix (ARCH §4.4); the design holds it"),
-    (id = Symbol("RULE.TEST.RULE_WITH_CHECK"),  date = "2026-09-21", reason = "a statement about this tool's own rulebook — a rule lands with its check (ARCH §7, test/rules.jl); the design and its test hold it"),
-    (id = Symbol("RULE.TEST.COUNTS_REMEASURED"), date = "2026-09-21", reason = "a statement about this tool's own records — a count is re-measured, never cited (ARCH §12); the design holds it"),
+    (id = Symbol("RULE.INST.FOUR_OBJECTS"),     date = "2026-09-21", fate = :moved, section = "3", reason = "named four instruments; the design has three, and its §3 table is what says what each audits"),
+    (id = Symbol("RULE.INST.CLOSURE_LOOP"),     date = "2026-09-21", fate = :moved, section = "10", reason = "spoke of banked findings, lanes and a plateau — the v1 round machinery, gone; the one-search-per-run rule is ARCH §10's"),
+    (id = Symbol("RULE.INST.AUDIT_DISPOSED"),   date = "2026-09-21", fate = :moved, section = "4.4", reason = "spoke of an audit round's staleness check and re-bank — v1 machinery, gone; the change audit's shape is ARCH §4.4's"),
+    (id = Symbol("RULE.INST.FIX_FROM_LANES"),   date = "2026-09-21", fate = :moved, section = "4.3", reason = "spoke of per-lane findings and a consolidated summary — v1 machinery, gone; a fix pass works from the run's findings by id, ARCH §4.3"),
+    (id = Symbol("RULE.INST.SEEDS"),            date = "2026-09-21", fate = :obsolete, section = "", reason = "seeding and recall measurement survive in no form (IMPLEMENTATION §7); nothing plants a seed"),
+    (id = Symbol("RULE.INST.FROZEN_MIDROUND"),  date = "2026-09-21", fate = :moved, section = "10", reason = "spoke of deferred.md, ROUND.toml and replaced verifier scripts — v1 machinery, gone; that a run never changes an instrument is ARCH §10's"),
+    (id = Symbol("RULE.INST.CARRY"),            date = "2026-09-21", fate = :moved, section = "10", reason = "spoke of CARRY_LIMIT, re-rated severities and a draining backlog — v1 machinery, gone; that open findings carry over is ARCH §10's, as ruled 2026-09-16"),
+    (id = Symbol("RULE.INST.ECONOMY"),          date = "2026-09-21", fate = :obsolete, section = "", reason = "economy lanes by default: the opposite of the 2026-09-20 ruling that every reader runs on the careful model"),
+    (id = Symbol("RULE.INST.WITNESS"),          date = "2026-09-21", fate = :moved, section = "4.4", reason = "a statement of how the bug hunt decides (ARCH §4.4, §10), which a consumer's session cannot act on; the design holds it"),
+    (id = Symbol("RULE.INST.SELF_REPORT"),      date = "2026-09-21", fate = :moved, section = "4.3", reason = "a statement of how a fix is verified — blind, then with the diff (ARCH §4.3 steps 5–6); the design holds it"),
+    (id = Symbol("RULE.INST.AUDIT_AFTER_CODE"), date = "2026-09-21", fate = :moved, section = "4.4", reason = "a statement of when the change audit runs — once, after an approved code fix (ARCH §4.4); the design holds it"),
+    (id = Symbol("RULE.TEST.RULE_WITH_CHECK"),  date = "2026-09-21", fate = :moved, section = "7", reason = "a statement about this tool's own rulebook — a rule lands with its check (ARCH §7, test/rules.jl); the design and its test hold it"),
+    (id = Symbol("RULE.TEST.COUNTS_REMEASURED"), date = "2026-09-21", fate = :moved, section = "12", reason = "a statement about this tool's own records — a count is re-measured, never cited (ARCH §12); the design holds it"),
 ]
 
 """

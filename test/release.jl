@@ -23,6 +23,15 @@ function repo(entry::AbstractString; settings = G.Model.Setting[])
     return root, gg
 end
 
+# `--counts` prints what still holds v2.0.0 — the conversion ratchet's outstanding count — and refuses
+# nothing; the Phase 5 gate reads the printed number.
+@testset "release --counts prints the outstanding conversion count and nothing else" begin
+    io = IOBuffer()
+    @test G.counts(; io) == 0
+    @test strip(String(take!(io))) == "0"
+    @test G.main(["release", "--counts"]) == 0
+end
+
 @testset "what a release refuses" begin
 
     # The branch is a RULE PARAMETER, not a constant of the verb and no longer a field of a config file

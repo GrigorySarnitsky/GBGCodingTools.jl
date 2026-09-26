@@ -310,6 +310,12 @@ end
                                                  files = ["docs/src/other.md"])])
         hits = CK.run_rule(NO_TODO, partly, dir)
         @test length(hits) == 1 && first(hits).file == "docs/src/page.md"        # off for one file only
+
+        # A deferral holds the rule off the same way — owed, not answered — and never fails a build.
+        owed = MR.Config(package = "P", tool = :dev, filesets = base.filesets,
+                         deferrals = [MR.Deferral(rule = NO_TODO.id, until = "the pages are rewritten")])
+        @test isempty(CK.run_rule(NO_TODO, owed, dir))
+        @test !CK.applies(owed, NO_TODO.id)
     end
 
     # ── and then the rulebook itself ─────────────────────────────────────────────────────────────────

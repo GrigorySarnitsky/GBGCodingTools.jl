@@ -51,6 +51,22 @@ const ALLOWANCE = 0
         end
     end
 
+    # A retired rule says where its content went (Phase 5): MOVED names the design section that holds
+    # it, and that section must exist — eleven reasons named one and nothing checked it; OBSOLETE is
+    # held by nothing because nothing needs to hold it (owner: "a rule could become just completely
+    # obsolete").
+    @testset "every retired rule has a fate, and a moved one names a section that exists" begin
+        design = read(joinpath(TOOL, "docs", "ARCHITECTURE.md"), String)
+        for r in G.Catalogue.RETIRED
+            @test r.fate in (:moved, :obsolete)
+            if r.fate === :moved
+                @test occursin(Regex("^#+ " * replace(r.section, "." => "\\.") * "[ .]", "m"), design)
+            else
+                @test isempty(r.section)
+            end
+        end
+    end
+
     # The owner's ruling of 2026-09-21: every rule is checked by a program, judged by a reader, or an
     # instruction the session is given — and nothing else remains.
     @testset "every rule has one of the three covers" begin

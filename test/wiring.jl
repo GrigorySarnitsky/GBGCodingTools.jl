@@ -285,6 +285,18 @@ end
         @test RN.write_all(cfg, dir) == [".claude/settings.json"]
     end
 
+    # A deferral is rendered beside the switches, with what would close it, so "owed" is on the record
+    # where "does not apply" is (Phase 5).
+    @testset "a deferral is listed beside the switches" begin
+        id = first(G.Catalogue.RULES).id
+        cfg = G.Model.Config(package = "Sample", tool = :dev,
+                             deferrals = [G.Model.Deferral(rule = id, until = "its pages are rewritten")])
+        page = RN.switches(cfg)
+        @test occursin("Deferred, not switched off", page)
+        @test occursin("`$id` — until its pages are rewritten", page)
+        @test !occursin("Deferred", RN.switches(G.Model.Config(package = "Sample", tool = :dev)))
+    end
+
     @testset "the hook it writes is executable and guards against its own loop" begin
         dir, cfg = wired_package()
         p = joinpath(dir, ".claude", "hooks", "queue-guard.sh")

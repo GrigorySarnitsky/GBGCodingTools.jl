@@ -142,9 +142,33 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
     return 0
 end
 
+"""
+    counts(; io = stdout, root = pkgdir(GBGCodingTools)) -> Int
+
+`gbg release --counts`: prints, for `v2.0.0` alone, what still holds that release — the number of ids
+of the frozen register (`docs/design-record/RULES-v1.toml`) that are neither a `Rule` value nor retired,
+the count the conversion test ratchets. It prints the one number and refuses nothing (ruled
+2026-09-16: nothing else holds a release); the Phase 5 gate reads it as `0`. The arguments are:
+
+- `io` — where the number goes.
+- `root` — the checkout whose register and rulebook are counted.
+
+Returns 0, or 2 where the register is not there to read.
+"""
+function counts(; io::IO = stdout, root::AbstractString = pkgdir(GBGCodingTools))
+    register = joinpath(root, "docs", "design-record", "RULES-v1.toml")
+    isfile(register) || (println(stderr, "release: no register at $register"); return 2)
+    ids = [String(r["id"]) for r in TOML.parsefile(register)["rule"]]
+    held = Set(String(r.id) for r in Catalogue.RULES)
+    retired = Set(String(r.id) for r in Catalogue.RETIRED)
+    println(io, count(id -> !(id in held) && !(id in retired), ids))
+    return 0
+end
+
 function cmd_release(args)
     o = parse_options(args)
-    isempty(o.positional) && (println(stderr, "usage: gbg release <ver> | gbg release <ver>-rc.<n>"); return 2)
+    "counts" in o.flags && return counts()
+    isempty(o.positional) && (println(stderr, "usage: gbg release <ver> | gbg release <ver>-rc.<n> | gbg release --counts"); return 2)
     return release(o.positional[1])
 end
 VERBS["release"] = cmd_release

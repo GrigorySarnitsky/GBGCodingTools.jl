@@ -12,6 +12,8 @@ where it is used, or it is not a term of art.
   and three complying ones.
 - **switch** — a package turning a rule off, wholly or for named files, with its reason. It replaces
   the exemption ledger: there is no expiry and no ceremony, only a reason a reader can weigh.
+- **deferral** — a package saying a rule is owed here and not yet met, with what would close it. A
+  switch is an answer; a deferral is a question with a condition on it. It fails no build.
 - **file set** — which of a package's files a rule runs over: docstrings, code, pages, rationale,
   Literate examples, tests.
 - **finding** — one violation at one location, with the rule that found it.

@@ -16,18 +16,19 @@ Config(
     # deviation that is structural — this package computes no physical quantity, and will not next year —
     # only schedules the work of writing it down again.
     switches = [
-        Switch(target = Symbol("RULE.TEST.ALLOC_ZERO"),
-               reason = "no in-place operator over element storage exists here: this package's `!` functions mutate a registry, a dictionary or a string buffer, and an allocation bound on them measures the Julia runtime, not the package"),
-        Switch(target = Symbol("RULE.TEST.PASS_AUDIT"),
-               reason = "the traffic audit counts reads and writes per array element; this package holds no array whose traffic is a correctness property, so a frozen row would record the runtime's behaviour and nothing of the package's"),
         Switch(target = Symbol("RULE.TEST.EXAMPLES_RUN"),
                reason = "this package ships no Literate examples: a worked example of a review instrument is a review, which is recorded rather than executed as a script"),
         Switch(target = Symbol("RULE.DOC.LEADING_IDENTITY"),
                reason = "the leading identity of a docstring is the physical meaning of the quantity it computes; this package computes no physical quantity, so its docstrings lead with what the operation does, which the rule's own parameter already admits"),
-        Switch(target = Symbol("RULE.API.POSITIONAL"),
-               reason = "no program decides whether an argument affects the result, and this package's own reading panels do not run over it yet; it is switched off here until they do"),
         Switch(target = :documentation_review,
                reason = "the review reads a package's documentation with the rulebook this package writes; running it here while the rulebook and the run machinery are still being built would grade the tool against rules it is in the middle of changing. It is switched on in Phase 8, when the tool reviews itself last"),
+    ],
+    # Owed and not yet met, which is not the same as "does not apply": a deferral is listed beside the
+    # switches and closes when its condition is met. The two harness contracts that were switched off
+    # here until Phase 5 bind only a package that declares them now, and needed no entry at all.
+    deferrals = [
+        Deferral(rule = Symbol("RULE.API.POSITIONAL"),
+                 until = "this package's own documentation review runs, in Phase 8: no program decides whether an argument affects the result, and the reader that does has not read this package yet"),
     ],
     # STRICTER THAN THE FLEET, and this package's alone: every page of this site carries the provenance
     # banner, because the owner reviews the four science packages' API prose and not this one's.

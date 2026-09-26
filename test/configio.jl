@@ -130,6 +130,24 @@ end
     # the arm turns itself on once a rule has been converted: before that, a name cannot be judged
     @test isempty(G.Catalogue.RULES) ? isempty(problems) : any(p -> occursin("not a rule", p), problems)
 
+    # A deferral is a question with a condition on it (Phase 5): it names a rule, says what would close
+    # it, and is not also a switch on the same rule.
+    let id = String(first(G.Catalogue.RULES).id)
+        ok = in_config("""Config(package = "P", tool = :dev,
+            deferrals = [Deferral(rule = Symbol("$id"), until = "the next release")])""")
+        cfg = CIO.read_config(ok)
+        @test length(cfg.deferrals) == 1 && cfg.deferrals[1].rule === Symbol(id)
+        @test isempty(CIO.validate(cfg, ok))
+        blank = in_config("""Config(package = "P", tool = :dev, deferrals = [Deferral(rule = Symbol("$id"), until = " ")])""")
+        @test any(p -> occursin("what would close it", p), CIO.validate(CIO.read_config(blank), blank))
+        unknown = in_config("""Config(package = "P", tool = :dev, deferrals = [Deferral(rule = :NO_SUCH_RULE, until = "soon")])""")
+        @test any(p -> occursin("not a rule", p), CIO.validate(CIO.read_config(unknown), unknown))
+        both = in_config("""Config(package = "P", tool = :dev,
+            switches = [Switch(target = Symbol("$id"), reason = "a reason a reader can weigh")],
+            deferrals = [Deferral(rule = Symbol("$id"), until = "soon")])""")
+        @test any(p -> occursin("one or the other", p), CIO.validate(CIO.read_config(both), both))
+    end
+
     # and a switch naming a rule that EXISTS is accepted, dots and all
     ok = in_config("""Config(package = "P", tool = :dev,
         switches = [Switch(target = Symbol("RULE.DOC.TABLE_TOP_LEVEL"), reason = "this package ships no tables at all")])""")

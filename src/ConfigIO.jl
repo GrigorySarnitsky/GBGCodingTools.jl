@@ -90,7 +90,7 @@ Base.showerror(io::IO, e::ConfigError) =
 # Every constructor a config file may call, with the module the value comes from. Nothing else is
 # accepted: a name not in this table is a refusal, so a config cannot reach a function by naming it.
 const CONSTRUCTORS = Dict{String,Any}(
-    "Config" => Model.Config, "Switch" => Model.Switch, "Setting" => Model.Setting,
+    "Config" => Model.Config, "Switch" => Model.Switch, "Deferral" => Model.Deferral, "Setting" => Model.Setting,
     "PatternRule" => Model.PatternRule, "Settled" => Model.Settled,
     "Location" => Model.Location, "TextExample" => Model.TextExample,
     "RetiredClaim" => Model.RetiredClaim,
@@ -362,6 +362,14 @@ function validate(cfg::Model.Config, root::AbstractString)
         isempty(strip(s.reason)) && push!(problems, "the switch against $(s.target) gives no reason")
         judge_names && !(s.target in known) &&
             push!(problems, "the switch names $(s.target), which is not a rule, a role or an instrument")
+    end
+    # A deferral is a question with a condition on it: one naming no rule, or no condition, is not one.
+    for d in cfg.deferrals
+        isempty(strip(d.until)) && push!(problems, "the deferral of $(d.rule) says nothing of what would close it")
+        judge_names && !any(r -> r.id === d.rule, Catalogue.RULES) &&
+            push!(problems, "the deferral names $(d.rule), which is not a rule")
+        any(s -> s.target === d.rule && isempty(s.files), cfg.switches) &&
+            push!(problems, "$(d.rule) is both switched off and deferred; it is one or the other")
     end
     for st in cfg.settings
         judge_names && !(st.rule in known) &&

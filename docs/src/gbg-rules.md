@@ -691,11 +691,11 @@ Covered by the session, as an instruction: followed while working, checked by no
 
 
 #### [`RULE.TEST.ALLOC_ZERO`](@id RULE.TEST.ALLOC_ZERO)
-Every in-place ! operator is allocation-free and in the audit; a deliberate materializer gets a bounded guard; where a bound covers another nondeterminism a configuration pins the true zero.
+In a package that declares the allocation audit, every in-place ! operator is allocation-free and in the audit; a deliberate materializer gets a bounded guard; where a bound covers another nondeterminism a configuration pins the true zero.
 
 The audit runs on the CPU, where a materialized temporary is visible; the completeness of its rows is derived from the export list, never remembered.
 
-Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session until a package wires the harness contract `TestHarness.allocation_completeness`, which no wired package calls today; checked by nothing until then
+Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session of a package that has declared this contract by calling `TestHarness.allocation_completeness` from its suite, where that suite checks it; a package that has not declared it is not bound, and nothing checks it here
 
 
 #### [`RULE.TEST.BOTH_DIRECTIONS`](@id RULE.TEST.BOTH_DIRECTIONS)
@@ -731,11 +731,11 @@ Covered by the session, as an instruction: followed while working, checked by no
 
 
 #### [`RULE.TEST.METHOD_PARITY`](@id RULE.TEST.METHOD_PARITY)
-The public method set is frozen per generic and per module; any change moves a number.
+In a package that declares method parity, the public method set is frozen per generic and per module; any change moves a number.
 
 The per-module count is derived from ownership over the whole function surface, internals included, so a method defined under a qualified name cannot hide.
 
-Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session until a package wires the harness contract `TestHarness.method_parity`, which no wired package calls today; checked by nothing until then
+Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session of a package that has declared this contract by calling `TestHarness.method_parity` from its suite, where that suite checks it; a package that has not declared it is not bound, and nothing checks it here
 
 
 #### [`RULE.TEST.MISSING_IS_FAILING`](@id RULE.TEST.MISSING_IS_FAILING)
@@ -755,19 +755,19 @@ Covered by the session, as an instruction: followed while working, checked by no
 
 
 #### [`RULE.TEST.ORACLE_INDEPENDENT`](@id RULE.TEST.ORACLE_INDEPENDENT)
-Every public value-returning operation is classified in the oracle registry; relational-only coverage is a finding.
+In a package that declares the oracle registry, every public value-returning operation is classified in it; relational-only coverage is a finding.
 
 The classes are analytic (a closed form derived independently of the package), independent (a direct computation written in the test), property (an invariant that pins the operation without computing it), relational (compared only against other package operations — legitimate as a second layer, never as the only one) and structural (returns metadata or storage). A new operation fails the registry until someone classifies it, which is the moment to notice it has no independent oracle.
 
-Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session until a package wires the harness contract `TestHarness.oracle_registry`, which no wired package calls today; checked by nothing until then
+Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session of a package that has declared this contract by calling `TestHarness.oracle_registry` from its suite, where that suite checks it; a package that has not declared it is not bound, and nothing checks it here
 
 
 #### [`RULE.TEST.PASS_AUDIT`](@id RULE.TEST.PASS_AUDIT)
-Every audited operation has a frozen per-array traffic row with a named holder for any gap.
+In a package that declares the traffic audit, every audited operation has a frozen per-array traffic row with a named holder for any gap.
 
 A raised count is a fusion regression unless a new holder justifies it; the frozen values are refrozen in the same commit as the change, with the reason.
 
-Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session until a package wires the harness contract `TestHarness.traffic_completeness`, which no wired package calls today; checked by nothing until then
+Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session of a package that has declared this contract by calling `TestHarness.traffic_completeness` from its suite, where that suite checks it; a package that has not declared it is not bound, and nothing checks it here
 
 
 ## [Glossary](@id glossary)
@@ -783,6 +783,8 @@ where it is used, or it is not a term of art.
   and three complying ones.
 - **switch** — a package turning a rule off, wholly or for named files, with its reason. It replaces
   the exemption ledger: there is no expiry and no ceremony, only a reason a reader can weigh.
+- **deferral** — a package saying a rule is owed here and not yet met, with what would close it. A
+  switch is an answer; a deferral is a question with a condition on it. It fails no build.
 - **file set** — which of a package's files a rule runs over: docstrings, code, pages, rationale,
   Literate examples, tests.
 - **finding** — one violation at one location, with the rule that found it.
@@ -826,12 +828,14 @@ where it is used, or it is not a term of art.
 Each entry names a rule this package does not hold itself to, and why. A rule listed
 here is read as the entry states it.
 
-- `RULE.TEST.ALLOC_ZERO` — no in-place operator over element storage exists here: this package's `!` functions mutate a registry, a dictionary or a string buffer, and an allocation bound on them measures the Julia runtime, not the package (the whole package)
-- `RULE.TEST.PASS_AUDIT` — the traffic audit counts reads and writes per array element; this package holds no array whose traffic is a correctness property, so a frozen row would record the runtime's behaviour and nothing of the package's (the whole package)
 - `RULE.TEST.EXAMPLES_RUN` — this package ships no Literate examples: a worked example of a review instrument is a review, which is recorded rather than executed as a script (the whole package)
 - `RULE.DOC.LEADING_IDENTITY` — the leading identity of a docstring is the physical meaning of the quantity it computes; this package computes no physical quantity, so its docstrings lead with what the operation does, which the rule's own parameter already admits (the whole package)
-- `RULE.API.POSITIONAL` — no program decides whether an argument affects the result, and this package's own reading panels do not run over it yet; it is switched off here until they do (the whole package)
 - `documentation_review` — the review reads a package's documentation with the rulebook this package writes; running it here while the rulebook and the run machinery are still being built would grade the tool against rules it is in the middle of changing. It is switched on in Phase 8, when the tool reviews itself last (the whole package)
+
+Deferred, not switched off: each of these is owed here and not yet met, and reports nothing
+until the package meets it. What would close each is stated.
+
+- `RULE.API.POSITIONAL` — until this package's own documentation review runs, in Phase 8: no program decides whether an argument affects the result, and the reader that does has not read this package yet
 
 
 

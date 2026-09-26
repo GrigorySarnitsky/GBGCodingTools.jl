@@ -36,6 +36,7 @@ GBGCodingTools.Model.Setting
 GBGCodingTools.Model.Settled
 GBGCodingTools.Model.SiteExample
 GBGCodingTools.Model.Switch
+GBGCodingTools.Model.Deferral
 GBGCodingTools.Model.TextExample
 GBGCodingTools.Model.TreeExample
 ```

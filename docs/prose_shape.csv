@@ -40,7 +40,7 @@ unit,words,longest_paragraph,admonitions
 "ARCHITECTURE.md § 6. Generation",520,207,0
 "ARCHITECTURE.md § 7. Deterministic first",322,189,0
 "ARCHITECTURE.md § 8. Asking the owner",405,166,0
-"ARCHITECTURE.md § 9. Applicability",344,160,0
+"ARCHITECTURE.md § 9. Applicability",416,157,0
 "ARCHITECTURE.md § GBGCodingTools — architecture",118,96,1
 "Agents.jl :: Agents",297,77,0
 "Agents.jl :: ECONOMY_MODEL",57,56,0
@@ -78,7 +78,7 @@ unit,words,longest_paragraph,admonitions
 "Catalogue.jl :: FLEET",136,102,0
 "Catalogue.jl :: GENERATED",39,38,0
 "Catalogue.jl :: INSTRUMENTS",83,50,0
-"Catalogue.jl :: RETIRED",54,53,0
+"Catalogue.jl :: RETIRED",92,55,0
 "Catalogue.jl :: RULES",50,49,0
 "Catalogue.jl :: architecture_doc(cfg) -> String",47,44,0
 "Catalogue.jl :: axes(x) -> Tuple",48,45,0
@@ -100,7 +100,7 @@ unit,words,longest_paragraph,admonitions
 "Check.jl :: rebaseline(root; io = stdout) -> Int",134,53,0
 "Check.jl :: run(root; intention = nothing, network = false, io = stdout)",98,51,0
 "Checks.jl :: Checks",80,56,0
-"Checks.jl :: applies(cfg, id; file = '') -> Bool",76,36,0
+"Checks.jl :: applies(cfg, id; file = '') -> Bool",86,52,0
 "Checks.jl :: not_run(cfg; pkg = nothing, site = nothing, network = false)",135,78,0
 "Checks.jl :: reading(rule, cfg, root) -> Vector{Tuple{Model.FileSet.T,Str",167,75,0
 "Checks.jl :: run_all(cfg, root; intention = nothing, network = false)",125,63,0
@@ -339,7 +339,7 @@ unit,words,longest_paragraph,admonitions
 "Render.jl :: settings_drift(root) -> Union{String,Nothing}",83,49,0
 "Render.jl :: skill(cfg, instrument) -> String",134,93,0
 "Render.jl :: skill_path(instrument) -> String",37,34,0
-"Render.jl :: switches(cfg) -> String",75,36,0
+"Render.jl :: switches(cfg) -> String",91,52,0
 "Render.jl :: version_tag(cfg) -> String",32,29,0
 "Render.jl :: wanted(cfg, g) -> Bool",85,55,0
 "Render.jl :: wiring(cfg, root) -> Vector{Model.Location}",83,79,0

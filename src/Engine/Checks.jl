@@ -25,7 +25,9 @@ files(cfg::Model.Config, root::AbstractString, fileset::Model.FileSet.T) = Texts
     applies(cfg, id; file = "") -> Bool
 
 Whether the rule, agent role or instrument with that id is on in this package: a [`Model.Switch`](@ref)
-naming it turns it off, and one naming files turns it off for those files alone. The arguments are:
+naming it turns it off, one naming files turns it off for those files alone, and a
+[`Model.Deferral`](@ref) naming a rule holds it off — owed, not answered — until the package meets it.
+The arguments are:
 
 - `cfg` — the package's config.
 - `id` — what is being asked about.
@@ -34,6 +36,7 @@ naming it turns it off, and one naming files turns it off for those files alone.
 Returns whether it applies.
 """
 function applies(cfg::Model.Config, id::Symbol; file::AbstractString = "")
+    any(d -> d.rule === id, cfg.deferrals) && return false
     for s in cfg.switches
         s.target === id || continue
         isempty(s.files) && return false

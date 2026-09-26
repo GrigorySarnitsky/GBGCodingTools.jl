@@ -17,8 +17,8 @@ never share a name and a misplaced one is a method error rather than a silent eq
 - [`AgentRole`](@ref), [`Instrument`](@ref), [`AlwaysOn`](@ref), [`Budget`](@ref) — who reads, what
   starts, and what a run may spend.
 - [`Question`](@ref) with [`Option`](@ref) and [`Item`](@ref) — the one form for asking the owner.
-- [`Config`](@ref), [`Switch`](@ref), [`Setting`](@ref), [`PatternRule`](@ref), [`Settled`](@ref) — a
-  package's own settings and the rulings it has already given.
+- [`Config`](@ref), [`Switch`](@ref), [`Deferral`](@ref), [`Setting`](@ref), [`PatternRule`](@ref),
+  [`Settled`](@ref) — a package's own settings and the rulings it has already given.
 - [`DocFix`](@ref), [`CodeFix`](@ref), [`Run`](@ref), [`Generated`](@ref) — what a run did and what
   writes each generated file.
 """
@@ -643,6 +643,22 @@ Base.@kwdef struct Switch
 end
 
 """
+    Deferral
+
+Says that one rule is owed here and not yet met: a question with a condition on it, where a switch is
+an answer. A deferred rule reports nothing in a build or a test — a deferral never fails a build — and
+is listed beside the switches on the package's own site and by `gbg check`, so "not yet" is on the
+record as owed rather than filed as "does not apply". The fields are:
+
+- `rule` — the rule deferred.
+- `until` — what would close it: the condition on which the package means to meet the rule.
+"""
+Base.@kwdef struct Deferral
+    rule::Symbol
+    until::String
+end
+
+"""
     PatternRule
 
 A rule a package adds for itself: a pattern its own files must not, or must, contain. The fields are:
@@ -679,6 +695,7 @@ The fields are:
 - `copies` — each build-time copy and its tracked source.
 - `generated` — pages written at build time; no rule reads one.
 - `switches` — what is off here, with reasons.
+- `deferrals` — what is owed here and not yet met, each with what would close it.
 - `settings` — its values for rule parameters.
 - `code_areas` — its code in named areas, one hunter each.
 
@@ -700,6 +717,7 @@ Base.@kwdef struct Config
     copies::Vector{Pair{String,String}} = Pair{String,String}[]
     generated::Vector{String} = String[]
     switches::Vector{Switch} = Switch[]
+    deferrals::Vector{Deferral} = Deferral[]
     settings::Vector{Setting} = Setting[]
     disciplines::Vector{Symbol} = Symbol[]
     code_areas::Vector{Pair{Symbol,Vector{String}}} = Pair{Symbol,Vector{String}}[]

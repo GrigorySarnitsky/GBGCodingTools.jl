@@ -23,11 +23,11 @@ const GATE_VS_SURVEY = Model.Rule(
 
 const ORACLE_INDEPENDENT = Model.Rule(
     id = Symbol("RULE.TEST.ORACLE_INDEPENDENT"),
-    statement = "Every public value-returning operation is classified in the oracle registry; relational-only coverage is a finding.",
+    statement = "In a package that declares the oracle registry, every public value-returning operation is classified in it; relational-only coverage is a finding.",
     why = "The classes are analytic (a closed form derived independently of the package), independent (a direct computation written in the test), property (an invariant that pins the operation without computing it), relational (compared only against other package operations — legitimate as a second layer, never as the only one) and structural (returns metadata or storage). A new operation fails the registry until someone classifies it, which is the moment to notice it has no independent oracle.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.TESTS, Model.FileSet.CODE],
-    unchecked_reason = "an instruction to the session until a package wires the harness contract `TestHarness.oracle_registry`, which no wired package calls today; checked by nothing until then")
+    unchecked_reason = "an instruction to the session of a package that has declared this contract by calling `TestHarness.oracle_registry` from its suite, where that suite checks it; a package that has not declared it is not bound, and nothing checks it here")
 
 const DEFINITION_OF_DONE = Model.Rule(
     id = Symbol("RULE.TEST.DEFINITION_OF_DONE"),
@@ -39,27 +39,27 @@ const DEFINITION_OF_DONE = Model.Rule(
 
 const ALLOC_ZERO = Model.Rule(
     id = Symbol("RULE.TEST.ALLOC_ZERO"),
-    statement = "Every in-place ! operator is allocation-free and in the audit; a deliberate materializer gets a bounded guard; where a bound covers another nondeterminism a configuration pins the true zero.",
+    statement = "In a package that declares the allocation audit, every in-place ! operator is allocation-free and in the audit; a deliberate materializer gets a bounded guard; where a bound covers another nondeterminism a configuration pins the true zero.",
     why = "The audit runs on the CPU, where a materialized temporary is visible; the completeness of its rows is derived from the export list, never remembered.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.TESTS, Model.FileSet.CODE],
-    unchecked_reason = "an instruction to the session until a package wires the harness contract `TestHarness.allocation_completeness`, which no wired package calls today; checked by nothing until then")
+    unchecked_reason = "an instruction to the session of a package that has declared this contract by calling `TestHarness.allocation_completeness` from its suite, where that suite checks it; a package that has not declared it is not bound, and nothing checks it here")
 
 const PASS_AUDIT = Model.Rule(
     id = Symbol("RULE.TEST.PASS_AUDIT"),
-    statement = "Every audited operation has a frozen per-array traffic row with a named holder for any gap.",
+    statement = "In a package that declares the traffic audit, every audited operation has a frozen per-array traffic row with a named holder for any gap.",
     why = "A raised count is a fusion regression unless a new holder justifies it; the frozen values are refrozen in the same commit as the change, with the reason.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.TESTS, Model.FileSet.CODE],
-    unchecked_reason = "an instruction to the session until a package wires the harness contract `TestHarness.traffic_completeness`, which no wired package calls today; checked by nothing until then")
+    unchecked_reason = "an instruction to the session of a package that has declared this contract by calling `TestHarness.traffic_completeness` from its suite, where that suite checks it; a package that has not declared it is not bound, and nothing checks it here")
 
 const METHOD_PARITY = Model.Rule(
     id = Symbol("RULE.TEST.METHOD_PARITY"),
-    statement = "The public method set is frozen per generic and per module; any change moves a number.",
+    statement = "In a package that declares method parity, the public method set is frozen per generic and per module; any change moves a number.",
     why = "The per-module count is derived from ownership over the whole function surface, internals included, so a method defined under a qualified name cannot hide.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.TESTS, Model.FileSet.CODE],
-    unchecked_reason = "an instruction to the session until a package wires the harness contract `TestHarness.method_parity`, which no wired package calls today; checked by nothing until then")
+    unchecked_reason = "an instruction to the session of a package that has declared this contract by calling `TestHarness.method_parity` from its suite, where that suite checks it; a package that has not declared it is not bound, and nothing checks it here")
 
 const MUTATION = Model.Rule(
     id = Symbol("RULE.TEST.MUTATION"),

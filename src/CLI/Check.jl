@@ -45,6 +45,10 @@ function run(root::AbstractString; intention = nothing, network::Bool = false, i
     # The rules that read the history run HERE, never in a build: this verb is a session's, run in a
     # package where git is, and the end-of-turn hook runs the same lines.
     found = Engine.Checks.run_all(cfg, root; intention, network, history = true)
+    # What is owed and not yet met is printed, never counted: a deferral fails no build and no check.
+    for d in cfg.deferrals
+        println(io, "  DEFERRED ", rpad(String(d.rule), 30), " until ", d.until)
+    end
     drift = intention === Model.Intention.DOCUMENTATION ? Model.Location[] : Render.wiring(cfg, root)
 
     if isempty(found) && isempty(drift)

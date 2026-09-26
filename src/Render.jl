@@ -902,6 +902,8 @@ function glossary(cfg::Model.Config)
       and three complying ones.
     - **switch** — a package turning a rule off, wholly or for named files, with its reason. It replaces
       the exemption ledger: there is no expiry and no ceremony, only a reason a reader can weigh.
+    - **deferral** — a package saying a rule is owed here and not yet met, with what would close it. A
+      switch is an answer; a deferral is a question with a condition on it. It fails no build.
     - **file set** — which of a package's files a rule runs over: docstrings, code, pages, rationale,
       Literate examples, tests.
     - **finding** — one violation at one location, with the rule that found it.
@@ -945,8 +947,9 @@ end
 """
     switches(cfg) -> String
 
-What this package has switched off, and why: one entry per `Switch` in its config, and a rule a package
-adds for itself listed after them. The argument is `cfg`, the package's config. Returns the file.
+What this package has switched off, and why: one entry per `Switch` in its config, then what it has
+deferred — owed and not yet met, each with what would close it — and a rule a package adds for itself
+listed after them. The argument is `cfg`, the package's config. Returns the file.
 
 A switch is read as part of the rulebook: a session that has loaded the rules has loaded what this
 package does not hold itself to, which is the only way a rule can be escaped.
@@ -963,6 +966,14 @@ function switches(cfg::Model.Config)
         for s in cfg.switches
             scope = isempty(s.files) ? "the whole package" : join("`" .* s.files .* "`", ", ")
             println(io, "- `", s.target, "` — ", s.reason, " (", scope, ")")
+        end
+        println(io)
+    end
+    if !isempty(cfg.deferrals)
+        println(io, "Deferred, not switched off: each of these is owed here and not yet met, and reports nothing")
+        println(io, "until the package meets it. What would close each is stated.\n")
+        for d in cfg.deferrals
+            println(io, "- `", d.rule, "` — until ", d.until)
         end
         println(io)
     end
