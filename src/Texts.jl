@@ -569,7 +569,7 @@ function ignored(root::AbstractString)
     end
     isempty(levels) && return _ -> false
     sort!(levels; by = first)
-    return function (f::AbstractString)
+    decide(f) = begin
         hit = false
         for (prefix, rules) in levels
             startswith(f, prefix) || continue
@@ -578,7 +578,18 @@ function ignored(root::AbstractString)
                 occursin(rx, rest) && (hit = !negated)
             end
         end
-        return hit
+        hit
+    end
+    # A file under an excluded directory is excluded whatever a deeper file says: git never re-includes
+    # a file whose parent directory is ignored. Found when `inspiration/` — ignored here, holding a
+    # clone whose own `.gitignore` re-includes its root manifest — surfaced a manifest of another
+    # package as this one's (RULE.GIT.MANIFEST_TRACKED, 2026-09-26).
+    return function (f::AbstractString)
+        parts = split(f, '/')
+        for k in 1:length(parts)-1
+            decide(join(parts[1:k], '/') * "/") && return true
+        end
+        return decide(f)
     end
 end
 

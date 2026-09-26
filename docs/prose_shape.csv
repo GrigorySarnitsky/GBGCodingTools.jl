@@ -101,10 +101,10 @@ unit,words,longest_paragraph,admonitions
 "Check.jl :: run(root; intention = nothing, network = false, io = stdout)",98,51,0
 "Checks.jl :: Checks",80,56,0
 "Checks.jl :: applies(cfg, id; file = '') -> Bool",76,36,0
-"Checks.jl :: not_run(cfg; pkg = nothing, site = nothing, network = false)",111,46,0
+"Checks.jl :: not_run(cfg; pkg = nothing, site = nothing, network = false)",135,78,0
 "Checks.jl :: reading(rule, cfg, root) -> Vector{Tuple{Model.FileSet.T,Str",167,75,0
-"Checks.jl :: run_all(cfg, root; intention = nothing, network = false)",118,54,0
-"Checks.jl :: run_rule(rule, cfg, root; network = false) -> Vector{Model.L",94,45,0
+"Checks.jl :: run_all(cfg, root; intention = nothing, network = false)",125,63,0
+"Checks.jl :: run_rule(rule, cfg, root; network = false) -> Vector{Model.L",118,69,0
 "Config.jl :: Config",225,98,0
 "Config.jl :: Config.parse(text; root, check = true) -> Dict",81,43,0
 "Config.jl :: ConfigError <: Exception",35,23,0
@@ -205,13 +205,13 @@ unit,words,longest_paragraph,admonitions
 "Model.jl :: Decider",20,20,0
 "Model.jl :: Discipline",110,50,0
 "Model.jl :: DocFix",107,89,0
-"Model.jl :: Example",38,37,0
+"Model.jl :: Example",39,38,0
 "Model.jl :: FileSet",15,15,0
 "Model.jl :: Finding",57,36,0
 "Model.jl :: FindingDraft",120,102,0
 "Model.jl :: Fixer",13,13,0
 "Model.jl :: Generated",62,40,0
-"Model.jl :: Input",45,45,0
+"Model.jl :: Input",85,85,0
 "Model.jl :: Instrument",115,69,0
 "Model.jl :: Intention",18,18,0
 "Model.jl :: Item",78,57,0
@@ -226,7 +226,7 @@ unit,words,longest_paragraph,admonitions
 "Model.jl :: Question",116,94,0
 "Model.jl :: QuestionExample",57,33,0
 "Model.jl :: RetiredClaim",137,69,0
-"Model.jl :: Rule",313,120,0
+"Model.jl :: Rule",320,133,0
 "Model.jl :: Run",466,140,0
 "Model.jl :: Setting",31,20,0
 "Model.jl :: Settled",60,40,0
@@ -603,10 +603,14 @@ unit,words,longest_paragraph,admonitions
 "judgement_doc.jl :: NOTATION_PAGE",10,10,0
 "judgement_doc.jl :: RULES",10,9,0
 "judgement_doc.jl :: Rules.JudgementDoc",136,61,0
-"judgement_git.jl :: RULES",10,9,0
-"judgement_git.jl :: Rules.JudgementGit",75,45,0
+"judgement_git.jl :: RULES",19,18,0
+"judgement_git.jl :: Rules.JudgementGit",106,74,0
 "judgement_git.jl :: WORKING_BRANCH",21,21,0
-"judgement_git.jl :: branch_of(cfg) -> String",64,33,0
+"judgement_git.jl :: branch_of(cfg) -> String",67,36,0
+"judgement_git.jl :: ci_manual(root, cfg) -> Vector{Model.Location}",68,64,0
+"judgement_git.jl :: hooked(fragment) -> Function",85,47,0
+"judgement_git.jl :: manifest_tracked(root, cfg) -> Vector{Model.Location}",58,54,0
+"judgement_git.jl :: requests(root, cfg) -> Vector{Model.Location}",36,32,0
 "judgement_inst.jl :: RULES",10,9,0
 "judgement_inst.jl :: Rules.JudgementInst",75,45,0
 "judgement_test.jl :: RULES",10,9,0

@@ -42,7 +42,9 @@ function run(root::AbstractString; intention = nothing, network::Bool = false, i
         return 2
     end
 
-    found = Engine.Checks.run_all(cfg, root; intention, network)
+    # The rules that read the history run HERE, never in a build: this verb is a session's, run in a
+    # package where git is, and the end-of-turn hook runs the same lines.
+    found = Engine.Checks.run_all(cfg, root; intention, network, history = true)
     drift = intention === Model.Intention.DOCUMENTATION ? Model.Location[] : Render.wiring(cfg, root)
 
     if isempty(found) && isempty(drift)

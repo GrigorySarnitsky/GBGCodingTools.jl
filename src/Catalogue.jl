@@ -528,7 +528,10 @@ function doc(a::Model.AlwaysOn)
     return String(take!(io))
 end
 
-check_words(c::Model.ProgramCheck) = "a program" * (c.network ? ", which reaches the network and runs only under `gbg check --network`" : "")
+check_words(c::Model.ProgramCheck) =
+    c.input === Model.Input.HISTORY ?
+        "a program in the end-of-turn hook, which reads the branch and the commits not yet pushed — weaker than a build check, since a hook can be skipped and a failing test cannot" :
+        "a program" * (c.network ? ", which reaches the network and runs only under `gbg check --network`" : "")
 check_words(c::Model.AgentCheck) = "an agent, because this needs " * lowercase(replace(string(c.why), "_" => " "))
 check_words(::Nothing) = "nothing yet"
 

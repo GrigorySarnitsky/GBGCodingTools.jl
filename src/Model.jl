@@ -37,10 +37,12 @@ module Fixer; @enum T ORDINARY_WORK DOCUMENTATION_FIXER CODE_FIXER REGENERATE OW
 
 """
 What a check reads: a source text, a small file tree, the loaded package with its root, the built site,
-or a question. A `LOADED_MODULE` check is handed `(pkg, root)`, since what it compares is nearly always
-the module against the source that documents it.
+a question, or the repository's history. A `LOADED_MODULE` check is handed `(pkg, root)`, since what it
+compares is nearly always the module against the source that documents it. A `HISTORY` check reads the
+branch and the commits, which no build or test may — a fresh clone and CI must answer alike — so it
+runs in the end-of-turn hook and under `gbg check`, and nowhere else.
 """
-module Input; @enum T SOURCE_TEXT FILE_TREE LOADED_MODULE BUILT_SITE QUESTION; end
+module Input; @enum T SOURCE_TEXT FILE_TREE LOADED_MODULE BUILT_SITE QUESTION HISTORY; end
 
 "A named set of a package's files, found by default patterns the config may override."
 module FileSet; @enum T DOCSTRINGS PAGES RATIONALE LITERATE CODE TESTS; end
@@ -300,7 +302,8 @@ end
 
 Something a rule's check must judge a known way, so that the check can be shown to match the rule it
 names. The concrete types differ by what they materialise into: [`TextExample`](@ref),
-[`TreeExample`](@ref), [`ModuleExample`](@ref), [`SiteExample`](@ref) and [`QuestionExample`](@ref).
+[`TreeExample`](@ref), [`ModuleExample`](@ref), [`SiteExample`](@ref), [`QuestionExample`](@ref) and
+[`HistoryExample`](@ref).
 """
 abstract type Example end
 
@@ -390,6 +393,23 @@ struct QuestionExample <: Example
 end
 
 """
+    HistoryExample
+
+A repository built by a shell script in an empty directory, judged by a check that reads the history —
+the rules the end-of-turn hook decides. The fields are:
+
+- `script` — the shell lines that build the repository, run in the directory.
+- `expect` — the locations the check must report, empty when the repository complies; a history
+  location names no file and no line.
+- `clause` — the clause of the rule's statement this example is for.
+"""
+struct HistoryExample <: Example
+    script::String
+    expect::Vector{Location}
+    clause::String
+end
+
+"""
     Parameter
 
 A value a rule reads that a package may set for itself, such as how a docstring's first sentence leads.
@@ -418,6 +438,8 @@ examples that show the check matches the statement. The fields are:
   `filesets`, or `nothing`.
 - `check` — what decides a violation, or `nothing` where nothing does.
 - `unchecked_reason` — why it has no check, required when it has none.
+- `hook` — the shell lines the end-of-turn hook runs for a rule that reads the history, printing one
+  line per violation; empty for every other rule. The check and the hook are one program.
 - `parameters` — the values a package may set.
 - `examples` — texts, trees, sources, pages or questions the check must judge a known way.
 
@@ -444,6 +466,7 @@ Base.@kwdef struct Rule
     files_parameter::Union{Symbol,Nothing} = nothing
     check::Union{ProgramCheck,AgentCheck,Nothing} = nothing
     unchecked_reason::String = ""
+    hook::String = ""
     parameters::Vector{Parameter} = Parameter[]
     examples::Vector{Example} = Example[]
     access::Vector{Access.T} = Access.T[]

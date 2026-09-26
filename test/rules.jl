@@ -96,6 +96,13 @@ function materialise(rule, example)
             write(joinpath(dir, path), content)
         end
         return CK.run_rule(rule, cfg, dir)
+    elseif example isa MR.HistoryExample
+        # A rule the end-of-turn hook decides is shown on a repository its script builds, run through
+        # the check the way `gbg check` runs it — which is the hook's own lines.
+        dir = mktempdir(; cleanup = true)
+        run(pipeline(setenv(`bash -c $(example.script)`; dir = dir); stdout = devnull, stderr = devnull))
+        cfg = MR.Config(package = "Example", tool = :dev)
+        return CK.run_rule(rule, cfg, dir; history = true)
     end
     return nothing                      # an example kind with no materialiser yet
 end
@@ -154,6 +161,15 @@ const NO_BARE_URL = MR.Rule(
     @test isempty(CK.files(cfg, dir, MR.FileSet.PAGES))
     write(joinpath(dir, "docs", "src", ".gitignore"), "!index.md\n")
     @test CK.files(cfg, dir, MR.FileSet.PAGES) == ["docs/src/index.md"]
+
+    # a file under an excluded directory stays excluded whatever a deeper `.gitignore` says, as git
+    # decides it: a nested clone's `!/Manifest.toml` re-included its manifest into this package's tree
+    mkpath(joinpath(dir, "inspiration", "Other"))
+    write(joinpath(dir, ".gitignore"), "inspiration/\n")
+    write(joinpath(dir, "inspiration", "Other", ".gitignore"), "Manifest.toml\n!/Manifest.toml\n")
+    write(joinpath(dir, "inspiration", "Other", "Manifest.toml"), "# v2\n")
+    @test G.Texts.ignored(dir)("inspiration/Other/Manifest.toml")
+    @test G.Texts.ignored(dir)("inspiration/Other/docs/Manifest.toml")
 
     # anchoring is read before the leading slash is stripped, or a negation leaks to every depth
     rules = G.Texts.gitignore_rules_of("Manifest.toml\n!/Manifest.toml\n")

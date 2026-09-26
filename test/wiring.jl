@@ -294,6 +294,44 @@ end
         @test occursin("From the last review", text)                           # the heading it must not count
     end
 
+    # The three git rules are programs in this hook (Phase 5), each the rule's own lines: shown on a
+    # repository the way the rule's examples are, and read by `gbg check` from the same lines — never by
+    # a build, which sees nothing of the history.
+    @testset "the hook holds a session to the git rules" begin
+        root = mktempdir(; cleanup = true)
+        mkpath(joinpath(root, ".claude")); mkpath(joinpath(root, ".gbg"))
+        write(joinpath(root, ".gbg", "config.jl"), """Config(package = "P", tool = :dev)""")
+        env = ["GIT_AUTHOR_NAME" => "t", "GIT_AUTHOR_EMAIL" => "t@t", "GIT_COMMITTER_NAME" => "t", "GIT_COMMITTER_EMAIL" => "t@t"]
+        git(args...) = run(pipeline(setenv(`git -C $root $args`, env; dir = root); stdout = devnull, stderr = devnull))
+        git("init", "-q", "-b", "master"); git("commit", "-q", "--allow-empty", "-m", "first")
+        git("init", "-q", "--bare", ".origin.git"); git("remote", "add", "origin", joinpath(root, ".origin.git"))
+        git("push", "-q", "-u", "origin", "master")
+        sh = joinpath(root, "hook.sh"); write(sh, RN.hook(G.ConfigIO.read_config(root))); chmod(sh, 0o755)
+        function fire()
+            err = IOBuffer()
+            p = run(pipeline(setenv(`bash $sh`, ["CLAUDE_PROJECT_DIR" => root]; dir = root);
+                             stdin = IOBuffer("{}"), stdout = devnull, stderr = err); wait = false)
+            wait(p); return p.exitcode, String(take!(err))
+        end
+        @test first(fire()) == 0                                         # pushed, on master: the turn may end
+        git("commit", "-q", "--allow-empty", "-m", "second")             # not pushed, and no trailer
+        code, msg = fire()
+        @test code == 2
+        @test occursin("RULE.GIT.PUSH", msg) && occursin("RULE.GIT.TRAILER", msg) && !occursin("RULE.GIT.BRANCH", msg)
+        cfg = G.ConfigIO.read_config(root)
+        found = G.Engine.Checks.run_all(cfg, root; history = true)
+        @test Set(String(id) for (id, _) in found) == Set(["RULE.GIT.PUSH", "RULE.GIT.TRAILER"])
+        @test isempty(G.Engine.Checks.run_all(cfg, root))               # a build sees nothing of the history
+        @test !any(id -> startswith(String(id), "RULE.GIT."), G.Engine.Checks.not_run(cfg))   # and is not told it missed them
+        git("checkout", "-q", "-b", "feature")
+        @test occursin("RULE.GIT.BRANCH", last(fire()))
+        # the loop guard covers this too, or a session that cannot push is trapped
+        held = IOBuffer()
+        p = run(pipeline(setenv(`bash $sh`, ["CLAUDE_PROJECT_DIR" => root]; dir = root);
+                         stdin = IOBuffer("""{"stop_hook_active": true}"""), stdout = devnull, stderr = held); wait = false)
+        wait(p); @test p.exitcode == 0
+    end
+
     @testset "this package's own wiring is what its generators write" begin
         @test isempty(RN.wiring(G.ConfigIO.read_config(TOOL), TOOL))
     end

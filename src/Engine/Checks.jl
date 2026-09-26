@@ -93,15 +93,18 @@ Everywhere the rule is broken in the package at `root`. The arguments are:
 - `root` — the package root.
 - `network` — whether a check that reaches the network may run; `false` inside every build and test, so a
   run gives the same answer offline.
+- `history` — whether a check that reads the repository's branch and commits may run; `false` inside
+  every build and test, `true` under `gbg check`, and the end-of-turn hook runs the same lines itself.
 
 A rule an agent decides, or one with no check at all, reports nothing here: this is the program half.
 Returns the locations, in file and line order.
 """
 function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; network::Bool = false,
-                  pkg = nothing, site = nothing)
+                  history::Bool = false, pkg = nothing, site = nothing)
     check = rule.check
     check isa Model.ProgramCheck || return Model.Location[]
     check.network && !network && return Model.Location[]
+    check.input === Model.Input.HISTORY && !history && return Model.Location[]
     applies(cfg, rule.id) || return Model.Location[]
 
     out = Model.Location[]
@@ -127,7 +130,7 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
                 push!(out, located(loc, file, root))
             end
         end
-    elseif check.input === Model.Input.FILE_TREE
+    elseif check.input === Model.Input.FILE_TREE || check.input === Model.Input.HISTORY
         append!(out, check.run(root, cfg))
     elseif check.input === Model.Input.LOADED_MODULE
         # The package itself, loaded. A caller that has not loaded it — `gbg check` run from outside a
@@ -171,18 +174,20 @@ the documentation rules in a docs build, the code rules in a test suite — or f
 - `root` — the package root.
 - `intention` — the intention to run, or `nothing` for every rule.
 - `network` — whether a check that reaches the network may run; `false` inside every build and test.
+- `history` — whether a check that reads the repository's history may run; `false` inside every build
+  and test.
 
 Returns the locations, in file and line order.
 """
 function run_all(cfg::Model.Config, root::AbstractString; intention = nothing, network::Bool = false,
-                 pkg = nothing, site = nothing)
+                 history::Bool = false, pkg = nothing, site = nothing)
     out = Tuple{Symbol,Model.Location}[]
     for rule in Catalogue.RULES
         intention === nothing || rule.intention === intention || continue
         # The rule's id travels WITH its finding. A report that prints only the message leaves a reader
         # to infer the class from the wording, and a class inferred from wording is a class miscounted:
         # a consumer counting one rule's findings from the text got two different totals in two runs.
-        for l in run_rule(rule, cfg, root; network, pkg, site)
+        for l in run_rule(rule, cfg, root; network, history, pkg, site)
             push!(out, (rule.id, l))
         end
     end
@@ -194,7 +199,8 @@ end
 
 The rules a run could not reach, and why it could not: those that read the loaded package where nothing
 loaded it, those that read the built site where none was built, and those that reach the network where
-that was not allowed. The arguments are:
+that was not allowed. A rule that reads the history is not among them: a build or a test never reaches
+it, and it is not told it missed something that was never its to run. The arguments are:
 
 - `cfg` — the package's config.
 - `pkg` — the loaded package, or `nothing`.

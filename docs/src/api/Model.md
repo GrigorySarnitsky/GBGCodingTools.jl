@@ -29,6 +29,7 @@ GBGCodingTools.Model.PatternRule
 GBGCodingTools.Model.ProgramCheck
 GBGCodingTools.Model.Question
 GBGCodingTools.Model.QuestionExample
+GBGCodingTools.Model.HistoryExample
 GBGCodingTools.Model.Rule
 GBGCodingTools.Model.Run
 GBGCodingTools.Model.Setting

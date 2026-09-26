@@ -75,6 +75,7 @@ under a heading this hook does not count, so a review never puts a session to wo
 has not asked about.
 """
 function hook(cfg::Model.Config)
+    ids = hook_rule_ids()
     return """
     #!/usr/bin/env bash
     # STOP HOOK — refuses to let the session end while committed work is open.
@@ -138,6 +139,32 @@ function hook(cfg::Model.Config)
       done
     fi
 
+    # THE GIT RULES. RULE.GIT.BRANCH, RULE.GIT.PUSH and RULE.GIT.TRAILER ask about the branch and the
+    # commits — what no build or test may read, since a fresh clone and CI must answer alike — so they
+    # are checked HERE, at the end of the turn, on what is not yet pushed. A hook check is weaker than
+    # a build check: a hook can be skipped and a failing test cannot, and the rulebook says so beside
+    # each. Every function below is the rule's own lines, spliced from the rule value, so `gbg check`
+    # and this script are one program and cannot disagree.
+    $(hook_rules(cfg))
+    GBG_BRANCH="$(Catalogue.branch_of(cfg))"
+    git_said=""
+    for r in $(join(ids, " ")); do
+      fn="gbg_rule_\${r//./_}"
+      out=\$(cd "\${CLAUDE_PROJECT_DIR:-.}" && "\$fn" 2>/dev/null) || out=""
+      [[ -n "\$out" ]] && git_said+="\$(printf '%s\\n' "\$out" | sed "s/^/  \$r  /")"\$'\\n'
+    done
+    if [[ -n "\$git_said" ]]; then
+      {
+        echo "THE GIT RULES ARE NOT MET — the turn does not end on a branch or a commit the rulebook refuses:"
+        echo
+        printf '%s' "\$git_said"
+        echo
+        echo "Push what is committed (commit ⇒ push), on the working branch, with the trailer on every"
+        echo "commit — or say why you cannot, so the owner decides. A hook can be skipped; do not."
+      } >&2
+      exit 2
+    fi
+
     queue="\${CLAUDE_PROJECT_DIR:-.}/.claude/WORK_QUEUE.md"
     [[ -f "\$queue" ]] || exit 0
 
@@ -163,6 +190,31 @@ function hook(cfg::Model.Config)
     exit 2
     """
 end
+
+"""
+    hook_rules(cfg) -> String
+
+The shell functions the end-of-turn hook defines for the rules that read the history: one per rule
+carrying `hook` lines, named `gbg_rule_<id with _ for .>`, its body the rule's own lines. The argument
+is `cfg`, the package's config. Returns the functions as text.
+"""
+function hook_rules(cfg::Model.Config)
+    io = IOBuffer()
+    for r in Catalogue.RULES
+        isempty(r.hook) && continue
+        println(io, "    gbg_rule_", replace(String(r.id), "." => "_"), "() {")
+        for line in split(strip(r.hook), '\n'); println(io, "      ", line); end
+        println(io, "    }")
+    end
+    return String(take!(io))
+end
+
+"""
+    hook_rule_ids() -> Vector{String}
+
+The ids of the rules the end-of-turn hook checks, in rulebook order. Returns them as strings.
+"""
+hook_rule_ids() = [String(r.id) for r in Catalogue.RULES if !isempty(r.hook)]
 
 """
     HOOK_COMMAND

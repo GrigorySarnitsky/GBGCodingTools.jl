@@ -362,7 +362,7 @@ Enums are scoped (`module Decider; @enum T …; end`) so values of different enu
 module Intention; @enum T DOCUMENTATION CODE; end          # PUBLICATION arrives with the leak scan
 module Decider;   @enum T PROGRAM FAILING_TEST AGENT; end
 module Fixer;     @enum T ORDINARY_WORK DOCUMENTATION_FIXER CODE_FIXER REGENERATE OWNER_ONLY; end
-module Input;     @enum T SOURCE_TEXT FILE_TREE LOADED_MODULE BUILT_SITE QUESTION; end
+module Input;     @enum T SOURCE_TEXT FILE_TREE LOADED_MODULE BUILT_SITE QUESTION HISTORY; end   # HISTORY: the hook's, never a build's
 module FileSet;   @enum T DOCSTRINGS PAGES RATIONALE LITERATE CODE TESTS; end
 module Strength;  @enum T ECONOMY FULL; end; module Part; @enum T WHOLE BLOCK TOML_ENTRIES; end
 module Verdict;   @enum T FIXED NOT_FIXED LINE_ONLY MADE_WORSE HIDES_CODE_DEFECT NOT_A_DEFECT; end
@@ -420,6 +420,7 @@ struct TreeExample     <: Example; files::Vector{Pair{String,String}}; expect::V
 struct ModuleExample   <: Example; source::String; expect::Vector{Location}; clause::String; end
 struct SiteExample     <: Example; pages::Vector{Pair{String,String}}; expect::Vector{Location}; clause::String; end
 struct QuestionExample <: Example; question::Question; expect::Vector{Location}; clause::String; end
+struct HistoryExample  <: Example; script::String; expect::Vector{Location}; clause::String; end   # a repository a script builds
 "A value a rule reads that a package may set, such as how a docstring's first sentence leads."
 struct Parameter{T}; name::Symbol; default::T; end
 "One rule of the rulebook."
@@ -427,7 +428,8 @@ Base.@kwdef struct Rule
     id::Symbol; statement::String; why::String   # statement: the rule in plain English, its only home
     intention::Intention.T; filesets::Vector{FileSet.T}   # documentation rules run in the docs build, code rules in
     check::Union{ProgramCheck,AgentCheck,Nothing}         # Pkg.test(); one whose input is QUESTION in neither (§8)
-    unchecked_reason::String = ""; parameters::Vector{Parameter} = Parameter[]  # reason: required with no check
+    unchecked_reason::String = ""; hook::String = ""   # reason: required with no check; hook: the lines the end-of-turn
+    parameters::Vector{Parameter} = Parameter[]          # hook runs for a HISTORY rule, one program with its check
     examples::Vector{Example} = Example[]      # a program check needs them; a rule an agent checks needs none
     access::Vector{Access.T} = Access.T[]      # what a reader must be given beyond the unit; empty: no reader's
     discipline::Union{Symbol,Nothing} = nothing  # the catalogued discipline deciding it takes, or any careful reader

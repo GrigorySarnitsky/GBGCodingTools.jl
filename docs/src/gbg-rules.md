@@ -7,7 +7,7 @@ Generated at build time from the rule values in GBGCodingTools vdev. Each rule c
 text and the program that enforces it cannot disagree. A rule's id is stable and is what a
 finding, a switch and a report all name.
 
-## Checked by a program — 43
+## Checked by a program — 49
 
 These run in every build and every test of the package; a breach is a red build.
 
@@ -248,6 +248,55 @@ A name another module owns is linked at its first mention in a docstring, qualif
 A reader meeting a name from elsewhere has nowhere to go: the docstring in front of him does not define it.
 
 Covered by a program.
+
+
+#### [`RULE.GIT.BRANCH`](@id RULE.GIT.BRANCH)
+The working branch is the one `branch` names, `master` unless the package sets it; a rename is the package's decision.
+
+A rename is a decision about the package, never bundled with a tooling adoption.
+
+Covered by a program in the end-of-turn hook, which reads the branch and the commits not yet pushed — weaker than a build check, since a hook can be skipped and a failing test cannot.
+This package may set `branch`; unset, it is `master`.
+
+
+#### [`RULE.GIT.CI_MANUAL`](@id RULE.GIT.CI_MANUAL)
+CI is manual-only, `workflow_dispatch` and release tags; the matrix runs locally before a commit; docs deploy on push.
+
+Before committing a code change, run the gate locally; a documentation-only change needs a load and the docs build. The docs build is therefore the per-push enforcement point, and the rules that read the built site run inside it.
+
+Covered by a program.
+
+
+#### [`RULE.GIT.MANIFEST_TRACKED`](@id RULE.GIT.MANIFEST_TRACKED)
+Sub-environment manifests are gitignored; a tracked root manifest is a declared deviation, a switch naming the file.
+
+A stale sub-environment manifest is resolved locally when precompilation breaks; CI resolves its own.
+
+Covered by a program.
+
+
+#### [`RULE.GIT.PUSH`](@id RULE.GIT.PUSH)
+Commit ⇒ push, directly on the configured branch; no feature branches.
+
+The repository is private and synced across machines through GitHub, so work is committed on the default branch and pushed in the same step; GitHub is the cross-machine sync path and the docs site deploys on push. Stage with `git add -u` plus every new file by name, never `-A`.
+
+Covered by a program in the end-of-turn hook, which reads the branch and the commits not yet pushed — weaker than a build check, since a hook can be skipped and a failing test cannot.
+
+
+#### [`RULE.GIT.REQUESTS`](@id RULE.GIT.REQUESTS)
+A cross-package request is a tracked file .gbg/requests/to-<PKG>-<date>-<topic>.md in the requester, whose first paragraph begins `Status:`; a concluded request is deleted.
+
+The requests directory holds what is still awaiting the other package and nothing else.
+
+Covered by a program.
+
+
+#### [`RULE.GIT.TRAILER`](@id RULE.GIT.TRAILER)
+Every commit carries a `Co-Authored-By: … <noreply@anthropic.com>` trailer; never [skip ci].
+
+The trailer names the session as co-author, so a commit's provenance is in the one place git never lets anyone correct it; the model in use changes often, and a version in the trailer is a fact about the day rather than about the work.
+
+Covered by a program in the end-of-turn hook, which reads the branch and the commits not yet pushed — weaker than a build check, since a hook can be skipped and a failing test cannot.
 
 
 #### [`RULE.TEX.BOLDSYMBOL_BRACED`](@id RULE.TEX.BOLDSYMBOL_BRACED)
@@ -589,7 +638,7 @@ Neither a rendered code block nor display math auto-wraps; inline math reflows a
 Covered by a reader given rendered.
 
 
-## Instructions to the session — 22
+## Instructions to the session — 16
 
 These are followed while working and checked by nothing: they tell a session how to commit, what to run unasked, and how to read what a scan prints.
 
@@ -617,61 +666,12 @@ Fixing only the pointed-at line and waiting to be handed the next instance is th
 Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session: followed while working, checked by nothing
 
 
-#### [`RULE.GIT.BRANCH`](@id RULE.GIT.BRANCH)
-The working branch is the one `branch` names, `master` unless the package sets it; a rename is the package's decision.
-
-A rename is a decision about the package, never bundled with a tooling adoption.
-
-Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session: followed while working, checked by nothing
-This package may set `branch`; unset, it is `master`.
-
-
-#### [`RULE.GIT.CI_MANUAL`](@id RULE.GIT.CI_MANUAL)
-CI is manual-only; the matrix runs locally before a commit; docs deploy on push.
-
-Before committing a code change, run the gate locally; a documentation-only change needs a load and the docs build. The docs build is therefore the per-push enforcement point, and the doctor, the hard scans and the gate stay inside it.
-
-Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session: followed while working, checked by nothing
-
-
-#### [`RULE.GIT.MANIFEST_TRACKED`](@id RULE.GIT.MANIFEST_TRACKED)
-Sub-environment manifests are gitignored; a tracked root manifest is a declared deviation.
-
-A stale sub-environment manifest is resolved locally when precompilation breaks; CI resolves its own.
-
-Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session: followed while working, checked by nothing
-
-
 #### [`RULE.GIT.NO_SHIMS`](@id RULE.GIT.NO_SHIMS)
 The API is not frozen; no backward-compatibility shims.
 
 Errors found later are fixed one by one; architectural soundness is judged on the full picture first.
 
-Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session: followed while working, checked by nothing
-
-
-#### [`RULE.GIT.PUSH`](@id RULE.GIT.PUSH)
-Commit ⇒ push, directly on the configured branch; no feature branches.
-
-The repository is private and synced across machines through GitHub, so work is committed on the default branch and pushed in the same step; GitHub is the cross-machine sync path and the docs site deploys on push. Stage with `git add -u` plus every new file by name, never `-A`.
-
-Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session: followed while working, checked by nothing
-
-
-#### [`RULE.GIT.REQUESTS`](@id RULE.GIT.REQUESTS)
-A cross-package request is a tracked file .gbg/requests/to-<PKG>-<date>-<topic>.md in the requester with a status paragraph on top; a concluded request is deleted.
-
-The requests directory holds what is still awaiting the other package and nothing else.
-
-Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session: followed while working, checked by nothing
-
-
-#### [`RULE.GIT.TRAILER`](@id RULE.GIT.TRAILER)
-Every commit ends with the versionless 'Co-Authored-By: Anthropic Claude <noreply@anthropic.com>' trailer; never [skip ci].
-
-The trailer names no model version on purpose: the model in use changes often and the versions supersede each other, so a version in the trailer is a fact about the day rather than about the work, and it goes stale in the one place git never lets anyone correct it.
-
-Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session: followed while working, checked by nothing
+Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session: what counts as a shim is judgement; followed while working, checked by nothing
 
 
 #### [`RULE.INST.CONSENT`](@id RULE.INST.CONSENT)
