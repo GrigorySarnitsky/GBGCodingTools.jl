@@ -456,3 +456,13 @@ end
     @test G.Catalogue.target(bare, "docs/ARCHITECTURE.md") && !G.Catalogue.target(bare, "docs/DECISIONS.md")
     @test G.Catalogue.material_doc(bare, "docs/DECISIONS.md")
 end
+
+# A Literate `#md # …` line is prose the page renders; its mark and its `#` stay, and the words may
+# change, as any Markdown line's may. Kept whole as a mark, a fix to an example's `#md` block could not
+# be committed at all (found by PF, 2026-09-24).
+@testset "a #md line's prose may change; its mark may not" begin
+    L(b, a) = doc("examples/x.jl", b, a)
+    @test L("x = 1\n#md # The results, plotted.\n", "x = 1\n#md # The results, plotted and tabled.\n")
+    @test !L("x = 1\n#md # The results, plotted.\n", "x = 1\n#jl # The results, plotted.\n")
+    @test !L("x = 1\n#md # The results, plotted.\n", "x = 1\n# The results, plotted.\n")
+end

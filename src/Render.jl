@@ -729,22 +729,33 @@ function skill(cfg::Model.Config, instrument::Symbol)
        `--readers both` for the open readers, `--model <name>` to name the careful model, `--sequential`
        to launch one agent at a time. It refuses a tree with uncommitted changes to tracked files.
     2. Launch the agents with the `Workflow` call the verb just printed: the driver at the path it names,
-       copied into the run's own scratch, with the arguments file beside it. Never the pinned package's
-       own `drivers/run.js`, which `Workflow` refuses because it lies outside the working directory. Julia
-       cannot launch an agent and only this session can, which is why the verb stopped here.
-    3. `gbg run collect` — reads what the agents wrote. Exit 2 means a role wrote nothing, or the tree
-       moved under them; the first is relaunched once, the second is the owner's to answer.
-    4. `gbg run next` — moves to the next stage and says what it wants. Repeat 2 to 4 until it says the
-       run is ready to close.""")
+       copied into the run's own scratch with the stage's arguments spliced in, so the call passes no
+       args. Never the pinned package's own `drivers/run.js`, which `Workflow` refuses because it lies
+       outside the working directory. Julia cannot launch an agent and only this session can, which is
+       why the verb stopped here.
+    3. Save what the `Workflow` RETURNED — the whole object — as `returned.json` in the stage's own
+       directory, which the verb named: the collect falls back on it for an agent whose result file never
+       appeared. Then `gbg run collect`, which reads what the agents wrote. Exit 2 means a role wrote
+       nothing, or the tree moved under them; the first is relaunched once, the second is the owner's to
+       answer.
+    4. `gbg run cost <dir>` — records what the stage's agents cost, from the transcripts under the
+       directory the `Workflow` result names (the one holding its `journal.jsonl`). The launch's own
+       token figure counts a tenth of the real cost; the transcripts are the source. Then
+       `gbg run next`, which moves to the next stage and says what it wants. Repeat 2 to 4 until it says
+       the run is ready to close.""")
     if fixes
         println(io, """
     5. At a FIX stage it writes the open findings instead of launching agents. Fix each in the
        documentation and commit it with `gbg docfix commit --message "…" --finding <id>`, which asks the
-       change guard first. `gbg docfix check` says what the change broke. Never edit code or the config
-       here, and never change a formula — what the page renders as mathematics; turning a code span into
-       a math span with the same text, or back, is the one respelling allowed. A finding whose fix needs
-       any of those is PARKED for the owner with `gbg run park <id> --why "<what it would change>"`: a
-       question about it stands, and no pass works on it until he answers.
+       change guard first and refuses a change that breaks a rule the run opened clean on. Never edit
+       code or the config here, and never change a formula — what the page renders as mathematics;
+       turning a code span into a math span with the same text, or back, is the one respelling allowed.
+       A finding whose fix needs any of those is PARKED for the owner with
+       `gbg run park <id> --why "<what it would change>"`: a question about it stands, and no pass works
+       on it until he answers. Before `gbg run next`, run `gbg docfix check` WITH the build: a cross
+       reference only the build resolves is otherwise found at the verify stage, after every commit of
+       the pass. One verifier per place then judges the pass's fixes with the diff; a pass that committed
+       nothing closes the run instead.
     6. `gbg run close` — writes the record and the report, and puts what is still open on the owner's
        work queue. COMMIT `.gbg/runs/<id>/` yourself: `gbg docfix commit` leaves it out on purpose, and
        nothing else commits it. Where a fix ADDED information and so raised a prose-shape number, the
@@ -862,10 +873,10 @@ function glossary(cfg::Model.Config)
       source, or the built site. A rule's tag says which bundle can judge it.
     - **unit** — the one page a reader of the first bundle is given. That reader is launched once per
       unit, so that what it cannot see is what the rule needs it not to see.
-    - **pass** — one round of fixing and verifying inside a run. A documentation review makes at most
-      four, after which what is still open carries to the next run.
-    - **verifier** — an agent that judges whether a fix fixed the finding: the first blind to the
-      change, the second reading the diff.
+    - **pass** — one round of fixing and verifying inside a run. A documentation review makes one,
+      after which what is still open goes to the owner's queue.
+    - **verifier** — an agent that judges whether the fixes of one place fixed their findings, with
+      the text as it now stands and the diff of the pass in front of it.
     - **cover** — what decides a rule is broken: a program, a reader, or nothing, the last being an
       instruction the session follows while working.
     - **discipline** — a field of expertise a package declares it needs a reader to have. A rule naming
@@ -1150,6 +1161,19 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
             run.passes, " of ", run.budget.fix_passes, " fix pass(es).",
             queued > 0 ? " $queued line(s) went to the work queue, under the heading the end-of-turn hook does not count." : "")
     println(io)
+    if !isempty(run.usage)
+        # What it cost, from the agents' own transcripts; the launch's summary field is not used, since it
+        # counts a tenth of the cache activity where nearly all of the cost is.
+        println(io, "| Stage | Pass | Agents | Cache write | Cache read | Input | Output |")
+        println(io, "|---|---|---|---|---|---|---|")
+        for u in run.usage
+            println(io, "| ", u.stage, " | ", u.pass, " | ", u.agents, " | ", u.cache_write, " | ", u.cache_read,
+                    " | ", u.input, " | ", u.output, " |")
+        end
+        println(io)
+        println(io, "Tokens, summed from each agent's transcript by `gbg run cost`.")
+        println(io)
+    end
     if !isempty(run.silent)
         # A reader that wrote nothing is not a clean reader, and the report says which (found in review,
         # 2026-09-23: collect said the report would name them, and it did not).
@@ -1185,15 +1209,22 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
         # fixed finding and dropped another said nothing about the second (found in review, 2026-09-23).
         println(io, "## ", run.dropped, " finding(s) were thrown away")
         println(io)
-        if isempty(run.findings)
+        gone = [f for f in run.findings if f.id in run.dropped_ids]
+        if isempty(gone)
+            # a record from before the texts were kept (ruled 2026-09-26)
             println(io, "The owner stopped this run, so what its readers reported was dropped and none of it")
             println(io, "is written down here. This page says NOTHING about ", cfg.package,
                         ": it was looked at, something was")
             println(io, "seen, and nobody stood behind it. Whatever it was opened to look for is still open.")
         else
             println(io, "The owner stopped this run. What its readers reported and nobody had yet stood behind")
-            println(io, "was dropped and is not written down here; what follows is only what had been fixed and")
-            println(io, "verified before the stop.")
+            println(io, "is carried into no later run; it is listed here so that a triage can name it.")
+            println(io)
+            for f in gone
+                l = isempty(f.draft.locations) ? nothing : f.draft.locations[1]
+                println(io, "- `", f.id, "` ", f.draft.claim,
+                        l === nothing ? "" : " — `" * l.file * "`" * (l.line > 0 ? ":" * string(l.line) : ""))
+            end
         end
         println(io)
     end
@@ -1241,7 +1272,7 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
                 println(io)
             end
         end
-        judged = [f for f in run.findings if !f.draft.in_material]
+        judged = [f for f in run.findings if !f.draft.in_material && !(f.id in run.dropped_ids)]   # the dropped are listed above
         println(io, "## Findings — ", length(judged))
         println(io)
         isempty(judged) && println(io, "None in the targets: every reader that was launched wrote its file, and none reported a defect in a document under review.\n")
@@ -1263,13 +1294,14 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
                         isempty(l.node) ? "" : "  (" * l.node * ")",
                         stale ? "  — **the text here has moved and was not found again**" : "")
             end
-            # The passes, as a program graded them: the verdict of the blind verifier and, for a fix it
-            # called fixed, of the one that read the diff.
+            # The passes, as a program graded them: the verifier's verdict, a second one where a record
+            # from before 2026-09-26 carries it, and what the program did to the verdict.
             for x in run.fixes
                 x.finding == f.id || continue
-                println(io, "- pass ", x.pass, ": blind verifier `", x.blind, "`",
+                println(io, "- pass ", x.pass, ": verifier `", x.blind, "`",
                         x.with_diff === nothing ? "" : ", with the diff `" * string(x.with_diff) * "`",
-                        isempty(x.commit) ? "" : "  (commit `" * first(x.commit, 8) * "`)")
+                        isempty(x.commit) ? "" : "  (commit `" * first(x.commit, 8) * "`)",
+                        isempty(x.note) ? "" : " — " * x.note)
             end
             println(io)
         end

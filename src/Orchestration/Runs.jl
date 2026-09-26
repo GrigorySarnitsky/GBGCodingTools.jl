@@ -38,7 +38,7 @@ findings it called fixed a second verifier reads the diff. From the last `collec
 straight to `close` when nothing was found.
 """
 const STAGES = Dict{Symbol,Vector{Symbol}}(
-    :documentation_review => [:start, :find, :collect, :fix, :verify, :collect, :diff, :collect, :close],
+    :documentation_review => [:start, :find, :collect, :fix, :verify, :collect, :close],
     :bug_hunt            => [:start, :hunt, :collect, :witnesses, :collect, :close],
     :change_audit        => [:start, :audit, :collect, :close],
 )
@@ -332,6 +332,8 @@ function advance!(root::AbstractString, id::AbstractString, to::Symbol; io::IO =
         fix = findfirst(==(:fix), order)
         fix !== nothing && at == length(order) - 1 && push!(candidates, fix)
     end
+    # A fix stage that committed nothing has nothing to verify and closes (found by PF, 2026-09-24).
+    here === :fix && push!(candidates, length(order))
     hit = findfirst(c -> order[c] === to, candidates)
     hit === nothing && (println(io, "run: $id is at $here; the next stage is ",
                                 join(sort(unique(String.(order[candidates]))), " or "), ", not $to"); return false)
@@ -364,14 +366,27 @@ function closed(run::Model.Run, id::AbstractString)
     k = findlast(f -> f.finding == id, run.fixes)
     k === nothing && return false
     f = run.fixes[k]
+    # One verifier since 2026-09-26, so `with_diff` is nothing; a record from before carries the second
+    # verdict, which must agree.
     return f.blind === Model.Verdict.NOT_A_DEFECT ||
-           (f.blind === Model.Verdict.FIXED && f.with_diff === Model.Verdict.FIXED)
+           (f.blind === Model.Verdict.FIXED && (f.with_diff === nothing || f.with_diff === Model.Verdict.FIXED))
 end
 
 "The options of a code question, as the owner answers them."
 const CODE_ANSWER = "fix the code"
 const DOCS_ANSWER = "fix the documentation instead"
 const NOT_A_DEFECT_ANSWER = "not a defect"
+"""
+The options of a parked finding's question, beside "not a defect": the owner makes the change himself,
+which is what "fix the code" means on a code question and reads wrongly where the change is a switch or
+a formula [found by PF, 2026-09-24]; or the fixer makes it on his ruling, given in `--direction`, after
+which the finding is open and workable again and a verifier closes it [ruled 2026-09-26].
+"""
+const OWNER_ANSWER = "I make the change"
+const RULED_ANSWER = "fix it on my ruling"
+
+"Whether the owner took the finding as his own to change: `fix the code` or `I make the change`."
+owner_took(run::Model.Run, id::AbstractString) = answer_of(run, id) in (CODE_ANSWER, OWNER_ANSWER)
 
 """
     answer_of(run, id) -> Union{String,Nothing}
@@ -384,8 +399,10 @@ function answer_of(run::Model.Run, id::AbstractString)
     return k === nothing ? nothing : run.questions[k].answer
 end
 
-"The id of the code question a run puts about one of its findings."
-code_question_id(run::Model.Run, id::AbstractString) = string(run.id, "-", id, "-code")
+# The id of the question a run puts about one of its findings. A finding's id already carries the run's,
+# so nothing is prefixed: `<run>-<run>-004-code` was the result before (found by PF, 2026-09-24).
+"The id of a run's question about one of its findings: the finding's id and `-code`."
+code_question_id(run::Model.Run, id::AbstractString) = string(id, "-code")
 
 """
     to_owner(run) -> Vector{Model.Finding}
@@ -393,7 +410,7 @@ code_question_id(run::Model.Run, id::AbstractString) = string(run.id, "-", id, "
 The findings the owner answered "fix the code" on: no pass works on them and none is carried; each is
 his, with the direction he gave. The argument is `run`. Returns them in the run's order.
 """
-to_owner(run::Model.Run) = [f for f in run.findings if answer_of(run, f.id) == CODE_ANSWER]
+to_owner(run::Model.Run) = [f for f in run.findings if owner_took(run, f.id)]
 
 """
     open_findings(run) -> Vector{Model.Finding}
@@ -406,7 +423,7 @@ it is not a leftover and is not carried into the next run. It is the owner's fro
 collected, and [`in_material`](@ref) is where it is read.
 """
 open_findings(run::Model.Run) = [f for f in run.findings if !closed(run, f.id) && !f.draft.in_material &&
-                                                             answer_of(run, f.id) != CODE_ANSWER]
+                                                             !owner_took(run, f.id) && !(f.id in run.dropped_ids)]
 
 """
     in_material(run) -> Vector{Model.Finding}
@@ -452,7 +469,8 @@ owner_question(run::Model.Run, f::Model.Finding, why::AbstractString) = Model.Qu
     id = code_question_id(run, f.id),
     decision = "This finding needs a change only you may make. Will you make it?",
     context = String(strip(why)),
-    options = [Model.Option(CODE_ANSWER, "the change is yours: the finding goes on your list, and the run leaves it", true),
+    options = [Model.Option(OWNER_ANSWER, "the change is yours: the finding goes on your list, and the run leaves it", true),
+               Model.Option(RULED_ANSWER, "the fixer makes it as your --direction says; the finding is open again, and a verifier closes it", false),
                Model.Option(NOT_A_DEFECT_ANSWER, "nothing changes, and the finding is closed", false)])
 
 """
@@ -686,12 +704,17 @@ as_dict(r::Model.Run) = Dict{String,Any}(
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
     "readers" => String(r.readers), "passes" => r.passes,
     "scope" => String(r.scope), "base" => r.base, "driver" => r.driver, "dropped" => r.dropped, "unreverted" => r.unreverted, "silent" => r.silent, "rulebook" => r.rulebook,
+    "pass_since" => r.pass_since, "dropped_ids" => r.dropped_ids,
     "questions" => [question_dict(q) for q in r.questions],
     "fixes" => [Dict{String,Any}("finding" => f.finding, "pass" => f.pass, "commit" => f.commit,
                                   "formula_edit" => f.formula_edit, "blind" => String(Symbol(f.blind)),
                                   "with_diff" => f.with_diff === nothing ? nothing : String(Symbol(f.with_diff)),
-                                  "agreeing_code" => f.agreeing_code === nothing ? nothing : loc_dict(f.agreeing_code))
+                                  "agreeing_code" => f.agreeing_code === nothing ? nothing : loc_dict(f.agreeing_code),
+                                  "note" => f.note)
                 for f in r.fixes],
+    "usage" => [Dict{String,Any}("stage" => u.stage, "pass" => u.pass, "agents" => u.agents, "input" => u.input,
+                                 "cache_write" => u.cache_write, "cache_read" => u.cache_read, "output" => u.output)
+                for u in r.usage],
     "findings" => [Dict{String,Any}("id" => f.id, "source" => String(f.source),
                                     "decider" => String(Symbol(f.decider)),
                                     "claim" => f.draft.claim, "evidence" => f.draft.evidence,
@@ -749,8 +772,16 @@ function from_dict(d::AbstractDict)
                                            with_diff = get(f, "with_diff", nothing) === nothing ? nothing :
                                                        getfield(Model.Verdict, Symbol(f["with_diff"])),
                                            agreeing_code = get(f, "agreeing_code", nothing) === nothing ? nothing :
-                                                           loc_of(f["agreeing_code"]))
+                                                           loc_of(f["agreeing_code"]),
+                                           note = get(f, "note", ""))
                               for f in get(d, "fixes", [])],
+                     usage = [Model.Usage(stage = String(get(u, "stage", "")), pass = get(u, "pass", 0),
+                                          agents = get(u, "agents", 0), input = get(u, "input", 0),
+                                          cache_write = get(u, "cache_write", 0), cache_read = get(u, "cache_read", 0),
+                                          output = get(u, "output", 0))
+                              for u in get(d, "usage", [])],
+                     pass_since = get(d, "pass_since", ""),
+                     dropped_ids = String[String(x) for x in get(d, "dropped_ids", [])],
                      passes = get(d, "passes", 0),
                      agent_launches = get(d, "agent_launches", 0), tokens = get(d, "tokens", nothing),
                      stop = getfield(Model.Stop, Symbol(get(d, "stop", "DONE"))),

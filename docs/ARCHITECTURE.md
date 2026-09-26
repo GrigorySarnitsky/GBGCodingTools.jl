@@ -231,23 +231,30 @@ run the owner asked for, and then fixes and verifies without asking again [R1, R
    every pass and reached the owner only at close].
 4. **Checks.** `gbg docfix check` runs the documentation checks, doctests and docs build; a check that passed at the
    run's first commit and fails now is exit 1.
-5. **Verifier, blind first.** `gbg run next` re-anchors the findings (§4.5) and writes the blind stage's arguments from
-   the anchors it got, so the text a verifier is sent is the text the finding is about. A verifier is given what the
-   reader that made the finding was given (§5.3) — one built page alone for the withheld reader's, the whole material
-   with the source for the full reader's, a discipline's standpoint for its own — and reads, in a copy of the tree
-   exported without git history, each finding, the current text at its locations — or, for an `OUTDATED` one, the
-   file's changed regions — and every region the pass changed, without the old text or the fixer's explanation. The
-   blind verifier runs at the tier of the reader whose finding it judges; the diff verifier runs economy [ruled
-   2026-09-21]. It answers `FIXED`, `NOT_FIXED`, `HIDES_CODE_DEFECT` (the documentation describes
-   code that looks wrong) or `NOT_A_DEFECT`. Only after that stage is collected does `gbg run next` write the second,
-   for `FIXED` findings only, which sees the diff and may answer `LINE_ONLY` (fixed at some locations only) or
-   `MADE_WORSE` [blind reading caught false mathematics; the diff stage caught 11 of 13 fixes made at one line only].
+5. **One verifier per place, with the diff.** `gbg run next` re-anchors the findings (§4.5) and writes the verify
+   stage's arguments from the anchors it got, so the text a verifier is sent is the text the findings are about. The
+   open findings are grouped by the unit they sit in — the built page, for the withheld reader's; the example's source,
+   for one made on it; the file named first, otherwise — and ONE verifier per unit (at most ten findings each) is given
+   those findings, the unit as it now stands, what the reader that found them was given (§5.3), and the diff of the
+   pass's commits, oldest first, and answers each finding by id: `FIXED`, `NOT_FIXED`, `LINE_ONLY` (fixed at some
+   locations only), `MADE_WORSE` (the change broke something the old text had right), `HIDES_CODE_DEFECT` (the
+   documentation now describes code that looks wrong) or `NOT_A_DEFECT`, each with one verbatim quote. It runs at the
+   tier of the reader whose findings it judges. [Until 2026-09-26 a blind verifier per finding ran first and a second
+   read the diff for what it called fixed. Measured on GBGPeriodicFields' first full run: 187 verifier launches paid the
+   same ~146k tokens of fixed context each, nine times the cost of finding; the blind stage was wrong on 47% of its
+   not-fixed verdicts, since a fix by linking a term is invisible with links stripped and a quote of two spans joined
+   by "…" is in no file; the diff stage made the one real catch. Ruled: one verifier that sees both, per place.]
 6. **Grade.** A program applies the verdicts. Every verdict except `NOT_FIXED` needs a quote the program finds in the
-   current text, or it becomes `NOT_FIXED`. `MADE_WORSE` reverts the edit; `HIDES_CODE_DEFECT` reverts it and asks the
-   owner — unless the owner already answered "fix the documentation instead", when the edit stands and is listed. A
-   `NOT_A_DEFECT` closes the finding for this run, listed but never stored.
-7. **Passes.** Open findings return to step 1, up to 4 [verified fixes rose 16 → 39 → 55 → 74 % over four passes in one
-   package, 43 → 69 → 76 → 95 % in another, then 93 and 90].
+   current text, each "…"-separated span on its own, or it becomes `NOT_FIXED`, the demotion written on the `DocFix`;
+   so is a finding no verifier answered for. `MADE_WORSE` reverts the pass's commits for the finding;
+   `HIDES_CODE_DEFECT` reverts them and asks the owner — unless he already answered "fix the documentation instead",
+   when the edit stands and is listed. A `NOT_A_DEFECT` closes the finding for this run, listed but never stored.
+7. **Passes.** One by default [ruled 2026-09-26: a second pass over unchanged text moved 22% of the verdicts by variance,
+   at a third of the first pass's cost; four was the cap before]. A fix stage that committed nothing closes the run, and
+   what is still open goes to the owner's queue.
+8. **Cost.** `gbg run cost <dir>` sums each agent's own usage records from the launch's transcripts and writes them on the
+   record per stage and pass; the report prints them. The launch's summary field counts a tenth of the cache activity,
+   where nearly all of the cost is, and is not used.
 
 ### 4.4 The code fixer — only on the owner's answer
 
@@ -441,8 +448,10 @@ Base.@kwdef struct AgentRole
 end
 "A field of expertise a package may declare, catalogued once here and shared; a declared one is an open expert reader."
 Base.@kwdef struct Discipline; id::Symbol; description::String; end
-"The one ceiling on a run: its fix passes. Launches are bounded by the design, not capped [ruled 2026-09-21]."
-Base.@kwdef struct Budget; fix_passes::Int = 4; end
+"The one ceiling on a run: its fix passes, one by default [ruled 2026-09-26]. Launches are bounded by the design, not capped [ruled 2026-09-21]."
+Base.@kwdef struct Budget; fix_passes::Int = 1; end
+"What one stage's agents cost, summed from their own transcripts by `gbg run cost` (§4.3 step 8)."
+Base.@kwdef struct Usage; stage::String; pass::Int = 0; agents::Int = 0; input::Int = 0; cache_write::Int = 0; cache_read::Int = 0; output::Int = 0; end
 "An instrument the owner starts, with its three values from §2 and the two prose columns of that table."
 Base.@kwdef struct Instrument
     id::Symbol; purpose::String; intention::Intention.T; decider::Decider.T; fixer::Fixer.T
@@ -527,9 +536,10 @@ lives in the package's own tests as a `Rule` passed to `Harness.test`; new rulin
 "One documentation-fixer attempt at one finding, with the program and agent judgements of it."
 Base.@kwdef struct DocFix
     finding::String; pass::Int; commit::String; formula_edit::Bool
-    blind::Verdict.T; with_diff::Union{Verdict.T,Nothing} = nothing  # the blind verdict (§4.3 step 5), then the
-                                                                     # diff stage's, for a FIXED finding only
+    blind::Verdict.T; with_diff::Union{Verdict.T,Nothing} = nothing  # the verifier's verdict (§4.3 step 5); a second,
+                                                                     # in records from before 2026-09-26
     agreeing_code::Union{Location,Nothing} = nothing  # anchored like any other: its quote is the code line itself
+    note::String = ""                                 # what the grade did to the verdict, if anything (step 6)
 end
 "One approved code fix and the single audit of it; kept with its question (§4.4)."
 Base.@kwdef struct CodeFix
@@ -545,6 +555,9 @@ Base.@kwdef struct Run
     code_fixes::Vector{CodeFix} = CodeFix[]   # the fixes its questions were answered with, added as they land
     agent_launches::Int; tokens::Union{Int,Nothing}; stop::Stop.T   # launches as they arrive: a record, not a cap
     readers::Symbol = :bound                  # which readers this run launches: bound, open or both
+    pass_since::String = ""                   # where the current pass began; its fixes are the commits after it
+    dropped_ids::Vector{String} = String[]    # what an abandon threw away, kept with its text and carried nowhere
+    usage::Vector{Usage} = Usage[]            # what each stage cost, per pass
 end
 ```
 
@@ -702,7 +715,7 @@ not asked about [a session held to that list could only edit by hand or open a r
 no second list of leftovers: it names the run record and says how many lines went to the queue.
 
 **Work.** `Runs` orders the stages; the session launches each one (§6). Documentation review: start → find → collect →
-up to 4 passes (§4.3) → close. Bug hunt: start → hunt, one hunter per code area of the config and the open readers →
+fix → verify → collect (one pass, §4.3) → close. Bug hunt: start → hunt, one hunter per code area of the config and the open readers →
 collect → agents write failing tests → `gbg run witnesses` runs them → collect → close. Change audit: start → audit →
 collect → close, the package's named tests run as evidence. `gbg run close` writes `run.json` and `report.md` — for a
 leak scan, neither (§3). The session commits and pushes what was written, shows the report and questions, and ends.
@@ -732,15 +745,15 @@ confirmed failing tests wait unanswered in `test/regressions/escalated/`. Nothin
 no open finding, no unanswered question, no audit.
 
 **Who stops.** Inside a run, the program, from the pass cap; there is no ceiling on launches — the panel over the
-units, one relaunch each, two verifiers per open finding per pass and four passes bound a run by design [ruled
-2026-09-21]. Across runs, the owner, by asking or not. A
+units, one relaunch each, one verifier per place holding open findings and one pass bound a run by design [ruled
+2026-09-21; one pass and one verifier, 2026-09-26]. Across runs, the owner, by asking or not. A
 program-decided loop needs no budget: it ends itself by passing (§4); the code fixer's three attempts are a judgement
 about the fixer, not a budget (§4.4 step 2).
 
 | Mechanism | The failure it prevents | Its cost |
 |---|---|---|
 | One search per run; the finding list fixed at collect | Repeated searches never settled | A defect the search missed waits for the next run |
-| At most 4 fix passes | Rounds of 9 and 15 passes | Findings open after 4 passes carry over |
+| One fix pass | Rounds of 9 and 15 passes; a second pass moving verdicts by variance | Findings open after the pass go to the owner's queue |
 | Carried findings, in the record and the work queue | A leftover forgotten between reviews | The next review starts with the last one's leftovers |
 | Locations anchored to a node and a quote, re-anchored before each use | A fix or a verifier sent to a line that has since moved | A finding whose text is gone closes as no longer locatable |
 | Guarded commit; classification and build check at close | Code changed, or a red build pushed, through a documentation fix | A documentation fix needing code waits for the owner |

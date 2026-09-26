@@ -558,9 +558,9 @@ Covered by a reader given source, because this needs meaning.
 
 
 #### [`RULE.TEX.CODE_SPAN_JULIA`](@id RULE.TEX.CODE_SPAN_JULIA)
-A backtick span holds only well-formed Julia, never code-looking math.
+A code span holds literal code or input in some language — Julia, shell, TOML, a path, LaTeX source — and never mathematics, which is written as math.
 
-A half-open interval, an inequality, a product, a lone `≤` or `·` glyph is LaTeX; the real operators `×`, `⋅` and `≈` backticked are code and stay.
+Code formatting marks text to be typed or read as code in any language: a shell flag, a path, an environment variable, a TOML key, LaTeX source on a notation page. A half-open interval, an inequality, a product, a lone `≤` or `·` glyph is mathematics and is set as such; the real operators `×`, `⋅` and `≈` backticked are code and stay. Reworded on GBGPeriodicFields' request [ruled 2026-09-26]: the old wording, 'only well-formed Julia', made every shell command a finding.
 
 Covered by a reader given nothing.
 
@@ -807,10 +807,10 @@ where it is used, or it is not a term of art.
   source, or the built site. A rule's tag says which bundle can judge it.
 - **unit** — the one page a reader of the first bundle is given. That reader is launched once per
   unit, so that what it cannot see is what the rule needs it not to see.
-- **pass** — one round of fixing and verifying inside a run. A documentation review makes at most
-  four, after which what is still open carries to the next run.
-- **verifier** — an agent that judges whether a fix fixed the finding: the first blind to the
-  change, the second reading the diff.
+- **pass** — one round of fixing and verifying inside a run. A documentation review makes one,
+  after which what is still open goes to the owner's queue.
+- **verifier** — an agent that judges whether the fixes of one place fixed their findings, with
+  the text as it now stands and the diff of the pass in front of it.
 - **cover** — what decides a rule is broken: a program, a reader, or nothing, the last being an
   instruction the session follows while working.
 - **discipline** — a field of expertise a package declares it needs a reader to have. A rule naming

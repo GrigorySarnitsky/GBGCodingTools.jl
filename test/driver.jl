@@ -147,8 +147,8 @@ function arguments_bytes(n::Int, size::Int)
                                        description = "the one standpoint", rules = [:RULE_X],
                                        strength = G.Model.Strength.FULL, cap = 1))
         extras[id] = Dict{String,Any}("kind" => "verifier", "finding_id" => "f$i", "unit" => "u.txt",
-                                      "finding" => Dict("id" => "f$i", "claim" => text,
-                                                        "locations" => [Dict("file" => "a.md", "text" => text)]),
+                                      "finding" => [Dict("id" => "f$i", "claim" => text,
+                                                         "locations" => [Dict("file" => "a.md", "text" => text)])],
                                       "diff" => text, "verdicts" => ["FIXED", "NOT_FIXED"])
     end
     path = G.Orchestration.Agents.write_arguments(root, run, cfg; roles, extras, io = devnull)

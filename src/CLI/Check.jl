@@ -62,12 +62,13 @@ function run(root::AbstractString; intention = nothing, network::Bool = false, i
 end
 
 """
-    rebaseline(root; io = stdout) -> Int
+    rebaseline(root; only = "", io = stdout) -> Int
 
 Records what the package's prose measures NOW as the ceiling it may not rise above, printing every row
 it raises, adds or drops first. The arguments are:
 
 - `root` — the package root.
+- `only` — a substring of the unit names to re-record; empty re-records every unit.
 - `io` — where the report goes.
 
 Exit 0 when written, 2 when the config cannot be read.
@@ -79,7 +80,7 @@ prose lint after wiring, and switched the rule off for the files the two disagre
 It prints before it writes because a re-baseline is how a ratchet is defeated by accident. What it
 raises is the part worth reading.
 """
-function rebaseline(root::AbstractString; io::IO = stdout)
+function rebaseline(root::AbstractString; only::AbstractString = "", io::IO = stdout)
     cfg = try
         ConfigIO.read_config(root)
     catch err
@@ -87,23 +88,24 @@ function rebaseline(root::AbstractString; io::IO = stdout)
         println(io, sprint(showerror, err)); return 2
     end
     changes = Catalogue.Shape.changes(root, cfg)
+    isempty(only) || (changes = [c for c in changes if occursin(only, c)])
     if isempty(changes)
         println(io, "rebaseline: nothing has grown; the baseline already records this prose.")
     else
         for line in changes; println(io, "  ", line); end
         println(io, "rebaseline: ", length(changes), " row(s) above.")
     end
-    Catalogue.Shape.write_baseline(root, cfg)
-    println(io, "rebaseline: wrote ", Catalogue.Shape.BASELINE, ".")
+    Catalogue.Shape.write_baseline(root, cfg; only)
+    println(io, "rebaseline: wrote ", Catalogue.Shape.BASELINE, isempty(only) ? "." : ", the unit(s) matching \"$only\" alone.")
     return 0
 end
 
 function cmd_check(args)
-    o = parse_options(args; valued = ["only"])
+    o = parse_options(args; valued = ["only", "unit"])
     if "rebaseline" in o.flags
         root = ConfigIO.require_root("check")
         root === nothing && return 2
-        return rebaseline(root)
+        return rebaseline(root; only = get(o.values, "unit", ""))
     end
     root = ConfigIO.require_root("check")
     root === nothing && return 2

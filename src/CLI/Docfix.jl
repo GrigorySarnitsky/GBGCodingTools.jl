@@ -177,6 +177,16 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
         println(io, "Nothing was committed. A code change waits for the owner's answer.")
         return 1
     end
+    # A change that breaks a rule the run opened clean on is refused here, not reported and committed:
+    # `check` said "broken by the change" and `commit` went ahead (found by PF, 2026-09-24). The docs
+    # build is not run here; it is `check`'s, and the verify stage's.
+    broke = broken_by_change(root)
+    if !isempty(broke)
+        println(io, "docfix: refused — the change breaks ", length(broke), " rule(s) that passed when the run opened:")
+        for id in broke; println(io, "  ", id); end
+        println(io, "Nothing was committed. Fix the text so that it passes, or park the finding.")
+        return 1
+    end
     Git.run(root, "add", "--", [r.path for r in rs]...) === nothing && (println(io, "docfix: git add failed"); return 3)
     moved = String[]
     for r in rs
@@ -277,6 +287,16 @@ function check(root::AbstractString; build::Bool = true, io::IO = stdout)
             (println(io, "docfix: the docs build does not pass"); bad = true)
     end
     return bad ? 1 : isempty(rs) ? 2 : 0
+end
+
+# The documentation rules the change broke: found now and not when the open run started. Empty where no
+# run is open, since nothing then says what the change caused.
+function broken_by_change(root::AbstractString)
+    before = baseline(root)
+    before === nothing && return Symbol[]
+    cfg = ConfigIO.read_config(root)
+    now = unique(id for (id, _) in Engine.Checks.run_all(cfg, root; intention = Model.Intention.DOCUMENTATION))
+    return sort(setdiff(now, before))
 end
 
 # What a program already found when the open run started, or `nothing` where no run is open.

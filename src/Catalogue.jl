@@ -64,7 +64,7 @@ const INSTRUMENTS = Model.Instrument[
         fixer = Model.Fixer.DOCUMENTATION_FIXER,
         when = "Owner's request",
         ends = "Nothing is open after its last pass, or the owner ended it",
-        budget = Model.Budget(fix_passes = 4)),
+        budget = Model.Budget(fix_passes = 1)),
     Model.Instrument(
         id = :bug_hunt,
         purpose = "The code does what its documentation says",

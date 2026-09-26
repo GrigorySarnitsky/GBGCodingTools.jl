@@ -4,6 +4,49 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.24 — 2026-09-26
+
+MINOR. **Verification rebuilt on the measurements of GBGPeriodicFields' first full review** (run
+`2026-09-24-documentation-review-01`, 37 items reported), and the defects it met fixed. Upgrade before the next review.
+
+**One verifier per place, with the diff, one pass** (ruled 2026-09-26). Pass 1 of that review launched 187 verifiers,
+each starting at ~146k tokens of fixed context, for $349 against $52 for the whole reading stage; the blind stage was
+wrong on 47% of its not-fixed verdicts and the diff stage made the one real catch; a second pass re-verified unchanged
+text and moved 22% of verdicts by variance for $118. Now the open findings are grouped by the unit they sit in and ONE
+verifier per unit (at most ten findings) judges them all, with the unit as it now stands and the diff of the pass, and
+answers each by id; the `diff` stage is gone, a pass is `fix → verify → collect`, and the budget is one pass. A fix
+stage that committed nothing closes the run instead of verifying unchanged text.
+
+**What a verifier could not see, and what the grade lost.** The page text shows a link as `[text](target)`, so a term
+fixed by linking it to its definition no longer reads as the unfixed text (ten findings failed that way). A quote of
+two spans joined by "…" holds when each span does. The driver returns each agent's validated result, the session saves
+it as `returned.json` beside the results, and the collect falls back on it for a role whose own file never appeared
+(three FIXED verdicts were counted silent). A demotion — quote not in the text, no answer, a verdict outside the list —
+is written on the `DocFix` as `note`, not only printed. A pass's fixes are the commits since the pass began
+(`Run.pass_since`), so a later pass no longer shows the earlier pass's commit on every finding.
+
+**Cost is recorded.** `gbg run cost <dir>` sums each agent's own usage from the launch's transcripts into the record
+(`Run.usage`), per stage and pass, and the report prints the table. The launch's summary field counted a tenth of the
+real cost — 17.9M reported against 164.6M measured — and nothing recorded a cost at all.
+
+**Parked findings.** A parked finding's question offers `I make the change` (the owner's; his list), `fix it on my
+ruling` (the fixer's again, with his `--direction`; a verifier then closes it; `docfix commit --finding` accepts the id)
+and `not a defect`. Question ids are `<finding>-code`, no longer with the run's id doubled in front.
+
+**The program checks and the guard.** `gbg docfix commit` refuses a change that breaks a rule the run opened clean on,
+where `check` reported it and `commit` went ahead. A Literate `#md # …` line's prose may change, as any Markdown line's
+may. `RULE.DOC.SHAPE` counts a formula as one word however it is laid out, and no lone dash. `RULE.TEX.CODE_SPAN_JULIA`
+is reworded on PF's request: a code span holds literal code or input in any language, and never mathematics.
+
+**Verbs.** `gbg run <verb> --help` prints usage and acts on nothing (`abandon --help` abandoned a run). `gbg run next`
+and `collect` name the pass. Abandoning a run keeps the text of what it dropped, marked `dropped_ids`, so a triage can
+name it; nothing dropped is carried. The driver copy a run places has the stage's arguments spliced in, so the launch
+passes no args. `gbg check --rebaseline --unit <name>` re-records the named units alone. The record's two hand-written
+field lists are gone: `with` and `with_questions` copy every field off the type, having dropped `rulebook`.
+
+**Not changed, by ruling:** a moved formula is still a change the guard refuses, and a new comment line in a Literate
+example is still code; both are parked. The rulebook stays imported into every package's `CLAUDE.md`.
+
 ## 2.0.0-rc.23 — 2026-09-24
 
 MINOR, one ruling. **The program checks read a package's design documents by default** (ruled 2026-09-24): the

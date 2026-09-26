@@ -24,8 +24,8 @@ const NO_HSCROLL = Model.Rule(
 
 const CODE_SPAN_JULIA = Model.Rule(
     id = Symbol("RULE.TEX.CODE_SPAN_JULIA"),
-    statement = "A backtick span holds only well-formed Julia, never code-looking math.",
-    why = "A half-open interval, an inequality, a product, a lone `≤` or `·` glyph is LaTeX; the real operators `×`, `⋅` and `≈` backticked are code and stay.",
+    statement = "A code span holds literal code or input in some language — Julia, shell, TOML, a path, LaTeX source — and never mathematics, which is written as math.",
+    why = "Code formatting marks text to be typed or read as code in any language: a shell flag, a path, an environment variable, a TOML key, LaTeX source on a notation page. A half-open interval, an inequality, a product, a lone `≤` or `·` glyph is mathematics and is set as such; the real operators `×`, `⋅` and `≈` backticked are code and stay. Reworded on GBGPeriodicFields' request [ruled 2026-09-26]: the old wording, 'only well-formed Julia', made every shell command a finding.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
     unchecked_reason = "judged by a reader; no program can decide it",

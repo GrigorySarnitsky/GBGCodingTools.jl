@@ -113,9 +113,18 @@ end
 
 """Write one verifier's verdict, as the driver would have written it, for the current stage."""
 function verifier_said(root, id, stage, finding, verdict; quote_ = "")
-    mkpath(AGENTS.results_dir(root, id))
-    write(joinpath(AGENTS.results_dir(root, id), string(stage, "-", finding, ".json")),
-          """{"verdict":"$verdict","quote":"$quote_"}""")
+    # One verifier per unit answers for every finding of it: the result file is the role's whose
+    # finding list names this finding, and holds one verdict per finding.
+    args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+    role = findfirst(r -> finding in strip.(split(String(r["finding"]), ",")), args["roles"])
+    role === nothing && error("no verifier of this stage is asked about $finding")
+    key = String(args["roles"][role]["key"])
+    path = joinpath(AGENTS.results_dir(root, id), key * ".json")
+    have = isfile(path) ? G.JSON3.read(read(path, String), Dict{String,Any}) : Dict{String,Any}("verdicts" => Any[])
+    vs = Any[v for v in get(have, "verdicts", Any[]) if String(get(v, "finding", "")) != finding]
+    push!(vs, Dict("finding" => finding, "verdict" => verdict, "quote" => quote_))
+    mkpath(dirname(path))
+    write(path, G.JSON3.write(Dict("verdicts" => vs)))
 end
 
 """Every launched reader but the named ones reports clean, so a collect is not exit 2 for their silence."""
@@ -324,6 +333,7 @@ end
             args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
             v = whole(args, only(args["roles"]))
             @test v["kind"] == "verifier" && !isempty(String(v["unit"]))
+            @test v["kept_from_code"] == false                      # it sees the diff too (ruled 2026-09-26)
             page = read(String(v["unit"]), String)
             @test occursin("The grid is a lattice.", page)            # the page as it now stands
             @test !occursin("The grid is spectral.", page)
@@ -503,8 +513,13 @@ end
             @test G.Run.abandon(root; io = devnull) == 0
             @test G.Run.open_run(root) === nothing
             record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
-            @test record["stop"] == "OWNER_STOPPED" && isempty(record["findings"])
-            @test occursin("The owner stopped it.", read(joinpath(RUNS.dir(root, id), "report.md"), String))
+            # the dropped finding's TEXT stays on the record, marked dropped (ruled 2026-09-26), and is
+            # carried into no later run
+            @test record["stop"] == "OWNER_STOPPED" && length(record["findings"]) == 1
+            @test record["dropped"] == 1 && record["dropped_ids"] == [fid]
+            @test isempty(RUNS.open_findings(RUNS.load(root, id)))
+            rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
+            @test occursin("The owner stopped it.", rep) && occursin("- `" * fid * "` the grid is named", rep)
             @test !isdir(AGENTS.scratch_dir(root, id))
             @test !occursin(fid, read(joinpath(root, ".claude", "WORK_QUEUE.md"), String))
             @test G.Run.abandon(root; io = devnull) == 2                # nothing open now
@@ -554,7 +569,7 @@ end
             reader_found(root, id, HOME_READER, "one"); all_clean(root, id; except = [HOME_READER])
             code_change(root)
             @test G.Run.collect(root; io = devnull) == 2                 # an uncommitted edit
-            @test RUNS.stage_of(root, id) === :find && isempty(RUNS.load(root, id).findings)
+            @test RUNS.stage_of(root, id) === :find && isempty(RUNS.open_findings(RUNS.load(root, id)))
             gg("add", "src"); gg("commit", "-q", "-m", "committed under the readers")
             @test G.Run.collect(root; io = devnull) == 2                 # a commit
             gg("reset", "-q", "--hard", "HEAD~1")                        # the tree restored (the run's files are untracked)
@@ -568,9 +583,11 @@ end
             id, fid = with_one_finding(root)
             cap = RUNS.load(root, id).budget.fix_passes
             for p in 1:cap
-                G.Run.next(root; io = devnull); G.Run.next(root; io = devnull)
+                G.Run.next(root; io = devnull)                              # fix
+                fixed_as(root, fid, "The grid is a lattice, pass $p.")
+                G.Run.next(root; io = devnull)                              # verify
                 verifier_said(root, id, "verify", fid, "NOT_FIXED")
-                G.Run.collect(root; io = devnull); G.Run.next(root; io = devnull); G.Run.collect(root; io = devnull)
+                G.Run.collect(root; io = devnull)
             end
             G.Run.next(root; io = devnull)
             @test G.Run.close_run(root; io = devnull) == 1
@@ -750,17 +767,17 @@ end
         end
     end
 
-    # ── the pass: fix, verify blind, verify with the diff, graded by a program (design §4.3)
+    # ── the pass: fix, then one verifier per place with the diff, graded by a program (design §4.3)
 
-    # The whole happy path: a finding, a guarded fix carrying its trailer, a blind verifier that quotes
-    # the new text, a diff verifier that agrees, and a run that closes clean with the pass on record.
-    @testset "a fix verified twice closes its finding, and the run closes clean" begin
+    # The whole happy path: a finding, a guarded fix carrying its trailer, one verifier given the
+    # finding, the page as it now stands and the diff, and a run that closes clean with the pass on record.
+    @testset "a fix a verifier stands behind closes its finding, and the run closes clean" begin
         package() do root, gg
             id, fid = with_one_finding(root)
             @test G.Run.next(root; io = devnull) == 0                  # → fix, pass 1
             @test RUNS.stage_of(root, id) === :fix
             run = RUNS.load(root, id)
-            @test run.passes == 1
+            @test run.passes == 1 && !isempty(run.pass_since)          # the pass knows where it began
             todo = G.JSON3.read(read(joinpath(AGENTS.stage_dir(root, id), "findings.json"), String))
             @test length(todo) == 1 && todo[1]["id"] == fid
             @test todo[1]["locations"][1]["line"] == HOME_LINE       # re-anchored before the fixer sees it
@@ -768,43 +785,69 @@ end
             fixed_as(root, fid, "The grid is a lattice.")
             @test RUNS.fix_commits(root, run.first_commit, fid) |> length == 1
 
-            @test G.Run.next(root; io = devnull) == 0                  # → verify: one blind verifier
+            @test G.Run.next(root; io = devnull) == 0                  # → verify: one verifier for the page
             args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
             @test length(args["roles"]) == 1
             v = whole(args, args["roles"][1])
-            @test v["kind"] == "verifier" && v["key"] == "verify-" * fid
-            # The finding is a PATH, and the diff is absent: the blind verifier is not shown the change,
-            # and what it IS shown is a file it reads rather than a paragraph in the arguments.
-            @test v["finding"] == fid && v["diff_file"] == ""
+            @test v["kind"] == "verifier" && v["key"] == "verify-unit-home"
+            # The findings are a FILE holding a list, and the diff is a file beside it: what the verifier
+            # is shown is what it reads, not a paragraph in the arguments.
+            @test v["finding"] == fid
             @test isfile(v["finding_file"])
-            @test G.JSON3.read(read(v["finding_file"], String), Dict{String,Any})["id"] == fid
-            @test v["kept_from_code"] == true                        # what the withheld reader was given
-            @test "HIDES_CODE_DEFECT" in v["verdicts"]
-            verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a lattice.")
-            @test G.Run.collect(root; io = devnull) == 1              # graded; still open until the diff agrees
-            @test only(RUNS.load(root, id).fixes).blind === MRun.Verdict.FIXED
-
-            @test G.Run.next(root; io = devnull) == 0                  # → diff: the same finding, with its diff
-            args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
-            d = whole(args, only(args["roles"]))
-            @test d["key"] == "diff-" * fid && d["strength"] == "economy"
-            @test occursin("lattice", read(d["diff_file"], String))
+            @test only(G.JSON3.read(read(v["finding_file"], String)))["id"] == fid
+            @test occursin("lattice", read(v["diff_file"], String))
+            @test v["kept_from_code"] == false
+            @test "HIDES_CODE_DEFECT" in v["verdicts"] && "MADE_WORSE" in v["verdicts"]
             # The standpoint is in the shared table under the key the role names, not written out here.
-            @test haskey(args["briefs"], d["brief"]) && !isempty(args["briefs"][d["brief"]])
+            @test haskey(args["briefs"], v["brief"]) && !isempty(args["briefs"][v["brief"]])
             @test length(args["roles"][1]) == 6                      # a role carries only what is its own
-            verifier_said(root, id, "diff", fid, "FIXED"; quote_ = "The grid is a lattice.")
+            # the driver's copy carries the arguments spliced in, so the call passes none
+            @test occursin("globalThis.args = {", read(joinpath(AGENTS.scratch_dir(root, id), "run.js"), String))
+            verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a lattice.")
             @test G.Run.collect(root; io = devnull) == 0              # nothing open
             fix = only(RUNS.load(root, id).fixes)
-            @test fix.with_diff === MRun.Verdict.FIXED && fix.pass == 1 && !isempty(fix.commit)
+            @test fix.blind === MRun.Verdict.FIXED && fix.with_diff === nothing && fix.pass == 1 && !isempty(fix.commit)
+            @test isempty(fix.note)
 
             @test G.Run.next(root; io = devnull) == 0                  # → close
             @test G.Run.close_run(root; io = devnull) == 0
             rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
-            @test occursin("pass 1: blind verifier `FIXED`, with the diff `FIXED`", rep)
-            @test occursin("1 of 4 fix pass", rep)
+            @test occursin("pass 1: verifier `FIXED`", rep)
+            @test occursin("1 of 1 fix pass", rep)
             @test !occursin(fid, read(joinpath(root, ".claude", "WORK_QUEUE.md"), String))  # nothing left over
             record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
             @test record["passes"] == 1 && length(record["fixes"]) == 1
+        end
+    end
+
+    # Several findings of one place go to ONE verifier, which answers each by id; a finding it leaves
+    # out is NOT_FIXED with the reason on record.
+    @testset "the findings of one place share a verifier, and one it skips is graded not fixed" begin
+        package() do root, gg
+            G.Run.start(root, :documentation_review; io = devnull)
+            id = G.Run.open_run(root)
+            reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+            reader_found(root, id, "full", "the record is not called a record"; quote_ = "an options record")
+            all_clean(root, id; except = [HOME_READER, "full"])
+            G.Run.collect(root; io = devnull)
+            found = RUNS.load(root, id).findings
+            home_id = only(f.id for f in found if f.source === Symbol(HOME_READER))
+            full_id = only(f.id for f in found if f.source === :full)
+            G.Run.next(root; io = devnull)                                # fix
+            write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
+            @test G.Docfix.commit(root, "fix for " * home_id; io = devnull, finding = home_id) == 0
+            G.Run.next(root; io = devnull)                                # verify
+            args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+            keys_ = sort([String(r["key"]) for r in args["roles"]])
+            @test keys_ == ["verify-file-docs-src-index-md", "verify-unit-home"]   # the full reader's file, the page's unit
+            verifier_said(root, id, "verify", home_id, "FIXED"; quote_ = "The grid is a lattice.")
+            @test G.Run.collect(root; io = devnull) == 2                  # the other verifier wrote nothing
+            write(joinpath(AGENTS.results_dir(root, id), "verify-file-docs-src-index-md.json"), """{"verdicts":[]}""")
+            @test G.Run.collect(root; io = devnull) == 2                  # still nothing: silent, but the run goes on
+            run = RUNS.load(root, id)
+            @test RUNS.closed(run, home_id) && !RUNS.closed(run, full_id)
+            k = findfirst(x -> x.finding == full_id, run.fixes)
+            @test run.fixes[k].blind === MRun.Verdict.NOT_FIXED && occursin("no verifier answered", run.fixes[k].note)
         end
     end
 
@@ -818,14 +861,15 @@ end
             G.Run.next(root; io = devnull)                               # verify
             verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "words nobody wrote")
             @test G.Run.collect(root; io = devnull) == 1
-            @test only(RUNS.load(root, id).fixes).blind === MRun.Verdict.NOT_FIXED
-            @test G.Run.next(root; io = devnull) == 0                    # → diff, with nobody to ask
-            @test RUNS.stage_of(root, id) === :diff
-            args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
-            @test isempty(args["roles"])                                 # nothing was called fixed
-            @test G.Run.collect(root; io = devnull) == 1
-            @test G.Run.next(root; io = devnull) == 0                    # → fix again, pass 2
-            @test RUNS.stage_of(root, id) === :fix && RUNS.load(root, id).passes == 2
+            fix = only(RUNS.load(root, id).fixes)
+            @test fix.blind === MRun.Verdict.NOT_FIXED
+            @test occursin("quote is not in the text", fix.note)         # the demotion is on the record
+            @test G.Run.next(root; io = devnull) == 0                    # one pass: → close
+            @test RUNS.stage_of(root, id) === :close
+            # a quote of two spans joined by "..." holds when each span does (found by PF, 2026-09-24)
+            f = only(RUNS.load(root, id).findings)
+            @test G.Run.quote_holds(root, f, "The grid is ... lattice.")
+            @test !G.Run.quote_holds(root, f, "The grid is ... spectral.")
         end
     end
 
@@ -837,10 +881,9 @@ end
             cap = RUNS.load(root, id).budget.fix_passes
             for p in 1:cap
                 @test G.Run.next(root; io = devnull) == 0 && RUNS.stage_of(root, id) === :fix
+                fixed_as(root, fid, "The grid is a lattice, pass $p.")
                 @test G.Run.next(root; io = devnull) == 0 && RUNS.stage_of(root, id) === :verify
                 verifier_said(root, id, "verify", fid, "NOT_FIXED")
-                @test G.Run.collect(root; io = devnull) == 1
-                @test G.Run.next(root; io = devnull) == 0 && RUNS.stage_of(root, id) === :diff
                 @test G.Run.collect(root; io = devnull) == 1
             end
             @test RUNS.load(root, id).passes == cap
@@ -854,7 +897,7 @@ end
             @test count("- [ ] " * fid, queue) == 1
             rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
             @test occursin("$cap of $cap fix pass", rep)
-            @test count("blind verifier `NOT_FIXED`", rep) == cap
+            @test count("verifier `NOT_FIXED`", rep) == cap
             # a second close over the same queue replaces the section rather than appending to it
             write(joinpath(root, ".claude", "WORK_QUEUE.md"), queue * "\n## Mine\n\n- [ ] the owner's own item\n")
             G.Run.queue_leftovers(root, RUNS.load(root, id))
@@ -871,13 +914,10 @@ end
             G.Run.next(root; io = devnull)
             fixed_as(root, fid, "The grid is a lattice.")
             G.Run.next(root; io = devnull)
-            verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a lattice.")
-            G.Run.collect(root; io = devnull)
-            G.Run.next(root; io = devnull)
-            verifier_said(root, id, "diff", fid, "MADE_WORSE"; quote_ = "The grid is a lattice.")
+            verifier_said(root, id, "verify", fid, "MADE_WORSE"; quote_ = "The grid is a lattice.")
             @test G.Run.collect(root; io = devnull) == 1
             @test occursin("spectral", read(joinpath(root, "docs", "src", "index.md"), String))
-            @test only(RUNS.load(root, id).fixes).with_diff === MRun.Verdict.MADE_WORSE
+            @test only(RUNS.load(root, id).fixes).blind === MRun.Verdict.MADE_WORSE
             @test isempty(RUNS.unguarded_code(root, RUNS.load(root, id).first_commit))
             @test length(RUNS.open_findings(RUNS.load(root, id))) == 1
         end
@@ -909,9 +949,10 @@ end
     @testset "NOT_A_DEFECT closes the finding" begin
         package() do root, gg
             id, fid = with_one_finding(root)
-            G.Run.next(root; io = devnull)                               # fix: the session decides not to
+            G.Run.next(root; io = devnull)                               # fix
+            fixed_as(root, fid, "The grid is spectral, that is, a lattice.")   # something committed, or nothing is verified
             G.Run.next(root; io = devnull)                               # verify
-            verifier_said(root, id, "verify", fid, "NOT_A_DEFECT"; quote_ = "The grid is spectral.")
+            verifier_said(root, id, "verify", fid, "NOT_A_DEFECT"; quote_ = "The grid is spectral")
             @test G.Run.collect(root; io = devnull) == 0
             @test RUNS.closed(RUNS.load(root, id), fid)
             @test G.Run.next(root; io = devnull) == 0 && RUNS.stage_of(root, id) === :close
@@ -1254,17 +1295,14 @@ end
         fid = only(f.id for f in run.findings if f.source === Symbol(HOME_READER))
         G.Run.next(root; io = devnull)                                # → fix
         fixed_as(root, fid, "The grid is a lattice.")
-        G.Run.next(root; io = devnull)                                # → verify (two verifiers)
+        G.Run.next(root; io = devnull)                                # → verify (one verifier per place)
         for f in RUNS.workable(RUNS.load(root, id))
             verifier_said(root, id, "verify", f.id, f.id == fid ? "FIXED" : "NOT_FIXED"; quote_ = f.id == fid ? "The grid is a lattice." : "")
         end
         G.Run.collect(root; io = devnull)
-        G.Run.next(root; io = devnull)                                # → diff, for the one called fixed
-        verifier_said(root, id, "diff", fid, "FIXED"; quote_ = "The grid is a lattice.")
-        G.Run.collect(root; io = devnull)
         @test G.Run.abandon(root; io = devnull) == 0
         record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
-        @test record["dropped"] == 1 && length(record["findings"]) == 1
+        @test record["dropped"] == 1 && length(record["findings"]) == 2 && length(record["dropped_ids"]) == 1
         rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
         @test occursin("## 1 finding(s) were thrown away", rep)       # said even though one was kept
         @test occursin("## Findings — 1", rep)
@@ -1399,11 +1437,8 @@ end
         fixed_as(root, target_id, "The grid is a lattice.")
         @test G.Run.next(root; io = devnull) == 0                     # → verify: one verifier, for the target
         args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
-        @test [String(r["key"]) for r in args["roles"]] == ["verify-" * target_id]
+        @test [String(r["key"]) for r in args["roles"]] == ["verify-unit-home"]
         verifier_said(root, id, "verify", target_id, "FIXED"; quote_ = "The grid is a lattice.")
-        G.Run.collect(root; io = devnull)
-        @test G.Run.next(root; io = devnull) == 0                     # → diff
-        verifier_said(root, id, "diff", target_id, "FIXED"; quote_ = "The grid is a lattice.")
         G.Run.collect(root; io = devnull)
         @test to_close(root, id) === :close
         @test G.Run.close_run(root; io = devnull) == 0
@@ -1443,9 +1478,6 @@ end
         fixed_as(root, fid, "The grid is a lattice.")
         G.Run.next(root; io = devnull)                                # → verify
         verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a lattice.")
-        G.Run.collect(root; io = devnull)
-        G.Run.next(root; io = devnull)                                # → diff
-        verifier_said(root, id, "diff", fid, "FIXED"; quote_ = "The grid is a lattice.")
         @test G.Run.collect(root; io = devnull) == 0
         @test G.Run.abandon(root; io = devnull) == 0
         record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
@@ -1736,10 +1768,7 @@ end
         write(idx, replace(read(idx, String), "The grid is a lattice." => "The grid is a periodic lattice."))
         gg("add", "docs/src/index.md"); gg("commit", "-q", "-m", "later\n\n" * RUNS.GUARD_TRAILER * "\n" * RUNS.FINDING_TRAILER * "OTHER")
         G.Run.next(root; io = devnull)                                  # → verify
-        verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a periodic lattice.")
-        G.Run.collect(root; io = devnull)
-        G.Run.next(root; io = devnull)                                  # → diff
-        verifier_said(root, id, "diff", fid, "MADE_WORSE"; quote_ = "The grid is a periodic lattice.")
+        verifier_said(root, id, "verify", fid, "MADE_WORSE"; quote_ = "The grid is a periodic lattice.")
         out = IOBuffer(); G.Run.collect(root; io = out)
         @test occursin("could NOT be reverted", String(take!(out)))
         @test !isempty(RUNS.load(root, id).unreverted)
@@ -1823,8 +1852,6 @@ end
         write(q, mine); gg("add", ".claude"); gg("commit", "-q", "-m", "queue")
         G.Run.next(root; io = devnull); fixed_as(root, fid, "The grid is a lattice.")
         G.Run.next(root; io = devnull); verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a lattice.")
-        G.Run.collect(root; io = devnull); G.Run.next(root; io = devnull)
-        verifier_said(root, id, "diff", fid, "FIXED"; quote_ = "The grid is a lattice.")
         G.Run.collect(root; io = devnull)
         to_close(root, id); @test G.Run.close_run(root; io = devnull) == 0
         text = read(q, String)
@@ -1890,8 +1917,6 @@ end
         G.Run.next(root; io = devnull)
         fixed_as(root, fid, "The grid is a lattice. BREAKS THE BUILD.")
         G.Run.next(root; io = devnull); verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a lattice.")
-        G.Run.collect(root; io = devnull); G.Run.next(root; io = devnull)
-        verifier_said(root, id, "diff", fid, "FIXED"; quote_ = "The grid is a lattice.")
         G.Run.collect(root; io = devnull)
         @test to_close(root, id) === :close
         old = SITE.BUILDER[]; SITE.BUILDER[] = picky_site
@@ -1985,21 +2010,23 @@ end
 @testset "a later pass reads only its own results" begin
     package() do root, gg
         id, fid = with_one_finding(root)
+        RUNS.save(root, G.Run.with(RUNS.load(root, id); budget = G.Model.Budget(fix_passes = 2)))   # two passes, for this
         G.Run.next(root; io = devnull)
         fixed_as(root, fid, "The grid is a lattice.")
         G.Run.next(root; io = devnull)
         verifier_said(root, id, "verify", fid, "NOT_FIXED")
         G.Run.collect(root; io = devnull)
-        order = RUNS.STAGES[:documentation_review]
-        for _ in 1:6                                                      # through the empty diff stage
-            (RUNS.load(root, id).passes == 2 && RUNS.stage_of(root, id) === :fix) && break
-            order[RUNS.stage_index(root, id) + 1] === :collect ? G.Run.collect(root; io = devnull) : G.Run.next(root; io = devnull)
-        end
-        @test RUNS.load(root, id).passes == 2
+        G.Run.next(root; io = devnull)                                    # → fix, pass 2
+        @test RUNS.load(root, id).passes == 2 && RUNS.stage_of(root, id) === :fix
         fixed_as(root, fid, "The grid is a periodic lattice.")
         G.Run.next(root; io = devnull)                                    # its verify stage
-        @test !isfile(joinpath(AGENTS.results_dir(root, id), "verify-" * fid * ".json"))   # pass 1's is gone
+        @test !isfile(joinpath(AGENTS.results_dir(root, id), "verify-unit-home.json"))   # pass 1's is gone
         @test G.Run.collect(root; io = devnull) == 2                      # silent: launched again, in pass 2 too
+        # and the pass's fix is the commit made in it, not pass 1's (found by PF, 2026-09-24)
+        write(joinpath(AGENTS.results_dir(root, id), "verify-unit-home.json"), """{"verdicts":[]}""")
+        G.Run.collect(root; io = devnull)
+        fixes = RUNS.load(root, id).fixes
+        @test length(fixes) == 2 && fixes[1].commit != fixes[2].commit && all(f -> !isempty(f.commit), fixes)
     end
 end
 
@@ -2117,20 +2144,21 @@ end
     @test !G.Run.switched_off(G.Model.Config(package = "P", tool = :dev), d(["docs/src/index.md"]))
 end
 
-@testset "the diff verifier is shown every commit of the fix, or every fix when it has none" begin
+@testset "the verifier is shown every commit of the fix, or every fix of the pass when it has none" begin
     package() do root, gg
         id, fid = with_one_finding(root)
         run = RUNS.load(root, id)
-        @test G.Run.fix_diff(root, run, run.findings[1]) == ""          # nothing committed yet
+        @test G.Run.fix_diff(root, run, [run.findings[1]]) == ""        # nothing committed yet
         fixed_as(root, fid, "The grid is a spectral lattice.")
         write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a periodic spectral lattice."))
         @test G.Docfix.commit(root, "second half of " * fid; io = devnull, finding = fid) == 0
-        both = G.Run.fix_diff(root, run, run.findings[1])
+        both = G.Run.fix_diff(root, run, [run.findings[1]])
         @test occursin("fix for", both) && occursin("second half of", both)
+        @test findfirst("fix for", both)[1] < findfirst("second half of", both)[1]   # oldest first
         other = G.Model.Finding("other-001", :full, G.Model.Decider.AGENT,
                                 G.Model.FindingDraft(rule = nothing, locations = G.Model.Location[], claim = "c", evidence = "", fix = ""))
-        none = G.Run.fix_diff(root, run, other)
-        @test startswith(none, "# No commit names this finding") && occursin("second half of", none)
+        none = G.Run.fix_diff(root, run, [other])
+        @test startswith(none, "# No commit names these findings") && occursin("second half of", none)
     end
 end
 
@@ -2200,15 +2228,31 @@ end
         @test occursin(qid, String(take!(out)))
         @test RUNS.parked(run, fid) && isempty(RUNS.workable(run))
         @test G.Run.park(root, fid; why = "again", io = devnull) == 2     # already waiting on the owner
-        # no verifier is launched on it
+        # nothing to verify and nothing committed: the run goes to its close
         G.Run.next(root; io = devnull)
-        args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
-        @test isempty(args["roles"])
+        @test RUNS.stage_of(root, id) === :close
         # his answer does what it does to a code question: on his list, and out of the run
-        @test G.Answer.answer(root, qid, "fix the code"; io = devnull) == 0
+        @test G.Answer.answer(root, qid, "fix the code"; io = devnull) == 2          # not an option of a parked finding
+        @test G.Answer.answer(root, qid, "I make the change"; io = devnull) == 0
         run = RUNS.load(root, id)
         @test !RUNS.parked(run, fid) && fid in [f.id for f in RUNS.to_owner(run)]
         @test occursin(fid, read(joinpath(root, ".claude", "WORK_QUEUE.md"), String))
+    end
+    # "fix it on my ruling": the finding is the fixer's again, its commit carries the id, and a verifier
+    # closes it (ruled 2026-09-26; PF fixed eight parked findings with no answer that said so)
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        G.Run.next(root; io = devnull)
+        @test G.Run.park(root, fid; why = "the formula changes", io = devnull) == 0
+        qid = RUNS.code_question_id(RUNS.load(root, id), fid)
+        @test G.Answer.answer(root, qid, "fix it on my ruling"; io = devnull, direction = "write lattice") == 0
+        run = RUNS.load(root, id)
+        @test !RUNS.parked(run, fid) && [f.id for f in RUNS.workable(run)] == [fid]
+        fixed_as(root, fid, "The grid is a lattice.")                    # docfix accepts the id again
+        G.Run.next(root; io = devnull)
+        verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a lattice.")
+        @test G.Run.collect(root; io = devnull) == 0
+        @test RUNS.closed(RUNS.load(root, id), fid)
     end
 end
 
@@ -2228,5 +2272,90 @@ end
         for f in fieldnames(G.Model.Run)
             f === :questions || @test getfield(qs, f) == getfield(run, f)
         end
+    end
+end
+
+# ── Measured on GBGPeriodicFields' first full review (2026-09-24) ─────────────────────────────────────
+
+@testset "the record keeps what a stage cost, summed from the agents' transcripts" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        dir = mktempdir(; cleanup = true)
+        @test G.Run.cost(root, dir; io = devnull) == 2                    # not at a collect yet
+        all_clean(root, id)
+        G.Run.collect(root; io = devnull)
+        @test G.Run.cost(root, dir; io = devnull) == 2                    # nothing under it
+        rec(u) = G.JSON3.write(Dict("type" => "assistant", "message" => Dict("usage" => u))) * "\n"
+        write(joinpath(dir, "agent-a.jsonl"), rec(Dict("input_tokens" => 5, "cache_creation_input_tokens" => 100,
+                                                        "cache_read_input_tokens" => 1000, "output_tokens" => 7)) *
+                                               "not json\n" *
+                                               rec(Dict("input_tokens" => 1, "cache_creation_input_tokens" => 10,
+                                                        "cache_read_input_tokens" => 200, "output_tokens" => 3)))
+        mkpath(joinpath(dir, "sub")); write(joinpath(dir, "sub", "agent-b.jsonl"), rec(Dict("output_tokens" => 2)))
+        write(joinpath(dir, "journal.jsonl"), """{"type":"started","key":"x"}\n""")   # no usage: not an agent
+        out = IOBuffer()
+        @test G.Run.cost(root, dir; io = out) == 0
+        u = only(RUNS.load(root, id).usage)
+        @test u.stage == "find" && u.pass == 0 && u.agents == 2
+        @test (u.input, u.cache_write, u.cache_read, u.output) == (6, 110, 1200, 12)
+        @test G.Run.cost(root, dir; io = devnull) == 0 && length(RUNS.load(root, id).usage) == 1   # replaced, not doubled
+        to_close(root, id); G.Run.close_run(root; io = devnull)
+        rep = read(joinpath(RUNS.dir(root, id), "report.md"), String)
+        @test occursin("| find | 0 | 2 | 110 | 1200 | 6 | 12 |", rep)
+    end
+end
+
+@testset "a verifier whose file never appeared is read from what the driver returned" begin
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        G.Run.next(root; io = devnull)
+        fixed_as(root, fid, "The grid is a lattice.")
+        G.Run.next(root; io = devnull)
+        write(joinpath(AGENTS.stage_dir(root, id), "returned.json"), G.JSON3.write(Dict(
+            "run" => id, "stage" => "verify", "silent" => [],
+            "results" => Dict("verify-unit-home" => Dict("verdicts" => [Dict("finding" => fid, "verdict" => "FIXED", "quote" => "The grid is a lattice.")])))))
+        @test G.Run.collect(root; io = devnull) == 0                      # no result file, and still graded
+        @test RUNS.closed(RUNS.load(root, id), fid)
+    end
+end
+
+@testset "a commit that breaks a rule the run opened clean on is refused" begin
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        G.Run.next(root; io = devnull)
+        # a fix that grows the page past its recorded size breaks RULE.DOC.SHAPE, which the run opened
+        # clean on — the case PF met, where check reported it and commit went ahead (2026-09-24)
+        long = "The grid is a lattice, " * repeat("and this sentence goes on and on, ", 24) * "as no fix should."   # past the 120-word paragraph cap
+        write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => long))
+        out = IOBuffer()
+        @test G.Docfix.commit(root, "fix for " * fid; io = out, finding = fid) == 1
+        @test occursin("breaks", String(take!(out))) 
+        @test isempty(RUNS.fix_commits(root, RUNS.load(root, id).first_commit, fid))
+        fixed_as(root, fid, "The grid is a lattice.")                    # a clean fix still goes through
+    end
+end
+
+@testset "help on a run verb acts on nothing" begin
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        cd(root) do
+            @test G.Run.cmd_run(["abandon", "--help"]) == 0
+        end
+        @test G.Run.open_run(root) == id                                  # still open
+    end
+end
+
+@testset "a re-baseline of one unit leaves every other row as it was" begin
+    package() do root, gg
+        cfg = G.ConfigIO.read_config(root)
+        G.Catalogue.Shape.write_baseline(root, cfg)
+        before = G.Catalogue.Shape.baseline(root)
+        write(joinpath(root, "docs", "src", "index.md"), HOME_PAGE * "\nA new paragraph of prose, with more words than before.\n")
+        write(joinpath(root, "docs", "src", "notation.md"), read(joinpath(root, "docs", "src", "notation.md"), String) * "\nAnd more words here too.\n")
+        @test G.Check.rebaseline(root; only = "index.md", io = devnull) == 0
+        after = G.Catalogue.Shape.baseline(root)
+        grew = [k for k in keys(after) if haskey(before, k) && after[k] != before[k]]
+        @test !isempty(grew) && all(k -> occursin("index.md", k), grew)
     end
 end

@@ -17,13 +17,15 @@ launched once per built page, each given that page's text and nothing else. A bu
 the run where it stood, since a panel launched without its rendered readers is not the panel the rules
 were tagged for.
 
-A documentation review's pass is four stages. At `fix` the open findings are re-anchored and written
-for the session, which edits and commits each through `gbg docfix commit --finding <id>`. At `verify`
-one blind verifier per open finding, given what the reader that found it was given and never the diff,
-answers `FIXED`, `NOT_FIXED`, `HIDES_CODE_DEFECT` or `NOT_A_DEFECT`, with a quote. At `diff` a second
-verifier reads the diff of each fix called fixed and answers `FIXED`, `LINE_ONLY` or `MADE_WORSE`. The
-grade is a program's: a verdict without a quote the current text holds is `NOT_FIXED`; `MADE_WORSE` and
-`HIDES_CODE_DEFECT` revert the commit, the second with a question to the owner.
+A documentation review's pass is two stages. At `fix` the open findings are re-anchored and written
+for the session, which commits each through `gbg docfix commit --finding <id>` or parks it. At `verify`
+one verifier per UNIT holding open findings — a built page, an example's source, a file — is given
+those findings, the text as it now stands and the diff of the pass, and answers each with a verdict and
+a quote (one verifier with the diff, and one pass, ruled 2026-09-26 on the measurements of
+[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)). The grade is a
+program's: a verdict without a quote the current text holds is
+`NOT_FIXED`, with the demotion recorded; `MADE_WORSE` and `HIDES_CODE_DEFECT` revert the commit, the
+second with a question to the owner.
 
 Exit 0 clean, 1 when something was found, 2 when a stage could not be evaluated.
 """
@@ -36,10 +38,10 @@ const Runs = Orchestration.Runs
 const Agents = Orchestration.Agents
 const Site = Orchestration.Site
 
-"What the blind verifier may answer."
-const BLIND_VERDICTS = ["FIXED", "NOT_FIXED", "HIDES_CODE_DEFECT", "NOT_A_DEFECT"]
-"What the verifier reading the diff may answer."
-const DIFF_VERDICTS = ["FIXED", "LINE_ONLY", "MADE_WORSE"]
+"What a verifier may answer about one finding."
+const VERDICTS = ["FIXED", "NOT_FIXED", "LINE_ONLY", "MADE_WORSE", "HIDES_CODE_DEFECT", "NOT_A_DEFECT"]
+"How many findings one verifier is handed at most; a unit with more gets several verifiers."
+const VERIFY_CAP = 10
 
 """
     open_run(root) -> Union{String,Nothing}
@@ -139,7 +141,7 @@ function next(root::AbstractString; io::IO = stdout)
     to === :collect && return continue_stage(root, id, order[at]; io)
     # Verifiers read the tree as committed: launched over an uncommitted edit they judge text that is in
     # no commit, and the collect then refuses the dirty tree with no way forward (review, 2026-09-23).
-    if order[at] === :fix || to in (:verify, :diff)
+    if order[at] === :fix || to === :verify
         dirty = [p for p in Runs.changed_tracked(root) if !Runs.own_record(p)]
         isempty(dirty) || (println(io, "run: tracked files are changed and not committed: ", join(dirty, ", "),
                                     ". Commit each fix with `gbg docfix commit --finding <id>`, or discard it, then gbg run next"); return 2)
@@ -151,17 +153,20 @@ function next(root::AbstractString; io::IO = stdout)
             to = run.passes < run.budget.fix_passes ? :fix : :close
         end
     end
+    # A fix stage that committed nothing has nothing to verify: verifiers launched over unchanged text
+    # answer by variance (a fifth of PF's verdicts moved that way, 2026-09-24) and cost a stage. The run
+    # closes instead, and what is open goes to the owner's queue.
+    if order[at] === :fix && to === :verify && isempty(Runs.guarded_commits(root, pass_start(run)))
+        println(io, "run: pass ", run.passes, " committed no fix, so there is nothing to verify; the run closes with what is open on the owner's queue.")
+        to = :close
+    end
     cfg = ConfigIO.read_config(root)
     # The site is built BEFORE the run moves: a build that failed must leave the run at the stage it was
     # at, rather than at one whose arguments were never written.
     site = ""
-    if to === :find || to === :verify || to === :diff
+    if to === :find || to === :verify
         panel = first(Catalogue.panel(run.instrument, cfg))
-        # The diff stage builds the site only for a finding its reader made on the built pages: that
-        # verifier judges a rendering, and the diff alone does not show one (found in review, 2026-09-24).
-        on_site(f) = (k = findfirst(r -> r.id === bundle_of(f.source), panel);
-                      k !== nothing && panel[k].site && !panel[k].kept_from_code)
-        if to === :diff ? any(on_site, Runs.workable(run)) : any(r -> r.site, panel)
+        if any(r -> r.site, panel)
             built = Site.build(root, cfg; io)
             built === nothing && return 2
             site = built
@@ -169,11 +174,13 @@ function next(root::AbstractString; io::IO = stdout)
     end
     Runs.advance!(root, id, to; io) || return 2
     moved = with(run; stage = to)
-    to === :fix && (moved = with(moved; passes = run.passes + 1))
+    # the pass's fixes are the commits after this point, not every commit since the run began: a pass
+    # that committed nothing showed the previous pass's commit on every finding (found by PF, 2026-09-24)
+    to === :fix && (moved = with(moved; passes = run.passes + 1, pass_since = Runs.head_commit(root)))
     Runs.save(root, moved)
     to === :close && (println(io, "run: ", id, " is ready to close: gbg run close"); return 0)
     to === :fix && return fix_stage(root, moved, cfg; io)
-    (to === :verify || to === :diff) && return verifier_stage(root, moved, cfg, to, site; io)
+    to === :verify && return verifier_stage(root, moved, cfg, site; io)
     roles, extras, site_pages = reader_roles(root, moved, cfg, site; io)
     Agents.write_arguments(root, moved, cfg; roles, extras, site, site_pages, io)
     moved = with(moved; driver = last(Agents.place_driver(root, moved.id)))
@@ -305,6 +312,10 @@ function reader_roles(root::AbstractString, run::Model.Run, cfg::Model.Config, s
     return roles, extras, site_pages
 end
 
+# The commit a pass's fixes are counted from: where the pass began, or the run's first commit for a
+# record written before that was recorded.
+pass_start(run::Model.Run) = isempty(run.pass_since) ? run.first_commit : run.pass_since
+
 "What separates a reader's id from the unit it was given, in the key a result file is named by."
 const UNIT_MARK = "@"
 
@@ -434,27 +445,26 @@ function other_copies(root::AbstractString, cfg::Model.Config, locations::Vector
 end
 
 """
-    verifier_stage(root, run, cfg, stage; io = stdout) -> Int
+    verifier_stage(root, run, cfg, site; io = stdout) -> Int
 
-Writes the arguments of a verifier stage: one verifier per workable finding at `verify`, blind to the
-diff; one per finding the blind stage called fixed at `diff`, given the fix's diff. The arguments are:
+Writes the verify stage's arguments: one verifier per UNIT that holds open findings, each given those
+findings, the unit as it now stands, and the diff of the pass. The arguments are:
 
 - `root` — the package root.
 - `run` — the run.
 - `cfg` — the package's config.
-- `stage` — `:verify` or `:diff`.
 - `site` — the site built for this stage, or `""`.
 - `io` — where the handoff is described.
 
 Exit 0.
 
-A verifier is given what the reader that made the finding was given: the withheld reader's finding is
-verified on the page alone, the full reader's with the source, a discipline's from its standpoint. A
-finding whose reader no longer exists is verified on the full bundle. The blind verifier runs at that
-reader's strength; the one reading the diff, a narrower question, at economy.
+A unit is what the reader that made the finding was given: the built page, for a finding of the reader
+given one page alone; the example's source file, for one made on it; and otherwise the file the finding
+names first, with the reader's surfaces. A unit with more than [`VERIFY_CAP`](@ref) open findings gets
+several verifiers. The verifier sees the diff: one per finding, blind to the change, was wrong on 47% of
+its not-fixed verdicts on GBGPeriodicFields and paid the same fixed context 187 times (ruled 2026-09-26).
 """
-function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config, stage::Symbol,
-                        site::AbstractString; io::IO = stdout)
+function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config, site::AbstractString; io::IO = stdout)
     panel = first(Catalogue.panel(run.instrument, cfg))
     by_id = Dict(r.id => r for r in panel)
     full = get(by_id, :full, nothing)
@@ -464,62 +474,52 @@ function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config,
     units = Dict{String,Any}(u.key => u for u in Site.write_units(Agents.stage_dir(root, run.id), built))
     for u in source_units(cfg, root); units[u.key] = u; end
     site_pages = [joinpath(site, p.path) for p in built]
+    groups = Dict{String,Vector{Model.Finding}}()
+    order = String[]
     for f in Runs.workable(run)
-        if stage === :diff
-            k = findlast(x -> x.finding == f.id && x.pass == run.passes, run.fixes)
-            (k === nothing || run.fixes[k].blind !== Model.Verdict.FIXED) && continue
-        end
         reader = get(by_id, bundle_of(f.source), full)
         reader === nothing && continue
-        # A verifier is given what the reader was given. For a reader given ONE PAGE that is the page as
-        # it now stands, rebuilt: a page the fix deleted has no verifier, and the finding stays open.
-        unit = ""
-        of_source = false
-        if stage === :verify && reader.site && reader.kept_from_code
-            key = String(last(split(String(f.source), UNIT_MARK)))
-            of_source = startswith(key, SOURCE_UNIT)
-            haskey(units, key) || (println(io, "run: ", f.id, " was found on a page the site no longer has; it stays open"); continue)
-            unit = units[key].file
-        end
-        diff = stage === :diff ? fix_diff(root, run, f) : ""
-        id = Symbol(string(stage, "-", f.id))
-        text = if stage === :diff && isempty(diff)
-            "You VERIFY one fix. The blind verifier called it FIXED, and this run committed no change at all, so there is no diff to show you. " *
-            "Read the current text at every location and answer FIXED (the defect is gone everywhere), LINE_ONLY (gone at some locations and not others) " *
-            "or MADE_WORSE (the text is now wrong where it was right). Quote the decisive words of the current text."
-        elseif stage === :diff
-            "You VERIFY one fix with the diff in front of you. The blind verifier called it FIXED; you check the change itself. " *
-            "Answer FIXED, LINE_ONLY (fixed at some locations and not others) or MADE_WORSE (the change broke something the old text had right). " *
-            "Quote the decisive words of the diff or of the current text."
-        elseif !isempty(unit)
-            # The reader had one unit and nothing else, and so has this verifier: the finding's other
-            # locations, copies the fix pass added, are the diff verifier's, who sees them all (found in
-            # review, 2026-09-23: told the unit was all it could read, and asked about every location).
-            "You VERIFY one fix, blind: you are not shown the change, only the text as it now stands. " *
-            "The finding below was made by the reader `$(f.source)` from one unit alone, and you are given that unit as it now stands and nothing else. " *
-            "Judge the defect on this unit: locations the finding names outside it are checked by the verifier who reads the diff. " *
-            "Answer FIXED (the defect is gone from this unit), NOT_FIXED, " *
-            "HIDES_CODE_DEFECT (the documentation now describes code that looks wrong) or NOT_A_DEFECT (the finding was mistaken). " *
-            "Quote the decisive current text of the unit; a verdict without a quote counts as NOT_FIXED."
+        key = if reader.site && reader.kept_from_code
+            k = String(last(split(String(f.source), UNIT_MARK)))
+            # A page the fix deleted has no verifier, and the finding stays open.
+            haskey(units, k) || (println(io, "run: ", f.id, " was found on a page the site no longer has; it stays open"); continue)
+            "unit-" * k
+        elseif isempty(f.draft.locations)
+            "file-none"
         else
-            "You VERIFY one fix, blind: you are not shown the change, only the text as it now stands. " *
-            "The finding below was made by the reader `$(f.source)`, and you are given what that reader was given. " *
-            "Read the current text at every location and answer FIXED (the defect is gone everywhere), NOT_FIXED, " *
-            "HIDES_CODE_DEFECT (the documentation now describes code that looks wrong) or NOT_A_DEFECT (the finding was mistaken). " *
-            "Quote the decisive current text; a verdict without a quote counts as NOT_FIXED."
+            "file-" * replace(f.draft.locations[1].file, r"[^A-Za-z0-9_]+" => "-")
         end
-        push!(roles, Model.AgentRole(; id, instrument = run.instrument, reads = reader.reads, site = reader.site,
-                                     # the example's source IS the unit: telling its verifier the source is withheld
-                                     # contradicted the line naming it (found in review, 2026-09-24)
-                                     kept_from_code = stage === :verify ? reader.kept_from_code && !of_source : false,
-                                     description = text * " The reader's standpoint: " * reader.description,
-                                     rules = f.draft.rule === nothing ? Symbol[] : [f.draft.rule],
-                                     strength = stage === :verify ? reader.strength : Model.Strength.ECONOMY, cap = 1))
-        extras[id] = Dict{String,Any}("kind" => "verifier", "finding" => Agents.finding_dict(f),
-                                      "finding_id" => f.id, "diff" => diff,
-                                      "unit" => unit,
-                                      "source_unit" => of_source,
-                                      "verdicts" => stage === :verify ? BLIND_VERDICTS : DIFF_VERDICTS)
+        haskey(groups, key) || (groups[key] = Model.Finding[]; push!(order, key))
+        push!(groups[key], f)
+    end
+    for key in order
+        fs = groups[key]
+        chunks = [fs[i:min(i + VERIFY_CAP - 1, end)] for i in 1:VERIFY_CAP:length(fs)]
+        for (n, chunk) in enumerate(chunks)
+            f1 = first(chunk)
+            reader = get(by_id, bundle_of(f1.source), full)
+            id = Symbol(string("verify-", key, length(chunks) > 1 ? "-$n" : ""))
+            unit = startswith(key, "unit-") ? String(units[key[6:end]].file) : ""
+            of_source = startswith(key, "unit-" * SOURCE_UNIT)
+            diff = fix_diff(root, run, chunk)
+            text = "You VERIFY the fixes made for the findings in the file named below, " *
+                   (length(chunk) == 1 ? "one finding" : "$(length(chunk)) findings") *
+                   " of one place, with the text as it now stands and the diff of the change in front of you. " *
+                   (isempty(unit) ? "" : "The findings were made by the reader `$(f1.source)` from one unit alone, and that unit as it now stands is what you judge the text on. ") *
+                   "For EACH finding, by its id, answer FIXED (the defect is gone everywhere the finding names), NOT_FIXED, " *
+                   "LINE_ONLY (gone at some locations and not others), MADE_WORSE (the change broke something the old text had right), " *
+                   "HIDES_CODE_DEFECT (the documentation now describes code that looks wrong) or NOT_A_DEFECT (the finding was mistaken). " *
+                   (isempty(diff) ? "This run committed no change for these, so there is no diff: judge the current text. " : "") *
+                   "Quote, for each, the decisive words of the current text or the diff, as ONE verbatim span; a verdict whose quote is not in the text counts as NOT_FIXED."
+            push!(roles, Model.AgentRole(; id, instrument = run.instrument, reads = reader.reads, site = reader.site,
+                                         kept_from_code = false,
+                                         description = text * " The reader's standpoint: " * reader.description,
+                                         rules = unique(Symbol[f.draft.rule for f in chunk if f.draft.rule !== nothing]),
+                                         strength = reader.strength, cap = length(chunk)))
+            extras[id] = Dict{String,Any}("kind" => "verifier", "finding" => [Agents.finding_dict(f) for f in chunk],
+                                          "finding_id" => join([f.id for f in chunk], ", "), "diff" => diff,
+                                          "unit" => unit, "source_unit" => of_source, "verdicts" => VERDICTS)
+        end
     end
     Agents.write_arguments(root, run, cfg; roles, extras, site, site_pages, io)
     isempty(roles) && println(io, "run: no finding needs this stage; collect it to move on")
@@ -527,28 +527,31 @@ function verifier_stage(root::AbstractString, run::Model.Run, cfg::Model.Config,
 end
 
 """
-    fix_diff(root, run, f) -> String
+    fix_diff(root, run, fs) -> String
 
-The change a diff verifier is shown for one finding. The arguments are:
+The change a verifier is shown for the findings of one unit. The arguments are:
 
 - `root` — the package root.
 - `run` — the run.
-- `f` — the finding.
+- `fs` — the findings.
 
-Returns the diff text, empty where the run has committed no fix at all.
+Returns the diff text, empty where the pass has committed nothing at all.
 
-Every commit that names the finding, oldest first, and not only the newest: a fix made in two commits
-was shown half of it. A finding with no commit of its own was fixed, if at all, by another's — a copy or
-a duplicate — and is shown every fix the run has made, with a line saying so; until 2026-09-24 it was
-told it had a diff and given none (found in review, 2026-09-23).
+Every commit of this pass that names one of the findings, oldest first, and not only the newest: a fix
+made in two commits was shown half of it. Findings with no commit of their own were fixed, if at all, by
+another's — a copy or a duplicate — and are shown every fix of the pass, with a line saying so; until
+2026-09-24 the verifier was told it had a diff and given none (found in review, 2026-09-23).
 """
-function fix_diff(root::AbstractString, run::Model.Run, f::Model.Finding)
-    mine = Runs.fix_commits(root, run.first_commit, f.id)
-    shas = isempty(mine) ? Runs.guarded_commits(root, run.first_commit) : mine
+function fix_diff(root::AbstractString, run::Model.Run, fs::AbstractVector{Model.Finding})
+    since = pass_start(run)
+    all = Runs.guarded_commits(root, since)                       # newest first
+    mine = Set{String}(c for f in fs for c in Runs.fix_commits(root, since, f.id))
+    named = [c for c in all if c in mine]
+    shas = isempty(named) ? all : named
     isempty(shas) && return ""
     body = something(Git.run(root, "show", "--format=commit %H%n%n%B", reverse(shas)...), "")
-    isempty(mine) || return body
-    return "# No commit names this finding. Below is every fix this run has made: the defect may have\n" *
+    isempty(named) || return body
+    return "# No commit names these findings. Below is every fix this pass has made: the defect may have\n" *
            "# been fixed by another finding's change, or not at all.\n\n" * body
 end
 
@@ -631,12 +634,12 @@ function collect(root::AbstractString; io::IO = stdout)
     # every role of the stage was launched at least once, and the relaunched ones once more
     n_launched = stage_roles(root, id) + length(again)
     Runs.advance!(root, id, :collect; io) || return 2
-    if launched === :verify || launched === :diff
-        run = grade(root, run, launched, verdicts; io)
+    if launched === :verify
+        run = grade(root, run, verdicts; io)
         run = with(run; stage = :collect, agent_launches = run.agent_launches + n_launched,
                    silent = unique(vcat(run.silent, silent)))
         Runs.save(root, run)
-        println(io, "run: collected ", length(verdicts), " verdict(s) from ", wrote, " verifier(s); ",
+        println(io, "run: pass ", run.passes, ": collected ", length(verdicts), " verdict(s) from ", wrote, " verifier(s); ",
                 length(Runs.open_findings(run)), " finding(s) open.")
     else
         findings = Model.Finding[]
@@ -660,6 +663,7 @@ function collect(root::AbstractString; io::IO = stdout)
     if !isempty(silent)
         println(io, "run: these wrote nothing even launched again, and are not clean; the report names them:")
         for s in silent; println(io, "  ", s); end
+        launched === :verify && println(io, "  The findings they were to judge are graded NOT_FIXED and stay open; the run goes on.")
         return 2                                  # a role that wrote NOTHING is exit 2, never a quiet zero
     end
     # 1 when something was FOUND, a finding in the working notes included: it is not open — no pass
@@ -717,82 +721,76 @@ function merge_same(drafts::AbstractVector, cfg::Model.Config)
 end
 
 """
-    grade(root, run, stage, verdicts; io = stdout) -> Model.Run
+    grade(root, run, verdicts; io = stdout) -> Model.Run
 
-Applies a verifier stage's verdicts. The arguments are:
+Applies a verify stage's verdicts. The arguments are:
 
 - `root` — the package root.
 - `run` — the run.
-- `stage` — `:verify` or `:diff`.
-- `verdicts` — each verifier's role key to its `(verdict, quote)`.
+- `verdicts` — each finding's id to its `(verdict, quote)`.
 - `io` — where a downgraded verdict or a revert is reported.
 
 Returns the run with its fixes, and on one verdict its questions, updated.
 
-Every verdict but `NOT_FIXED` needs a quote the current text holds, or it becomes `NOT_FIXED`.
-`MADE_WORSE` reverts the finding's commit; `HIDES_CODE_DEFECT` reverts it and puts a question to the
-owner; `NOT_A_DEFECT` closes the finding for this run. A blind verifier that did not answer leaves the
-finding open, with `NOT_FIXED` recorded so the report shows it was asked.
+A verdict a program cannot ground is `NOT_FIXED`, and the record says why: a quote not in the text, a
+verdict outside the allowed list, or no verifier answering for the finding. Until 2026-09-26 a demotion
+was one terminal line and nothing durable (found by PF, 2026-09-24). `MADE_WORSE` reverts the finding's
+commits of this pass; `HIDES_CODE_DEFECT` reverts them and puts a question to the owner.
 """
-function grade(root::AbstractString, run::Model.Run, stage::Symbol, verdicts; io::IO = stdout)
+function grade(root::AbstractString, run::Model.Run, verdicts; io::IO = stdout)
     fixes = copy(run.fixes)
     questions = copy(run.questions)
     unreverted = copy(run.unreverted)
-    allowed = stage === :verify ? BLIND_VERDICTS : DIFF_VERDICTS
     for f in Runs.workable(run)
-        key = string(stage, "-", f.id)
-        answered = haskey(verdicts, key)
-        v, quote_ = answered ? verdicts[key] : ("NOT_FIXED", "")
-        v in allowed || (v = "NOT_FIXED")
-        if v != "NOT_FIXED" && !quote_holds(root, f, quote_)
-            println(io, "run: ", f.id, " — the verifier's quote is not in the text; ", v, " becomes NOT_FIXED")
+        answered = haskey(verdicts, f.id)
+        v, quote_ = answered ? verdicts[f.id] : ("NOT_FIXED", "")
+        note = answered ? "" : "no verifier answered for it"
+        if !(v in VERDICTS)
+            note = "the verifier answered `$v`, which is not a verdict; read as NOT_FIXED"
+            v = "NOT_FIXED"
+        elseif v != "NOT_FIXED" && !quote_holds(root, f, quote_)
+            note = "the verifier said $v, but its quote is not in the text; read as NOT_FIXED"
+            println(io, "run: ", f.id, " — ", note)
             v = "NOT_FIXED"
         end
         verdict = getfield(Model.Verdict, Symbol(v))
-        commits = Runs.fix_commits(root, run.first_commit, f.id)
-        if stage === :verify
-            push!(fixes, Model.DocFix(finding = f.id, pass = run.passes,
-                                      commit = isempty(commits) ? "" : first(commits), blind = verdict))
-            if verdict === Model.Verdict.HIDES_CODE_DEFECT
-                failed = [c for c in commits if !Runs.revert!(root, c; why = "the verifier believes the code is wrong")]
-                append!(unreverted, failed)
-                push!(questions, code_question(f, run))
-                println(io, "run: ", f.id, isempty(failed) ? " — the fix is reverted and a question stands for the owner" :
-                            " — the fix could NOT be reverted (a later fix conflicts), so the edit stays; a question stands for the owner and the run cannot end as evaluated")
-            end
-        else
-            answered || continue                             # the diff stage asked only about the fixed
-            k = findlast(x -> x.finding == f.id && x.pass == run.passes, fixes)
-            k === nothing && continue
-            old = fixes[k]
-            fixes[k] = Model.DocFix(finding = old.finding, pass = old.pass, commit = old.commit,
-                                    formula_edit = old.formula_edit, blind = old.blind, with_diff = verdict,
-                                    agreeing_code = old.agreeing_code)
-            if verdict === Model.Verdict.MADE_WORSE && !isempty(commits)
-                failed = [c for c in commits if !Runs.revert!(root, c)]
-                append!(unreverted, failed)
-                println(io, "run: ", f.id, isempty(failed) ? " — the fix made things worse and is reverted" :
-                            " — the fix made things worse and could NOT be reverted (a later fix conflicts); the edit stays and the run cannot end as evaluated")
-            end
+        commits = Runs.fix_commits(root, pass_start(run), f.id)
+        push!(fixes, Model.DocFix(finding = f.id, pass = run.passes,
+                                  commit = isempty(commits) ? "" : first(commits), blind = verdict, note = note))
+        if verdict === Model.Verdict.HIDES_CODE_DEFECT
+            failed = [c for c in commits if !Runs.revert!(root, c; why = "the verifier believes the code is wrong")]
+            append!(unreverted, failed)
+            push!(questions, code_question(f, run))
+            println(io, "run: ", f.id, isempty(failed) ? " — the fix is reverted and a question stands for the owner" :
+                        " — the fix could NOT be reverted (a later fix conflicts), so the edit stays; a question stands for the owner and the run cannot end as evaluated")
+        elseif verdict === Model.Verdict.MADE_WORSE && !isempty(commits)
+            failed = [c for c in commits if !Runs.revert!(root, c)]
+            append!(unreverted, failed)
+            println(io, "run: ", f.id, isempty(failed) ? " — the fix made things worse and is reverted" :
+                        " — the fix made things worse and could NOT be reverted (a later fix conflicts); the edit stays and the run cannot end as evaluated")
         end
     end
     return with(run; fixes = fixes, questions = questions, unreverted = unreverted)
 end
 
-# Whether a verifier's quote is in the current text of a file the finding names.
+# Whether a verifier's quote is in the current text of a file the finding names. A quote written as two
+# spans joined by "..." or "…" holds when each span does: matched whole, a correct verdict was demoted
+# because the joined string is in no file (found by PF, 2026-09-24).
 function quote_holds(root::AbstractString, f::Model.Finding, quote_::AbstractString)
-    isempty(strip(quote_)) && return false
-    for file in unique(l.file for l in f.draft.locations)
-        loc = Texts.reanchor(root, Model.Location(; file, text = String(strip(quote_)), line = 0))
-        loc.found === Model.Anchor.OUTDATED || return true
+    parts = [String(strip(x)) for x in split(String(quote_), r"\.\.\.|…") if !isempty(strip(x))]
+    isempty(parts) && return false
+    files = unique(l.file for l in f.draft.locations)
+    return all(parts) do part
+        any(files) do file
+            Texts.reanchor(root, Model.Location(; file, text = part, line = 0); loose = false).found !== Model.Anchor.OUTDATED
+        end
     end
-    return false
 end
 
 # The question a HIDES_CODE_DEFECT verdict puts: the documentation was made to describe code that looks
 # wrong, the edit is reverted, and the owner says which half is right.
 function code_question(f::Model.Finding, run::Model.Run)
-    Model.Question(id = string(run.id, "-", f.id, "-code"),
+    Model.Question(id = Runs.code_question_id(run, f.id),
                    decision = "Is the code right here, or the documentation?",
                    context = "A fix made the documentation describe what the code does, and the verifier reading the result believes the code itself is wrong. The edit is reverted until you answer.",
                    options = [Model.Option("fix the code", "the code is changed on your direction; the documentation keeps its old text", true),
@@ -865,7 +863,7 @@ function close_run(root::AbstractString; io::IO = stdout)
     stop = isempty(unguarded) ? run.stop : Model.Stop.CANNOT_EVALUATE
     # A silent READER leaves part of the package unjudged, so the run cannot end as evaluated. A silent
     # verifier does not: its fix is graded NOT_FIXED, and its finding stays open and is carried.
-    silent_readers = [k for k in run.silent if !startswith(k, "verify-") && !startswith(k, "diff-")]
+    silent_readers = [k for k in run.silent if !startswith(k, "verify-")]
     if !isempty(silent_readers)
         stop = Model.Stop.CANNOT_EVALUATE
         println(io, "run: ", length(silent_readers), " reader(s) wrote nothing, so what they were to judge was not judged; the run cannot end as evaluated.")
@@ -950,7 +948,7 @@ run that found a hundred and was stopped. A report is written from the record, s
 tell the two apart makes a report that lies.
 
 ITS RECORD AND REPORT ARE COMMITTED, like a closed run's [ruled 2026-09-22, on
-[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)'s question, after two
+GBGPeriodicFields's question, after two
 abandoned runs left it with no rule to follow]. "Was this package ever reviewed, and
 what came of it?" is answered from the repository or not at all, and an attempt that leaves no trace
 reads as an attempt that was never made — which is also how an id stays unreusable across a clone, and
@@ -984,16 +982,14 @@ function abandon(root::AbstractString; io::IO = stdout)
         end
         return 0
     end
-    # What the stop throws away is the OPEN findings and the ones in the working notes. A finding fixed
-    # and stood behind by two verifiers was not thrown away by anyone: it stays in the record with its
-    # pass, since the fix stays in the history, and the report says so rather than "nobody stood behind
-    # it" (found in review, 2026-09-23).
-    kept = [f for f in run.findings if Runs.closed(run, f.id) || Runs.answer_of(run, f.id) == Runs.CODE_ANSWER]
-    stopped = with(run; stage = :close, stop = Model.Stop.OWNER_STOPPED, findings = kept,
-                   fixes = [x for x in run.fixes if any(f -> f.id == x.finding, kept)],
-                   # a question about a dropped finding goes with it: answered later it settled nothing
-                   questions = [q for q in run.questions if any(f -> Runs.code_question_id(run, f.id) == q.id, kept)],
-                   dropped = length(Runs.open_findings(run)) + length(Runs.in_material(run)))
+    # What the stop throws away is the OPEN findings and the ones in the working notes: none is carried
+    # into the next run. Their TEXT stays on the record, marked dropped [ruled 2026-09-26]: two runs'
+    # findings were kept only as a count, and a triage made of them pointed at nothing. A finding fixed
+    # and verified was not thrown away by anyone and stays with its pass (found in review, 2026-09-23).
+    gone = vcat([f.id for f in Runs.open_findings(run)], [f.id for f in Runs.in_material(run)])
+    stopped = with(run; stage = :close, stop = Model.Stop.OWNER_STOPPED,
+                   dropped = length(gone), dropped_ids = unique(vcat(run.dropped_ids, gone)))
+    kept = [f for f in stopped.findings if !(f.id in stopped.dropped_ids)]
     write(joinpath(dir, "report.md"), Render.report(stopped, cfg; root))
     open(joinpath(dir, "run.json"), "w") do f
         GBGCodingTools.JSON3.pretty(f, GBGCodingTools.JSON3.write(Runs.as_dict(stopped)))
@@ -1001,8 +997,8 @@ function abandon(root::AbstractString; io::IO = stdout)
     rm(joinpath(dir, "run.draft.json"); force = true)
     rm(Agents.scratch_dir(root, id); force = true, recursive = true)
     Runs.write_stage(root, id, length(get(Runs.STAGES, run.instrument, Symbol[])))
-    println(io, "run: ", id, " abandoned at ", run.stage, "; ", stopped.dropped, " finding(s) dropped",
-            isempty(kept) ? "." : ", $(length(kept)) closed by a verdict and kept on the record.")
+    println(io, "run: ", id, " abandoned at ", run.stage, " (pass ", run.passes, "); ", stopped.dropped, " finding(s) dropped — their text stays on the record",
+            isempty(kept) ? "." : " — and $(length(kept)) closed by a verdict or the owner's answer.")
     println(io, "  Commit .gbg/runs/", id, "/ — the record and the report. Its agents read this package,")
     println(io, "  and that they were stopped is evidence about it. Its scratch is deleted.")
     return 0
@@ -1165,7 +1161,57 @@ function park(root::AbstractString, id::AbstractString; why::AbstractString = ""
     q = Runs.owner_question(run, f, why)
     Runs.save(root, with(run; questions = vcat(run.questions, [q])))
     println(io, "run: ", id, " is parked; no pass works on it until the owner answers:")
-    println(io, "  gbg answer ", q.id, " \"", Runs.CODE_ANSWER, "\"   or   \"", Runs.NOT_A_DEFECT_ANSWER, "\"")
+    println(io, "  gbg answer ", q.id, " \"", Runs.OWNER_ANSWER, "\"  |  \"", Runs.RULED_ANSWER, "\" --direction \"…\"  |  \"", Runs.NOT_A_DEFECT_ANSWER, "\"")
+    return 0
+end
+
+"""
+    cost(root, dir; io = stdout) -> Int
+
+Records what the last launched stage's agents cost, summed from their own transcripts. The arguments are:
+
+- `root` — the package root.
+- `dir` — the directory holding the launch's transcripts: every `.jsonl` file under it is read, and
+  each record with a `message.usage` counts.
+- `io` — where the totals are written.
+
+Exit 0 when recorded, 2 when no run is open, the directory holds no usage, or the run is not at a
+collect.
+
+The launch's own summary field counts a tenth of the real cost — it leaves out most of the cache
+reads and writes, which are nearly all of it [measured on GBGPeriodicFields, 2026-09-24: 17.9M reported
+against 164.6M summed] — and nothing recorded a cost at all; the record's `tokens` stayed empty. The
+transcripts are the reliable source, and the skill tells the session where the launch names them.
+"""
+function cost(root::AbstractString, dir::AbstractString; io::IO = stdout)
+    id = open_run(root)
+    id === nothing && (println(io, "run: nothing is open here"); return 2)
+    run = Runs.load(root, id)
+    order = get(Runs.STAGES, run.instrument, Symbol[])
+    at = Runs.stage_index(root, id)
+    (at >= 2 && order[at] === :collect) || (println(io, "run: record a cost at the collect of the stage it belongs to; ", id, " is at ", order[at]); return 2)
+    isdir(dir) || (println(io, "run: no directory at ", dir); return 2)
+    agents = 0; input = 0; cw = 0; cr = 0; output = 0
+    for (here, _, files) in walkdir(dir), f in files
+        endswith(f, ".jsonl") || continue
+        seen = false
+        for line in eachline(joinpath(here, f))
+            d = try GBGCodingTools.JSON3.read(line, Dict{String,Any}) catch; continue end
+            m = get(d, "message", nothing); m isa AbstractDict || continue
+            u = get(m, "usage", nothing); u isa AbstractDict || continue
+            input += Int(get(u, "input_tokens", 0)); output += Int(get(u, "output_tokens", 0))
+            cw += Int(get(u, "cache_creation_input_tokens", 0)); cr += Int(get(u, "cache_read_input_tokens", 0))
+            seen = true
+        end
+        seen && (agents += 1)
+    end
+    agents == 0 && (println(io, "run: no transcript under ", dir, " carries a usage record; nothing recorded"); return 2)
+    stage = String(order[at - 1])
+    entry = Model.Usage(; stage, pass = run.passes, agents, input, cache_write = cw, cache_read = cr, output)
+    others = [u for u in run.usage if !(u.stage == stage && u.pass == run.passes)]
+    Runs.save(root, with(run; usage = vcat(others, [entry])))
+    println(io, "run: ", stage, " (pass ", run.passes, "): ", agents, " agent(s); input ", input, ", cache write ", cw,
+            ", cache read ", cr, ", output ", output, " tokens. Recorded.")
     return 0
 end
 
@@ -1175,11 +1221,18 @@ function cmd_run(args)
     root === nothing && return 2
     isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--scope full|changed] [--model <name>] [--sequential] | gbg run next|collect|close|abandon | gbg run park <finding> --why \"…\""); return 2)
     what = o.positional[1]
+    # A help flag on any verb prints usage and does nothing: `gbg run abandon --help` abandoned PF's
+    # run (2026-09-24), and a help flag on the one irreversible verb must never act.
+    if "help" in o.flags || "h" in o.flags
+        println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--scope full|changed] [--model <name>] [--sequential] | gbg run next|collect|close|abandon | gbg run park <finding> --why \"…\" | gbg run cost <dir>")
+        return 0
+    end
     what == "next" && return next(root)
     what == "collect" && return collect(root)
     what == "close" && return close_run(root)
     what == "abandon" && return abandon(root)
     what == "park" && return park(root, length(o.positional) >= 2 ? o.positional[2] : ""; why = get(o.values, "why", ""))
+    what == "cost" && return cost(root, length(o.positional) >= 2 ? o.positional[2] : "")
     return start(root, Symbol(replace(what, "-" => "_")); readers = Symbol(get(o.values, "readers", "bound")),
                  scope = Symbol(get(o.values, "scope", "full")),
                  model = get(o.values, "model", "session"), sequential = "sequential" in o.flags)

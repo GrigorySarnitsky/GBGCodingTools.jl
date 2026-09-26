@@ -506,11 +506,36 @@ The one ceiling on a run: how many fix passes it may make. The fields are:
 - `fix_passes` — how many times the open findings may go back to the fixer.
 
 There is no ceiling on agent launches, as ruled 2026-09-21: the design bounds them — a panel over the
-units per stage, one relaunch each, two verifiers per open finding per pass, at most four passes — and a
-run interrupted before its end (an outage, the plan's tokens gone) is continued, not capped.
+units per stage, one relaunch each, one verifier per unit holding open findings — and a run interrupted
+before its end is continued, not capped. One pass by default [ruled 2026-09-26: a second pass re-verified
+unchanged text and moved a fifth of the verdicts by variance].
 """
 Base.@kwdef struct Budget
-    fix_passes::Int = 4
+    fix_passes::Int = 1
+end
+
+"""
+    Usage
+
+What one stage's agents cost, as the platform's own records count it. The fields are:
+
+- `stage` — the stage, as `Run.stage` names it.
+- `pass` — the fix pass it belongs to, `0` for the reading stage.
+- `agents` — how many agent records were summed.
+- `input`, `cache_write`, `cache_read`, `output` — the token counts, summed over every record.
+
+Recorded by `gbg run cost` from the agents' own transcripts, never from the launch's summary field,
+which counts a tenth of the cache activity where nearly all of the cost is [measured on
+[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/), 2026-09-24].
+"""
+Base.@kwdef struct Usage
+    stage::String
+    pass::Int = 0
+    agents::Int = 0
+    input::Int = 0
+    cache_write::Int = 0
+    cache_read::Int = 0
+    output::Int = 0
 end
 
 """
@@ -688,9 +713,11 @@ The fields are:
 - `pass` — which fix pass made it.
 - `commit` — the commit it landed in.
 - `formula_edit` — whether it changed mathematics, which needs agreement and a numeric check.
-- `blind` — the verdict of the verifier that did not see the diff.
-- `with_diff` — the verdict of the stage that did, for a fixed finding only.
+- `blind` — the verifier's verdict (one verifier sees the text and the diff since 2026-09-26).
+- `with_diff` — a second verifier's verdict, in records from before that; `nothing` since.
 - `agreeing_code` — the code the fixer quoted as agreeing with the new text.
+- `note` — what the program did to the verdict, if anything: demoted for a quote not in the text, or
+  no verifier answered.
 """
 Base.@kwdef struct DocFix
     finding::String
@@ -700,6 +727,7 @@ Base.@kwdef struct DocFix
     blind::Verdict.T
     with_diff::Union{Verdict.T,Nothing} = nothing
     agreeing_code::Union{Location,Nothing} = nothing
+    note::String = ""
 end
 
 """
@@ -768,6 +796,10 @@ One execution of one instrument on one package, stored beside its report. The fi
   report names each, and none is read as a clean result.
 - `rulebook` — the digest of the rules it judged by, which a later `--scope changed` run compares with
   its own: a version number does not move when a development checkout's rules do.
+- `pass_since` — the commit the current fix pass began at; its fixes are the commits after it.
+- `dropped_ids` — what the owner's stop threw away, kept in `findings` with its text [ruled 2026-09-26]
+  and carried nowhere.
+- `usage` — what each stage's agents cost, per stage and pass, as `gbg run cost` recorded it.
 
 That last count is what keeps an abandoned record honest. Stopping a run removes its open findings
 from the list — what a verdict had closed stays — and leaves its launch count alone, and those two read
@@ -804,6 +836,9 @@ Base.@kwdef struct Run
     unreverted::Vector{String} = String[]
     silent::Vector{String} = String[]
     rulebook::String = ""
+    pass_since::String = ""
+    dropped_ids::Vector{String} = String[]
+    usage::Vector{Usage} = Usage[]
 end
 
 end # module Model

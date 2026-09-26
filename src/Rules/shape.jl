@@ -29,8 +29,19 @@ admonitions)`.
 """
 function metrics(text::AbstractString)
     paragraphs = split(text, r"\n\s*\n")
-    longest = isempty(paragraphs) ? 0 : maximum(length(split(p)) for p in paragraphs)
-    return (words = length(split(text)), longest = longest, admonitions = count(r"^\s*!!! "m, text))
+    longest = isempty(paragraphs) ? 0 : maximum(words(p) for p in paragraphs)
+    return (words = words(text), longest = longest, admonitions = count(r"^\s*!!! "m, text))
+end
+
+# The words of a prose text: mathematics is not prose, so a formula counts as one word however it is
+# laid out — breaking a long one into aligned rows, which RULE.TEX.NO_HSCROLL asks for, grew a unit by
+# the `&` and `\\` it added — and a dash standing alone between words is not a word (both found by PF,
+# 2026-09-24).
+function words(text::AbstractString)
+    # the stand-in carries no spaces, so a formula and the punctuation on it stay one word, as they were
+    t = replace(String(text), r"```math.*?```"s => "M", r"(?<!`)``(?!`).*?(?<!`)``(?!`)"s => "M",
+                r"\\\[.*?\\\]"s => "M", r"(?<!\$)\$[^\$\n]+\$(?!\$)" => "M")
+    return count(w -> !(w in ("—", "–", "-")), split(t))
 end
 
 """
@@ -196,18 +207,28 @@ Writes the baseline from the prose as it stands and returns how many units it re
 It is called only by a person asking for it, with a reason — never by a check. A baseline a check could
 rewrite is a ratchet that resets itself.
 """
-function write_baseline(root::AbstractString, cfg)
+function write_baseline(root::AbstractString, cfg; only::AbstractString = "")
     us = units(root, files_of(root, cfg))
+    rows = Dict{String,NTuple{3,Int}}(csvkey(k) => (u.words, u.longest, u.admonitions) for (k, u) in us)
+    # Named units only: every other row stays as it was, so a reviewer of the commit sees the one raise
+    # that was meant and not a hundred rows lowered beside it (found by PF, 2026-09-24).
+    if !isempty(only)
+        kept = something(baseline(root), Dict{String,NTuple{3,Int}}())
+        for (k, v) in rows
+            occursin(only, k) && (kept[k] = v)
+        end
+        rows = kept
+    end
     path = joinpath(root, BASELINE)
     mkpath(dirname(path))
     open(path, "w") do io
         println(io, "unit,words,longest_paragraph,admonitions")
-        for k in sort!(collect(keys(us)))
-            u = us[k]
-            println(io, "\"", csvkey(k), "\",", u.words, ",", u.longest, ",", u.admonitions)
+        for k in sort!(collect(keys(rows)))
+            w, l, a = rows[k]
+            println(io, "\"", k, "\",", w, ",", l, ",", a)
         end
     end
-    return length(us)
+    return length(rows)
 end
 
 """

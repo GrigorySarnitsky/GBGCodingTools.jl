@@ -1215,12 +1215,18 @@ function page_text!(io::IO, n; in_pre::Bool = false)
         t = tagname(n)
         block = t in BLOCK_TAGS
         mark = t === :pre ? "```" : (t === :code && !in_pre ? "`" : "")
+        # A link is shown as one, `[text](target)`: with links stripped a term fixed by linking it to its
+        # definition read exactly as the unfixed text, and no verifier could pass such a fix (found by PF,
+        # 2026-09-24, ten findings).
+        href = t === :a ? String(something(getattr(n, "href", nothing), "")) : ""
         block && write(io, '\n')
         t === :pre && write(io, mark, '\n')
         t === :code && !in_pre && write(io, mark)
+        isempty(href) || write(io, '[')
         for c in children(n)
             page_text!(io, c; in_pre = in_pre || t === :pre)
         end
+        isempty(href) || write(io, "](", href, ")")
         t === :code && !in_pre && write(io, mark)
         t === :pre && write(io, '\n', mark)
         block && write(io, '\n')

@@ -240,8 +240,9 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
         end
         Dict{String,Any}("key" => String(r.id), "kind" => kind, "launch" => true,
                          "unit" => get(x, "unit", ""), "unit_source" => get(x, "unit_source", ""),
-                         "finding" => String(get(x, "finding_id",
-                                                 found === nothing ? "" : String(get(found, "id", "")))))
+                         "finding" => String(get(x, "finding_id") do
+                             found isa AbstractDict ? String(get(found, "id", "")) : ""
+                         end))
     end for r in roles]
     path = arguments_path(root, run.id)
     # A stage sits at the same place every pass, so its results directory still held the last pass's
@@ -249,22 +250,23 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
     # silent (found in review, 2026-09-24). Writing a stage's arguments starts it, so its results go.
     rm(results_dir(root, run.id); recursive = true, force = true)
     mkpath(dirname(path)); mkpath(results_dir(root, run.id))
-    write(path, JSON3.write(args))   # compact: nobody reads this file, the session TYPES it
-    driver, sha = place_driver(root, run.id)
-    println(io, "run: ", run.id, " is at ", run.stage, "; ", length(roles), " agent(s) to launch.")
-    println(io, "  arguments: ", relpath(path, root))
-    println(io, "  driver:    ", relpath(driver, root), "  (", first(sha, 12), ")")
-    println(io, "  launch it: Workflow({scriptPath: \"", relpath(driver, root), "\", args: <the arguments file>})")
-    println(io, "  then: gbg run collect")
+    write(path, JSON3.write(args))   # compact: nobody reads this file
+    driver, sha = place_driver(root, run.id; arguments = path)
+    println(io, "run: ", run.id, " is at ", run.stage, " (pass ", run.passes, "); ", length(roles), " agent(s) to launch.")
+    println(io, "  arguments: ", relpath(path, root), "  (spliced into the driver: pass no args)")
+    println(io, "  driver:    ", relpath(driver, root), "  (", first(sha, 12), " before the splice)")
+    println(io, "  launch it: Workflow({scriptPath: \"", relpath(driver, root), "\"})")
+    println(io, "  then: save what it RETURNED as ", relpath(joinpath(stage_dir(root, run.id), "returned.json"), root), ", and gbg run collect")
     return path
 end
 
 """
     place_driver(root, id) -> Tuple{String,String}
 
-Puts the driver where the session can launch it from, and says which one it put. The arguments are
-`root`, the package root, and `id`, the run's id. Returns the path it wrote and the SHA-256 of the file,
-which is what a record means by "which driver this run used".
+Puts the driver where the session can launch it from, the stage's arguments spliced in. The arguments
+are `root`, the package root, `id`, the run's id, and `arguments`, the file to splice in, or empty for
+the driver alone. Returns the path written and the SHA-256 of the driver before the splice, which is
+what a record means by "which driver this run used".
 
 The pinned driver lives under `~/.julia/packages/`, and the `Workflow` tool refuses a script outside the
 working directory — so naming the pinned path directly cannot work, in any consumer, ever. Every package
@@ -272,12 +274,22 @@ would otherwise discover that and copy the file by hand, as [GBGPeriodicFields](
 record would say which driver the run had actually used. The copy is byte for byte, into the run's own
 scratch, which is gitignored and deleted at close.
 """
-function place_driver(root::AbstractString, id::AbstractString)
+function place_driver(root::AbstractString, id::AbstractString; arguments::AbstractString = "")
     src = joinpath(pkgdir(Model), "drivers", "run.js")
     dest = joinpath(scratch_dir(root, id), "run.js")
     mkpath(dirname(dest))
-    cp(src, dest; force = true)
-    return dest, bytes2hex(SHA.sha256(read(dest)))
+    text = read(src, String)
+    sha = bytes2hex(SHA.sha256(text))
+    # The arguments are SPLICED into the copy, after the `meta` export the tool requires first: a
+    # workflow script has no filesystem, so the session had to type the whole file into the call —
+    # 46–94 KB on PF, which it worked around with exactly this splice (found by PF, 2026-09-24).
+    if !isempty(arguments)
+        k = findfirst("};\n", text[findfirst("export const meta", text)[1]:end])
+        at = findfirst("export const meta", text)[1] + last(k) - 1
+        text = text[1:at] * "\nglobalThis.args = " * read(arguments, String) * ";\n" * text[at+1:end]
+    end
+    write(dest, text)
+    return dest, sha
 end
 
 # The commit the package is at, or "" outside a repository; what a continued stage is compared against.
@@ -287,6 +299,29 @@ function head(root::AbstractString)
     catch
         ""
     end
+end
+
+"""
+    returned_results(root, id) -> Dict{String,Any}
+
+What the driver returned for the current stage, as the session saved it: `returned.json` in the stage's
+directory, holding `results`, each role's validated return under its key. The arguments are `root` and
+the run's `id`. Returns the roles' payloads, empty where nothing was saved.
+
+The agent writes its own result file and returns the same object; the file is what the collect reads,
+and this is the fallback where the file is missing or unreadable. A role present here and absent from
+the results directory is one whose file-writing failed, which happened to about 5% of PF's agents.
+"""
+function returned_results(root::AbstractString, id::AbstractString)
+    path = joinpath(stage_dir(root, id), "returned.json")
+    isfile(path) || return Dict{String,Any}()
+    d = try
+        JSON3.read(read(path, String), Dict{String,Any})
+    catch
+        return Dict{String,Any}()
+    end
+    r = get(d, "results", nothing)
+    return r isa AbstractDict ? Dict{String,Any}(String(k) => v for (k, v) in r if v isa AbstractDict) : Dict{String,Any}()
 end
 
 """
@@ -407,19 +442,36 @@ function collect_results(root::AbstractString, id::AbstractString, cfg::Model.Co
     verdicts = Dict{String,Tuple{String,String}}()
     wrote = String[]
     arrived = 0
+    # What the driver RETURNED, saved by the session beside the results: the fallback for a role whose
+    # own file is missing or unreadable. Three of PF's verifiers had answered FIXED in their return value
+    # and were counted silent because the file never appeared (found by PF, 2026-09-24).
+    returned = returned_results(root, id)
     for (role, kind) in sort(collect(expected))
         path = joinpath(dir, role * ".json")
-        isfile(path) || continue
-        arrived += 1
-        payload = try
-            JSON3.read(read(path, String), Dict{String,Any})
-        catch
-            continue                                   # malformed: silent, as if nothing had arrived
+        payload = nothing
+        if isfile(path)
+            arrived += 1
+            payload = try
+                JSON3.read(read(path, String), Dict{String,Any})
+            catch
+                nothing                                # malformed: as if nothing had arrived
+            end
+        end
+        if payload === nothing
+            haskey(returned, role) || continue
+            payload = returned[role]
+            isfile(path) || (arrived += 1)
         end
         if kind == "verifier"
-            v = String(get(payload, "verdict", ""))
-            isempty(v) && continue
-            verdicts[role] = (v, String(get(payload, "quote", "")))
+            # one verifier answers for every finding of its unit, each by id
+            vs = get(payload, "verdicts", nothing)
+            vs isa AbstractVector && !isempty(vs) || continue
+            for v in vs
+                v isa AbstractDict || continue
+                fid = String(get(v, "finding", "")); vv = String(get(v, "verdict", ""))
+                (isempty(fid) || isempty(vv)) && continue
+                verdicts[fid] = (vv, String(get(v, "quote", "")))
+            end
             push!(wrote, role)
             continue
         end

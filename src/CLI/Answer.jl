@@ -123,7 +123,7 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
         q.answer === nothing || (println(io, "answer: it was already answered: ", q.answer); return 2)
         isempty(q.options) || option in [o.label for o in q.options] ||
             (println(io, "answer: ", option, " is not one of its options: ", join([o.label for o in q.options], ", ")); return 2)
-        fid = replace(replace(id, Regex("^" * run_id * "-") => ""), r"-code$" => "")
+        fid = replace(id, r"-code$" => "")
         # "do not report it again" is a ruling that the READER was wrong; it is refused on an answer that
         # wants the code or the documentation changed (review, 2026-09-23)
         settled && option != NOT_A_DEFECT &&
@@ -155,7 +155,9 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
     if of_run && option == R.DOCS_ANSWER
         println(io, remade ? "answer: the reverted edit is made again and stands; the finding is closed." :
                              "answer: no reverted edit of it was found to make again; the finding is closed.")
-    elseif of_run && option == R.CODE_ANSWER
+    elseif of_run && option == R.RULED_ANSWER
+        println(io, "answer: the finding is the fixer's again, to be made as you say; commit it with `gbg docfix commit --finding ", fid, "`, and a verifier closes it.")
+    elseif of_run && option in (R.CODE_ANSWER, R.OWNER_ANSWER)
         # onto the OWNER's list, which no close rewrites: the finding lives only in its run's record, and
         # a line on the tool's section was erased at the next close (review, 2026-09-23)
         _, run, _ = found
@@ -228,7 +230,7 @@ function settled_locations(root::AbstractString, id::AbstractString)
     found = Orchestration.Runs.question_of(root, id)
     found === nothing && return Model.Location[]
     _, run, _ = found
-    k = findfirst(f -> occursin("-" * f.id * "-", id), run.findings)
+    k = findfirst(f -> Orchestration.Runs.code_question_id(run, f.id) == id, run.findings)
     return k === nothing ? Model.Location[] : run.findings[k].draft.locations
 end
 

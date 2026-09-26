@@ -165,7 +165,7 @@ end
         finding = MQ.Finding("F1", :full, MQ.Decider.AGENT,
                              MQ.FindingDraft(rule = Symbol("RULE.DOC.SHAPE"),
                                              claim = "the docstring is wrong", locations = [loc]))
-        q = MQ.Question(id = "r1-F1-code", decision = "Is the code right here, or the documentation?",
+        q = MQ.Question(id = "F1-code", decision = "Is the code right here, or the documentation?",
                         options = [MQ.Option("fix the code", "the code is changed", true),
                                    MQ.Option("fix the documentation instead", "the edit stands", false),
                                    MQ.Option(G.Answer.NOT_A_DEFECT, "the finding is closed", false)])
@@ -176,18 +176,18 @@ end
 
         # It is not in `.gbg/questions.json`, and before this it could not be answered at all.
         @test isempty(Q.open_questions(root))
-        @test G.Answer.answer(root, "r1-F1-code", "no such option"; io = devnull) == 2
-        @test G.Answer.answer(root, "r1-F1-code", G.Answer.NOT_A_DEFECT; io = devnull) == 0
+        @test G.Answer.answer(root, "F1-code", "no such option"; io = devnull) == 2
+        @test G.Answer.answer(root, "F1-code", G.Answer.NOT_A_DEFECT; io = devnull) == 0
 
         back = G.Orchestration.Runs.load(root, "r1")
         @test only(back.questions).answer == G.Answer.NOT_A_DEFECT
-        @test G.Answer.answer(root, "r1-F1-code", "fix the code"; io = devnull) == 2   # answered once
+        @test G.Answer.answer(root, "F1-code", "fix the code"; io = devnull) == 2   # answered once
 
         # "not a defect" settles it without the flag, carrying the finding's own locations, so the next
         # run's readers are told not to raise it again.
         settled = G.ConfigIO.read_settled(root)
         @test length(settled) == 1
-        @test only(settled).question == "r1-F1-code"
+        @test only(settled).question == "F1-code"
         @test only(settled).locations == [loc]
     end
 

@@ -54,16 +54,27 @@ const FINDINGS = {
   required: ['findings', 'checked'],
 };
 
-// What a VERIFIER returns: one verdict from the list its arguments allow, and the quote that decides it.
-// The grade is Julia's: a verdict without a quote the current text holds is read as NOT_FIXED.
+// What a VERIFIER returns: one verdict per finding of its unit, from the list its arguments allow, each
+// with the quote that decides it. The grade is Julia's: a verdict without a quote the current text holds
+// is read as NOT_FIXED.
 const VERDICT = {
   type: 'object',
   properties: {
-    verdict: { type: 'string' },
-    quote: { type: 'string' },
-    reason: { type: 'string' },
+    verdicts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          finding: { type: 'string' },
+          verdict: { type: 'string' },
+          quote: { type: 'string' },
+          reason: { type: 'string' },
+        },
+        required: ['finding', 'verdict', 'quote'],
+      },
+    },
   },
-  required: ['verdict', 'quote'],
+  required: ['verdicts'],
 };
 
 // What a TAGGER returns: one answer per rule, from the rule's TEXT alone. The study measures agreement,
@@ -125,14 +136,14 @@ function verifierBrief(role) {
     : '';
   const unit = !role.unit ? ''
     : role.source_unit
-      ? `\nThe example's source as it now stands is the file ${role.unit}, and it is the whole of what you may read.`
-      : `\nThe page as it now stands is the file ${role.unit}, and it is the whole of what you may read.`;
+      ? `\nThe example's source as it now stands is the file ${role.unit}: judge the text on it, and read the diff beside it.`
+      : `\nThe page as it now stands is the file ${role.unit}: judge the text on it, and read the diff beside it.`;
   // A verifier of a finding made on the built site is given the site, as its reader was.
   const site = role.site && !role.unit && (args.site_pages || []).length
     ? '\nThe BUILT site as it now stands — these pages and NO other file under it:\n' + args.site_pages.join('\n')
     : '';
   return [
-    `You are verifying one fix in the Julia package ${args.package}, pass ${args.pass} of a ${args.instrument.replace(/_/g, ' ')}.`,
+    `You are verifying the fixes of one place in the Julia package ${args.package}, pass ${args.pass} of a ${args.instrument.replace(/_/g, ' ')}.`,
     '',
     standpoint(role),
     '',
@@ -142,15 +153,16 @@ function verifierBrief(role) {
     // and a hundred of those is most of what the session has to type to launch this stage. Read it FIRST
     // — a verdict reached without it is a verdict about nothing, and the quote it owes cannot be found.
     `READ THIS FIRST: ${role.finding_file}`,
-    `It is the finding ${role.finding} as the reader wrote it — the claim, the rule, the fix proposed, and`,
-    'every location with the text quoted as the reader read it. Nothing below repeats it.',
+    `It holds the finding(s) ${role.finding} as the reader wrote them — each with its id, claim, rule, the`,
+    'fix proposed, and every location with the text quoted as the reader read it. Nothing below repeats it.',
     unit,
     site,
     role.diff_file ? `\nThe change made for it is the diff in ${role.diff_file}. Read that too.` : '',
     '',
-    `Answer with ONE verdict from: ${(role.verdicts || []).join(', ')} — and the decisive QUOTE (at most 25`,
-    'words, exactly as it appears in the current text or the diff). A verdict without a quote that is in',
-    'the text counts as NOT_FIXED.',
+    `Answer for EVERY finding in that file, by its id: one verdict from ${(role.verdicts || []).join(', ')},`,
+    'and the decisive QUOTE (at most 25 words, ONE verbatim span exactly as it appears in the current text',
+    'or the diff — never two fragments joined by "…", never a paraphrase). A verdict whose quote is not in',
+    'the text counts as NOT_FIXED. A finding you leave out is graded NOT_FIXED.',
   ].join('\n');
 }
 
@@ -319,7 +331,9 @@ const one = async (role) => {
   let out = await launch(false);
   if (!out) { log(`${role.key} wrote nothing; launching it once more`); out = await launch(true); }
   if (!out) return { key: role.key, wrote: false };
-  return { key: role.key, wrote: true };
+  // The validated return travels back too: the session saves it beside the results as `returned.json`,
+  // and the collect falls back on it for a role whose own file never appeared.
+  return { key: role.key, wrote: true, result: out };
 };
 
 // Together by default; ONE AT A TIME when the run asked for it, so an outage costs one agent's work
@@ -336,12 +350,15 @@ if (args.sequential) {
 const silent = wrote.filter((w) => !w || !w.wrote).map((w) => (w ? w.key : 'unknown'));
 if (silent.length) log(`silent after a relaunch: ${silent.join(', ')} — the collect names them`);
 
+const results = {};
+for (const w of wrote) if (w && w.result) results[w.key] = w.result;
 return {
   run: args.run,
   stage: args.stage,
   launched: roles.length,
   results_dir: args.results_dir,
   silent,
+  results,
 };
 
 // The result files are what `gbg run collect` reads, and the AGENT writes its own. This script cannot:

@@ -296,7 +296,12 @@ function regions(src::AbstractString; literate::Bool = false, rule_prose::Bool =
             # neither removed nor turned into a mark; the rest may change, the second `#` included — which
             # is the fix RULE.DOC.LITERATE asks for, a comment inside a loop made `##` [ruled 2026-09-24].
             push!(cut, (first(r) + 1):last(r))
-        end                                                      # a mark: exactly as it is
+        elseif (m = match(r"^(#!?(?:md|jl|nb) #)( |$)", c)) !== nothing
+            # A filtered Markdown line, `#md # prose`: the mark and its `#` stay exactly, and the prose
+            # after them may change as any Markdown line's may. It was kept whole as a mark, so a fix to an
+            # example's `#md` block could not be committed at all (found by PF, 2026-09-24).
+            push!(cut, (first(r) + length(m.captures[1]) + 1):last(r))
+        end                                                      # any other mark: exactly as it is
     end
     if literate
         # a prose run that leaves a fence open swallows the next code chunk into it
