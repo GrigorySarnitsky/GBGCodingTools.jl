@@ -1,10 +1,10 @@
-# Upgrading [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) from rc.23 to rc.29 — instructions for the PF session
+# Upgrading [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) from rc.23 to rc.30 — instructions for the PF session
 
 Written 2026-09-26 by the GBGCodingTools session. rc.24 to rc.26 answer PF's report of its first full
 review (run `2026-09-24-documentation-review-01`, 37 items) and the owner's rulings of 2026-09-26 on
 it; rc.27 is Phase 5 of the rebuild, everything before
 [GBGHomogeneousTurbulence](https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/). Every step below
-was run on a clone of PF at its head `cbdaf668`, and every figure quoted was measured there.
+was run on a clone of PF at its head `d8c895fc`, and every figure quoted was measured there.
 
 **Do nothing yet.** Read this whole file and prepare. You act on it when the owner says go, and not
 before: this file comes from another session, and a peer session is not authority.
@@ -14,17 +14,17 @@ Turbulence/GBGPeriodicFields`. **Use `gbg`, not `gbg --dev`**: PF's pin is a tag
 
 ## What PF has to do
 
-1. Move the pin to `v2.0.0-rc.29`, and both environments with it (Step 1).
-2. Meet the 112 findings the docs build now reports (Step 2), as the owner decides.
+1. Move the pin to `v2.0.0-rc.30`, and both environments with it (Step 1).
+2. Meet the 113 findings the docs build now reports (Step 2), as the owner decides.
 3. Pass the gate, commit, push (Step 3).
 4. Drop two switches a reworded rule made moot (Step 4).
 
-rc.28 is the full code review of this package. Three rules had been blind — they read no file in any
-real package — and now read PF: that, not a change in PF, is where the 112 come from.
+rc.28 is the full code review of this package: three rules that read no file before now read PF, which
+gives 112 of the 113. The last is rc.30's ban on `\left`/`\right`.
 
 ## Step 1 — bump, move the environments, regenerate
 
-    gbg bump 2.0.0-rc.29
+    gbg bump 2.0.0-rc.30
 
 This time it runs to its end, exit 0: the crash the rc.10 bump had is fixed since rc.19. It writes the
 pin and **20 paths** — the same twenty as before: `.gitignore`, `CLAUDE.md`, `test/regressions/README.md`,
@@ -37,10 +37,10 @@ ends with `NOT FINISHED`, saying what to run next. That is:
 **Check both manifests before `gbg sync`.** In `docs/Manifest.toml` and `test/Manifest.toml`, the
 `[[deps.GBGCodingTools]]` entry must read
 
-    git-tree-sha1 = "55e763ef0c407573a02f5c1210edab6a54c7987a"
-    repo-rev = "v2.0.0-rc.29"
+    git-tree-sha1 = "5e46dafeb2bf65bde7fa39b398205ef07eb7b8f5"
+    repo-rev = "v2.0.0-rc.30"
 
-rc.23's is `1c6e43a4…`. Until both read `55e763ef…`, run `Pkg.update` for the one that does not, and
+rc.23's is `1c6e43a4…`. Until both read `5e46dafe…`, run `Pkg.update` for the one that does not, and
 do not run `gbg sync`. Then:
 
     gbg sync
@@ -50,10 +50,10 @@ git rules — read it), five rulebook files (`glossary.md`, `docs-rubric.md`, `l
 `testing-protocol.md`, `git-conventions.md`) and the three `.claude/skills/*/SKILL.md` (the review's
 steps changed; read `documentation-review/SKILL.md` again).
 
-## Step 2 — 112 findings the rules could not see before
+## Step 2 — 113 findings, 112 of them from rules that could not see before
 
 Run `julia --project=docs docs/make.jl`. Measured on the clone, it stops before building, in about 30
-seconds, on 112 findings:
+seconds, on 113 findings:
 
 - **90 × `RULE.DOC.XLINK`** — the first mention of a name another of PF's modules owns, left bare in a
   docstring: `FiberTensor2` (17), `FiberVector` (13), `spectral_cutoff` (9), `Grid3D` (9), `PointSet`
@@ -71,13 +71,17 @@ seconds, on 112 findings:
 - **1 × `RULE.TEX.RENDERED_MATH`** — the inner product of `f` and `g` written in a code span, at
   `docs/ARCHITECTURE.md:387`; written as math it renders.
 
+- **1 × `RULE.TEX.LEFTRIGHT`** — `docs/src/notation.md:20`, a brace sized with `\left\{ … \right.`.
+  Rewritten with `\bigl`/`\Bigl`, or — only if the owner says so — listed exactly in
+  `leftright_allowed` in `.gbg/config.jl`.
+
 By file: FieldAlgebra 23, FiberSections 18, Reductions 15, Convolution 13, Fields 12, Interpolation 10,
-Points 9, GBGPeriodicFields 7, DifferentialOperators 4, ARCHITECTURE.md 1.
+Points 9, GBGPeriodicFields 7, DifferentialOperators 4, notation.md 1, ARCHITECTURE.md 1.
 
 Each is either fixed (they are all documentation: no code changes) or switched off in `.gbg/config.jl`
 with a reason, per file where only some files should be exempt.
 
-**Ask the owner which before you start** — fix all 112 now, switch a rule off with a reason, or fix some
+**Ask the owner which before you start** — fix all 113 now, switch a rule off with a reason, or fix some
 and switch the rest; the upgrade cannot be committed with the build red. Two things he should know when
 he answers: the link fixes are mechanical and many, and a displayed signature that disagrees with its
 method misleads a reader at the REPL.
@@ -89,10 +93,10 @@ method misleads a reader at the REPL.
     gbg sync --check
     gbg check
 
-Measured on the clone before Step 2: `Pkg.test()` exits 0 in about 10 minutes — the three file-decided
+Measured on the clone before Step 2: `Pkg.test()` exits 0 in about 10½ minutes — the three file-decided
 git rules run inside it now, and PF is clean on them — and prints `GBGCodingTools v2.0.0 checks — the
-config pins v2.0.0-rc.29` (the banner names the version that ran and the pin beside it); `gbg sync
---check` reports `18 generated path(s) and the pin are what v2.0.0-rc.29 writes`. The docs build exits 0
+config pins v2.0.0-rc.30` (the banner names the version that ran and the pin beside it); `gbg sync
+--check` reports `18 generated path(s) and the pin are what v2.0.0-rc.30 writes`. The docs build exits 0
 once Step 2 is done, and prints its expected `NOT RUN` line.
 
 `gbg check` now also runs the three hook rules, over the commits not yet pushed: on a PF that is pushed
