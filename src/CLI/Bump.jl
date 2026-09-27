@@ -5,15 +5,14 @@
 `gbg bump <version>`: moves a package's pin to a released version of this one and rewrites its wiring
 at that version.
 
-It runs the checks of the copy that is RUNNING first — `pkgversion`, the version the environment
-resolved, which is the old pin until the environments move — and refuses to move the pin while any of
-them finds something, printing the count per rule. A pin moved silently is a package that finds out at
-its next build, on someone else's time, that a newer rulebook has opinions about its prose; a package
-told first can fix what it wants to fix and switch off what it does not, and then bump.
+It moves the pin and regenerates; it checks nothing first. The new version's rules are not installed
+until the environments move, AFTER the bump, so a check here ran the old rules and could refuse nothing
+it existed to refuse (removed 2026-09-27, the owner's word). The package's next docs build and test run
+the new rules, and that is where a newer rulebook's opinions about its prose appear.
 """
 module Bump
 
-using ..GBGCodingTools: GBGCodingTools, Catalogue, ConfigIO, Engine, Model, Render, parse_options, VERBS
+using ..GBGCodingTools: GBGCodingTools, ConfigIO, Model, Render, parse_options, VERBS
 
 """
     set_pin(root, version) -> Bool
@@ -36,43 +35,24 @@ function set_pin(root::AbstractString, version::VersionNumber)
 end
 
 """
-    counts(cfg, root) -> Vector{Pair{Symbol,Int}}
-
-How many findings each rule has in the package at `root`, most first. The arguments are `cfg`, the
-package's config, and `root`, the package root. Returns one pair per rule that found anything.
-"""
-function counts(cfg::Model.Config, root::AbstractString)
-    out = Dict{Symbol,Int}()
-    for rule in Catalogue.RULES
-        n = length(Engine.Checks.run_rule(rule, cfg, root))
-        n > 0 && (out[rule.id] = n)
-    end
-    return sort!(collect(out), by = last, rev = true)
-end
-
-"""
     bump(root, version; io = stdout) -> Int
 
-Moves the pin of the package at `root` to `version` and rewrites its wiring, or refuses and changes
-nothing. The arguments are:
+Moves the pin of the package at `root` to `version` and rewrites its wiring. The arguments are:
 
 - `root` — the package root.
 - `version` — the released version to pin, `X.Y.Z`.
 - `io` — where the report goes.
 
-Exit 0 when the pin moved, 1 when the running version's rules found something and it did not, or a
-generated path is the package's own file, 2 when the config could not be read or the pin line could not
-be found. The rules that guard the move are the RUNNING copy's, `pkgversion(GBGCodingTools)`, and the
-report says so: they are the new version's only once the environments resolve it.
+Exit 0 when the pin moved, 1 when a generated path is the package's own file and was kept, 2 when the
+config could not be read or the pin line could not be found.
 
 A PRERELEASE may be pinned. It was refused here until 2026-09-18, on the reasoning that a candidate is
 not a release; the refusal bought nothing and the cost was concrete. A tag is immutable whether or not
 it carries `-rc.N`, so a candidate resolves from GitHub exactly as a release does.
 
 Refusing it left the first wired package pinned to an absolute path on one machine, its CI resolving
-nothing and running none of these rules, for as long as the final release was away. What guards a bad
-pin is the check below, which will not move a pin while the new version finds anything, and that guard
-does not care what the version is called.
+nothing and running none of these rules, for as long as the final release was away. What judges a pin
+is the package's next build, under the new version, whatever the version is called.
 """
 function bump(root::AbstractString, version::VersionNumber; io::IO = stdout)
     cfg = try
@@ -82,18 +62,6 @@ function bump(root::AbstractString, version::VersionNumber; io::IO = stdout)
         println(io, sprint(showerror, err))
         return 2
     end
-
-    running = pkgversion(GBGCodingTools)
-    found = counts(cfg, root)
-    if !isempty(found)
-        println(io, "bump: ", Render.version_tag(cfg), " → v", version, " is refused; the rules of the running v",
-                running, " find ", sum(last, found), " thing(s) here:")
-        for (id, n) in found; println(io, "  ", lpad(n, 5), "  ", id); end
-        println(io, "Fix what you mean to fix, switch the rest off in .gbg/config.jl with a reason, then bump.")
-        println(io, "Nothing was changed.")
-        return 1
-    end
-    println(io, "bump: the rules of the running v", running, " find nothing here.")
 
     set_pin(root, version) || (println(io, "bump: no `tool = …` line in .gbg/config.jl to move"); return 2)
     cfg = ConfigIO.read_config(root)                 # we just wrote it; failing to read it back is a crash
@@ -105,12 +73,12 @@ function bump(root::AbstractString, version::VersionNumber; io::IO = stdout)
         println(io, "bump: these paths are the package's own, not a generator's, and were not written over:")
         for (p, line) in refused; println(io, "  ", p, "\n      it begins: ", first(line, 70)); end
     end
-    stale_warning(io, version, running)
+    stale_warning(io, version, pkgversion(GBGCodingTools))
     return isempty(refused) ? 0 : 1
 end
 
 """
-    stale_warning(io, version, running)
+    stale_warning(io, version, pkgversion(GBGCodingTools))
 
 Says that what was just written is the RUNNING version's, not the pinned one's. The arguments are:
 

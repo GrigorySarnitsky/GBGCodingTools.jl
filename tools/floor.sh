@@ -25,8 +25,13 @@ cd "${1:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}"
 # routinely a different workflow at a different commit, and reading it as a verdict on this one is how
 # both v2.0.0-rc.2 and v2.0.0-rc.3 went out red.
 #
-# An empty conclusion is a run still going, which the first version counted as success. A green run at
-# another commit REFUSES too: it said so here and only printed a line until 2026-09-26.
+# An empty conclusion is a run still going, which the first version counted as success.
+#
+# A green run at ANOTHER commit is reported and not refused. What this check serves is that the owner
+# gets no failure mail: a red run refuses, because nothing belongs on top of it. A run behind HEAD is
+# not red — CI runs by hand, so it is behind before nearly every commit, and this commit is tested by the
+# gate below, not by GitHub. It refused from 2026-09-26 and had to be overridden on every commit, which
+# is a check nobody reads (the owner, 2026-09-27).
 if [ -z "${FLOOR_IGNORE_CI:-}" ] && [ -z "${1:-}" ]; then
   if command -v gh >/dev/null 2>&1; then
     HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
@@ -63,8 +68,6 @@ if [ -z "${FLOOR_IGNORE_CI:-}" ] && [ -z "${1:-}" ]; then
           echo "floor: the newest $WF run is at a commit this clone does not have — it did not see this work."
         fi
         [ "$WF" = "CI" ] && echo "  CI runs on a tag or a dispatch: gh workflow run CI --ref master"
-        echo "  Wait for a run at HEAD, or, if THIS commit is the fix: FLOOR_IGNORE_CI=1 tools/floor.sh"
-        exit 1
       fi
     done
   else

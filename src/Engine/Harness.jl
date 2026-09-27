@@ -6,7 +6,7 @@ What a package's `test/runtests.jl` calls: the code half of the always-on checks
 that a broken contract is a failing test rather than a report nobody reads.
 
 It runs only programs — the code rules of the rulebook, and the frozen contracts a package pins — and
-reads no review state, starts no child process and never touches the network, because CI and a fresh
+reads no review state or git state and never touches the network, because CI and a fresh
 clone must give the same answer.
 
 It does NOT reach the wiring check, though a test suite runs that too. `Render` is above `Engine` in the

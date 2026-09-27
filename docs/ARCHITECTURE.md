@@ -342,9 +342,9 @@ rule of no Python and no child process beyond a few named commands, still carrie
 One boundary stays: whose dependency this is. GBGCodingTools is a **developer-side** dependency: it lives in each
 package's `docs/` and `test/` environments, which `gbg sync` writes, and never in the package's own `[deps]`, so `]add
 GBGPeriodicFields` pulls none of it and no user of a science package resolves it. What it brings — JSON3, Gumbo and the
-rest — is paid for there, by the developer. What runs inside a consumer's build or test stays offline and starts no
-child process, because CI must give the same answer every time; the instrument side, run only when the owner asks, is
-free, and already starts `git`, the docs build, the tests and witnesses. Settled case by case:
+rest — is paid for there, by the developer. What runs inside a consumer's build or test stays offline and reads no
+git or review state, because CI and a fresh clone must answer alike; a child Julia process is allowed [2026-09-27].
+The instrument side also starts `git`, builds and witnesses. Settled case by case:
 
 | Job | Answer | Reason, and what it costs |
 |---|---|---|
@@ -784,9 +784,8 @@ about the fixer, not a budget (§4.4 step 2).
 
 **The pinned version.** `Config.tool` names one released version (as ruled) — `:dev` only in the tooling package's own
 checkout — which `gbg sync` writes into the docs and test environments, and into neither package's own dependencies.
-`gbg bump` runs only on the owner's request; it first runs the new version's checks on the package and exits 1,
-changing nothing, with counts per new rule when any fails; else it changes the pin and regenerates every generated part
-[a new check would otherwise redden a build on old text].
+`gbg bump` runs only on the owner's request; it changes the pin and regenerates every generated part, checking nothing
+first: the new rules arrive only when the environments move, so the next build under them judges the package.
 
 **Inside a science package's `Pkg.test()`** the code rules run and the wiring check compares, and **inside its docs
 build** the documentation rules run and the wiring check compares again; regenerating anything is left to `gbg sync`,
