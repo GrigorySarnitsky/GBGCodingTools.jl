@@ -4,6 +4,21 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.30 — 2026-09-27
+
+MINOR, the owner's answers to the review's open questions:
+
+- **`RULE.TEX.LEFTRIGHT`: `\left` and `\right` are banned**, except in a formula a package lists in the
+  new `leftright_allowed` setting — each exactly, on the owner's answer. A package using them elsewhere
+  gets a finding per formula.
+- **`RULE.GIT.TRAILER` restored to the ruling of 2026-09-08**: every commit ends with exactly
+  `Co-Authored-By: Anthropic Claude <noreply@anthropic.com>`, no versioned trailer and no Claude-Session
+  line. rc.27 had loosened it to any Co-Authored-By line.
+- **`gbg bump` checks nothing before moving the pin**: its pre-check ran the old version's rules and could
+  refuse nothing; the next build under the new version judges the package.
+- A consumer's build or test may start a child Julia process; what it may not read is git state, review
+  state or the network.
+
 ## 2.0.0-rc.29 — 2026-09-27
 
 PATCH, two false positives in `RULE.DOC.XLINK`, found by the first run of the rules the review brought to
