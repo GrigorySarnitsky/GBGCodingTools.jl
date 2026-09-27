@@ -88,7 +88,9 @@ fi
       git rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1 || range=HEAD
       for c in $(git rev-list "$range" 2>/dev/null); do
         msg=$(git log -1 --format=%B "$c")
-        printf '%s\n' "$msg" | grep -Eq '^Co-Authored-By: .*<noreply@anthropic\.com>' || echo "$(git log -1 --format=%h "$c") carries no Co-Authored-By trailer"
+        printf '%s\n' "$msg" | grep -Fxq 'Co-Authored-By: Anthropic Claude <noreply@anthropic.com>' || echo "$(git log -1 --format=%h "$c") does not carry the trailer 'Co-Authored-By: Anthropic Claude <noreply@anthropic.com>'"
+        printf '%s\n' "$msg" | grep -Eq '^Co-Authored-By: .*<noreply@anthropic\.com>' && ! printf '%s\n' "$msg" | grep -Eq '^Co-Authored-By: Anthropic Claude <noreply@anthropic\.com>$' && echo "$(git log -1 --format=%h "$c") carries a versioned Co-Authored-By trailer"
+        printf '%s\n' "$msg" | grep -Eq '^Claude-Session:' && echo "$(git log -1 --format=%h "$c") carries a Claude-Session line"
         printf '%s\n' "$msg" | grep -Fq '[skip ci]' && echo "$(git log -1 --format=%h "$c") says [skip ci]"
       done
       return 0

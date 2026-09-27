@@ -239,7 +239,9 @@ range='@{upstream}..HEAD'
 git rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1 || range=HEAD
 for c in $(git rev-list "$range" 2>/dev/null); do
   msg=$(git log -1 --format=%B "$c")
-  printf '%s\n' "$msg" | grep -Eq '^Co-Authored-By: .*<noreply@anthropic\.com>' || echo "$(git log -1 --format=%h "$c") carries no Co-Authored-By trailer"
+  printf '%s\n' "$msg" | grep -Fxq 'Co-Authored-By: Anthropic Claude <noreply@anthropic.com>' || echo "$(git log -1 --format=%h "$c") does not carry the trailer 'Co-Authored-By: Anthropic Claude <noreply@anthropic.com>'"
+  printf '%s\n' "$msg" | grep -Eq '^Co-Authored-By: .*<noreply@anthropic\.com>' && ! printf '%s\n' "$msg" | grep -Eq '^Co-Authored-By: Anthropic Claude <noreply@anthropic\.com>$' && echo "$(git log -1 --format=%h "$c") carries a versioned Co-Authored-By trailer"
+  printf '%s\n' "$msg" | grep -Eq '^Claude-Session:' && echo "$(git log -1 --format=%h "$c") carries a Claude-Session line"
   printf '%s\n' "$msg" | grep -Fq '[skip ci]' && echo "$(git log -1 --format=%h "$c") says [skip ci]"
 done
 return 0
@@ -300,7 +302,7 @@ end
 const REPO = "export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t\n" *
              "git init -q -b master && git commit -q --allow-empty -m 'first' && " *
              "git init -q --bare .origin.git && git remote add origin .origin.git && git push -q -u origin master\n"
-const TRAILER = "\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
+const TRAILER = "\n\nCo-Authored-By: Anthropic Claude <noreply@anthropic.com>"
 
 const BRANCH = Model.Rule(
     id = Symbol("RULE.GIT.BRANCH"),
@@ -335,8 +337,8 @@ const PUSH = Model.Rule(
 
 const TRAILER_RULE = Model.Rule(
     id = Symbol("RULE.GIT.TRAILER"),
-    statement = "Every commit carries a `Co-Authored-By: … <noreply@anthropic.com>` trailer; never [skip ci].",
-    why = "The trailer names the session as co-author, so a commit's provenance is in the one place git never lets anyone correct it; the model in use changes often, and a version in the trailer is a fact about the day rather than about the work.",
+    statement = "Every commit ends with the versionless 'Co-Authored-By: Anthropic Claude <noreply@anthropic.com>' trailer, and no other Co-Authored-By or Claude-Session line; never [skip ci].",
+    why = "The trailer names no model version on purpose (ruled 2026-09-08): the model in use changes often and the versions supersede each other, so a version in the trailer is a fact about the day rather than about the work, and it goes stale in the one place git never lets anyone correct it.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.CODE],
     check = Model.ProgramCheck(Model.Input.HISTORY, hooked(TRAILER_HOOK), false),
@@ -346,6 +348,12 @@ const TRAILER_RULE = Model.Rule(
         Model.HistoryExample(REPO * "git commit -q --allow-empty -m 'second$TRAILER'\n", Model.Location[], "carries the trailer"),
         Model.HistoryExample(REPO * "git commit -q --allow-empty -m 'second [skip ci]$TRAILER'\n", [Model.Location(; file = "", line = 0)], "never [skip ci]"),
         Model.HistoryExample(REPO * "git commit -q --allow-empty -m 'second, run it$TRAILER'\n", Model.Location[], "never [skip ci]"),
+        Model.HistoryExample(REPO * "git commit -q --allow-empty -m 'second\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'\n",
+                             [Model.Location(; file = "", line = 0), Model.Location(; file = "", line = 0)], "no other Co-Authored-By line"),
+        Model.HistoryExample(REPO * "git commit -q --allow-empty -m 'third$TRAILER'\n", Model.Location[], "no other Co-Authored-By line"),
+        Model.HistoryExample(REPO * "git commit -q --allow-empty -m 'second$TRAILER\nClaude-Session: https://claude.ai/x'\n",
+                             [Model.Location(; file = "", line = 0)], "no Claude-Session line"),
+        Model.HistoryExample(REPO * "git commit -q --allow-empty -m 'second, again$TRAILER'\n", Model.Location[], "no Claude-Session line"),
     ])
 
 # ──────────────────────────────────────────────────────────────────── the one that stays an instruction

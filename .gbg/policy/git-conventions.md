@@ -48,9 +48,9 @@ The requests directory holds what is still awaiting the other package and nothin
 Covered by a program.
 
 ### RULE.GIT.TRAILER
-Every commit carries a `Co-Authored-By: … <noreply@anthropic.com>` trailer; never [skip ci].
+Every commit ends with the versionless 'Co-Authored-By: Anthropic Claude <noreply@anthropic.com>' trailer, and no other Co-Authored-By or Claude-Session line; never [skip ci].
 
-The trailer names the session as co-author, so a commit's provenance is in the one place git never lets anyone correct it; the model in use changes often, and a version in the trailer is a fact about the day rather than about the work.
+The trailer names no model version on purpose (ruled 2026-09-08): the model in use changes often and the versions supersede each other, so a version in the trailer is a fact about the day rather than about the work, and it goes stale in the one place git never lets anyone correct it.
 
 Covered by a program in the end-of-turn hook, which reads the branch and the commits not yet pushed — weaker than a build check, since a hook can be skipped and a failing test cannot.
 
