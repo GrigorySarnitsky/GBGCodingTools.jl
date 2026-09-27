@@ -18,6 +18,7 @@ Turbulence/GBGPeriodicFields`. **Use `gbg`, not `gbg --dev`**: PF's pin is a tag
 2. Meet the 113 findings the docs build now reports (Step 2), as the owner decides.
 3. Pass the gate, commit, push (Step 3).
 4. Drop two switches a reworded rule made moot (Step 4).
+5. Cut from `CLAUDE.md` what the rulebook already holds (Step 5), after the upgrade is committed.
 
 rc.28 is the full code review of this package: three rules that read no file before now read PF, which
 gives 112 of the 113. The last is rc.30's ban on `\left`/`\right`.
@@ -121,6 +122,30 @@ both from `.gbg/config.jl`, run `gbg check`, and commit that on its own.
 
 If `check` then reports the rule on one of those files, the text there is mathematics in a code span:
 a finding to fix, not a reason to keep the switch.
+
+## Step 5 — cut what `CLAUDE.md` restates of the rulebook
+
+PF's `CLAUDE.md` imports the rulebook at its head, and then restates much of it in its own words, so every
+PF agent loads those rules twice — about a fifth of a 281 KB file — and the copy drifts from the rule. The
+owner has asked for the restatements to go.
+
+The measured list is `docs/design-record/PF-CLAUDE-CUT-2026-09-27.md` in the GBGCodingTools repository:
+every passage of PF's `CLAUDE.md` marked `DUPLICATE`, `TRIM` or `CONFLICT` against the rulebook of rc.30,
+with its first words quoted. About 29 lines are plain duplicates, about 497 lines are passages to trim,
+and 13 passages conflict with a rule.
+
+Work from the list, and check each item against the text before acting — it is a measurement, not a
+ruling:
+
+- `DUPLICATE`: delete the passage, if it truly adds nothing PF-specific.
+- `TRIM`: cut what the list says goes; keep what it says stays, reworded only as far as it must be to
+  read on its own.
+- `CONFLICT`: change nothing. Put the 13 to the owner as questions — keep PF's version as a switch or
+  setting in `.gbg/config.jl`, or drop it for the rule — and act on each answer.
+- An item you judge wrong: leave the text and say why in your report.
+
+Keep the cut apart from the upgrade: its own commits, after the upgrade is pushed. `CLAUDE.md` is code —
+the owner reviews the diff. Report the lines before and after.
 
 ## What changed since rc.23
 
