@@ -120,7 +120,7 @@ A read: src/Render.jl whole, the extension, src/CLI/Wire.jl; the rendered hook e
 - evidence: `found = counts(cfg, root)` … `for rule in Catalogue.RULES` (Bump.jl:45); module docstring: "It runs the new version's checks FIRST and refuses to move the pin while any of them finds something"; ARCHITECTURE §11: "`gbg bump` … first runs the new version's checks on the package and exits 1"; bin/gbg:31 `P="$d/docs"` → the consumer's docs Manifest, which holds the OLD pin; PF-WIRING.md:25–33 runs `gbg bump 2.0.0-rc.27` first and `Pkg.update("GBGCodingTools")` after.
 - failure: a consumer pinned at rc.23 runs `gbg bump 2.0.0-rc.27` through the shim → the loaded code is rc.23, so `Catalogue.RULES` is rc.23's rulebook, which the package already satisfies → the guard passes trivially, the pin moves, and rc.27's new opinions redden the next build — the exact case §11 says bump prevents. `stale_warning` admits the REGENERATION is stale but says nothing about the guard being stale; the module and `bump` docstrings state the opposite.
 - fix: refuse (exit 2) when `pkgversion(GBGCodingTools)` is not the version being pinned, telling the session to move the environments first; or reorder the documented procedure and say in the docstring which version's rules the guard runs.
-- verified: yes, by reading (2026-09-26) · fate: owner — should `bump` refuse (exit 2) when the running version is not the one being pinned? Docstring and output now name the version whose rules ran.
+- verified: yes, by reading (2026-09-26) · fate: fixed 0a2d279 — ruled 2026-09-27: the pre-check is removed; the next build under the new version judges the package
 
 ### C-2: `gbg fleet` grades a consumer wired exactly at its pin as `RED WIRING`, because the wiring check renders with the dev tree's generators
 - file: src/CLI/Fleet.jl:86
@@ -192,7 +192,7 @@ A read: src/Render.jl whole, the extension, src/CLI/Wire.jl; the rendered hook e
 - evidence: `if [ -n "$SHA" ] && [ "$SHA" != "$HEAD_SHA" ]; then … echo "floor: the newest $WF run is $BEHIND commit(s) behind HEAD — it did not see this work."` — no `exit`; lines 55–56 call this "the whole defect restated: it is a verdict on other code"; lines 16–17 "It REFUSES rather than warns. A printed line is what the previous version of this lesson was, and it was read past."
 - failure: CI green at a commit twenty behind HEAD → two echo lines and the floor continues to green; the `release` verb's `ci_verdict` is the only place the same-commit condition holds.
 - fix: either exit 1 when the newest CI run is behind HEAD (with the same `FLOOR_IGNORE_CI` escape) or reword the header to say the behind-HEAD case is only reported.
-- verified: yes, by reading (2026-09-26) · fate: fixed in the review commit — `floor.sh` exits 1 when the newest run is not at HEAD; `FLOOR_IGNORE_CI=1` bypasses.
+- verified: yes, by reading (2026-09-26) · fate: fixed, then reversed 0a2d279 — ruled 2026-09-27: a run behind HEAD is reported, only a red run refuses
 
 ### C-10: The clean export silently loses files once the tracked path list passes xargs's 128 KiB buffer
 - file: tools/floor.sh:95
@@ -255,7 +255,7 @@ A read: src/Render.jl whole, the extension, src/CLI/Wire.jl; the rendered hook e
 - evidence: `stale_warning(io, version); return 0` after `println(io, "NOT FINISHED. What was just written is this version's content under a v", version, " banner:")`.
 - failure: the pin and the generated files disagree by construction (the docstring says so: "every generated file it writes is the old version's content under the new version's banner"), and the verb returns the clean code; a session reading exit codes — the contract, "a log is never grepped for a verdict" — sees a finished bump.
 - fix: return 1 (or a named code) while the running version differs from the pinned one, and 0 only when `pkgversion(GBGCodingTools) == version`.
-- verified: yes, by reading (2026-09-26) · fate: owner — goes with C-1: should `bump` exit non-zero while the running version is not the pinned one? It would make the documented bump-first procedure always exit 1.
+- verified: yes, by reading (2026-09-26) · fate: fixed 0a2d279 — goes with C-1: with no pre-check, bump's exit says only whether the pin moved
 
 ### C-17: `Study.read_round` drops a short row without a word
 - file: src/Study.jl:100
@@ -1037,7 +1037,7 @@ SKIPPED: the rules that call these readers (src/Rules/*), the guard and the CLI 
 - evidence: `return readchomp(`$(Base.julia_cmd()) --startup-file=no --project=$project -t$threads -e $src`)`; docs/ARCHITECTURE.md §5.1: "What runs inside a consumer's build or test stays offline and starts no child process, because CI must give the same answer every time"; Harness docstring (src/Engine/Harness.jl:9): "starts no child process".
 - failure: a consumer's suite calling `thread_digest` (the PF threading test it was harvested from) starts a second Julia; the design's exception table admits `git`, the docs build, tests and witnesses on the instrument side only.
 - fix: either admit it in §5.1's table with its reason, or move the cross-`-t` probe to a `gbg` verb.
-- verified: yes, by reading (2026-09-26) · fate: owner — should `thread_digest`, which starts a child Julia inside a consumer's `Pkg.test()`, be admitted in §5.1's exception table, or move to a `gbg` verb?
+- verified: yes, by reading (2026-09-26) · fate: refused 0a2d279 — ruled 2026-09-27: a child Julia breaks no invariant; the design's "starts no child process" was corrected
 
 ### D-21: `Witnesses.refusal` is evaded by `include_string`, `evalfile`, a multi-line `using`, and `@eval using`
 - file: src/Witnesses.jl:61 (and :62)
@@ -1313,7 +1313,7 @@ everything else they confirmed.
 - C-2 REGRESSION: AT-PIN was asked before BEHIND, so a stale released pin outside the sweep window graded 0. · fate: fixed in the verification commit (BEHIND first)
 - V-1: `runs_hook` matched any command ending in `queue-guard.sh`, so a package's own `my-queue-guard.sh` Stop hook would be deleted by the merge. · fate: fixed in the verification commit
 - V-2: the `ci_drift` docstring named CompatHelper as a workflow with no Julia step; it runs Julia and is reported. · fate: fixed in the verification commit (docstring)
-- noted: after C-9 the floor refuses whenever the newest CI run is not at HEAD, which under manual CI is nearly always · fate: owner — keep the refusal (dispatch CI before each commit) or warn when behind and refuse only when red?
+- noted: after C-9 the floor refused whenever the newest CI run was not at HEAD, which under manual CI is nearly always · fate: fixed 0a2d279 (ruled 2026-09-27: warn when behind, refuse only red)
 
 ### Groups G and H — 26 confirmed, 1 regression, H-11's refusal holds
 - G-6 REGRESSION: the shared grammar made `?` and `[…]` wildcards in FILE-SET patterns, which escaped them deliberately on 2026-09-23 (`glob_matches("docs/[x].md", "docs/[x].md")` became false). · fate: fixed in the verification commit (`classes = false` for file-set patterns)
