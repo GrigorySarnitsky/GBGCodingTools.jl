@@ -102,7 +102,8 @@ old tree left, and rests until Phase 6.
 
 ## Working agreements
 
-- Commit ⇒ push, directly on `master`; every commit message ends with the trailer the session is given;
+- Commit ⇒ push, directly on `master`; every commit message ends with the versionless trailer
+  `Co-Authored-By: Anthropic Claude <noreply@anthropic.com>` and nothing else (`RULE.GIT.TRAILER`, ruled 2026-09-08);
   stage with `git add -u` plus new files by name, never `-A`.
 - Gate every commit on `tools/floor.sh` — `Pkg.test()` and the docs build, each exit 0. "Should work" is
   not done. Unasked, run only that.

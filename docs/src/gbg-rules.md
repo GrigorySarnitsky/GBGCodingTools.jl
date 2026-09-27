@@ -331,11 +331,12 @@ Covered by a program.
 
 
 #### [`RULE.TEX.LEFTRIGHT`](@id RULE.TEX.LEFTRIGHT)
-A sized delimiter names what it sizes: \left( pairs with \right), and neither stands alone.
+\left and \right are not used, except in a formula the package lists in `leftright_allowed`, each formula listed exactly and on the owner's answer.
 
-An unpaired sizing command is a LaTeX error, and the whole formula fails to render.
+An auto-sized delimiter sizes to its content, so the same bracket renders at different sizes in neighbouring formulas; a size chosen with \bigl…\bigr is the same everywhere. Where a formula needs one, the owner says so for that formula.
 
 Covered by a program.
+This package may set `leftright_allowed`; unset, it is `String[]`.
 
 
 #### [`RULE.TEX.MATHBB`](@id RULE.TEX.MATHBB)

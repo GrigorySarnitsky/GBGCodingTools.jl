@@ -261,13 +261,81 @@ const FRAC_UNBRACED = pattern_rule("RULE.TEX.FRAC_BRACED",
     "The ratio ``\\frac{1}{2}`` is a half.",
     "both arguments are braced")
 
-const LEFTRIGHT = pattern_rule("RULE.TEX.LEFTRIGHT",
-    "A sized delimiter names what it sizes: \\left( pairs with \\right), and neither stands alone.",
-    "An unpaired sizing command is a LaTeX error, and the whole formula fails to render.",
-    r"\\left(?![a-zA-Z]|\\\{)|\\right(?![a-zA-Z]|\.)",
-    "The norm ``\\left\\| u \\right.`` is bounded.",
-    "The norm ``\\lVert u \\rVert`` is bounded.",
-    "neither stands alone")
+"""
+    LEFTRIGHT_ALLOWED
+
+The formulas a package may write with `\\left` and `\\right`, each exactly as it stands in the text.
+The list is empty unless a package names one, and a package names one only on the owner's answer: the
+config is code, and no session changes it on its own.
+"""
+const LEFTRIGHT_ALLOWED = Model.Parameter(:leftright_allowed, String[])
+
+"""
+    leftright(text, cfg) -> Vector{Model.Location}
+
+Every formula that uses `\\left` or `\\right` and is not on the package's list. The arguments are
+`text`, the file's prose, and `cfg`, the package's config, which supplies the list. Returns one
+location per formula.
+
+A formula is an inline span between double backticks, or a whole ```math block; it is compared whole,
+stripped of surrounding space, so an allowance is per formula and never per command.
+"""
+function leftright(text::AbstractString, cfg)
+    allowed = Set{String}()
+    for s in cfg.settings
+        s.rule === LEFTRIGHT.id && s.name === :leftright_allowed && s.value isa Vector{String} &&
+            union!(allowed, strip.(s.value))
+    end
+    sized(f) = occursin(r"\\(left|right)(?![a-zA-Z])", f)
+    out = Model.Location[]
+    lines = split(text, '\n')
+    block = nothing; start = 0
+    for (i, line) in pairs(lines)
+        t = strip(line)
+        if block === nothing && startswith(t, "```math")
+            block = String[]; start = i; continue
+        elseif block !== nothing
+            if startswith(t, "```")
+                f = strip(join(block, "\n"))
+                sized(f) && !(f in allowed) && push!(out, Model.Location(; file = "", line = start, text = first(f, 120)))
+                block = nothing
+            else
+                push!(block, String(line))
+            end
+            continue
+        end
+        for m in eachmatch(r"``(.+?)``", line)
+            f = strip(m.captures[1])
+            sized(f) && !(f in allowed) && push!(out, Model.Location(; file = "", line = i, text = f))
+        end
+    end
+    return out
+end
+
+# The one package setting the allowance examples run under.
+const LEFTRIGHT_EXAMPLE = [Model.Setting(rule = Symbol("RULE.TEX.LEFTRIGHT"), name = :leftright_allowed,
+                                         value = ["\\left( \\frac{a}{b} \\right)"])]
+
+const LEFTRIGHT = Model.Rule(
+    id = Symbol("RULE.TEX.LEFTRIGHT"),
+    statement = "\\left and \\right are not used, except in a formula the package lists in `leftright_allowed`, each formula listed exactly and on the owner's answer.",
+    why = "An auto-sized delimiter sizes to its content, so the same bracket renders at different sizes in neighbouring formulas; a size chosen with \\bigl…\\bigr is the same everywhere. Where a formula needs one, the owner says so for that formula.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, leftright, false),
+    parameters = Model.Parameter[LEFTRIGHT_ALLOWED],
+    examples = [
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe norm ``\\left( u \\right)`` is bounded.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "not used"),
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe norm ``\\bigl( u \\bigr)`` is bounded.\n",
+            Model.Location[], "not used"),
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\n```math\n\\left| u \\right|\n```\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "not used"),
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe ratio ``\\left( \\frac{a}{b} \\right)`` here.\n",
+            Model.Location[], "except in a formula the package lists", LEFTRIGHT_EXAMPLE),
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe ratio ``\\left( \\frac{a}{c} \\right)`` here.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "except in a formula the package lists", LEFTRIGHT_EXAMPLE),
+    ])
 
 const PARTIAL_BARE = pattern_rule("RULE.TEX.PARTIAL",
     "A partial derivative names its index as a symbol, not as a bare letter subscript.",

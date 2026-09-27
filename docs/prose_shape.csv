@@ -555,10 +555,12 @@ unit,words,longest_paragraph,admonitions
 "judgement_test.jl :: Rules.JudgementTest",75,45,0
 "judgement_tex.jl :: RULES",10,9,0
 "judgement_tex.jl :: Rules.JudgementTex",75,45,0
+"latex.jl :: LEFTRIGHT_ALLOWED",50,49,0
 "latex.jl :: MATHBF_ALLOWED",27,26,0
 "latex.jl :: RULES",12,11,0
 "latex.jl :: Rules.Latex",82,50,0
 "latex.jl :: inline_math_split(text, cfg) -> Vector{Model.Location}",77,37,0
+"latex.jl :: leftright(text, cfg) -> Vector{Model.Location}",71,35,0
 "latex.jl :: matching(pattern; mask = true) -> Function",50,19,0
 "latex.jl :: mathbf(text, cfg) -> Vector{Model.Location}",65,32,0
 "latex.jl :: pattern_rule(id, statement, why, pattern, breaking, complyin",123,74,0
