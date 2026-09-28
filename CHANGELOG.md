@@ -4,6 +4,14 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.36 — 2026-09-28
+
+PATCH. **RULE.DOC.SIGNATURE_FIDELITY compiles once, not once per function.** Its helpers took each
+function as its own type, and every Julia function has one, so they were compiled again for every
+function of the package: the rule took 67 s of the 76 the rulebook's checks spent before this package's
+docs build, 13 s in GBGHomogeneousTurbulence's and 17 s in GBGPeriodicFields'. Measured after, first
+call: 5.3, 2.8 and 3.0 s, with the same findings. A docs build's rule checks here take 14 s, not 76.
+
 ## 2.0.0-rc.35 — 2026-09-28
 
 PATCH, four tool defects that rehearsing and verifying GBGHomogeneousTurbulence's first wiring found:
