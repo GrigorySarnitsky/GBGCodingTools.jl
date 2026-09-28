@@ -14,14 +14,16 @@ using ...Texts
 # The bulleted form is an `# Arguments` heading over the bullets (ruled 2026-09-28); the prose form is
 # the marker phrase, "The arguments are `a`, …", in a sentence. A bulleted list under the marker phrase —
 # the form this rule asked for until that ruling — is neither, and is told so by name, so a consumer
-# converting is pointed at the heading and not merely told the form is wrong. A type whose docstring has
-# a `# Fields` section documents its fields, not its constructor's arguments, and is set aside first.
+# converting is pointed at the heading and not merely told the form is wrong. A type is held to the rule
+# like any call, whatever its `# Fields` section says: it was exempt until the owner's ruling of
+# 2026-09-28, which left the arguments of a constructor that are not its fields documented nowhere as
+# arguments (GBGPeriodicFields' `LalescuSpline(n, m = 1; T = Float64)`, whose fields are none of them).
+# Where a default constructor's arguments repeat the fields, the repetition is the price, ruled so.
 # A line may lead into the bullets inside the section — "All keyword, all required:" — and the list is
 # still under the heading; a bullet past the next heading is not.
 const BULLETED = r"(?m)^#\s+Arguments\s*\n(?:(?!#)[^\n]*\n)*?\s*[-*]\s"
 const UNDER_PHRASE = r"The\s+arguments\s+are\b[^\n]*\n\s*\n?\s*[-*]\s"
 const IN_PROSE = r"The\s+arguments?\s+(is|are)\s+`"
-const FIELDS_SECTION = r"(?m)^#\s+Fields\s*$"
 const WRAPPER_PHRASE = "Allocating form of"
 const THRESHOLD = 3
 
@@ -34,16 +36,14 @@ this rule does not read. Returns one location per docstring.
 
 Three or more arguments, or any keyword, want an `# Arguments` heading over one bullet each; fewer
 are bound in running prose. Exempt, as the rule itself says: an internal helper whose name opens with
-an underscore, a thin allocating wrapper, which documents no arguments of its own, a type whose
-`# Fields` section documents its fields rather than arguments, a signature that holds no argument
-list, and a single element-type keyword bound in one prose clause.
+an underscore, a thin allocating wrapper, a signature with no argument list, and one element-type
+keyword bound in a prose clause. A type is not exempt, though its `# Fields` repeat the arguments.
 """
 function args_form(src::AbstractString, cfg)
     out = Model.Location[]
     for d in Texts.docstrings_of(src)
         startswith(d.node, "_") && continue
         occursin(WRAPPER_PHRASE, d.text) && continue
-        occursin(FIELDS_SECTION, d.text) && continue
 
         # The WIDEST of the displayed signatures, not the first: a docstring showing a two- and a
         # four-argument form is a docstring whose reader meets four, and the bulleted form is for them.
@@ -97,7 +97,7 @@ Three or more arguments, or any keyword, go under `# Arguments`; fewer are bound
 """
 const ARGS_FORM = Model.Rule(
     id = Symbol("RULE.DOC.ARGS_FORM"),
-    statement = "Three or more arguments, or any keyword, are listed under an `# Arguments` heading, one bullet per argument; fewer are bound in running prose, as in \"The arguments are `a`, the first, and `b`, the second.\"; the two are never mixed. A type whose `# Fields` section documents its fields, rather than its constructor's arguments, is exempt.",
+    statement = "Three or more arguments, or any keyword, are listed under an `# Arguments` heading, one bullet per argument; fewer are bound in running prose, as in \"The arguments are `a`, the first, and `b`, the second.\"; the two are never mixed. A type lists its constructor's arguments so too, even where its `# Fields` section repeats them.",
     why = "A reader looking for one argument of many needs a list; a reader of a two-argument call needs a sentence.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],
@@ -144,14 +144,14 @@ const ARGS_FORM = Model.Rule(
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b, c)", "Does a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
             Model.Location[], "the two are never mixed"),
-        # A keyword constructor documented by its type's fields owes no argument list; the same type
-        # with its fields left undocumented is held to the rule like any call.
+        # A type's constructor arguments are listed though its `# Fields` section lists the same names:
+        # the fields alone leave the arguments undocumented as arguments (ruled 2026-09-28).
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S(; a = 1, b = 2)\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nBase.@kwdef struct S\n    a = 1\n    b = 2\nend\n",
-            Model.Location[], "a type whose `# Fields` section documents its fields is exempt"),
+            [Model.Location(; file = "src/Example.jl", line = 1)], "a type lists its constructor's arguments"),
         Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    S(; a = 1, b = 2)\n\nA thing. The fields are `a`, the first, and `b`, the second.\n\"\"\"\nBase.@kwdef struct S\n    a = 1\n    b = 2\nend\n",
-            [Model.Location(; file = "src/Example.jl", line = 1)], "a type whose `# Fields` section documents its fields is exempt"),
+            "\"\"\"\n    S(; a = 1, b = 2)\n\nA thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n\n# Fields\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nBase.@kwdef struct S\n    a = 1\n    b = 2\nend\n",
+            Model.Location[], "a type lists its constructor's arguments"),
     ])
 
 """

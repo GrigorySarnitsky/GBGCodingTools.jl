@@ -4,6 +4,18 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.37 — 2026-09-28
+
+MINOR, the owner's ruling of 2026-09-28: **a type lists its constructor's arguments under `# Arguments`,
+even where its `# Fields` section repeats them.** `RULE.DOC.ARGS_FORM` exempted a type with a `# Fields`
+section, which is right only for a default constructor, whose arguments are the fields; any other left
+its arguments documented nowhere as arguments (GBGPeriodicFields' `LalescuSpline(n, m = 1; T = Float64)`,
+whose fields are none of them). Duplication is preferred to the gap.
+
+Measured on each package's current tree, argument-list findings before and after: this package 0 and 0,
+GBGPeriodicFields 0 and 6, GBGHomogeneousTurbulence 41 and 53, GBGCloudPhysics 61 and 86,
+GBGStreamingStatistics 23 and 25.
+
 ## 2.0.0-rc.36 — 2026-09-28
 
 PATCH. **RULE.DOC.SIGNATURE_FIDELITY compiles once, not once per function.** Its helpers took each

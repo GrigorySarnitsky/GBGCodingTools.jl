@@ -49,7 +49,7 @@ A reader passing an argument the docstring never mentions has to read the source
 Covered by a program.
 
 ### RULE.DOC.ARGS_FORM
-Three or more arguments, or any keyword, are listed under an `# Arguments` heading, one bullet per argument; fewer are bound in running prose, as in "The arguments are `a`, the first, and `b`, the second."; the two are never mixed. A type whose `# Fields` section documents its fields, rather than its constructor's arguments, is exempt.
+Three or more arguments, or any keyword, are listed under an `# Arguments` heading, one bullet per argument; fewer are bound in running prose, as in "The arguments are `a`, the first, and `b`, the second."; the two are never mixed. A type lists its constructor's arguments so too, even where its `# Fields` section repeats them.
 
 A reader looking for one argument of many needs a list; a reader of a two-argument call needs a sentence.
 
