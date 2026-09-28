@@ -27,6 +27,11 @@ const DOI_PATH = raw"(?:[^\s()\]\"]|\([^\s()]*\))+"
 const DOI_RE = Regex("doi\\.org/" * DOI_PATH)
 # The one admitted citation form: the work's title, italicised, linked to its DOI.
 const TITLE_LINK = Regex("\\[(\\*[^\\]]+?\\*)\\]\\((https://doi\\.org/" * DOI_PATH * ")\\)")
+# A work with no DOI (ruled 2026-09-28): an entry that SAYS so may link its title to the stable public
+# record instead — a report server, an archive — over https. The statement is what licenses the link: a
+# reference that merely links a title somewhere else has not said there is no DOI to link.
+const NO_DOI = r"\bno\s+DOI\b"i
+const RECORD_LINK = r"\[\*[^\]]+?\*\]\(https://[^\s()]+\)"
 const RESOLVABLE_LINK = Regex("\\[([^\\]]*)\\]\\((https://(?:doi\\.org|openlibrary\\.org)/" * DOI_PATH * ")\\)")
 # A line that is a reference rather than prose about one: the lone-citation form, or a bullet with a
 # year that has the SHAPE of a reference — a title in italics, pages after the year, or an author list
@@ -50,9 +55,9 @@ norm_doi(s) = lowercase(rstrip(replace(percent_decode(s), r"^https?://" => ""), 
 """
     doi_on_title(text, cfg) -> Vector{Model.Location}
 
-Every reference that carries no clickable DOI, and every DOI written as the retired `[doi:…]` label
-instead of on the work's title. The arguments are `text`, the file's prose, and `cfg`, the package's
-config, which is not read. Returns one location per reference.
+Every reference lacking a DOI on its title — or a record link, where it says it has none — and every
+retired `[doi:…]` label. The arguments are `text`, the prose, and `cfg`, which is not read. Returns one
+location per reference.
 
 A DOI a reader cannot click is a string to retype; one written as a bare label is a DOI the reader
 cannot tell from prose.
@@ -71,15 +76,17 @@ function doi_on_title(text::AbstractString, cfg)
         # `Reference:` alone opens a block list, whose entries are the lines under it.
         occursin(r"^\s*Reference:\s*$", line) && continue
         occursin(r"doi\.org/|openlibrary\.org/", line) && continue
+        occursin(NO_DOI, line) && occursin(RECORD_LINK, line) && continue
         push!(out, Model.Location(; file = "", line = i,
-            text = "a reference with no DOI or Open Library link on its title: " * strip(String(line))))
+            text = (occursin(NO_DOI, line) ? "a work with no DOI and no https link to its record on its title: " :
+                                             "a reference with no DOI or Open Library link on its title: ") * strip(String(line))))
     end
     return out
 end
 
 const DOI = Model.Rule(
     id = Symbol("RULE.CIT.DOI"),
-    statement = "Every reference carries a clickable DOI, or an Open Library link for a book, on its title.",
+    statement = "Every reference carries a clickable DOI, or an Open Library link for a book, on its title. A work whose entry states it has no DOI — the words \"no DOI\", in any case — may carry on its title instead an https link to its stable public record.",
     why = "A DOI a reader cannot click is a string to retype; one written as a bare label is indistinguishable from prose.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
@@ -115,6 +122,23 @@ const DOI = Model.Rule(
             "Kraichnan, [doi:10.1017/S0022112059000362](https://doi.org/10.1017/S0022112059000362)).\n",
             [Model.Location(; file = "docs/src/page.md", line = 3), Model.Location(; file = "docs/src/page.md", line = 4)],
             "on its title"),
+        # A report with no DOI links its record on its title, and says it has none; the same link
+        # without the statement is a title linked somewhere a DOI may have belonged.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Rogallo, R. S. (1981). [*Numerical experiments in homogeneous turbulence*](https://ntrs.nasa.gov/citations/19810022965). NASA TM 81315.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "a work whose entry states it has no DOI"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Rogallo, R. S. (1981). [*Numerical experiments in homogeneous turbulence*](https://ntrs.nasa.gov/citations/19810022965). NASA TM 81315; No DOI.\n",
+            Model.Location[], "a work whose entry states it has no DOI"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Rogallo, R. S. (1981). *Numerical experiments in homogeneous turbulence*. NASA TM 81315, no DOI ([record](https://ntrs.nasa.gov/citations/19810022965)).\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "an https link to its stable public record on its title"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Rogallo, R. S. (1981). [*Numerical experiments in homogeneous turbulence*](http://ntrs.nasa.gov/citations/19810022965). NASA TM 81315, no DOI.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "an https link to its stable public record on its title"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Rogallo, R. S. (1981). [*Numerical experiments in homogeneous turbulence*](https://ntrs.nasa.gov/citations/19810022965). NASA TM 81315, no DOI.\n",
+            Model.Location[], "an https link to its stable public record on its title"),
     ])
 
 # ──────────────────────────────────────────────────────────── the full reference and its canonical entry

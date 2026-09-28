@@ -65,7 +65,9 @@ end
     start(root, instrument; readers = :bound, model = "session", sequential = false,
           scope = :full, io = stdout) -> Int
 
-Opens a run and writes its first stage's arguments. The arguments are:
+Opens a run and writes its first stage's arguments.
+
+# Arguments
 
 - `root` — the package root.
 - `instrument` — the instrument to run.
@@ -114,7 +116,9 @@ with(run::Model.Run; kw...) =
 """
     next(root; io = stdout) -> Int
 
-Moves the open run to its next stage and writes what the session needs to launch it. The arguments are:
+Moves the open run to its next stage and writes what the session needs to launch it.
+
+# Arguments
 
 - `root` — the package root.
 - `io` — where the handoff is described.
@@ -210,7 +214,9 @@ end
 """
     continue_stage(root, id, stage; io = stdout) -> Int
 
-Continues a launched, uncollected stage after an interruption. The arguments are:
+Continues a launched, uncollected stage after an interruption.
+
+# Arguments
 
 - `root` — the package root.
 - `id` — the run's id.
@@ -246,7 +252,9 @@ end
 """
     reader_roles(root, run, cfg, site; io = stdout) -> (roles, extras, site_pages)
 
-The agents a reading stage launches, with what each needs beyond its derived reader. The arguments are:
+The agents a reading stage launches, with what each needs beyond its derived reader.
+
+# Arguments
 
 - `root` — the package root.
 - `run` — the run, at the stage being launched.
@@ -333,7 +341,9 @@ pass_start(run::Model.Run) = isempty(run.pass_since) ? run.first_commit : run.pa
 """
     blame_build(root, run, log; io = stdout) -> Vector{String}
 
-Names the pass's commits that touched the files a failed docs build complains about. The arguments are:
+Names the pass's commits that touched the files a failed docs build complains about.
+
+# Arguments
 
 - `root` — the package root.
 - `run` — the run.
@@ -399,7 +409,9 @@ source_units(cfg::Model.Config, root::AbstractString) =
 
 Opens a fix pass: re-anchors every open finding, adds the other copies of what each says, and writes
 the workable ones for the session, which edits and commits each through
-`gbg docfix commit --finding <id>`. The arguments are:
+`gbg docfix commit --finding <id>`.
+
+# Arguments
 
 - `root` — the package root.
 - `run` — the run, at its `fix` stage.
@@ -459,7 +471,9 @@ end
 """
     other_copies(root, cfg, locations) -> Vector{Model.Location}
 
-Every further place in the documentation that says what these locations say. The arguments are:
+Every further place in the documentation that says what these locations say.
+
+# Arguments
 
 - `root` — the package root.
 - `cfg` — the package's config, which says where its documentation is.
@@ -495,7 +509,9 @@ end
     verifier_stage(root, run, cfg, site; io = stdout) -> Int
 
 Writes the verify stage's arguments: one verifier per UNIT that holds open findings, each given those
-findings, the unit as it now stands, and the diff of the pass. The arguments are:
+findings, the unit as it now stands, and the diff of the pass.
+
+# Arguments
 
 - `root` — the package root.
 - `run` — the run.
@@ -578,7 +594,9 @@ end
 """
     fix_diff(root, run, fs) -> String
 
-The change a verifier is shown for the findings of one unit. The arguments are:
+The change a verifier is shown for the findings of one unit.
+
+# Arguments
 
 - `root` — the package root.
 - `run` — the run.
@@ -624,7 +642,9 @@ end
     collect(root; io = stdout) -> Int
 
 Reads what the agents of the current stage wrote — findings after a find, verdicts after a verifier
-stage, which it grades — and moves the run to its `collect` stage. The arguments are:
+stage, which it grades — and moves the run to its `collect` stage.
+
+# Arguments
 
 - `root` — the package root.
 - `io` — where the result goes.
@@ -772,7 +792,9 @@ end
 """
     grade(root, run, verdicts; cfg, io = stdout) -> Model.Run
 
-Applies a verify stage's verdicts. The arguments are:
+Applies a verify stage's verdicts.
+
+# Arguments
 
 - `root` — the package root.
 - `run` — the run.
@@ -878,7 +900,9 @@ end
 """
     close_run(root; io = stdout) -> Int
 
-Writes the run's record and its report, and ends it. The arguments are:
+Writes the run's record and its report, and ends it.
+
+# Arguments
 
 - `root` — the package root.
 - `io` — where the result goes.
@@ -1006,7 +1030,9 @@ end
     abandon(root; io = stdout) -> Int
 
 Ends the open run as `OWNER_STOPPED`, its findings dropped, and writes its record and report so the id
-is never reused. The arguments are:
+is never reused.
+
+# Arguments
 
 - `root` — the package root.
 - `io` — where the result goes.
@@ -1094,7 +1120,9 @@ end
 """
     restore_green(root, run, cfg; io = stdout) -> (undone, red, failed)
 
-Puts the documentation back where the run left the build red. The arguments are:
+Puts the documentation back where the run left the build red.
+
+# Arguments
 
 - `root` — the package root.
 - `run` — the run being closed.
@@ -1157,7 +1185,9 @@ const QUEUE_HEADING = "## From the last review"
     queue_leftovers(root, run; open_too = true) -> Int
 
 Writes one line per open finding into `.claude/WORK_QUEUE.md`, under the heading the end-of-turn hook
-does not count, creating the file or the section where there is none. The arguments are:
+does not count, creating the file or the section where there is none.
+
+# Arguments
 
 - `root` — the package root.
 - `run` — the closed run.
@@ -1225,7 +1255,9 @@ end
     park(root, id; why, io = stdout) -> Int
 
 Hands one finding to the owner, at a fix stage: a question about it is put, and no pass works on it
-again until he answers. The arguments are:
+again until he answers.
+
+# Arguments
 
 - `root` — the package root.
 - `id` — the finding.
@@ -1260,7 +1292,9 @@ end
 """
     cost(root, dir; io = stdout) -> Int
 
-Records what the last launched stage's agents cost, summed from their own transcripts. The arguments are:
+Records what the last launched stage's agents cost, summed from their own transcripts.
+
+# Arguments
 
 - `root` — the package root.
 - `dir` — the directory holding the launch's transcripts: every `.jsonl` file under it is read, and

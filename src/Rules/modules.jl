@@ -166,7 +166,9 @@ const XLINK = Model.Rule(
             \"\"\"
                 Holder
 
-            A holder. The fields are:
+            A holder.
+
+            # Fields
 
             - `helper` — what it holds.
             \"\"\"

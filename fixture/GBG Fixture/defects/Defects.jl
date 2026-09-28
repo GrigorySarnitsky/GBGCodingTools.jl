@@ -90,7 +90,9 @@ ref_abut(u) = u
 """
     GhostField(n)
 
-A record with a stale field list. The fields are:
+A record with a stale field list.
+
+# Fields
 
 - `n` — the node count.
 - `spacing` — the spacing, which the struct no longer has.
@@ -102,7 +104,9 @@ end
 """
     UndocField(n, spacing)
 
-A record missing a bullet. The fields are:
+A record missing a bullet.
+
+# Fields
 
 - `n` — the node count.
 """
@@ -121,7 +125,9 @@ mixed_link_run(u) = u
 """
     bold_arg_bullet(u; tolerance = 0)
 
-A bolded argument bullet. The arguments are:
+A bolded argument bullet.
+
+# Arguments
 
 - **`u`** — the field.
 - `tolerance` — the tolerance.
@@ -169,9 +175,7 @@ paragraph_over_cap(u) = u
 """
     fields_not_last(n)
 
-A record whose field heading is followed by another heading. The fields are:
-
-- `n` — the node count.
+A record whose field heading is followed by another heading.
 
 # Fields
 
@@ -189,7 +193,9 @@ end
     mirrored_bare(v; tol = 1e-8) -> Float64
 
 An argument the METHOD types and the signature leaves bare: right under `rubric.signature_types = "names"`
-and the hit under `mirror`, which is the whole of the variation point. The arguments are:
+and the hit under `mirror`, which is the whole of the variation point.
+
+# Arguments
 
 - `v` — the values summed, a vector of reals.
 - `tol` — the floor below which a value is dropped, a real.
@@ -210,7 +216,9 @@ returns_typed(x) = x > 0 ? true : nothing
     typed_signature(x::Real; scale::Real = 1.0) -> Real
 
 A signature that types its arguments where the rule asks for names and defaults alone, the types
-belonging to the bullets. The arguments are:
+belonging to the bullets.
+
+# Arguments
 
 - `x` — the value, a real.
 - `scale` — what it is multiplied by, a real.

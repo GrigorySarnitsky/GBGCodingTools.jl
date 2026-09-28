@@ -91,14 +91,14 @@ const ARGCOV = Model.Rule(
     check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, argcov, false),
     examples = [
         Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    f(a, b, c)\n\nDoes a thing. The arguments are:\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nf(x) = x\n",
+            "\"\"\"\n    f(a, b, c)\n\nDoes a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nf(x) = x\n",
             [Model.Location(; file = "src/Example.jl", line = 1)], "every argument is documented"),
         Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    f(a, b, c)\n\nDoes a thing. The arguments are:\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third.\n\"\"\"\nf(x) = x\n",
+            "\"\"\"\n    f(a, b, c)\n\nDoes a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third.\n\"\"\"\nf(x) = x\n",
             Model.Location[], "every argument is documented"),
         # A bullet naming the argument with its type documents it.
         Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    f(a, b; tol = 1e-6)\n\nDoes a thing. The arguments are:\n\n- `a::Int` — the first.\n- `b` — the second.\n- `tol::Float64` — the tolerance.\n\"\"\"\nf(x) = x\n",
+            "\"\"\"\n    f(a, b; tol = 1e-6)\n\nDoes a thing.\n\n# Arguments\n\n- `a::Int` — the first.\n- `b` — the second.\n- `tol::Float64` — the tolerance.\n\"\"\"\nf(x) = x\n",
             Model.Location[], "every argument is documented"),
         # An argument only the wider of two displayed signatures takes is still an argument.
         Model.TextExample(Model.FileSet.CODE,

@@ -14,12 +14,14 @@ export Grid, twice, scale!, scale
 """
     Grid(n, spacing)
 
-A uniform one-dimensional grid of `n` nodes at a constant spacing. The fields are:
+A uniform one-dimensional grid of `n` nodes at a constant spacing.
+
+The arguments of the constructor are the two fields.
+
+# Fields
 
 - `n` — the number of nodes.
 - `spacing` — the distance between neighbouring nodes.
-
-The arguments of the constructor are the two fields.
 """
 struct Grid
     n::Int
@@ -37,7 +39,9 @@ twice(x::Number) = 2x
     scale!(destination, source, α) -> destination
 
 Scales a value field in place: every entry of `source` multiplied by the scalar ``\\alpha`` and written
-into `destination`, which may alias `source`. The arguments are:
+into `destination`, which may alias `source`.
+
+# Arguments
 
 - `destination` — the array written; the same length as `source`.
 - `source` — the array read.

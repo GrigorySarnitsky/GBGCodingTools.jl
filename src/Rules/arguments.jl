@@ -11,15 +11,17 @@ module Arguments
 using ...Model
 using ...Texts
 
-# What tells the two forms apart is the BULLET: both open with the same marker phrase, so a pattern that
-# stops at the phrase matches the prose form too. The bulleted form ends its marker line in the colon
-# the statement asks for; the marker followed by bullets and no colon is its own finding, so a consumer
-# who left the colon off is told that and not that the form is wrong. (A field list is not an argument
-# list, and is set aside first.)
-const BULLETED = r"The\s+arguments\s+are\b[^\n]*:\s*\n\s*\n?\s*[-*]\s"
-const BULLETED_NO_COLON = r"The\s+arguments\s+are\b[^\n:]*\n\s*\n?\s*[-*]\s"
+# The bulleted form is an `# Arguments` heading over the bullets (ruled 2026-09-28); the prose form is
+# the marker phrase, "The arguments are `a`, …", in a sentence. A bulleted list under the marker phrase —
+# the form this rule asked for until that ruling — is neither, and is told so by name, so a consumer
+# converting is pointed at the heading and not merely told the form is wrong. A type whose docstring has
+# a `# Fields` section documents its fields, not its constructor's arguments, and is set aside first.
+# A line may lead into the bullets inside the section — "All keyword, all required:" — and the list is
+# still under the heading; a bullet past the next heading is not.
+const BULLETED = r"(?m)^#\s+Arguments\s*\n(?:(?!#)[^\n]*\n)*?\s*[-*]\s"
+const UNDER_PHRASE = r"The\s+arguments\s+are\b[^\n]*\n\s*\n?\s*[-*]\s"
 const IN_PROSE = r"The\s+arguments?\s+(is|are)\s+`"
-const FIELDS_LIST = r"The\s+fields\s+are\b[^\n]*\n\s*\n?\s*[-*]\s"
+const FIELDS_SECTION = r"(?m)^#\s+Fields\s*$"
 const WRAPPER_PHRASE = "Allocating form of"
 const THRESHOLD = 3
 
@@ -30,18 +32,18 @@ Every docstring that lists its arguments in the wrong form: bullets where prose 
 where bullets are, or both in one docstring. The arguments are `src`, the Julia source, and `cfg`, which
 this rule does not read. Returns one location per docstring.
 
-Three or more arguments, or any keyword, want the bulleted form — the marker phrase, then a colon, then
-one bullet per argument; fewer are bound in running prose. Exempt, as the rule itself says: an internal helper whose name opens with an
-underscore, a thin allocating wrapper, which documents no arguments of its own, a type documenting its
-fields rather than arguments, a signature that holds no argument list, and a single element-type keyword
-bound in one prose clause.
+Three or more arguments, or any keyword, want an `# Arguments` heading over one bullet each; fewer
+are bound in running prose. Exempt, as the rule itself says: an internal helper whose name opens with
+an underscore, a thin allocating wrapper, which documents no arguments of its own, a type whose
+`# Fields` section documents its fields rather than arguments, a signature that holds no argument
+list, and a single element-type keyword bound in one prose clause.
 """
 function args_form(src::AbstractString, cfg)
     out = Model.Location[]
     for d in Texts.docstrings_of(src)
         startswith(d.node, "_") && continue
         occursin(WRAPPER_PHRASE, d.text) && continue
-        occursin(FIELDS_LIST, d.text) && continue
+        occursin(FIELDS_SECTION, d.text) && continue
 
         # The WIDEST of the displayed signatures, not the first: a docstring showing a two- and a
         # four-argument form is a docstring whose reader meets four, and the bulleted form is for them.
@@ -59,9 +61,9 @@ function args_form(src::AbstractString, cfg)
 
         prosed = occursin(IN_PROSE, d.text)
         bulleted = occursin(BULLETED, d.text)
-        if !bulleted && occursin(BULLETED_NO_COLON, d.text)
+        if !bulleted && occursin(UNDER_PHRASE, d.text)
             push!(out, Model.Location(; file = "", line = d.line, node = d.node,
-                text = "`$(d.node)` lists its arguments under the marker phrase with no colon: `The arguments are:`"))
+                text = "`$(d.node)` lists its arguments under a sentence: put the bullets under an `# Arguments` heading"))
             continue
         end
         # The rule's last exemption, and no wider: ONE element-type keyword BOUND IN A PROSE CLAUSE. A
@@ -91,11 +93,11 @@ doc(binding, body) = "\"\"\"\n    " * binding * "\n\n" * body * "\n\"\"\"\n" *
 """
     ARGS_FORM
 
-Three or more arguments, or any keyword, use the bulleted form; fewer are bound in running prose.
+Three or more arguments, or any keyword, go under `# Arguments`; fewer are bound in running prose.
 """
 const ARGS_FORM = Model.Rule(
     id = Symbol("RULE.DOC.ARGS_FORM"),
-    statement = "Three or more arguments, or any keyword, use the bulleted form, led by the marker phrase and a colon; fewer are bound in running prose; the two are never mixed.",
+    statement = "Three or more arguments, or any keyword, are listed under an `# Arguments` heading, one bullet per argument; fewer are bound in running prose, as in \"The arguments are `a`, the first, and `b`, the second.\"; the two are never mixed. A type whose `# Fields` section documents its fields, rather than its constructor's arguments, is exempt.",
     why = "A reader looking for one argument of many needs a list; a reader of a two-argument call needs a sentence.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],
@@ -103,34 +105,53 @@ const ARGS_FORM = Model.Rule(
     examples = [
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b, c)", "Does a thing. The arguments are `a`, the first, `b`, the second, and `c`, the third."),
-            [Model.Location(; file = "src/Example.jl", line = 1)], "three or more use the bulleted form"),
+            [Model.Location(; file = "src/Example.jl", line = 1)], "three or more are listed"),
+        Model.TextExample(Model.FileSet.CODE,
+            doc("f(a, b, c)", "Does a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
+            Model.Location[], "three or more are listed"),
+        # The bulleted list under the marker phrase, the form asked for before 2026-09-28, is a list
+        # with no heading over it.
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b, c)", "Does a thing. The arguments are:\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
-            Model.Location[], "three or more use the bulleted form"),
+            [Model.Location(; file = "src/Example.jl", line = 1)], "under an `# Arguments` heading"),
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b, c)", "Does a thing. The arguments are\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
-            [Model.Location(; file = "src/Example.jl", line = 1)], "led by the marker phrase and a colon"),
+            [Model.Location(; file = "src/Example.jl", line = 1)], "under an `# Arguments` heading"),
         Model.TextExample(Model.FileSet.CODE,
-            doc("f(a, b, c)", "Does a thing. The arguments are:\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
-            Model.Location[], "led by the marker phrase and a colon"),
+            doc("f(a, b, c)", "Does a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third.\n\nReturns nothing."),
+            Model.Location[], "under an `# Arguments` heading"),
+        Model.TextExample(Model.FileSet.CODE,
+            doc("f(a, b, c)", "Does a thing.\n\n# Arguments\n\nAll three required:\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
+            Model.Location[], "under an `# Arguments` heading"),
+        Model.TextExample(Model.FileSet.CODE,
+            doc("f(a, b, c)", "Does a thing.\n\n# Arguments\n\nAll three required.\n\n# Notes\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
+            [Model.Location(; file = "src/Example.jl", line = 1)], "under an `# Arguments` heading"),
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a; opt = 1)", "Does a thing. The arguments are `a`, the first, and `opt`, the option."),
-            [Model.Location(; file = "src/Example.jl", line = 1)], "any keyword uses the bulleted form"),
+            [Model.Location(; file = "src/Example.jl", line = 1)], "any keyword is listed"),
         Model.TextExample(Model.FileSet.CODE,
-            doc("f(a; opt = 1)", "Does a thing. The arguments are:\n\n- `a` — the first.\n- `opt` — the option."),
-            Model.Location[], "any keyword uses the bulleted form"),
+            doc("f(a; opt = 1)", "Does a thing.\n\n# Arguments\n\n- `a` — the first.\n- `opt` — the option."),
+            Model.Location[], "any keyword is listed"),
         Model.TextExample(Model.FileSet.CODE,
-            doc("f(a, b)", "Does a thing. The arguments are:\n\n- `a` — the first.\n- `b` — the second."),
+            doc("f(a, b)", "Does a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second."),
             [Model.Location(; file = "src/Example.jl", line = 1)], "fewer are bound in running prose"),
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b)", "Does a thing. The arguments are `a`, the first, and `b`, the second."),
             Model.Location[], "fewer are bound in running prose"),
         Model.TextExample(Model.FileSet.CODE,
-            doc("f(a, b, c)", "Does a thing. The arguments are `a`, the first. The arguments are:\n\n- `b` — the second.\n- `c` — the third."),
+            doc("f(a, b, c)", "Does a thing. The arguments are `a`, the first.\n\n# Arguments\n\n- `b` — the second.\n- `c` — the third."),
             [Model.Location(; file = "src/Example.jl", line = 1)], "the two are never mixed"),
         Model.TextExample(Model.FileSet.CODE,
-            doc("f(a, b, c)", "Does a thing. The arguments are:\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
+            doc("f(a, b, c)", "Does a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
             Model.Location[], "the two are never mixed"),
+        # A keyword constructor documented by its type's fields owes no argument list; the same type
+        # with its fields left undocumented is held to the rule like any call.
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S(; a = 1, b = 2)\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nBase.@kwdef struct S\n    a = 1\n    b = 2\nend\n",
+            Model.Location[], "a type whose `# Fields` section documents its fields is exempt"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S(; a = 1, b = 2)\n\nA thing. The fields are `a`, the first, and `b`, the second.\n\"\"\"\nBase.@kwdef struct S\n    a = 1\n    b = 2\nend\n",
+            [Model.Location(; file = "src/Example.jl", line = 1)], "a type whose `# Fields` section documents its fields is exempt"),
     ])
 
 """

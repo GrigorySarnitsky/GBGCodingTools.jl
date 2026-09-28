@@ -52,8 +52,9 @@ end
 """
     init(root; io = stdout) -> Int
 
-Writes `.gbg/config.jl` for the package at `root` if it has none, then writes every generated file. The
-arguments are:
+Writes `.gbg/config.jl` for the package at `root` if it has none, then writes every generated file.
+
+# Arguments
 
 - `root` — the package root.
 - `io` — where the report goes.
@@ -106,7 +107,9 @@ end
     sync(root; check = false, io = stdout) -> Int
 
 Writes every generated file of the package at `root`, or, with `check`, reports which of them is not
-what the running copy would write and changes nothing. The arguments are:
+what the running copy would write and changes nothing.
+
+# Arguments
 
 - `root` — the package root.
 - `check` — report instead of writing.

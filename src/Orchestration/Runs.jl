@@ -72,7 +72,9 @@ end
     start(instrument, root; readers = :bound, model = "session", sequential = false,
           scope = :full, base = "", io = stdout) -> Union{Model.Run,Nothing}
 
-Opens a run of `instrument` in the package at `root`. The arguments are:
+Opens a run of `instrument` in the package at `root`.
+
+# Arguments
 
 - `instrument` — the instrument to run.
 - `root` — the package root.
@@ -300,7 +302,9 @@ write_stage(root::AbstractString, id::AbstractString, at::Int) =
 """
     advance!(root, id, to; io = stdout) -> Bool
 
-Moves a run to its next stage, and refuses any other. The arguments are:
+Moves a run to its next stage, and refuses any other.
+
+# Arguments
 
 - `root` — the package root.
 - `id` — the run's id.
@@ -456,7 +460,9 @@ end
 """
     owner_question(run, f, why) -> Model.Question
 
-The question `gbg run park` puts: the finding needs a change only the owner may make. The arguments are:
+The question `gbg run park` puts: the finding needs a change only the owner may make.
+
+# Arguments
 
 - `run` — the run.
 - `f` — the finding.
@@ -515,7 +521,9 @@ end
 """
     reverted_by(root, since, fixes) -> Vector{String}
 
-The reverts this package made of the given fix commits since `since`, newest first. The arguments are:
+The reverts this package made of the given fix commits since `since`, newest first.
+
+# Arguments
 
 - `root` — the package root.
 - `since` — the run's first commit.
@@ -539,7 +547,9 @@ end
 """
     reverts_of(root, since, id) -> Vector{String}
 
-The reverts this package made of finding `id`'s fixes since `since`, newest first. The arguments are:
+The reverts this package made of finding `id`'s fixes since `since`, newest first.
+
+# Arguments
 
 - `root` — the package root.
 - `since` — the run's first commit.
@@ -599,7 +609,9 @@ end
 """
     answer!(root, id, option; item = "", direction = "") -> Union{String,Nothing}
 
-Records the owner's answer on a question a RUN put, or the reason it could not be. The arguments are:
+Records the owner's answer on a question a RUN put, or the reason it could not be.
+
+# Arguments
 
 - `root` — the package root.
 - `id` — the question's id.
@@ -969,7 +981,9 @@ const REVERT_TRAILER = "GBG-Docfix-Revert: "
 """
     fix_commits(root, since, id) -> Vector{String}
 
-The commits that `gbg docfix commit --finding` made for one finding, newest first. The arguments are:
+The commits that `gbg docfix commit --finding` made for one finding, newest first.
+
+# Arguments
 
 - `root` — the package root.
 - `since` — the run's first commit; nothing before it is searched.
@@ -1023,7 +1037,9 @@ end
     revert!(root, sha; why = "a verifier called the fix worse") -> Bool
 
 Reverts one guarded commit, marking the revert with the commit it undoes; a close classifies the revert
-like any other commit of the run and does not check it against that commit. The arguments are:
+like any other commit of the run and does not check it against that commit.
+
+# Arguments
 
 - `root` — the package root.
 - `sha` — the commit.
@@ -1055,7 +1071,9 @@ end
 """
     reanchor(root, loc; since = "") -> Model.Location
 
-Where a finding's location is now. The arguments are:
+Where a finding's location is now.
+
+# Arguments
 
 - `root` — the package root.
 - `loc` — the location made earlier.
@@ -1095,7 +1113,9 @@ stamped(l::Model.Location, now::AbstractString) = now in ("", "unknown") ? l :
 """
     mapped_line(root, loc, since) -> Union{Int,Nothing}
 
-The line a location's old line became, read out of git's own diff. The arguments are:
+The line a location's old line became, read out of git's own diff.
+
+# Arguments
 
 - `root` — the package root.
 - `loc` — the location, whose `line` is the one being mapped.

@@ -43,11 +43,11 @@ three verifiers: **110 true, 11 false, 50 unclear**. The per-line verdicts are i
 - **W-9.** RULE.DOC.FIELDS accepts only the phrase "The fields are", while RULE.DOC.HOME_ORDER names the
   `# Fields` section the same rule governs. HT writes `# Fields` 33 times: 27 complete field lists are
   reported as "documents no fields", and the check never compares a `# Fields` list with the struct, so
-  it cannot find the one real drift. · fate: owner — which form the rulebook means
+  it cannot find the one real drift. · fate: fixed in rc.34 — ruled 2026-09-28: a `# Fields` section; the check compares it with the struct
 - **W-10.** RULE.DOC.ARGS_FORM's statement asks for "the marker phrase and a colon" and never names the
   phrase; only the check's regex does ("The arguments are"). HT's `# Arguments` heading, and types whose
-  constructor arguments are their fields, are read as prose. · fate: owner — name the marker, and whether a
-  heading counts
+  constructor arguments are their fields, are read as prose. · fate: fixed in rc.34 — ruled 2026-09-28: an `# Arguments` heading,
+  named in the statement
 - **W-11.** RULE.DOC.ARGCOV counts an argument documented only when its name is a code span of its own; a
   splat described by a pass-through sentence, or a name inside a larger code expression, is missed.
   · fate: fixed in the rc.33 commit (a name inside a code span, and a splat whose pass-through is stated, count as documented; verified by re-measuring HT's clone)
@@ -57,8 +57,8 @@ three verifiers: **110 true, 11 false, 50 unclear**. The per-line verdicts are i
   `[doi:…]` reference is not seen; once HT fixes its DOI findings those become FULL_INLINE findings — a
   second round the first did not announce. · fate: fixed in the rc.33 commit (the `[doi:…]` label form is a full inline reference too; HT's 10 appear in one round; verified by re-measuring HT's clone)
 - **W-14.** RULE.CIT.DOI accepts only a DOI or an Open Library link; a report with no DOI that is not a
-  book (Rogallo 1981, Lundgren 2003, Carpenter & Kennedy 1994) cannot comply. · fate: owner — another
-  stable link (e.g. NASA NTRS), or a switch
+  book (Rogallo 1981, Lundgren 2003, Carpenter & Kennedy 1994) cannot comply. · fate: fixed in rc.34 — ruled
+  2026-09-28: an entry saying "no DOI" links its title to the work's stable public record
 - **W-15.** RULE.DOC.SIGNATURE_MIRROR's 88-column limit is in the check's code only, and counts the
   Markdown indent. · fate: fixed in the rc.33 commit (the limit stated, measured as rendered; verified by re-measuring HT's clone)
 

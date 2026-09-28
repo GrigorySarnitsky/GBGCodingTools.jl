@@ -25,7 +25,9 @@ end
 """
     matching(pattern; mask = true) -> Function
 
-A check that reports every line matching `pattern`. The arguments are:
+A check that reports every line matching `pattern`.
+
+# Arguments
 
 - `pattern` — the pattern to look for.
 - `mask` — whether single-backtick code spans are blanked first.
@@ -49,7 +51,9 @@ end
                  mask = true, filesets = …, more = …) -> Model.Rule
 
 One rule of this family: a pattern, the two examples that show the check matches the statement, and the
-prose that says why it exists. The arguments are:
+prose that says why it exists.
+
+# Arguments
 
 - `id` — the rule's identifier.
 - `statement` — the rule in plain English.

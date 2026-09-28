@@ -75,7 +75,9 @@ narrow(v::AbstractVector) = isempty(v) ? v : (T = typeof(first(v)); all(x -> x i
 """
     ConfigError
 
-A `.gbg/config.jl` or `.gbg/settled.jl` that cannot be read as data. The fields are:
+A `.gbg/config.jl` or `.gbg/settled.jl` that cannot be read as data.
+
+# Fields
 
 - `file` — the file it was raised for.
 - `problems` — one line per refusal, each naming what was found and where.

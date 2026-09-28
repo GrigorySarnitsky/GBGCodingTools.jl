@@ -136,7 +136,9 @@ finding_dict(f::Model.Finding) = Dict{String,Any}(
 """
     write_arguments(root, run, cfg; roles, extras, site, site_pages, io) -> String
 
-Writes what the session needs to launch one stage. The arguments are:
+Writes what the session needs to launch one stage.
+
+# Arguments
 
 - `root` — the package root.
 - `run` — the run.
@@ -266,8 +268,9 @@ end
 """
     place_driver(root, id; arguments = "") -> Tuple{String,String}
 
-Puts the driver where the session can launch it from, the stage's arguments spliced in. The arguments
-are:
+Puts the driver where the session can launch it from, the stage's arguments spliced in.
+
+# Arguments
 
 - `root` — the package root.
 - `id` — the run's id.
@@ -430,7 +433,9 @@ end
 """
     collect_results(root, id, cfg) -> (findings, verdicts, silent, arrived, wrote)
 
-Reads what the agents wrote for the current stage. The arguments are:
+Reads what the agents wrote for the current stage.
+
+# Arguments
 
 - `root` — the package root.
 - `id` — the run's id.

@@ -13,12 +13,14 @@ export Options, describe
 """
     Options(; tolerance = 1e-8, iterations = 100)
 
-The settings of a run. The fields are:
+The settings of a run.
+
+The arguments of the constructor are the two fields, as keywords.
+
+# Fields
 
 - `tolerance` — the convergence tolerance.
 - `iterations` — the iteration ceiling.
-
-The arguments of the constructor are the two fields, as keywords.
 """
 struct Options
     tolerance::Float64

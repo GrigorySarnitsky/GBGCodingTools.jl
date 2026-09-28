@@ -99,8 +99,9 @@ end
 """
     put(q, root, cfg; io = stdout) -> Bool
 
-Records a question so the owner can answer it, after the language rules have judged it. The arguments
-are:
+Records a question so the owner can answer it, after the language rules have judged it.
+
+# Arguments
 
 - `q` — the question.
 - `root` — the package root.
@@ -133,8 +134,9 @@ end
 """
     answer!(root, id, option; item = "", direction = "") -> Union{String,Nothing}
 
-Records the owner's answer on a question put outside a run, or the reason it could not be. The arguments
-are:
+Records the owner's answer on a question put outside a run, or the reason it could not be.
+
+# Arguments
 
 - `root` — the package root.
 - `id` — the question's id.

@@ -232,7 +232,9 @@ end
 """
     roles_of(instrument, cfg; readers = :both) -> Vector{Model.AgentRole}
 
-The readers one run launches. The arguments are:
+The readers one run launches.
+
+# Arguments
 
 - `instrument` — the instrument's id.
 - `cfg` — the package's config.
@@ -284,7 +286,9 @@ end
     normal_path(cfg, root, path) -> String
 
 A path as the rest of this package spells one: forward slashes, relative to `root`, no leading `./`,
-and a declared copy resolved to its source. The arguments are:
+and a declared copy resolved to its source.
+
+# Arguments
 
 - `cfg` — the package's config, which names the copies.
 - `root` — the package root.

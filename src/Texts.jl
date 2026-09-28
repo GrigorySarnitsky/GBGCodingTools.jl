@@ -54,7 +54,9 @@ const DEFAULT_PATTERNS = Dict{Model.FileSet.T,Vector{String}}(
     files(cfg, root, fileset) -> Vector{String}
 
 The files of one file set in the package at `root`, as paths relative to it, sorted and without
-duplicates. The arguments are:
+duplicates.
+
+# Arguments
 
 - `cfg` — the package's config.
 - `root` — the package root.
@@ -211,8 +213,9 @@ end
 """
     line_at(start, breaks, s, offset) -> Int
 
-The line of the text that byte `offset` of a logical line from [`unwrapped`](@ref) came from. The
-arguments are:
+The line of the text that byte `offset` of a logical line from [`unwrapped`](@ref) came from.
+
+# Arguments
 
 - `start`, `breaks` — the first and third of that function's triple.
 - `s` — the logical line, or any masking of it that keeps its length in characters.
@@ -275,7 +278,9 @@ const NAME = "[\\p{L}_][\\p{L}\\p{N}_!′]*"
 """
     NodeSpan
 
-One named node of a file, with where it is. The fields are:
+One named node of a file, with where it is.
+
+# Fields
 
 - `name` — the node's name: a binding for Julia source, a heading path for Markdown.
 - `line` — the line it starts on.
@@ -292,7 +297,9 @@ end
 """
     DocBlock
 
-One docstring of a Julia file, with the node it documents. The fields are:
+One docstring of a Julia file, with the node it documents.
+
+# Fields
 
 - `node` — the name of what it documents.
 - `text` — the docstring itself.
@@ -570,8 +577,9 @@ end
 """
     docstrings_of(src; filename = "source.jl") -> Vector{DocBlock}
 
-The docstrings of Julia source held in memory, for a rule handed the text rather than the path. The
-arguments are:
+The docstrings of Julia source held in memory, for a rule handed the text rather than the path.
+
+# Arguments
 
 - `src` — the source.
 - `filename` — the name to parse it under.
@@ -610,8 +618,9 @@ end
 """
     prose_text(path; comments = true) -> String
 
-The file's PROSE alone, with every other line left empty so that line numbers are unchanged. The
-arguments are:
+The file's PROSE alone, with every other line left empty so that line numbers are unchanged.
+
+# Arguments
 
 - `path` — the Julia file to read.
 - `comments` — whether ordinary comments count as prose here.
@@ -1020,7 +1029,7 @@ end
 The lines the named node spans in the file, or an empty range when the file holds no such node. Julia
 nodes are named by binding (`f`, `S`, `ARGS_FORM.statement`) and Markdown nodes by heading path.
 
-The arguments are:
+# Arguments
 
 - `root` — the package root.
 - `file` — the path relative to it.
@@ -1070,7 +1079,7 @@ A node that survives does not anchor a finding whose quote is gone: the finding 
 a fixer sent to a paragraph it was not written about is the failure this exists to prevent. A location
 with a node and no quote is about the node itself and anchors to it.
 
-The arguments are:
+# Arguments
 
 - `root` — the package root.
 - `loc` — the location to find again.
@@ -1116,7 +1125,9 @@ nearest(hits, line) = hits[argmin(abs.(hits .- line))]
 """
     place(cfg, root, text) -> Union{Model.Location,Nothing}
 
-Where a quote is written, searched across the package's documentation. The arguments are:
+Where a quote is written, searched across the package's documentation.
+
+# Arguments
 
 - `cfg` — the package's config, which says where its documentation is.
 - `root` — the package root.
@@ -1197,7 +1208,9 @@ end
 """
     occurrences(cfg, root, text) -> Vector{Model.Location}
 
-Every place in the package's documentation that holds a quote, one location each. The arguments are:
+Every place in the package's documentation that holds a quote, one location each.
+
+# Arguments
 
 - `cfg` — the package's config, which says where its documentation is.
 - `root` — the package root.
@@ -1326,7 +1339,9 @@ outdated(loc) = Model.Location(; file = loc.file, node = loc.node, text = loc.te
     node_at(root, file, line) -> String
 
 The name of the node the line falls in — the innermost Julia definition, or the Markdown heading path —
-empty where it falls in none. The arguments are:
+empty where it falls in none.
+
+# Arguments
 
 - `root` — the package root.
 - `file` — the path relative to it.
@@ -1366,7 +1381,9 @@ classes(el) = el isa HTMLElement ? String.(split(get(el.attributes, "class", "")
 """
     attr(el, name, default = "") -> String
 
-The named attribute of a node, or a fallback. The arguments are:
+The named attribute of a node, or a fallback.
+
+# Arguments
 
 - `el` — the node; anything that is not an `HTMLElement` (a text node) carries no attributes and
   always takes `default`.

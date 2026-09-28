@@ -46,7 +46,9 @@ end
     rulings(root; generated = Dict{String,String}(), contents = nothing)
         -> Vector{Engine.Guard.Ruling}
 
-What the guard says about every changed file of the working tree at `root`. The arguments are:
+What the guard says about every changed file of the working tree at `root`.
+
+# Arguments
 
 - `root` — the package root.
 - `generated` — the current output of each generated path's generator, which the caller supplies because
@@ -132,7 +134,9 @@ end
     commit(root, message; io = stdout, generated = Dict(), finding = "") -> Int
 
 Commits every changed file of the working tree at `root` when the guard calls all of them documentation,
-and commits nothing otherwise. The arguments are:
+and commits nothing otherwise.
+
+# Arguments
 
 - `root` — the package root.
 - `message` — the commit message.
@@ -275,7 +279,9 @@ end
     check(root; build = true, io = stdout) -> Int
 
 Says what the guard makes of the working tree, and what the documentation rules make of it, and changes
-nothing. The arguments are:
+nothing.
+
+# Arguments
 
 - `root` — the package root.
 - `build` — whether to run the docs build too, which is where the doctests and the rendered rules are;

@@ -22,7 +22,9 @@ using ..GBGCodingTools: GBGCodingTools, Catalogue, ConfigIO, Engine, Model, Stud
 """
     rules(root, path; io = stdout) -> Int
 
-Reports the round of votes in `path`. The arguments are:
+Reports the round of votes in `path`.
+
+# Arguments
 
 - `root` — the package root.
 - `path` — the votes, tab-separated.

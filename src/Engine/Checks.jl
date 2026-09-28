@@ -27,7 +27,8 @@ files(cfg::Model.Config, root::AbstractString, fileset::Model.FileSet.T) = Texts
 Whether the rule, agent role or instrument with that id is on in this package: a [`Model.Switch`](@ref)
 naming it turns it off, one naming files turns it off for those files alone, and a
 [`Model.Deferral`](@ref) naming a rule holds it off — owed, not answered — until the package meets it.
-The arguments are:
+
+# Arguments
 
 - `cfg` — the package's config.
 - `id` — what is being asked about.
@@ -51,8 +52,9 @@ end
 """
     reading(rule, cfg, root) -> Vector{Tuple{Model.FileSet.T,String}}
 
-Every file one rule reads in this package, each with the file set it was reached through. The arguments
-are:
+Every file one rule reads in this package, each with the file set it was reached through.
+
+# Arguments
 
 - `rule` — the rule about to run.
 - `cfg` — the package's config, which may name this rule's files itself.
@@ -92,7 +94,9 @@ end
     run_rule(rule, cfg, root; network = false, history = false, pkg = nothing,
              site = nothing) -> Vector{Model.Location}
 
-Everywhere the rule is broken in the package at `root`. The arguments are:
+Everywhere the rule is broken in the package at `root`.
+
+# Arguments
 
 - `rule` — the rule to run.
 - `cfg` — the package's config.
@@ -176,7 +180,9 @@ end
 
 Everywhere any rule of the rulebook is broken in the package at `root`, for the rules of one intention —
 the documentation rules in a docs build, the code rules in a test suite — or for every rule when
-`intention` is `nothing`. The arguments are:
+`intention` is `nothing`.
+
+# Arguments
 
 - `cfg` — the package's config, which says which rules are off here and where its files are.
 - `root` — the package root.
@@ -208,7 +214,9 @@ end
     run_patterns(cfg, root; intention = nothing) -> Vector{Tuple{Symbol,Model.Location}}
 
 Everywhere one of the package's OWN rules — each a [`Model.PatternRule`](@ref) in its config — is
-broken, for the rules of one intention or for all of them. The arguments are:
+broken, for the rules of one intention or for all of them.
+
+# Arguments
 
 - `cfg` — the package's config, which holds the rules.
 - `root` — the package root.
@@ -252,7 +260,9 @@ intention_of(r::Model.PatternRule) =
 The rules a run could not reach, and why it could not: those that read the loaded package where nothing
 loaded it, those that read the built site where none was built, and those that reach the network where
 that was not allowed. A rule that reads the history is not among them: a build or a test never reaches
-it, and it is not told it missed something that was never its to run. The arguments are:
+it, and it is not told it missed something that was never its to run.
+
+# Arguments
 
 - `cfg` — the package's config.
 - `pkg` — the loaded package, or `nothing`.

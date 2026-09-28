@@ -71,8 +71,9 @@ is_repo(root) = run(root, "rev-parse", "--is-inside-work-tree") == "true"
 """
     Git.is_ancestor(root, a, b) -> Bool
 
-Whether one commit is an ancestor of (or equal to) another (`git merge-base --is-ancestor`). The
-arguments are:
+Whether one commit is an ancestor of (or equal to) another (`git merge-base --is-ancestor`).
+
+# Arguments
 
 - `root` — the repository the two commits are read in.
 - `a` — the commit tested as the ancestor.
@@ -92,7 +93,9 @@ end
     Git.porcelain(root; untracked = true) -> Vector{Tuple{String,String}}
 
 `git status --porcelain` seen from a consumer, as `(status, path)` pairs with paths relative to the
-consumer root. The arguments are:
+consumer root.
+
+# Arguments
 
 - `root` — the consumer root the status is read from and the paths are made relative to.
 - `untracked` — with `untracked = false` untracked files are left out.
@@ -130,7 +133,9 @@ end
 """
     Git.diff(root, range, paths) -> String
 
-The diff of a commit range restricted to a set of paths. The arguments are:
+The diff of a commit range restricted to a set of paths.
+
+# Arguments
 
 - `root` — the repository the diff is taken in.
 - `range` — the commit range, `<base>..<head>`.
@@ -143,7 +148,9 @@ diff(root, range, paths) = something(run(root, "diff", range, "--", paths...), "
 """
     Git.diffstat(root, range, paths) -> String
 
-The `--stat` summary of the diff of a commit range restricted to a set of paths. The arguments are:
+The `--stat` summary of the diff of a commit range restricted to a set of paths.
+
+# Arguments
 
 - `root` — the repository the diff is taken in.
 - `range` — the commit range.
@@ -163,7 +170,9 @@ log(root, range) = something(run(root, "log", "--format=%h %s", range), "")
 """
     Git.changed_paths(root, range, paths) -> Vector{String}
 
-The files changed in a commit range under a set of paths (`git diff --name-only`). The arguments are:
+The files changed in a commit range under a set of paths (`git diff --name-only`).
+
+# Arguments
 
 - `root` — the repository the diff is taken in.
 - `range` — the commit range.

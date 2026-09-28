@@ -48,7 +48,9 @@ end
     release_fails(cfg, root, ver, base, rc) -> Vector{String}
 
 Every reason `v<ver>` may not be tagged from `root`, in the order they are checked; empty when there is
-none. The arguments are:
+none.
+
+# Arguments
 
 - `cfg` — the package's config, read at `root`.
 - `root` — the checkout to release.
@@ -89,7 +91,9 @@ end
 """
     release(ver; io = stdout, skip_tests = false, root = pkgdir(GBGCodingTools)) -> Int
 
-Tags and pushes `v<ver>` from the dev checkout. The arguments are:
+Tags and pushes `v<ver>` from the dev checkout.
+
+# Arguments
 
 - `ver` — the version to tag, `X.Y.Z` or `X.Y.Z-rc.N`.
 - `io` — where the checks are reported.
@@ -161,7 +165,9 @@ end
 `gbg release --counts`: prints, for `v2.0.0` alone, what still holds that release — the number of ids
 of the frozen register (`docs/design-record/RULES-v1.toml`) that are neither a `Rule` value nor retired,
 the count the conversion test ratchets. It prints the one number and refuses nothing (ruled
-2026-09-16: nothing else holds a release); the Phase 5 gate reads it as `0`. The arguments are:
+2026-09-16: nothing else holds a release); the Phase 5 gate reads it as `0`.
+
+# Arguments
 
 - `io` — where the number goes.
 - `root` — the checkout whose register and rulebook are counted.

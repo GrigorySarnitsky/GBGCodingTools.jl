@@ -144,7 +144,9 @@ end
     field_threshold(field_bytes; fraction = 16, per_thread = 4096,
                     components = 1) -> Int
 
-The allocation bound for a field-destination operation. The arguments are:
+The allocation bound for a field-destination operation.
+
+# Arguments
 
 - `field_bytes` — the size of one field in bytes.
 - `fraction` — the bound admits `field_bytes ÷ fraction` bytes of small temporaries (any field-sized
@@ -161,7 +163,9 @@ field_threshold(field_bytes::Integer; fraction::Integer = 16, per_thread::Intege
 """
     allocation_completeness(pkg, modules; exempt = Dict{Symbol,String}())
 
-The derived completeness check of the allocation audit. The arguments are:
+The derived completeness check of the allocation audit.
+
+# Arguments
 
 - `pkg` — the package module.
 - `modules` — its owned modules (the public surface is derived from them).
@@ -196,7 +200,7 @@ operation's element traffic can be measured through generic `AbstractArray` stor
 KernelAbstractions defines `KernelAbstractions.get_backend(a::CountingArray) = get_backend(a.data)`
 itself (the tool does not depend on it).
 
-The fields are:
+# Fields
 
 - `data` — the wrapped array.
 - `reads` — the atomic read counter.
@@ -233,7 +237,7 @@ end
 
 One array's row in an audited call.
 
-The fields are:
+# Fields
 
 - `role` — the array's role in the call (`"source"`, `"dest"`, `"kernel"`).
 - `array` — the [`CountingArray`](@ref) measured.
@@ -261,7 +265,9 @@ const AUDITED_TRAFFIC_OPS = Set{Symbol}()
 """
     audit(operation!, name, rows...; print = false)
 
-One row of the traffic audit (the per-operation table of array reads and writes). The arguments are:
+One row of the traffic audit (the per-operation table of array reads and writes).
+
+# Arguments
 
 - `operation!` — a zero-argument closure running the operation once over the counting arrays.
 - `name` — the row's name; its leading token, up to whitespace, `(` or `∘`, is the operation recorded
@@ -294,7 +300,9 @@ end
     traffic_completeness(pkg, modules; exempt = Dict{Symbol,String}())
 
 The derived completeness check of the traffic audit, the twin of [`allocation_completeness`](@ref)
-over [`AUDITED_TRAFFIC_OPS`](@ref). The arguments are:
+over [`AUDITED_TRAFFIC_OPS`](@ref).
+
+# Arguments
 
 - `pkg` — the package module.
 - `modules` — its owned modules.
@@ -343,7 +351,9 @@ end
 """
     traffic_rows(baseline, name, symbols) -> Vector
 
-One row of a frozen traffic table, evaluated. The arguments are:
+One row of a frozen traffic table, evaluated.
+
+# Arguments
 
 - `baseline` — the parsed `test/pass_audit_baseline.toml`.
 - `name` — the `[[row]]` entry's name.
@@ -371,7 +381,9 @@ end
 """
     resolve_function(name, pkg, modules; externals = (Base,)) -> Union{Function,Nothing}
 
-The function object a surface name denotes. The arguments are:
+The function object a surface name denotes.
+
+# Arguments
 
 - `name` — the symbol.
 - `pkg` — the umbrella module.
@@ -402,7 +414,9 @@ end
     module_method_count(mod, pkg, modules; externals = (Base,)) -> Int
 
 Every method module `mod` OWNS, summed over the package's whole function surface (internals included,
-not `names(mod)` — a method defined under a qualified name creates no binding). The arguments are:
+not `names(mod)` — a method defined under a qualified name creates no binding).
+
+# Arguments
 
 - `mod` — the module counted.
 - `pkg` — the umbrella.
@@ -424,7 +438,9 @@ end
 """
     method_parity(pkg, modules, baseline; externals = (Base,))
 
-The method-parity engine. The arguments are:
+The method-parity engine.
+
+# Arguments
 
 - `pkg` — the umbrella module.
 - `modules` — the package modules.
@@ -469,7 +485,9 @@ const ORACLE_CLASSES = ("analytic", "independent", "property", "relational", "st
 """
     oracle_registry(pkg, modules, registry, testdir)
 
-The oracle-provenance engine. The arguments are:
+The oracle-provenance engine.
+
+# Arguments
 
 - `pkg` — the umbrella module.
 - `modules` — the package modules.
@@ -554,7 +572,9 @@ has_display(type, modules::AbstractVector{Module}) = any(m -> m.module in module
                  falsify = true)
 
 The display gate, DERIVED rather than listed: every concrete struct type has a package-owned `show`
-or an exemption with a reason. The arguments are:
+or an exemption with a reason.
+
+# Arguments
 
 - `modules` — the modules whose concrete struct types are enumerated.
 - `no_display` — type name to reason, for the types deliberately without a display; an exemption whose
@@ -614,8 +634,9 @@ eval(Meta.parse(DIGEST_SOURCE))
     thread_digest(probe_source; threads, project = Base.active_project()) -> String
 
 Runs a probe in a fresh Julia process with a given thread count and returns its output — the
-cross-thread-count half of a bitwise-invariance check the in-process toggle cannot make. The
-arguments are:
+cross-thread-count half of a bitwise-invariance check the in-process toggle cannot make.
+
+# Arguments
 
 - `probe_source` — Julia source that prints digests with `fnv_digest` (which is prepended).
 - `threads` — the `-t` value.
@@ -640,7 +661,9 @@ other_thread_count() = Threads.nthreads() == 1 ? 4 : 1
 """
     run_regressions(dir; parent = Main) -> Vector{String}
 
-The one include loop of the promoted witnesses. The arguments are:
+The one include loop of the promoted witnesses.
+
+# Arguments
 
 - `dir` — the consumer's test directory (`@__DIR__` of `runtests.jl`); its `regressions/`
   subdirectory is read, or `dir` itself when it is that directory.

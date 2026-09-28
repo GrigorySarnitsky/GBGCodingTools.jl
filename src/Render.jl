@@ -363,7 +363,9 @@ const SUBENVS = ["docs", "test"]
     pin_entries(cfg, root, envdir) -> Dict{String,Any}
 
 What one sub-environment's `Project.toml` must say about this package: the dependency, and either the
-released version with its compat bound or the path to the checkout. The arguments are:
+released version with its compat bound or the path to the checkout.
+
+# Arguments
 
 - `cfg` — the package's config, which carries the pin.
 - `root` — the package root.
@@ -402,7 +404,9 @@ end
     pin_drift(cfg, root, envdir) -> Union{String,Nothing}
 
 What one sub-environment's `Project.toml` gets wrong about this package, or `nothing` where it gets it
-right. The arguments are:
+right.
+
+# Arguments
 
 - `cfg` — the package's config, which carries the pin.
 - `root` — the package root.
@@ -433,7 +437,9 @@ end
     write_pin(cfg, root, envdir) -> Bool
 
 Sets this package's entries in one sub-environment's `Project.toml`, keeping every other entry and
-Pkg's own section order. The arguments are:
+Pkg's own section order.
+
+# Arguments
 
 - `cfg` — the package's config, which carries the pin.
 - `root` — the package root.
@@ -1291,7 +1297,9 @@ end
 """
     report(run, cfg; root = "", queued = 0, undone = 0, red = false) -> String
 
-What one run found, as the page the owner reads. The arguments are:
+What one run found, as the page the owner reads.
+
+# Arguments
 
 - `run` — the finished run.
 - `cfg` — the package's config.

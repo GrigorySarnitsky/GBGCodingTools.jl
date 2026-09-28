@@ -12,7 +12,7 @@ A reader looking for one reference in a semicolon-separated run has to parse the
 Covered by a program.
 
 ### RULE.CIT.DOI
-Every reference carries a clickable DOI, or an Open Library link for a book, on its title.
+Every reference carries a clickable DOI, or an Open Library link for a book, on its title. A work whose entry states it has no DOI — the words "no DOI", in any case — may carry on its title instead an https link to its stable public record.
 
 A DOI a reader cannot click is a string to retype; one written as a bare label is indistinguishable from prose.
 

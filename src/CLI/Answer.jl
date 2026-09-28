@@ -20,8 +20,9 @@ using ..GBGCodingTools: GBGCodingTools, ConfigIO, Engine, Model, Orchestration, 
 """
     ask(root; io = stdout) -> Int
 
-Prints the questions waiting for the owner in the package at `root`, unanswered first. The arguments
-are:
+Prints the questions waiting for the owner in the package at `root`, unanswered first.
+
+# Arguments
 
 - `root` — the package root.
 - `io` — where the list goes.
@@ -70,7 +71,9 @@ end
 """
     answer(root, id, option; item, direction, settled, io) -> Int
 
-Records the owner's answer to one question. The arguments are:
+Records the owner's answer to one question.
+
+# Arguments
 
 - `root` — the package root.
 - `id` — the question's id.
@@ -180,7 +183,9 @@ end
     settle!(root, id, text) -> String
 
 Records one answered question in the package's settled list, with the locations of the finding it was
-about, so no agent reports it again. The arguments are:
+about, so no agent reports it again.
+
+# Arguments
 
 - `root` — the package root.
 - `id` — the question's id.
@@ -239,7 +244,9 @@ end
 """
     put(root, decision; context, options, exhibit, io) -> Int
 
-Puts one question to the owner. The arguments are:
+Puts one question to the owner.
+
+# Arguments
 
 - `root` — the package root.
 - `decision` — the one decision it asks, in his words.

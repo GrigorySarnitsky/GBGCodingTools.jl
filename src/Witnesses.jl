@@ -28,7 +28,7 @@ const JS = Base.JuliaSyntax
 
 The outcome of one witness file.
 
-The fields are:
+# Fields
 
 - `name` — the file name.
 - `status` — `:pass`, `:fail` (an assertion came out false — the witness working), `:broken` (an
@@ -195,7 +195,9 @@ end
 """
     run_one(path; project, package) -> WitnessResult
 
-Runs one witness file in a fresh Julia process and classifies the outcome. The arguments are:
+Runs one witness file in a fresh Julia process and classifies the outcome.
+
+# Arguments
 
 - `path` — the witness file.
 - `project` — the `--project` it runs under.
@@ -255,7 +257,9 @@ end
 """
     run(dir; expect, package, project, names = String[], io = stdout) -> (code, results)
 
-Runs every witness under `dir` and holds the set to an expectation. The arguments are:
+Runs every witness under `dir` and holds the set to an expectation.
+
+# Arguments
 
 - `dir` — the directory of `.jl` witnesses (the round's `witnesses/`, or `test/regressions/escalated/`).
 - `expect` — `:fail` (a hunt's bank: every witness must fail on this tree) or `:pass` (after the fix).

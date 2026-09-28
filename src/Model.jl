@@ -82,7 +82,12 @@ module Anchor; @enum T FRESH BY_NODE BY_QUOTE BY_DIFF OUTDATED; end
     Location
 
 Where a finding is, held still while the text around it moves: the node and the quote survive edits above
-them, and the line is only a hint. The fields are:
+them, and the line is only a hint.
+
+A line found again on a later pass is a line of that later tree; mapped from the run's first commit, it
+was moved a second time.
+
+# Fields
 
 - `file` — the path, relative to the package root.
 - `node` — for a `.jl` file the binding, method or field of a constant documented (`ARGS_FORM.statement`);
@@ -91,9 +96,6 @@ them, and the line is only a hint. The fields are:
 - `line` — the line it was on then, kept as a hint and never taken from an agent.
 - `found` — how it was anchored the last time it was looked for.
 - `at` — the commit `line` was read at, empty for the commit the run began at.
-
-A line found again on a later pass is a line of that later tree; mapped from the run's first commit, it
-was moved a second time.
 """
 Base.@kwdef struct Location
     file::String
@@ -107,7 +109,9 @@ end
 """
     FindingDraft
 
-What an agent or a check reports, before a run gives it an id. The fields are:
+What an agent or a check reports, before a run gives it an id.
+
+# Fields
 
 - `rule` — the rule it breaks, or `nothing` where no rule names it yet.
 - `locations` — every site, each with its own quote.
@@ -145,7 +149,9 @@ relocated(d::FindingDraft, locations::Vector{Location}) =
 """
     Finding
 
-One defect in a run: the draft, the id the run gave it, and who reported it. The fields are:
+One defect in a run: the draft, the id the run gave it, and who reported it.
+
+# Fields
 
 - `id` — the run's own identifier for it.
 - `source` — the check or the agent role that reported it.
@@ -164,7 +170,9 @@ end
 """
     Option
 
-A possible answer to a question, with what happens if it is chosen. The fields are:
+A possible answer to a question, with what happens if it is chosen.
+
+# Fields
 
 - `label` — the answer itself, in a few words.
 - `consequence` — what follows from choosing it, including what it costs.
@@ -180,7 +188,8 @@ end
     Item
 
 One decision inside a question; items share the question's options and each is answered on its own. 
-The fields are:
+
+# Fields
 
 - `text` — the decision, in one sentence.
 - `recommended` — the label of the option recommended for this item.
@@ -200,7 +209,8 @@ end
     Question
 
 A decision put to the owner: plain data, checked against the language rules only when it is put. 
-The fields are:
+
+# Fields
 
 - `id` — its identifier, stable once written.
 - `decision` — the decision itself, one sentence ending in a question mark.
@@ -235,7 +245,9 @@ abstract type Check end
 """
     ProgramCheck
 
-A check a program decides, run over one kind of input. The fields are:
+A check a program decides, run over one kind of input.
+
+# Fields
 
 - `input` — what it reads.
 - `run` — the function itself, `run(x, cfg)::Vector{Location}`; re-run from scratch, so it never needs
@@ -251,7 +263,9 @@ end
 """
     AgentCheck
 
-A check an agent decides, because a program cannot. The fields are:
+A check an agent decides, because a program cannot.
+
+# Fields
 
 - `question` — what the agent is asked about the text in front of it.
 - `why` — which of the three admitted reasons this needs an agent for.
@@ -264,17 +278,19 @@ end
 """
     RetiredClaim
 
-A phrase a package has retired, and must not assert again. The fields are:
-
-- `phrase` — the wording itself, matched literally and case-insensitively, with any run of whitespace
-  matching any other, so a phrase broken across a line wrap is still found.
-- `reason` — what to say instead, shown with every finding.
-- `decision` — the record that retired it, where the package keeps one.
+A phrase a package has retired, and must not assert again.
 
 It carries a PHRASE and never a regular expression. A pattern written in a package's config would be
 compiled inside every docs build of that package, which puts a malformed pattern, a pathological one and
 an over-broad one into the build; a literal costs nothing and covers what the fleet's own retired claims
 need, because what makes them hard to match is line wrapping, which the check handles itself.
+
+# Fields
+
+- `phrase` — the wording itself, matched literally and case-insensitively, with any run of whitespace
+  matching any other, so a phrase broken across a line wrap is still found.
+- `reason` — what to say instead, shown with every finding.
+- `decision` — the record that retired it, where the package keeps one.
 """
 Base.@kwdef struct RetiredClaim
     phrase::String
@@ -285,7 +301,9 @@ end
 """
     Setting
 
-A package's value for one rule parameter. The fields are:
+A package's value for one rule parameter.
+
+# Fields
 
 - `rule` — the rule that reads it.
 - `name` — the parameter's name.
@@ -310,17 +328,19 @@ abstract type Example end
 """
     TextExample
 
-One text, judged by a check that reads a source text. The fields are:
+One text, judged by a check that reads a source text.
+
+A rule whose behaviour is a package's to supply cannot otherwise be shown to work, which is what
+`settings` answers. A parameter empty by default makes its check silent by default, so every example of
+it complies and the rule carries no demonstration that it ever fires.
+
+# Fields
 
 - `fileset` — the file set the text stands for.
 - `text` — the text itself.
 - `expect` — the locations the check must report, empty when the text complies.
 - `clause` — the clause of the rule's statement this example is for.
 - `settings` — the package settings the example is judged under, empty for the rule's own defaults.
-
-A rule whose behaviour is a package's to supply cannot otherwise be shown to work, which is what
-`settings` answers. A parameter empty by default makes its check silent by default, so every example of
-it complies and the rule carries no demonstration that it ever fires.
 """
 struct TextExample <: Example
     fileset::FileSet.T
@@ -334,7 +354,9 @@ TextExample(fileset, text, expect, clause) = TextExample(fileset, text, expect, 
 """
     TreeExample
 
-A small file tree, judged by a check that reads one. The fields are:
+A small file tree, judged by a check that reads one.
+
+# Fields
 
 - `files` — each path with its content.
 - `expect` — the locations the check must report, empty when the tree complies.
@@ -349,7 +371,9 @@ end
 """
     ModuleExample
 
-Julia source loaded into a fresh module, judged by a check that reads the loaded package. The fields are:
+Julia source loaded into a fresh module, judged by a check that reads the loaded package.
+
+# Fields
 
 - `source` — the source to load.
 - `expect` — the locations the check must report, empty when the source complies.
@@ -364,7 +388,9 @@ end
 """
     SiteExample
 
-Pages built into a site, judged by a check that reads the built site. The fields are:
+Pages built into a site, judged by a check that reads the built site.
+
+# Fields
 
 - `pages` — each page path with its content.
 - `expect` — the locations the check must report, empty when the pages comply.
@@ -380,7 +406,8 @@ end
     QuestionExample
 
 A question, judged by a check that reads one — the language rules every question put to the owner passes.
-The fields are:
+
+# Fields
 
 - `question` — the question itself.
 - `expect` — the locations the check must report, empty when the question complies.
@@ -396,7 +423,9 @@ end
     HistoryExample
 
 A repository built by a shell script in an empty directory, judged by a check that reads the history —
-the rules the end-of-turn hook decides. The fields are:
+the rules the end-of-turn hook decides.
+
+# Fields
 
 - `script` — the shell lines that build the repository, run in the directory.
 - `expect` — the locations the check must report, empty when the repository complies; a history
@@ -413,7 +442,8 @@ end
     Parameter
 
 A value a rule reads that a package may set for itself, such as how a docstring's first sentence leads.
-The fields are:
+
+# Fields
 
 - `name` — what the rule calls it.
 - `default` — the value where a package sets none.
@@ -427,7 +457,19 @@ end
     Rule
 
 One rule of the rulebook, carrying its own statement, the check that decides a violation, and the
-examples that show the check matches the statement. The fields are:
+examples that show the check matches the statement.
+
+A rule with an access tag is a READER'S rule: the readers of a documentation review are derived from
+these tags rather than listed. A rule naming a discipline goes to that discipline's reader where the package
+declares it, and to nobody — said in the report — where it does not.
+
+A file set is shared and some rules are not, which is what `files_parameter` answers. Which pages must
+carry the provenance banner differs per package and has nothing to do with which pages are rationale.
+
+Expressed as a file set, widening one rule's reach drags every other rule reading that set along with
+it. A rule naming a parameter lets a package say which files it means and leave the sets alone.
+
+# Fields
 
 - `id` — its stable identifier.
 - `statement` — the rule in plain English; this is its only home.
@@ -446,16 +488,6 @@ examples that show the check matches the statement. The fields are:
 - `access` — what a reader must be given beyond the unit; empty where a program decides it or a
   session keeps it as a habit.
 - `discipline` — the catalogued discipline deciding it takes, or `nothing`: any careful reader.
-
-A rule with an access tag is a READER'S rule: the readers of a documentation review are derived from
-these tags rather than listed. A rule naming a discipline goes to that discipline's reader where the package
-declares it, and to nobody — said in the report — where it does not.
-
-A file set is shared and some rules are not, which is what `files_parameter` answers. Which pages must
-carry the provenance banner differs per package and has nothing to do with which pages are rationale.
-
-Expressed as a file set, widening one rule's reach drags every other rule reading that set along with
-it. A rule naming a parameter lets a package say which files it means and leave the sets alone.
 """
 Base.@kwdef struct Rule
     id::Symbol
@@ -479,7 +511,8 @@ end
     AgentRole
 
 One kind of agent an instrument launches: what it reads, what it is kept from, and which rules it checks.
-The fields are:
+
+# Fields
 
 - `id` — its stable identifier.
 - `instrument` — the instrument that launches it.
@@ -507,14 +540,16 @@ end
     Discipline
 
 A field of expertise a package may declare it needs a reader to have, catalogued once in this package
-and shared: a fluid-dynamics theoretician serves two of the science packages. The fields are:
-
-- `id` — its stable identifier, which a package names in its config's `disciplines`.
-- `description` — who the reader is, in two or three sentences.
+and shared: a fluid-dynamics theoretician serves two of the science packages.
 
 A reader with a discipline is the same model with a standpoint, not a different model. It is derived
 into the panel as an OPEN reader — a specialist reading the whole documentation for whatever is wrong in
 its field — bound only to a rule that names its discipline.
+
+# Fields
+
+- `id` — its stable identifier, which a package names in its config's `disciplines`.
+- `description` — who the reader is, in two or three sentences.
 """
 Base.@kwdef struct Discipline
     id::Symbol
@@ -524,14 +559,16 @@ end
 """
     Budget
 
-The one ceiling on a run: how many fix passes it may make. The fields are:
-
-- `fix_passes` — how many times the open findings may go back to the fixer.
+The one ceiling on a run: how many fix passes it may make.
 
 There is no ceiling on agent launches, as ruled 2026-09-21: the design bounds them — a panel over the
 units per stage, one relaunch each, one verifier per unit holding open findings — and a run interrupted
 before its end is continued, not capped. One pass by default [ruled 2026-09-26: a second pass re-verified
 unchanged text and moved a fifth of the verdicts by variance].
+
+# Fields
+
+- `fix_passes` — how many times the open findings may go back to the fixer.
 """
 Base.@kwdef struct Budget
     fix_passes::Int = 1
@@ -540,16 +577,18 @@ end
 """
     Usage
 
-What one stage's agents cost, as the platform's own records count it. The fields are:
+What one stage's agents cost, as the platform's own records count it.
+
+Recorded by `gbg run cost` from the agents' own transcripts, never from the launch's summary field,
+which counts a tenth of the cache activity where nearly all of the cost is [measured on
+[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/), 2026-09-24].
+
+# Fields
 
 - `stage` — the stage, as `Run.stage` names it.
 - `pass` — the fix pass it belongs to, `0` for the reading stage.
 - `agents` — how many agent records were summed.
 - `input`, `cache_write`, `cache_read`, `output` — the token counts, summed over every record.
-
-Recorded by `gbg run cost` from the agents' own transcripts, never from the launch's summary field,
-which counts a tenth of the cache activity where nearly all of the cost is [measured on
-[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/), 2026-09-24].
 """
 Base.@kwdef struct Usage
     stage::String
@@ -565,7 +604,11 @@ end
     Instrument
 
 A review procedure the owner starts, with the three values that separate it from every other and the two
-sentences the instrument table prints. The fields are:
+sentences the instrument table prints.
+
+Its readers are not a field: they are derived from the rules at run time, by the catalogue.
+
+# Fields
 
 - `id` — its stable identifier.
 - `purpose` — what it is for, in one sentence.
@@ -575,8 +618,6 @@ sentences the instrument table prints. The fields are:
 - `when` — when it runs.
 - `ends` — when one of its runs ends.
 - `budget` — what one run may spend.
-
-Its readers are not a field: they are derived from the rules at run time, by the catalogue.
 """
 Base.@kwdef struct Instrument
     id::Symbol
@@ -592,7 +633,9 @@ end
 """
     AlwaysOn
 
-A program check that every build and test runs; nobody starts it and it has no runs. The fields are:
+A program check that every build and test runs; nobody starts it and it has no runs.
+
+# Fields
 
 - `id` — its stable identifier.
 - `purpose` — what it is for, in one sentence.
@@ -613,7 +656,9 @@ end
 """
     Generated
 
-A file, or a part of a file, that a Julia function writes and the wiring check compares. The fields are:
+A file, or a part of a file, that a Julia function writes and the wiring check compares.
+
+# Fields
 
 - `paths` — `paths(cfg)::Vector{String}`, the paths it writes in a given package.
 - `part` — how much of each path it writes.
@@ -630,7 +675,9 @@ end
 """
     Switch
 
-Turns one rule, agent role or instrument off in one package, or in some of its files. The fields are:
+Turns one rule, agent role or instrument off in one package, or in some of its files.
+
+# Fields
 
 - `target` — what is switched off.
 - `reason` — why it does not apply here, shown on the package's own site.
@@ -648,7 +695,9 @@ end
 Says that one rule is owed here and not yet met: a question with a condition on it, where a switch is
 an answer. A deferred rule reports nothing in a build or a test — a deferral never fails a build — and
 is listed beside the switches on the package's own site and by `gbg check`, so "not yet" is on the
-record as owed rather than filed as "does not apply". The fields are:
+record as owed rather than filed as "does not apply".
+
+# Fields
 
 - `rule` — the rule deferred.
 - `until` — what would close it: the condition on which the package means to meet the rule.
@@ -661,7 +710,9 @@ end
 """
     PatternRule
 
-A rule a package adds for itself: a pattern its own files must not, or must, contain. The fields are:
+A rule a package adds for itself: a pattern its own files must not, or must, contain.
+
+# Fields
 
 - `id` — its stable identifier within the package.
 - `statement` — the rule in plain English.
@@ -683,7 +734,11 @@ end
     Config
 
 A package's settings, written by hand in `.gbg/config.jl` and read by a parser that evaluates nothing.
-The fields are:
+
+A reader or a discipline a package needs and the tool's catalogue lacks is requested from the tool's
+own session, which adds it for the whole fleet; it is not written in a config.
+
+# Fields
 
 - `package` — its name.
 - `tool` — the version of this package it pins, or `:dev` here.
@@ -702,9 +757,6 @@ The fields are:
 - `disciplines` — the catalogued disciplines its documentation needs read by.
 - `material` — documents a reader may open to judge the targets and never report on: the rationale
   documents beyond the one `architecture_doc` names, which no reader is given unless listed here.
-
-A reader or a discipline a package needs and the tool's catalogue lacks is requested from the tool's
-own session, which adds it for the whole fleet; it is not written in a config.
 """
 Base.@kwdef struct Config
     package::String
@@ -728,7 +780,8 @@ end
     Settled
 
 A question the owner settled, kept in `.gbg/settled.jl` and given to agents as "do not report". 
-The fields are:
+
+# Fields
 
 - `question` — the question it answers.
 - `text` — the ruling, in his own words.
@@ -748,7 +801,8 @@ end
     DocFix
 
 One documentation-fixer attempt at one finding, with the program and agent judgements of it. 
-The fields are:
+
+# Fields
 
 - `finding` — the finding it fixed.
 - `pass` — which fix pass made it.
@@ -774,7 +828,9 @@ end
 """
     CodeFix
 
-One approved code fix and the single audit of it, kept with the question that approved it. The fields are:
+One approved code fix and the single audit of it, kept with the question that approved it.
+
+# Fields
 
 - `question` — the question whose answer approved it.
 - `direction` — how the owner asked for it to be fixed, where he said.
@@ -805,7 +861,18 @@ end
 """
     Run
 
-One execution of one instrument on one package, stored beside its report. The fields are:
+One execution of one instrument on one package, stored beside its report.
+
+The count `dropped` is what keeps an abandoned record honest. Stopping a run removes its open findings
+from the list — what a verdict had closed stays — and leaves its launch count alone, and those two read
+together say that every reader wrote its file and none of them found anything — of a run that found a
+hundred. What was thrown away is part of what
+happened, and belongs where the run is written down rather than only in a line nobody keeps.
+
+A bound reader carries rules; an open one carries a standpoint and no rule. Bound is the default, and
+runs most often.
+
+# Fields
 
 - `id` — its identifier, which names its directory.
 - `instrument` — the instrument that ran.
@@ -841,15 +908,6 @@ One execution of one instrument on one package, stored beside its report. The fi
 - `dropped_ids` — what the owner's stop threw away, kept in `findings` with its text [ruled 2026-09-26]
   and carried nowhere.
 - `usage` — what each stage's agents cost, per stage and pass, as `gbg run cost` recorded it.
-
-That last count is what keeps an abandoned record honest. Stopping a run removes its open findings
-from the list — what a verdict had closed stays — and leaves its launch count alone, and those two read
-together say that every reader wrote its file and none of them found anything — of a run that found a
-hundred. What was thrown away is part of what
-happened, and belongs where the run is written down rather than only in a line nobody keeps.
-
-A bound reader carries rules; an open one carries a standpoint and no rule. Bound is the default, and
-runs most often.
 """
 Base.@kwdef struct Run
     id::String

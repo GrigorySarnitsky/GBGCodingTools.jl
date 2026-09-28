@@ -41,10 +41,12 @@ end
 # ───────────────────────────────────────────────────────────── an argument bullet set in bold
 
 const BOLD_BULLET = r"^\s*[-*]\s+\*\*`"
-# The marker that opens an argument or field list. Without it a bulleted name is not an argument bullet:
-# a design document's type glossary is a bulleted list of names with prose about each, and reading it as
-# an argument list reported fourteen entries of one package's §10 for using bold where it means bold.
-const LIST_MARKER = r"The\s+(arguments?|fields)\s+(is|are)\b"
+# The heading that opens an argument or field list — `# Arguments` or `# Fields`, the sections
+# `RULE.DOC.ARGS_FORM` and `RULE.DOC.FIELDS` ask for (ruled 2026-09-28), at any level on a page. Without
+# it a bulleted name is not an argument bullet: a design document's type glossary is a bulleted list of
+# names with prose about each, and reading it as an argument list reported fourteen entries of one
+# package's §10 for using bold where it means bold.
+const LIST_MARKER = r"^\s*#+\s+(Arguments|Fields)\s*$"
 
 """
     arg_bullet(text, cfg) -> Vector{Model.Location}
@@ -55,7 +57,7 @@ Returns one location per bullet.
 
 A bold PROSE label — `- **Positions.**` — is a different device and is not a hit: the backtick must
 follow the asterisks, which is what makes it a name rather than a heading. Nor is a bulleted name
-OUTSIDE an argument or field list, which is why the list marker has to be found first: a design
+OUTSIDE an argument or field list, which is why the list's heading has to be found first: a design
 document indexes its types that way, and bold there is doing the job bold is for.
 """
 function arg_bullet(text::AbstractString, cfg)
@@ -88,14 +90,17 @@ const ARG_BULLET = Model.Rule(
     check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, arg_bullet, false),
     examples = [
         Model.TextExample(Model.FileSet.PAGES,
-            "# A page\n\nThe arguments are:\n\n- **`u`** — the field.\n",
+            "# A page\n\n# Arguments\n\n- **`u`** — the field.\n",
             [Model.Location(; file = "docs/src/page.md", line = 5)], "a plain code span, never a bold one"),
         Model.TextExample(Model.FileSet.PAGES,
-            "# A page\n\nThe arguments are:\n\n- `u` — the field.\n",
+            "# A page\n\n# Arguments\n\n- `u` — the field.\n",
             Model.Location[], "a plain code span, never a bold one"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\n- **Positions.** Where each sits.\n",
             Model.Location[], "a plain code span, never a bold one"),
+        Model.TextExample(Model.FileSet.DOCSTRINGS,
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- **`a`** — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",
+            [Model.Location(; file = "src/Example.jl", line = 8)], "a plain code span, never a bold one"),
         # A design document's glossary of types is a bulleted list of NAMES, not of arguments, and bold
         # there is doing the job bold is for.
         Model.TextExample(Model.FileSet.RATIONALE,
@@ -161,7 +166,7 @@ const FIELD_NAME = r"`([^`:\s,]+)(?:::[^`]*)?`"
     field_docs(src, cfg) -> Vector{Model.Location}
 
 Every documented type whose field list does not match its fields: one that names a field the type does
-not have, one that leaves a field out, and one with fields and no list at all. The arguments are `src`,
+not have, one that leaves a field out, and one with fields and no `# Fields` section. The arguments are `src`,
 the Julia source, and `cfg`, the package's config, which this rule does not read. Returns one location
 per type, quoting what is wrong.
 
@@ -178,8 +183,12 @@ function field_docs(src::AbstractString, cfg)
         isempty(fields) && continue
         documented = documented_fields(d.text)
         if documented === nothing
+            # The sentence-led list this rule asked for until 2026-09-28 is named, so a package
+            # converting is told where its list goes rather than that it has none.
+            under_phrase = occursin(r"The\s+fields\s+are\b", d.text)
             push!(out, Model.Location(; file = "", line = d.line, node = d.node,
-                                       text = "$(d.node) stores $(join(fields, ", ")) and documents no fields"))
+                text = under_phrase ? "$(d.node) lists its fields under a sentence: put them under a `# Fields` heading" :
+                                      "$(d.node) stores $(join(fields, ", ")) and has no `# Fields` section"))
             continue
         end
         ghost = setdiff(documented, fields)
@@ -280,13 +289,17 @@ function struct_fields(src::AbstractString, name::AbstractString)
     return something(found[], String[])
 end
 
-# The field names a docstring's list claims, or `nothing` where it holds no list at all.
+# The field names a docstring's `# Fields` section claims, or `nothing` where it has no such section.
+# The list is the bullets under the heading, to the first line that is neither a bullet, its indented
+# continuation nor blank; a heading before any bullet ends it too, so an empty section claims nothing.
+const FIELDS_HEADING = r"(?m)^#\s+Fields\s*$"
 function documented_fields(doc::AbstractString)
-    k = findfirst("The fields are", doc)
+    k = findfirst(FIELDS_HEADING, doc)
     k === nothing && return nothing
     names = String[]
     inlist = false
     for line in split(doc[first(k):end], '\n')[2:end]
+        startswith(line, "#") && break
         if occursin(FIELD_BULLET, line)
             inlist = true
             head = first(split(line, r" — | -- "))
@@ -301,50 +314,57 @@ end
 """
     FIELDS
 
-A type with named fields documents them under "The fields are", one bullet per field.
+A type with named fields documents them under `# Fields`, one bullet per field.
 """
 const FIELDS = Model.Rule(
     id = Symbol("RULE.DOC.FIELDS"),
-    statement = "A type with named fields documents them under \"The fields are\", one bullet per field: every bullet a real field, and every field a bullet.",
+    statement = "A type with named fields documents them in a `# Fields` section, one bullet per field: every bullet a real field, and every field a bullet. A sentence listing them, \"The fields are …\", is no such section.",
     why = "A field list that has drifted is worse than none: it names what does not exist and hides what does.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],
     check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, field_docs, false),
     examples = [
         Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
             [Model.Location(; file = "src/Example.jl", line = 1)], "every field a bullet"),
         Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
             Model.Location[], "every field a bullet"),
         # An outer constructor's docstring is paired with the constructor, not with the type of the
         # same name: it documents arguments, and owes no field list.
         Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n\n\"\"\"\n    S(n; scale = 1)\n\nBuilds one from `n`.\n\"\"\"\nS(n; scale = 1) = S(n * scale)\n",
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n\n\"\"\"\n    S(n; scale = 1)\n\nBuilds one from `n`.\n\"\"\"\nS(n; scale = 1) = S(n * scale)\n",
             Model.Location[], "every field a bullet"),
         # An untyped field and a `const` one are fields, and a type made of them alone is held to the
         # rule like any other.
         Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nmutable struct S\n    const a::Int\n    b\nend\n",
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nmutable struct S\n    const a::Int\n    b\nend\n",
             Model.Location[], "every field a bullet"),
         Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n\"\"\"\nmutable struct S\n    const a::Int\n    b\nend\n",
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n\"\"\"\nmutable struct S\n    const a::Int\n    b\nend\n",
             [Model.Location(; file = "src/Example.jl", line = 1)], "every field a bullet"),
         Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n- `c` — no such field.\n\"\"\"\nstruct S\n    a::Int\nend\n",
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n- `c` — no such field.\n\"\"\"\nstruct S\n    a::Int\nend\n",
             [Model.Location(; file = "src/Example.jl", line = 1)], "every bullet a real field"),
         Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",
             Model.Location[], "every bullet a real field"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing with fields and no list.\n\"\"\"\nstruct S\n    a::Int\nend\n",
-            [Model.Location(; file = "src/Example.jl", line = 1)], "documents them under \"The fields are\""),
+            [Model.Location(; file = "src/Example.jl", line = 1)], "documents them in a `# Fields` section"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing with untyped fields and no list.\n\"\"\"\nBase.@kwdef struct S\n    a = 1\n    b\nend\n",
-            [Model.Location(; file = "src/Example.jl", line = 1)], "documents them under \"The fields are\""),
+            [Model.Location(; file = "src/Example.jl", line = 1)], "documents them in a `# Fields` section"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",
+            Model.Location[], "documents them in a `# Fields` section"),
+        # The sentence-led list, the form asked for before 2026-09-28, complete as it is, is no section.
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",
-            Model.Location[], "documents them under \"The fields are\""),
+            [Model.Location(; file = "src/Example.jl", line = 1)], "is no such section"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",
+            Model.Location[], "is no such section"),
     ])
 
 # ───────────────────────────────────────────────────────── how a sentence is allowed to open

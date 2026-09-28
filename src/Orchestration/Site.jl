@@ -37,7 +37,9 @@ const BUILDER = Ref{Function}()
 """
     build(root, cfg; io = stdout) -> Union{String,Nothing}
 
-Builds the package's site. The arguments are:
+Builds the package's site.
+
+# Arguments
 
 - `root` — the package root.
 - `cfg` — the package's config, which names the build command.
@@ -77,8 +79,9 @@ BUILDER[] = build_with_make
 """
     pages(dir, cfg, root) -> Vector{NamedTuple}
 
-The built pages of the site at `dir` a reader may be given, each with the text a reader meets. The
-arguments are:
+The built pages of the site at `dir` a reader may be given, each with the text a reader meets.
+
+# Arguments
 
 - `dir` — the built site's directory.
 - `cfg` — the package's config, which names the generated pages and the copies.
@@ -161,7 +164,9 @@ end
     source_of(root, path; cfg = nothing) -> String
 
 The tracked file a built page was made from, by Documenter's own convention: `guide/config/index.html`
-is `docs/src/guide/config.md`, and the home page is `docs/src/index.md`. The arguments are:
+is `docs/src/guide/config.md`, and the home page is `docs/src/index.md`.
+
+# Arguments
 
 - `root` — the package root.
 - `path` — the page's path inside the site.

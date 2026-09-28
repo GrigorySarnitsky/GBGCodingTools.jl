@@ -16,8 +16,9 @@ using ..GBGCodingTools: GBGCodingTools, Catalogue, ConfigIO, Engine, Model, Rend
 """
     run(root; intention = nothing, network = false, io = stdout) -> Int
 
-Runs the rules and the wiring check over the package at `root` and prints what they found. The arguments
-are:
+Runs the rules and the wiring check over the package at `root` and prints what they found.
+
+# Arguments
 
 - `root` — the package root.
 - `intention` — `Model.Intention.DOCUMENTATION` for what a docs build runs, `Model.Intention.CODE` for
@@ -96,7 +97,9 @@ end
     rebaseline(root; only = "", io = stdout) -> Int
 
 Records what the package's prose measures NOW as the ceiling it may not rise above, printing every row
-it raises, adds or drops first. The arguments are:
+it raises, adds or drops first.
+
+# Arguments
 
 - `root` — the package root.
 - `only` — a substring of the unit names to re-record; empty re-records every unit.

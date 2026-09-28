@@ -65,7 +65,9 @@ end
 """
     base(root, instrument, readers, cfg) -> Union{Tuple{String,String},Nothing}
 
-The commit a `changed` run measures from, with the run that earned it. The arguments are:
+The commit a `changed` run measures from, with the run that earned it.
+
+# Arguments
 
 - `root` — the package root.
 - `instrument` — the instrument about to run.
@@ -94,7 +96,9 @@ end
 """
     why_full(root, instrument, readers, cfg) -> String
 
-Why this run reads everything, in the words a session prints. The arguments are:
+Why this run reads everything, in the words a session prints.
+
+# Arguments
 
 - `root` — the package root.
 - `instrument` — the instrument about to run.
@@ -199,7 +203,9 @@ end
 """
     sets_of(cfg, root, changed) -> Dict{Model.FileSet.T,Vector{String}}
 
-Which file set each changed file belongs to. The arguments are:
+Which file set each changed file belongs to.
+
+# Arguments
 
 - `cfg` — the package's config.
 - `root` — the package root.
@@ -240,7 +246,9 @@ end
 """
     prose_moved(root, path, commit) -> Bool
 
-Whether the docstrings of `path` differ between `commit` and the tree. The arguments are:
+Whether the docstrings of `path` differ between `commit` and the tree.
+
+# Arguments
 
 - `root` — the package root.
 - `path` — the file, relative to the root.
@@ -296,7 +304,9 @@ end
 """
     unit_touched(root, cfg, unit, sets, added) -> Bool
 
-Whether the built page `unit` must be read again. The arguments are:
+Whether the built page `unit` must be read again.
+
+# Arguments
 
 - `root` — the package root.
 - `cfg` — the package's config, which names the copies a built page may have been made from.

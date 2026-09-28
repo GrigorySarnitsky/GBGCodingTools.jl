@@ -4,6 +4,23 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.34 — 2026-09-28
+
+MINOR, three rulings of the owner's (2026-09-28), which change what a package's documentation must say:
+
+- **Field lists are a `# Fields` section**, one bullet per field, compared with the struct: every bullet
+  a real field and every field a bullet. A sentence "The fields are …" is no such section.
+- **Argument lists are an `# Arguments` section** wherever the bulleted form is required (three or more
+  arguments, or any keyword). Fewer are still bound in prose, "The arguments are `a`, the first, and `b`,
+  the second." A type whose `# Fields` section documents its fields is exempt.
+- **A work with no DOI links its stable public record**: an entry that says "no DOI" may carry on its
+  title an https link to the work's public record (NASA's technical-report server, an institute's page).
+
+Measured with the new rules: GBGPeriodicFields 54 argument lists and 25 field lists to convert;
+GBGHomogeneousTurbulence 41 and 4 (its 27 complete `# Fields` lists are no longer reported);
+GBGStreamingStatistics 23 and 2; GBGCloudPhysics 61 and 27. This package's own 154 docstrings are
+converted.
+
 ## 2.0.0-rc.33 — 2026-09-28
 
 PATCH. **This package loads on Julia 1.13.** It reads source with the parser bundled with the Julia that

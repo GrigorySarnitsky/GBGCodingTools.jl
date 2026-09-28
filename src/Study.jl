@@ -28,7 +28,9 @@ using ..Catalogue
 """
     Tag
 
-One reader's answer about one rule. The fields are:
+One reader's answer about one rule.
+
+# Fields
 
 - `rule` — the rule's id, as the vote file spells it.
 - `reader` — which of the three answered.
@@ -48,7 +50,9 @@ end
 """
     Round
 
-One round of the study, and what its arithmetic says. The fields are:
+One round of the study, and what its arithmetic says.
+
+# Fields
 
 - `tags` — every answer, three per rule.
 - `rules` — the rules answered about, in the file's order.

@@ -27,7 +27,9 @@ The git tree id of a directory, computed as `git write-tree` would over every fi
 sorted by git's rule (a directory name compares with a trailing `/`), modes `100644`, `100755`,
 `120000` and `40000`, empty directories omitted. It is what Pkg records as `git-tree-sha1` in a manifest
 and reports as `tree_hash` from `Pkg.dependencies()`, so the running copy can re-hash itself without
-`git`. The arguments are:
+`git`.
+
+# Arguments
 
 - `dir` — the directory to hash.
 - `skip` — entry names ignored at any level, `.git` by default, so a working tree hashes the same as
@@ -113,7 +115,9 @@ Recomputes the git tree hash of the copy this process runs from (`pkgdir(GBGCodi
 [`tree_hash`](@ref)) and compares it with what `Pkg.dependencies()` reports for the tool in the
 active environment and with the `git-tree-sha1` every sub-environment manifest under `root` records;
 asserts the dependency entry is `is_tracking_repo && !is_tracking_path` (a `Pkg.develop`'d copy lives
-inside the depot, so only the flags tell it apart). The arguments are:
+inside the depot, so only the flags tell it apart).
+
+# Arguments
 
 - `root` — the consumer root whose sub-environment manifests are compared; `nothing` (no root found)
   leaves only the active environment's entry to compare against.

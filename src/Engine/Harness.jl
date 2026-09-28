@@ -29,7 +29,8 @@ using ..Checks
 
 Runs the code half of the always-on checks over the package at `root` and throws on anything found, so a
 red suite means a broken contract and a green one means every program that can check this package has.
-The arguments are:
+
+# Arguments
 
 - `root` — the package root; the directory holding `.gbg/config.jl`.
 - `extra` — the package's own rules, run AFTER the whole rulebook and never instead of it; only those

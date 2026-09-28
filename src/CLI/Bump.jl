@@ -37,7 +37,9 @@ end
 """
     bump(root, version; io = stdout) -> Int
 
-Moves the pin of the package at `root` to `version` and rewrites its wiring. The arguments are:
+Moves the pin of the package at `root` to `version` and rewrites its wiring.
+
+# Arguments
 
 - `root` — the package root.
 - `version` — the released version to pin, `X.Y.Z`.
@@ -80,7 +82,9 @@ end
 """
     stale_warning(io, version, pkgversion(GBGCodingTools))
 
-Says that what was just written is the RUNNING version's, not the pinned one's. The arguments are:
+Says that what was just written is the RUNNING version's, not the pinned one's.
+
+# Arguments
 
 - `io` — where it goes.
 - `version` — the version just pinned.

@@ -54,7 +54,7 @@ The mandatory docs-build wrapper a consumer's `docs/make.jl` calls instead of `D
 The body is defined by the Documenter extension (`ext/GBGCodingToolsDocumenterExt.jl`), which Julia
 loads once `Documenter` is in the environment — a consumer's `make.jl` already does `using Documenter`.
 
-The arguments are:
+# Arguments
 
 - `root` — the package root, the directory holding `.gbg/config.jl`.
 - `kwargs...` — passed through to `Documenter.makedocs` unchanged (`sitename`, `pages`, `modules`,

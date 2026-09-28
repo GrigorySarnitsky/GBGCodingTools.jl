@@ -15,7 +15,7 @@ const VERBS = Dict{String,Function}()
 
 The parsed command line of one verb: the positional arguments in order and the options by name.
 
-The fields are:
+# Fields
 
 - `positional` — every argument that is not an option, in order.
 - `flags` — the options given without a value (`--deep`, `--dry-run`), as a set of names without the dashes.
@@ -30,12 +30,14 @@ end
 """
     UsageError
 
-A command line a verb cannot run: an option missing its value. The fields are:
-
-- `msg` — the sentence printed.
+A command line a verb cannot run: an option missing its value.
 
 It is the user's mistake, so [`main`](@ref) prints it without a backtrace and returns 2, not the crash
 code 3 (found in review, 2026-09-26).
+
+# Fields
+
+- `msg` — the sentence printed.
 """
 struct UsageError <: Exception
     msg::String
@@ -47,7 +49,9 @@ Base.showerror(io::IO, e::UsageError) = print(io, e.msg)
 
 Parses `args` into an `Options` record. Any `--name=value` is a value whatever `valued` says; an option
 named in `valued` also consumes the following bare argument as its value; every other bare `--name` is a
-flag; a lone `--` ends option parsing. The arguments are:
+flag; a lone `--` ends option parsing.
+
+# Arguments
 
 - `args` — the command-line arguments to parse, in order.
 - `valued` — the names, without the dashes, of the options that take a value.

@@ -305,7 +305,9 @@ end
 """
     write_baseline(root, cfg; only = "") -> Int
 
-Writes the baseline from the prose as it stands and returns how many units it recorded. The arguments are:
+Writes the baseline from the prose as it stands and returns how many units it recorded.
+
+# Arguments
 
 - `root` — the package root.
 - `cfg` — the package's config.

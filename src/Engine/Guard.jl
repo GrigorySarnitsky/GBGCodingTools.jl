@@ -36,7 +36,9 @@ const JS = Base.JuliaSyntax
 """
     Ruling
 
-What the guard decided about one changed file, and why. The fields are:
+What the guard decided about one changed file, and why.
+
+# Fields
 
 - `path` — the file it is about.
 - `documentation` — whether the change may be committed by the documentation fixer.
@@ -99,7 +101,9 @@ end
 """
     math_changed(before, after; jl = false, literate = false) -> Vector{String}
 
-The mathematics this change adds, alters, removes or reorders. The arguments are:
+The mathematics this change adds, alters, removes or reorders.
+
+# Arguments
 
 - `before` and `after` — the file's text on each side.
 - `jl` — whether it is a Julia file, whose mathematics is read in its docstrings, never in its code.
@@ -208,7 +212,9 @@ rationale(cfg::Model.Config, p) =
     classify(cfg, path, before, after; generated = nothing) -> Ruling
 
 What one changed file is: documentation, which the documentation fixer may commit, or code, which waits
-for the owner. The arguments are:
+for the owner.
+
+# Arguments
 
 - `cfg` — the package's config, which names the rationale documents, the declared copies and the
   normative documents.
@@ -267,7 +273,9 @@ end
 """
     regions(src; literate = false, rule_prose = false) -> Union{NamedTuple,Nothing}
 
-A Julia file split into what the documentation fixer may change and everything else. The arguments are:
+A Julia file split into what the documentation fixer may change and everything else.
+
+# Arguments
 
 - `src` — the file's content.
 - `literate` — whether it is a Literate example, whose comments are Markdown and decide what runs.
@@ -467,7 +475,9 @@ end
     texts_of(src; literate = false) -> Union{Vector{String},Nothing}
 
 The prose of a Julia file: the value of every docstring the fixer may edit, and, in a Literate example,
-each run of comment lines. The arguments are:
+each run of comment lines.
+
+# Arguments
 
 - `src` — the file's content.
 - `literate` — whether it is a Literate example.
