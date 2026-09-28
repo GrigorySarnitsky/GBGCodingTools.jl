@@ -15,7 +15,7 @@ using ...Model
 
 const CONSENT = Model.Rule(
     id = Symbol("RULE.INST.CONSENT"),
-    statement = "Unasked, run only Pkg.test(); every instrument, survey, benchmark and panel runs only on the user's request, in words or by slash.",
+    statement = "Unasked, run only Pkg.test(), and before every push the docs build, which the push hook runs; every instrument, survey, benchmark and panel runs only on the user's request, in words or by slash.",
     why = "The correct output when one would be informative is to name it and its cost and wait. This is a consent boundary, not licence to leave work unfinished: finish the code, run the gate, and report what remains unverified and why. \"Check the docs\" is such a request: it means run `/check-docs`.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.CODE],

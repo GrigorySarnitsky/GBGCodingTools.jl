@@ -4,6 +4,22 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.40 — 2026-09-29
+
+MINOR, two changes the owner asked for on 2026-09-29:
+
+- **Every push does the docs build.** `gbg sync` installs a push hook, `.claude/hooks/push-gate.sh`,
+  as a `PreToolUse` hook in `.claude/settings.json`, beside the package's own hooks. Before a session's
+  `git push` it runs the package's docs build and stops the push when the build fails, listing every
+  finding. `RULE.INST.CONSENT` and the managed block of `CLAUDE.md` say so. A session ran only
+  `Pkg.test()` before pushing, and GBGPeriodicFields pushed a broken cross-reference sixteen times.
+  A wired package gains one generated path: 19, not 18.
+- **`RULE.GIT.LOCAL_PATH`:** no committed environment file, a `Project.toml`'s `[sources]` or a
+  `Manifest.toml`, names a path outside the repository. It is the one failure of a fresh clone on this
+  machine that a runner meets and a local run does not. Measured: no package breaks it today, and it
+  reports both paths of the GBGPeriodicFields commit whose docs build failed that way on 2026-09-18.
+  The rulebook is 93 rules.
+
 ## 2.0.0-rc.39 — 2026-09-29
 
 PATCH, **the proper fix for Julia 1.13**, replacing rc.33's patch over two of Julia's internals:

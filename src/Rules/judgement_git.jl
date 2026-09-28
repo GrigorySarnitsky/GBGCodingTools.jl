@@ -14,6 +14,7 @@ module JudgementGit
 
 using ...Model
 using ...Texts
+import TOML
 
 # ─────────────────────────────────────────────────────────────── the three the files decide
 
@@ -367,11 +368,83 @@ const NO_SHIMS = Model.Rule(
     unchecked_reason = "an instruction to the session: what counts as a shim is judgement; followed while working, checked by nothing")
 
 """
+    local_paths(root, cfg) -> Vector{Model.Location}
+
+Every path outside the repository that a committed environment file names: a `path` source in a
+`Project.toml`'s `[sources]`, or a `path` entry in a `Manifest.toml`. The arguments are `root`, the package
+root, and `cfg`, its config. Returns one location per path.
+
+The environments read are the root and every one at most two directories deep, as for
+`RULE.GIT.MANIFEST_TRACKED`; a file the ignore rules hold is local and skipped, since it is never
+committed. An absolute path is reported wherever it points, because it names this machine's layout; a
+relative one is reported when it leads out of the repository.
+"""
+function local_paths(root::AbstractString, cfg::Model.Config)
+    out = Model.Location[]
+    skip = Texts.ignored(root)
+    envs = [""]
+    for d in sort(readdir(root))
+        p = joinpath(root, d)
+        (isdir(p) && !startswith(d, ".")) || continue
+        isfile(joinpath(p, "Project.toml")) && push!(envs, d)
+        for e in sort(readdir(p))
+            q = joinpath(p, e)
+            isdir(q) && !startswith(e, ".") && isfile(joinpath(q, "Project.toml")) && push!(envs, d * "/" * e)
+        end
+    end
+    home = rstrip(normpath(abspath(root)), '/')
+    outside(env, s) = isabspath(s) ||
+        !startswith(rstrip(normpath(joinpath(home, env, s)), '/') * "/", home * "/")
+    for env in envs, name in ("Project.toml", "Manifest.toml")
+        rel = isempty(env) ? name : env * "/" * name
+        file = joinpath(root, rel)
+        (isfile(file) && !skip(rel)) || continue
+        doc = try TOML.parsefile(file) catch; continue end
+        paths = String[]
+        if name == "Project.toml"
+            for (_, src) in get(doc, "sources", Dict{String,Any}())
+                src isa AbstractDict && haskey(src, "path") && push!(paths, String(src["path"]))
+            end
+        else
+            for (_, entries) in get(doc, "deps", Dict{String,Any}()), e in entries
+                e isa AbstractDict && haskey(e, "path") && push!(paths, String(e["path"]))
+            end
+        end
+        lines = split(read(file, String), '\n')
+        for s in unique(paths)
+            outside(env, s) || continue
+            n = something(findfirst(l -> occursin(s, l), lines), 0)
+            push!(out, Model.Location(; file = rel, line = n,
+                text = "names the path `$s`, outside the repository: a clone or a runner cannot resolve it"))
+        end
+    end
+    return out
+end
+
+const LOCAL_PATH = Model.Rule(
+    id = Symbol("RULE.GIT.LOCAL_PATH"),
+    statement = "No committed environment file, a `Project.toml`'s `[sources]` or a `Manifest.toml`, names a path outside the repository.",
+    why = "A path outside the repository exists on the machine that wrote it and nowhere else: GBGPeriodicFields committed docs and test projects whose `[sources]` named this package's Dropbox checkout, and its docs build failed on the runner while every local run passed (2026-09-18).",
+    intention = Model.Intention.CODE,
+    filesets = [Model.FileSet.CODE],
+    check = Model.ProgramCheck(Model.Input.FILE_TREE, local_paths, false),
+    examples = [
+        Model.TreeExample(["docs/Project.toml" => "[deps]\n\n[sources]\nX = {path = \"/home/someone/X\"}\n"],
+                          [Model.Location(; file = "docs/Project.toml", line = 4)], "names a path outside the repository"),
+        Model.TreeExample(["docs/Project.toml" => "[deps]\n\n[sources]\nX = {path = \"..\"}\n"],
+                          Model.Location[], "names a path outside the repository"),
+        Model.TreeExample(["docs/Manifest.toml" => "[[deps.X]]\npath = \"../../elsewhere/X\"\nuuid = \"1\"\n", "docs/Project.toml" => "[deps]\n"],
+                          [Model.Location(; file = "docs/Manifest.toml", line = 2)], "names a path outside the repository"),
+        Model.TreeExample([".gitignore" => "docs/Manifest.toml\n", "docs/Manifest.toml" => "[[deps.X]]\npath = \"/home/someone/X\"\nuuid = \"1\"\n", "docs/Project.toml" => "[deps]\n"],
+                          Model.Location[], "names a path outside the repository"),
+    ])
+
+"""
     RULES
 
 The rules of this family: three programs over the files, three programs in the end-of-turn hook, one
 instruction.
 """
-const RULES = Model.Rule[CI_MANUAL, MANIFEST_TRACKED, REQUESTS, BRANCH, PUSH, TRAILER_RULE, NO_SHIMS]
+const RULES = Model.Rule[CI_MANUAL, MANIFEST_TRACKED, LOCAL_PATH, REQUESTS, BRANCH, PUSH, TRAILER_RULE, NO_SHIMS]
 
 end # module JudgementGit

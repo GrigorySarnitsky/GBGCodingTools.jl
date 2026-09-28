@@ -5,7 +5,8 @@ The rulebook above is the whole of it: the rules, the terms they use, and what G
 switched off with its reason. Nothing restates a rule outside it — a rule quoted in two files is a
 rule that will be reworded in one.
 
-Unasked, run `Pkg.test()` and nothing else. What a rule finds is reported, never fixed silently:
+Unasked, run `Pkg.test()` and nothing else; before every push the docs build runs too, through the
+push hook, and a failing build stops the push. What a rule finds is reported, never fixed silently:
 documentation may be fixed without asking, and anything else waits for an answer.
 
 The readers of a review are derived from the rules and the tool's catalogue of disciplines. A

@@ -223,6 +223,55 @@ The ids of the rules the end-of-turn hook checks, in rulebook order. Returns the
 hook_rule_ids() = [String(r.id) for r in Catalogue.RULES if !isempty(r.hook)]
 
 """
+    push_gate(cfg) -> String
+
+The push hook: the script that runs the package's docs build before every push a session makes, and
+stops the push when the build fails. The argument is `cfg`, the package's config, whose `docs_build` is the
+command it runs, the standard one where it is empty. Returns the script.
+
+Claude Code runs it before every shell command, with the call on standard input; a command that is not a
+push passes at once. The owner ruled on 2026-09-29 that every push does the docs build: until then a
+session ran only `Pkg.test()` before pushing, and one package pushed a broken cross-reference sixteen
+times, each one a docs run that failed on GitHub and a mail to the owner.
+"""
+function push_gate(cfg::Model.Config)
+    # An empty setting is the build every wiring seeds, as `Scope` reads it too.
+    cmd = isempty(cfg.docs_build) ? ["julia", "--project=docs", "docs/make.jl"] : cfg.docs_build
+    build = join((shell_quote(a) for a in cmd), " ")
+    return """
+    #!/usr/bin/env bash
+    # PUSH HOOK — the docs build runs before every push, and a build that fails stops the push.
+    # Written by GBGCodingTools $(version_tag(cfg)); do not edit.
+    #
+    # CONTRACT. Claude Code runs this before every shell command (PreToolUse), with the call as JSON on
+    # standard input. A command that pushes runs the package's docs build first, in the package root; exit
+    # 2 stops the push and hands stderr back as the reason, exit 0 lets it through.
+    #
+    # WHY. The owner's ruling of 2026-09-29: every push does the docs build. A session ran only
+    # `Pkg.test()` before pushing, so a broken cross-reference reached GitHub sixteen times in one package.
+    set -uo pipefail
+    payload=\$(cat)
+    printf '%s' "\$payload" | grep -qE 'git([[:space:]]+-C[[:space:]]+[^[:space:]]+)?[[:space:]]+push([^[:alnum:]_-]|\$)' || exit 0
+    cd "\${CLAUDE_PROJECT_DIR:-.}" || exit 0
+    log=\$(mktemp)
+    if $build >"\$log" 2>&1; then
+      rm -f "\$log"
+      exit 0
+    fi
+    {
+      echo "PUSH STOPPED: the docs build failed, and every push does the docs build (the owner, 2026-09-29)."
+      echo "What it reported, every finding and error line:"
+      grep -E '^  (RULE\\.|WIRING|CONFIG)|ERROR|Error' "\$log"
+      echo "The whole output: \$log"
+    } >&2
+    exit 2
+    """
+end
+
+# A word as a POSIX shell reads it literally: every consumer path holds spaces.
+shell_quote(s::AbstractString) = occursin(r"^[A-Za-z0-9_./=+-]+$", s) ? String(s) : "'" * replace(String(s), "'" => "'\\''") * "'"
+
+"""
     remedy(l) -> String
 
 What fixes one wiring finding: `gbg sync` for a path this package writes, and an edit by the package for
@@ -243,10 +292,20 @@ hook. It is matched literally, so a package may hold any number of other hooks b
 const HOOK_COMMAND = "\"\$CLAUDE_PROJECT_DIR\"/.claude/hooks/queue-guard.sh"
 
 """
+    PUSH_COMMAND
+
+The line `.claude/settings.json` carries for the push hook, run before every shell command: see
+[`push_gate`](@ref). A docs build takes minutes, so its entry allows an hour, far past Claude Code's
+default of a minute, which would end the build and let the push through.
+"""
+const PUSH_COMMAND = "\"\$CLAUDE_PROJECT_DIR\"/.claude/hooks/push-gate.sh"
+const PUSH_TIMEOUT = 3600
+
+"""
     settings_drift(root) -> Union{String,Nothing}
 
-What `.claude/settings.json` gets wrong about the end-of-turn hook in the package at `root`, or
-`nothing` where it installs it. The argument is `root`, the package root. Returns the fault, in words.
+What `.claude/settings.json` gets wrong about this package's two hooks in the package at `root`, or
+`nothing`. The argument is `root`, the package root. Returns the fault, in words.
 
 Only this package's own Stop hook is looked for. The file is the PACKAGE's — it may hold its own hooks,
 its own permissions and its own settings — so a whole-file comparison would report every one of them as
@@ -267,19 +326,26 @@ function settings_drift(root::AbstractString)
     ours = [get(h, "command", "") for entry in get(get(doc, "hooks", Dict{String,Any}()), "Stop", Any[])
             for h in get(entry, "hooks", Any[]) if runs_hook(get(h, "command", ""))]
     isempty(ours) && return "no Stop hook runs .claude/hooks/queue-guard.sh"
-    ours == [HOOK_COMMAND] && return nothing
-    return "the Stop hook running .claude/hooks/queue-guard.sh is not written once, as `gbg sync` writes it"
+    ours == [HOOK_COMMAND] || return "the Stop hook running .claude/hooks/queue-guard.sh is not written once, as `gbg sync` writes it"
+    push = [(entry, h) for entry in get(get(doc, "hooks", Dict{String,Any}()), "PreToolUse", Any[])
+            for h in get(entry, "hooks", Any[]) if runs_push(get(h, "command", ""))]
+    isempty(push) && return "no PreToolUse hook runs .claude/hooks/push-gate.sh"
+    length(push) == 1 && get(first(push)[1], "matcher", "") == "Bash" &&
+        get(first(push)[2], "command", "") == PUSH_COMMAND && get(first(push)[2], "timeout", 0) == PUSH_TIMEOUT &&
+        return nothing
+    return "the PreToolUse hook running .claude/hooks/push-gate.sh is not written once, as `gbg sync` writes it"
 end
 
 # Whether a hook command runs this package's hook, whatever its quoting: the entry's spelling changed
 # once already, and a merge matching one literal spelling kept the old entry and added the new one.
 runs_hook(command) = command isa AbstractString && occursin(r"(^|[/\"'\s])queue-guard\.sh$", rstrip(command, ['"', '\'', ' ']))
+runs_push(command) = command isa AbstractString && occursin(r"(^|[/\"'\s])push-gate\.sh$", rstrip(command, ['"', '\'', ' ']))
 
 """
     write_settings(root) -> Bool
 
-Installs this package's Stop hook in `.claude/settings.json` in the package at `root`, keeping every
-other hook and setting the file holds. The argument is `root`, the package root. Returns whether it
+Installs this package's two hooks in `.claude/settings.json` in the package at `root`, keeping every
+other hook and setting. The argument is `root`, the package root. Returns whether it
 changed.
 
 Every entry running the hook, in whatever spelling, is replaced by the one entry written here; the rest
@@ -305,6 +371,13 @@ function write_settings(root::AbstractString)
     end
     filter!(entry -> !(entry isa AbstractDict && haskey(entry, "hooks") && isempty(entry["hooks"])), stops)
     push!(stops, Dict("hooks" => [Dict("type" => "command", "command" => HOOK_COMMAND)]))
+    pres = get!(hooks, "PreToolUse", Any[])
+    for entry in pres
+        entry isa AbstractDict && haskey(entry, "hooks") && filter!(h -> !runs_push(get(h, "command", "")), entry["hooks"])
+    end
+    filter!(entry -> !(entry isa AbstractDict && haskey(entry, "hooks") && isempty(entry["hooks"])), pres)
+    push!(pres, Dict("matcher" => "Bash",
+                     "hooks" => [Dict("type" => "command", "command" => PUSH_COMMAND, "timeout" => PUSH_TIMEOUT)]))
     mkpath(dirname(path))
     open(path, "w") do io; JSON3.pretty(io, JSON3.write(doc)); println(io); end
     return true
@@ -729,7 +802,8 @@ function claude_block(cfg::Model.Config)
     switched off with its reason. Nothing restates a rule outside it — a rule quoted in two files is a
     rule that will be reworded in one.
 
-    Unasked, run `Pkg.test()` and nothing else. What a rule finds is reported, never fixed silently:
+    Unasked, run `Pkg.test()` and nothing else; before every push the docs build runs too, through the
+    push hook, and a failing build stops the push. What a rule finds is reported, never fixed silently:
     documentation may be fixed without asking, and anything else waits for an answer.
 
     The readers of a review are derived from the rules and the tool's catalogue of disciplines. A
@@ -1198,6 +1272,7 @@ instrument of the catalogue — so the wiring check holds exactly what is genera
 const GENERATED = [
     (path = ".gitignore",                  part = Model.Part.BLOCK,        generator = :gitignore),
     (path = ".claude/hooks/queue-guard.sh", part = Model.Part.WHOLE,       generator = :hook),
+    (path = ".claude/hooks/push-gate.sh",  part = Model.Part.WHOLE,        generator = :push_gate),
     (path = "test/regressions/README.md",  part = Model.Part.WHOLE,        generator = :regressions_note),
     (path = "CLAUDE.md",                   part = Model.Part.BLOCK,        generator = :claude_block),
     (path = CI_ACTION,                     part = Model.Part.WHOLE,        generator = :ci),
@@ -1218,6 +1293,7 @@ and `cfg`, the package's config. Returns the content.
 function produce(name::Symbol, cfg::Model.Config)
     name === :gitignore && return gitignore(cfg)
     name === :hook && return hook(cfg)
+    name === :push_gate && return push_gate(cfg)
     name === :regressions_note && return regressions_note(cfg)
     name === :policy_index && return policy_index(cfg)
     name === :glossary && return glossary(cfg)
@@ -1558,7 +1634,7 @@ function wiring(cfg::Model.Config, root::AbstractString)
         if have != want
             push!(out, Model.Location(; file = g.path, line = first_difference(have, want),
                                        text = "this file is not what `gbg sync` writes now"))
-        elseif g.generator === :hook && !Sys.isexecutable(full)
+        elseif g.generator in (:hook, :push_gate) && !Sys.isexecutable(full)
             # the mode is part of the file: a hook Claude Code cannot exec guards nothing
             push!(out, Model.Location(; file = g.path, text = "the hook is not executable"))
         end
@@ -1618,14 +1694,14 @@ function write_all(cfg::Model.Config, root::AbstractString)
             generated_here(have) || (push!(refused, g.path => opening_line(have)); continue)
             if have == want
                 # the content is right; the mode may not be, and the hook's mode is part of it
-                (g.generator === :hook && !Sys.isexecutable(full)) || continue
+                (g.generator in (:hook, :push_gate) && !Sys.isexecutable(full)) || continue
             else
                 write(full, want)
             end
         else
             write(full, want)
         end
-        g.generator === :hook && chmod(full, 0o755)
+        g.generator in (:hook, :push_gate) && chmod(full, 0o755)
         push!(changed, g.path)
     end
     write_settings(root) && push!(changed, ".claude/settings.json")

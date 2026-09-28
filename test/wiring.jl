@@ -487,6 +487,46 @@ end
         @test_throws G.ConfigIO.ConfigError RN.write_settings(dir)
     end
 
+    # Every push does the docs build (the owner, 2026-09-29): the push hook is installed once beside the
+    # package's own hooks, lets a command that does not push through, and stops a push whose build fails.
+    @testset "the push hook runs the docs build before a push, and a failing build stops it" begin
+        dir, cfg = wired_package()
+        path = joinpath(dir, ".claude", "settings.json")
+        @test RN.settings_drift(dir) === nothing
+        doc = JSON3.read(read(path, String), Dict{String,Any})
+        pre = only(doc["hooks"]["PreToolUse"])
+        @test pre["matcher"] == "Bash" && only(pre["hooks"])["command"] == RN.PUSH_COMMAND
+        @test only(pre["hooks"])["timeout"] == RN.PUSH_TIMEOUT
+        # the package's own PreToolUse hook stays, and a missing push hook is drift that sync restores
+        doc["hooks"]["PreToolUse"] = [Dict("matcher" => "Edit", "hooks" => [Dict("type" => "command", "command" => "echo mine")])]
+        write(path, JSON3.write(doc))
+        @test occursin("push-gate.sh", RN.settings_drift(dir))
+        @test RN.write_settings(dir) && RN.settings_drift(dir) === nothing
+        cmds = [h["command"] for e in JSON3.read(read(path, String), Dict{String,Any})["hooks"]["PreToolUse"] for h in e["hooks"]]
+        @test "echo mine" in cmds && count(==(RN.PUSH_COMMAND), cmds) == 1
+        # the script itself, over a build that passes and one that fails
+        julia = joinpath(Sys.BINDIR, "julia")
+        quick = G.Model.Config(package = cfg.package, tool = :dev, docs_build = [julia, "--startup-file=no", "docs/make.jl"])
+        script = joinpath(dir, ".claude", "hooks", "push-gate.sh")
+        write(script, RN.push_gate(quick)); chmod(script, 0o755)
+        mkpath(joinpath(dir, "docs"))
+        gate(command) = begin
+            payload = JSON3.write(Dict("tool_name" => "Bash", "tool_input" => Dict("command" => command)))
+            err = IOBuffer()
+            p = run(pipeline(setenv(`$script`, "CLAUDE_PROJECT_DIR" => dir, "PATH" => ENV["PATH"]);
+                             stdin = IOBuffer(payload), stdout = devnull, stderr = err); wait = false)
+            wait(p)
+            (p.exitcode, String(take!(err)))
+        end
+        write(joinpath(dir, "docs", "make.jl"), "error(\"the build failed\")\n")
+        @test gate("git status --short")[1] == 0                          # not a push: no build at all
+        code, msg = gate("git push -q origin master")
+        @test code == 2 && occursin("PUSH STOPPED", msg) && occursin("the build failed", msg)
+        @test gate("git -C \"$dir\" push")[1] == 2
+        write(joinpath(dir, "docs", "make.jl"), "println(\"built\")\n")
+        @test gate("git push origin master")[1] == 0
+    end
+
     # A hook at mode 644 with the right content was neither restored nor reported, and Claude Code
     # cannot exec it.
     @testset "a hook that lost its execute bit is reported and restored" begin
