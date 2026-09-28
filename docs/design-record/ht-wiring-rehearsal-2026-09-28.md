@@ -134,7 +134,8 @@ tool:
 - **W-27.** RULE.DOC.ARGS_FORM tells a type that documents its fields under "The fields are" to bullet
   its arguments under `# Arguments`; the fix that clears it is the `# Fields` heading, which exempts
   the type, and the fix the message names would repeat the field list (six of PF's findings). · fate:
-  open (the message); `PF-WIRING.md` names the right fix
+  resolved in rc.37 — the owner ruled the exemption out (2026-09-28), so a type lists its arguments under
+  `# Arguments` and the message now names the fix the rule wants
 - **W-28.** RULE.DOC.ARGS_FORM's "under a sentence" branch runs before the argument count, so a
   docstring with fewer than three arguments and no keyword, bulleted under "The arguments are", would be
   told to add a heading where the statement asks for prose. It fires nowhere in PF or HT. · fate: open
