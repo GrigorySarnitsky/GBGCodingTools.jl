@@ -31,7 +31,8 @@ using ..Model
 using ..Texts
 using Markdown
 
-const JS = Base.JuliaSyntax
+using JuliaSyntax: JuliaSyntax
+const JS = JuliaSyntax   # the registered parser, pinned: its trees do not change when Julia does
 
 """
     Ruling

@@ -23,7 +23,8 @@ using ..Model
 using Gumbo: parsehtml, HTMLDocument, HTMLElement, HTMLText, children
 using AbstractTrees: PreOrderDFS
 
-const JS = Base.JuliaSyntax
+using JuliaSyntax: JuliaSyntax
+const JS = JuliaSyntax   # the registered parser, pinned: its trees do not change when Julia does
 
 # A directory that disappears while a walk is running is SKIPPED, not thrown over. Every walk here is
 # over a working tree, and a working tree has git in it: git packs and removes its own object
@@ -405,11 +406,11 @@ The name a macro call's head names, without its `@` and without a string macro's
 `@doc`, `"kwdef"` for `Base.@kwdef`, `"r"` for `r"…"`. The argument is `head`, the first child of a
 `macrocall` node. Returns the name, or `""` for a node that is not a macro's name.
 
-The parser is the one bundled with the Julia that runs, and Julia 1.13's shapes the head differently from
-1.12's: a `MacroName` leaf there is a `macro_name` node holding an `Identifier`, and `StringMacroName`
-is `StrMacroName`. Kinds are compared by NAME here, because naming one this Julia's parser does not have
-(`K"MacroName"` on 1.13) is an error when the package loads — which stopped every consumer's docs build
-on 1.13 (found by GBGPeriodicFields, 2026-09-28).
+The parser is the registered JuliaSyntax, pinned in `Project.toml`, so its trees do not change with
+the Julia that runs. Until 2026-09-29 it was the copy bundled with Julia, which 1.13 changed: a
+`MacroName` leaf became a `macro_name` node holding an `Identifier`, and naming a kind that parser lacked
+failed at load, which stopped every consumer's docs build on 1.13 (found by GBGPeriodicFields). Both
+shapes are still read, and kinds compared by name, so that moving the pin cannot fail at load.
 """
 function macro_name(head)
     k = string(JS.kind(head))

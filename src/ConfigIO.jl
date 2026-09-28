@@ -22,7 +22,8 @@ using ..Model
 using ..Texts
 using ..Catalogue
 
-const JS = Base.JuliaSyntax
+using JuliaSyntax: JuliaSyntax
+const JS = JuliaSyntax   # the registered parser, pinned: its trees do not change when Julia does
 
 """
     require_root(verb) -> Union{String,Nothing}

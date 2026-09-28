@@ -4,6 +4,24 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.39 — 2026-09-29
+
+PATCH, **the proper fix for Julia 1.13**, replacing rc.33's patch over two of Julia's internals:
+
+- **The parser is the registered JuliaSyntax, pinned at `~1.0.2`**, not the copy bundled with Julia.
+  The bundled copy is not public API and changed in 1.13, which broke the package's load; the pinned one
+  changes only when this package moves the pin. A new dependency, developer-side as every one of this
+  package's is.
+- **The witness runner counts through Test's documented interface.** A test set of its own
+  (`record`, `finish`, `get_test_counts`) keeps the counts and prints nothing, and the witness's own
+  test sets take its type, as Test's manual says. The undocumented print switch it replaced was a `Ref`
+  on 1.12 and a `ScopedValue` on 1.13.
+
+Measured: every rule's findings over this package and the four consumers on this machine, 1,259 lines,
+identical before and after on both Julias; the suite green on 1.12 and 1.13 in a fresh clone; PF's four
+regression files pass through the new runner on both; PF's test and docs environments resolve
+JuliaSyntax 1.0.2 on both.
+
 ## 2.0.0-rc.38 — 2026-09-29
 
 PATCH. **The test harness counts no compiler-generated function.** `TestHarness.all_package_functions`,

@@ -21,7 +21,8 @@ import ..GBGCodingTools: Texts
 
 export WitnessResult
 
-const JS = Base.JuliaSyntax
+using JuliaSyntax: JuliaSyntax
+const JS = JuliaSyntax   # the registered parser, pinned: its trees do not change when Julia does
 
 """
     WitnessResult
@@ -164,32 +165,38 @@ end
 const WRAPPER = raw"""
 using Test
 const __gbg_path = ARGS[1]
-__gbg_counts = nothing
-try
-    __gbg_run() = @testset "gbg witness" begin
+# A test set of the wrapper's own, through the interface Test documents (`record`, `finish`,
+# `get_test_counts`): it keeps counts and prints nothing, and every `@testset` inside the witness takes
+# its type, as Test's manual says nested sets do. The print switch this replaced is none of Test's API; it
+# was a Ref on 1.12 and a ScopedValue on 1.13, and the wrapper's assignment broke every witness there.
+mutable struct __GBGQuiet <: Test.AbstractTestSet
+    description::String
+    pass::Int; fail::Int; error::Int
+end
+__GBGQuiet(description::AbstractString; kwargs...) = __GBGQuiet(String(description), 0, 0, 0)
+Test.record(ts::__GBGQuiet, r::Test.Pass) = (ts.pass += 1; r)
+Test.record(ts::__GBGQuiet, r::Test.Fail) = (ts.fail += 1; r)
+Test.record(ts::__GBGQuiet, r::Test.Error) = (ts.error += 1; r)
+Test.record(ts::__GBGQuiet, r::Test.Broken) = r
+Test.record(ts::__GBGQuiet, child::__GBGQuiet) =
+    (ts.pass += child.pass; ts.fail += child.fail; ts.error += child.error; child)
+function Test.record(ts::__GBGQuiet, child::Test.AbstractTestSet)   # a set the witness typed itself
+    c = Test.get_test_counts(child)
+    ts.pass += c.passes + c.cumulative_passes; ts.fail += c.fails + c.cumulative_fails
+    ts.error += c.errors + c.cumulative_errors
+    return child
+end
+Test.finish(ts::__GBGQuiet) = (Test.get_testset_depth() > 0 && Test.record(Test.get_testset(), ts); ts)
+__gbg_ts = try
+    @testset __GBGQuiet "gbg witness" begin
         Base.include(Main, __gbg_path)
     end
-    # Test's print switch is a Ref on Julia 1.12 and a ScopedValue on 1.13, where assigning it is a
-    # MethodError and every witness read as broken (found checking 1.13, 2026-09-28)
-    __gbg_ts = Test.TESTSET_PRINT_ENABLE isa Base.RefValue ?
-        (Test.TESTSET_PRINT_ENABLE[] = false; __gbg_run()) :
-        Base.ScopedValues.with(__gbg_run, Test.TESTSET_PRINT_ENABLE => false)
-    global __gbg_counts = Test.get_test_counts(__gbg_ts)
 catch err
-    if err isa Test.TestSetException
-        println("GBG_WITNESS pass=", err.pass, " fail=", err.fail, " error=", err.error)
-        exit(1)
-    end
     println("GBG_WITNESS_EXCEPTION ", sprint(showerror, err))
     exit(3)
 end
-if __gbg_counts !== nothing
-    c = __gbg_counts
-    p = c isa Tuple ? c[1] : c.passes;  f = c isa Tuple ? c[2] : c.fails;  e = c isa Tuple ? c[3] : c.errors
-    cp = c isa Tuple ? c[5] : c.cumulative_passes; cf = c isa Tuple ? c[6] : c.cumulative_fails; ce = c isa Tuple ? c[7] : c.cumulative_errors
-    println("GBG_WITNESS pass=", p + cp, " fail=", f + cf, " error=", e + ce)
-    exit((f + cf + e + ce) == 0 ? 0 : 1)
-end
+println("GBG_WITNESS pass=", __gbg_ts.pass, " fail=", __gbg_ts.fail, " error=", __gbg_ts.error)
+exit(__gbg_ts.fail + __gbg_ts.error == 0 ? 0 : 1)
 """
 
 """
