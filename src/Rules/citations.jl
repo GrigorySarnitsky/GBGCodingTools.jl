@@ -59,11 +59,12 @@ cannot tell from prose.
 """
 function doi_on_title(text::AbstractString, cfg)
     out = Model.Location[]
-    for (i, line) in Texts.unwrapped(text)
+    for (i, line, breaks) in Texts.unwrapped(text)
         # In code ticks the form is NAMED, not used: this rule's own statement quotes it, and so does
         # every page that tells an author which form was retired.
-        for m in eachmatch(r"\[doi:[^\]]+\]", Texts.mask_code_spans(line))
-            push!(out, Model.Location(; file = "", line = i,
+        masked = Texts.mask_code_spans(line)
+        for m in eachmatch(r"\[doi:[^\]]+\]", masked)
+            push!(out, Model.Location(; file = "", line = Texts.line_at(i, breaks, masked, m.offset),
                 text = "the retired $(m.match) label form — put the DOI on the title, `[*Title*](https://doi.org/…)`"))
         end
         occursin(REFERENCE_LINE, line) || continue
@@ -108,6 +109,12 @@ const DOI = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe spectrum is [*Kolmogorov's*](https://doi.org/10.1098/rspa.1991.0075).\n",
             Model.Location[], "on its title"),
+        # Each label inside a parenthesis wrapped over lines is reported on its own line, not the first.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe bump is known (Qian, [doi:10.1063/1.864902](https://doi.org/10.1063/1.864902);\n" *
+            "Kraichnan, [doi:10.1017/S0022112059000362](https://doi.org/10.1017/S0022112059000362)).\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3), Model.Location(; file = "docs/src/page.md", line = 4)],
+            "on its title"),
     ])
 
 # ──────────────────────────────────────────────────────────── the full reference and its canonical entry
@@ -195,10 +202,24 @@ function full_inline(root::AbstractString, cfg)
                         text = "the title differs from the canonical entry for $doi: here $(join(split(title), " ")), there $(titles[doi])"))
                 end
             end
+            # The retired `[doi:…](…)` label is a full reference in the prose too: seen only by
+            # `RULE.CIT.DOI`, it met this rule in the round after that one was fixed (HT, 2026-09-28).
+            # Quoted in code ticks it is named, not used.
+            masked = Texts.mask_code_spans(body)
+            for m in eachmatch(LABEL_LINK, masked)
+                nth = 1 + count(==('\n'), masked[1:prevind(masked, m.offset)])
+                (at !== nothing && m.offset > first(at)) && continue
+                occursin(r"^\s*Reference:", split(masked, '\n')[nth]) && continue
+                push!(out, Model.Location(; file, line = opens + nth - 1, node = d.node,
+                    text = "a full reference in the prose: cite author–year here and put the work under this docstring's `# References` section"))
+            end
         end
     end
     return out
 end
+
+# A DOI linked on a `[doi:…]` label rather than on a title: the form `RULE.CIT.DOI` retires.
+const LABEL_LINK = r"\[doi:[^\]]+\]\(https?://(?:dx\.)?doi\.org/[^)\s]+\)"
 
 """
     sources(root, cfg) -> Vector{String}
@@ -250,6 +271,19 @@ const FULL_INLINE = Model.Rule(
              end
              """],
             Model.Location[], "cites author–year in its prose"),
+        Model.TreeExample(
+            ["docs/ARCHITECTURE.md" => "# Design\n\n" * REFERENCE_ENTRY,
+             "src/Example.jl" => """
+             module Example
+             \"\"\"
+                 mix(u)
+
+             The mixing length (Pope 2000, [doi:10.1017/CBO9780511840531](https://doi.org/10.1017/CBO9780511840531)).
+             \"\"\"
+             mix(u) = u
+             end
+             """],
+            [Model.Location(; file = "src/Example.jl", line = 5)], "cites author–year in its prose"),
         Model.TreeExample(
             ["docs/ARCHITECTURE.md" => "# Design\n\n" * REFERENCE_ENTRY,
              "src/Example.jl" => """
@@ -344,16 +378,18 @@ Returns one location per link, with what the resolver said.
 """
 function links_resolve(text::AbstractString, cfg)
     out = Model.Location[]
-    for (i, line) in Texts.unwrapped(text)
-        for m in eachmatch(RESOLVABLE_LINK, Texts.mask_math_spans(Texts.mask_code_spans(line)))
+    for (i, line, breaks) in Texts.unwrapped(text)
+        masked = Texts.mask_math_spans(Texts.mask_code_spans(line))
+        for m in eachmatch(RESOLVABLE_LINK, masked)
+            at = Texts.line_at(i, breaks, masked, m.offset)
             linked = strip(String(m.captures[1]), ['*', '_', ' '])
             url = String(m.captures[2])
             status, title = RESOLVER[](url)
             if status == 0 || status >= 400
-                push!(out, Model.Location(; file = "", line = i,
+                push!(out, Model.Location(; file = "", line = at,
                     text = url * " does not resolve" * (status == 0 ? " (nothing answered)" : " (HTTP $status)")))
             elseif !isempty(title) && !names_the_work(linked, title)
-                push!(out, Model.Location(; file = "", line = i,
+                push!(out, Model.Location(; file = "", line = at,
                     text = url * " resolves to \"" * title * "\", not to \"" * linked * "\""))
             end
         end

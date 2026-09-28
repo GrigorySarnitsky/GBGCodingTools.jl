@@ -128,16 +128,18 @@ Every signature line of a docstring wider than the house column. The arguments a
 source, and `cfg`, the package's config, which this rule does not read. Returns one location per line.
 
 The header block ends at the first line that is not indented, so only the signature itself is measured:
-a wide line there wraps in the rendered page and in every terminal that shows the docstring.
+a wide line there wraps in the rendered page and in every terminal that shows the docstring. It is
+measured as rendered, without the four spaces that make it a code block, which no reader sees.
 """
 function signature_width(src::AbstractString, cfg)
     out = Model.Location[]
     for d in Texts.docstrings_of(src)
         for (i, line) in pairs(split(d.text, '\n'))
             startswith(line, "    ") || break
-            length(line) > SIGNATURE_WIDTH &&
+            width = length(line) - 4
+            width > SIGNATURE_WIDTH &&
                 push!(out, Model.Location(; file = "", line = d.line + i, node = d.node,
-                                           text = "$(length(line)) columns: " * strip(String(line))))
+                                           text = "$width columns: " * strip(String(line))))
         end
     end
     return out
@@ -145,7 +147,7 @@ end
 
 const SIGNATURE_MIRROR = Model.Rule(
     id = Symbol("RULE.DOC.SIGNATURE_MIRROR"),
-    statement = "A docstring's signature block fits the house column and repeats only as much of the method as a reader needs.",
+    statement = "A docstring's signature block fits the house column of 88 characters, as rendered, and repeats only as much of the method as a reader needs.",
     why = "A signature wider than the column wraps in the rendered page and in every terminal that shows it.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],
@@ -157,6 +159,13 @@ const SIGNATURE_MIRROR = Model.Rule(
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(a)\n\nDoes a thing.\n\"\"\"\nf(x) = x\n",
             Model.Location[], "fits the house column"),
+        # 88 characters as rendered: the code block's four-space indent is not the reader's
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(" * "a"^85 * ")\n\nDoes a thing.\n\"\"\"\nf(x) = x\n",
+            Model.Location[], "of 88 characters, as rendered"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(" * "a"^86 * ")\n\nDoes a thing.\n\"\"\"\nf(x) = x\n",
+            [Model.Location(; file = "src/Example.jl", line = 2)], "of 88 characters, as rendered"),
     ])
 
 """
@@ -333,8 +342,10 @@ mention that links the site again where a bare name belongs. The arguments are `
 and `cfg`, the package's config, which names the package doing the mentioning; the sites are the
 fleet's, from [`SIBLING_SITES`](@ref). Returns one location per mention.
 
-A reader meeting a sibling's name for the first time needs to be able to reach it; meeting it a fourth
-time, linked again, learns only that the writer was not reading.
+A mention is the name as a reader SEES it: a link's destination — a URL, an `@ref` or `@extref`
+target — is read only to decide whether a visible mention links the site. Counted as mentions, the
+targets of HT's `@extref`s took the first-mention slot, so a correct link after them was reported as a
+re-link and a bare first mention after them was not reported at all (2026-09-28).
 """
 function sibling_link(text::AbstractString, cfg)
     out = Model.Location[]
@@ -351,9 +362,18 @@ function sibling_link(text::AbstractString, cfg)
         bare_site = rstrip(site, '/')
         link_re = Regex("\\[`?" * name * "(?:\\.jl)?`?\\]\\(\\Q" * bare_site * "\\E/?")
         home_re = Regex("\\[`?" * name * "(?:\\.jl)?`?\\]\\(\\Q" * bare_site * "\\E/?[\"')]")
-        seen = false
+        seen = false; fence = nothing
         for (n, raw) in pairs(lines)
-            o = findfirst(name_re, raw); o === nothing && continue
+            # A code listing is no mention either: `using GBGPeriodicFields` in one can carry no link, and
+            # read once the `@extref` targets stopped taking the slot, it became the first (HT, gpu.md).
+            f = Texts.fence_of(raw)
+            if fence === nothing
+                f === nothing || (fence = f; continue)
+            else
+                f !== nothing && f[1] == fence[1] && f[2] >= fence[2] && (fence = nothing)
+                continue
+            end
+            o = findfirst(name_re, visible_text(raw)); o === nothing && continue
             m = match(link_re, raw)
             linked = m !== nothing && m.offset <= first(o) <= m.offset + ncodeunits(m.match)
             if !seen
@@ -367,6 +387,26 @@ function sibling_link(text::AbstractString, cfg)
         end
     end
     return out
+end
+
+# The line with every link destination blanked to spaces, byte for byte, so an offset into it is an offset
+# into the line: the `(…)` of `[text](dest)`, balanced, and the target of a `[label]: dest` definition.
+function visible_text(line::AbstractString)
+    b = Vector{UInt8}(codeunits(line))
+    d = match(r"^\s*\[[^\]]+\]:\s*", line)
+    d === nothing || (b[ncodeunits(d.match)+1:end] .= UInt8(' '))
+    i = 1
+    while (k = findnext(codeunits("]("), b, i)) !== nothing
+        j = last(k) + 1; depth = 1
+        while j <= length(b)
+            b[j] == UInt8('(') && (depth += 1)
+            b[j] == UInt8(')') && (depth -= 1; depth == 0 && break)
+            j += 1
+        end
+        b[last(k)+1:min(j, length(b) + 1)-1] .= UInt8(' ')
+        i = j
+    end
+    return String(b)
 end
 
 const SIBLING_LINK = Model.Rule(
@@ -390,6 +430,17 @@ const SIBLING_LINK = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nAs [GBGCloudPhysics](https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/) does it.\n" *
             "And again, GBGCloudPhysics, bare.\n",
+            Model.Location[], "later mentions are bare"),
+        # a destination is not a mention: the bare name after an `@extref` target is the first one
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nSee [`f`](@extref GBGCloudPhysics GBGCloudPhysics.f).\nAs GBGCloudPhysics does it.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 4)], "the first mention links"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n```julia\nusing GBGCloudPhysics\n```\n\nAs [GBGCloudPhysics](https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/) does it.\n",
+            Model.Location[], "the first mention links"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nSee [the guide](https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/dev/guide/).\n" *
+            "As [GBGCloudPhysics](https://grigorysarnitsky.github.io/GBGCloudPhysics.jl/) does it.\n",
             Model.Location[], "later mentions are bare"),
     ])
 

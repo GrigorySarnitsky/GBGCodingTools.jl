@@ -455,6 +455,7 @@ unit,words,longest_paragraph,admonitions
 "Texts.jl :: heading_path(path, line) -> String",41,37,0
 "Texts.jl :: headings(path) -> Vector{NodeSpan}",80,47,0
 "Texts.jl :: ignored(root) -> Function",303,117,0
+"Texts.jl :: line_at(start, breaks, s, offset) -> Int",92,32,0
 "Texts.jl :: mask_code_spans(line) -> String",53,50,0
 "Texts.jl :: mask_math_spans(line) -> String",86,50,0
 "Texts.jl :: node_at(root, file, line) -> String",50,27,0
@@ -471,6 +472,7 @@ unit,words,longest_paragraph,admonitions
 "Texts.jl :: slots(text) -> Vector{String}",81,49,0
 "Texts.jl :: tagname(node) -> Symbol",32,29,0
 "Texts.jl :: text_of(node) -> String",23,20,0
+"Texts.jl :: unwrapped(text) -> Vector{Tuple{Int,String,Vector{Int}}}",217,98,0
 "Texts.jl :: unwrapped(text) -> Vector{Tuple{Int,String}}",207,98,0
 "Texts.jl :: wrapped_lines(text) -> Vector{Tuple{Int,String}}",124,72,0
 "Texts.md § Texts",32,22,1
@@ -581,8 +583,8 @@ unit,words,longest_paragraph,admonitions
 "pages.jl :: crammed_citation(src, cfg) -> Vector{Model.Location}",71,40,0
 "pages.jl :: dead_reference(text, cfg) -> Vector{Model.Location}",70,37,0
 "pages.jl :: retired_claims(text, cfg) -> Vector{Model.Location}",126,55,0
-"pages.jl :: sibling_link(text, cfg) -> Vector{Model.Location}",97,61,0
-"pages.jl :: signature_width(src, cfg) -> Vector{Model.Location}",74,36,0
+"pages.jl :: sibling_link(text, cfg) -> Vector{Model.Location}",133,68,0
+"pages.jl :: signature_width(src, cfg) -> Vector{Model.Location}",93,55,0
 "questions.jl :: CONTEXT_WORDS",20,19,0
 "questions.jl :: DECISION_WORDS",22,21,0
 "questions.jl :: HOUSE_TERMS",41,40,0
@@ -593,7 +595,7 @@ unit,words,longest_paragraph,admonitions
 "questions.jl :: short(q, cfg) -> Vector{Model.Location}",76,39,0
 "reflection.jl :: RULES",6,5,0
 "reflection.jl :: Rules.Reflection",83,45,0
-"reflection.jl :: argcov(src, cfg) -> Vector{Model.Location}",119,80,0
+"reflection.jl :: argcov(src, cfg) -> Vector{Model.Location}",151,112,0
 "reflection.jl :: dupref(src, cfg) -> Vector{Model.Location}",66,34,0
 "reflection.jl :: exported_names(src) -> Set{String}",18,15,0
 "reflection.jl :: id_resolves(text, cfg) -> Vector{Model.Location}",67,38,0

@@ -538,3 +538,14 @@ end
     end
     @test occursin("\ndocs/src/gbg.md\n", RN.gitignore(G.Model.Config(package = "P", tool = :dev)))
 end
+
+# Found wiring GBGHomogeneousTurbulence (2026-09-28): `gbg check`'s summary counted a build script that
+# does not call in as a "generated path adrift", which it is not and which `gbg sync` does not repair.
+@testset "gbg check's summary does not call the package's own files generated" begin
+    dir, cfg = wired_package()
+    mkpath(joinpath(dir, "docs"))
+    write(joinpath(dir, "docs", "make.jl"), "using Documenter\nmakedocs()\n")
+    out = sprint(io -> G.Check.run(dir; intention = MW.Intention.CODE, io))
+    @test !occursin("generated path(s) adrift", out)
+    @test occursin("1 wiring finding(s) (0 for `gbg sync`, 1 in the package's own files)", out)
+end

@@ -84,7 +84,11 @@ function run(root::AbstractString; intention = nothing, network::Bool = false, i
     for l in drift
         println(io, "  WIRING ", l.file, "  ", l.text, " — ", Render.remedy(l))
     end
-    println(io, "check: ", length(found), " finding(s), ", length(drift), " generated path(s) adrift.")
+    # A build script, a test entry point or a workflow is the package's own file, not a generated one:
+    # counting them as "generated path(s) adrift" sent a first wiring to `gbg sync` for them (HT, 2026-09-28).
+    adrift = count(l -> Render.remedy(l) == "run `gbg sync`", drift)
+    println(io, "check: ", length(found), " finding(s), ", length(drift), " wiring finding(s)",
+            isempty(drift) ? "" : " ($adrift for `gbg sync`, $(length(drift) - adrift) in the package's own files)", ".")
     return 1
 end
 

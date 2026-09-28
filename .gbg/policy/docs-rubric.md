@@ -264,7 +264,7 @@ A displayed signature is what a reader calls; one the method table has moved pas
 Covered by a program.
 
 ### RULE.DOC.SIGNATURE_MIRROR
-A docstring's signature block fits the house column and repeats only as much of the method as a reader needs.
+A docstring's signature block fits the house column of 88 characters, as rendered, and repeats only as much of the method as a reader needs.
 
 A signature wider than the column wraps in the rendered page and in every terminal that shows it.
 

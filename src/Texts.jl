@@ -166,11 +166,11 @@ function expand(root::AbstractString, pattern::AbstractString)
 end
 
 """
-    unwrapped(text) -> Vector{Tuple{Int,String}}
+    unwrapped(text) -> Vector{Tuple{Int,String,Vector{Int}}}
 
 The text as logical lines, each with the number of the line it starts on: a line whose brackets do not
 close absorbs the lines after it until they do. The argument is `text`, the text to read. Returns the
-pairs, in order.
+triples, in order; the third is where each absorbed line begins, for [`line_at`](@ref).
 
 Prose is hard-wrapped, and almost nothing in a docstring can be assumed to fit one line. A citation
 whose title crosses a wrap reads, line by line, as `[*Computer Simulation Using` — an opening bracket
@@ -186,23 +186,46 @@ of a half-open interval written ``[a, b)`` has no `]` and never will. Without ei
 reported a correct DOI as resolving to the wrong title.
 """
 function unwrapped(text::AbstractString)
-    out = Tuple{Int,String}[]
-    current = ""; start = 0
+    out = Tuple{Int,String,Vector{Int}}[]
+    current = ""; start = 0; breaks = Int[]
     for (i, raw) in pairs(split(text, '\n'))
         line = String(raw)
         if isempty(strip(line))
-            isempty(current) || (push!(out, (start, current)); current = "")
+            isempty(current) || (push!(out, (start, current, breaks)); current = "")
             continue
         end
-        isempty(current) ? (current = line; start = i) : (current *= " " * strip(line))
+        if isempty(current)
+            current = line; start = i; breaks = Int[]
+        else
+            current *= " "; push!(breaks, length(current) + 1); current *= strip(line)
+        end
         seen = mask_math_spans(mask_code_spans(current))
         balanced = count(==('['), seen) == count(==(']'), seen) &&
                    count(==('('), seen) == count(==(')'), seen)
-        balanced && (push!(out, (start, current)); current = "")
+        balanced && (push!(out, (start, current, breaks)); current = "")
     end
-    isempty(current) || push!(out, (start, current))
+    isempty(current) || push!(out, (start, current, breaks))
     return out
 end
+
+"""
+    line_at(start, breaks, s, offset) -> Int
+
+The line of the text that byte `offset` of a logical line from [`unwrapped`](@ref) came from. The
+arguments are:
+
+- `start`, `breaks` — the first and third of that function's triple.
+- `s` — the logical line, or any masking of it that keeps its length in characters.
+- `offset` — the byte of `s` asked about.
+
+Returns the line number.
+
+A finding inside a joined run was reported at the run's first line, so three DOIs on three lines all
+pointed at the first (found verifying the findings on
+[GBGHomogeneousTurbulence](https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/), 2026-09-28).
+"""
+line_at(start::Integer, breaks::AbstractVector{<:Integer}, s::AbstractString, offset::Integer) =
+    start + count(<=(length(s, 1, offset)), breaks)
 
 """
     wrapped_lines(text) -> Vector{Tuple{Int,String}}
