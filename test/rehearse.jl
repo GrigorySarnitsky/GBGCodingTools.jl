@@ -2228,6 +2228,20 @@ end
     end
 end
 
+# On a first wiring no manifest holds the tool, and the update bump printed failed in both of
+# GBGHomogeneousTurbulence's environments: "expected package `GBGCodingTools` to be registered" (2026-09-28).
+@testset "bump prints the command that moves each environment as it stands" begin
+    root = mktempdir(; cleanup = true)
+    for env in ("docs", "test"); mkpath(joinpath(root, env)); write(joinpath(root, env, "Project.toml"), "[deps]\n"); end
+    @test occursin("Pkg.resolve()", G.Bump.move_command(root, "docs"))          # no manifest
+    @test G.Bump.move_command(root, "test") == ""                               # Pkg.test resolves it
+    write(joinpath(root, "docs", "Manifest.toml"), "[[deps.Documenter]]\nuuid = \"x\"\n")
+    @test occursin("Pkg.resolve()", G.Bump.move_command(root, "docs"))          # a manifest without the tool
+    write(joinpath(root, "test", "Manifest.toml"), "[[deps.GBGCodingTools]]\nuuid = \"x\"\n")
+    @test occursin("Pkg.update(\"GBGCodingTools\")", G.Bump.move_command(root, "test"))  # the old hash exists
+    @test G.Bump.move_command(root, "nowhere") == ""
+end
+
 # A finding whose fix only the owner may make — the config, code, a formula — could not be committed or
 # verified, cost a verifier every pass, and reached him only at close. `gbg run park` hands it to him at
 # the fix stage, through the same question a verifier's code verdict puts (ruled 2026-09-24).

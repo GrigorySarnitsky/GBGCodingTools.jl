@@ -1,7 +1,8 @@
 # Rehearsing GBGHomogeneousTurbulence's first wiring — the record (2026-09-28)
 
 HT (head `c016f95`) wired on a scratch clone, pushing disabled, at GBGCodingTools v2.0.0-rc.31 and again
-from a fresh clone at v2.0.0-rc.32. Every figure in `docs/HT-WIRING.md` comes from this rehearsal. What it
+from a fresh clone at v2.0.0-rc.32, and last from a fresh clone of head `8c7ab73` at v2.0.0-rc.34.
+Every figure in `docs/HT-WIRING.md` comes from this rehearsal. What it
 found in the TOOL is recorded here first, each with its fate, before any fix — the rule the owner set on
 2026-09-27 after the code review: a mistake found is written down with the check that catches it.
 
@@ -69,3 +70,61 @@ three verifiers: **110 true, 11 false, 50 unclear**. The per-line verdicts are i
   switch, a `ScopedValue` on 1.13. PF's docs deploy stopped at its first build on `version: '1'`. Nothing
   here ran on a Julia newer than the floor. · fate: fixed in rc.33 (version-proof macro-name reader, both
   Test forms, the newest Julia in CI; the whole suite green on 1.12.7 and 1.13.1)
+
+## Found writing `HT-WIRING.md` (2026-09-28)
+
+- **W-17.** RULE.DOC.SIBLING_LINK skips fenced code blocks but reads an indented code block in a Markdown
+  page as prose, so a package URL in an indented shell command took the first-mention slot. A plain
+  "four spaces is code" test would be wrong: PF's and HT's pages indent list continuations by four
+  spaces (e.g. HT `docs/src/decisions.md:92`), and those are prose the rule must read. · fate: open — telling
+  the two apart needs a Markdown parser's reading of list context; `HT-WIRING.md` uses fenced blocks
+- **W-18.** `gbg bump` closed by printing `Pkg.update("GBGCodingTools")` for `docs/` and `test/`. On a
+  first wiring no manifest holds the tool, and both failed: "expected package `GBGCodingTools
+  [3aee1de0]` to be registered". HT's test environment cannot be resolved alone at all, since it names
+  the unregistered GBGPeriodicFields and only the root environment says where to find it. `HT-WIRING.md`
+  said to run the printed commands, and nothing had run them. · fate: fixed in the commit after rc.34
+  (`Bump.move_command` prints an update where a manifest holds the tool, a resolve where none does,
+  and nothing for a test environment with no manifest; verified by re-running the rehearsal)
+- **W-19.** The first `HT-WIRING.md` said every figure was measured at rc.34 on one head; its reviewer
+  found 19 problems, among them figures from rc.31 and rc.32, a head HT had moved past, the wiring check
+  and the tests claimed clean after a sync no log showed, and bump's printed commands claimed run. ·
+  fate: the whole rehearsal re-run in one script at HT's head `8a0e279`, every step logged, and the
+  document rewritten from that run alone
+
+## Every rc.34 finding verified at HT's head `8a0e279` (2026-09-28)
+
+The 155 findings of the one-run rehearsal (153 from the build, 2 from the site) were each checked
+against the rule's statement by four verifiers: **150 true, 1 false, 4 unclear**. What they found in the
+tool:
+
+- **W-20.** RULE.DOC.SIGNATURE_FIDELITY strips a hat only as the combining circumflex, U+0302. HT's
+  `û` is the precomposed U+00FB, which Julia's normalised identifiers hold wherever one exists, so
+  `kinetic_energy(û)` over the method `kinetic_energy(u)` was reported. The one false finding. · fate:
+  fixed in the commit after rc.34 (the name is decomposed before the mark is stripped; an example with
+  `û` and `ω̂`, which fails on the old code; HT's finding goes, PF's count is unchanged at 0)
+- **W-21.** RULE.DOC.XLINK counted a name linked anywhere in a docstring as linked, while its statement
+  judges the first mention; a bare first mention with a later link was never reported (HT's
+  `StochasticOU`). · fate: fixed in the commit after rc.34 (the first mention decides; a breaking and a
+  complying example; HT gains 6 findings, each read and genuine; PF's count is unchanged at 0)
+- **W-22.** RULE.DOC.LINK_UNIFORMITY printed its names as `SubString{String}["…"]`. · fate: fixed in the
+  commit after rc.34
+- **W-23.** ARGS_FORM's "under a sentence" findings, FIELDS, XLINK and LINK_UNIFORMITY report the line
+  where the docstring opens, not the line of the defect; the finding names the docstring, so it can be
+  found, but not at its line. · fate: open — every docstring rule anchors so, and changing it is one
+  change across them all
+- **W-24.** RULE.DOC.XLINK resolves a name through the export table alone, so a field of a local type
+  that shares a name with another module's function is read as that function (`scalar_dissipation` in
+  HT's `Spectra.jl` and `StructureFunctions.jl`: the two unclear findings). · fate: open — whether
+  `fp.scalar_dissipation` mentions the function is a reading of the statement, the owner's
+- **W-25.** RULE.CIT.FULL_INLINE calls a bare "Author year, [doi:…](…)" a "full reference"; the verdict
+  holds, since the rule also requires the work under `# References`, but the message overstates. ·
+  fate: open (wording)
+- **W-26.** Fixing HT's ten Phenomenology citations as the messages say — the work under `# References`,
+  its DOI on the title — raises a second round the first does not announce: FULL_INLINE compares every
+  DOI there with the canonical reference list, which the Phenomenology leaf is exempt from by HT's own
+  design (`docs/ARCHITECTURE.md` 3087–3089) with no switch declaring it. The class of W-13. · fate:
+  announced in `HT-WIRING.md`; the switch or the list entries are the owner's
+- The other two unclear findings are readings of a statement: whether a field described inside another
+  field's bullet has its bullet (RULE.DOC.FIELDS, `Cache.jl`), and whether `kwargs...` is documented when
+  every keyword it collects is but the splat itself is never named (RULE.DOC.ARGCOV, `SimulationRun.jl`).
+  · fate: open, the owner's

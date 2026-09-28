@@ -4,6 +4,23 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.35 — 2026-09-28
+
+PATCH, four tool defects that rehearsing and verifying GBGHomogeneousTurbulence's first wiring found:
+
+- **`gbg bump` prints a command that works on a first wiring.** It printed `Pkg.update("GBGCodingTools")`
+  for both environments, which fails where no manifest holds the tool yet ("expected package to be
+  registered"). It now prints an update where a manifest holds the tool, a resolve where none does, and
+  nothing for a test environment with no manifest, which `Pkg.test()` resolves itself.
+- **RULE.DOC.SIGNATURE_FIDELITY strips a precomposed hat.** `û` (U+00FB, the spelling Julia's normalised
+  identifiers hold) was not read as `u`, so `f(û)` over the method `f(u)` was reported.
+- **RULE.DOC.XLINK judges the first mention, as its statement says.** A name linked anywhere in the
+  docstring counted as linked, so a bare first mention with a later link was never reported.
+- **RULE.DOC.LINK_UNIFORMITY's message** names the names, not `SubString{String}[…]`.
+
+Measured: GBGHomogeneousTurbulence loses 1 false finding and gains 6 genuine ones; GBGPeriodicFields'
+counts under the three rules are unchanged at 0.
+
 ## 2.0.0-rc.34 — 2026-09-28
 
 MINOR, three rulings of the owner's (2026-09-28), which change what a package's documentation must say:
@@ -17,7 +34,7 @@ MINOR, three rulings of the owner's (2026-09-28), which change what a package's 
   title an https link to the work's public record (NASA's technical-report server, an institute's page).
 
 Measured with the new rules: GBGPeriodicFields 54 argument lists and 25 field lists to convert;
-GBGHomogeneousTurbulence 41 and 4 (its 27 complete `# Fields` lists are no longer reported);
+GBGHomogeneousTurbulence 41 and 4 (its other 29 `# Fields` sections, of 33, pass);
 GBGStreamingStatistics 23 and 2; GBGCloudPhysics 61 and 27. This package's own 154 docstrings are
 converted.
 

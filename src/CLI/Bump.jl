@@ -75,20 +75,22 @@ function bump(root::AbstractString, version::VersionNumber; io::IO = stdout)
         println(io, "bump: these paths are the package's own, not a generator's, and were not written over:")
         for (p, line) in refused; println(io, "  ", p, "\n      it begins: ", first(line, 70)); end
     end
-    stale_warning(io, version, pkgversion(GBGCodingTools))
+    stale_warning(io, version, pkgversion(GBGCodingTools), root)
     return isempty(refused) ? 0 : 1
 end
 
 """
-    stale_warning(io, version, pkgversion(GBGCodingTools))
+    stale_warning(io, version, running, root)
 
-Says that what was just written is the RUNNING version's, not the pinned one's.
+Says that what was just written is the RUNNING version's, not the pinned one's, and prints the commands
+that move each environment onto the pinned tag.
 
 # Arguments
 
 - `io` — where it goes.
 - `version` — the version just pinned.
 - `running` — the version of the copy that wrote.
+- `root` — the package root, whose environments the commands move.
 
 The pin moves first and the regeneration follows, and the regeneration runs on the code that is LOADED —
 which is the version the environment's manifest still holds, not the one just pinned. So every generated file it writes is the
@@ -98,22 +100,54 @@ from rc.5 to rc.7 — sixteen paths where twenty were due, with the new rulebook
 missing — and the drift is invisible until the next build runs the wiring check.
 
 It cannot be fixed by regenerating harder: the right content does not exist in this process. What closes
-it is resolving the environments onto the new tag and running `gbg sync` again, under the new code.
+it is resolving the environments onto the new tag and running `gbg sync` again, under the new code. Each
+environment's command is the one [`move_command`](@ref) returns for it.
 """
-function stale_warning(io::IO, version, running)
+function stale_warning(io::IO, version, running, root::AbstractString)
     println(io, "")
     println(io, "NOT FINISHED. What was just written is v", running, "'s content under a v", version, " banner,")
     println(io, "and the rules that let the pin move were v", running, "'s too: `bump` runs with the code that")
     println(io, "is RUNNING, and the running code is whatever the environments' manifests still hold — not")
     println(io, "what you have just pinned. Move them, then regenerate under the new code:")
     println(io, "")
-    println(io, "    julia --project=docs -e 'using Pkg; Pkg.update(\"GBGCodingTools\")'")
-    println(io, "    julia --project=test -e 'using Pkg; Pkg.update(\"GBGCodingTools\")'")
+    for env in ("docs", "test")
+        c = move_command(root, env)
+        isempty(c) || println(io, "    ", c)
+    end
     println(io, "    gbg sync")
     println(io, "")
-    println(io, "`Pkg.update` and not `Pkg.resolve`: a resolve writes the new rev while keeping the old")
-    println(io, "tree hash where the clone has never fetched the tag, which leaves the old code running")
-    println(io, "under the new revision — seen twice, at rc.4 and at rc.7.")
+    println(io, "`Pkg.update` where a manifest already holds the tool, and not `Pkg.resolve`: a resolve writes")
+    println(io, "the new rev while keeping the old tree hash where the clone has never fetched the tag, which")
+    println(io, "leaves the old code running under the new revision — seen twice, at rc.4 and at rc.7. Where no")
+    println(io, "manifest holds the tool yet, as on a first wiring, there is no old hash to keep and a resolve")
+    println(io, "fetches the tag; a test environment with no manifest is resolved by `Pkg.test()` itself.")
+end
+
+"""
+    move_command(root, env) -> String
+
+The command that moves the environment `env` of the package at `root` onto the tag just pinned, or an
+empty string when there is nothing to move. The arguments are `root`, the package root, and `env`, the
+environment's directory under it, `"docs"` or `"test"`.
+
+Returns an update of the tool where the environment's manifest already holds it, and a resolve where
+it does not. A test environment with no manifest gets nothing: `Pkg.test()` resolves it, and resolving
+it alone fails when it names an unregistered package that only the root environment says where to find.
+
+The update alone was printed until 2026-09-28, and on a first wiring it fails: an update of a package
+no manifest holds says "expected package `GBGCodingTools` to be registered". Both environments of
+[GBGHomogeneousTurbulence](https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/) failed so in its wiring rehearsal.
+"""
+function move_command(root::AbstractString, env::AbstractString)
+    isfile(joinpath(root, env, "Project.toml")) || return ""
+    manifest = joinpath(root, env, "Manifest.toml")
+    if !isfile(manifest)
+        env == "test" && return ""
+        return "julia --project=$env -e 'using Pkg; Pkg.resolve()'"
+    end
+    holds = occursin(r"(?m)^\[\[deps\.GBGCodingTools\]\]", read(manifest, String))
+    return holds ? "julia --project=$env -e 'using Pkg; Pkg.update(\"GBGCodingTools\")'" :
+                   "julia --project=$env -e 'using Pkg; Pkg.resolve()'"
 end
 
 function cmd_bump(args)

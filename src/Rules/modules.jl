@@ -54,8 +54,8 @@ Every cross-module name mentioned bare in a docstring where a reader would need 
 arguments are `loaded`, the loaded package with the package root, and `cfg`, the package's config, which
 names the files. Returns one location per first bare mention.
 
-A name the same module owns needs no link — the reader is already there. A name in the docstring's own
-signature, or already linked earlier in the same docstring, is not a mention to be linked either.
+Only a name's first mention is judged, since a later link comes too late for the reader. A name the same
+module owns needs no link, and neither does one in the docstring's own signature.
 """
 function xlink(loaded, cfg)
     own_of = owners(loaded.pkg, cfg)
@@ -87,12 +87,17 @@ function xlink(loaded, cfg)
             # A name heading a bullet is the docstring's own field or argument, not a mention: a field
             # called `audit` is not the function of that name elsewhere.
             for b in eachmatch(r"(?m)^\s*[-*]\s+`([^`:\s]+)", prose); push!(in_signature, String(b.captures[1])); end
-            linked = Set(String.(x.captures[1] for x in eachmatch(r"\[`([^`]+)`\]\(@", prose)))
+            # The FIRST mention decides, as the statement says. Read as "linked anywhere in the docstring",
+            # a bare first mention with a link forty lines further down was never reported
+            # (GBGHomogeneousTurbulence's `StochasticOU`, found verifying its findings, 2026-09-28).
             seen = Set{String}()
             for x in eachmatch(Regex("`(" * Texts.NAME * ")`"), prose)
                 name = String(x.captures[1])
-                (haskey(own_of, name) && !(name in in_signature) && !(name in linked) && !(name in seen)) || continue
+                (haskey(own_of, name) && !(name in in_signature) && !(name in seen)) || continue
                 push!(seen, name)
+                is_link = x.offset > 1 && prose[prevind(prose, x.offset)] == '[' &&
+                          startswith(SubString(prose, x.offset + ncodeunits(x.match)), "](@")
+                is_link && continue
                 own_of[name] === me && continue
                 push!(out, Model.Location(; file = f, line = d.line, node = d.node,
                     text = "`$name` is owned by $(own_of[name]) and mentioned here without a link"))
@@ -177,11 +182,57 @@ const XLINK = Model.Rule(
             end
             end
             """, Model.Location[], "linked at its first mention"),
+        # The first mention is bare and a later one links it: reported. Linked first and bare after: not.
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper
+                \"\"\"
+                    helper(x)
+
+                A helper.
+                \"\"\"
+                helper(x) = x
+            end
+            using .Inner
+            \"\"\"
+                caller(x)
+
+            Calls `helper` on its argument; see [`helper`](@ref Example.Inner.helper).
+            \"\"\"
+            caller(x) = Inner.helper(x)
+            end
+            """, [Model.Location(; file = "src/Example.jl", line = 12)], "linked at its first mention"),
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper
+                \"\"\"
+                    helper(x)
+
+                A helper.
+                \"\"\"
+                helper(x) = x
+            end
+            using .Inner
+            \"\"\"
+                caller(x)
+
+            Calls [`helper`](@ref Example.Inner.helper) on its argument; `helper` returns it.
+            \"\"\"
+            caller(x) = Inner.helper(x)
+            end
+            """, Model.Location[], "linked at its first mention"),
     ])
 
 # ────────────────────────────────────────── what a docstring shows against what the module defines
 
-dehat(a::Symbol) = Symbol(replace(String(a), "̂" => ""))
+# A hat is stripped from a name in either spelling: the combining circumflex after a letter that has no
+# precomposed form (`φ̂`, `ω̂`), and the precomposed letter itself (`û`, U+00FB), which is what Julia's
+# normalised identifiers hold wherever one exists. Stripping only the combining mark, the rule read
+# `kinetic_energy(û)` over the method `kinetic_energy(u)` as a different argument (found verifying
+# GBGHomogeneousTurbulence's findings, 2026-09-28).
+dehat(a::Symbol) = Symbol(Base.Unicode.normalize(replace(Base.Unicode.normalize(String(a), :NFD), "\u0302" => ""), :NFC))
 
 """
     displayed_signatures(root, cfg) -> Tuple
@@ -413,6 +464,25 @@ const SIGNATURE_FIDELITY = Model.Rule(
             The mean of `u`, to within `atol`.
             \"\"\"
             measure(u; atol = 1e-6) = sum(u) / length(u)
+            end
+            """, Model.Location[], "argument for argument"),
+        # A spectral field shown hatted over a method that names it plainly is the same argument, in the
+        # precomposed spelling (`û`, the one Julia's normalised identifiers hold) as in the combining one.
+        Model.ModuleExample("""
+            module Example
+            export energy, enstrophy
+            \"\"\"
+                energy(û)
+
+            Half the sum of the squares of `û`.
+            \"\"\"
+            energy(u) = sum(abs2, u) / 2
+            \"\"\"
+                enstrophy(ω̂)
+
+            Half the sum of the squares of `ω̂`.
+            \"\"\"
+            enstrophy(ω) = sum(abs2, ω) / 2
             end
             """, Model.Location[], "argument for argument"),
     ])

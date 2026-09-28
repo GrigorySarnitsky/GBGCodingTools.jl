@@ -257,7 +257,8 @@ function link_uniformity(root::AbstractString, cfg)
             bare = [m.captures[1] for m in eachmatch(RUN_BARE, text) if m.captures[1] in public && m.captures[1] != d.node]
             (isempty(linked) || isempty(bare)) && continue
             push!(out, Model.Location(; file = f, line = d.line, node = d.node,
-                text = "linked $(linked) beside bare $(bare) in one run: " * first(String(text), 90)))
+                text = "linked " * join(("`$n`" for n in linked), ", ") * " beside bare " *
+                       join(("`$n`" for n in bare), ", ") * " in one run: " * first(String(text), 90)))
         end
     end
     return out
