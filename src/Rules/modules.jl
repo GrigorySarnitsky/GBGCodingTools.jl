@@ -331,17 +331,29 @@ function signature_fidelity(loaded, cfg)
     pkgroot = something(home, root)
     every_method = home === nothing
     ours(m) = every_method || startswith(String(m.file), pkgroot) || occursin(cfg.package, String(m.file))
-    owned(name) = unique!([getfield(m, name) for m in mods if isdefined(m, name) && Base.which(m, name) === m])
-    in_file(f, file) = f isa Function &&
+    # Every helper below takes a function as a plain value, never as its own type: each Julia function
+    # has a type of its own, and a helper specialised on it was compiled again for every function of the
+    # package. The rule spent 67 of its 72 seconds compiling in this package's docs build, 13 in
+    # GBGHomogeneousTurbulence's and 17 in GBGPeriodicFields' (measured 2026-09-28).
+    function owned(name)
+        found = Any[]
+        for m in mods
+            (isdefined(m, name) && Base.which(m, name) === m) || continue
+            v = getfield(m, name)
+            any(x -> x === v, found) || push!(found, v)
+        end
+        return found
+    end
+    in_file(@nospecialize(f), file) = f isa Function &&
         any(m -> endswith(replace(String(m.file), '\\' => '/'), "/" * file) || String(m.file) == file, methods(f))
     function resolve(name, file)
-        cands = filter(f -> f isa Function || f isa Type, owned(name))
-        here = filter(f -> in_file(f, file), cands)
+        cands = Any[f for f in owned(name) if f isa Function || f isa Type]
+        here = Any[f for f in cands if in_file(f, file)]
         length(here) == 1 && return here[1]
         length(cands) == 1 && return cands[1]
         return nothing
     end
-    function defined_sets(f)
+    function defined_sets(@nospecialize(f))
         f isa Function && isempty(methods(f)) && return :extension
         pos, kw = Set{Symbol}(), Set{Symbol}(); unnamed = false
         for m in methods(f)
