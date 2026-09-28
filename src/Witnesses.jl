@@ -17,6 +17,7 @@ a program that fails is not that program; this is.
 module Witnesses
 
 import ..GBGCodingTools
+import ..GBGCodingTools: Texts
 
 export WitnessResult
 
@@ -94,8 +95,8 @@ function refusal_in(node, package)
         name = node.val
         name in FORBIDDEN && return "line $line names `$name`, which a witness may not (it loads code or forges the verdict)"
         startswith(String(name), "__gbg") && return "line $line names `$name`, which is the runner's own"
-    elseif k === JS.K"MacroName" && node.val in FORBIDDEN_MACROS
-        return "line $line calls `$(node.val)`, which runs code the runner never read (refused in a witness)"
+    elseif string(k) in ("MacroName", "macro_name") && Symbol("@", Texts.macro_name(node)) in FORBIDDEN_MACROS
+        return "line $line calls `@$(Texts.macro_name(node))`, which runs code the runner never read (refused in a witness)"
     elseif k === JS.K"function" && !isempty(cs) && JS.kind(signature_head(cs[1])) === JS.K"."
         return "line $line defines a method of another module's function, which can redefine how Test counts (refused in a witness)"
     end
@@ -165,10 +166,14 @@ using Test
 const __gbg_path = ARGS[1]
 __gbg_counts = nothing
 try
-    Test.TESTSET_PRINT_ENABLE[] = false
-    __gbg_ts = @testset "gbg witness" begin
+    __gbg_run() = @testset "gbg witness" begin
         Base.include(Main, __gbg_path)
     end
+    # Test's print switch is a Ref on Julia 1.12 and a ScopedValue on 1.13, where assigning it is a
+    # MethodError and every witness read as broken (found checking 1.13, 2026-09-28)
+    __gbg_ts = Test.TESTSET_PRINT_ENABLE isa Base.RefValue ?
+        (Test.TESTSET_PRINT_ENABLE[] = false; __gbg_run()) :
+        Base.ScopedValues.with(__gbg_run, Test.TESTSET_PRINT_ENABLE => false)
     global __gbg_counts = Test.get_test_counts(__gbg_ts)
 catch err
     if err isa Test.TestSetException

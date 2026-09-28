@@ -4,6 +4,18 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.33 — 2026-09-28
+
+PATCH. **This package loads on Julia 1.13.** It reads source with the parser bundled with the Julia that
+runs, and 1.13's renames and reshapes a macro call's name (`MacroName` → a `macro_name` node,
+`StringMacroName` → `StrMacroName`); naming a kind the parser lacks is an error when the package loads, so
+every consumer whose workflow runs `version: '1'` had a docs build that died before any check. Macro names
+are now read through one helper that knows both, and the witness runner handles 1.13's `Test`, whose print
+switch became a `ScopedValue`. CI's matrix gains the newest Julia. Found by GBGPeriodicFields, whose docs
+deploy stopped. Also in this candidate: the six defects the verification of HT's findings found (a
+sibling's name inside a link target, argument coverage, finding lines inside a wrapped run, the `[doi:…]`
+label form, the rendered signature width, `gbg check`'s summary).
+
 ## 2.0.0-rc.32 — 2026-09-28
 
 PATCH, four defects the rehearsal of GBGHomogeneousTurbulence's first wiring found:

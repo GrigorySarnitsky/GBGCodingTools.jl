@@ -61,3 +61,11 @@ three verifiers: **110 true, 11 false, 50 unclear**. The per-line verdicts are i
   stable link (e.g. NASA NTRS), or a switch
 - **W-15.** RULE.DOC.SIGNATURE_MIRROR's 88-column limit is in the check's code only, and counts the
   Markdown indent. · fate: fixed in the rc.33 commit (the limit stated, measured as rendered; verified by re-measuring HT's clone)
+
+## Found meanwhile, by GBGPeriodicFields (2026-09-28)
+
+- **W-16.** The package failed to load on Julia 1.13: it named parser kinds (`MacroName`,
+  `StringMacroName`) that 1.13's bundled parser renamed, and the witness wrapper assigned Test's print
+  switch, a `ScopedValue` on 1.13. PF's docs deploy stopped at its first build on `version: '1'`. Nothing
+  here ran on a Julia newer than the floor. · fate: fixed in rc.33 (version-proof macro-name reader, both
+  Test forms, the newest Julia in CI; the whole suite green on 1.12.7 and 1.13.1)

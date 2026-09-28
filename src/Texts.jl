@@ -391,14 +391,40 @@ function callee_name(node)
     return node_text(node)
 end
 
-# A macro's name without its `@`, or `""` for a node that is not one; `Base.@doc` names `doc` too.
-function macro_name(node)
-    k = JS.kind(node)
-    k === JS.K"MacroName" && return lstrip(node_text(node), '@')
-    cs = something(JS.children(node), ())
-    k === JS.K"." && !isempty(cs) && return macro_name(last(cs))
+"""
+    macro_name(head) -> String
+
+The name a macro call's head names, without its `@` and without a string macro's `_str`: `"doc"` for
+`@doc`, `"kwdef"` for `Base.@kwdef`, `"r"` for `r"…"`. The argument is `head`, the first child of a
+`macrocall` node. Returns the name, or `""` for a node that is not a macro's name.
+
+The parser is the one bundled with the Julia that runs, and Julia 1.13's shapes the head differently from
+1.12's: a `MacroName` leaf there is a `macro_name` node holding an `Identifier`, and `StringMacroName`
+is `StrMacroName`. Kinds are compared by NAME here, because naming one this Julia's parser does not have
+(`K"MacroName"` on 1.13) is an error when the package loads — which stopped every consumer's docs build
+on 1.13 (found by GBGPeriodicFields, 2026-09-28).
+"""
+function macro_name(head)
+    k = string(JS.kind(head))
+    cs = something(JS.children(head), ())
+    if k in ("MacroName", "StringMacroName", "CmdMacroName") && head.val isa Symbol   # Julia 1.12
+        s = lstrip(String(head.val), '@')
+        return k == "MacroName" ? s : replace(s, r"_(str|cmd)$" => "")
+    elseif k in ("StrMacroName", "CmdMacroName", "Identifier") && head.val isa Symbol  # Julia 1.13
+        return String(head.val)
+    elseif k in ("macro_name", ".") && !isempty(cs)
+        return macro_name(last(cs))
+    end
     return ""
 end
+
+"""
+    string_macro(head) -> Bool
+
+Whether a macro call's head is a STRING macro's, `r"…"`, `raw"…"`, `v"…"`, on either parser. The
+argument is `head`, the first child of a `macrocall` node. Returns the answer.
+"""
+string_macro(head) = string(JS.kind(head)) in ("StringMacroName", "StrMacroName")
 
 # A docstring and the thing it documents, as a pair, or `nothing` for a node that is not one. Two
 # spellings make one: the parser's own `doc` node, and a call of `@doc` on a string and a definition —
@@ -412,7 +438,7 @@ function doc_parts(node)
     elseif k === JS.K"macrocall" && length(cs) >= 3 && macro_name(cs[1]) == "doc"
         s = cs[2]
         is_string = JS.kind(s) === JS.K"string" ||
-                    (JS.kind(s) === JS.K"macrocall" && JS.kind(first(something(JS.children(s), (s,)))) === JS.K"StringMacroName")
+                    (JS.kind(s) === JS.K"macrocall" && string_macro(first(something(JS.children(s), (s,)))))
         return is_string ? (s, cs[3]) : nothing
     end
     return nothing

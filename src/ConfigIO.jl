@@ -259,13 +259,13 @@ function build(node, path, problems)
         any(x -> x === nothing, items) && return nothing        # already refused, one line each
         all(x -> x isa T, items) || (push!(problems, "line $line: not every element of $elem[…] is a $elem"); return nothing)
         return T[x for x in items]
-    elseif k === JS.K"macrocall" && !isempty(cs) && cs[1].val in (Symbol("@v_str"), Symbol("@r_str"))
+    elseif k === JS.K"macrocall" && !isempty(cs) && Texts.string_macro(cs[1]) && Texts.macro_name(cs[1]) in ("v", "r")
         # `v"2.0.0"` is a pinned version and `r"…"` a package's own pattern; each is read from the
         # parser's string child — a raw string takes no escapes, so unquoting the source text turned
         # `r"\\d"` into `r"\d"` and dropped the flags of `r"x"i` — and a mistake in either is a refusal
         # naming the line, not a backtrace (found in review, 2026-09-26).
         lit = length(cs) >= 2 && JS.kind(cs[2]) === JS.K"string" ? join(String(c.val) for c in something(JS.children(cs[2]), ())) : ""
-        if cs[1].val === Symbol("@v_str")
+        if Texts.macro_name(cs[1]) == "v"
             v = tryparse(VersionNumber, lit)
             v === nothing && (push!(problems, "line $line: $text is not a version"); return nothing)
             return v
