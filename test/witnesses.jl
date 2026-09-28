@@ -81,12 +81,18 @@ module ProbeHarness
         const dims = (1, 2)
     end
     helper!(x) = x
+    tuned(x; scale = 1) = scale * x            # a keyword method: its body is a compiler-generated binding
+    const twice_all = xs -> map(x -> 2x, xs)   # closures: compiler-generated bindings too
 end
 @testset "TestHarness — the review of 2026-09-26" begin
     TH = G.TestHarness
     P = ProbeHarness
     @test :broadcasted in TH.package_operations(P, Module[P.A, P.B])      # a Base submodule's generic
     @test :helper! in TH.all_package_functions(P, Module[P.A, P.B])        # the umbrella's own internals
+    # No compiler-generated name is a function of the package: Julia 1.13 lists many more of them than
+    # 1.12, and a method count frozen on one was wrong on the other (GBGPeriodicFields, 2026-09-28).
+    fs = TH.all_package_functions(P, Module[P.A, P.B])
+    @test :tuned in fs && !any(n -> startswith(String(n), "#"), fs)
     @test TH.resolve_function(:dims, P, Module[P.B, P.A]) === P.A.dims     # a sibling's constant is no function
     @test_throws ErrorException TH.audit(() -> nothing, "(x)")
 end

@@ -4,6 +4,19 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.38 — 2026-09-29
+
+PATCH. **The test harness counts no compiler-generated function.** `TestHarness.all_package_functions`,
+which `module_method_count` and so `method_parity` count from, took every binding of a module that owns
+methods, compiler-generated ones included (`#809#val`, a keyword method's body). Julia 1.13 lists many
+more of them than 1.12, so a count frozen on one was wrong on the other. GBGPeriodicFields reported it:
+its `Fields` module read 189 methods on 1.12 and 313 on 1.13. Names opening with `#` are now skipped,
+as `package_operations` already skipped them.
+
+A package that declares method parity refreezes where hidden methods were counted, once: its counts now
+agree on 1.12 and 1.13. Measured on GBGPeriodicFields, four of its eight module counts move on 1.12:
+`FiberSections` 120 to 114, `Fields` 189 to 184, `Interpolation` 170 to 155, `Reductions` 139 to 124.
+
 ## 2.0.0-rc.37 — 2026-09-28
 
 MINOR, the owner's ruling of 2026-09-28: **a type lists its constructor's arguments under `# Arguments`,

@@ -95,6 +95,11 @@ function all_package_functions(pkg::Module, modules::AbstractVector{Module})
     owned = Set(vcat(modules, [pkg]))
     found = Set{Symbol}()
     for mod in owned, name in names(mod; all = true, imported = true)
+        # A compiler-generated binding (`#809#val`, a closure's or a keyword sorter's) is no function
+        # of the package's. Julia 1.13 lists far more of them than 1.12, and they own methods in the
+        # module, so a count frozen on one version was wrong on the other: GBGPeriodicFields' `Fields`
+        # module read 189 methods on 1.12 and 313 on 1.13 (reported by PF, 2026-09-28).
+        startswith(String(name), "#") && continue
         isdefined(mod, name) || continue
         f = getfield(mod, name)
         f isa Function || continue
