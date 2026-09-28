@@ -776,8 +776,8 @@ end
 """
     signature_lines(doc) -> Vector{String}
 
-Every signature a docstring displays: the run of indented lines it opens with, before its first line of
-prose. The argument is `doc`, the docstring's text. Returns them stripped, in order, empty where it
+Every signature a docstring displays: the indented lines it opens with, blank lines between them
+included, up to its first line of prose. The argument is `doc`, the docstring's text. Returns them stripped, in order, empty where it
 opens with prose.
 
 A docstring may display several arities — `weighted_inner(f, w)`, `weighted_inner(f, g, w)` — and a
@@ -789,7 +789,10 @@ function signature_lines(doc::AbstractString)
     out = String[]
     current = ""
     for line in split(doc, '\n')
-        isempty(strip(line)) && (isempty(out) && isempty(current) ? continue : break)
+        # A blank line separates two signatures of the block and does not end it; the first line that is
+        # neither blank nor indented does (GBGPeriodicFields' request of 2026-09-27: every signature after a
+        # blank line went unread, so its keywords were reported missing and its stale names passed).
+        isempty(strip(line)) && continue
         startswith(line, (' ', '\t')) || break
         # A signature too wide for the column is wrapped, and its continuation is indented too. Lines are
         # joined until the parentheses balance, or the second of a wrapped pair reads as its own call

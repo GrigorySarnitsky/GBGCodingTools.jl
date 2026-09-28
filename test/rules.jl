@@ -580,3 +580,32 @@ end
     @test !haskey(own, "length")                   # Base's, extended here
     @test get(own, "mine", nothing) === :A         # the package's own function keeps its owner
 end
+
+# A signature block reads across the blank lines between its signatures (GBGPeriodicFields' request of
+# 2026-09-27): a keyword shown only in a later signature was reported missing, and a stale name there
+# was never compared.
+@testset "a signature block reads past a blank line" begin
+    T = G.Texts
+    @test T.signature_lines("    f(a)\n\n    f(a, b; k = 1)\n\nProse.\n") == ["f(a)", "f(a, b; k = 1)"]
+    @test T.signature_lines("    f(a)\n\nProse.\n\n    g(b, c, d)\n") == ["f(a)"]       # an example below prose is not one
+    dir = mktempdir(; cleanup = true); mkpath(joinpath(dir, "src"))
+    write(joinpath(dir, "src", "Example.jl"), """
+    module Example
+    \"\"\"
+        make(n)
+
+        make(n, m; origin = 0)
+
+    Makes one.
+    \"\"\"
+    make(n) = n
+    make(n, m; origin = 0) = n + m + origin
+    end
+    """)
+    holder = Module(:SigHolder)
+    Base.include_string(holder, read(joinpath(dir, "src", "Example.jl"), String))
+    pkg = Base.invokelatest(getfield, holder, :Example)
+    cfg = MR.Config(package = "Example", tool = :dev, filesets = Dict(MR.FileSet.CODE => ["src/Example.jl"]))
+    r = only(x for x in G.Catalogue.RULES if x.id === Symbol("RULE.DOC.SIGNATURE_FIDELITY"))
+    @test isempty(Base.invokelatest(CK.run_rule, r, cfg, dir; pkg))                 # `origin` is shown, second
+end

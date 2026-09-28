@@ -4,6 +4,16 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.31 — 2026-09-28
+
+PATCH, two defects GBGPeriodicFields reported upgrading to rc.30:
+
+- **A docstring's signature block is read across the blank lines between its signatures.** It stopped at
+  the first blank line, so `RULE.DOC.SIGNATURE_FIDELITY`, `ARGCOV` and `ARGS_FORM` never read a later
+  signature: a keyword it showed was reported missing, and a stale name there passed.
+- **`RULE.TEX.MATHBB` says what KaTeX renders:** blackboard bold only on a capital letter or `k`, and the
+  identity written `\mathbf{1}`. It told authors to write `\mathbb{1}`, which renders as a plain 1.
+
 ## 2.0.0-rc.30 — 2026-09-27
 
 MINOR, the owner's answers to the review's open questions:

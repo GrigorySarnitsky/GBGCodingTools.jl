@@ -224,16 +224,10 @@ function displayed_signatures(root::AbstractString, cfg)
     for f in Texts.files(cfg, root, Model.FileSet.CODE)
         path = joinpath(root, f)
         for d in Texts.docstrings_of(read(path, String))
-            header = collect(Iterators.takewhile(l -> startswith(l, "    "), split(d.text, '\n')))
-            isempty(header) && continue
-            joined = String[]; current = ""
-            for line in header
-                current *= strip(line) * " "
-                if count('(', current) == count(')', current) && !isempty(strip(current))
-                    push!(joined, strip(current)); current = ""
-                end
-            end
-            for signature in joined
+            # The one reader of a signature block, which reads across the blank lines between signatures:
+            # a block cut at the first blank line never compared a later signature at all, and reported its
+            # keywords as missing (GBGPeriodicFields' request of 2026-09-27).
+            for signature in Texts.signature_lines(d.text)
                 # The `-> T` a signature ends in is not part of the call. Written `\$` inside the
                 # pattern it was a literal dollar, nothing was cut, and every signature with a return
                 # annotation parsed as a lambda and was dropped (found in review, 2026-09-26).

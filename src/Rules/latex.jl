@@ -243,15 +243,17 @@ const SPACING = Model.Rule(
                         Model.Location[], "a medium or thick space by hand")]))
 
 const MATHBB_DIGIT = pattern_rule("RULE.TEX.MATHBB",
-    "A blackboard-bold digit is not a set; the identity is written \\mathbb{1} only where it means one.",
-    "A blackboard digit renders as an outline numeral, which means nothing to a reader of mathematics.",
-    # Any digit but a lone 1, which the statement grants as the identity.
-    r"\\mathbb\s*\{?\s*(?:[02-9]|1[0-9])",
-    "The field ``\\mathbb 2`` of two elements.",
-    "The field ``\\mathbb{F}_2`` of two elements.",
-    "a blackboard-bold digit is not a set";
-    more = [("The identity ``\\mathbb{1}`` acts trivially.", false, "the identity is written \\mathbb{1}"),
-            ("The identity ``\\mathbb{12}`` acts trivially.", true, "the identity is written \\mathbb{1}")])
+    "Blackboard bold is written only on a capital letter or k, the glyphs the renderer has; the identity is written \\mathbf{1}.",
+    "KaTeX's blackboard font covers A–Z and k alone, so anything else — a digit, the identity \\mathbb{1} — silently renders as a plain glyph (GBGPeriodicFields' finding of 2026-07-17, checked against KaTeX's support table 2026-09-28).",
+    # possessive, or a backtrack leaves the brace unconsumed and reads it as the argument
+    r"\\mathbb\s*+(?:\{\s*+)?+(?![A-Zk](?![A-Za-z]))",
+    "The identity ``\\mathbb{1}`` acts trivially.",
+    "The identity ``\\mathbf{1}`` acts trivially.",
+    "the identity is written \\mathbf{1}";
+    more = [("The field ``\\mathbb 2`` of two elements.", true, "only on a capital letter or k"),
+            ("The field ``\\mathbb{F}_2`` of two elements.", false, "only on a capital letter or k"),
+            ("The ring ``\\mathbb{Z}[x]`` and the field ``\\mathbb k``.", false, "only on a capital letter or k"),
+            ("The set ``\\mathbb{x}`` of points.", true, "only on a capital letter or k")])
 
 const FRAC_UNBRACED = pattern_rule("RULE.TEX.FRAC_BRACED",
     "Both arguments of a fraction are braced.",

@@ -62,9 +62,9 @@ Covered by a program.
 This package may set `leftright_allowed`; unset, it is `String[]`.
 
 ### RULE.TEX.MATHBB
-A blackboard-bold digit is not a set; the identity is written \mathbb{1} only where it means one.
+Blackboard bold is written only on a capital letter or k, the glyphs the renderer has; the identity is written \mathbf{1}.
 
-A blackboard digit renders as an outline numeral, which means nothing to a reader of mathematics.
+KaTeX's blackboard font covers A–Z and k alone, so anything else — a digit, the identity \mathbb{1} — silently renders as a plain glyph (GBGPeriodicFields' finding of 2026-07-17, checked against KaTeX's support table 2026-09-28).
 
 Covered by a program.
 
