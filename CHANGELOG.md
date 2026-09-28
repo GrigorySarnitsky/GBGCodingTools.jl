@@ -4,6 +4,16 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.32 — 2026-09-28
+
+PATCH, four defects the rehearsal of GBGHomogeneousTurbulence's first wiring found:
+
+- **A wiring finding names what fixes it.** Every one said "run `gbg sync`", which writes none of a
+  package's `docs/make.jl`, `test/runtests.jl` or workflows; those now say to edit the file.
+- **`docs/src/gbg.md`, the tooling page a build writes, is in the managed ignore block.**
+- `RULE.DOC.HOME_ORDER`'s why claimed a check the prose-shape rule does not make; corrected.
+- This package's `make.jl` guarded its deploy with a condition that could never hold; removed.
+
 ## 2.0.0-rc.31 — 2026-09-28
 
 PATCH, two defects GBGPeriodicFields reported upgrading to rc.30:

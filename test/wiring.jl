@@ -526,3 +526,15 @@ end
         @test !RN.harness_called("using GBGCodingTools.Engine\n@test true")
     end
 end
+
+# Found wiring GBGHomogeneousTurbulence (2026-09-28): every wiring finding said "run `gbg sync`", which
+# writes none of a package's build script, test entry point or workflows; and the tooling page a build
+# writes was not in the ignore block, so a package committed it or listed it by hand.
+@testset "a wiring finding names what fixes it, and the tooling page is ignored" begin
+    @test RN.remedy(G.Model.Location(; file = ".gitignore")) == "run `gbg sync`"
+    @test RN.remedy(G.Model.Location(; file = ".claude/settings.json")) == "run `gbg sync`"
+    for f in ("docs/make.jl", "test/runtests.jl", ".github/workflows/CI.yml")
+        @test occursin("edit this file", RN.remedy(G.Model.Location(; file = f)))
+    end
+    @test occursin("\ndocs/src/gbg.md\n", RN.gitignore(G.Model.Config(package = "P", tool = :dev)))
+end

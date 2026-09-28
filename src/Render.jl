@@ -58,6 +58,7 @@ function gitignore(cfg::Model.Config)
     # $BEGIN_MARK $(version_tag(cfg)) — rewritten by `gbg sync`; do not edit
     .gbg/scratch/
     docs/build/
+    docs/src/gbg.md
     docs/Manifest.toml
     test/Manifest.toml
     benchmark/Manifest.toml
@@ -220,6 +221,18 @@ end
 The ids of the rules the end-of-turn hook checks, in rulebook order. Returns them as strings.
 """
 hook_rule_ids() = [String(r.id) for r in Catalogue.RULES if !isempty(r.hook)]
+
+"""
+    remedy(l) -> String
+
+What fixes one wiring finding: `gbg sync` for a path this package writes, and an edit by the package for
+the ones it only checks — its build script, its test entry point, its workflows. The argument is `l`, the
+finding. Returns the phrase. Every finding said "run `gbg sync`" until 2026-09-28, which writes none of
+the second kind (found wiring [GBGHomogeneousTurbulence](https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/)).
+"""
+remedy(l::Model.Location) =
+    (any(g -> g.path == l.file, GENERATED) || l.file == ".claude/settings.json") ? "run `gbg sync`" :
+        "edit this file: `gbg sync` does not write it"
 
 """
     HOOK_COMMAND

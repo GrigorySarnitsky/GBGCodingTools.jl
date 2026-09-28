@@ -82,7 +82,7 @@ function run(root::AbstractString; intention = nothing, network::Bool = false, i
                 isempty(l.node) ? "" : "  [" * l.node * "]", "  ", l.text)
     end
     for l in drift
-        println(io, "  WIRING ", l.file, "  ", l.text, " — run `gbg sync`")
+        println(io, "  WIRING ", l.file, "  ", l.text, " — ", Render.remedy(l))
     end
     println(io, "check: ", length(found), " finding(s), ", length(drift), " generated path(s) adrift.")
     return 1

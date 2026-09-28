@@ -1,6 +1,7 @@
 # gbg:managed begin vdev — rewritten by `gbg sync`; do not edit
 .gbg/scratch/
 docs/build/
+docs/src/gbg.md
 docs/Manifest.toml
 test/Manifest.toml
 benchmark/Manifest.toml
@@ -28,3 +29,4 @@ docs/src/architecture.md
 docs/src/guide/doctor.md
 docs/src/guide/instruments.md
 docs/src/guide/rules.md
+docs/src/gbg-rules.md

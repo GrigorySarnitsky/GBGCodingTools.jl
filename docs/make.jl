@@ -45,9 +45,7 @@ result = GBGCodingTools.makedocs(ROOT;
     ],
 )
 
-# The wrapper returns nothing when a docs round froze the build, before Documenter or after it: nothing
-# built under a frozen round is deployed, and an unguarded deploy would publish the previous run's
-# directory or none at all (WIRE.MAKEDOCS). A build that ran returns `true` (Documenter's own result is
-# nothing unless `debug = true`), so a push or a tag with no docs round open deploys the site.
-result === nothing ||
-    deploydocs(repo = "github.com/GrigorySarnitsky/GBGCodingTools.jl", devbranch = "master", push_preview = false)
+# The wrapper throws on a finding and returns `true` otherwise, so reaching this line means the build
+# passed. It was guarded by `result === nothing ||` for a frozen round, which no longer exists: the
+# guard could never fire (found wiring GBGHomogeneousTurbulence, 2026-09-28).
+deploydocs(repo = "github.com/GrigorySarnitsky/GBGCodingTools.jl", devbranch = "master", push_preview = false)

@@ -63,7 +63,7 @@ function rules_and_wiring(root::AbstractString; site = nothing)
                 isempty(l.node) ? "" : "  [" * l.node * "]", "  ", l.text)
     end
     for l in drift
-        println(stderr, "  WIRING ", l.file, "  ", l.text, " — run `gbg sync`")
+        println(stderr, "  WIRING ", l.file, "  ", l.text, " — ", GBGCodingTools.Render.remedy(l))
     end
     return 1
 end
