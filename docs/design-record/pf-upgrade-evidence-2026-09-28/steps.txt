@@ -1,0 +1,15 @@
+copied docs/Manifest.toml
+copied test/Manifest.toml
+HEAD e395c0de
+01-bump exit 0
+02-docs-update exit 0
+03-test-update exit 0
+04-sync exit 0
+05-sync-check exit 0
+06-check exit 1
+07-test-112 exit 0
+08-docs-112 exit 1
+09-docs-env-113 exit 0
+10-docs-113 exit 1
+11-test-113 exit 1
+done

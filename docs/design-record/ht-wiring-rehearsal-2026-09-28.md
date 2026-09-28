@@ -128,3 +128,16 @@ tool:
   field's bullet has its bullet (RULE.DOC.FIELDS, `Cache.jl`), and whether `kwargs...` is documented when
   every keyword it collects is but the splat itself is never named (RULE.DOC.ARGCOV, `SimulationRun.jl`).
   · fate: open, the owner's
+
+## Found rehearsing GBGPeriodicFields' upgrade to rc.36 (2026-09-28)
+
+- **W-27.** RULE.DOC.ARGS_FORM tells a type that documents its fields under "The fields are" to bullet
+  its arguments under `# Arguments`; the fix that clears it is the `# Fields` heading, which exempts
+  the type, and the fix the message names would repeat the field list (six of PF's findings). · fate:
+  open (the message); `PF-WIRING.md` names the right fix
+- **W-28.** RULE.DOC.ARGS_FORM's "under a sentence" branch runs before the argument count, so a
+  docstring with fewer than three arguments and no keyword, bulleted under "The arguments are", would be
+  told to add a heading where the statement asks for prose. It fires nowhere in PF or HT. · fate: open
+- **W-29.** RULE.DOC.ARGCOV counts an argument documented only when its name is code; PF's six
+  allocating constructors describe `family` in italics, which the statement's "documented in its body"
+  admits. · fate: open, the owner's reading

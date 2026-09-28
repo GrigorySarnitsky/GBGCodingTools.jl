@@ -1,0 +1,19 @@
+Float64: Test Failed at src/TestHarness.jl:135
+   Evaluated: 34288 < 32768
+Float64: Test Failed at src/TestHarness.jl:135
+   Evaluated: 34288 < 32768
+Float64: Test Failed at src/TestHarness.jl:135
+   Evaluated: 138608 < 81920
+Float64: Test Failed at src/TestHarness.jl:135
+   Evaluated: 138608 < 81920
+Float32: Test Failed at src/TestHarness.jl:135
+   Evaluated: 34288 < 32768
+Float32: Test Failed at src/TestHarness.jl:135
+   Evaluated: 34288 < 32768
+Float32: Test Failed at src/TestHarness.jl:135
+   Evaluated: 138608 < 81920
+Float32: Test Failed at src/TestHarness.jl:135
+   Evaluated: 138608 < 81920
+ERROR: LoadError: Some tests did not pass: 36 passed, 8 failed, 0 errored, 0 broken.
+in expression starting at test/allocations.jl:552
+in expression starting at test/runtests.jl:37

@@ -1,0 +1,30 @@
+#!/bin/bash
+# PF's upgrade from rc.30 to rc.36, rehearsed on a clone, every step logged. Pushing disabled.
+S=/tmp/claude-1000/-home-grigory-Dropbox-Research-and-Teach-AI-Helpers-GBGCodingTools/7683c89e-093e-4433-8205-eb60c644023a
+S=$S/scratchpad; R=$S/r7; L=$R/log; PF="/home/grigory/Dropbox/Research and Teach/Isotropic Turbulence/GBGPeriodicFields"
+rm -rf $R/pf $R/pf13 $L; mkdir -p $L
+git clone -q "$PF" $R/pf && cd $R/pf || exit 9
+git remote set-url origin https://github.com/GrigorySarnitsky/GBGPeriodicFields.jl.git
+git remote set-url --push origin DISABLED
+# PF's own checkout has ignored manifests; the clone gets copies so the steps run as they will there.
+for m in docs/Manifest.toml test/Manifest.toml; do [ -f "$PF/$m" ] && cp "$PF/$m" "$m" && echo "copied $m" >> $L/steps.txt; done
+step() { local n=$1; shift; "$@" > $L/$n.out 2>&1; local e=$?; echo "$n exit $e" >> $L/steps.txt; }
+echo "HEAD $(git log -1 --format=%h)" >> $L/steps.txt
+step 01-bump gbg bump 2.0.0-rc.36
+sed -n '/NOT FINISHED/,$p' $L/01-bump.out | grep "^    julia\|^    gbg" > $L/01b-printed.txt
+step 02-docs-update julia +1.12 --project=docs --startup-file=no -e 'using Pkg; Pkg.update("GBGCodingTools")'
+step 03-test-update julia +1.12 --project=test --startup-file=no -e 'using Pkg; Pkg.update("GBGCodingTools")'
+sed -n '/^\[\[deps.GBGCodingTools\]\]/,/^$/p' docs/Manifest.toml > $L/03b-docs-manifest.txt
+step 04-sync gbg sync
+step 05-sync-check gbg sync --check
+step 06-check gbg check
+step 07-test-112 env GIT_CONFIG_GLOBAL=/dev/null julia +1.12 --project --startup-file=no -e 'using Pkg; Pkg.test()'
+step 08-docs-112 julia +1.12 --project=docs --startup-file=no docs/make.jl
+# As PF's docs workflow runs: Julia '1' (1.13), no manifest, the workflow's environment step.
+git clone -q $R/pf $R/pf13 && cp -r $R/pf/. $R/pf13/ 2>/dev/null; cd $R/pf13 && rm -f docs/Manifest.toml Manifest.toml
+git remote set-url origin https://github.com/GrigorySarnitsky/GBGPeriodicFields.jl.git; git remote set-url --push origin DISABLED
+step 09-docs-env-113 julia +1.13 --project=docs --startup-file=no -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+step 10-docs-113 julia +1.13 --project=docs --startup-file=no docs/make.jl
+step 11-test-113 env GIT_CONFIG_GLOBAL=/dev/null julia +1.13 --project --startup-file=no -e 'using Pkg; Pkg.test()'
+cd $R/pf; git status --short > $L/12-status.txt; git diff --stat > $L/12-diffstat.txt
+echo done >> $L/steps.txt

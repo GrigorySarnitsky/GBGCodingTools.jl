@@ -1,0 +1,15 @@
+# The mechanical fixes of PF-WIRING Step 3, applied to a scratch copy to measure what they raise next.
+import re, sys, glob
+root = sys.argv[1]
+n = {"fields": 0, "args": 0, "family": 0}
+for p in glob.glob(root + "/src/**/*.jl", recursive=True):
+    t = open(p).read(); o = t
+    t, k = re.subn(r"(?m)^(\s*)The fields are:?\s*$", r"\1# Fields\n", t); n["fields"] += k
+    t, k = re.subn(r"(?m)^(\s*)The arguments are:\s*$", r"\1# Arguments\n", t); n["args"] += k
+    t, k = re.subn(r"(?m)^(.*\S) The arguments are:\s*$", r"\1\n\n# Arguments\n", t); n["args"] += k
+    t, k = re.subn(r"storage \*family\*", "storage `family`", t); n["family"] += k
+    if t != o: open(p, "w").write(t)
+print(n)
+c = root + "/.gbg/config.jl"; t = open(c).read()
+t2 = re.sub(r'\n\s*Switch\(target = Symbol\("RULE\.DOC\.SIGNATURE_FIDELITY"\),.*?"\),', "", t, count=1, flags=re.S)
+print("switch removed:", t2 != t); open(c, "w").write(t2)
