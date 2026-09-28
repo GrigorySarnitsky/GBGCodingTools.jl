@@ -75,42 +75,72 @@ if [ -z "${FLOOR_IGNORE_CI:-}" ] && [ -z "${1:-}" ]; then
   fi
 fi
 
+# THE MATRIX, IN A FRESH CLONE, ON EVERY JULIA IT MUST RUN ON.
+#
+# The tests and the docs build run in a fresh clone of this repository, not in the working tree, and on
+# each Julia in FLOOR_JULIAS: the floor, 1.12, and the newest release a consumer's `version: '1'`
+# resolves to. Of the 37 CI and docs runs that failed on GitHub in September 2026, 34 failed on
+# something a local run could have caught, and the local gate missed them for two reasons:
+#
+# - It ran in the working tree, where files git does not hold still exist: a test read a git-ignored
+#   file present only here (v2.0.0-rc.13), `src/Scans/` survived here after git dropped it (2026-09-17).
+#   A load from the tracked files caught the second, and could not catch the first, since it only loaded.
+# - It ran one Julia. The newest one refused to load the package (parser kinds renamed in 1.13), and
+#   every consumer whose docs build runs `version: '1'` failed ten times before anyone looked.
+#
+# The clone is of HEAD, with the working tree's tracked files laid over it: the floor runs BEFORE the
+# commit, so HEAD alone would test the previous one. A new file must be added (`git add`) to be seen,
+# which is the point: an untracked file is not in the commit either. It has no manifests, since git
+# ignores them here, so every environment resolves afresh. Outside Dropbox, since every repository is
+# inside it. One `tar` reads the whole path list from stdin: through `xargs tar`, past xargs's buffer
+# the list became two archives and the extract stopped at the first (found in review, 2026-09-26).
+#
 # WITHOUT THIS MACHINE'S GIT IDENTITY. A runner has no `user.name` and no `user.email`; a developer's
 # machine has both, globally, and hands them to every child process. A test that builds a git repository
 # and expects a commit to succeed therefore passed here and failed there — the whole first testset of
-# `test/docfix.jl`, on the v2.0.0-rc.2 tag, which is the fourth defect of this shape: the gate measured
-# somewhere the failure could not appear. A fixture that needs an identity now sets one in its own
+# `test/docfix.jl`, on the v2.0.0-rc.2 tag. A fixture that needs an identity sets one in its own
 # repository, as a real package does, and this keeps it honest.
-GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
-  julia --project --startup-file=no -e 'using Pkg; Pkg.test()'
-julia --project=docs --startup-file=no docs/make.jl
-
-# DOES IT LOAD FROM WHAT GIT ACTUALLY HOLDS?
 #
-# The two commands above run in this working tree, which is not what anyone else gets. `src/Scans/`
-# was emptied on 2026-09-17 and git does not track an empty directory, so it survived here and was
-# absent from every clone — and `Scan.jl` read it at load. Every CI run failed for a day while this
-# gate stayed green, because this gate ran in the one place the directory still existed.
-#
-# So: export the tracked files to a temporary directory and load the package there. It catches the
-# whole class — an untracked file, an empty directory, anything present here and not in the repository.
-# Outside Dropbox, because every repository here is inside it. One `tar` reads the whole path list from
-# stdin: piped through `xargs tar`, past xargs's buffer the list was split into two archives and the
-# extracting tar stopped at the first one's end, so the export silently lacked the last files (found in
-# review, 2026-09-26). Not `git archive HEAD`: the floor runs BEFORE the commit, and HEAD is the last one.
-#
-# This step and the sweep below are THIS repository's: run with a consumer's root, its root environment
-# names no GBGCodingTools, so they are skipped there, as the CI check above is.
+# A channel is named, not `release`, because `release` moves: juliaup updates it to the newest Julia,
+# and the floor lane would silently become a second newest lane. A missing channel refuses, saying what
+# to install. With a consumer's root, the working tree is tested as before: a consumer's docs
+# environment is built by its own workflow's steps, which this script does not know.
+FLOOR_JULIAS="${FLOOR_JULIAS:-1.12 1.13}"
 if [ -z "${1:-}" ]; then
-  echo "floor: loading from the tracked files alone"
-  EXPORT=$(mktemp -d)
-  trap 'rm -rf "$EXPORT"' EXIT
-  git ls-files -z | tar --null -T - -cf - | tar -xf - -C "$EXPORT"
-  julia --project="$EXPORT" --startup-file=no -e '
-      using Pkg; Pkg.instantiate()
+  for V in $FLOOR_JULIAS; do
+    julia "+$V" --version >/dev/null 2>&1 || {
+      echo "floor: no Julia $V channel on this machine — run: juliaup add $V"
+      exit 1
+    }
+  done
+  CLONE=$(mktemp -d)
+  trap 'rm -rf "$CLONE"' EXIT
+  git clone --quiet --no-local . "$CLONE/repo"
+  # The clone's remote is this checkout's path; Documenter reads the remote to build its source links and
+  # refuses a path. It gets the real one, and can never push to it.
+  git -C "$CLONE/repo" remote set-url origin "$(git remote get-url origin)"
+  git -C "$CLONE/repo" remote set-url --push origin DISABLED
+  git ls-files -z | tar --null -T - -cf - | tar -xf - -C "$CLONE/repo"
+  # A file deleted from the working tree but not yet from git is absent from the commit: remove it here.
+  git ls-files -z --deleted | (cd "$CLONE/repo" && xargs -0 -r rm -f --)
+  for V in $FLOOR_JULIAS; do
+    echo "floor: Julia $V, in a fresh clone — the tests"
+    rm -f "$CLONE/repo/Manifest.toml"       # each Julia resolves its own; a manifest names the Julia it was resolved by
+    ( cd "$CLONE/repo" && GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
+        julia "+$V" --project --startup-file=no -e 'using Pkg; Pkg.test()' )
+    echo "floor: Julia $V, in a fresh clone — the docs build"
+    rm -f "$CLONE/repo/docs/Manifest.toml"
+    ( cd "$CLONE/repo" && julia "+$V" --project=docs --startup-file=no -e 'using Pkg; Pkg.instantiate()' \
+        && julia "+$V" --project=docs --startup-file=no docs/make.jl )
+  done
+  julia +1.12 --project="$CLONE/repo" --startup-file=no -e '
       using GBGCodingTools
-      isempty(GBGCodingTools.Catalogue.RULES) && error("the rulebook is empty in a clean export")
+      isempty(GBGCodingTools.Catalogue.RULES) && error("the rulebook is empty in a fresh clone")
       println("floor: loaded ", length(GBGCodingTools.Catalogue.RULES), " rules from the tracked files")'
+else
+  GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
+    julia --project --startup-file=no -e 'using Pkg; Pkg.test()'
+  julia --project=docs --startup-file=no docs/make.jl
 fi
 
 
