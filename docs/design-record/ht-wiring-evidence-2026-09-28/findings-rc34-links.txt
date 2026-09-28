@@ -1,0 +1,19 @@
+RULE.DOC.AI_BANNER             docs/ARCHITECTURE.md:1  [Architecture]  no provenance banner on a page that must carry one
+RULE.DOC.INTERNAL_API          docs/src/api/GBGHomogeneousTurbulence.md:12  [GBGHomogeneousTurbulence / Index]  an index block: an API page is grouped by a person, never indexed
+RULE.DOC.SIBLING_LINK          docs/src/index.md:105  [GBGHomogeneousTurbulence.jl / What it solves]  the first mention of `GBGStreamingStatistics` is not a link to its site
+RULE.DOC.SIBLING_LINK          docs/src/observables_cache.md:189  [The observables cache / 1. The design / 1.3 When a cached value is valid]  the first mention of `GBGPeriodicFields` is not a link to its site
+RULE.DOC.SIBLING_LINK          src/GBGHomogeneousTurbulence.jl:44  [GBGHomogeneousTurbulence]  the first mention of `GBGStreamingStatistics` is not a link to its site
+RULE.DOC.SIBLING_LINK          src/Observables.jl:441  [energy_spectrum]  the first mention of `GBGPeriodicFields` is not a link to its site
+RULE.DOC.SIBLING_LINK          src/Particles.jl:71  [Tracers]  the first mention of `GBGPeriodicFields` is not a link to its site
+RULE.DOC.LINKS                 src/SimulationRun.jl:217  [Simulation]  `GBGHomogeneousTurbulence.Forcing.DeferredForcing` is linked here and again at line 116; the first mention carries the link
+RULE.DOC.LINK_UNIFORMITY       src/phenomenology/Spectra.jl:401  [Pao1965]  linked SubString{String}["VonKarman1948"] beside bare SubString{String}["Pope2000"] in one run: `Pope2000` or [`VonKarman1948`](@ref)
+RULE.DOC.XLINK                 src/Forcing.jl:947  [StochasticOU]  `Simulation` is owned by SimulationRun and mentioned here without a link
+RULE.DOC.XLINK                 src/GBGHomogeneousTurbulence.jl:34  [GBGHomogeneousTurbulence]  `write_simulation` is owned by SimulationRun and mentioned here without a link
+RULE.DOC.XLINK                 src/GBGHomogeneousTurbulence.jl:34  [GBGHomogeneousTurbulence]  `read_simulation` is owned by SimulationRun and mentioned here without a link
+RULE.DOC.XLINK                 src/Generator.jl:51  [FlowConditions]  `FlowParameters` is owned by Phenomenology and mentioned here without a link
+RULE.DOC.XLINK                 src/Phenomenology.jl:68  [FlowParameters]  `FlowConditions` is owned by Generator and mentioned here without a link
+RULE.DOC.XLINK                 src/Phenomenology.jl:68  [FlowParameters]  `FixedDomain` is owned by SimulationDomain and mentioned here without a link
+RULE.DOC.XLINK                 src/SimulationRun.jl:17  [SimulationRun]  `FlowParameters` is owned by Phenomenology and mentioned here without a link
+RULE.DOC.XLINK                 src/SimulationRun.jl:80  [Simulation]  `Linear` is owned by Forcing and mentioned here without a link
+RULE.DOC.XLINK                 src/phenomenology/Spectra.jl:472  [ObukhovCorrsin1949]  `scalar_dissipation` is owned by Observables and mentioned here without a link
+RULE.DOC.XLINK                 src/phenomenology/StructureFunctions.jl:142  [Yaglom1949]  `scalar_dissipation` is owned by Observables and mentioned here without a link

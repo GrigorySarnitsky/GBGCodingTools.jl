@@ -1,0 +1,6 @@
+src/Cache.jl:388 RULE.DOC.XLINK `Simulation` — first mention line 409 is bare: "announcing to a bare cache rather than a `Simulation` must also call"; first link at line 415 — TRUE
+src/Generator.jl:297 RULE.DOC.XLINK `uses_steady_linear_rate` — first mention line 330 is bare: "declaring `uses_steady_linear_rate` is given no"; first link at line 358 — TRUE
+src/Generator.jl:496 RULE.DOC.XLINK `PhaseShift` — first mention line 507 is bare: "- `û` — the stage velocity in spectral representation, consulted by `PhaseShift`'s disp"; first link at line 538 — TRUE
+src/Generator.jl:666 RULE.DOC.XLINK `PhaseShift` — first mention line 678 is bare: "- `û`, `φ̂` — the stage velocity and scalar in spectral representation, consulted by "; first link at line 699 — TRUE
+src/SimulationRun.jl:80 RULE.DOC.XLINK `StochasticOU` — first mention line 159 is bare: "One holding neither, given its own strength — a `Linear` rate, a `StochasticOU` variance"; first link at line 304 — TRUE
+src/SimulationRun.jl:80 RULE.DOC.XLINK `VarianceController` — first mention line 222 is bare: "A `VarianceController` with a defaulted `turnover_time` is refused as `scalar_forcing` (it"; first link at line 346 — TRUE

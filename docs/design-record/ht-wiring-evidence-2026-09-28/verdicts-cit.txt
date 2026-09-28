@@ -1,0 +1,49 @@
+docs/ARCHITECTURE.md:3098 RULE.CIT.DOI TRUE — Rogallo 1981 says "No DOI" but its title *Numerical experiments in homogeneous turbulence.* has no link at all, so the no-DOI exception, which needs an https record link on the title, is not met. line ok.
+docs/ARCHITECTURE.md:3108 RULE.CIT.DOI TRUE — Lundgren 2003 says "No DOI" but the title "Linearly forced isotropic turbulence." is plain text with no record link. line ok.
+docs/ARCHITECTURE.md:3142 RULE.CIT.DOI TRUE — Carpenter & Kennedy 1994 has no link of any kind on its title. The entry says "outside the DOI system", not the words "no DOI", so a record link alone would still not satisfy the exception as literally stated; the fix is to add a record link and write "no DOI". line ok.
+docs/ARCHITECTURE.md:3156 RULE.CIT.DOI TRUE — Lamb 1932 *Hydrodynamics* is a book stating "No DOI" with no Open Library or record link on its title. line ok.
+src/phenomenology/Spectra.jl:75 RULE.CIT.DOI TRUE — "(Qian 1984, [doi:10.1063/1.864902](…)": the DOI is linked on a `[doi:…]` label, not on a title, which is the form the rule's why rejects. line ok.
+src/phenomenology/Spectra.jl:76 RULE.CIT.DOI TRUE — "Ishihara et al. 2005, [doi:10.1143/JPSJ.74.1464](…)": the same label form, with the DOI not on a title. line ok.
+src/phenomenology/Spectra.jl:77 RULE.CIT.DOI TRUE — "Kraichnan 1959, [doi:10.1017/S0022112059000362](…)": the same label form. line ok.
+src/phenomenology/Spectra.jl:250 RULE.CIT.DOI TRUE — "[doi:10.1103/PhysRevFluids.3.082601](…)" for Khurshid, Donzis & Sreenivasan 2018: a label, not a title. line ok (the label is on 250; the authors are on 249).
+src/phenomenology/Spectra.jl:251 RULE.CIT.DOI TRUE — "Chen et al. 1993, [doi:10.1103/PhysRevLett.70.3051](…)": the label form. line ok.
+src/phenomenology/Spectra.jl:277 RULE.CIT.DOI TRUE — "Saffman (1963, appendix, [doi:10.1017/S0022112063000987](…)": the label form. line ok.
+src/phenomenology/Spectra.jl:279 RULE.CIT.DOI TRUE — "Townsend 1951 form, [doi:10.1098/rspa.1951.0179](…)": the label form. line ok.
+src/phenomenology/Spectra.jl:315 RULE.CIT.DOI TRUE — "*Homogeneous Turbulence Dynamics*, 2nd ed., Springer, [doi:10.1007/978-3-319-73162-9](…)": a title exists but carries no link, and the DOI sits on a separate label. line ok.
+src/phenomenology/Spectra.jl:484 RULE.CIT.DOI TRUE — "Sreenivasan 1996, *Phys. Fluids* **8**, 189, [doi:10.1063/1.868826](…)": the label form. line ok.
+src/phenomenology/StructureFunctions.jl:113 RULE.CIT.DOI TRUE — "Obukhov (1962, *J. Fluid Mech.* **13**, 77, [doi:10.1017/S0022112062000506](…)": the label form. line ok.
+src/Forcing.jl:466 RULE.CIT.FULL_INLINE TRUE — the full Sullivan, Mahalingam & Kerr 1994 reference (linked title, journal, volume, pages) sits mid-sentence in the VarianceRescaling prose. line ok.
+src/Forcing.jl:525 RULE.CIT.FULL_INLINE TRUE — the full Bussi, Donadio & Parrinello 2007 reference sits inside a sentence in the admonition. line ok.
+src/Forcing.jl:711 RULE.CIT.FULL_INLINE TRUE — the full Bassenne et al. 2016 reference sits in the VarianceController prose. line ok.
+src/Forcing.jl:743 RULE.CIT.FULL_INLINE TRUE — the full Berendsen et al. 1984 reference sits in the prose. line ok.
+src/Forcing.jl:748 RULE.CIT.FULL_INLINE TRUE — the full Nosé 1984 reference sits in the prose. line ok.
+src/Forcing.jl:750 RULE.CIT.FULL_INLINE TRUE — the full Hoover 1985 reference sits in the prose. line ok.
+src/Forcing.jl:952 RULE.CIT.FULL_INLINE TRUE — the full Eswaran & Pope 1988 reference sits in the StochasticOU prose. line ok.
+src/Observables.jl:203 RULE.CIT.FULL_INLINE TRUE — Pope 2000 with its linked title and publisher sits mid-sentence. line ok.
+src/Observables.jl:377 RULE.CIT.FULL_INLINE TRUE — the full Betchov 1956 reference sits in the derivative_skewness prose. line ok.
+src/Particles.jl:415 RULE.CIT.FULL_INLINE TRUE — the full Lalescu et al. 2022 reference sits in the prose. line ok.
+src/Particles.jl:467 RULE.CIT.FULL_INLINE TRUE — the full Lalescu, Teaca & Carati 2010 reference sits in the prose. line ok.
+src/Propagator.jl:236 RULE.CIT.FULL_INLINE TRUE — the full Williamson 1980 reference sits in the first sentence. line ok.
+src/Propagator.jl:561 RULE.CIT.FULL_INLINE TRUE — the full Shu & Osher 1988 reference sits in the first sentence. line ok.
+src/SimulationDomain.jl:64 RULE.CIT.FULL_INLINE TRUE — the full Orszag 1971 reference sits in the TwoThirds prose. line ok.
+src/SimulationDomain.jl:78 RULE.CIT.FULL_INLINE TRUE — the full Hou & Li 2007 reference sits in the HouLi prose. line ok.
+src/SimulationDomain.jl:142 RULE.CIT.FULL_INLINE TRUE — the full Patterson & Orszag 1971 reference sits in the PhaseShift prose. line ok.
+src/phenomenology/Spectra.jl:75 RULE.CIT.FULL_INLINE TRUE — Qian 1984 is cited with a DOI in the prose, and DissipationFactor has no `# References` section, so the work is not where the rule puts it. The message's words "a full reference" overstate an author–year plus a DOI label, but the rule is broken. line ok.
+src/phenomenology/Spectra.jl:76 RULE.CIT.FULL_INLINE TRUE — the same for Ishihara et al. 2005: a DOI in the prose and no `# References` section. line ok.
+src/phenomenology/Spectra.jl:77 RULE.CIT.FULL_INLINE TRUE — the same for Kraichnan 1959. line ok.
+src/phenomenology/Spectra.jl:250 RULE.CIT.FULL_INLINE TRUE — Khurshid et al. 2018 has its DOI in the prose, and ExponentialDissipation has no `# References` section. line ok.
+src/phenomenology/Spectra.jl:251 RULE.CIT.FULL_INLINE TRUE — the same for Chen et al. 1993. line ok.
+src/phenomenology/Spectra.jl:277 RULE.CIT.FULL_INLINE TRUE — Saffman 1963 has its DOI in the prose, and SaffmanDissipation has no `# References` section. line ok.
+src/phenomenology/Spectra.jl:279 RULE.CIT.FULL_INLINE TRUE — the same for Townsend 1951. line ok.
+src/phenomenology/Spectra.jl:315 RULE.CIT.FULL_INLINE TRUE — the complete Sagaut & Cambon 2018 reference (title, edition, publisher, DOI) sits mid-sentence. line ok.
+src/phenomenology/Spectra.jl:484 RULE.CIT.FULL_INLINE TRUE — Sreenivasan 1996 with journal, volume, page and DOI sits mid-sentence. line ok.
+src/phenomenology/StructureFunctions.jl:113 RULE.CIT.FULL_INLINE TRUE — Obukhov 1962 with journal, volume, page and DOI sits in the prose of Kolmogorov1962, which has no `# References` section. line ok.
+
+TOTAL: 40 TRUE, 0 FALSE, 0 UNCLEAR
+
+No FALSE findings.
+
+Notes for the fix (these are not verdicts):
+- The 10 Phenomenology label-form places are reported twice, once under RULE.CIT.DOI and once under RULE.CIT.FULL_INLINE. One fix clears both: move the work to a `# References` section with the DOI on its title.
+- ARCHITECTURE.md (lines 3087–3089) says the Phenomenology leaf is exempt from the canonical list, but HT declares no Switch for it. Once these works are moved under `# References`, FULL_INLINE compares each DOI with the canonical list in docs/ARCHITECTURE.md. Their DOIs (Qian, Ishihara, Kraichnan, Khurshid, Chen, Saffman, Townsend, Sreenivasan, Obukhov) are not in it, so each will then raise "absent from the canonical reference list". HT must either add these works to ARCHITECTURE's references or ask for a switch or setting. This is a design question for HT, not a check defect.
+- FULL_INLINE's message calls a bare "Author year, [doi:…](…)" a "full reference". That wording is loose, but the verdict is still right, because the rule also requires the work to be in `# References`.

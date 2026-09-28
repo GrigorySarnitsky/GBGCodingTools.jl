@@ -1,0 +1,45 @@
+src/Cache.jl:68 RULE.DOC.FIELDS UNCLEAR — `history_steps` and `history_filled` are real fields and are described, but only mid-sentence inside the `velocity_at_particles_history` bullet ("…most recent first, and `history_steps` the step sizes they were taken over; `history_filled` says how many are valid"). Reading A: "every field a bullet" means a bullet that opens with the field's name (the form every other bullet here uses, several names allowed), and these two have none, so TRUE. Reading B: the field is documented in a bullet of the `# Fields` list and nothing has drifted, so not a violation. If TRUE: line wrong: 125 (the bullet; 68 opens the docstring, `# Fields` at 113).
+src/Generator.jl:51 RULE.DOC.FIELDS TRUE — the `# Fields` section is a single sentence ("The plain constructor … takes the four fields directly … each holds the value documented for the keyword of the same name above") with no bullets; the rule says a sentence listing them is no such section. line wrong: 86 (`# Fields`; 51 opens the docstring).
+src/Generator.jl:297 RULE.DOC.FIELDS TRUE — the struct has `velocity_forcing_state::Any` and `scalar_forcing_state::Any` (lines 382-383), and the `# Fields` list (345-365) stops at `displaced_velocity_source`. line wrong: 345 (the `# Fields` section; 297 opens the docstring).
+src/Phenomenology.jl:68 RULE.DOC.FIELDS TRUE — `# Fields` is a prose sentence pointing back at the keyword bullets under `# Arguments` ("each holds the value documented for the keyword of the same name above"); there are no field bullets, and the rule rules out a sentence. line wrong: 112.
+src/Forcing.jl:248 RULE.DOC.ARGS_FORM TRUE — the three argument bullets come after "The generator calls it once, when it is built. The arguments are:" with no `# Arguments` heading (and `forcing`, the fourth, is bound in prose above). line wrong: 258.
+src/Forcing.jl:294 RULE.DOC.ARGS_FORM TRUE — three positional arguments (`forcing`, `advanced_field`, `domain`) bound only in running prose, no `# Arguments` list. line ok.
+src/Forcing.jl:308 RULE.DOC.ARGS_FORM TRUE — three positional arguments (`forcing`, `field`, `domain`) bound only in prose. line ok.
+src/Forcing.jl:327 RULE.DOC.ARGS_FORM TRUE — five bullets under "The arguments are:", no `# Arguments` heading. line wrong: 337.
+src/Forcing.jl:349 RULE.DOC.ARGS_FORM TRUE — six bullets under "The arguments are:", no heading. line wrong: 361.
+src/Forcing.jl:1381 RULE.DOC.ARGS_FORM TRUE — three bullets under "The arguments are:", no heading. line wrong: 1394.
+src/Forcing.jl:1404 RULE.DOC.ARGS_FORM TRUE — three bullets under "The arguments are:", no heading. line wrong: 1413.
+src/Generator.jl:428 RULE.DOC.ARGS_FORM TRUE — four bullets under "The arguments are:", no heading. line wrong: 437.
+src/Generator.jl:458 RULE.DOC.ARGS_FORM TRUE — three bullets under "The arguments are:", no heading. line wrong: 469.
+src/Generator.jl:496 RULE.DOC.ARGS_FORM TRUE — six bullets under "The arguments are:", no heading. line wrong: 504.
+src/Generator.jl:666 RULE.DOC.ARGS_FORM TRUE — bullets (including the keyword `displaced_velocity_current`) under "The arguments are:", no heading. line wrong: 675.
+src/Observables.jl:85 RULE.DOC.ARGS_FORM TRUE — the widest form `dissipation(û, domain, viscosity)` has three arguments; the bullets sit under "The arguments are:", no heading. line wrong: 103.
+src/Observables.jl:146 RULE.DOC.ARGS_FORM TRUE — three bullets under "The arguments are:", no heading. line wrong: 161.
+src/Observables.jl:177 RULE.DOC.ARGS_FORM TRUE — three bullets under "The arguments are:", no heading. line wrong: 211.
+src/Observables.jl:284 RULE.DOC.ARGS_FORM TRUE — four bullets under "The arguments are:", no heading. line wrong: 292.
+src/Observables.jl:324 RULE.DOC.ARGS_FORM TRUE — three bullets under "The arguments are:", no heading. line wrong: 330.
+src/Particles.jl:245 RULE.DOC.ARGS_FORM TRUE — the widest form `rebuild_traversal!(traversal, domain, tracers)` has three arguments, bound only in prose (249-253). line ok.
+src/Particles.jl:629 RULE.DOC.ARGS_FORM TRUE — six positional arguments and the keyword `traversal`, all bound in prose across several paragraphs; no `# Arguments` list. line ok.
+src/Particles.jl:717 RULE.DOC.ARGS_FORM TRUE — three positional arguments and the keyword `traversal`, bound only in prose. line ok.
+src/Particles.jl:832 RULE.DOC.ARGS_FORM TRUE — three bullets under "The arguments are:", no heading. line wrong: 840.
+src/Particles.jl:850 RULE.DOC.ARGS_FORM TRUE — three bullets under "The arguments are:", no heading. line wrong: 859.
+src/Phenomenology.jl:225 RULE.DOC.ARGS_FORM TRUE — three bullets under "The arguments are:", no heading. line wrong: 233.
+src/Phenomenology.jl:243 RULE.DOC.ARGS_FORM TRUE — a keyword (`order`), so bullets are due, and they sit under "The arguments are:", no heading. line wrong: 250.
+src/Phenomenology.jl:259 RULE.DOC.ARGS_FORM TRUE — four bullets under "The arguments are:", no heading. line wrong: 268.
+src/Propagator.jl:152 RULE.DOC.ARGS_FORM TRUE — bullets for both forms under "The arguments are:", no heading. line wrong: 161.
+src/Propagator.jl:187 RULE.DOC.ARGS_FORM TRUE — seven bullets under "The arguments are:", no heading. line wrong: 194.
+src/Propagator.jl:758 RULE.DOC.ARGS_FORM TRUE — bullets for all three forms under "The arguments are:", no heading. line wrong: 771.
+src/SimulationDomain.jl:587 RULE.DOC.ARGS_FORM TRUE — three bullets under "The arguments are:", no heading. line wrong: 596.
+src/SimulationDomain.jl:606 RULE.DOC.ARGS_FORM TRUE — bullets (keyword `array_type` included) under "The arguments are:", no heading. line wrong: 615.
+src/SimulationRun.jl:926 RULE.DOC.ARGS_FORM TRUE — a keyword (`dt`), so bullets are due, and they sit under "The arguments are:", no heading. line wrong: 931.
+src/SimulationRun.jl:1152 RULE.DOC.ARGS_FORM TRUE — three bullets under "The arguments are:", no heading. line wrong: 1176.
+src/SimulationRun.jl:1432 RULE.DOC.ARGS_FORM TRUE — `warmup!(sim; dt = nothing, kwargs...)` takes keywords, and `sim`, `dt` and the pass-through are bound only in prose (1441-1447). line ok.
+src/phenomenology/Spectra.jl:352 RULE.DOC.ARGS_FORM TRUE — five keywords (`C_K`, `c_L`, `p₀`, `c_η`, `β`) described in running prose (359-364), no `# Arguments` list. line ok.
+src/phenomenology/Spectra.jl:376 RULE.DOC.ARGS_FORM TRUE — two keywords (`C_K`, `c_L`) bound in prose (386-388); any keyword asks for the list. line ok.
+src/phenomenology/Spectra.jl:401 RULE.DOC.ARGS_FORM TRUE — one keyword `C_K`, bound in prose; the statement says "any keyword" goes under `# Arguments`, and the only exemption (a single element-type keyword) does not cover it. Pedantic, but it is the rule as stated. line ok.
+src/SimulationRun.jl:80 RULE.DOC.ARGCOV UNCLEAR — every keyword that `kwargs...` gathers is bulleted under `# Arguments` (the "run group", 191 onward: `viscosity`, the forcings, `scalar`, the tracers, …), and line 174 says "the **run group** is accepted by both". But the body never says `kwargs...` stands for those keywords, never names `kwargs`, and has no pass-through sentence. Reading A: `kwargs...` is a placeholder whose members are all documented, so nothing is undocumented (FALSE). Reading B: it is an argument shown in the signature, and the reader has to work out what it gathers, so it should be tied to the run group in words (TRUE; line wrong: 83, fixed with one clause such as "`kwargs...` — the run group below").
+src/Observables.jl:60 RULE.DOC.SIGNATURE_FIDELITY FALSE — the text shows `kinetic_energy(u)` and `kinetic_energy(û)`, and the one method `kinetic_energy(u) = inner(u, u) / 2` accepts both calls. The check does mean to treat `û` as `u` (it strips the hat with `dehat`), but `dehat` removes only the combining circumflex U+0302. This `û` is the precomposed U+00FB (bytes 303 273), which is also what Julia's NFC-normalized identifiers produce, so the hat is never stripped.
+
+TOTAL: 44 TRUE, 1 FALSE, 2 UNCLEAR
+
+FALSE — RULE.DOC.SIGNATURE_FIDELITY (the class). `dehat` in `src/Rules/modules.jl:184` (`replace(String(a), "̂" => "")`) removes only the combining circumflex U+0302. Julia normalizes identifiers to NFC, so the u/û pair that the package's own notation uses for representation arrives as the single codepoint U+00FB, and so does any displayed `û` typed in an ordinary editor. The hat is then never stripped, and any docstring that shows `f(û)` over a method whose argument is `u` (or the reverse) is reported as a mismatched name. Symbols with no precomposed hatted form (`φ̂`, `N̂`, `ω̂`) do get stripped, so the defect hits exactly the letters that have one (û, â, ê, î, ô, ŷ, ẑ, …). Fix: NFD-normalize before stripping U+0302, e.g. `Base.Unicode.normalize(s, :NFD)` then remove the combining mark, or compare the two names under `normalize(…, stripmark=true)`.

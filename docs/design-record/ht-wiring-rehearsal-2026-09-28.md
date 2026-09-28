@@ -1,7 +1,8 @@
 # Rehearsing GBGHomogeneousTurbulence's first wiring — the record (2026-09-28)
 
 HT (head `c016f95`) wired on a scratch clone, pushing disabled, at GBGCodingTools v2.0.0-rc.31 and again
-from a fresh clone at v2.0.0-rc.32, and last from a fresh clone of head `8c7ab73` at v2.0.0-rc.34.
+from a fresh clone at v2.0.0-rc.32, then from a fresh clone of head `8c7ab73` at v2.0.0-rc.34, and last in one script at head `8a0e279`,
+first at rc.34 and then at rc.35.
 Every figure in `docs/HT-WIRING.md` comes from this rehearsal. What it
 found in the TOOL is recorded here first, each with its fate, before any fix — the rule the owner set on
 2026-09-27 after the code review: a mistake found is written down with the check that catches it.
@@ -82,14 +83,14 @@ three verifiers: **110 true, 11 false, 50 unclear**. The per-line verdicts are i
   first wiring no manifest holds the tool, and both failed: "expected package `GBGCodingTools
   [3aee1de0]` to be registered". HT's test environment cannot be resolved alone at all, since it names
   the unregistered GBGPeriodicFields and only the root environment says where to find it. `HT-WIRING.md`
-  said to run the printed commands, and nothing had run them. · fate: fixed in the commit after rc.34
+  said to run the printed commands, and nothing had run them. · fate: fixed in rc.35
   (`Bump.move_command` prints an update where a manifest holds the tool, a resolve where none does,
   and nothing for a test environment with no manifest; verified by re-running the rehearsal)
 - **W-19.** The first `HT-WIRING.md` said every figure was measured at rc.34 on one head; its reviewer
   found 19 problems, among them figures from rc.31 and rc.32, a head HT had moved past, the wiring check
   and the tests claimed clean after a sync no log showed, and bump's printed commands claimed run. ·
-  fate: the whole rehearsal re-run in one script at HT's head `8a0e279`, every step logged, and the
-  document rewritten from that run alone
+  fate: the whole rehearsal re-run in one script at HT's head `8a0e279`, every step logged, at
+  rc.34 and, once W-18 and W-20 to W-22 were fixed, at rc.35; the document rewritten from the rc.35 run
 
 ## Every rc.34 finding verified at HT's head `8a0e279` (2026-09-28)
 
@@ -100,14 +101,13 @@ tool:
 - **W-20.** RULE.DOC.SIGNATURE_FIDELITY strips a hat only as the combining circumflex, U+0302. HT's
   `û` is the precomposed U+00FB, which Julia's normalised identifiers hold wherever one exists, so
   `kinetic_energy(û)` over the method `kinetic_energy(u)` was reported. The one false finding. · fate:
-  fixed in the commit after rc.34 (the name is decomposed before the mark is stripped; an example with
+  fixed in rc.35 (the name is decomposed before the mark is stripped; an example with
   `û` and `ω̂`, which fails on the old code; HT's finding goes, PF's count is unchanged at 0)
 - **W-21.** RULE.DOC.XLINK counted a name linked anywhere in a docstring as linked, while its statement
   judges the first mention; a bare first mention with a later link was never reported (HT's
-  `StochasticOU`). · fate: fixed in the commit after rc.34 (the first mention decides; a breaking and a
+  `StochasticOU`). · fate: fixed in rc.35 (the first mention decides; a breaking and a
   complying example; HT gains 6 findings, each read and genuine; PF's count is unchanged at 0)
-- **W-22.** RULE.DOC.LINK_UNIFORMITY printed its names as `SubString{String}["…"]`. · fate: fixed in the
-  commit after rc.34
+- **W-22.** RULE.DOC.LINK_UNIFORMITY printed its names as `SubString{String}["…"]`. · fate: fixed in rc.35
 - **W-23.** ARGS_FORM's "under a sentence" findings, FIELDS, XLINK and LINK_UNIFORMITY report the line
   where the docstring opens, not the line of the defect; the finding names the docstring, so it can be
   found, but not at its line. · fate: open — every docstring rule anchors so, and changing it is one

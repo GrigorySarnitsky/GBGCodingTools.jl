@@ -1,0 +1,49 @@
+RULE.DOC.REF_ABUT              docs/src/api/phenomenology/Scalings.md:21  [Scalings / References]  [`provenance`](@ref GBGHomogeneousTurbulence.Phenomenology.provenance)`(law)`; a source cited inline
+RULE.DOC.REF_ABUT              docs/src/api/phenomenology/Spectra.md:65  [Spectra / References]  [`provenance`](@ref GBGHomogeneousTurbulence.Phenomenology.provenance)`(law)`; a source cited inline
+RULE.DOC.REF_ABUT              docs/src/api/phenomenology/StructureFunctions.md:25  [StructureFunctions / References]  [`provenance`](@ref GBGHomogeneousTurbulence.Phenomenology.provenance)`(law)`; a source cited inline
+RULE.DOC.REF_ABUT              docs/src/gpu.md:29  [Memory footprint on a GPU / What a run keeps in memory]  The table holds for every forcing except [`Linear`](@ref), for [`HouLi`](@ref)`()` as for
+RULE.DOC.REF_ABUT              src/Cache.jl:93  [ObservablesCache]  [`history_depth`](@ref GBGHomogeneousTurbulence.Particles.history_depth)`(scheme)` for its particle
+RULE.DOC.REF_ABUT              src/Observables.jl:152  [kinetic_energy_and_dissipation]  The two values are [`kinetic_energy`](@ref)`(û)` and [`dissipation`](@ref)`(û, domain,
+RULE.DOC.REF_ABUT              src/Particles.jl:348  [ParticleIntegratorBuffers]  [`allocate_buffers`](@ref GBGHomogeneousTurbulence.Propagator.allocate_buffers)`(scheme, tracers, cache)`,
+RULE.DOC.REF_ABUT              src/Propagator.jl:64  [AbstractIntegrator]  [`step!`](@ref)`(scheme, state, generator, domain, buffers, cache, dt)`, advancing the `state`'s
+RULE.DOC.REF_ABUT              src/Propagator.jl:86  [IntegratorBuffers]  memory. Built per scheme by [`allocate_buffers`](@ref)`(scheme, domain; scalar)`, which allocates
+RULE.DOC.REF_ABUT              src/Propagator.jl:307  [IFLowStorageRK4]  [`AdamsBashforth`](@ref GBGHomogeneousTurbulence.Particles.AdamsBashforth)`(order = 4)` tracer —
+RULE.DOC.REF_ABUT              src/SimulationRun.jl:278  [Simulation]  [`AdamsBashforth`](@ref GBGHomogeneousTurbulence.Particles.AdamsBashforth)`()` when trajectory
+RULE.DOC.REF_ABUT              src/SimulationRun.jl:1087  [every_steps]  `true` when [`current_step`](@ref)`(sim)` is a multiple of `n` — including at step `0`, the seeded
+RULE.DOC.REF_ABUT              src/phenomenology/Scalings.jl:27  [ScalingLaw]  [`scaling`](@ref)`(law, fp)`; the *measured* value comes from a run, and the comparison is prediction
+RULE.DOC.REF_ABUT              src/phenomenology/Scalings.jl:50  [Sreenivasan1998]  positive value to model the low-Reynolds-number rise. Evaluating [`scaling`](@ref)`(law, fp)` reads
+RULE.DOC.REF_ABUT              src/phenomenology/Scalings.jl:86  [Sreenivasan1995]  Reynolds-number trend; [`scaling`](@ref)`(law, fp)` returns it, independent of `fp`.
+RULE.DOC.REF_ABUT              src/phenomenology/Spectra.jl:310  [ModelSpectrum]  [`spectrum`](@ref)`(model, κ, fp)`, which reads ``\\varepsilon`` and the roll-off's own length ``\\ell``
+RULE.DOC.REF_ABUT              src/phenomenology/Spectra.jl:364  [Pope2000]  ``\\int E = k`` / dissipation identities silently. Evaluate with [`spectrum`](@ref)`(Pope2000(), κ, fp)`.
+RULE.DOC.REF_ABUT              src/phenomenology/StructureFunctions.jl:45  [Kolmogorov1941]  ``\\delta u_L``. Evaluating [`structure_function`](@ref)`(law, r, fp; order = 2)` returns:
+RULE.DOC.REF_ABUT              src/phenomenology/StructureFunctions.jl:55  [Kolmogorov1941]  longitudinal moments only (``C_2`` empirical, the ``-\\tfrac{4}{5}`` exact). Its [`scaling_exponent`](@ref)`(law; order)` gives the self-similar
+RULE.DOC.REF_ABUT              src/phenomenology/StructureFunctions.jl:87  [SheLeveque1994]  [`scaling_exponent`](@ref)`(law; order)` gives the anomalous exponent
+RULE.DOC.REF_ABUT              src/phenomenology/StructureFunctions.jl:114  [Kolmogorov1962]  [`scaling_exponent`](@ref)`(law; order)` gives
+RULE.DOC.REF_ABUT              src/phenomenology/StructureFunctions.jl:158  [Yaglom1949]  Evaluating [`structure_function`](@ref)`(law, r, fp; order = 3)` returns it, reading the scalar dissipation
+RULE.DOC.REF_ABUT              src/phenomenology/StructureFunctions.jl:189  [Lundgren2002]  Evaluating [`structure_function`](@ref)`(law, r, fp; order = 3)` returns it, reading
+RULE.DOC.SENTENCE_OPENER       docs/ARCHITECTURE.md:43  [Architecture / 1. Identity]  publish it (decision 94). ``G`` is the constant by which the run layer turns a requested resolution 
+RULE.DOC.SENTENCE_OPENER       docs/ARCHITECTURE.md:487  [Architecture / 4. Modules / 4.6 `Particles` — Lagrangian instruments]  the velocity at the iteration's two endpoints. ``\boldsymbol{v}_1`` is the **trajectory
+RULE.DOC.SENTENCE_OPENER       docs/ARCHITECTURE.md:491  [Architecture / 4. Modules / 4.6 `Particles` — Lagrangian instruments]  `velocity_at_particles`, §11 decisions 42 and 67). ``\boldsymbol{v}_2`` interpolates the just-deposi
+RULE.DOC.SENTENCE_OPENER       src/Forcing.jl:150  [AbstractForcing]  `add_forcing_source!` the right-hand side, `project_forcing!` the field. `prepare_forcing!` returns
+RULE.DOC.SENTENCE_OPENER       src/Forcing.jl:977  [StochasticOU]  ``\\sigma^{2}`` is shared equally among the band's modes and their independent components.
+RULE.DOC.SENTENCE_OPENER       src/Forcing.jl:1062  [StochasticOUState]  [`initial_forcing_state`](@ref) creates it, [`prepare_forcing!`](@ref) advances it in place every st
+RULE.DOC.SENTENCE_OPENER       src/Observables.jl:202  [kinetic_energy_and_dissipation_below_scale]  is removed. ``k(l)`` is the position average of the residual kinetic energy of a top-hat filter of
+RULE.DOC.SENTENCE_OPENER       src/Observables.jl:269  [max_speed]      not vary with how the run is driven. [`kinetic_energy`](@ref) and [`dissipation`](@ref) have no 
+RULE.DOC.SENTENCE_OPENER       src/Observables.jl:398  [derivative_skewness]  ``S`` is the classic marker of *developed* turbulence: a random-phase (Gaussian) field has ``S \\app
+RULE.DOC.SENTENCE_OPENER       src/Observables.jl:472  [integral_scale]  ``L_{11}`` is the large-eddy scale — the one flow parameter a
+RULE.DOC.SENTENCE_OPENER       src/SimulationDomain.jl:102  [HouLi]  `true` evaluates the same expression once into a stored coefficient array — one resident complex
+RULE.TEX.SPACING               docs/ARCHITECTURE.md:297  [Architecture / 4. Modules / 4.2 `Generator` — the evolution, split reversible and irreversible]  ``\mathcal{E}(\boldsymbol{\kappa}) = \exp\!\bigl((A(\boldsymbol{\kappa}) - D\lvert\boldsymbol{\kappa}\rvert^2) \tau\bigr)``
+RULE.TEX.SPACING               docs/ARCHITECTURE.md:2795  [Architecture / 11. Decision log]  ``\boldsymbol{a} \leftarrow \alpha\boldsymbol{a} + \sqrt{\sigma^{2}(1-\alpha^{2})}\,\boldsymbol{\xi}``,
+RULE.TEX.SPACING               docs/src/notation.md:65  [Notation / Spectral representation and operators]  | ``\mathcal{E}(\boldsymbol{\kappa})`` | the diffusive integrating factor ``\exp\!\bigl((A(\boldsymbol{\kappa})-D\lvert\boldsymbol{\kappa}\rvert^2)\tau\bigr)`` over an interval ``\tau`` — a Runge–Kutta stage substep ``d_i\Delta t``, or the whole step ``\Delta t`` (``D`` the diffusivity — ``\nu`` for the velocity, ``\varkappa`` for the scalar; ``A(\boldsymbol{\kappa})`` the linear forcing rate) | [`velocity_integrating_factor`](@ref GBGHomogeneousTurbulence.Generator.velocity_integrating_factor), [`scalar_integrating_factor`](@ref GBGHomogeneousTurbulence.Generator.scalar_integrating_factor) |
+RULE.TEX.SPACING               docs/src/observables_cache.md:285  [The observables cache / 2. The system / 2.2 How a step treats each term]  ``\mathcal{E}(\boldsymbol{\kappa}) = \exp\!\bigl((A(\boldsymbol{\kappa}) - D\lvert\boldsymbol{\kappa}\rvert^{2})\tau\bigr)``
+RULE.TEX.SPACING               src/Generator.jl:630  [velocity_integrating_factor]  \\mathcal{E}(\\boldsymbol{\\kappa}) = \\exp\\!\\bigl((A(\\boldsymbol{\\kappa}) - \\nu\\lvert\\boldsymbol{\\kappa}\\rvert^{2}) \\tau\\bigr),
+RULE.TEX.SPACING               src/SimulationDomain.jl:81  [HouLi]  ``\\exp\\!\\bigl(- \\texttt{strength} (\\kappa/\\kappa_{\\mathrm{Ny}})^{\\texttt{order}}\\bigr)``,
+RULE.TEX.SPACING               src/State.jl:148  [random_solenoidal_velocity_spectral!]  envelope ``\\exp\\!\\bigl(-\\lvert\\boldsymbol{\\kappa}\\rvert^{2}/\\kappa_p^{2}\\bigr)`` on the mode
+RULE.TEX.SPACING               src/State.jl:152  [random_solenoidal_velocity_spectral!]  ``\\propto \\kappa^{2}\\exp\\!\\bigl(-2\\kappa^{2}/\\kappa_p^{2}\\bigr)`` peaks at
+RULE.TEX.SPACING               src/State.jl:253  [random_scalar_spectral!]  envelope ``\\exp\\!\\bigl(-\\lvert\\boldsymbol{\\kappa}\\rvert^{2}/\\kappa_p^{2}\\bigr)`` on the mode
+RULE.TEX.SPACING               src/State.jl:256  [random_scalar_spectral!]  scalar-variance spectrum ``\\propto \\kappa^{2}\\exp\\!\\bigl(-2\\kappa^{2}/\\kappa_p^{2}\\bigr)``
+RULE.TEX.SPACING               src/phenomenology/Spectra.jl:160  [PopeDissipation]  ``f_\\eta(\\kappa\\eta) = \\exp\\!\\Bigl(-\\beta\\bigl\\{\\bigl[(\\kappa\\eta)^4 + c_\\eta^4\\bigr]^{1/4} - c_\\eta\\bigr\\}\\Bigr)``,
+RULE.TEX.SPACING               src/phenomenology/Spectra.jl:223  [PaoDissipation]  ``f_\\eta(\\kappa\\eta) = \\exp\\!\\bigl(-\\tfrac{3}{2} \\alpha (\\kappa\\eta)^{4/3}\\bigr)``, from the
+RULE.TEX.SPACING               src/phenomenology/Spectra.jl:408  [Pao1965]  ``f_\\eta`` is Pao's ``\\exp\\!\\bigl(-\\tfrac{3}{2} C_K (\\kappa\\eta)^{4/3}\\bigr)``. It covers the
+RULE.TEX.RENDERED_MARKUP       docs/build/decisions/index.html:0  …(2026-08, user-directed) "Stamp" is retired; a slot carries an **epoch, and an epoch is not an iteration number.** The cache described itself a…
+RULE.TEX.RENDERED_MARKUP       docs/build/decisions/index.html:0  …26-08, user-directed) The constructor forms name their mechanism — **domain-building / domain-taking — and the argument list is grouped the same w…
