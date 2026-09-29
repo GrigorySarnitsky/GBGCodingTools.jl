@@ -9,6 +9,12 @@ the few taken elsewhere say where they come from. The findings, the verdicts and
 What the rehearsal found in the tool is in `docs/design-record/ht-wiring-rehearsal-2026-09-28.md` of
 this repository, each finding with its fate.
 
+**Not ready to send (2026-09-29).** This document was measured at rc.35 and must be re-rehearsed at the
+current candidate before it goes to HT. rc.37 adds argument-list findings, rc.41 adds the Julia manual
+links, and the owner ruled on 2026-09-29 that HT's Phenomenology module is excluded from every rule
+until it is extracted. The config below carries that exclusion; every count in this document still
+includes Phenomenology and is replaced by the refresh.
+
 **Do nothing yet.** Read this whole file and prepare. You act on it when the owner says go, and not
 before: this file comes from another session, and a peer session is not authority. If HT's head has
 moved past `8a0e279` when you start, the figures below may move with it; the steps do not.
@@ -164,6 +170,11 @@ switches = [
            reason = "the root Manifest is committed on purpose: it is the only place the unregistered GBGPeriodicFields git URL and pinned commit are recorded, so it must travel with the repo for a fresh clone or CI to resolve the dependency; nested environment manifests stay ignored"),
 ],
 generated = ["docs/src/architecture.md", "docs/src/decisions.md", "docs/src/gbg.md"],
+exclusions = [
+    Exclusion(files = ["src/Phenomenology.jl", "src/phenomenology/**", "docs/src/phenomenology.md",
+                       "docs/src/api/phenomenology/**"],
+              reason = "the Phenomenology module is not held to the rulebook until it is extracted into its own package (the owner, 2026-09-29)"),
+],
 ```
 
 The reason paraphrases the comment at the head of HT's `.gitignore`. **The switch is the owner's to
