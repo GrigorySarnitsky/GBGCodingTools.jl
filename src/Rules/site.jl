@@ -16,13 +16,18 @@ using ...Model
 using ...Texts
 
 """
-    pages_of(build) -> Vector{String}
+    pages_of(build, cfg) -> Vector{String}
 
-Every rendered page under the built site. The argument is `build`, the site's directory. Returns the
-paths, sorted.
+Every rendered page under the built site that a rule may read. The arguments are `build`, the site's
+directory, and `cfg`, the package's config. Returns the paths, sorted.
+
+A page built from a file the config excludes is left out BEFORE any rule reads it: filtering the
+findings afterwards made a rule comparing pages depend on which page sorted first, so a docstring shown
+on an excluded page and a kept one was reported or not by the pages' names (found in review, 2026-09-29).
 """
-pages_of(build::AbstractString) = sort!([joinpath(r, f) for (r, _, fs) in walkdir(build)
-                                         for f in fs if endswith(f, ".html")])
+pages_of(build::AbstractString, cfg) =
+    sort!([joinpath(r, f) for (r, _, fs) in walkdir(build) for f in fs
+           if endswith(f, ".html") && !Texts.excluded(cfg, "docs/build/" * replace(relpath(joinpath(r, f), build), '\\' => '/'))])
 
 const STRAY_MARKUP = r"`|\]\(@ref|\]\(http|!!!"
 
@@ -39,7 +44,7 @@ rendered page can show.
 """
 function rendered_math(build::AbstractString, cfg)
     out = Model.Location[]
-    for page in pages_of(build)
+    for page in pages_of(build, cfg)
         doc = Texts.parse_page(page)
         art = Texts.article_of(doc)
         art === nothing && continue
@@ -111,7 +116,7 @@ config, which this rule does not read. Returns one location per place.
 """
 function rendered_markup(build::AbstractString, cfg)
     out = Model.Location[]
-    for page in pages_of(build)
+    for page in pages_of(build, cfg)
         text = replace(article_prose(page), r"\\\[.*?\\\]"s => " ", r"\\\(.*?\\\)"s => " ", r"\$[^\$\n]*\$" => " ")
         for line in split(text, '\n')
             # A PAIRED span, which is what emphasis that failed to render leaves: a lone asterisk — a
@@ -196,7 +201,7 @@ page it was filed under.
 function api_grouping(build::AbstractString, cfg)
     out = Model.Location[]
     where_ = Dict{String,Vector{String}}()
-    for page in pages_of(build)
+    for page in pages_of(build, cfg)
         for b in page_bindings(page)
             push!(get!(where_, b.id, String[]), page)
             occursin("Internal API", b.section) && startswith(b.name, "Base.") &&

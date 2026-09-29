@@ -393,8 +393,10 @@ function local_paths(root::AbstractString, cfg::Model.Config)
         end
     end
     home = rstrip(normpath(abspath(root)), '/')
-    outside(env, s) = isabspath(s) ||
-        !startswith(rstrip(normpath(joinpath(home, env, s)), '/') * "/", home * "/")
+    # Absolute on ANY host: a Windows path read on Linux is not relative, nor the reverse (found in review).
+    absolute(s) = isabspath(s) || startswith(s, '/') || occursin(r"^[A-Za-z]:[\\/]", s) || startswith(s, "\\\\")
+    outside(env, s) = absolute(s) ||
+        !startswith(rstrip(normpath(joinpath(home, env, replace(s, '\\' => '/'))), '/') * "/", home * "/")
     for env in envs, name in ("Project.toml", "Manifest.toml")
         rel = isempty(env) ? name : env * "/" * name
         file = joinpath(root, rel)
@@ -411,9 +413,13 @@ function local_paths(root::AbstractString, cfg::Model.Config)
             end
         end
         lines = split(read(file, String), '\n')
+        # A path's line is the one whose `path = "…"` value, read as TOML reads it, is the path: searching
+        # the raw text missed an escaped path and took a comment naming it (found in review).
+        value(l) = (m = match(r"^[^#]*\bpath\s*=\s*(\"(?:[^\"\\\\]|\\\\.)*\")", l); m === nothing ? nothing :
+                    try TOML.parse("v = " * m.captures[1])["v"] catch; nothing end)
         for s in unique(paths)
             outside(env, s) || continue
-            n = something(findfirst(l -> occursin(s, l), lines), 0)
+            n = something(findfirst(l -> value(l) == s, lines), 0)
             push!(out, Model.Location(; file = rel, line = n,
                 text = "names the path `$s`, outside the repository: a clone or a runner cannot resolve it"))
         end
@@ -437,6 +443,11 @@ const LOCAL_PATH = Model.Rule(
                           [Model.Location(; file = "docs/Manifest.toml", line = 2)], "names a path outside the repository"),
         Model.TreeExample([".gitignore" => "docs/Manifest.toml\n", "docs/Manifest.toml" => "[[deps.X]]\npath = \"/home/someone/X\"\nuuid = \"1\"\n", "docs/Project.toml" => "[deps]\n"],
                           Model.Location[], "names a path outside the repository"),
+        # a Windows path on any host, and the entry's line rather than a comment naming the same path
+        Model.TreeExample(["docs/Project.toml" => "[deps]\n\n[sources]\nX = {path = \"C:\\\\Users\\\\me\\\\X\"}\n"],
+                          [Model.Location(; file = "docs/Project.toml", line = 4)], "names a path outside the repository"),
+        Model.TreeExample(["docs/Project.toml" => "# was /home/someone/X\n[deps]\n\n[sources]\nX = {path = \"/home/someone/X\"}\n"],
+                          [Model.Location(; file = "docs/Project.toml", line = 5)], "names a path outside the repository"),
     ])
 
 """

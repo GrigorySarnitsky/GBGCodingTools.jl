@@ -78,10 +78,34 @@ function files(cfg::Model.Config, root::AbstractString, fileset::Model.FileSet.T
     written = Set(vcat(cfg.generated, first.(cfg.copies)))
     skip = Texts.ignored(root)
     # Nor is a file the config excludes from every rule anyone's to read, for a rule or for a reader.
-    out_of_scope(f) = any(e -> any(pat -> glob_matches(pat, f), e.files), cfg.exclusions)
-    return sort!(unique!(filter(f -> !(f in written) && !skip(f) && !out_of_scope(f), out)))
+    return sort!(unique!(filter(f -> !(f in written) && !skip(f) && !excluded(cfg, f), out)))
 end
 
+
+"""
+    excluded(cfg, file) -> Bool
+
+Whether the file is one the package's config takes out of every rule. The arguments are `cfg`, the
+package's config, and `file`, the path relative to the package root. Returns the answer.
+
+A built page counts as every source page Documenter could have built it from: `docs/build/X/index.html`
+from `docs/src/X.md` or `docs/src/X/index.md`, and `docs/build/X.html`, the local build's plain form,
+from `docs/src/X.md`. The first version knew only the first form, so a local build and a page built from an
+`index.md` escaped the exclusion (found in review, 2026-09-29).
+"""
+function excluded(cfg::Model.Config, file::AbstractString)
+    isempty(cfg.exclusions) && return false
+    f = replace(file, '\\' => '/')
+    paths = [f]
+    if (m = match(r"^docs/build/(?:(.*)/)?index\.html$", f)) !== nothing
+        stem = m.captures[1]
+        stem === nothing ? push!(paths, "docs/src/index.md") :
+                           append!(paths, ["docs/src/" * stem * ".md", "docs/src/" * stem * "/index.md"])
+    elseif (m = match(r"^docs/build/(.*)\.html$", f)) !== nothing
+        push!(paths, "docs/src/" * m.captures[1] * ".md")
+    end
+    return any(e -> any(pat -> any(p -> glob_matches(pat, p), paths), e.files), cfg.exclusions)
+end
 
 """
     glob_matches(pattern, path) -> Bool
@@ -300,19 +324,25 @@ end
 """
     DocBlock
 
-One docstring of a Julia file, with the node it documents.
+One docstring of a Julia file.
 
 # Fields
 
-- `node` — the name of what it documents.
-- `text` — the docstring itself.
-- `line` — the line the docstring starts on.
+- `node` — what it documents.
+
+- `text` — the docstring.
+
+- `line` — the line it starts on.
+
+- `text_line` — the line its text starts on.
 """
 struct DocBlock
     node::String
     text::String
     line::Int
+    text_line::Int      # the line the text's first character is on: below the quotes, or on them
 end
+DocBlock(node, text, line) = DocBlock(node, text, line, line + 1)
 
 # ─────────────────────────────────────────────────────────────────────────────────── Julia source
 
@@ -610,9 +640,14 @@ function docs!(out, node)
             # the text of leading space hides that line from any rule that reads it. Only the quotes
             # and the blank lines around the body come off.
             raw = String(JS.sourcetext(first(parts)))
-            body = strip(replace(raw, r"^(?:raw)?\"{1,3}" => "", r"\"{1,3}$" => ""), '\n')
+            inner = replace(raw, r"^(?:raw)?\"{1,3}" => "", r"\"{1,3}$" => "")
+            body = strip(inner, '\n')
             target = something(doc_target(last(parts)), "")
-            push!(out, DocBlock(target, body, JS.source_line(c)))
+            # Where the text starts: the quotes' line plus every line break stripped before it, so a one-line
+            # docstring, blank lines after the quotes and Windows line endings all place it right.
+            lead = length(inner) - length(lstrip(inner, '\n'))
+            quotes = JS.source_line(first(parts))
+            push!(out, DocBlock(target, body, JS.source_line(c), quotes + lead))
         end
         docs!(out, c)
     end
@@ -825,12 +860,13 @@ const IDENTIFIER = Regex("^" * NAME * "[\\p{M}]*\$")
 The file line of the character at `offset` in the text of the docstring `d`, one of
 [`docstrings_of`](@ref)'s. The arguments are `d` and `offset`, a byte index into `d.text`. Returns the line.
 
-A docstring's `line` is its opening quotes and its text begins on the line below, so a rule reporting
-`d.line` sent every fixer to the top of the docstring, not to the defect in it (found verifying
-GBGHomogeneousTurbulence's and GBGPeriodicFields' findings, 2026-09-28).
+A docstring's `line` is its opening quotes, and a rule reporting it sent every fixer to the top of the
+docstring, not to the defect in it (found verifying two packages' findings, 2026-09-28). The count starts
+from `text_line`, where the text really begins: assuming the line below the quotes put a one-line
+docstring, a blank line after the quotes and a Windows line ending one line off (found in review).
 """
 docstring_line(d, offset::Integer) =
-    d.line + 1 + count(==('\n'), SubString(d.text, 1, prevind(d.text, max(offset, 1))))
+    d.text_line + count(==('\n'), SubString(d.text, 1, prevind(d.text, max(offset, 1))))
 
 """
     signature_line(doc) -> String
@@ -1019,6 +1055,84 @@ end
 function fence_of(line::AbstractString)
     m = match(r"^ {0,3}(`{3,}|~{3,})", line)
     return m === nothing ? nothing : (m.captures[1][1], length(m.captures[1]))
+end
+
+"""
+    bullet_head_names(line) -> Vector{String}
+
+The names a Markdown bullet opens with: the code spans at its head, before its description, as in
+"- `a` — …", "- `a`, `b` — …" or "- `a`: …". The argument is `line`, one line. Returns the names, a
+type or default after `::` taken off, or none for a line that is not a bullet opening with code.
+
+The field and link rules each cut a bullet's head their own way until 2026-09-29: one only at a dash,
+so every code span of a colon-form description counted as a field, and one only at the first span, so
+the second name of "- `a`, `b` —" read as a mention needing a link (found in review, on a consumer).
+"""
+function bullet_head_names(line::AbstractString)
+    m = match(r"^\s*[-*+]\s+((?:`[^`\n]+`(?:\s*(?:,|and|&|/)\s*|\s+)?)+)", line)
+    m === nothing && return String[]
+    return [String(x.captures[1]) for x in eachmatch(r"`([^`:\s,]+)(?:::[^`]*)?`", m.captures[1])]
+end
+
+"""
+    bullets(text) -> Vector{String}
+
+Every Markdown bullet of the text with its continuation lines joined to it, since a bullet's head of
+names may wrap onto the next line. The argument is `text`. Returns each bullet's text.
+"""
+function bullets(text::AbstractString)
+    out = String[]
+    for l in split(String(text), '\n')
+        if occursin(r"^\s*[-*+]\s", l)
+            push!(out, String(l))
+        elseif !isempty(out) && !isempty(strip(l)) && occursin(r"^\s", l)
+            out[end] *= "\n" * l
+        elseif isempty(strip(l)) || !occursin(r"^\s", l)
+            isempty(out) || (out[end] *= "")      # a blank or an unindented line ends nothing it joins
+        end
+    end
+    return out
+end
+
+"""
+    markdown_headings(text) -> Vector{NamedTuple}
+
+Every heading of a Markdown text, as CommonMark reads one: an ATX heading indented at most three
+spaces, and a setext heading, a line of text underlined by `===` or `---`. The argument is `text`.
+Returns `(line, level, name)` for each, in order; a line inside a fenced code block is never one.
+
+Only the column-0 `#` form was read until 2026-09-29, so an indented or underlined heading did not end
+the section before it, and the change guard let an instruction under it through as documentation
+(found in review).
+"""
+function markdown_headings(text::AbstractString)
+    lines = split(String(text), '\n')
+    out = NamedTuple{(:line, :level, :name),Tuple{Int,Int,String}}[]
+    fence = nothing
+    for (i, raw) in pairs(lines)
+        l = rstrip(raw, '\r')
+        f = fence_of(l)
+        if fence !== nothing
+            f !== nothing && f[1] == fence[1] && f[2] >= fence[2] && (fence = nothing)
+            continue
+        end
+        f === nothing || (fence = f; continue)
+        m = match(r"^ {0,3}(#{1,6})(?:\s+(.*?))?\s*#*\s*$", l)
+        if m !== nothing
+            push!(out, (line = i, level = length(m.captures[1]), name = strip(something(m.captures[2], ""))))
+            continue
+        end
+        # a setext underline makes the line above a heading, when that line is text of a paragraph
+        u = match(r"^ {0,3}(=+|-+)\s*$", l)
+        if u !== nothing && i > 1
+            prev = rstrip(lines[i-1], '\r')
+            if !isempty(strip(prev)) && !occursin(r"^ {0,3}([-*+]\s|\d+[.)]\s|#|>|```|~~~)", prev) &&
+               !any(h -> h.line == i - 1, out)
+                push!(out, (line = i - 1, level = u.captures[1][1] == '=' ? 1 : 2, name = String(strip(prev))))
+            end
+        end
+    end
+    return sort!(out; by = h -> h.line)
 end
 
 """

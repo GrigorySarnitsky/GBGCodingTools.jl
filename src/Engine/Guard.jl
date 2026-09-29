@@ -283,31 +283,25 @@ end
 The Markdown text with the bodies of the named sections taken out, their heading lines kept. The
 arguments are `text`, the file, and `headings`, the section names. Returns what is left.
 
-A section runs from its heading to the next heading of the same level or higher; a line inside a fenced
-code block is never a heading.
+A section runs from its heading to the next heading of the same level or higher, as
+[`Texts.markdown_headings`](@ref) reads headings. An `@path` import line inside it stays: it would read
+another file's instructions into every session, which is what the section rule keeps as code.
 """
 function outside_sections(text::AbstractString, headings::AbstractVector{<:AbstractString})
     lines = split(String(text), '\n')
     keep = trues(length(lines))
-    inside = false; level = 0; fence = nothing
-    for (i, l) in pairs(lines)
-        f = Texts.fence_of(l)
-        if fence === nothing && f !== nothing
-            fence = f
-        elseif fence !== nothing
-            f !== nothing && f[1] == fence[1] && f[2] >= fence[2] && (fence = nothing)
-        else
-            m = match(r"^(#{1,6})\s+(.*?)\s*$", l)
-            if m !== nothing
-                lv = length(m.captures[1])
-                inside && lv <= level && (inside = false)
-                if !inside && strip(m.captures[2]) in headings
-                    inside = true; level = lv
-                    continue
-                end
-            end
+    heads = Texts.markdown_headings(text)
+    for (k, h) in pairs(heads)
+        h.name in headings || continue
+        # the section runs to the next heading of the same level or higher, as CommonMark reads headings
+        stop = something(findfirst(x -> x.line > h.line && x.level <= h.level, heads[k+1:end]), nothing)
+        last = stop === nothing ? length(lines) : heads[k + stop].line - 1
+        underline = h.line + 1 <= length(lines) && occursin(r"^ {0,3}(=+|-+)\s*$", lines[h.line + 1])
+        for i in (h.line + (underline ? 2 : 1)):last
+            # an import line reads another file's instructions into every session: never documentation
+            occursin(r"^\s*@\S", lines[i]) && continue
+            keep[i] = false
         end
-        inside && (keep[i] = false)
     end
     return join(lines[keep], '\n')
 end

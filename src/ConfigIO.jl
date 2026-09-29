@@ -393,7 +393,7 @@ function validate(cfg::Model.Config, root::AbstractString)
     # nothing and say nothing, and the owner would believe a section fixable that is not.
     if !isempty(cfg.claude_documentation)
         cm = joinpath(root, "CLAUDE.md")
-        heads = isfile(cm) ? Set(strip(m.captures[1]) for m in eachmatch(r"(?m)^#{1,6}\s+(.*?)\s*$", read(cm, String))) : Set{String}()
+        heads = isfile(cm) ? Set(h.name for h in Texts.markdown_headings(read(cm, String))) : Set{String}()
         for h in cfg.claude_documentation
             h in heads || push!(problems, "claude_documentation names the section \"$h\", which CLAUDE.md does not have")
         end
@@ -426,8 +426,12 @@ function validate(cfg::Model.Config, root::AbstractString)
     for e in cfg.exclusions
         isempty(strip(e.reason)) && push!(problems, "an exclusion gives no reason")
         isempty(e.files) && push!(problems, "an exclusion names no files")
+        # Counted over the files a clone holds: a pattern matching only ignored files — a build's output,
+        # a local manifest — passed here and failed on CI, where they do not exist (found in review).
+        skip = Texts.ignored(root)
         for pat in e.files
-            isempty(Texts.expand(root, pat)) && push!(problems, "the exclusion names $pat, which matches nothing here")
+            isempty(filter(f -> !skip(f), Texts.expand(root, pat))) &&
+                push!(problems, "the exclusion names $pat, which matches no file the repository holds")
         end
     end
     # A deferral is a question with a condition on it: one naming no rule, or no condition, is not one.

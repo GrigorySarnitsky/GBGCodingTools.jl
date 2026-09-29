@@ -289,7 +289,7 @@ end
         mkpath(joinpath(d, "docs", "src")); write(joinpath(d, "docs", "src", "phen.md"), "# P\n")
         @test G.Texts.files(ex, d, MM.FileSet.CODE) == ["src/O.jl"]            # no reader is given them either
         @test !any(p -> occursin("exclusion", p), CIO.validate(ex, d))
-        @test any(p -> occursin("matches nothing", p), v(ex))
+        @test any(p -> occursin("matches no file", p), v(ex))
         @test any(p -> occursin("gives no reason", p), CIO.validate(MM.Config(package = "P", tool = :dev,
                   exclusions = [MM.Exclusion(files = ["src/O.jl"], reason = " ")]), d))
         @test occursin("read by none", G.Render.switches(ex)) && occursin("waits to be extracted", G.Render.switches(ex))

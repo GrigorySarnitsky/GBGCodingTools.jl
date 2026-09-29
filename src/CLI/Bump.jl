@@ -140,12 +140,14 @@ no manifest holds says "expected package `GBGCodingTools` to be registered". Bot
 """
 function move_command(root::AbstractString, env::AbstractString)
     isfile(joinpath(root, env, "Project.toml")) || return ""
-    manifest = joinpath(root, env, "Manifest.toml")
-    if !isfile(manifest)
+    # Julia reads a version's own manifest, `Manifest-v1.12.toml`, before the plain one; the plain one was
+    # the only one looked at, and a versioned one holding the tool got the resolve that keeps its old hash.
+    manifests = filter(f -> occursin(r"^Manifest(-v[0-9.]+)?\.toml$", f), readdir(joinpath(root, env)))
+    if isempty(manifests)
         env == "test" && return ""
         return "julia --project=$env -e 'using Pkg; Pkg.resolve()'"
     end
-    holds = occursin(r"(?m)^\[\[deps\.GBGCodingTools\]\]", read(manifest, String))
+    holds = any(m -> occursin(r"(?m)^\[\[deps\.GBGCodingTools\]\]", read(joinpath(root, env, m), String)), manifests)
     return holds ? "julia --project=$env -e 'using Pkg; Pkg.update(\"GBGCodingTools\")'" :
                    "julia --project=$env -e 'using Pkg; Pkg.resolve()'"
 end

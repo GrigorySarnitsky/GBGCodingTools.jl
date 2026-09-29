@@ -50,20 +50,7 @@ function applies(cfg::Model.Config, id::Symbol; file::AbstractString = "")
     return true
 end
 
-"""
-    excluded(cfg, file) -> Bool
-
-Whether the file is one the package's config takes out of every rule, a built page counting as the
-source page it was built from. The arguments are `cfg`, the package's config, and `file`, the path
-relative to the package root. Returns the answer.
-"""
-function excluded(cfg::Model.Config, file::AbstractString)
-    isempty(cfg.exclusions) && return false
-    f = replace(file, '\\' => '/')
-    m = match(r"^docs/build/(?:(.*)/)?index\.html$", f)
-    paths = m === nothing ? [f] : [f, "docs/src/" * something(m.captures[1], "index") * ".md"]
-    return any(e -> any(pat -> any(p -> Texts.glob_matches(pat, p), paths), e.files), cfg.exclusions)
-end
+excluded(cfg::Model.Config, file::AbstractString) = Texts.excluded(cfg, file)
 
 """
     reading(rule, cfg, root) -> Vector{Tuple{Model.FileSet.T,String}}

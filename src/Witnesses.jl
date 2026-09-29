@@ -178,6 +178,9 @@ Test.record(ts::__GBGQuiet, r::Test.Pass) = (ts.pass += 1; r)
 Test.record(ts::__GBGQuiet, r::Test.Fail) = (ts.fail += 1; r)
 Test.record(ts::__GBGQuiet, r::Test.Error) = (ts.error += 1; r)
 Test.record(ts::__GBGQuiet, r::Test.Broken) = r
+# Any other result is a failed assertion: a failed `@test_logs` is a `LogTestFailure`, which counted as an
+# error and filed a failing witness as broken (found in review, 2026-09-29).
+Test.record(ts::__GBGQuiet, r::Test.Result) = (ts.fail += 1; r)
 Test.record(ts::__GBGQuiet, child::__GBGQuiet) =
     (ts.pass += child.pass; ts.fail += child.fail; ts.error += child.error; child)
 function Test.record(ts::__GBGQuiet, child::Test.AbstractTestSet)   # a set the witness typed itself

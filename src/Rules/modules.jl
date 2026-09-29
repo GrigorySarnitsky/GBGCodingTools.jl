@@ -86,7 +86,7 @@ function xlink(loaded, cfg)
             end
             # A name heading a bullet is the docstring's own field or argument, not a mention: a field
             # called `audit` is not the function of that name elsewhere.
-            for b in eachmatch(r"(?m)^\s*[-*]\s+`([^`:\s]+)", prose); push!(in_signature, String(b.captures[1])); end
+            for b in Texts.bullets(prose); union!(in_signature, Texts.bullet_head_names(b)); end
             # The FIRST mention decides, as the statement says. Read as "linked anywhere in the docstring",
             # a bare first mention with a link forty lines further down was never reported
             # (GBGHomogeneousTurbulence's `StochasticOU`, found verifying its findings, 2026-09-28).
@@ -99,7 +99,8 @@ function xlink(loaded, cfg)
                           startswith(SubString(prose, x.offset + ncodeunits(x.match)), "](@")
                 is_link && continue
                 own_of[name] === me && continue
-                at = d.line + first_prose + count(==('\n'), SubString(prose, 1, prevind(prose, x.offset)))
+                before = first_prose == 1 ? 0 : ncodeunits(join(lines[1:first_prose-1], "\n")) + 1
+                at = Texts.docstring_line(d, before + x.offset)
                 push!(out, Model.Location(; file = f, line = at, node = d.node,
                     text = "`$name` is owned by $(own_of[name]) and mentioned here without a link"))
             end
@@ -222,6 +223,54 @@ const XLINK = Model.Rule(
             Calls [`helper`](@ref Example.Inner.helper) on its argument; `helper` returns it.
             \"\"\"
             caller(x) = Inner.helper(x)
+            end
+            """, Model.Location[], "linked at its first mention"),
+        # Every name heading a bullet is the docstring's own, the second of two as well as the first.
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export a, b
+                a(x) = x
+                b(x) = x
+            end
+            using .Inner
+            \"\"\"
+                Holder
+
+            A holder.
+
+            # Fields
+
+            - `a`, `b` — its two ends.
+            \"\"\"
+            struct Holder
+                a::Int
+                b::Int
+            end
+            end
+            """, Model.Location[], "linked at its first mention"),
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export a, b
+                a(x) = x
+                b(x) = x
+            end
+            using .Inner
+            \"\"\"
+                Holder
+
+            A holder.
+
+            # Fields
+
+            - `a`,
+              `b` — its two ends, the head of names wrapping.
+            \"\"\"
+            struct Holder
+                a::Int
+                b::Int
+            end
             end
             """, Model.Location[], "linked at its first mention"),
     ])

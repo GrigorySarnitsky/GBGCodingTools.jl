@@ -542,10 +542,15 @@ ruled on 2026-09-29; another construct is one more entry.
 """
 const MANUAL_SECTIONS = [
     (name = "a keyword splat (`kwargs...`)",
-     uses = r";[^)\n]*\b[A-Za-z_][A-Za-z0-9_]*\.\.\.",
+     # inside one call's parentheses, after its `;`, across lines and one level of nested parentheses:
+     # prose "; and so on...", a `vcat` splat `[a; rest...]` and `f(args...)` are none (found in review)
+     uses = r"\((?:[^()]|\([^()]*\))*;(?:[^()]|\([^()]*\))*?(?<![\w.])(?<splat>[\p{L}_][\p{L}\p{N}_!]*\.\.\.)\s*\)",
      url = "https://docs.julialang.org/en/v1/manual/functions/#Keyword-Arguments"),
     (name = "a `do` block",
-     uses = r"\)\s+do\b(?:\s+[A-Za-z_(][^\n#]*)?\s*$"m,
+     # a call's closing parenthesis, `do`, and at most its arguments' names to the line's end: prose
+     # ") do not store" is none, and `map(xs) do ξ` is one (found in review)
+     # — or written inline in a signature, `run!(sim) do sim … end`
+     uses = r"\)[ \t]+do(?:[ \t]+\(?[\p{L}_][\p{L}\p{N}_!]*(?:[ \t]*,[ \t]*[\p{L}_][\p{L}\p{N}_!]*)*\)?)?[ \t]*(?:$|[ \t]*(?:…|\.\.\.|;)[^\n]*\bend\b)"m,
      url = "https://docs.julialang.org/en/v1/manual/functions/#Do-Block-Syntax-for-Function-Arguments"),
 ]
 
@@ -567,14 +572,16 @@ function julia_manual(root::AbstractString, cfg)
             m = match(s.uses, text)
             m === nothing && continue
             occursin(s.url, text) && continue
-            line = first_line + count(==('\n'), SubString(text, 1, prevind(text, m.offset)))
+            # at the splat itself where the pattern names it, since a signature may run over lines
+            at = haskey(m, :splat) && m[:splat] !== nothing ? m.offsets[1] : m.offset
+            line = first_line + count(==('\n'), SubString(text, 1, prevind(text, at)))
             push!(out, Model.Location(; file, line,
                 text = "uses $(s.name) and does not link its Julia manual section: $(s.url)"))
         end
     end
     for f in Texts.files(cfg, root, Model.FileSet.CODE)
         for d in Texts.docstrings_of(read(joinpath(root, f), String))
-            judge(f, d.text, d.line + 1)                  # the text begins below the opening quotes
+            judge(f, d.text, d.text_line)
         end
     end
     for f in Texts.files(cfg, root, Model.FileSet.PAGES)
@@ -602,6 +609,16 @@ const JULIA_MANUAL = Model.Rule(
         # a sentence ending in "do" is no `do` block
         Model.TreeExample(["docs/src/guide.md" => "# Guide\n\nRun it as the tests do\n"],
                           Model.Location[], "a `do` block links the manual"),
+        # none of these is a keyword splat or a `do` block (found in review, 2026-09-29)
+        Model.TreeExample(["docs/src/guide.md" => "# Guide\n\nIt stacks `[a; rest...]`; and so on...\nThe windows) do not store it.\nCall `f(args...)` and `x = 1; y = g(z...)`.\n"],
+                          Model.Location[], "a keyword splat links the manual"),
+        # a splat on a signature's continuation line, reported there; a do block over a non-ASCII argument
+        Model.TreeExample(["src/Example.jl" => "\"\"\"\n    f(a;\n      tol = 1,\n      kwargs...)\n\nCalls `g`.\n\"\"\"\nf(a; kwargs...) = a\n"],
+                          [Model.Location(; file = "src/Example.jl", line = 4)], "a keyword splat links the manual"),
+        Model.TreeExample(["docs/src/guide.md" => "# Guide\n\n```julia\nmap(xs) do ξ\n    2ξ\nend\n```\n"],
+                          [Model.Location(; file = "docs/src/guide.md", line = 4)], "a `do` block links the manual"),
+        Model.TreeExample(["src/Example.jl" => "\"\"\"\n    run!(sim) do sim … end\n\nRuns a simulation.\n\"\"\"\nrun!(f, sim) = f(sim)\n"],
+                          [Model.Location(; file = "src/Example.jl", line = 2)], "a `do` block links the manual"),
     ])
 
 """

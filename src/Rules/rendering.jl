@@ -447,14 +447,27 @@ function indented_code(text::AbstractString, cfg)
                 isempty(strip(m.captures[3])) && (fence = nothing)
         end
     end
-    out = Model.Location[]; taken = Set{Int}()
+    out = Model.Location[]; from = 1
     for c in code_blocks(Markdown.parse(join(tagged, '\n')))
         startswith(c.language, FENCE_TAG) && continue
-        head = strip(first(split(c.code, '\n')))
-        n = findfirst(k -> !fenced[k] && !(k in taken) && startswith(lines[k], "    ") && strip(lines[k]) == head,
-                      eachindex(lines))
+        # Where the block is: the first line at or after the last block found, indented by a tab or four
+        # spaces, from which every line of the block follows, compared as the parser saw the text. A block
+        # of a tab or of an indented fence was dropped, and a block was placed at an earlier line with the
+        # same text, until review (2026-09-29).
+        code = split(c.code, '\n')
+        # and the parser, asked again with a mark on that line, puts the mark in an unfenced code block:
+        # a list's paragraph can hold the same text and is not code
+        is_code(k) = begin
+            marked = copy(tagged); marked[k] = replace(marked[k], r"\S.*$" => "GBGMARK" * strip(marked[k]))
+            any(x -> !startswith(x.language, FENCE_TAG) && occursin("GBGMARK", x.code),
+                code_blocks(Markdown.parse(join(marked, '\n'))))
+        end
+        same(k) = k + length(code) - 1 <= length(tagged) &&
+                  occursin(r"^(\t| {4})", tagged[k]) &&
+                  all(i -> strip(tagged[k + i - 1]) == strip(code[i]), eachindex(code)) && is_code(k)
+        n = findfirst(same, from:length(tagged))
         n === nothing && continue
-        push!(taken, n)
+        n = from + n - 1; from = n + length(code)
         push!(out, Model.Location(; file = "", line = n,
             text = "an indented code block: fence it with three backticks, or unindent it if it is prose"))
     end
@@ -495,6 +508,14 @@ const FENCED_CODE = Model.Rule(
         # Two blank lines end the item, and its bullets left indented are a code block.
         Model.TextExample(Model.FileSet.PAGES, "# Page\n\n1. An item.\n\n\n    - **A bullet.** Of the item.\n",
             [Model.Location(; file = "docs/src/page.md", line = 6)], "fenced with three backticks, never indented"),
+        # a tab-indented block, and a fence indented four spaces, which renders with its backticks showing
+        Model.TextExample(Model.FileSet.PAGES, "# Page\n\nRun it:\n\n\tjulia --project\n",
+            [Model.Location(; file = "docs/src/page.md", line = 5)], "fenced with three backticks, never indented"),
+        Model.TextExample(Model.FileSet.PAGES, "# Page\n\nRun it:\n\n    ```sh\n    julia --project\n    ```\n",
+            [Model.Location(; file = "docs/src/page.md", line = 5)], "fenced with three backticks, never indented"),
+        # the block, not an earlier list paragraph with the same text
+        Model.TextExample(Model.FileSet.PAGES, "# Page\n\n1. An item,\n\n    x = 1\n\nThen:\n\n    x = 1\n",
+            [Model.Location(; file = "docs/src/page.md", line = 9)], "fenced with three backticks, never indented"),
     ])
 
 """

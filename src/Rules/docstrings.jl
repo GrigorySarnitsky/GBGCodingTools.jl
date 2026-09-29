@@ -301,16 +301,18 @@ function documented_fields(doc::AbstractString)
     k === nothing && return nothing
     names = String[]
     inlist = false
+    section = String[]
     for line in split(doc[first(k):end], '\n')[2:end]
         startswith(line, "#") && break
         if occursin(FIELD_BULLET, line)
             inlist = true
-            head = first(split(line, r" — | -- "))
-            for m in eachmatch(FIELD_NAME, head); push!(names, String(m.captures[1])); end
         elseif inlist && !isempty(strip(line)) && !startswith(line, (' ', '\t'))
             break
         end
+        push!(section, line)
     end
+    # a bullet's head of names may wrap onto its continuation lines
+    for b in Texts.bullets(join(section, '\n')); append!(names, Texts.bullet_head_names(b)); end
     return names
 end
 
@@ -375,6 +377,17 @@ const FIELDS = Model.Rule(
             [Model.Location(; file = "src/Example.jl", line = 6)], "every field heading a bullet of its own"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a`, `b` — the two ends.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
+            Model.Location[], "every field heading a bullet of its own"),
+        # The colon form heads a bullet as the dash form does, and a name inside its description is none.
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a`: the first, and `b` the second.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
+            [Model.Location(; file = "src/Example.jl", line = 6)], "every field heading a bullet of its own"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a`: the first, not `k`.\n- `b`: the second.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
+            Model.Location[], "every bullet a real field"),
+        # a bullet's head of names wraps onto its next line and still heads it
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a`,\n  `b` — the two ends.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
             Model.Location[], "every field heading a bullet of its own"),
     ])
 

@@ -257,8 +257,11 @@ function link_uniformity(root::AbstractString, cfg)
             linked = [m.captures[1] for m in eachmatch(RUN_LINKED, text)]
             bare = [m.captures[1] for m in eachmatch(RUN_BARE, text) if m.captures[1] in public && m.captures[1] != d.node]
             (isempty(linked) || isempty(bare)) && continue
-            first_link = findfirst("`" * first(linked) * "`", d.text)
-            at = first_link === nothing ? d.line : Texts.docstring_line(d, first(first_link))
+            # the run itself, found in the docstring's own text with its whitespace free again: the first
+            # appearance of its linked name elsewhere in the docstring took the line (found in review)
+            words = split(String(text))
+            place = match(Regex(join(("\\Q" * w * "\\E" for w in words), "\\s+")), d.text)
+            at = place === nothing ? d.line : Texts.docstring_line(d, place.offset)
             push!(out, Model.Location(; file = f, line = at, node = d.node,
                 text = "linked " * join(("`$n`" for n in linked), ", ") * " beside bare " *
                        join(("`$n`" for n in bare), ", ") * " in one run: " * first(String(text), 90)))
@@ -291,6 +294,10 @@ const LINK_UNIFORMITY = Model.Rule(
             ["src/Example.jl" => "module Example\nexport f\n\"\"\"\n    f(x)\n\nA thing, with `x` and `y` given.\n\"\"\"\nf(x) = x\ninclude(\"other.jl\")\nend\n",
              "src/other.jl" => "\"\"\"\n    h(x)\n\nSee [`f`](@ref), `x` and `y`.\n\"\"\"\nh(x) = x\n"],
             Model.Location[], "either every name is linked or none is"),
+        # the run's own line, though its linked name appears earlier in the docstring
+        Model.TextExample(Model.FileSet.CODE,
+            "export f, g\n\n\"\"\"\n    h(x)\n\nUses [`f`](@ref) first.\n\nThen: see [`f`](@ref), `g` and more.\n\"\"\"\nh(x) = x\n",
+            [Model.Location(; file = "src/Example.jl", line = 8)], "either every name is linked or none is"),
     ])
 
 # ───────────────────────────────────────────────────── a rule id that names something that exists

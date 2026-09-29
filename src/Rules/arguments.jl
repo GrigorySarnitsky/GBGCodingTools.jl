@@ -22,7 +22,9 @@ using ...Texts
 # A line may lead into the bullets inside the section — "All keyword, all required:" — and the list is
 # still under the heading; a bullet past the next heading is not.
 const BULLETED = r"(?m)^#\s+Arguments\s*\n(?:(?!#)[^\n]*\n)*?\s*[-*]\s"
-const UNDER_PHRASE = r"The\s+arguments\s+are\b[^\n]*\n\s*\n?\s*[-*]\s"
+# The sentence that ENDS at "are" or "are:" with bullets under it. Any text after "are" on the line made a
+# prose binding followed by an unrelated list read as a bulleted one (found in review, 2026-09-29).
+const UNDER_PHRASE = r"The\s+arguments\s+are:?[ \t]*\n\s*\n?\s*[-*]\s"
 const IN_PROSE = r"The\s+arguments?\s+(is|are)\s+`"
 const WRAPPER_PHRASE = "Allocating form of"
 const THRESHOLD = 3
@@ -157,6 +159,10 @@ const ARGS_FORM = Model.Rule(
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S(; a = 1, b = 2)\n\nA thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n\n# Fields\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nBase.@kwdef struct S\n    a = 1\n    b = 2\nend\n",
             Model.Location[], "a type lists its constructor's arguments"),
+        # arguments bound in prose, and an unrelated list after them: no finding
+        Model.TextExample(Model.FileSet.CODE,
+            doc("f(a, b)", "Does a thing. The arguments are `a`, the first, and `b`, the second.\n\n- one note.\n- another."),
+            Model.Location[], "fewer are bound in running prose"),
     ])
 
 """

@@ -121,8 +121,11 @@ if [ -z "${1:-}" ]; then
   git -C "$CLONE/repo" remote set-url origin "$(git remote get-url origin)"
   git -C "$CLONE/repo" remote set-url --push origin DISABLED
   git ls-files -z | tar --null -T - -cf - | tar -xf - -C "$CLONE/repo"
-  # A file deleted from the working tree but not yet from git is absent from the commit: remove it here.
+  # A file the commit will not hold is removed from the clone: one deleted from the working tree and not
+  # yet from git, and one removed from the index with `git rm` or left behind as the old name of a `git mv`
+  # (the second pair was missed until review, 2026-09-29, and HEAD's copy of each stayed in the clone).
   git ls-files -z --deleted | (cd "$CLONE/repo" && xargs -0 -r rm -f --)
+  git diff --cached --name-only --no-renames --diff-filter=D -z | (cd "$CLONE/repo" && xargs -0 -r rm -f --)
   for V in $FLOOR_JULIAS; do
     echo "floor: Julia $V, in a fresh clone — the tests"
     rm -f "$CLONE/repo/Manifest.toml"       # each Julia resolves its own; a manifest names the Julia it was resolved by

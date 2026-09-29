@@ -4,6 +4,24 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.43 — 2026-09-29
+
+PATCH, the 26 defects an independent review of rc.35–rc.42 found, each fixed with a test or an example
+that fails on the code it was found in (`docs/design-record/review-2026-09-29.md`). The ones a consumer
+meets:
+
+- **The push hook** catches every spelling of a push (a quoted `-C` path, `git -c`, `gbg release`), no
+  longer builds for a command that only mentions one, stops a push while tracked files are uncommitted,
+  and leaves another repository's push alone.
+- **False findings removed in GBGCloudPhysics:** 10 from `RULE.DOC.FIELDS` (colon-form bullets, wrapped
+  heads) and 22 from `RULE.DOC.XLINK` (every name heading a bullet is the docstring's own).
+- **`RULE.DOC.JULIA_MANUAL`** takes a keyword splat only inside a call after its `;`, a `do` block only
+  as code, and a multi-line signature's splat at its own line.
+- **Lines** are right for one-line docstrings, blank lines after the quotes and Windows line endings.
+- **Exclusions** cover every built-page form, apply before a site rule reads a page, and are validated
+  against the files a clone holds.
+- **The change guard** reads CLAUDE.md headings as CommonMark does, and keeps an `@path` import as code.
+
 ## 2.0.0-rc.42 — 2026-09-29
 
 MINOR, the owner's rulings of 2026-09-29 and five recorded defects:

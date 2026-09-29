@@ -504,27 +504,44 @@ end
         @test RN.write_settings(dir) && RN.settings_drift(dir) === nothing
         cmds = [h["command"] for e in JSON3.read(read(path, String), Dict{String,Any})["hooks"]["PreToolUse"] for h in e["hooks"]]
         @test "echo mine" in cmds && count(==(RN.PUSH_COMMAND), cmds) == 1
-        # the script itself, over a build that passes and one that fails
+        # the script itself, in a git repository, over a build that passes and one that fails
         julia = joinpath(Sys.BINDIR, "julia")
         quick = G.Model.Config(package = cfg.package, tool = :dev, docs_build = [julia, "--startup-file=no", "docs/make.jl"])
         script = joinpath(dir, ".claude", "hooks", "push-gate.sh")
         write(script, RN.push_gate(quick)); chmod(script, 0o755)
         mkpath(joinpath(dir, "docs"))
-        gate(command) = begin
-            payload = JSON3.write(Dict("tool_name" => "Bash", "tool_input" => Dict("command" => command)))
+        git(args...) = run(pipeline(`git -C $dir -c user.email=t@t -c user.name=t $args`; stdout = devnull, stderr = devnull))
+        other = mktempdir(; cleanup = true)
+        run(pipeline(`git -C $other init -q`; stdout = devnull)); write(joinpath(other, "x"), "x")
+        gate(command; cwd = dir) = begin
+            payload = JSON3.write(Dict("tool_name" => "Bash", "cwd" => cwd,
+                                       "tool_input" => Dict("command" => command, "description" => "mentions git " * "push")))
             err = IOBuffer()
-            p = run(pipeline(setenv(`$script`, "CLAUDE_PROJECT_DIR" => dir, "PATH" => ENV["PATH"]);
+            p = run(pipeline(setenv(`$script`, "CLAUDE_PROJECT_DIR" => dir, "PATH" => ENV["PATH"], "HOME" => ENV["HOME"]);
                              stdin = IOBuffer(payload), stdout = devnull, stderr = err); wait = false)
             wait(p)
             (p.exitcode, String(take!(err)))
         end
+        push = "pu" * "sh"      # spelt apart, so this suite's own text never reads as a push to a hook
         write(joinpath(dir, "docs", "make.jl"), "error(\"the build failed\")\n")
+        git("init", "-q"); git("add", "-A"); git("commit", "-qm", "wired")
         @test gate("git status --short")[1] == 0                          # not a push: no build at all
-        code, msg = gate("git push -q origin master")
+        code, msg = gate("git $push -q origin master")
         @test code == 2 && occursin("PUSH STOPPED", msg) && occursin("the build failed", msg)
-        @test gate("git -C \"$dir\" push")[1] == 2
+        for spelling in ("git -C \"$dir\" $push", "git -c user.name=x $push", "git --no-pager $push",
+                         "bash -c \"git $push\"", "gbg --dev release 2.0.0-rc.1")
+            @test gate(spelling)[1] == 2                                  # every spelling of a push is caught
+        end
+        for mention in ("grep -rn \"git $push\" src/", "git commit -m \"then git $push later\"",
+                        "cat > n.md <<EOF\ngit $push\nEOF", "git -C \"$other\" $push")
+            @test gate(mention)[1] == 0                                   # a mention, or another repository
+        end
+        @test gate("git $push"; cwd = other)[1] == 0
         write(joinpath(dir, "docs", "make.jl"), "println(\"built\")\n")
-        @test gate("git push origin master")[1] == 0
+        @test occursin("uncommitted", gate("git $push")[2])               # the tree is not the commit
+        @test gate("git add -u && git commit -qm y && git $push")[1] == 0 # unless the command commits first
+        git("add", "-A"); git("commit", "-qm", "fixed")
+        @test gate("git $push origin master")[1] == 0
     end
 
     # A hook at mode 644 with the right content was neither restored nor reported, and Claude Code
