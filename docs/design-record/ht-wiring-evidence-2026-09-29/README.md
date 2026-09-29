@@ -22,3 +22,5 @@ it ran. The paths in these files are the rehearsal's scratch directory.
   wired clone.
 - `ht-test-audit-c016f95.md` — HT's tests read against the four harness contracts, at `c016f95` and
   rc.31 (Step 7).
+- `rc48-bump-run.sh.txt`, `rc48-bump-steps.txt` — HT's own wiring commit `22821d7` (rc.47, unpushed)
+  moved to rc.48 on a clone, 2026-09-30: the amendment at the head of the document.

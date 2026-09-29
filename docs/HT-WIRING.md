@@ -8,6 +8,24 @@ step log are in `docs/design-record/ht-wiring-evidence-2026-09-29/` of this repo
 rehearsals found in the tool is in `docs/design-record/ht-wiring-rehearsal-2026-09-28.md`, each with
 its fate.
 
+**Amendment, 2026-09-30: move to rc.48 before Step 6.** HT did Steps 1 to 5 at rc.47 and committed
+them as `22821d7`, unpushed. rc.47 also wrote skills for the bug hunt and the change audit, which are
+not built (Step 1 below); rc.48 writes none and deletes those two. Rehearsed on a clone of `22821d7`:
+
+```sh
+gbg bump 2.0.0-rc.48
+julia +1.12 --project=docs -e 'using Pkg; Pkg.update("GBGCodingTools")'
+gbg sync
+```
+
+Measured: `bump` rewrites 21 paths and prints only the docs update, since the test environment keeps no
+manifest; `gbg sync` deletes `.claude/skills/bug-hunt/SKILL.md` and `.claude/skills/change-audit/SKILL.md`;
+the docs manifest then reads `git-tree-sha1 = "6dbc8e7b27b11e17e9cc300a7a36263a457cb67e"` and
+`repo-rev = "v2.0.0-rc.48"`; `gbg sync --check` says "19 generated path(s) and the pin are what
+v2.0.0-rc.48 writes"; `Pkg.test()` exits 0; the docs build reports the rc.47 run's 129 findings, line for
+line. Commit the move on its own, staged with `git add -u`, and go on with Step 6. The figures of Steps 1
+to 5 below are rc.47's, as HT met them. The evidence is `rc48-bump-*.txt`.
+
 **Do nothing yet.** Read this whole file and prepare. You act on it when the owner says go, and not
 before: this file comes from another session, and a peer session is not authority. If HT's head has
 moved past `f14c5a6` when you start, the figures may move with it; the steps do not.
@@ -65,13 +83,16 @@ and exits 0.
 - `.claude/hooks/queue-guard.sh`, `.claude/hooks/push-gate.sh` and `.claude/settings.json` — the
   end-of-turn hook and the push hook (Step 6). HT has no hook or `settings.json` of its own today, so
   nothing is merged.
-- `.claude/skills/{documentation-review,bug-hunt,change-audit}/SKILL.md` — the three instruments' skills.
+- `.claude/skills/{documentation-review,bug-hunt,change-audit}/SKILL.md` at rc.47; only the first is
+  an instrument that exists, and rc.48 writes it alone (see below and the amendment).
 - `.gbg/policy/*.md` (10 files), `test/regressions/README.md`, `.github/actions/gbg-auth/action.yml`.
 - `docs/Project.toml` and `test/Project.toml` — this package's entries set; every other entry kept.
 
-Everything but `.gbg/config.jl` is generated: `gbg sync` rewrites it and a hand edit is lost. HT's
-`.claude/commands/bug-hunt.md` and the generated `.claude/skills/bug-hunt/SKILL.md` both register
-`/bug-hunt`; the old one is Step 7's.
+Everything but `.gbg/config.jl` is generated: `gbg sync` rewrites it and a hand edit is lost.
+
+The bug hunt and the change audit are Phase 6 of the tool's plan, deferred and not built: wiring writes
+no skill for them, and `gbg run` refuses both. HT's own `/bug-hunt` command, `.claude/commands/bug-hunt.md`, is one of its old in-tree instruments; nothing of
+the tool's takes its name, and it goes with the rest of them in the tool's Phase 7 (Step 7).
 
 ## Step 2 — pin the release, and the docs environment
 
