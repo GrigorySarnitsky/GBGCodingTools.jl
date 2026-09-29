@@ -948,14 +948,19 @@ generated_here(text::AbstractString) =
 Whether the package configured by `cfg` is to have the generated part `g`. The arguments are `cfg` and
 `g`, one entry of [`GENERATED`](@ref). Returns the answer.
 
-Everything is wanted but the skill of an instrument the package has switched off: a skill file is a
-command a person can type, and leaving one for an instrument that refuses to start is an invitation to
-an error message. What is not wanted is deleted, and the wiring check reports one left behind.
+Everything is wanted but the skill of an instrument switched off here or not built: a skill file is a
+command a person can type, and one for an instrument that refuses to start invites an error message.
+What is not wanted is deleted, and the wiring check reports one left behind.
 """
 function wanted(cfg::Model.Config, g)
     startswith(String(g.generator), "skill_") || return true
-    return Engine.Checks.applies(cfg, Symbol(SubString(String(g.generator), ncodeunits("skill_") + 1)))
+    id = Symbol(SubString(String(g.generator), ncodeunits("skill_") + 1))
+    return built(id) && Engine.Checks.applies(cfg, id)
 end
+
+# Whether an instrument's runs exist yet. The bug hunt's and the change audit's skills were written into
+# every wired package while both refused to start, and a session told HT it had them (the owner, 2026-09-30).
+built(id::Symbol) = only(i for i in Catalogue.INSTRUMENTS if i.id === id).built
 
 """
     skill_path(instrument) -> String
@@ -1708,7 +1713,9 @@ function wiring(cfg::Model.Config, root::AbstractString)
         full = joinpath(root, g.path)
         if !wanted(cfg, g)
             isfile(full) && generated_here(read(full, String)) && push!(out, Model.Location(; file = g.path,
-                                   text = "this instrument is switched off here and keeps no skill file"))
+                text = built(Symbol(SubString(String(g.generator), ncodeunits("skill_") + 1))) ?
+                       "this instrument is switched off here and keeps no skill file" :
+                       "this instrument is not built yet and keeps no skill file"))
             continue
         end
         want = produce(g.generator, cfg)
@@ -1769,7 +1776,7 @@ function write_all(cfg::Model.Config, root::AbstractString)
         full = joinpath(root, g.path)
         if !wanted(cfg, g)
             isfile(full) && generated_here(read(full, String)) || continue
-            rm(full; force = true)                       # a switched-off instrument keeps no skill
+            rm(full; force = true)                       # a switched-off or unbuilt instrument keeps no skill
             isdir(dirname(full)) && isempty(readdir(dirname(full))) && rm(dirname(full))
             push!(changed, g.path)
             continue

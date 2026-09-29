@@ -29,6 +29,7 @@ end
     @testset "one changed byte in any generated path is reported" begin
         for g in RN.GENERATED
             dir, cfg = wired_package()
+            RN.wanted(cfg, g) || continue                    # an unbuilt instrument's skill is not written
             full = joinpath(dir, g.path)
             text = read(full, String)
             # the change must land INSIDE the generated part: for a block file the package's own lines
@@ -213,10 +214,10 @@ end
         # the package's own CI action, and its own skill of a name the tool also uses
         own = joinpath(dir, RN.CI_ACTION)
         mkpath(dirname(own)); write(own, "name: the package's own action\non: [push]\n")
-        skill = joinpath(dir, RN.skill_path(:bug_hunt))
-        write(skill, "# /bug-hunt — the package had this command first\n")
+        skill = joinpath(dir, RN.skill_path(:documentation_review))
+        write(skill, "# /documentation-review — the package had this command first\n")
         clash = RN.collisions(cfg, dir)
-        @test sort(first.(clash)) == sort([RN.CI_ACTION, RN.skill_path(:bug_hunt)])
+        @test sort(first.(clash)) == sort([RN.CI_ACTION, RN.skill_path(:documentation_review)])
         @test occursin("the package's own action", last(first(filter(c -> first(c) == RN.CI_ACTION, clash))))
 
         @test G.Wire.init(dir; io = devnull) == 1              # it stops
@@ -260,13 +261,12 @@ end
     @testset "a switched-off instrument keeps no skill" begin
         dir, cfg = wired_package()
         for i in G.Catalogue.INSTRUMENTS
-            @test isfile(joinpath(dir, RN.skill_path(i.id)))
+            @test isfile(joinpath(dir, RN.skill_path(i.id))) == i.built
         end
         text = read(joinpath(dir, RN.skill_path(:documentation_review)), String)
         @test occursin("gbg run documentation-review", text)
         @test occursin("gbg run close", text)
         @test occursin("gbg docfix commit", text)            # it has fix passes
-        @test !occursin("gbg docfix commit", read(joinpath(dir, RN.skill_path(:bug_hunt)), String))
 
         off = G.Model.Config(package = cfg.package, tool = cfg.tool, filesets = cfg.filesets,
                              switches = [G.Model.Switch(target = :documentation_review,
@@ -283,6 +283,26 @@ end
         write(joinpath(dir, RN.skill_path(:documentation_review)), RN.skill(cfg, :documentation_review))
         drift = RN.wiring(off, dir)
         @test length(drift) == 1 && occursin("switched off", first(drift).text)
+    end
+
+    # An instrument not built yet keeps no skill either: its run refuses to start, and a session reading the
+    # skill told HT it had a bug hunt (the owner, 2026-09-30).
+    @testset "an instrument not built keeps no skill" begin
+        dir, cfg = wired_package()
+        @test !G.Catalogue.INSTRUMENTS[findfirst(i -> i.id === :bug_hunt, G.Catalogue.INSTRUMENTS)].built
+        @test !isfile(joinpath(dir, RN.skill_path(:bug_hunt)))
+        @test !isfile(joinpath(dir, RN.skill_path(:change_audit)))
+        # one of ours left behind by an earlier version is drift, and `sync` deletes it
+        mkpath(dirname(joinpath(dir, RN.skill_path(:bug_hunt))))
+        write(joinpath(dir, RN.skill_path(:bug_hunt)), RN.skill(cfg, :bug_hunt))
+        drift = RN.wiring(cfg, dir)
+        @test length(drift) == 1 && occursin("not built yet", first(drift).text)
+        @test RN.write_all(cfg, dir).changed == [RN.skill_path(:bug_hunt)]
+        @test !isdir(dirname(joinpath(dir, RN.skill_path(:bug_hunt))))
+        # and a run of it refuses to start
+        io = IOBuffer()
+        G.Orchestration.Runs.start(:bug_hunt, dir; io = io)
+        @test occursin("not built yet", String(take!(io)))
     end
 
     @testset "write_all is idempotent, and says what it changed" begin
@@ -403,11 +423,18 @@ end
         @test [l.file for l in RN.wiring(cfg, dir)] == ["test/regressions/README.md"]    # and it stays reported
         # a switched-off instrument's skill of the package's own is not deleted either
         off = G.Model.Config(package = cfg.package, tool = cfg.tool, filesets = cfg.filesets,
-                             switches = [G.Model.Switch(target = :bug_hunt, reason = "the package has its own")])
-        write(joinpath(dir, RN.skill_path(:bug_hunt)), "# /bug-hunt, the package's\n")
+                             switches = [G.Model.Switch(target = :documentation_review, reason = "the package has its own")])
+        own = joinpath(dir, RN.skill_path(:documentation_review))
+        write(own, "# /documentation-review, the package's\n")
         RN.write_all(off, dir)
-        @test read(joinpath(dir, RN.skill_path(:bug_hunt)), String) == "# /bug-hunt, the package's\n"
-        @test !any(l -> l.file == RN.skill_path(:bug_hunt), RN.wiring(off, dir))
+        @test read(own, String) == "# /documentation-review, the package's\n"
+        @test !any(l -> l.file == RN.skill_path(:documentation_review), RN.wiring(off, dir))
+        # nor is the package's own skill at an unbuilt instrument's path
+        mine = joinpath(dir, RN.skill_path(:bug_hunt))
+        mkpath(dirname(mine)); write(mine, "# /bug-hunt, the package's\n")
+        RN.write_all(cfg, dir)
+        @test read(mine, String) == "# /bug-hunt, the package's\n"
+        @test !any(l -> l.file == RN.skill_path(:bug_hunt), RN.wiring(cfg, dir))
     end
 
     # Every consumer's `docs/` holds a `Project.toml`, so `gbg init` run there wired `docs/` as a package

@@ -112,6 +112,7 @@ function start(instrument::Symbol, root::AbstractString; readers::Symbol = :boun
     i === nothing && (println(io, "run: no instrument is called $instrument"); return nothing)
     inst = Catalogue.INSTRUMENTS[i]
     cfg = ConfigIO.read_config(root)
+    inst.built || (println(io, "run: $instrument is not built yet"); return nothing)
     Engine.Checks.applies(cfg, instrument) ||
         (println(io, "run: $instrument is switched off in this package"); return nothing)
     # An instrument with no derived readers would open, launch nobody and close clean: the bug hunt and

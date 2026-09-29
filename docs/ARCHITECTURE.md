@@ -462,6 +462,7 @@ Base.@kwdef struct Instrument
     id::Symbol; purpose::String; intention::Intention.T; decider::Decider.T; fixer::Fixer.T
     when::String; ends::String                  # the last two columns of §3, in the same words
     budget::Budget                              # its readers are derived at run time, not a field
+    built::Bool = true                          # false for a row marked future: no skill, no run
 end
 "A program check that every build and test runs; its decider is a program by definition."
 Base.@kwdef struct AlwaysOn
@@ -605,12 +606,12 @@ is, with the three rows marked future read as future.
 | File, or part of a file | Read by | Written by |
 |---|---|---|
 | `.gbg/policy/*.md` (statements, no examples); the tooling package's block in `CLAUDE.md` | sessions | `Render.policy` |
-| one `.claude/skills/<instrument>/SKILL.md` per instrument that applies | Claude Code | `Render.skill` |
-| agents' arguments and output schemas, under `.gbg/scratch/<run>/` | the Workflow tool, agents | `Agents`; the driver itself is this package's tracked `drivers/run.js` |
+| one `.claude/skills/<instrument>/SKILL.md` per built instrument that applies | Claude Code | `Render.skill` |
+| agents' arguments and output schemas, under `.gbg/scratch/<run>/` | the Workflow tool, agents | `Agents`; the driver is this package's tracked `drivers/run.js` |
 | the pin in `docs/Project.toml` and `test/Project.toml` | Pkg | `Render.pin` |
 | the tooling package's block in `.gitignore`, the CI workflow files, the end-of-turn hook | git, GitHub, Claude Code | `Render.gitignore`, `Render.ci`, `Render.hook` |
 | one small page on each consumer's site, under its design or internals section: what the documentation is held to, a link to this package's site, and the switches with their reasons — nothing else of the tool [ruled 2026-09-23; the rulebook, readers and instruments pages it replaced are §3 of the decision log] | readers of a consumer's site | `Render.pages`, called by `docs/make.jl` |
-| the rulebook as a page, grouped by cover, an anchor per rule, with the glossary — on this package's own site alone | readers of this site | `Render.rulebook_page`, called by this package's `docs/make.jl` only |
+| the rulebook as a page, grouped by cover, an anchor per rule, with the glossary — on this package's site alone | readers of this site | `Render.rulebook_page`, called by this package's `docs/make.jl` only |
 
 `Render.GENERATED` lists every generated path or part — a whole file, a marked block, or the entries of a TOML
 table — with its generator; a package's declared copies count as generated. Run records, reports and the question store
@@ -819,7 +820,7 @@ module's [a check with no input reports clean].
 .gbg/runs/<id>/              run.json and report.md; while a run is open, its stage file and draft record
 .gbg/scratch/<id>/           the agents' arguments and results, git-ignored, deleted at close
 .gbg/requests/               requests to another package (RULE.GIT.REQUESTS); a reader or discipline asked of the tooling session is one
-.claude/skills/*/SKILL.md    generated, one per instrument that applies
+.claude/skills/*/SKILL.md    generated, one per instrument that applies and is built
 .claude/WORK_QUEUE.md        the owner's items, guarded; under an unguarded heading, each run's leftovers
 .claude/settings.json        the end-of-turn hook, generated
 CLAUDE.md                    the tooling package's block generated; the rest belongs to the package

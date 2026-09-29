@@ -126,6 +126,10 @@ if [ -z "${1:-}" ]; then
   # (the second pair was missed until review, 2026-09-29, and HEAD's copy of each stayed in the clone).
   git ls-files -z --deleted | (cd "$CLONE/repo" && xargs -0 -r rm -f --)
   git diff --cached --name-only --no-renames --diff-filter=D -z | (cd "$CLONE/repo" && xargs -0 -r rm -f --)
+  # A directory the removals emptied goes too, as no clone of the commit would hold it: an emptied
+  # `.claude/skills/bug-hunt/` was still listed there, and a test counting the skill directories failed
+  # on what the commit does not contain (rc.48, 2026-09-30).
+  ( cd "$CLONE/repo" && find . -path ./.git -prune -o -type d -empty -print | xargs -r rmdir -p --ignore-fail-on-non-empty 2>/dev/null ) || true
   for V in $FLOOR_JULIAS; do
     echo "floor: Julia $V, in a fresh clone — the tests"
     rm -f "$CLONE/repo/Manifest.toml"       # each Julia resolves its own; a manifest names the Julia it was resolved by

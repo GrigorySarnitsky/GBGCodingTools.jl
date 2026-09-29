@@ -159,3 +159,8 @@ tool:
   bullet with two arguments. Found verifying HT's rc.46 findings. · fate: resolved in rc.47 — the owner
   ruled (2026-09-29) that several names may head one bullet, for fields and arguments alike, since all
   of them are seen at a glance; the statements now say so
+- **W-34.** Wiring wrote the bug hunt's and the change audit's skills though both are Phase 6, deferred,
+  and their runs refuse to start; HT-WIRING.md listed them as installed, and HT's session read that it
+  had a bug hunt beside its old one, "Step 7 settles which stays" (the owner noticed, 2026-09-30).
+  · fate: fixed in rc.48 — an instrument not built keeps no skill, and the document says the two do not
+  exist yet and that HT's old instruments go in Phase 7

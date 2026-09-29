@@ -4,6 +4,18 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.48 — 2026-09-30
+
+PATCH, the owner's decision of 2026-09-30:
+
+- **An instrument not built yet keeps no skill file.** The bug hunt and the change audit are Phase 6,
+  deferred, and their runs refuse to start ("has no readers yet"); their skills were written into every
+  wired package all the same, and a session read them as instruments it had. An `Instrument` now says
+  whether it is `built`; `gbg sync` deletes a skill of ours left for one that is not, the wiring check
+  reports one left behind, and `gbg run` says "not built yet". A package's own file at that path is
+  kept. A wired package loses `.claude/skills/bug-hunt/` and `.claude/skills/change-audit/` on its next
+  `sync`.
+
 ## 2.0.0-rc.47 — 2026-09-29
 
 PATCH, the owner's ruling of 2026-09-29 on names at a bullet's head:

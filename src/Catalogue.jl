@@ -73,7 +73,8 @@ const INSTRUMENTS = Model.Instrument[
         fixer = Model.Fixer.CODE_FIXER,
         when = "Owner's request",
         ends = "Every candidate is confirmed or discarded, once",
-        budget = Model.Budget(fix_passes = 0)),
+        budget = Model.Budget(fix_passes = 0),
+        built = false),                                     # Phase 6, deferred 2026-09-21
     Model.Instrument(
         id = :change_audit,
         purpose = "A code change is no wider than the defect and the owner's direction and still accepts input that worked before; it grades the fix and changes nothing",
@@ -82,7 +83,8 @@ const INSTRUMENTS = Model.Instrument[
         fixer = Model.Fixer.CODE_FIXER,
         when = "After each approved code fix, and on request",
         ends = "One pass over the change",
-        budget = Model.Budget(fix_passes = 0)),
+        budget = Model.Budget(fix_passes = 0),
+        built = false),                                     # Phase 6, deferred 2026-09-21
 ]
 
 """

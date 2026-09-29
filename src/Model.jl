@@ -603,21 +603,21 @@ end
 """
     Instrument
 
-A review procedure the owner starts, with the three values that separate it from every other and the two
-sentences the instrument table prints.
+A review procedure the owner starts, as the design's instrument table prints it.
 
 Its readers are not a field: they are derived from the rules at run time, by the catalogue.
 
 # Fields
 
 - `id` — its stable identifier.
-- `purpose` — what it is for, in one sentence.
-- `intention` — whether its defects are in documentation or in code.
-- `decider` — what decides that a finding is real.
+- `purpose` — what it is for.
+- `intention` — documentation or code.
+- `decider` — what makes a finding real.
 - `fixer` — who fixes what it found.
 - `when` — when it runs.
-- `ends` — when one of its runs ends.
-- `budget` — what one run may spend.
+- `ends` — when a run ends.
+- `budget` — what a run may spend.
+- `built` — false while its row is future: no skill, no run.
 """
 Base.@kwdef struct Instrument
     id::Symbol
@@ -628,6 +628,7 @@ Base.@kwdef struct Instrument
     when::String
     ends::String
     budget::Budget
+    built::Bool = true
 end
 
 """
@@ -638,7 +639,7 @@ A program check that every build and test runs; nobody starts it and it has no r
 # Fields
 
 - `id` — its stable identifier.
-- `purpose` — what it is for, in one sentence.
+- `purpose` — what it is for.
 - `intention` — whether its defects are in documentation or in code.
 - `fixer` — who fixes what it found.
 - `decider` — what decides that a finding is real, a program by definition.
