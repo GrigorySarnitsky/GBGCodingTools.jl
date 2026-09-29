@@ -533,10 +533,82 @@ const RETIRED = Model.Rule(
 )
 
 """
+    MANUAL_SECTIONS
+
+The Julia constructs a reader may not know, each with its official home in the Julia manual: what
+`RULE.DOC.JULIA_MANUAL` asks a docstring or page using one to link. Each entry is the construct's name,
+the pattern that finds a use of it, and the manual section. The keyword splat and the `do` block were
+ruled on 2026-09-29; another construct is one more entry.
+"""
+const MANUAL_SECTIONS = [
+    (name = "a keyword splat (`kwargs...`)",
+     uses = r";[^)\n]*\b[A-Za-z_][A-Za-z0-9_]*\.\.\.",
+     url = "https://docs.julialang.org/en/v1/manual/functions/#Keyword-Arguments"),
+    (name = "a `do` block",
+     uses = r"\)\s+do\b(?:\s+[A-Za-z_(][^\n#]*)?\s*$"m,
+     url = "https://docs.julialang.org/en/v1/manual/functions/#Do-Block-Syntax-for-Function-Arguments"),
+]
+
+"""
+    julia_manual(root, cfg) -> Vector{Model.Location}
+
+Every docstring and hand-written page that uses a construct of [`MANUAL_SECTIONS`](@ref) and does not
+link its manual section. The arguments are `root`, the package root, and `cfg`, its config, which names
+the files. Returns one location per construct per unit, at its first use.
+
+A docstring is judged alone, since it is read alone at the REPL; a page is judged whole. A keyword
+splat counts in a docstring's signature or in code anywhere in the unit, and a `do` block where a call's
+closing parenthesis is followed by `do`, which is the only way to write one.
+"""
+function julia_manual(root::AbstractString, cfg)
+    out = Model.Location[]
+    function judge(file, text, first_line)
+        for s in MANUAL_SECTIONS
+            m = match(s.uses, text)
+            m === nothing && continue
+            occursin(s.url, text) && continue
+            line = first_line + count(==('\n'), SubString(text, 1, prevind(text, m.offset)))
+            push!(out, Model.Location(; file, line,
+                text = "uses $(s.name) and does not link its Julia manual section: $(s.url)"))
+        end
+    end
+    for f in Texts.files(cfg, root, Model.FileSet.CODE)
+        for d in Texts.docstrings_of(read(joinpath(root, f), String))
+            judge(f, d.text, d.line + 1)                  # the text begins below the opening quotes
+        end
+    end
+    for f in Texts.files(cfg, root, Model.FileSet.PAGES)
+        judge(f, read(joinpath(root, f), String), 1)
+    end
+    return out
+end
+
+const JULIA_MANUAL = Model.Rule(
+    id = Symbol("RULE.DOC.JULIA_MANUAL"),
+    statement = "A docstring or page that uses a keyword splat (`kwargs...`) or a `do` block links the Julia manual's section on it.",
+    why = "A reader who has not met the construct learns it where it is used, and the manual is its official home: a paraphrase of it drifts, and a link does not.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.CODE, Model.FileSet.PAGES],
+    check = Model.ProgramCheck(Model.Input.FILE_TREE, julia_manual, false),
+    examples = [
+        Model.TreeExample(["src/Example.jl" => "\"\"\"\n    f(a; kwargs...)\n\nCalls `g` with `a`.\n\n# Arguments\n\n- `a` — the input.\n- `kwargs...` — passed to `g`.\n\"\"\"\nf(a; kwargs...) = a\n"],
+                          [Model.Location(; file = "src/Example.jl", line = 2)], "a keyword splat links the manual"),
+        Model.TreeExample(["src/Example.jl" => "\"\"\"\n    f(a; kwargs...)\n\nCalls `g` with `a`.\n\n# Arguments\n\n- `a` — the input.\n- `kwargs...` — [keyword arguments](https://docs.julialang.org/en/v1/manual/functions/#Keyword-Arguments) passed to `g`.\n\"\"\"\nf(a; kwargs...) = a\n"],
+                          Model.Location[], "a keyword splat links the manual"),
+        Model.TreeExample(["docs/src/guide.md" => "# Guide\n\n```julia\nopen(path) do io\n    write(io, \"x\")\nend\n```\n"],
+                          [Model.Location(; file = "docs/src/guide.md", line = 4)], "a `do` block links the manual"),
+        Model.TreeExample(["docs/src/guide.md" => "# Guide\n\nWith a [`do` block](https://docs.julialang.org/en/v1/manual/functions/#Do-Block-Syntax-for-Function-Arguments):\n\n```julia\nopen(path) do io\n    write(io, \"x\")\nend\n```\n"],
+                          Model.Location[], "a `do` block links the manual"),
+        # a sentence ending in "do" is no `do` block
+        Model.TreeExample(["docs/src/guide.md" => "# Guide\n\nRun it as the tests do\n"],
+                          Model.Location[], "a `do` block links the manual"),
+    ])
+
+"""
     RULES
 
 The rules of this batch, in the order they were converted.
 """
-const RULES = Model.Rule[AI_BANNER, SIGNATURE_MIRROR, BLOCK_LIST, NO_DEAD_REFS, INTERNAL_API, SIBLING_LINK, RETIRED]
+const RULES = Model.Rule[AI_BANNER, SIGNATURE_MIRROR, BLOCK_LIST, NO_DEAD_REFS, INTERNAL_API, SIBLING_LINK, RETIRED, JULIA_MANUAL]
 
 end # module Pages

@@ -57,8 +57,8 @@ loads once `Documenter` is in the environment — a consumer's `make.jl` already
 # Arguments
 
 - `root` — the package root, the directory holding `.gbg/config.jl`.
-- `kwargs...` — passed through to `Documenter.makedocs` unchanged (`sitename`, `pages`, `modules`,
-  `checkdocs`, `doctest`, `format`, …).
+- `kwargs...` — the [keyword arguments](https://docs.julialang.org/en/v1/manual/functions/#Keyword-Arguments)
+  passed to `Documenter.makedocs` unchanged (`sitename`, `pages`, `modules`, `checkdocs`, `format`, …).
 
 Before Documenter runs it runs, in-process, the documentation rules of the rulebook and the wiring
 check; after Documenter it runs the rules that read the built site. Any non-zero

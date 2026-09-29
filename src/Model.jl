@@ -673,6 +673,22 @@ end
 # ───────────────────────────────────────────────────────────────── a package's own settings
 
 """
+    Exclusion
+
+Takes some of a package's files out of every rule: part of the package that is not held to the
+rulebook at all, as a whole, while it waits for something the owner has named.
+
+# Fields
+
+- `files` — the files, as file-set patterns.
+- `reason` — why no rule reads them, shown on the package's own site.
+"""
+Base.@kwdef struct Exclusion
+    files::Vector{String}
+    reason::String
+end
+
+"""
     Switch
 
 Turns one rule, agent role or instrument off in one package, or in some of its files.
@@ -745,12 +761,12 @@ own session, which adds it for the whole fleet; it is not written in a config.
 - `docs_build` — what builds its documentation.
 - `test` — what runs its tests.
 - `rules` — its own pattern rules.
-- `filesets` — its file sets, where the defaults miss.
+- `filesets` — file sets, where defaults miss.
 - `normative` — the documents that bind it.
 - `copies` — each build-time copy and its tracked source.
-- `generated` — pages written at build time; no rule reads one.
+- `generated` — pages a build writes, which no rule reads.
 - `switches` — what is off here, with reasons.
-- `deferrals` — what is owed here and not yet met, each with what would close it.
+- `deferrals` — what is owed and not yet met, with what closes it.
 - `settings` — its values for rule parameters.
 - `code_areas` — its code in named areas, one hunter each.
 
@@ -758,6 +774,7 @@ own session, which adds it for the whole fleet; it is not written in a config.
 - `material` — documents a reader may consult and never report on: the rationale documents beyond the
   one `architecture_doc` names.
 - `claude_documentation` — the headings of its `CLAUDE.md` sections that are documentation.
+- `exclusions` — files no rule reads, with the reason.
 """
 Base.@kwdef struct Config
     package::String
@@ -776,6 +793,7 @@ Base.@kwdef struct Config
     code_areas::Vector{Pair{Symbol,Vector{String}}} = Pair{Symbol,Vector{String}}[]
     material::Vector{String} = String[]
     claude_documentation::Vector{String} = String[]
+    exclusions::Vector{Exclusion} = Exclusion[]
 end
 
 """

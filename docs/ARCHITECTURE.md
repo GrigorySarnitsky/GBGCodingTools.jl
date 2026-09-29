@@ -507,6 +507,8 @@ under two rules that had that day been ruled not to apply to them.]
 ```julia
 "Turns one rule, agent role or instrument off in one package, or in some of its files, with the reason."
 Base.@kwdef struct Switch; target::Symbol; reason::String; files::Vector{String} = String[]; end
+"Takes files out of every rule, with the reason shown on the package's site."
+Base.@kwdef struct Exclusion; files::Vector{String}; reason::String; end
 "A package's value for one rule parameter; a list-valued parameter is set the same way."
 Base.@kwdef struct Setting; rule::Symbol; name::Symbol; value::Union{String,Symbol,Bool,Int,Vector{String},Vector{RetiredClaim}}; end
 "A rule a package adds for itself: a pattern its files must not (or must) contain, with examples."
@@ -526,6 +528,7 @@ Base.@kwdef struct Config
     disciplines::Vector{Symbol} = Symbol[]    # the catalogued disciplines its readers need; never a reader of its own
     code_areas::Vector{Pair{Symbol,Vector{String}}} = Pair{Symbol,Vector{String}}[]  # one hunter per area (§10)
     claude_documentation::Vector{String} = String[]  # sections of CLAUDE.md that are documentation (§4.2)
+    exclusions::Vector{Exclusion} = Exclusion[]     # files no rule reads, with the reason
 end
 "A question the owner settled, kept in `.gbg/settled.jl` and given to agents as 'do not report'."
 Base.@kwdef struct Settled                        # locations: what the ruling is about, quotes included

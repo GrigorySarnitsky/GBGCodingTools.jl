@@ -1,7 +1,7 @@
 <!-- gbg:managed begin vdev — rewritten by `gbg sync`; do not edit -->
 # Documentation and API — `RULE.DOC.*`, `RULE.API.*`
 
-What a docstring and an API page contain, in what order and in what shape. 44 rules, written from the rule values themselves,
+What a docstring and an API page contain, in what order and in what shape. 45 rules, written from the rule values themselves,
 so a rule reworded here was reworded in the program that checks it.
 
 ### RULE.API.POSITIONAL
@@ -106,7 +106,7 @@ A citation of something renamed or removed reads exactly like one that resolves,
 Covered by a program.
 
 ### RULE.DOC.FIELDS
-A type with named fields documents them in a `# Fields` section, one bullet per field: every bullet a real field, and every field a bullet. A sentence listing them, "The fields are …", is no such section.
+A type with named fields documents them in a `# Fields` section, one bullet per field: every bullet a real field, and every field heading a bullet of its own, though two may head one together; a field named only inside another's bullet has none. A sentence listing them, "The fields are …", is no such section.
 
 A field list that has drifted is worse than none: it names what does not exist and hides what does.
 
@@ -130,6 +130,13 @@ Covered by a reader given other documents.
 An API page puts its internal section last, holds no empty block of collected docstrings, and is never indexed.
 
 Internals in the middle of the public surface, and an index on a hand-grouped page, both make a reader work around the page.
+
+Covered by a program.
+
+### RULE.DOC.JULIA_MANUAL
+A docstring or page that uses a keyword splat (`kwargs...`) or a `do` block links the Julia manual's section on it.
+
+A reader who has not met the construct learns it where it is used, and the manual is its official home: a paraphrase of it drifts, and a link does not.
 
 Covered by a program.
 

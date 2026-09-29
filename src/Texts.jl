@@ -77,7 +77,9 @@ function files(cfg::Model.Config, root::AbstractString, fileset::Model.FileSet.T
     # (docs/ARCHITECTURE.md §5.2). Same for a declared copy, whose text belongs to its source.
     written = Set(vcat(cfg.generated, first.(cfg.copies)))
     skip = Texts.ignored(root)
-    return sort!(unique!(filter(f -> !(f in written) && !skip(f), out)))
+    # Nor is a file the config excludes from every rule anyone's to read, for a rule or for a reader.
+    out_of_scope(f) = any(e -> any(pat -> glob_matches(pat, f), e.files), cfg.exclusions)
+    return sort!(unique!(filter(f -> !(f in written) && !skip(f) && !out_of_scope(f), out)))
 end
 
 
@@ -898,8 +900,9 @@ end
 The positional and keyword parameter NAMES of an argument list, with their types and defaults taken off.
 The argument is `inside`, the text between the parentheses. Returns the two lists, positional first.
 
-A bare splat — `kwargs...` — counts as a parameter although it is not an identifier: a docstring for
-`f(cfg; kwargs...)` documents a keyword argument, and dropping the splat would read it as taking none.
+A bare [keyword splat](https://docs.julialang.org/en/v1/manual/functions/#Keyword-Arguments), `kwargs...`,
+counts as a parameter although it is not an identifier: `f(cfg; kwargs...)` takes keywords, and
+dropping the splat would read it as taking none.
 A typed splat is already its own name and is not counted twice.
 """
 function parameters(inside::AbstractString)

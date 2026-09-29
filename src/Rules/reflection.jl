@@ -32,7 +32,7 @@ takes four is the case this exists to catch, and a check that reads the prose fi
 fourth. Every displayed signature counts, so an argument only the wider form takes is held to the rule
 too. Exempt, as the rule says: an internal helper, a thin allocating wrapper, and a call short enough
 to bind its arguments in prose. Documented means: the name is a code span, or a word of one that is not
-the function's own call restated; and a splat, also a sentence sending "every other keyword" on.
+the function's own call restated. A splat is held to it too (ruled 2026-09-29).
 """
 function argcov(src::AbstractString, cfg)
     out = Model.Location[]
@@ -68,8 +68,7 @@ function argcov(src::AbstractString, cfg)
             q = "\\Q" * base * "\\E"
             documented = occursin(Regex("`" * q * "(?:\\.\\.\\.)?(?:::[^`]*)?`"), d.text) ||
                          occursin(Regex("`" * q * "\\s*=[^`]*`"), d.text) ||
-                         any(sp -> occursin(Regex("(?<![\\w!.])" * q * "(?![\\w!])"), sp), spans) ||
-                         (endswith(p, "...") && occursin(PASS_THROUGH, d.text))
+                         any(sp -> occursin(Regex("(?<![\\w!.])" * q * "(?![\\w!])"), sp), spans)
             documented && continue
             push!(out, Model.Location(; file = "", line = d.line, node = d.node,
                                        text = "`$p` of `$signature` is undocumented"))
@@ -78,10 +77,9 @@ function argcov(src::AbstractString, cfg)
     return out
 end
 
-# A splat documented by where it sends what it gathers: "every other keyword is passed through to X".
-# Held to one sentence, so "other arguments" in one and "passed" in the next do not add up to it.
-const PASS_THROUGH = r"(?i)\b(?:every|all|any)\s+(?:other|remaining|further|additional|extra)\s+(?:keyword|argument)s?\b[^.;]*?\b(?:passed|forwarded|handed)\b"
-
+# A splat is named like any argument. A sentence sending "every other keyword" on counted for it until
+# the owner ruled, on 2026-09-29, that `kwargs...` is named as code, as the rule's statement says: the
+# sentence says where the keywords go and leaves the reader to guess which name holds them.
 const ARGCOV = Model.Rule(
     id = Symbol("RULE.DOC.ARGCOV"),
     statement = "Every argument in a docstring's signature, positional and keyword, is named as code in its body.",
@@ -120,7 +118,7 @@ const ARGCOV = Model.Rule(
              Model.Location(; file = "src/Example.jl", line = 1)],   # one per undocumented argument
             "an internal helper is exempt"),
         # A name inside a larger code span is documented by it, unless the span restates the call itself;
-        # a splat is documented by a sentence saying where every other keyword goes.
+        # a splat is named like any argument, and a sentence about "every other keyword" does not name it.
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(a, b; kwargs...)\n\nDoes a thing: `f(a, b; kwargs...)` is `g(a + b; kwargs...)`.\n\"\"\"\nf(x) = x\n",
             Model.Location[], "positional and keyword"),
@@ -130,6 +128,9 @@ const ARGCOV = Model.Rule(
             "positional and keyword"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(a, b; kwargs...)\n\nDoes a thing with `a` and `b`; every other keyword is\npassed through to `g` untouched.\n\"\"\"\nf(x) = x\n",
+            [Model.Location(; file = "src/Example.jl", line = 1)], "positional and keyword"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(a, b; kwargs...)\n\nDoes a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `kwargs...` — every other keyword, passed to `g` untouched.\n\"\"\"\nf(x) = x\n",
             Model.Location[], "positional and keyword"),
     ])
 

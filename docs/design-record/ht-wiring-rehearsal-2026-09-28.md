@@ -114,8 +114,8 @@ tool:
   change across them all
 - **W-24.** RULE.DOC.XLINK resolves a name through the export table alone, so a field of a local type
   that shares a name with another module's function is read as that function (`scalar_dissipation` in
-  HT's `Spectra.jl` and `StructureFunctions.jl`: the two unclear findings). · fate: open — whether
-  `fp.scalar_dissipation` mentions the function is a reading of the statement, the owner's
+  HT's `Spectra.jl` and `StructureFunctions.jl`: the two unclear findings). · fate: moot — both are in
+  HT's Phenomenology module, which the owner excluded from every rule on 2026-09-29 until it is extracted
 - **W-25.** RULE.CIT.FULL_INLINE calls a bare "Author year, [doi:…](…)" a "full reference"; the verdict
   holds, since the rule also requires the work under `# References`, but the message overstates. ·
   fate: open (wording)
@@ -123,11 +123,12 @@ tool:
   its DOI on the title — raises a second round the first does not announce: FULL_INLINE compares every
   DOI there with the canonical reference list, which the Phenomenology leaf is exempt from by HT's own
   design (`docs/ARCHITECTURE.md` 3087–3089) with no switch declaring it. The class of W-13. · fate:
-  announced in `HT-WIRING.md`; the switch or the list entries are the owner's
+  moot — Phenomenology is excluded from every rule (the owner, 2026-09-29)
 - The other two unclear findings are readings of a statement: whether a field described inside another
   field's bullet has its bullet (RULE.DOC.FIELDS, `Cache.jl`), and whether `kwargs...` is documented when
   every keyword it collects is but the splat itself is never named (RULE.DOC.ARGCOV, `SimulationRun.jl`).
-  · fate: open, the owner's
+  · fate: ruled 2026-09-29 — a field heads a bullet of its own, though two may head one together; and
+  `kwargs...` is named like any argument, and links the manual's keyword section (RULE.DOC.JULIA_MANUAL)
 
 ## Found rehearsing GBGPeriodicFields' upgrade to rc.36 (2026-09-28)
 

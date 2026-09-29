@@ -1095,13 +1095,21 @@ function switches(cfg::Model.Config)
     println(io, "<!-- gbg:managed begin ", version_tag(cfg), " — rewritten by `gbg sync`; do not edit -->")
     println(io, "# What ", cfg.package, " has switched off\n")
     if isempty(cfg.switches)
-        println(io, "Nothing. Every rule of the rulebook applies here as written.\n")
+        println(io, isempty(cfg.exclusions) ? "Nothing. Every rule of the rulebook applies here as written.\n" :
+                                              "No rule is switched off; the files below are read by none.\n")
     else
         println(io, "Each entry names a rule this package does not hold itself to, and why. A rule listed")
         println(io, "here is read as the entry states it.\n")
         for s in cfg.switches
             scope = isempty(s.files) ? "the whole package" : join("`" .* s.files .* "`", ", ")
             println(io, "- `", s.target, "` — ", s.reason, " (", scope, ")")
+        end
+        println(io)
+    end
+    if !isempty(cfg.exclusions)
+        println(io, "Excluded from every rule: no rule reads these files, and no reader is given them.\n")
+        for e in cfg.exclusions
+            println(io, "- ", join("`" .* e.files .* "`", ", "), " — ", e.reason)
         end
         println(io)
     end

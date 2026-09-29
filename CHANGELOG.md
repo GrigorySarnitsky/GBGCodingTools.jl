@@ -4,6 +4,27 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.41 — 2026-09-29
+
+MINOR, the owner's rulings of 2026-09-29:
+
+- **Exclusions.** A config's `exclusions` take files out of every rule, a built page with the source it
+  was built from, and out of every reader's hands, each set with its reason on the package's switches
+  page. Measured on GBGHomogeneousTurbulence with its Phenomenology module excluded: 299 findings become
+  246, the 53 removed all in that module's files.
+- **`RULE.DOC.JULIA_MANUAL`:** a docstring or page that uses a keyword splat (`kwargs...`) or a `do`
+  block links the Julia manual's section on it, the official home of each. Measured: this package 2
+  (fixed), GBGPeriodicFields 0, GBGHomogeneousTurbulence 4, GBGCloudPhysics 7, GBGStreamingStatistics 0.
+- **`RULE.DOC.ARGCOV`:** `kwargs...` is named like any argument; a sentence sending "every other keyword"
+  on no longer counts for it. Its statement says "named as code". Splat findings: GBGHomogeneousTurbulence
+  2, GBGCloudPhysics 4, the others 0.
+- **`RULE.DOC.FIELDS`:** each field heads a bullet of its own, though two may head one together; a field
+  named only inside another's bullet has none. The check already read so; the statement now says it.
+- **`CLAUDE.md` sections a config names in `claude_documentation` are documentation** to the change
+  guard, a change counting only when every other line is the same.
+
+The rulebook is 94 rules.
+
 ## 2.0.0-rc.40 — 2026-09-29
 
 MINOR, two changes the owner asked for on 2026-09-29:

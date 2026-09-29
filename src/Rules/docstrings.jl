@@ -318,7 +318,7 @@ A type with named fields documents them under `# Fields`, one bullet per field.
 """
 const FIELDS = Model.Rule(
     id = Symbol("RULE.DOC.FIELDS"),
-    statement = "A type with named fields documents them in a `# Fields` section, one bullet per field: every bullet a real field, and every field a bullet. A sentence listing them, \"The fields are …\", is no such section.",
+    statement = "A type with named fields documents them in a `# Fields` section, one bullet per field: every bullet a real field, and every field heading a bullet of its own, though two may head one together; a field named only inside another's bullet has none. A sentence listing them, \"The fields are …\", is no such section.",
     why = "A field list that has drifted is worse than none: it names what does not exist and hides what does.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],
@@ -365,6 +365,14 @@ const FIELDS = Model.Rule(
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",
             Model.Location[], "is no such section"),
+        # A field described inside another field's bullet has no bullet; two named at one bullet's head do
+        # (the owner, 2026-09-29).
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first, and `b` the second.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
+            [Model.Location(; file = "src/Example.jl", line = 1)], "every field heading a bullet of its own"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a`, `b` — the two ends.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
+            Model.Location[], "every field heading a bullet of its own"),
     ])
 
 # ───────────────────────────────────────────────────────── how a sentence is allowed to open

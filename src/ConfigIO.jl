@@ -94,7 +94,7 @@ Base.showerror(io::IO, e::ConfigError) =
 # Every constructor a config file may call, with the module the value comes from. Nothing else is
 # accepted: a name not in this table is a refusal, so a config cannot reach a function by naming it.
 const CONSTRUCTORS = Dict{String,Any}(
-    "Config" => Model.Config, "Switch" => Model.Switch, "Deferral" => Model.Deferral, "Setting" => Model.Setting,
+    "Config" => Model.Config, "Switch" => Model.Switch, "Exclusion" => Model.Exclusion, "Deferral" => Model.Deferral, "Setting" => Model.Setting,
     "PatternRule" => Model.PatternRule, "Settled" => Model.Settled,
     "Location" => Model.Location, "TextExample" => Model.TextExample,
     "RetiredClaim" => Model.RetiredClaim,
@@ -420,6 +420,15 @@ function validate(cfg::Model.Config, root::AbstractString)
         isempty(strip(s.reason)) && push!(problems, "the switch against $(s.target) gives no reason")
         s.target in known ||
             push!(problems, "the switch names $(s.target), which is not a rule, a role or an instrument")
+    end
+    # An exclusion takes files out of every rule, so it must say why and must name something: one matching
+    # no file would claim, on the package's site, an exemption that covers nothing.
+    for e in cfg.exclusions
+        isempty(strip(e.reason)) && push!(problems, "an exclusion gives no reason")
+        isempty(e.files) && push!(problems, "an exclusion names no files")
+        for pat in e.files
+            isempty(Texts.expand(root, pat)) && push!(problems, "the exclusion names $pat, which matches nothing here")
+        end
     end
     # A deferral is a question with a condition on it: one naming no rule, or no condition, is not one.
     # And a rule cannot be both switched off and deferred, for the whole package or for some of its files.

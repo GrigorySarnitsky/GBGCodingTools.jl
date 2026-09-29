@@ -277,6 +277,23 @@ end
     on(pat, file) = G.Engine.Checks.applies(MM.Config(package = "P", tool = :dev, switches = [MM.Switch(target = :R, reason = "r", files = [pat])]), :R; file)
     @test !on("src/**/*.jl", "src/a.jl") && on("src/*.jl", "src/a/b.jl")
     @test on("docs/src/a+b.md", "docs/src/ab.md") && !on("docs/src/a+b.md", "docs/src/a+b.md")
+    # An exclusion takes files out of every rule, a built page with its source; it must name files that
+    # exist and say why (the owner, 2026-09-29: HT's Phenomenology waits to be extracted, unchecked).
+    let ex = MM.Config(package = "P", tool = :dev,
+                       exclusions = [MM.Exclusion(files = ["src/phen/**", "docs/src/phen.md"], reason = "waits to be extracted")])
+        @test !G.Engine.Checks.applies(ex, Symbol("RULE.DOC.ARGCOV"); file = "src/phen/Spectra.jl")
+        @test !G.Engine.Checks.applies(ex, Symbol("RULE.TEX.RENDERED_MARKUP"); file = "docs/build/phen/index.html")
+        @test G.Engine.Checks.applies(ex, Symbol("RULE.DOC.ARGCOV"); file = "src/Other.jl")
+        d = mktempdir(; cleanup = true)
+        mkpath(joinpath(d, "src", "phen")); write(joinpath(d, "src", "phen", "S.jl"), "x = 1\n"); write(joinpath(d, "src", "O.jl"), "y = 2\n")
+        mkpath(joinpath(d, "docs", "src")); write(joinpath(d, "docs", "src", "phen.md"), "# P\n")
+        @test G.Texts.files(ex, d, MM.FileSet.CODE) == ["src/O.jl"]            # no reader is given them either
+        @test !any(p -> occursin("exclusion", p), CIO.validate(ex, d))
+        @test any(p -> occursin("matches nothing", p), v(ex))
+        @test any(p -> occursin("gives no reason", p), CIO.validate(MM.Config(package = "P", tool = :dev,
+                  exclusions = [MM.Exclusion(files = ["src/O.jl"], reason = " ")]), d))
+        @test occursin("read by none", G.Render.switches(ex)) && occursin("waits to be extracted", G.Render.switches(ex))
+    end
     # a root holding a non-ASCII character
     @test G.Catalogue.normal_path(MM.Config(package = "P", tool = :dev), "/tmp/Ünter/pkg", "/tmp/Ünter/pkg/docs/a.md") == "docs/a.md"
     # a reader switched off leaves its rules as gaps, one each, never silence
