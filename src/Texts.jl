@@ -820,6 +820,19 @@ end
 const IDENTIFIER = Regex("^" * NAME * "[\\p{M}]*\$")
 
 """
+    docstring_line(d, offset) -> Int
+
+The file line of the character at `offset` in the text of the docstring `d`, one of
+[`docstrings_of`](@ref)'s. The arguments are `d` and `offset`, a byte index into `d.text`. Returns the line.
+
+A docstring's `line` is its opening quotes and its text begins on the line below, so a rule reporting
+`d.line` sent every fixer to the top of the docstring, not to the defect in it (found verifying
+GBGHomogeneousTurbulence's and GBGPeriodicFields' findings, 2026-09-28).
+"""
+docstring_line(d, offset::Integer) =
+    d.line + 1 + count(==('\n'), SubString(d.text, 1, prevind(d.text, max(offset, 1))))
+
+"""
     signature_line(doc) -> String
 
 The signature a docstring opens with — the indented call on its first non-empty line — or an empty string

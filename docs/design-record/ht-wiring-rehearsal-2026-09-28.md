@@ -19,12 +19,13 @@ found in the TOOL is recorded here first, each with its fate, before any fix —
   fixed in rc.32
 - **W-5.** The installed `gbg` shim on this machine predated the review's shim fixes: `gbg install` is
   per machine, and nothing says when it is stale. · fate: re-installed here; `HT-WIRING.md` tells HT's
-  session to re-install on its machine. A staleness check is open (not built).
+  session to re-install on its machine. · fate: fixed 2026-09-29 — `gbg --dev` compares the installed copy
+  with the checkout's `bin/gbg` and says to re-install when they differ
 - **W-6.** `gbg check`'s summary counts the build-script, test-entry and workflow findings as "generated
   path(s) adrift"; none is a generated path. · fate: fixed in the rc.33 commit (wiring findings counted and split by what fixes them; verified by re-measuring HT's clone)
 - **W-7.** A first wiring cannot use `gbg init`: the shim refuses in a directory with no `.gbg/config.jl`,
-  since it cannot know which version to run. `gbg --dev init` is the only way in. · fate: open — by
-  design or not is the owner's; `HT-WIRING.md` says to use `--dev`
+  since it cannot know which version to run. `gbg --dev init` is the only way in. · fate: kept by design
+  (2026-09-29), and the refusal for `init` now names `gbg --dev init`
 
 ## Measured, and read as the tool working
 
@@ -110,15 +111,15 @@ tool:
 - **W-22.** RULE.DOC.LINK_UNIFORMITY printed its names as `SubString{String}["…"]`. · fate: fixed in rc.35
 - **W-23.** ARGS_FORM's "under a sentence" findings, FIELDS, XLINK and LINK_UNIFORMITY report the line
   where the docstring opens, not the line of the defect; the finding names the docstring, so it can be
-  found, but not at its line. · fate: open — every docstring rule anchors so, and changing it is one
-  change across them all
+  found, but not at its line. · fate: fixed 2026-09-29 — each reports its own line: the argument or field sentence,
+  the `# Fields` heading, the mention, the run (`Texts.docstring_line`); eleven examples moved to it
 - **W-24.** RULE.DOC.XLINK resolves a name through the export table alone, so a field of a local type
   that shares a name with another module's function is read as that function (`scalar_dissipation` in
   HT's `Spectra.jl` and `StructureFunctions.jl`: the two unclear findings). · fate: moot — both are in
   HT's Phenomenology module, which the owner excluded from every rule on 2026-09-29 until it is extracted
 - **W-25.** RULE.CIT.FULL_INLINE calls a bare "Author year, [doi:…](…)" a "full reference"; the verdict
   holds, since the rule also requires the work under `# References`, but the message overstates. ·
-  fate: open (wording)
+  fate: fixed 2026-09-29 — the label case says "a DOI label in the prose"
 - **W-26.** Fixing HT's ten Phenomenology citations as the messages say — the work under `# References`,
   its DOI on the title — raises a second round the first does not announce: FULL_INLINE compares every
   DOI there with the canonical reference list, which the Phenomenology leaf is exempt from by HT's own

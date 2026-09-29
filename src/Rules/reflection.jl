@@ -257,7 +257,9 @@ function link_uniformity(root::AbstractString, cfg)
             linked = [m.captures[1] for m in eachmatch(RUN_LINKED, text)]
             bare = [m.captures[1] for m in eachmatch(RUN_BARE, text) if m.captures[1] in public && m.captures[1] != d.node]
             (isempty(linked) || isempty(bare)) && continue
-            push!(out, Model.Location(; file = f, line = d.line, node = d.node,
+            first_link = findfirst("`" * first(linked) * "`", d.text)
+            at = first_link === nothing ? d.line : Texts.docstring_line(d, first(first_link))
+            push!(out, Model.Location(; file = f, line = at, node = d.node,
                 text = "linked " * join(("`$n`" for n in linked), ", ") * " beside bare " *
                        join(("`$n`" for n in bare), ", ") * " in one run: " * first(String(text), 90)))
         end
@@ -275,7 +277,7 @@ const LINK_UNIFORMITY = Model.Rule(
     examples = [
         Model.TextExample(Model.FileSet.CODE,
             "export f, g\n\n\"\"\"\n    h(x)\n\nSee [`f`](@ref), `g` and more.\n\"\"\"\nh(x) = x\n",
-            [Model.Location(; file = "src/Example.jl", line = 3)], "either every name is linked or none is"),
+            [Model.Location(; file = "src/Example.jl", line = 6)], "either every name is linked or none is"),
         Model.TextExample(Model.FileSet.CODE,
             "export f, g\n\n\"\"\"\n    h(x)\n\nSee [`f`](@ref), [`g`](@ref) and more.\n\"\"\"\nh(x) = x\n",
             Model.Location[], "either every name is linked or none is"),
@@ -284,7 +286,7 @@ const LINK_UNIFORMITY = Model.Rule(
         Model.TreeExample(
             ["src/Example.jl" => "module Example\nexport f,\n    g\n\"\"\"\n    f(x)\n\nA thing, with `x` and `y` given.\n\"\"\"\nf(x) = x\ninclude(\"other.jl\")\nend\n",
              "src/other.jl" => "\"\"\"\n    h(x)\n\nSee [`f`](@ref), `g` and more.\n\"\"\"\nh(x) = x\n"],
-            [Model.Location(; file = "src/other.jl", line = 1)], "either every name is linked or none is"),
+            [Model.Location(; file = "src/other.jl", line = 4)], "either every name is linked or none is"),
         Model.TreeExample(
             ["src/Example.jl" => "module Example\nexport f\n\"\"\"\n    f(x)\n\nA thing, with `x` and `y` given.\n\"\"\"\nf(x) = x\ninclude(\"other.jl\")\nend\n",
              "src/other.jl" => "\"\"\"\n    h(x)\n\nSee [`f`](@ref), `x` and `y`.\n\"\"\"\nh(x) = x\n"],

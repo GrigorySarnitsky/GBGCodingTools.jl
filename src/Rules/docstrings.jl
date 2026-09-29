@@ -185,17 +185,20 @@ function field_docs(src::AbstractString, cfg)
         if documented === nothing
             # The sentence-led list this rule asked for until 2026-09-28 is named, so a package
             # converting is told where its list goes rather than that it has none.
-            under_phrase = occursin(r"The\s+fields\s+are\b", d.text)
-            push!(out, Model.Location(; file = "", line = d.line, node = d.node,
+            phrase = match(r"The\s+fields\s+are\b", d.text)
+            under_phrase = phrase !== nothing
+            push!(out, Model.Location(; file = "", line = under_phrase ? Texts.docstring_line(d, phrase.offset) : d.line, node = d.node,
                 text = under_phrase ? "$(d.node) lists its fields under a sentence: put them under a `# Fields` heading" :
                                       "$(d.node) stores $(join(fields, ", ")) and has no `# Fields` section"))
             continue
         end
         ghost = setdiff(documented, fields)
         missed = setdiff(fields, documented)
-        isempty(ghost) || push!(out, Model.Location(; file = "", line = d.line, node = d.node,
+        heading = match(r"(?m)^#\s+Fields\s*$", d.text)                 # the list's own line, where it has one
+        at = heading === nothing ? d.line : Texts.docstring_line(d, heading.offset)
+        isempty(ghost) || push!(out, Model.Location(; file = "", line = at, node = d.node,
             text = "$(d.node) documents $(join(ghost, ", ")), which it does not have"))
-        isempty(missed) || push!(out, Model.Location(; file = "", line = d.line, node = d.node,
+        isempty(missed) || push!(out, Model.Location(; file = "", line = at, node = d.node,
             text = "$(d.node) has no bullet for $(join(missed, ", "))"))
     end
     return out
@@ -326,7 +329,7 @@ const FIELDS = Model.Rule(
     examples = [
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
-            [Model.Location(; file = "src/Example.jl", line = 1)], "every field a bullet"),
+            [Model.Location(; file = "src/Example.jl", line = 6)], "every field a bullet"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
             Model.Location[], "every field a bullet"),
@@ -342,10 +345,10 @@ const FIELDS = Model.Rule(
             Model.Location[], "every field a bullet"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n\"\"\"\nmutable struct S\n    const a::Int\n    b\nend\n",
-            [Model.Location(; file = "src/Example.jl", line = 1)], "every field a bullet"),
+            [Model.Location(; file = "src/Example.jl", line = 6)], "every field a bullet"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n- `c` — no such field.\n\"\"\"\nstruct S\n    a::Int\nend\n",
-            [Model.Location(; file = "src/Example.jl", line = 1)], "every bullet a real field"),
+            [Model.Location(; file = "src/Example.jl", line = 6)], "every bullet a real field"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",
             Model.Location[], "every bullet a real field"),
@@ -361,7 +364,7 @@ const FIELDS = Model.Rule(
         # The sentence-led list, the form asked for before 2026-09-28, complete as it is, is no section.
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing. The fields are:\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",
-            [Model.Location(; file = "src/Example.jl", line = 1)], "is no such section"),
+            [Model.Location(; file = "src/Example.jl", line = 4)], "is no such section"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",
             Model.Location[], "is no such section"),
@@ -369,7 +372,7 @@ const FIELDS = Model.Rule(
         # (the owner, 2026-09-29).
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first, and `b` the second.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
-            [Model.Location(; file = "src/Example.jl", line = 1)], "every field heading a bullet of its own"),
+            [Model.Location(; file = "src/Example.jl", line = 6)], "every field heading a bullet of its own"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a`, `b` — the two ends.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
             Model.Location[], "every field heading a bullet of its own"),

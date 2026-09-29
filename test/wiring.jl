@@ -589,3 +589,29 @@ end
     @test !occursin("generated path(s) adrift", out)
     @test occursin("1 wiring finding(s) (0 for `gbg sync`, 1 in the package's own files)", out)
 end
+
+# The `gbg` command, run as a shell script with a stand-in `julia` so no Julia starts: a first wiring is
+# told the exact command, and a copy that has fallen behind the dev checkout says so (2026-09-29).
+@testset "the gbg command: the first-wiring hint and a stale copy" begin
+    shim = joinpath(pkgdir(GBGCodingTools), "bin", "gbg")
+    home = mktempdir(; cleanup = true); fakebin = mktempdir(; cleanup = true)
+    write(joinpath(fakebin, "julia"), "#!/bin/sh\nexit 0\n"); chmod(joinpath(fakebin, "julia"), 0o755)
+    env = ["HOME" => home, "PATH" => fakebin * ":" * ENV["PATH"]]
+    runshim(script, args, dir) = begin
+        err = IOBuffer()
+        p = run(pipeline(setenv(`sh $script $args`, env...; dir); stdout = devnull, stderr = err); wait = false)
+        wait(p); (p.exitcode, String(take!(err)))
+    end
+    bare = mktempdir(; cleanup = true)
+    code, msg = runshim(shim, ["init"], bare)
+    @test code == 2 && occursin("gbg --dev init", msg)
+    @test !occursin("gbg --dev init", runshim(shim, ["check"], bare)[2])
+    # a dev checkout whose bin/gbg is this script: no warning; a different one: the warning
+    dev = mktempdir(; cleanup = true)
+    mkpath(joinpath(dev, "bin")); cp(shim, joinpath(dev, "bin", "gbg")); write(joinpath(dev, "Manifest.toml"), "")
+    mkpath(joinpath(home, ".gbg")); write(joinpath(home, ".gbg", "dev"), dev * "\n")
+    installed = joinpath(mktempdir(; cleanup = true), "gbg"); cp(shim, installed)
+    @test !occursin("differs", runshim(installed, ["--dev", "check"], bare)[2])
+    write(installed, read(shim, String) * "\n# an older copy\n")
+    @test occursin("run: gbg --dev install", runshim(installed, ["--dev", "check"], bare)[2])
+end

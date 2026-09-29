@@ -99,7 +99,8 @@ function xlink(loaded, cfg)
                           startswith(SubString(prose, x.offset + ncodeunits(x.match)), "](@")
                 is_link && continue
                 own_of[name] === me && continue
-                push!(out, Model.Location(; file = f, line = d.line, node = d.node,
+                at = d.line + first_prose + count(==('\n'), SubString(prose, 1, prevind(prose, x.offset)))
+                push!(out, Model.Location(; file = f, line = at, node = d.node,
                     text = "`$name` is owned by $(own_of[name]) and mentioned here without a link"))
             end
         end
@@ -134,7 +135,7 @@ const XLINK = Model.Rule(
             \"\"\"
             caller(x) = Inner.helper(x)
             end
-            """, [Model.Location(; file = "src/Example.jl", line = 12)], "linked at its first mention"),
+            """, [Model.Location(; file = "src/Example.jl", line = 15)], "linked at its first mention"),
         Model.ModuleExample("""
             module Example
             module Inner
@@ -202,7 +203,7 @@ const XLINK = Model.Rule(
             \"\"\"
             caller(x) = Inner.helper(x)
             end
-            """, [Model.Location(; file = "src/Example.jl", line = 12)], "linked at its first mention"),
+            """, [Model.Location(; file = "src/Example.jl", line = 15)], "linked at its first mention"),
         Model.ModuleExample("""
             module Example
             module Inner

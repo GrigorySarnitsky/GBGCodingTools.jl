@@ -62,7 +62,7 @@ function args_form(src::AbstractString, cfg)
         prosed = occursin(IN_PROSE, d.text)
         bulleted = occursin(BULLETED, d.text)
         if !bulleted && occursin(UNDER_PHRASE, d.text)
-            push!(out, Model.Location(; file = "", line = d.line, node = d.node,
+            push!(out, Model.Location(; file = "", line = Texts.docstring_line(d, match(UNDER_PHRASE, d.text).offset), node = d.node,
                 text = "`$(d.node)` lists its arguments under a sentence: put the bullets under an `# Arguments` heading"))
             continue
         end
@@ -113,10 +113,10 @@ const ARGS_FORM = Model.Rule(
         # with no heading over it.
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b, c)", "Does a thing. The arguments are:\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
-            [Model.Location(; file = "src/Example.jl", line = 1)], "under an `# Arguments` heading"),
+            [Model.Location(; file = "src/Example.jl", line = 4)], "under an `# Arguments` heading"),
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b, c)", "Does a thing. The arguments are\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
-            [Model.Location(; file = "src/Example.jl", line = 1)], "under an `# Arguments` heading"),
+            [Model.Location(; file = "src/Example.jl", line = 4)], "under an `# Arguments` heading"),
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b, c)", "Does a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third.\n\nReturns nothing."),
             Model.Location[], "under an `# Arguments` heading"),

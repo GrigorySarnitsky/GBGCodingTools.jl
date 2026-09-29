@@ -235,7 +235,7 @@ function full_inline(root::AbstractString, cfg)
                 (at !== nothing && m.offset > first(at)) && continue
                 occursin(r"^\s*Reference:", split(masked, '\n')[nth]) && continue
                 push!(out, Model.Location(; file, line = opens + nth - 1, node = d.node,
-                    text = "a full reference in the prose: cite author–year here and put the work under this docstring's `# References` section"))
+                    text = "a DOI label in the prose: cite author–year here and put the work, its DOI on the title, under this docstring's `# References` section"))
             end
         end
     end

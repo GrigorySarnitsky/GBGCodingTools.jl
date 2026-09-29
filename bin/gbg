@@ -13,6 +13,10 @@ if [ "${1:-}" = "--dev" ]; then                       # (1) explicit dev route
   # the same question the pinned route asks: a fresh clone has no Manifest (it is git-ignored), and
   # Julia's package-loading error is not the line that says what to run
   [ -f "$P/Manifest.toml" ] || { echo "gbg: the dev checkout $P is not instantiated" >&2; echo "run: julia --project=\"$P\" -e 'using Pkg; Pkg.instantiate()'" >&2; exit 2; }
+  # this command is a copy of the checkout's `bin/gbg`, made by `gbg install` once per machine, and nothing
+  # else says when that copy has fallen behind: one machine ran a copy predating the review's fixes to it
+  # (found wiring GBGHomogeneousTurbulence, 2026-09-28). It warns and goes on; the copy still works.
+  cmp -s "$0" "$P/bin/gbg" 2>/dev/null || echo "gbg: this command differs from the dev checkout's bin/gbg; run: gbg --dev install" >&2
 else
   d=$PWD                                             # (2) walk up to the nearest .gbg/ with a config
   while [ "$d" != "/" ] && [ ! -f "$d/.gbg/config.jl" ]; do d=$(dirname "$d"); done
@@ -21,7 +25,13 @@ else
     # SILENTLY, so a command typed in the wrong directory ran against a different package's tree and
     # said nothing. It refuses instead, and says where it looked.
     echo "gbg: no .gbg/config.jl in $PWD or any directory above it" >&2
-    echo "     (run it inside a package, or use: gbg --dev <verb> for the dev checkout)" >&2
+    # A first wiring is the one verb that must run here: the config it writes is what picks a version
+    # later, so it goes through the dev checkout, and the refusal names the command.
+    if [ "${1:-}" = "init" ]; then
+      echo "     a first wiring runs through the dev checkout: gbg --dev init" >&2
+    else
+      echo "     (run it inside a package, or use: gbg --dev <verb> for the dev checkout)" >&2
+    fi
     exit 2
   else
     # (3) the pinned version, read from the config as text: the LEFTMOST `tool =` on a line that is not
