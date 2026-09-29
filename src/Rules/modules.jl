@@ -60,6 +60,15 @@ module owns needs no link, and neither does one in the docstring's own signature
 function xlink(loaded, cfg)
     own_of = owners(loaded.pkg, cfg)
     out = Model.Location[]
+    # A module declared in a file the config excludes is out of the rulebook, and so is linking to its
+    # names from anywhere else (the owner, 2026-09-29, of HT's Phenomenology).
+    out_of_scope = Set{Symbol}()
+    for e in cfg.exclusions, pat in e.files, f in Texts.expand(loaded.root, pat)
+        endswith(f, ".jl") || continue
+        for m in eachmatch(r"(?m)^\s*(?:bare)?module\s+([A-Za-z_][A-Za-z0-9_]*)", read(joinpath(loaded.root, f), String))
+            push!(out_of_scope, Symbol(m.captures[1]))
+        end
+    end
     # Through the same resolver every other rule uses. Read as a list of FILES, the config's code set is
     # a list of globs — empty by default — and both rules here visited nothing and reported clean in
     # every real package (found in review, 2026-09-26).
@@ -99,6 +108,7 @@ function xlink(loaded, cfg)
                           startswith(SubString(prose, x.offset + ncodeunits(x.match)), "](@")
                 is_link && continue
                 own_of[name] === me && continue
+                own_of[name] in out_of_scope && continue
                 before = first_prose == 1 ? 0 : ncodeunits(join(lines[1:first_prose-1], "\n")) + 1
                 at = Texts.docstring_line(d, before + x.offset)
                 push!(out, Model.Location(; file = f, line = at, node = d.node,
@@ -111,7 +121,7 @@ end
 
 const XLINK = Model.Rule(
     id = Symbol("RULE.DOC.XLINK"),
-    statement = "A name another module owns is linked at its first mention in a docstring, qualified so the link resolves.",
+    statement = "A name another module owns, mentioned on its own, is linked at its first mention in a docstring, qualified so the link resolves; a name inside a code expression owes no link.",
     why = "A reader meeting a name from elsewhere has nowhere to go: the docstring in front of him does not define it.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],
@@ -273,6 +283,37 @@ const XLINK = Model.Rule(
             end
             end
             """, Model.Location[], "linked at its first mention"),
+        # a name inside a code expression owes no link (the owner, 2026-09-29)
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper
+                helper(x) = x
+            end
+            using .Inner
+            \"\"\"
+                caller(x)
+
+            Calls it as `helper(2x)` on its argument.
+            \"\"\"
+            caller(x) = Inner.helper(x)
+            end
+            """, Model.Location[], "a name inside a code expression owes no link"),
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper
+                helper(x) = x
+            end
+            using .Inner
+            \"\"\"
+                caller(x)
+
+            Calls `helper` on its argument.
+            \"\"\"
+            caller(x) = Inner.helper(x)
+            end
+            """, [Model.Location(; file = "src/Example.jl", line = 10)], "a name inside a code expression owes no link"),
     ])
 
 # ────────────────────────────────────────── what a docstring shows against what the module defines

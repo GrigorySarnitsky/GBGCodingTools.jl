@@ -328,7 +328,7 @@ A plausible 'X is just Y' is a false claim until the expansion matches. Run this
 Covered by a reader given source, because this needs meaning.
 
 ### RULE.DOC.XLINK
-A name another module owns is linked at its first mention in a docstring, qualified so the link resolves.
+A name another module owns, mentioned on its own, is linked at its first mention in a docstring, qualified so the link resolves; a name inside a code expression owes no link.
 
 A reader meeting a name from elsewhere has nowhere to go: the docstring in front of him does not define it.
 

@@ -4,6 +4,18 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.45 — 2026-09-29
+
+PATCH, the owner's two rulings of 2026-09-29 on `RULE.DOC.XLINK`:
+
+- **A name inside a code expression owes no link**, as `helper(2x)` or `sym(gradient(u))`: the rule is
+  about a name mentioned on its own, and its statement now says so. The check already read so.
+- **A name owned by a module declared in an excluded file owes no link from anywhere**, since nothing of
+  that module is held to the rulebook until it is extracted.
+
+Measured: GBGPeriodicFields 0 before and after; GBGHomogeneousTurbulence 12 becomes 10, the two removed
+its mentions of Phenomenology's `FlowParameters`.
+
 ## 2.0.0-rc.44 — 2026-09-29
 
 PATCH, two defects verifying GBGHomogeneousTurbulence's new findings at rc.43 found:
