@@ -319,11 +319,11 @@ end
 """
     FIELDS
 
-A type with named fields documents them under `# Fields`, one bullet per field.
+A type with named fields documents them under `# Fields`, each heading a bullet.
 """
 const FIELDS = Model.Rule(
     id = Symbol("RULE.DOC.FIELDS"),
-    statement = "A type with named fields documents them in a `# Fields` section, one bullet per field: every bullet a real field, and every field heading a bullet of its own, though two may head one together; a field named only inside another's bullet has none. A sentence listing them, \"The fields are …\", is no such section.",
+    statement = "A type with named fields documents them in a `# Fields` section, in bullets: every bullet a real field, and every field at the head of a bullet, alone or with others; a field named only inside another's bullet has none. A sentence listing them, \"The fields are …\", is no such section.",
     why = "A field list that has drifted is worse than none: it names what does not exist and hides what does.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],
@@ -374,21 +374,25 @@ const FIELDS = Model.Rule(
         # (the owner, 2026-09-29).
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first, and `b` the second.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
-            [Model.Location(; file = "src/Example.jl", line = 6)], "every field heading a bullet of its own"),
+            [Model.Location(; file = "src/Example.jl", line = 6)], "every field at the head of a bullet"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a`, `b` — the two ends.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
-            Model.Location[], "every field heading a bullet of its own"),
+            Model.Location[], "every field at the head of a bullet"),
         # The colon form heads a bullet as the dash form does, and a name inside its description is none.
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a`: the first, and `b` the second.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
-            [Model.Location(; file = "src/Example.jl", line = 6)], "every field heading a bullet of its own"),
+            [Model.Location(; file = "src/Example.jl", line = 6)], "every field at the head of a bullet"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a`: the first, not `k`.\n- `b`: the second.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
             Model.Location[], "every bullet a real field"),
+        # Any number of names may head one bullet: all of them are seen at a glance (the owner, 2026-09-29).
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a`, `b`, `c` — the three corners.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\n    c::Int\nend\n",
+            Model.Location[], "every field at the head of a bullet"),
         # a bullet's head of names wraps onto its next line and still heads it
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a`,\n  `b` — the two ends.\n\"\"\"\nstruct S\n    a::Int\n    b::Int\nend\n",
-            Model.Location[], "every field heading a bullet of its own"),
+            Model.Location[], "every field at the head of a bullet"),
     ])
 
 # ───────────────────────────────────────────────────────── how a sentence is allowed to open

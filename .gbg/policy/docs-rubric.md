@@ -49,7 +49,7 @@ A reader passing an argument the docstring never mentions has to read the source
 Covered by a program.
 
 ### RULE.DOC.ARGS_FORM
-Three or more arguments, or any keyword, are listed under an `# Arguments` heading, one bullet per argument; fewer are bound in running prose, as in "The arguments are `a`, the first, and `b`, the second."; the two are never mixed. A type lists its constructor's arguments so too, even where its `# Fields` section repeats them.
+Three or more arguments, or any keyword, are listed as bullets under an `# Arguments` heading, where several may head one bullet together; fewer are bound in running prose, as in "The arguments are `a`, the first, and `b`, the second."; the two are never mixed. A type lists its constructor's arguments so too, even where its `# Fields` section repeats them.
 
 A reader looking for one argument of many needs a list; a reader of a two-argument call needs a sentence.
 
@@ -113,7 +113,7 @@ An indented block is code only by context, so a program reading the page cannot 
 Covered by a program.
 
 ### RULE.DOC.FIELDS
-A type with named fields documents them in a `# Fields` section, one bullet per field: every bullet a real field, and every field heading a bullet of its own, though two may head one together; a field named only inside another's bullet has none. A sentence listing them, "The fields are …", is no such section.
+A type with named fields documents them in a `# Fields` section, in bullets: every bullet a real field, and every field at the head of a bullet, alone or with others; a field named only inside another's bullet has none. A sentence listing them, "The fields are …", is no such section.
 
 A field list that has drifted is worse than none: it names what does not exist and hides what does.
 

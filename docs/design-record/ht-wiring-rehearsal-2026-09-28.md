@@ -154,3 +154,8 @@ tool:
   rule's own, and at the first argument bullet otherwise, and prose that should be a list at the
   docstring's opening line. · fate: kept by design — each is where the defect named begins: the sentence,
   the unheaded list, and the docstring as a whole
+- **W-33.** RULE.DOC.ARGS_FORM's statement said "one bullet per argument", and FIELDS' "two may head one
+  together", while both checks accept any number of names at a bullet's head; four HT docstrings head a
+  bullet with two arguments. Found verifying HT's rc.46 findings. · fate: resolved in rc.47 — the owner
+  ruled (2026-09-29) that several names may head one bullet, for fields and arguments alike, since all
+  of them are seen at a glance; the statements now say so

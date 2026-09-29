@@ -4,6 +4,15 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.47 — 2026-09-29
+
+PATCH, the owner's ruling of 2026-09-29 on names at a bullet's head:
+
+- **`RULE.DOC.FIELDS` and `RULE.DOC.ARGS_FORM`:** any number of names may head one bullet together, a
+  field's or an argument's; a field named only inside another's bullet still has none. The statements
+  said "one bullet per field" with "two may head one together", and "one bullet per argument", while
+  both checks already accepted several names at a head. The wording changes; no check does.
+
 ## 2.0.0-rc.46 — 2026-09-29
 
 PATCH, a defect verifying GBGHomogeneousTurbulence's findings at rc.45 found:

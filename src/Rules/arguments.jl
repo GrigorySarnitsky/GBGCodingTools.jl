@@ -122,7 +122,7 @@ Three or more arguments, or any keyword, go under `# Arguments`; fewer are bound
 """
 const ARGS_FORM = Model.Rule(
     id = Symbol("RULE.DOC.ARGS_FORM"),
-    statement = "Three or more arguments, or any keyword, are listed under an `# Arguments` heading, one bullet per argument; fewer are bound in running prose, as in \"The arguments are `a`, the first, and `b`, the second.\"; the two are never mixed. A type lists its constructor's arguments so too, even where its `# Fields` section repeats them.",
+    statement = "Three or more arguments, or any keyword, are listed as bullets under an `# Arguments` heading, where several may head one bullet together; fewer are bound in running prose, as in \"The arguments are `a`, the first, and `b`, the second.\"; the two are never mixed. A type lists its constructor's arguments so too, even where its `# Fields` section repeats them.",
     why = "A reader looking for one argument of many needs a list; a reader of a two-argument call needs a sentence.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],
@@ -177,6 +177,10 @@ const ARGS_FORM = Model.Rule(
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    S(; a = 1, b = 2)\n\nA thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n\n# Fields\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nBase.@kwdef struct S\n    a = 1\n    b = 2\nend\n",
             Model.Location[], "a type lists its constructor's arguments"),
+        # several arguments at the head of one bullet are the list form (the owner, 2026-09-29)
+        Model.TextExample(Model.FileSet.CODE,
+            doc("f(a; lo = 0, hi = 1)", "Does a thing.\n\n# Arguments\n\n- `a` — the first.\n- `lo`, `hi` — the bounds, at most one given."),
+            Model.Location[], "under an `# Arguments` heading"),
         # arguments bound in prose, and an unrelated list after them: no finding
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b)", "Does a thing. The arguments are `a`, the first, and `b`, the second.\n\n- one note.\n- another."),
