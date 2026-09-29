@@ -54,8 +54,8 @@ Every cross-module name mentioned bare in a docstring where a reader would need 
 arguments are `loaded`, the loaded package with the package root, and `cfg`, the package's config, which
 names the files. Returns one location per first bare mention.
 
-Only a name's first mention is judged, since a later link comes too late for the reader. A name the same
-module owns needs no link, and neither does one in the docstring's own signature.
+Only a first mention is judged; a later link comes too late. A name the same module owns needs no link,
+nor does the signature's name or a parameter; a call inside it exempts nothing.
 """
 function xlink(loaded, cfg)
     own_of = owners(loaded.pkg, cfg)
@@ -86,12 +86,18 @@ function xlink(loaded, cfg)
             first_prose = something(findfirst(l -> !startswith(l, "    ") && !isempty(strip(l)), lines), 1)
             signature = join(lines[1:first_prose-1], "\n")
             prose = join(lines[first_prose:end], "\n")
-            in_signature = Set(String.(x.captures[1] for x in eachmatch(Regex("(" * Texts.NAME * ")\\("), signature)))
-            for am in eachmatch(r"\(([^)]*)\)", signature)
-                for raw in split(am.captures[1], ",")
-                    a = strip(split(split(split(raw, "::")[1], "=")[1], ";")[end])
-                    isempty(a) || push!(in_signature, String(a))
-                end
+            # What the signature documents: the name it is written under, qualified or not, and its
+            # parameters. A name CALLED in it — the default `velocity_forcing = ConstantPower()` — is a
+            # code expression, and exempting it hid the bare prose mention of `ConstantPower` further down
+            # (GBGHomogeneousTurbulence's `predicted_stationary_state`, found verifying its findings,
+            # 2026-09-29).
+            in_signature = Set{String}()
+            for sig in Texts.signature_lines(signature)
+                s = match(Regex("^(?:[\\p{L}_][\\p{L}\\p{N}_]*\\.)*(" * Texts.NAME * ")"), sig)
+                s === nothing || push!(in_signature, String(s.captures[1]))
+                inside = Texts.argument_list(sig)
+                inside === nothing && continue
+                union!(in_signature, Texts.parameters(inside)...)
             end
             # A name heading a bullet is the docstring's own field or argument, not a mention: a field
             # called `audit` is not the function of that name elsewhere.
@@ -314,6 +320,38 @@ const XLINK = Model.Rule(
             caller(x) = Inner.helper(x)
             end
             """, [Model.Location(; file = "src/Example.jl", line = 10)], "a name inside a code expression owes no link"),
+        # A name called in the signature's default is a code expression there; its bare prose mention owes
+        # the link. The name the signature is written under is the docstring's own.
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper
+                helper(x) = x
+            end
+            using .Inner
+            \"\"\"
+                caller(x; h = helper(1))
+
+            Calls `helper` on its argument.
+            \"\"\"
+            caller(x; h = Inner.helper(1)) = x
+            end
+            """, [Model.Location(; file = "src/Example.jl", line = 10)], "a name inside a code expression owes no link"),
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper
+                helper(x) = x
+            end
+            using .Inner
+            \"\"\"
+                Inner.helper(x::Float64)
+
+            A float `helper`, which returns `x`.
+            \"\"\"
+            Inner.helper(x::Float64) = x
+            end
+            """, Model.Location[], "a name inside a code expression owes no link"),
     ])
 
 # ────────────────────────────────────────── what a docstring shows against what the module defines

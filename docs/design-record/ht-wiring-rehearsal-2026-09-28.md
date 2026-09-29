@@ -134,3 +134,23 @@ tool:
   allocating constructors describe `family` in italics, which the statement's "documented in its body"
   admits. · fate: resolved 2026-09-29 — the owner ruled the statement to match the check: every argument
   is named as code in the body (PF had already written `family` as code)
+
+## Found rehearsing HT's wiring at rc.45 (2026-09-29)
+
+- **W-30.** The push hook's docs build cannot load HT. Step 5 had HT drop the two lines the old docs
+  workflow step adds to `docs/Project.toml`, as HT's commit `224cb8c` does, and a build of what is
+  committed then fails on "Package GBGHomogeneousTurbulence not found"; keeping the lines uncommitted
+  instead trips the hook's stop on uncommitted tracked files. Every HT push would have been stopped
+  whatever its content. · fate: resolved in the wiring document — HT's docs project names HT
+  (`path = ".."`) and GBGPeriodicFields (its URL) under `[sources]`, as GBGCloudPhysics' already does,
+  and the workflow step is `Pkg.instantiate()` alone. Measured on a copy of the wired clone: the hook's
+  build then loads HT and reports the 128 findings and nothing else
+- **W-31.** RULE.DOC.XLINK exempted every name CALLED in a docstring's signature, so the default
+  `velocity_forcing = ConstantPower()` of `predicted_stationary_state` hid the bare prose mention of
+  Forcing's `ConstantPower` below it, which the statement asks to link. · fate: fixed in rc.46 — the
+  signature exempts the name it is written under and its parameters; a call inside it is a code
+  expression. Measured over the four packages: one finding more, this one, and no other change
+- **W-32.** RULE.DOC.ARGS_FORM reports a list under a sentence at the sentence, where the phrase is the
+  rule's own, and at the first argument bullet otherwise, and prose that should be a list at the
+  docstring's opening line. · fate: kept by design — each is where the defect named begins: the sentence,
+  the unheaded list, and the docstring as a whole

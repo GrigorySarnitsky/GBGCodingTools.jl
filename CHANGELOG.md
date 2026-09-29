@@ -4,6 +4,17 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.46 — 2026-09-29
+
+PATCH, a defect verifying GBGHomogeneousTurbulence's findings at rc.45 found:
+
+- **`RULE.DOC.XLINK`:** a name called inside a docstring's signature, as the default
+  `velocity_forcing = ConstantPower()`, no longer exempts the name's bare mention in the prose. The
+  signature exempts the name it is written under and its parameters, and nothing else it calls.
+
+Measured over the four packages: GBGHomogeneousTurbulence one finding more, the bare `ConstantPower` of
+`predicted_stationary_state`; GBGPeriodicFields, GBGCloudPhysics and GBGStreamingStatistics unchanged.
+
 ## 2.0.0-rc.45 — 2026-09-29
 
 PATCH, the owner's two rulings of 2026-09-29 on `RULE.DOC.XLINK`:
