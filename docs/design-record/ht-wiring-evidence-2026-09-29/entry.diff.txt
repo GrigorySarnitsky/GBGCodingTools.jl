@@ -1,0 +1,48 @@
+diff --git a/docs/make.jl b/docs/make.jl
+index 1ade0b7..d60e6dd 100644
+--- a/docs/make.jl
++++ b/docs/make.jl
+@@ -350,7 +350,10 @@ lint_review_closure()
+ 
+ using Documenter
+ using DocumenterInterLinks
++using GBGCodingTools
+ using GBGHomogeneousTurbulence
++const ROOT = normpath(joinpath(@__DIR__, ".."))
++const TOOLING = GBGCodingTools.Render.pages(GBGCodingTools.ConfigIO.read_config(ROOT), ROOT)
+ # Phenomenology is deliberately not re-exported by the umbrella (ARCHITECTURE §4.7); bring its
+ # submodule names into scope here so the docs pages can reference them by bare name, as the DNS API is.
+ using GBGHomogeneousTurbulence.Phenomenology
+@@ -375,7 +378,7 @@ links = InterLinks(
+ )
+ 
+ 
+-makedocs(
++GBGCodingTools.makedocs(ROOT;
+   sitename = "GBGHomogeneousTurbulence.jl",
+   modules  = [
+     GBGHomogeneousTurbulence,
+@@ -434,11 +437,12 @@ makedocs(
+       "Architecture"   => "architecture.md",
+       "Decision log"   => "decisions.md",
+       "Observables cache" => "observables_cache.md",
++      "Documentation tooling" => only(TOOLING),
+     ],
+   ],
+ )
+ 
+ deploydocs(
+   repo      = "github.com/GrigorySarnitsky/GBGHomogeneousTurbulence.jl",
+   devbranch = "master",
+ )
+diff --git a/test/runtests.jl b/test/runtests.jl
+index 63a25a9..156d3e4 100644
+--- a/test/runtests.jl
++++ b/test/runtests.jl
+@@ -31,3 +31,6 @@ for witness in sort(filter(f -> endswith(f, ".jl"), readdir(joinpath(@__DIR__, "
+   path = joinpath(@__DIR__, "regressions", witness)
+   @eval module $name; include($path); end
+ end
++
++using GBGCodingTools
++GBGCodingTools.Engine.Harness.test(dirname(@__DIR__); checks = (GBGCodingTools.Render.wiring,))

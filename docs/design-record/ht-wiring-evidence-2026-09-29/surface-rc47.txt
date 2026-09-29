@@ -1,0 +1,3 @@
+modules: 13 in all, 9 without Phenomenology: Cache, Forcing, Generator, Observables, Particles, Propagator, SimulationDomain, SimulationRun, State
+without Phenomenology: 76 operations, 23 in-place, 53 value-returning; 25 types
+all: 90 operations, 23 in-place, 67 value-returning; 38 types
