@@ -14,6 +14,7 @@ module Rendering
 
 using ...Model
 using ...Texts
+import Markdown
 
 # The character of a line that opens or closes a fenced block — ``` or `~~~`, both CommonMark fences —
 # or `nothing` for any other line.
@@ -418,10 +419,89 @@ const ONE_SPAN = Model.Rule(
     ])
 
 """
+    indented_code(text, cfg) -> Vector{Model.Location}
+
+Every code block in a Markdown page or rationale document that is indented rather than fenced. The
+arguments are `text`, the document, and `cfg`, the package's config, which this rule does not read.
+Returns one location per block, at its first line.
+
+The page is read by Julia's own Markdown parser, the one Documenter renders with, so a block is
+reported exactly when the page would show it as code: a paragraph indented as a list item's
+continuation is not one, and a list item's bullets left indented after two blank lines are, which is
+how a decision of one package's log rendered as a code block (found measuring this rule,
+2026-09-29). Every fence opener is first tagged in its language field, which keeps the text's structure
+as it is, and a block the parser returns without the tag is an indented one.
+"""
+function indented_code(text::AbstractString, cfg)
+    lines = split(String(text), '\n')
+    tagged = copy(lines); fenced = falses(length(lines)); fence = nothing
+    for (i, l) in pairs(lines)
+        m = match(r"^(\s*)(`{3,}|~{3,})(.*)$", l)
+        if fence === nothing
+            m === nothing && continue
+            fence = m.captures[2]; fenced[i] = true
+            tagged[i] = m.captures[1] * m.captures[2] * FENCE_TAG * m.captures[3]
+        else
+            fenced[i] = true
+            m !== nothing && m.captures[2][1] == fence[1] && length(m.captures[2]) >= length(fence) &&
+                isempty(strip(m.captures[3])) && (fence = nothing)
+        end
+    end
+    out = Model.Location[]; taken = Set{Int}()
+    for c in code_blocks(Markdown.parse(join(tagged, '\n')))
+        startswith(c.language, FENCE_TAG) && continue
+        head = strip(first(split(c.code, '\n')))
+        n = findfirst(k -> !fenced[k] && !(k in taken) && startswith(lines[k], "    ") && strip(lines[k]) == head,
+                      eachindex(lines))
+        n === nothing && continue
+        push!(taken, n)
+        push!(out, Model.Location(; file = "", line = n,
+            text = "an indented code block: fence it with three backticks, or unindent it if it is prose"))
+    end
+    return out
+end
+
+const FENCE_TAG = "gbgfenced"
+
+# Every code block of a parsed document, in lists, admonitions, quotes and footnotes too.
+function code_blocks(x, acc = Markdown.Code[])
+    x isa Markdown.Code && push!(acc, x)
+    if x isa Markdown.MD || x isa Markdown.Admonition || x isa Markdown.BlockQuote
+        foreach(c -> code_blocks(c, acc), x.content)
+    elseif x isa Markdown.List
+        foreach(item -> foreach(c -> code_blocks(c, acc), item), x.items)
+    elseif x isa Markdown.Footnote
+        x.text === nothing || foreach(c -> code_blocks(c, acc), x.text)
+    end
+    return acc
+end
+
+const FENCED_CODE = Model.Rule(
+    id = Symbol("RULE.DOC.FENCED_CODE"),
+    statement = "A code block in a page or a rationale document is fenced with three backticks, never indented; a docstring's indented signature is exempt.",
+    why = "An indented block is code only by context, so a program reading the page cannot tell it from an indented paragraph without the parser's whole reading, and a list item left indented after a blank line renders as code nobody wrote.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, indented_code, false),
+    examples = [
+        Model.TextExample(Model.FileSet.PAGES, "# Page\n\nRun it:\n\n    julia --project\n",
+            [Model.Location(; file = "docs/src/page.md", line = 5)], "fenced with three backticks, never indented"),
+        Model.TextExample(Model.FileSet.PAGES, "# Page\n\nRun it:\n\n```sh\njulia --project\n```\n",
+            Model.Location[], "fenced with three backticks, never indented"),
+        # A list item's continuation paragraph is indented and is prose; a fence inside an item, and the
+        # item's next paragraph after it, keep their structure.
+        Model.TextExample(Model.FileSet.PAGES, "# Page\n\n1. First item,\n    continued.\n\n    A second paragraph of it.\n\n    ```julia\n    x = 1\n    ```\n\n    And prose after the code.\n",
+            Model.Location[], "fenced with three backticks, never indented"),
+        # Two blank lines end the item, and its bullets left indented are a code block.
+        Model.TextExample(Model.FileSet.PAGES, "# Page\n\n1. An item.\n\n\n    - **A bullet.** Of the item.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 6)], "fenced with three backticks, never indented"),
+    ])
+
+"""
     RULES
 
 The rules of this batch, in the order they were converted.
 """
-const RULES = Model.Rule[TABLE_TOP_LEVEL, CODE_IN_MATH, SWALLOWED_ESCAPE, REF_ABUT_RULE, ONE_SPAN]
+const RULES = Model.Rule[TABLE_TOP_LEVEL, CODE_IN_MATH, SWALLOWED_ESCAPE, REF_ABUT_RULE, ONE_SPAN, FENCED_CODE]
 
 end # module Rendering

@@ -61,17 +61,22 @@ function args_form(src::AbstractString, cfg)
 
         prosed = occursin(IN_PROSE, d.text)
         bulleted = occursin(BULLETED, d.text)
-        if !bulleted && occursin(UNDER_PHRASE, d.text)
-            push!(out, Model.Location(; file = "", line = Texts.docstring_line(d, match(UNDER_PHRASE, d.text).offset), node = d.node,
-                text = "`$(d.node)` lists its arguments under a sentence: put the bullets under an `# Arguments` heading"))
-            continue
-        end
         # The rule's last exemption, and no wider: ONE element-type keyword BOUND IN A PROSE CLAUSE. A
         # docstring that binds nothing at all is not a prose clause, and exempting it would turn a hit
         # into silence — the direction that costs a reader something.
         element_type = nkw == 1 && length(keyword) == 1 && first(keyword) in ("T", "eltype", "element_type") &&
                        prosed && npos + nkw < THRESHOLD
         wants_bullets = npos + nkw >= THRESHOLD || (nkw > 0 && !element_type)
+        # Bullets under the old sentence are judged AFTER the count: a two-argument call bulleted so was
+        # told to add a heading, where the rule wants it in prose (found in review, 2026-09-28).
+        if !bulleted && occursin(UNDER_PHRASE, d.text)
+            at = Texts.docstring_line(d, match(UNDER_PHRASE, d.text).offset)
+            push!(out, Model.Location(; file = "", line = at, node = d.node,
+                text = wants_bullets ?
+                    "`$(d.node)` lists its arguments under a sentence: put the bullets under an `# Arguments` heading" :
+                    "`$(d.node)` takes $(npos + nkw) argument(s): bind them in running prose, not bullets"))
+            continue
+        end
 
         if bulleted && prosed
             push!(out, Model.Location(; file = "", line = d.line, node = d.node,

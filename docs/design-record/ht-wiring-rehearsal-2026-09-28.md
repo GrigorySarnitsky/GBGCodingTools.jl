@@ -78,20 +78,8 @@ three verifiers: **110 true, 11 false, 50 unclear**. The per-line verdicts are i
 - **W-17.** RULE.DOC.SIBLING_LINK skips fenced code blocks but reads an indented code block in a Markdown
   page as prose, so a package URL in an indented shell command took the first-mention slot. A plain
   "four spaces is code" test would be wrong: PF's and HT's pages indent list continuations by four
-  spaces (e.g. HT `docs/src/decisions.md:92`), and those are prose the rule must read. · fate: open — telling
-  the two apart needs a Markdown parser's reading of list context; `HT-WIRING.md` uses fenced blocks
-- **W-18.** `gbg bump` closed by printing `Pkg.update("GBGCodingTools")` for `docs/` and `test/`. On a
-  first wiring no manifest holds the tool, and both failed: "expected package `GBGCodingTools
-  [3aee1de0]` to be registered". HT's test environment cannot be resolved alone at all, since it names
-  the unregistered GBGPeriodicFields and only the root environment says where to find it. `HT-WIRING.md`
-  said to run the printed commands, and nothing had run them. · fate: fixed in rc.35
-  (`Bump.move_command` prints an update where a manifest holds the tool, a resolve where none does,
-  and nothing for a test environment with no manifest; verified by re-running the rehearsal)
-- **W-19.** The first `HT-WIRING.md` said every figure was measured at rc.34 on one head; its reviewer
-  found 19 problems, among them figures from rc.31 and rc.32, a head HT had moved past, the wiring check
-  and the tests claimed clean after a sync no log showed, and bump's printed commands claimed run. ·
-  fate: the whole rehearsal re-run in one script at HT's head `8a0e279`, every step logged, at
-  rc.34 and, once W-18 and W-20 to W-22 were fixed, at rc.35; the document rewritten from the rc.35 run
+  spaces (e.g. HT `docs/src/decisions.md:92`), and those are prose the rule must read. · fate: fixed 2026-09-29 — the owner ruled code in pages and rationale documents fenced
+  (RULE.DOC.FENCED_CODE, found by Julia's own Markdown parser); no page rule then needs to tell the two apart
 
 ## Every rc.34 finding verified at HT's head `8a0e279` (2026-09-28)
 
@@ -140,7 +128,8 @@ tool:
   `# Arguments` and the message now names the fix the rule wants
 - **W-28.** RULE.DOC.ARGS_FORM's "under a sentence" branch runs before the argument count, so a
   docstring with fewer than three arguments and no keyword, bulleted under "The arguments are", would be
-  told to add a heading where the statement asks for prose. It fires nowhere in PF or HT. · fate: open
+  told to add a heading where the statement asks for prose. It fires nowhere in PF or HT. · fate: fixed
+  2026-09-29 — the check counts first
 - **W-29.** RULE.DOC.ARGCOV counts an argument documented only when its name is code; PF's six
   allocating constructors describe `family` in italics, which the statement's "documented in its body"
   admits. · fate: resolved 2026-09-29 — the owner ruled the statement to match the check: every argument

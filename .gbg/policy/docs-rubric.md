@@ -1,7 +1,7 @@
 <!-- gbg:managed begin vdev — rewritten by `gbg sync`; do not edit -->
 # Documentation and API — `RULE.DOC.*`, `RULE.API.*`
 
-What a docstring and an API page contain, in what order and in what shape. 45 rules, written from the rule values themselves,
+What a docstring and an API page contain, in what order and in what shape. 46 rules, written from the rule values themselves,
 so a rule reworded here was reworded in the program that checks it.
 
 ### RULE.API.POSITIONAL
@@ -102,6 +102,13 @@ Covered by a reader given source, because this needs meaning.
 No stale claim: a rule cited by id names a rule that exists, and a retired phrasing is not used.
 
 A citation of something renamed or removed reads exactly like one that resolves, which is why it survives.
+
+Covered by a program.
+
+### RULE.DOC.FENCED_CODE
+A code block in a page or a rationale document is fenced with three backticks, never indented; a docstring's indented signature is exempt.
+
+An indented block is code only by context, so a program reading the page cannot tell it from an indented paragraph without the parser's whole reading, and a list item left indented after a blank line renders as code nobody wrote.
 
 Covered by a program.
 

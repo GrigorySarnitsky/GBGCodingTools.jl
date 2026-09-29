@@ -609,3 +609,15 @@ end
     r = only(x for x in G.Catalogue.RULES if x.id === Symbol("RULE.DOC.SIGNATURE_FIDELITY"))
     @test isempty(Base.invokelatest(CK.run_rule, r, cfg, dir; pkg))                 # `origin` is shown, second
 end
+
+# A short call bulleted under the old sentence is told to use prose, not to add a heading: the check
+# looked at the form before it counted (fixed 2026-09-29). The location is the same either way, so the
+# message is what is asserted.
+@testset "ARGS_FORM counts before it judges bullets under the old sentence" begin
+    r = only(x for x in G.Catalogue.RULES if x.id === Symbol("RULE.DOC.ARGS_FORM"))
+    two = "\"\"\"\n    f(a, b)\n\nDoes a thing. The arguments are:\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nf(a, b) = a\n"
+    three = "\"\"\"\n    f(a, b, c)\n\nDoes a thing. The arguments are:\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third.\n\"\"\"\nf(a, b, c) = a\n"
+    cfg = G.Model.Config(package = "P", tool = :dev)
+    @test occursin("running prose", only(r.check.run(two, cfg)).text)
+    @test occursin("`# Arguments` heading", only(r.check.run(three, cfg)).text)
+end

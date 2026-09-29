@@ -4,6 +4,25 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.42 — 2026-09-29
+
+MINOR, the owner's rulings of 2026-09-29 and five recorded defects:
+
+- **`RULE.DOC.FENCED_CODE`:** a code block in a page or a rationale document is fenced, never indented;
+  a docstring's indented signature is exempt. Found by Julia's own Markdown parser, the one Documenter
+  renders with. Measured: one finding in the fleet, GBGPeriodicFields' `docs/DECISIONS.md:3607`, where
+  two blank lines end a numbered item and its bullets render on the site as a code block.
+- **Findings at the defect's own line:** `ARGS_FORM`'s sentence-led lists, `FIELDS`, `XLINK` and
+  `LINK_UNIFORMITY` report the sentence, the `# Fields` heading, the mention or the run, not the
+  docstring's opening quotes.
+- **`ARGS_FORM` counts before it judges bullets under the old sentence**, so a two-argument call is told
+  to use prose, not to add a heading.
+- **`FULL_INLINE`** says "a DOI label in the prose" for the label case.
+- **`gbg init` with no config names `gbg --dev init`; `gbg --dev` warns when the installed command
+  differs from the checkout's `bin/gbg`.**
+
+The rulebook is 95 rules.
+
 ## 2.0.0-rc.41 — 2026-09-29
 
 MINOR, the owner's rulings of 2026-09-29:
