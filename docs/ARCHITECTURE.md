@@ -143,14 +143,14 @@ it as a possible code defect; otherwise it becomes a question. The change guard 
 ### 4.2 What is documentation, and the change guard
 
 **Documentation** is exactly: docstrings and comments in `.jl` files under `src/` and `ext/`; hand-written Markdown
-under `docs/src/`; the package's `README.md`; the rationale documents the config names; and, in GBGCodingTools, the
-prose of its rules — the `statement` and `why` of a `Rule`, and nothing else in that value. **Everything else is code**
-[R2]: other `.jl` files, whole (tests, `docs/make.jl`, Literate scripts, whose comment marks decide what runs);
-`Project.toml` and `Manifest.toml`; the config; stored data code reads, in any format; every generated path and
-declared copy (§6); CI, hook and skill files; `CLAUDE.md`; any document the config declares normative, which wins over
-"rationale" (this document, for GBGCodingTools) [a fix aligning a specification with code would authorise that code];
-and every other part of a rule, agent role, discipline or instrument — id, check, examples, parameters, file sets,
-the access and discipline tags, strength, lists.
+under `docs/src/`; `README.md`; the rationale documents the config names; the `CLAUDE.md` sections its
+`claude_documentation` names, when no other line changes [facts, not instructions; ruled 2026-09-29]; and, in
+GBGCodingTools, a `Rule`'s `statement` and `why`. **Everything else is code** [R2]: other `.jl` files whole
+(tests, `docs/make.jl`, Literate scripts, whose comment marks decide what runs); `Project.toml` and `Manifest.toml`;
+the config; stored data code reads; every generated path and declared copy (§6); CI, hook and skill files; the
+rest of `CLAUDE.md`; a document the config declares normative, which wins over "rationale" [a fix aligning a
+specification with code would authorise that code]; and every other part of a rule, agent role, discipline or
+instrument — id, check, examples, parameters, file sets, tags, strength, lists.
 
 The **change guard** is the program `Guard.classify(cfg, path, before, after, generated)`, where `generated` is what
 that path's generator produces now, or `nothing` where no generator writes it. The caller supplies it: the guard lives
@@ -525,6 +525,7 @@ Base.@kwdef struct Config
     material::Vector{String} = String[]       # documents a reader may consult and never report on (§10)
     disciplines::Vector{Symbol} = Symbol[]    # the catalogued disciplines its readers need; never a reader of its own
     code_areas::Vector{Pair{Symbol,Vector{String}}} = Pair{Symbol,Vector{String}}[]  # one hunter per area (§10)
+    claude_documentation::Vector{String} = String[]  # sections of CLAUDE.md that are documentation (§4.2)
 end
 "A question the owner settled, kept in `.gbg/settled.jl` and given to agents as 'do not report'."
 Base.@kwdef struct Settled                        # locations: what the ruling is about, quotes included

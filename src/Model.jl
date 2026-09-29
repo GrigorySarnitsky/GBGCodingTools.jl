@@ -755,8 +755,9 @@ own session, which adds it for the whole fleet; it is not written in a config.
 - `code_areas` — its code in named areas, one hunter each.
 
 - `disciplines` — the catalogued disciplines its documentation needs read by.
-- `material` — documents a reader may open to judge the targets and never report on: the rationale
-  documents beyond the one `architecture_doc` names, which no reader is given unless listed here.
+- `material` — documents a reader may consult and never report on: the rationale documents beyond the
+  one `architecture_doc` names.
+- `claude_documentation` — the headings of its `CLAUDE.md` sections that are documentation.
 """
 Base.@kwdef struct Config
     package::String
@@ -774,6 +775,7 @@ Base.@kwdef struct Config
     disciplines::Vector{Symbol} = Symbol[]
     code_areas::Vector{Pair{Symbol,Vector{String}}} = Pair{Symbol,Vector{String}}[]
     material::Vector{String} = String[]
+    claude_documentation::Vector{String} = String[]
 end
 
 """

@@ -141,4 +141,5 @@ tool:
   told to add a heading where the statement asks for prose. It fires nowhere in PF or HT. · fate: open
 - **W-29.** RULE.DOC.ARGCOV counts an argument documented only when its name is code; PF's six
   allocating constructors describe `family` in italics, which the statement's "documented in its body"
-  admits. · fate: open, the owner's reading
+  admits. · fate: resolved 2026-09-29 — the owner ruled the statement to match the check: every argument
+  is named as code in the body (PF had already written `family` as code)

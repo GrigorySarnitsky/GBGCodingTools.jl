@@ -84,7 +84,7 @@ const PASS_THROUGH = r"(?i)\b(?:every|all|any)\s+(?:other|remaining|further|addi
 
 const ARGCOV = Model.Rule(
     id = Symbol("RULE.DOC.ARGCOV"),
-    statement = "Every argument in a docstring's signature, positional and keyword, is documented in its body.",
+    statement = "Every argument in a docstring's signature, positional and keyword, is named as code in its body.",
     why = "A reader passing an argument the docstring never mentions has to read the source to learn what it does.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],

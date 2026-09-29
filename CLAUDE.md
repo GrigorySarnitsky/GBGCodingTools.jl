@@ -30,8 +30,8 @@ The managed block above imports the shared policy; this file holds only what is 
 
 ## Where the rebuild stands
 
-**Phase 5 of `IMPLEMENTATION.md` is BUILT** (2026-09-26, everything before HT; `v2.0.0-rc.27`); what remains of it
-is HT wired by its own session and the `v2.0.0` tag, both on the owner's word.
+**Phase 5 of `IMPLEMENTATION.md` is BUILT** (2026-09-26, everything before HT; now at `v2.0.0-rc.40`); what remains
+of it is HT wired by its own session and the `v2.0.0` tag, both on the owner's word.
 The new tree stands whole: `Model`, `Texts`, `Catalogue`, `ConfigIO`, `Engine` (`Checks`, `Guard`,
 `Harness`), `Render`, `Study` and `Orchestration` (`Runs`, `Site`, `Scope`, `Agents`), with `Wire`,
 `Check`, `Docfix`, `Run`, `StudyCmd` and `Release` above them. A documentation review runs end to end in
@@ -81,8 +81,9 @@ old tree left, and rests until Phase 6.
 - Nothing a consumer's docs build or test suite runs may read review state, git state or the network:
   both must give the same answer on a fresh clone and on CI (`docs/ARCHITECTURE.md` §5.1, §11).
 - Changing documentation is safe and changing code is not: what counts as documentation is listed in
-  §4.2 of the design, and everything else — tests, stored data, config, generated files, this file — is
-  code, which changes only on the owner's answer.
+  §4.2 of the design, and everything else — tests, stored data, config, generated files, this file but
+  for the sections its config names in `claude_documentation` — is code, which changes only on the
+  owner's answer.
 - Exit codes are the contract; a log is never grepped for a verdict. A scan output is never truncated.
 - Deterministic first: whatever a program can decide is a program's to decide (§7).
 
@@ -124,7 +125,7 @@ old tree left, and rests until Phase 6.
 
 1. Clean tree on `master`, pushed; `tools/floor.sh` green; `gbg sync --check` clean at the root.
 2. `CHANGELOG.md` carries the entry `## <ver> — <date>` with MAJOR | MINOR | PATCH.
-3. `gbgdev release <ver>` (or `<ver>-rc.<n>`) tags and pushes; a tag is never moved or re-issued.
+3. `gbg --dev release <ver>` (or `<ver>-rc.<n>`) tags and pushes; a tag is never moved or re-issued.
 4. Nothing else holds a release: no review, no open finding, no unanswered question, no audit.
 5. The 1.0.0 line is abandoned: the eleven `v1.0.0-rc.*` tags stand, 1.0.0 is never released, and the
    next release is `2.0.0`, cut where `IMPLEMENTATION.md` §5 says.

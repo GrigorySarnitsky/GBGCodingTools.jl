@@ -41,4 +41,7 @@ Config(
                 # `IMPLEMENTATION.md` is not on the site and is not listed.
                 value = ["docs/src/**/*.md", "docs/ARCHITECTURE.md"]),
     ],
+    # The one section of CLAUDE.md that states facts, not instructions: a state line or a count there is
+    # fixed without asking; every other line of the file stays code (the owner, 2026-09-29).
+    claude_documentation = ["Where the rebuild stands"],
 )

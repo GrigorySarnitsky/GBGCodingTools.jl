@@ -8,9 +8,9 @@ documentation fixer may commit on its own, or a CODE change, which waits for the
 whenever it is unsure.
 
 Documentation is exactly: docstrings and comments in `.jl` files under `src/` and `ext/`; hand-written
-Markdown under `docs/src/`; the package's `README.md`; and the rationale documents the config names.
-Everything else is code — other `.jl` files whole, the config, stored data, generated files, CI and hook
-files, `CLAUDE.md`, and any document the config declares normative.
+Markdown under `docs/src/`; `README.md`; the rationale documents and the `CLAUDE.md` sections the config
+names. Everything else is code: other `.jl` files whole, config, stored data, generated files, CI and
+hook files, the rest of `CLAUDE.md`, and normative documents.
 
 For a `.jl` file that is on the documentation list, being on it is not enough: both versions must parse,
 and with the text inside the docstrings and comments it already has taken out, THE FILE MUST BE
@@ -181,6 +181,7 @@ function on_documentation_list(cfg::Model.Config, path::AbstractString)
     any(f -> replace(first(f), '\\' => '/') == p, cfg.copies) && return false
     any(g -> replace(g, '\\' => '/') == p, cfg.generated) && return false
     endswith(p, ".jl") && (startswith(p, "src/") || startswith(p, "ext/")) && return true
+    p == "CLAUDE.md" && !isempty(cfg.claude_documentation) && return true      # clause 7 decides the lines
     p == "README.md" && return true
     startswith(p, "docs/src/") && endswith(p, ".md") && return true
     literate(cfg, p) && return true
@@ -256,6 +257,13 @@ function classify(cfg::Model.Config, path::AbstractString, before, after; genera
         end
         tb, ta = rb.texts, ra.texts
     else
+        # Clause 7: in `CLAUDE.md`, only the sections the config names are documentation, and a change
+        # is one only when every other line, their headings included, is the same (ruled 2026-09-29: a
+        # factual line, a state or a command name, is fixed without asking; the rest instructs sessions).
+        if replace(path, '\\' => '/') == "CLAUDE.md"
+            outside_sections(before, cfg.claude_documentation) == outside_sections(after, cfg.claude_documentation) ||
+                return Ruling(path, false, "a line of CLAUDE.md outside the sections the config names as documentation changed (clause 7)")
+        end
         tb, ta = String[String(before)], String[String(after)]
     end
 
@@ -267,6 +275,41 @@ function classify(cfg::Model.Config, path::AbstractString, before, after; genera
                                    join("`" .* first.(changed, 60) .* "`", ", "))
     rule_prose && return Ruling(path, true, "the prose of a rule — its statement or why — and nothing else (clause 3)")
     return Ruling(path, true, "docstrings, comments or prose only")
+end
+
+"""
+    outside_sections(text, headings) -> String
+
+The Markdown text with the bodies of the named sections taken out, their heading lines kept. The
+arguments are `text`, the file, and `headings`, the section names. Returns what is left.
+
+A section runs from its heading to the next heading of the same level or higher; a line inside a fenced
+code block is never a heading.
+"""
+function outside_sections(text::AbstractString, headings::AbstractVector{<:AbstractString})
+    lines = split(String(text), '\n')
+    keep = trues(length(lines))
+    inside = false; level = 0; fence = nothing
+    for (i, l) in pairs(lines)
+        f = Texts.fence_of(l)
+        if fence === nothing && f !== nothing
+            fence = f
+        elseif fence !== nothing
+            f !== nothing && f[1] == fence[1] && f[2] >= fence[2] && (fence = nothing)
+        else
+            m = match(r"^(#{1,6})\s+(.*?)\s*$", l)
+            if m !== nothing
+                lv = length(m.captures[1])
+                inside && lv <= level && (inside = false)
+                if !inside && strip(m.captures[2]) in headings
+                    inside = true; level = lv
+                    continue
+                end
+            end
+        end
+        inside && (keep[i] = false)
+    end
+    return join(lines[keep], '\n')
 end
 
 # ────────────────────────────────────────────────────────────────────── clause 2: the code itself

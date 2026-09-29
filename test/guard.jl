@@ -494,3 +494,23 @@ end
     @test !doc("docs/src/i.md", "| a | b |\n|---|---|\n| `E = h` | x |\n", "| a | b |\n|---|---|\n| \$E = 2h\$ | x |\n")
 end
 
+
+# Clause 7 (ruled 2026-09-29): the sections of CLAUDE.md the config names are documentation, and a change
+# is one only when every other line, the headings included, is the same.
+@testset "clause 7 — CLAUDE.md, only in the sections the config names" begin
+    named = G.Model.Config(package = "P", tool = :dev, claude_documentation = ["Where it stands"])
+    c(b, a; cfg = named) = GD.classify(cfg, "CLAUDE.md", b, a).documentation
+    base = "# P\n\n## Where it stands\n\nAt rc.1.\n\n### Detail\n\nOne.\n\n## Rules\n\nPush every commit.\n\n```sh\n# Where it stands\nls\n```\n"
+    @test c(base, replace(base, "At rc.1." => "At rc.2."))                        # inside the section
+    @test c(base, replace(base, "One." => "Two."))                                # in a subsection of it
+    @test !c(base, replace(base, "Push every commit." => "Push when you like."))  # an instruction outside it
+    @test !c(base, replace(base, "## Where it stands" => "## Where it went"))     # its heading
+    @test !c(base, replace(base, "\nls\n" => "\nrm -rf x\n"))                     # a fence is no heading
+    @test !c(base, replace(base, "At rc.1." => "At rc.2."); cfg = G.Model.Config(package = "P", tool = :dev))
+    # a section named in the config must be one the file has
+    dir = mktempdir(; cleanup = true)
+    write(joinpath(dir, "CLAUDE.md"), base)
+    bad = G.Model.Config(package = "P", tool = :dev, claude_documentation = ["Where it went"])
+    @test any(p -> occursin("does not have", p), G.ConfigIO.validate(bad, dir))
+    @test !any(p -> occursin("claude_documentation", p), G.ConfigIO.validate(named, dir))
+end

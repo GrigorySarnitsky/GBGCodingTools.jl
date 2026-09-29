@@ -389,6 +389,15 @@ function validate(cfg::Model.Config, root::AbstractString)
         isfile(joinpath(root, cmd[script])) ||
             push!(problems, "$label names $(cmd[script]), which is not a file here")
     end
+    # A section named as documentation must be one the file has: a heading misspelt here would admit
+    # nothing and say nothing, and the owner would believe a section fixable that is not.
+    if !isempty(cfg.claude_documentation)
+        cm = joinpath(root, "CLAUDE.md")
+        heads = isfile(cm) ? Set(strip(m.captures[1]) for m in eachmatch(r"(?m)^#{1,6}\s+(.*?)\s*$", read(cm, String))) : Set{String}()
+        for h in cfg.claude_documentation
+            h in heads || push!(problems, "claude_documentation names the section \"$h\", which CLAUDE.md does not have")
+        end
+    end
     for (copy, source) in cfg.copies
         isfile(joinpath(root, source)) ||
             push!(problems, "the copy $copy is declared from $source, which is not a file here")

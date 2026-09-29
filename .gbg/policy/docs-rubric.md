@@ -42,7 +42,7 @@ Two homes for one docstring is two things to keep true, and the second teaches a
 Covered by a program.
 
 ### RULE.DOC.ARGCOV
-Every argument in a docstring's signature, positional and keyword, is documented in its body.
+Every argument in a docstring's signature, positional and keyword, is named as code in its body.
 
 A reader passing an argument the docstring never mentions has to read the source to learn what it does.
 
