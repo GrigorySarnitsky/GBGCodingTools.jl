@@ -61,6 +61,23 @@ function argcov(src::AbstractString, cfg)
                if m !== nothing]
         spans = [m.captures[1] for m in eachmatch(r"(?<!`)`([^`\n]+)`(?!`)", d.text)
                  if !any(f -> startswith(m.captures[1], f * "("), own)]
+        # A SPLAT passed on in a fenced Julia example is documented by it: `run!(C(; kwargs...), sim)` says
+        # where `kwargs...` goes as plainly as the same call inline, which alone counted (HT's `warmup!`,
+        # found verifying its findings, 2026-09-29). Nothing else counts there: a name in a `math` block or
+        # a doctest's local variable is no argument's documentation, and counting every fenced line hid two
+        # real findings. A line restating the call itself is not documentation either.
+        fenced_splats = String[]
+        lang = nothing
+        for l in split(d.text, '\n')
+            m = match(r"^\s*(?:```|~~~)\s*([A-Za-z@]*)", l)
+            if m !== nothing
+                lang = lang === nothing ? m.captures[1] : nothing
+                continue
+            end
+            (lang in ("julia", "jldoctest", "")) || continue
+            any(f -> startswith(strip(l), f * "("), own) && continue
+            for s in eachmatch(r"([\p{L}_][\p{L}\p{N}_!]*)\.\.\.", l); push!(fenced_splats, s.captures[1]); end
+        end
         for (p, signature) in shown
             # A splat may be documented by its base name or with its dots — `rows` or `kwargs...` — and
             # both are the same argument to a reader; so is a name carrying its type or its default.
@@ -68,7 +85,8 @@ function argcov(src::AbstractString, cfg)
             q = "\\Q" * base * "\\E"
             documented = occursin(Regex("`" * q * "(?:\\.\\.\\.)?(?:::[^`]*)?`"), d.text) ||
                          occursin(Regex("`" * q * "\\s*=[^`]*`"), d.text) ||
-                         any(sp -> occursin(Regex("(?<![\\w!.])" * q * "(?![\\w!])"), sp), spans)
+                         any(sp -> occursin(Regex("(?<![\\w!.])" * q * "(?![\\w!])"), sp), spans) ||
+                         (endswith(p, "...") && base in fenced_splats)
             documented && continue
             push!(out, Model.Location(; file = "", line = d.line, node = d.node,
                                        text = "`$p` of `$signature` is undocumented"))
@@ -132,6 +150,17 @@ const ARGCOV = Model.Rule(
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(a, b; kwargs...)\n\nDoes a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `kwargs...` — every other keyword, passed to `g` untouched.\n\"\"\"\nf(x) = x\n",
             Model.Location[], "positional and keyword"),
+        # a fenced example passing the splat on documents it; one restating the call does not
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(a, b; kwargs...)\n\nDoes a thing with `a` and `b`, as\n\n```julia\ng(C(; kwargs...), a, b)\n```\n\"\"\"\nf(x) = x\n",
+            Model.Location[], "positional and keyword"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(a, b; kwargs...)\n\nDoes a thing with `a` and `b`:\n\n```julia\nf(a, b; kwargs...)\n```\n\"\"\"\nf(x) = x\n",
+            [Model.Location(; file = "src/Example.jl", line = 1)], "positional and keyword"),
+        # a name in a `math` block or a doctest's own variable documents no argument
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(a, b, h)\n\nDoes a thing with `a` and `b`.\n\n```math\nh^2\n```\n\n```jldoctest\njulia> h = 1;\n```\n\"\"\"\nf(x) = x\n",
+            [Model.Location(; file = "src/Example.jl", line = 1)], "positional and keyword"),
     ])
 
 """

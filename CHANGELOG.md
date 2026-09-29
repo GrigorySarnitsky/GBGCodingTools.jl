@@ -4,6 +4,21 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.44 — 2026-09-29
+
+PATCH, two defects verifying GBGHomogeneousTurbulence's new findings at rc.43 found:
+
+- **`RULE.DOC.ARGCOV`:** a splat passed on in a fenced Julia example, `run!(C(; kwargs...), sim)`, is
+  documented by it, as the same call inline was. Nothing else in a fence counts: a name in a `math` block
+  or a doctest's own variable documents no argument (counting every fenced line hid two real findings in
+  GBGStreamingStatistics, caught measuring the fix).
+- **`RULE.DOC.ARGS_FORM`:** arguments bulleted under any sentence, outside a `# Fields` section, are told
+  the heading is missing, at the bullets' line; read only under "The arguments are", a docstring whose
+  bullets led in otherwise was told to use bullets it had.
+
+Measured: GBGPeriodicFields 0 findings under both rules; GBGHomogeneousTurbulence loses one false
+ARGCOV finding and its bulleted docstrings are pointed at the heading.
+
 ## 2.0.0-rc.43 — 2026-09-29
 
 PATCH, the 26 defects an independent review of rc.35–rc.42 found, each fixed with a test or an example

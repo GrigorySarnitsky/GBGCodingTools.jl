@@ -71,8 +71,14 @@ function args_form(src::AbstractString, cfg)
         wants_bullets = npos + nkw >= THRESHOLD || (nkw > 0 && !element_type)
         # Bullets under the old sentence are judged AFTER the count: a two-argument call bulleted so was
         # told to add a heading, where the rule wants it in prose (found in review, 2026-09-28).
-        if !bulleted && occursin(UNDER_PHRASE, d.text)
-            at = Texts.docstring_line(d, match(UNDER_PHRASE, d.text).offset)
+        # Bullets heading the arguments' own names under ANY sentence, outside a `# Fields` section, are the
+        # bulleted form without its heading: read only under "The arguments are", "The arguments run from
+        # the largest scale to the smallest:" was told to use bullets it already had (HT, 2026-09-29).
+        names = Set(replace.(vcat(positional, keyword), r"\.\.\.$" => ""))
+        loose = bulleted ? nothing : argument_bullets(d.text, names)
+        if !bulleted && (occursin(UNDER_PHRASE, d.text) || loose !== nothing)
+            at = occursin(UNDER_PHRASE, d.text) ? Texts.docstring_line(d, match(UNDER_PHRASE, d.text).offset) :
+                                                  Texts.docstring_line(d, loose)
             push!(out, Model.Location(; file = "", line = at, node = d.node,
                 text = wants_bullets ?
                     "`$(d.node)` lists its arguments under a sentence: put the bullets under an `# Arguments` heading" :
@@ -92,6 +98,18 @@ function args_form(src::AbstractString, cfg)
         end
     end
     return out
+end
+
+# The offset of the first bullet outside a `# Fields` section whose head names an argument, or nothing.
+function argument_bullets(text::AbstractString, names)
+    offset = 1; in_fields = false
+    for l in split(text, '\n')
+        h = match(r"^ {0,3}#{1,6}\s+(.*?)\s*$", l)
+        h === nothing || (in_fields = strip(h.captures[1]) == "Fields")
+        !in_fields && any(in(names), Texts.bullet_head_names(l)) && return offset
+        offset += ncodeunits(l) + 1
+    end
+    return nothing
 end
 
 doc(binding, body) = "\"\"\"\n    " * binding * "\n\n" * body * "\n\"\"\"\n" *
@@ -132,7 +150,7 @@ const ARGS_FORM = Model.Rule(
             Model.Location[], "under an `# Arguments` heading"),
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b, c)", "Does a thing.\n\n# Arguments\n\nAll three required.\n\n# Notes\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
-            [Model.Location(; file = "src/Example.jl", line = 1)], "under an `# Arguments` heading"),
+            [Model.Location(; file = "src/Example.jl", line = 12)], "under an `# Arguments` heading"),
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a; opt = 1)", "Does a thing. The arguments are `a`, the first, and `opt`, the option."),
             [Model.Location(; file = "src/Example.jl", line = 1)], "any keyword is listed"),
@@ -163,6 +181,10 @@ const ARGS_FORM = Model.Rule(
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b)", "Does a thing. The arguments are `a`, the first, and `b`, the second.\n\n- one note.\n- another."),
             Model.Location[], "fewer are bound in running prose"),
+        # the arguments bulleted under another sentence: the heading is what is missing, at the bullets
+        Model.TextExample(Model.FileSet.CODE,
+            doc("f(a, b, c)", "Does a thing. They run from the largest to the smallest:\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
+            [Model.Location(; file = "src/Example.jl", line = 6)], "under an `# Arguments` heading"),
     ])
 
 """
