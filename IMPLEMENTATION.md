@@ -287,10 +287,11 @@ asked for: deferring it handed `v2.1.0` to Phase 7.
 
 ### Phase 7 — GBGStreamingStatistics, GBGCloudPhysics, and the legacy deletions (40 commits, 6–7 sessions)
 **Ends with** all four science packages wired and on one version, and no legacy instruments left in any of them. **Depends
-on** Phase 6. **Creates** SS's and CP's `.gbg/`, and a `CP-WIRING.md` (CP's `[extras]`/`[targets]` test declaration becomes a
+on** Phase 5; Phase 6 was deferred on 2026-09-21, and Phase 7 follows Phase 5 directly. **Creates** SS's and CP's `.gbg/`, and a `CP-WIRING.md` (CP's `[extras]`/`[targets]` test declaration becomes a
 `test/Project.toml` the pin can land in). **Deletes**, each in its own package's commit and only after a real
 documentation review has run there and the owner has read its report: PF's, HT's and SS's legacy instrument directories,
-their round folders moving to that package's `docs/design-record/`. **Why it is not three sessions**: two wirings, three full
+their round folders moving to that package's `docs/design-record/`. CP tracks none (measured 2026-09-30); the gate
+holds it so. **Why it is not three sessions**: two wirings, three full
 instrument runs, the fixing each produces, and three owner readings the plan cannot schedule. **Owner:** decision 12. Release
 `v2.1.0`.
 **Gate** `bash -e -o pipefail -c 'for P in "$@"; do tools/floor.sh "$P"; test -z "$(git -C "$P" ls-files -- .claude/commands .claude/doc-review .claude/audit-changes .claude/bug-hunt)"; done' _ "$PF" "$CP" "$HT" "$SS"`
