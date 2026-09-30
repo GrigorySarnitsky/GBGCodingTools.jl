@@ -4,6 +4,13 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## Unreleased
+
+- **`RULE.CIT.DOI`:** that a work has no DOI is read from its whole reference entry, wrapped lines
+  included, as the statement says; the check joined lines only while a bracket was open, so "(No DOI; …)"
+  starting on an entry's second line went unseen. The DOI itself is still sought on the title's line.
+  Measured over the four packages and this one: no finding changes.
+
 ## 2.0.0-rc.48 — 2026-09-30
 
 PATCH, the owner's decision of 2026-09-30:

@@ -64,6 +64,7 @@ cannot tell from prose.
 """
 function doi_on_title(text::AbstractString, cfg)
     out = Model.Location[]
+    raw = split(text, '\n')
     for (i, line, breaks) in Texts.unwrapped(text)
         # In code ticks the form is NAMED, not used: this rule's own statement quotes it, and so does
         # every page that tells an author which form was retired.
@@ -76,10 +77,21 @@ function doi_on_title(text::AbstractString, cfg)
         # `Reference:` alone opens a block list, whose entries are the lines under it.
         occursin(r"^\s*Reference:\s*$", line) && continue
         occursin(r"doi\.org/|openlibrary\.org/", line) && continue
-        occursin(NO_DOI, line) && occursin(RECORD_LINK, line) && continue
+        # That the work HAS no DOI is read from the whole entry, its indented continuation lines with it:
+        # joined only while a bracket was open, an entry whose "(No DOI; …)" began on its second line was
+        # reported as not saying so, and GBGHomogeneousTurbulence moved the words onto the first line to
+        # clear it (2026-09-30). The DOI itself is still sought on the title's line: an entry holding two
+        # works would otherwise pass the first on the second's DOI.
+        entry = line
+        j = i + length(breaks) + 1
+        while j <= length(raw) && !isempty(strip(raw[j])) && occursin(r"^\s", raw[j]) &&
+              !occursin(r"^\s*[-*+]\s", raw[j])
+            entry *= " " * strip(raw[j]); j += 1
+        end
+        occursin(NO_DOI, entry) && occursin(RECORD_LINK, entry) && continue
         push!(out, Model.Location(; file = "", line = i,
-            text = (occursin(NO_DOI, line) ? "a work with no DOI and no https link to its record on its title: " :
-                                             "a reference with no DOI or Open Library link on its title: ") * strip(String(line))))
+            text = (occursin(NO_DOI, entry) ? "a work with no DOI and no https link to its record on its title: " :
+                                              "a reference with no DOI or Open Library link on its title: ") * strip(String(line))))
     end
     return out
 end
@@ -130,6 +142,14 @@ const DOI = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\n- Rogallo, R. S. (1981). [*Numerical experiments in homogeneous turbulence*](https://ntrs.nasa.gov/citations/19810022965). NASA TM 81315; No DOI.\n",
             Model.Location[], "a work whose entry states it has no DOI"),
+        # The entry says so on its wrapped second line: the whole entry is read (2026-09-30). Unsaid on
+        # either line, it is reported.
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Rogallo, R. S. (1981). [*Numerical experiments in homogeneous turbulence*](https://ntrs.nasa.gov/citations/19810022965).\n  NASA TM 81315. *(No DOI; a technical memorandum.)*\n",
+            Model.Location[], "a work whose entry states it has no DOI"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- Rogallo, R. S. (1981). [*Numerical experiments in homogeneous turbulence*](https://ntrs.nasa.gov/citations/19810022965).\n  NASA TM 81315. *(A technical memorandum.)*\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "a work whose entry states it has no DOI"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\n- Rogallo, R. S. (1981). *Numerical experiments in homogeneous turbulence*. NASA TM 81315, no DOI ([record](https://ntrs.nasa.gov/citations/19810022965)).\n",
             [Model.Location(; file = "docs/src/page.md", line = 3)], "an https link to its stable public record on its title"),

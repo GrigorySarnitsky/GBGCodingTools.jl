@@ -164,3 +164,8 @@ tool:
   had a bug hunt beside its old one, "Step 7 settles which stays" (the owner noticed, 2026-09-30).
   · fate: fixed in rc.48 — an instrument not built keeps no skill, and the document says the two do not
   exist yet and that HT's old instruments go in Phase 7
+- **W-35.** RULE.CIT.DOI read "no DOI" only where the title's logical line ended, which the check joined
+  across wraps only while a bracket was open; HT moved Carpenter & Kennedy's "No DOI" onto the entry's
+  first line to clear it (HT's report, 2026-09-30). · fate: fixed after rc.48 — the statement that there
+  is no DOI is read from the whole entry; the DOI is still sought on the title's line, since one entry can
+  hold two works. No finding in the fleet changes
