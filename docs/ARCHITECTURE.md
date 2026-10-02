@@ -384,10 +384,10 @@ The instrument side also starts `git`, builds and witnesses. Settled case by cas
 Enums are scoped (`module Decider; @enum T …; end`) so values of different enums never share a name.
 
 ```julia
-module Intention; @enum T DOCUMENTATION CODE; end          # PUBLICATION arrives with the leak scan
+module Intention; @enum T DOCUMENTATION CODE PUBLICATION; end   # PUBLICATION: the leak scan's
 module Decider;   @enum T PROGRAM FAILING_TEST AGENT; end
 module Fixer;     @enum T ORDINARY_WORK DOCUMENTATION_FIXER CODE_FIXER REGENERATE OWNER_ONLY; end
-module Input;     @enum T SOURCE_TEXT FILE_TREE LOADED_MODULE BUILT_SITE QUESTION HISTORY; end   # HISTORY: the hook's, never a build's
+module Input;     @enum T SOURCE_TEXT FILE_TREE LOADED_MODULE BUILT_SITE QUESTION HISTORY PUBLICATION; end   # HISTORY: the hook's; PUBLICATION: `gbg leak`'s
 module FileSet;   @enum T DOCSTRINGS PAGES RATIONALE LITERATE CODE TESTS; end
 module Strength;  @enum T ECONOMY FULL; end; module Part; @enum T WHOLE BLOCK TOML_ENTRIES; end
 module Verdict;   @enum T FIXED NOT_FIXED LINE_ONLY MADE_WORSE HIDES_CODE_DEFECT NOT_A_DEFECT; end
@@ -555,6 +555,8 @@ Base.@kwdef struct Config
     code_areas::Vector{Pair{Symbol,Vector{String}}} = Pair{Symbol,Vector{String}}[]  # one hunter per area (§10)
     claude_documentation::Vector{String} = String[]  # sections of CLAUDE.md that are documentation (§4.2)
     exclusions::Vector{Exclusion} = Exclusion[]     # files no rule reads, with the reason
+    leak_emails::Vector{String} = String[]          # addresses approved for publication (§3.1)
+    leak_terms::Vector{String} = String[]           # words never published: the machines' names
 end
 "A question the owner settled, kept in `.gbg/settled.jl` and given to agents as 'do not report'."
 Base.@kwdef struct Settled                        # locations: what the ruling is about, quotes included

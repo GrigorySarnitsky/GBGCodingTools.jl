@@ -27,7 +27,7 @@ module Model
 # ───────────────────────────────────────────────────────────────────────────────────────── the enums
 
 "What the defects a check or an instrument looks for are in. `PUBLICATION` arrives with the leak scan."
-module Intention; @enum T DOCUMENTATION CODE; end
+module Intention; @enum T DOCUMENTATION CODE PUBLICATION; end
 
 "Who says a finding is real: a program, an agent whose failing test a program then runs, or an agent."
 module Decider; @enum T PROGRAM FAILING_TEST AGENT; end
@@ -36,13 +36,12 @@ module Decider; @enum T PROGRAM FAILING_TEST AGENT; end
 module Fixer; @enum T ORDINARY_WORK DOCUMENTATION_FIXER CODE_FIXER REGENERATE OWNER_ONLY; end
 
 """
-What a check reads: a source text, a small file tree, the loaded package with its root, the built site,
-a question, or the repository's history. A `LOADED_MODULE` check is handed `(pkg, root)`, since what it
-compares is nearly always the module against the source that documents it. A `HISTORY` check reads the
-branch and the commits, which no build or test may — a fresh clone and CI must answer alike — so it
-runs in the end-of-turn hook and under `gbg check`, and nowhere else.
+What a check reads: a source text, a small file tree, the loaded package with its root (handed
+`(pkg, root)`, since it compares the module against its source), the built site, a question, the
+repository's history, or what a repository would publish. No build or test may read git, so a `HISTORY`
+check runs in the end-of-turn hook and under `gbg check` alone, and a `PUBLICATION` check in `gbg leak`.
 """
-module Input; @enum T SOURCE_TEXT FILE_TREE LOADED_MODULE BUILT_SITE QUESTION HISTORY; end
+module Input; @enum T SOURCE_TEXT FILE_TREE LOADED_MODULE BUILT_SITE QUESTION HISTORY PUBLICATION; end
 
 "A named set of a package's files, found by default patterns the config may override."
 module FileSet; @enum T DOCSTRINGS PAGES RATIONALE LITERATE CODE TESTS; end
@@ -752,9 +751,6 @@ end
 
 A package's settings, written by hand in `.gbg/config.jl` and read by a parser that evaluates nothing.
 
-A reader or a discipline a package needs and the tool's catalogue lacks is requested from the tool's
-own session, which adds it for the whole fleet; it is not written in a config.
-
 # Fields
 
 - `package` — its name.
@@ -776,6 +772,8 @@ own session, which adds it for the whole fleet; it is not written in a config.
   one `architecture_doc` names.
 - `claude_documentation` — the headings of its `CLAUDE.md` sections that are documentation.
 - `exclusions` — files no rule reads, with the reason.
+- `leak_emails` — the email addresses the owner approves for publication.
+- `leak_terms` — words never published, as the machines' names.
 """
 Base.@kwdef struct Config
     package::String
@@ -795,6 +793,8 @@ Base.@kwdef struct Config
     material::Vector{String} = String[]
     claude_documentation::Vector{String} = String[]
     exclusions::Vector{Exclusion} = Exclusion[]
+    leak_emails::Vector{String} = String[]
+    leak_terms::Vector{String} = String[]
 end
 
 """

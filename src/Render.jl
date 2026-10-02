@@ -810,6 +810,10 @@ const POLICY_FILES = [
     (generator = :policy_asking, path = ".gbg/policy/asking.md", families = [:ASK],
      title = "Asking the owner — `RULE.ASK.*`",
      opening = "One decision, short, in his words rather than this package's, with every identifier moved out of the sentence."),
+    # What a repository may not publish when it is made public; only `gbg leak` decides these (§3.1).
+    (generator = :policy_publication, path = ".gbg/policy/publication.md", families = [:LEAK],
+     title = "Publication — `RULE.LEAK.*`",
+     opening = "What a repository may not publish when it is made public: no credential, nothing personal, nothing never meant for a reader."),
 ]
 
 """

@@ -15,7 +15,7 @@ include("helpers.jl")
 const LAYERS = Dict("src/Model.jl" => 1, "src/Texts.jl" => 2, "src/ConfigIO.jl" => 4,
                     "src/Rules/rendering.jl" => 3, "src/Rules/docstrings.jl" => 3,
                     "src/Rules/arguments.jl" => 3, "src/Rules/latex.jl" => 3, "src/Rules/pages.jl" => 3, "src/Rules/reflection.jl" => 3, "src/Rules/site.jl" => 3, "src/Rules/shape.jl" => 3, "src/Rules/modules.jl" => 3,
-                    "src/Rules/judgement_api.jl" => 3, "src/Rules/judgement_cit.jl" => 3, "src/Rules/judgement_doc.jl" => 3, "src/Rules/judgement_git.jl" => 3, "src/Rules/records.jl" => 3, "src/Rules/judgement_inst.jl" => 3, "src/Rules/judgement_test.jl" => 3, "src/Rules/judgement_tex.jl" => 3,
+                    "src/Rules/judgement_api.jl" => 3, "src/Rules/judgement_cit.jl" => 3, "src/Rules/judgement_doc.jl" => 3, "src/Rules/judgement_git.jl" => 3, "src/Rules/records.jl" => 3, "src/Rules/leaks.jl" => 3, "src/Rules/judgement_inst.jl" => 3, "src/Rules/judgement_test.jl" => 3, "src/Rules/judgement_tex.jl" => 3,
                     "src/Rules/questions.jl" => 3, "src/Rules/citations.jl" => 3, "src/Engine/Questions.jl" => 5, "src/CLI/Answer.jl" => 8,
                     "src/Orchestration.jl" => 7, "src/Orchestration/Runs.jl" => 7, "src/Orchestration/Agents.jl" => 7,
                     "src/Orchestration/Scope.jl" => 7, "src/Orchestration/Site.jl" => 7, "src/Study.jl" => 6, "src/CLI/StudyCmd.jl" => 8,

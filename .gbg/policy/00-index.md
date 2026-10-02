@@ -24,6 +24,7 @@ The files:
 - `instruments.md` — What a session runs or sends unasked, and how it reads what a scan prints. (3 rules)
 - `git-conventions.md` — What a commit carries, where it goes, and what is never committed. (9 rules)
 - `asking.md` — One decision, short, in his words rather than this package's, with every identifier moved out of the sentence. (5 rules)
+- `publication.md` — What a repository may not publish when it is made public: no credential, nothing personal, nothing never meant for a reader. (9 rules)
 - `glossary.md` — the terms the rules use, bound once.
 - `switches.md` — what this package has switched off, and why.
 
@@ -34,6 +35,7 @@ The files:
 @.gbg/policy/instruments.md
 @.gbg/policy/git-conventions.md
 @.gbg/policy/asking.md
+@.gbg/policy/publication.md
 @.gbg/policy/glossary.md
 @.gbg/policy/switches.md
 <!-- gbg:managed end -->

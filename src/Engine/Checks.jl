@@ -120,6 +120,9 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
     check isa Model.ProgramCheck || return Model.Location[]
     check.network && !network && return Model.Location[]
     check.input === Model.Input.HISTORY && !history && return Model.Location[]
+    # A publication rule reads what a repository would publish — every commit, its metadata, the GitHub
+    # side — and only `gbg leak` runs it, through `Engine.Leak`; no build, test or hook ever does.
+    check.input === Model.Input.PUBLICATION && return Model.Location[]
     applies(cfg, rule.id) || return Model.Location[]
 
     out = Model.Location[]

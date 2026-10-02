@@ -31,7 +31,12 @@ const EXAMPLE_PATH = Dict(MR.FileSet.PAGES => "docs/src/page.md",
                           MR.FileSet.TESTS => "test/example.jl")
 
 function materialise(rule, example)
-    if example isa MR.TextExample
+    if example isa MR.TextExample && rule.check isa MR.ProgramCheck && rule.check.input === MR.Input.PUBLICATION
+        # A publication rule is run by `gbg leak` alone, which hands its check each text it reads; so is
+        # it here, on a config approving one address and keeping one word private.
+        cfg = MR.Config(package = "Example", tool = :dev, leak_emails = ["owner@example.org"], leak_terms = ["Examplehost"])
+        return rule.check.run(example.text, cfg)
+    elseif example isa MR.TextExample
         dir = mktempdir(; cleanup = true)
         path = get(EXAMPLE_PATH, example.fileset, "src/Example.jl")
         mkpath(joinpath(dir, dirname(path)))
