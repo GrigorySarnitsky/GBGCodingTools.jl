@@ -80,6 +80,7 @@ include("Catalogue.jl")      # what this package knows, as values: the table, th
 include("ConfigIO.jl")       # a package's own settings, read as data and never evaluated
 include("Engine.jl")         # what runs the rules; for now, the change guard
 include("Render.jl")
+include("Publication.jl")    # the leak scan's engine: what a repository would publish, read whole
 include("Study.jl")                 # the rule wording study: agreement, measured
 include("Orchestration.jl")         # every file that connects a package to this one
 include("CLI/Main.jl")
@@ -97,5 +98,6 @@ include("CLI/Bump.jl")
 include("CLI/Answer.jl")
 include("CLI/Run.jl")
 include("CLI/Release.jl")
+include("CLI/Leak.jl")
 
 end # module

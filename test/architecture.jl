@@ -22,14 +22,14 @@ const LAYERS = Dict("src/Model.jl" => 1, "src/Texts.jl" => 2, "src/ConfigIO.jl" 
                     "src/Roles/documentation_review.jl" => 3, "src/CLI/Run.jl" => 8,
                     "src/Engine.jl" => 5, "src/Engine/Guard.jl" => 5,
                     "src/CLI/Docfix.jl" => 8, "src/CLI/Check.jl" => 8, "src/CLI/Wire.jl" => 8,
-                    "src/Catalogue.jl" => 3, "src/Engine/Checks.jl" => 5, "src/Engine/Harness.jl" => 5, "src/Render.jl" => 6,
+                    "src/Catalogue.jl" => 3, "src/Engine/Checks.jl" => 5, "src/Engine/Harness.jl" => 5, "src/Render.jl" => 6, "src/Publication.jl" => 6,
                     # Phase 5: the module file, the command line's remaining files and the test harness, kept
                     "src/GBGCodingTools.jl" => 8, "src/CLI/Main.jl" => 8, "src/CLI/Bump.jl" => 8, "src/CLI/Release.jl" => 8,
-                    "src/CLI/Fleet.jl" => 8, "src/CLI/Install.jl" => 8, "src/CLI/Self.jl" => 8, "src/CLI/Git.jl" => 8,
+                    "src/CLI/Fleet.jl" => 8, "src/CLI/Install.jl" => 8, "src/CLI/Leak.jl" => 8, "src/CLI/Self.jl" => 8, "src/CLI/Git.jl" => 8,
                     "src/TestHarness.jl" => 5)
 
 const RANK_OF_MODULE = Dict("Model" => 1, "Texts" => 2, "Catalogue" => 3, "ConfigIO" => 4,
-                            "Engine" => 5, "Render" => 6, "Orchestration" => 7, "CLI" => 8)
+                            "Engine" => 5, "Render" => 6, "Publication" => 6, "Orchestration" => 7, "CLI" => 8)
 
 # The tree being replaced. This number only falls; a commit that raises it fails here, which is what
 # makes "two machines in one tree" a measured state rather than a feeling. Phase 5 deleted the third

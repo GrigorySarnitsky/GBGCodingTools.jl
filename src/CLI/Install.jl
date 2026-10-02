@@ -33,15 +33,18 @@ julia_floor_ok() = VERSION >= JULIA_FLOOR
 """
     cmd_install(args) -> Int
 
-`gbg install [--dev-checkout <path>]`: copies the running copy's `bin/gbg` to `~/.local/bin/gbg` with mode
-755 and, with the option, writes the one-line pointer `~/.gbg/dev`. Runs from whichever copy Pkg resolved
-for the calling environment — no depot glob is ever expanded. Returns 0 when the shim is written, and the `~/.gbg/dev` pointer with it under `--dev-checkout`, 2
-when the Julia in use is below the floor, when `--dev-checkout` names a directory that is not a
-`GBGCodingTools` checkout, or when `~/.local/bin` is not on `PATH` (the shim would be installed but
-never found).
+`gbg install [--dev-checkout <path>]`: copies the running copy's `bin/gbg` to `~/.local/bin/gbg`,
+mode 755, and with the option writes the one-line pointer `~/.gbg/dev`; `gbg install --gitleaks`
+installs the leak scan's pinned Gitleaks instead
+([`Publication.install`](@ref GBGCodingTools.Publication.install)). It runs from whichever copy Pkg
+resolved; no depot glob is expanded. Returns 0 when done, 2 when the Julia in use is below the floor,
+when `--dev-checkout` names no `GBGCodingTools` checkout, or when `~/.local/bin` is not on `PATH`, where
+the shim would never be found.
 """
 function cmd_install(args)
     o = parse_options(args; valued = ["dev-checkout"])
+    # The leak scan's engine, pinned and checked (§3.1); the one install that reaches the network.
+    "gitleaks" in o.flags && return Publication.install()
     if !julia_floor_ok()
         println(stderr, "gbg install: julia $(VERSION) is below the floor $(JULIA_FLOOR); use juliaup"); return 2
     end
