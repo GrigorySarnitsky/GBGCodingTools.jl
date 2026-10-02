@@ -801,7 +801,7 @@ const POLICY_FILES = [
      opening = "What a test is for, where its oracle comes from, and when a thing is done."),
     (generator = :policy_instruments, path = ".gbg/policy/instruments.md", families = [:INST],
      title = "Instruments — `RULE.INST.*`",
-     opening = "What a session runs unasked, and how it reads what a scan prints."),
+     opening = "What a session runs or sends unasked, and how it reads what a scan prints."),
     (generator = :policy_git, path = ".gbg/policy/git-conventions.md", families = [:GIT],
      title = "Git conventions — `RULE.GIT.*`",
      opening = "What a commit carries, where it goes, and what is never committed."),
@@ -891,8 +891,8 @@ function claude_block(cfg::Model.Config)
     documentation may be fixed without asking, and anything else waits for an answer.
 
     The readers of a review are derived from the rules and the tool's catalogue of disciplines. A
-    reader or a discipline this package needs and the tool lacks is requested from the tool's own
-    session, never written here.
+    reader or a discipline this package needs and the tool lacks is requested of the tool, as a request
+    file the owner has approved, never written here.
 
     A run an earlier session left open is continued before anything else, and the chat says so:
     `gbg run next` says what to launch or that the stage is ready to collect, and the run goes on to

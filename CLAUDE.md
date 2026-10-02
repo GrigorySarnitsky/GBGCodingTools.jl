@@ -10,8 +10,8 @@ push hook, and a failing build stops the push. What a rule finds is reported, ne
 documentation may be fixed without asking, and anything else waits for an answer.
 
 The readers of a review are derived from the rules and the tool's catalogue of disciplines. A
-reader or a discipline this package needs and the tool lacks is requested from the tool's own
-session, never written here.
+reader or a discipline this package needs and the tool lacks is requested of the tool, as a request
+file the owner has approved, never written here.
 
 A run an earlier session left open is continued before anything else, and the chat says so:
 `gbg run next` says what to launch or that the stage is ready to collect, and the run goes on to

@@ -169,3 +169,8 @@ tool:
   first line to clear it (HT's report, 2026-09-30). · fate: fixed after rc.48 — the statement that there
   is no DOI is read from the whole entry; the DOI is still sought on the title's line, since one entry can
   hold two works. No finding in the fleet changes
+- **W-36.** Nothing in the rulebook said when a session may message another package's session; the
+  practice lived in this session's and PF's memories, which no other package reads, and the generated
+  CLAUDE.md block said a missing reader "is requested from the tool's own session". HT sent PF a
+  follow-up request the owner had not approved (2026-10-01). · fate: fixed in rc.49 — RULE.INST.PEER_MESSAGE,
+  RULE.GIT.REQUESTS names the owner's approval, and the block's sentence corrected (the owner, 2026-10-01)

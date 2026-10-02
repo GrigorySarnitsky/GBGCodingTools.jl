@@ -48,7 +48,7 @@ The repository is private and synced across machines through GitHub, so work is 
 Covered by a program in the end-of-turn hook, which reads the branch and the commits not yet pushed — weaker than a build check, since a hook can be skipped and a failing test cannot.
 
 ### RULE.GIT.REQUESTS
-A cross-package request is a tracked file .gbg/requests/to-<PKG>-<date>-<topic>.md in the requester, whose first paragraph begins `Status:`; a concluded request is deleted.
+A cross-package request is a tracked file .gbg/requests/to-<PKG>-<date>-<topic>.md in the requester, whose first paragraph begins `Status:` and says when the owner approved sending it, as `approved by the owner on <date>`; a concluded request is deleted.
 
 The requests directory holds what is still awaiting the other package and nothing else.
 

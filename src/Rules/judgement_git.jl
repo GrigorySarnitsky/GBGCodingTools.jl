@@ -164,14 +164,15 @@ const MANIFEST_TRACKED = Model.Rule(
                           Model.Location[], "a tracked root manifest is declared"),
     ])
 
+const APPROVED = r"approved\s+by\s+the\s+owner\s+on\s+\d{4}-\d{2}-\d{2}"i
 const REQUEST_NAME = r"^to-[A-Za-z0-9]+-\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$"
 
 """
     requests(root, cfg) -> Vector{Model.Location}
 
-`RULE.GIT.REQUESTS` over `.gbg/requests/`: every file there is named `to-<PKG>-<date>-<topic>.md`, and
-its first paragraph — after an optional heading — begins `Status:`. The arguments are `root`, the
-package, and `cfg`, its config. Returns the locations.
+`RULE.GIT.REQUESTS` over `.gbg/requests/`: each file is named `to-<PKG>-<date>-<topic>.md`, its
+first paragraph a `Status:` naming the owner's approval. The arguments are
+`root`, the package, and `cfg`, its config. Returns the locations.
 """
 function requests(root::AbstractString, cfg::Model.Config)
     out = Model.Location[]
@@ -186,6 +187,14 @@ function requests(root::AbstractString, cfg::Model.Config)
         first = findfirst(l -> !isempty(strip(l)) && !startswith(strip(l), "#"), lines)
         first === nothing || occursin(r"^\**Status\**:", strip(lines[first])) ||
             push!(out, Model.Location(; file = rel, line = first, text = "the first paragraph does not begin `Status:`"))
+        # The owner approves a request before it is sent (RULE.INST.PEER_MESSAGE); the file says so, and
+        # when. HT filed and sent one he had not approved (2026-10-01).
+        if first !== nothing && occursin(r"^\**Status\**:", strip(lines[first]))
+            last = something(findnext(l -> isempty(strip(l)), lines, first), length(lines) + 1) - 1
+            paragraph = join(lines[first:last], " ")
+            occursin(APPROVED, paragraph) || push!(out, Model.Location(; file = rel, line = first,
+                text = "the status does not say when the owner approved sending it: `approved by the owner on <date>`"))
+        end
         first === nothing && push!(out, Model.Location(; file = rel, line = 0, text = "the request has no status paragraph"))
     end
     return out
@@ -193,20 +202,25 @@ end
 
 const REQUESTS = Model.Rule(
     id = Symbol("RULE.GIT.REQUESTS"),
-    statement = "A cross-package request is a tracked file .gbg/requests/to-<PKG>-<date>-<topic>.md in the requester, whose first paragraph begins `Status:`; a concluded request is deleted.",
+    statement = "A cross-package request is a tracked file .gbg/requests/to-<PKG>-<date>-<topic>.md in the requester, whose first paragraph begins `Status:` and says when the owner approved sending it, as `approved by the owner on <date>`; a concluded request is deleted.",
     why = "The requests directory holds what is still awaiting the other package and nothing else.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.CODE],
     check = Model.ProgramCheck(Model.Input.FILE_TREE, requests, false),
     examples = [
-        Model.TreeExample([".gbg/requests/fourier-reader.md" => "Status: open, sent 2026-09-26.\n\nA Fourier reader.\n"],
+        Model.TreeExample([".gbg/requests/fourier-reader.md" => "Status: open, sent 2026-09-26, approved by the owner on 2026-09-26.\n\nA Fourier reader.\n"],
                           [Model.Location(; file = ".gbg/requests/fourier-reader.md", line = 0)], "named to-<PKG>-<date>-<topic>.md"),
-        Model.TreeExample([".gbg/requests/to-GBGCodingTools-2026-09-26-fourier-reader.md" => "Status: open, sent 2026-09-26.\n\nA Fourier reader.\n"],
+        Model.TreeExample([".gbg/requests/to-GBGCodingTools-2026-09-26-fourier-reader.md" => "Status: open, sent 2026-09-26, approved by the owner on 2026-09-26.\n\nA Fourier reader.\n"],
                           Model.Location[], "named to-<PKG>-<date>-<topic>.md"),
         Model.TreeExample([".gbg/requests/to-GBGCodingTools-2026-09-26-fourier-reader.md" => "# A Fourier reader\n\nThe package needs a reader for its spectral pages.\n"],
                           [Model.Location(; file = ".gbg/requests/to-GBGCodingTools-2026-09-26-fourier-reader.md", line = 3)], "first paragraph begins Status:"),
-        Model.TreeExample([".gbg/requests/to-GBGCodingTools-2026-09-26-fourier-reader.md" => "# A Fourier reader\n\n**Status:** open, sent 2026-09-26.\n\nThe package needs a reader for its spectral pages.\n"],
+        Model.TreeExample([".gbg/requests/to-GBGCodingTools-2026-09-26-fourier-reader.md" => "# A Fourier reader\n\n**Status:** open, sent 2026-09-26,\napproved by the owner on 2026-09-26.\n\nThe package needs a reader for its spectral pages.\n"],
                           Model.Location[], "first paragraph begins Status:"),
+        # approval named in the first paragraph, not merely somewhere in the file (2026-10-01)
+        Model.TreeExample([".gbg/requests/to-GBGCodingTools-2026-09-26-fourier-reader.md" => "Status: open, sent 2026-09-26.\n\nA Fourier reader, approved by the owner on 2026-09-26.\n"],
+                          [Model.Location(; file = ".gbg/requests/to-GBGCodingTools-2026-09-26-fourier-reader.md", line = 1)], "says when the owner approved sending it"),
+        Model.TreeExample([".gbg/requests/to-GBGCodingTools-2026-09-26-fourier-reader.md" => "Status: open — Approved by the owner on 2026-09-26, sent the same day.\n\nA Fourier reader.\n"],
+                          Model.Location[], "says when the owner approved sending it"),
     ])
 
 # ─────────────────────────────────────────────────────────── the three the end-of-turn hook decides
