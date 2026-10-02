@@ -132,6 +132,7 @@ One thing a repository would publish that a rule forbids, without the thing itse
 - `place` — where: the commit and the file's line, a commit's metadata, or a place on GitHub.
 - `file` — the file it is in, which a switch naming files is matched against; empty where none.
 - `fingerprint` — what tells this finding from another of the same rule at the same place.
+- `current` — whether the default branch's files hold it still, or only the history does.
 """
 Base.@kwdef struct Finding
     rule::Symbol
@@ -139,7 +140,33 @@ Base.@kwdef struct Finding
     place::String
     file::String = ""
     fingerprint::String = ""
+    current::Bool = false
 end
+
+"""
+    ACCEPTED
+
+Where a package records the notes its owner accepts: `.gbg/leak-accepted.txt`, one fingerprint a line,
+written by `gbg leak --accept` and committed. It holds hashes alone, so it publishes nothing it names.
+"""
+const ACCEPTED = joinpath(".gbg", "leak-accepted.txt")
+
+"""
+    accepted(root) -> Set{String}
+
+The fingerprints the package at `root` has accepted. The argument is `root`. Returns them; none where the
+file is absent.
+"""
+accepted(root::AbstractString) = (f = joinpath(root, ACCEPTED);
+    isfile(f) ? Set(String(strip(l)) for l in readlines(f) if occursin(r"^[0-9a-f]{16}$", strip(l))) : Set{String}())
+
+"""
+    blocking(f) -> Bool
+
+Whether a finding must be fixed rather than accepted: its rule is in `Catalogue.Leaks.BLOCKING`. The
+argument is `f`, the finding.
+"""
+blocking(f::Finding) = f.rule in Catalogue.Leaks.BLOCKING
 
 const CREDENTIAL = Symbol("RULE.LEAK.CREDENTIAL")
 const NEVER = Symbol("RULE.LEAK.NEVER_PUBLISHED")
@@ -470,6 +497,16 @@ function scan(root::AbstractString, cfg::Model.Config; github::Bool = false, io:
                                fingerprint = fingerprint(rule_of(r), id, r.f.StartLine)))
         end
     end
+    # The default branch's files as they stand: a finding they still hold is the owner's to clean, and
+    # one only the history holds his to accept (ruled 2026-10-02).
+    head = mkpath(joinpath(dir, "head"))
+    success(pipeline(clean(`git -C $repo archive HEAD`), clean(`tar -x -C $head`)))
+    now_files = Set(split(git(repo, "ls-tree", "-r", "--name-only", "-z", "HEAD"), '\0'; keepempty = false))
+    now_rules = Set((rule_of(r), relpath(String(r.f.File), head)) for r in both(["dir", head], cfg, dir))
+    out = [Finding(; rule = f.rule, detail = f.detail, place = f.place, file = f.file, fingerprint = f.fingerprint,
+                   current = !isempty(f.file) && (f.file in now_files) &&
+                             (startswith(f.place, "commit ") ? (f.rule, f.file) in now_rules : true))
+           for f in out]
     text, places = metadata(repo)
     commits = count(p -> startswith(p, "the message of commit"), unique(places))
     read_what = ["every commit on every ref and in the reflog, merges and binary-marked files included",

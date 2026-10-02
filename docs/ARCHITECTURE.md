@@ -120,6 +120,12 @@ the one part that needs the network.
 finding printed in a session enters what that session sends to its model. A false positive is a `Switch` with its
 reason.
 
+**Three tiers** (the owner, 2026-10-02: a machine's name in the history is no threat, a credential
+anywhere is). A credential or a file never published is blocking, fixed and never accepted. A note — a
+path, a word, an address, a link — that the default branch's files hold is cleaned when it is cheap. A
+note only the history holds may be accepted: `gbg leak --accept` records its fingerprint in
+`.gbg/leak-accepted.txt`, which holds hashes alone, and a later scan counts it as accepted.
+
 **Not used:** a scanner that verifies a secret by trying it, which sends the secret out, and any Python tool. Removing a
 leak from history is a rewrite the owner makes, outside the instrument.
 

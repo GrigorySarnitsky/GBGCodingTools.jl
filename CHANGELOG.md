@@ -4,6 +4,19 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.53 — 2026-10-02
+
+MINOR, the owner's ruling of 2026-10-02 that not every leak deserves the same treatment:
+
+- **Three tiers in `gbg leak`'s output.** A credential or a file never published is *blocking*: fixed,
+  never accepted. A *note* — a path, a word, an address, a link — that the default branch's files still
+  hold is to be cleaned when it is cheap. A note only the history holds may be accepted.
+- **`gbg leak --accept`** records the history's notes by fingerprint in `.gbg/leak-accepted.txt`, which
+  holds hashes alone; a later scan counts them as accepted and lists only what is new. Exit 1 only
+  where something is new.
+
+Measured on this package: 793 findings — none blocking, 82 in the current files, 711 only in history.
+
 ## 2.0.0-rc.52 — 2026-10-02
 
 MINOR, Phase 9: the leak scan, asked for by the owner on 2026-10-02 before the packages go public

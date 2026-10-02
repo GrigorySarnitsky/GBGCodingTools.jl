@@ -61,6 +61,9 @@ GBGCodingTools.Publication.loose_blobs
 GBGCodingTools.Publication.install
 GBGCodingTools.Publication.config_toml
 GBGCodingTools.Publication.Finding
+GBGCodingTools.Publication.ACCEPTED
+GBGCodingTools.Publication.accepted
+GBGCodingTools.Publication.blocking
 GBGCodingTools.Publication.metadata
 GBGCodingTools.Publication.github
 GBGCodingTools.Publication.scan

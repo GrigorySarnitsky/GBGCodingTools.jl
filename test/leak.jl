@@ -138,4 +138,28 @@ end
     run(pipeline(setenv(`git -C $dir commit -q --allow-empty -m another`, env); stdout = devnull))
     @test before_fp ⊆ fp(G.Publication.scan(dir, cfg).findings)
 
+
+    # The three tiers (the owner, 2026-10-02). A note the current files hold is not a history note; a
+    # blocking finding is never accepted; `--accept` records the history's notes, and they are then
+    # counted as accepted, not listed.
+    tiers_dir, tenv = planted()
+    write(joinpath(tiers_dir, "now.md"), "/home/nowuser/x\n")
+    run(pipeline(setenv(`git -C $tiers_dir add now.md`, tenv); stdout = devnull))
+    run(pipeline(setenv(`git -C $tiers_dir commit -q -m now`, tenv); stdout = devnull))
+    fs = G.Publication.scan(tiers_dir, G.Model.Config(package = "Planted", tool = :dev)).findings
+    pick(rule, place) = only(f for f in fs if f.rule === Symbol(rule) && occursin(place, f.place))
+    @test pick("RULE.LEAK.HOME_PATH", "now.md:1").current
+    @test !pick("RULE.LEAK.HOME_PATH", "rewritten.txt:1").current
+    @test G.Publication.blocking(pick("RULE.LEAK.CREDENTIAL", "old.toml:1"))
+    @test !G.Publication.blocking(pick("RULE.LEAK.HOME_PATH", "now.md:1"))
+    first_out = IOBuffer(); G.Leak.scan(tiers_dir; accept = true, io = first_out)
+    taken = G.Publication.accepted(tiers_dir)
+    @test pick("RULE.LEAK.HOME_PATH", "rewritten.txt:1").fingerprint in taken      # a history note, accepted
+    @test !(pick("RULE.LEAK.HOME_PATH", "now.md:1").fingerprint in taken)          # a current one, not
+    @test !(pick("RULE.LEAK.CREDENTIAL", "old.toml:1").fingerprint in taken)       # a blocking one, never
+    @test all(l -> occursin(r"^[0-9a-f]{16}$", l), readlines(joinpath(tiers_dir, G.Publication.ACCEPTED)))
+    again_out = IOBuffer(); @test G.Leak.scan(tiers_dir; io = again_out) == 1      # blocking still open
+    again = String(take!(again_out))
+    @test occursin(r"0 only in history; \d+ accepted before", again)
+    @test occursin("now.md", again) && !occursin("rewritten.txt", again)
 end

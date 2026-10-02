@@ -102,6 +102,16 @@ text_check(id, subject) = Model.ProgramCheck(Model.Input.PUBLICATION, function (
     return matches(text, p.regex, p.allow, subject)
 end, false)
 
+"""
+    BLOCKING
+
+The rules whose findings must be fixed, never accepted: a credential, which is revoked and then removed,
+and a file never published. Every other rule's finding is a note — a path, a word, an address, a link —
+which the owner may accept where only the history holds it (ruled 2026-10-02: a machine's name in the
+history is no threat; a credential anywhere is).
+"""
+const BLOCKING = Set([Symbol("RULE.LEAK.CREDENTIAL"), Symbol("RULE.LEAK.NEVER_PUBLISHED")])
+
 const WHY_HISTORY = "A repository made public publishes every commit it ever held, on every branch and tag, deleted files included; a later commit that removes a thing does not unpublish it."
 
 const CREDENTIAL = Model.Rule(
