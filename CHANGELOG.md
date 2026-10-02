@@ -4,6 +4,34 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.52 — 2026-10-02
+
+MINOR, Phase 9: the leak scan, asked for by the owner on 2026-10-02 before the packages go public
+(`docs/ARCHITECTURE.md` §3.1):
+
+- **`gbg leak [--all] [--github]`**: what a repository would publish if it were made public, read from a
+  bare mirror of it in a temporary directory — every commit on every ref and in the reflog, merges and
+  binary-marked files included; every path any commit held; blobs a ref holds and no commit does; every
+  ref's name, tag object, commit message, author, committer and tagger. With `--github`, GitHub's own
+  copy with its pull requests' refs, and its issues, pull requests, reviews, comments, releases and
+  workflow logs. Two Gitleaks passes over each: its default rules, their global allowlist cut out, then
+  this package's rules alone. A finding names its rule, a place that holds no found text, and a
+  fingerprint; it is printed in the session only, the count by rule and by file first.
+- **`RULE.LEAK.*`**, nine rules in `.gbg/policy/publication.md`: credentials, home and synced-folder
+  paths, assistant session links and scratch paths, addresses the config does not approve in
+  `leak_emails`, words this machine keeps private in `~/.gbg/leak-terms` (never in the config, which is
+  published), absolute manifest paths, files never published. Only `gbg leak` runs them; an exclusion
+  does not apply, a switch does. 107 rules.
+- **`gbg install --gitleaks`** installs Gitleaks v8.30.1 and its default rules, each refused unless its
+  SHA-256 is the pinned one. Linux on x86-64.
+- **Nothing in the scanned repository or the environment can silence it**: no `.gitleaks.toml`,
+  `.gitleaksignore`, inline `gitleaks:allow`, `.gitattributes`, replace ref, git config or `GIT_DIR`.
+- **`Engine.Guard.refuse_publication`**: every writer of a tracked record — the question store, a run's
+  record and report, the work queue, the settled list — refuses text a leak scan printed; exit 2.
+- The leak scan is a built instrument, `:leak_scan`, with its skill. Phase 9's gate is
+  `julia --project test/leak.jl`, with Gitleaks installed: it plants each of the 32 ways two independent
+  reviews found to miss a leak or to print one.
+
 ## 2.0.0-rc.51 — 2026-10-02
 
 MINOR, the owner's ruling of 2026-10-02 on GBGPeriodicFields' report:

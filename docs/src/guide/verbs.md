@@ -54,6 +54,10 @@ GBGCodingTools.Leak.MARK
 GBGCodingTools.Publication
 GBGCodingTools.Publication.GITLEAKS
 GBGCodingTools.Publication.gitleaks
+GBGCodingTools.Publication.machine_terms
+GBGCodingTools.Publication.mirror
+GBGCodingTools.Publication.paths
+GBGCodingTools.Publication.loose_blobs
 GBGCodingTools.Publication.install
 GBGCodingTools.Publication.config_toml
 GBGCodingTools.Publication.Finding

@@ -372,6 +372,8 @@ when there is none.
 function validate(cfg::Model.Config, root::AbstractString)
     problems = String[]
     isempty(cfg.package) && push!(problems, "the package has no name")
+    # The config is published with the package, so a list of private words in it publishes them.
+    isempty(cfg.leak_terms) || push!(problems, "`leak_terms` is never in the config, which is published: list the words in ~/.gbg/leak-terms on each machine")
     # The name is what every rule about a package's own name reads — which of its mentions is a sibling's
     # and which is its own. A config that names the DIRECTORY rather than the package passes every other
     # check and then reports a package's every mention of itself as an unlinked sibling.

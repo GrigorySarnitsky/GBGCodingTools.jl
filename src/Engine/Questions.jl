@@ -16,6 +16,7 @@ module Questions
 using ..Model
 using ..Catalogue
 using ..Engine.Checks
+using ..Engine
 using JSON3
 
 """
@@ -127,6 +128,7 @@ function put(q::Model.Question, root::AbstractString, cfg::Model.Config; io::IO 
                                "items" => [Dict{String,Any}("text" => i.text, "recommended" => i.recommended,
                                                             "answer" => nothing, "direction" => "") for i in q.items]))
     mkpath(dirname(store(root)))
+    Engine.Guard.refuse_publication(JSON3.write(qs), ".gbg/questions.json")
     open(store(root), "w") do f; JSON3.pretty(f, JSON3.write(qs)); end
     return true
 end
@@ -168,6 +170,7 @@ function answer!(root::AbstractString, id::AbstractString, option::AbstractStrin
         q["items"][j]["answer"] === nothing || return "that item was already answered"
         q["items"][j]["answer"] = option; q["items"][j]["direction"] = direction
     end
+    Engine.Guard.refuse_publication(JSON3.write(qs), ".gbg/questions.json")
     open(store(root), "w") do f; JSON3.pretty(f, JSON3.write(qs)); end
     return nothing
 end

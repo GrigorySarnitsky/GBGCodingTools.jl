@@ -133,10 +133,10 @@ legacy_files() = sort([relpath(joinpath(r, f), TOOL) for (r, _, fs) in walkdir(j
     # for one thing, which is what the table exists to prevent.
     @testset "the instrument table is the document's table" begin
         rows = table_rows(joinpath(TOOL, "docs", "ARCHITECTURE.md"))
-        @test length(rows) == 7                                   # three always-on, three instruments, one future
+        @test length(rows) == 7                                   # three always-on, four instruments
         values = vcat(G.Catalogue.ALWAYS_ON, G.Catalogue.INSTRUMENTS)
-        @test length(values) == 6                                 # the leak scan's row is marked future
-        for (row, v) in zip(rows[1:6], values)
+        @test length(values) == 7                                 # the leak scan built, 2026-10-02
+        for (row, v) in zip(rows, values)
             @test row.purpose == v.purpose
             @test row.intention == uppercase(replace(string(v.intention), "_" => " "))
             @test row.decided_by == decider_words(v.decider)
@@ -144,7 +144,10 @@ legacy_files() = sort([relpath(joinpath(r, f), TOOL) for (r, _, fs) in walkdir(j
             @test row.when == v.when
             @test row.ends == (v isa G.Model.AlwaysOn ? "—" : v.ends)
         end
-        @test occursin("future", lowercase(rows[7].name))          # and the seventh says it is not built
+        # a row the table marks future is exactly an instrument not built
+        for (row, v) in zip(rows[4:end], G.Catalogue.INSTRUMENTS)
+            @test occursin("future", lowercase(row.name)) == !v.built
+        end
         @test length(unique(G.Catalogue.axes.(values))) == length(values)
     end
 

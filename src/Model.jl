@@ -773,7 +773,8 @@ A package's settings, written by hand in `.gbg/config.jl` and read by a parser t
 - `claude_documentation` — the headings of its `CLAUDE.md` sections that are documentation.
 - `exclusions` — files no rule reads, with the reason.
 - `leak_emails` — the email addresses the owner approves for publication.
-- `leak_terms` — words never published, as the machines' names.
+- `leak_terms` — words never published, as the machines' names: filled by `gbg leak` from this machine's
+  `~/.gbg/leak-terms`, and refused in `.gbg/config.jl`, which is itself published.
 """
 Base.@kwdef struct Config
     package::String

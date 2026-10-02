@@ -203,6 +203,7 @@ Returns the path written. A question already in the list is not written twice.
 """
 function settle!(root::AbstractString, id::AbstractString, text::AbstractString)
     any(s -> s.question == id, ConfigIO.read_settled(root)) && return joinpath(root, ".gbg", "settled.jl")
+    Engine.Guard.refuse_publication(text, ".gbg/settled.jl")
     return ConfigIO.append_settled(root, Model.Settled(question = id, text = text, date = string(Dates.today()),
                                                        locations = settled_locations(root, id)))
 end
@@ -224,6 +225,7 @@ function owner_line!(root::AbstractString, line::AbstractString)
         k = j - 1; while k > i && isempty(strip(ls[k])); k -= 1; end
         text = join(vcat(ls[1:k], k == i ? [""] : String[], [line], ls[k+1:end]), '\n')
     end
+    Engine.Guard.refuse_publication(text, ".claude/WORK_QUEUE.md")
     mkpath(dirname(path)); write(path, text)
 end
 

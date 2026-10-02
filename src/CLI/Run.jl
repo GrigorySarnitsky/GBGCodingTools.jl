@@ -989,7 +989,9 @@ function close_run(root::AbstractString; io::IO = stdout)
     # that could not be evaluated carries them instead (review, 2026-09-23).
     queued = queue_leftovers(root, closed; open_too = stop === Model.Stop.DONE)
     dir = Runs.dir(root, id)
-    write(joinpath(dir, "report.md"), Render.report(closed, cfg; root, queued, undone = length(undone), red))
+    report = Render.report(closed, cfg; root, queued, undone = length(undone), red)
+    Engine.Guard.refuse_publication(report, "a run's report")
+    write(joinpath(dir, "report.md"), report)
     open(joinpath(dir, "run.json"), "w") do f
         GBGCodingTools.JSON3.pretty(f, GBGCodingTools.JSON3.write(Runs.as_dict(closed)))
     end
@@ -1103,7 +1105,9 @@ function abandon(root::AbstractString; io::IO = stdout)
     stopped = with(run; stage = :close, stop = Model.Stop.OWNER_STOPPED, questions,
                    dropped = length(gone), dropped_ids = unique(vcat(run.dropped_ids, gone)))
     kept = [f for f in stopped.findings if !(f.id in stopped.dropped_ids)]
-    write(joinpath(dir, "report.md"), Render.report(stopped, cfg; root))
+    report = Render.report(stopped, cfg; root)
+    Engine.Guard.refuse_publication(report, "a run's report")
+    write(joinpath(dir, "report.md"), report)
     open(joinpath(dir, "run.json"), "w") do f
         GBGCodingTools.JSON3.pretty(f, GBGCodingTools.JSON3.write(Runs.as_dict(stopped)))
     end
@@ -1247,6 +1251,7 @@ function queue_leftovers(root::AbstractString, run::Model.Run; open_too::Bool = 
     out = join(vcat(head, section, after), '\n')
     endswith(out, '\n') || (out *= "\n")
     mkpath(dirname(path))
+    Engine.Guard.refuse_publication(out, ".claude/WORK_QUEUE.md")
     write(path, out)
     return length(lines)
 end

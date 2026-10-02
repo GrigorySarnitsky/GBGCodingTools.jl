@@ -306,7 +306,7 @@ leave `test/architecture.jl` in that same commit — the one commit that turns s
 decision 13. Release `v2.2.0`.
 **Gate** `bash -e -o pipefail -c 'tools/floor.sh && sh bin/gbg check && julia --project test/switches.jl && ! git grep -q "Documenter.makedocs" -- docs/make.jl'`
 
-### Phase 9 — The leak scan (12 commits, 2–3 sessions; asked for by the owner 2026-10-02, before the packages go public)
+### Phase 9 — The leak scan (BUILT 2026-10-02, rc.52, in three commits and one session; asked for by the owner that day, before the packages go public)
 The design marks this row future (§3), so it is last and only when asked: its rules, the reader of every branch, commit
 message and `Manifest.toml` path, the `PUBLICATION` intention, its `Instrument` value, and `Guard.refuse_publication` —
 called by every writer of a tracked file (run record, report, question store, settled rulings, work queue) and exiting 2 on

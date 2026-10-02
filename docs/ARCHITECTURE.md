@@ -76,7 +76,7 @@ is named the same way. Inside the code the word "check" keeps its ordinary meani
 | **Documentation review** | Documentation is true to the code, correct, consistent and self-contained; the change guard, the checks and a verifier agent check each fix | Documentation | An agent | Documentation fixer | Owner's request | Nothing is open after its last pass, or the owner ended it |
 | **Bug hunt** (future) | The code does what its documentation says | Code | An agent proposes, a program decides | Code fixer | Owner's request | Every candidate is confirmed or discarded, once |
 | **Change audit** (future) | A code change is no wider than the defect and the owner's direction and still accepts input that worked before; it grades the fix and changes nothing | Code | An agent | Code fixer | After each approved code fix, and on request | One pass over the change |
-| **Leak scan** (future) | Nothing secret or personal is published when a repository is made public; it writes nothing but session output | Publication | A program | Owner only | Owner's request | One pass over every branch, commit and message |
+| **Leak scan** | Nothing secret or personal is published when a repository is made public; it writes nothing but session output | Publication | A program | Owner only | Owner's request | One pass over every branch, commit and message |
 
 A Change audit starts by itself in exactly one place: once, over an approved code fix that has gone green (§4.4) —
 superseding the earlier ruling that an audit was only advised, since the owner asked to be told not just that a bug was
@@ -85,19 +85,18 @@ Documentation review and Bug hunt can meet one disagreement between a docstring 
 review compares, the hunt reports only what a failing test shows; either way a possible code defect reaches the owner
 as a question, and an answered question never returns (§8).
 
-Three rows are marked future and are built only when the owner asks: the Bug hunt and the Change audit, deferred on
-2026-09-21 so that the documentation half reaches the four science packages first, and the leak scan, future from the
-start. Deferring the two code rows defers the code fixer with them, and with it the one place an instrument starts
-itself — an audit over an approved code fix — so until they are built nothing in this package changes code, and a code
-defect an instrument meets is what it already was: a question to the owner. The table test (§6) reads all three as
-future.
+Two rows are marked future and are built only when the owner asks: the Bug hunt and the Change audit, deferred on
+2026-09-21 so that the documentation half reaches the four science packages first. Deferring them defers the code fixer
+with them, and with it the one place an instrument starts itself — an audit over an approved code fix — so until they
+are built nothing in this package changes code, and a code defect an instrument meets is what it already was: a
+question to the owner. The table test (§6) reads a row marked future as exactly an instrument not built, which keeps
+no skill file and refuses to start.
 
-The leak scan is built by adding its rules, a reader of every branch, commit message and `Manifest.toml` path,
-one `Instrument` value and the `PUBLICATION` intention — none of which exists yet, so the table test (§6) reads that
-row as future. Its design is §3.1. It writes no tracked file: no run record, report or work-queue line. Its findings are
-printed in the session that ran it, where the owner reads them and acts. `Guard.refuse_publication` is called by every
-writer of a tracked file — run record, report, question store, settled rulings, work queue — and exits 2 on text from a
-publication run.
+The leak scan, future from the start, was built on 2026-10-02, before the packages go public: its rules, a reader of
+every branch, commit, message and manifest, its `Instrument` value and the `PUBLICATION` intention. Its design is §3.1.
+It writes no tracked file: no run record, report or work-queue line. Its findings are printed in the session that ran
+it, where the owner reads them and acts. `Guard.refuse_publication` is called by every writer of a tracked file — run
+record, report, question store, settled rulings, work queue — and exits 2 on text from a publication run.
 
 
 ### 3.1 The leak scan's design
@@ -556,7 +555,7 @@ Base.@kwdef struct Config
     claude_documentation::Vector{String} = String[]  # sections of CLAUDE.md that are documentation (§4.2)
     exclusions::Vector{Exclusion} = Exclusion[]     # files no rule reads, with the reason
     leak_emails::Vector{String} = String[]          # addresses approved for publication (§3.1)
-    leak_terms::Vector{String} = String[]           # words never published: the machines' names
+    leak_terms::Vector{String} = String[]           # words never published, from ~/.gbg/leak-terms: never in the config
 end
 "A question the owner settled, kept in `.gbg/settled.jl` and given to agents as 'do not report'."
 Base.@kwdef struct Settled                        # locations: what the ruling is about, quotes included

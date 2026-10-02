@@ -15,19 +15,32 @@ using ...Model
 
 # Each pattern is written once, in the subset of regular expressions Julia's PCRE and Gitleaks' RE2 read
 # alike: no look-around, no back-reference.
-const HOME = raw"(?:/home/|/Users/)[A-Za-z0-9._-]+/|[A-Za-z]:\\Users\\[A-Za-z0-9._-]+"
-const SYNCED = raw"(?i)(?:Dropbox|OneDrive|Google Drive|iCloud Drive|Nextcloud)/"
-const SESSION = raw"(?i)claude\.ai/(?:code/)?(?:session|chat|share)[_/][A-Za-z0-9_-]+"
+# The review of 2026-10-02 widened each: a home path needs no trailing slash and may be escaped; a synced
+# folder may be a team's or a business account's, and is written with a capital, so `github.com/dropbox`
+# is not one; any assistant's shared session counts.
+const HOME = raw"(?:/home/|/Users/)[A-Za-z0-9._-]+|[A-Za-z]:\\{1,2}Users\\{1,2}[A-Za-z0-9._-]+"
+const SYNCED = raw"(?:Dropbox(?: \([^)/\\]*\))?|OneDrive(?: - [^/\\]+|-[^/\\]+)?|Google Drive|GoogleDrive-[^/\\]+|iCloud Drive|Nextcloud)[/\\]"
+const SESSION = raw"(?i)(?:claude\.ai/(?:code/)?(?:session|chat|share)[_/]|chatgpt\.com/(?:share|c)/|chat\.openai\.com/(?:share|c)/|gemini\.google\.com/(?:share|app)/)[A-Za-z0-9_-]+"
 const SCRATCH = raw"/tmp/claude-[0-9]+"
 const EMAIL = raw"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}"
 const MANIFEST_FILE = raw"(?:^|/)(?:Julia)?(?:Manifest|Project)(?:-v[0-9.]+)?\.toml$"
-const MANIFEST_ABSOLUTE = raw"path\s*=\s*\"(?:/|[A-Za-z]:)"
-const NEVER_FILE = raw"(?i)(?:^|/)(?:\.env(?:\.[A-Za-z0-9]+)?|\.netrc|\.pypirc|id_(?:rsa|dsa|ecdsa|ed25519)|credentials(?:\.[A-Za-z]+)?|settings\.local\.json|[^/]+\.(?:pem|key|p12|pfx|keystore|jsonl))$"
+const MANIFEST_ABSOLUTE = raw"path\s*=\s*[\"'](?:/|[A-Za-z]:)"
+# Read by this package alone, over every path any commit held — binary files and renames among them,
+# which a scan of patches misses — so it may use look-ahead: a committed template is not a secret.
+const NEVER_FILE = raw"(?i)(?:^|/)(?:\.env(?!\.(?:example|sample|template)$)(?:rc|\.[^/]+)?|\.git-credentials|\.netrc|\.pypirc|\.npmrc|id_(?:rsa|dsa|ecdsa|ed25519)|credentials(?:\.(?:json|ya?ml|toml|xml|csv|txt|ini))?|settings\.local\.json|[^/]+\.(?:pem|key|p12|pfx|keystore|jks|jsonl))$"
 
 # Addresses that are public by design: GitHub's no-reply addresses and git's own SSH user, and the
 # address of the commit trailer RULE.GIT.TRAILER requires on every commit.
-const PUBLIC_EMAILS = [raw"(?i)^[A-Za-z0-9._%+-]+@users\.noreply\.github\.com$", raw"(?i)^noreply@github\.com$",
-                       raw"(?i)^git@github\.com$", raw"(?i)^noreply@anthropic\.com$"]
+# GitHub's own service addresses — the bots of every workflow log — are on the same footing (measured on
+# this package's 1013 workflow logs, 2026-10-02: every address in them was at github.com).
+const PUBLIC_EMAILS = [raw"(?i)^[A-Za-z0-9._%+-]+@users\.noreply\.github\.com$", raw"(?i)^[A-Za-z0-9._%+-]+@github\.com$",
+                       raw"(?i)^noreply@anthropic\.com$"]
+
+# The home of GitHub's hosted runners, on Linux, macOS and Windows: public, and in every workflow log
+# (39,299 of this package's findings before it was allowed, 2026-10-02).
+const RUNNER_HOMES = [raw"^/home/runner$", raw"^/Users/runner$", raw"(?i)^[A-Za-z]:\\{1,2}Users\\{1,2}runneradmin$"]
+# A retina image's name, `logo@2x.png`, has an address's shape and is not one.
+const IMAGE_NAME = raw"(?i)@[0-9]+x\.(?:png|jpe?g|gif|svg|webp)$"
 
 escape_regex(s) = replace(s, r"[.^$|?*+()\[\]{}\\]" => x -> "\\" * x)
 
@@ -37,7 +50,7 @@ escape_regex(s) = replace(s, r"[.^$|?*+()\[\]{}\\]" => x -> "\\" * x)
 The patterns of every address that may be published: those public by design, and those the package's
 config approves in `leak_emails`. The argument is `cfg`. Returns the patterns, anchored.
 """
-allowed_emails(cfg) = vcat(PUBLIC_EMAILS, ["(?i)^" * escape_regex(e) * "\$" for e in cfg.leak_emails])
+allowed_emails(cfg) = vcat(PUBLIC_EMAILS, [IMAGE_NAME], ["(?i)^" * escape_regex(e) * "\$" for e in cfg.leak_emails])
 
 """
     term_pattern(cfg) -> Union{String,Nothing}
@@ -45,8 +58,10 @@ allowed_emails(cfg) = vcat(PUBLIC_EMAILS, ["(?i)^" * escape_regex(e) * "\$" for 
 The pattern of the words the package's config names in `leak_terms`, whole words in any case, or
 `nothing` where it names none. The argument is `cfg`.
 """
+# Bounded by any character that is not a letter or a digit, not by `\b`: RE2's `\b` is ASCII and found no
+# term with a letter like Ö at its edge, and both engines took `_` for a letter, missing `host_bench`.
 term_pattern(cfg) = isempty(cfg.leak_terms) ? nothing :
-    "(?i)\\b(?:" * join(escape_regex.(cfg.leak_terms), "|") * ")\\b"
+    "(?i)(?:^|[^\\p{L}\\p{N}])(?:" * join(escape_regex.(cfg.leak_terms), "|") * ")(?:[^\\p{L}\\p{N}]|\$)"
 
 """
     patterns(cfg) -> Vector{NamedTuple}
@@ -57,7 +72,7 @@ that is allowed. The argument is `cfg`, the package's config. Returns them; a ru
 for in this package is left out.
 """
 function patterns(cfg)
-    out = [(id = "RULE.LEAK.HOME_PATH", regex = HOME, path = "", allow = String[]),
+    out = [(id = "RULE.LEAK.HOME_PATH", regex = HOME, path = "", allow = RUNNER_HOMES),
            (id = "RULE.LEAK.SYNCED_PATH", regex = SYNCED, path = "", allow = String[]),
            (id = "RULE.LEAK.SESSION_LINK", regex = SESSION, path = "", allow = String[]),
            (id = "RULE.LEAK.SCRATCH_PATH", regex = SCRATCH, path = "", allow = String[]),
@@ -99,7 +114,7 @@ const CREDENTIAL = Model.Rule(
 
 const HOME_PATH = Model.Rule(
     id = Symbol("RULE.LEAK.HOME_PATH"),
-    statement = "No home-directory path — `/home/<name>/`, `/Users/<name>/`, `C:\\Users\\<name>` — is published.",
+    statement = "No home-directory path — `/home/<name>/`, `/Users/<name>/`, `C:\\Users\\<name>` — is published, but a hosted runner's.",
     why = WHY_HISTORY * " A home path names the person and the machine, and a credential scanner allows it on purpose.",
     intention = Model.Intention.PUBLICATION,
     filesets = [Model.FileSet.CODE],
@@ -108,6 +123,9 @@ const HOME_PATH = Model.Rule(
         Model.TextExample(Model.FileSet.CODE, "The checkout is at /home/someone/work/pkg.\n",
                           [Model.Location(; file = "", line = 1)], "no home-directory path"),
         Model.TextExample(Model.FileSet.CODE, "The checkout is at `~/work/pkg`, or under /home in general.\n",
+                          Model.Location[], "no home-directory path"),
+        # a hosted runner's home is GitHub's, in every workflow log
+        Model.TextExample(Model.FileSet.CODE, "Run julia-actions in /home/runner/work/pkg/pkg\n",
                           Model.Location[], "no home-directory path"),
     ])
 
@@ -155,7 +173,7 @@ const SCRATCH_PATH = Model.Rule(
 
 const EMAIL_RULE = Model.Rule(
     id = Symbol("RULE.LEAK.EMAIL"),
-    statement = "No email address is published but those the package's config approves in `leak_emails`, GitHub's no-reply addresses, and the commit trailer's.",
+    statement = "No email address is published but those the package's config approves in `leak_emails`, GitHub's own and no-reply addresses, and the commit trailer's.",
     why = WHY_HISTORY * " An address in a commit's author field is published with the commit; only a rewrite of the history removes it, which is the owner's to make.",
     intention = Model.Intention.PUBLICATION,
     filesets = [Model.FileSet.CODE],
@@ -172,17 +190,17 @@ const EMAIL_RULE = Model.Rule(
 
 const TERM = Model.Rule(
     id = Symbol("RULE.LEAK.TERM"),
-    statement = "No word the package's config names in `leak_terms` — the machines' names, or anything else the owner keeps private — is published, in any case.",
-    why = WHY_HISTORY * " What is private to one owner no generic scanner knows; the config says it once.",
+    statement = "No word this machine's `~/.gbg/leak-terms` lists — the machines' names, or anything else the owner keeps private — is published, in any case.",
+    why = WHY_HISTORY * " What is private to one owner no generic scanner knows, and a list of it committed with a package would publish it: it is kept per machine, outside every repository.",
     intention = Model.Intention.PUBLICATION,
     filesets = [Model.FileSet.CODE],
     check = text_check("RULE.LEAK.TERM", "a word the config keeps private"),
     examples = [
         # The examples' config names the term Examplehost (test/rules.jl).
         Model.TextExample(Model.FileSet.CODE, "Benchmarked on examplehost, the home workstation.\n",
-                          [Model.Location(; file = "", line = 1)], "no word the package's config names"),
+                          [Model.Location(; file = "", line = 1)], "no word this machine's `~/.gbg/leak-terms` lists"),
         Model.TextExample(Model.FileSet.CODE, "Benchmarked on an Examplehostile machine.\n",
-                          Model.Location[], "no word the package's config names"),
+                          Model.Location[], "no word this machine's `~/.gbg/leak-terms` lists"),
     ])
 
 const MANIFEST_PATH = Model.Rule(

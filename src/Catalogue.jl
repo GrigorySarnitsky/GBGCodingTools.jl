@@ -53,7 +53,7 @@ separate it from every other — what its defects are in, what decides that a fi
 fixes what it found — and the two sentences the table prints.
 
 The roles each launches are empty here and are filled in the phase that builds that instrument; the leak
-scan is not here at all, because the design marks its row future.
+scan launches none, being a program, `gbg leak`.
 """
 const INSTRUMENTS = Model.Instrument[
     Model.Instrument(
@@ -85,6 +85,16 @@ const INSTRUMENTS = Model.Instrument[
         ends = "One pass over the change",
         budget = Model.Budget(fix_passes = 0),
         built = false),                                     # Phase 6, deferred 2026-09-21
+    # Phase 9, built 2026-10-02 on the owner's word, before the packages go public (§3.1).
+    Model.Instrument(
+        id = :leak_scan,
+        purpose = "Nothing secret or personal is published when a repository is made public; it writes nothing but session output",
+        intention = Model.Intention.PUBLICATION,
+        decider = Model.Decider.PROGRAM,
+        fixer = Model.Fixer.OWNER_ONLY,
+        when = "Owner's request",
+        ends = "One pass over every branch, commit and message",
+        budget = Model.Budget(fix_passes = 0)),
 ]
 
 """

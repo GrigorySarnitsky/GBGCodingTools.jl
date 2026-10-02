@@ -16,8 +16,8 @@ A finding names its rule, its place and a fingerprint, never the text it matched
 module Publication
 
 using ..Model
+using ..Texts
 using ..Catalogue
-using ..Engine
 import Downloads, SHA, JSON3
 
 """
@@ -29,7 +29,11 @@ refused by [`install`](@ref) rather than guessed at.
 """
 const GITLEAKS = (version = "8.30.1",
                   sha256 = "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
-                  url = "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz")
+                  url = "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz",
+                  # its default rules, as the release's tag holds them: run with the global allowlist cut
+                  # out, which skips `node_modules/`, lock files and images whatever they hold (review)
+                  config_sha256 = "e163e53b9e7e8a8511e77271e2b323ed057759542a6d988258afe3a1fa329caf",
+                  config_url = "https://raw.githubusercontent.com/gitleaks/gitleaks/v8.30.1/config/gitleaks.toml")
 
 """
     gitleaks() -> String
@@ -38,6 +42,17 @@ Where the pinned Gitleaks is installed on this machine, `~/.gbg/tools/gitleaks-<
 Returns the path, whether or not it is there.
 """
 gitleaks() = joinpath(homedir(), ".gbg", "tools", "gitleaks-" * GITLEAKS.version, "gitleaks")
+defaults_file() = joinpath(dirname(gitleaks()), "gitleaks-defaults.toml")
+
+"""
+    machine_terms() -> Vector{String}
+
+The words this machine's owner never publishes, one per line in `~/.gbg/leak-terms`. They are kept
+outside every repository: a list of private words committed with a package is published with it.
+Returns them; none where the file is absent.
+"""
+machine_terms() = (f = joinpath(homedir(), ".gbg", "leak-terms");
+                   isfile(f) ? [String(strip(l)) for l in readlines(f) if !isempty(strip(l)) && !startswith(strip(l), "#")] : String[])
 
 """
     install(; io = stdout) -> Int
@@ -65,10 +80,19 @@ function install(; io::IO = stdout)
     got = bytes2hex(open(SHA.sha256, archive))
     got == GITLEAKS.sha256 ||
         (println(io, "gbg install: Gitleaks' archive has SHA-256 ", got, ", not the published ", GITLEAKS.sha256, "; refused"); return 2)
+    defaults = joinpath(dir, "defaults.toml")
+    try
+        Downloads.download(GITLEAKS.config_url, defaults)
+    catch e
+        println(io, "gbg install: could not download Gitleaks' default rules: ", sprint(showerror, e)); return 2
+    end
+    bytes2hex(open(SHA.sha256, defaults)) == GITLEAKS.config_sha256 ||
+        (println(io, "gbg install: Gitleaks' default rules are not the pinned ones; refused"); return 2)
     target = dirname(gitleaks())
     mkpath(target)
     run(`tar -xzf $archive -C $target gitleaks`)
     chmod(gitleaks(), 0o755)
+    cp(defaults, defaults_file(); force = true)
     println(io, "gbg install: Gitleaks ", GITLEAKS.version, " at ", gitleaks(), ", its checksum verified")
     return 0
 end
@@ -85,6 +109,8 @@ function config_toml(cfg::Model.Config)
     io = IOBuffer()
     println(io, "# Rendered by GBGCodingTools from the RULE.LEAK.* rules; written to a temporary file per scan.")
     for p in Catalogue.Leaks.patterns(cfg)
+        # a rule of paths alone is applied to every path any commit held, binary or empty, by `scan`
+        isempty(p.regex) && continue
         println(io, "\n[[rules]]\nid = \"", p.id, "\"\ndescription = \"", p.id, "\"")
         isempty(p.regex) || println(io, "regex = '''", p.regex, "'''")
         isempty(p.path) || println(io, "path = '''", p.path, "'''")
@@ -104,79 +130,221 @@ One thing a repository would publish that a rule forbids, without the thing itse
 - `rule` — the rule's id.
 - `detail` — which of Gitleaks' credential rules matched, for a credential; empty otherwise.
 - `place` — where: the commit and the file's line, a commit's metadata, or a place on GitHub.
+- `file` — the file it is in, which a switch naming files is matched against; empty where none.
 - `fingerprint` — what tells this finding from another of the same rule at the same place.
 """
 Base.@kwdef struct Finding
     rule::Symbol
     detail::String = ""
     place::String
+    file::String = ""
     fingerprint::String = ""
 end
 
 const CREDENTIAL = Symbol("RULE.LEAK.CREDENTIAL")
+const NEVER = Symbol("RULE.LEAK.NEVER_PUBLISHED")
 
-# One Gitleaks pass. `args` are its subcommand and options; `text` goes to its standard input. The report
-# lands in a temporary file, never in the package, and every finding in it is redacted.
-function pass(args::Vector{String}, dir::AbstractString; text = nothing)
+# Git and Gitleaks run in an environment nothing of the user's or the scanned repository's can steer:
+# no git config — a diff driver or an attributes file hid content — and no Gitleaks configuration from
+# the environment, which replaced its credential rules (found in review, 2026-10-02).
+# And none that points git elsewhere: `GIT_DIR` set by a hook outranks `-C`, and a replace ref shows a
+# clean lookalike where GitHub publishes the commit (found in the second review).
+const STEERING = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_COMMON_DIR",
+                  "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_NAMESPACE", "GIT_REPLACE_REF_BASE",
+                  "GIT_CONFIG", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT", "GITLEAKS_CONFIG", "GITLEAKS_CONFIG_TOML")
+unsteered() = Dict(k => v for (k, v) in ENV if !(k in STEERING) && !startswith(k, "GIT_CONFIG_KEY_") && !startswith(k, "GIT_CONFIG_VALUE_"))
+clean(cmd) = setenv(cmd, merge(unsteered(), Dict("GIT_CONFIG_GLOBAL" => "/dev/null", "GIT_CONFIG_NOSYSTEM" => "1",
+                                                 "GIT_NO_REPLACE_OBJECTS" => "1")))
+git(dir, args...) = read(clean(`git -C $dir $args`), String)
+
+# The type of each object id given, in one `cat-file` rather than one per object, which in a repository
+# of tens of thousands of objects is the difference between a second and minutes.
+function types_of(repo, ids)
+    isempty(ids) && return Dict{String,String}()
+    out = read(pipeline(clean(`git -C $repo cat-file "--batch-check=%(objectname) %(objecttype)"`); stdin = IOBuffer(join(ids, '\n') * "\n")), String)
+    return Dict(String(a) => String(b) for (a, b) in (split(l) for l in split(out, '\n') if length(split(l)) == 2))
+end
+reachable(repo, args...) = [String(first(split(l))) for l in split(git(repo, "rev-list", "--objects", args...), '\n') if !isempty(strip(l))]
+
+# The pass a repository cannot silence. Every option below closes a way the review found: the repository
+# scanned is a bare mirror, so it has no working tree whose `.gitleaksignore` Gitleaks reads whatever
+# flag says otherwise; its `.gitleaks.toml` is overridden by an explicit configuration; an inline
+# `gitleaks:allow` hides nothing; merges, the reflog, binary-marked and text-converted files are read.
+const LOG_OPTS = "--log-opts=--all --reflog -m --text --no-textconv"
+
+# One Gitleaks pass. `args` are its subcommand and target; `conf` its configuration; `text` its standard
+# input. The report lands in a temporary directory, never in the package: its matches are redacted, and
+# its author fields are not, so it is read and removed at once.
+function pass(args::Vector{String}, conf::AbstractString, dir::AbstractString; text = nothing)
     report = joinpath(dir, "report-$(rand(UInt32)).json")
-    cmd = `$(gitleaks()) $args --redact --no-banner --exit-code 0 -f json -r $report`
+    ignore = mkpath(joinpath(dir, "no-ignore"))
+    cmd = clean(`$(gitleaks()) $args -c $conf -i $ignore --ignore-gitleaks-allow --redact --no-banner --exit-code 0 -f json -r $report`)
     ok = success(text === nothing ? pipeline(cmd; stdout = devnull, stderr = devnull) :
                  pipeline(cmd; stdin = IOBuffer(text), stdout = devnull, stderr = devnull))
-    ok && isfile(report) || error("Gitleaks did not run: $(join(args, ' '))")
-    found = JSON3.read(read(report, String))
-    rm(report; force = true)
-    return found
+    try
+        ok && isfile(report) || error("Gitleaks did not run over $(args[1])")
+        return JSON3.read(read(report, String))
+    finally
+        rm(report; force = true)
+    end
 end
 
-# Both passes over one input: Gitleaks' own rules, then this package's alone.
+# Both passes over one input: Gitleaks' own rules, from its default configuration given explicitly, then
+# this package's alone, where the default allowlist cannot hide a home path.
 function both(args::Vector{String}, cfg, dir; text = nothing)
-    conf = joinpath(dir, "gbg-leak.toml")
-    write(conf, config_toml(cfg))
-    return vcat([(own = false, f = f) for f in pass(args, dir; text)],
-                [(own = true, f = f) for f in pass(vcat(args, ["-c", conf]), dir; text)])
+    defaults = joinpath(dir, "defaults.toml")
+    isfile(defaults) || write(defaults, without_global_allowlist(read(defaults_file(), String)))
+    own = joinpath(dir, "gbg-leak.toml"); write(own, config_toml(cfg))
+    return vcat([(own = false, f = f) for f in pass(args, defaults, dir; text)],
+                [(own = true, f = f) for f in pass(args, own, dir; text)])
+end
+
+# Gitleaks' default rules with the global allowlist that precedes them cut out: what it skips by path —
+# dependencies, lock files, images — a published repository publishes all the same.
+function without_global_allowlist(text)
+    a = findfirst("\n[allowlist]", text); r = findfirst("\n[[rules]]", text)
+    (a === nothing || r === nothing || first(a) > first(r)) && error("Gitleaks' default rules do not read as pinned")
+    return text[1:first(a)] * text[first(r)+1:end]
 end
 
 rule_of(r) = r.own ? Symbol(String(r.f.RuleID)) : CREDENTIAL
 detail_of(r) = r.own ? "" : String(r.f.RuleID)
+short(sha) = first(String(sha), 8)
 
 """
-    metadata(root) -> Tuple{String,Vector{String}}
+    mirror(root, dir; github = false) -> String
 
-What a repository publishes besides its files: every branch's and tag's name, every tag's message, every
-commit's message, and each distinct author and committer, `name <address>`, once. The argument is `root`.
-Returns the text, one line per line read, and beside it the place each line came from.
+A bare mirror of what is scanned: of the repository with every object it holds and a ref for each commit
+only its reflog still reaches — a commit pushed and force-pushed away stays on GitHub — or of its
+`origin` on GitHub, with the pull requests' refs no clone fetches.
+
+# Arguments
+
+- `root` — the repository.
+- `dir` — the temporary directory the mirror is made in.
+- `github` — whether GitHub's copy is mirrored instead.
+
+Returns the mirror's path. A mirror has no working tree, so nothing in the repository can tell Gitleaks
+to skip.
 """
-function metadata(root::AbstractString)
+function mirror(root::AbstractString, dir::AbstractString; github::Bool = false)
+    path = joinpath(dir, "mirror.git")
+    if github
+        # GitHub's copy is fetched with the user's own git, whose credential helper reads a private
+        # repository; what is then read of it is read clean.
+        url = strip(git(root, "remote", "get-url", "origin"))
+        user(cmd) = setenv(cmd, merge(unsteered(), Dict("GIT_NO_REPLACE_OBJECTS" => "1")))
+        run(pipeline(user(`git clone -q --mirror $url $path`); stdout = devnull, stderr = devnull))
+        run(pipeline(user(`git -C $path fetch -q origin "+refs/pull/*:refs/pull/*"`); stdout = devnull, stderr = devnull))
+    else
+        run(pipeline(clean(`git clone -q --mirror $root $path`); stdout = devnull, stderr = devnull))
+        reached = Set(split(git(path, "rev-list", "--all"), '\n'))
+        for (i, sha) in enumerate(unique(split(git(root, "log", "-g", "--format=%H", "--all"), '\n')))
+            isempty(sha) || sha in reached ||
+                success(pipeline(clean(`git -C $path update-ref refs/gbg-reflog/$i $sha`); stderr = devnull))
+        end
+    end
+    return path
+end
+
+"""
+    metadata(repo) -> Tuple{String,Vector{String}}
+
+What a repository publishes besides its files' contents: every ref's name, every tag's message and
+tagger, every commit's message, each distinct author and committer once, and every path any commit
+held. The argument is `repo`, the mirror. Returns the text, one line per line read, and beside it the
+place each line came from — a place that names a commit or an index, never the text read.
+"""
+function metadata(repo::AbstractString)
     lines = String[]; places = String[]
     add(text, place) = for l in split(text, '\n'); push!(lines, l); push!(places, place); end
-    git(args...) = read(`git -C $root $args`, String)
-    for ref in split(git("for-each-ref", "--format=%(refname:short)", "refs/heads", "refs/remotes", "refs/tags"), '\n')
-        isempty(ref) || add(ref, "the name of " * ref)
+    # NUL separates what git writes here: a message may hold any other character (found in review).
+    # `for-each-ref` ends each record with a newline after its last NUL, and `log -z` a commit with one
+    # before its message's: the newline opens the next record's first field, and is not part of it.
+    fields(out, n) = (parts = split(out, '\0'); [vcat([lstrip(parts[i], '\n')], parts[i+1:i+n-1]) for i in 1:n:length(parts)-n+1])
+    for (sha, name) in fields(git(repo, "for-each-ref", "--format=%(objectname)%00%(refname)%00"), 2)
+        add(name, "the name of a ref pointing at " * short(sha))
     end
-    for entry in split(git("for-each-ref", "--format=%(refname:short)%1f%(contents)%1e", "refs/tags"), '\x1e')
-        parts = split(strip(entry, '\n'), '\x1f'; limit = 2)
-        length(parts) == 2 && !isempty(strip(parts[2])) && add(parts[2], "the message of tag " * parts[1])
+    # Every tag object the refs reach, a tag of a tag among them, whose inner object no ref names.
+    every = reachable(repo, "--all")
+    kinds = types_of(repo, every)
+    for id in every
+        get(kinds, id, "") == "tag" || continue
+        head, msg = (parts = split(git(repo, "cat-file", "tag", id), "\n\n"; limit = 2); (parts[1], length(parts) == 2 ? parts[2] : ""))
+        for line in split(head, '\n')
+            startswith(line, "tagger ") && add(line[8:end], "the tagger of a tag object " * short(id))
+            startswith(line, "tag ") && add(line[5:end], "the name in a tag object " * short(id))
+        end
+        isempty(strip(msg)) || add(msg, "the message of a tag object " * short(id))
     end
     people = Dict{String,Vector{String}}()
-    for entry in split(git("log", "--all", "--format=%H%x1f%an <%ae>%x1f%cn <%ce>%x1f%B%x1e"), '\x1e')
-        parts = split(strip(entry, '\n'), '\x1f'; limit = 4)
-        length(parts) == 4 || continue
-        sha = first(parts[1], 8)
-        add(parts[4], "the message of commit " * sha)
-        for who in parts[2:3]; push!(get!(people, who, String[]), sha); end
+    for (sha, a, c, msg) in fields(git(repo, "log", "--all", "-z", "--format=%H%x00%an <%ae>%x00%cn <%ce>%x00%B"), 4)
+        add(msg, "the message of commit " * short(sha))
+        for who in (a, c); push!(get!(people, who, String[]), short(sha)); end
     end
     for (who, shas) in sort!(collect(people); by = first)
-        add(who, "the author or committer of $(length(unique(shas))) commit(s), first $(last(shas))")
+        add(who, "an author or committer, first in commit $(last(shas))")
     end
     return join(lines, '\n'), places
 end
 
 """
+    paths(repo) -> Vector{Tuple{String,String}}
+
+Every path any commit of the mirror `repo` added or renamed to, with the commit that first did:
+binary files, empty files and renames included, which a scan of patches never shows. Returns the pairs.
+"""
+function paths(repo::AbstractString)
+    # NUL-separated, so a path is read as it is: git otherwise quotes one holding `"`, `\\` or a control
+    # character, and a quoted path matched no rule and was printed with its private word (second review).
+    # Each commit is `\x01<id>`, then its paths; a commit's first path opens with the newline after it.
+    records = Tuple{String,Vector{String}}[]
+    for tok in split(git(repo, "log", "--all", "-m", "-z", "--name-only", "--diff-filter=AR", "--format=%x01%H"), '\0')
+        tok = startswith(tok, "\n") ? tok[2:end] : tok
+        if startswith(tok, "\x01")
+            push!(records, (short(tok[2:end]), String[]))
+        elseif !isempty(tok) && !isempty(records)
+            push!(last(records)[2], tok)
+        end
+    end
+    first_seen = Dict{String,String}()
+    for (sha, ps) in reverse(records), p in ps        # oldest first, so the first commit is kept
+        haskey(first_seen, p) || (first_seen[p] = sha)
+    end
+    return sort!([(p, s) for (p, s) in first_seen])
+end
+
+"""
+    loose_blobs(repo, dir) -> Vector{Tuple{String,String}}
+
+Every blob a ref of the mirror `repo` reaches and no commit's tree does — a tag pointing straight at a
+blob — written into `dir`, one file per blob, named by its id. Returns the pairs of file and blob id; a
+scan of commits never reads these.
+"""
+function loose_blobs(repo::AbstractString, dir::AbstractString)
+    # A blob a ref reaches and no commit's tree does — a tag of a blob, of a tree — is published and read
+    # by no scan of commits. One nothing reaches was never pushed, and is not published.
+    commits = git(repo, "rev-list", "--all")
+    walked = read(pipeline(clean(`git -C $repo rev-list --objects --stdin`); stdin = IOBuffer(commits)), String)
+    held = Set(String(first(split(l))) for l in split(walked, '\n') if !isempty(strip(l)))
+    candidates = sort!(collect(setdiff(Set(reachable(repo, "--all")), held)))
+    kinds = types_of(repo, candidates)
+    out = Tuple{String,String}[]
+    for id in candidates
+        get(kinds, id, "") == "blob" || continue
+        file = joinpath(mkpath(joinpath(dir, "blobs")), id)
+        write(file, read(clean(`git -C $repo cat-file blob $id`)))
+        push!(out, (file, id))
+    end
+    return out
+end
+
+"""
     github(root; io = stdout) -> Tuple{String,Vector{String},Vector{String}}
 
-What the repository's GitHub side publishes, read through `gh`: every issue's and pull request's title
-and text, every comment on them and on a pull request's code, every release's notes, and every workflow
-run's log still kept.
+What the repository's GitHub side publishes outside git, read through `gh`: every issue's and pull
+request's title and text, every comment on them, on a pull request's code and on a commit, every review's
+text, every release's notes, and every workflow run's log still kept.
 
 # Arguments
 
@@ -187,37 +355,63 @@ Returns the text, the place of each line, and what could not be read, said rathe
 silence.
 """
 function github(root::AbstractString; io::IO = stdout)
-    url = strip(read(`git -C $root remote get-url origin`, String))
+    url = strip(git(root, "remote", "get-url", "origin"))
     m = match(r"github\.com[:/]([^/]+/[^/]+?)(?:\.git)?$", url)
     m === nothing && error("origin is not a GitHub repository: the GitHub side cannot be read")
     slug = m.captures[1]
-    lines = String[]; places = String[]; missed = String[]
+    lines = String[]; places = String[]
+    missed = ["the wiki, the description and topics, release assets, workflow artifacts, discussions and edit history: not read"]
     add(text, place) = for l in split(text, '\n'); push!(lines, l); push!(places, place); end
     api(path, jq) = readlines(`gh api --paginate $path --jq $jq`)
     for row in api("repos/$slug/issues?state=all&per_page=100", ".[] | [(.number|tostring), ((.title // \"\") + \"\\n\" + (.body // \"\"))] | @json")
         n, t = JSON3.read(row); add(t, "issue or pull request #" * n)
+        for r in api("repos/$slug/pulls/$n/reviews?per_page=100", ".[] | (.body // \"\") | @json")
+            add(JSON3.read(r), "a review of #" * n)
+        end
     end
     for (path, what) in (("issues/comments", "a comment on #"), ("pulls/comments", "a review comment on #"))
         for row in api("repos/$slug/$path?per_page=100", ".[] | [((.issue_url // .pull_request_url) | split(\"/\") | last), (.body // \"\")] | @json")
             n, t = JSON3.read(row); add(t, what * n)
         end
     end
-    for row in api("repos/$slug/releases?per_page=100", ".[] | [.tag_name, ((.name // \"\") + \"\\n\" + (.body // \"\"))] | @json")
-        tag, t = JSON3.read(row); add(t, "the notes of release " * tag)
+    for row in api("repos/$slug/comments?per_page=100", ".[] | [(.id|tostring), (.body // \"\")] | @json")
+        n, t = JSON3.read(row); add(t, "commit comment " * n)
+    end
+    for row in api("repos/$slug/releases?per_page=100", ".[] | [(.id|tostring), ((.name // \"\") + \"\\n\" + (.body // \"\"))] | @json")
+        id, t = JSON3.read(row); add(t, "the notes of release id " * id)
     end
     runs = api("repos/$slug/actions/runs?per_page=100", ".workflow_runs[] | .id | tostring")
     println(io, "gbg leak: reading ", length(runs), " workflow run log(s) of ", slug)
     dir = mktempdir(; cleanup = true)
-    for id in runs
+    # Eight at a time: one after another, a repository's thousand logs took longer than the scan.
+    logs = asyncmap(runs; ntasks = 8) do id
         zip = joinpath(dir, id * ".zip")
         ok = success(pipeline(`gh api repos/$slug/actions/runs/$id/logs`; stdout = zip, stderr = devnull))
-        ok || (push!(missed, "workflow run $id: its log is no longer kept"); continue)
-        text = read(ignorestatus(`unzip -p $zip`), String)
-        add(text, "the log of workflow run " * id)
+        # GitHub answers an expired log with an error or an empty archive; either is a log not read.
+        ok && filesize(zip) > 0 || return (id, nothing)
+        text = read(pipeline(ignorestatus(`unzip -p $zip`); stderr = devnull), String)
         rm(zip; force = true)
+        return (id, text)
+    end
+    for (id, text) in logs
+        text === nothing || isempty(text) ? push!(missed, "workflow run $id: its log is no longer kept") :
+                                            add(text, "the log of workflow run " * id)
     end
     return join(lines, '\n'), places, missed
 end
+
+# A rule is off only by a switch naming it: an exclusion parks a module from the rulebook, and its files
+# are published all the same (found in review, 2026-10-02: HT's Phenomenology).
+switched_off(cfg, rule, file) = any(s -> s.target === rule &&
+    (isempty(s.files) || (!isempty(file) && any(p -> Texts.glob_matches(p, file), s.files))), cfg.switches)
+
+fingerprint(parts...) = bytes2hex(SHA.sha256(join(string.(parts), '|')))[1:16]
+
+# The config with this machine's private words added: they are never in `.gbg/config.jl`, which is
+# published, and the config's other fields are carried over by the type's own field names.
+with_terms(cfg::Model.Config, terms) =
+    Model.Config(; (f => (f === :leak_terms ? unique(vcat(cfg.leak_terms, terms)) : getfield(cfg, f))
+                    for f in fieldnames(Model.Config))...)
 
 """
     scan(root, cfg; github = false, io = stdout) -> NamedTuple
@@ -227,46 +421,83 @@ Every finding of the `RULE.LEAK.*` rules in what the repository at `root` would 
 # Arguments
 
 - `root` — the repository.
-- `cfg` — its config, which approves addresses, keeps words private and switches findings off.
-- `github` — whether the GitHub side is read too, through the network.
+- `cfg` — its config, which approves addresses and switches rules off; the words kept private are this
+  machine's, from [`machine_terms`](@ref).
+- `github` — whether GitHub's own copy is mirrored, its pull requests' refs included, and its side
+  outside git read too, through the network.
 - `io` — where progress goes.
 
 Returns `(findings, read, missed)`: the findings, what was read, and what could not be. Writes nothing
-in the repository.
+in the repository: everything it reads is mirrored into a temporary directory first.
 """
 function scan(root::AbstractString, cfg::Model.Config; github::Bool = false, io::IO = stdout)
-    isfile(gitleaks()) || error("Gitleaks $(GITLEAKS.version) is not installed: run `gbg install --gitleaks`")
+    isfile(gitleaks()) && isfile(defaults_file()) ||
+        error("Gitleaks $(GITLEAKS.version) is not installed with its pinned default rules: run `gbg install --gitleaks`")
+    cfg = with_terms(cfg, machine_terms())
     dir = mktempdir(; cleanup = true)
+    repo = mirror(root, dir; github)
     out = Finding[]
-    for r in both(["git", root, "--log-opts=--all"], cfg, dir)
-        push!(out, Finding(; rule = rule_of(r), detail = detail_of(r),
-                           place = "commit $(first(String(r.f.Commit), 8)) $(r.f.File):$(r.f.StartLine)",
-                           fingerprint = String(r.f.Fingerprint)))
+    # A path is printed as a place only when no rule finds anything in it: a token or an address in a
+    # file's name was printed with the finding until the review (2026-10-02).
+    every_path = paths(repo)
+    flagged = Set{String}()
+    for r in (isempty(every_path) ? [] : both(["stdin"], cfg, dir; text = join(first.(every_path), '\n')))
+        1 <= r.f.StartLine <= length(every_path) || continue
+        p, s = every_path[r.f.StartLine]
+        push!(flagged, p)
+        push!(out, Finding(; rule = rule_of(r), detail = detail_of(r), place = "a file's path, first in commit $s",
+                           file = p, fingerprint = fingerprint(rule_of(r), p)))
     end
-    text, places = metadata(root)
+    never = Regex(Catalogue.Leaks.NEVER_FILE)
+    for (p, s) in every_path
+        occursin(never, p) || continue
+        push!(out, Finding(; rule = NEVER, place = (p in flagged ? "a file" : p) * ", first in commit $s",
+                           file = p, fingerprint = fingerprint(NEVER, p)))
+    end
+    label(file) = file in flagged || occursin(r"[\x00-\x1f]", file) ? "a file whose path is reported" : file
+    for r in both(["git", repo, LOG_OPTS], cfg, dir)
+        file = String(r.f.File)
+        push!(out, Finding(; rule = rule_of(r), detail = detail_of(r),
+                           place = "commit $(short(r.f.Commit)) $(label(file)):$(r.f.StartLine)", file,
+                           fingerprint = fingerprint(rule_of(r), r.f.Commit, file, r.f.StartLine)))
+    end
+    blobs = loose_blobs(repo, dir)
+    if !isempty(blobs)
+        names = Dict(basename(f) => id for (f, id) in blobs)
+        for r in both(["dir", joinpath(dir, "blobs")], cfg, dir)
+            id = get(names, basename(String(r.f.File)), "?")
+            push!(out, Finding(; rule = rule_of(r), detail = detail_of(r), place = "blob $(short(id)), held by no commit:$(r.f.StartLine)",
+                               fingerprint = fingerprint(rule_of(r), id, r.f.StartLine)))
+        end
+    end
+    text, places = metadata(repo)
     commits = count(p -> startswith(p, "the message of commit"), unique(places))
-    read_what = ["every commit on every branch and tag, $commits commit message(s), $(count(startswith("the name of"), places)) ref name(s), the authors and committers"]
+    read_what = ["every commit on every ref and in the reflog, merges and binary-marked files included",
+                 "$commits commit message(s), every ref's name, every tag object's name, tagger and message, the authors and committers",
+                 "$(length(every_path)) path(s), $(length(blobs)) blob(s) a ref holds and no commit does"]
     missed = String[]
+    github || push!(missed, "what GitHub holds and this clone lacks — pull requests' refs, branches never fetched — and the GitHub side: run with --github")
     sources = [(text, places)]
     if github
-        gtext, gplaces, missed = Publication.github(root; io)
+        gtext, gplaces, gmissed = Publication.github(root; io)
+        append!(missed, gmissed)
         push!(sources, (gtext, gplaces))
-        push!(read_what, "the GitHub side: issues, pull requests, comments, releases, workflow logs")
+        push!(read_what, "GitHub's own copy, its pull requests' refs, and its issues, pull requests, reviews, comments, releases and workflow logs")
     end
     for (t, ps) in sources
         isempty(strip(t)) && continue
+        start = Dict{String,Int}()
+        for (i, p) in enumerate(ps); haskey(start, p) || (start[p] = i); end
         for r in both(["stdin"], cfg, dir; text = t)
-            place = 1 <= r.f.StartLine <= length(ps) ? ps[r.f.StartLine] : "line $(r.f.StartLine) of what was read"
+            n = r.f.StartLine
+            place = 1 <= n <= length(ps) ? ps[n] : "line $n of what was read"
+            # the line within its place tells two findings in one message apart, and does not move when
+            # another commit is added (second review)
             push!(out, Finding(; rule = rule_of(r), detail = detail_of(r), place,
-                               fingerprint = bytes2hex(SHA.sha256(string(rule_of(r), '|', place, '|', r.f.StartLine)))[1:16]))
+                               fingerprint = fingerprint(rule_of(r), place, n - get(start, place, n))))
         end
     end
-    # A switch on a rule, for the package or for the files it names, is honoured as on any rule.
-    keep(f) = begin
-        file = occursin(r"^commit \S+ (.+):\d+$", f.place) ? match(r"^commit \S+ (.+):\d+$", f.place).captures[1] : ""
-        isempty(file) ? Engine.Checks.applies(cfg, f.rule) : Engine.Checks.applies(cfg, f.rule; file)
-    end
-    return (findings = unique(filter(keep, out)), read = read_what, missed = missed)
+    return (findings = unique(filter(f -> !switched_off(cfg, f.rule, f.file), out)), read = read_what, missed = missed)
 end
 
 end # module Publication

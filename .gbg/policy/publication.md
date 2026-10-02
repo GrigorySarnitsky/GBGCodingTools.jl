@@ -12,14 +12,14 @@ A repository made public publishes every commit it ever held, on every branch an
 Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session, never to commit one; `gbg leak` decides it with Gitleaks' own credential rules, over every commit, the commit metadata and the GitHub side, which no program here restates
 
 ### RULE.LEAK.EMAIL
-No email address is published but those the package's config approves in `leak_emails`, GitHub's no-reply addresses, and the commit trailer's.
+No email address is published but those the package's config approves in `leak_emails`, GitHub's own and no-reply addresses, and the commit trailer's.
 
 A repository made public publishes every commit it ever held, on every branch and tag, deleted files included; a later commit that removes a thing does not unpublish it. An address in a commit's author field is published with the commit; only a rewrite of the history removes it, which is the owner's to make.
 
 Covered by a program.
 
 ### RULE.LEAK.HOME_PATH
-No home-directory path — `/home/<name>/`, `/Users/<name>/`, `C:\Users\<name>` — is published.
+No home-directory path — `/home/<name>/`, `/Users/<name>/`, `C:\Users\<name>` — is published, but a hosted runner's.
 
 A repository made public publishes every commit it ever held, on every branch and tag, deleted files included; a later commit that removes a thing does not unpublish it. A home path names the person and the machine, and a credential scanner allows it on purpose.
 
@@ -61,9 +61,9 @@ A repository made public publishes every commit it ever held, on every branch an
 Covered by a program.
 
 ### RULE.LEAK.TERM
-No word the package's config names in `leak_terms` — the machines' names, or anything else the owner keeps private — is published, in any case.
+No word this machine's `~/.gbg/leak-terms` lists — the machines' names, or anything else the owner keeps private — is published, in any case.
 
-A repository made public publishes every commit it ever held, on every branch and tag, deleted files included; a later commit that removes a thing does not unpublish it. What is private to one owner no generic scanner knows; the config says it once.
+A repository made public publishes every commit it ever held, on every branch and tag, deleted files included; a later commit that removes a thing does not unpublish it. What is private to one owner no generic scanner knows, and a list of it committed with a package would publish it: it is kept per machine, outside every repository.
 
 Covered by a program.
 

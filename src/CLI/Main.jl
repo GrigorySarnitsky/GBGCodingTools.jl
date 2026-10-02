@@ -173,7 +173,8 @@ function main(args::AbstractVector{<:AbstractString})::Int
         # once here, it is caught for every verb; the old reader's error was caught the same way until
         # Phase 5, and the rebuilt reader's reached the crash arm with a backtrace where the contract
         # promises 2 (found in review, 2026-09-23).
-        (err isa GBGCodingTools.ConfigIO.ConfigError || err isa UsageError) &&
+        (err isa GBGCodingTools.ConfigIO.ConfigError || err isa UsageError ||
+         err isa GBGCodingTools.Engine.Guard.PublicationRefused) &&
             (println(stderr, "gbg ", key, ": ", sprint(showerror, err)); return 2)
         println(stderr, "gbg ", key, ": crashed — ", sprint(showerror, err))
         Base.show_backtrace(stderr, catch_backtrace()); println(stderr)

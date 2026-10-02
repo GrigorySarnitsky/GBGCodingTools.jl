@@ -17,7 +17,7 @@ using ..GBGCodingTools: GBGCodingTools, ConfigIO, Model, Publication, parse_opti
 What opens every line the scan prints. A writer of a tracked file refuses text holding it
 (`Engine.Guard.refuse_publication`), so a finding cannot be carried into a record by copying it.
 """
-const MARK = "gbg-leak:"
+const MARK = GBGCodingTools.Engine.Guard.LEAK_MARK
 
 """
     roots(all) -> Vector{String}
@@ -49,12 +49,16 @@ what could not be.
 Returns 0 when nothing was found, 1 when something was, 2 when it could not read the repository.
 """
 function scan(root::AbstractString; github::Bool = false, io::IO = stdout)
-    cfg = isfile(joinpath(root, ".gbg", "config.jl")) ? ConfigIO.read_config(root) :
-          Model.Config(package = basename(rstrip(root, '/')), tool = :dev)
-    result = try
-        Publication.scan(root, cfg; github, io)
+    # A config that cannot be read stops this repository's scan, not the others of `--all` (review).
+    name = basename(rstrip(root, '/'))
+    cfg, result = try
+        c = isfile(joinpath(root, ".gbg", "config.jl")) ? ConfigIO.read_config(root) : Model.Config(package = name, tool = :dev)
+        c, Publication.scan(root, c; github, io)
     catch e
-        println(io, MARK, " ", cfg.package, ": cannot read it — ", sprint(showerror, e)); return 2
+        # a config error quotes the line it could not read, which may be what the scan exists to keep in
+        why = e isa ConfigIO.ConfigError ? "its .gbg/config.jl does not read; run `gbg check` there" :
+                                           replace(sprint(showerror, e), '\n' => ' ')
+        println(io, MARK, " ", name, ": cannot read it — ", why); return 2
     end
     println(io, MARK, " ", cfg.package, ": ", length(result.findings), " finding(s)")
     # The count first, by rule and by file, so a long list is read in its shape before its lines; every

@@ -581,4 +581,40 @@ function blocks_of(text::AbstractString)
     return out
 end
 
+# ──────────────────────────────────────────────────────────────── what a leak scan printed
+
+"""
+    LEAK_MARK
+
+What opens every line the leak scan prints, so a writer can tell its text from any other.
+"""
+const LEAK_MARK = "gbg-leak:"
+
+"""
+    PublicationRefused <: Exception
+
+A tracked record would have held text a leak scan printed. A finding names where a leak is, and a
+record of it is a second copy of the map, published with the repository.
+
+# Fields
+
+- `what` — the record that refused it.
+"""
+struct PublicationRefused <: Exception
+    what::String
+end
+Base.showerror(io::IO, e::PublicationRefused) =
+    print(io, "refused: ", e.what, " would hold text from a leak scan; a finding stays in the session that printed it")
+
+"""
+    refuse_publication(text, what)
+
+Throws [`PublicationRefused`](@ref) when `text` holds a line a leak scan printed. The arguments are
+`text`, what is about to be written, and `what`, the record it would go into. Every writer of a tracked
+record calls it first: the question store, a run's record and report, the work queue, the settled
+list. Returns `nothing`.
+"""
+refuse_publication(text::AbstractString, what::AbstractString) =
+    occursin(LEAK_MARK, text) ? throw(PublicationRefused(what)) : nothing
+
 end # module Guard

@@ -113,6 +113,7 @@ function start(instrument::Symbol, root::AbstractString; readers::Symbol = :boun
     inst = Catalogue.INSTRUMENTS[i]
     cfg = ConfigIO.read_config(root)
     inst.built || (println(io, "run: $instrument is not built yet"); return nothing)
+    instrument === :leak_scan && (println(io, "run: the leak scan is a program, not a run: `gbg leak`"); return nothing)
     Engine.Checks.applies(cfg, instrument) ||
         (println(io, "run: $instrument is switched off in this package"); return nothing)
     # An instrument with no derived readers would open, launch nobody and close clean: the bug hunt and
@@ -669,6 +670,7 @@ with_questions(r::Model.Run, qs::Vector{Model.Question}) =
 function write_record(root::AbstractString, run::Model.Run)
     final = joinpath(dir(root, run.id), "run.json")
     isfile(final) || return save(root, run)
+    Engine.Guard.refuse_publication(JSON3.write(as_dict(run)), "a run's record")
     open(final, "w") do f; JSON3.pretty(f, JSON3.write(as_dict(run))); end
     return final
 end
@@ -686,6 +688,7 @@ That is the opposite of `config.jl`, which a person writes and a parser refuses 
 function save(root::AbstractString, run::Model.Run)
     path = joinpath(dir(root, run.id), "run.draft.json")
     mkpath(dirname(path))
+    Engine.Guard.refuse_publication(JSON3.write(as_dict(run)), "a run's record")
     open(path, "w") do f; JSON3.pretty(f, JSON3.write(as_dict(run))); end
     return path
 end
