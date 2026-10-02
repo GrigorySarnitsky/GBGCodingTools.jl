@@ -95,10 +95,25 @@ fi
       done
       return 0
     }
+    gbg_rule_RULE_GIT_RECORDS() {
+      git rev-parse --git-dir >/dev/null 2>&1 || return 0
+      seen=""
+      while IFS= read -r line; do
+        p=${line:3}
+        case "$p" in
+          .gbg/runs/*) d=${p#.gbg/runs/}; d=".gbg/runs/${d%%/*}"
+                       [ -f "$d/stage" ] && [ ! -f "$d/run.json" ] && continue
+                       case " $seen " in *" $d "*) continue ;; esac
+                       seen="$seen $d"; p="$d/" ;;
+        esac
+        echo "$p is a record the tool keeps for the owner, not committed: commit it"
+      done < <(git status --porcelain --untracked-files=all -- .gbg/questions.json .gbg/runs 2>/dev/null)
+      return 0
+    }
 
 GBG_BRANCH="master"
 git_said=""
-for r in RULE.GIT.BRANCH RULE.GIT.PUSH RULE.GIT.TRAILER; do
+for r in RULE.GIT.BRANCH RULE.GIT.PUSH RULE.GIT.TRAILER RULE.GIT.RECORDS; do
   fn="gbg_rule_${r//./_}"
   out=$(cd "${CLAUDE_PROJECT_DIR:-.}" && "$fn" 2>/dev/null) || out=""
   [[ -n "$out" ]] && git_said+="$(printf '%s\n' "$out" | sed "s/^/  $r  /")"$'\n'

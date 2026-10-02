@@ -15,7 +15,7 @@ include("helpers.jl")
 const LAYERS = Dict("src/Model.jl" => 1, "src/Texts.jl" => 2, "src/ConfigIO.jl" => 4,
                     "src/Rules/rendering.jl" => 3, "src/Rules/docstrings.jl" => 3,
                     "src/Rules/arguments.jl" => 3, "src/Rules/latex.jl" => 3, "src/Rules/pages.jl" => 3, "src/Rules/reflection.jl" => 3, "src/Rules/site.jl" => 3, "src/Rules/shape.jl" => 3, "src/Rules/modules.jl" => 3,
-                    "src/Rules/judgement_api.jl" => 3, "src/Rules/judgement_cit.jl" => 3, "src/Rules/judgement_doc.jl" => 3, "src/Rules/judgement_git.jl" => 3, "src/Rules/judgement_inst.jl" => 3, "src/Rules/judgement_test.jl" => 3, "src/Rules/judgement_tex.jl" => 3,
+                    "src/Rules/judgement_api.jl" => 3, "src/Rules/judgement_cit.jl" => 3, "src/Rules/judgement_doc.jl" => 3, "src/Rules/judgement_git.jl" => 3, "src/Rules/records.jl" => 3, "src/Rules/judgement_inst.jl" => 3, "src/Rules/judgement_test.jl" => 3, "src/Rules/judgement_tex.jl" => 3,
                     "src/Rules/questions.jl" => 3, "src/Rules/citations.jl" => 3, "src/Engine/Questions.jl" => 5, "src/CLI/Answer.jl" => 8,
                     "src/Orchestration.jl" => 7, "src/Orchestration/Runs.jl" => 7, "src/Orchestration/Agents.jl" => 7,
                     "src/Orchestration/Scope.jl" => 7, "src/Orchestration/Site.jl" => 7, "src/Study.jl" => 6, "src/CLI/StudyCmd.jl" => 8,
@@ -105,7 +105,11 @@ legacy_files() = sort([relpath(joinpath(r, f), TOOL) for (r, _, fs) in walkdir(j
     @testset "nothing a build or a test runs reads review state" begin
         # the rules and their runner too: `RULE.DOC.SHAPE` read the run directory inside every docs build
         # until 2026-09-26, and a build's verdict depended on whether a run was open
-        rules = [joinpath("src", "Rules", f) for f in readdir(joinpath(TOOL, "src", "Rules")) if endswith(f, ".jl")]
+        # `RULE.GIT.RECORDS` names the records it checks, and its file alone is exempt: its only check is
+        # a git hook, which `run_rule` runs only when asked for history — never in a build or a test, as
+        # the lines below this loop show.
+        rules = [joinpath("src", "Rules", f) for f in readdir(joinpath(TOOL, "src", "Rules"))
+                 if endswith(f, ".jl") && f != "records.jl"]
         for f in vcat(["ext/GBGCodingToolsDocumenterExt.jl", "src/TestHarness.jl", "src/Engine/Checks.jl",
                        "src/Engine/Harness.jl", "src/Texts.jl", "src/Catalogue.jl"], rules)
             text = read(joinpath(TOOL, f), String)
@@ -113,6 +117,14 @@ legacy_files() = sort([relpath(joinpath(r, f), TOOL) for (r, _, fs) in walkdir(j
                 @test !occursin(forbidden, text)
             end
         end
+        records = G.Catalogue.Records.RECORDS
+        @test records.check.input === G.Model.Input.HISTORY
+        tree = mktempdir(; cleanup = true)
+        mkpath(joinpath(tree, ".gbg")); write(joinpath(tree, ".gbg", "questions.json"), "[]")
+        run(pipeline(`git -C $tree init -q`; stdout = devnull, stderr = devnull))
+        cfg = G.Model.Config(package = "Example", tool = :dev)
+        @test isempty(G.Engine.Checks.run_rule(records, cfg, tree))                  # as a build or test runs it
+        @test !isempty(G.Engine.Checks.run_rule(records, cfg, tree; history = true)) # as the hook and `gbg check` do
     end
 
     # The design's §3 table and the values are ONE table. Every cell is compared, so a purpose reworded in

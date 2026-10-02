@@ -157,6 +157,14 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
     of_run && (why = R.answer!(root, id, option; item, direction))
     why === nothing || (println(io, "answer: ", why); return 2)
     println(io, "answer: ", id, isempty(item) ? "" : " / " * item, " answered `", option, "`.")
+    # The answer is kept in a file no verb commits (RULE.GIT.RECORDS): GBGPeriodicFields' store sat
+    # untracked for ten days with two of his rulings in it (2026-10-02).
+    if of_run && first(found) == open_here
+        println(io, "answer: it is kept in the open run's record, which is committed with the run at its close.")
+    else
+        println(io, "answer: commit ", of_run ? ".gbg/runs/$(first(found))/" : ".gbg/questions.json",
+                " — the answer is kept nowhere else.")
+    end
     if of_run && option == R.DOCS_ANSWER
         println(io, remade ? "answer: the reverted edit is made again and stands; the finding is closed." :
                              "answer: no reverted edit of it was found to make again; the finding is closed.")

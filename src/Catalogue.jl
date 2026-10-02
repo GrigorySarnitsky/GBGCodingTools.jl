@@ -142,6 +142,7 @@ include("Rules/judgement_cit.jl")
 include("Rules/judgement_doc.jl")
 include("Rules/judgement_git.jl")
 using .JudgementGit: branch_of
+include("Rules/records.jl")
 include("Rules/judgement_inst.jl")
 include("Rules/judgement_test.jl")
 include("Rules/judgement_tex.jl")
@@ -155,7 +156,7 @@ The rulebook: every rule as a value, beside the check that decides it and the ex
 check matches the statement, one file of `src/Rules/` per family. The rulebook a session loads,
 `.gbg/policy/`, is rendered from these values and never edited.
 """
-const RULES = Model.Rule[Rendering.RULES..., Docstrings.RULES..., Arguments.RULES..., Latex.RULES..., Pages.RULES..., Reflection.RULES..., Site.RULES..., Shape.RULES..., Modules.RULES..., Questions.RULES..., Citations.RULES..., JudgementApi.RULES..., JudgementCit.RULES..., JudgementDoc.RULES..., JudgementGit.RULES..., JudgementInst.RULES..., JudgementTest.RULES..., JudgementTex.RULES...]
+const RULES = Model.Rule[Rendering.RULES..., Docstrings.RULES..., Arguments.RULES..., Latex.RULES..., Pages.RULES..., Reflection.RULES..., Site.RULES..., Shape.RULES..., Modules.RULES..., Questions.RULES..., Citations.RULES..., JudgementApi.RULES..., JudgementCit.RULES..., JudgementDoc.RULES..., JudgementGit.RULES..., Records.RULES..., JudgementInst.RULES..., JudgementTest.RULES..., JudgementTex.RULES...]
 
 
 """

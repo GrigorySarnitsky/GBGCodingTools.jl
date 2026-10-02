@@ -4,6 +4,20 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.51 — 2026-10-02
+
+MINOR, the owner's ruling of 2026-10-02 on GBGPeriodicFields' report:
+
+- **`RULE.GIT.RECORDS`, new:** a record the tool keeps for the owner — `.gbg/questions.json`, and a
+  closed run under `.gbg/runs/` — is committed, never left untracked or modified; an open run's is
+  committed at its close. Checked from git by the end-of-turn hook and `gbg check`, as `RULE.GIT.PUSH`
+  is: no build or test may read git. A closed run is reported once. The work queue is not a record of
+  this kind and is left out. PF's store had sat untracked since 2026-09-22 with two of the owner's
+  answers in it. Measured: PF's untracked store is reported; GBGHomogeneousTurbulence and this package,
+  nothing. 98 rules.
+- **`gbg answer`** says which file to commit, or that an open run's record is committed at its close;
+  the documentation review's skill names `.gbg/questions.json` beside the run's record.
+
 ## 2.0.0-rc.50 — 2026-10-02
 
 MINOR, the owner's ruling of 2026-10-02 on GBGHomogeneousTurbulence's proposal:
