@@ -306,12 +306,15 @@ leave `test/architecture.jl` in that same commit — the one commit that turns s
 decision 13. Release `v2.2.0`.
 **Gate** `bash -e -o pipefail -c 'tools/floor.sh && sh bin/gbg check && julia --project test/switches.jl && ! git grep -q "Documenter.makedocs" -- docs/make.jl'`
 
-### Phase 9 — The leak scan (12 commits, 2–3 sessions, on request)
+### Phase 9 — The leak scan (12 commits, 2–3 sessions; asked for by the owner 2026-10-02, before the packages go public)
 The design marks this row future (§3), so it is last and only when asked: its rules, the reader of every branch, commit
 message and `Manifest.toml` path, the `PUBLICATION` intention, its `Instrument` value, and `Guard.refuse_publication` —
 called by every writer of a tracked file (run record, report, question store, settled rulings, work queue) and exiting 2 on
 text from a publication run.
-**Gate** `bash -e -o pipefail -c 'tools/floor.sh && julia --project test/leak.jl'`, which asserts that a publication run writes no tracked file.
+The engine is Gitleaks v8.30.1, pinned by version and checksum and installed by `gbg install`; the rules, the metadata
+reader, the `--github` reader through `gh`, the email list and the redaction are this package's, as §3 says. **Creates**
+`gbg leak <package>|--all [--github]`.
+**Gate** `bash -e -o pipefail -c 'tools/floor.sh && julia --project test/leak.jl'`, which asserts that a publication run writes no tracked file, that a planted secret in a deleted file of an old commit, in a commit message and in an author's address is each reported, and that no finding prints the text it found.
 
 ### Phase 10 — The code review (on request; not designed)
 Asked for by the owner on 2026-09-21, beside the leak scan: an instrument that reads the CODE of a package for the

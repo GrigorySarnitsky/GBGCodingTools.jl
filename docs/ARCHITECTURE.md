@@ -92,12 +92,37 @@ itself — an audit over an approved code fix — so until they are built nothin
 defect an instrument meets is what it already was: a question to the owner. The table test (§6) reads all three as
 future.
 
-The leak scan is built later, by adding its rules, a reader of every branch, commit message and `Manifest.toml` path,
+The leak scan is built by adding its rules, a reader of every branch, commit message and `Manifest.toml` path,
 one `Instrument` value and the `PUBLICATION` intention — none of which exists yet, so the table test (§6) reads that
-row as the one marked future. It writes no tracked file: no run record, report or work-queue line. Its findings are
+row as future. Its design is §3.1. It writes no tracked file: no run record, report or work-queue line. Its findings are
 printed in the session that ran it, where the owner reads them and acts. `Guard.refuse_publication` is called by every
 writer of a tracked file — run record, report, question store, settled rulings, work queue — and exits 2 on text from a
 publication run.
+
+
+### 3.1 The leak scan's design
+
+Decided by the owner on 2026-10-02, before the packages go public.
+
+**The content of every commit**, on every branch and tag, deleted files included, is read by Gitleaks: a pinned
+release, checked against its published checksum. Its default credential rules run, and this package's own rules are
+rendered into its configuration from their values, so a pattern has one home.
+
+**This package's rules** name what no generic scanner knows is personal here: home and Dropbox paths, the machines'
+names, an email address not on the list the owner approves, a session link, a scratch path, an absolute path in a
+manifest, and a file that is never published, by its name or kind.
+
+**The commit metadata** — authors' and committers' names and addresses, commit and tag messages — has its own reader,
+through the same rules, because Gitleaks reads patches only. **The GitHub side** — issues, pull requests, comments,
+release notes, workflow logs — turns public with the repository and is not in git; it is read through `gh` on a flag,
+the one part that needs the network.
+
+**Every finding is redacted.** It names the rule, the commit, the file and line and a fingerprint, never the text: a
+finding printed in a session enters what that session sends to its model. A false positive is a `Switch` with its
+reason.
+
+**Not used:** a scanner that verifies a secret by trying it, which sends the secret out, and any Python tool. Removing a
+leak from history is a rewrite the owner makes, outside the instrument.
 
 ## 4. Finding and fixing
 
