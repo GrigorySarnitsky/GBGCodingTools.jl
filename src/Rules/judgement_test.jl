@@ -45,6 +45,16 @@ const ALLOC_ZERO = Model.Rule(
     filesets = [Model.FileSet.TESTS, Model.FileSet.CODE],
     unchecked_reason = "an instruction to the session of a package that has declared this contract by calling `TestHarness.allocation_completeness` from its suite, where that suite checks it; a package that has not declared it is not bound, and nothing checks it here")
 
+# Proposed by GBGHomogeneousTurbulence and measured there first, on CUDA (2026-10-01): its draws were
+# bitwise or within 2.4 epsilon, and a wrong seed was refused on every draw. Ruled by the owner 2026-10-02.
+const SEED_PARITY = Model.Rule(
+    id = Symbol("RULE.TEST.SEED_PARITY"),
+    statement = "In a package that declares seed parity, one seed gives the same draws on every backend it runs: a draw the run uses as drawn is bitwise equal, one it sees through a transform agrees within a stated bound in machine epsilon, and a run from another seed is told apart on every draw.",
+    why = "Runs on two machines are then comparable and a regression is reproducible on either. How a package meets it is its own: drawing on the host and moving the numbers, or one counter-based generator on both, which only the comparison shows to agree.",
+    intention = Model.Intention.CODE,
+    filesets = [Model.FileSet.TESTS, Model.FileSet.CODE],
+    unchecked_reason = "an instruction to the session of a package that has declared this contract by calling `TestHarness.seed_parity` from its GPU tests, where those tests check it; without a GPU they record a skip, never a pass, so it cannot run on CI; a package that has not declared it is not bound, and nothing checks it here")
+
 const PASS_AUDIT = Model.Rule(
     id = Symbol("RULE.TEST.PASS_AUDIT"),
     statement = "In a package that declares the traffic audit, every audited operation has a frozen per-array traffic row with a named holder for any gap.",
@@ -98,6 +108,6 @@ const EXAMPLES_RUN = Model.Rule(
 
 The rules of this family that no program decides.
 """
-const RULES = Model.Rule[GATE_VS_SURVEY, ORACLE_INDEPENDENT, DEFINITION_OF_DONE, ALLOC_ZERO, PASS_AUDIT, METHOD_PARITY, MUTATION, BOTH_DIRECTIONS, MISSING_IS_FAILING, EXAMPLES_RUN]
+const RULES = Model.Rule[GATE_VS_SURVEY, ORACLE_INDEPENDENT, DEFINITION_OF_DONE, ALLOC_ZERO, PASS_AUDIT, METHOD_PARITY, SEED_PARITY, MUTATION, BOTH_DIRECTIONS, MISSING_IS_FAILING, EXAMPLES_RUN]
 
 end # module JudgementTest

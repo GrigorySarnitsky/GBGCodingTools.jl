@@ -4,6 +4,26 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.50 — 2026-10-02
+
+MINOR, the owner's ruling of 2026-10-02 on GBGHomogeneousTurbulence's proposal:
+
+- **`RULE.TEST.SEED_PARITY`, a new harness contract:** in a package that declares it, one seed gives the
+  same draws on every backend it runs — bitwise for a draw the run uses as drawn, within a stated bound
+  in machine epsilon for one it sees through a transform — and a run from another seed is told apart on
+  every draw. 97 rules.
+- **`TestHarness.seed_parity(draws, backends; seed, other_seed, bound = 8)`**, which the package's GPU
+  tests call: `draws(seed, backend)` returns `(exact = …, rounded = …)`, the package names the backends
+  that work on the machine, and with one backend it records a skip, never a pass. `seed_measure` returns
+  the figures, `seed_difference` the distance of one draw in epsilon. The bound of 8 is HT's: its CUDA
+  run measured at most 2.4.
+- **What the comparison holds, after an independent review of the first version found eight gaps:**
+  bitwise means the same element type and the same bytes (`-0.0` is not `0.0`, a `NaN` equals itself);
+  a non-finite transformed value must match its place, and the rest is measured; the run from another
+  seed is tried on every backend, each having its own generator; a draw one backend makes and another
+  does not fails; one backend, or no draws at all, is never a pass; an integer transformed draw is
+  refused with its reason, and a scalar draw is a 0-dimensional array.
+
 ## 2.0.0-rc.49 — 2026-10-02
 
 MINOR, the owner's ruling of 2026-10-01 on messages between sessions, and one check fix:

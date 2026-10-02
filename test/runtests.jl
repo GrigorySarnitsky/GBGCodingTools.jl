@@ -27,6 +27,7 @@ module WitnessTests;     include("witnesses.jl");    end
 module ReleaseTests;     include("release.jl");      end
 module CliTests;         include("cli.jl");          end
 module CountTests;       include("counts.jl");       end
+module HarnessTests;     include("harness.jl");      end
 
 rm(TMP; recursive = true, force = true)   # cleanup = true would do it at exit; this is the tidy path
 

@@ -15,9 +15,9 @@ The engines behind a consumer's `test/`: the allocation audit ([`@alloc_below`](
 [`TestHarness.AUDITED_TRAFFIC_OPS`](@ref)), the
 method-parity baselines ([`TestHarness.method_parity`](@ref)), the oracle registry
 ([`TestHarness.oracle_registry`](@ref)), the display gate ([`TestHarness.display_gate`](@ref)), the
-cross-thread-count digest ([`TestHarness.thread_digest`](@ref)), the promoted-witness loop
-([`TestHarness.run_regressions`](@ref)). The frozen tables a package pins (method counts, traffic rows, oracle
-classes) live in the consumer as TOML; the engines here read them.
+cross-thread-count digest ([`TestHarness.thread_digest`](@ref)), seed parity across backends
+([`TestHarness.seed_parity`](@ref)), the promoted-witness loop
+([`TestHarness.run_regressions`](@ref)). The tables a package freezes live in the consumer as TOML.
 """
 module TestHarness
 
@@ -660,6 +660,134 @@ end
 The thread count a cross-`-t` probe runs at: 4 when this process has one thread, 1 otherwise. Returns it.
 """
 other_thread_count() = Threads.nthreads() == 1 ? 4 : 1
+
+# ───────────────────────────────────────────────────────────────────────────────── seed parity
+
+# A draw on the host, from any device; a scalar draw is a 0-dimensional array.
+host(x) = x isa AbstractArray ? Array(x) : fill(x)
+
+"""
+    seed_identical(a, b) -> Bool
+
+Whether two copies of one exact draw are the same bits: the same element type, the same shape, and
+the same bytes — so `-0.0` is not `0.0`, a `NaN` equals itself, and a `Float32` copy of a `Float64` draw
+differs. The arguments are the two draws, on any device. Returns the answer.
+"""
+function seed_identical(a, b)
+    A, B = host(a), host(b)
+    eltype(A) === eltype(B) && size(A) == size(B) || return false
+    isbitstype(eltype(A)) || return isequal(A, B)
+    return reinterpret(UInt8, vec(A)) == reinterpret(UInt8, vec(B))
+end
+
+"""
+    seed_difference(reference, other) -> Float64
+
+How far two copies of one transformed draw are apart: the largest difference over the finite values,
+relative to the largest finite magnitude of `reference`, in machine epsilon of its element type. The
+arguments are the two draws, on any device, of one floating-point element type. Returns `Inf` where
+the types or shapes differ, or a non-finite value of one is not the same in the other.
+"""
+function seed_difference(reference, other)
+    a, b = host(reference), host(other)
+    eltype(a) <: Union{AbstractFloat,Complex{<:AbstractFloat}} ||
+        throw(ArgumentError("a transformed draw is floating-point; put an integer draw under `exact`"))
+    eltype(a) === eltype(b) && size(a) == size(b) || return Inf
+    finite = isfinite.(a)
+    all(i -> finite[i] == isfinite(b[i]) && (finite[i] || isequal(a[i], b[i])), eachindex(a)) || return Inf
+    unit = eps(real(eltype(a)))
+    scale = maximum(abs, a[finite]; init = zero(real(eltype(a))))
+    gap = maximum(abs, a[finite] .- b[finite]; init = zero(real(eltype(a))))
+    return iszero(scale) ? (iszero(gap) ? 0.0 : Inf) : Float64(gap / scale / unit)
+end
+
+"""
+    seed_measure(draws, backends; seed = 1, other_seed = seed + 1, bound = 8) -> NamedTuple
+
+What [`seed_parity`](@ref) tests, measured without testing it.
+
+# Arguments
+
+- `draws` — the package's function `draws(seed, backend)`, returning `(exact = (; name => draw, …),
+  rounded = (; name => draw, …))`: the draws a run uses as drawn, and those it sees through a transform.
+- `backends` — the backends to compare, the reference first.
+- `seed`, `other_seed` — the seed, and the one the planted run draws from.
+- `bound` — how far a transformed draw may differ, in machine epsilon.
+
+Returns `(exact, rounded, planted, ok)`, per backend after the first: the exact draws not bitwise equal
+or not drawn by both, each transformed draw's distance, and, for every backend, the draws a run from
+`other_seed` failed to tell apart. The last, `ok`, holds when all is as the contract asks and two
+backends ran.
+"""
+function seed_measure(draws, backends; seed::Integer = 1, other_seed::Integer = seed + 1, bound::Real = 8)
+    reference = draws(seed, first(backends))
+    isempty(keys(reference.exact)) && isempty(keys(reference.rounded)) &&
+        throw(ArgumentError("seed parity: `draws` returned no draws, so nothing would be compared"))
+    exact = Dict{Any,Vector{Symbol}}(); rounded = Dict{Any,Dict{Symbol,Float64}}()
+    planted = Dict{Any,Vector{Symbol}}()
+    for backend in backends[2:end]
+        got = draws(seed, backend)
+        exact[backend] = [k for k in union(keys(reference.exact), keys(got.exact))
+                          if !(haskey(reference.exact, k) && haskey(got.exact, k) &&
+                               seed_identical(reference.exact[k], got.exact[k]))]
+        rounded[backend] = Dict(k => (haskey(reference.rounded, k) && haskey(got.rounded, k) ?
+                                      seed_difference(reference.rounded[k], got.rounded[k]) : Inf)
+                                for k in union(keys(reference.rounded), keys(got.rounded)))
+    end
+    # A run from another seed is told apart on every draw and every backend, each having its own
+    # generator; a draw it lacks is told apart.
+    for backend in backends
+        wrong = draws(other_seed, backend)
+        planted[backend] = vcat(
+            [k for k in keys(reference.exact) if haskey(wrong.exact, k) && seed_identical(reference.exact[k], wrong.exact[k])],
+            [k for k in keys(reference.rounded) if haskey(wrong.rounded, k) && seed_difference(reference.rounded[k], wrong.rounded[k]) <= bound])
+    end
+    ok = length(backends) >= 2 && all(isempty, values(exact)) &&
+         all(d -> all(<=(bound), values(d)), values(rounded)) && all(isempty, values(planted))
+    return (exact = exact, rounded = rounded, planted = planted, ok = ok)
+end
+
+"""
+    seed_parity(draws, backends; seed = 1, other_seed = seed + 1, bound = 8)
+
+The seed-parity contract, `RULE.TEST.SEED_PARITY`: one seed gives the same draws on every backend.
+
+# Arguments
+
+- `draws` — the package's function `draws(seed, backend)`, as [`seed_measure`](@ref) reads it.
+- `backends` — the backends this machine can run, the CPU first; the package decides which work.
+- `seed`, `other_seed` — the seed, and the one a planted wrong run draws from.
+- `bound` — how far a transformed draw may differ, in machine epsilon.
+
+An exact draw is bitwise equal on every backend, a transformed one within `bound`, and a run from
+`other_seed` is told apart on every draw. With one backend it records `@test_skip` and a warning:
+skipped, never passed, as on a runner with no GPU. Runs as a `@testset`. Returns what
+`seed_measure` measured, or `nothing` when skipped.
+"""
+function seed_parity(draws, backends; seed::Integer = 1, other_seed::Integer = seed + 1, bound::Real = 8)
+    result = nothing
+    @testset "one seed gives the same draws on every backend" begin
+        if length(backends) < 2
+            @warn "seed parity: one backend only, so nothing is compared; skipped, not passed" backends
+            @test_skip false
+        else
+            result = seed_measure(draws, backends; seed, other_seed, bound)
+            for (backend, names) in result.exact
+                isempty(names) || @error "exact draws not bitwise equal, or not drawn on both" backend names
+                @test isempty(names)
+            end
+            for (backend, distance) in result.rounded, (name, d) in distance
+                d <= bound || @error "a transformed draw differs beyond the bound" backend name d bound
+                @test d <= bound
+            end
+            for (backend, names) in result.planted
+                isempty(names) || @error "a run from another seed was not told apart" backend names
+                @test isempty(names)
+            end
+        end
+    end
+    return result
+end
 
 # ───────────────────────────────────────────────────────────────────────────────── regressions
 

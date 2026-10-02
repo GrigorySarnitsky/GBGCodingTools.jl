@@ -28,6 +28,10 @@ GBGCodingTools.TestHarness.method_parity
 GBGCodingTools.TestHarness.oracle_registry
 GBGCodingTools.TestHarness.display_gate
 GBGCodingTools.TestHarness.thread_digest
+GBGCodingTools.TestHarness.seed_parity
+GBGCodingTools.TestHarness.seed_measure
+GBGCodingTools.TestHarness.seed_difference
+GBGCodingTools.TestHarness.seed_identical
 ```
 
 ## Gates
