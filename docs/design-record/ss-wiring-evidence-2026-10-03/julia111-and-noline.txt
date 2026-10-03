@@ -1,0 +1,6 @@
+# Julia 1.11: the docs environment, then Pkg.test(), on the wired tree with no manifest
+ERROR: julia version requirement from Project.toml's compat section not satisfied for package at `/home/grigory/.julia/packages/GBGCodingTools/Hv04a`
+ERROR: julia version requirement from Project.toml's compat section not satisfied for package at `/home/grigory/.julia/packages/GBGCodingTools/Hv04a`
+
+# docs/Project.toml without Step 2's line, no manifest, Julia 1.12: Pkg.instantiate()
+ERROR: expected package `GBGStreamingStatistics [f7630e6d]` to be registered

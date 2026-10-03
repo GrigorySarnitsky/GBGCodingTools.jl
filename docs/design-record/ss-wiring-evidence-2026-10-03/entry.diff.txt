@@ -1,0 +1,43 @@
+diff --git a/docs/make.jl b/docs/make.jl
+index 5267939..568c289 100644
+--- a/docs/make.jl
++++ b/docs/make.jl
+@@ -1,7 +1,10 @@
+ using Pkg
+ Pkg.activate(@__DIR__)
+ using Documenter
++using GBGCodingTools
+ using GBGStreamingStatistics
++const ROOT = normpath(joinpath(@__DIR__, ".."))
++const TOOLING = GBGCodingTools.Render.pages(GBGCodingTools.ConfigIO.read_config(ROOT), ROOT)
+ 
+ 
+ # Doc lint: an inline-math span ``…`` must not be split across a source line by a CommonMark
+@@ -66,7 +69,7 @@ copy_rationale_pages()
+ # verifies them on every build so they cannot drift from the code. Add them incrementally.
+ DocMeta.setdocmeta!(GBGStreamingStatistics, :DocTestSetup, :(using GBGStreamingStatistics); recursive = true)
+ 
+-makedocs(
++GBGCodingTools.makedocs(ROOT;
+   sitename  = "GBGStreamingStatistics.jl",
+   modules   = [GBGStreamingStatistics,
+                GBGStreamingStatistics.Accumulators,
+@@ -105,6 +108,7 @@ makedocs(
+       "Testing"       => "testing.md",
+       "Performance"   => "performance.md",
+       "Internals"     => "internals.md",
++      "Documentation tooling" => only(TOOLING),
+     ],
+   ]
+ )
+diff --git a/test/runtests.jl b/test/runtests.jl
+index d3be8a9..14c0369 100644
+--- a/test/runtests.jl
++++ b/test/runtests.jl
+@@ -24,3 +24,6 @@ module AllocationsTests;        include("allocations.jl");        end
+ module AquaTests;               include("aqua.jl");               end
+ module JETTests;                include("jet.jl");                end
+ module HDF5Tests;               include("hdf5.jl");               end
++
++using GBGCodingTools
++GBGCodingTools.Engine.Harness.test(dirname(@__DIR__); checks = (GBGCodingTools.Render.wiring,))

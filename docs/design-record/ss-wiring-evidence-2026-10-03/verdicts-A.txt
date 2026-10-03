@@ -1,0 +1,111 @@
+RULE.DOC.ARGCOV (.gbg/policy/docs-rubric.md:44-49)
+  Statement: "Every argument in a docstring's signature, positional and keyword, is named as code in its body."
+  Why: "A reader passing an argument the docstring never mentions has to read the source to learn what it does."
+
+Reading applied: "named as code" = the argument's name appears in an inline code span (single backticks) in
+the body of THIS docstring. A name inside a longer code span (`merge!(into, from; weight)`) counts. A name
+appearing only in math (``x``, \texttt{weight}), only in prose ("the summary"), or only via a cross-reference
+("Arguments: as for [`other`](@ref)") does not. A coincidental identifier in a jldoctest block (`h = Histogram1D(...)`,
+a histogram, not the bandwidth keyword) is not the argument being named.
+
+Reported line: every finding points at the opening `"""` of the unit's docstring (the signature is on the next
+line). Since the defect is an absence there is no body line to point at; the docstring opening is adequate.
+
+FALSE  src/Accumulators.jl:54  [merge!]  `from` is named as code at line 67, inside the span `merge!(into, from; weight)`
+FALSE  src/Accumulators.jl:54  [merge!]  `weight` is named as code at line 67, inside the span `merge!(into, from; weight)` (and in math \texttt{weight} at 68, 83)
+TRUE   src/ConditionalDensity.jl:177  [transition_density]  `summary` appears only in prose ("the summary's lag"); hx/hy/kernelx/kernely/normalize/x/y are named, summary is not
+TRUE   src/ConditionalDensity.jl:228  [conditional_density_standard_error]  `summary` never named as code; "Arguments: as for conditional_density" is a cross-reference
+TRUE   src/ConditionalDensity.jl:228  [conditional_density_standard_error]  `y` appears only inside math (``\hat f(y\mid x)``), never as code
+TRUE   src/ConditionalDensity.jl:228  [conditional_density_standard_error]  `kernelx` never named as code (only `kernely` is, "asymmetric-`kernely`")
+TRUE   src/ConditionalDensity.jl:285  [conditional_density_with_standard_error]  `summary` never named as code; body names only value/standard_error/y/NamedTuple/normalize
+TRUE   src/ConditionalDensity.jl:285  [conditional_density_with_standard_error]  `hx` never named as code; delegated by "Arguments: as for"
+TRUE   src/ConditionalDensity.jl:285  [conditional_density_with_standard_error]  `hy` never named as code; delegated by "Arguments: as for"
+TRUE   src/ConditionalDensity.jl:285  [conditional_density_with_standard_error]  `kernelx` never named as code; delegated by "Arguments: as for"
+TRUE   src/ConditionalDensity.jl:285  [conditional_density_with_standard_error]  `kernely` never named as code; delegated by "Arguments: as for"
+TRUE   src/ConditionalDensity.jl:320  [transition_density_standard_error]  `summary` never named as code; body names only `normalize`
+TRUE   src/ConditionalDensity.jl:320  [transition_density_standard_error]  `x` never named as code
+TRUE   src/ConditionalDensity.jl:320  [transition_density_standard_error]  `y` never named as code
+TRUE   src/ConditionalDensity.jl:320  [transition_density_standard_error]  `hx` never named as code
+TRUE   src/ConditionalDensity.jl:320  [transition_density_standard_error]  `hy` never named as code
+TRUE   src/ConditionalDensity.jl:320  [transition_density_standard_error]  `kernelx` never named as code
+TRUE   src/ConditionalDensity.jl:320  [transition_density_standard_error]  `kernely` never named as code
+TRUE   src/ConditionalDensity.jl:338  [transition_density_with_standard_error]  `summary` never named as code; body names only (value, standard_error)/NamedTuple/normalize
+TRUE   src/ConditionalDensity.jl:338  [transition_density_with_standard_error]  `x` never named as code
+TRUE   src/ConditionalDensity.jl:338  [transition_density_with_standard_error]  `y` never named as code
+TRUE   src/ConditionalDensity.jl:338  [transition_density_with_standard_error]  `hx` never named as code
+TRUE   src/ConditionalDensity.jl:338  [transition_density_with_standard_error]  `hy` never named as code
+TRUE   src/ConditionalDensity.jl:338  [transition_density_with_standard_error]  `kernelx` never named as code
+TRUE   src/ConditionalDensity.jl:338  [transition_density_with_standard_error]  `kernely` never named as code
+TRUE   src/ConditionalExpectations.jl:152  [conditional_expectation_standard_error]  `summary` never named as code; body names only `degree`
+TRUE   src/ConditionalExpectations.jl:152  [conditional_expectation_standard_error]  `h` never named as code (only math h^2)
+TRUE   src/ConditionalExpectations.jl:152  [conditional_expectation_standard_error]  `kernel` never named as code
+TRUE   src/ConditionalExpectations.jl:195  [conditional_expectation_with_standard_error]  `summary` never named as code; body names value/standard_error/x/NamedTuple
+TRUE   src/ConditionalExpectations.jl:195  [conditional_expectation_with_standard_error]  `g` appears only in math
+TRUE   src/ConditionalExpectations.jl:195  [conditional_expectation_with_standard_error]  `h` never named as code
+TRUE   src/ConditionalExpectations.jl:195  [conditional_expectation_with_standard_error]  `kernel` never named as code
+TRUE   src/ConditionalExpectations.jl:195  [conditional_expectation_with_standard_error]  `degree` never named as code
+TRUE   src/ConditionalExpectations.jl:401  [conditional_variance_standard_error]  `summary` never named as code; body names only :residual/:plugin/method
+TRUE   src/ConditionalExpectations.jl:401  [conditional_variance_standard_error]  `x` appears only inside math (\ell(x), m(x))
+TRUE   src/ConditionalExpectations.jl:401  [conditional_variance_standard_error]  `h` never named as code
+TRUE   src/ConditionalExpectations.jl:401  [conditional_variance_standard_error]  `kernel` never named as code
+TRUE   src/ConditionalExpectations.jl:401  [conditional_variance_standard_error]  `degree` never named as code
+TRUE   src/ConditionalExpectations.jl:437  [conditional_variance_with_standard_error]  `summary` never named as code; body names value/method/:residual/:plugin/standard_error/x
+TRUE   src/ConditionalExpectations.jl:437  [conditional_variance_with_standard_error]  `h` never named as code
+TRUE   src/ConditionalExpectations.jl:437  [conditional_variance_with_standard_error]  `kernel` never named as code
+TRUE   src/ConditionalExpectations.jl:437  [conditional_variance_with_standard_error]  `degree` never named as code
+TRUE   src/ConditionalExpectations.jl:558  [conditional_pushforward_density_standard_error]  `summary` never named as code; body names only `degree` (and ``kernelz`` in math)
+TRUE   src/ConditionalExpectations.jl:558  [conditional_pushforward_density_standard_error]  `g` appears only in math g(Y)
+TRUE   src/ConditionalExpectations.jl:558  [conditional_pushforward_density_standard_error]  `hx` never named as code
+TRUE   src/ConditionalExpectations.jl:558  [conditional_pushforward_density_standard_error]  `hz` never named as code (only math h_z)
+TRUE   src/ConditionalExpectations.jl:558  [conditional_pushforward_density_standard_error]  `kernelx` never named as code
+TRUE   src/ConditionalExpectations.jl:596  [conditional_pushforward_density_with_standard_error]  `summary` never named as code; body names only `z` and `NamedTuple`; no Arguments line at all
+TRUE   src/ConditionalExpectations.jl:596  [conditional_pushforward_density_with_standard_error]  `g` never named as code
+TRUE   src/ConditionalExpectations.jl:596  [conditional_pushforward_density_with_standard_error]  `x` never named as code
+TRUE   src/ConditionalExpectations.jl:596  [conditional_pushforward_density_with_standard_error]  `hx` never named as code
+TRUE   src/ConditionalExpectations.jl:596  [conditional_pushforward_density_with_standard_error]  `hz` never named as code
+TRUE   src/ConditionalExpectations.jl:596  [conditional_pushforward_density_with_standard_error]  `kernelx` never named as code
+TRUE   src/ConditionalExpectations.jl:596  [conditional_pushforward_density_with_standard_error]  `kernelz` never named as code
+TRUE   src/ConditionalExpectations.jl:596  [conditional_pushforward_density_with_standard_error]  `degree` never named as code
+TRUE   src/Expectations.jl:106  [var]  `summary` never named as code; only `corrected` is
+TRUE   src/Expectations.jl:125  [std]  `summary` never named as code; only `corrected` is
+TRUE   src/Expectations.jl:327  [pushforward_density_standard_error]  `summary` never named as code; body names no argument at all
+TRUE   src/Expectations.jl:327  [pushforward_density_standard_error]  `g` appears only in math g(X)
+TRUE   src/Expectations.jl:327  [pushforward_density_standard_error]  `y` appears only in math
+TRUE   src/Expectations.jl:327  [pushforward_density_standard_error]  `h` appears only in math (nh, K_h)
+TRUE   src/Expectations.jl:327  [pushforward_density_standard_error]  `kernel` never named as code
+TRUE   src/Expectations.jl:357  [pushforward_density_with_standard_error]  `summary` never named as code; body names only `y` and `NamedTuple`
+TRUE   src/Expectations.jl:357  [pushforward_density_with_standard_error]  `g` never named as code
+TRUE   src/Expectations.jl:357  [pushforward_density_with_standard_error]  `h` never named as code
+TRUE   src/Expectations.jl:357  [pushforward_density_with_standard_error]  `kernel` never named as code
+TRUE   src/Histograms.jl:188  [Histogram2D]  `accumulator` never named as code; body says "`Float64` accumulation" and names `count = Float64`, `lag`, the box fields, but not the `accumulator` keyword
+TRUE   src/Histograms.jl:318  [observe_pairs!]  `summary` appears only in prose ("the per-lag summary"); `x_past`, `y_now` are named
+TRUE   src/MarginalDensity.jl:665  [density_standard_error]  `summary` never named as code (jldoctest uses `h` for the histogram)
+TRUE   src/MarginalDensity.jl:665  [density_standard_error]  `normalize` never named as code (h/kernel/adaptive/bounds/start/degree are)
+TRUE   src/MarginalDensity.jl:665  [density_standard_error]  `binning` never named as code
+TRUE   src/MarginalDensity.jl:743  [density_with_standard_error]  `summary` never named as code; body names only x/value/standard_error/NamedTuple
+TRUE   src/MarginalDensity.jl:743  [density_with_standard_error]  `h` never named as code in prose; the `h` in the jldoctest is a Histogram1D variable, not the bandwidth keyword (borderline under the letter; TRUE under the why)
+TRUE   src/MarginalDensity.jl:743  [density_with_standard_error]  `kernel` never named as code
+TRUE   src/MarginalDensity.jl:743  [density_with_standard_error]  `degree` never named as code
+TRUE   src/MarginalDensity.jl:743  [density_with_standard_error]  `adaptive` never named as code
+TRUE   src/MarginalDensity.jl:743  [density_with_standard_error]  `bounds` never named as code
+TRUE   src/MarginalDensity.jl:743  [density_with_standard_error]  `start` never named as code
+TRUE   src/MarginalDensity.jl:743  [density_with_standard_error]  `normalize` never named as code
+TRUE   src/MarginalDensity.jl:743  [density_with_standard_error]  `binning` never named as code
+
+TOTALS: 80 findings; 78 TRUE, 2 FALSE. All 80 reported lines point at the unit's docstring (its opening `"""`).
+
+Pattern the check missed (the 2 FALSE): an argument named inside a LONGER inline code span, here the call form
+`merge!(into, from; weight)` — the check evidently matches only a span whose whole content is the bare name
+(`into` is such a span in the same docstring, and was not flagged).
+
+Patterns behind the 78 TRUE, for the caller:
+- 15 docstrings delegate with "Arguments: as for [`other`](@ref ...)" (18 of the 20 flagged units are
+  *_standard_error / *_with_standard_error companions of a documented estimator). The rule as written does
+  not accept a cross-reference as naming, so these are TRUE under the letter; whether a delegation should
+  satisfy ARGCOV is a question for the rule, not for the findings.
+- `summary` is flagged in 19 of the 20 units: the receiver is written in prose ("the summary") and never as code.
+- Names that occur only in math (``x``, ``g(Y)``, h_z, \texttt{weight}) are not code. Note the check's own
+  leniency in the other direction: it did NOT flag `x`/`z`/`g` where they appear as ``x`` (Julia-Markdown
+  math, rendered as $x$), so it reads a double-backtick span as code; by the statement those are not named
+  as code either, and strictly a few more findings would be due (e.g. `x` at ConditionalDensity.jl:228,
+  `kernelz` at ConditionalExpectations.jl:558).

@@ -1,0 +1,17 @@
+# SS's derived public surface as the harness contracts read it.
+using GBGStreamingStatistics, GBGCodingTools
+const SS = GBGStreamingStatistics; const TH = GBGCodingTools.TestHarness
+function submodules(m, acc = Module[])
+    for n in names(m; all = true)
+        isdefined(m, n) || continue
+        v = getfield(m, n)
+        v isa Module && v !== m && parentmodule(v) === m && !(v in acc) && (push!(acc, v); submodules(v, acc))
+    end
+    return acc
+end
+mods = submodules(SS)
+println("modules: ", length(mods), ": ", join(nameof.(mods), ", "))
+ops = TH.package_operations(SS, mods); tys = TH.struct_types(mods)
+inplace = count(n -> endswith(String(n), "!"), ops)
+println(length(ops), " operations, ", inplace, " in-place, ", length(ops) - inplace, " value-returning; ", length(tys), " types")
+println("in-place: ", join(sort(String.(filter(n -> endswith(String(n), "!"), ops))), ", "))

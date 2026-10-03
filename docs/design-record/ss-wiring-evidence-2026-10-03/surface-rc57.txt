@@ -1,0 +1,3 @@
+modules: 9: Accumulators, Bandwidth, ConditionalDensity, ConditionalExpectations, Expectations, Histograms, Kernels, LocalPolynomial, MarginalDensity
+38 operations, 4 in-place, 34 value-returning; 4 types
+in-place: merge!, observe!, observe_pairs!, scale!
