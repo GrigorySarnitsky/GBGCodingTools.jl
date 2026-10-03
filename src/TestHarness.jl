@@ -123,26 +123,105 @@ const AUDITED_ALLOCATION_OPS = Set{Symbol}()
 """
     @alloc_below bound expr
 
-Warms `expr` up once (compilation, plans, first touch), then asserts a single call allocates strictly
-fewer than `bound` bytes. A thrown error becomes a failed test rather than aborting the testset, so one
-bad line cannot mask every check after it. The callee of `expr` (when it is a plain call) is recorded
-in [`AUDITED_ALLOCATION_OPS`](@ref). Splice a NAMED function rather than an anonymous closure: the
-expression is evaluated twice and an anonymous closure would get two types, the second read as a
-compile allocation.
+Asserts that one call of `expr`, after a warm-up, allocates fewer than `bound` bytes. A plain call is
+measured by [`allocated_call`](@ref), compiled for its arguments' types, so a bound of one byte holds
+where nothing is allocated; building the arguments is not counted, and other expressions are measured
+in place. Each run evaluates the whole expression, arguments included. A thrown error fails the
+check. A plain call's callee is recorded in [`AUDITED_ALLOCATION_OPS`](@ref).
 """
 macro alloc_below(bound, expr)
     callee = (expr isa Expr && expr.head === :call && expr.args[1] isa Symbol) ? expr.args[1] : nothing
     record = callee === nothing ? :() : :(push!($TestHarness.AUDITED_ALLOCATION_OPS, $(QuoteNode(callee))))
+    # The whole expression runs once in place to warm up, as it always has: an argument may have an effect
+    # each call needs, as GBGHomogeneousTurbulence's `step!(…, deposited_cache(SIM), …)` does. The measured
+    # call evaluates its arguments again, outside the count.
+    measure = something(barrier_call(expr), :(@allocated $(esc(expr))))
+    # The test is the measurement itself, at the caller's line, so a failure names the call it measured.
+    check = Expr(:macrocall, Symbol("@test"), __source__, :($measure < limit))
     quote
         $record
         local limit = $(esc(bound))
         try
             $(esc(expr))
-            @test (@allocated $(esc(expr))) < limit
+            $check
         catch err
             @error "alloc check threw (likely a test-side signature error, not an allocation)" exception = (err, catch_backtrace())
             @test false
         end
+    end
+end
+
+# The barrier for a call `f(args...; kws...)`: the callee, a tuple of the positional arguments and a
+# named tuple of the keywords, each evaluated once, handed to `allocated_call`. Splats stay splats. An
+# expression that is not a plain call, or one with a `do` block, gets `nothing` and is measured in place.
+# Measured in place, a keyword call on variables a testset reads from its module counted the run-time
+# lookup of their types: 48 to 208 bytes in GBGStreamingStatistics' `merge!`, so no bound could pin a
+# true zero (SS's request, 2026-10-03). SS asked for the count to be bound to a local before `@test`;
+# measured, that changed nothing.
+function barrier_call(expr)
+    expr isa Expr && expr.head === :call || return nothing
+    # a dotted operator, `x .+ y`, is a broadcast spelled as a call to a name that is no function
+    f = expr.args[1]
+    f isa Symbol && startswith(String(f), ".") && return nothing
+    carried(x) = :($TestHarness.carry($(esc(x))))
+    every(x) = Expr(:..., :(map($TestHarness.carry, Tuple($(esc(x))))))
+    everykw(x) = Expr(:..., :(map($TestHarness.carry, $(Expr(:tuple, Expr(:parameters, Expr(:..., esc(x))))))))
+    positional = Any[]; keywords = Any[]
+    for a in expr.args[2:end]
+        if a isa Expr && a.head === :parameters
+            for k in a.args
+                k isa Expr && k.head === :kw ? push!(keywords, Expr(:(=), esc(k.args[1]), carried(k.args[2]))) :
+                k isa Expr && k.head === :... ? push!(keywords, everykw(k.args[1])) :
+                k isa Symbol ? push!(keywords, Expr(:(=), esc(k), carried(k))) : return nothing
+            end
+        elseif a isa Expr && a.head === :kw
+            push!(keywords, Expr(:(=), esc(a.args[1]), carried(a.args[2])))
+        elseif a isa Expr && a.head === :...
+            push!(positional, every(a.args[1]))
+        else
+            push!(positional, carried(a))
+        end
+    end
+    return :($TestHarness.allocated_call($(esc(expr.args[1])), ($(positional...),),
+                                         $(Expr(:tuple, Expr(:parameters, keywords...)))))
+end
+
+# A type passed as an argument rides as `TypeArgument{T}()`, so the tuple carrying it is concrete and the
+# call is compiled for `T` itself; a `DataType` element would leave it a dynamic call (review, 2026-10-03).
+struct TypeArgument{T} end
+carry(x) = x
+carry(::Type{T}) where {T} = TypeArgument{T}()
+
+"""
+    allocated_call(f, args, kwargs) -> Int
+
+The bytes one call `f(args...; kwargs...)` allocates, measured inside a function generated for the
+arguments' types, so that looking up a variable's type is not counted.
+[`@alloc_below`](@ref) measures a plain call through it, after running the call once to warm it up. The keywords arrive as a named tuple and are
+passed on as a [keyword splat](https://docs.julialang.org/en/v1/manual/functions/#Keyword-Arguments).
+
+# Arguments
+
+- `f` — the operation.
+- `args` — its positional arguments, a tuple.
+- `kwargs` — its keyword arguments, a named tuple.
+
+Returns the count. The call is written out argument by argument, because a splat of more than 32 is
+applied dynamically and allocates; a test of a 33-operand sum met that. Its result is kept alive, so a
+returned array is counted. A type passed directly, as `(Float64, x)`, is measured dynamically: the
+macro carries each type so the call is compiled for it.
+"""
+@generated function allocated_call(f, args::Tuple, kwargs::NamedTuple)
+    value(T, ex) = T <: TypeArgument ? T.parameters[1] : ex
+    pos = [value(args.parameters[i], :(args[$i])) for i in 1:length(args.parameters)]
+    names, types = kwargs.parameters[1], kwargs.parameters[2].parameters
+    kws = [Expr(:kw, names[i], value(types[i], :(getfield(kwargs, $(QuoteNode(names[i])))))) for i in eachindex(names)]
+    call = Expr(:call, :f, Expr(:parameters, kws...), pos...)
+    return quote
+        local result
+        local bytes = @allocated (result = $call)
+        Base.donotdelete(result)
+        bytes
     end
 end
 

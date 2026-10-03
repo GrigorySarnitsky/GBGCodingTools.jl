@@ -11,6 +11,7 @@ GBGCodingTools.TestHarness
 
 ```@docs
 GBGCodingTools.TestHarness.@alloc_below
+GBGCodingTools.TestHarness.allocated_call
 GBGCodingTools.TestHarness.CountingArray
 GBGCodingTools.TestHarness.counting
 GBGCodingTools.TestHarness.Traffic

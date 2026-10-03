@@ -4,6 +4,26 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.58 — 2026-10-04
+
+PATCH, GBGStreamingStatistics' request of 2026-10-03:
+
+- **`@alloc_below` can pin an exact zero.** It measured a call in place, so a keyword call on variables
+  a testset reads from its module counted the run-time lookup of their types: 48 to 208 bytes in SS's
+  `merge!`, and `@alloc_below 1` could never hold for an operation that allocates nothing. A plain call
+  is now measured behind a function barrier, `TestHarness.allocated_call`, generated for the arguments'
+  types and written out argument by argument, so a splat of more than 32 operands is not applied
+  dynamically; a type argument is carried so the call is compiled for it; the call's result is kept
+  alive, so a returned array is counted. The whole expression still runs once in place to warm up, and
+  the measured call evaluates its arguments again, outside the count. Any other expression — a
+  broadcast, a dotted operator, a `do` block — is measured in place, as before. A failure now names the
+  measured call at the caller's line.
+- SS asked for the count to be bound to a local before the `@test`; measured, that changes nothing: the
+  cause was the lookup, not the capture. GBGPeriodicFields' and GBGHomogeneousTurbulence's bounds are
+  kilobytes and hid the cost. Two first drafts of the barrier were reviewed and refused: one allocated
+  on PF's 33-operand rows, and one built the arguments once for two calls, which HT's `step!` refuses,
+  since every call needs a fresh deposit.
+
 ## 2.0.0-rc.57 — 2026-10-03
 
 PATCH, from GBGPeriodicFields' notes on the device-cost harness:

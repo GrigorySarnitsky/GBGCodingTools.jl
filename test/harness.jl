@@ -96,3 +96,45 @@ end
     @test TH.device_cost([plain], copy, sync; bounds = Dict(:plain => 1e6), reps = 5) !== nothing
     @test (@test_logs (:warn, r"skipped, not passed") match_mode = :any TH.device_cost(NamedTuple[], copy, sync)) === nothing
 end
+
+# `@alloc_below 1` could not hold for an operation that allocates nothing: measured in place, a keyword
+# call on variables a testset reads from the module read 176 bytes here, and 48 to 208 in
+# GBGStreamingStatistics' `merge!`, from looking up the variables' types (SS's request, 2026-10-03).
+# Measured behind the barrier, every call shape reads its own allocation and nothing else.
+struct AllocBox; c::Vector{Float64}; end
+alloc_merge!(a::AllocBox, b::AllocBox; weight = 1.0) = (a.c .+= weight .* b.c; a)
+alloc_grow(a::AllocBox) = push!(copy(a.c), 1.0)
+alloc_a = AllocBox(zeros(1000)); alloc_b = AllocBox(ones(1000)); alloc_w = 0.5
+alloc_kw = (; weight = 0.25); alloc_xs = (alloc_a, alloc_b)
+alloc_sum!(out, xs...) = (out .= 0; for x in xs; out .+= x; end; out)
+alloc_fill!(out, ::Type{T}, v) where {T} = (out .= T(v); out)
+alloc_fill!(out, ::Type{T}; value) where {T} = (out .= T(value); out)
+alloc_pair(x) = [x, x]
+alloc_token = Ref(0)
+alloc_fresh!(t) = (t[] += 1; t)
+alloc_use!(t) = (t[] == 1 || error("used without a fresh deposit"); t[] = 0; t)
+alloc_out = zeros(Float32, 8); alloc_many = Tuple(fill(ones(Float32, 8), 33))
+
+@testset "an operation that allocates nothing holds at a bound of one byte" begin
+    TH.@alloc_below 1 alloc_merge!(alloc_a, alloc_b)
+    TH.@alloc_below 1 alloc_merge!(alloc_a, alloc_b; weight = 0.5)
+    TH.@alloc_below 1 alloc_merge!(alloc_a, alloc_b, weight = alloc_w)
+    TH.@alloc_below 1 alloc_merge!(alloc_a, alloc_b; alloc_kw...)
+    TH.@alloc_below 1 alloc_merge!(alloc_xs...)
+    @test :alloc_merge! in TH.AUDITED_ALLOCATION_OPS
+    # a real allocation is still counted, whole
+    @test TH.allocated_call(alloc_grow, (alloc_a,), (;)) >= sizeof(alloc_a.c)
+    TH.@alloc_below 4 * sizeof(alloc_a.c) alloc_grow(alloc_a)
+    # what the first barrier got wrong (review, 2026-10-03): a splat of more than 32 arguments is applied
+    # dynamically and allocated; a type argument made the call dynamic; a dotted operator was taken for
+    # a function; and a returned allocation could be deleted unseen
+    TH.@alloc_below 1 alloc_sum!(alloc_out, alloc_many...)
+    TH.@alloc_below 1 alloc_fill!(alloc_out, Float32, alloc_w)
+    TH.@alloc_below 1 alloc_fill!(alloc_out, Float32; value = alloc_w)
+    TH.@alloc_below 1 alloc_merge!(alloc_a, alloc_b; Dict(:weight => 0.5)...)
+    TH.@alloc_below 4 * sizeof(alloc_a.c) alloc_a.c .+ alloc_b.c
+    @test TH.allocated_call(alloc_pair, (1.0,), (;)) > 0
+    # each run evaluates its arguments: HT's `step!` needs a fresh deposit for every call
+    TH.@alloc_below 1 alloc_use!(alloc_fresh!(alloc_token))
+    @test alloc_token[] == 0
+end
