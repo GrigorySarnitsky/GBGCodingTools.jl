@@ -16,7 +16,8 @@ The engines behind a consumer's `test/`: the allocation audit ([`@alloc_below`](
 method-parity baselines ([`TestHarness.method_parity`](@ref)), the oracle registry
 ([`TestHarness.oracle_registry`](@ref)), the display gate ([`TestHarness.display_gate`](@ref)), the
 cross-thread-count digest ([`TestHarness.thread_digest`](@ref)), seed parity across backends
-([`TestHarness.seed_parity`](@ref)), the promoted-witness loop
+([`TestHarness.seed_parity`](@ref)), device time against memory
+([`TestHarness.device_cost`](@ref)), the promoted-witness loop
 ([`TestHarness.run_regressions`](@ref)). The tables a package freezes live in the consumer as TOML.
 """
 module TestHarness
@@ -783,6 +784,101 @@ function seed_parity(draws, backends; seed::Integer = 1, other_seed::Integer = s
             for (backend, names) in result.planted
                 isempty(names) || @error "a run from another seed was not told apart" backend names
                 @test isempty(names)
+            end
+        end
+    end
+    return result
+end
+
+# ─────────────────────────────────────────────────────────────────────────────────── device cost
+
+"""
+    fastest(run, sync; reps = 30, warmup = 3) -> Tuple{Float64,Float64}
+
+The fastest and the median wall time of one call of `run`, in seconds.
+
+# Arguments
+
+- `run` — the operation, called with no argument.
+- `sync` — what waits until the device has finished: a device runs asynchronously, and a clock read
+  before it has finished times the launch, not the work.
+- `reps`, `warmup` — the timed calls, and the calls before them that compile and warm the caches.
+
+Returns the two times. The fastest is the cost; the median beside it says how busy the machine was.
+"""
+function fastest(run, sync; reps::Integer = 30, warmup::Integer = 3)
+    for _ in 1:warmup; run(); sync(); end
+    times = Float64[]
+    for _ in 1:reps
+        sync(); t0 = time_ns(); run(); sync(); push!(times, (time_ns() - t0) / 1e9)
+    end
+    sort!(times)
+    return (first(times), times[cld(length(times), 2)])
+end
+
+"""
+    device_measure(cases, copy, sync; reps = 30, warmup = 3) -> NamedTuple
+
+What [`device_cost`](@ref) tests, measured without testing it: each operation's time against the time
+the device takes to move the memory it must move.
+
+# Arguments
+
+- `cases` — the operations: `(name, run, bytes)`, `run` doing one call on the device and `bytes` the
+  least memory it must read and write, which a traffic audit knows or a field's size gives.
+- `copy` — a copy on the same device, `(run, bytes)`, whose rate is the bandwidth the ratios are taken
+  against; measured in the same run, it moves with the clocks and the power limit.
+- `sync` — what waits until the device has finished.
+- `reps`, `warmup` — as [`fastest`](@ref) takes them.
+
+Returns `(bandwidth, rows, busy)`: the copy's bytes per second; per operation its name, its fastest time,
+its bytes and its ratio, the time over the time the bandwidth needs for the bytes; and whether the
+median runs ran half again over the fastest, a sign another load shared the device.
+"""
+function device_measure(cases, copy, sync; reps::Integer = 30, warmup::Integer = 3)
+    t_copy, m_copy = fastest(copy.run, sync; reps, warmup)
+    bandwidth = copy.bytes / t_copy
+    rows = NamedTuple[]; busy = m_copy > 1.5 * t_copy
+    for c in cases
+        t, m = fastest(c.run, sync; reps, warmup)
+        busy |= m > 1.5 * t
+        push!(rows, (name = c.name, seconds = t, bytes = c.bytes, ratio = t / (c.bytes / bandwidth)))
+    end
+    return (bandwidth = bandwidth, rows = rows, busy = busy)
+end
+
+"""
+    device_cost(cases, copy, sync; bounds = Dict(), reps = 30, warmup = 3)
+
+The device-cost contract, `RULE.TEST.DEVICE_COST`: a device operation is timed against the memory it
+must move, and holds at or below the ratio its package froze for it.
+
+# Arguments
+
+- `cases`, `copy`, `sync` — as [`device_measure`](@ref) takes them; `cases` empty, as on a machine with
+  no device, records a skip and never a pass.
+- `bounds` — the ratio frozen per operation's name; one with no bound is measured and reported, not
+  judged, until its package freezes one from what it measured.
+- `reps`, `warmup` — as [`fastest`](@ref) takes them.
+
+Runs as a `@testset`, and warns when the machine looked busy, since a timing then overstates the cost.
+Returns what `device_measure` measured, or `nothing` when skipped.
+"""
+function device_cost(cases, copy, sync; bounds::AbstractDict = Dict{Symbol,Float64}(),
+                     reps::Integer = 30, warmup::Integer = 3)
+    result = nothing
+    @testset "each device operation against the memory it must move" begin
+        if isempty(cases)
+            @warn "device cost: no device operation given, so nothing is timed; skipped, not passed"
+            @test_skip false
+        else
+            result = device_measure(cases, copy, sync; reps, warmup)
+            result.busy && @warn "device cost: the median runs ran half again over the fastest; another load may share the device, and the ratios overstate"
+            for r in result.rows
+                @info "device cost" r.name ratio = round(r.ratio; digits = 2) seconds = r.seconds r.bytes
+                haskey(bounds, r.name) || continue
+                r.ratio <= bounds[r.name] || @error "a device operation costs more than its frozen ratio" r.name r.ratio bound = bounds[r.name]
+                @test r.ratio <= bounds[r.name]
             end
         end
     end

@@ -55,6 +55,17 @@ const SEED_PARITY = Model.Rule(
     filesets = [Model.FileSet.TESTS, Model.FileSet.CODE],
     unchecked_reason = "an instruction to the session of a package that has declared this contract by calling `TestHarness.seed_parity` from its GPU tests, where those tests check it; without a GPU they record a skip, never a pass, so it cannot run on CI; a package that has not declared it is not bound, and nothing checks it here")
 
+# Asked for by GBGPeriodicFields, for GBGHomogeneousTurbulence too (the owner, 2026-10-03): the traffic
+# audit counts what an operation reads and writes, and an operation at that count can still be slow, the
+# excess being computation — HT's `weighted_inner` ran 40–60% over a plain read on its card.
+const DEVICE_COST = Model.Rule(
+    id = Symbol("RULE.TEST.DEVICE_COST"),
+    statement = "In a package that declares the device-cost audit, each audited device operation is timed against the memory it must move, in a ratio to a copy measured in the same run, and holds at or below the ratio frozen for it.",
+    why = "A count of reads and writes cannot see computation that costs time; only a timing against the least traffic can. The copy measured beside it keeps the ratio honest under the device's clocks and power limit; the fastest of many runs is the cost, and a frozen bound is refrozen in the commit that changes the operation, with the reason.",
+    intention = Model.Intention.CODE,
+    filesets = [Model.FileSet.TESTS, Model.FileSet.CODE],
+    unchecked_reason = "an instruction to the session of a package that has declared this contract by calling `TestHarness.device_cost` from its GPU tests, where those tests check it; without a device they record a skip, never a pass, so it cannot run on CI; a package that has not declared it is not bound, and nothing checks it here")
+
 const PASS_AUDIT = Model.Rule(
     id = Symbol("RULE.TEST.PASS_AUDIT"),
     statement = "In a package that declares the traffic audit, every audited operation has a frozen per-array traffic row with a named holder for any gap.",
@@ -108,6 +119,6 @@ const EXAMPLES_RUN = Model.Rule(
 
 The rules of this family that no program decides.
 """
-const RULES = Model.Rule[GATE_VS_SURVEY, ORACLE_INDEPENDENT, DEFINITION_OF_DONE, ALLOC_ZERO, PASS_AUDIT, METHOD_PARITY, SEED_PARITY, MUTATION, BOTH_DIRECTIONS, MISSING_IS_FAILING, EXAMPLES_RUN]
+const RULES = Model.Rule[GATE_VS_SURVEY, ORACLE_INDEPENDENT, DEFINITION_OF_DONE, ALLOC_ZERO, PASS_AUDIT, METHOD_PARITY, SEED_PARITY, DEVICE_COST, MUTATION, BOTH_DIRECTIONS, MISSING_IS_FAILING, EXAMPLES_RUN]
 
 end # module JudgementTest

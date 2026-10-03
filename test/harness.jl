@@ -75,3 +75,24 @@ fixed_rounded(f) = (seed, backend) -> (exact = (s = [seed],), rounded = (f = see
     @test TH.seed_parity(draws, [:cpu, :same]).ok
     @test (@test_logs (:warn, r"skipped, not passed") match_mode = :any TH.seed_parity(draws, [:cpu])) === nothing
 end
+
+# The device-cost contract's engine, on the CPU: a copy gives the bandwidth, a plain read of a vector
+# costs about its bytes, and the same read with a sine per element costs more — computation a traffic
+# count cannot see, which is what the contract exists to find (PF's request, 2026-10-03).
+@testset "device cost" begin
+    n = 2^20
+    src = rand(n); dst = similar(src); sink = Ref(0.0)
+    copy = (run = () -> copyto!(dst, src), bytes = 2 * sizeof(src))
+    plain = (name = :plain, run = () -> (sink[] = sum(src)), bytes = sizeof(src))
+    heavy = (name = :heavy, run = () -> (sink[] = sum(sin, src)), bytes = sizeof(src))
+    sync = () -> nothing
+    t, m = TH.fastest(plain.run, sync; reps = 5)
+    @test 0 < t <= m
+    r = TH.device_measure([plain, heavy], copy, sync; reps = 10)
+    @test r.bandwidth > 0
+    ratio(name) = only(x.ratio for x in r.rows if x.name === name)
+    @test ratio(:heavy) > 2 * ratio(:plain)                      # the computation shows in the ratio
+    # through the testset: an operation with a generous frozen bound passes; none given is a skip
+    @test TH.device_cost([plain], copy, sync; bounds = Dict(:plain => 1e6), reps = 5) !== nothing
+    @test (@test_logs (:warn, r"skipped, not passed") match_mode = :any TH.device_cost(NamedTuple[], copy, sync)) === nothing
+end

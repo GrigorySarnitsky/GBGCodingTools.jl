@@ -4,6 +4,21 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.56 — 2026-10-03
+
+MINOR, GBGPeriodicFields' request of 2026-10-03, for GBGHomogeneousTurbulence too (the owner):
+
+- **`RULE.TEST.DEVICE_COST`, a new harness contract:** in a package that declares it, each audited
+  device operation is timed against the memory it must move, in a ratio to a copy measured in the same
+  run, and holds at or below the ratio frozen for it. 109 rules.
+- **`TestHarness.device_cost(cases, copy, sync; bounds)`**, which a package's GPU tests call: each case
+  is `(name, run, bytes)`, the least bytes given by the package — from its traffic audit, or from its
+  fields' sizes; `copy` is a copy on the same device, whose rate is the bandwidth; `sync` waits for the
+  device. The fastest of many runs is the cost, the median beside it flags a busy machine, and an
+  operation with no frozen bound is measured and reported, not judged. With no case, a skip, never a
+  pass. `device_measure` returns the figures, `fastest` times one call. Measured on the CPU: a read
+  with a sine per element comes out costlier than a plain read of the same bytes.
+
 ## 2.0.0-rc.55 — 2026-10-03
 
 MINOR, GBGHomogeneousTurbulence's request of 2026-10-03, so its last two doc lints can go:

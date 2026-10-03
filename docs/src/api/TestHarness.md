@@ -32,6 +32,9 @@ GBGCodingTools.TestHarness.seed_parity
 GBGCodingTools.TestHarness.seed_measure
 GBGCodingTools.TestHarness.seed_difference
 GBGCodingTools.TestHarness.seed_identical
+GBGCodingTools.TestHarness.device_cost
+GBGCodingTools.TestHarness.device_measure
+GBGCodingTools.TestHarness.fastest
 ```
 
 ## Gates
