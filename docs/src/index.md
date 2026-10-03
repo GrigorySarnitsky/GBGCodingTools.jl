@@ -71,7 +71,7 @@ where the sessions read them.
 
 Running [`gbg init`](@ref GBGCodingTools.Wire.init) in the package writes its `.gbg/config.jl` and then everything that config
 generates: the rulebook under `.gbg/policy/`, a managed block of the package's `CLAUDE.md`, the
-end-of-turn hook, and `GBGCodingTools = "=X.Y.Z"` in the docs and test environments. A small launcher script,
+end-of-turn hook, and `GBGCodingTools = "=X.Y.Z"` in each environment naming the tool. A small launcher script,
 also named `gbg` and installed once per machine by [`gbg install`](@ref GBGCodingTools.cmd_install), runs whichever version the package in
 the current directory pins.
 

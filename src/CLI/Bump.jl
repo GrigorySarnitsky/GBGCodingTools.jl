@@ -12,6 +12,7 @@ the new rules, and that is where a newer rulebook's opinions about its prose app
 """
 module Bump
 
+using TOML
 using ..GBGCodingTools: GBGCodingTools, ConfigIO, Model, Render, parse_options, VERBS
 
 """
@@ -46,7 +47,7 @@ Moves the pin of the package at `root` to `version` and rewrites its wiring.
 - `io` — where the report goes.
 
 Exit 0 when the pin moved, 1 when a generated path is the package's own file and was kept, 2 when the
-config could not be read or the pin line could not be found.
+config, or an environment's `Project.toml`, could not be read, or the pin line could not be found.
 
 A PRERELEASE may be pinned. It was refused here until 2026-09-18, on the reasoning that a candidate is
 not a release; the refusal bought nothing and the cost was concrete. A tag is immutable whether or not
@@ -65,6 +66,10 @@ function bump(root::AbstractString, version::VersionNumber; io::IO = stdout)
         return 2
     end
 
+    # an environment that does not parse would be left behind on the old pin, so nothing moves at all
+    broken = [e for e in Render.pin_envs(root) if isfile(joinpath(root, e, "Project.toml")) &&
+                                                  !(TOML.tryparse(read(joinpath(root, e, "Project.toml"), String)) isa Dict)]
+    isempty(broken) || (println(io, "bump: ", join(broken .* "/Project.toml", ", "), " does not parse; fix it first"); return 2)
     set_pin(root, version) || (println(io, "bump: no `tool = …` line in .gbg/config.jl to move"); return 2)
     cfg = ConfigIO.read_config(root)                 # we just wrote it; failing to read it back is a crash
     changed, refused = Render.write_all(cfg, root)
@@ -110,7 +115,7 @@ function stale_warning(io::IO, version, running, root::AbstractString)
     println(io, "is RUNNING, and the running code is whatever the environments' manifests still hold — not")
     println(io, "what you have just pinned. Move them, then regenerate under the new code:")
     println(io, "")
-    for env in ("docs", "test")
+    for env in Render.pin_envs(root)
         c = move_command(root, env)
         isempty(c) || println(io, "    ", c)
     end
@@ -128,7 +133,7 @@ end
 
 The command that moves the environment `env` of the package at `root` onto the tag just pinned, or an
 empty string when there is nothing to move. The arguments are `root`, the package root, and `env`, the
-environment's directory under it, `"docs"` or `"test"`.
+environment's directory under it, one of `Render.pin_envs`.
 
 Returns an update of the tool where the environment's manifest already holds it, and a resolve where
 it does not. A test environment with no manifest gets nothing: `Pkg.test()` resolves it, and resolving
@@ -145,11 +150,11 @@ function move_command(root::AbstractString, env::AbstractString)
     manifests = filter(f -> occursin(r"^Manifest(-v[0-9.]+)?\.toml$", f), readdir(joinpath(root, env)))
     if isempty(manifests)
         env == "test" && return ""
-        return "julia --project=$env -e 'using Pkg; Pkg.resolve()'"
+        return "julia --project=\"$env\" -e 'using Pkg; Pkg.resolve()'"
     end
     holds = any(m -> occursin(r"(?m)^\[\[deps\.GBGCodingTools\]\]", read(joinpath(root, env, m), String)), manifests)
-    return holds ? "julia --project=$env -e 'using Pkg; Pkg.update(\"GBGCodingTools\")'" :
-                   "julia --project=$env -e 'using Pkg; Pkg.resolve()'"
+    return holds ? "julia --project=\"$env\" -e 'using Pkg; Pkg.update(\"GBGCodingTools\")'" :
+                   "julia --project=\"$env\" -e 'using Pkg; Pkg.resolve()'"
 end
 
 function cmd_bump(args)

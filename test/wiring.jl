@@ -464,6 +464,77 @@ end
         @test !occursin("[sources.", read(pj, String))              # inline, as Pkg writes it
     end
 
+    # GBGPeriodicFields tests on a device from `test/gpu/cuda` and `test/gpu/rocm`, each naming this package
+    # for the device-cost harness; `bump` moved only `docs` and `test`, and the two were moved by hand
+    # (2026-10-03). The file was also written whole, which would have deleted the comments kept beside a bound.
+    @testset "every environment naming the tool carries the pin, and keeps its comments" begin
+        dir, cfg = wired_package()
+        write(joinpath(dir, "Project.toml"), "name = \"Sample\"\n")
+        named = "[deps]\n" * RN.PKG * " = \"" * RN.PKG_UUID * "\"\n"
+        gpu = joinpath(dir, "test", "gpu", "cuda"); mkpath(gpu); pj = joinpath(gpu, "Project.toml")
+        write(pj, named * "CUDA = \"052768ef-5323-5732-b1bb-66c8b64840ba\"\n\n[sources]\n" * RN.PKG *
+                  " = {rev = \"v2.0.0-rc.56\", url = \"" * RN.PKG_URL * "\"}\n\n[compat]\n" * RN.PKG *
+                  " = \"=2.0.0\"\n# a library bound, explained\nCUDA = \"6.2\"\n")
+        write(joinpath(gpu, "Manifest.toml"), "[[deps.GBGCodingTools]]\nuuid = \"x\"\n")
+        # another package below this one — the fixture — is that package's, and an ignored one is no environment
+        other = joinpath(dir, "fixture", "Other"); mkpath(joinpath(other, "docs"))
+        write(joinpath(other, "Project.toml"), "name = \"Other\"\nuuid = \"8d4f2a10-0000-4000-8000-000000000001\"\n")
+        write(joinpath(other, "docs", "Project.toml"), named)
+        mkpath(joinpath(dir, "test", "scratch")); write(joinpath(dir, "test", "scratch", "Project.toml"), named)
+        write(joinpath(dir, ".gitignore"), read(joinpath(dir, ".gitignore"), String) * "/test/scratch/\n")
+        @test RN.pin_envs(dir) == ["docs", "test", "test/gpu/cuda"]
+        # the wiring check reports it, and the bump says how to move it
+        @test any(l -> l.file == joinpath("test/gpu/cuda", "Project.toml"), RN.wiring(cfg, dir))
+        @test occursin("--project=\"test/gpu/cuda\" -e 'using Pkg; Pkg.update(\"GBGCodingTools\")'",
+                       sprint(io -> G.Bump.stale_warning(io, v"2.0.0-rc.57", v"2.0.0-rc.56", dir)))
+        # a release moves one line; the comment stays where it was
+        moved = G.Model.Config(package = "Sample", tool = v"2.0.0-rc.57")
+        before = read(pj, String)
+        @test RN.write_pin(moved, dir, "test/gpu/cuda") && !RN.write_pin(moved, dir, "test/gpu/cuda")
+        @test read(pj, String) == replace(before, "v2.0.0-rc.56" => "v2.0.0-rc.57")
+        @test RN.pin_drift(moved, dir, "test/gpu/cuda") === nothing
+        # a checkout drops the compat line and keeps the rest; `sync` writes every environment
+        @test "test/gpu/cuda/Project.toml" in RN.write_all(cfg, dir).changed
+        @test isempty(RN.wiring(cfg, dir))
+        @test occursin("# a library bound, explained\nCUDA = \"6.2\"", read(pj, String))
+        @test !occursin("=2.0.0", read(pj, String))
+    end
+
+    # What the review of rc.57 found: a comment on the pin's own line was dropped and a right line
+    # rewritten on every sync; a CRLF file came back with mixed endings; a test environment carrying a
+    # `name` hid every environment below it; and a directory with a space broke the move command.
+    @testset "the pin's line keeps its comment and its file's endings, and only a package hides what is below it" begin
+        rel(v) = G.Model.Config(package = "Sample", tool = v)
+        dir, _ = wired_package()
+        pj = joinpath(dir, "test", "Project.toml")
+        RN.write_pin(rel(v"2.0.0-rc.56"), dir, "test")
+        text = replace(read(pj, String), r"(?m)^(GBGCodingTools = \"=2\.0\.0\")\n" => s"\1  # why it is bound\n")
+        write(pj, text)
+        @test !RN.write_pin(rel(v"2.0.0-rc.56"), dir, "test")       # a right line is left as written
+        @test RN.write_pin(rel(v"2.0.0-rc.57"), dir, "test")
+        @test read(pj, String) == replace(text, "v2.0.0-rc.56" => "v2.0.0-rc.57")
+        write(pj, replace(text, "\n" => "\r\n"))
+        @test RN.write_pin(rel(v"2.0.0-rc.57"), dir, "test")
+        @test !occursin(r"[^\r]\n", read(pj, String))
+        # a table the file lacks is no place for a line: the file is written whole
+        write(pj, "[deps]\n" * RN.PKG * " = \"" * RN.PKG_UUID * "\"\n")
+        @test RN.write_pin(rel(v"2.0.0-rc.57"), dir, "test") && RN.pin_drift(rel(v"2.0.0-rc.57"), dir, "test") === nothing
+        # a test environment with a name is not a package; one that does not parse is reported, not skipped
+        write(pj, "name = \"T\"\n" * read(pj, String))
+        mkpath(joinpath(dir, "test", "gpu lane"))
+        write(joinpath(dir, "test", "gpu lane", "Project.toml"), "[deps]\n" * RN.PKG * " = \"" * RN.PKG_UUID * "\"\n[[\n")
+        @test RN.pin_envs(dir) == ["docs", "test", "test/gpu lane"]
+        @test RN.pin_drift(rel(v"2.0.0-rc.57"), dir, "test/gpu lane") == "test/gpu lane/Project.toml does not parse"
+        # sync leaves it for the wiring check, and bump moves nothing rather than leave it behind
+        broken = read(joinpath(dir, "test", "gpu lane", "Project.toml"), String)
+        @test !RN.write_pin(rel(v"2.0.0-rc.57"), dir, "test/gpu lane")
+        config = read(joinpath(dir, ".gbg", "config.jl"), String)
+        @test G.Bump.bump(dir, v"2.0.0-rc.57"; io = IOBuffer()) == 2
+        @test read(joinpath(dir, ".gbg", "config.jl"), String) == config
+        @test read(joinpath(dir, "test", "gpu lane", "Project.toml"), String) == broken
+        @test G.Bump.move_command(dir, "test/gpu lane") == "julia --project=\"test/gpu lane\" -e 'using Pkg; Pkg.resolve()'"
+    end
+
     # The block was found by substring, with a trailing newline the file did not have, so a block that
     # ended its file could not be repaired; a marker mentioned in the package's own prose above the
     # block began the block there, and the prose was eaten; and a block written twice stayed twice.

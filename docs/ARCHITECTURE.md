@@ -642,7 +642,7 @@ is, with the three rows marked future read as future.
 | `.gbg/policy/*.md` (statements, no examples); the tooling package's block in `CLAUDE.md` | sessions | `Render.policy` |
 | one `.claude/skills/<instrument>/SKILL.md` per built instrument that applies | Claude Code | `Render.skill` |
 | agents' arguments and output schemas, under `.gbg/scratch/<run>/` | the Workflow tool, agents | `Agents`; the driver is this package's tracked `drivers/run.js` |
-| the pin in `docs/Project.toml` and `test/Project.toml` | Pkg | `Render.pin` |
+| the tool's pin, in each environment | Pkg | `Render.write_pin` |
 | the tooling package's block in `.gitignore`, the CI workflow files, the end-of-turn hook | git, GitHub, Claude Code | `Render.gitignore`, `Render.ci`, `Render.hook` |
 | one small page on each consumer's site, under its design or internals section: what the documentation is held to, a link to this package's site, and the switches with their reasons — nothing else of the tool [ruled 2026-09-23; the rulebook, readers and instruments pages it replaced are §3 of the decision log] | readers of a consumer's site | `Render.pages`, called by `docs/make.jl` |
 | the rulebook as a page, grouped by cover, an anchor per rule, with the glossary — on this package's site alone | readers of this site | `Render.rulebook_page`, called by this package's `docs/make.jl` only |
@@ -822,7 +822,7 @@ about the fixer, not a budget (§4.4 step 2).
 ## 11. How GBGCodingTools plugs into a package
 
 **The pinned version.** `Config.tool` names one released version (as ruled) — `:dev` only in the tooling package's own
-checkout — which `gbg sync` writes into the docs and test environments, and into neither package's own dependencies.
+checkout — which `gbg sync` writes into each environment naming the tool, and into neither package's own dependencies.
 `gbg bump` runs only on the owner's request; it changes the pin and regenerates every generated part, checking nothing
 first: the new rules arrive only when the environments move, so the next build under them judges the package.
 
@@ -858,7 +858,7 @@ module's [a check with no input reports clean].
 .claude/WORK_QUEUE.md        the owner's items, guarded; under an unguarded heading, each run's leftovers
 .claude/settings.json        the end-of-turn hook, generated
 CLAUDE.md                    the tooling package's block generated; the rest belongs to the package
-docs/, test/Project.toml     the pin, generated into both environments
+…/Project.toml               the pin, generated into every environment naming the tool
 .gitignore, CI workflows     the tooling package's block and its workflow files, generated
 test/regressions/            accepted failing tests; escalated/ holds those awaiting an answer
 ```

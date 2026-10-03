@@ -23,6 +23,7 @@ module Render
 using TOML, JSON3
 
 using ..Model
+using ..Texts
 using ..Catalogue
 using ..ConfigIO
 using ..Engine
@@ -510,11 +511,51 @@ const PKG_URL = "https://github.com/GrigorySarnitsky/GBGCodingTools.jl.git"
 """
     SUBENVS
 
-The sub-environments of a package that must see this one: the documentation build and the test suite.
+The environments of a package that always see this one: the documentation build and the test suite.
 Both run this package's checks, so both name it, and a package whose two environments disagree about
 which version to use gets two different answers from the same commit.
 """
 const SUBENVS = ["docs", "test"]
+
+"""
+    pin_envs(root) -> Vector{String}
+
+Every environment of the package at `root` that must carry the pin: the two of [`SUBENVS`](@ref), and
+every other environment below the root whose `[deps]` names this package. The argument is `root`, the
+package root. Returns the environments' directories, relative to it.
+
+A package may test on a device from an environment of its own, and that environment names this package
+to reach the device-cost harness. [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)
+holds two, `test/gpu/cuda` and `test/gpu/rocm`, and moved their pins by hand while `bump` moved only
+the two it knew (2026-10-03): an environment the bump does not move tests on the old version and says
+nothing. They are found by reading the files, not by asking git, since the wiring check runs inside a
+build: an environment the package ignores is not one, and a directory holding a package of its own —
+this package's fixture, named and with a uuid — is that package's, with everything below it.
+"""
+function pin_envs(root::AbstractString)
+    out = copy(SUBENVS)
+    skip = Texts.ignored(root)
+    nested = String[]
+    for (dir, _, fs) in walkdir(root; onerror = Texts.SKIP_VANISHED)
+        rel = replace(relpath(dir, root), '\\' => '/')
+        (rel == "." || rel == ".git" || startswith(rel, ".git/")) && continue
+        any(n -> startswith(rel * "/", n * "/"), nested) && continue
+        "Project.toml" in fs || continue
+        skip(rel * "/Project.toml") && continue
+        text = read(joinpath(dir, "Project.toml"), String)
+        proj = TOML.tryparse(text)
+        # one that does not parse is reported by the wiring check if it names this package, not passed over
+        if !(proj isa Dict)
+            occursin(PKG_UUID, text) ? (rel in out || push!(out, rel)) :
+                occursin(r"(?m)^\s*uuid\s*=", text) && push!(nested, rel)     # a package, though broken
+            continue
+        end
+        haskey(proj, "name") && haskey(proj, "uuid") && (push!(nested, rel); continue)
+        deps = get(proj, "deps", nothing)
+        deps isa Dict && haskey(deps, PKG) && !(rel in out) && push!(out, rel)
+    end
+    return out
+end
 
 """
     pin_entries(cfg, root, envdir) -> Dict{String,Any}
@@ -526,7 +567,7 @@ released version with its compat bound or the path to the checkout.
 
 - `cfg` — the package's config, which carries the pin.
 - `root` — the package root.
-- `envdir` — the sub-environment, `"docs"` or `"test"`.
+- `envdir` — the sub-environment, one of [`pin_envs`](@ref).
 
 Returns the entries, keyed by the TOML table each belongs in; a table whose value is `nothing` must be
 absent, which is how a checkout is distinguished from a release rather than merely left unstated.
@@ -577,7 +618,8 @@ resolves, so comparing the text would report every ordinary `Pkg.add` as drift.
 function pin_drift(cfg::Model.Config, root::AbstractString, envdir::AbstractString)
     path = joinpath(root, envdir, "Project.toml")
     isfile(path) || return "$envdir/Project.toml is absent"
-    have = TOML.parsefile(path)
+    have = TOML.tryparse(read(path, String))
+    have isa Dict || return "$envdir/Project.toml does not parse"
     for (table, want) in pin_entries(cfg, root, envdir)
         got = get(get(have, table, Dict{String,Any}()), PKG, nothing)
         if want === nothing
@@ -593,8 +635,8 @@ end
 """
     write_pin(cfg, root, envdir) -> Bool
 
-Sets this package's entries in one sub-environment's `Project.toml`, keeping every other entry and
-Pkg's own section order.
+Sets this package's entries in one sub-environment's `Project.toml`, keeping every other entry, its
+order and its comments.
 
 # Arguments
 
@@ -604,20 +646,23 @@ Pkg's own section order.
 
 Returns whether the file changed.
 
-The file is written as Pkg writes it, by the TOML writer with Pkg's key order and inline `[sources]`
-tables, so whatever else the environment holds — a `[targets]` list, a `description` — goes back as it came.
+Only the pin's lines change, so a comment beside a bound survives. Where a line has no place — a
+table the file lacks — the file is written whole, with Pkg's key order and inline `[sources]` tables.
 """
 function write_pin(cfg::Model.Config, root::AbstractString, envdir::AbstractString)
     path = joinpath(root, envdir, "Project.toml")
-    proj = isfile(path) ? TOML.parsefile(path) : Dict{String,Any}()
-    for (table, want) in pin_entries(cfg, root, envdir)
-        if want === nothing
-            haskey(proj, table) && delete!(proj[table], PKG)
-            haskey(proj, table) && isempty(proj[table]) && delete!(proj, table)
-        else
-            get!(proj, table, Dict{String,Any}())[PKG] = want[PKG]
+    want = pin_entries(cfg, root, envdir)
+    if isfile(path)
+        old = read(path, String)
+        TOML.tryparse(old) isa Dict || return false     # left as it is; the wiring check reports it
+        text = patch_pin(old, want)
+        if text !== nothing
+            text == old && return false
+            write(path, text); return true
         end
     end
+    proj = isfile(path) ? TOML.parsefile(path) : Dict{String,Any}()
+    apply_pin!(proj, want)
     inline = Base.IdSet{Dict}()
     for s in values(get(proj, "sources", Dict{String,Any}())); s isa Dict && push!(inline, s); end
     order = ["name", "uuid", "keywords", "license", "desc", "version", "workspace", "deps", "weakdeps",
@@ -627,6 +672,66 @@ function write_pin(cfg::Model.Config, root::AbstractString, envdir::AbstractStri
     isfile(path) && read(path, String) == text && return false
     mkpath(dirname(path)); write(path, text)
     return true
+end
+
+# Sets the pin's entries in a parsed `Project.toml`, dropping a table the removal leaves empty.
+function apply_pin!(proj::Dict, want::Dict)
+    for (table, w) in want
+        if w === nothing
+            haskey(proj, table) && delete!(proj[table], PKG)
+            haskey(proj, table) && isempty(proj[table]) && delete!(proj, table)
+        else
+            get!(proj, table, Dict{String,Any}())[PKG] = w[PKG]
+        end
+    end
+    return proj
+end
+
+# The pin set into a file's text line by line, or `nothing` where it cannot be: a table absent, an
+# entry spelled as a table or a dotted key. The result is read back and must equal the file with the
+# entries set and nothing else moved; where it does not, the caller writes the file whole.
+function patch_pin(text::AbstractString, want::Dict)
+    before = TOML.tryparse(text)
+    before isa Dict || return nothing
+    occursin(Regex("(?m)^\\s*\\[\\s*\\w+\\.\\\"?" * PKG * "\\b"), text) && return nothing
+    lines = split(text, '\n')
+    cr = occursin("\r\n", text) ? "\r" : ""          # a CRLF file keeps its endings on the lines written
+    entry = Regex("^(\\s*\\\"?" * PKG * "\\\"?\\s*=\\s*)(.*?)\\r?\$")
+    for (table, w) in want
+        head = findfirst(l -> occursin(Regex("^\\s*\\[\\s*" * table * "\\s*\\]\\s*(#.*)?\$"), l), lines)
+        stop = head === nothing ? nothing :
+               something(findnext(l -> occursin(r"^\s*\[", l), lines, head + 1), length(lines) + 1)
+        at = head === nothing ? nothing : findfirst(i -> occursin(entry, lines[i]), head+1:stop-1)
+        at === nothing || (at = head + at)
+        if w === nothing
+            at === nothing || deleteat!(lines, at)
+        else
+            head === nothing && return nothing
+            value = w[PKG]
+            line = chomp(sprint(io -> TOML.print(io, Dict{String,Any}(PKG => value);
+                                                 inline_tables = value isa Dict ? Base.IdSet{Dict}([value]) : Base.IdSet{Dict}())))
+            if at === nothing
+                insert!(lines, head + 1, line * cr)
+            else
+                # a line already right is left as it is written; a wrong one keeps its key and its comment
+                m = match(entry, lines[at]); rest = m.captures[2]
+                got = TOML.tryparse("x = " * rest)
+                got isa Dict && got["x"] == value && continue
+                # the comment begins at the first `#` before which the value reads whole
+                cut = nothing
+                for i in eachindex(rest)
+                    rest[i] == '#' && TOML.tryparse("x = " * rest[1:prevind(rest, i)]) isa Dict && (cut = i; break)
+                end
+                comment = cut === nothing ? "" : rest[ncodeunits(rstrip(rest[1:prevind(rest, cut)]))+1:end]
+                lines[at] = m.captures[1] * split(line, " = "; limit = 2)[2] * comment * cr
+            end
+        end
+    end
+    out = join(lines, '\n')
+    after = TOML.tryparse(out)
+    drop_empty(d) = Dict(k => v for (k, v) in d if !(v isa Dict && isempty(v)))
+    (after isa Dict && drop_empty(after) == drop_empty(apply_pin!(before, want))) || return nothing
+    return out
 end
 
 """
@@ -1288,7 +1393,7 @@ const TOOL_SITE = "https://grigorysarnitsky.github.io/GBGCodingTools.jl/"
 The published rulebook on this package's site, which a consumer's tooling page links to. Documenter
 publishes under a version directory — `dev/` from `master`, and `stable/` only once a release is
 tagged, which none yet is — so the page is under `dev/`; the address without it answered 404 on every
-consumer's site (found upgrading [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/), 2026-09-24).
+consumer's site (found upgrading GBGPeriodicFields, 2026-09-24).
 """
 const RULES_URL = TOOL_SITE * "dev/gbg-rules/"
 
@@ -1788,7 +1893,7 @@ function wiring(cfg::Model.Config, root::AbstractString)
     why === nothing || push!(out, Model.Location(; file = ".claude/settings.json", text = why))
     # The pin is entries inside a file Pkg owns and rewrites, so only this package's own entries are
     # compared, and as parsed values: comparing the text would report every `Pkg.add` as drift.
-    for envdir in SUBENVS
+    for envdir in pin_envs(root)
         why = pin_drift(cfg, root, envdir)
         why === nothing || push!(out, Model.Location(; file = joinpath(envdir, "Project.toml"), text = why))
     end
@@ -1846,7 +1951,7 @@ function write_all(cfg::Model.Config, root::AbstractString)
         push!(changed, g.path)
     end
     write_settings(root) && push!(changed, ".claude/settings.json")
-    for envdir in SUBENVS
+    for envdir in pin_envs(root)
         write_pin(cfg, root, envdir) && push!(changed, joinpath(envdir, "Project.toml"))
     end
     return (changed = changed, refused = refused)

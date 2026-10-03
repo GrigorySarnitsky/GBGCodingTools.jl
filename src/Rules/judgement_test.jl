@@ -60,7 +60,7 @@ const SEED_PARITY = Model.Rule(
 # excess being computation — HT's `weighted_inner` ran 40–60% over a plain read on its card.
 const DEVICE_COST = Model.Rule(
     id = Symbol("RULE.TEST.DEVICE_COST"),
-    statement = "In a package that declares the device-cost audit, each audited device operation is timed against the memory it must move, in a ratio to a copy measured in the same run, and holds at or below the ratio frozen for it.",
+    statement = "In a package that declares the device-cost audit, each audited device operation is timed against the memory it must move, in a ratio to a copy measured in the same run, and holds at or below the ratio frozen for it on that device and element type.",
     why = "A count of reads and writes cannot see computation that costs time; only a timing against the least traffic can. The copy measured beside it keeps the ratio honest under the device's clocks and power limit; the fastest of many runs is the cost, and a frozen bound is refrozen in the commit that changes the operation, with the reason.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.TESTS, Model.FileSet.CODE],

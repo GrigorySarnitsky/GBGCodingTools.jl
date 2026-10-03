@@ -11,9 +11,8 @@ tests run over; the [glossary](@ref glossary) binds the term.
 
 ## The pinned version
 
-Every sub-environment of a consumer that lists the tool (`docs/`, `test/`, `benchmark/`) carries the
-same three entries, rendered by [`gbg sync`](@ref GBGCodingTools.Wire.sync) from the pinned version in
-`.gbg/config.jl`:
+`docs/`, `test/` and any other environment naming the tool, such as `test/gpu/cuda/`, carry these three
+entries, which [`gbg sync`](@ref GBGCodingTools.Wire.sync) sets from the pin in `.gbg/config.jl`:
 
 ```toml
 [deps]

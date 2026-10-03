@@ -4,6 +4,26 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.57 — 2026-10-03
+
+PATCH, from GBGPeriodicFields' notes on the device-cost harness:
+
+- **The pin reaches every environment that names the tool.** `gbg bump` and `gbg sync` wrote the pin
+  into `docs/` and `test/` alone, and the wiring check read only those two; GBGPeriodicFields tests on a
+  device from `test/gpu/cuda/` and `test/gpu/rocm/` and moved those pins by hand. Now every environment
+  below the root whose `[deps]` names the tool is written, checked and given its move command — read
+  from the files, not from git, skipping what `.gitignore` excludes and any directory holding a package
+  of its own.
+- **The pin is edited where it stands.** The file was written whole by the TOML writer, which drops
+  comments; now only a pin line whose value is wrong changes, keeping its key's spelling, its comment
+  and the file's line endings. A table the file lacks, or an entry written as a table of its own, still
+  gets the whole-file write. An environment's file that does not parse is reported by the wiring check
+  and left alone by `sync`, and `bump` moves nothing until it is fixed; the move commands quote the
+  environment's directory.
+- **`RULE.TEST.DEVICE_COST`** says the frozen ratio is the one for that device and element type, as
+  `TestHarness.device_cost`'s `bounds` now does: the same operation costs a different ratio on another
+  card or in another precision.
+
 ## 2.0.0-rc.56 — 2026-10-03
 
 MINOR, GBGPeriodicFields' request of 2026-10-03, for GBGHomogeneousTurbulence too (the owner):

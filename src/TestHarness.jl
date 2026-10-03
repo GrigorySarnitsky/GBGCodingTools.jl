@@ -857,8 +857,10 @@ must move, and holds at or below the ratio its package froze for it.
 
 - `cases`, `copy`, `sync` — as [`device_measure`](@ref) takes them; `cases` empty, as on a machine with
   no device, records a skip and never a pass.
-- `bounds` — the ratio frozen per operation's name; one with no bound is measured and reported, not
-  judged, until its package freezes one from what it measured.
+- `bounds` — the ratio frozen per operation's name, for the device and element type the run is on:
+  the same operation costs a different ratio on another card or in another precision, so a package
+  keeps one table for each. One with no bound is measured and reported, not judged, until its package
+  freezes one from what it measured.
 - `reps`, `warmup` — as [`fastest`](@ref) takes them.
 
 Runs as a `@testset`, and warns when the machine looked busy, since a timing then overstates the cost.

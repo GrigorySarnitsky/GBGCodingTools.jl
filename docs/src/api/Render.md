@@ -18,6 +18,7 @@ GBGCodingTools.Render.glossary
 GBGCodingTools.Render.hook
 GBGCodingTools.Render.pin_drift
 GBGCodingTools.Render.pin_entries
+GBGCodingTools.Render.pin_envs
 GBGCodingTools.Render.policy_file
 GBGCodingTools.Render.policy_index
 GBGCodingTools.Render.policy_paths
