@@ -22,6 +22,26 @@ Config(
                reason = "the leading identity of a docstring is the physical meaning of the quantity it computes; this package computes no physical quantity, so its docstrings lead with what the operation does, which the rule's own parameter already admits"),
         Switch(target = :documentation_review,
                reason = "the review reads a package's documentation with the rulebook this package writes; running it here while the rulebook and the run machinery are still being built would grade the tool against rules it is in the middle of changing. It is switched on in Phase 8, when the tool reviews itself last"),
+        # Internal records: the paths and links of how the work was done, and nothing else (the owner, 2026-10-03).
+        Switch(target = Symbol("RULE.LEAK.HOME_PATH"), files = ["docs/design-record/**", "docs/PF-WIRING.md", "docs/HT-WIRING.md"],
+               reason = "internal records no user reads, holding the checkout and scratch paths of how the work was done; credentials, files never published, addresses, private terms and manifest paths are still checked there (the owner, 2026-10-03)"),
+        Switch(target = Symbol("RULE.LEAK.SYNCED_PATH"), files = ["docs/design-record/**", "docs/PF-WIRING.md", "docs/HT-WIRING.md"],
+               reason = "internal records no user reads, holding the checkout and scratch paths of how the work was done; credentials, files never published, addresses, private terms and manifest paths are still checked there (the owner, 2026-10-03)"),
+        Switch(target = Symbol("RULE.LEAK.SCRATCH_PATH"), files = ["docs/design-record/**", "docs/PF-WIRING.md", "docs/HT-WIRING.md"],
+               reason = "internal records no user reads, holding the checkout and scratch paths of how the work was done; credentials, files never published, addresses, private terms and manifest paths are still checked there (the owner, 2026-10-03)"),
+        Switch(target = Symbol("RULE.LEAK.SESSION_LINK"), files = ["docs/design-record/**", "docs/PF-WIRING.md", "docs/HT-WIRING.md"],
+               reason = "internal records no user reads, holding the checkout and scratch paths of how the work was done; credentials, files never published, addresses, private terms and manifest paths are still checked there (the owner, 2026-10-03)"),
+        # The leak scan's own planted examples and the rules' examples (the owner, 2026-10-03).
+        Switch(target = Symbol("RULE.LEAK.HOME_PATH"), files = ["test/leak.jl", "test/publication.jl", "test/rules.jl", "test/scope.jl", "src/Rules/leaks.jl", "src/Rules/judgement_git.jl"],
+               reason = "invented test data: made-up user names, documentation domains, a made-up session id, the scan's own patterns — each line read and confirmed invented on 2026-10-03"),
+        Switch(target = Symbol("RULE.LEAK.SYNCED_PATH"), files = ["test/leak.jl", "test/publication.jl", "test/rules.jl", "test/scope.jl", "src/Rules/leaks.jl", "src/Rules/judgement_git.jl"],
+               reason = "invented test data: made-up user names, documentation domains, a made-up session id, the scan's own patterns — each line read and confirmed invented on 2026-10-03"),
+        Switch(target = Symbol("RULE.LEAK.SESSION_LINK"), files = ["test/leak.jl", "test/publication.jl", "test/rules.jl", "test/scope.jl", "src/Rules/leaks.jl", "src/Rules/judgement_git.jl"],
+               reason = "invented test data: made-up user names, documentation domains, a made-up session id, the scan's own patterns — each line read and confirmed invented on 2026-10-03"),
+        Switch(target = Symbol("RULE.LEAK.SCRATCH_PATH"), files = ["test/leak.jl", "test/publication.jl", "test/rules.jl", "test/scope.jl", "src/Rules/leaks.jl", "src/Rules/judgement_git.jl"],
+               reason = "invented test data: made-up user names, documentation domains, a made-up session id, the scan's own patterns — each line read and confirmed invented on 2026-10-03"),
+        Switch(target = Symbol("RULE.LEAK.EMAIL"), files = ["test/leak.jl", "test/publication.jl", "test/rules.jl", "test/scope.jl", "src/Rules/leaks.jl", "src/Rules/judgement_git.jl"],
+               reason = "invented test data: made-up user names, documentation domains, a made-up session id, the scan's own patterns — each line read and confirmed invented on 2026-10-03"),
     ],
     # Owed and not yet met, which is not the same as "does not apply": a deferral is listed beside the
     # switches and closes when its condition is met. The two harness contracts that were switched off
@@ -44,4 +64,6 @@ Config(
     # The one section of CLAUDE.md that states facts, not instructions: a state line or a count there is
     # fixed without asking; every other line of the file stays code (the owner, 2026-09-29).
     claude_documentation = ["Where the rebuild stands"],
+    # The one address the owner publishes (2026-10-03); any other is a leak scan's finding.
+    leak_emails = ["grigory@sarnitsky.se"],
 )

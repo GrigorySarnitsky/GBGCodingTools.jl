@@ -34,7 +34,7 @@ function materialise(rule, example)
     if example isa MR.TextExample && rule.check isa MR.ProgramCheck && rule.check.input === MR.Input.PUBLICATION
         # A publication rule is run by `gbg leak` alone, which hands its check each text it reads; so is
         # it here, on a config approving one address and keeping one word private.
-        cfg = MR.Config(package = "Example", tool = :dev, leak_emails = ["owner@example.org"], leak_terms = ["Examplehost"])
+        cfg = MR.Config(package = "Example", tool = :dev, leak_emails = ["owner@mailbox.zz"], leak_terms = ["Examplehost"])
         return rule.check.run(example.text, cfg)
     elseif example isa MR.TextExample
         dir = mktempdir(; cleanup = true)

@@ -6,7 +6,7 @@ const G = GBGCodingTools
 const P = G.Publication
 
 @testset "the leak scan's configuration and metadata reader" begin
-    cfg = G.Model.Config(package = "Example", tool = :dev, leak_emails = ["owner@example.org"], leak_terms = ["Examplehost"])
+    cfg = G.Model.Config(package = "Example", tool = :dev, leak_emails = ["owner@mailbox.zz"], leak_terms = ["Examplehost"])
     conf = TOML.parse(P.config_toml(cfg))
     ids = Set(r["id"] for r in conf["rules"])
     # every rule with a text pattern: the credential rule is Gitleaks' own pass, and the rule of paths
@@ -15,7 +15,7 @@ const P = G.Publication
                      if !(r.id in (Symbol("RULE.LEAK.CREDENTIAL"), Symbol("RULE.LEAK.NEVER_PUBLISHED"))))
     @test !haskey(conf, "extend")                                  # its own pass: no default allowlist
     email = only(r for r in conf["rules"] if r["id"] == "RULE.LEAK.EMAIL")
-    @test any(occursin("owner@example", a) for a in only(email["allowlists"])["regexes"])
+    @test any(occursin("owner@mailbox", a) for a in only(email["allowlists"])["regexes"])
     # a config naming no private word renders no rule for it
     @test !occursin("RULE.LEAK.TERM", P.config_toml(G.Model.Config(package = "Example", tool = :dev)))
 

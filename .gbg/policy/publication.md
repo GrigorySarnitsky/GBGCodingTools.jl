@@ -12,7 +12,7 @@ A repository made public publishes every commit it ever held, on every branch an
 Covered by the session, as an instruction: followed while working, checked by nothing. Nothing checks it: an instruction to the session, never to commit one; `gbg leak` decides it with Gitleaks' own credential rules, over every commit, the commit metadata and the GitHub side, which no program here restates
 
 ### RULE.LEAK.EMAIL
-No email address is published but those the package's config approves in `leak_emails`, GitHub's own and no-reply addresses, and the commit trailer's.
+No email address is published but those the package's config approves in `leak_emails`, GitHub's own and no-reply addresses, the commit trailer's, and those in a domain reserved for documentation.
 
 A repository made public publishes every commit it ever held, on every branch and tag, deleted files included; a later commit that removes a thing does not unpublish it. An address in a commit's author field is published with the commit; only a rewrite of the history removes it, which is the owner's to make.
 

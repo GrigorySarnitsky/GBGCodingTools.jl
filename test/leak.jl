@@ -13,8 +13,8 @@ const G = GBGCodingTools
 isfile(G.Publication.gitleaks()) || error("Gitleaks $(G.Publication.GITLEAKS.version) is not installed: run `gbg install --gitleaks`")
 
 const TOKEN = "ghp_" * "0123456789abcdefghijABCDEFGHIJ012345"         # a GitHub token's shape, planted
-const ADDRESS = "someone@" * "private.example"
-const TAGGER = "tagger@" * "private.example"
+const ADDRESS = "someone@" * "mailbox.zz"            # .zz is assigned to no country, and reserved for none
+const TAGGER = "tagger@" * "mailbox.zz"
 
 function planted()
     dir = mktempdir(; cleanup = true)

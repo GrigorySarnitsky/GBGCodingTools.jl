@@ -39,6 +39,9 @@ const PUBLIC_EMAILS = [raw"(?i)^[A-Za-z0-9._%+-]+@users\.noreply\.github\.com$",
 # The home of GitHub's hosted runners, on Linux, macOS and Windows: public, and in every workflow log
 # (39,299 of this package's findings before it was allowed, 2026-10-02).
 const RUNNER_HOMES = [raw"^/home/runner$", raw"^/Users/runner$", raw"(?i)^[A-Za-z]:\\{1,2}Users\\{1,2}runneradmin$"]
+# A domain reserved for documentation (RFC 2606, RFC 6761) belongs to no one, so no address in it is
+# personal; the three left in this package's records after its first scan were all such (2026-10-03).
+const RESERVED_DOMAIN = raw"(?i)@(?:[A-Za-z0-9-]+\.)*(?:example\.(?:com|org|net)|example|invalid|test|localhost)$"
 # A retina image's name, `logo@2x.png`, has an address's shape and is not one.
 const IMAGE_NAME = raw"(?i)@[0-9]+x\.(?:png|jpe?g|gif|svg|webp)$"
 
@@ -50,7 +53,7 @@ escape_regex(s) = replace(s, r"[.^$|?*+()\[\]{}\\]" => x -> "\\" * x)
 The patterns of every address that may be published: those public by design, and those the package's
 config approves in `leak_emails`. The argument is `cfg`. Returns the patterns, anchored.
 """
-allowed_emails(cfg) = vcat(PUBLIC_EMAILS, [IMAGE_NAME], ["(?i)^" * escape_regex(e) * "\$" for e in cfg.leak_emails])
+allowed_emails(cfg) = vcat(PUBLIC_EMAILS, [IMAGE_NAME, RESERVED_DOMAIN], ["(?i)^" * escape_regex(e) * "\$" for e in cfg.leak_emails])
 
 """
     term_pattern(cfg) -> Union{String,Nothing}
@@ -183,16 +186,16 @@ const SCRATCH_PATH = Model.Rule(
 
 const EMAIL_RULE = Model.Rule(
     id = Symbol("RULE.LEAK.EMAIL"),
-    statement = "No email address is published but those the package's config approves in `leak_emails`, GitHub's own and no-reply addresses, and the commit trailer's.",
+    statement = "No email address is published but those the package's config approves in `leak_emails`, GitHub's own and no-reply addresses, the commit trailer's, and those in a domain reserved for documentation.",
     why = WHY_HISTORY * " An address in a commit's author field is published with the commit; only a rewrite of the history removes it, which is the owner's to make.",
     intention = Model.Intention.PUBLICATION,
     filesets = [Model.FileSet.CODE],
     check = text_check("RULE.LEAK.EMAIL", "an email address not approved for publication"),
     examples = [
-        # The examples' config approves owner@example.org (test/rules.jl).
-        Model.TextExample(Model.FileSet.CODE, "Write to someone@private.example for access.\n",
+        # The examples' config approves owner@mailbox.zz (test/rules.jl); `.zz` is assigned to no country.
+        Model.TextExample(Model.FileSet.CODE, "Write to someone@mailbox.zz for access.\n",
                           [Model.Location(; file = "", line = 1)], "but those the package's config approves"),
-        Model.TextExample(Model.FileSet.CODE, "Write to owner@example.org; 12345+someone@users.noreply.github.com committed it.\n",
+        Model.TextExample(Model.FileSet.CODE, "Write to owner@mailbox.zz; 12345+someone@users.noreply.github.com committed it, user@example.com is a placeholder.\n",
                           Model.Location[], "but those the package's config approves"),
         Model.TextExample(Model.FileSet.CODE, "Co-Authored-By: Anthropic Claude <noreply@anthropic.com>\n",
                           Model.Location[], "but those the package's config approves"),

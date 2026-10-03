@@ -4,6 +4,20 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.54 — 2026-10-03
+
+PATCH, from the first leak scan of this package (the owner's decisions of 2026-10-03):
+
+- **`RULE.LEAK.EMAIL`** allows an address in a domain reserved for documentation (RFC 2606, RFC 6761:
+  `example.com`, `.example`, `.invalid`, `.test`, `localhost`), which belongs to no one. The scan's own
+  tests now plant addresses under `.zz`, a country code assigned to no one.
+- **This package's config** approves `grigory@sarnitsky.se`, the one address it publishes; switches the
+  path, scratch, synced-folder and session-link rules off for its internal records, with credentials,
+  files never published, addresses, private terms and manifest paths still checked there; and switches
+  the leak rules off for its invented test data, each line read and confirmed invented.
+- **`.gbg/leak-accepted.txt`**: the 646 notes only its history holds, accepted by fingerprint. A scan
+  of this package now reports nothing new.
+
 ## 2.0.0-rc.53 — 2026-10-02
 
 MINOR, the owner's ruling of 2026-10-02 that not every leak deserves the same treatment:
