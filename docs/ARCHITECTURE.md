@@ -544,7 +544,9 @@ Base.@kwdef struct Exclusion; files::Vector{String}; reason::String; end
 Base.@kwdef struct Setting; rule::Symbol; name::Symbol; value::Union{String,Symbol,Bool,Int,Vector{String},Vector{RetiredClaim}}; end
 "A rule a package adds for itself: a pattern its files must not (or must) contain, with examples."
 Base.@kwdef struct PatternRule
-    id::Symbol; statement::String; fileset::FileSet.T; pattern::Regex; forbidden::Bool; examples::Vector{TextExample}
+    id::Symbol; statement::String; filesets::Vector{FileSet.T}; pattern::Regex; forbidden::Bool
+    trigger::Union{Regex,Nothing}; window::Int; escape::Union{Regex,Nothing}   # only near a trigger, unless escaped
+    skip::Vector{Pair{String,String}}; examples::Vector{TextExample}          # regions between two headings, unread
 end
 "A package's settings, written by hand in `.gbg/config.jl`."
 Base.@kwdef struct Config

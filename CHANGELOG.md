@@ -4,6 +4,21 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.55 — 2026-10-03
+
+MINOR, GBGHomogeneousTurbulence's request of 2026-10-03, so its last two doc lints can go:
+
+- **`RULE.DOC.SECTION_ORDER`, new:** a caveat admonition at a docstring's margin comes after its
+  `# Arguments` section and before its `# Fields` section — the two consequences of
+  `RULE.DOC.HOME_ORDER` a program can decide; an admonition indented under a list item, or in a fence,
+  is not the docstring's. Measured over the four packages and this one: no finding. 108 rules.
+- **A package's `PatternRule` near a trigger.** `fileset` becomes `filesets`, a list (no package used
+  a pattern rule yet). New, all optional: `trigger` and `window` — the pattern counts only within the
+  window of a line matching the trigger, reported at that line; `escape` — a match it accompanies is
+  cleared; `skip` — regions between two headings no trigger is read in. A rule without them is as
+  before. Measured: GBGHomogeneousTurbulence's Lamb-vector lint, declared as such a rule, reports the
+  same lines as the lint on a copy planted with every case, and nothing on HT as it stands.
+
 ## 2.0.0-rc.54 — 2026-10-03
 
 PATCH, from the first leak scan of this package (the owner's decisions of 2026-10-03):

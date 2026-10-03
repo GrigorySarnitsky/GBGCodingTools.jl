@@ -416,6 +416,13 @@ function validate(cfg::Model.Config, root::AbstractString)
     # rather than a set a package may not escape (ruled 2026-09-17).
     # A package's own pattern rules are rules too: `run_patterns` honours a switch against one, and
     # refusing that switch here left a package no way to turn off a rule of its own making.
+    # A pattern rule's window is read only around a trigger, and a trigger only bounds a forbidden pattern.
+    for r in cfg.rules
+        isempty(r.filesets) && push!(problems, "the pattern rule $(r.id) names no file set")
+        r.window < 0 && push!(problems, "the pattern rule $(r.id) has a negative window")
+        r.window > 0 && r.trigger === nothing && push!(problems, "the pattern rule $(r.id) has a window and no trigger to centre it on")
+        r.trigger !== nothing && !r.forbidden && push!(problems, "the pattern rule $(r.id) has a trigger, which bounds only a forbidden pattern")
+    end
     own = Set(r.id for r in cfg.rules)
     known = union(Catalogue.known_ids(), own)
     for s in cfg.switches

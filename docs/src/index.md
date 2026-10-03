@@ -61,7 +61,7 @@ evaluate, `3` when it crashed. The two a person runs most:
 
 ## The written rules
 
-The policy is 107 rules, on [The rules](@ref gbg-rules), each with an id like
+The policy is 108 rules, on [The rules](@ref gbg-rules), each with an id like
 [`RULE.DOC.ARGCOV`](@ref RULE.DOC.ARGCOV) (every argument of a function appears in its docstring): a documentation rubric, the LaTeX idiom, the citation style, the testing
 protocol, the rules of the instruments, and git conventions. Each is a Julia value carrying its own
 check and the examples that show the check matches it; `Render.policy` writes them into every package,

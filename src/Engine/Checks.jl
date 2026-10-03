@@ -239,14 +239,13 @@ function run_patterns(cfg::Model.Config, root::AbstractString; intention = nothi
     for r in cfg.rules
         intention === nothing || intention_of(r) === intention || continue
         applies(cfg, r.id) || continue
-        for file in files(cfg, root, r.fileset)
+        for fs in r.filesets, file in files(cfg, root, fs)
             applies(cfg, r.id; file) || continue
-            text = r.fileset === Model.FileSet.DOCSTRINGS ?
+            text = fs === Model.FileSet.DOCSTRINGS ?
                    Texts.prose_text(joinpath(root, file); comments = false) :
                    read(joinpath(root, file), String)
             if r.forbidden
-                for (i, line) in enumerate(split(text, '\n'))
-                    occursin(r.pattern, line) || continue
+                for i in pattern_lines(r, text)
                     push!(out, (r.id, located(Model.Location(; file = "", line = i, text = r.statement), file, root)))
                 end
             elseif !occursin(r.pattern, text)
@@ -254,11 +253,50 @@ function run_patterns(cfg::Model.Config, root::AbstractString; intention = nothi
             end
         end
     end
+    unique!(out)
     return sort!(out; by = ((_, l),) -> (l.file, l.line))
 end
 
+# A rule over any documentation set runs in the build, as a package's own lint over its pages did; one
+# over the code or the tests alone runs in the suite.
 intention_of(r::Model.PatternRule) =
-    r.fileset in (Model.FileSet.CODE, Model.FileSet.TESTS) ? Model.Intention.CODE : Model.Intention.DOCUMENTATION
+    all(fs -> fs in (Model.FileSet.CODE, Model.FileSet.TESTS), r.filesets) ? Model.Intention.CODE : Model.Intention.DOCUMENTATION
+
+"""
+    pattern_lines(r, text) -> Vector{Int}
+
+The lines of `text` where the forbidden pattern rule `r` is broken. The arguments are `r` and `text`.
+Returns the line numbers, in order.
+
+Without a trigger, a line holding the pattern and not the escape. With one, a line holding the trigger
+whose window — `window` lines either side — holds the pattern and not the escape: the convention is
+about what is said NEAR a word, as
+[GBGHomogeneousTurbulence](https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/)'s Lamb-vector
+sign is (its request of 2026-10-03). A line inside a `skip` region is never a trigger, nor a match without one.
+"""
+function pattern_lines(r::Model.PatternRule, text::AbstractString)
+    lines = split(text, '\n')
+    skipped = falses(length(lines))
+    for (from, to) in r.skip
+        i = 1
+        while (a = findnext(l -> startswith(l, from), lines, i)) !== nothing
+            b = something(findnext(l -> startswith(l, to), lines, a + 1), length(lines))
+            skipped[a:b] .= true
+            i = b + 1
+        end
+    end
+    escaped(t) = r.escape !== nothing && occursin(r.escape, t)
+    if r.trigger === nothing
+        return [i for (i, l) in enumerate(lines) if !skipped[i] && occursin(r.pattern, l) && !escaped(l)]
+    end
+    out = Int[]
+    for (i, l) in enumerate(lines)
+        (skipped[i] || !occursin(r.trigger, l)) && continue
+        window = join(lines[max(1, i - r.window):min(length(lines), i + r.window)], '\n')
+        occursin(r.pattern, window) && !escaped(window) && push!(out, i)
+    end
+    return out
+end
 
 """
     not_run(cfg; pkg = nothing, site = nothing, network = false) -> Vector{Symbol}

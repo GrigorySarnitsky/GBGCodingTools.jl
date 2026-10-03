@@ -31,7 +31,7 @@ Config(
     switches = [Switch(target = Symbol("RULE.TEX.CODE_IN_MATH"), reason = "no mathematics in this package's prose")],
     settings = [Setting(rule = Symbol("RULE.DOC.COORD_FREE"), name = :formalization, value = "what the operation does")],
     rules = [PatternRule(id = :NO_TODO, statement = "No TODO is left in shipped prose.",
-                         fileset = FileSet.PAGES, pattern = r"TODO", forbidden = true)],
+                         filesets = [FileSet.PAGES], pattern = r"TODO", forbidden = true)],
     code_areas = [:engine => ["src/Engine/*.jl"]],
 )
 """
@@ -214,11 +214,11 @@ end
     @test CIO.read_config(in_config("Config(package = \"a \\\$ b\", tool = :dev)")).package == "a \$ b"
     # a consumer's bad literal is one refusal naming the line, never an exception
     @test only(problems("Config(package = \"P\", tool = v\"not a version\")")) == "line 1: v\"not a version\" is not a version"
-    @test occursin("is not a pattern", only(problems(P * "rules = [PatternRule(id = :x, statement = \"s\", fileset = FileSet.PAGES, pattern = r\"(\")])")))
+    @test occursin("is not a pattern", only(problems(P * "rules = [PatternRule(id = :x, statement = \"s\", filesets = [FileSet.PAGES], pattern = r\"(\")])")))
     @test occursin("is not an integer", only(problems(P * "settings = [Setting(rule = :x, name = :y, value = 99999999999999999999999)])")))
     # a raw pattern takes no escapes, and keeps its flags
-    let cfg = CIO.read_config(in_config(P * """rules = [PatternRule(id = :x, statement = "s", fileset = FileSet.PAGES, pattern = r"\\\\d"),
-                                                     PatternRule(id = :y, statement = "s", fileset = FileSet.PAGES, pattern = r"x"i)])"""))
+    let cfg = CIO.read_config(in_config(P * """rules = [PatternRule(id = :x, statement = "s", filesets = [FileSet.PAGES], pattern = r"\\\\d"),
+                                                     PatternRule(id = :y, statement = "s", filesets = [FileSet.PAGES], pattern = r"x"i)])"""))
         @test cfg.rules[1].pattern == r"\\d" && !occursin(cfg.rules[1].pattern, "5")
         @test occursin(cfg.rules[2].pattern, "X")
     end
@@ -257,7 +257,7 @@ end
         @test [s.question for s in CIO.read_settled(dir)] == ["q1"]
     end
     # a package may switch off, or defer, a pattern rule of its own
-    let own = [MM.PatternRule(id = :NO_TODO, statement = "s", fileset = MM.FileSet.PAGES, pattern = r"TODO", forbidden = true)]
+    let own = [MM.PatternRule(id = :NO_TODO, statement = "s", filesets = [MM.FileSet.PAGES], pattern = r"TODO", forbidden = true)]
         vv(cfg) = CIO.validate(cfg, mktempdir(; cleanup = true))
         @test !any(p -> occursin("NO_TODO", p), vv(MM.Config(package = "P", tool = :dev, rules = own,
                                                           switches = [MM.Switch(target = :NO_TODO, reason = "r")])))
@@ -320,8 +320,8 @@ end
 # A package's own rules are run, and the harness runs the rulebook whatever it is handed.
 @testset "a package's pattern rules run, and extra rules never replace the rulebook" begin
     dir = in_config("""Config(package = "P", tool = :dev,
-        rules = [PatternRule(id = :no_todo, statement = "No TODO is left in shipped prose.", fileset = FileSet.PAGES, pattern = r"TODO"),
-                 PatternRule(id = :no_fixme, statement = "No FIXME in the code.", fileset = FileSet.CODE, pattern = r"FIXME")])""")
+        rules = [PatternRule(id = :no_todo, statement = "No TODO is left in shipped prose.", filesets = [FileSet.PAGES], pattern = r"TODO"),
+                 PatternRule(id = :no_fixme, statement = "No FIXME in the code.", filesets = [FileSet.CODE], pattern = r"FIXME")])""")
     mkpath(joinpath(dir, "docs", "src")); mkpath(joinpath(dir, "src"))
     write(joinpath(dir, "docs", "src", "index.md"), "# Page\n\nTODO: write this.\n")
     write(joinpath(dir, "src", "P.jl"), "module P\n# FIXME\nend\n")
@@ -344,4 +344,34 @@ end
     @test ran == [:spy]
     code_rules = count(r -> r.intention === MM.Intention.CODE && r.check isa MM.ProgramCheck, G.Catalogue.RULES)
     @test code_rules > 0                                       # there are rulebook rules the old call dropped
+end
+
+# A package's own pattern rule with a trigger, a window, an escape and regions it does not read: the
+# shape GBGHomogeneousTurbulence's Lamb-vector sign needs (its request of 2026-10-03).
+@testset "a pattern rule near a trigger" begin
+    cfg = CIO.read_config(in_config("""Config(package = "P", tool = :dev, rules = [
+        PatternRule(id = :lamb, statement = "The Lamb vector is ω × u.", filesets = [FileSet.CODE, FileSet.PAGES],
+                    pattern = r"u\\s*×\\s*ω", trigger = r"\\b[Ll]amb(?![A-Za-z])", window = 3, escape = r"negat",
+                    skip = ["## 11." => "## References"])])"""))
+    r = only(cfg.rules)
+    @test r.trigger isa Regex && r.window == 3 && r.escape isa Regex && r.skip == ["## 11." => "## References"]
+    @test isempty(CIO.validate(cfg, mktempdir(; cleanup = true)))
+    lines(text) = G.Engine.Checks.pattern_lines(r, text)
+    @test lines("The Lamb vector\nis u × ω here.\n") == [1]                        # reported at the trigger
+    @test isempty(lines("The Lamb vector is ω × u.\n"))                            # the right order
+    @test isempty(lines("The Lamb vector\nhas the negation u × ω.\n"))             # escaped in the window
+    @test isempty(lines("Lamb\n.\n.\n.\n.\nu × ω far below\n"))                     # beyond the window
+    @test isempty(lines("u × ω with no trigger near\n"))                            # no trigger, no finding
+    @test isempty(lines("## 11. Decisions\nLamb was u × ω once.\n## References\n")) # in a skipped region
+    @test lines("## 11. Decisions\nold\n## References\nLamb and u × ω\n") == [4]   # after it, read again
+    @test isempty(lines("Lambda is u × ω.\n"))                                      # the trigger is the word
+    # a pattern alone, with an escape on the line, as before plus the escape
+    plain = MM.PatternRule(id = :todo, statement = "No TODO.", filesets = [MM.FileSet.PAGES], pattern = r"TODO", escape = r"TODO-ok")
+    @test G.Engine.Checks.pattern_lines(plain, "a TODO\nTODO-ok here\n") == [1]
+    # a window without a trigger, a trigger on a required pattern, a negative window, no file set: refused
+    v(r) = CIO.validate(MM.Config(package = "P", tool = :dev, rules = [r]), mktempdir(; cleanup = true))
+    @test any(p -> occursin("no trigger", p), v(MM.PatternRule(id = :a, statement = "s", filesets = [MM.FileSet.PAGES], pattern = r"x", window = 2)))
+    @test any(p -> occursin("bounds only a forbidden", p), v(MM.PatternRule(id = :b, statement = "s", filesets = [MM.FileSet.PAGES], pattern = r"x", forbidden = false, trigger = r"y")))
+    @test any(p -> occursin("negative window", p), v(MM.PatternRule(id = :c, statement = "s", filesets = [MM.FileSet.PAGES], pattern = r"x", trigger = r"y", window = -1)))
+    @test any(p -> occursin("no file set", p), v(MM.PatternRule(id = :d, statement = "s", filesets = MM.FileSet.T[], pattern = r"x")))
 end

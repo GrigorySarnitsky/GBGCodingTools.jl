@@ -488,6 +488,67 @@ const SENTENCE_OPENER = Model.Rule(
 
 The rules of this batch, in the order they were converted.
 """
-const RULES = Model.Rule[ARG_BULLET, REGISTER, FIELDS, SENTENCE_OPENER]
+# ───────────────────────────────────────────────────────────── where a caveat sits among the sections
+
+"""
+    section_order(src, cfg) -> Vector{Model.Location}
+
+Every caveat admonition at a docstring's margin that sits out of `RULE.DOC.HOME_ORDER`'s order: after the
+`# Fields` section, or before an `# Arguments` section. The arguments are `src`, the Julia source, and
+`cfg`, which is not read. Returns one location per misplaced line. An admonition indented under a list
+item belongs to that item, and a line in a fenced block is code, so neither counts.
+"""
+function section_order(src::AbstractString, cfg)
+    out = Model.Location[]
+    for d in Texts.docstrings_of(src)
+        fields = false; caveat = false; fence = false; offset = 1
+        for line in split(d.text, '\n')
+            here = offset; offset += ncodeunits(line) + 1
+            startswith(lstrip(line), "```") && (fence = !fence; continue)
+            fence && continue
+            if rstrip(line) == "# Fields"
+                fields = true
+            elseif startswith(line, "!!! ")
+                fields && push!(out, Model.Location(; file = "", line = Texts.docstring_line(d, here), node = d.node,
+                                                   text = "a caveat admonition after `# Fields`, which comes last"))
+                caveat = true
+            elseif rstrip(line) == "# Arguments" && caveat
+                push!(out, Model.Location(; file = "", line = Texts.docstring_line(d, here), node = d.node,
+                                           text = "`# Arguments` after a caveat admonition, which comes after the arguments"))
+            end
+        end
+    end
+    return out
+end
+
+# a function's docstring over a one-line method, for the examples below
+order_doc(binding, body) = "\"\"\"\n    " * binding * "\n\n" * body * "\n\"\"\"\n" * first(split(binding, "(")) * "(x) = x\n"
+
+# The program half of RULE.DOC.HOME_ORDER, which a reader decides whole: its two consequences no reading
+# is needed for, asked for by GBGHomogeneousTurbulence so its own lint could go (2026-10-03).
+const SECTION_ORDER = Model.Rule(
+    id = Symbol("RULE.DOC.SECTION_ORDER"),
+    statement = "A caveat admonition at a docstring's margin comes after its `# Arguments` section and before its `# Fields` section.",
+    why = "`RULE.DOC.HOME_ORDER` orders a docstring: the arguments, then the caveats that close its prose, then `# References`, then `# Fields` last. These two places are where a caveat most often lands wrongly, and a program can find them; an admonition indented under a list item is that item's.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.CODE],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, section_order, false),
+    examples = [
+        Model.TextExample(Model.FileSet.CODE,
+            order_doc("f(a, b, c)", "Does a thing.\n\n!!! warning \"Slow\"\n    It is slow.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),
+            [Model.Location(; file = "src/Example.jl", line = 9)], "after its `# Arguments` section"),
+        Model.TextExample(Model.FileSet.CODE,
+            order_doc("f(a, b, c)", "Does a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third.\n\n!!! warning \"Slow\"\n    It is slow."),
+            Model.Location[], "after its `# Arguments` section"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- `a` — the first.\n\n!!! note\n    Late.\n\"\"\"\nstruct S\n    a::Int\nend\n",
+            [Model.Location(; file = "src/Example.jl", line = 10)], "before its `# Fields` section"),
+        # indented under a list item, or in a fence, it is not the docstring's own caveat
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    S\n\nA thing.\n\n!!! note\n    Early.\n\n# Fields\n\n- `a` — the first.\n    !!! tip\n        The item's.\n\n```\n!!! not a caveat\n```\n\"\"\"\nstruct S\n    a::Int\nend\n",
+            Model.Location[], "before its `# Fields` section"),
+    ])
+
+const RULES = Model.Rule[ARG_BULLET, REGISTER, FIELDS, SENTENCE_OPENER, SECTION_ORDER]
 
 end # module Docstrings

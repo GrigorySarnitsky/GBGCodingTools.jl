@@ -730,19 +730,27 @@ A rule a package adds for itself: a pattern its own files must not, or must, con
 
 # Fields
 
-- `id` — its stable identifier within the package.
+- `id` — its identifier within the package.
 - `statement` — the rule in plain English.
-- `fileset` — the file set it runs over.
-- `pattern` — the pattern itself.
-- `forbidden` — whether matching the pattern is the violation, or failing to.
-- `examples` — texts the check must judge a known way.
+- `filesets` — the file sets it reads.
+- `pattern` — the pattern.
+- `forbidden` — whether a match breaks it, or its absence.
+- `trigger` — if set, a match counts only near a line matching this, reported there.
+- `window` — lines either side of a trigger.
+- `escape` — a match it accompanies is cleared.
+- `skip` — regions between two headings, unread.
+- `examples` — texts it must judge a known way.
 """
 Base.@kwdef struct PatternRule
     id::Symbol
     statement::String
-    fileset::FileSet.T
+    filesets::Vector{FileSet.T}
     pattern::Regex
     forbidden::Bool = true
+    trigger::Union{Regex,Nothing} = nothing
+    window::Int = 0
+    escape::Union{Regex,Nothing} = nothing
+    skip::Vector{Pair{String,String}} = Pair{String,String}[]
     examples::Vector{TextExample} = TextExample[]
 end
 

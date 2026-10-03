@@ -201,7 +201,7 @@ unit,words,longest_paragraph,admonitions
 "Model.jl :: Option",44,27,0
 "Model.jl :: Parameter",38,23,0
 "Model.jl :: Part",18,18,0
-"Model.jl :: PatternRule",65,44,0
+"Model.jl :: PatternRule",92,72,0
 "Model.jl :: ProgramCheck",48,33,0
 "Model.jl :: Question",100,78,0
 "Model.jl :: QuestionExample",50,27,0
