@@ -288,13 +288,15 @@ asked for: deferring it handed `v2.1.0` to Phase 7.
 ### Phase 7 — GBGStreamingStatistics, GBGCloudPhysics, and the legacy deletions (40 commits, 6–7 sessions)
 **Ends with** all four science packages wired and on one version, and no legacy instruments left in any of them. **Depends
 on** Phase 5; Phase 6 was deferred on 2026-09-21, and Phase 7 follows Phase 5 directly. **Creates** SS's and CP's `.gbg/`, and a `CP-WIRING.md` (CP's `[extras]`/`[targets]` test declaration becomes a
-`test/Project.toml` the pin can land in). **Deletes**, each in its own package's commit and only after a real
-documentation review has run there and the owner has read its report: PF's, HT's and SS's legacy instrument directories,
-their round folders moving to that package's `docs/design-record/`. CP tracks none (measured 2026-09-30); the gate
-holds it so. **Why it is not three sessions**: two wirings, three full
-instrument runs, the fixing each produces, and three owner readings the plan cannot schedule. **Owner:** decision 12. Release
-`v2.1.0`.
-**Gate** `bash -e -o pipefail -c 'for P in "$@"; do tools/floor.sh "$P"; test -z "$(git -C "$P" ls-files -- .claude/commands .claude/doc-review .claude/audit-changes .claude/bug-hunt)"; done' _ "$PF" "$CP" "$HT" "$SS"`
+`test/Project.toml` the pin can land in). **Deletes**, each in its own package's commit once that package is wired —
+its wiring check clean, whether or not a review has run there, or runs well — and the owner has approved that
+package's deletion explicitly (the owner, 2026-10-04): every
+file of the old machinery that PF, HT and SS track under `.claude/`, instruments, their rounds and the old request files
+alike, a request still open moving to `.gbg/requests/`. The rounds are deleted, not kept anywhere: a package carries no old rounds (ruled 2026-09-08), and git's history
+holds them. CP tracks none (measured 2026-09-30); the gate holds it so. **Why it is not three sessions**: two wirings,
+the findings each meets, and three packages' deletions, each its own session's. **Owner:** decision 12, answered.
+Release `v2.1.0`.
+**Gate** `bash -e -o pipefail -c 'for P in "$@"; do tools/floor.sh "$P"; test -z "$(git -C "$P" ls-files -- .claude ":!.claude/hooks" ":!.claude/skills" ":!.claude/settings.json" ":!.claude/WORK_QUEUE.md")"; done' _ "$PF" "$CP" "$HT" "$SS"`
 
 ### Phase 8 — GBGCodingTools as its fifth consumer (20 commits, 3–4 sessions)
 **Ends with** the tool checked by itself. The design review that stood here is deferred to Phase 11 (§13). Last on purpose: the machinery has run on four packages, so its own defects
@@ -468,7 +470,7 @@ recall and the ledger survive in no form [recall measured nothing after the seed
 | 9 | ~~For each rule with no check today: keep it with the reason, or retire it?~~ Answered 2026-09-21 by the three covers: every rule is a program's, a reader's or an instruction; thirteen retired. What remains is whether the seven git instructions get programs. | 5 | the seven statements and what a program could see | as Phase 5 says | Those seven stay instructions. |
 | 10 | ~~For each rule a reading panel decides: still meaning, derivation or reading order?~~ Answered another way: the tagging study says what each rule needs; the `WhyAgent` on the 14 agent checks is metadata a reader is not shown. | 5 | — | — | — |
 | 11 | Should the rules about commits and branches be checked by a program at all, now that they are instructions? | 5 | the three statements and what the end-of-turn hook could see | Give all three the hook check | They stay instructions; nothing holds. |
-| 12 | May a package's old review machinery be deleted now that a real review has run there? | 7 | that package's report and its legacy directories | Yes, once he has read the report | Both machineries stay there; the phase cannot end. |
+| 12 | ~~May a package's old review machinery be deleted now that a real review has run there?~~ Answered 2026-10-04: yes, once the package is wired, whether or not a review has run there or works, and on his explicit approval for that package; its old rounds are deleted, not moved to `docs/design-record/`. | 7 | — | — | — |
 | 13 | Should the tool be wired to check itself? | 8 | its own switches and settings | Yes, last, so its defects arrive as ordinary findings | The tool stays unchecked by its own rules; nothing else blocks. |
 | 14 | ~~When a run that carried the previous run's open findings is abandoned before it launched an agent, are those findings dropped too?~~ Answered 2026-09-23: no. A run that launched nothing has no standing over findings it never looked at; `abandon` deletes its record whole and the run that found them carries them again. Supersedes the ruling of 2026-09-22 that the record made the drop stick. | 5 | — | — | — |
 
@@ -476,7 +478,7 @@ recall and the ledger survive in no form [recall measured nothing after the seed
 
 | Risk | Counter |
 |---|---|
-| **The rebuild stalls half-done and the owner has neither machine.** | Every phase from 3 ends with a tag a package pins; nothing old is deleted before its replacement is green; PF's and IT's legacy instruments stand until a real review has run in their package. |
+| **The rebuild stalls half-done and the owner has neither machine.** | Every phase from 3 ends with a tag a package pins; nothing old is deleted before its replacement is green; a package's legacy instruments stand until it is wired and the owner approves their deletion. |
 | Phase 4 is eleven to fifteen sessions and sits between him and the capability the package exists for. | Cut at the design's own handoffs, one commit group per stage, each with its assertion in `test/rehearse.jl`, which runs the whole instrument with no model call. |
 | Wiring PF exposes an unbounded documentation cleanup in his most active package. | The gate never requires PF to be clean: a rule PF does not satisfy is fixed as PF's own work or switched off with a reason on its site, and the fifteen ship switchable until two packages have shown their counts. |
 | A generated file overwrites something he wrote by hand — CI, settings, the queue, a command; or his two hosts drift and the stale one fails silently. | Wiring refuses to overwrite those four and prints the diff, and unwiring is reverting the wiring commits; Phase 1 makes the shim refuse rather than fall back and print the checkout it resolved, and every release phase ends with `gbg install` on the other host, named as his action. |
