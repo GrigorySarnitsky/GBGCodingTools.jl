@@ -30,6 +30,55 @@ const WRAPPER_PHRASE = "Allocating form of"
 const THRESHOLD = 3
 
 """
+    documents_in_full(e) -> Bool
+
+Whether a docstring documents its own arguments in full, as a delegate's must: it displays a signature,
+names every one of its arguments as code — a bare name, or with its type, default or dots — and lists
+them in the form `RULE.DOC.ARGS_FORM` asks. The argument is `e`, the docstring. Returns the verdict.
+No exemption applies: a private or short delegate is held to naming them all like any other.
+"""
+function documents_in_full(e)
+    names = Texts.signature_names(e.text)
+    isempty(names) && return false
+    named(n) = occursin(Regex("`\\Q" * n * "\\E(?:\\.\\.\\.)?(?:\\s*(?:::|=)[^`]*)?`"), e.text)
+    return all(named, names) && isempty(args_form_one(e; exempt = false))
+end
+
+"""
+    delegation_verdict(d, docs) -> Union{Nothing,Symbol,String}
+
+Whether a docstring's argument delegation stands. The arguments are `d`, the docstring, and `docs`,
+every docstring of its file. Returns `nothing` where `d` delegates nothing, `:ok` where the delegation
+stands, and the reason in words where it does not.
+
+It stands when the delegate — matched by its last name — is documented in the same file, by a docstring
+that delegates nothing and [`documents_in_full`](@ref); when every argument of `d`'s signature is one
+of the delegate's; and when every argument of the delegate's that `d` lacks is named as code in the
+delegating paragraph, as "without `normalize`" does
+([GBGStreamingStatistics](https://grigorysarnitsky.github.io/GBGStreamingStatistics.jl/)' request, 2026-10-04).
+Both rules judge a delegation by this one verdict, so a fault in it is the same fault under both.
+"""
+function delegation_verdict(d, docs)
+    del = Texts.delegation(d.text)
+    del === nothing && return nothing
+    f = del.delegate
+    targets = [e for e in docs if last(split(e.node, '.')) == f && e.text != d.text]
+    isempty(targets) && return "delegates its arguments to `$f`, which has no docstring in this file"
+    any(e -> Texts.delegation(e.text) !== nothing, targets) &&
+        return "delegates its arguments to `$f`, which delegates its own: a delegation is not chained"
+    all(documents_in_full, targets) ||
+        return "delegates its arguments to `$f`, whose own docstring does not document them in full"
+    mine = Texts.signature_names(d.text)
+    isempty(mine) && return "delegates its arguments to `$f` and displays no signature of its own"
+    theirs = unique(vcat((Texts.signature_names(e.text) for e in targets)...))
+    extra = setdiff(mine, theirs)
+    isempty(extra) || return "delegates its arguments to `$f`, which does not take " * join("`" .* extra .* "`", ", ")
+    unsaid = [n for n in setdiff(theirs, mine) if !occursin(Regex("`\\Q" * n * "\\E(?:\\.\\.\\.)?`"), del.paragraph)]
+    isempty(unsaid) || return "delegates its arguments to `$f` and does not say it lacks " * join("`" .* unsaid .* "`", ", ")
+    return :ok
+end
+
+"""
     args_form(src, cfg) -> Vector{Model.Location}
 
 Every docstring that lists its arguments in the wrong form: bullets where prose is called for, prose
@@ -43,9 +92,29 @@ keyword bound in a prose clause. A type is not exempt, though its `# Fields` rep
 """
 function args_form(src::AbstractString, cfg)
     out = Model.Location[]
-    for d in Texts.docstrings_of(src)
-        startswith(d.node, "_") && continue
-        occursin(WRAPPER_PHRASE, d.text) && continue
+    docs = Texts.docstrings_of(src)
+    for d in docs
+        own = args_form_one(d)
+        # A delegation answers for the list only where one is missing; an exempt docstring stays exempt.
+        isempty(own) && continue
+        verdict = delegation_verdict(d, docs)
+        verdict === :ok && continue
+        if verdict isa String
+            push!(out, Model.Location(; file = "", line = Texts.docstring_line(d, Texts.delegation(d.text).offset),
+                                       node = d.node, text = "`$(d.node)` " * verdict))
+            continue
+        end
+        append!(out, own)
+    end
+    return out
+end
+
+# One docstring's verdict under the rule, delegation aside.
+function args_form_one(d; exempt = true)
+    out = Model.Location[]
+    begin
+        exempt && startswith(d.node, "_") && return out
+        exempt && occursin(WRAPPER_PHRASE, d.text) && return out
 
         # The WIDEST of the displayed signatures, not the first: a docstring showing a two- and a
         # four-argument form is a docstring whose reader meets four, and the bulleted form is for them.
@@ -59,7 +128,7 @@ function args_form(src::AbstractString, cfg)
             npos, nkw = a, b
             positional, keyword = Texts.parameters(inside)      # the NAMES of the widest, for the carve-out
         end
-        npos + nkw == 0 && continue
+        npos + nkw == 0 && return out
 
         prosed = occursin(IN_PROSE, d.text)
         bulleted = occursin(BULLETED, d.text)
@@ -83,7 +152,7 @@ function args_form(src::AbstractString, cfg)
                 text = wants_bullets ?
                     "`$(d.node)` lists its arguments under a sentence: put the bullets under an `# Arguments` heading" :
                     "`$(d.node)` takes $(npos + nkw) argument(s): bind them in running prose, not bullets"))
-            continue
+            return out
         end
 
         if bulleted && prosed
@@ -122,8 +191,8 @@ Three or more arguments, or any keyword, go under `# Arguments`; fewer are bound
 """
 const ARGS_FORM = Model.Rule(
     id = Symbol("RULE.DOC.ARGS_FORM"),
-    statement = "Three or more arguments, or any keyword, are listed as bullets under an `# Arguments` heading, where several may head one bullet together; fewer are bound in running prose, as in \"The arguments are `a`, the first, and `b`, the second.\"; the two are never mixed. A type lists its constructor's arguments so too, even where its `# Fields` section repeats them.",
-    why = "A reader looking for one argument of many needs a list; a reader of a two-argument call needs a sentence.",
+    statement = "Three or more arguments, or any keyword, are listed as bullets under an `# Arguments` heading, where several may head one bullet together; fewer are bound in running prose, as in \"The arguments are `a`, the first, and `b`, the second.\"; the two are never mixed. A type lists its constructor's arguments so too, even where its `# Fields` section repeats them. A docstring that delegates its arguments as `RULE.DOC.ARGCOV` states takes neither form.",
+    why = "A reader looking for one argument of many needs a list; a reader of a two-argument call needs a sentence; a reader of a function that takes another's arguments needs the one list they both take.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],
     check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, args_form, false),
@@ -185,6 +254,15 @@ const ARGS_FORM = Model.Rule(
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b)", "Does a thing. The arguments are `a`, the first, and `b`, the second.\n\n- one note.\n- another."),
             Model.Location[], "fewer are bound in running prose"),
+        # a delegation stands for the list, and one that breaks a condition is reported at its paragraph
+        Model.TextExample(Model.FileSet.CODE,
+            doc("f(a, b, c)", "Does a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third.") *
+            doc("g(a, b, c; d = 1)", "Does another thing.\n\nArguments: as for [`f`](@ref)."),
+            [Model.Location(; file = "src/Example.jl", line = 18)], "takes neither form"),
+        Model.TextExample(Model.FileSet.CODE,
+            doc("f(a, b, c)", "Does a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third.") *
+            doc("g(a, b; c = 1)", "Does another thing.\n\nArguments: as for [`f`](@ref)."),
+            Model.Location[], "takes neither form"),
         # the arguments bulleted under another sentence: the heading is what is missing, at the bullets
         Model.TextExample(Model.FileSet.CODE,
             doc("f(a, b, c)", "Does a thing. They run from the largest to the smallest:\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third."),

@@ -4,6 +4,29 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.59 — 2026-10-04
+
+MINOR, GBGStreamingStatistics' request of 2026-10-04, approved by the owner:
+
+- **A docstring may delegate its arguments.** `RULE.DOC.ARGCOV` and `RULE.DOC.ARGS_FORM` accept a
+  paragraph opening "Arguments: as for", or an `# Arguments` section opening "As for", that links a
+  function documented in the same file — when that function's own docstring names all its arguments,
+  in the form `RULE.DOC.ARGS_FORM` asks, without delegating, when it takes every argument of the delegating signature, and when the paragraph
+  names as code each of its arguments the delegating signature lacks, as "without `normalize`" does. A
+  delegation that breaks a condition is one finding at the delegating docstring, naming the condition.
+  SS's fifteen standard-error readers kept one list for a parent and its readers this way until the
+  rules made them repeat it; measured on SS's current files with the pointers put back, all sixteen
+  delegations stand. A delegation is consulted only where the docstring's own list falls short, so an
+  exempt docstring stays exempt. The first draft was reviewed and refused: a delegate the rule exempts,
+  short or private, counted as documenting its arguments while naming none.
+- **A comment in a displayed signature no longer hides the arguments after it.** A wrapped signature
+  whose first line ends in a comment, as `f(s, g, x, z;   # ≡ f_{g(Y) ∣ X}`, joined the comment into
+  the argument list and lost every argument on the next line, for every rule that reads a signature.
+  A `#` in a string, a command or a character literal is no comment, and an inline `#= … =#` loses only
+  its own text.
+  Measured over the four packages and this one, the four rules that read signatures report the same 132
+  findings before and after.
+
 ## 2.0.0-rc.58 — 2026-10-04
 
 PATCH, GBGStreamingStatistics' request of 2026-10-03:

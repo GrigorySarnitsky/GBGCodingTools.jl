@@ -907,13 +907,46 @@ function signature_lines(doc::AbstractString)
         # A signature too wide for the column is wrapped, and its continuation is indented too. Lines are
         # joined until the parentheses balance, or the second of a wrapped pair reads as its own call
         # with the arguments left on the first line lost.
-        current = isempty(current) ? String(strip(line)) : current * " " * strip(line)
+        # A trailing comment is no part of the call. Joined into a wrapped signature it swallowed the next
+        # line's arguments: `f(s, g, x, z;   # ≡ f_{g(Y) ∣ X}` then `hx, hz, …` read as taking no `hx`
+        # (GBGStreamingStatistics' `conditional_pushforward_density`, measured 2026-10-04).
+        code = strip(without_comment(line))
+        current = isempty(current) ? String(code) : current * " " * code
         if count(==('('), current) == count(==(')'), current)
             push!(out, current); current = ""
         end
     end
     isempty(current) || push!(out, current)
     return out
+end
+
+# A line with its comments cut. A `#` outside a string, a command and a character literal opens a comment
+# in Julia, with or without a space before it; `#= … =#` closes on the same line and only its own text
+# goes. `comment = '#'` is a default, not a comment, and cutting there lost every argument after it; a
+# `#=` mid-signature lost the argument before it (review, 2026-10-04).
+function without_comment(line::AbstractString)
+    out = IOBuffer(); quote_char = nothing; escaped = false; prev = ' '
+    i = firstindex(line)
+    while i <= lastindex(line)
+        c = line[i]
+        if quote_char !== nothing
+            escaped ? (escaped = false) : c == '\\' ? (escaped = true) : c == quote_char && (quote_char = nothing)
+        elseif c == '"' || c == '`'
+            quote_char = c
+        elseif c == '\'' && !(Base.is_id_char(prev) || prev in (')', ']', '}', '\''))
+            quote_char = c                   # a character literal, not an adjoint
+        elseif c == '#'
+            rest = line[i:end]
+            startswith(rest, "#=") || break
+            close = findnext("=#", line, nextind(line, i, 2))
+            close === nothing && break
+            i = nextind(line, last(close)); prev = ' '
+            continue
+        end
+        print(out, c); prev = c
+        i = nextind(line, i)
+    end
+    return String(take!(out))
 end
 
 """
@@ -963,6 +996,59 @@ function parameters(inside::AbstractString)
     splats(text) = [x for x in bare.(slots(text)) if occursin(Regex("^" * NAME * "\\.\\.\\.\$"), x)]
     return (vcat(named(positional_text), splats(positional_text)),
             vcat(named(keyword_text), splats(keyword_text)))
+end
+
+"""
+    signature_names(doc) -> Vector{String}
+
+The names of every argument the signatures a docstring displays take, positional and keyword, each
+once, a splat without its dots. The argument is `doc`, the docstring's text. Returns them in order.
+"""
+function signature_names(doc::AbstractString)
+    out = String[]
+    for sig in signature_lines(doc)
+        inside = argument_list(replace(sig, r"\s*->.*$" => ""))
+        inside === nothing && continue
+        positional, keyword = parameters(inside)
+        for p in vcat(positional, keyword)
+            n = replace(p, r"\.\.\.$" => "")
+            n in out || push!(out, n)
+        end
+    end
+    return out
+end
+
+"""
+    DELEGATION
+
+A paragraph that hands a docstring's arguments to another function's: "Arguments: as for", or an
+`# Arguments` heading whose paragraph opens "As for", then a `@ref` link to the delegate.
+"""
+const DELEGATION = r"(?m)(?:^Arguments:[ \t]+as[ \t]+for|^#[ \t]+Arguments[ \t]*\r?\n[ \t]*\r?\n[ \t]*As[ \t]+for)\s+\[`([^`]+)`\]\(@ref[^)]*\)"
+
+"""
+    delegation(doc) -> Union{Nothing,NamedTuple}
+
+The delegation a docstring makes, if it makes one: the delegate's name, the delegating paragraph, and
+its offset in the text. The argument is `doc`, the docstring's text. Returns `(delegate, paragraph,
+offset)`, or `nothing` where the docstring documents its own arguments.
+"""
+function delegation(doc::AbstractString)
+    for m in eachmatch(DELEGATION, doc)
+        before = doc[1:prevind(doc, m.offset)]
+        # a paragraph's opening, not a line inside one; and prose, not a fenced example
+        (isempty(strip(before)) || occursin(r"\n[ \t]*\r?\n[ \t]*$", before)) || continue
+        isodd(count(l -> occursin(r"^[ \t]*(?:```|~~~)", l), split(before, '\n'))) && continue
+        name = String(last(split(m.captures[1], '.')))
+        start = m.offset + first(findfirst(r"[Aa]s[ \t]+for", m.match)) - 1
+        rest = doc[start:end]
+        stop = findfirst(r"\n[ \t]*\r?\n", rest)
+        paragraph = stop === nothing ? rest : rest[1:prevind(rest, first(stop))]
+        # the link names the delegate, not an argument: an argument of the same name must be named apart
+        paragraph = replace(paragraph, r"\[`[^`]+`\]\(@ref[^)]*\)" => "")
+        return (delegate = replace(name, r"\(.*$" => ""), paragraph = String(paragraph), offset = start)
+    end
+    return nothing
 end
 
 """

@@ -16,6 +16,7 @@ module Reflection
 using ...Model
 using ...Texts
 using ..Docstrings: body_line
+using ..Arguments: delegation_verdict
 
 const WRAPPER_PHRASE = "Allocating form of"
 const THRESHOLD = 3
@@ -36,9 +37,28 @@ the function's own call restated. A splat is held to it too (ruled 2026-09-29).
 """
 function argcov(src::AbstractString, cfg)
     out = Model.Location[]
-    for d in Texts.docstrings_of(src)
-        startswith(d.node, "_") && continue
-        occursin(WRAPPER_PHRASE, d.text) && continue
+    docs = Texts.docstrings_of(src)
+    for d in docs
+        own = argcov_one(d)
+        # A delegation answers only for arguments the body leaves unnamed; an exempt docstring stays exempt.
+        isempty(own) && continue
+        verdict = delegation_verdict(d, docs)
+        verdict === :ok && continue
+        if verdict isa String
+            push!(out, Model.Location(; file = "", line = d.line, node = d.node, text = "`$(d.node)` " * verdict))
+            continue
+        end
+        append!(out, own)
+    end
+    return out
+end
+
+# One docstring's verdict under the rule, delegation aside.
+function argcov_one(d)
+    out = Model.Location[]
+    begin
+        startswith(d.node, "_") && return out
+        occursin(WRAPPER_PHRASE, d.text) && return out
         # The union of every displayed signature's parameters, each remembered with the signature that
         # introduced it; the widest form decides whether the docstring is short enough for prose.
         shown = Tuple{String,String}[]; widest = 0; widest_kw = 0
@@ -53,8 +73,8 @@ function argcov(src::AbstractString, cfg)
             n = length(positional) + length(keyword)
             n > widest && (widest = n; widest_kw = length(keyword))
         end
-        isempty(shown) && continue
-        widest < THRESHOLD && widest_kw == 0 && continue
+        isempty(shown) && return out
+        widest < THRESHOLD && widest_kw == 0 && return out
         # The inline code spans that are not the function's own call restated: `run!(C(; kwargs...))`
         # says where a splat goes, while `f(a, b)` beside the signature `f(a, b)` says nothing of `a`.
         own = [m.captures[1] for m in (match(r"^\s*([^(\s]+)\(", s) for s in Texts.signature_lines(d.text))
@@ -95,17 +115,75 @@ function argcov(src::AbstractString, cfg)
     return out
 end
 
+# The delegation examples: `f` documents its three arguments, and a second function hands its own to it.
+const DELEGATE = "\"\"\"\n    f(a, b, c)\n\nDoes a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `c` — the third.\n\"\"\"\nf(x) = x\n"
+delegating(sig, sentence) = "\"\"\"\n    " * sig * "\n\nDoes another thing.\n\n" * sentence * "\n\"\"\"\n" *
+                             first(split(sig, "(")) * "(x) = x\n"
+
 # A splat is named like any argument. A sentence sending "every other keyword" on counted for it until
 # the owner ruled, on 2026-09-29, that `kwargs...` is named as code, as the rule's statement says: the
 # sentence says where the keywords go and leaves the reader to guess which name holds them.
 const ARGCOV = Model.Rule(
     id = Symbol("RULE.DOC.ARGCOV"),
-    statement = "Every argument in a docstring's signature, positional and keyword, is named as code in its body.",
-    why = "A reader passing an argument the docstring never mentions has to read the source to learn what it does.",
+    statement = "Every argument in a docstring's signature, positional and keyword, is named as code in its body, or delegated: a paragraph opening \"Arguments: as for\", or an `# Arguments` section opening \"As for\", links a function documented in the same file whose own docstring names all its arguments, in the form `RULE.DOC.ARGS_FORM` asks, without delegating, whose arguments include all of this signature's, and the paragraph names as code each of its arguments this signature lacks.",
+    why = "A reader passing an argument the docstring never mentions has to read the source to learn what it does. Where several functions take one function's arguments, one list serves them all, and the conditions keep the pointer from covering an argument that list lacks.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],
     check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, argcov, false),
     examples = [
+        # a comment on a wrapped signature's first line hid every argument after it (SS, 2026-10-04)
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(a, b;   # ≡ φ(a, b)\n      tol = 1e-6)\n\nDoes a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nf(x) = x\n",
+            [Model.Location(; file = "src/Example.jl", line = 1)], "is named as code in its body"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(a, b;   # ≡ φ(a, b)\n      tol = 1e-6)\n\nDoes a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n- `tol` — the tolerance.\n\"\"\"\nf(x) = x\n",
+            Model.Location[], "is named as code in its body"),
+        # a `#` that is a default, not a comment, hides nothing (review, 2026-10-04)
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    read_table(io; delim = ',', comment = '#', header = true)\n\nReads a table from `io`.\n\"\"\"\nread_table(x) = x\n",
+            [Model.Location(; file = "src/Example.jl", line = 1), Model.Location(; file = "src/Example.jl", line = 1),
+             Model.Location(; file = "src/Example.jl", line = 1)], "is named as code in its body"),
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    read_table(io; delim = ',', comment = '#', header = true)\n\nReads a table from `io`, split at `delim`, skipping lines that open with `comment`, with `header` naming the columns.\n\"\"\"\nread_table(x) = x\n",
+            Model.Location[], "is named as code in its body"),
+        # a delegate the rule would exempt, short and naming nothing, documents nothing in full
+        Model.TextExample(Model.FileSet.CODE,
+            "\"\"\"\n    f(a, b)\n\nDoes a thing.\n\"\"\"\nf(x) = x\n" * delegating("g(a; b = 1)", "Arguments: as for [`f`](@ref)."),
+            [Model.Location(; file = "src/Example.jl", line = 7)], "whose own docstring names all its arguments, in the form `RULE.DOC.ARGS_FORM` asks, without delegating"),
+        Model.TextExample(Model.FileSet.CODE,
+            DELEGATE * delegating("g(a; b = 1)", "# Arguments\n\nAs for [`f`](@ref), without `c`."),
+            Model.Location[], "names as code each of its arguments this signature lacks"),
+        # the delegation, asked for by GBGStreamingStatistics (2026-10-04): it stands, or it is reported
+        # at the delegating docstring with the condition it breaks
+        Model.TextExample(Model.FileSet.CODE,
+            DELEGATE * delegating("g(a, b, c)", "Arguments: as for [`f`](@ref)."),
+            Model.Location[], "a function documented in the same file"),
+        Model.TextExample(Model.FileSet.CODE,
+            delegating("g(a, b, c)", "Arguments: as for [`h`](@ref)."),
+            [Model.Location(; file = "src/Example.jl", line = 1)], "a function documented in the same file"),
+        Model.TextExample(Model.FileSet.CODE,
+            DELEGATE * delegating("g(a, b, c)", "# Arguments\n\nAs for [`f`](@ref GBGExample.f)."),
+            Model.Location[], "whose own docstring names all its arguments, in the form `RULE.DOC.ARGS_FORM` asks, without delegating"),
+        Model.TextExample(Model.FileSet.CODE,
+            replace(DELEGATE, "- `c` — the third.\n" => "") * delegating("g(a, b, c)", "Arguments: as for [`f`](@ref)."),
+            [Model.Location(; file = "src/Example.jl", line = 1), Model.Location(; file = "src/Example.jl", line = 12)],
+            "whose own docstring names all its arguments, in the form `RULE.DOC.ARGS_FORM` asks, without delegating"),
+        Model.TextExample(Model.FileSet.CODE,
+            DELEGATE * delegating("g(a, b, c)", "Arguments: as for [`f`](@ref).") *
+                       delegating("k(a, b, c)", "Arguments: as for [`g`](@ref)."),
+            [Model.Location(; file = "src/Example.jl", line = 21)], "whose own docstring names all its arguments, in the form `RULE.DOC.ARGS_FORM` asks, without delegating"),
+        Model.TextExample(Model.FileSet.CODE,
+            DELEGATE * delegating("g(a, b, d)", "Arguments: as for [`f`](@ref)."),
+            [Model.Location(; file = "src/Example.jl", line = 13)], "whose arguments include all of this signature's"),
+        Model.TextExample(Model.FileSet.CODE,
+            DELEGATE * delegating("g(a, b; c = 1)", "Arguments: as for [`f`](@ref)."),
+            Model.Location[], "whose arguments include all of this signature's"),
+        Model.TextExample(Model.FileSet.CODE,
+            DELEGATE * delegating("g(a; b = 1)", "Arguments: as for [`f`](@ref)."),
+            [Model.Location(; file = "src/Example.jl", line = 13)], "names as code each of its arguments this signature lacks"),
+        Model.TextExample(Model.FileSet.CODE,
+            DELEGATE * delegating("g(a; b = 1)", "Arguments: as for [`f`](@ref), without `c`."),
+            Model.Location[], "names as code each of its arguments this signature lacks"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(a, b, c)\n\nDoes a thing.\n\n# Arguments\n\n- `a` — the first.\n- `b` — the second.\n\"\"\"\nf(x) = x\n",
             [Model.Location(; file = "src/Example.jl", line = 1)], "every argument is documented"),

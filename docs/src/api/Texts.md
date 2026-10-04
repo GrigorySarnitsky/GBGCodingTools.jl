@@ -23,6 +23,9 @@ GBGCodingTools.Texts.headings
 GBGCodingTools.Texts.mask_code_spans
 GBGCodingTools.Texts.node_at
 GBGCodingTools.Texts.parameters
+GBGCodingTools.Texts.signature_names
+GBGCodingTools.Texts.DELEGATION
+GBGCodingTools.Texts.delegation
 GBGCodingTools.Texts.prose_text
 GBGCodingTools.Texts.reanchor
 GBGCodingTools.Texts.signature_line

@@ -202,6 +202,14 @@ end
     @test length(first(T.parameters("grid::Grid3D, layout::Layout, ::Val{R}"))) == 2   # but it has no NAME
     # only the leading block counts: an indented line further down is an example
     @test T.signature_lines("    f(a)\n\nProse.\n\n    g(b, c, d)\n") == ["f(a)"]
+    # a comment is no part of a signature, and a `#` that is no comment is (SS and review, 2026-10-04)
+    names(sig) = T.signature_names("    " * sig * "\n\nProse.\n")
+    @test names("f(s, g, x, z;   # ≡ f_{g(Y) ∣ X}\n      hx, hz, kernelx = k)") == ["s", "g", "x", "z", "hx", "hz", "kernelx"]
+    @test names("f(a, b;# note\n      c = 1)") == ["a", "b", "c"]
+    @test names("f(a #= n =#, b, c)") == ["a", "b", "c"]
+    @test names("read_table(io; delim = ',', comment = '#', header = true)") == ["io", "delim", "comment", "header"]
+    @test names("f(v₁, b = v₁')  # c (") == ["v₁", "b"]
+    @test names("f(a, s = \"a#b\", c = '\\'')") == ["a", "s", "c"]
 end
 
 # Three shapes real consumers write that the rules misread, each reported by the session wiring one.
