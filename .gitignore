@@ -7,6 +7,7 @@ test/Manifest.toml
 benchmark/Manifest.toml
 .claude/settings.local.json
 *.cov
+inspiration/
 # gbg:managed end
 
 # seeded by hand at Phase 0; `gbg sync` adds its managed block at Phase 1.10

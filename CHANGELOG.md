@@ -4,6 +4,26 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.60 — 2026-10-05
+
+MINOR, GBGPeriodicFields' request of 2026-10-05, approved by the owner:
+
+- **`RULE.GIT.TRACKED`, new: what a package's git may hold.** The package's own files — `src/`, `ext/`,
+  `test/`, `docs/` but its build, `examples/`, `benchmark/`, `.github/`, `Project.toml`, `README.md`, a
+  `LICENSE`, `CHANGELOG.md`, `.gitignore`, `CLAUDE.md` — and the tool's: `.gbg/config.jl`, `.gbg/policy/`,
+  `.gbg/requests/`, `.gbg/questions.json`, `.gbg/settled.jl`, `.gbg/runs/`, `.gbg/leak-accepted.txt`, `.claude/settings.json`,
+  `.claude/hooks/`, `.claude/skills/`, `.claude/WORK_QUEUE.md`. Anything else is one finding per file, so a
+  file kept on purpose is a per-file switch with its reason; the rulebook lists no exception, each package
+  declares its own (the owner). A draft or a note between sessions lives in `inspiration/`, which the
+  tool's `.gitignore` block now ignores in every package and Dropbox carries to both machines. It reads git, so `gbg check` runs it and no build or test
+  does. Measured: PF 102 findings, HT 281, SS 8, CP 1 — the old instruments and rounds, notes, and the
+  folders each package decides on. 110 rules.
+- **The end-of-turn hook names every file newly in git**, and stops nothing for it: "new in git: …" is
+  shown to the owner whether the turn ends or is held, and to the session beside the reason when it is
+  held. Any name a file system allows comes through whole; twenty are named and the rest counted.
+  Reviewed: the first draft refused `CHANGELOG.md`, which `gbg release` requires, broke its message on a
+  tab in a name, and on a held turn told only the session.
+
 ## 2.0.0-rc.59 — 2026-10-04
 
 MINOR, GBGStreamingStatistics' request of 2026-10-04, approved by the owner:

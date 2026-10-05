@@ -642,6 +642,38 @@ end
         @test gate("git $push origin master")[1] == 0
     end
 
+    # GBGPeriodicFields' git carried notes no commit ever remarked on (its request, 2026-10-05): every file
+    # newly in the index is named at the turn's end, to the owner, and beside the reason when it is held.
+    @testset "the end-of-turn hook names every file newly in git, and stops nothing for it" begin
+        dir, cfg = wired_package()
+        hook = joinpath(dir, ".claude", "hooks", "queue-guard.sh")
+        git(args...) = run(pipeline(`git -C $dir $args`; stdout = devnull, stderr = devnull))
+        git("init", "-q", "-b", "master")
+        turn() = (out = IOBuffer(); err = IOBuffer();
+                  p = run(pipeline(addenv(`bash $hook`, "CLAUDE_PROJECT_DIR" => dir); stdin = IOBuffer("{}"),
+                                   stdout = out, stderr = err); wait = false); wait(p);
+                  (p.exitcode, String(take!(out)), String(take!(err))))
+        write(joinpath(dir, "a.jl"), "x"); git("add", "a.jl")
+        @test turn() == (0, "", "")                                    # the first turn only records
+        write(joinpath(dir, "notes \"x\".md"), "n"); git("add", "notes \"x\".md")
+        code, out, _ = turn()
+        @test code == 0
+        @test JSON3.read(out)["systemMessage"] == "new in git: notes \"x\".md"
+        @test turn() == (0, "", "")                                    # named once, not every turn
+        write(joinpath(dir, ".claude", "WORK_QUEUE.md"), "- [ ] an item\n")
+        write(joinpath(dir, "b.jl"), "y"); git("add", "b.jl")
+        code, out, err = turn()
+        @test code == 2 && occursin("new in git: b.jl", err)          # held for the queue, the file named too,
+        @test JSON3.read(out)["systemMessage"] == "new in git: b.jl"  # to the session and to the owner
+        # any name a file system allows comes through whole, and a flood is counted, not listed
+        write(joinpath(dir, ".claude", "WORK_QUEUE.md"), "- [x] an item\n")
+        for n in ("t\tx", "new\nline.md", "a,b.md"); write(joinpath(dir, n), "x"); git("add", "--", n); end
+        @test JSON3.read(turn()[2])["systemMessage"] == "new in git: a,b.md, new\nline.md, t\tx"
+        for i in 1:25; write(joinpath(dir, "f$i.jl"), "x"); git("add", "f$i.jl"); end
+        @test endswith(JSON3.read(turn()[2])["systemMessage"], ", and 5 more")
+        @test !occursin(".gbg/scratch", read(`git -C $dir ls-files`, String))
+    end
+
     # A hook at mode 644 with the right content was neither restored nor reported, and Claude Code
     # cannot exec it.
     @testset "a hook that lost its execute bit is reported and restored" begin
