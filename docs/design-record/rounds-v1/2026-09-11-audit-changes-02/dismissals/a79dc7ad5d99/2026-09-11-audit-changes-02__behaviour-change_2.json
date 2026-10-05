@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-audit-changes-02/behaviour-change#2",
-  "verdict": "UNSAFE",
-  "evidence": "Dismissal: 'every re-baseline in this window carries its reason'. src/Scan.jl:586: '--rebaseline needs --reason ... the reason goes in the commit'. 47db044 and 272e01b say 're-baselined'. But 249b795 also rewrites docs/prose_shape.csv (Demote 224->234, render_args 159->160, ARGS_THRESHOLD 41->42, Reflection 92->101 longest paragraph), and its message never mentions prose-shape or a reason. docs-rubric.md: 're-recorded deliberately, never by accident.'",
-  "what_would_bite": "The dismissal's key premise is false for one of the window's three re-baselines. Commit 249b795 ('fix pass 3') raised four docstring ratchet rows but its message gives no --reason, which breaks cmd_scan's contract that 'the reason goes in the commit'. Someone reading git log to find why the baseline moved finds nothing. The re-baseline also landed in the same commit as the prose it lets through, the self-certifying shape that audit.js line 77 says to check. Part of the growth repeats text: ARGS_THRESHOLD restates the rubric's home, which the Reflection map already names."
-}

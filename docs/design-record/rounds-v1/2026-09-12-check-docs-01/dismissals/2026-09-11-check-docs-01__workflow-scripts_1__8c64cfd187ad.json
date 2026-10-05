@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-check-docs-01/workflow-scripts#1",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "src/GBGCodingTools.jl:105 `include(\"CLI/Design.jl\")`. src/CLI/Design.jl:209 `VERBS[\"attack\"]`, :214 `VERBS[\"calibrate\"]`; :80 `install_script(joinpath(instrument_dir(\"audit-changes\"),\"workflow\",\"attack-design.js\"), ...)` then :86 `workflow_call(joinpath(wd,\"attack-design.js\"), a)`; :172/:179 the same for `rubric-audit.js` from instrument_dir(\"check-consistency\"). Loading the module lists \"attack\", \"attack read\", \"calibrate\", \"calibrate read\" in VERBS; running attack(cfg,\"check-docs\") returned rc=0 and printed the Workflow call for attack-design.js.",
-  "what_would_bite": ""
-}

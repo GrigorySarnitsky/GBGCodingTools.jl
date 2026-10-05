@@ -1,7 +1,0 @@
-{
-  "id": "2026-09-11-check-docs-01/workflow-scripts#1",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "src/CLI/Design.jl:80 `Preflight.install_script(joinpath(Preflight.instrument_dir(\"audit-changes\"), \"workflow\", \"attack-design.js\"), ...)`; :86 `println(io, Preflight.workflow_call(joinpath(wd, \"attack-design.js\"), a))`; :172/:179 the same for `rubric-audit.js`; :209 `VERBS[\"attack\"]`, :214 `VERBS[\"calibrate\"]`; src/GBGCodingTools.jl:105 `include(\"CLI/Design.jl\")`. Running `main([\"--help\"])` prints `gbg attack` and `gbg calibrate`. test/rounds.jl:272 `@test occursin(\"attack-design.js\", s)` and :297 `occursin(\"rubric-audit.js\", ...)`, in RoundTests of test/runtests.jl:22.",
-  "what_would_bite": null,
-  "notes": "The finding's cited line (Preflight.main_script, src/CLI/Preflight.jl:820) still maps only the four instrument entry points, but Design.jl never routes through it: it names the two scripts directly. Preflight.instrument_dir (Preflight.jl:35) resolves to the shipped instruments/ tree, where both scripts exist; catalog/attack/ holds subjects for all four instruments, so `gbg attack <instrument>` reaches the launch rather than the exit-2 no-subject branch. The 'launch' is a printed Workflow call the session runs, which is the same shape every in-round instrument uses (Rounds.jl:771), so there is no sibling asymmetry."
-}

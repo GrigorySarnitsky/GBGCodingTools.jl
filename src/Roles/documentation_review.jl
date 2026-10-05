@@ -47,7 +47,7 @@ The fields of expertise a package may declare, catalogued once and shared across
 names the ones it needs in its config's `disciplines`; one it needs and this list lacks is requested
 from the tool's session, which adds it here for everyone. First written 2026-09-20 from the readers the
 old tree kept per package; rewritten 2026-09-21 as experts with a licence to judge, after the attack and
-the blind comparison recorded in `docs/design-record/08-discipline-attack.md`.
+the blind comparison of 2026-09-21.
 """
 const DISCIPLINES = Model.Discipline[
     Model.Discipline(id = :differential_geometry,

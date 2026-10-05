@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-audit-changes-02/behaviour-change#1",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "Gate.jl gate_problems: `r.name in ignored && continue` precedes `push!(problems, :open ...)` and the `:committed` push, which is guarded by `if !in_ci && ...`; so under GBG_ROUND (gbg round build/prepare/pass open, Rounds.jl:151/188/297, Passes.jl:530) or CI neither fires. DocLints.jl: `all(p -> first(p) == :open, ...) || return String[]`. Every description of the skip (makedocs docstring, gate_or_skip, ARCHITECTURE:491, IMPLEMENTATION:326, index.md:27) says 'refusing only because a round of a docs instrument is open'; IMPLEMENTATION:90-91: 'A bare julia --project=docs docs/make.jl under an open round is refused by design'. Release.jl:108 and Doctor.jl:644 set GBG_DOCS_NO_SKIP. No template or hook runs make.jl locally besides docs.yml.snippet (CI).",
-  "what_would_bite": ""
-}

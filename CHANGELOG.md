@@ -4,6 +4,31 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.61 — 2026-10-05
+
+MINOR, the owner's rulings of 2026-10-05:
+
+- **A push is refused while git tracks a file the rulebook does not allow.** The push hook runs
+  `RULE.GIT.TRACKED` under the package's own switches and exclusions, through
+  `Engine.Checks.tracked_strays`, before the docs build, and lists every such file. Publishing is the
+  moment a stray file does harm; a build or a test still never reads git. A command that stages new
+  files, commits and pushes at once is judged with the files git neither tracks nor ignores, named apart,
+  since what it stages is not in the index yet; `git add -u` stages none, and is not.
+- **`docs/` holds only what its build and its site take part in:** the pages under `docs/src/`, the
+  build's script, `docs/Project.toml`, `docs/prose_shape.csv`, the design document `architecture_doc`
+  names, and each document the package declares, in `copies` or in a rationale file set its config writes out. A design record, a proposal or a note beside
+  them is refused; the default rationale set, every top-level Markdown file, would admit such a note. Measured under each package's
+  own config: PF's and SS's `docs/` pass whole; HT's `architecture.als` and CP's figure are refused, CP's
+  until it is wired.
+- **This package's own `docs/` is cleaned** to that shape: the design record (1,278 files), the
+  superseded proposal and the three wiring documents left the tree, into the ignored `inspiration/`, and
+  git's history keeps them. The frozen rule register the release check and the conversion test read
+  moved to `test/RULES-v1.toml`. The leak switches naming those files stay: git's history still holds
+  them, and the leak scan reads it. This package's own working parts — `fixture/`, `tools/`, `bin/`,
+  `drivers/`, `install.sh`, `fleet.toml`, `IMPLEMENTATION.md` — are declared with a switch each, with its
+  reason (the owner). Reviewed: the first draft refused a declared rationale document,
+  let a file staged in a commit-and-push command through, and dropped those switches.
+
 ## 2.0.0-rc.60 — 2026-10-05
 
 MINOR, GBGPeriodicFields' request of 2026-10-05, approved by the owner:

@@ -12,7 +12,7 @@ using Test, GBGCodingTools, TOML
 include("helpers.jl")
 
 # The register as it stood when the rebuild began: 95 ids, frozen, read by nothing but this test.
-const REGISTER = joinpath(TOOL, "docs", "design-record", "RULES-v1.toml")
+const REGISTER = joinpath(TOOL, "test", "RULES-v1.toml")
 
 # Rules dropped rather than converted, each with the reason. A retirement is a code change like any other
 # (docs/ARCHITECTURE.md §13): the owner's answer named the id and why, and the id is never reused. The

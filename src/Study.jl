@@ -13,7 +13,7 @@ two things, and that is a fact about the wording, which no amount of discussion 
 **It converges on nothing, and there is nothing to converge.** This was called an attack on the rules
 until 2026-09-21, and the name was wrong twice over: an attack collects objections until they stop,
 which rewards a text that claims less, and the narrowing that produced is a measured failure of this
-project rather than a worry [`docs/design-record/08-discipline-attack.md`]. Here nobody objects. Three
+project rather than a worry [2026-09-21]. Here nobody objects. Three
 readers answer, the answers agree or they do not, and rewording is what the disagreement is FOR.
 
 **What it does with a disagreement.** Nothing, by itself. A rule the readers split on is reported, and a

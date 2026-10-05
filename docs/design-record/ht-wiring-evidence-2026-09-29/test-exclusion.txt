@@ -1,4 +1,0 @@
-The wired rc.47 clone, its exclusion widened by "test/phenomenology.jl", then gbg sync:
-gbg check findings before and after: identical
-Pkg.test(): exit 0
-docs build: the same 129 findings, line for line

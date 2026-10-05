@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-audit-changes-02/public-contract#2",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "Diff 47db044 of src/CLI/Gate.jl only moves gate's loop into gate_problems and tags each message (:open/:disabled/:committed => same string). gate keeps signature `gate(cfg, instruments...; io = stderr) -> Int`, runs self_verify then ROUND.DIR first, passes its own io (`gate_problems(cfg, instruments...; io)`), `fatal && return 2`, prints `\"  \", last(p)` (the same text), returns 1/0. Callers TestHarness.jl:608 and ext:34 are unchanged. gate_problems is not exported and is documented in verbs.md:51.",
-  "what_would_bite": ""
-}

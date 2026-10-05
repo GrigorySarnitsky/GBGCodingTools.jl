@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-audit-changes-02/behaviour-change#1",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "ARCHITECTURE.md:490-491 makes the one exception \"either gate refusing only because a round of a docs instrument is open\"; DocLints.jl:49 `all(p -> first(p) == :open, last(gate_problems(...))) || return String[]` enforces exactly that. Gate.jl:80 `r.name in ignored && continue` comes before the :committed push, and Rounds.jl:94 exports GBG_ROUND. In both cases nothing is built (ext `gate_or_skip(...) && return nothing` comes before Documenter). check-consistency PROTOCOL:53-54: \"a bare julia --project=docs docs/make.jl under an open round is refused by the gate, by design.\"",
-  "what_would_bite": ""
-}

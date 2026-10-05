@@ -1,8 +1,0 @@
-# catalog/attack/check-consistency.toml — the subject `gbg attack check-consistency` hands the attackers
-# (schema/attack-subject.schema.json). The {package.*} placeholders are filled per consumer.
-object = "the RENDERED documentation site of {package.name}, consolidated into one manuscript and read by a panel of persona hats, each from a single standpoint"
-defects = "defects a reader meets across the rendered site: pages that contradict each other, notation or naming that drifts, a claim stated one way here and another way there, broken structure, and citation or typesetting defects"
-context = "{package.name} — {package.description} Its field is {package.domain}. The hats read the built site, not the source; seeded defects measure their recall; a diff-reading act verifier and a blind state verifier grade the fix passes."
-standpoint = "a first-time reader of the rendered site, who reads it in order and never sees the source"
-source = "the built site under docs/build/ and the sources it is built from under docs/ and src/"
-directions = "a contradiction between two pages no single hat reads together; a term that drifts gradually across pages; a defect visible only in rendered math or layout"

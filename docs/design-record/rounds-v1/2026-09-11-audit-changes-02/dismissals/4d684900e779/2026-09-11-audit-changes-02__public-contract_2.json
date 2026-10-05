@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-audit-changes-02/public-contract#2",
-  "verdict": "UNSAFE",
-  "evidence": "gate() is unchanged: same messages, order and exit codes (diff e21e57f..249b795). But the new public gate_problems says \"What [`gate`](@ref) refuses for\" while its code runs `isdir(RoundFiles.rounds_dir(cfg)) || return (fatal, problems)`, which is clean. gate returns 2 in that case (ROUND.DIR) and on a self_verify failure. The record's claim field is empty, and the dismissal checked only gate, never the new binding's own contract.",
-  "what_would_bite": "GBGCodingTools.gate_problems(cfg) with .gbg/rounds/ absent and instruments enabled, or with self verify failing, returns (false, []), which reads as nothing to refuse, where gate(cfg) returns 2. docs_build_skipped only calls it after code == 1, so today's caller is safe. A direct caller of the documented public binding is not."
-}

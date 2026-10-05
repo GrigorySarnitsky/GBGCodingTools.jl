@@ -163,7 +163,7 @@ end
     counts(; io = stdout, root = pkgdir(GBGCodingTools)) -> Int
 
 `gbg release --counts`: prints, for `v2.0.0` alone, what still holds that release — the number of ids
-of the frozen register (`docs/design-record/RULES-v1.toml`) that are neither a `Rule` value nor retired,
+of the frozen register (`test/RULES-v1.toml`) that are neither a `Rule` value nor retired,
 the count the conversion test ratchets. It prints the one number and refuses nothing (ruled
 2026-09-16: nothing else holds a release); the Phase 5 gate reads it as `0`.
 
@@ -175,7 +175,7 @@ the count the conversion test ratchets. It prints the one number and refuses not
 Returns 0, or 2 where the register is not there to read.
 """
 function counts(; io::IO = stdout, root::AbstractString = pkgdir(GBGCodingTools))
-    register = joinpath(root, "docs", "design-record", "RULES-v1.toml")
+    register = joinpath(root, "test", "RULES-v1.toml")
     isfile(register) || (println(stderr, "release: no register at $register"); return 2)
     ids = [String(r["id"]) for r in TOML.parsefile(register)["rule"]]
     held = Set(String(r.id) for r in Catalogue.RULES)

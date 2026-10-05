@@ -1,6 +1,0 @@
-01-sync exit 0
-02-docs-112 exit 0
-03-plain-build exit 0
-04-site exit 0
-05-test-113-ci exit 1
-done

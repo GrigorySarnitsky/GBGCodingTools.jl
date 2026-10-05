@@ -615,13 +615,18 @@ end
             payload = JSON3.write(Dict("tool_name" => "Bash", "cwd" => cwd,
                                        "tool_input" => Dict("command" => command, "description" => "mentions git " * "push")))
             err = IOBuffer()
-            p = run(pipeline(setenv(`$script`, "CLAUDE_PROJECT_DIR" => dir, "PATH" => ENV["PATH"], "HOME" => ENV["HOME"]);
+            # the hook's Julia loads the tool from the docs environment; here that is this suite's own
+            p = run(pipeline(setenv(`$script`, "CLAUDE_PROJECT_DIR" => dir, "PATH" => ENV["PATH"], "HOME" => ENV["HOME"],
+                                    "JULIA_LOAD_PATH" => "@:" * dirname(Base.active_project()) * ":@stdlib");
                              stdin = IOBuffer(payload), stdout = devnull, stderr = err); wait = false)
             wait(p)
             (p.exitcode, String(take!(err)))
         end
         push = "pu" * "sh"      # spelt apart, so this suite's own text never reads as a push to a hook
         write(joinpath(dir, "docs", "make.jl"), "error(\"the build failed\")\n")
+        # the hook's Julia asks the docs environment what git may track; this one names the tool but was
+        # never instantiated, so it goes, and the suite's own environment answers through the load path
+        rm(joinpath(dir, "docs", "Project.toml"))
         git("init", "-q"); git("add", "-A"); git("commit", "-qm", "wired")
         @test gate("git status --short")[1] == 0                          # not a push: no build at all
         code, msg = gate("git $push -q origin master")
@@ -640,6 +645,26 @@ end
         @test gate("git add -u && git commit -qm y && git $push")[1] == 0 # unless the command commits first
         git("add", "-A"); git("commit", "-qm", "fixed")
         @test gate("git $push origin master")[1] == 0
+        # a file the rulebook does not let git track stops the push, before the build; a switch the
+        # package declares with its reason lets it through (the owner, 2026-10-05)
+        write(joinpath(dir, "notes.md"), "a session's note"); git("add", "notes.md"); git("commit", "-qm", "a note")
+        code, msg = gate("git $push origin master")
+        @test code == 2 && occursin("RULE.GIT.TRACKED", msg) && occursin("  notes.md", msg) && !occursin("built", msg)
+        config = joinpath(dir, ".gbg", "config.jl")
+        write(config, replace(read(config, String), r"\)\s*$" =>
+            ", switches = [Switch(target = Symbol(\"RULE.GIT.TRACKED\"), files = [\"notes.md\"], reason = \"kept for a test\")])\n"))
+        git("add", "-A"); git("commit", "-qm", "the switch")
+        @test gate("git $push origin master")[1] == 0
+        # a command that stages, commits and pushes at once: what it stages is not in the index yet when
+        # the push is judged, so files git neither tracks nor ignores count (review, 2026-10-05)
+        write(joinpath(dir, "draft.md"), "a draft")
+        code, msg = gate("git add draft.md && git commit -qm d && git $push origin master")
+        @test code == 2 && occursin("  draft.md  (untracked, not ignored)", msg)
+        # and only a command that stages new files: `git add -u` stages none, so an untracked file left
+        # in the tree is no stray of this push
+        @test gate("git add -u && git commit -qm d && git $push origin master")[1] == 0
+        @test gate("git commit --allow-empty -qm e && git $push origin master")[1] == 0
+        rm(joinpath(dir, "draft.md"))
     end
 
     # GBGPeriodicFields' git carried notes no commit ever remarked on (its request, 2026-10-05): every file

@@ -1,6 +1,0 @@
-# The edit Step 2 gives: the docs environment names HT itself and GBGPeriodicFields, with where each comes from.
-p='docs/Project.toml'; t=open(p).read()
-assert '[deps]\n' in t and '[sources]\n' in t
-t=t.replace('[deps]\n', '[deps]\nGBGHomogeneousTurbulence = "3aaacc91-4a61-401b-8a51-8cd29bd9b474"\nGBGPeriodicFields = "f1da9c2b-0ac1-4736-96f9-af1c25aedab1"\n',1)
-t=t.replace('[sources]\n','[sources]\nGBGHomogeneousTurbulence = {path = ".."}\nGBGPeriodicFields = {rev = "master", url = "https://github.com/GrigorySarnitsky/GBGPeriodicFields.jl"}\n',1)
-open(p,'w').write(t)

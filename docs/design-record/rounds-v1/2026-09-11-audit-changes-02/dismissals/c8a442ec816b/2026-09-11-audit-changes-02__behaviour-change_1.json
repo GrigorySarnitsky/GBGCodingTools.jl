@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-audit-changes-02/behaviour-change#1",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "Gate.jl gate_problems: `r.name in ignored && continue` precedes both the :open and :committed pushes (GBG_ROUND exempts the round from both); `:committed` requires `!in_ci` with `in_ci = haskey(ENV, \"CI\")`. DocLints.jl docs_build_skipped: skip only if `all(p -> first(p) == :open, ...)`; docstring: 'a round whose fixes were committed without it, fails the build'. IMPLEMENTATION.md:90-91: 'A bare julia --project=docs docs/make.jl under an open round is refused by design'.",
-  "what_would_bite": ""
-}

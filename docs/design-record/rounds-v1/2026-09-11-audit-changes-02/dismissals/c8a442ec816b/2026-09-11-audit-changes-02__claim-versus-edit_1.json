@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-audit-changes-02/claim-versus-edit#1",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "47db044 touches src/CLI/Design.jl in one docstring line only: '-which hat's own rubric should have caught it' -> '+which hat's persona should have caught it'. The commit message itemizes that class: 'cold-reader#1-4 ...; \"the rubric\" named'. The new word is accurate: catalog/hats/README.md defines '`persona` (the prompt body)', and calibrate writes h[\"persona\"] to the payload each blind hat reads. No code changed, so no behaviour moved silently.",
-  "what_would_bite": ""
-}

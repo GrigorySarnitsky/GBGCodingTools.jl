@@ -94,6 +94,28 @@ function reading(rule::Model.Rule, cfg::Model.Config, root::AbstractString)
 end
 
 """
+    tracked_strays(root, cfg; untracked = false) -> Vector{String}
+
+What `RULE.GIT.TRACKED` reports for a package: each tracked path the rule does not allow and no switch
+or exclusion of the package declares, or a line saying why it could not be evaluated.
+
+# Arguments
+
+- `root` — the package root.
+- `cfg` — its config.
+- `untracked` — whether files git neither tracks nor ignores count too.
+
+Returns the paths and lines, empty when the package tracks only what it may. The push hook refuses a push while this is not empty (the owner, 2026-10-05):
+publishing is the moment a stray file does harm.
+"""
+function tracked_strays(root::AbstractString, cfg::Model.Config; untracked::Bool = false)
+    id = Catalogue.Records.TRACKED.id
+    applies(cfg, id) || return String[]
+    return [isempty(l.file) ? l.text : occursin("is untracked", l.text) ? l.file * "  (untracked, not ignored)" : l.file
+            for l in Catalogue.Records.tracked(root, cfg; untracked) if isempty(l.file) || applies(cfg, id; file = l.file)]
+end
+
+"""
     run_rule(rule, cfg, root; network = false, history = false, pkg = nothing,
              site = nothing) -> Vector{Model.Location}
 

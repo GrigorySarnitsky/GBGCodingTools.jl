@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-audit-changes-02/executing#5",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "The edit is comment-only (ext/GBGCodingToolsDocumenterExt.jl makedocs: \"freezes the build (ARCHITECTURE D9)\", formerly `RULE.INST.FROZEN_MIDROUND`). D9 (docs/ARCHITECTURE.md:478ff) states the skip: \"either gate refusing only because a round of a docs instrument is open prints `makedocs: SKIPPED` ... `GBG_DOCS_NO_SKIP` restores the refusal\". policy/instruments.md:80 FROZEN_MIDROUND: \"An instrument is never changed mid-round; a change is its own commit and release\" -- it says nothing about builds.",
-  "what_would_bite": ""
-}

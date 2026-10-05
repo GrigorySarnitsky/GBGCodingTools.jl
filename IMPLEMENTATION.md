@@ -3,7 +3,9 @@
 This is the migration order from the package as it stands to the target design, `docs/ARCHITECTURE.md`, which is
 normative: nothing here re-argues it. The owner adopted both on 2026-09-17, with the five rulings this plan's last
 section records, and said the code as it stands is abandoned; Phase 0 began that day. The design each phase builds
-towards is `docs/ARCHITECTURE.md`; what the package was before is `docs/design-record/ARCHITECTURE-v1.md`.
+towards is `docs/ARCHITECTURE.md`; what the package was before is in git's history. Accounts and gates below that
+name `docs/design-record/`, `docs/proposals/` or a `*-WIRING.md` describe the tree as it stood; those files left it on
+2026-10-05.
 
 Terms. A **session** is one Claude Code conversation with a finite context. The **floor** is the two commands every commit
 passes — `julia --project -e 'using Pkg; Pkg.test()'` and `julia --project=docs docs/make.jl`, each exit 0. Phase 0 writes
@@ -179,8 +181,7 @@ owner's answers of 2026-09-21. The phase is five pieces:
   produced six auditors, which the owner ruled were not experts. The six were rewritten as experts with a
   licence to judge appropriateness, accountable through the standard, the alternative and what the stated
   reason leaves unanswered, and beat the seven-round texts in two blind, package-grounded comparisons in
-  every field. Adopted by the owner as decision 28; `spectral_numerics` keeps its id; filed as
-  `docs/design-record/08-discipline-attack.md`. Before any package declares one.
+  every field. Adopted by the owner as decision 28; `spectral_numerics` keeps its id. Before any package declares one.
 - **Release `v2.0.0-rc.6`** after 4b and 4f, with a CHANGELOG entry covering everything since rc.5, which holds no
   Phase 4 commit; `docs/PF-WIRING.md` rewritten for it. **Then PF**, in its own session and on its own pin: it proposes
   its disciplines, sets `formalization` and confirms the other three parameters, declares `copies` for its five built
@@ -339,8 +340,8 @@ Two conditions are on it, and both come from a measured failure rather than a pr
 reader panel, a guard, a lens set — never prose. And every attacker owes a concrete EVADING EXAMPLE: the defect that
 gets through, where it sits, and why each part of the mechanism misses it. The one round the deleted machinery ran
 worked that way and returned eighteen gaps, two of them fatal, each with a real file and line; the seven rounds of
-objections over the six discipline texts converged on nothing useful and narrowed every one of them, which is what
-`docs/design-record/08-discipline-attack.md` records.
+objections over the six discipline texts converged on nothing useful and narrowed every one of them, as the comparison
+of 2026-09-21 recorded.
 
 ### Phase 12 — A package's own rules (on request; to study, 2026-09-22)
 A question the owner raised and deferred rather than answered: should a package's OWN rules live in the same format

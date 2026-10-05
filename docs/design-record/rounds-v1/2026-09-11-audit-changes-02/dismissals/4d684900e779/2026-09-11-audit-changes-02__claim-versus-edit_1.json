@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-audit-changes-02/claim-versus-edit#1",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "47db044's only Design.jl hunk is docstring text: '-which hat's own rubric should have caught it' -> '+which hat's persona should have caught it'. The message itemizes it under the cold-reader class: 'cold-reader#1-4 ...; \"the rubric\" named'. The same commit swept 'the rubric' -> 'the docstring rubric' in Reflection.jl. 'persona' is the bound term: GBGCodingTools.jl:21 'A **hat** is one persona of the check-consistency panel'; calibrate writes h[\"persona\"] (Design.jl:155).",
-  "what_would_bite": ""
-}

@@ -1,8 +1,0 @@
-# catalog/attack/check-docs.toml — the subject `gbg attack check-docs` hands the attackers
-# (schema/attack-subject.schema.json). The {package.*} placeholders are filled per consumer.
-object = "the SOURCE documentation of {package.name}: its rationale documents, hand-written pages, the docstrings of src/ and ext/, its Literate examples and the built HTML, read one surface per lane plus three cross-cutting lanes (family, cold-reader, operational-claims)"
-defects = "documentation defects: a statement false against the code, a stale count or claim, notation or formatting drift, a missing or dead reference, a contradiction between two surfaces, and an operational claim a docstring makes about its own function that the body does not keep"
-context = "{package.name} — {package.description} Its field is {package.domain}. The deterministic half (scans, reflection checks, the docs build) runs before the lanes; the lanes run at economy strength; a diff-reading act verifier and a blind state verifier grade the fix passes, within a budget of passes."
-standpoint = "a user of {package.name} reading its documentation to use it correctly, who trusts what a page or a docstring says"
-source = "the documentation surfaces of the repository: docs/, src/, ext/ and the built site under docs/build/"
-directions = "two statements each true alone and false together; a claim right in the docstring and wrong on the built page; a harm in what a page leaves out rather than in what it says"

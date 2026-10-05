@@ -10,6 +10,7 @@ a test holds the exemption to that fact.
 module Records
 
 using ...Model
+using ...Texts
 using ..JudgementGit: hooked, REPO, TRAILER
 
 # A record the tool keeps for the owner, left uncommitted, exists on one machine only: GBGPeriodicFields'
@@ -66,45 +67,84 @@ const RECORDS = Model.Rule(
 const TRACKED_FILES = ["Project.toml", "README.md", "LICENSE", "LICENSE.md", "CHANGELOG.md", ".gitignore", "CLAUDE.md",
                        ".gbg/config.jl", ".gbg/questions.json", ".gbg/settled.jl", ".gbg/leak-accepted.txt",
                        ".claude/settings.json", ".claude/WORK_QUEUE.md"]
-const TRACKED_DIRS = ["src/", "ext/", "test/", "docs/", "examples/", "benchmark/", ".github/",
+const TRACKED_DIRS = ["src/", "ext/", "test/", "examples/", "benchmark/", ".github/",
                       ".gbg/policy/", ".gbg/requests/", ".gbg/runs/", ".claude/hooks/", ".claude/skills/"]
+# `docs/` holds what its build and its site take part in (the owner, 2026-10-05): the pages, the build's script
+# and environment, the prose baseline the build reads, and each document the package declares — in `copies`,
+# which the build copies into the pages, or in a rationale file set the config writes out. A design record, a
+# proposal or a note beside them is read by no build and rendered nowhere, and the default rationale set,
+# every Markdown file at the top of `docs/`, would admit exactly such a note; only a declared set counts.
+const DOCS_BUILD = ["docs/Project.toml", "docs/prose_shape.csv"]
 
 """
-    tracked_allowed(path) -> Bool
+    declared_docs(root, cfg) -> Vector{String}
 
-Whether a package may track `path`, relative to its root, without a switch. The argument is `path`.
-Returns the verdict: one of the allowed files, or a path under an allowed directory, a documentation
-build excepted.
+The files under `docs/` the package at `root` declares its build takes part in, beyond its pages. The
+arguments are `root` and `cfg`. Returns the build's script, as `docs_build` names it, each document in
+`copies`, the design document `architecture_doc` names, and each file of a rationale set the config
+writes out.
 """
-tracked_allowed(path::AbstractString) =
-    path in TRACKED_FILES ||
-    (any(d -> startswith(path, d), TRACKED_DIRS) && !startswith(path, "docs/build/"))
+function declared_docs(root::AbstractString, cfg)
+    k = findfirst(a -> endswith(a, ".jl"), cfg.docs_build)
+    out = [k === nothing ? "docs/make.jl" : replace(cfg.docs_build[k], '\\' => '/')]
+    append!(out, String.(last.(cfg.copies)))
+    # the design document the rulebook already names, through `architecture_doc`: no arbitrary note gets in
+    # this way, and a package that renders it needs no declaration beyond the rulebook's own (review)
+    push!(out, parentmodule(@__MODULE__).architecture_doc(cfg))
+    haskey(cfg.filesets, Model.FileSet.RATIONALE) && append!(out, Texts.files(cfg, root, Model.FileSet.RATIONALE))
+    return out
+end
 
 """
-    tracked(root, cfg) -> Vector{Model.Location}
+    tracked_allowed(path, rendered = String[]) -> Bool
 
-Every path git tracks in the package at `root` that it may not track. The arguments are `root`, the
-package root, and `cfg`, which this rule does not read. Returns one location per path, naming it, so a
-per-file switch can declare it with its reason.
+Whether a package may track `path`, relative to its root, without a switch. The arguments are `path`
+and `rendered`, the files under `docs/` the package declares its build takes part in. Returns the
+verdict: one of the allowed files, a path under an allowed directory, or under `docs/` a page, the
+build's own file or a declared document.
 """
-function tracked(root::AbstractString, cfg)
+tracked_allowed(path::AbstractString, rendered = String[]) =
+    path in TRACKED_FILES || any(d -> startswith(path, d), TRACKED_DIRS) ||
+    (startswith(path, "docs/src/") || path in DOCS_BUILD || path in rendered)
+
+"""
+    tracked(root, cfg; untracked = false) -> Vector{Model.Location}
+
+Every path git tracks in the package at `root` that it may not track.
+
+# Arguments
+
+- `root` — the package root.
+- `cfg` — its config, which declares the documents its build takes part in.
+- `untracked` — whether files git neither tracks nor ignores count too, as they do for a command that
+  commits before it pushes: whatever it stages is not in the index yet when the push is judged.
+
+Returns one location per path, naming it, so a per-file switch can declare it with its reason.
+"""
+function tracked(root::AbstractString, cfg; untracked::Bool = false)
     Sys.which("git") === nothing &&
         return [Model.Location(; file = "", line = 0, text = "cannot evaluate: `git` is not on the path")]
     # outside a repository nothing is tracked, and the rule has nothing to say, as every git rule does there
     success(pipeline(`git -C $root rev-parse --git-dir`; stdout = devnull, stderr = devnull)) || return Model.Location[]
-    listed = try
-        read(pipeline(ignorestatus(`git -C $root ls-files -z`); stderr = devnull), String)
+    listed, others = try
+        read(pipeline(ignorestatus(`git -C $root ls-files -z`); stderr = devnull), String),
+        untracked ? read(pipeline(ignorestatus(`git -C $root ls-files -z --others --exclude-standard`); stderr = devnull), String) : ""
     catch e
         return [Model.Location(; file = "", line = 0, text = "cannot evaluate: git did not run ($(sprint(showerror, e)))")]
     end
-    return [Model.Location(; file = String(f), line = 0,
-                            text = "`$f` is tracked and is none of the package's own files: move a draft or a note to `inspiration/`, or declare the file with its reason")
-            for f in split(listed, '\0') if !isempty(f) && !tracked_allowed(f)]
+    rendered = declared_docs(root, cfg)
+    stray(text) = [String(f) for f in split(text, '\0') if !isempty(f) && !tracked_allowed(f, rendered)]
+    return vcat([Model.Location(; file = f, line = 0,
+                                 text = "`$f` is tracked and is none of the package's own files: move a draft or a note to `inspiration/`, or declare the file with its reason")
+                 for f in stray(listed)],
+                [Model.Location(; file = f, line = 0,
+                                 text = "`$f` is untracked and not ignored, and this command stages new files: move it to `inspiration/` or ignore it")
+                 for f in stray(others)])
 end
 
 const TRACKED = Model.Rule(
     id = Symbol("RULE.GIT.TRACKED"),
-    statement = "A package's git tracks only the package and the tool's files: `src/`, `ext/`, `test/`, `docs/` but its build, `examples/`, `benchmark/`, `.github/`, `Project.toml`, `README.md`, a `LICENSE`, `CHANGELOG.md`, `.gitignore` and `CLAUDE.md`; `.gbg/config.jl`, `.gbg/policy/`, `.gbg/requests/`, `.gbg/questions.json`, `.gbg/settled.jl`, `.gbg/runs/` and `.gbg/leak-accepted.txt`; `.claude/settings.json`, `.claude/hooks/`, `.claude/skills/` and `.claude/WORK_QUEUE.md`. A draft or a note between sessions lives in `inspiration/`, which git ignores; any other file is declared with its reason.",
+    statement = "A package's git tracks only the package and the tool's files: `src/`, `ext/`, `test/`, of `docs/` what its build and site take part in (the pages under `docs/src/`, the build's script, `docs/Project.toml`, `docs/prose_shape.csv`, and each document declared in `copies` or in a rationale file set the config writes out), `examples/`, `benchmark/`, `.github/`, `Project.toml`, `README.md`, a `LICENSE`, `CHANGELOG.md`, `.gitignore` and `CLAUDE.md`; `.gbg/config.jl`, `.gbg/policy/`, `.gbg/requests/`, `.gbg/questions.json`, `.gbg/settled.jl`, `.gbg/runs/` and `.gbg/leak-accepted.txt`; `.claude/settings.json`, `.claude/hooks/`, `.claude/skills/` and `.claude/WORK_QUEUE.md`. A draft or a note between sessions lives in `inspiration/`, which git ignores; any other file is declared with its reason.",
     why = "Git carried notes between machines because it was the easiest way, and a public release would have published them: one package held a design proposal, notes to other sessions and old review rounds. `inspiration/` reaches both machines through Dropbox, so no note needs git, and a file kept on purpose says why.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.CODE],
@@ -117,10 +157,14 @@ const TRACKED = Model.Rule(
                              "echo n > README.md && git add src docs README.md && git commit -q -m 'the package$TRAILER'\n",
                              Model.Location[], "tracks only the package and the tool's files"),
         # a documentation build is no documentation; a staged file counts as tracked, before any commit
-        Model.HistoryExample(REPO * "mkdir -p docs/build && echo h > docs/build/index.html && git add docs/build\n",
-                             [Model.Location(; file = "docs/build/index.html", line = 0)], "`docs/` but its build"),
-        Model.HistoryExample(REPO * "mkdir -p docs/src && echo p > docs/src/index.md && git add docs\n",
-                             Model.Location[], "`docs/` but its build"),
+        Model.HistoryExample(REPO * "mkdir -p docs/build docs/design-record && echo h > docs/build/index.html && " *
+                             "echo r > docs/design-record/old.md && echo a > docs/NOTES.md && git add docs\n",
+                             [Model.Location(; file = "docs/NOTES.md", line = 0), Model.Location(; file = "docs/build/index.html", line = 0),
+                              Model.Location(; file = "docs/design-record/old.md", line = 0)],
+                             "of `docs/` what its build and site take part in"),
+        Model.HistoryExample(REPO * "mkdir -p docs/src && echo p > docs/src/index.md && echo m > docs/make.jl && " *
+                             "echo c > docs/prose_shape.csv && echo a > docs/ARCHITECTURE.md && git add docs\n",
+                             Model.Location[], "of `docs/` what its build and site take part in"),
         # the tool's own files, the ones `gbg release` and the owner's records need among them
         Model.HistoryExample(REPO * "mkdir -p .gbg/requests .claude/hooks && echo r > .gbg/requests/to-X.md && " *
                              "echo h > .claude/hooks/queue-guard.sh && echo c > CHANGELOG.md && echo s > .gbg/settled.jl && " *

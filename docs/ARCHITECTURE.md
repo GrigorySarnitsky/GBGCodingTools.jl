@@ -7,7 +7,7 @@ This is the target design, and it is normative: code that disagrees with it is w
 It follows the owner's rulings; no question about it is open. A term in **bold** is defined where it first appears, and
 the reason for each mechanism is given in brackets: a requirement R1–R10 from the owner, or a failure seen in the past.
 R11 asked for a short normative architecture in plain words: this document is its whole answer. Not in it: the
-migration order (`IMPLEMENTATION.md`); history and evidence, with the replaced architecture (`docs/design-record/`).
+migration order (`IMPLEMENTATION.md`); history and the replaced architecture (git's history).
 
 ## 1. Purpose and scope
 
@@ -906,7 +906,7 @@ of an attack. Two things are asked of it whenever it is built. It attacks a MECH
 set — and never prose, and it demands of every attacker a concrete EVADING EXAMPLE: the defect that passes, where it
 sits, and why each part of the mechanism misses it. An attack that only collects objections converges by narrowing what
 the thing under attack claims, which is a measured failure of this project and not a hypothetical one [the six discipline
-texts, seven rounds to no objection, filed in `docs/design-record/08-discipline-attack.md`].
+texts, seven rounds to no objection, 2026-09-21].
 
 **Retiring a rule.** A rule leaves the rulebook by having its value removed, which is a code change like any other: the
 owner's answer names the id and why the rule is no longer worth keeping, `Catalogue.RETIRED` and the `CHANGELOG` entry

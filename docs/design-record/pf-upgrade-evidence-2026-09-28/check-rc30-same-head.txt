@@ -1,6 +1,0 @@
-Precompiling packages...
-   3955.9 ms  ✓ GBGCodingTools
-  1 dependency successfully precompiled in 4 seconds. 39 already precompiled.
-  NOT RUN HERE RULE.TEX.RENDERED_MATH_SITE, RULE.TEX.RENDERED_MARKUP, RULE.DOC.API_GROUPING, RULE.DOC.XLINK, RULE.DOC.SIGNATURE_FIDELITY — the docs build and the test suite run these
-  NOT RUN HERE RULE.CIT.RESOLVES — only `gbg check --network` runs these
-check: clean over what ran here, and 18 generated path(s) in place.

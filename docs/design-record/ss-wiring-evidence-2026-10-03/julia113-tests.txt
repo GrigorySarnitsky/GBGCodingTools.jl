@@ -1,8 +1,0 @@
-# Julia 1.13, four threads: wired at rc.57 (ss13), then SS's head unwired (plain13)
-224:cone: weighted merge! (the addition, §10): Test Failed at /tmp/claude-1000/-home-grigory-Dropbox-Research-and-Teach-AI-Helpers-GBGCodingTools/7683c89e-093e-4433-8205-eb60c644023a/scratchpad/ss-wi
-225-  Expression: i_w1.counts == i_plain.counts && i_w1.powersums == i_plain.powersums
-226-  Stacktrace:
-
-282:cone: weighted merge! (the addition, §10): Test Failed at /tmp/claude-1000/-home-grigory-Dropbox-Research-and-Teach-AI-Helpers-GBGCodingTools/7683c89e-093e-4433-8205-eb60c644023a/scratchpad/ss-wi
-283-  Expression: i_w1.counts == i_plain.counts && i_w1.powersums == i_plain.powersums
-284-  Stacktrace:

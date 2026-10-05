@@ -23,9 +23,8 @@ its close. It waits for the owner only when `gbg run next` says the tree moved s
 You are in the dev checkout of `GBGCodingTools.jl`, the one shared tooling package of the four GBG Julia
 packages and of itself. **It is being rebuilt.** `docs/ARCHITECTURE.md` is the design it is being built
 to — normative, adopted by the owner on 2026-09-17 — and `IMPLEMENTATION.md` is the order of the work,
-phase by phase, each with the gate it must pass. What the package was before is
-`docs/design-record/ARCHITECTURE-v1.md`, and the machinery deleted from it is filed beside that, under
-`machinery-v1/`, `instruments-v1/`, `roles-v1/`, `rounds-v1/` and `seeds-v1/`: history, read by nothing.
+phase by phase, each with the gate it must pass. What the package was before, and the machinery deleted
+from it, are in git's history: the design record left the tree on 2026-10-05, read by nothing.
 The managed block above imports the shared policy; this file holds only what is the tool's own.
 
 ## Where the rebuild stands

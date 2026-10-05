@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-audit-changes-02/public-contract#1",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "Gate.jl gate_problems: `r.name in ignored && continue` precedes both `push!(problems, :open => ...)` and the `:committed` push, which additionally requires `!in_ci && head != r.round[\"head\"]` and dirty round files; so GBG_ROUND builds (run_under_round, Rounds.jl:94) and CI are untouched. The published contract was always narrower than the old code: ARCHITECTURE.md:491, IMPLEMENTATION.md:326 and DocLints.jl:22 all say the skip applies to 'either gate refusing only because a round of a docs instrument is open'; the gate docstring names the committed-without-the-round case as its own exit-1 refusal. Release.jl:108 and Doctor.jl:644 set GBG_DOCS_NO_SKIP, so they refused this case before the change too. The change brings the code into line with its documented contract rather than widening it. Residual gap, not a defect: test/gate.jl only checks the :disabled case, not a :committed refusal.",
-  "what_would_bite": ""
-}

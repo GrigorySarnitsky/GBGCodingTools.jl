@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-check-docs-01/rationale#1",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "docs/ARCHITECTURE.md §3 computed indents: 988 indent=4 `CLI/`; 989-1003 indent=6 (Main.jl…Design.jl); 1004 indent=4 `Scan.jl`; 1005 indent=4 `Scans/<ScanId>.jl`; 1006 indent=4 `TreeHash.jl`. src/GBGCodingTools.jl:87 `include(\"Scan.jl\")`, not CLI/. c8ef916 diff: `-      Scan.jl` → `+    Scan.jl`. No `CLI/Scan` reference anywhere outside .gbg.",
-  "what_would_bite": ""
-}

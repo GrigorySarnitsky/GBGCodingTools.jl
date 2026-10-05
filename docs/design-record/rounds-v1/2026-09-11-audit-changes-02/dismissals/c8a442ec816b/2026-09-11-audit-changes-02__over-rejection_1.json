@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-audit-changes-02/over-rejection#1",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "Gate.jl frozen_rounds doc: \"A build refused ONLY for these is frozen\". gate_problems: `r.name in ignored && continue` precedes the :committed push, which needs `!in_ci && head != r.round[\"head\"]`. Round builds use run_under_round (GBG_ROUND); release/doctor add GBG_DOCS_NO_SKIP; logs go to scratch_dir. Only a bare local build changes: before, it skipped with exit 0 and built nothing (\"Nothing was built\"). Now it fails with exit 1, and the gate CLI refuses the same state.",
-  "what_would_bite": ""
-}

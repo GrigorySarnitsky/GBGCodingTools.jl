@@ -16,6 +16,21 @@ Config(
     # deviation that is structural — this package computes no physical quantity, and will not next year —
     # only schedules the work of writing it down again.
     switches = [
+        # The tool's own working parts, which no consumer has (the owner, 2026-10-05: one switch per path).
+        Switch(target = Symbol("RULE.GIT.TRACKED"), files = ["fixture/**"],
+               reason = "the toy consumer package the tool's tests run over: a package of its own, tracked as the tests' input"),
+        Switch(target = Symbol("RULE.GIT.TRACKED"), files = ["tools/**"],
+               reason = "the commit gate (`tools/floor.sh`) and the fleet sweep (`tools/fleet.jl`) every commit of this package runs"),
+        Switch(target = Symbol("RULE.GIT.TRACKED"), files = ["bin/**"],
+               reason = "the `gbg` launcher that `gbg install` copies onto each machine"),
+        Switch(target = Symbol("RULE.GIT.TRACKED"), files = ["drivers/**"],
+               reason = "the one Workflow driver every review launches its agents through"),
+        Switch(target = Symbol("RULE.GIT.TRACKED"), files = ["install.sh"],
+               reason = "the first-install script that puts the `gbg` command on a machine"),
+        Switch(target = Symbol("RULE.GIT.TRACKED"), files = ["fleet.toml"],
+               reason = "the sweep state `gbg fleet` reads: when a release leaves the fleet at two versions, and since when"),
+        Switch(target = Symbol("RULE.GIT.TRACKED"), files = ["IMPLEMENTATION.md"],
+               reason = "the plan of the rebuild, phase by phase, with each phase's gate"),
         Switch(target = Symbol("RULE.TEST.EXAMPLES_RUN"),
                reason = "this package ships no Literate examples: a worked example of a review instrument is a review, which is recorded rather than executed as a script"),
         Switch(target = Symbol("RULE.DOC.LEADING_IDENTITY"),

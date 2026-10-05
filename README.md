@@ -17,8 +17,8 @@ version, pinned by every consumer through its sub-environment `Project.toml` fil
 verbs, rounds, the doctor, the ledger, the config), the API pages and the architecture record, built
 from `master` by the Docs workflow.
 
-The design is `docs/ARCHITECTURE.md`; the build plan is `IMPLEMENTATION.md`; `docs/design-record/` is
-the provenance.
+The design is `docs/ARCHITECTURE.md`; the build plan is `IMPLEMENTATION.md`; the provenance is git's
+history.
 
 ## Bootstrap on a machine
 

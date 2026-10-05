@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-check-docs-01/rationale#1",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "docs/ARCHITECTURE.md §3 fence: \"  src/\", \"    CLI/\", children at six (\"      Design.jl\"), then at four spaces \"    Scan.jl                     `gbg scan docs|html` — the tiered engine over catalog/scans.toml\", a sibling of \"    Scans/<ScanId>.jl\" and \"    TreeHash.jl\". src/Scan.jl is top level (src/CLI/ holds no Scan.jl); src/GBGCodingTools.jl:87 `include(\"Scan.jl\")`. grep \"CLI/Scan\" outside .gbg: no hits.",
-  "what_would_bite": ""
-}

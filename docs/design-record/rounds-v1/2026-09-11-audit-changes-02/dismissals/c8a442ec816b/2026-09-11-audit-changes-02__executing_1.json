@@ -1,6 +1,0 @@
-{
-  "id": "2026-09-11-audit-changes-02/executing#1",
-  "verdict": "DISMISSAL-SOUND",
-  "evidence": "DocLints.jl docs_build_skipped: \"A refusal that also names an open round of a disabled instrument, or a round whose fixes were committed without it, fails the build.\" Gate.jl:80 `r.name in ignored && continue` precedes :committed; Gate.jl:82 `if !in_ci && head !== nothing && head != r.round[\"head\"]`. Release.jl:108 and Doctor.jl:644 set GBG_DOCS_NO_SKIP. The same gate already refuses Pkg.test in this state.",
-  "what_would_bite": ""
-}
