@@ -278,9 +278,9 @@ A reader meeting the name for the first time must be able to reach it, and a fou
 Covered by a program.
 
 ### RULE.DOC.SIGNATURE_FIDELITY
-The signature a docstring displays and the methods the module defines agree, argument for argument.
+The signature a docstring displays and the methods the module defines agree, argument for argument, in name and in position.
 
-A displayed signature is what a reader calls; one the method table has moved past is a call that fails.
+A displayed signature is what a reader calls and the names a reader learns: one the method table has moved past is a call that fails, and a renamed argument is one the reader looks for in the code and does not find.
 
 Covered by a program.
 

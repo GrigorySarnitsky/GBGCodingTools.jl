@@ -928,16 +928,15 @@ runs most often.
 
 - `dropped` — how many findings the owner's stop threw away, `0` for every other run.
 
-- `unreverted` — the fix commits a verdict said to revert and git could not, because a later fix
-  conflicts; each leaves a rejected edit in the tree, and the run cannot end as evaluated.
-- `silent` — the agents that wrote nothing, or nothing readable, after being launched again once; the
-  report names each, and none is read as a clean result.
-- `rulebook` — the digest of the rules it judged by, which a later `--scope changed` run compares with
-  its own: a version number does not move when a development checkout's rules do.
-- `pass_since` — the commit the current fix pass began at; its fixes are the commits after it.
-- `dropped_ids` — what the owner's stop threw away, kept in `findings` with its text [ruled 2026-09-26]
-  and carried nowhere.
-- `usage` — what each stage's agents cost, per stage and pass, as `gbg run cost` recorded it.
+- `unreverted` — the fix commits a verdict said to revert and git could not: each leaves a rejected edit,
+  and the run cannot end as evaluated.
+- `silent` — the agents that wrote nothing readable after a second launch; none is read as clean.
+- `rulebook` — the digest of the rules it judged by, which a later `--scope changed` run compares.
+- `pass_since` — the commit the current fix pass began at.
+- `dropped_ids` — what the owner's stop threw away, kept in `findings` [ruled 2026-09-26].
+- `usage` — what each stage's agents cost, as `gbg run cost` recorded it.
+- `licences` — each parked finding's id and a file its question showed the owner, tab-separated.
+- `ruled` — the findings the owner answered `fix it on my ruling`, kept whatever he answers later.
 """
 Base.@kwdef struct Run
     id::String
@@ -968,6 +967,8 @@ Base.@kwdef struct Run
     pass_since::String = ""
     dropped_ids::Vector{String} = String[]
     usage::Vector{Usage} = Usage[]
+    licences::Vector{String} = String[]
+    ruled::Vector{String} = String[]
 end
 
 end # module Model

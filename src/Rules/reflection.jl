@@ -75,12 +75,13 @@ function argcov_one(d)
         end
         isempty(shown) && return out
         widest < THRESHOLD && widest_kw == 0 && return out
-        # The inline code spans that are not the function's own call restated: `run!(C(; kwargs...))`
-        # says where a splat goes, while `f(a, b)` beside the signature `f(a, b)` says nothing of `a`.
+        # The function's own names, from its signatures: a fenced line restating the call is skipped below.
         own = [m.captures[1] for m in (match(r"^\s*([^(\s]+)\(", s) for s in Texts.signature_lines(d.text))
                if m !== nothing]
-        spans = [m.captures[1] for m in eachmatch(r"(?<!`)`([^`\n]+)`(?!`)", d.text)
-                 if !any(f -> startswith(m.captures[1], f * "("), own)]
+        # Every inline code span counts, the function's own call restated among them: `merge!(into, from;
+        # weight)` names `from` and `weight` as code, as the statement asks. Excluded until 2026-10-06, it
+        # reported both undocumented in GBGStreamingStatistics' `merge!`.
+        spans = [m.captures[1] for m in eachmatch(r"(?<!`)`([^`\n]+)`(?!`)", d.text)]
         # A SPLAT passed on in a fenced Julia example is documented by it: `run!(C(; kwargs...), sim)` says
         # where `kwargs...` goes as plainly as the same call inline, which alone counted (HT's `warmup!`,
         # found verifying its findings, 2026-09-29). Nothing else counts there: a name in a `math` block or
@@ -213,15 +214,14 @@ const ARGCOV = Model.Rule(
              Model.Location(; file = "src/Example.jl", line = 1),
              Model.Location(; file = "src/Example.jl", line = 1)],   # one per undocumented argument
             "an internal helper is exempt"),
-        # A name inside a larger code span is documented by it, unless the span restates the call itself;
-        # a splat is named like any argument, and a sentence about "every other keyword" does not name it.
+        # A name inside a larger code span is documented by it, the call itself restated included; a splat
+        # is named like any argument, and a sentence about "every other keyword" does not name it.
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(a, b; kwargs...)\n\nDoes a thing: `f(a, b; kwargs...)` is `g(a + b; kwargs...)`.\n\"\"\"\nf(x) = x\n",
             Model.Location[], "positional and keyword"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(a, b; kwargs...)\n\nDoes a thing with `a`; `f(a, b; kwargs...)` is the call.\n\"\"\"\nf(x) = x\n",
-            [Model.Location(; file = "src/Example.jl", line = 1), Model.Location(; file = "src/Example.jl", line = 1)],
-            "positional and keyword"),
+            Model.Location[], "positional and keyword"),
         Model.TextExample(Model.FileSet.CODE,
             "\"\"\"\n    f(a, b; kwargs...)\n\nDoes a thing with `a` and `b`; every other keyword is\npassed through to `g` untouched.\n\"\"\"\nf(x) = x\n",
             [Model.Location(; file = "src/Example.jl", line = 1)], "positional and keyword"),

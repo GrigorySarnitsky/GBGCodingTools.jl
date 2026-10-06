@@ -4,6 +4,40 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.62 — 2026-10-06
+
+MINOR, the check defects GBGStreamingStatistics' wiring exposed (2026-10-03), the owner's rulings, and
+GBGHomogeneousTurbulence's request of 2026-10-06:
+
+- **A finding the owner answered `fix it on my ruling` passes the change guard within the files it
+  names**, every clause of it, code included (the owner): `gbg docfix commit --finding` overrides each
+  refusal there, writes each into the commit message with its reason, and marks the commit
+  `GBG-Docfix-Ruled`. The files licensed are the ones the parked question showed him, in its exhibit,
+  recorded when it was put; a finding is put to him once; and his ruling is kept for the commits made
+  under it whatever a later answer says. A ruling given before this release licenses nothing until he
+  is asked again; a close
+  honours the mark only beside the guard's own marks and its finding's, and a revert carries the licence
+  of what it undoes; `gbg docfix check` shows such a file as RULED. HT's fixes to mathematics the owner
+  had ruled on were refused again at the commit, and went around the guard unverified.
+
+- **`RULE.DOC.ARGCOV`** counts an argument named in a code span that restates the call, as
+  `merge!(into, from; weight)` names `from` and `weight`: the statement asks for the name as code, and
+  the exclusion was the check's own. Measured: six findings in GBGCloudPhysics go, of that shape.
+- **`RULE.DOC.SENTENCE_OPENER`** skips fenced code, as its statement says, and carries a sentence across a
+  displayed formula whose last line ends without a full stop.
+- **`RULE.TEX.SPACING`** reads the start of the next line when a formula is wrapped right after its thin
+  space or `\,\mathrm`, so the differential that follows is seen.
+- **`RULE.TEX.RENDERED_MATH`** reads a code span comparing names of three letters or more, as
+  `degree ≥ 2` does, as code; `x ≤ y` is still a formula.
+- **`RULE.CIT.FULL_INLINE`** reports a `References:` block in the prose once, at its label, whatever its
+  entries link to; reported entry by entry, one linking a stable record rather than a DOI was missed.
+- **`RULE.DOC.SIGNATURE_FIDELITY`**, by the owner's ruling: a displayed signature and the methods agree in
+  name and in position. The check compared names alone, as a set; each displayed signature's positionals
+  must now be some method's, in that order and number. PF, HT and SS: no finding.
+- Reviewed: the first draft's `References:` block ran past its list and hid a later prose reference,
+  took a label over no list for a block, read fences against the wrong character, and joined only one
+  word of a wrapped differential; `Reλ ≥ 100` is a formula still.
+
 ## 2.0.0-rc.61 — 2026-10-05
 
 MINOR, the owner's rulings of 2026-10-05:

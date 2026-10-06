@@ -127,6 +127,10 @@ function rendered_math(text::AbstractString, cfg)
             occursin(FORMULA_GLYPHS, span) || continue
             occursin(CODE_SYNTAX, span) && continue                 # a call, an index, an assignment: code
             occursin(DIMENSIONS, strip(span)) && continue           # `64×64×64`, as Julia prints it
+            # Every name a plain word, as the code's own are — `degree ≥ 2` compares a keyword — and no single
+            # letter or Greek name, as a formula's are: `x ≤ y`, `Reλ ≥ 100` (GBGStreamingStatistics, 2026-10-03).
+            names = [m.match for m in eachmatch(r"[\p{L}_][\p{L}\p{N}_!]*", span)]
+            !isempty(names) && all(n -> isascii(n) && length(n) >= 3, names) && continue
             occursin(Regex("^\\s*" * Texts.NAME * "?\\s*\$"), strip(span)) && continue   # one token: an operator named
             # A lone glyph names an operator. A formula written tight — `u×v`, `∇⋅u` — is still a
             # formula, and skipping every span without whitespace let those through.
@@ -161,6 +165,11 @@ const RENDERED_MATH = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe operator `⋅` contracts a `64×64×64` grid through `dot(u ⋅ v, w)`.\n",
             Model.Location[], "never inside a code span"),
+        # a comparison of the code's own names is code (GBGStreamingStatistics, 2026-10-03); a Greek name is not
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nIt needs `degree ≥ 2` to be set.\n",
+            Model.Location[], "never inside a code span"),
+        Model.TextExample(Model.FileSet.PAGES, "# A page\n\nIt holds for `Reλ ≥ 100` only.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "never inside a code span"),
         Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe cross `u×v` and `∇⋅u` here.\n",
             [Model.Location(; file = "docs/src/page.md", line = 3)], "never inside a code span"),
         # Dollars in code are not mathematics: a docstring's fenced example and a code span hold
@@ -200,10 +209,17 @@ The exception is the one the rule states: a thin space before a differential is 
 """
 function spacing(text::AbstractString, cfg)
     out = Model.Location[]
-    for (i, line) in pairs(split(text, '\n'))
+    lines = split(text, '\n')
+    for (i, line) in pairs(lines)
         # Read in the page's spelling whichever surface this is: a docstring doubles every LaTeX
         # backslash, and each pattern below was written against a single one.
         masked = Texts.single_escapes(Texts.mask_code_spans(line))
+        # A formula wrapped right after its thin space, or after `\,\mathrm`, finds its differential on the
+        # next line, which is read with this one. GBGStreamingStatistics wrapped `\,\mathrm` /
+        # `du` so, and was told it spaced by hand (2026-10-03).
+        if i < length(lines) && occursin(r"\\,\s*(?:\\mathrm\s*)?$", masked)
+            masked = masked * " " * strip(Texts.single_escapes(Texts.mask_code_spans(lines[i + 1])))
+        end
         any(p -> occursin(p[1], masked), SPACING_PATTERNS) &&
             push!(out, Model.Location(; file = "", line = i, text = strip(String(line))))
     end
@@ -235,6 +251,16 @@ const SPACING = Model.Rule(
                         Model.Location[], "except before a differential"),
                      Model.TextExample(Model.FileSet.PAGES,
                         "# A page\n\nThe product ``a\\,d_k`` here.\n",
+                        [Model.Location(; file = "docs/src/page.md", line = 3)], "except before a differential"),
+                     # a formula wrapped after `\,\mathrm`, its differential on the next line
+                     Model.TextExample(Model.FileSet.PAGES,
+                        "# A page\n\nThe moment ``\\int u^2 K(u)\\,\\mathrm\ndu`` is finite.\n",
+                        Model.Location[], "except before a differential"),
+                     Model.TextExample(Model.FileSet.PAGES,
+                        "# A page\n\nThe moment ``\\int K(u)\\,\n\\mathrm{d} u`` is finite.\n",
+                        Model.Location[], "except before a differential"),
+                     Model.TextExample(Model.FileSet.PAGES,
+                        "# A page\n\nThe product ``a\\,\nb_k`` is finite.\n",
                         [Model.Location(; file = "docs/src/page.md", line = 3)], "except before a differential")],
                     # The same rule on the other surface, where every LaTeX backslash is doubled. Both
                     # directions: a hand-spaced formula in a docstring is still reported, and the

@@ -366,15 +366,16 @@ dehat(a::Symbol) = Symbol(Base.Unicode.normalize(replace(Base.Unicode.normalize(
 """
     displayed_signatures(root, cfg) -> Tuple
 
-Every signature a docstring displays, as the positional and keyword names it shows, keyed by binding
-and file, with the keys whose signature elides arguments behind a splat. The arguments are `root`, the
-package root, and `cfg`, the package's config. Returns `(positional, keyword, elided, shown_in,
-arg_in)`: each key's first docstring line, and the first line showing each `(name, file, argument)`.
+Every signature a docstring displays, as the names it shows, keyed by binding and file, with the keys
+whose signature elides arguments behind a splat. The arguments are `root` and `cfg`. Returns
+`(positional, keyword, elided, shown_in, arg_in, ordered)`: the first lines of each key and each
+`(name, file, argument)`, and each signature's positionals in order.
 """
 function displayed_signatures(root::AbstractString, cfg)
     Key = Tuple{Symbol,String}
     positional = Dict{Key,Set{Symbol}}(); keyword = Dict{Key,Set{Symbol}}()
     elided = Set{Key}(); shown_in = Dict{Key,Int}(); arg_in = Dict{Tuple{Symbol,String,Symbol},Int}()
+    ordered = Dict{Key,Vector{Tuple{Vector{Symbol},Int}}}()     # each signature's positionals, in order
     note!(d, key, args) = union!(get!(d, key, Set{Symbol}()), args)
     function harvest!(ex, file, line)
         ex isa Expr && ex.head === :where && return harvest!(ex.args[1], file, line)
@@ -398,6 +399,7 @@ function displayed_signatures(root::AbstractString, cfg)
             end
         end
         note!(positional, key, dehat.(pos)); note!(keyword, key, kw)
+        push!(get!(ordered, key, Tuple{Vector{Symbol},Int}[]), (dehat.(pos), line))
         get!(shown_in, key, line)
         for a in [dehat.(pos); kw]
             get!(arg_in, (name, file, a), line)
@@ -418,7 +420,7 @@ function displayed_signatures(root::AbstractString, cfg)
             end
         end
     end
-    return (positional, keyword, elided, shown_in, arg_in)
+    return (positional, keyword, elided, shown_in, arg_in, ordered)
 end
 
 # Every module of the package, nested ones included: a module two levels down is as much the package's as a
@@ -452,7 +454,7 @@ skipped too.
 """
 function signature_fidelity(loaded, cfg)
     pkg, root = loaded.pkg, loaded.root
-    shown, shown_kw, elided, shown_in, arg_in = displayed_signatures(root, cfg)
+    shown, shown_kw, elided, shown_in, arg_in, ordered = displayed_signatures(root, cfg)
     mods = modules_of(pkg)
     # A module with no package directory — one an example loaded into memory — has methods whose file is
     # not a path at all, so the filter that keeps a package's own methods would reject every one of them.
@@ -484,17 +486,20 @@ function signature_fidelity(loaded, cfg)
     end
     function defined_sets(@nospecialize(f))
         f isa Function && isempty(methods(f)) && return :extension
-        pos, kw = Set{Symbol}(), Set{Symbol}(); unnamed = false
+        pos, kw = Set{Symbol}(), Set{Symbol}(); unnamed = false; tuples = Set{Vector{Symbol}}(); vararg = false
         for m in methods(f)
             ours(m) || continue
-            for a in Base.method_argnames(m)[2:end]
+            names_ = Base.method_argnames(m)[2:end]
+            m.isva && (vararg = true)
+            for a in names_
                 (a === Symbol("#unused#") || a === Symbol("")) ? (unnamed = true) : push!(pos, dehat(a))
             end
+            push!(tuples, dehat.(names_))
             for k in Base.kwarg_decl(m)
                 endswith(String(k), "...") || push!(kw, k)
             end
         end
-        return (pos = pos, kw = kw, unnamed = unnamed)
+        return (pos = pos, kw = kw, unnamed = unnamed, tuples = tuples, vararg = vararg)
     end
 
     exported = Set(names(pkg))
@@ -542,14 +547,28 @@ function signature_fidelity(loaded, cfg)
             push!(out, Model.Location(; file, line, node,
                 text = "$name: the displayed positional `$a` matches no defined argument name"))
         end
+        # In position too, by the owner's ruling (2026-10-06): a displayed signature whose every name is
+        # defined still takes its positionals in an order, and a number, some method takes. A method with an
+        # unnamed or a splatted argument cannot be compared so, and the names alone are judged there.
+        (def.unnamed || def.vararg) && continue
+        for key in keys_
+            key in elided && continue
+            for (sig, line) in get(ordered, key, Tuple{Vector{Symbol},Int}[])
+                issubset(sig, def.pos) || continue             # an unknown name is reported above
+                sig in def.tuples && continue
+                takes = join(sort!(["(" * join(t, ", ") * ")" for t in def.tuples]), ", ")
+                push!(out, Model.Location(; file = key[2], line, node,
+                    text = "$name: the displayed positionals ($(join(sig, ", "))) are no method's, in that order and number; the methods take $takes"))
+            end
+        end
     end
     return out
 end
 
 const SIGNATURE_FIDELITY = Model.Rule(
     id = Symbol("RULE.DOC.SIGNATURE_FIDELITY"),
-    statement = "The signature a docstring displays and the methods the module defines agree, argument for argument.",
-    why = "A displayed signature is what a reader calls; one the method table has moved past is a call that fails.",
+    statement = "The signature a docstring displays and the methods the module defines agree, argument for argument, in name and in position.",
+    why = "A displayed signature is what a reader calls and the names a reader learns: one the method table has moved past is a call that fails, and a renamed argument is one the reader looks for in the code and does not find.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],
     check = Model.ProgramCheck(Model.Input.LOADED_MODULE, signature_fidelity, false),
@@ -607,6 +626,41 @@ const SIGNATURE_FIDELITY = Model.Rule(
             measure(u; atol = 1e-6) = sum(u) / length(u)
             end
             """, Model.Location[], "argument for argument"),
+        # In position too, by the owner's ruling (2026-10-06): a swapped order or a missing argument is no
+        # method's signature; a default shown as one is, since Julia defines the shorter method too.
+        Model.ModuleExample("""
+            module Example
+            export spread
+            \"\"\"
+                spread(b, a)
+
+            The difference of `a` and `b`.
+            \"\"\"
+            spread(a, b) = a - b
+            end
+            """, [Model.Location(; file = "src/Example.jl", line = 3)], "in name and in position"),
+        Model.ModuleExample("""
+            module Example
+            export spread
+            \"\"\"
+                spread(a)
+
+            The difference of `a` and `b`.
+            \"\"\"
+            spread(a, b) = a - b
+            end
+            """, [Model.Location(; file = "src/Example.jl", line = 3)], "in name and in position"),
+        Model.ModuleExample("""
+            module Example
+            export spread
+            \"\"\"
+                spread(a, b = 0)
+
+            The difference of `a` and `b`.
+            \"\"\"
+            spread(a, b = 0) = a - b
+            end
+            """, Model.Location[], "in name and in position"),
         # A spectral field shown hatted over a method that names it plainly is the same argument, in the
         # precomposed spelling (`û`, the one Julia's normalised identifiers hold) as in the combining one.
         Model.ModuleExample("""

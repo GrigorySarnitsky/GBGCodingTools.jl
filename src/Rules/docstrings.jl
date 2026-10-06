@@ -421,7 +421,27 @@ i.e., cf., vs. and incl., and the tick marker used as a bullet.
 function sentence_opener(text::AbstractString, cfg)
     out = Model.Location[]
     previous = ""; inlist = false
+    # Fenced code is exempt, as the statement says, and a displayed formula whose last line ends no sentence
+    # — `R(K) = \int K^2,` — runs on into the paragraph after it: GBGStreamingStatistics'
+    # `conditional_density_standard_error` continued its sentence so and was told it opened one (2026-10-03).
+    fence = nothing; last_fenced = ""; runs_on = false
     for (n, line) in pairs(split(text, '\n'))
+        f = match(r"^\s*(`{3,}|~{3,})\s*([A-Za-z]*)", line)
+        if f !== nothing && (fence === nothing || (f.captures[1][1] == fence[2][1] && length(f.captures[1]) >= length(fence[2]) && isempty(f.captures[2])))
+            if fence === nothing
+                fence = (f.captures[2], f.captures[1]); last_fenced = ""
+            else
+                runs_on = fence[1] == "math" && !isempty(last_fenced) && !occursin(ENDS_SENTENCE, rstrip(last_fenced))
+                fence = nothing
+            end
+            previous = line; continue
+        end
+        if fence !== nothing
+            isempty(strip(line)) || (last_fenced = line)
+            continue
+        end
+        continuing = runs_on && isempty(strip(previous))
+        isempty(strip(line)) || (runs_on = false)
         if occursin(OPENER_LEADER, line)
             inlist = true
         elseif isempty(strip(line)) || !startswith(line, (' ', '\t'))
@@ -432,7 +452,7 @@ function sentence_opener(text::AbstractString, cfg)
         end
         stripped = rstrip(line)
         if !startswith(line, (' ', '\t')) && occursin(OPENER_LOWER, line) && !startswith(line, "``\\checkmark``")
-            if isempty(strip(previous)) || (occursin(ENDS_SENTENCE, rstrip(previous)) && !occursin(ABBREVIATION, rstrip(previous)))
+            if (isempty(strip(previous)) && !continuing) || (occursin(ENDS_SENTENCE, rstrip(previous)) && !occursin(ABBREVIATION, rstrip(previous)))
                 push!(out, Model.Location(; file = "", line = n, text = first(String(stripped), 100)))
                 previous = line; continue
             end
@@ -473,6 +493,17 @@ const SENTENCE_OPENER = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nIt is the mean. The tolerance ``\\varepsilon`` bounds the error.\n",
             Model.Location[], "never a formula"),
+        # a fence closes only on its own character: a ``` line inside a ~~~ block opens nothing (review)
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n~~~\n```\n~~~\n\n`after` opens it.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 7)], "never a lowercase identifier"),
+        # a displayed formula ending in a comma runs on into the next paragraph; one ending in a full stop does not
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe variance is\n\n```math\nV = R(K) / n,\n```\n\n``R(K)`` the roughness of the kernel.\n",
+            Model.Location[], "never a formula"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe variance is\n\n```math\nV = R(K) / n.\n```\n\n``R(K)`` is the roughness of the kernel.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 9)], "never a formula"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\n- `measure` returns the mean.\n",
             # An EXEMPTION is not a clause: it can have no breaking example, so these two are complying

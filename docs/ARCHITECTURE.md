@@ -608,6 +608,7 @@ Base.@kwdef struct Run
     pass_since::String = ""                   # where the current pass began; its fixes are the commits after it
     dropped_ids::Vector{String} = String[]    # what an abandon threw away, kept with its text and carried nowhere
     usage::Vector{Usage} = Usage[]            # what each stage cost, per pass
+    licences::Vector{String} = String[]; ruled::Vector{String} = String[]  # what a ruling licenses, and who ruled
 end
 ```
 

@@ -175,12 +175,17 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
         (println(io, "docfix: refused — `", escape_string(finding), "` is not a finding id"); return 2)
     # A finding the open run closed, or never had, is not this pass's to fix: a commit for one was never
     # verified and left it closed over an unverified edit (review, 2026-09-23).
+    ruled = Set{String}()
     if !isempty(finding)
         rid = open_run_id(root)
         if rid !== nothing
             r = Orchestration.Runs.load(root, rid)
             r === nothing || finding in [f.id for f in Orchestration.Runs.workable(r)] ||
                 (println(io, "docfix: refused — ", finding, " is not a finding this pass of ", rid, " works on"); return 2)
+            # The owner answered it `fix it on my ruling`: every refusal of the guard is overridden within
+            # the files the finding names, and named in the commit (the owner, 2026-10-06). HT's fixes to
+            # mathematics he had ruled on were refused here again, and committed around the guard.
+            r === nothing || (ruled = Orchestration.Runs.ruled_files(r, finding))
         end
     end
     # The run's marks are the tool's to write. A message typing one — a guard or revert trailer — could
@@ -207,8 +212,11 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
     # While a run is open, a rationale document that is not a TARGET of the review is not the fixer's
     # either (ruled 2026-09-23): the guard rightly calls an edit to it documentation, but the run was
     # never about it, and a fix landing there is a pass spent on the package's working notes.
+    ruled_notes = String[]
     if !isempty(finding)
-        notes = working_notes(root, rs)
+        all_notes = working_notes(root, rs)
+        ruled_notes = filter(n -> n in ruled, all_notes)
+        notes = filter(n -> !(n in ruled), all_notes)
         if !isempty(notes)
             println(io, "docfix: refused — ", length(notes), " changed file(s) are working notes, not targets of the review:")
             for n in notes; println(io, "  - ", n); end
@@ -216,7 +224,8 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
             return 1
         end
     end
-    code = [r for r in rs if !r.documentation]
+    overridden = [r for r in rs if !r.documentation && r.path in ruled]
+    code = [r for r in rs if !r.documentation && !(r.path in ruled)]
     if !isempty(code)
         println(io, "docfix: refused — ", length(code), " of ", length(rs), " changed file(s) are code:")
         for r in code; println(io, "  - ", r.path, ": ", r.reason); end
@@ -264,14 +273,21 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
     # committed, with no pathspec: `git commit -- <path>` takes the working tree's bytes, which reopens
     # the window the comparison above just closed (found in review, 2026-09-26).
     trailers = Orchestration.Runs.GUARD_TRAILER * (isempty(finding) ? "" : "\n" * Orchestration.Runs.FINDING_TRAILER * finding)
-    if Git.run(root, "commit", "-m", message * "\n\n" * trailers) === nothing
+    licensed = ""
+    if !isempty(overridden) || !isempty(ruled_notes)
+        trailers *= "\n" * Orchestration.Runs.RULED_TRAILER * finding
+        licensed = "\n\nPassed on the owner's ruling (fix it on my ruling), which overrode:\n" *
+                   join(vcat(["- " * r.path * ": " * r.reason for r in overridden],
+                             ["- " * n * ": a working note, not a target of the review" for n in ruled_notes]), "\n")
+    end
+    if Git.run(root, "commit", "-m", message * licensed * "\n\n" * trailers) === nothing
         # unstage what this call staged, or every later fix and revert refuses on it
         Git.run(root, "reset", "-q", "--", [r.path for r in rs]...)
         println(io, "docfix: git commit failed; nothing is left staged")
         return 3
     end
-    println(io, "docfix: committed ", length(rs), " documentation file(s).")
-    for r in rs; println(io, "  - ", r.path); end
+    println(io, "docfix: committed ", length(rs), " file(s).")
+    for r in rs; println(io, "  - ", r.path, r in overridden ? "  (on the owner's ruling: " * r.reason * ")" : ""); end
     return 0
 end
 
@@ -304,15 +320,33 @@ function check(root::AbstractString; build::Bool = true, io::IO = stdout)
     # at the close and are looked past here too, or the check the fixer is told to run before every
     # commit is red for every edit while a run is open (found in review, 2026-09-23).
     rs = filter(r -> !Orchestration.Runs.own_record(r.path), rulings(root; generated = generated_now(root)))
-    run_open = open_run_id(root) !== nothing
+    rid = open_run_id(root)
+    run_open = rid !== nothing
     notes = run_open ? working_notes(root, rs) : String[]
+    # A file the owner's ruling licenses is what `commit --finding <id>` lets through: shown as RULED, and
+    # not counted, so the check the fixer runs first agrees with the commit (review, 2026-10-06).
+    licensed = Dict{String,String}()
+    if run_open
+        rec = Orchestration.Runs.load(root, rid)
+        if rec !== nothing
+            for fid in rec.ruled, file in Orchestration.Runs.ruled_files(rec, fid)
+                licensed[file] = fid
+            end
+        end
+    end
     for r in rs
-        println(io, "  ", r.path in notes ? "NOTE" : r.documentation ? "DOC " : "CODE", "  ", rpad(r.path, 44),
-                r.path in notes ? "working notes, not a target of the open run" : r.reason)
+        held = r.path in notes || !r.documentation
+        if held && haskey(licensed, r.path)
+            println(io, "  RULED ", rpad(r.path, 43), "on the owner's ruling, with `--finding ", licensed[r.path], "`: ",
+                    r.path in notes ? "working notes" : r.reason)
+        else
+            println(io, "  ", r.path in notes ? "NOTE" : r.documentation ? "DOC " : "CODE", "  ", rpad(r.path, 44),
+                    r.path in notes ? "working notes, not a target of the open run" : r.reason)
+        end
     end
     isempty(rs) && println(io, "docfix: the working tree has no change to classify")
     warn_refs(root, [r.path for r in rs]; io)
-    bad = any(r -> !r.documentation, rs) || !isempty(notes)
+    bad = any(r -> !r.documentation && !haskey(licensed, r.path), rs) || any(n -> !haskey(licensed, n), notes)
 
     cfg = ConfigIO.read_config(root)
     before = baseline(root)

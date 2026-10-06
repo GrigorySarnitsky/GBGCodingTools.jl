@@ -226,7 +226,36 @@ function full_inline(root::AbstractString, cfg)
             body = d.text
             at = findfirst(r"(?m)^#+\s+References\s*$", body)
             opens = body_line(src, d)
+            # A `References:` label over a list is a block of full references in the prose: one finding, at
+            # the label, whatever its entries link to. Reported entry by entry, one linking a stable record
+            # rather than a DOI was missed (GBGStreamingStatistics' `transition_density`, 2026-10-03).
+            blocks = UnitRange{Int}[]
+            masked_body = Texts.mask_code_spans(body)
+            fenced = [isodd(count(l -> occursin(r"^\s*(?:```|~~~)", l), split(body[1:prevind(body, m.offset)], '\n')))
+                      for m in eachmatch(r"(?m)^[ \t]*References?:[ \t\r]*$", masked_body)]
+            for (m, inside) in zip(eachmatch(r"(?m)^[ \t]*References?:[ \t\r]*$", masked_body), fenced)
+                (at !== nothing && m.offset > first(at)) && continue
+                inside && continue                                    # a fenced example, not prose
+                base = m.offset + ncodeunits(m.match); stop = base - 1; seen = false
+                for l in eachmatch(r"(?m)^.*$", body[base:end])
+                    t = l.match
+                    if isempty(strip(t))
+                        seen && break
+                    elseif occursin(r"^\s*[-*+]\s", t) || (seen && startswith(t, (' ', '\t')))
+                        seen = true
+                    else
+                        break
+                    end
+                    stop = base + l.offset - 1 + ncodeunits(t) - 1
+                end
+                seen || continue                                      # a label over no list is no block
+                push!(blocks, m.offset:stop)
+                nth = 1 + count(==('\n'), body[1:prevind(body, m.offset)])
+                push!(out, Model.Location(; file, line = opens + nth - 1, node = d.node,
+                    text = "a block of full references in the prose: cite author–year in the sentences and put the works under this docstring's `# References` section"))
+            end
             for m in eachmatch(TITLE_LINK, body)
+                any(b -> m.offset in b, blocks) && continue
                 # The docstring's own line the match sits on, and the file line that is.
                 nth = 1 + count(==('\n'), body[1:prevind(body, m.offset)])
                 line = opens + nth - 1
@@ -253,6 +282,7 @@ function full_inline(root::AbstractString, cfg)
             for m in eachmatch(LABEL_LINK, masked)
                 nth = 1 + count(==('\n'), masked[1:prevind(masked, m.offset)])
                 (at !== nothing && m.offset > first(at)) && continue
+                any(b -> m.offset in b, blocks) && continue
                 occursin(r"^\s*Reference:", split(masked, '\n')[nth]) && continue
                 push!(out, Model.Location(; file, line = opens + nth - 1, node = d.node,
                     text = "a DOI label in the prose: cite author–year here and put the work, its DOI on the title, under this docstring's `# References` section"))
@@ -299,6 +329,64 @@ const FULL_INLINE = Model.Rule(
              end
              """],
             [Model.Location(; file = "src/Example.jl", line = 5)], "cites author–year in its prose"),
+        # a `References:` block in the prose is one finding at its label, an entry with no DOI included
+        Model.TreeExample(
+            ["docs/ARCHITECTURE.md" => "# Design\n\n" * REFERENCE_ENTRY,
+             "src/Example.jl" => """
+             module Example
+             \"\"\"
+                 mix(u)
+
+             The mixing length.
+
+             References:
+
+             - Rosenblatt (1969), *Conditional densities*, in [*Multivariate Analysis II*](https://openlibrary.org/works/OL1W).
+             $(REFERENCE_ENTRY)\"\"\"
+             mix(u) = u
+             end
+             """],
+            [Model.Location(; file = "src/Example.jl", line = 7)], "carries the full reference in a `# References` section"),
+        # a prose reference after the block is its own finding; a label over no list is none (review)
+        Model.TreeExample(
+            ["docs/ARCHITECTURE.md" => "# Design\n\n" * REFERENCE_ENTRY,
+             "src/Example.jl" => """
+             module Example
+             \"\"\"
+                 mix(u)
+
+             The mixing length.
+
+             References:
+
+             $(REFERENCE_ENTRY)- Kolmogorov, [*Turbulence*](https://doi.org/10.1098/rspa.1991.0075), PRSA (1941)
+
+             Following Pope, [*Turbulent Flows*](https://doi.org/10.1017/CBO9780511840531), CUP (2000).
+
+             References: Pope (2000), as the note says.
+             \"\"\"
+             mix(u) = u
+             end
+             """],
+            [Model.Location(; file = "src/Example.jl", line = 7), Model.Location(; file = "src/Example.jl", line = 12)],
+            "cites author–year in its prose"),
+        Model.TreeExample(
+            ["docs/ARCHITECTURE.md" => "# Design\n\n" * REFERENCE_ENTRY,
+             "src/Example.jl" => """
+             module Example
+             \"\"\"
+                 mix(u)
+
+             The mixing length (Rosenblatt 1969; Pope 2000).
+
+             # References
+
+             - Rosenblatt (1969), *Conditional densities*, in [*Multivariate Analysis II*](https://openlibrary.org/works/OL1W).
+             $(REFERENCE_ENTRY)\"\"\"
+             mix(u) = u
+             end
+             """],
+            Model.Location[], "carries the full reference in a `# References` section"),
         Model.TreeExample(
             ["docs/ARCHITECTURE.md" => "# Design\n\n" * REFERENCE_ENTRY,
              "src/Example.jl" => """

@@ -2289,6 +2289,42 @@ end
         @test G.Run.collect(root; io = devnull) == 0
         @test RUNS.closed(RUNS.load(root, id), fid)
     end
+    # On his ruling the guard's refusals are overridden within the files the finding names, and named in
+    # the commit; elsewhere they stand, and the close honours the ruling only by the run's record of it
+    # (the owner, 2026-10-06: HT's fixes to mathematics he ruled on were refused, and went around the guard)
+    package() do root, gg
+        id, fid = with_one_finding(root)
+        G.Run.next(root; io = devnull)
+        @test G.Run.park(root, fid; why = "the formula changes", io = devnull) == 0
+        qid = RUNS.code_question_id(RUNS.load(root, id), fid)
+        @test G.Answer.answer(root, qid, "fix it on my ruling"; io = devnull, direction = "write the lattice") == 0
+        rec = RUNS.load(root, id)
+        named = only(unique(l.file for f in rec.findings if f.id == fid for l in f.draft.locations))
+        @test RUNS.ruled_files(rec, fid) == Set([named])
+        q = only(x for x in rec.questions if x.id == qid)
+        @test occursin(named, q.exhibit) && !occursin(named, q.context)  # shown him, outside the sentence
+        @test fid in rec.ruled
+        @test G.Run.park(root, fid; why = "again", io = devnull) == 2   # put once; no second licence
+        page = joinpath(root, named)
+        write(page, replace(read(page, String), "The grid is spectral." => "The grid is the lattice ``\\mathbb{Z}^3``."))
+        @test G.Docfix.check(root; build = false, io = devnull) != 1         # the check agrees with the commit
+        @test G.Docfix.commit(root, "fix on the ruling"; io = devnull, finding = fid) == 0
+        msg = read(`git -C $root log -1 --format=%B`, String)
+        @test occursin(RUNS.RULED_TRAILER * fid, msg) && occursin("clause 6", msg)
+        # the close's re-check: backed by the run's record it is no code; with no record behind it, it is
+        @test isempty(RUNS.unguarded_code(root, rec.first_commit; run = rec))
+        @test !isempty(RUNS.unguarded_code(root, rec.first_commit))
+        # a ruling mark typed on a plain commit, without the guard's own marks, licenses nothing
+        write(page, replace(read(page, String), "``\\mathbb{Z}^3``" => "``\\mathbb{Z}^2``"))
+        run(pipeline(`git -C $root -c user.email=t@t -c user.name=t commit -qam $("typed\n\n" * RUNS.RULED_TRAILER * fid)`; stdout = devnull))
+        @test length(RUNS.unguarded_code(root, rec.first_commit; run = rec)) == 1
+        # a file the finding does not name is refused as before, ruling or not
+        other = joinpath(root, "docs", "src", "other.md")
+        write(other, "# Other\n\nThe set ``\\mathbb{R}``.\n")
+        run(pipeline(`git -C $root add docs/src/other.md`; stdout = devnull)); run(pipeline(`git -C $root -c user.email=t@t -c user.name=t commit -qm other`; stdout = devnull))
+        write(other, "# Other\n\nThe set ``\\mathbb{C}``.\n")
+        @test G.Docfix.commit(root, "not on the ruling"; io = devnull, finding = fid) == 1
+    end
 end
 
 # Two helpers rebuilt the record field by field from a list written by hand, and both dropped `rulebook`,

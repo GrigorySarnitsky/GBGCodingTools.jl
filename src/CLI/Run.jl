@@ -405,7 +405,7 @@ source_units(cfg::Model.Config, root::AbstractString) =
      for f in Texts.files(cfg, root, Model.FileSet.LITERATE)]
 
 """
-    fix_stage(root, run; io = stdout) -> Int
+    fix_stage(root, run, cfg; io = stdout) -> Int
 
 Opens a fix pass: re-anchors every open finding, adds the other copies of what each says, and writes
 the workable ones for the session, which edits and commits each through
@@ -959,7 +959,7 @@ function close_run(root::AbstractString; io::IO = stdout)
         run = with(run; fixes = vcat(run.fixes, [Model.DocFix(finding = fid, pass = run.passes, commit = sha,
                                                                blind = Model.Verdict.NOT_FIXED)]))
     end
-    unguarded = Runs.unguarded_code(root, run.first_commit)
+    unguarded = Runs.unguarded_code(root, run.first_commit; run)
     stop = isempty(unguarded) ? run.stop : Model.Stop.CANNOT_EVALUATE
     # A silent READER leaves part of the package unjudged, so the run cannot end as evaluated. A silent
     # verifier does not: its fix is graded NOT_FIXED, and its finding stays open and is carried.
@@ -1287,8 +1287,14 @@ function park(root::AbstractString, id::AbstractString; why::AbstractString = ""
     k = findfirst(f -> f.id == id, Runs.workable(run))
     k === nothing && (println(io, "run: ", id, " is not a finding this run can work on — closed, in material, already waiting on the owner, or unknown"); return 2)
     f = Runs.workable(run)[k]
+    # A finding is put to the owner once: parked again after his ruling, it recorded more files under that
+    # same ruling with no new answer (review, 2026-10-06).
+    any(q -> q.id == Runs.code_question_id(run, id), run.questions) &&
+        (println(io, "run: ", id, " was put to the owner already; his answer stands, and it is not parked again"); return 2)
     q = put_question(Runs.owner_question(run, f, why), ConfigIO.read_config(root); io)
-    Runs.save(root, with(run; questions = vcat(run.questions, [q])))
+    # the files the question shows are what a ruling on it licenses, recorded now
+    Runs.save(root, with(run; questions = vcat(run.questions, [q]),
+                         licences = vcat(run.licences, [id * "\t" * file for file in Runs.licence_of(f)])))
     println(io, "run: ", id, " is parked; no pass works on it until the owner answers:")
     println(io, "  gbg answer ", q.id, " \"", Runs.OWNER_ANSWER, "\"  |  \"", Runs.RULED_ANSWER, "\" --direction \"…\"  |  \"", Runs.NOT_A_DEFECT_ANSWER, "\"")
     return 0

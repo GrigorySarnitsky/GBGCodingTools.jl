@@ -477,6 +477,10 @@ owner_question(run::Model.Run, f::Model.Finding, why::AbstractString) = Model.Qu
     id = code_question_id(run, f.id),
     decision = "This finding needs a change only you may make. Will you make it?",
     context = String(strip(why)),
+    # the files a ruling on it licenses, in the exhibit, which the asking rules do not read for paths
+    exhibit = isempty(licence_of(f)) ?
+        "No file: the finding's place could not be found again, so a ruling on it licenses none." :
+        "A ruling licenses these files, and no other:\n" * join("  " .* licence_of(f), "\n"),
     options = [Model.Option(OWNER_ANSWER, "the change is yours: the finding goes on your list, and the run leaves it", true),
                Model.Option(RULED_ANSWER, "the fixer makes it as your --direction says; the finding is open again, and a verifier closes it", false),
                Model.Option(NOT_A_DEFECT_ANSWER, "nothing changes, and the finding is closed", false)])
@@ -655,7 +659,13 @@ function answer!(root::AbstractString, id::AbstractString, option::AbstractStrin
     end
     qs = copy(run.questions)
     qs[findfirst(x -> x.id == id, qs)] = answered
-    write_record(root, with_questions(run, qs))
+    run = with_questions(run, qs)
+    # a ruling is kept for the commits made under it, whatever a later answer says
+    if option == RULED_ANSWER && endswith(id, "-code")
+        fid = replace(id, r"-code$" => "")
+        fid in run.ruled || (run = Model.Run(; (f => (f === :ruled ? vcat(run.ruled, [fid]) : getfield(run, f)) for f in fieldnames(Model.Run))...))
+    end
+    write_record(root, run)
     return nothing
 end
 
@@ -720,7 +730,7 @@ as_dict(r::Model.Run) = Dict{String,Any}(
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
     "readers" => String(r.readers), "passes" => r.passes,
     "scope" => String(r.scope), "base" => r.base, "driver" => r.driver, "dropped" => r.dropped, "unreverted" => r.unreverted, "silent" => r.silent, "rulebook" => r.rulebook,
-    "pass_since" => r.pass_since, "dropped_ids" => r.dropped_ids,
+    "pass_since" => r.pass_since, "dropped_ids" => r.dropped_ids, "licences" => r.licences, "ruled" => r.ruled,
     "questions" => [question_dict(q) for q in r.questions],
     "fixes" => [Dict{String,Any}("finding" => f.finding, "pass" => f.pass, "commit" => f.commit,
                                   "formula_edit" => f.formula_edit, "blind" => String(Symbol(f.blind)),
@@ -798,6 +808,8 @@ function from_dict(d::AbstractDict)
                               for u in get(d, "usage", [])],
                      pass_since = get(d, "pass_since", ""),
                      dropped_ids = String[String(x) for x in get(d, "dropped_ids", [])],
+                     licences = String[String(x) for x in get(d, "licences", [])],
+                     ruled = String[String(x) for x in get(d, "ruled", [])],
                      passes = get(d, "passes", 0),
                      agent_launches = get(d, "agent_launches", 0), tokens = get(d, "tokens", nothing),
                      stop = getfield(Model.Stop, Symbol(get(d, "stop", "DONE"))),
@@ -814,23 +826,26 @@ end
 
 
 """
-    unguarded_code(root, since) -> Vector{String}
+    unguarded_code(root, since; run = nothing) -> Vector{String}
 
-Every commit since `since` that changed CODE without going through the change guard. The arguments are
-`root`, the package root, and `since`, the commit the run started at. Returns one line per commit, each
-naming it and the files that make it code.
+Every commit since `since` that changed CODE without going through the change guard.
 
-This is the first of the two programs a run's close runs, and it is why a run records where it started.
-A review that edited code behind its own guard has not been reviewed: the guard is what decides that a
-change is documentation and may be committed without asking, so a code change made around it is exactly
-the thing nobody looked at. The run ends `CANNOT_EVALUATE` and the owner is asked to keep or revert.
+# Arguments
 
-Every commit is classified, the guard's own included: the trailer `gbg docfix commit` writes is typed
-text, and a code change amended into a guarded commit, or a plain commit carrying the trailer, would
-otherwise go unread. A revert this package made is classified too; only a refusal for mathematics alone
-is not counted on it, since a revert may put back a formula its fix removed and mathematics is not code.
+- `root` — the package root.
+- `since` — the commit the run started at.
+- `run` — the run's record, which backs a commit passed on the owner's ruling.
+
+Returns one line per commit, naming it and the files that make it code.
+
+The first program a run's close runs, and why a run records where it started. A review that edited code
+behind its own guard has not been reviewed: a code change made around the guard is exactly what nobody
+looked at. The run ends `CANNOT_EVALUATE` and the owner is asked to keep or revert.
+
+Every commit is classified, the guard's own included, since a trailer is typed text. A revert this
+package made may put back a formula its fix removed, so a refusal for mathematics alone is not counted on it.
 """
-function unguarded_code(root::AbstractString, since::AbstractString)
+function unguarded_code(root::AbstractString, since::AbstractString; run = nothing)
     (isempty(since) || since == "unknown") && return String[]
     cfg = try ConfigIO.read_config(root) catch; return String[] end
     log = git_out(root, "log", "--format=%H%x1f%s%x1f%b%x1e", "$since..HEAD")
@@ -848,6 +863,32 @@ function unguarded_code(root::AbstractString, since::AbstractString)
         # mark buys nothing else (simplified 2026-09-23: recognising "exact" reverts took four review
         # passes and still had holes; this needs no recognition).
         revert = any(l -> startswith(strip(l), REVERT_TRAILER), split(body, '\n'))
+        # A commit passed on the owner's ruling is code nowhere within the files of the finding he ruled
+        # on, by the run's own record of his answer; a trailer the record does not back is ignored.
+        ruled = Set{String}()
+        if run !== nothing
+            marks = String.(strip.(split(body, '\n')))
+            guarded = GUARD_TRAILER in marks
+            fixes = Set(m[length(FINDING_TRAILER)+1:end] for m in marks if startswith(m, FINDING_TRAILER))
+            for m in marks
+                startswith(m, RULED_TRAILER) || continue
+                fid = m[length(RULED_TRAILER)+1:end]
+                guarded && fid in fixes && union!(ruled, ruled_files(run, fid))
+            end
+            # a revert undoes what its commit's ruling licensed, and carries that licence
+            for m in marks
+                startswith(m, REVERT_TRAILER) || continue
+                undone = git_out(root, "log", "-1", "--format=%b", m[length(REVERT_TRAILER)+1:end])
+                undone === nothing && continue
+                um = String.(strip.(split(undone, '\n')))
+                ufix = Set(x[length(FINDING_TRAILER)+1:end] for x in um if startswith(x, FINDING_TRAILER))
+                for x in um
+                    startswith(x, RULED_TRAILER) || continue
+                    fid = x[length(RULED_TRAILER)+1:end]
+                    GUARD_TRAILER in um && fid in ufix && union!(ruled, ruled_files(run, fid))
+                end
+            end
+        end
         code = String[]
         for (status, f, odd) in touched(root, sha)
             own_record(f) && continue
@@ -858,6 +899,7 @@ function unguarded_code(root::AbstractString, since::AbstractString)
             # is not one anybody checked
             ((status != "A" && before === nothing) || (status != "D" && after === nothing)) &&
                 (push!(code, f); continue)
+            f in ruled && continue
             r = Engine.Guard.classify(cfg, f, before, after)
             r.documentation || (revert && occursin("(clause 6)", r.reason)) || push!(code, f)
         end
@@ -981,6 +1023,38 @@ revert like every other commit — recognising an exact inverse was tried and dr
 tolerates on one only a refusal over mathematics, so the trailer alone buys nothing.
 """
 const REVERT_TRAILER = "GBG-Docfix-Revert: "
+
+"""
+    RULED_TRAILER
+
+The trailer a commit carries when it passed the guard on the owner's ruling: the finding he answered
+`fix it on my ruling`. A close honours it only where the run's record holds that answer for that finding,
+and only for the files the finding names, so a typed trailer buys nothing.
+"""
+const RULED_TRAILER = "GBG-Docfix-Ruled: "
+
+"""
+    licence_of(f) -> Vector{String}
+
+The files a finding names where it still stands: what its question shows the owner, and so what his
+ruling licenses. The argument is `f`. Returns the paths, a location no longer found left out.
+"""
+licence_of(f::Model.Finding) =
+    unique([l.file for l in f.draft.locations if !isempty(l.file) && l.found != Model.Anchor.OUTDATED])
+
+"""
+    ruled_files(run, id) -> Set{String}
+
+The files the owner's ruling on a finding licenses: those its question showed him, when he answered it
+`fix it on my ruling`; empty otherwise. The arguments are `run` and the finding's `id`. Returns the paths.
+A change the guard would refuse passes there and nowhere else (the owner, 2026-10-06). The files are the
+ones recorded when he was asked, so a copy added to the finding afterwards is not licensed, and a ruling
+once given stands for the commits made under it.
+"""
+function ruled_files(run::Model.Run, id::AbstractString)
+    id in run.ruled || return Set{String}()
+    return Set(String(last(split(e, '\t'; limit = 2))) for e in run.licences if startswith(e, id * "\t"))
+end
 
 """
     fix_commits(root, since, id) -> Vector{String}
