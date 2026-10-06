@@ -29,34 +29,33 @@ The managed block above imports the shared policy; this file holds only what is 
 
 ## Where the rebuild stands
 
-**Phase 5 of `IMPLEMENTATION.md` is BUILT** (2026-09-26, everything before HT; now at `v2.0.0-rc.40`); what remains
-of it is HT wired by its own session and the `v2.0.0` tag, both on the owner's word.
+**Phases 0–5 and 9 of `IMPLEMENTATION.md` are BUILT; the tool is at `v2.0.0-rc.63` (2026-10-06).** Three
+science packages are wired and on the rulebook: PF (2026-09-18), HT (2026-09-30) and SS (2026-10-03,
+by its own session); CP is Phase 7's, with its wiring still to rehearse. The `v2.0.0` tag waits on the
+owner's word. Deferred on his word: Phase 6 (the bug hunt, the code fixer, the change audit), Phase 10
+(the code review) and Phase 11 (the design review). Phase 8, the tool as its own fifth consumer, is
+next after CP.
+
 The new tree stands whole: `Model`, `Texts`, `Catalogue`, `ConfigIO`, `Engine` (`Checks`, `Guard`,
-`Harness`), `Render`, `Study` and `Orchestration` (`Runs`, `Site`, `Scope`, `Agents`), with `Wire`,
-`Check`, `Docfix`, `Run`, `StudyCmd` and `Release` above them. A documentation review runs end to end in
-the rehearsal: `gbg run` opens it, builds the site, launches the readers through the one driver,
-collects, fixes through the guard, verifies blind and then with the diff, and closes with a report and
-the owner's work queue. `--scope changed` reads only what moved since the last run like it. **A run has
-never been launched over real agents**, so what breaks first is reported here rather than worked around.
+`Harness`), `Render`, `Study`, `Publication` and `Orchestration` (`Runs`, `Site`, `Scope`, `Agents`),
+with `Wire`, `Check`, `Docfix`, `Run`, `Answer`, `Leak`, `StudyCmd` and `Release` above them. The
+documentation review has run over real agents in PF (2026-09-22 and -24) and HT (2026-10-04): `gbg run`
+opens it, builds the site, launches the readers through the one driver, collects, fixes through the
+guard, verifies blind and then with the diff, and closes with a report and the owner's work queue.
+`--scope changed` reads only what moved since the last run like it. The leak scan (`gbg leak`) reads a
+repository's whole history and, on `--github`, its GitHub side; this package settled clean on
+2026-10-03, the science packages have not run it yet.
 
 Every rule is a `Rule` value under `src/Rules/`, each with its check and the examples that show the
-check matches its statement (`test/rules.jl`). There are NO scans and no `policy/` — the rulebook a
-session loads, `.gbg/policy/`, is written by `Render.policy` from the rule values. What a package switches off is a `Switch` in its `.gbg/config.jl`,
-not a ledger entry.
+check matches its statement (`test/rules.jl`); 110 rules. There are NO scans and no `policy/` — the
+rulebook a session loads, `.gbg/policy/`, is written by `Render.policy` from the rule values. What a
+package switches off is a `Switch` in its `.gbg/config.jl`. A package's wiring is judged by the WIRING
+CHECK — `Render.wiring`, run inside every docs build and every test run. The documentation review is
+SWITCHED OFF here until Phase 8, with the reason in `.gbg/config.jl`: the tool reviews itself last.
+`.claude/skills/` holds one file per built instrument that applies, written by `Render.skill`; do not
+hand-edit one, and do not re-create an instrument outside its phase.
 
-Gone with Phase 2: the old `Sync`, `Init`, `Doctor`, `Selftest`, `Consolidate` and `Schema`, with
-`schema/`, `templates/`, `.gbg/managed.json` and `.gbg/exemptions.toml`. A package's wiring is judged by
-the WIRING CHECK — `Render.wiring`, run inside every docs build and every test run — not by a doctor on
-request. The documentation review is SWITCHED OFF here until Phase 8, with the reason in
-`.gbg/config.jl`: the tool reviews itself last, and a package cannot be graded against a rulebook it is
-in the middle of writing. `.claude/skills/` holds one file per instrument that applies, written by
-`Render.skill`; do not hand-edit one, and do not re-create an instrument outside its phase.
-
-The third stroke is deleted (Phase 5, 2026-09-26): `Scan.jl`, `Reflection`, `DocLints`, `HtmlWalker`,
-`TreeHash`, the old `Config` and `Ledger`, `.gbg/config.toml`, `catalog/` and the fixture's hats. What
-they still had a reader for was harvested: the derived public surface into `TestHarness`, the tree hash
-into `Self.jl`, the `makedocs` declaration into the module file. `Witnesses.jl` is the one file of the
-old tree left, and rests until Phase 6.
+`Witnesses.jl` is the one file of the old tree left, and rests until Phase 6.
 
 ## Modules and wiring
 
