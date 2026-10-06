@@ -63,7 +63,7 @@ Config(
     # here until Phase 5 bind only a package that declares them now, and needed no entry at all.
     deferrals = [
         Deferral(rule = Symbol("RULE.API.POSITIONAL"),
-                 until = "this package's own documentation review runs, in Phase 8: no program decides whether an argument affects the result, and the reader that does has not read this package yet"),
+                 until = "this package's own documentation review runs, in Phase 8: no program decides which arguments are required or select a method, and the reader that does has not read this package yet"),
     ],
     # STRICTER THAN THE FLEET, and this package's alone: every page of this site carries the provenance
     # banner, because the owner reviews the four science packages' API prose and not this one's.

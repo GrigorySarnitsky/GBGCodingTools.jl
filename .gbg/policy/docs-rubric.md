@@ -5,9 +5,9 @@ What a docstring and an API page contain, in what order and in what shape. 47 ru
 so a rule reworded here was reworded in the program that checks it.
 
 ### RULE.API.POSITIONAL
-In an operation, an argument that can change the result is positional, defaults included; an argument that cannot change the result — a performance hint, a builder's cost/accuracy tunable — is a keyword. An exception is a `Switch` on this rule in the package's own config, with its reason.
+In an operation, the required inputs and any argument whose type selects the method are positional, the latter passed as an instance; every argument with a default — an option, a tunable, a hint — is a keyword, whether or not it changes the result. An exception is a `Switch` on this rule in the package's own config, with its reason.
 
-In an operation, every argument that affects the result is positional, defaults included; an argument that cannot change the result is a keyword. An exception is a `Switch` on this rule, with its reason.
+Methods are dispatched on positional arguments alone, so what selects the method must be one, and as an instance rather than a type so a later option extends it without breaking a call. A keyword names its value at the call site and may be given in any order or left out; an optional positional can be neither skipped nor named, and each default adds a method to disambiguate. This is Julia's own practice — `sort(v; by, rev)`, `round(x; digits)`, `solve(prob, Tsit5(); abstol)` — and no guideline in any language makes an argument positional for changing the result (researched 2026-10-06).
 
 Covered by a reader given source + other documents, because this needs meaning.
 

@@ -4,6 +4,23 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.63 — 2026-10-06
+
+MINOR, GBGStreamingStatistics' request of 2026-10-06, the owner's ruling after the research he asked for:
+
+- **`RULE.API.POSITIONAL` reworded.** It read "an argument that can change the result is positional,
+  defaults included; one that cannot is a keyword" — GBGPeriodicFields' own convention, written as fleet
+  law. It now reads: the required inputs and any argument whose type selects the method are positional,
+  the latter as an instance; every argument with a default — an option, a tunable, a hint — is a keyword,
+  whether or not it changes the result. Four researchers read the primary sources in parallel — the
+  Julia manual, Base and ten packages, every Julia style guide, Python's PEPs and scikit-learn, Swift,
+  Kotlin, .NET, the tidyverse guide, the numerical libraries, the API-usability studies, CLOS and Dylan —
+  and no source states the old criterion; Julia's Base (`sort(v; by, rev)`, `round(x; digits)`, `pinv`'s
+  positional `rtol` "to be deprecated in Julia 2.0"), SciML's style guide and every other language's
+  guideline state the new one. The fourteen load-bearing quotes were re-fetched and held; the research
+  is filed with the owner. The rule's reason now gives one. SS complies as it stands; PF's four switches
+  on the rule each kept a keyword against the old wording and are now unnecessary. 110 rules.
+
 ## 2.0.0-rc.62 — 2026-10-06
 
 MINOR, the check defects GBGStreamingStatistics' wiring exposed (2026-10-03), the owner's rulings, and

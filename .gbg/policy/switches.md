@@ -27,6 +27,6 @@ here is read as the entry states it.
 Deferred, not switched off: each of these is owed here and not yet met, and reports nothing
 until the package meets it. What would close each is stated.
 
-- `RULE.API.POSITIONAL` — until this package's own documentation review runs, in Phase 8: no program decides whether an argument affects the result, and the reader that does has not read this package yet
+- `RULE.API.POSITIONAL` — until this package's own documentation review runs, in Phase 8: no program decides which arguments are required or select a method, and the reader that does has not read this package yet
 
 <!-- gbg:managed end -->
