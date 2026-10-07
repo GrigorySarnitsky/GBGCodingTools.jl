@@ -4,6 +4,20 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.66 — 2026-10-07
+
+PATCH, GBGPeriodicFields' request of 2026-10-07, the owner's yes:
+
+- **`RULE.API.POSITIONAL`: an optional argument that selects the method stays positional.** The rule
+  made an argument whose type selects the method positional and every argument with a default a keyword,
+  and named no precedence for one that is both. It now says: "An argument whose type selects among the
+  operation's methods is positional whether or not it has a default; a value that parametrises a single
+  method is a keyword however it is typed", and the keyword clause reads "every other argument with a
+  default". A keyword dispatches only through a second, internal call, and Base keeps such a selector
+  positional — `round(x, r::RoundingMode = RoundNearest; digits)`, `lu!(A, pivot = RowMaximum(); check)`.
+  The second half closes a loophole an independent review found: a tunable such as `tol::Real = 1e-8`
+  could otherwise claim its type selects the method.
+
 ## 2.0.0-rc.65 — 2026-10-07
 
 MINOR, the owner's ruling of 2026-10-07:
