@@ -340,6 +340,7 @@ end
     spy = MM.Rule(id = :spy, statement = "s", why = "w", intention = MM.Intention.CODE,
                   check = MM.ProgramCheck(MM.Input.FILE_TREE, (r, c) -> (push!(ran, :spy); MM.Location[]), false))
     write(joinpath(dir, "src", "P.jl"), "module P\nend\n")
+    write(joinpath(dir, "LICENSE"), G.Catalogue.JudgementGit.MIT)
     redirect_stdout(devnull) do; G.Engine.Harness.test(dir; rules = [spy]); end
     @test ran == [:spy]
     code_rules = count(r -> r.intention === MM.Intention.CODE && r.check isa MM.ProgramCheck, G.Catalogue.RULES)

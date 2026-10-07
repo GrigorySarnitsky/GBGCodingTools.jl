@@ -4,6 +4,20 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.65 — 2026-10-07
+
+MINOR, the owner's ruling of 2026-10-07:
+
+- **`RULE.GIT.LICENSE`, new.** A package carries the MIT licence in one file at its root, `LICENSE` or
+  `LICENSE.md`: a copyright line naming the year and the holder, then the licence's text word for word.
+  Line breaks, a title line, the common forms of a copyright line, a byte-order mark and typographic
+  quotes do not count; another licence, an edited text, a clause added after it, a missing copyright line
+  or a second file named as a licence (`COPYING`, `LICENSE.txt`, any case) do. It is a
+  code rule over the files, like the other git rules: `Pkg.test()` and `gbg check` run it, the docs build
+  does not. No package of the fleet carries a licence yet, so each one's test suite fails after it moves
+  to this version until it adds `LICENSE`, in the same commit. This package and its fixture carry one
+  from this release.
+
 ## 2.0.0-rc.64 — 2026-10-07
 
 PATCH, GBGPeriodicFields' request of 2026-10-07, the owner's yes:

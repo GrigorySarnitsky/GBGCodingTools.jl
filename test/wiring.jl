@@ -340,6 +340,7 @@ end
         root = mktempdir(; cleanup = true)
         mkpath(joinpath(root, ".claude")); mkpath(joinpath(root, ".gbg"))
         write(joinpath(root, ".gbg", "config.jl"), """Config(package = "P", tool = :dev)""")
+        write(joinpath(root, "LICENSE"), G.Catalogue.JudgementGit.MIT)   # the one file rule a bare repository breaks
         env = ["GIT_AUTHOR_NAME" => "t", "GIT_AUTHOR_EMAIL" => "t@t", "GIT_COMMITTER_NAME" => "t", "GIT_COMMITTER_EMAIL" => "t@t"]
         git(args...) = run(pipeline(setenv(`git -C $root $args`, env; dir = root); stdout = devnull, stderr = devnull))
         git("init", "-q", "-b", "master"); git("commit", "-q", "--allow-empty", "-m", "first")

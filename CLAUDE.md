@@ -47,7 +47,7 @@ repository's whole history and, on `--github`, its GitHub side; this package set
 2026-10-03, the science packages have not run it yet.
 
 Every rule is a `Rule` value under `src/Rules/`, each with its check and the examples that show the
-check matches its statement (`test/rules.jl`); 110 rules. There are NO scans and no `policy/` — the
+check matches its statement (`test/rules.jl`); 111 rules. There are NO scans and no `policy/` — the
 rulebook a session loads, `.gbg/policy/`, is written by `Render.policy` from the rule values. What a
 package switches off is a `Switch` in its `.gbg/config.jl`. A package's wiring is judged by the WIRING
 CHECK — `Render.wiring`, run inside every docs build and every test run. The documentation review is

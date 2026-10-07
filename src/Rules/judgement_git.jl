@@ -2,8 +2,8 @@
 """
     Rules.JudgementGit
 
-The `RULE.GIT.*` rules, split three ways (ruled 2026-09-22). Three are decided from the FILES and run
-in every test suite: the workflow triggers, the ignore file, a request's name and opening.
+The `RULE.GIT.*` rules, split three ways (ruled 2026-09-22). Five are decided from the FILES and run
+in every test suite: the workflows, the ignore file, environment paths, requests and the licence.
 
 Three ask about commits and branches — what no build or test may read, since a fresh clone and CI
 must answer alike — and are programs in the end-of-turn hook, each carrying the shell lines the hook
@@ -464,12 +464,151 @@ const LOCAL_PATH = Model.Rule(
                           [Model.Location(; file = "docs/Project.toml", line = 5)], "names a path outside the repository"),
     ])
 
+# The MIT licence, word for word (SPDX `MIT`). Without a licence a published repository can be read and
+# not reused; MIT is what Julia, its standard libraries and nearly all of the General registry carry, and
+# what every dependency of the fleet is under (the owner's ruling, 2026-10-07).
+const MIT_BODY = """
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial
+portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+
+const LICENSE_TITLE = r"^#*\s*(?:The\s+)?MIT(?:\s+Licen[cs]e)?(?:\s+\(MIT\))?\s*$"i
+# Any file at the root that holds a licence by its name: `LICENSE`, `LICENCE`, `COPYING`, any case, with
+# or without an extension. Read from the directory listing, so that a case-insensitive file system
+# (macOS) does not take `license` for `LICENSE`.
+const LICENSE_NAME = r"^(?:licen[cs]e|copying)(?:\.[A-Za-z]+)?$"i
+
+# A copyright line names a year and a holder, in any of the forms in use: `Copyright (c) 2026 A. Holder`,
+# `Copyright 2026, A. Holder`, `Copyright © 2019-present A. Holder`, `COPYRIGHT (C) A. Holder 2026`.
+function copyright_line(l::AbstractString)
+    m = match(r"^copyright\b(.*)$"i, l)
+    m === nothing && return false
+    rest = m.captures[1]
+    occursin(r"\b\d{4}\b", rest) || return false
+    holder = replace(rest, r"\([cC]\)|©" => " ", r"\b\d{4}\b" => " ", r"\bpresent\b"i => " ", r"\ball rights reserved\b"i => " ")
+    return occursin(r"\p{L}", holder)
+end
+
+# The words of a text with the line each stands on; typographic quotes read as straight ones.
+function licence_words(lines)
+    words = Tuple{String,Int}[]
+    for (n, l) in enumerate(lines), w in split(replace(l, r"[“”]" => "\"", r"[‘’]" => "'"))
+        push!(words, (String(w), n))
+    end
+    return words
+end
+
+"""
+    licence(root, cfg) -> Vector{Model.Location}
+
+`RULE.GIT.LICENSE` over the root: one file `LICENSE` or `LICENSE.md`, and no other file named as a
+licence, holds the MIT licence — an optional title line (`MIT License`), at least one copyright line
+naming a year and a holder, then the licence's text word for word, with nothing after it. Line breaks,
+blank lines, a byte-order mark and typographic quotes do not count. The arguments are `root`, the
+package, and `cfg`, its config. Returns the locations.
+"""
+function licence(root::AbstractString, cfg::Model.Config)
+    named = sort([f for f in readdir(root) if occursin(LICENSE_NAME, f) && isfile(joinpath(root, f))])
+    files = filter(in(("LICENSE", "LICENSE.md")), named)
+    if isempty(files)
+        return [Model.Location(; file = isempty(named) ? "LICENSE" : first(named), line = 0,
+            text = isempty(named) ? "the package has no `LICENSE`; it carries the MIT licence" :
+                   "the licence is read from `LICENSE` or `LICENSE.md`; rename this file")]
+    end
+    file = first(files)
+    extra = [Model.Location(; file = f, line = 0, text = "a second licence file beside `$file`; the package carries one")
+             for f in named if f != file]
+    isempty(extra) || return extra
+    text = replace(read(joinpath(root, file), String), "\r\n" => "\n")
+    startswith(text, '﻿') && (text = text[nextind(text, 1):end])
+    lines = split(text, '\n')
+    start = findfirst(l -> startswith(strip(l), "Permission is hereby granted"), lines)
+    start === nothing && return [Model.Location(; file, line = 0,
+        text = "not the MIT licence: its text, \"Permission is hereby granted…\", is missing")]
+    out = Model.Location[]
+    header = [(n, strip(lines[n])) for n in 1:start-1 if !isempty(strip(lines[n]))]
+    for (n, l) in header
+        occursin(LICENSE_TITLE, l) || copyright_line(l) ||
+            push!(out, Model.Location(; file, line = n,
+                text = "above the licence's text stands only its title and the copyright lines"))
+    end
+    any(((_, l),) -> copyright_line(l), header) ||
+        push!(out, Model.Location(; file, line = start,
+            text = "no copyright line, `Copyright (c) <year> <holder>`, above the licence's text"))
+    have = licence_words(lines[start:end])
+    want = first.(licence_words(split(MIT_BODY, '\n')))
+    k = findfirst(i -> i > length(have) || i > length(want) || have[i][1] != want[i], 1:max(length(have), length(want)))
+    if k !== nothing
+        n = k <= length(have) ? have[k][2] + start - 1 : something(findlast(l -> !isempty(strip(l)), lines), 0)
+        push!(out, Model.Location(; file, line = n,
+            text = k > length(want) ? "text after the MIT licence's last sentence" :
+                   "the MIT licence's text differs here: \"$(want[k])\" expected"))
+    end
+    return out
+end
+
+const MIT = """
+MIT License
+
+Copyright (c) 2026 A. Holder
+
+""" * MIT_BODY
+
+const LICENSE_RULE = Model.Rule(
+    id = Symbol("RULE.GIT.LICENSE"),
+    statement = "A package carries the MIT licence in one file at its root, `LICENSE` or `LICENSE.md`: a copyright line naming the year and the holder, then the licence's text word for word.",
+    why = "A repository published without a licence can be read but not legally reused. MIT is what Julia, its standard libraries and nearly every package of the General registry carry, and what each package of the fleet depends on, so it adds nothing a user must check (the owner's ruling, 2026-10-07). The text is compared word for word because an edited licence is a different licence.",
+    intention = Model.Intention.CODE,
+    filesets = [Model.FileSet.CODE],
+    check = Model.ProgramCheck(Model.Input.FILE_TREE, licence, false),
+    examples = [
+        Model.TreeExample(["README.md" => "# X\n"], [Model.Location(; file = "LICENSE", line = 0)], "carries the MIT licence"),
+        Model.TreeExample(["LICENSE" => MIT], Model.Location[], "carries the MIT licence"),
+        Model.TreeExample(["LICENSE" => "Apache License\nVersion 2.0, January 2004\n"], [Model.Location(; file = "LICENSE", line = 0)], "carries the MIT licence"),
+        Model.TreeExample(["LICENSE" => MIT, "LICENSE.md" => MIT], [Model.Location(; file = "LICENSE.md", line = 0)], "in one file"),
+        Model.TreeExample(["LICENSE" => MIT, "COPYING" => "GNU GENERAL PUBLIC LICENSE\n"], [Model.Location(; file = "COPYING", line = 0)], "in one file"),
+        Model.TreeExample(["license.txt" => MIT], [Model.Location(; file = "license.txt", line = 0)], "in one file at its root, `LICENSE` or `LICENSE.md`"),
+        Model.TreeExample(["LICENSE" => MIT], Model.Location[], "in one file at its root, `LICENSE` or `LICENSE.md`"),
+        # Markdown, a range of years, typographic quotes and the text wrapped differently all comply
+        Model.TreeExample(["LICENSE.md" => replace(replace(MIT, "MIT License" => "# The MIT License (MIT)", "2026" => "2024–2026"),
+                                                    "\"AS IS\"" => "“AS IS”", "obtaining a copy of this software and\n" => "obtaining a copy\nof this software and ")],
+                          Model.Location[], "in one file"),
+        Model.TreeExample(["LICENSE" => replace(MIT, "Copyright (c) 2026 A. Holder\n" => "")],
+                          [Model.Location(; file = "LICENSE", line = 4)], "a copyright line naming the year and the holder"),
+        Model.TreeExample(["LICENSE" => replace(MIT, "Copyright (c) 2026 A. Holder" => "Copyright (c) A. Holder")],
+                          [Model.Location(; file = "LICENSE", line = 3), Model.Location(; file = "LICENSE", line = 5)],
+                          "a copyright line naming the year and the holder"),
+        Model.TreeExample(["LICENSE" => replace(MIT, "Copyright (c) 2026 A. Holder" => "Copyright © 2019, 2024-2026: A. Holder and contributors")],
+                          Model.Location[], "a copyright line naming the year and the holder"),
+        Model.TreeExample(["LICENSE" => replace(MIT, "MIT License\n\nCopyright (c) 2026 A. Holder" => "\ufeffMIT Licence\n\nCopyright 2026, A. Holder")],
+                          Model.Location[], "a copyright line naming the year and the holder"),
+        Model.TreeExample(["LICENSE" => replace(MIT, "Copyright (c) 2026 A. Holder" => "Copyright (c) 2026 .")],
+                          [Model.Location(; file = "LICENSE", line = 3), Model.Location(; file = "LICENSE", line = 5)],
+                          "a copyright line naming the year and the holder"),
+        # an edited MIT text, and a clause added after it
+        Model.TreeExample(["LICENSE" => replace(MIT, "merge, publish," => "merge,")], [Model.Location(; file = "LICENSE", line = 7)], "word for word"),
+        Model.TreeExample(["LICENSE" => MIT * "\nNot for commercial use.\n"], [Model.Location(; file = "LICENSE", line = 20)], "word for word"),
+        Model.TreeExample(["LICENSE" => replace(MIT, "\"AS IS\"" => "“AS IS”") * "\n\n"], Model.Location[], "word for word"),
+    ])
+
 """
     RULES
 
-The rules of this family: three programs over the files, three programs in the end-of-turn hook, one
+The rules of this family: five programs over the files, three programs in the end-of-turn hook, one
 instruction.
 """
-const RULES = Model.Rule[CI_MANUAL, MANIFEST_TRACKED, LOCAL_PATH, REQUESTS, BRANCH, PUSH, TRAILER_RULE, NO_SHIMS]
+const RULES = Model.Rule[CI_MANUAL, MANIFEST_TRACKED, LOCAL_PATH, REQUESTS, LICENSE_RULE, BRANCH, PUSH, TRAILER_RULE, NO_SHIMS]
 
 end # module JudgementGit
