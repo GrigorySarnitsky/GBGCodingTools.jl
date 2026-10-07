@@ -4,6 +4,17 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.64 — 2026-10-07
+
+PATCH, GBGPeriodicFields' request of 2026-10-07, the owner's yes:
+
+- **`RULE.API.POSITIONAL` admits a mirrored interface.** An operation that extends or mirrors a function
+  of Base, a standard library or another package follows that function's arguments instead, and names it
+  where the operation is documented, so a reader can compare the two signatures. PF's `anterpolate!`
+  takes its weights `α, β` positionally as `LinearAlgebra.mul!(C, A, B, α, β)` does, its `lpnorm(f, p = 2)`
+  follows `norm(x, p = 2)`, and its `var`, `std` and `cov` extend `Statistics` with `corrected` as a
+  keyword; each needed a switch restating the same reason. Any other exception is still a switch.
+
 ## 2.0.0-rc.63 — 2026-10-06
 
 MINOR, GBGStreamingStatistics' request of 2026-10-06, the owner's ruling after the research he asked for:
