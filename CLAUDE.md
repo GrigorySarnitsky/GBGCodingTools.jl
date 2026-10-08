@@ -29,9 +29,11 @@ The managed block above imports the shared policy; this file holds only what is 
 
 ## Where the rebuild stands
 
-**Phases 0–5 and 9 of `IMPLEMENTATION.md` are BUILT; the tool is at `v2.0.0-rc.63` (2026-10-06).** Three
-science packages are wired and on the rulebook: PF (2026-09-18), HT (2026-09-30) and SS (2026-10-03,
-by its own session); CP is Phase 7's, with its wiring still to rehearse. The `v2.0.0` tag waits on the
+**Phases 0–5 and 9 of `IMPLEMENTATION.md` are BUILT.** The version is the latest tag, and the first
+entry of `CHANGELOG.md` says what it holds; this file names neither, nor any count a program keeps, so
+it cannot go stale with a release. Three science packages are wired and on the rulebook: PF
+(2026-09-18), HT (2026-09-30) and SS (2026-10-03, by its own session); CP is Phase 7's, with its wiring
+still to rehearse. Which version each pins is in its own `docs/Project.toml`. The `v2.0.0` tag waits on the
 owner's word. Deferred on his word: Phase 6 (the bug hunt, the code fixer, the change audit), Phase 10
 (the code review) and Phase 11 (the design review). Phase 8, the tool as its own fifth consumer, is
 next after CP.
@@ -43,11 +45,11 @@ documentation review has run over real agents in PF (2026-09-22 and -24) and HT 
 opens it, builds the site, launches the readers through the one driver, collects, fixes through the
 guard, verifies blind and then with the diff, and closes with a report and the owner's work queue.
 `--scope changed` reads only what moved since the last run like it. The leak scan (`gbg leak`) reads a
-repository's whole history and, on `--github`, its GitHub side; this package settled clean on
-2026-10-03, the science packages have not run it yet.
+repository's whole history and, on `--github`, its GitHub side; what a package has accepted is its
+own `.gbg/leak-accepted.txt`.
 
 Every rule is a `Rule` value under `src/Rules/`, each with its check and the examples that show the
-check matches its statement (`test/rules.jl`); 111 rules. There are NO scans and no `policy/` — the
+check matches its statement (`test/rules.jl`). There are NO scans and no `policy/` — the
 rulebook a session loads, `.gbg/policy/`, is written by `Render.policy` from the rule values. What a
 package switches off is a `Switch` in its `.gbg/config.jl`. A package's wiring is judged by the WIRING
 CHECK — `Render.wiring`, run inside every docs build and every test run. The documentation review is

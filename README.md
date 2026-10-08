@@ -5,7 +5,7 @@
 The one shared tooling package of the four GBG Julia packages — `GBGPeriodicFields`,
 `GBGHomogeneousTurbulence`, `GBGStreamingStatistics`, `GBGCloudPhysics` — and of itself. It holds the
 rules the AI coding sessions in those packages are given, and the programs that verify them: the
-rulebook of 111 rules, each a Julia value with its own check and examples; the docs-build wrapper that
+rulebook, each rule a Julia value with its own check and examples; the docs-build wrapper that
 runs the rules before and after Documenter; the test harness a package's suite calls; the documentation
 review, run by agents through one driver; the leak scan, before a package goes public; and the `gbg`
 command that wires a package, checks it, and moves its pin. Every package names one exact released
