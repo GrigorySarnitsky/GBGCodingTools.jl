@@ -692,7 +692,7 @@ end
         @test code == 2 && occursin("new in git: b.jl", err)          # held for the queue, the file named too,
         @test JSON3.read(out)["systemMessage"] == "new in git: b.jl"  # to the session and to the owner
         # any name a file system allows comes through whole, and a flood is counted, not listed
-        write(joinpath(dir, ".claude", "WORK_QUEUE.md"), "- [x] an item\n")
+        write(joinpath(dir, ".claude", "WORK_QUEUE.md"), "# Work queue\n")             # the item done, its line deleted
         for n in ("t\tx", "new\nline.md", "a,b.md"); write(joinpath(dir, n), "x"); git("add", "--", n); end
         @test JSON3.read(turn()[2])["systemMessage"] == "new in git: a,b.md, new\nline.md, t\tx"
         for i in 1:25; write(joinpath(dir, "f$i.jl"), "x"); git("add", "f$i.jl"); end

@@ -4,6 +4,19 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.68 — 2026-10-08
+
+MINOR, the owner's ruling of 2026-10-08, on GBGPeriodicFields' question:
+
+- **The work queue lists only what is still to do.** A finished item is deleted, in the commit that
+  finishes it, not ticked: the deletion shows in the diff as plainly, and git keeps the history. The
+  end-of-turn hook now holds a session while a done line `- [x]` is left in any section, the owner's and
+  the last review's included, and names each with its line. A blocked item stays open, its text beginning
+  `BLOCKED:` and the reason, and is not counted, so the block stays in sight. Any list bullet with a box
+  is an item (`-`, `*`, `+`, `1.`); a line inside a fenced block is not. Nothing removed a ticked
+  line before: PF's queue had grown to 206 lines with nothing open. On the move to this version each
+  package deletes its ticked lines once, in one commit; the hook holds the turn once, naming them.
+
 ## 2.0.0-rc.67 — 2026-10-08
 
 MINOR, GBGPeriodicFields' request of 2026-10-08, the owner's ruling:

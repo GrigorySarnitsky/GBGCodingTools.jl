@@ -2109,6 +2109,39 @@ end
     end
 end
 
+# The queue lists only what is still to do (the owner, 2026-10-08): a done line in any section holds the
+# session until it is deleted, and an open line marked BLOCKED: is not counted.
+@testset "the hook holds a session on a done line, and lets a blocked one stand" begin
+    root = mktempdir(; cleanup = true)
+    mkpath(joinpath(root, ".claude"))
+    q = joinpath(root, ".claude", "WORK_QUEUE.md")
+    sh = joinpath(root, "hook.sh"); write(sh, G.Render.hook(G.Model.Config(package = "P", tool = :dev))); chmod(sh, 0o755)
+    function turn()
+        err = IOBuffer()
+        p = run(pipeline(setenv(`bash $sh`, ["CLAUDE_PROJECT_DIR" => root]; dir = root); stdin = IOBuffer("{}"), stdout = devnull, stderr = err); wait = false); wait(p)
+        return p.exitcode, String(take!(err))
+    end
+    write(q, "# queue\n\n- [ ] BLOCKED: waits on the owner's answer\n")
+    @test first(turn()) == 0
+    write(q, "# queue\n\n- [x] finished\n")
+    code, msg = turn()
+    @test code == 2 && occursin("3:- [x] finished", msg) && occursin("DONE ITEMS", msg)
+    write(q, "# queue\n\n## Code the owner asked for\n\n- [X] his, finished\n\n## From the last review\n\n- [ ] r1-001 not counted\n")
+    code, msg = turn()
+    @test code == 2 && occursin("5:- [X] his, finished", msg) && !occursin("r1-001", msg)
+    write(q, "# queue\n\n- [ ] open\n- [x] done\n")
+    code, msg = turn()
+    @test code == 2 && occursin("3:- [ ] open", msg) && occursin("4:- [x] done", msg)
+    # found in review: any bullet with a box is an item, a fenced example is not, and BLOCKED: opens the
+    # item's text and gives a reason, or the line is counted
+    for (queue, held) in ("* [x] done\n" => true, "1. [x] done\n" => true, "-[x] done\n" => true, "+ [ ] open\n" => true,
+                          "```\n- [x] an example\n- [ ] another\n```\n" => false, "- [ ] BLOCKED:\n" => true,
+                          "- [ ] fix the BLOCKED: parser\n" => true, "Use `- [x]` to mark one.\n" => false)
+        write(q, queue)
+        @test (first(turn()) == 2) == held
+    end
+end
+
 @testset "the hook reads the heading with a trailing space or a carriage return" begin
     root = mktempdir(; cleanup = true)
     mkpath(joinpath(root, ".claude"))

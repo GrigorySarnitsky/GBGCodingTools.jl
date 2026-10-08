@@ -790,8 +790,8 @@ starts another run, or changes an instrument (instruments are code); discarded b
 their passing tests [one was a real blocker].
 
 **Across runs.** No build, test or wiring check reads a run record, the question store or the settled rulings [review
-state turned science tests red]. The work-queue file and the end-of-turn guard that holds a session to it stay as
-ruled; a run's close is the only verb writing to that file, one line per leftover, under the uncounted heading.
+state turned science tests red]. The work-queue file lists only what is left; the guard holds a session on an
+open or done line, not a `BLOCKED:` one. A close writes leftovers under an uncounted heading, `gbg answer` the owner's.
 
 **Release** of GBGCodingTools needs a clean tree on `master`, pushed; a green `Pkg.test()`, a green docs build and a
 green wiring check; and the `CHANGELOG.md` entry; the tag is never moved. `gbg release --counts` prints, for
@@ -856,7 +856,7 @@ module's [a check with no input reports clean].
 .gbg/scratch/<id>/           the agents' arguments and results, git-ignored, deleted at close
 .gbg/requests/               requests to another package (RULE.GIT.REQUESTS); a reader or discipline asked of the tooling session is one
 .claude/skills/*/SKILL.md    generated, one per instrument that applies and is built
-.claude/WORK_QUEUE.md        the owner's items, guarded; under an unguarded heading, each run's leftovers
+.claude/WORK_QUEUE.md        what is still to do, guarded; under two uncounted headings, runs' leftovers and the owner's code
 .claude/settings.json        the end-of-turn hook, generated
 CLAUDE.md                    the tooling package's block generated; the rest belongs to the package
 …/Project.toml               the pin, generated into every environment naming the tool
