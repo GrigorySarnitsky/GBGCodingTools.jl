@@ -254,11 +254,20 @@ const RETURNS = Model.Rule(
     unchecked_reason = "judged by a reader; no program can decide it",
     access = [Model.Access.NOTHING])
 
+const COST_STRUCTURAL = Model.Rule(
+    id = Symbol("RULE.DOC.COST_STRUCTURAL"),
+    statement = "Where a docstring states an operation's cost, it states it by its structure — its complexity, the number of passes, the memory it needs, or a comparison with a named operation — and, where the faster of two choices depends on the case, says which way in words. A measured figure of its speed — a timing, a ratio of times or a throughput — is not stated in a docstring, nor the hardware it was measured on: it goes, dated, to the package's performance document, which the docstring may link.",
+    why = "A measured figure goes stale with every benchmark sweep, and nothing checks a docstring against the next one. In GBGPeriodicFields, a feature commit put that day's ratios into `exponential_convolve!`; later sessions, asked whether a cost note still held, re-derived the figures and wrote more precise ones back, until three docstrings carried paragraphs of ratios by grid size, thread count, element type and GPU model in the middle of the description — and the newer figures existed nowhere else (its request, 2026-10-08). Structure stays true until the code changes, and the reader learns from it which way to choose. A program cannot tell a measured ratio from one derived from the structure (two passes against one), nor a timing from a simulated time (`50 s at dt = 0.05`), so a reader judges it (the owner, 2026-10-08).",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.DOCSTRINGS],
+    check = Model.AgentCheck("Where a docstring states an operation's cost, it states it by its structure — its complexity, the number of passes, the memory it needs, or a comparison with a named operation — and, where the faster of two choices depends on the case, says which way in words. A measured figure of its speed — a timing, a ratio of times or a throughput — is not stated in a docstring, nor the hardware it was measured on: it goes, dated, to the package's performance document, which the docstring may link.", Model.WhyAgent.MEANING),
+    access = [Model.Access.OTHER_DOCUMENTS])
+
 """
     RULES
 
 The rules of this family that no program decides.
 """
-const RULES = Model.Rule[TWO_TIER, HOME_ORDER, LEADING_IDENTITY, ONE_HOME, VARIANT_PAIR, ADMONITION_TITLE, STEER, ALIASING_BULLET, COVERAGE_BASES, GRAMMAR, VERIFIED, SELF_CONTAINED, TERMS_DEFINED, CLASS_SWEEP, BATTERY, LITERATE, LITERATE_RENDERED, BUILD_VERIFY, ONE_NOTATION, COORD_FREE, MODULE_MAP, RETURNS]
+const RULES = Model.Rule[TWO_TIER, HOME_ORDER, LEADING_IDENTITY, ONE_HOME, VARIANT_PAIR, ADMONITION_TITLE, STEER, ALIASING_BULLET, COVERAGE_BASES, GRAMMAR, VERIFIED, SELF_CONTAINED, TERMS_DEFINED, CLASS_SWEEP, BATTERY, LITERATE, LITERATE_RENDERED, BUILD_VERIFY, ONE_NOTATION, COORD_FREE, MODULE_MAP, RETURNS, COST_STRUCTURAL]
 
 end # module JudgementDoc

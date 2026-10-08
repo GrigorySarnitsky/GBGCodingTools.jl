@@ -4,6 +4,19 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.67 — 2026-10-08
+
+MINOR, GBGPeriodicFields' request of 2026-10-08, the owner's ruling:
+
+- **`RULE.DOC.COST_STRUCTURAL`, new, judged by the review's readers.** Where a docstring states an
+  operation's cost, it states it by its structure — complexity, passes, memory, a comparison with a named operation — and says in
+  words which way the faster choice falls where it depends on the case. A measured timing, ratio of
+  times or throughput, and the hardware behind it, go dated to the package's performance document, which the
+  docstring may link. PF's benchmark ratios had grown into three docstrings and gone stale there, the
+  newer ones recorded nowhere else. No program check: one matching the forms PF used caught about a third
+  of its figures, and could not tell a measured ratio from one derived from the structure, nor a
+  timing from a simulated time, so the rule is a reader's and fails no build (the owner).
+
 ## 2.0.0-rc.66 — 2026-10-07
 
 PATCH, GBGPeriodicFields' request of 2026-10-07, the owner's yes:
