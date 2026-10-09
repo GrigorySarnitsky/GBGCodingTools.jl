@@ -4,6 +4,33 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.70 — 2026-10-09
+
+MINOR, the owner's rulings of 2026-10-09, on GBGPeriodicFields' question about going public:
+
+- **The leak scan's skill says how to go public.** It stopped at "what to do about each finding is his",
+  so a package session asked whether it was ready could tell the owner nothing. It now says when to run
+  the scan (as soon as publishing is considered), sorts the findings into the three tiers with ONE
+  decision per tier and a recommendation — blocking: revoke, then rewrite the history once into a new
+  public repository, the private one kept as the archive; current files: cleaned, an address kept only
+  if approved; history notes: accepted with `gbg leak --accept` — when the package is ready, and that its
+  test and docs environments need GBGCodingTools reachable.
+- **`RULE.LEAK.NEVER_PUBLISHED` no longer names a local settings file.** A file that exists to hold a
+  secret stays blocking by its name; one that only may hold one, as `.claude/settings.local.json`, is
+  judged by what it holds, by the other rules, in every commit. PF's was blocking by name alone while the
+  scan found no credential in any version of it; PF's scan now prints none blocking.
+- **The push hook refuses a push that would publish a session link.** `RULE.GIT.TRAILER` forbids the
+  harness's `Claude-Session:` line by the owner's ruling of 2026-09-08, but the end-of-turn hook that
+  reported it holds a session only once, and 620 of PF's commits carry one. The push now stops while a
+  commit of any local branch or tag that no remote holds, or the commit the command makes (its `-m`,
+  `--trailer` or `-F` file), carries the line, before any build, and says how to remove it.
+- **What the GitHub side holds is in the current tier.** An issue, a comment or a workflow log turns
+  public with the repository and can be edited before it does; the scan counted it with the history,
+  which `--accept` took.
+- Reviewed on a scratch copy: the first draft told a session to fix a path it was forbidden to read,
+  contradicted itself on what the scan writes, missed a second `-m`, `--trailer`, `-F` and other
+  branches, suggested a repair that fails without an upstream, and accepted GitHub-side notes.
+
 ## 2.0.0-rc.69 — 2026-10-09
 
 PATCH, the owner's ruling of 2026-10-09: one coherent policy, which does not move and breaks nothing.

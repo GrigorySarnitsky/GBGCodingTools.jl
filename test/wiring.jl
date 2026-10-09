@@ -666,6 +666,31 @@ end
         @test gate("git add -u && git commit -qm d && git $push origin master")[1] == 0
         @test gate("git commit --allow-empty -qm e && git $push origin master")[1] == 0
         rm(joinpath(dir, "draft.md"))
+        # a session link stops the push, in a commit not yet on a remote or in the one the command makes
+        # (the owner, 2026-10-09); the line removed, the push goes
+        link = "Claude" * "-Session: https://example.org/session_x"
+        git("commit", "--allow-empty", "-qm", "a change\n\n" * link)
+        code, msg = gate("git $push origin master")
+        @test code == 2 && occursin("Claude-Session line", msg) && occursin("a change", msg) && !occursin("built", msg)
+        git("commit", "--amend", "--allow-empty", "-qm", "a change")
+        @test gate("git $push origin master")[1] == 0
+        code, msg = gate("git commit --allow-empty -qm \"x\n\n$link\" && git $push origin master")
+        @test code == 2 && occursin("the commit this command makes", msg)
+        # every form a message takes in the command, and every local branch (review, 2026-10-09)
+        @test gate("git commit --allow-empty -qm x -m \"$link\" && git $push origin master")[1] == 2
+        @test gate("git commit --allow-empty -qm x --trailer \"$link\" && git $push origin master")[1] == 2
+        @test gate("git commit --allow-empty -qm x --trailer=\"$link\" && git $push origin master")[1] == 2
+        write(joinpath(dir, "msg.txt"), "x\n\n" * link * "\n")
+        @test gate("git commit --allow-empty -qF msg.txt && git $push origin master")[1] == 2
+        rm(joinpath(dir, "msg.txt"))
+        @test gate("git commit --allow-empty -qm \"the trailer named Claude-Session in prose\" && git $push origin master")[1] == 0
+        git("checkout", "-qb", "feat"); git("commit", "--allow-empty", "-qm", "on a branch\n\n" * link); git("checkout", "-q", "master")
+        @test occursin("on a branch", gate("git $push --all")[2])
+        git("branch", "-qD", "feat")
+        # a link a remote already holds is published already, and the push goes
+        remote = mktempdir(; cleanup = true); run(pipeline(`git init -q --bare $remote`; stdout = devnull))
+        git("commit", "--allow-empty", "-qm", "already out\n\n" * link); git("remote", "add", "origin", remote); git("push", "-q", "origin", "master")
+        @test gate("git $push origin master")[1] == 0
     end
 
     # GBGPeriodicFields' git carried notes no commit ever remarked on (its request, 2026-10-05): every file

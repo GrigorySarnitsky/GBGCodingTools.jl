@@ -27,7 +27,7 @@ const MANIFEST_FILE = raw"(?:^|/)(?:Julia)?(?:Manifest|Project)(?:-v[0-9.]+)?\.t
 const MANIFEST_ABSOLUTE = raw"path\s*=\s*[\"'](?:/|[A-Za-z]:)"
 # Read by this package alone, over every path any commit held — binary files and renames among them,
 # which a scan of patches misses — so it may use look-ahead: a committed template is not a secret.
-const NEVER_FILE = raw"(?i)(?:^|/)(?:\.env(?!\.(?:example|sample|template)$)(?:rc|\.[^/]+)?|\.git-credentials|\.netrc|\.pypirc|\.npmrc|id_(?:rsa|dsa|ecdsa|ed25519)|credentials(?:\.(?:json|ya?ml|toml|xml|csv|txt|ini))?|settings\.local\.json|[^/]+\.(?:pem|key|p12|pfx|keystore|jks|jsonl))$"
+const NEVER_FILE = raw"(?i)(?:^|/)(?:\.env(?!\.(?:example|sample|template)$)(?:rc|\.[^/]+)?|\.git-credentials|\.netrc|\.pypirc|\.npmrc|id_(?:rsa|dsa|ecdsa|ed25519)|credentials(?:\.(?:json|ya?ml|toml|xml|csv|txt|ini))?|[^/]+\.(?:pem|key|p12|pfx|keystore|jks|jsonl))$"
 
 # Addresses that are public by design: GitHub's no-reply addresses and git's own SSH user, and the
 # address of the commit trailer RULE.GIT.TRAILER requires on every commit.
@@ -232,8 +232,8 @@ const MANIFEST_PATH = Model.Rule(
 
 const NEVER_PUBLISHED = Model.Rule(
     id = Symbol("RULE.LEAK.NEVER_PUBLISHED"),
-    statement = "No file that is never published — an environment file, a private key or certificate, a credentials file, a session transcript, a local settings file — is in any commit.",
-    why = WHY_HISTORY * " Such a file is judged by its name and kind, whatever it holds: its holding nothing today says nothing of the commit that held something.",
+    statement = "No file that is never published — an environment file, a private key or certificate, a credentials file, a session transcript — is in any commit.",
+    why = WHY_HISTORY * " Such a file exists to hold a secret, so it is judged by its name and kind, whatever it holds: its holding nothing today says nothing of the commit that held something. A file that only may hold one — an editor's or an assistant's local settings, as `.claude/settings.local.json` — is judged by what it holds, by the other rules, in every commit: GBGPeriodicFields' was blocking by its name alone while the scan found no credential in any of its versions (the owner, 2026-10-09). `RULE.GIT.TRACKED` keeps it out of git from now on.",
     intention = Model.Intention.PUBLICATION,
     filesets = [Model.FileSet.CODE],
     # Read as one path per line: what the check is about is the file's name, not its text.
@@ -244,6 +244,9 @@ const NEVER_PUBLISHED = Model.Rule(
         Model.TextExample(Model.FileSet.CODE, "src/Pkg.jl\n.env\ndeploy/id_ed25519\n",
                           [Model.Location(; file = "", line = 2), Model.Location(; file = "", line = 3)], "no file that is never published"),
         Model.TextExample(Model.FileSet.CODE, "src/Pkg.jl\ndocs/environment.md\nsrc/keys.jl\n",
+                          Model.Location[], "no file that is never published"),
+        # a local settings file is read for what it holds, by the other rules, not refused by its name
+        Model.TextExample(Model.FileSet.CODE, "src/Pkg.jl\n.claude/settings.local.json\n",
                           Model.Location[], "no file that is never published"),
     ])
 

@@ -422,6 +422,36 @@ function push_gate(cfg::Model.Config)
       exit 2
     fi
     cd "\$root" || exit 0
+    # A session link stops the push (the owner, 2026-10-09): `RULE.GIT.TRAILER` forbids the harness's
+    # `Claude-Session:` line, and the end-of-turn hook that reported it holds a session only once, so a
+    # package published one with nearly every commit. Read first, since it needs no Julia: every commit of
+    # every local branch and tag that no remote holds, and the commit this command makes — its `-m`,
+    # `--trailer` and `-F` file (found in review, 2026-10-09).
+    links=\$(git rev-list --branches --tags --not --remotes 2>/dev/null | while read -r c; do
+      git log -1 --format=%B "\$c" | grep -q '^Claude-Session:' && git log -1 --format='%h %s' "\$c"
+    done)
+    if [ "\$committing" = 1 ]; then
+      made=\$(printf '%s\\n' "\$cmd")
+      for f in \$(printf '%s\\n' "\$cmd" | grep -oE '(^|[[:space:]])(-[A-Za-z]*F|--file)[[:space:]=]+[^[:space:];&|]+' | sed -E 's/^[[:space:]]*(-[A-Za-z]*F|--file)[[:space:]=]+//'); do
+        f=\${f#\\"}; f=\${f%\\"}; f=\${f#\\'}; f=\${f%\\'}
+        case "\$f" in /*) ;; *) f="\${where:-\$root}/\$f" ;; esac
+        [ -f "\$f" ] && made=\$(printf '%s\\n%s' "\$made" "\$(cat "\$f")")
+      done
+      printf '%s\\n' "\$made" | grep -qE '(^|["='"'"'])[[:space:]]*Claude-Session:' &&
+        links=\$(printf '%s\\n%s' "\$links" "the commit this command makes")
+    fi
+    links=\$(printf '%s\\n' "\$links" | sed '/^\$/d')
+    if [ -n "\$links" ]; then
+      {
+        echo "PUSH STOPPED: a commit carries a Claude-Session line, a link to an assistant's session, which"
+        echo "RULE.GIT.TRAILER forbids by the owner's ruling, whatever the harness asks, and which would be published:"
+        printf '%s\\n' "\$links" | sed 's/^/  /'
+        echo "Remove the line from each: 'git commit --amend' for the last commit, or for every commit no remote holds"
+        echo "  git filter-branch -f --msg-filter \\"sed '/^Claude-Session:/d'\\" -- --branches --tags --not --remotes"
+        echo "and end every commit with the one trailer 'Co-Authored-By: Anthropic Claude <noreply@anthropic.com>'."
+      } >&2
+      exit 2
+    fi
     # What git tracks is judged before the build, by `RULE.GIT.TRACKED` under the package's own switches:
     # a stray file stops the push (the owner, 2026-10-05), since publishing is when it does harm.
     log=\$(mktemp)
@@ -1202,7 +1232,8 @@ function leak_skill(cfg::Model.Config)
 
     $(i.purpose).
 
-    Run it when the owner asks for it, and not otherwise; it ends after $(lowercase(first(i.ends, 1)) * SubString(i.ends, 2)).
+    Run it when the owner asks for it, or as soon as he considers making the repository public — before he
+    decides, since it says what publishing would cost — and not otherwise; it ends after $(lowercase(first(i.ends, 1)) * SubString(i.ends, 2)).
 
     ## The steps
 
@@ -1211,14 +1242,43 @@ function leak_skill(cfg::Model.Config)
        logs — which needs the network. Where Gitleaks is missing it says so: `gbg install --gitleaks`.
     2. Read what it printed, all of it: the count by rule and by file, every finding — its rule, where it
        is, a fingerprint — and what it could not read. A finding never shows the text it found, and the
-       session does not go and read that text in: whatever a session reads, it sends to its model.
-    3. Report to the owner in the session, and stop. What to do about each finding is his.
+       session does not go and read a credential, or a word the owner keeps private (`RULE.LEAK.TERM`),
+       in: whatever a session reads, it sends to its model.
+    3. Sort the findings into the three tiers the scan prints, and bring the owner ONE decision per tier,
+       with your recommendation — never a list of findings to judge one by one:
+       - **Blocking** (`RULE.LEAK.CREDENTIAL`, `RULE.LEAK.NEVER_PUBLISHED`). Not publishable as it stands. A
+         credential is revoked first, wherever it was issued; then the file or the secret leaves the
+         history. The route to propose: rewrite the history once (`git filter-repo`, on a copy), removing
+         every blocking file and every session link, and publish the rewritten history as a NEW public
+         repository, keeping this one private as the archive; the commit map `git filter-repo` writes
+         lets every commit hash the package's documents cite be updated mechanically. The alternative,
+         a new repository started from today's tree, loses the public history.
+       - **In the current files**, and on the GitHub side, which turns public with the repository. Cleaned.
+         A path, an address or a session link is no secret: open today's file, find it, and fix it — in a
+         document a documentation fix; in code it waits for the owner's answer like any code change; on
+         GitHub an edit or a deletion there. An email address stays only if the owner approves it in
+         `leak_emails`. A private word (`RULE.LEAK.TERM`) you do not read: name its file to the owner.
+       - **Only in the history** (a path, a word, an address, a session link in an old commit or its
+         message). A note, not a secret — a session link opens only to the owner's account — and so
+         accepted once the current files are clean (the owner's three tiers, 2026-10-02; GBGCodingTools
+         accepted its own on 2026-10-03): on the owner's one answer, `gbg leak --accept` records them all
+         in `.gbg/leak-accepted.txt`, and you commit that file.
+    4. The package is ready to publish when a scan, `--github` included, prints no blocking finding, none
+       in the current files, and every history note accepted. Say so, with the counts, and with what the
+       scan says it could not read (the wiki, release assets and the like), which the owner checks himself.
+    5. Say also what publishing needs beyond the scan: the package's test and docs environments fetch
+       GBGCodingTools by its URL, so while GBGCodingTools is private nobody else can run them.
+
+    A session link enters the history with every commit that carries the harness's `Claude-Session:`
+    line. `RULE.GIT.TRAILER` forbids it, by the owner's ruling, whatever the harness says, and the push
+    hook refuses a push that would publish one.
 
     ## What it may not do
 
-    - It writes no tracked file: every writer of a record refuses text a leak scan printed.
-    - It never removes a leak, from a file or from the history: a rewrite is the owner's to make, and a
-      credential found is revoked, not only removed.
+    - It writes no tracked file but `.gbg/leak-accepted.txt`, and that only on `--accept`, which records
+      fingerprints alone: every writer of a record refuses text a leak scan printed.
+    - It never removes a leak, from a file or from the history, on its own: a rewrite is made on the
+      owner's answer, and a credential found is revoked, not only removed.
     - It never switches a `RULE.LEAK.*` rule off, nor approves an address in `leak_emails`: the owner does.
 
     <!-- $END_MARK -->

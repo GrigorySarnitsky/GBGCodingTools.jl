@@ -76,7 +76,7 @@ is named the same way. Inside the code the word "check" keeps its ordinary meani
 | **Documentation review** | Documentation is true to the code, correct, consistent and self-contained; the change guard, the checks and a verifier agent check each fix | Documentation | An agent | Documentation fixer | Owner's request | Nothing is open after its last pass, or the owner ended it |
 | **Bug hunt** (future) | The code does what its documentation says | Code | An agent proposes, a program decides | Code fixer | Owner's request | Every candidate is confirmed or discarded, once |
 | **Change audit** (future) | A code change is no wider than the defect and the owner's direction and still accepts input that worked before; it grades the fix and changes nothing | Code | An agent | Code fixer | After each approved code fix, and on request | One pass over the change |
-| **Leak scan** | Nothing secret or personal is published when a repository is made public; it writes nothing but session output | Publication | A program | Owner only | Owner's request | One pass over every branch, commit and message |
+| **Leak scan** | Nothing secret or personal is published when a repository is made public; it records only accepted fingerprints | Publication | A program | Owner only | Owner's request | One pass over every branch, commit and message |
 
 A Change audit starts by itself in exactly one place: once, over an approved code fix that has gone green (§4.4) —
 superseding the earlier ruling that an audit was only advised, since the owner asked to be told not just that a bug was

@@ -514,14 +514,16 @@ function scan(root::AbstractString, cfg::Model.Config; github::Bool = false, io:
                  "$(length(every_path)) path(s), $(length(blobs)) blob(s) a ref holds and no commit does"]
     missed = String[]
     github || push!(missed, "what GitHub holds and this clone lacks — pull requests' refs, branches never fetched — and the GitHub side: run with --github")
-    sources = [(text, places)]
+    # The GitHub side is live, not history: an issue, a comment or a log can be edited or deleted before the
+    # repository turns public, so what it holds is the current tier's, never accepted (review, 2026-10-09).
+    sources = [(text, places, false)]
     if github
         gtext, gplaces, gmissed = Publication.github(root; io)
         append!(missed, gmissed)
-        push!(sources, (gtext, gplaces))
+        push!(sources, (gtext, gplaces, true))
         push!(read_what, "GitHub's own copy, its pull requests' refs, and its issues, pull requests, reviews, comments, releases and workflow logs")
     end
-    for (t, ps) in sources
+    for (t, ps, live) in sources
         isempty(strip(t)) && continue
         start = Dict{String,Int}()
         for (i, p) in enumerate(ps); haskey(start, p) || (start[p] = i); end
@@ -531,7 +533,7 @@ function scan(root::AbstractString, cfg::Model.Config; github::Bool = false, io:
             # the line within its place tells two findings in one message apart, and does not move when
             # another commit is added (second review)
             push!(out, Finding(; rule = rule_of(r), detail = detail_of(r), place,
-                               fingerprint = fingerprint(rule_of(r), place, n - get(start, place, n))))
+                               fingerprint = fingerprint(rule_of(r), place, n - get(start, place, n)), current = live))
         end
     end
     return (findings = unique(filter(f -> !switched_off(cfg, f.rule, f.file), out)), read = read_what, missed = missed)

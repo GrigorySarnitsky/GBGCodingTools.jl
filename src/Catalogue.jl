@@ -88,7 +88,7 @@ const INSTRUMENTS = Model.Instrument[
     # Phase 9, built 2026-10-02 on the owner's word, before the packages go public (§3.1).
     Model.Instrument(
         id = :leak_scan,
-        purpose = "Nothing secret or personal is published when a repository is made public; it writes nothing but session output",
+        purpose = "Nothing secret or personal is published when a repository is made public; it records only accepted fingerprints",
         intention = Model.Intention.PUBLICATION,
         decider = Model.Decider.PROGRAM,
         fixer = Model.Fixer.OWNER_ONLY,
