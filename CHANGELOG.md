@@ -4,6 +4,25 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.69 — 2026-10-09
+
+PATCH, the owner's ruling of 2026-10-09: one coherent policy, which does not move and breaks nothing.
+
+- **`RULE.API.POSITIONAL`, settled.** It had been reworded in rc.63, rc.64 and rc.66, each time for the
+  case in front of it, and its "required inputs are positional" would have reported the required
+  parameters GBGStreamingStatistics, GBGHomogeneousTurbulence and GBGCloudPhysics name
+  (`conditional_density(…; hx, hy)`, `simulate(…; t_stop, dt)`, `FlowConditions(; viscosity, …)`), while
+  its opposite would report GBGPeriodicFields' positional surface. It now reads: a required argument is
+  positional or keyword as the package chooses, operation by operation; an argument with a default is a
+  keyword, whether or not it changes the result, unless its type selects among the operation's methods,
+  when it is positional, as an instance; a mirrored function decides for itself; any other exception is a
+  switch. Each argument falls under exactly one clause. Measured over the four packages: nothing becomes
+  a finding; the one standing finding is PF's `RealFourierLayout(fft_dims = (1, 2, 3))`, an optional
+  positional that selects no method. An independent review found the first draft readable two ways
+  (a required argument that selects the method; the scope of the package's choice); the order of the
+  clauses now decides, and putting the selector first would have reported HT's and CP's required
+  selectors named as keywords (`dealiasing::DealiasingStrategy`, `domain::Domain`).
+
 ## 2.0.0-rc.68 — 2026-10-08
 
 MINOR, the owner's ruling of 2026-10-08, on GBGPeriodicFields' question:
