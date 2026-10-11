@@ -163,3 +163,28 @@ end
     @test occursin(r"0 only in history; \d+ accepted before", again)
     @test occursin("now.md", again) && !occursin("rewritten.txt", again)
 end
+
+# A log GitHub refuses is a log not read, never one no longer kept: eight downloads at a time ran into the
+# rate limit, and every pass read a different part of the logs and called itself complete (GBGPeriodicFields,
+# 2026-10-11). A stand-in `gh` answers as GitHub does.
+@testset "a refused workflow log is retried, then reported unread, never as gone" begin
+    bin = mktempdir(; cleanup = true); dir = mktempdir(; cleanup = true)
+    count_file = joinpath(dir, "calls")
+    gh = joinpath(bin, "gh")
+    write(gh, """#!/usr/bin/env bash
+    n=\$(cat "$count_file" 2>/dev/null || echo 0); n=\$((n + 1)); echo \$n > "$count_file"
+    case "\$2" in
+      */gone/logs)    echo "gh: Not Found (HTTP 410)" >&2; exit 1 ;;
+      */limited/logs) echo "gh: API rate limit exceeded (HTTP 403)" >&2; exit 1 ;;
+      */late/logs)    [ \$n -ge 2 ] && { printf 'PK'; exit 0; }; echo "gh: API rate limit exceeded (HTTP 403)" >&2; exit 1 ;;
+    esac
+    """); chmod(gh, 0o755)
+    withenv("PATH" => bin * ":" * ENV["PATH"]) do
+        zip = joinpath(dir, "x.zip")
+        @test G.Publication.fetch_log("o/r", "gone", zip; waits = (0, 0, 0)) === :expired
+        @test G.Publication.fetch_log("o/r", "limited", zip; waits = (0, 0, 0)) === :refused
+        rm(count_file; force = true)
+        @test G.Publication.fetch_log("o/r", "late", zip; waits = (0, 0, 0)) === :read     # waited out
+    end
+end
+

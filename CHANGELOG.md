@@ -4,6 +4,20 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.71 — 2026-10-11
+
+PATCH, GBGPeriodicFields' report of 2026-10-11:
+
+- **A workflow log GitHub refuses is a log not read, never one no longer kept.** `gbg leak --github`
+  downloaded about 1,700 logs eight at a time, ran into GitHub's rate limit, and reported every refused
+  log as expired; so each pass read a different part of the logs, named a different handful of findings,
+  and called itself complete. Logs now go four at a time, a refusal is waited out (30, 90 and 270
+  seconds), a 404 or 410 alone means expired, and a log still refused, or an archive that does not
+  unpack, leaves the scan INCOMPLETE: it says so, how many, and exits 2, whatever else it found. Once one
+  log is refused after every wait the rest are not tried, so a fully refused pass ends in minutes, not a
+  day (both found in review). Gitleaks itself has no cap: 600 home paths planted in
+  514 MB of input were all found.
+
 ## 2.0.0-rc.70 — 2026-10-09
 
 MINOR, the owner's rulings of 2026-10-09, on GBGPeriodicFields' question about going public:

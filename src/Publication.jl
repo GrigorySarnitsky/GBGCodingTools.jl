@@ -367,7 +367,7 @@ function loose_blobs(repo::AbstractString, dir::AbstractString)
 end
 
 """
-    github(root; io = stdout) -> Tuple{String,Vector{String},Vector{String}}
+    github(root; io = stdout) -> Tuple{String,Vector{String},Vector{String},Int}
 
 What the repository's GitHub side publishes outside git, read through `gh`: every issue's and pull
 request's title and text, every comment on them, on a pull request's code and on a commit, every review's
@@ -378,8 +378,8 @@ text, every release's notes, and every workflow run's log still kept.
 - `root` — the repository, whose `origin` names it on GitHub.
 - `io` — where progress goes.
 
-Returns the text, the place of each line, and what could not be read, said rather than skipped in
-silence.
+Returns the text, the place of each line, what could not be read, said rather than skipped in silence,
+and how many logs GitHub refused, which leaves the pass incomplete.
 """
 function github(root::AbstractString; io::IO = stdout)
     url = strip(git(root, "remote", "get-url", "origin"))
@@ -410,21 +410,58 @@ function github(root::AbstractString; io::IO = stdout)
     runs = api("repos/$slug/actions/runs?per_page=100", ".workflow_runs[] | .id | tostring")
     println(io, "gbg leak: reading ", length(runs), " workflow run log(s) of ", slug)
     dir = mktempdir(; cleanup = true)
-    # Eight at a time: one after another, a repository's thousand logs took longer than the scan.
-    logs = asyncmap(runs; ntasks = 8) do id
+    # Four at a time, each refusal waited out: eight at a time ran into GitHub's rate limit, and a refused
+    # log was reported as one no longer kept, so every pass read a different part of the logs and called
+    # itself complete (GBGPeriodicFields, 2026-10-11).
+    # Once one log is refused after every wait, the rest are not tried: the pass is incomplete either way,
+    # and trying them all would take a day and keep the limit hit (review, 2026-10-11).
+    given_up = Threads.Atomic{Bool}(false)
+    logs = asyncmap(runs; ntasks = 4) do id
+        given_up[] && return (id, :refused, "")
         zip = joinpath(dir, id * ".zip")
-        ok = success(pipeline(`gh api repos/$slug/actions/runs/$id/logs`; stdout = zip, stderr = devnull))
-        # GitHub answers an expired log with an error or an empty archive; either is a log not read.
-        ok && filesize(zip) > 0 || return (id, nothing)
-        text = read(pipeline(ignorestatus(`unzip -p $zip`); stderr = devnull), String)
+        status = fetch_log(slug, id, zip)
+        status === :refused && (given_up[] = true)
+        status === :read || return (id, status, "")
+        out = IOBuffer()
+        # an archive that does not unpack is a log not read, never one no longer kept
+        unpacked = success(pipeline(`unzip -p $zip`; stdout = out, stderr = devnull))
         rm(zip; force = true)
-        return (id, text)
+        text = String(take!(out))
+        return unpacked ? (id, isempty(text) ? :expired : :read, text) : (id, :refused, "")
     end
-    for (id, text) in logs
-        text === nothing || isempty(text) ? push!(missed, "workflow run $id: its log is no longer kept") :
-                                            add(text, "the log of workflow run " * id)
+    refused = String[]
+    for (id, status, text) in logs
+        status === :read    ? add(text, "the log of workflow run " * id) :
+        status === :expired ? push!(missed, "workflow run $id: its log is no longer kept") :
+                              push!(refused, "workflow run $id: its log was refused or failed, after waiting, or not tried once another was")
     end
-    return join(lines, '\n'), places, missed
+    append!(missed, refused)
+    return join(lines, '\n'), places, missed, length(refused)
+end
+
+"""
+    fetch_log(slug, id, zip; waits = (0, 30, 90, 270)) -> Symbol
+
+One workflow run's log, downloaded into `zip`: `:read`; `:expired` when GitHub says it keeps it no longer
+(404 or 410, or an empty archive); `:refused` when every attempt failed otherwise — a rate limit, a
+timeout — which is a log NOT read, never one that is gone.
+
+# Arguments
+
+- `slug` — the repository, `owner/name`.
+- `id` — the run.
+- `zip` — the file the archive is written to.
+- `waits` — the seconds waited before each attempt.
+"""
+function fetch_log(slug::AbstractString, id::AbstractString, zip::AbstractString; waits = (0, 30, 90, 270))
+    for w in waits
+        sleep(w)
+        err = IOBuffer()
+        ok = success(pipeline(`gh api repos/$slug/actions/runs/$id/logs`; stdout = zip, stderr = err))
+        ok && return filesize(zip) > 0 ? :read : :expired
+        occursin(r"HTTP (404|410)", String(take!(err))) && return :expired
+    end
+    return :refused
 end
 
 # A rule is off only by a switch naming it: an exclusion parks a module from the rulebook, and its files
@@ -454,7 +491,8 @@ Every finding of the `RULE.LEAK.*` rules in what the repository at `root` would 
   outside git read too, through the network.
 - `io` — where progress goes.
 
-Returns `(findings, read, missed)`: the findings, what was read, and what could not be. Writes nothing
+Returns `(findings, read, missed, unread)`: the findings, what was read, what could not be, and how many
+workflow logs GitHub refused, a pass that is no verdict while it is above zero. Writes nothing
 in the repository: everything it reads is mirrored into a temporary directory first.
 """
 function scan(root::AbstractString, cfg::Model.Config; github::Bool = false, io::IO = stdout)
@@ -513,12 +551,13 @@ function scan(root::AbstractString, cfg::Model.Config; github::Bool = false, io:
                  "$commits commit message(s), every ref's name, every tag object's name, tagger and message, the authors and committers",
                  "$(length(every_path)) path(s), $(length(blobs)) blob(s) a ref holds and no commit does"]
     missed = String[]
+    unread = 0
     github || push!(missed, "what GitHub holds and this clone lacks — pull requests' refs, branches never fetched — and the GitHub side: run with --github")
     # The GitHub side is live, not history: an issue, a comment or a log can be edited or deleted before the
     # repository turns public, so what it holds is the current tier's, never accepted (review, 2026-10-09).
     sources = [(text, places, false)]
     if github
-        gtext, gplaces, gmissed = Publication.github(root; io)
+        gtext, gplaces, gmissed, unread = Publication.github(root; io)
         append!(missed, gmissed)
         push!(sources, (gtext, gplaces, true))
         push!(read_what, "GitHub's own copy, its pull requests' refs, and its issues, pull requests, reviews, comments, releases and workflow logs")
@@ -536,7 +575,8 @@ function scan(root::AbstractString, cfg::Model.Config; github::Bool = false, io:
                                fingerprint = fingerprint(rule_of(r), place, n - get(start, place, n)), current = live))
         end
     end
-    return (findings = unique(filter(f -> !switched_off(cfg, f.rule, f.file), out)), read = read_what, missed = missed)
+    return (findings = unique(filter(f -> !switched_off(cfg, f.rule, f.file), out)), read = read_what, missed = missed,
+            unread = unread)
 end
 
 end # module Publication

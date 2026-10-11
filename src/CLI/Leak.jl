@@ -101,6 +101,12 @@ function scan(root::AbstractString; github::Bool = false, accept::Bool = false, 
     end
     println(io, MARK, "   read: ", join(result.read, "; "))
     for m in result.missed; println(io, MARK, "   NOT READ: ", m); end
+    # A log GitHub refused is one not read: the scan is no verdict then, clean or not (2026-10-11).
+    if result.unread > 0
+        println(io, MARK, " INCOMPLETE: ", result.unread, " workflow log(s) were not read — GitHub refused them or the download failed,",
+                " after waiting; this pass says nothing of them. Run it again later; `gh api rate_limit` shows when the limit resets.")
+        return 2
+    end
     return isempty(fresh) ? 0 : 1
 end
 
