@@ -185,6 +185,67 @@ end
         @test G.Publication.fetch_log("o/r", "limited", zip; waits = (0, 0, 0)) === :refused
         rm(count_file; force = true)
         @test G.Publication.fetch_log("o/r", "late", zip; waits = (0, 0, 0)) === :read     # waited out
+        # a shared pace: a hold delays every download, not only the one refused
+        pace = G.Publication.Throttle(0.0)
+        G.Publication.hold!(pace, 1.0)
+        t0 = time(); G.Publication.slot!(pace); @test time() - t0 >= 0.9
+    end
+end
+
+# Each GitHub-side item is scanned as its own file and placed by it: joined into one text and placed again
+# by line number, every one of ten findings in GBGPeriodicFields' logs named a run whose log held nothing
+# (2026-10-11).
+@testset "a GitHub-side finding names the item that holds it" begin
+    items = mktempdir(; cleanup = true); work = mktempdir(; cleanup = true)
+    places = Dict{String,String}()
+    for k in 1:200
+        f = "item-$k.txt"
+        write(joinpath(items, f), k == 137 ? "line one\nbuilt in /home/someone/work/pkg\n" : "ordinary\r\nlog " * "x"^(k * 50) * "\n")
+        places[f] = "the log of workflow run $(1000 + k)"
+    end
+    fs, skipped = G.Publication.item_findings(items, places, G.Model.Config(package = "P", tool = :dev), work)
+    @test skipped == 0
+    # a file Gitleaks takes for binary is skipped by it in silence: here it is counted, an item not read
+    write(joinpath(items, "item-201.txt"), "%PDF-1.4\n/home/someone/hidden\n"); places["item-201.txt"] = "issue #201"
+    @test last(G.Publication.item_findings(items, places, G.Model.Config(package = "P", tool = :dev), mktempdir(; cleanup = true))) == 1
+    rm(joinpath(items, "item-201.txt")); delete!(places, "item-201.txt")
+    @test [f.place for f in fs if f.rule === Symbol("RULE.LEAK.HOME_PATH")] == ["the log of workflow run 1137"]
+    @test all(f -> f.current, fs)
+end
+
+# The whole GitHub side through a stand-in `gh`: an issue whose title reads as a PDF is still scanned, two
+# comments on one issue are two findings, a log names its run, and a log GitHub refuses leaves the pass
+# incomplete (review, 2026-10-11).
+@testset "the GitHub side, read through gh, end to end" begin
+    work = mktempdir(; cleanup = true); bin = joinpath(work, "bin"); mkpath(bin)
+    logs = joinpath(work, "logs"); mkpath(logs)
+    for (k, body) in (1 => "2026-07-01T00:00:00Z clean line\n", 2 => "2026-07-01T00:00:00Z built at /home/eve/w\n")
+        write(joinpath(logs, "job.txt"), body)
+        run(pipeline(`zip -qj $(joinpath(logs, "$k.zip")) $(joinpath(logs, "job.txt"))`; stdout = devnull))
+    end
+    write(joinpath(bin, "gh"), """#!/usr/bin/env bash
+    p="\$2"; [ "\$p" = "--paginate" ] && p="\$3"
+    case "\$p" in
+      repos/o/r/issues\\?*)        echo '["5","An issue\\nfirst line"]'; echo '["6","%PDF-1.4 title\\n/home/bob/b"]' ;;
+      repos/o/r/pulls/*/reviews*)  : ;;
+      repos/o/r/issues/comments*)  echo '["5","see /home/carol/c"]'; echo '["5","see /home/carol/c"]' ;;
+      repos/o/r/pulls/comments*|repos/o/r/comments*|repos/o/r/releases*) : ;;
+      repos/o/r/actions/runs\\?*)  echo 101; echo 102; echo 103 ;;
+      repos/o/r/actions/runs/101/logs) cat "$(joinpath(logs, "1.zip"))" ;;
+      repos/o/r/actions/runs/102/logs) cat "$(joinpath(logs, "2.zip"))" ;;
+      repos/o/r/actions/runs/103/logs) echo "gh: API rate limit exceeded (HTTP 403)" >&2; exit 1 ;;
+      *) echo "unknown \$p" >&2; exit 1 ;;
+    esac
+    """); chmod(joinpath(bin, "gh"), 0o755)
+    repo = joinpath(work, "repo"); mkpath(repo)
+    run(pipeline(`git -C $repo init -q`; stdout = devnull)); run(pipeline(`git -C $repo remote add origin https://github.com/o/r.git`; stdout = devnull))
+    withenv("PATH" => bin * ":" * ENV["PATH"]) do
+        gdir, files, missed, unread = G.Publication.github(repo; io = devnull, waits = (0, 0))
+        fs, skipped = G.Publication.item_findings(gdir, files, G.Model.Config(package = "P", tool = :dev), work)
+        homes = sort([f.place for f in fs if f.rule === Symbol("RULE.LEAK.HOME_PATH")])
+        @test homes == ["a comment on #5", "a comment on #5", "issue or pull request #6", "the log of workflow run 102"]
+        @test length(unique(f.fingerprint for f in fs if f.place == "a comment on #5")) == 2
+        @test skipped == 0 && unread == 1
     end
 end
 

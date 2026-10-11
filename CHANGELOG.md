@@ -4,6 +4,25 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.72 — 2026-10-11
+
+PATCH, GBGPeriodicFields' report of 2026-10-11, measured on its GitHub side:
+
+- **Each GitHub-side item is scanned as its own file, and a finding names the file that holds it.** The
+  issues, comments, releases and ~1,700 workflow logs were joined into one text and each finding placed
+  again by its line number. On PF's logs every finding of a pass named a run whose log, read alone by the
+  same rules, held nothing: the ten of one pass and the six of each of PF's, which is why the findings
+  changed every pass and PF deleted nine runs for nothing. Scanned item by item, PF's 1,271 logs still
+  kept, its issues, comments and releases hold none. Commit messages, read the same joined way, were
+  checked: every one of 839 session-link findings in PF and this package names a commit that holds one.
+  Each item's file opens with a header line, since Gitleaks skips in silence a file whose first bytes
+  read as a PDF, a zip or an RTF — an issue titled `%PDF-1.4` hid its body; a file it skips all the same
+  is counted as an item not read; and two findings in two comments on one issue stay two (all three
+  found in review, with an end-to-end test through a stand-in `gh`).
+- **Downloads are paced.** One starts a second at most, across four workers, and a refusal pauses them
+  all, for one, three and then seven minutes: GitHub's secondary limit refused bursts while 4,884 of the
+  hour's 5,000 requests were left.
+
 ## 2.0.0-rc.71 — 2026-10-11
 
 PATCH, GBGPeriodicFields' report of 2026-10-11:

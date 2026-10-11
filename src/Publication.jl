@@ -202,12 +202,16 @@ const LOG_OPTS = "--log-opts=--all --reflog -m --text --no-textconv"
 # One Gitleaks pass. `args` are its subcommand and target; `conf` its configuration; `text` its standard
 # input. The report lands in a temporary directory, never in the package: its matches are redacted, and
 # its author fields are not, so it is read and removed at once.
-function pass(args::Vector{String}, conf::AbstractString, dir::AbstractString; text = nothing)
+function pass(args::Vector{String}, conf::AbstractString, dir::AbstractString; text = nothing, skipped = nothing)
     report = joinpath(dir, "report-$(rand(UInt32)).json")
     ignore = mkpath(joinpath(dir, "no-ignore"))
-    cmd = clean(`$(gitleaks()) $args -c $conf -i $ignore --ignore-gitleaks-allow --redact --no-banner --exit-code 0 -f json -r $report`)
-    ok = success(text === nothing ? pipeline(cmd; stdout = devnull, stderr = devnull) :
-                 pipeline(cmd; stdin = IOBuffer(text), stdout = devnull, stderr = devnull))
+    level = skipped === nothing ? String[] : ["-l", "debug"]
+    cmd = clean(`$(gitleaks()) $args -c $conf -i $ignore --ignore-gitleaks-allow --redact --no-banner --exit-code 0 -f json -r $report $level`)
+    err = IOBuffer()
+    ok = success(text === nothing ? pipeline(cmd; stdout = devnull, stderr = err) :
+                 pipeline(cmd; stdin = IOBuffer(text), stdout = devnull, stderr = err))
+    # Gitleaks skips a file it takes for binary, or a symlink, and says so only at debug level
+    skipped === nothing || append!(skipped, [String(l) for l in split(String(take!(err)), '\n') if occursin("skipping", l)])
     try
         ok && isfile(report) || error("Gitleaks did not run over $(args[1])")
         return JSON3.read(read(report, String))
@@ -218,12 +222,12 @@ end
 
 # Both passes over one input: Gitleaks' own rules, from its default configuration given explicitly, then
 # this package's alone, where the default allowlist cannot hide a home path.
-function both(args::Vector{String}, cfg, dir; text = nothing)
+function both(args::Vector{String}, cfg, dir; text = nothing, skipped = nothing)
     defaults = joinpath(dir, "defaults.toml")
     isfile(defaults) || write(defaults, without_global_allowlist(read(defaults_file(), String)))
     own = joinpath(dir, "gbg-leak.toml"); write(own, config_toml(cfg))
-    return vcat([(own = false, f = f) for f in pass(args, defaults, dir; text)],
-                [(own = true, f = f) for f in pass(args, own, dir; text)])
+    return vcat([(own = false, f = f) for f in pass(args, defaults, dir; text, skipped)],
+                [(own = true, f = f) for f in pass(args, own, dir; text, skipped)])
 end
 
 # Gitleaks' default rules with the global allowlist that precedes them cut out: what it skips by path —
@@ -367,7 +371,7 @@ function loose_blobs(repo::AbstractString, dir::AbstractString)
 end
 
 """
-    github(root; io = stdout) -> Tuple{String,Vector{String},Vector{String},Int}
+    github(root; io = stdout, waits = (0, 60, 180, 420)) -> Tuple
 
 What the repository's GitHub side publishes outside git, read through `gh`: every issue's and pull
 request's title and text, every comment on them, on a pull request's code and on a commit, every review's
@@ -377,18 +381,24 @@ text, every release's notes, and every workflow run's log still kept.
 
 - `root` — the repository, whose `origin` names it on GitHub.
 - `io` — where progress goes.
+- `waits` — the seconds every download pauses before each attempt at a refused log.
 
-Returns the text, the place of each line, what could not be read, said rather than skipped in silence,
-and how many logs GitHub refused, which leaves the pass incomplete.
+Returns the directory holding one file per item, the place each file stands for, what could not be read,
+said rather than skipped in silence, and how many logs GitHub refused, which leaves the pass incomplete.
 """
-function github(root::AbstractString; io::IO = stdout)
+function github(root::AbstractString; io::IO = stdout, waits = (0, 60, 180, 420))
     url = strip(git(root, "remote", "get-url", "origin"))
     m = match(r"github\.com[:/]([^/]+/[^/]+?)(?:\.git)?$", url)
     m === nothing && error("origin is not a GitHub repository: the GitHub side cannot be read")
     slug = m.captures[1]
-    lines = String[]; places = String[]
+    # Each item is its own file, which Gitleaks names in each finding: the items joined into one text and
+    # placed again by line number named the wrong run for every one of ten findings in GBGPeriodicFields'
+    # logs (2026-10-11), while each named log, read alone, held nothing.
+    out_dir = mktempdir(; cleanup = true); files = Dict{String,String}()
     missed = ["the wiki, the description and topics, release assets, workflow artifacts, discussions and edit history: not read"]
-    add(text, place) = for l in split(text, '\n'); push!(lines, l); push!(places, place); end
+    # A header line opens every item, so no title is taken for a file type: Gitleaks skips a file whose
+    # first bytes read as a PDF, a zip or an RTF, and an issue titled `%PDF-1.4` hid its body (review).
+    add(text, place) = (f = "item-$(length(files) + 1).txt"; write(joinpath(out_dir, f), ITEM_HEADER * text); files[f] = place)
     api(path, jq) = readlines(`gh api --paginate $path --jq $jq`)
     for row in api("repos/$slug/issues?state=all&per_page=100", ".[] | [(.number|tostring), ((.title // \"\") + \"\\n\" + (.body // \"\"))] | @json")
         n, t = JSON3.read(row); add(t, "issue or pull request #" * n)
@@ -416,10 +426,13 @@ function github(root::AbstractString; io::IO = stdout)
     # Once one log is refused after every wait, the rest are not tried: the pass is incomplete either way,
     # and trying them all would take a day and keep the limit hit (review, 2026-10-11).
     given_up = Threads.Atomic{Bool}(false)
+    # One download starts a second at most, across the workers, and a refusal pauses them all: GitHub's
+    # secondary limit refused bursts while 4,884 of the hour's 5,000 requests were left (2026-10-11).
+    pace = Throttle(1.0)
     logs = asyncmap(runs; ntasks = 4) do id
         given_up[] && return (id, :refused, "")
         zip = joinpath(dir, id * ".zip")
-        status = fetch_log(slug, id, zip)
+        status = fetch_log(slug, id, zip; waits, pace)
         status === :refused && (given_up[] = true)
         status === :read || return (id, status, "")
         out = IOBuffer()
@@ -436,11 +449,74 @@ function github(root::AbstractString; io::IO = stdout)
                               push!(refused, "workflow run $id: its log was refused or failed, after waiting, or not tried once another was")
     end
     append!(missed, refused)
-    return join(lines, '\n'), places, missed, length(refused)
+    return out_dir, files, missed, length(refused)
 end
 
 """
-    fetch_log(slug, id, zip; waits = (0, 30, 90, 270)) -> Symbol
+    Throttle(interval)
+
+The pace shared by concurrent downloads: each starts `interval` seconds after the one before at the
+earliest, and a hold pauses every one of them, so a refusal is waited out by all at once.
+
+# Fields
+
+- `interval` — the seconds between two starts.
+- `next` — the earliest time, in seconds since the epoch, the next download may start.
+- `lock` — what the downloads take in turn to read and move `next`.
+"""
+mutable struct Throttle
+    interval::Float64
+    next::Float64
+    lock::ReentrantLock
+    Throttle(interval::Real) = new(Float64(interval), 0.0, ReentrantLock())
+end
+
+# The next start, taken in turn; the caller sleeps until it.
+function slot!(t::Throttle)
+    start = lock(t.lock) do
+        s = max(time(), t.next); t.next = s + t.interval; s
+    end
+    sleep(max(0.0, start - time()))
+end
+
+# Every download waits `secs` more before it starts.
+hold!(t::Throttle, secs::Real) = secs > 0 && lock(() -> (t.next = max(t.next, time() + secs)), t.lock)
+
+"The line that opens every GitHub-side item's file, so its first bytes never read as a file type."
+const ITEM_HEADER = "gbg leak: one item of the GitHub side\n"
+
+"""
+    item_findings(items, places, cfg, dir) -> Tuple{Vector{Finding},Int}
+
+The findings in a directory of GitHub-side items, one file each, every finding placed by the file Gitleaks
+names, never by a line number in a joined text. All are in the current tier: the GitHub side turns public
+with the repository and can be edited before it does.
+
+# Arguments
+
+- `items` — the directory.
+- `places` — the place each file stands for, by its name.
+- `cfg` — the package's config.
+- `dir` — the temporary directory the scan works in.
+
+Returns the findings and how many files Gitleaks skipped — taken for binary, or a symlink — each an item
+not read.
+"""
+function item_findings(items::AbstractString, places::Dict{String,String}, cfg, dir::AbstractString)
+    skipped = String[]
+    rs = both(["dir", items], cfg, dir; skipped)
+    found = map(rs) do r
+        f = relpath(String(r.f.File), items)
+        place = get(places, f, f)
+        # the item's file is in the fingerprint: two comments on one issue share a place (review)
+        Finding(; rule = rule_of(r), detail = detail_of(r), place,
+                fingerprint = fingerprint(rule_of(r), place, f, r.f.StartLine - 2), current = true)
+    end
+    return found, length(unique(skipped))
+end
+
+"""
+    fetch_log(slug, id, zip; waits = (0, 30, 90, 270), pace = nothing) -> Symbol
 
 One workflow run's log, downloaded into `zip`: `:read`; `:expired` when GitHub says it keeps it no longer
 (404 or 410, or an empty archive); `:refused` when every attempt failed otherwise — a rate limit, a
@@ -452,10 +528,12 @@ timeout — which is a log NOT read, never one that is gone.
 - `id` — the run.
 - `zip` — the file the archive is written to.
 - `waits` — the seconds waited before each attempt.
+- `pace` — a [`Throttle`](@ref) shared by every download, or `nothing`; a wait then holds them all.
 """
-function fetch_log(slug::AbstractString, id::AbstractString, zip::AbstractString; waits = (0, 30, 90, 270))
+function fetch_log(slug::AbstractString, id::AbstractString, zip::AbstractString; waits = (0, 30, 90, 270),
+                   pace::Union{Throttle,Nothing} = nothing)
     for w in waits
-        sleep(w)
+        pace === nothing ? sleep(w) : (hold!(pace, w); slot!(pace))
         err = IOBuffer()
         ok = success(pipeline(`gh api repos/$slug/actions/runs/$id/logs`; stdout = zip, stderr = err))
         ok && return filesize(zip) > 0 ? :read : :expired
@@ -557,10 +635,13 @@ function scan(root::AbstractString, cfg::Model.Config; github::Bool = false, io:
     # repository turns public, so what it holds is the current tier's, never accepted (review, 2026-10-09).
     sources = [(text, places, false)]
     if github
-        gtext, gplaces, gmissed, unread = Publication.github(root; io)
+        gdir, gfiles, gmissed, unread = Publication.github(root; io)
         append!(missed, gmissed)
-        push!(sources, (gtext, gplaces, true))
         push!(read_what, "GitHub's own copy, its pull requests' refs, and its issues, pull requests, reviews, comments, releases and workflow logs")
+        found, skipped = item_findings(gdir, gfiles, cfg, dir)
+        append!(out, found)
+        skipped > 0 && push!(missed, "$skipped item(s) of the GitHub side: Gitleaks skipped them as binary")
+        unread += skipped
     end
     for (t, ps, live) in sources
         isempty(strip(t)) && continue
