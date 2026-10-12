@@ -4,6 +4,18 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.73 — 2026-10-12
+
+PATCH, on the owner's word of 2026-10-12:
+
+- **The leak scan's skill says what a workflow log is and when a run may be deleted.** GitHub deletes a
+  run's log by itself once the repository's retention period has passed (90 days unless changed), and
+  the skill says how to read that period; a run whose log is no longer kept needs no check, and is
+  reported as one count. A log is removed only for a finding the scan names in it, on the owner's answer,
+  and the log alone rather than the whole run; a pass that prints `INCOMPLETE`, or whose findings move between
+  passes, is the scan's defect to report. GBGPeriodicFields deleted nine runs over findings that moved
+  from pass to pass (rc.72), and the skill, all a package reads of the instrument, did not say this.
+
 ## 2.0.0-rc.72 — 2026-10-11
 
 PATCH, GBGPeriodicFields' report of 2026-10-11, measured on its GitHub side:
