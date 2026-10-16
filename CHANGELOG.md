@@ -4,6 +4,16 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.75 — 2026-10-16
+
+PATCH, on the owner's word of 2026-10-16:
+
+- **A run's record names the version that ran it.** The value a record took was meant to be set when
+  the package loaded and never was, so every run so far records `tool_version = "dev"`. It is now what
+  `gbg version` prints: the `Project.toml` version for a fetched copy (`2.0.0` for every candidate),
+  `dev+<commit>[-dirty]` for a working tree. For a record from before the rulebook digest, `--scope changed` compared this value with the
+  running one; such a record now reads full, which is what a changed tool asks for.
+
 ## 2.0.0-rc.74 — 2026-10-16
 
 PATCH, on the owner's word of 2026-10-16, from GBGStreamingStatistics' run of 2026-10-15:

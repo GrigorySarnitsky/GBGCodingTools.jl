@@ -84,6 +84,7 @@ include("Publication.jl")    # the leak scan's engine: what a repository would p
 include("Study.jl")                 # the rule wording study: agreement, measured
 include("Orchestration.jl")         # every file that connects a package to this one
 include("CLI/Main.jl")
+Orchestration.Runs.VERSION_OF[] = tool_version   # what a run record says ran it
 include("Witnesses.jl")
 include("TestHarness.jl")
 include("CLI/Self.jl")

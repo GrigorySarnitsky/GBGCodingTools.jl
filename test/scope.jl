@@ -93,8 +93,19 @@ end
         close_a_run(root, "2026-09-22-g", :bound; tool = "2.0.0-rc.6", rulebook = "")
         @test occursin("the tool moved", SC.why_full(root, :documentation_review, :bound, cfg))
         root = scope_repo()
-        close_a_run(root, "2026-09-22-g", :bound; tool = string(RN.GBG_VERSION[]), rulebook = "")
+        close_a_run(root, "2026-09-22-g", :bound; tool = RN.version_running(), rulebook = "")
         @test SC.base(root, :documentation_review, :bound, cfg) !== nothing
+    end
+
+    # Before rc.75 the version was a Ref nothing ever set, so every record said "dev" (found 2026-10-16).
+    @testset "a run records the version that ran it" begin
+        @test RN.version_running() == G.tool_version() != "dev"
+        root = mktempdir(; cleanup = true)
+        mkpath(joinpath(root, ".gbg")); mkpath(joinpath(root, "docs", "src"))
+        write(joinpath(root, ".gbg", "config.jl"), """Config(package = "Sample", tool = :dev)""")
+        write(joinpath(root, "docs", "src", "guide.md"), "# Guide\n\nProse.\n")
+        run = RN.start(:documentation_review, root; io = devnull)
+        @test run.tool_version == G.tool_version()
     end
 
     @testset "a change to the docs build's script reads full" begin

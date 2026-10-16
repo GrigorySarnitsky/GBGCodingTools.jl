@@ -146,7 +146,7 @@ function invalid(root::AbstractString, run::Model.Run, commit::AbstractString, c
         run.rulebook == Runs.rulebook_digest(cfg, run.instrument) ||
             return "the rules or the readers moved since $(run.id), so its silence was about others"
     else
-        now = string(Runs.GBG_VERSION[])
+        now = Runs.version_running()
         run.tool_version == now ||
             return "the tool moved from $(run.tool_version) to $now, so the rules are not the ones that run read"
     end

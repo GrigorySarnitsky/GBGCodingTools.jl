@@ -131,7 +131,7 @@ function start(instrument::Symbol, root::AbstractString; readers::Symbol = :boun
         return nothing
     end
     run = Model.Run(id = new_id(instrument, root), instrument = instrument,
-                    tool_version = string(GBG_VERSION[]), first_commit = head_commit(root),
+                    tool_version = version_running(), first_commit = head_commit(root),
                     rulebook = rulebook_digest(cfg, instrument),
                     budget = inst.budget, stage = :start, readers = readers,
                     model = model, sequential = sequential,
@@ -173,8 +173,11 @@ function rulebook_digest(cfg::Model.Config, instrument::Symbol)
     return bytes2hex(SHA.sha256(take!(io)))
 end
 
-# The version that ran, recorded so a record says what judged it. Set by the package at load.
-const GBG_VERSION = Ref{Any}("dev")
+# The version that ran, recorded so a record says what judged it. What says it is the package's own
+# `tool_version`, defined above this module and handed down where the package includes the CLI, so
+# this module names nothing above it; "dev" stands only until then.
+const VERSION_OF = Ref{Function}(() -> "dev")
+version_running() = string(VERSION_OF[]())
 
 """
     failing_now(cfg, root) -> Vector{Symbol}
