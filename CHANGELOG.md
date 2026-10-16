@@ -4,6 +4,21 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.76 — 2026-10-16
+
+PATCH, on the owner's word of 2026-10-16:
+
+- **A fix committed with git alone can be credited to its finding.** Before rc.74 a finding whose fix
+  was committed outside `gbg docfix commit` was judged on the text as it stood; rc.74's refusal to leave
+  a fix stage with an unworked finding left such a fix no way through but undoing it and making it
+  again. `gbg run covered <id> --by-commit <sha>` now has the change guard read that commit as the
+  close reads every commit, with no ruling's licence, refuses it on any code, exit 1, and otherwise
+  records it on the run (`credited`). From then on it is the run's own edit: the finding's verifier
+  reads its diff, a verdict against it reverts it, the owner's "fix the documentation instead" makes
+  it again, and the close can undo it with the rest. A merge is refused, since it shows no change of
+  its own. The close's own classification of every commit is unchanged, and is now one function,
+  `Runs.code_of`, that the crediting shares.
+
 ## 2.0.0-rc.75 — 2026-10-16
 
 PATCH, on the owner's word of 2026-10-16:

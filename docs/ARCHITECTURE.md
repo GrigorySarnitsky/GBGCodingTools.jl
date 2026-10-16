@@ -289,10 +289,16 @@ run the owner asked for, and then fixes and verifies without asking again [R1, R
    where nearly all of the cost is, and is not used.
 9. **Leaving a fix stage.** `gbg run next` leaves it only when every finding of the pass is committed, covered or
    parked, and names those that are none of these. A change that fixes several findings names them all; one found
-   afterwards to have fixed another is recorded with `gbg run covered <id> --by <id>`; either way the finding's verifier
-   reads that diff, and a revert of it reopens every finding it fixed. The owner's "fix the documentation instead" makes
-   the edit again once, however many findings asked, and names the others it fixed: they stay as recorded, and a later
-   review judges them, since nothing is closed without a verifier.
+   afterwards to have fixed another is recorded with `gbg run covered <id> --by <id>`. Either way the finding's
+   verifier reads that diff, and a revert of it reopens every finding it fixed.
+
+   A fix committed with git alone is credited with `gbg run covered <id> --by-commit <sha>`, after the guard has read
+   that commit as the close reads every commit, with no ruling's licence, and found it documentation throughout; from
+   then on it is the run's own edit [the owner, 2026-10-16: before the refusal such a finding was judged on the text
+   as it stood, and the refusal left no way through but undoing correct work].
+
+   The owner's "fix the documentation instead" makes the edit again once, however many findings asked, and names the
+   others it fixed: they stay as recorded, and a later review judges them, since nothing is closed without a verifier.
 
    Exempt are a finding none of whose places was
    found again when the stage opened, its text being gone before the pass, and one the owner answered "fix it on my
@@ -624,6 +630,7 @@ Base.@kwdef struct Run
     usage::Vector{Usage} = Usage[]            # what each stage cost, per pass
     licences::Vector{String} = String[]; ruled::Vector{String} = String[]  # what a ruling licenses, and who ruled
     covered::Vector{String} = String[]        # a finding another's fix covered, and that finding (gbg run covered)
+    credited::Vector{String} = String[]       # a finding and the commit made outside the guard that fixed it (--by-commit)
 end
 ```
 

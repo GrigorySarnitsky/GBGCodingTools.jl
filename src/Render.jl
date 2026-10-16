@@ -1360,7 +1360,9 @@ function skill(cfg::Model.Config, instrument::Symbol)
        `gbg run park <id> --why "<what it would change>"`: a question about it stands, and no pass works
        on it until he answers; park also a finding you believe is no defect, and say why, since his
        answers include "not a defect". A finding a fix already committed turned out to fix too is
-       recorded with `gbg run covered <id> --by <the finding that commit names>`. EVERY finding of the
+       recorded with `gbg run covered <id> --by <the finding that commit names>`; one fixed by a commit
+       made with git alone, outside `gbg docfix commit`, with `gbg run covered <id> --by-commit <sha>`,
+       which has the guard read that commit first and refuses it on any code. EVERY finding of the
        pass is committed, covered or parked before `gbg run next`, which refuses otherwise and names
        those left — a run has one fix pass, so a finding left untouched is never worked on. One the
        owner answered "fix it on my ruling" and you could not fix goes on, named, to be judged. `gbg run next` then builds the site, and a red build

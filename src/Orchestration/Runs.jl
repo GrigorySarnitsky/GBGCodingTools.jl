@@ -578,6 +578,7 @@ function reverts_of(root::AbstractString, since::AbstractString, id::AbstractStr
         lines = strip.(split(length(p) >= 2 ? String(p[2]) : "", '\n'))
         any(n -> (FINDING_TRAILER * n) in lines, names) && push!(mine, String(p[1]))
     end
+    run === nothing || union!(mine, (c for n in names for c in credited_shas(run, n)))
     for p in entries
         lines = strip.(split(length(p) >= 2 ? String(p[2]) : "", '\n'))
         for l in lines
@@ -742,7 +743,7 @@ as_dict(r::Model.Run) = Dict{String,Any}(
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
     "readers" => String(r.readers), "passes" => r.passes,
     "scope" => String(r.scope), "base" => r.base, "driver" => r.driver, "dropped" => r.dropped, "unreverted" => r.unreverted, "silent" => r.silent, "rulebook" => r.rulebook,
-    "pass_since" => r.pass_since, "dropped_ids" => r.dropped_ids, "licences" => r.licences, "ruled" => r.ruled, "covered" => r.covered,
+    "pass_since" => r.pass_since, "dropped_ids" => r.dropped_ids, "licences" => r.licences, "ruled" => r.ruled, "covered" => r.covered, "credited" => r.credited,
     "questions" => [question_dict(q) for q in r.questions],
     "fixes" => [Dict{String,Any}("finding" => f.finding, "pass" => f.pass, "commit" => f.commit,
                                   "formula_edit" => f.formula_edit, "blind" => String(Symbol(f.blind)),
@@ -823,6 +824,7 @@ function from_dict(d::AbstractDict)
                      licences = String[String(x) for x in get(d, "licences", [])],
                      ruled = String[String(x) for x in get(d, "ruled", [])],
                      covered = String[String(x) for x in get(d, "covered", [])],
+                     credited = String[String(x) for x in get(d, "credited", [])],
                      passes = get(d, "passes", 0),
                      agent_launches = get(d, "agent_launches", 0), tokens = get(d, "tokens", nothing),
                      stop = getfield(Model.Stop, Symbol(get(d, "stop", "DONE"))),
@@ -902,25 +904,48 @@ function unguarded_code(root::AbstractString, since::AbstractString; run = nothi
                 end
             end
         end
-        code = String[]
-        for (status, f, odd) in touched(root, sha)
-            own_record(f) && continue
-            odd && (push!(code, f); continue)          # a symlink, a submodule, a mode change: never prose
-            before = status == "A" ? nothing : git_file(root, sha * "^", f)
-            after = status == "D" ? nothing : git_file(root, sha, f)
-            # a side git could not read, where the status says it exists, is code: an unreadable file
-            # is not one anybody checked
-            ((status != "A" && before === nothing) || (status != "D" && after === nothing)) &&
-                (push!(code, f); continue)
-            f in ruled && continue
-            r = Engine.Guard.classify(cfg, f, before, after)
-            r.documentation || (revert && occursin("(clause 6)", r.reason)) || push!(code, f)
-        end
+        code = code_of(root, cfg, sha; revert, ruled)
         isempty(code) && continue
         push!(out, first(sha, 8) * "  " * subject * "  [" * join(first(code, 4), ", ") *
                    (length(code) > 4 ? ", …" : "") * "]")
     end
     return out
+end
+
+"""
+    code_of(root, cfg, sha; revert = false, ruled = Set{String}()) -> Vector{String}
+
+The files one commit changed that the change guard calls code: what a close counts against the run, and
+what `gbg run covered --by-commit` reads before crediting a commit made outside the guard.
+
+# Arguments
+
+- `root` — the package root.
+- `cfg` — the package's config, which the guard classifies by.
+- `sha` — the commit.
+- `revert` — whether the commit is a revert this package made, on which a refusal for mathematics alone
+  is not counted.
+- `ruled` — the files a ruling of the owner's licensed for this commit.
+
+Returns the paths; empty where the commit is documentation throughout.
+"""
+function code_of(root::AbstractString, cfg::Model.Config, sha::AbstractString;
+                 revert::Bool = false, ruled = Set{String}())
+    code = String[]
+    for (status, f, odd) in touched(root, sha)
+        own_record(f) && continue
+        odd && (push!(code, f); continue)          # a symlink, a submodule, a mode change: never prose
+        before = status == "A" ? nothing : git_file(root, sha * "^", f)
+        after = status == "D" ? nothing : git_file(root, sha, f)
+        # a side git could not read, where the status says it exists, is code: an unreadable file
+        # is not one anybody checked
+        ((status != "A" && before === nothing) || (status != "D" && after === nothing)) &&
+            (push!(code, f); continue)
+        f in ruled && continue
+        r = Engine.Guard.classify(cfg, f, before, after)
+        r.documentation || (revert && occursin("(clause 6)", r.reason)) || push!(code, f)
+    end
+    return code
 end
 
 # git, its output exactly as git wrote it — no stripping — or `nothing` where git failed.
@@ -1101,10 +1126,29 @@ covering(run::Model.Run, id::AbstractString) =
     [String(last(split(e, '\t'; limit = 2))) for e in run.covered if startswith(e, id * "\t")]
 
 """
+    credited_shas(run, id) -> Vector{String}
+
+The commits `gbg run covered --by-commit` credited to the finding `id` of `run`: fixes made outside
+`gbg docfix commit`, read by the guard afterwards. The arguments are `run` and the finding's id. Returns
+the full shas.
+"""
+credited_shas(run::Model.Run, id::AbstractString) =
+    [String(last(split(e, '\t'; limit = 2))) for e in run.credited if startswith(e, id * "\t")]
+
+"""
+    credited_to(run, sha) -> Vector{String}
+
+The findings of `run` the commit `sha` was credited with. The arguments are `run` and the commit's
+full sha. Returns the ids.
+"""
+credited_to(run::Model.Run, sha::AbstractString) =
+    [String(first(split(e, '\t'; limit = 2))) for e in run.credited if endswith(e, "\t" * sha)]
+
+"""
     pass_commits(root, since, run, id) -> Vector{String}
 
-The commits of a pass that fixed the finding `id` of `run`: its own, and those of every finding recorded
-as covering it, newest first.
+The commits of a pass that fixed the finding `id` of `run`: its own, those credited to it, and those of
+every finding recorded as covering it, newest first.
 
 # Arguments
 
@@ -1117,8 +1161,8 @@ A verifier reads these as the finding's diff, a revert of any of them reopens it
 none is one the pass has not worked on.
 """
 function pass_commits(root::AbstractString, since::AbstractString, run::Model.Run, id::AbstractString)
-    out = fix_commits(root, since, id)
-    for other in covering(run, id), c in fix_commits(root, since, other)
+    out = fix_commits(root, since, id; run)
+    for other in covering(run, id), c in fix_commits(root, since, other; run)
         c in out || push!(out, c)
     end
     return out
@@ -1127,8 +1171,8 @@ end
 """
     fixed_by(root, run, sha) -> Vector{String}
 
-The findings of `run` the commit `sha` fixed: those its trailers name, and those recorded as covered by
-one of them.
+The findings of `run` the commit `sha` fixed: those its trailers name, those the record credits it with,
+and those recorded as covered by one of them.
 
 # Arguments
 
@@ -1138,6 +1182,10 @@ one of them.
 """
 function fixed_by(root::AbstractString, run::Model.Run, sha::AbstractString)
     named = findings_of(root, sha)
+    full = something(git_out(root, "rev-parse", sha), sha) |> strip
+    for c in credited_to(run, full)
+        c in named || push!(named, c)
+    end
     out = copy(named)
     for e in run.covered
         b, a = split(e, '\t'; limit = 2)
@@ -1147,19 +1195,22 @@ function fixed_by(root::AbstractString, run::Model.Run, sha::AbstractString)
 end
 
 """
-    fix_commits(root, since, id) -> Vector{String}
+    fix_commits(root, since, id; run = nothing) -> Vector{String}
 
-The commits that `gbg docfix commit --finding` made for one finding, newest first.
+The commits that `gbg docfix commit --finding` made for one finding, newest first, and, given `run`,
+those its record credits to the finding.
 
 # Arguments
 
 - `root` — the package root.
 - `since` — the run's first commit; nothing before it is searched.
 - `id` — the finding's id.
+- `run` — the run, whose record names the credited commits; `nothing` reads trailers alone.
 
 Returns the shas.
 """
-function fix_commits(root::AbstractString, since::AbstractString, id::AbstractString)
+function fix_commits(root::AbstractString, since::AbstractString, id::AbstractString;
+                     run::Union{Model.Run,Nothing} = nothing)
     (isempty(since) || since == "unknown") && return String[]
     # The WHOLE trailer line, not a substring: `…-100` is a prefix of `…-1000`, and a substring match
     # handed one finding's diff to another's verifier and reverted the wrong fix (found in review,
@@ -1167,24 +1218,36 @@ function fix_commits(root::AbstractString, since::AbstractString, id::AbstractSt
     log = git_out(root, "log", "--format=%H%x1f%b%x1e", "$since..HEAD")
     log === nothing && return String[]
     undone = reverted(root, since)
+    # A commit the record credits to the finding is its fix as much as one its trailer names, and takes
+    # its place in the log: appended, an older guarded fix came first and its revert conflicted with the
+    # newer edit on top of it; and one credited in an earlier pass is not this pass's (found in review).
+    credited = run === nothing ? Set{String}() : Set(credited_shas(run, id))
     mine = String[]
     for entry in split(log, '\x1e'; keepempty = false)
         parts = split(strip(entry, ['\n']), '\x1f')
         sha = String(parts[1]); lines = strip.(split(length(parts) >= 2 ? String(parts[2]) : "", '\n'))
-        (FINDING_TRAILER * id) in lines && !(sha in undone) && push!(mine, sha)
+        ((FINDING_TRAILER * id) in lines || sha in credited) && !(sha in undone) && push!(mine, sha)
     end
     return mine
 end
 
 """
-    guarded_commits(root, since) -> Vector{String}
+    guarded_commits(root, since; run = nothing) -> Vector{String}
 
-The commits since `since` that passed the change guard, newest first. The arguments are `root`, the
-package root, and `since`, the run's first commit. Returns the shas.
+The commits since `since` that passed the change guard, newest first: those `gbg docfix commit` made,
+and, given `run`, those its record credits to a finding, which the guard read when they were credited.
+
+# Arguments
+
+- `root` — the package root.
+- `since` — the run's first commit.
+- `run` — the run, whose record names the credited commits; `nothing` reads trailers alone.
+
+Returns the shas.
 
 These are the run's own edits: what close undoes when it has to put the documentation back.
 """
-function guarded_commits(root::AbstractString, since::AbstractString)
+function guarded_commits(root::AbstractString, since::AbstractString; run::Union{Model.Run,Nothing} = nothing)
     (isempty(since) || since == "unknown") && return String[]
     # A fix commit, not a revert: close undoes the run's EDITS, and undoing a revert would put back a
     # fix a verifier rejected (found in review, 2026-09-23). Nor one a revert already undid.
@@ -1197,6 +1260,8 @@ function guarded_commits(root::AbstractString, since::AbstractString)
         sha = String(parts[1]); lines = strip.(split(length(parts) >= 2 ? String(parts[2]) : "", '\n'))
         GUARD_TRAILER in lines && !(sha in undone) &&
             !any(l -> startswith(l, REVERT_TRAILER), lines) && push!(out, sha)
+        # a credited commit passed the same guard, later; it is the run's edit from then on
+        run !== nothing && !(sha in undone) && !(sha in out) && !isempty(credited_to(run, sha)) && push!(out, sha)
     end
     return out
 end

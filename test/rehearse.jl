@@ -2819,6 +2819,104 @@ end
     end
 end
 
+# A fix committed with git alone is credited to its finding once the guard has read the commit (the owner,
+# 2026-10-16: rc.74's refusal left such a fix no way through but undoing it). Credited, it is the run's
+# edit: the gate passes, the verifier reads its diff, and a verdict against it reverts it.
+@testset "a commit made outside the guard is credited to its finding, or refused as code" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        all_clean(root, id; except = [HOME_READER])
+        G.Run.collect(root; io = devnull)
+        fid = only(f.id for f in RUNS.load(root, id).findings)
+        G.Run.next(root; io = devnull)                                         # → fix
+        page = joinpath(root, "docs", "src", "index.md")
+        write(page, replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
+        gg("commit", "-q", "-am", "a fix made with git alone")
+        sha = strip(read(setenv(`git -C $root rev-parse HEAD`; dir = root), String))
+        @test G.Run.next(root; io = devnull) == 2                               # unworked: refused
+        buf = IOBuffer(); G.Run.next(root; io = buf)
+        @test occursin("--by-commit", String(take!(buf)))
+        @test G.Run.covered(root, fid; commit = "no-such-commit", io = devnull) == 2
+        @test G.Run.covered(root, fid; commit = G.Run.pass_start(RUNS.load(root, id)), io = devnull) == 2   # before the pass
+        @test G.Run.covered(root, fid, "x"; commit = sha, io = devnull) == 2    # one of --by and --by-commit
+        @test G.Run.covered(root, "no-such-finding"; commit = sha, io = devnull) == 2
+        cd(root) do                                                            # the two-word form parses
+            @test G.Run.cmd_run(["covered", fid, "--by-commit", sha]) == 0
+        end
+        @test G.Run.covered(root, fid; commit = sha, io = devnull) == 0         # once is enough
+        run = RUNS.load(root, id)
+        @test run.credited == [fid * "\t" * sha]
+        @test RUNS.pass_commits(root, G.Run.pass_start(run), run, fid) == [sha]
+        @test RUNS.fixed_by(root, run, sha) == [fid]
+        @test sha in RUNS.guarded_commits(root, G.Run.pass_start(run); run)
+        @test G.Run.next(root; io = devnull) == 0                               # credited counts: → verify
+        args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+        r = args["roles"][findfirst(r -> fid in strip.(split(String(r["finding"]), ",")), args["roles"])]
+        diff = read(whole(args, r)["diff_file"], String)
+        @test occursin("lattice", diff) && !occursin("No commit names these findings", diff)
+        # a verdict against it reverts the credited commit like any fix of the run
+        verifier_said(root, id, "verify", fid, "MADE_WORSE"; quote_ = "The grid is a lattice.")
+        G.Run.collect(root; io = devnull)
+        @test occursin("spectral", read(page, String))
+        @test only(RUNS.load(root, id).fixes).blind === MRun.Verdict.MADE_WORSE
+    end
+    # a commit the guard calls code is refused, and nothing is recorded
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        all_clean(root, id; except = [HOME_READER])
+        G.Run.collect(root; io = devnull)
+        fid = only(f.id for f in RUNS.load(root, id).findings)
+        G.Run.next(root; io = devnull)
+        src = joinpath(root, "src", "GBGFixture.jl")
+        write(src, read(src, String) * "\nconst CREDIT_TEST = 1\n")
+        gg("commit", "-q", "-am", "a code change made with git alone")
+        sha = strip(read(setenv(`git -C $root rev-parse HEAD`; dir = root), String))
+        buf = IOBuffer()
+        @test G.Run.covered(root, fid; commit = sha, io = buf) == 1
+        @test occursin("src/GBGFixture.jl", String(take!(buf)))
+        @test isempty(RUNS.load(root, id).credited)
+        # a guarded commit is not credited: --by is its route
+        fixed_as(root, fid, "The grid is a lattice.")
+        guarded = strip(read(setenv(`git -C $root rev-parse HEAD`; dir = root), String))
+        @test G.Run.covered(root, fid; commit = guarded, io = devnull) == 2
+        # a plain commit on top of the guarded fix, credited, is the NEWEST fix: reverted first, so that
+        # the older one's revert does not conflict with it (found in review)
+        page = joinpath(root, "docs", "src", "index.md")
+        write(page, replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice, and square."))
+        gg("commit", "-q", "-am", "a second fix made with git alone")
+        plain = strip(read(setenv(`git -C $root rev-parse HEAD`; dir = root), String))
+        @test G.Run.covered(root, fid; commit = plain, io = devnull) == 0
+        run = RUNS.load(root, id)
+        @test RUNS.pass_commits(root, G.Run.pass_start(run), run, fid) == [plain, guarded]
+        @test G.Run.next(root; io = devnull) == 0                               # → verify
+        verifier_said(root, id, "verify", fid, "MADE_WORSE"; quote_ = "The grid is a lattice, and square.")
+        G.Run.collect(root; io = devnull)
+        @test occursin("spectral", read(page, String)) && isempty(RUNS.load(root, id).unreverted)
+    end
+    # a merge shows no change of its own, so it is not credited
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        all_clean(root, id; except = [HOME_READER])
+        G.Run.collect(root; io = devnull)
+        fid = only(f.id for f in RUNS.load(root, id).findings)
+        G.Run.next(root; io = devnull)
+        trunk = strip(read(setenv(`git -C $root rev-parse --abbrev-ref HEAD`; dir = root), String))
+        gg("checkout", "-q", "-b", "side")
+        write(joinpath(root, "src", "Side.jl"), "const SIDE = 1\n")
+        gg("add", "src/Side.jl"); gg("commit", "-q", "-m", "code on a side branch")
+        gg("checkout", "-q", trunk); gg("merge", "-q", "--no-ff", "-m", "merge the side", "side")
+        merge = strip(read(setenv(`git -C $root rev-parse HEAD`; dir = root), String))
+        @test G.Run.covered(root, fid; commit = merge, io = devnull) == 2
+        @test isempty(RUNS.load(root, id).credited)
+    end
+end
+
 # The owner's "fix the documentation instead" makes the reverted edit again for a finding whose fix was
 # another's, recorded with `covered` (found reviewing rc.74, 2026-10-16: the edit was not found, and the
 # finding closed over unfixed text). The finding that edit also fixed is named and stays as recorded:

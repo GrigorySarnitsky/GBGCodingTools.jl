@@ -893,11 +893,9 @@ end
 
 One execution of one instrument on one package, stored beside its report.
 
-The count `dropped` is what keeps an abandoned record honest. Stopping a run removes its open findings
-from the list — what a verdict had closed stays — and leaves its launch count alone, and those two read
-together say that every reader wrote its file and none of them found anything — of a run that found a
-hundred. What was thrown away is part of what
-happened, and belongs where the run is written down rather than only in a line nobody keeps.
+The count `dropped` keeps an abandoned record honest: stopping a run removes its open findings and
+leaves its launch count, and the two together read as readers that found nothing, of a run that found
+a hundred. What was thrown away belongs in the record, not in a line nobody keeps.
 
 A bound reader carries rules; an open one carries a standpoint and no rule. Bound is the default, and
 runs most often.
@@ -920,8 +918,7 @@ runs most often.
 
 - `readers` — which readers it launches: `:bound`, `:open` or `:both`.
 - `passes` — how many fix passes it has begun; the cap is `budget.fix_passes`.
-- `model` — the careful model its readers ran on, or `"session"` where they ran on whatever model the
-  session itself was on, which is the default and the only honest answer when nobody named one.
+- `model` — the careful model its readers ran on, or `"session"`, the default, for the session's own.
 - `sequential` — whether its agents were launched one at a time rather than together.
 - `scope`, `base`, `driver` — `:changed` read what moved since `base`; the SHA-256 of the driver used.
 - `already_failing` — the rules already violated when it opened, so a fix is held to what it broke.
@@ -935,10 +932,13 @@ runs most often.
 - `pass_since` — the commit the current fix pass began at.
 - `dropped_ids` — what the owner's stop threw away, kept in `findings` [ruled 2026-09-26].
 - `usage` — what each stage's agents cost, as `gbg run cost` recorded it.
+
 - `licences` — each parked finding's id and a file its question showed the owner, tab-separated.
 - `ruled` — the findings the owner answered `fix it on my ruling`, kept whatever he answers later.
 - `covered` — each finding a fix of another covered, and that other finding's id, tab-separated, as
   `gbg run covered` recorded it.
+- `credited` — each finding fixed by a commit made outside the guard, and that commit's full sha,
+  tab-separated, as `gbg run covered --by-commit` recorded it.
 """
 Base.@kwdef struct Run
     id::String
@@ -972,6 +972,7 @@ Base.@kwdef struct Run
     licences::Vector{String} = String[]
     ruled::Vector{String} = String[]
     covered::Vector{String} = String[]
+    credited::Vector{String} = String[]
 end
 
 end # module Model

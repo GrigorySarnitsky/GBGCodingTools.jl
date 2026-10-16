@@ -31,7 +31,7 @@ Exit 0 clean, 1 when something was found, 2 when a stage could not be evaluated.
 """
 module Run
 
-using ..GBGCodingTools: GBGCodingTools, Catalogue, ConfigIO, Engine, Git, Model, Orchestration, Render, Texts,
+using ..GBGCodingTools: GBGCodingTools, Catalogue, ConfigIO, Docfix, Engine, Git, Model, Orchestration, Render, Texts,
                         parse_options, VERBS
 
 const Runs = Orchestration.Runs
@@ -168,8 +168,10 @@ function next(root::AbstractString; io::IO = stdout)
                     join([f.id for f in untouched], ", "), ".")
             println(io, "  For each: fix it and `gbg docfix commit --message \"…\" --finding <id>` (a change that fixes")
             println(io, "  several names them all: `--finding <id>,<id>`); or, where a fix already committed fixed it,")
-            println(io, "  `gbg run covered <id> --by <the finding that commit names>`; or `gbg run park <id> --why \"…\"`")
-            println(io, "  where only the owner may make the fix or you believe it is no defect. Then gbg run next.")
+            println(io, "  `gbg run covered <id> --by <the finding that commit names>`; where a commit made outside")
+            println(io, "  `gbg docfix commit` fixed it, `gbg run covered <id> --by-commit <sha>`, which the guard reads first;")
+            println(io, "  or `gbg run park <id> --why \"…\"` where only the owner may make the fix or you believe it is")
+            println(io, "  no defect. Then gbg run next.")
             return 2
         end
         isempty(ruled) || println(io, "run: answered \"fix it on my ruling\" and not fixed this pass, so judged as they stand: ",
@@ -185,7 +187,7 @@ function next(root::AbstractString; io::IO = stdout)
     # A fix stage that committed nothing has nothing to verify: verifiers launched over unchanged text
     # answer by variance (a fifth of PF's verdicts moved that way, 2026-09-24) and cost a stage. The run
     # closes instead, and what is open goes to the owner's queue.
-    if order[at] === :fix && to === :verify && isempty(Runs.guarded_commits(root, pass_start(run)))
+    if order[at] === :fix && to === :verify && isempty(Runs.guarded_commits(root, pass_start(run); run))
         println(io, "run: pass ", run.passes, " committed no fix, so there is nothing to verify; the run closes with what is open on the owner's queue.")
         to = :close
     end
@@ -383,11 +385,11 @@ function blame_build(root::AbstractString, run::Model.Run, log::AbstractString; 
     named = Set{String}(replace(m.match, '\\' => '/') for m in eachmatch(r"(?:docs|src|ext|examples)/[A-Za-z0-9_./-]+\.(?:md|jl)", log))
     isempty(named) && return String[]
     out = String[]
-    for sha in reverse(Runs.guarded_commits(root, pass_start(run)))
+    for sha in reverse(Runs.guarded_commits(root, pass_start(run); run))
         files = something(Git.run(root, "show", "--format=", "--name-only", sha), "")
         hit = [f for f in split(files, '\n') if !isempty(f) && any(n -> endswith(n, f) || endswith(f, n), named)]
         isempty(hit) && continue
-        fids = Runs.findings_of(root, sha)
+        fids = Runs.fixed_by(root, run, sha)
         push!(out, first(sha, 8) * "  " * (isempty(fids) ? "no finding" : join(fids, ",")) * "  " * join(hit, ", "))
     end
     if !isempty(out)
@@ -637,7 +639,7 @@ another's — a copy or a duplicate — and are shown every fix of the pass, wit
 """
 function fix_diff(root::AbstractString, run::Model.Run, fs::AbstractVector{Model.Finding})
     since = pass_start(run)
-    all = Runs.guarded_commits(root, since)                       # newest first
+    all = Runs.guarded_commits(root, since; run)                  # newest first
     mine = Set{String}(c for f in fs for c in Runs.pass_commits(root, since, run, f.id))
     named = [c for c in all if c in mine]
     shas = isempty(named) ? all : named
@@ -1197,7 +1199,7 @@ edits are restored and the owner is told the build was already broken.
 """
 function restore_green(root::AbstractString, run::Model.Run, cfg::Model.Config; io::IO = stdout)
     Site.build(root, cfg; io = devnull) === nothing || return (String[], false, false)
-    mine = Runs.guarded_commits(root, run.first_commit)
+    mine = Runs.guarded_commits(root, run.first_commit; run)
     if isempty(mine)
         println(io, "run: the docs build is red and this run committed nothing, so it was red before the run; the owner reads the build")
         return (String[], true, false)
@@ -1310,43 +1312,94 @@ function queue_leftovers(root::AbstractString, run::Model.Run; open_too::Bool = 
 end
 
 """
-    covered(root, id, by; io = stdout) -> Int
+    covered(root, id, by = ""; commit = "", io = stdout) -> Int
 
-Records that a fix already committed for the finding `by` fixed the finding `id` too.
+Records that a commit already made fixed the finding `id`: a fix of the finding `by`, or the commit
+`commit`, made outside `gbg docfix commit` and read by the change guard here.
 
 # Arguments
 
 - `root` — the package root.
-- `id` — the finding fixed in passing.
-- `by` — the finding whose commits of this pass fixed it.
+- `id` — the finding fixed.
+- `by` — the finding whose commits of this pass fixed it; one of `by` and `commit`.
+- `commit` — a commit of this pass that no `gbg docfix commit` made.
 - `io` — where the outcome is reported.
 
-Exit 0 when it is recorded; 2 when no run is open, the run is not at a fix stage, either finding is not
-one this pass works on, they are the same, or `by` has no fix commit this pass.
+Exit 0 when it is recorded; 1 when the guard calls `commit` code, or the tree breaks a rule the run
+opened clean on; 2 when no run is open, the run is not at a fix stage, a finding is not one this pass
+works on, `id` and `by` are the same, `by` has no fix commit this pass, or `commit` is not a commit of
+this pass, is a merge, was made by the guard, or was reverted.
 
-A change that fixes several findings names them all when it is committed (`--finding <id>,<id>`). This
-is for the one found afterwards: the commit exists, nothing is left to commit, and `gbg run next` would
-otherwise refuse the finding for ever (found reviewing rc.74, 2026-10-16). From here the finding's
-verifier reads `by`'s diff, and a revert of it reopens both.
+A change that fixes several findings names them all when it is committed (`--finding <id>,<id>`). The
+option `by` is for the one found afterwards: the commit exists, nothing is left to commit, and `gbg run
+next` would otherwise refuse the finding for ever (found reviewing rc.74, 2026-10-16).
+
+The option `commit` is for a fix a session committed with git alone: before rc.74 its finding was judged
+on the text as it stood, and the refusal rc.74 added left no way through but undoing correct work (the
+owner, 2026-10-16). The guard reads the commit as the close will, with no ruling's licence, and refuses
+it on any code. Credited, it is the run's own edit: the finding's verifier reads it, a verdict against
+it reverts it, and the close can undo it with the rest.
 """
-function covered(root::AbstractString, id::AbstractString, by::AbstractString; io::IO = stdout)
+function covered(root::AbstractString, id::AbstractString, by::AbstractString = ""; commit::AbstractString = "", io::IO = stdout)
     rid = open_run(root)
     rid === nothing && (println(io, "run: nothing is open here"); return 2)
     run = Runs.load(root, rid)
     Runs.stage_of(root, rid) === :fix ||
         (println(io, "run: record a covered finding at a fix stage; ", rid, " is at ", Runs.stage_of(root, rid)); return 2)
-    (isempty(id) || isempty(by)) && (println(io, "usage: gbg run covered <finding> --by <finding>"); return 2)
-    id == by && (println(io, "run: a finding does not cover itself"); return 2)
+    (isempty(id) || isempty(by) == isempty(commit)) &&
+        (println(io, "usage: gbg run covered <finding> --by <finding> | gbg run covered <finding> --by-commit <sha>"); return 2)
     work = Set(f.id for f in Runs.workable(run))
-    for x in (id, by)
-        x in work || (println(io, "run: ", x, " is not a finding this pass of ", rid, " works on"); return 2)
-    end
-    isempty(Runs.fix_commits(root, pass_start(run), by)) &&
+    id in work || (println(io, "run: ", id, " is not a finding this pass of ", rid, " works on"); return 2)
+    isempty(commit) || return credit(root, rid, run, id, commit; io)
+    id == by && (println(io, "run: a finding does not cover itself"); return 2)
+    by in work || (println(io, "run: ", by, " is not a finding this pass of ", rid, " works on"); return 2)
+    isempty(Runs.fix_commits(root, pass_start(run), by; run)) &&
         (println(io, "run: ", by, " has no fix committed this pass, so it covers nothing yet"); return 2)
     entry = id * "\t" * by
     entry in run.covered && (println(io, "run: ", id, " is already recorded as covered by ", by); return 0)
     Runs.save(root, with(run; covered = vcat(run.covered, [entry])))
     println(io, "run: ", id, " is covered by the fix of ", by, "; its verifier reads that diff, and a revert of it reopens both")
+    return 0
+end
+
+# The `--by-commit` half of `covered`: the commit is read by the guard as the close reads every commit,
+# and credited only when it is documentation throughout.
+function credit(root::AbstractString, rid::AbstractString, run::Model.Run, id::AbstractString, commit::AbstractString; io::IO = stdout)
+    full = Git.run(root, "rev-parse", "--verify", "--quiet", commit * "^{commit}")
+    (full === nothing || isempty(strip(full))) && (println(io, "run: ", commit, " is not a commit here"); return 2)
+    full = String(strip(full))
+    since = pass_start(run)
+    # of this pass: after the commit the pass began at, and on the branch
+    (Git.run(root, "merge-base", "--is-ancestor", full, "HEAD") !== nothing && full != since &&
+     (isempty(since) || Git.run(root, "merge-base", "--is-ancestor", since, full) !== nothing)) ||
+        (println(io, "run: ", first(full, 8), " is not a commit of this pass, which began at ", first(since, 8)); return 2)
+    # a merge shows no change of its own, while its side carries whatever it carries (found in review)
+    parents = split(strip(something(Git.run(root, "log", "-1", "--format=%P", full), "")))
+    length(parents) > 1 &&
+        (println(io, "run: ", first(full, 8), " is a merge, which shows no change of its own; credit the commits it brought in"); return 2)
+    body = String.(strip.(split(something(Git.run(root, "log", "-1", "--format=%B", full), ""), '\n')))
+    Runs.GUARD_TRAILER in body &&
+        (println(io, "run: ", first(full, 8), " was made by the guard and names its findings; a finding it fixed in passing is recorded with --by"); return 2)
+    full in Runs.reverted(root, since) &&
+        (println(io, "run: ", first(full, 8), " was reverted, so it fixes nothing now"); return 2)
+    entry = id * "\t" * full
+    entry in run.credited && (println(io, "run: ", id, " is already credited with ", first(full, 8)); return 0)
+    cfg = ConfigIO.read_config(root)
+    code = Runs.code_of(root, cfg, full)
+    if !isempty(code)
+        println(io, "run: refused — the guard calls ", length(code), " file(s) of ", first(full, 8), " code: ", join(code, ", "))
+        println(io, "  Nothing was recorded. A code change waits for the owner's answer: park the finding, and the close")
+        println(io, "  puts the commit to him.")
+        return 1
+    end
+    broke = Docfix.broken_by_change(root)
+    if !isempty(broke)
+        println(io, "run: refused — the tree breaks ", length(broke), " rule(s) that passed when the run opened: ", join(String.(broke), ", "))
+        println(io, "  Nothing was recorded. Fix the text so that it passes, as `gbg docfix commit` would have required.")
+        return 1
+    end
+    Runs.save(root, with(run; credited = vcat(run.credited, [entry])))
+    println(io, "run: ", id, " is credited with ", first(full, 8), "; it is the run's edit now: its verifier reads that diff, and a verdict against it reverts it")
     return 0
 end
 
@@ -1492,15 +1545,15 @@ function cost(root::AbstractString, dir::AbstractString; io::IO = stdout)
 end
 
 function cmd_run(args)
-    o = parse_options(args; valued = ["readers", "model", "scope", "why", "by"])
+    o = parse_options(args; valued = ["readers", "model", "scope", "why", "by", "by-commit"])
     root = ConfigIO.require_root("run")
     root === nothing && return 2
-    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--scope full|changed] [--model <name>] [--sequential] | gbg run next|back|collect|close|abandon | gbg run park <finding> --why \"…\" | gbg run covered <finding> --by <finding>"); return 2)
+    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--scope full|changed] [--model <name>] [--sequential] | gbg run next|back|collect|close|abandon | gbg run park <finding> --why \"…\" | gbg run covered <finding> --by <finding> | --by-commit <sha>"); return 2)
     what = o.positional[1]
     # A help flag on any verb prints usage and does nothing: `gbg run abandon --help` abandoned PF's
     # run (2026-09-24), and a help flag on the one irreversible verb must never act.
     if "help" in o.flags || "h" in o.flags
-        println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--scope full|changed] [--model <name>] [--sequential] | gbg run next|back|collect|close|abandon | gbg run park <finding> --why \"…\" | gbg run covered <finding> --by <finding> | gbg run cost <dir>")
+        println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--scope full|changed] [--model <name>] [--sequential] | gbg run next|back|collect|close|abandon | gbg run park <finding> --why \"…\" | gbg run covered <finding> --by <finding> | --by-commit <sha> | gbg run cost <dir>")
         return 0
     end
     what == "next" && return next(root)
@@ -1508,7 +1561,8 @@ function cmd_run(args)
     what == "close" && return close_run(root)
     what == "abandon" && return abandon(root)
     what == "back" && return back(root)
-    what == "covered" && return covered(root, length(o.positional) >= 2 ? o.positional[2] : "", get(o.values, "by", ""))
+    what == "covered" && return covered(root, length(o.positional) >= 2 ? o.positional[2] : "", get(o.values, "by", "");
+                                        commit = get(o.values, "by-commit", ""))
     what == "park" && return park(root, length(o.positional) >= 2 ? o.positional[2] : ""; why = get(o.values, "why", ""))
     what == "cost" && return cost(root, length(o.positional) >= 2 ? o.positional[2] : "")
     return start(root, Symbol(replace(what, "-" => "_")); readers = Symbol(get(o.values, "readers", "bound")),
