@@ -189,12 +189,22 @@ function fixed_as(root, fid, text)
     @test G.Docfix.commit(root, "fix for " * fid; io = devnull, finding = fid) == 0
 end
 
-"""Drive the open run forward until it is ready to close: collecting where agents were launched, moving on elsewhere."""
+"""
+Drive the open run forward until it is ready to close: collecting where agents were launched, moving on
+elsewhere. At a fix stage it parks what the pass has not committed, as a session must before it moves on.
+"""
 function to_close(root, id)
     order = RUNS.STAGES[:documentation_review]
     for _ in 1:40
         at = RUNS.stage_index(root, id)
         order[at] === :close && break
+        if order[at] === :fix
+            run = RUNS.load(root, id)
+            for f in RUNS.workable(run)
+                isempty(RUNS.pass_commits(root, G.Run.pass_start(run), run, f.id)) &&
+                    G.Run.park(root, f.id; why = "the fix would change the code", io = devnull)
+            end
+        end
         order[at + 1] === :collect ? G.Run.collect(root; io = devnull) : G.Run.next(root; io = devnull)
     end
     return RUNS.stage_of(root, id)
@@ -618,6 +628,11 @@ end
             @test [f.id for f in second.findings] == [fid]                # carried, under its old id
             @test only(second.findings).source === Symbol(HOME_READER)
             @test only(only(second.findings).draft.locations).line == HOME_LINE   # re-anchored
+            G.Run.collect(root; io = devnull)
+            G.Run.next(root; io = devnull)                                  # fix: the carried finding, worked on
+            fixed_as(root, fid, "The grid is a lattice, second run.")
+            G.Run.next(root; io = devnull)                                  # verify
+            verifier_said(root, id2, "verify", fid, "NOT_FIXED")
             @test to_close(root, id2) === :close
             @test G.Run.close_run(root; io = devnull) == 1
             rep = read(joinpath(RUNS.dir(root, id2), "report.md"), String)
@@ -1166,7 +1181,8 @@ end
                       stop = G.Model.Stop.OWNER_STOPPED, readers = :both, passes = 3,
                       model = "opus", sequential = true, scope = :changed, base = "feedface",
                       driver = "e3b0c44298fc1c14", already_failing = [:PROSE_SHAPE, :ARGS_FORM],
-                      dropped = 142, unreverted = ["abc123"], silent = ["full"])
+                      dropped = 142, unreverted = ["abc123"], silent = ["full"],
+                      licences = ["f1\tdocs/src/index.md"], ruled = ["f1"], covered = ["f2\tf1"])
     back = RUNS.from_dict(G.JSON3.read(G.JSON3.write(RUNS.as_dict(run)), Dict{String,Any}))
     for f in fieldnames(G.Model.Run)
         # The four list-valued fields carry their own types and are round-tripped by the suites that
@@ -1312,7 +1328,9 @@ end
         fid = only(f.id for f in run.findings if f.source === Symbol(HOME_READER))
         G.Run.next(root; io = devnull)                                # → fix
         fixed_as(root, fid, "The grid is a lattice.")
-        G.Run.next(root; io = devnull)                                # → verify (one verifier per place)
+        other = only(f.id for f in run.findings if f.id != fid)
+        @test G.Run.park(root, other; why = "the fix would change the code", io = devnull) == 0
+        @test G.Run.next(root; io = devnull) == 0                     # → verify (one verifier per place)
         for f in RUNS.workable(RUNS.load(root, id))
             verifier_said(root, id, "verify", f.id, f.id == fid ? "FIXED" : "NOT_FIXED"; quote_ = f.id == fid ? "The grid is a lattice." : "")
         end
@@ -2592,5 +2610,317 @@ end
         collect_twice(root); to_close(root, id2); G.Run.close_run(root; io = devnull)
         q = joinpath(root, ".claude", "WORK_QUEUE.md")
         @test !isfile(q) || !occursin(qid, read(q, String))
+    end
+end
+
+# A fix stage is left only when each of its findings is committed or parked (SS, 2026-10-16: a run reached
+# verify with 98 of 100 untouched), and a verify stage nothing has written to goes back to it.
+@testset "a fix stage is left only with every finding committed or parked, and an unwritten verify goes back" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        reader_found(root, id, "full", "the grid's kind is not said")
+        all_clean(root, id; except = [HOME_READER, "full"])
+        G.Run.collect(root; io = devnull)
+        found = RUNS.load(root, id).findings
+        home_id = only(f.id for f in found if f.source === Symbol(HOME_READER))
+        full_id = only(f.id for f in found if f.source === :full)
+        @test G.Run.back(root; io = devnull) == 2                      # not at a verify stage
+        G.Run.next(root; io = devnull)                                 # → fix
+        @test G.Run.back(root; io = devnull) == 2
+        fixed_as(root, home_id, "The grid is a lattice.")
+        out = IOBuffer()
+        @test G.Run.next(root; io = out) == 2                          # one finding is neither
+        said = String(take!(out))
+        @test occursin(full_id, said) && !occursin(home_id, said) && occursin("run park", said) && occursin("run covered", said)
+        @test RUNS.stage_of(root, id) === :fix
+        @test G.Run.park(root, full_id; why = "the fix would change the code", io = devnull) == 0
+        @test G.Run.next(root; io = devnull) == 0
+        @test RUNS.stage_of(root, id) === :verify
+        verify_dir = AGENTS.stage_dir(root, id)
+        @test isfile(AGENTS.arguments_path(root, id))
+        # nothing written: the stage goes back, and its arguments with it
+        @test G.Run.back(root; io = devnull) == 0
+        @test RUNS.stage_of(root, id) === :fix && !isdir(verify_dir)
+        run = RUNS.load(root, id)
+        @test run.passes == 1 && !isempty(RUNS.fix_commits(root, G.Run.pass_start(run), home_id))   # the pass is the same pass
+        @test G.Run.next(root; io = devnull) == 0 && RUNS.stage_of(root, id) === :verify
+        # a verdict written: nothing goes back over it
+        verifier_said(root, id, "verify", home_id, "FIXED"; quote_ = "The grid is a lattice.")
+        @test G.Run.back(root; io = devnull) == 2
+        @test RUNS.stage_of(root, id) === :verify
+        # what the Workflow returned, saved and no file yet: a verifier has answered, and nothing goes back
+        rm(AGENTS.results_dir(root, id); recursive = true); mkpath(AGENTS.results_dir(root, id))
+        write(joinpath(AGENTS.stage_dir(root, id), "returned.json"), """{"results":{}}""")
+        @test G.Run.back(root; io = devnull) == 2
+    end
+end
+
+# Two kinds of finding cannot be committed or parked, and must not hold a stage for ever: one a fix
+# already committed turned out to cover, which is recorded; one the owner ruled on, which goes on, named
+# (both found reviewing rc.74, 2026-10-16).
+@testset "a finding covered by another's fix is recorded, and a ruled one goes on named" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        reader_found(root, id, "full", "the grid's kind is not said")
+        all_clean(root, id; except = [HOME_READER, "full"])
+        G.Run.collect(root; io = devnull)
+        found = RUNS.load(root, id).findings
+        home_id = only(f.id for f in found if f.source === Symbol(HOME_READER))
+        full_id = only(f.id for f in found if f.source === :full)
+        @test G.Run.covered(root, full_id, home_id; io = devnull) == 2          # not at a fix stage
+        G.Run.next(root; io = devnull)                                         # → fix
+        @test G.Run.covered(root, full_id, home_id; io = devnull) == 2          # home has no fix yet
+        fixed_as(root, home_id, "The grid is a lattice.")
+        @test G.Docfix.commit(root, "nothing"; io = devnull, finding = full_id) == 2   # nothing left to commit
+        @test G.Run.covered(root, full_id, full_id; io = devnull) == 2
+        @test G.Run.covered(root, full_id, "no-such-finding"; io = devnull) == 2
+        @test G.Run.covered(root, full_id, home_id; io = devnull) == 0
+        @test G.Run.covered(root, full_id, home_id; io = devnull) == 0          # once is enough
+        run = RUNS.load(root, id)
+        @test run.covered == [full_id * "\t" * home_id]
+        @test RUNS.pass_commits(root, G.Run.pass_start(run), run, full_id) == RUNS.fix_commits(root, G.Run.pass_start(run), home_id)
+        @test G.Run.next(root; io = devnull) == 0                               # covered counts: → verify
+        args = G.JSON3.read(read(AGENTS.arguments_path(root, id), String), Dict{String,Any})
+        r = args["roles"][findfirst(r -> full_id in strip.(split(String(r["finding"]), ",")), args["roles"])]
+        diff = read(whole(args, r)["diff_file"], String)
+        @test occursin("lattice", diff) && !occursin("No commit names these findings", diff)
+        # the covering fix reverted, the covered one is reopened with it
+        verifier_said(root, id, "verify", home_id, "MADE_WORSE"; quote_ = "The grid is a lattice.")
+        verifier_said(root, id, "verify", full_id, "FIXED"; quote_ = "The grid is a lattice.")
+        G.Run.collect(root; io = devnull)
+        fx = Dict(x.finding => x for x in RUNS.load(root, id).fixes)
+        @test fx[full_id].blind === MRun.Verdict.NOT_FIXED && occursin(home_id, fx[full_id].note)
+    end
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        reader_found(root, id, "full", "the grid's kind is not said")
+        all_clean(root, id; except = [HOME_READER, "full"])
+        G.Run.collect(root; io = devnull)
+        found = RUNS.load(root, id).findings
+        home_id = only(f.id for f in found if f.source === Symbol(HOME_READER))
+        full_id = only(f.id for f in found if f.source === :full)
+        G.Run.next(root; io = devnull)                                         # → fix
+        @test G.Run.park(root, full_id; why = "the formula changes", io = devnull) == 0
+        qid = RUNS.code_question_id(RUNS.load(root, id), full_id)
+        @test G.Answer.answer(root, qid, "fix it on my ruling"; io = devnull, direction = "write lattice") == 0
+        fixed_as(root, home_id, "The grid is a lattice.")
+        @test G.Run.park(root, full_id; why = "still the formula", io = devnull) == 2     # once to the owner
+        out = IOBuffer()
+        @test G.Run.next(root; io = out) == 0                                   # not held for ever
+        @test occursin("fix it on my ruling", String(take!(out)))
+        @test RUNS.stage_of(root, id) === :verify
+    end
+end
+
+# The other order: the finding graded first is the one whose shared commit a later verdict reverts.
+@testset "a revert for a finding graded later reopens one graded earlier" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        reader_found(root, id, "full", "the grid's kind is not said")
+        all_clean(root, id; except = [HOME_READER, "full"])
+        G.Run.collect(root; io = devnull)
+        found = RUNS.load(root, id).findings
+        ids = [f.id for f in found]
+        home_id = only(f.id for f in found if f.source === Symbol(HOME_READER))
+        full_id = only(f.id for f in found if f.source === :full)
+        G.Run.next(root; io = devnull)
+        write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
+        @test G.Docfix.commit(root, "one fix"; io = devnull, finding = home_id * "," * full_id) == 0
+        G.Run.next(root; io = devnull)
+        first_id, last_id = ids[1], ids[2]                                      # the run's order is the grading order
+        verifier_said(root, id, "verify", first_id, "FIXED"; quote_ = "The grid is a lattice.")
+        verifier_said(root, id, "verify", last_id, "MADE_WORSE"; quote_ = "The grid is a lattice.")
+        G.Run.collect(root; io = devnull)
+        run = RUNS.load(root, id)
+        fx = Dict(x.finding => x for x in run.fixes)
+        @test fx[first_id].blind === MRun.Verdict.NOT_FIXED && occursin(last_id, fx[first_id].note)
+        @test !isempty(fx[first_id].commit) && fx[first_id].commit == fx[last_id].commit   # the record keeps the commit
+        @test isempty(run.unreverted)
+    end
+end
+
+# One change that fixes two findings names both; a revert of it for one reopens the other, whatever the
+# other's own verdict said, since the text it was judged on is gone.
+@testset "a commit may name several findings, and a revert for one reopens them all" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        reader_found(root, id, "full", "the grid's kind is not said")
+        all_clean(root, id; except = [HOME_READER, "full"])
+        G.Run.collect(root; io = devnull)
+        found = RUNS.load(root, id).findings
+        home_id = only(f.id for f in found if f.source === Symbol(HOME_READER))
+        full_id = only(f.id for f in found if f.source === :full)
+        G.Run.next(root; io = devnull)                                 # → fix
+        write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
+        @test G.Docfix.commit(root, "one fix"; io = devnull, finding = home_id * ",no-such-finding") == 2
+        @test G.Docfix.commit(root, "one fix"; io = devnull, finding = home_id * ",bad\nid") == 2
+        @test G.Docfix.commit(root, "one fix"; io = devnull, finding = " , ") == 2
+        @test G.Docfix.commit(root, "one fix"; io = devnull, finding = home_id * "," * full_id) == 0
+        run = RUNS.load(root, id)
+        head = strip(read(`git -C $root rev-parse HEAD`, String))
+        @test RUNS.findings_of(root, head) == [home_id, full_id]
+        @test RUNS.fix_commits(root, G.Run.pass_start(run), home_id) == RUNS.fix_commits(root, G.Run.pass_start(run), full_id) == [head]
+        @test G.Run.next(root; io = devnull) == 0                      # both committed: → verify
+        verifier_said(root, id, "verify", home_id, "MADE_WORSE"; quote_ = "The grid is a lattice.")
+        verifier_said(root, id, "verify", full_id, "FIXED"; quote_ = "The grid is a lattice.")
+        out = IOBuffer()
+        G.Run.collect(root; io = out)
+        run = RUNS.load(root, id)
+        @test occursin("spectral", read(joinpath(root, "docs", "src", "index.md"), String))   # reverted once
+        @test isempty(run.unreverted)
+        fx = Dict(x.finding => x for x in run.fixes)
+        @test fx[home_id].blind === MRun.Verdict.MADE_WORSE
+        @test fx[full_id].blind === MRun.Verdict.NOT_FIXED && occursin(home_id, fx[full_id].note)
+        @test !RUNS.closed(run, full_id)
+    end
+end
+
+# The close's own undo of a red build reopens every finding the undone commit fixed, but not one a
+# verifier called no defect: that verdict was not about the text (found reviewing rc.74, 2026-10-16).
+@testset "the close's undo reopens the findings a commit fixed, and spares one called no defect" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        reader_found(root, id, "full", "the grid's kind is not said")
+        all_clean(root, id; except = [HOME_READER, "full"])
+        G.Run.collect(root; io = devnull)
+        found = RUNS.load(root, id).findings
+        home_id = only(f.id for f in found if f.source === Symbol(HOME_READER))
+        full_id = only(f.id for f in found if f.source === :full)
+        SITE.BUILDER[] = picky_site
+        try
+            G.Run.next(root; io = devnull)                                     # fix
+            write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "BREAKS THE BUILD."))
+            @test G.Docfix.commit(root, "one fix"; io = devnull, finding = home_id * "," * full_id) == 0
+            run = RUNS.load(root, id)
+            sha = only(RUNS.guarded_commits(root, run.first_commit))
+            RUNS.save(root, G.Run.with(run; fixes = [MRun.DocFix(finding = home_id, pass = 1, commit = sha, blind = MRun.Verdict.FIXED),
+                                                     MRun.DocFix(finding = full_id, pass = 1, commit = sha, blind = MRun.Verdict.NOT_A_DEFECT)]))
+            RUNS.write_stage(root, id, length(RUNS.STAGES[:documentation_review]))
+            @test G.Run.close_run(root; io = devnull) == 2
+            record = G.JSON3.read(read(joinpath(RUNS.dir(root, id), "run.json"), String), Dict{String,Any})
+            last_of(fid) = String(record["fixes"][findlast(x -> x["finding"] == fid, record["fixes"])]["blind"])
+            @test last_of(home_id) == "NOT_FIXED"
+            @test last_of(full_id) == "NOT_A_DEFECT"
+        finally
+            SITE.BUILDER[] = write_site
+        end
+    end
+end
+
+# The owner's "fix the documentation instead" makes the reverted edit again for a finding whose fix was
+# another's, recorded with `covered` (found reviewing rc.74, 2026-10-16: the edit was not found, and the
+# finding closed over unfixed text). The finding that edit also fixed is named and stays as recorded:
+# nothing is closed without a verifier.
+@testset "an answer makes a covering fix again, and names the finding it also fixed" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        reader_found(root, id, "full", "the grid's kind is not said")
+        all_clean(root, id; except = [HOME_READER, "full"])
+        G.Run.collect(root; io = devnull)
+        found = RUNS.load(root, id).findings
+        a = only(f.id for f in found if f.source === Symbol(HOME_READER))
+        b = only(f.id for f in found if f.source === :full)
+        G.Run.next(root; io = devnull)                                         # → fix
+        fixed_as(root, a, "The grid is a lattice.")
+        @test G.Run.covered(root, b, a; io = devnull) == 0
+        @test G.Run.next(root; io = devnull) == 0                               # → verify
+        verifier_said(root, id, "verify", a, "FIXED"; quote_ = "The grid is a lattice.")
+        verifier_said(root, id, "verify", b, "HIDES_CODE_DEFECT"; quote_ = "The grid is a lattice.")
+        G.Run.collect(root; io = devnull)
+        page() = read(joinpath(root, "docs", "src", "index.md"), String)
+        @test occursin("spectral", page())                                      # reverted for b
+        run = RUNS.load(root, id)
+        @test !RUNS.closed(run, a) && run.fixes[end].note == RUNS.REVERTED_FOR * b * "; read as NOT_FIXED"
+        @test RUNS.parked(run, b)
+        G.Run.next(root; io = devnull)
+        G.Run.close_run(root; io = devnull)
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "the run, closed")
+        qid = RUNS.code_question_id(RUNS.load(root, id), b)
+        out = IOBuffer()
+        @test G.Answer.answer(root, qid, "fix the documentation instead"; io = out) == 0
+        said = String(take!(out))
+        @test occursin("made again and stands", said) && occursin("also fixed " * a, said)
+        @test occursin("lattice", page())
+        run = RUNS.load(root, id)
+        @test RUNS.closed(run, b) && !RUNS.closed(run, a)                       # a waits for a verifier
+        @test occursin("- [ ] " * a * " ", read(joinpath(root, ".claude", "WORK_QUEUE.md"), String))
+    end
+end
+
+# Two findings of one commit, both said to hide a code defect: the commit is reverted once and both are
+# asked. The first answer "fix the documentation instead" makes the edit again; the second finds it made,
+# and closes rather than failing on a revert that commits nothing (found reviewing rc.74, 2026-10-16).
+@testset "a shared edit made again on one answer is not made twice on the next" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        reader_found(root, id, "full", "the grid's kind is not said")
+        all_clean(root, id; except = [HOME_READER, "full"])
+        G.Run.collect(root; io = devnull)
+        found = RUNS.load(root, id).findings
+        a = only(f.id for f in found if f.source === Symbol(HOME_READER))
+        b = only(f.id for f in found if f.source === :full)
+        G.Run.next(root; io = devnull)
+        write(joinpath(root, "docs", "src", "index.md"), replace(HOME_PAGE, "The grid is spectral." => "The grid is a lattice."))
+        @test G.Docfix.commit(root, "one fix"; io = devnull, finding = a * "," * b) == 0
+        G.Run.next(root; io = devnull)
+        verifier_said(root, id, "verify", a, "HIDES_CODE_DEFECT"; quote_ = "The grid is a lattice.")
+        verifier_said(root, id, "verify", b, "HIDES_CODE_DEFECT"; quote_ = "The grid is a lattice.")
+        G.Run.collect(root; io = devnull)
+        run = RUNS.load(root, id)
+        @test isempty(run.unreverted) && RUNS.parked(run, a) && RUNS.parked(run, b)
+        G.Run.next(root; io = devnull)
+        G.Run.close_run(root; io = devnull)
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "the run, closed")
+        page() = read(joinpath(root, "docs", "src", "index.md"), String)
+        @test occursin("spectral", page())
+        @test G.Answer.answer(root, RUNS.code_question_id(run, a), "fix the documentation instead"; io = devnull) == 0
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "answered")
+        @test occursin("lattice", page())
+        @test G.Answer.answer(root, RUNS.code_question_id(run, b), "fix the documentation instead"; io = devnull) == 0
+        @test occursin("lattice", page())
+        run = RUNS.load(root, id)
+        @test RUNS.closed(run, a) && RUNS.closed(run, b)
+    end
+end
+
+# A pass resumed by `gbg run back` keeps the places found when it opened: re-found after its own
+# commits, a finding whose text one of them changed in passing would read as gone before the pass, and
+# leave the stage unworked (found reviewing rc.74, 2026-10-16).
+@testset "a pass resumed by back keeps its anchors" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        reader_found(root, id, "full", "the grid's kind is not said")
+        all_clean(root, id; except = [HOME_READER, "full"])
+        G.Run.collect(root; io = devnull)
+        found = RUNS.load(root, id).findings
+        a = only(f.id for f in found if f.source === Symbol(HOME_READER))
+        b = only(f.id for f in found if f.source === :full)
+        G.Run.next(root; io = devnull)                                         # → fix: the places are found
+        opened = RUNS.as_dict(RUNS.load(root, id))["findings"]
+        fixed_as(root, a, "The grid is a lattice.")                            # rewrites b's sentence too
+        # a verify stage reached as SS reached one, before the refusal existed
+        RUNS.write_stage(root, id, findfirst(==(:verify), RUNS.STAGES[:documentation_review]))
+        @test G.Run.back(root; io = devnull) == 0
+        @test RUNS.as_dict(RUNS.load(root, id))["findings"] == opened          # as the pass opened, not re-found
+        out = IOBuffer()
+        @test G.Run.next(root; io = out) == 2 && occursin(b, String(take!(out)))
     end
 end

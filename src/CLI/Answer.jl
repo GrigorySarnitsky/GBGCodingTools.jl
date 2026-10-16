@@ -138,7 +138,7 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
             # the question standing; and never while a run is open, whose collect the commit would block
             open_run_here(root) === nothing ||
                 (println(io, "answer: refused — a run is open; answer this once it has closed, since re-making the edit commits"); return 2)
-            undone = R.reverts_of(root, run.first_commit, fid)
+            undone = R.reverts_of(root, run.first_commit, fid; run)
             # All or none: a revert made before one that failed is taken back, or the answer that said
             # nothing was recorded left HEAD moved and every retry failing (found in review, 2026-09-24).
             saved = R.head_commit(root)
@@ -168,6 +168,18 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
     if of_run && option == R.DOCS_ANSWER
         println(io, remade ? "answer: the reverted edit is made again and stands; the finding is closed." :
                              "answer: no reverted edit of it was found to make again; the finding is closed.")
+        if remade
+            # The edit made again may have fixed other findings too; each stays as its record says, open or
+            # waiting on its own answer, and a later review judges it on the text as it now stands. Nothing
+            # is closed here without a verifier (2026-10-16: restoring their verdicts took three reviews and
+            # still closed findings that were open).
+            run_id, _, _ = found
+            rec = R.load(root, run_id)
+            others = unique(vcat([setdiff(R.fixed_by(root, rec, c), [fid])
+                                  for c in (R.reverted_commit(root, r) for r in undone) if c !== nothing]...))
+            isempty(others) || println(io, "answer: the edit made again also fixed ", join(others, ", "),
+                                       "; each stays as recorded, and the next review judges it on the text as it now stands.")
+        end
     elseif of_run && option == R.RULED_ANSWER
         println(io, "answer: the finding is the fixer's again, to be made as you say; commit it with `gbg docfix commit --finding ", fid, "`, and a verifier closes it.")
     elseif of_run && option in (R.CODE_ANSWER, R.OWNER_ANSWER)

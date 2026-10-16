@@ -282,11 +282,25 @@ run the owner asked for, and then fixes and verifies without asking again [R1, R
    `HIDES_CODE_DEFECT` reverts them and asks the owner — unless he already answered "fix the documentation instead",
    when the edit stands and is listed. A `NOT_A_DEFECT` closes the finding for this run, listed but never stored.
 7. **Passes.** One by default [ruled 2026-09-26: a second pass over unchanged text moved 22% of the verdicts by variance,
-   at a third of the first pass's cost; four was the cap before]. A fix stage that committed nothing closes the run, and
-   what is still open goes to the owner's queue.
+   at a third of the first pass's cost; four was the cap before]. A fix stage that committed nothing closes the run, and what
+   is still open goes to the owner's queue.
 8. **Cost.** `gbg run cost <dir>` sums each agent's own usage records from the launch's transcripts and writes them on the
    record per stage and pass; the report prints them. The launch's summary field counts a tenth of the cache activity,
    where nearly all of the cost is, and is not used.
+9. **Leaving a fix stage.** `gbg run next` leaves it only when every finding of the pass is committed, covered or
+   parked, and names those that are none of these. A change that fixes several findings names them all; one found
+   afterwards to have fixed another is recorded with `gbg run covered <id> --by <id>`; either way the finding's verifier
+   reads that diff, and a revert of it reopens every finding it fixed. The owner's "fix the documentation instead" makes
+   the edit again once, however many findings asked, and names the others it fixed: they stay as recorded, and a later
+   review judges them, since nothing is closed without a verifier.
+
+   Exempt are a finding none of whose places was
+   found again when the stage opened, its text being gone before the pass, and one the owner answered "fix it on my
+   ruling", which has been to him and cannot be parked again; the second is named. Neither has a fix of its own, so it
+   is judged on the text as it stands, or, where the pass committed nothing, goes to the owner's queue unjudged. A
+   verify stage no verifier has written to goes back to its fix stage with `gbg run back` [2026-10-16: SS reached
+   verify with 98 of 100 findings untouched, and with one pass in the budget they would have reached the owner
+   unworked].
 
 ### 4.4 The code fixer — only on the owner's answer
 
@@ -609,6 +623,7 @@ Base.@kwdef struct Run
     dropped_ids::Vector{String} = String[]    # what an abandon threw away, kept with its text and carried nowhere
     usage::Vector{Usage} = Usage[]            # what each stage cost, per pass
     licences::Vector{String} = String[]; ruled::Vector{String} = String[]  # what a ruling licenses, and who ruled
+    covered::Vector{String} = String[]        # a finding another's fix covered, and that finding (gbg run covered)
 end
 ```
 

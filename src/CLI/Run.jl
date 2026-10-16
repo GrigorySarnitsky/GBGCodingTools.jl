@@ -151,6 +151,30 @@ function next(root::AbstractString; io::IO = stdout)
         isempty(dirty) || (println(io, "run: tracked files are changed and not committed: ", join(dirty, ", "),
                                     ". Commit each fix with `gbg docfix commit --finding <id>`, or discard it, then gbg run next"); return 2)
     end
+    # A fix stage is left when each finding it works on is committed or parked, as the stage's own text
+    # says: SS left one with 98 of 100 untouched (2026-10-16), and with one pass in the budget its verifiers
+    # would have judged unchanged text and closed the run with all 98 on the owner's queue. Two kinds are
+    # exempt: a finding none of whose places was found again when the stage opened, whose text was gone
+    # before the pass; and one the owner answered "fix it on my ruling", which has been to him already and
+    # cannot be parked again — named here, so that it is not left in silence.
+    if order[at] === :fix
+        unworked = [f for f in Runs.workable(run)
+                    if isempty(Runs.pass_commits(root, pass_start(run), run, f.id)) &&
+                       !(!isempty(f.draft.locations) && all(l -> l.found === Model.Anchor.OUTDATED, f.draft.locations))]
+        ruled = [f for f in unworked if f.id in run.ruled]
+        untouched = [f for f in unworked if !(f.id in run.ruled)]
+        if !isempty(untouched)
+            println(io, "run: ", length(untouched), " finding(s) of this pass are neither committed nor parked: ",
+                    join([f.id for f in untouched], ", "), ".")
+            println(io, "  For each: fix it and `gbg docfix commit --message \"…\" --finding <id>` (a change that fixes")
+            println(io, "  several names them all: `--finding <id>,<id>`); or, where a fix already committed fixed it,")
+            println(io, "  `gbg run covered <id> --by <the finding that commit names>`; or `gbg run park <id> --why \"…\"`")
+            println(io, "  where only the owner may make the fix or you believe it is no defect. Then gbg run next.")
+            return 2
+        end
+        isempty(ruled) || println(io, "run: answered \"fix it on my ruling\" and not fixed this pass, so judged as they stand: ",
+                                  join([f.id for f in ruled], ", "))
+    end
     if order[at] === :collect
         if isempty(Runs.workable(run))
             to = :close
@@ -363,8 +387,8 @@ function blame_build(root::AbstractString, run::Model.Run, log::AbstractString; 
         files = something(Git.run(root, "show", "--format=", "--name-only", sha), "")
         hit = [f for f in split(files, '\n') if !isempty(f) && any(n -> endswith(n, f) || endswith(f, n), named)]
         isempty(hit) && continue
-        fid = something(Runs.finding_of(root, sha), "no finding")
-        push!(out, first(sha, 8) * "  " * fid * "  " * join(hit, ", "))
+        fids = Runs.findings_of(root, sha)
+        push!(out, first(sha, 8) * "  " * (isempty(fids) ? "no finding" : join(fids, ",")) * "  " * join(hit, ", "))
     end
     if !isempty(out)
         println(io, "run: the build complains about files these commits of pass ", run.passes, " touched — fix through `gbg docfix commit --finding <id>`:")
@@ -405,7 +429,7 @@ source_units(cfg::Model.Config, root::AbstractString) =
      for f in Texts.files(cfg, root, Model.FileSet.LITERATE)]
 
 """
-    fix_stage(root, run, cfg; io = stdout) -> Int
+    fix_stage(root, run, cfg; io = stdout, reanchor = true) -> Int
 
 Opens a fix pass: re-anchors every open finding, adds the other copies of what each says, and writes
 the workable ones for the session, which edits and commits each through
@@ -417,15 +441,18 @@ the workable ones for the session, which edits and commits each through
 - `run` — the run, at its `fix` stage.
 - `cfg` — the package's config, which says where its documentation is.
 - `io` — where the handoff is described.
+- `reanchor` — whether the findings are found again; `false` keeps the places found when the pass
+  opened, for a pass resumed by `gbg run back`, whose own commits would otherwise make a finding they
+  changed in passing read as gone before the pass, and exempt.
 
 Exit 0.
 
 A location that comes back `OUTDATED` is kept and named; the session is not sent there.
 """
-function fix_stage(root::AbstractString, run::Model.Run, cfg::Model.Config; io::IO = stdout)
+function fix_stage(root::AbstractString, run::Model.Run, cfg::Model.Config; io::IO = stdout, reanchor::Bool = true)
     anchored = Model.Finding[]
     copies = 0
-    for f in run.findings
+    for f in (reanchor ? run.findings : Model.Finding[])
         Runs.closed(run, f.id) && (push!(anchored, f); continue)
         locs = [Runs.reanchor(root, l; since = run.first_commit) for l in f.draft.locations]
         # A finding in the working notes is re-anchored and left alone: extending it to a target page
@@ -436,8 +463,7 @@ function fix_stage(root::AbstractString, run::Model.Run, cfg::Model.Config; io::
         append!(locs, more)
         push!(anchored, Model.Finding(f.id, f.source, f.decider, Model.relocated(f.draft, locs)))
     end
-    run = with(run; findings = anchored)
-    Runs.save(root, run)
+    reanchor && (run = with(run; findings = anchored); Runs.save(root, run))
     todo = Runs.workable(run)
     dir = Agents.stage_dir(root, run.id)
     mkpath(dir)
@@ -458,10 +484,10 @@ function fix_stage(root::AbstractString, run::Model.Run, cfg::Model.Config; io::
                                 join([f.id for f in waiting], ", "))
     println(io, "  the findings: ", relpath(path, root))
     println(io, "  fix each, then: gbg docfix check   (what the guard and the rules make of the edit, committing nothing)")
-    println(io, "                  gbg docfix commit --message \"…\" --finding <id>")
-    println(io, "  one whose fix only the owner may make (the config, code, a formula):")
+    println(io, "                  gbg docfix commit --message \"…\" --finding <id>   (one change fixing several: --finding <id>,<id>)")
+    println(io, "  one whose fix only the owner may make (the config, code, a formula), or that you believe is no defect:")
     println(io, "                  gbg run park <id> --why \"…\"")
-    println(io, "  when all are committed or parked: gbg run next")
+    println(io, "  when all are committed or parked: gbg run next   (it refuses while one is neither)")
     println(io, "  check BEFORE each commit, not after the pass: a refused commit costs one edit to")
     println(io, "  understand, and a pass of them costs the pass")
     println(io, "  an edit that changes mathematics is refused by the guard and put to the owner with `gbg ask`; do not make it")
@@ -612,7 +638,7 @@ another's — a copy or a duplicate — and are shown every fix of the pass, wit
 function fix_diff(root::AbstractString, run::Model.Run, fs::AbstractVector{Model.Finding})
     since = pass_start(run)
     all = Runs.guarded_commits(root, since)                       # newest first
-    mine = Set{String}(c for f in fs for c in Runs.fix_commits(root, since, f.id))
+    mine = Set{String}(c for f in fs for c in Runs.pass_commits(root, since, run, f.id))
     named = [c for c in all if c in mine]
     shas = isempty(named) ? all : named
     isempty(shas) && return ""
@@ -814,7 +840,14 @@ function grade(root::AbstractString, run::Model.Run, verdicts; cfg::Model.Config
     fixes = copy(run.fixes)
     questions = copy(run.questions)
     unreverted = copy(run.unreverted)
-    for f in Runs.workable(run)
+    # Three steps, in this order, because a commit may fix several findings (2026-10-16). Every verdict is
+    # judged first, on the text the verifiers read: a revert made for one finding would otherwise demote
+    # the next one's quote, which that revert took out. Each finding's commits are read before any revert,
+    # so a shared commit is reverted once and not taken for no fix at all.
+    todo = Runs.workable(run)
+    own = Dict(f.id => Runs.pass_commits(root, pass_start(run), run, f.id) for f in todo)
+    graded = Dict{String,Model.Verdict.T}()
+    for f in todo
         answered = haskey(verdicts, f.id)
         v, quote_ = answered ? verdicts[f.id] : ("NOT_FIXED", "")
         note = answered ? "" : "no verifier answered for it"
@@ -826,13 +859,19 @@ function grade(root::AbstractString, run::Model.Run, verdicts; cfg::Model.Config
             println(io, "run: ", f.id, " — ", note)
             v = "NOT_FIXED"
         end
-        verdict = getfield(Model.Verdict, Symbol(v))
-        commits = Runs.fix_commits(root, pass_start(run), f.id)
+        graded[f.id] = getfield(Model.Verdict, Symbol(v))
         push!(fixes, Model.DocFix(finding = f.id, pass = run.passes,
-                                  commit = isempty(commits) ? "" : first(commits), blind = verdict, note = note))
+                                  commit = isempty(own[f.id]) ? "" : first(own[f.id]), blind = graded[f.id], note = note))
+    end
+    undone = Set{String}()
+    cause = Dict{String,String}()                       # each commit reverted, and the finding whose verdict did it
+    for f in todo
+        verdict = graded[f.id]
+        commits = [c for c in own[f.id] if !(c in undone)]
         if verdict === Model.Verdict.HIDES_CODE_DEFECT
             failed = [c for c in commits if !Runs.revert!(root, c; why = "the verifier believes the code is wrong")]
-            append!(unreverted, failed)
+            append!(unreverted, failed); union!(undone, setdiff(commits, failed))
+            for c in setdiff(commits, failed); cause[c] = f.id; end
             q = put_question(code_question(f, run), cfg; io)
             # One question per finding: parked, answered "fix it on my ruling", fixed and judged again,
             # the finding would carry an answered question and an unanswerable second one under the
@@ -850,10 +889,23 @@ function grade(root::AbstractString, run::Model.Run, verdicts; cfg::Model.Config
                         " — the fix could NOT be reverted (a later fix conflicts), so the edit stays; a question stands for the owner and the run cannot end as evaluated")
         elseif verdict === Model.Verdict.MADE_WORSE && !isempty(commits)
             failed = [c for c in commits if !Runs.revert!(root, c)]
-            append!(unreverted, failed)
+            append!(unreverted, failed); union!(undone, setdiff(commits, failed))
+            for c in setdiff(commits, failed); cause[c] = f.id; end
             println(io, "run: ", f.id, isempty(failed) ? " — the fix made things worse and is reverted" :
                         " — the fix made things worse and could NOT be reverted (a later fix conflicts); the edit stays and the run cannot end as evaluated")
         end
+    end
+    # A finding whose fix was in a commit reverted for ANOTHER finding is no longer fixed, whatever its own
+    # verdict said: the text it was judged on has gone back. Its verifier's verdict stays on the record,
+    # and this is written after it.
+    for f in todo
+        graded[f.id] in (Model.Verdict.FIXED, Model.Verdict.LINE_ONLY) || continue
+        lost = intersect(own[f.id], undone)
+        isempty(lost) && continue
+        note = Runs.REVERTED_FOR * join(unique([cause[c] for c in lost]), ", ") * "; read as NOT_FIXED"
+        println(io, "run: ", f.id, " — ", note)
+        push!(fixes, Model.DocFix(finding = f.id, pass = run.passes, commit = first(own[f.id]),
+                                  blind = Model.Verdict.NOT_FIXED, note = note))
     end
     return with(run; fixes = fixes, questions = questions, unreverted = unreverted)
 end
@@ -953,9 +1005,10 @@ function close_run(root::AbstractString; io::IO = stdout)
 
     undone, red, failed = restore_green(root, run, cfg; io)
     # a fix the close undid is no longer a fix: its finding is open again, and is carried
-    for sha in undone
-        fid = Runs.finding_of(root, sha)
-        fid === nothing && continue
+    # A finding a verifier called no defect stays closed: what it was judged on is not the text.
+    for sha in undone, fid in Runs.fixed_by(root, run, sha)
+        k = findlast(x -> x.finding == fid, run.fixes)
+        k !== nothing && run.fixes[k].blind === Model.Verdict.NOT_A_DEFECT && continue
         run = with(run; fixes = vcat(run.fixes, [Model.DocFix(finding = fid, pass = run.passes, commit = sha,
                                                                blind = Model.Verdict.NOT_FIXED)]))
     end
@@ -1257,6 +1310,86 @@ function queue_leftovers(root::AbstractString, run::Model.Run; open_too::Bool = 
 end
 
 """
+    covered(root, id, by; io = stdout) -> Int
+
+Records that a fix already committed for the finding `by` fixed the finding `id` too.
+
+# Arguments
+
+- `root` — the package root.
+- `id` — the finding fixed in passing.
+- `by` — the finding whose commits of this pass fixed it.
+- `io` — where the outcome is reported.
+
+Exit 0 when it is recorded; 2 when no run is open, the run is not at a fix stage, either finding is not
+one this pass works on, they are the same, or `by` has no fix commit this pass.
+
+A change that fixes several findings names them all when it is committed (`--finding <id>,<id>`). This
+is for the one found afterwards: the commit exists, nothing is left to commit, and `gbg run next` would
+otherwise refuse the finding for ever (found reviewing rc.74, 2026-10-16). From here the finding's
+verifier reads `by`'s diff, and a revert of it reopens both.
+"""
+function covered(root::AbstractString, id::AbstractString, by::AbstractString; io::IO = stdout)
+    rid = open_run(root)
+    rid === nothing && (println(io, "run: nothing is open here"); return 2)
+    run = Runs.load(root, rid)
+    Runs.stage_of(root, rid) === :fix ||
+        (println(io, "run: record a covered finding at a fix stage; ", rid, " is at ", Runs.stage_of(root, rid)); return 2)
+    (isempty(id) || isempty(by)) && (println(io, "usage: gbg run covered <finding> --by <finding>"); return 2)
+    id == by && (println(io, "run: a finding does not cover itself"); return 2)
+    work = Set(f.id for f in Runs.workable(run))
+    for x in (id, by)
+        x in work || (println(io, "run: ", x, " is not a finding this pass of ", rid, " works on"); return 2)
+    end
+    isempty(Runs.fix_commits(root, pass_start(run), by)) &&
+        (println(io, "run: ", by, " has no fix committed this pass, so it covers nothing yet"); return 2)
+    entry = id * "\t" * by
+    entry in run.covered && (println(io, "run: ", id, " is already recorded as covered by ", by); return 0)
+    Runs.save(root, with(run; covered = vcat(run.covered, [entry])))
+    println(io, "run: ", id, " is covered by the fix of ", by, "; its verifier reads that diff, and a revert of it reopens both")
+    return 0
+end
+
+"""
+    back(root; io = stdout) -> Int
+
+Returns the open run from a verify stage to the fix stage before it, while no verifier of that stage has
+written a verdict.
+
+# Arguments
+
+- `root` — the package root.
+- `io` — where the outcome is reported.
+
+Exit 0 when the run is back at its fix stage, with the findings listed as `gbg run next` lists them
+there; 2 when no run is open, the run is not at a verify stage, or a verdict of it has been written.
+
+A run never goes back over anything an agent judged: that is what `Runs.advance!` refuses, and
+this does not loosen it. A verify stage none of whose verifiers has written is only arguments on disk,
+so dropping them loses nothing. SS reached such a stage on 2026-10-16 with 98 of its 100 findings
+untouched, before `gbg run next` refused that, and nothing but a hand edit of the record led back.
+"""
+function back(root::AbstractString; io::IO = stdout)
+    id = open_run(root)
+    id === nothing && (println(io, "run: nothing is open here"); return 2)
+    run = Runs.load(root, id)
+    order = get(Runs.STAGES, run.instrument, Symbol[])
+    at = Runs.stage_index(root, id)
+    (at >= 2 && order[at] === :verify && order[at - 1] === :fix) ||
+        (println(io, "run: ", id, " is at ", Runs.stage_of(root, id), "; only a verify stage goes back, to its fix stage"); return 2)
+    stage = Agents.stage_dir(root, id)
+    results = Agents.results_dir(root, id)
+    wrote = (isdir(results) && !isempty(readdir(results))) || isfile(joinpath(stage, "returned.json"))
+    wrote && (println(io, "run: a verifier of ", id, " has written, so its stage is not undone; gbg run next continues it"); return 2)
+    rm(stage; recursive = true, force = true)
+    Runs.write_stage(root, id, at - 1)
+    moved = with(run; stage = :fix)
+    Runs.save(root, moved)
+    println(io, "run: ", id, " is back at fix (pass ", run.passes, "); the verify stage's arguments are dropped, and no verifier may be running.")
+    return fix_stage(root, moved, ConfigIO.read_config(root); io, reanchor = false)
+end
+
+"""
     park(root, id; why, io = stdout) -> Int
 
 Hands one finding to the owner, at a fix stage: a question about it is put, and no pass works on it
@@ -1359,21 +1492,23 @@ function cost(root::AbstractString, dir::AbstractString; io::IO = stdout)
 end
 
 function cmd_run(args)
-    o = parse_options(args; valued = ["readers", "model", "scope", "why"])
+    o = parse_options(args; valued = ["readers", "model", "scope", "why", "by"])
     root = ConfigIO.require_root("run")
     root === nothing && return 2
-    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--scope full|changed] [--model <name>] [--sequential] | gbg run next|collect|close|abandon | gbg run park <finding> --why \"…\""); return 2)
+    isempty(o.positional) && (println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--scope full|changed] [--model <name>] [--sequential] | gbg run next|back|collect|close|abandon | gbg run park <finding> --why \"…\" | gbg run covered <finding> --by <finding>"); return 2)
     what = o.positional[1]
     # A help flag on any verb prints usage and does nothing: `gbg run abandon --help` abandoned PF's
     # run (2026-09-24), and a help flag on the one irreversible verb must never act.
     if "help" in o.flags || "h" in o.flags
-        println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--scope full|changed] [--model <name>] [--sequential] | gbg run next|collect|close|abandon | gbg run park <finding> --why \"…\" | gbg run cost <dir>")
+        println(stderr, "usage: gbg run <instrument> [--readers bound|open|both] [--scope full|changed] [--model <name>] [--sequential] | gbg run next|back|collect|close|abandon | gbg run park <finding> --why \"…\" | gbg run covered <finding> --by <finding> | gbg run cost <dir>")
         return 0
     end
     what == "next" && return next(root)
     what == "collect" && return collect(root)
     what == "close" && return close_run(root)
     what == "abandon" && return abandon(root)
+    what == "back" && return back(root)
+    what == "covered" && return covered(root, length(o.positional) >= 2 ? o.positional[2] : "", get(o.values, "by", ""))
     what == "park" && return park(root, length(o.positional) >= 2 ? o.positional[2] : ""; why = get(o.values, "why", ""))
     what == "cost" && return cost(root, length(o.positional) >= 2 ? o.positional[2] : "")
     return start(root, Symbol(replace(what, "-" => "_")); readers = Symbol(get(o.values, "readers", "bound")),

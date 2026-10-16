@@ -937,6 +937,8 @@ runs most often.
 - `usage` — what each stage's agents cost, as `gbg run cost` recorded it.
 - `licences` — each parked finding's id and a file its question showed the owner, tab-separated.
 - `ruled` — the findings the owner answered `fix it on my ruling`, kept whatever he answers later.
+- `covered` — each finding a fix of another covered, and that other finding's id, tab-separated, as
+  `gbg run covered` recorded it.
 """
 Base.@kwdef struct Run
     id::String
@@ -969,6 +971,7 @@ Base.@kwdef struct Run
     usage::Vector{Usage} = Usage[]
     licences::Vector{String} = String[]
     ruled::Vector{String} = String[]
+    covered::Vector{String} = String[]
 end
 
 end # module Model

@@ -142,8 +142,8 @@ and commits nothing otherwise.
 - `message` — the commit message.
 - `io` — where the report goes.
 - `generated` — the current output of each generated path's generator.
-- `finding` — the id of the finding this commit fixes, written as a trailer so the run's verifiers can
-  find the diff and revert it; empty outside a fix pass.
+- `finding` — the findings this commit fixes, ids comma-separated, written as trailers so the run's
+  verifiers can find the diff and revert it; empty outside a fix pass.
 
 Exit 0 when it committed; 1 when a file was code, or was working notes while a run is open, and nothing
 was committed; 2 when there was nothing to commit, or a run is open and no finding was named; 3 when git
@@ -169,23 +169,39 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
             return 2
         end
     end
+    # One change may fix several findings — a finding fixed by another's edit is named in it, so that
+    # its verifier reads that diff and a revert of it reopens both (2026-10-16: SS reached verify with
+    # 98 of 100 findings neither committed nor parked, and nothing could name a fix made in passing).
+    ids = unique!([String(strip(x)) for x in split(finding, ',') if !isempty(strip(x))])
     # A finding id is a name, not text: one carrying a newline wrote a revert trailer into the commit,
     # after which close could never undo that fix (found in review, 2026-09-23).
-    isempty(finding) || occursin(r"^[A-Za-z0-9][A-Za-z0-9._:@+-]*$", finding) ||
-        (println(io, "docfix: refused — `", escape_string(finding), "` is not a finding id"); return 2)
+    for x in ids
+        occursin(r"^[A-Za-z0-9][A-Za-z0-9._:@+-]*$", x) ||
+            (println(io, "docfix: refused — `", escape_string(x), "` is not a finding id"); return 2)
+    end
+    !isempty(finding) && isempty(ids) && (println(io, "docfix: refused — `", escape_string(finding), "` names no finding"); return 2)
     # A finding the open run closed, or never had, is not this pass's to fix: a commit for one was never
     # verified and left it closed over an unverified edit (review, 2026-09-23).
     ruled = Set{String}()
-    if !isempty(finding)
+    licence = Dict{String,Set{String}}()
+    if !isempty(ids)
         rid = open_run_id(root)
         if rid !== nothing
             r = Orchestration.Runs.load(root, rid)
-            r === nothing || finding in [f.id for f in Orchestration.Runs.workable(r)] ||
-                (println(io, "docfix: refused — ", finding, " is not a finding this pass of ", rid, " works on"); return 2)
-            # The owner answered it `fix it on my ruling`: every refusal of the guard is overridden within
-            # the files the finding names, and named in the commit (the owner, 2026-10-06). HT's fixes to
-            # mathematics he had ruled on were refused here again, and committed around the guard.
-            r === nothing || (ruled = Orchestration.Runs.ruled_files(r, finding))
+            if r !== nothing
+                work = Set(f.id for f in Orchestration.Runs.workable(r))
+                for x in ids
+                    x in work || (println(io, "docfix: refused — ", x, " is not a finding this pass of ", rid, " works on"); return 2)
+                end
+                # The owner answered it `fix it on my ruling`: every refusal of the guard is overridden
+                # within the files the finding names, and named in the commit (the owner, 2026-10-06).
+                # HT's fixes to mathematics he had ruled on were refused here again, and committed
+                # around the guard.
+                for x in ids
+                    files = Orchestration.Runs.ruled_files(r, x)
+                    isempty(files) || (union!(ruled, files); licence[x] = files)
+                end
+            end
         end
     end
     # The run's marks are the tool's to write. A message typing one — a guard or revert trailer — could
@@ -272,10 +288,12 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
     # The trailer is the mark a run's close trusts: a commit carrying it passed this guard. The INDEX is
     # committed, with no pathspec: `git commit -- <path>` takes the working tree's bytes, which reopens
     # the window the comparison above just closed (found in review, 2026-09-26).
-    trailers = Orchestration.Runs.GUARD_TRAILER * (isempty(finding) ? "" : "\n" * Orchestration.Runs.FINDING_TRAILER * finding)
+    trailers = Orchestration.Runs.GUARD_TRAILER * join(["\n" * Orchestration.Runs.FINDING_TRAILER * x for x in ids])
     licensed = ""
     if !isempty(overridden) || !isempty(ruled_notes)
-        trailers *= "\n" * Orchestration.Runs.RULED_TRAILER * finding
+        # the mark goes on the findings whose licence this commit used, not on every ruled one it names
+        used = Set(vcat([r.path for r in overridden], ruled_notes))
+        trailers *= join(["\n" * Orchestration.Runs.RULED_TRAILER * x for x in ids if haskey(licence, x) && !isempty(intersect(licence[x], used))])
         licensed = "\n\nPassed on the owner's ruling (fix it on my ruling), which overrode:\n" *
                    join(vcat(["- " * r.path * ": " * r.reason for r in overridden],
                              ["- " * n * ": a working note, not a target of the review" for n in ruled_notes]), "\n")
@@ -467,10 +485,10 @@ function cmd_docfix(args)
         return check(root; build = !("no-build" in o.flags))
     elseif sub == "commit"
         msg = get(o.values, "message", "")
-        isempty(msg) && (println(stderr, "usage: gbg docfix commit --message \"…\" [--finding <id>]"); return 2)
+        isempty(msg) && (println(stderr, "usage: gbg docfix commit --message \"…\" [--finding <id>[,<id>…]]"); return 2)
         return commit(root, msg; generated = generated_now(root), finding = get(o.values, "finding", ""))
     end
-    println(stderr, "usage: gbg docfix check [--no-build] | gbg docfix commit --message \"…\" [--finding <id>]")
+    println(stderr, "usage: gbg docfix check [--no-build] | gbg docfix commit --message \"…\" [--finding <id>[,<id>…]]")
     return 2
 end
 VERBS["docfix"] = cmd_docfix

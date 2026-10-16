@@ -510,18 +510,15 @@ function open_questions(root::AbstractString)
 end
 
 """
-    finding_of(root, sha) -> Union{String,Nothing}
+    findings_of(root, sha) -> Vector{String}
 
-The finding a guarded fix commit names in its trailer, or `nothing`. The arguments are `root` and the
-commit `sha`. Returns the finding's id.
+The findings a guarded fix commit names in its trailers, in their order, empty when it names none. The
+arguments are `root` and the commit `sha`. A commit names several when one change fixed them all.
 """
-function finding_of(root::AbstractString, sha::AbstractString)
+function findings_of(root::AbstractString, sha::AbstractString)
     body = git_out(root, "log", "-1", "--format=%b", sha)
-    body === nothing && return nothing
-    for l in strip.(split(body, '\n'))
-        startswith(l, FINDING_TRAILER) && return String(strip(l[length(FINDING_TRAILER)+1:end]))
-    end
-    return nothing
+    body === nothing && return String[]
+    return [String(strip(l[length(FINDING_TRAILER)+1:end])) for l in strip.(split(body, '\n')) if startswith(l, FINDING_TRAILER)]
 end
 
 """
@@ -551,7 +548,7 @@ function reverted_by(root::AbstractString, since::AbstractString, fixes::Abstrac
 end
 
 """
-    reverts_of(root, since, id) -> Vector{String}
+    reverts_of(root, since, id; run = nothing) -> Vector{String}
 
 The reverts this package made of finding `id`'s fixes since `since`, newest first.
 
@@ -560,18 +557,23 @@ The reverts this package made of finding `id`'s fixes since `since`, newest firs
 - `root` — the package root.
 - `since` — the run's first commit.
 - `id` — the finding's id.
+- `run` — the run, whose record names the findings whose fixes covered this one; `nothing` reads the
+  commits' own trailers alone.
 
 Returns the shas — what re-applies the documentation when the owner answers that it was right after
-all.
+all. A fix recorded with `gbg run covered` is the covered finding's fix too: reading trailers alone, the
+owner's answer found nothing to make again and closed the finding over the text it was about (found
+reviewing rc.74, 2026-10-16).
 """
-function reverts_of(root::AbstractString, since::AbstractString, id::AbstractString)
+function reverts_of(root::AbstractString, since::AbstractString, id::AbstractString; run::Union{Model.Run,Nothing} = nothing)
     log = git_out(root, "log", "--format=%H%x1f%b%x1e", "$since..HEAD")
     log === nothing && return String[]
     mine = Set{String}(); out = String[]
+    names = Set(vcat([String(id)], run === nothing ? String[] : covering(run, id)))
     entries = [split(strip(e, ['\n']), '\x1f') for e in split(log, '\x1e'; keepempty = false)]
     for p in entries
         lines = strip.(split(length(p) >= 2 ? String(p[2]) : "", '\n'))
-        (FINDING_TRAILER * id) in lines && push!(mine, String(p[1]))
+        any(n -> (FINDING_TRAILER * n) in lines, names) && push!(mine, String(p[1]))
     end
     for p in entries
         lines = strip.(split(length(p) >= 2 ? String(p[2]) : "", '\n'))
@@ -579,7 +581,14 @@ function reverts_of(root::AbstractString, since::AbstractString, id::AbstractStr
             startswith(l, REVERT_TRAILER) && String(strip(l[length(REVERT_TRAILER)+1:end])) in mine && push!(out, String(p[1]))
         end
     end
-    return out
+    # A revert an earlier answer already undid is not undone twice: its edit is in the tree, and a second
+    # revert of it commits nothing, so the answer failed every time it was given (found reviewing rc.74).
+    remade = Set{String}()
+    for p in entries, l in strip.(split(length(p) >= 2 ? String(p[2]) : "", '\n'))
+        startswith(l, REVERT_TRAILER) && push!(remade, String(strip(l[length(REVERT_TRAILER)+1:end])))
+    end
+    full(x) = something(git_out(root, "rev-parse", x), x) |> strip
+    return [r for r in out if !(full(r) in remade)]
 end
 
 """
@@ -730,7 +739,7 @@ as_dict(r::Model.Run) = Dict{String,Any}(
     "agent_launches" => r.agent_launches, "tokens" => r.tokens, "stop" => String(Symbol(r.stop)),
     "readers" => String(r.readers), "passes" => r.passes,
     "scope" => String(r.scope), "base" => r.base, "driver" => r.driver, "dropped" => r.dropped, "unreverted" => r.unreverted, "silent" => r.silent, "rulebook" => r.rulebook,
-    "pass_since" => r.pass_since, "dropped_ids" => r.dropped_ids, "licences" => r.licences, "ruled" => r.ruled,
+    "pass_since" => r.pass_since, "dropped_ids" => r.dropped_ids, "licences" => r.licences, "ruled" => r.ruled, "covered" => r.covered,
     "questions" => [question_dict(q) for q in r.questions],
     "fixes" => [Dict{String,Any}("finding" => f.finding, "pass" => f.pass, "commit" => f.commit,
                                   "formula_edit" => f.formula_edit, "blind" => String(Symbol(f.blind)),
@@ -810,6 +819,7 @@ function from_dict(d::AbstractDict)
                      dropped_ids = String[String(x) for x in get(d, "dropped_ids", [])],
                      licences = String[String(x) for x in get(d, "licences", [])],
                      ruled = String[String(x) for x in get(d, "ruled", [])],
+                     covered = String[String(x) for x in get(d, "covered", [])],
                      passes = get(d, "passes", 0),
                      agent_launches = get(d, "agent_launches", 0), tokens = get(d, "tokens", nothing),
                      stop = getfield(Model.Stop, Symbol(get(d, "stop", "DONE"))),
@@ -1054,6 +1064,83 @@ once given stands for the commits made under it.
 function ruled_files(run::Model.Run, id::AbstractString)
     id in run.ruled || return Set{String}()
     return Set(String(last(split(e, '\t'; limit = 2))) for e in run.licences if startswith(e, id * "\t"))
+end
+
+"""
+    REVERTED_FOR
+
+How the record begins the note on a finding reopened because a commit that fixed it was reverted for
+another finding; the verifier's own verdict is the entry before it.
+"""
+const REVERTED_FOR = "its fix was in a commit reverted for "
+
+"""
+    reverted_commit(root, sha) -> Union{String,Nothing}
+
+The commit a revert this package made undid, read off its mark, or `nothing` for any other commit. The
+arguments are `root` and the revert's `sha`.
+"""
+function reverted_commit(root::AbstractString, sha::AbstractString)
+    body = git_out(root, "log", "-1", "--format=%b", sha)
+    body === nothing && return nothing
+    for l in strip.(split(body, '\n'))
+        startswith(l, REVERT_TRAILER) && return String(strip(l[length(REVERT_TRAILER)+1:end]))
+    end
+    return nothing
+end
+
+"""
+    covering(run, id) -> Vector{String}
+
+The findings whose fixes `gbg run covered` recorded as also fixing the finding `id` of `run`.
+"""
+covering(run::Model.Run, id::AbstractString) =
+    [String(last(split(e, '\t'; limit = 2))) for e in run.covered if startswith(e, id * "\t")]
+
+"""
+    pass_commits(root, since, run, id) -> Vector{String}
+
+The commits of a pass that fixed the finding `id` of `run`: its own, and those of every finding recorded
+as covering it, newest first.
+
+# Arguments
+
+- `root` — the package root.
+- `since` — the commit the pass began at.
+- `run` — the run.
+- `id` — the finding's id.
+
+A verifier reads these as the finding's diff, a revert of any of them reopens it, and a finding with
+none is one the pass has not worked on.
+"""
+function pass_commits(root::AbstractString, since::AbstractString, run::Model.Run, id::AbstractString)
+    out = fix_commits(root, since, id)
+    for other in covering(run, id), c in fix_commits(root, since, other)
+        c in out || push!(out, c)
+    end
+    return out
+end
+
+"""
+    fixed_by(root, run, sha) -> Vector{String}
+
+The findings of `run` the commit `sha` fixed: those its trailers name, and those recorded as covered by
+one of them.
+
+# Arguments
+
+- `root` — the package root.
+- `run` — the run, whose record says what was covered.
+- `sha` — the commit.
+"""
+function fixed_by(root::AbstractString, run::Model.Run, sha::AbstractString)
+    named = findings_of(root, sha)
+    out = copy(named)
+    for e in run.covered
+        b, a = split(e, '\t'; limit = 2)
+        a in named && !(b in out) && push!(out, String(b))
+    end
+    return out
 end
 
 """

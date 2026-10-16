@@ -4,6 +4,30 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.74 — 2026-10-16
+
+PATCH, on the owner's word of 2026-10-16, from GBGStreamingStatistics' run of 2026-10-15:
+
+- **A fix stage is left only when each of its findings is committed or parked.** `gbg run next` checked
+  that the tree was clean and that the pass had committed something, never what its own text says
+  ("when all are committed or parked"): SS reached verify with 98 of its 100 findings untouched, and with
+  one fix pass in a documentation review's budget its 21 verifiers would have judged unchanged text and
+  closed the run with the 98 on the owner's queue. It now refuses, exit 2, and names them. Exempt are a
+  finding none of whose places was found again when the stage opened, and one the owner answered "fix it
+  on my ruling", which cannot be parked again and is named. A finding the session believes is no defect
+  is parked, with why; "not a defect" is among the owner's answers.
+- **One change may fix several findings, and names them all:** `gbg docfix commit --finding <id>,<id>`;
+  one found afterwards to have fixed another is recorded with `gbg run covered <id> --by <id>`. Either
+  way the finding's verifier reads that diff. When a verdict on one reverts the commit, the others it
+  fixed are reopened, with the finding that caused it on record beside their verifier's verdict, and
+  the commit is reverted once; every verdict is judged on the text the verifiers read, before any
+  revert. The owner's "fix the documentation instead" makes a covering fix again, makes a shared edit
+  again only once, and names the other findings that edit fixed, which a later review judges. The close's own undo spares a finding a verifier
+  called no defect, and `gbg run back` keeps the places found when the pass opened. The "on the owner's ruling" mark goes only on
+  the findings whose licence the commit used.
+- **`gbg run back`** returns a verify stage to its fix stage while no verifier of it has written; its
+  arguments are dropped, and the pass is the same pass. A stage something has judged never goes back.
+
 ## 2.0.0-rc.73 — 2026-10-12
 
 PATCH, on the owner's word of 2026-10-12:
