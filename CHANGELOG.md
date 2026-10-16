@@ -4,6 +4,19 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.78 — 2026-10-16
+
+PATCH, on the owner's word of 2026-10-16, from GBGStreamingStatistics' trace:
+
+- **The copy says whether it is a working tree, not the route that started it.** `gbg --dev` exports
+  `GBG_DEV=1`, which every child process inherits; a package's docs build started from a `--dev` verb
+  loads the pinned copy from the depot, took itself for the dev checkout, asked git for a commit in a
+  directory that is no repository, printed git's "fatal: not a git repository", and stamped itself
+  `dev+unknown` though it ran a tag. A copy is now a working tree when it holds `.git`, and the shim no
+  longer exports `GBG_DEV`, which also spares a package still pinned at an older release; git's
+  complaint, where a stamp is asked of a directory that is no repository, is not printed. The shim
+  changed: run `gbg --dev install` once on each machine.
+
 ## 2.0.0-rc.77 — 2026-10-16
 
 PATCH, on the owner's word of 2026-10-16, from GBGStreamingStatistics' run of 2026-10-15:

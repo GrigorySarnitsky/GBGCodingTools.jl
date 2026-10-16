@@ -530,9 +530,11 @@ end
 end
 
 @testset "an EditURL that leaves the package is not followed" begin
-    root = mktempdir(; cleanup = true)
+    # the package and the file outside it both inside one scratch directory, which the test owns
+    outer = mktempdir(; cleanup = true)
+    root = joinpath(outer, "pkg")
     mkpath(joinpath(root, "docs", "src", "examples"))
-    write(joinpath(dirname(root), "outside.jl"), "# outside\n")
+    write(joinpath(outer, "outside.jl"), "# outside\n")
     write(joinpath(root, "docs", "src", "examples", "ex.md"), "```@meta\nEditURL = \"../../../../outside.jl\"\n```\n")
     @test G.Orchestration.Site.source_of(root, "examples/ex/index.html") == joinpath("docs", "src", "examples", "ex.md")
 end

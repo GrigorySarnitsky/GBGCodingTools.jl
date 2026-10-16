@@ -9,7 +9,7 @@ devpath() {
   head -n 1 "$HOME/.gbg/dev"
 }
 if [ "${1:-}" = "--dev" ]; then                       # (1) explicit dev route
-  shift; P=$(devpath) || exit 2; GBG_DEV=1; export GBG_DEV
+  shift; P=$(devpath) || exit 2
   # the same question the pinned route asks: a fresh clone has no Manifest (it is git-ignored), and
   # Julia's package-loading error is not the line that says what to run
   [ -f "$P/Manifest.toml" ] || { echo "gbg: the dev checkout $P is not instantiated" >&2; echo "run: julia --project=\"$P\" -e 'using Pkg; Pkg.instantiate()'" >&2; exit 2; }

@@ -39,7 +39,7 @@ that environment resolved — so `gbg` in a consumer runs the version its `docs/
 which is the pinned one once that environment is instantiated after a bump. One consumer is routed differently: a
 consumer pinned at `dev` that is not itself the tool's checkout — the fixture, which sits inside that
 checkout — resolves against the enclosing tool repository's root rather than its own `docs/`. `gbg --dev …`
-runs the registered dev checkout instead; `GBG_DEV=1` marks it.
+runs the registered dev checkout instead.
 
 ## The dev checkout
 

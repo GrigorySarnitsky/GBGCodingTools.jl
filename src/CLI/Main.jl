@@ -85,15 +85,23 @@ function parse_options(args::AbstractVector{<:AbstractString}; valued = String[]
 end
 
 """
-    running_dev() -> Bool
+    running_dev(; dir = pkgdir(GBGCodingTools)) -> Bool
 
-Whether the running copy is a working tree rather than a fetched tag: `GBG_DEV` is set (the `--dev`
-route of the shim — `bin/gbg`, the small script `gbg install` copies to `~/.local/bin/gbg` and which
-execs [`main`](@ref) — or `main`'s own flag), or the package directory holds a `.git` entry — the dev checkout
-loaded by path, as the tool's own `docs/` environment and the fixture's sub-environments do. A copy Pkg
-fetched into the depot at a tag has no `.git`. Returns `true` for a working tree.
+Whether a copy of this package is a working tree rather than a fetched tag: it holds a `.git` entry, as
+the dev checkout does whether the `--dev` route of the shim loaded it or an environment that names it by
+path. A copy Pkg fetched into the depot at a tag has none.
+
+# Arguments
+
+- `dir` — the copy, the running one by default.
+
+Returns `true` for a working tree.
+
+The copy decides, never the route that started the process: an environment variable the `--dev` route
+set was inherited by every child, and a package's docs build started from it loaded the pinned copy,
+which stamped itself `dev+unknown` over a git error (found by a consumer's session, 2026-10-16).
 """
-running_dev() = get(ENV, "GBG_DEV", "") == "1" || ispath(joinpath(pkgdir(GBGCodingTools), ".git"))
+running_dev(; dir::AbstractString = pkgdir(GBGCodingTools)) = ispath(joinpath(dir, ".git"))
 
 """
     git_stamp(dir) -> String
@@ -103,8 +111,8 @@ when `git status --porcelain` is non-empty. Returns `"dev+unknown"` when `git` f
 """
 function git_stamp(dir::AbstractString)
     try
-        sha = strip(read(setenv(`git -C $dir rev-parse --short HEAD`, dir = dir), String))
-        dirty = !isempty(strip(read(`git -C $dir status --porcelain`, String)))
+        sha = strip(read(pipeline(setenv(`git -C $dir rev-parse --short HEAD`, dir = dir); stderr = devnull), String))
+        dirty = !isempty(strip(read(pipeline(`git -C $dir status --porcelain`; stderr = devnull), String)))
         return "dev+" * sha * (dirty ? "-dirty" : "")
     catch
         return "dev+unknown"
@@ -139,8 +147,8 @@ end
 The one entry point of the command line: the shim execs `julia -e 'using GBGCodingTools;
 exit(GBGCodingTools.main(ARGS))'`, and every test of a verb calls it directly. Dispatches `<noun> <verb>`
 (or a lone noun) through [`VERBS`](@ref) and returns that function's exit code: 0 clean, 1 substantive
-finding, 2 cannot evaluate, 3 crash. A `--dev` first argument sets `GBG_DEV=1` so the stamps read
-`dev+<sha>`, exactly as the shim's `--dev` route does. An unknown verb prints the table and returns 2.
+finding, 2 cannot evaluate, 3 crash. A `--dev` first argument, which the shim used to load the dev
+checkout, is dropped. An unknown verb prints the table and returns 2.
 Output is never truncated.
 
 An exception escaping a verb is printed with its backtrace to `stderr` and returns 3, so a crash is
@@ -150,9 +158,9 @@ without a backtrace.
 """
 function main(args::AbstractVector{<:AbstractString})::Int
     args = String.(args)
-    if !isempty(args) && args[1] == "--dev"
-        ENV["GBG_DEV"] = "1"; args = args[2:end]
-    end
+    # The copy says whether it is a working tree (`running_dev`): an environment variable set here, or by
+    # the shim, reached every child and stamped a pinned copy as the dev one (2026-10-16).
+    !isempty(args) && args[1] == "--dev" && (args = args[2:end])
     if isempty(args) || args[1] in ("--help", "-h", "help")
         usage(); return isempty(args) ? 2 : 0
     end

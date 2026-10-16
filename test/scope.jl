@@ -97,6 +97,27 @@ end
         @test SC.base(root, :documentation_review, :bound, cfg) !== nothing
     end
 
+    # The copy says whether it is a working tree, never the route that started the process: GBG_DEV is
+    # inherited by a docs build that loads the pinned copy, which stamped itself dev+unknown over a git
+    # error (found by GBGStreamingStatistics, 2026-10-16).
+    @testset "a fetched copy is not a working tree, whatever the environment says" begin
+        fetched = mktempdir(; cleanup = true)
+        # git must not find a repository above the scratch directory, wherever TMPDIR points
+        withenv("GBG_DEV" => "1", "GIT_CEILING_DIRECTORIES" => dirname(fetched)) do
+            @test !G.running_dev(; dir = fetched)
+            @test G.running_dev()                                   # the dev checkout the tests load
+        end
+        err = tempname()
+        stamp = withenv("GIT_CEILING_DIRECTORIES" => dirname(fetched)) do
+            open(err, "w") do io
+                redirect_stderr(io) do
+                    G.git_stamp(fetched)
+                end
+            end
+        end
+        @test stamp == "dev+unknown" && isempty(read(err, String))
+    end
+
     # Before rc.75 the version was a Ref nothing ever set, so every record said "dev" (found 2026-10-16).
     @testset "a run records the version that ran it" begin
         @test RN.version_running() == G.tool_version() != "dev"
