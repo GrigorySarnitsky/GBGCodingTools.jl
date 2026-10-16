@@ -830,7 +830,7 @@ end
 """
     DocFix
 
-One documentation-fixer attempt at one finding, with the program and agent judgements of it. 
+One documentation-fixer attempt at one finding, with the program and agent judgements of it.
 
 # Fields
 
@@ -838,11 +838,11 @@ One documentation-fixer attempt at one finding, with the program and agent judge
 - `pass` — which fix pass made it.
 - `commit` — the commit it landed in.
 - `formula_edit` — whether it changed mathematics, which needs agreement and a numeric check.
-- `blind` — the verifier's verdict (one verifier sees the text and the diff since 2026-09-26).
-- `with_diff` — a second verifier's verdict, in records from before that; `nothing` since.
+- `blind` — the verifier's verdict (one verifier, with the diff, since 2026-09-26).
+- `with_diff` — a second verifier's verdict in records from before that; `nothing` since.
 - `agreeing_code` — the code the fixer quoted as agreeing with the new text.
-- `note` — what the program did to the verdict, if anything: demoted for a quote not in the text, or
-  no verifier answered.
+- `span` — what the verifier quoted, in the form it was shown.
+- `note` — what the program did to the verdict: demoted, or unanswered.
 """
 Base.@kwdef struct DocFix
     finding::String
@@ -853,6 +853,7 @@ Base.@kwdef struct DocFix
     with_diff::Union{Verdict.T,Nothing} = nothing
     agreeing_code::Union{Location,Nothing} = nothing
     note::String = ""
+    span::String = ""
 end
 
 """

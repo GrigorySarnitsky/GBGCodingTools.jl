@@ -4,6 +4,20 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.77 — 2026-10-16
+
+PATCH, on the owner's word of 2026-10-16, from GBGStreamingStatistics' run of 2026-10-15:
+
+- **A verifier's quote is checked in the form the verifier was shown.** A verifier of a built page reads
+  that page's text as it renders — mathematics as `\$…\$`, a link's target as the site has it, lines
+  joined — and the collect matched its quote against the source file byte for byte, where the same text
+  is in double backticks, a Markdown target and wrapped lines: 25 of SS's 82 verdicts, FIXED or
+  LINE_ONLY, were read as NOT_FIXED and went to the owner's queue as unfixed work. The quote is now
+  looked for first in the unit text the stage wrote for that verifier, whitespace squeezed, and then in
+  the source as before. The quote is kept on the verdict's record, which held only the verdict.
+- The findings SS's run left open this way are judged again by its next review, on the text as it
+  stands: the quotes were in no file, so nothing in the tree can re-grade them (the owner, 2026-10-16).
+
 ## 2.0.0-rc.76 — 2026-10-16
 
 PATCH, on the owner's word of 2026-10-16:

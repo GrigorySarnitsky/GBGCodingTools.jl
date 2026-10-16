@@ -749,7 +749,7 @@ as_dict(r::Model.Run) = Dict{String,Any}(
                                   "formula_edit" => f.formula_edit, "blind" => String(Symbol(f.blind)),
                                   "with_diff" => f.with_diff === nothing ? nothing : String(Symbol(f.with_diff)),
                                   "agreeing_code" => f.agreeing_code === nothing ? nothing : loc_dict(f.agreeing_code),
-                                  "note" => f.note)
+                                  "note" => f.note, "quote" => f.span)
                 for f in r.fixes],
     "usage" => [Dict{String,Any}("stage" => u.stage, "pass" => u.pass, "agents" => u.agents, "input" => u.input,
                                  "cache_write" => u.cache_write, "cache_read" => u.cache_read, "output" => u.output)
@@ -812,7 +812,7 @@ function from_dict(d::AbstractDict)
                                                        getfield(Model.Verdict, Symbol(f["with_diff"])),
                                            agreeing_code = get(f, "agreeing_code", nothing) === nothing ? nothing :
                                                            loc_of(f["agreeing_code"]),
-                                           note = get(f, "note", ""))
+                                           note = get(f, "note", ""), span = get(f, "quote", ""))
                               for f in get(d, "fixes", [])],
                      usage = [Model.Usage(stage = String(get(u, "stage", "")), pass = get(u, "pass", 0),
                                           agents = get(u, "agents", 0), input = get(u, "input", 0),

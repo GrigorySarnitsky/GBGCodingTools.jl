@@ -605,6 +605,7 @@ Base.@kwdef struct DocFix
                                                                      # in records from before 2026-09-26
     agreeing_code::Union{Location,Nothing} = nothing  # anchored like any other: its quote is the code line itself
     note::String = ""                                 # what the grade did to the verdict, if anything (step 6)
+    span::String = ""                                 # the span the verifier quoted, in the form it was shown
 end
 "One approved code fix and the single audit of it; kept with its question (§4.4)."
 Base.@kwdef struct CodeFix

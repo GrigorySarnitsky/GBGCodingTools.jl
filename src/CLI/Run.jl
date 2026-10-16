@@ -730,9 +730,10 @@ function collect(root::AbstractString; io::IO = stdout)
     end
     # every role of the stage was launched at least once, and the relaunched ones once more
     n_launched = stage_roles(root, id) + length(again)
+    shown = shown_units(root, id)                  # read at the stage that wrote it, before the run moves
     Runs.advance!(root, id, :collect; io) || return 2
     if launched === :verify
-        run = grade(root, run, verdicts; cfg, io)
+        run = grade(root, run, verdicts; cfg, io, shown)
         run = with(run; stage = :collect, agent_launches = run.agent_launches + n_launched,
                    silent = unique(vcat(run.silent, silent)))
         Runs.save(root, run)
@@ -818,7 +819,7 @@ function merge_same(drafts::AbstractVector, cfg::Model.Config)
 end
 
 """
-    grade(root, run, verdicts; cfg, io = stdout) -> Model.Run
+    grade(root, run, verdicts; cfg, io = stdout, shown = Dict()) -> Model.Run
 
 Applies a verify stage's verdicts.
 
@@ -828,17 +829,19 @@ Applies a verify stage's verdicts.
 - `run` — the run.
 - `verdicts` — each finding's id to its `(verdict, quote)`.
 - `cfg` — the package's config, which the language rules read when a question is put.
-- `io` — where a downgraded verdict, a revert or a question's failed rule is reported.
+- `io` — where a demotion, a revert or a question's failed rule is reported.
+- `shown` — each finding's id to the files holding the text its verifier was shown, where the stage
+  wrote them; the quote is looked for there first, in the form the verifier read.
 
 Returns the run with its fixes, and on one verdict its questions, updated.
 
 A verdict a program cannot ground is `NOT_FIXED`, and the record says why: a quote not in the text, a
-verdict outside the allowed list, or no verifier answering for the finding. Until 2026-09-26 a demotion
-was one terminal line and nothing durable (found by PF, 2026-09-24). `MADE_WORSE` reverts the finding's
-commits of this pass; `HIDES_CODE_DEFECT` reverts them and puts a question to the owner, replacing an
-answered one of the same finding, so the finding waits again rather than carrying two.
+verdict outside the list, or no verifier answering (durable since 2026-09-26; found by PF). `MADE_WORSE`
+reverts the finding's commits of this pass; `HIDES_CODE_DEFECT` reverts them and puts a question to the
+owner, replacing an answered one of the same finding, so the finding waits again rather than carrying two.
 """
-function grade(root::AbstractString, run::Model.Run, verdicts; cfg::Model.Config = ConfigIO.read_config(root), io::IO = stdout)
+function grade(root::AbstractString, run::Model.Run, verdicts; cfg::Model.Config = ConfigIO.read_config(root), io::IO = stdout,
+               shown::AbstractDict = Dict{String,String}())
     fixes = copy(run.fixes)
     questions = copy(run.questions)
     unreverted = copy(run.unreverted)
@@ -856,14 +859,15 @@ function grade(root::AbstractString, run::Model.Run, verdicts; cfg::Model.Config
         if !(v in VERDICTS)
             note = "the verifier answered `$v`, which is not a verdict; read as NOT_FIXED"
             v = "NOT_FIXED"
-        elseif v != "NOT_FIXED" && !quote_holds(root, f, quote_)
+        elseif v != "NOT_FIXED" && !quote_holds(root, f, quote_; shown = get(shown, f.id, String[]))
             note = "the verifier said $v, but its quote is not in the text; read as NOT_FIXED"
             println(io, "run: ", f.id, " — ", note)
             v = "NOT_FIXED"
         end
         graded[f.id] = getfield(Model.Verdict, Symbol(v))
         push!(fixes, Model.DocFix(finding = f.id, pass = run.passes,
-                                  commit = isempty(own[f.id]) ? "" : first(own[f.id]), blind = graded[f.id], note = note))
+                                  commit = isempty(own[f.id]) ? "" : first(own[f.id]), blind = graded[f.id], note = note,
+                                  span = String(quote_)))
     end
     undone = Set{String}()
     cause = Dict{String,String}()                       # each commit reverted, and the finding whose verdict did it
@@ -912,18 +916,59 @@ function grade(root::AbstractString, run::Model.Run, verdicts; cfg::Model.Config
     return with(run; fixes = fixes, questions = questions, unreverted = unreverted)
 end
 
-# Whether a verifier's quote is in the current text of a file the finding names. A quote written as two
-# spans joined by "..." or "…" holds when each span does: matched whole, a correct verdict was demoted
-# because the joined string is in no file (found by PF, 2026-09-24).
-function quote_holds(root::AbstractString, f::Model.Finding, quote_::AbstractString)
+# Whether a verifier's quote is in the current text: first in the text the verifier was shown, where the
+# stage wrote one (`shown`), then in a file the finding names. A quote written as two spans joined by
+# "..." or "…" holds when each span does: matched whole, a correct verdict was demoted because the
+# joined string is in no file (found by PF, 2026-09-24). A verifier of a built page is shown that page's
+# text as it reads — mathematics as `\$…\$`, a link's target as the site has it, lines joined — and quotes
+# it in that form; matched against the source alone, 25 of SS's 82 verdicts were demoted (2026-10-16).
+function quote_holds(root::AbstractString, f::Model.Finding, quote_::AbstractString; shown::AbstractVector = String[])
     parts = [String(strip(x)) for x in split(String(quote_), r"\.\.\.|…") if !isempty(strip(x))]
     isempty(parts) && return false
+    for file in shown
+        isfile(file) || continue
+        text = squeeze(read(file, String))
+        all(part -> occursin(squeeze(part), text), parts) && return true
+    end
     files = unique(l.file for l in f.draft.locations)
     return all(parts) do part
         any(files) do file
             Texts.reanchor(root, Model.Location(; file, text = part, line = 0); loose = false).found !== Model.Anchor.OUTDATED
         end
     end
+end
+
+# Runs of whitespace as one space: a quote is one span of text, and the text it is in wraps where it likes.
+squeeze(s::AbstractString) = replace(strip(s), r"\s+" => " ")
+
+"""
+    shown_units(root, id) -> Dict{String,Vector{String}}
+
+Each finding's id to the files holding the text its verifier of the current stage was shown, from the
+stage's arguments: the one unit a verifier of a unit was given, or every page unit the stage wrote for a
+verifier given the whole built site. A finding whose verifier read the source files, or a stage with no
+arguments, is absent. The arguments are `root`, the package root, and `id`, the run's id. Returns the map.
+"""
+function shown_units(root::AbstractString, id::AbstractString)
+    out = Dict{String,Vector{String}}()
+    path = Agents.arguments_path(root, id)
+    isfile(path) || return out
+    args = try GBGCodingTools.JSON3.read(read(path, String), Dict{String,Any}) catch; return out end
+    dir = Agents.stage_dir(root, id)
+    pages = isdir(dir) ? [joinpath(dir, f) for f in readdir(dir) if startswith(f, "unit-") && endswith(f, ".txt")] : String[]
+    kinds = get(args, "kinds", Dict{String,Any}())
+    for r in get(args, "roles", [])
+        unit = String(get(r, "unit", ""))
+        kind = get(kinds, String(get(r, "kind", "")), Dict{String,Any}())
+        # a reader of the whole site is verified on the whole site, and quotes any of its pages
+        files = !isempty(unit) ? [unit] :
+                (get(kind, "site", false) == true && get(kind, "kept_from_code", false) == false) ? pages : String[]
+        isempty(files) && continue
+        for fid in strip.(split(String(get(r, "finding", "")), ','))
+            isempty(fid) || (out[String(fid)] = files)
+        end
+    end
+    return out
 end
 
 # A question put inside a run passes the language rules like one put outside it (§8): the question is

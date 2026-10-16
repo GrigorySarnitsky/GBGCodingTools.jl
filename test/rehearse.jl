@@ -2819,6 +2819,69 @@ end
     end
 end
 
+# A verifier quotes the text as it was shown it — the built page's reading, not the source's bytes — and
+# the quote holds in that form (SS, 2026-10-16: 25 verdicts demoted on math delimiters, link targets and
+# line breaks that differ between the page and the file).
+@testset "a verifier's quote holds in the form the verifier was shown" begin
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        all_clean(root, id; except = [HOME_READER])
+        G.Run.collect(root; io = devnull)
+        fid = only(f.id for f in RUNS.load(root, id).findings)
+        G.Run.next(root; io = devnull)                                         # → fix
+        fixed_as(root, fid, "The grid is a lattice, see the page [`Grid`](api/Grid.md) on its spacing.")
+        @test G.Run.next(root; io = devnull) == 0                               # → verify
+        shown = G.Run.shown_units(root, id)
+        @test haskey(shown, fid) && length(shown[fid]) == 1 && isfile(only(shown[fid]))
+        # the page as a site renders it: the link's target resolved, and a line wrapped
+        write(only(shown[fid]), "GBG Fixture\n\nThe grid is a lattice, see the page [`Grid`](Grid/)\non its spacing.\n")
+        verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "a lattice, see the page [`Grid`](Grid/) on its spacing.")
+        @test G.Run.collect(root; io = devnull) == 0
+        fx = only(RUNS.load(root, id).fixes)
+        @test fx.blind === MRun.Verdict.FIXED && isempty(fx.note)
+        @test fx.span == "a lattice, see the page [`Grid`](Grid/) on its spacing."   # kept on the record
+        @test RUNS.load(root, id).fixes[1].span == fx.span                   # and round-trips
+    end
+    # a reader of the whole built site is verified on the whole site: its verifier has no one unit, and
+    # quotes any page as it renders (found in review, 2026-10-16)
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, "rendered", "the grid is named but not said to be a lattice")
+        all_clean(root, id; except = ["rendered"])
+        G.Run.collect(root; io = devnull)
+        fid = only(f.id for f in RUNS.load(root, id).findings)
+        G.Run.next(root; io = devnull)                                         # → fix
+        fixed_as(root, fid, "The grid is a lattice, see the page [`Grid`](api/Grid.md) on its spacing.")
+        @test G.Run.next(root; io = devnull) == 0                               # → verify
+        shown = G.Run.shown_units(root, id)
+        @test haskey(shown, fid) && !isempty(shown[fid]) && all(isfile, shown[fid])
+        home = only(filter(f -> endswith(f, "unit-home.txt"), shown[fid]))
+        write(home, "GBG Fixture\n\nThe grid is a lattice, see the page [`Grid`](Grid/)\non its spacing.\n")
+        verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "a lattice, see the page [`Grid`](Grid/) on its spacing.")
+        @test G.Run.collect(root; io = devnull) == 0
+        @test only(RUNS.load(root, id).fixes).blind === MRun.Verdict.FIXED
+    end
+    # a quote in neither form is still refused
+    package() do root, gg
+        G.Run.start(root, :documentation_review; io = devnull)
+        id = G.Run.open_run(root)
+        reader_found(root, id, HOME_READER, "the grid is named but not said to be a lattice")
+        all_clean(root, id; except = [HOME_READER])
+        G.Run.collect(root; io = devnull)
+        fid = only(f.id for f in RUNS.load(root, id).findings)
+        G.Run.next(root; io = devnull)
+        fixed_as(root, fid, "The grid is a lattice.")
+        G.Run.next(root; io = devnull)
+        verifier_said(root, id, "verify", fid, "FIXED"; quote_ = "The grid is a torus.")
+        G.Run.collect(root; io = devnull)
+        fx = only(RUNS.load(root, id).fixes)
+        @test fx.blind === MRun.Verdict.NOT_FIXED && occursin("not in the text", fx.note)
+    end
+end
+
 # A fix committed with git alone is credited to its finding once the guard has read the commit (the owner,
 # 2026-10-16: rc.74's refusal left such a fix no way through but undoing it). Credited, it is the run's
 # edit: the gate passes, the verifier reads its diff, and a verdict against it reverts it.
