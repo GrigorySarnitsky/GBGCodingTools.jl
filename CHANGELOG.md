@@ -4,6 +4,16 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.80 — 2026-10-17
+
+PATCH, from GBGHomogeneousTurbulence's request of 2026-10-17 (owner-approved):
+
+- **`RULE.DOC.EMPHASIS` reads a quotation as the block it renders as.** Each `> ` line was read as a
+  block of its own, so a bold span crossing two lines of a quotation went unseen, and one opening a
+  later line of it passed as a run-in head. The markers are now blanked and the quotation read like any
+  other block; a head that opens it still passes, and so does a list inside it. A quotation nested one
+  level deeper opens a block too, and a fence or a table header inside a quotation is read as one.
+
 ## 2.0.0-rc.79 — 2026-10-17
 
 MINOR, on the owner's word of 2026-10-16, from GBGHomogeneousTurbulence's request:

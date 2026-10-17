@@ -625,8 +625,10 @@ const JULIA_MANUAL = Model.Rule(
 
 # A line that is its own block: a heading, a table row, an admonition's opening line.
 const OWN_BLOCK = r"^\s{0,3}(?:#{1,6}\s|\||!!!)"
-# A line that opens a block after its leader: a list item, a quotation.
-const LEADER = r"^\s*(?:(?:[-*+]|\d+[.)])\s+|>\s?)"
+# A line that opens a block after its leader: a list item.
+const LEADER = r"^\s*(?:[-*+]|\d+[.)])\s+"
+# The markers of a quotation, nested or not, which the page renders as the block they hold.
+const QUOTE_MARK = r"^\s*(?:>[ \t]?)+"
 # Bold, opened and closed by two asterisks against text; bold italic is three.
 const BOLD_SPAN = r"(?s)(?<![\\*])\*\*(?=[^\s*])(.+?)(?<=[^\s\\])\*\*(?!\*)"
 const BOLD_ITALIC = r"\*\*\*(?=\S)|(?<=\S)\*\*\*|\*\*_(?=\S)|_\*\*(?=\S)"
@@ -686,9 +688,20 @@ function emphasis(text::AbstractString, cfg)
         for _ in 1:ncodeunits(segment); push!(from, line); end
         write(buf, segment); write(src, original)
     end
-    fence = false
+    fence = false; depth = 0
+    unquote(l) = (q = match(QUOTE_MARK, l); q === nothing ? l : " "^ncodeunits(q.match) * l[ncodeunits(q.match) + 1:end])
     for (i, raw) in pairs(lines)
         line = String(raw)
+        # A quotation is read as the block it renders as: its markers are blanked, each line of it then
+        # read as any other — a fence, a table, a list — and a quotation that begins, or nests one level
+        # deeper, opens a block; one falling back a level continues the paragraph, as CommonMark joins
+        # it. Read line by line as blocks of their own, a span across two of its lines went unseen and one
+        # opening a later line passed as a run-in head (found by GBGHomogeneousTurbulence, 2026-10-17).
+        q = match(QUOTE_MARK, line)
+        level = q === nothing ? 0 : count(==('>'), q.match)
+        level > depth && close_block()
+        depth = level
+        line = unquote(line)
         if occursin(r"^\s*(```|~~~)", line)
             close_block(); fence = !fence; continue
         end
@@ -706,7 +719,7 @@ function emphasis(text::AbstractString, cfg)
             if occursin(r"^\s*\|", masked)
                 # a table row: each cell is a block of its own, and the header row, over its separator,
                 # is structure whole
-                header = i < length(lines) && occursin(r"^\s*\|?\s*:?-{3,}", lines[i + 1])
+                header = i < length(lines) && occursin(r"^\s*\|?\s*:?-{3,}", unquote(String(lines[i + 1])))
                 at = 1
                 for cell in split(masked, r"(?<!\\)\|")
                     n = ncodeunits(cell)
@@ -719,8 +732,7 @@ function emphasis(text::AbstractString, cfg)
             continue
         end
         if occursin(LEADER, masked)
-            # a list item or a quotation opens a block; its leader is blanked, so the block opens where
-            # its text does
+            # a list item opens a block; its leader is blanked, so the block opens where its text does
             close_block()
             lead = ncodeunits(match(LEADER, masked).match)
             add(" "^lead * masked[lead + 1:end], " "^lead * line[lead + 1:end], i)
@@ -791,6 +803,16 @@ const EMPHASIS = Model.Rule(
             "# A page\n\n- The item is **bold** late.\n\n> The quotation is **bold** late.\n\n| Grid | Speed-up |\n|---|---|\n| cubic | about **5.1×** |\n",
             [Model.Location(; file = "docs/src/page.md", line = 3), Model.Location(; file = "docs/src/page.md", line = 5),
              Model.Location(; file = "docs/src/page.md", line = 9)], "Bold anywhere else in a sentence"),
+        # a quotation is the block it renders as: a span across its lines, and one opening a later line
+        Model.TextExample(Model.FileSet.PAGES,
+            "# Probe\n\n> A quote with a **span\n> across lines** in it, and **one** on a line.\n> **lead** at a continuation line start.\n\nA paragraph with a **span\nacross lines** in it.\n\n> **Head.** A quote that opens with a head.\n\n> - **Item.** A list in a quotation.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3), Model.Location(; file = "docs/src/page.md", line = 4),
+             Model.Location(; file = "docs/src/page.md", line = 5), Model.Location(; file = "docs/src/page.md", line = 7)],
+            "Bold anywhere else in a sentence"),
+        # a deeper quotation opens a block; a quoted table's header and a quoted fence are what they are
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n> Outer text here\n> > **Inner.** text\n\n> | The **x** column | y |\n> |---|---|\n> | 1 | 2 |\n\n> ```\n> a **b** c\n> ```\n",
+            Model.Location[], "Bold anywhere else in a sentence"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\n> **Note.** A quotation's run-in head.\n\n| The **x** column | y |\n|---|---|\n| 1 | 2 |\n",
             Model.Location[], "a table's header row"),
