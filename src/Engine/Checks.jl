@@ -16,7 +16,7 @@ using ..Catalogue
 using ..Texts
 
 # `DEFAULT_PATTERNS`, `files` and `expand` moved to `Texts` on 2026-09-18. Which files a rule reads is a
-# text-reading concern, and a RULE could not reach them here: `Rules` is the third module of the order
+# text-reading concern, and a rule could not reach them here: `Rules` is the third module of the order
 # and this is the fifth, so `RULE.DOC.SHAPE` had grown its own copy of the resolution and got it wrong.
 const DEFAULT_PATTERNS = Texts.DEFAULT_PATTERNS
 files(cfg::Model.Config, root::AbstractString, fileset::Model.FileSet.T) = Texts.files(cfg, root, fileset)
@@ -65,7 +65,7 @@ Every file one rule reads in this package, each with the file set it was reached
 
 Returns the pairs, in file order.
 
-Normally that is the rule's file sets. A rule that names a `files_parameter` and whose package has SET
+Normally that is the rule's file sets. A rule that names a `files_parameter` and whose package has set
 that parameter reads exactly the globs named there instead, so a package can say which files one rule
 means without widening a set that other rules also read — which pages carry the provenance banner is
 that kind of question, and expressing it as `rationale` put the banner's reach and every rationale
@@ -148,7 +148,7 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
     applies(cfg, rule.id) || return Model.Location[]
 
     out = Model.Location[]
-    # A per-file switch is honoured on EVERY kind of check, not only the one that reads file by file.
+    # A per-file switch is honoured on every kind of check, not only the one that reads file by file.
     # It used to be consulted inside the `SOURCE_TEXT` branch alone, so a switch naming files on a rule
     # that reads the tree, the built site or the loaded module was a silent no-op — and its reason was
     # still rendered onto the package's site, publishing a claim that was not in force.
@@ -156,12 +156,12 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
     if check.input === Model.Input.SOURCE_TEXT
         for (fs, file) in reading(rule, cfg, root)
             applies(cfg, rule.id; file) || continue
-            # A documentation rule reads the file's PROSE, not its source: Julia code is full of text
+            # A documentation rule reads the file's prose, not its source: Julia code is full of text
             # that looks like prose markup, and a rule handed the whole file reports the code as though
             # it were the prose about it (`Texts.prose_text` keeps the line numbering).
-            # A DOCSTRINGS rule reads the docstrings alone — a docstring is published and a comment is
-            # not, so a rule about how text renders has nothing to say about a comment. A CODE rule reads
-            # the SOURCE, because what it is about is the code and the text together: whether a docstring
+            # A `DOCSTRINGS` rule reads the docstrings alone — a docstring is published and a comment is
+            # not, so a rule about how text renders has nothing to say about a comment. A `CODE` rule reads
+            # the source, because what it is about is the code and the text together: whether a docstring
             # tells the truth about the thing under it cannot be decided from either half alone.
             text = fs === Model.FileSet.DOCSTRINGS ?
                    Texts.prose_text(joinpath(root, file); comments = false) :
@@ -174,10 +174,10 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
         append!(out, check.run(root, cfg))
     elseif check.input === Model.Input.LOADED_MODULE
         # The package itself, loaded. A caller that has not loaded it — `gbg check` run from outside a
-        # package's own environment — passes nothing, and the rule is NOT silently skipped: it is the
+        # package's own environment — passes nothing, and the rule is not silently skipped: it is the
         # caller's business to say so, by asking `not_run` which rules it could not reach.
         pkg === nothing && return Model.Location[]
-        # A check that reads the loaded package nearly always reads the SOURCE too — what a docstring
+        # A check that reads the loaded package nearly always reads the source too — what a docstring
         # says against what the module actually holds — so it is handed both.
         append!(out, check.run((pkg = pkg, root = root), cfg))
     elseif check.input === Model.Input.BUILT_SITE
@@ -189,7 +189,7 @@ function run_rule(rule::Model.Rule, cfg::Model.Config, root::AbstractString; net
             push!(out, Model.Location(; file, node = loc.node, text = loc.text, line = loc.line, found = loc.found))
         end
     else
-        return Model.Location[]      # a QUESTION check is run when a question is put, by `Questions`
+        return Model.Location[]      # a `QUESTION` check is run when a question is put, by `Questions`
     end
     return sort!(filter(keep, out); by = l -> (l.file, l.line))
 end
@@ -227,7 +227,7 @@ function run_all(cfg::Model.Config, root::AbstractString; intention = nothing, n
     out = Tuple{Symbol,Model.Location}[]
     for rule in Catalogue.RULES
         intention === nothing || rule.intention === intention || continue
-        # The rule's id travels WITH its finding. A report that prints only the message leaves a reader
+        # The rule's id travels with its finding. A report that prints only the message leaves a reader
         # to infer the class from the wording, and a class inferred from wording is a class miscounted:
         # a consumer counting one rule's findings from the text got two different totals in two runs.
         for l in run_rule(rule, cfg, root; network, history, pkg, site)
@@ -241,7 +241,7 @@ end
 """
     run_patterns(cfg, root; intention = nothing) -> Vector{Tuple{Symbol,Model.Location}}
 
-Everywhere one of the package's OWN rules — each a [`Model.PatternRule`](@ref) in its config — is
+Everywhere one of the package's own rules — each a [`Model.PatternRule`](@ref) in its config — is
 broken, for the rules of one intention or for all of them.
 
 # Arguments
@@ -292,7 +292,7 @@ Returns the line numbers, in order.
 
 Without a trigger, a line holding the pattern and not the escape. With one, a line holding the trigger
 whose window — `window` lines either side — holds the pattern and not the escape: the convention is
-about what is said NEAR a word, as
+about what is said near a word, as
 [GBGHomogeneousTurbulence](https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/)'s Lamb-vector
 sign is (its request of 2026-10-03). A line inside a `skip` region is never a trigger, nor a match without one.
 """

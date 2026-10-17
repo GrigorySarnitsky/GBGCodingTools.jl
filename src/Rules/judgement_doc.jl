@@ -131,15 +131,15 @@ const VERIFIED = Model.Rule(
 The one rationale document that must read self-contained, which is the exception the two cold-read rules
 carry. Empty where a package has none, and then no rationale document is held to a cold read.
 
-WHY THE OTHERS ARE EXEMPT (ruled 2026-09-23, from [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)'s first real review). A cold read
+Why the others are exempt (ruled 2026-09-23, from [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)'s first real review). A cold read
 asks whether a text stands alone, which is the right question for a docstring — somebody genuinely meets
-one at the REPL — and for a page a reader arrives at from outside. It is the WRONG question for a design
+one at the REPL — and for a page a reader arrives at from outside. It is the wrong question for a design
 document, which exists to explain one architecture and assumes the rest of itself: satisfying it means
 re-binding the same vocabulary on every page, against the one-home rule the same packages follow. The
 volume says the same thing: of that review's locations, the rationale documents carried 75 of 194 for
 one rule and 159 of 272 for the other.
 
-It is a DEFAULT and not a switch each package writes, because every package that opts its design
+It is a default and not a switch each package writes, because every package that opts its design
 documents in meets this, and a default nobody finds until it hurts is not a default.
 """
 const ARCHITECTURE_DOC = Model.Parameter(:architecture_doc, "docs/ARCHITECTURE.md")
@@ -182,7 +182,7 @@ const BATTERY = Model.Rule(
 
 # Two rules where there was one. The three clauses below are properties of the `.jl` file; what the page
 # made of them is invisible there — `a_b and c_d` reads fine in the source and renders as italic — and is
-# LITERATE_RENDERED's, read on the built page.
+# `LITERATE_RENDERED`'s, read on the built page.
 const LITERATE = Model.Rule(
     id = Symbol("RULE.DOC.LITERATE"),
     statement = "In the source file of a Literate example, every full-line # comment is prose that will render, any mathematics in such a comment is LaTeX, and a comment inside control flow is written ## so that it does not render. The rule is judged on the source file; what the page made of it is RULE.DOC.LITERATE_RENDERED's question.",

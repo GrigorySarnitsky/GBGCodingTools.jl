@@ -9,8 +9,8 @@ It runs only programs — the code rules of the rulebook, and the frozen contrac
 reads no review state or git state and never touches the network, because CI and a fresh
 clone must give the same answer.
 
-It does NOT reach the wiring check, though a test suite runs that too. `Render` is above `Engine` in the
-order and the harness reaches no further than its own layer, so the wiring check is handed IN, by
+It does not reach the wiring check, though a test suite runs that too. `Render` is above `Engine` in the
+order and the harness reaches no further than its own layer, so the wiring check is handed in, by
 whoever calls this. That is what `checks` is for, and it is how a consumer's suite gets both without this
 module knowing what a generator is.
 
@@ -33,7 +33,7 @@ red suite means a broken contract and a green one means every program that can c
 # Arguments
 
 - `root` — the package root; the directory holding `.gbg/config.jl`.
-- `extra` — the package's own rules, run AFTER the whole rulebook and never instead of it; only those
+- `extra` — the package's own rules, run after the whole rulebook and never instead of it; only those
   whose intention is code. `rules` is accepted as the same thing.
 - `checks` — further checks to run, each `(cfg, root) -> Vector{Model.Location}`. The wiring check is
   passed in this way, because it lives in a module above this one.
@@ -77,7 +77,7 @@ end
 
 tool_name(cfg::Model.Config) = cfg.tool isa VersionNumber ? "v" * string(cfg.tool) : "vdev"
 
-# The banner names the version that RAN, not the pin: a test manifest resolved to an older release than
+# The banner names the version that ran, not the pin: a test manifest resolved to an older release than
 # the config names printed the pin, and CI read the wrong version as having run (found in review,
 # 2026-09-26). Where the two agree, or the pin is `:dev`, it is the pin's spelling, which the workflows grep.
 function banner(cfg::Model.Config)

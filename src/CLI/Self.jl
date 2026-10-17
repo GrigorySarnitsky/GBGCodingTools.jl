@@ -15,7 +15,7 @@ function blob_hash(path::AbstractString)
     return bytes2hex(digest!(ctx))
 end
 
-# The OWNER's execute bit alone, as git and Pkg's `gitmode` read it: a file with only a group or other
+# The owner's execute bit alone, as git and Pkg's `gitmode` read it: a file with only a group or other
 # bit is `100644` to both, and hashing it as `100755` failed `self verify` on an unedited tree.
 _mode(path) = islink(path) ? "120000" : (filemode(path) & 0o100) != 0 ? "100755" : "100644"
 _sortkey(name, isdir) = isdir ? name * "/" : name
@@ -123,7 +123,7 @@ inside the depot, so only the flags tell it apart).
   leaves only the active environment's entry to compare against.
 - `io` — where the one line per comparison is printed.
 
-Returns 0 when every comparison agrees, 0 with a WARN when the running copy is a working tree (pinned
+Returns 0 when every comparison agrees, 0 with a `WARN` when the running copy is a working tree (pinned
 at `dev`) or no manifest exists to compare against, and 2 for a disagreement or a developed copy — an
 edited pinned tree is never allowed to grade a round.
 """

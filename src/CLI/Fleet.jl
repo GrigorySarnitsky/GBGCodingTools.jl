@@ -32,7 +32,7 @@ A missing path is `MISSING`, exit 2. The tool's own row (`path = "."`) shows `de
 `clean at vX.Y.Z` or `off tag`, is `OK`/`RED` by its own wiring and never `BEHIND`. Returns the rows and
 the exit code.
 
-The wiring is judged by THIS copy's generators, which are the dev tree's. That is the right judge of a
+The wiring is judged by this copy's generators, which are the dev tree's. That is the right judge of a
 consumer pinned to the checkout, and the wrong one of a consumer pinned to a release: its files are what
 its pin writes, and the dev tree words them differently whenever a generator changed since that tag. So
 a released pin that differs is `AT-PIN`, not `RED` — its own build judges it at its pin — and a
@@ -61,7 +61,7 @@ function rows()
         end
         # `.gbg/config.toml`, read here until 2026-09-18, has not existed since Phase 2 replaced it with
         # `config.jl`. The verb therefore looked for a file no package has and called every one of them
-        # NOT-INITIALISED — five wrong rows, GBGPeriodicFields wired and reported as unwired.
+        # `NOT-INITIALISED` — five wrong rows, GBGPeriodicFields wired and reported as unwired.
         if !isfile(joinpath(p, ".gbg", "config.jl"))
             push!(out, (name = c.name, pin = "—", status = "NOT-INITIALISED", detail = "no .gbg/config.jl (gbg init)")); code = max(code, 1); continue
         end
@@ -80,10 +80,10 @@ function rows()
             push!(out, (name = c.name, pin = stamp, status = st, detail = st == "OK" ? detail : detail * "; " * join(fails, ", ")))
             st == "RED" && (code = max(code, 1)); continue
         end
-        # BEHIND is asked first: a pin behind the newest release is that whatever its files say, and
-        # asking AT-PIN first graded a stale pin outside the sweep window 0 (found verifying, 2026-09-27).
-        # A released pin's generated files are judged by ITS OWN build, at its pin; this tree cannot
-        # tell a hand edit there from a newer generator, so AT-PIN says only that they differ.
+        # `BEHIND` is asked first: a pin behind the newest release is that whatever its files say, and
+        # asking `AT-PIN` first graded a stale pin outside the sweep window 0 (found verifying, 2026-09-27).
+        # A released pin's generated files are judged by its own build, at its pin; this tree cannot
+        # tell a hand edit there from a newer generator, so `AT-PIN` says only that they differ.
         if newest !== nothing && haskey(pins, c.name) && pins[c.name] < newest
             push!(out, (name = c.name, pin = pin, status = "BEHIND", detail = "pinned at $pin, newest $newest — $window"))
             window == "within window" || (code = max(code, 1))

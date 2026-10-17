@@ -520,7 +520,7 @@ end
 
 One workflow run's log, downloaded into `zip`: `:read`; `:expired` when GitHub says it keeps it no longer
 (404 or 410, or an empty archive); `:refused` when every attempt failed otherwise — a rate limit, a
-timeout — which is a log NOT read, never one that is gone.
+timeout — which is a log not read, never one that is gone.
 
 # Arguments
 

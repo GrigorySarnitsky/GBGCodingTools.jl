@@ -6,7 +6,7 @@
 the change guard and commits only when every one of them came back documentation; otherwise it commits
 nothing and says which file stopped it.
 
-Why a verb commits at all, when no other does: the guard must run BEFORE a commit exists. A session that
+Why a verb commits at all, when no other does: the guard must run before a commit exists. A session that
 committed first and asked afterwards would already have pushed the code it was not allowed to touch.
 
 This is the runaway-session defence, and it is useful before any fixer exists: a session doing
@@ -33,7 +33,7 @@ The file's content at `HEAD`, or `nothing` where the commit does not hold it —
 has added. The arguments are `root`, the package root, and `path`, the file. Returns the content.
 """
 function at_head(root::AbstractString, path::AbstractString)
-    # EXACTLY as committed: `Git.run` strips trailing newlines, and the guard compares bytes, so every
+    # Exactly as committed: `Git.run` strips trailing newlines, and the guard compares bytes, so every
     # file read that way looked changed at its last line (found 2026-09-23, with the byte-exact rule)
     try
         read(pipeline(`git -C $root -c core.quotePath=false show HEAD:$path`; stderr = devnull), String)
@@ -149,7 +149,7 @@ Exit 0 when it committed; 1 when a file was code, or was working notes while a r
 was committed; 2 when there was nothing to commit, or a run is open and no finding was named; 3 when git
 failed. An unreadable config throws, which the CLI reports as exit 2. Returns the exit code.
 
-WHILE A RUN IS OPEN THE FINDING IS REQUIRED. Everything the pass machinery does afterwards is keyed on
+While a run is open the finding is required. Everything the pass machinery does afterwards is keyed on
 that trailer: the verifier reading the diff is handed the diff of the commits that name its finding, and
 a fix a verifier calls worse is reverted by reverting them. A fix committed without it is invisible to
 both — it is never verified, its finding stays open into the next pass, and nothing says why. That is
@@ -213,7 +213,7 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
     pre = Git.run(root, "diff", "--cached", "--name-only")
     (pre === nothing || !isempty(strip(pre))) &&
         (println(io, "docfix: refused — something is already staged; unstage it first (`git restore --staged .`)"); return 2)
-    # The bytes classified are the bytes committed. Each file is read ONCE, classified from that read,
+    # The bytes classified are the bytes committed. Each file is read once, classified from that read,
     # and after staging the index is compared with it: a file another writer changed in between is
     # refused, where before the guard read one version and `git add` staged another (found in review,
     # 2026-09-23).
@@ -225,7 +225,7 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
     # works, and is the session's to commit at close, not the fixer's now.
     rs = filter(r -> !Orchestration.Runs.own_record(r.path), rulings(root; generated, contents = snap))
     isempty(rs) && (println(io, "docfix: nothing has changed"); return 2)
-    # While a run is open, a rationale document that is not a TARGET of the review is not the fixer's
+    # While a run is open, a rationale document that is not a target of the review is not the fixer's
     # either (ruled 2026-09-23): the guard rightly calls an edit to it documentation, but the run was
     # never about it, and a fix landing there is a pass spent on the package's working notes.
     ruled_notes = String[]
@@ -285,7 +285,7 @@ function commit(root::AbstractString, message::AbstractString; io::IO = stdout,
         println(io, "changed, which is never prose; run it again once nothing else is writing the tree.")
         return 1
     end
-    # The trailer is the mark a run's close trusts: a commit carrying it passed this guard. The INDEX is
+    # The trailer is the mark a run's close trusts: a commit carrying it passed this guard. The index is
     # committed, with no pathspec: `git commit -- <path>` takes the working tree's bytes, which reopens
     # the window the comparison above just closed (found in review, 2026-09-26).
     trailers = Orchestration.Runs.GUARD_TRAILER * join(["\n" * Orchestration.Runs.FINDING_TRAILER * x for x in ids])
@@ -329,7 +329,7 @@ something has changed, since a tree nobody touched was built as it stands.
 Outside a run there is no first commit to compare with, so a broken rule is reported and not counted: what
 the change caused cannot be told from what it inherited, and saying so is the honest answer.
 
-A rule already broken when the run opened is NAMED AND NOT COUNTED. The fixer is answerable for what its
+A rule already broken when the run opened is named and not counted. The fixer is answerable for what its
 edit broke; holding it to a defect it inherited would make every pass of every run red from the first,
 and a signal that is always red is not read.
 """
@@ -341,7 +341,7 @@ function check(root::AbstractString; build::Bool = true, io::IO = stdout)
     rid = open_run_id(root)
     run_open = rid !== nothing
     notes = run_open ? working_notes(root, rs) : String[]
-    # A file the owner's ruling licenses is what `commit --finding <id>` lets through: shown as RULED, and
+    # A file the owner's ruling licenses is what `commit --finding <id>` lets through: shown as `RULED`, and
     # not counted, so the check the fixer runs first agrees with the commit (review, 2026-10-06).
     licensed = Dict{String,String}()
     if run_open
@@ -400,7 +400,7 @@ Every `@ref` in the given files whose target is found among none of the package'
 the `@id`s and the headings of its pages. The arguments are `root`, the package root, and `paths`, the
 files to read, relative to it. Returns `(file, target)` pairs.
 
-A WARNING'S evidence, never a refusal's: only Documenter resolves a reference exactly, with the modules
+A warning's evidence, never a refusal's: only Documenter resolves a reference exactly, with the modules
 loaded, and this reads the text alone. It exists because nine references to nothing were committed over
 eighty fixes and surfaced together at the build ([GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/), 2026-09-24); a build per commit was
 declined as too costly [ruled 2026-09-26].
@@ -431,7 +431,7 @@ function unresolved_refs(root::AbstractString, paths::AbstractVector{<:AbstractS
     for p in paths
         full = joinpath(root, p)
         (isfile(full) && (endswith(p, ".md") || endswith(p, ".jl"))) || continue
-        # the PROSE of a Julia file: a regex literal in its code once matched itself (review, 2026-09-26)
+        # the prose of a Julia file: a regex literal in its code once matched itself (review, 2026-09-26)
         text = endswith(p, ".jl") ? Texts.prose_text(full) : read(full, String)
         for m in eachmatch(r"\[([^\]]+)\]\(@ref(?:\s+([^)]+))?\)", text)
             target = strip(replace(String(something(m.captures[2], m.captures[1])), '`' => '"'), ['"', ' '])

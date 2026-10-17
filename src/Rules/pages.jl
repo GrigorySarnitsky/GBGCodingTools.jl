@@ -30,7 +30,7 @@ Verbatim is the point: a banner reworded in one package is a banner a reader lea
 mentions the words without the exact text is reported as drifted rather than as missing, which is the
 more useful thing to be told.
 """
-# A Literate source becomes a PAGE; a script beside it does not, however alike they look on disk. What
+# A Literate source becomes a page; a script beside it does not, however alike they look on disk. What
 # separates them is the Markdown structure Literate renders — a `# #` heading — not the directory or the
 # extension. GBGPeriodicFields keeps three runnable scripts beside its one rendered example, and this
 # rule reported a missing banner on all three: a banner for a reader of a page nobody publishes.
@@ -42,19 +42,19 @@ function ai_banner(text::AbstractString, cfg)
     # A Markdown page is a page. A Julia file is one only if Literate renders it, and what Literate
     # renders is the Markdown structure in its comments — a `# #` heading. Fenced blocks are removed
     # before looking for code, or a page holding a `julia` example would read as a script itself. And
-    # a script PARSES as Julia, which a page of prose never does: a page whose wrapping put `module`
+    # a script parses as Julia, which a page of prose never does: a page whose wrapping put `module`
     # or `const` at the start of a line was taken for a script and let through without its banner.
     unfenced = replace(text, r"(?ms)^```.*?^```" => "")
     is_script = occursin(r"(?m)^(using|import|function|const|module|struct|macro)\s", unfenced) && parses(text)
     is_script && !occursin(LITERATE_HEADING, text) && return Model.Location[]
     # Literate renders a full-line `# ` comment as prose, so the banner in a Literate source carries that
-    # prefix on every line and MUST: without it the admonition would render as a code block. Comparing
+    # prefix on every line and must: without it the admonition would render as a code block. Comparing
     # the raw text called the correct thing drifted. The file is not the page.
     unprefixed = replace(text, r"(?m)^#[ \t]?" => "")
     (occursin(BANNER, text) || occursin(BANNER, unprefixed)) && return Model.Location[]
-    # Whether this is a banner that has DRIFTED or no banner at all, which is a different repair and so
+    # Whether this is a banner that has drifted or no banner at all, which is a different repair and so
     # a different message. It tested for `Written by AI`, the title's wording, and the body says
-    # `written by AI` — so a page whose TITLE had been reworded, the commonest drift there is, reported
+    # `written by AI` — so a page whose title had been reworded, the commonest drift there is, reported
     # as carrying no banner and sent a reader looking for something that was in front of them.
     mentions = occursin(r"written by AI"i, text) || occursin(r"written by AI"i, unprefixed)
     return [Model.Location(; file = "", line = 1,
@@ -76,7 +76,7 @@ end
 The pages this package requires the provenance banner on, as globs. Unset — the default — the rule reads
 its file sets, the rationale documents and the rendered Literate examples.
 
-A package sets it where its list is its own: this one requires the banner on EVERY page of its site,
+A package sets it where its list is its own: this one requires the banner on every page of its site,
 because the owner reviews the four science packages' API prose and not this one's, and that requirement
 was written in `CLAUDE.md` and enforced by nothing until 2026-09-18. It is not `rationale`, which other
 rules read; naming the pages here leaves those sets alone.
@@ -215,7 +215,7 @@ const BLOCK_LIST = Model.Rule(
             Model.Location[], "never run together with semicolons"),
     ])
 
-# The PROGRAM half of the rule, and no wider. A section number and a gitignored directory are citations
+# The program half of the rule, and no wider. A section number and a gitignored directory are citations
 # whatever the sentence around them: neither can be followed from the REPL, ever. A file name is not —
 # a docstring for the verb that writes `CLAUDE.md` must name it, and telling that apart from a citation
 # needs the meaning of the sentence, which is the agent half (RULE.CIT.NO_INACCESSIBLE).
@@ -328,7 +328,7 @@ The sibling packages a first mention links to, and where their sites are: the fl
 package sets it — a config holds no list of pairs, and the rule reads only this — so it is not among
 the rule's parameters.
 
-DERIVED from `Catalogue.FLEET`, which is the fleet's one home, rather than being a second list of the
+Derived from `Catalogue.FLEET`, which is the fleet's one home, rather than being a second list of the
 same packages: two lists diverge, and this pair diverging is silent both ways.
 """
 const SIBLING_SITES = Model.Parameter(:sibling_sites,
@@ -342,7 +342,7 @@ mention that links the site again where a bare name belongs. The arguments are `
 and `cfg`, the package's config, which names the package doing the mentioning; the sites are the
 fleet's, from [`SIBLING_SITES`](@ref). Returns one location per mention.
 
-A mention is the name as a reader SEES it: a link's destination — a URL, an `@ref` or `@extref`
+A mention is the name as a reader sees it: a link's destination — a URL, an `@ref` or `@extref`
 target — is read only to decide whether a visible mention links the site. Counted as mentions, the
 targets of HT's `@extref`s took the first-mention slot, so a correct link after them was reported as a
 re-link and a bare first mention after them was not reported at all (2026-09-28).
@@ -354,7 +354,7 @@ function sibling_link(text::AbstractString, cfg)
         name == cfg.package && continue
         # `.jl` is part of the name wherever a package is named as a repository — which is how its own
         # link text and its URL both spell it. Reading the bare name only, the rule found the first
-        # mention INSIDE a link it did not recognise and reported the link as missing.
+        # mention inside a link it did not recognise and reported the link as missing.
         name_re = Regex("(?<![A-Za-z0-9_])" * name * "(?:\\.jl)?(?![A-Za-z0-9_])")
         # The trailing slash of a site is optional in a link, and the table carries one. Matching it
         # literally, a correct link to `…/Package.jl` did not count, and the rule reported the first
@@ -466,7 +466,7 @@ hard-wrapped document crosses a line, and a check that matches only within a lin
 what it is looking for. Matching is case-insensitive, since a claim at the start of a sentence is the
 same claim.
 
-The phrase is LITERAL. It is escaped before it is used, so nothing a package writes in its config is
+The phrase is literal. It is escaped before it is used, so nothing a package writes in its config is
 compiled as a pattern inside its own docs build.
 """
 function retired_claims(text::AbstractString, cfg)

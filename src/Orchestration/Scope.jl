@@ -5,14 +5,14 @@
 
 What a run reads: everything, or only what changed since the last one like it.
 
-`--scope full` gives every reader its whole corpus. `--scope changed` asks two questions instead. WHERE
-does "since" start — the BASE, which is per reader combination, because a run launched with `bound`
-readers has said nothing about what an `open` reader would find. And WHICH readers does a change reach,
+`--scope full` gives every reader its whole corpus. `--scope changed` asks two questions instead. Where
+does "since" start — the base, which is per reader combination, because a run launched with `bound`
+readers has said nothing about what an `open` reader would find. And which readers does a change reach,
 which is not one answer but one per reader: an edited function body reaches the reader given the source
 and not the one the code is kept from, and an edited page reaches the reader given that page and not the
 twenty others launched beside it.
 
-**A base is a commit, not a run.** It is the commit that ADDED the last finished run's record, so the
+**A base is a commit, not a run.** It is the commit that added the last finished run's record, so the
 tree it names is the tree that run read. A run that stopped short says nothing about the corpus it never
 finished reading, so only `DONE` is a base.
 
@@ -127,7 +127,7 @@ end
 
 # The invalidations, the most precise reason first. Returns the reason or `nothing`.
 #
-# The rules are compared by what they SAY: the digest the run recorded against the rulebook running now.
+# The rules are compared by what they say: the digest the run recorded against the rulebook running now.
 # A record from before the digest compares the version that ran with the version running — the pin was
 # compared before, and a run records the running version, so a development checkout never matched and
 # a tool whose rules moved under an unchanged pin kept its base (found in review, 2026-09-23).
@@ -190,7 +190,7 @@ changed_in(root::AbstractString, commit::AbstractString, path::AbstractString) =
 """
     added_since(root, commit) -> Vector{String}
 
-Every tracked file that `commit..HEAD` ADDED. The arguments are `root`, the package root, and `commit`,
+Every tracked file that `commit..HEAD` added. The arguments are `root`, the package root, and `commit`,
 the base. Returns the paths. A page added since is one no reader has read, which is why it is asked for
 separately from the changed ones.
 """
@@ -215,7 +215,7 @@ Which file set each changed file belongs to.
 Returns one entry per set that any changed file falls in.
 
 A file falls in two sets at once — a `.jl` file under `src/` is both `DOCSTRINGS` and `CODE` — and the
-two reach different readers, so the name alone is not enough. A file whose DOCSTRINGS did not move is
+two reach different readers, so the name alone is not enough. A file whose docstrings did not move is
 not a documentation change however much of it was rewritten: that is the difference between an edited
 docstring, which the reader given one page must read again, and an edited function body, which it may
 not see at all. The docstrings of both versions are extracted and compared, which needs `commit`, the
@@ -224,7 +224,7 @@ base; pass `""` and every source file counts as both, the safe direction.
 function sets_of(cfg::Model.Config, root::AbstractString, changed::AbstractVector{<:AbstractString},
                  commit::AbstractString = "")
     want = Set(replace(f, '\\' => '/') for f in changed)
-    # A file the diff DELETED is in no listing of the tree, and was dropped here: the notation page gone
+    # A file the diff deleted is in no listing of the tree, and was dropped here: the notation page gone
     # relaunched nobody, though a rule reads every other page against it (found in review, 2026-09-23).
     gone = [f for f in want if !isfile(joinpath(root, f))]
     out = Dict{Model.FileSet.T,Vector{String}}()
@@ -280,7 +280,7 @@ end
 Whether anything in `sets` reaches `role`. The arguments are `role`, a derived reader, and `sets`, what
 [`sets_of`](@ref) returned. Returns the answer.
 
-A change reaches a role when the set it falls in is one the role READS, or when it is code, the code is
+A change reaches a role when the set it falls in is one the role reads, or when it is code, the code is
 not kept from the role, and the role is an open reader or carries a rule that needs the source. That is
 why an edited function body reaches the reader with the source beside it and neither the reader given
 one page alone nor the reader of the built site, without any of them being named here.
@@ -316,14 +316,14 @@ Whether the built page `unit` must be read again.
 
 Returns the answer.
 
-Three ways a page changes. Its own source changed. Its source is NEW, so no reader has read it. Or a
+Three ways a page changes. Its own source changed. Its source is new, so no reader has read it. Or a
 docstring changed and this page collects docstrings — which is decided by reading the page's source for
 an `@docs` block, the only statement in the tree of which docstrings a page gathers. A page with no
 source at all is read again: it was built from something this cannot see.
 """
 function unit_touched(root::AbstractString, cfg::Model.Config, unit, sets::AbstractDict,
                       added::AbstractVector{<:AbstractString})
-    # With the config, so a page built from a declared copy is judged by its SOURCE — the architecture
+    # With the config, so a page built from a declared copy is judged by its source — the architecture
     # document's page was never re-read under a changed scope while this resolved to the copy.
     src = Site.source_of(root, unit.path; cfg)
     isempty(src) && return true
@@ -337,7 +337,7 @@ function unit_touched(root::AbstractString, cfg::Model.Config, unit, sets::Abstr
 end
 
 # Whether a page gathers docstrings, which Documenter states one way: an `@docs` block. Read from the
-# SOURCE rather than the built page, because the built page shows the result and not the instruction.
+# source rather than the built page, because the built page shows the result and not the instruction.
 function collects_docstrings(path::AbstractString)
     isfile(path) || return true
     for line in eachline(path)

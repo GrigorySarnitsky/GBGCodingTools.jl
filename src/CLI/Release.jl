@@ -15,22 +15,22 @@
 Why the CI workflow does not say this commit is green, or `nothing` when it does. The arguments are
 `root`, the checkout, and `sha`, the commit about to be tagged. Returns the reason, in words.
 
-It is asked over the network and is therefore NOT in [`release_fails`](@ref), which reads the tree alone
+It is asked over the network and is therefore not in [`release_fails`](@ref), which reads the tree alone
 and is what the refusal tests exercise.
 
 A tag is permanent and a local gate is not the same question: `v2.0.0-rc.2` and `v2.0.0-rc.3` both went
 out on 2026-09-18 with every local command green, one failing on a git identity this machine has and a
 runner does not, the other on a workflow step greping a banner that had been renamed. Neither could fail
-here. CI runs on a tag or a dispatch (`RULE.GIT.CI_MANUAL`), so the run to ask about is a DISPATCH on
+here. CI runs on a tag or a dispatch (`RULE.GIT.CI_MANUAL`), so the run to ask about is a dispatch on
 this commit — `gh workflow run CI --ref master` — before the tag, not after it.
 
-Where `gh` is missing or GitHub cannot be reached this REFUSES rather than passing: a release cut blind
+Where `gh` is missing or GitHub cannot be reached this refuses rather than passing: a release cut blind
 is what the two red tags were. `GBG_RELEASE_IGNORE_CI=1` is the deliberate way past it.
 """
 function ci_verdict(root::AbstractString, sha::AbstractString)
     get(ENV, "GBG_RELEASE_IGNORE_CI", "") == "" || return nothing
     Sys.which("gh") === nothing && return "no `gh` on this machine, so CI's verdict on $sha cannot be read"
-    # Asked BY COMMIT, and the NEWEST run at it is the verdict: the newest thirty runs of the workflow
+    # Asked by commit, and the newest run at it is the verdict: the newest thirty runs of the workflow
     # could miss an older dispatch at this commit, and any one success among them passed a commit whose
     # re-run had gone red (found in review, 2026-09-26). `gh` lists the newest first.
     newest = try
@@ -58,7 +58,7 @@ none.
 - `base` — its `X.Y.Z` part.
 - `rc` — whether it is a candidate.
 
-It reads the tree, the tags, `CHANGELOG.md` and `Project.toml`, and writes NOTHING — which is the point
+It reads the tree, the tags, `CHANGELOG.md` and `Project.toml`, and writes nothing — which is the point
 of it being separate. A test of [`release`](@ref) can only reach the refusals: past them the verb runs
 `git tag` and `git push`, and a test must never cut a tag. So the conditions beyond this list were
 untestable, and that is exactly where a defect lived for nine releases. Lifted out so each can be
@@ -72,7 +72,7 @@ function release_fails(cfg::Model.Config, root::AbstractString, ver::AbstractStr
     want = Catalogue.branch_of(cfg)
     branch == want || push!(fails, "on branch $branch, not $want")
     Git.run(root, "rev-parse", "-q", "--verify", "refs/tags/v$ver") === nothing || push!(fails, "tag v$ver exists — a tag is never re-issued")
-    # A NAMED refusal, never a crash. The exit contract is 0 clean, 1 substantive finding, 2 cannot
+    # A named refusal, never a crash. The exit contract is 0 clean, 1 substantive finding, 2 cannot
     # evaluate, 3 crash; a bare `read` threw SystemError out of the verb — exit 3, with a backtrace — for
     # a consumer that has simply not written a changelog yet, while every sibling condition here is a
     # line in `fails` and exit 2. Found by giving this verb its first test (2026-09-12 work queue), and
@@ -108,7 +108,7 @@ Tags and pushes `v<ver>` from the dev checkout.
 Refused (exit 2) unless: the tree is clean and on the configured branch; the tag is absent; `CHANGELOG.md`
 carries `## <ver> — `; `Project.toml`'s version equals the release version (the base version for a
 prerelease); `Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`); `gbg sync --check`
-is clean at the root; the newest CI run AT THIS COMMIT is a success ([`ci_verdict`](@ref)). Nothing else
+is clean at the root; the newest CI run at this commit is a success ([`ci_verdict`](@ref)). Nothing else
 holds a release — no review, no open finding, no unanswered question, no audit. A tag is never moved or
 re-issued. Returns the exit code; a failed gate, tag or push prints the reason its command gave.
 """

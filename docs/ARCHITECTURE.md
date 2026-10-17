@@ -193,7 +193,7 @@ returns documentation only when all of these hold, and code otherwise:
    merely follows whatever else the commit changed, and any other content there is code. This is what lets a reworded
    rule statement be committed with the policy files it feeds (§4.3 step 2);
 1. the path is on the documentation list;
-2. for `.jl`: both versions parse, and they are byte for byte the same, whitespace included, except the TEXT inside
+2. for `.jl`: both versions parse, and they are byte for byte the same, whitespace included, except the text inside
    docstrings the file already has and the text of comments it already has [the simple rule, ruled 2026-09-23]. A
    docstring or a comment is never added, removed or moved by the fixer: a missing docstring comes to the owner as a
    question with the proposed text. A docstring's text is the string tokens of a string the parser attached as one,
@@ -254,12 +254,12 @@ run the owner asked for, and then fixes and verifies without asking again [R1, R
    not render — a broken brace — is still mathematics: fixing it is the owner's: the change guard refuses it (clause 6) and
    the finding becomes a question for the owner [ruled 2026-09-21]. The rule considered before that, and declined, was
    an automatic edit backed by a quote from the documented method's body plus a numeric check the program ran; the
-   reason it was declined is that both halves make the CODE the oracle, so code that is itself wrong certifies prose
+   reason it was declined is that both halves make the code the oracle, so code that is itself wrong certifies prose
    matching it, and the tool would be executing Julia an agent had just written. A reworded rule statement (§4.2
    clause 3) stays automatic but is verified blind on the careful model, the verifier being given the rule's check and
    its examples, because no program compares a statement with the check it names. Both kinds are listed in the report
    [a docstring was "fixed" to contradict code that was itself wrong; a fix wrote false mathematics].
-   A finding whose fix only the owner may make — the config, code, a formula — is PARKED by the fixer with
+   A finding whose fix only the owner may make — the config, code, a formula — is parked by the fixer with
    `gbg run park <id> --why "…"`: the same question a `HIDES_CODE_DEFECT` puts stands on it, no pass or verifier
    works on it, and his answer does what it does there [ruled 2026-09-24; left open, such a finding cost a verifier
    every pass and reached the owner only at close].
@@ -268,7 +268,7 @@ run the owner asked for, and then fixes and verifies without asking again [R1, R
 5. **One verifier per place, with the diff.** `gbg run next` re-anchors the findings (§4.5) and writes the verify
    stage's arguments from the anchors it got, so the text a verifier is sent is the text the findings are about. The
    open findings are grouped by the unit they sit in — the built page, for the withheld reader's; the example's source,
-   for one made on it; the file named first, otherwise — and ONE verifier per unit (at most ten findings each) is given
+   for one made on it; the file named first, otherwise — and one verifier per unit (at most ten findings each) is given
    those findings, the unit as it now stands, what the reader that found them was given (§5.3), and the diff of the
    pass's commits, oldest first, and answers each finding by id: `FIXED`, `NOT_FIXED`, `LINE_ONLY` (fixed at some
    locations only), `MADE_WORSE` (the change broke something the old text had right), `HIDES_CODE_DEFECT` (the
@@ -353,7 +353,7 @@ the line, kept only as a hint.
 `Texts.reanchor` does the two steps that need only files: the node — parse the file with Julia's own parser
 (JuliaSyntax, part of Julia 1.12) and find the named definition, or scan the Markdown headings — and then the quote
 inside it (`BY_NODE`); failing that, the quote alone, nearest the old line when there are several (`BY_QUOTE`).
-A quote is compared with the source as both READ on the built page (`Texts.reading`): markup the page renders away —
+A quote is compared with the source as both read on the built page (`Texts.reading`): markup the page renders away —
 link targets, backticks, dollars, emphasis, a docstring's escaped backslash, Literate's comment marks — is taken
 from both, and whitespace flattened, so a quote copied from the page, or one the source wraps, is found in its file.
 `Runs.reanchor` is the wrapper a run calls: it tries `Texts.reanchor` first and, when that fails, maps the old line
@@ -526,8 +526,8 @@ struct Generated; paths::Function; part::Part.T; generator::Symbol; end   # path
 ```
 
 **Readers are derived, not listed** [ruled 2026-09-20]. A rule no program decides carries `access` — what a reader must
-be given beyond the unit it is about: NOTHING (exclusive: the unit alone, since more would change the answer), SIBLINGS,
-OTHER DOCUMENTS, SOURCE, RENDERED, HISTORY, CITED WORK, or a combination — put on from the rule's own text by three blind
+be given beyond the unit it is about: `NOTHING` (exclusive: the unit alone, since more would change the answer), `SIBLINGS`,
+`OTHER_DOCUMENTS`, `SOURCE`, `RENDERED`, `HISTORY`, `CITED_WORK`, or a combination — put on from the rule's own text by three blind
 readers (§12), and, where its own words are a field's, `discipline`. `Roles.derive` computes the panel: three *bound
 readers*, one per bundle of material a rule lands in, tried in order — *withheld* (one built page or Literate file
 alone), *full* (siblings + source + other documents), *rendered* (the built site) — a rule going to the first bundle that
@@ -542,11 +542,11 @@ requested from the tooling session. Every reader runs on the careful model; `gbg
 chooses which are launched, `bound` by default. An open reader's findings name no rule, so the reason for trusting it is
 its standpoint, and a finding that recurs becomes a rule (§7).
 
-**Targets and material** [ruled 2026-09-23]. What a reader is GIVEN is decided by audience, not by file type. A
+**Targets and material** [ruled 2026-09-23]. What a reader is given is decided by audience, not by file type. A
 *target* is what a user reads — a docstring, a hand-written page under `docs/src/`, a Literate example, and the one
 document `architecture_doc` names — and is the only place a finding may be located and the only thing the fixer is ever
 handed. *Material* is what a reader may open to judge a target and never report on: the source, every rationale document
-that is not a target, and every generated page; a reader is GIVEN a material document only when the package lists it in
+that is not a target, and every generated page; a reader is given a material document only when the package lists it in
 `Config.material`, empty by default. Every other rationale document is read by nobody unless listed:
 not launched over, not handed to the full reader or a discipline, not walked on the site — the site walk keeps only a
 page whose source is a target, so a build-time copy of the working notes drops out by construction. A finding located
@@ -750,7 +750,7 @@ truth is "owed". A deferred rule reports nothing in a build or a test — a defe
 beside the switches on the package's site and printed by `gbg check`. A rule cannot be both switched off and deferred.
 
 **Every rule is switchable. There is no set a package may not escape** [as ruled 2026-09-17]. The rulebook is the
-DEFAULT, and a package overrides any part of it by saying so where a reader can see it. An earlier draft marked some
+default, and a package overrides any part of it by saying so where a reader can see it. An earlier draft marked some
 rules — the ones catching text that renders wrongly, and the docstring-structure rules — as always on, and that mark was
 never set, because the two things it would have bought are already bought by the switch itself. A switch cannot be
 silent: it names the rule, gives the reason, and is rendered into the package's own rulebook and onto the one small
@@ -922,14 +922,14 @@ The rule wording study (Phase 4e) is that procedure as a verb; it proposes, and 
 
 A rule, agent role, discipline or instrument is code in GBGCodingTools, apart from the prose fields of §4.2: it changes
 through the code fixer on the owner's answer to a finding, or by the session on the owner's direct answer, is released as a tag that is never moved, and reaches a package through `gbg bump`
-[R2]; it never changes during a run. A *design review* is FUTURE WORK, not an instrument, and has no row in §3: `gbg
+[R2]; it never changes during a run. A *design review* is future work, not an instrument, and has no row in §3: `gbg
 attack` would run agents over this design and produce proposals, never findings, each becoming a question to the owner or
 dismissed with its reason. It would write no tracked file — no run record, no report, no work-queue line — so it has no
 row in §6 either: its proposals reach the owner as questions in the session that ran it, the way a leak scan's findings do
 [as ruled]. Deferred on 2026-09-21 so that this package reaches its consumers sooner; nothing depends on it, and nothing
-it would check is unchecked meanwhile, because the rulebook's TEXT is the subject of the rule wording study (§12) and not
-of an attack. Two things are asked of it whenever it is built. It attacks a MECHANISM — a reader panel, a guard, a lens
-set — and never prose, and it demands of every attacker a concrete EVADING EXAMPLE: the defect that passes, where it
+it would check is unchecked meanwhile, because the rulebook's text is the subject of the rule wording study (§12) and not
+of an attack. Two things are asked of it whenever it is built. It attacks a mechanism — a reader panel, a guard, a lens
+set — and never prose, and it demands of every attacker a concrete evading example: the defect that passes, where it
 sits, and why each part of the mechanism misses it. An attack that only collects objections converges by narrowing what
 the thing under attack claims, which is a measured failure of this project and not a hypothetical one [the six discipline
 texts, seven rounds to no objection, 2026-09-21].

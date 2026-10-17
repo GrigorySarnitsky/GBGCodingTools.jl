@@ -2,7 +2,7 @@
 """
     Rules.Rendering
 
-The rules that catch text which RENDERS WRONGLY: prose that looks right in the source and comes out as
+The rules that catch text which renders wrongly: prose that looks right in the source and comes out as
 something else on the page. Each is a rule value carrying its own statement, the program that decides it,
 and the examples that show the two agree.
 
@@ -92,7 +92,7 @@ const MATH_CONTROL_WORD = r"\\[a-zA-Z]+"
 # joined to another by an underscore; `x_i` inside `\sigma_{x_i}` is a nested index, not a name.
 const MATH_BRACED_INDEX = r"[_^]\{[^{}]*\}"
 const INDEX_NAME = r"[A-Za-z]{2,}_[A-Za-z]|[A-Za-z]_[A-Za-z]{2,}|[a-z]{5,}"
-# Three letters, not two. A two-letter run in a physics formula is almost always a PRODUCT of single
+# Three letters, not two. A two-letter run in a physics formula is almost always a product of single
 # scalars — `ck_a`, `ac - bd`, `dx` — and reading those as code identifiers reported correct mathematics
 # in GBGPeriodicFields. A code identifier short enough to be missed by this is short enough that the
 # renderer's italic product looks the same as the name anyway.
@@ -109,7 +109,7 @@ const GROUPED_WORD = r"[a-z]{4,}"
 The inline ```` ``…`` ```` math spans of a text, each as the line it opens on and the span's content. The
 argument is `text`, the file's content.
 
-The markers are paired left to right with the open state carried ACROSS lines, so a span wrapped over a
+The markers are paired left to right with the open state carried across lines, so a span wrapped over a
 line break pairs correctly rather than leaving every span after it misread. Returns the spans.
 """
 function math_spans(text::AbstractString)
@@ -292,11 +292,11 @@ const ABUT_MATH = raw"``[^`\n]+``"
 const ABUT = Regex("(?:" * ABUT_MATH * raw"\s*" * ABUT_CODE * "|" * ABUT_CODE * raw"\s*" * ABUT_MATH * ")")
 const CODE_THEN_MATH = Regex(ABUT_CODE * raw"\s*" * ABUT_MATH)
 const MATH_THEN_CODE = Regex(ABUT_MATH * raw"\s*" * ABUT_CODE)
-# A formula left OPEN AT AN EDGE continues past that edge, and what continues it is the code span on
+# A formula left open at an edge continues past that edge, and what continues it is the code span on
 # that side. Open at the right — an equation ending in a relation — and the name after it is the
 # right-hand side. Open at the left, and the name before it is the left-hand side.
 #
-# A RELATION, not any operator. `\times` is what closes `` ``\approx 48\times`` ``, a self-contained
+# A relation, not any operator. `\times` is what closes `` ``\approx 48\times`` ``, a self-contained
 # measurement, and a leading `-` opens `` ``-92.0\%`` ``, a self-contained figure; reading either as an
 # open edge reported fourteen measurement rows of one package as split formulas with no rewrite.
 #
@@ -316,16 +316,16 @@ location per line.
 
 Two abutting spans render as two disjoint runs at different sizes, and the reader is left to guess
 whether the second continues the first, qualifies it, or defines it. Which remedy applies depends on
-what the name is DOING, and the rule's own prose says how to choose.
+what the name is doing, and the rule's own prose says how to choose.
 
-An ATTRIBUTIVE MODIFIER is not reported, because it has no remedy and needs none: a finished formula
+An attributive modifier is not reported, because it has no remedy and needs none: a finished formula
 naming a size, a smoothness class or a measurement, set beside the name it qualifies, stands exactly
 where an English adjective stands. A connective between them produces a comma where no English sentence has one, so the
 rule would be asking for a rewrite that does not exist.
 
-A formula left OPEN at its right edge is a different thing and is still reported. An equation ending in
+A formula left open at its right edge is a different thing and is still reported. An equation ending in
 a relation, whose right-hand side is the name that follows it, is a naming and wants a connective. Span
-ORDER alone cannot tell the two apart — that was tried, fits three of the four packages, and fails on
+order alone cannot tell the two apart — that was tried, fits three of the four packages, and fails on
 the fourth, whose author writes the naming symbol-first.
 """
 function one_span(text::AbstractString, cfg)
@@ -361,7 +361,7 @@ const ONE_SPAN = Model.Rule(
     filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
     check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, one_span, false),
     examples = [
-        # The formula NAMES what the code denotes: two spans, joined. A parenthesis, an em dash, a
+        # The formula names what the code denotes: two spans, joined. A parenthesis, an em dash, a
         # comma or a colon all serve; `≡` is not a connective, it is the thing the connective replaces.
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe tolerance `atol` ``\\equiv \\varepsilon`` is fixed.\n",
@@ -399,7 +399,7 @@ const ONE_SPAN = Model.Rule(
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nIt runs on a ``512^3`` `Float64` grid.\n",
             Model.Location[], "a finished formula is an adjective"),
-        # One left OPEN at its right edge is an equation continuing into the name, which is a naming.
+        # One left open at its right edge is an equation continuing into the name, which is a naming.
         # Span order cannot tell these apart: this one is a naming written symbol-first.
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\nThe first bandwidth ``h_1 =`` `hx` is set by the caller.\n",

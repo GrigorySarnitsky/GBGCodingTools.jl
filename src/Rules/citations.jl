@@ -27,14 +27,14 @@ const DOI_PATH = raw"(?:[^\s()\]\"]|\([^\s()]*\))+"
 const DOI_RE = Regex("doi\\.org/" * DOI_PATH)
 # The one admitted citation form: the work's title, italicised, linked to its DOI.
 const TITLE_LINK = Regex("\\[(\\*[^\\]]+?\\*)\\]\\((https://doi\\.org/" * DOI_PATH * ")\\)")
-# A work with no DOI (ruled 2026-09-28): an entry that SAYS so may link its title to the stable public
+# A work with no DOI (ruled 2026-09-28): an entry that says so may link its title to the stable public
 # record instead — a report server, an archive — over https. The statement is what licenses the link: a
 # reference that merely links a title somewhere else has not said there is no DOI to link.
 const NO_DOI = r"\bno\s+DOI\b"i
 const RECORD_LINK = r"\[\*[^\]]+?\*\]\(https://[^\s()]+\)"
 const RESOLVABLE_LINK = Regex("\\[([^\\]]*)\\]\\((https://(?:doi\\.org|openlibrary\\.org)/" * DOI_PATH * ")\\)")
 # A line that is a reference rather than prose about one: the lone-citation form, or a bullet with a
-# year that has the SHAPE of a reference — a title in italics, pages after the year, or an author list
+# year that has the shape of a reference — a title in italics, pages after the year, or an author list
 # of surnames with initials followed by the year and then a capitalised title, as in
 # `- Pope, S. B. (2000). Turbulent Flows.` A bullet that merely cites author–year, as `RULE.CIT.STYLE`
 # asks the prose to, is prose: `- Kolmogorov (1941) gives the 5/3 law.` names a surname with no
@@ -66,7 +66,7 @@ function doi_on_title(text::AbstractString, cfg)
     out = Model.Location[]
     raw = split(text, '\n')
     for (i, line, breaks) in Texts.unwrapped(text)
-        # In code ticks the form is NAMED, not used: this rule's own statement quotes it, and so does
+        # In code ticks the form is named, not used: this rule's own statement quotes it, and so does
         # every page that tells an author which form was retired.
         masked = Texts.mask_code_spans(line)
         for m in eachmatch(r"\[doi:[^\]]+\]", masked)
@@ -77,7 +77,7 @@ function doi_on_title(text::AbstractString, cfg)
         # `Reference:` alone opens a block list, whose entries are the lines under it.
         occursin(r"^\s*Reference:\s*$", line) && continue
         occursin(r"doi\.org/|openlibrary\.org/", line) && continue
-        # That the work HAS no DOI is read from the whole entry, its indented continuation lines with it:
+        # That the work has no DOI is read from the whole entry, its indented continuation lines with it:
         # joined only while a bracket was open, an entry whose "(No DOI; …)" began on its second line was
         # reported as not saying so, and GBGHomogeneousTurbulence moved the words onto the first line to
         # clear it (2026-09-30). The DOI itself is still sought on the title's line: an entry holding two

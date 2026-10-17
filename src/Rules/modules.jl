@@ -3,7 +3,7 @@
 """
     Rules.Modules
 
-The rules that need the package LOADED: what a docstring shows against what the module actually holds.
+The rules that need the package loaded: what a docstring shows against what the module actually holds.
 A cross-module name mentioned bare where a reader cannot follow it, and a displayed signature that no
 longer matches the method table, are both invisible in the source of any one file.
 
@@ -69,7 +69,7 @@ function xlink(loaded, cfg)
             push!(out_of_scope, Symbol(m.captures[1]))
         end
     end
-    # Through the same resolver every other rule uses. Read as a list of FILES, the config's code set is
+    # Through the same resolver every other rule uses. Read as a list of files, the config's code set is
     # a list of globs — empty by default — and both rules here visited nothing and reported clean in
     # every real package (found in review, 2026-09-26).
     for f in Texts.files(cfg, loaded.root, Model.FileSet.CODE)
@@ -87,7 +87,7 @@ function xlink(loaded, cfg)
             signature = join(lines[1:first_prose-1], "\n")
             prose = join(lines[first_prose:end], "\n")
             # What the signature documents: the name it is written under, qualified or not, and its
-            # parameters. A name CALLED in it — the default `velocity_forcing = ConstantPower()` — is a
+            # parameters. A name called in it — the default `velocity_forcing = ConstantPower()` — is a
             # code expression, and exempting it hid the bare prose mention of `ConstantPower` further down
             # (GBGHomogeneousTurbulence's `predicted_stationary_state`, found verifying its findings,
             # 2026-09-29).
@@ -102,7 +102,7 @@ function xlink(loaded, cfg)
             # A name heading a bullet is the docstring's own field or argument, not a mention: a field
             # called `audit` is not the function of that name elsewhere.
             for b in Texts.bullets(prose); union!(in_signature, Texts.bullet_head_names(b)); end
-            # The FIRST mention decides, as the statement says. Read as "linked anywhere in the docstring",
+            # The first mention decides, as the statement says. Read as "linked anywhere in the docstring",
             # a bare first mention with a link forty lines further down was never reported
             # (GBGHomogeneousTurbulence's `StochasticOU`, found verifying its findings, 2026-09-28).
             seen = Set{String}()
@@ -506,7 +506,7 @@ function signature_fidelity(loaded, cfg)
     by_export = length(exported) > 1      # a package that exports nothing publishes through its docstrings
     # Every docstring held to one function is read together: a function whose methods are documented in
     # two files shows its keywords across both, and one file's docstring compared alone reported the
-    # other file's keywords as shown nowhere. Grouping by the RESOLVED function, not by name, still
+    # other file's keywords as shown nowhere. Grouping by the resolved function, not by name, still
     # keeps two modules' namesakes apart.
     groups = Dict{Any,Vector{Tuple{Symbol,String}}}()
     for key in sort!(collect(keys(shown)))

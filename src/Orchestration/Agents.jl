@@ -12,18 +12,18 @@ The arguments are a file rather than a return value for the same reason: the two
 programs, minutes apart, and a file is what survives that. `test/driver.jl` checks the driver reads every
 key written here, so a key added in Julia and never read is caught rather than silently ignored.
 
-Two kinds of agent are launched through the same arguments: a READER, given surfaces and rules and
-returning findings, and a VERIFIER, given one finding and returning a verdict on its fix. Every role
+Two kinds of agent are launched through the same arguments: a reader, given surfaces and rules and
+returning findings, and a verifier, given one finding and returning a verdict on its fix. Every role
 carries the same keys — a reader's `finding` is empty — so the driver reads one shape.
 
-A reader of the WITHHELD bundle is launched once per UNIT: its `unit` names a file holding one built
+A reader of the withheld bundle is launched once per unit: its `unit` names a file holding one built
 page's text and nothing else, and its surfaces are not listed, because a reader that is given the whole
 documentation is not the reader the rule was tagged for.
 
 Everything the agents write, and the arguments they are given, lives under `.gbg/scratch/<run>/`, one
 directory per stage instance — git-ignored, so it is never committed, and inside the package, so a run
 interrupted in one session is continued in the next (ruled 2026-09-21): the arguments record the commit
-they were written at, each role carries a LAUNCH mark, and continuing a stage clears the mark of every
+they were written at, each role carries a launch mark, and continuing a stage clears the mark of every
 role whose result already arrived. Closing the run deletes it.
 """
 module Agents
@@ -97,7 +97,7 @@ function surfaces(cfg::Model.Config, root::AbstractString)
     out = Pair{String,Vector{String}}[]
     for fs in (Model.FileSet.RATIONALE, Model.FileSet.PAGES, Model.FileSet.DOCSTRINGS, Model.FileSet.LITERATE)
         files = Texts.files(cfg, root, fs)
-        # Of the rationale documents only the one the review holds to a cold read is a TARGET (ruled
+        # Of the rationale documents only the one the review holds to a cold read is a target (ruled
         # 2026-09-23); the rest are read by nobody unless listed as material, and then as material.
         if fs === Model.FileSet.RATIONALE
             filter!(f -> Catalogue.target(cfg, f), files)
@@ -156,7 +156,7 @@ Returns the path written.
 Every role is launched: nothing caps launches, as ruled 2026-09-21 — the panel over the units, one
 relaunch each and the pass cap bound a run by design, and a run cut short by an outage is continued.
 
-WHAT THIS FILE COSTS IS WHY IT IS SHAPED THIS WAY. A workflow script has no filesystem, so the session
+What this file costs is why it is shaped this way. A workflow script has no filesystem, so the session
 cannot hand the driver a path: it types the arguments into the launching call, and every byte here is a
 byte of the session's context. Two things made that file large and neither had to be in it.
 
@@ -168,7 +168,7 @@ into `briefs`, each once, and a role names the one it was given.
 The second is the material a verifier judges — the finding, with the text quoted at every location, and
 the diff of the fix made for it. That is the bulk of the file and no part of it is the script's to read:
 the script only names it in a brief, and the agent has file tools. So each is written beside the
-arguments and passed as a PATH, which is what a reader given one built page has always been given. The
+arguments and passed as a path, which is what a reader given one built page has always been given. The
 file's size no longer depends on the size of a finding or a diff, and `test/driver.jl` holds it there.
 
 The third is the rest of a role. Nine of its fields were the same for every role of one shape and three
@@ -222,7 +222,7 @@ function write_arguments(root::AbstractString, run::Model.Run, cfg::Model.Config
         end
         diff = String(get(x, "diff", ""))
         isempty(diff) || write(joinpath(side, String(r.id) * ".diff"), diff)
-        # Everything identical across the roles of one shape, keyed by its VALUE so the table is as
+        # Everything identical across the roles of one shape, keyed by its value so the table is as
         # small as the stage's variety and no field has to be classified by hand: a reader's shape is
         # its own, a verifier's is shared by every finding under the same rule and reader.
         shape = Dict{String,Any}("kind" => get(x, "kind", "reader"),
@@ -291,7 +291,7 @@ function place_driver(root::AbstractString, id::AbstractString; arguments::Abstr
     mkpath(dirname(dest))
     text = read(src, String)
     sha = bytes2hex(SHA.sha256(text))
-    # The arguments are SPLICED into the copy, after the `meta` export the tool requires first: a
+    # The arguments are spliced into the copy, after the `meta` export the tool requires first: a
     # workflow script has no filesystem, so the session had to type the whole file into the call —
     # 46–94 KB on PF, which it worked around with exactly this splice (found by PF, 2026-09-24).
     if !isempty(arguments)
@@ -404,7 +404,7 @@ tree is at a different commit than when the stage was written, and the driver to
 where no arguments exist.
 
 Nothing of an unfinished stage is taken: a result that arrived stands, one that did not is asked for
-again, and a stage launched against one commit and continued against another is reported as MOVED
+again, and a stage launched against one commit and continued against another is reported as moved
 rather than mixed, since the readers would then have read two different packages.
 
 The driver is placed again with the rewritten arguments spliced in, since the driver reads the copy
@@ -445,16 +445,16 @@ Returns the findings, each with the role that made it; the verdicts, one per ver
 that answered, as `(verdict, quote)`; the roles that count as having written nothing; how many result
 files arrived at all; and how many roles wrote something that counts.
 
-A role counts as SILENT when its file is missing, when it does not parse, when a reader reports no finding
+A role counts as silent when its file is missing, when it does not parse, when a reader reports no finding
 and an empty `checked` list — the brief says an empty `checked` reads as a reader that did nothing, and
 this is where that is kept — or when a verifier gives no verdict. A crashed agent and a careful one that
 found nothing are the same empty set to a reader, and the design relaunches a silent one once and then
 names it.
 
-The LINE is filled in here, never taken from an agent: an agent reports the file, the quote and the node
+The line is filled in here, never taken from an agent: an agent reports the file, the quote and the node
 it read, and a line it also reported would be its count of the text it was shown, not the file's.
 
-The FILE may be corrected here too. A reader given one built page names the file that page is written
+The file may be corrected here too. A reader given one built page names the file that page is written
 in, which is right for the page's own prose and wrong for a sentence the build rendered from a docstring
 in the source; where the named file does not hold the quote, the documentation is searched for it, and a
 quote exactly one file holds is placed there.
@@ -471,8 +471,8 @@ function collect_results(root::AbstractString, id::AbstractString, cfg::Model.Co
     verdicts = Dict{String,Tuple{String,String}}()
     wrote = String[]
     arrived = 0
-    # What the driver RETURNED, saved by the session beside the results: the fallback for a role whose
-    # own file is missing or unreadable. Three of PF's verifiers had answered FIXED in their return value
+    # What the driver returned, saved by the session beside the results: the fallback for a role whose
+    # own file is missing or unreadable. Three of PF's verifiers had answered `FIXED` in their return value
     # and were counted silent because the file never appeared (found by PF, 2026-09-24).
     returned = returned_results(root, id)
     for (role, kind) in sort(collect(expected))
@@ -521,7 +521,7 @@ function collect_results(root::AbstractString, id::AbstractString, cfg::Model.Co
                 end
                 push!(locs, found)
             end
-            # A finding located nowhere in a target is IN MATERIAL: a reader given the working notes
+            # A finding located nowhere in a target is in material: a reader given the working notes
             # to consult found something there. It is kept and goes to the owner, never to the fixer.
             push!(findings, (role, Model.FindingDraft(
                 rule = get(f, "rule", nothing) === nothing ? nothing : Symbol(f["rule"]),

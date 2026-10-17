@@ -12,11 +12,11 @@ module Git
 """
     Git.run(root, args...) -> Union{String,Nothing}
 
-`git -C root args...` with stderr discarded; the stdout with TRAILING whitespace removed, or `nothing`
+`git -C root args...` with stderr discarded; the stdout with trailing whitespace removed, or `nothing`
 on a non-zero exit or when git is absent.
 
 Trailing only, never leading. `git status --porcelain` puts the status in the first two columns, so an
-unstaged modification begins with a SPACE (`" M path"`), and a full `strip` deleted it — from the first
+unstaged modification begins with a space (`" M path"`), and a full `strip` deleted it — from the first
 line alone, since only that line touches the start of the output. [`Git.porcelain`](@ref) then read the
 code as `"M "` and the path from column 4 as `gbg/exemptions.toml`, one character short, matching no
 watched path.
@@ -40,7 +40,7 @@ end
 """
     Git.said(root, args...) -> (ok, said)
 
-`git -C root args...` for a command that WRITES — a tag, a push — where a failure must be reported with
+`git -C root args...` for a command that writes — a tag, a push — where a failure must be reported with
 git's own reason. The arguments are `root`, the repository, and `args`, git's arguments. Returns whether
 it succeeded and what it printed, stdout and stderr together; a missing identity or a remote refusing a
 push was a line with no cause while [`Git.run`](@ref) discarded stderr (found in review, 2026-09-26).

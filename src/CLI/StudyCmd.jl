@@ -10,7 +10,7 @@ only a rule's text, the rules they answered differently about, the rules whose w
 guessing, and the rules whose majority answer differs from the tag the rulebook carries. The last become
 questions the owner answers; nothing here edits a rule.
 
-The verb reads a round that has already been ANSWERED — a tab-separated file of votes. Launching the
+The verb reads a round that has already been answered — a tab-separated file of votes. Launching the
 three readers is a run's work and a session's: Julia cannot launch an agent, and this verb is the half
 that can be a program. A round is a file so that a measurement is repeatable: the four numbers of
 2026-09-19 are `test/tagging/`, and they come out the same today.

@@ -9,7 +9,7 @@ One module, because they are one act at two moments. The first writes the config
 have written itself and then calls the second; everything after that is the second alone, and there is
 no third path by which a generated file comes into being.
 
-Neither merges. A generated file is the return value of a function, so there is nothing to merge WITH:
+Neither merges. A generated file is the return value of a function, so there is nothing to merge with:
 `sync` writes what the function returns, and a hand edit is lost. That is the bargain the wiring check
 states out loud — it reports drift on every build so that nothing is lost silently. What is never lost
 is a file the package wrote itself at a generated path: both verbs refuse it and say so.
@@ -59,7 +59,7 @@ Writes `.gbg/config.jl` for the package at `root` if it has none, then writes ev
 - `root` — the package root.
 - `io` — where the report goes.
 
-It NEVER overwrites an existing config: a package's config is the one file here that is the package's
+It never overwrites an existing config: a package's config is the one file here that is the package's
 own, holding what it has switched off and why, and a verb that rewrote it would throw that away on a
 re-run. Where one exists, this is `sync` and says so.
 
@@ -75,7 +75,7 @@ function init(root::AbstractString; io::IO = stdout)
     name = isfile(proj) ? get(TOML.parsefile(proj), "name", "") : ""
     isempty(name) && (name = basename(abspath(root)))
     seed = config_seed(root, name)
-    # What the package wrote itself is never overwritten. This is asked BEFORE the config is written, so
+    # What the package wrote itself is never overwritten. This is asked before the config is written, so
     # a refusal leaves the package exactly as it was — on the first run against the config about to be
     # written, which until 2026-09-26 was the one run that never asked.
     cfg = if isfile(path)

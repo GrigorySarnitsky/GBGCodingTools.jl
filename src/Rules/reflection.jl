@@ -7,7 +7,7 @@ The rules that hold a docstring against the thing it documents: every argument a
 target linked twice in one docstring. Both read the source rather than the loaded package, because what
 they compare is the docstring's own signature with its own body.
 
-These are the fifth batch of the conversion. The two that need the package LOADED — the displayed
+These are the fifth batch of the conversion. The two that need the package loaded — the displayed
 signature against the method table, and a cross-module name linked at its first mention — are the batch
 after this one.
 """
@@ -28,7 +28,7 @@ Every argument of a docstring's signature that its body never mentions. The argu
 Julia source, and `cfg`, the package's config, which this rule does not read. Returns one location per
 undocumented argument.
 
-It runs FROM THE SIGNATURE, not from the prose: a body that lists three arguments where the signature
+It runs from the signature, not from the prose: a body that lists three arguments where the signature
 takes four is the case this exists to catch, and a check that reads the prose first cannot see the
 fourth. Every displayed signature counts, so an argument only the wider form takes is held to the rule
 too. Exempt, as the rule says: an internal helper, a thin allocating wrapper, and a call short enough
@@ -82,7 +82,7 @@ function argcov_one(d)
         # weight)` names `from` and `weight` as code, as the statement asks. Excluded until 2026-10-06, it
         # reported both undocumented in GBGStreamingStatistics' `merge!`.
         spans = [m.captures[1] for m in eachmatch(r"(?<!`)`([^`\n]+)`(?!`)", d.text)]
-        # A SPLAT passed on in a fenced Julia example is documented by it: `run!(C(; kwargs...), sim)` says
+        # A splat passed on in a fenced Julia example is documented by it: `run!(C(; kwargs...), sim)` says
         # where `kwargs...` goes as plainly as the same call inline, which alone counted (HT's `warmup!`,
         # found verifying its findings, 2026-09-29). Nothing else counts there: a name in a `math` block or
         # a doctest's local variable is no argument's documentation, and counting every fenced line hid two
@@ -260,7 +260,7 @@ function dupref(src::AbstractString, cfg)
         repeats = Dict{String,Vector{Int}}()
         opens = body_line(src, d)
         for m in eachmatch(r"\[`([^`]+)`\]\(@ref\s*([^)]*)\)", d.text)
-            # The TARGET, not the link text: `[`g`](@ref)` and `[`g(x)`](@ref g)` are one target, and
+            # The target, not the link text: `[`g`](@ref)` and `[`g(x)`](@ref g)` are one target, and
             # `[`g`](@ref)` and `[`g`](@ref h)` are two.
             t = strip(String(m.captures[2]))
             isempty(t) && (t = replace(String(m.captures[1]), r"\(.*$" => ""))

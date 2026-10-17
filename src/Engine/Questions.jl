@@ -57,7 +57,7 @@ end
 What the language rules find wrong with one question, as lines a session can read. The arguments are
 `q`, the question, and `cfg`, the package's config. Returns an empty string when nothing is wrong.
 
-A failing question is rewritten once and then shown with the failed rule NAMED, so the owner can see
+A failing question is rewritten once and then shown with the failed rule named, so the owner can see
 that the tool knew and asked anyway, rather than wondering whether anything checked it at all.
 """
 function report(q::Model.Question, cfg::Model.Config)
@@ -76,7 +76,7 @@ end
 """
     store(root) -> String
 
-Where questions put OUTSIDE a run wait for their answers. The argument is `root`, the package root.
+Where questions put outside a run wait for their answers. The argument is `root`, the package root.
 Returns the path.
 
 A run's own questions live in its run record; these are the rest — the wiring check that could not read
@@ -111,7 +111,7 @@ Records a question so the owner can answer it, after the language rules have jud
 
 Returns whether it was recorded.
 
-A question that fails a language rule is recorded ANYWAY, with the failed rules printed. The design has
+A question that fails a language rule is recorded anyway, with the failed rules printed. The design has
 a failing question rewritten once and then shown with the rule named: a question withheld because the
 tool disliked its wording is a question the owner never gets to answer, and the rule was written to
 improve questions, not to suppress them.

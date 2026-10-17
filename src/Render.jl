@@ -7,16 +7,16 @@ There is no template language and no template directory: a generated file is the
 function that takes the package's config, so what a package receives is decided in Julia, beside the
 values it is derived from, and can be compared with what is on disk by running the function again.
 
-That comparison is the WIRING CHECK, which every build and every test runs: a generated file that has
+That comparison is the *wiring check*, which every build and every test runs: a generated file that has
 been hand-edited, or that a newer version of this package would write differently, is a finding rather
 than a silent divergence. Regenerating is left to `gbg sync`, `gbg bump` and `gbg release`, so a build
 reports drift and never repairs it.
 
 This is the sixth module of the order: it may name `Model`, `Texts`, `Catalogue`, `ConfigIO` and
-`Engine`, and nothing above. What it writes today is the WIRING — the ignore block, the end-of-turn hook,
-the settings that install it, the regressions note — the RULEBOOK a session loads, rendered from the rule
+`Engine`, and nothing above. What it writes today is the wiring — the ignore block, the end-of-turn hook,
+the settings that install it, the regressions note — the rulebook a session loads, rendered from the rule
 values themselves, so a rule cannot be reworded in the text without being reworded in the program that
-enforces it, and one SKILL per instrument that applies.
+enforces it, and one skill per instrument that applies.
 """
 module Render
 
@@ -28,7 +28,7 @@ using ..Catalogue
 using ..ConfigIO
 using ..Engine
 
-# The marker a generated block carries. A marker LINE is the mark at the head of a comment — `#` in a
+# The marker a generated block carries. A marker line is the mark at the head of a comment — `#` in a
 # shell script or a `.gitignore`, `<!--` in Markdown — with nothing but whitespace before the opener, so
 # one predicate reads every file. A line that mentions the mark in its prose is not a marker: a
 # `CLAUDE.md` whose own text discussed the marker above the block lost that paragraph on the next sync,
@@ -530,7 +530,7 @@ const PUSH_TIMEOUT = 3600
 What `.claude/settings.json` gets wrong about this package's two hooks in the package at `root`, or
 `nothing`. The argument is `root`, the package root. Returns the fault, in words.
 
-Only this package's own Stop hook is looked for. The file is the PACKAGE's — it may hold its own hooks,
+Only this package's own Stop hook is looked for. The file is the package's — it may hold its own hooks,
 its own permissions and its own settings — so a whole-file comparison would report every one of them as
 drift, and writing the file whole would delete them. The hook is recognised by the script it runs, in
 any spelling, and must be installed once in the one spelling written here: a second entry in another
@@ -714,7 +714,7 @@ A checkout is named by a relative path where this package's repository encloses 
 and absolutely otherwise: a chain of `../` out of one repository and into another breaks the moment
 either moves.
 
-A PRERELEASE pin names the full tag as its `rev` and its BASE version in `compat`. The two differ
+A prerelease pin names the full tag as its `rev` and its base version in `compat`. The two differ
 because Pkg refuses a prerelease in a version specifier outright — `semver_spec("=2.0.0-rc.1")` throws
 `invalid version specifier` — while `release` already refuses to tag `vX.Y.Z-rc.N` unless `Project.toml`
 says `X.Y.Z`, so the base is what a consumer resolving that tag actually reads. The tag is what pins;
@@ -899,12 +899,12 @@ The composite GitHub action a consumer's workflows call before resolving their e
 rewrite that lets a private dependency be fetched on a runner. The argument is `cfg`, the package's
 config, which this generator does not read. Returns the action file.
 
-It is a whole FILE that a workflow names in one line, not a fragment spliced into the workflow. A
+It is a whole file that a workflow names in one line, not a fragment spliced into the workflow. A
 fragment has to be inserted at the right indentation inside somebody else's `steps:` list, and getting
 that wrong produces YAML that is valid and does nothing. A `uses:` line is one line, and the wiring
 check can read it the way it reads any other call.
 
-Only a package pinned to a RELEASED version needs this. A checkout resolves this package over a path,
+Only a package pinned to a released version needs this. A checkout resolves this package over a path,
 and a path needs no credential.
 """
 function ci(cfg::Model.Config)
@@ -984,7 +984,7 @@ Both are the same call. A check that knew the full spelling alone reported a sui
 as running none (found in review, 2026-09-26).
 """
 function harness_called(live::AbstractString)
-    # `GBGCodingTools.Harness.test` is NOT accepted: no such binding exists, and accepting it passed the
+    # `GBGCodingTools.Harness.test` is not accepted: no such binding exists, and accepting it passed the
     # wiring check for a suite that then threw (found verifying the review's fixes, 2026-09-27).
     occursin("GBGCodingTools.Engine.Harness.test", live) && return true
     occursin("Harness.test", live) || return false
@@ -1183,7 +1183,7 @@ opening_line(text::AbstractString) = isempty(text) ? "(empty)" : String(first(sp
 
 # Whether a file says, in its opening lines, that this package wrote it. The marker is what most
 # generated files carry; the hook is a shell script whose first line must be its shebang, and it says so
-# in the sentence under it instead. Only the opening is read: a file that MENTIONS the marker far below
+# in the sentence under it instead. Only the opening is read: a file that mentions the marker far below
 # is discussing it, not claiming it.
 generated_here(text::AbstractString) =
     any(l -> occursin(MANAGED_MARK, l) || occursin("Written by GBGCodingTools", l),
@@ -1304,10 +1304,10 @@ The skill file that runs one instrument: what it is for, and the exact sequence 
 closed run. The arguments are `cfg`, the package's config, and `instrument`, the instrument's id.
 Returns the file.
 
-It carries NO rule and no judgement of its own. What a reader is given, which rules it checks and how
+It carries no rule and no judgement of its own. What a reader is given, which rules it checks and how
 many passes there are follow from the rulebook and the instrument's own value, and the verbs print them
 at each step; a skill that repeated any of it would be a second copy to reword. What it does hold is the
-ORDER, because the order is not discoverable from any one verb: a session that stopped after collecting
+order, because the order is not discoverable from any one verb: a session that stopped after collecting
 would leave a run open, and the stage machine cannot start the driver itself.
 """
 function skill(cfg::Model.Config, instrument::Symbol)
@@ -1590,7 +1590,7 @@ const RULES_URL = TOOL_SITE * "dev/gbg-rules/"
 """
     pages(cfg, root) -> Vector{String}
 
-Writes the ONE page a consumer's site carries about this tool, and returns its path relative to
+Writes the one page a consumer's site carries about this tool, and returns its path relative to
 `docs/src/`, which is the form a `docs/make.jl` lists in its `pages`. The arguments are `cfg`, the
 package's config, and `root`, the package root.
 
@@ -1606,7 +1606,7 @@ readers page and an instruments page — and a physics library's site had three 
 entries describing review tooling. The rulebook is still rendered, by [`rulebook_page`](@ref), on this
 package's own site alone, which is what the link here points at.
 
-The page is written at BUILD time and belongs in the package's `generated` list, so that no rule reads
+The page is written at build time and belongs in the package's `generated` list, so that no rule reads
 it and no fixer edits it.
 """
 function pages(cfg::Model.Config, root::AbstractString)
@@ -1644,7 +1644,7 @@ publish, and a consumer's site links here rather than carrying a copy. The ancho
 id linkable from anywhere, and keeping them in one place is what keeps the links from multiplying.
 
 A page that states the rules is by construction full of text that breaks them — it quotes the banned
-spellings in order to ban them — so it is written at BUILD time and is in this package's `generated`
+spellings in order to ban them — so it is written at build time and is in this package's `generated`
 list, where no rule reads it.
 """
 function rulebook_page(cfg::Model.Config, root::AbstractString)
@@ -1820,7 +1820,7 @@ What one run found, as the page the owner reads.
 
 Returns the Markdown.
 
-It reports the WHOLE run, the parts that did not work included: a stage that could not be evaluated, a
+It reports the whole run, the parts that did not work included: a stage that could not be evaluated, a
 location that could not be found again, a budget that ran out with findings still open. A report that
 printed only what went well would make the two endings — nothing left to do, and no budget left to do it
 with — read the same.
@@ -1833,7 +1833,7 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
     io = IOBuffer()
     println(io, "# ", titlecase(replace(String(run.instrument), "_" => " ")), " — ", run.id)
     println(io)
-    # The provenance banner, taken from the RULE that defines it rather than copied: a report is a page
+    # The provenance banner, taken from the rule that defines it rather than copied: a report is a page
     # like any other, and a second copy of the banner here is the drift that rule exists to catch.
     println(io, Catalogue.Pages.BANNER)
     println(io)
@@ -1893,7 +1893,7 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
     end
 
     if run.dropped > 0
-        # STOPPED IS NOT CLEAN, and the record alone cannot tell them apart without this number: what
+        # Stopped is not clean, and the record alone cannot tell them apart without this number: what
         # was open when the owner stopped is gone from the list and the launch count is untouched.
         # Reported whenever anything was thrown away, kept findings or not — an abandon that kept one
         # fixed finding and dropped another said nothing about the second (found in review, 2026-09-23).
@@ -1921,7 +1921,7 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
     if isempty(run.findings) && run.dropped > 0
         nothing                                             # said above; nothing was kept to list
     elseif isempty(run.findings) && run.agent_launches == 0
-        # NOTHING READ is not NOTHING FOUND. A run that launched no agent has no evidence about this
+        # Nothing read is not nothing found. A run that launched no agent has no evidence about this
         # package at all, and a report saying its documentation was read and found clean — under the
         # banner, on a page anyone may open — is worse than no report. This is the dead-lane-read-as-clean
         # failure the instrument exists to prevent, appearing in the instrument's own output; the driver
@@ -1939,7 +1939,7 @@ function report(run::Model.Run, cfg::Model.Config; root::AbstractString = "", qu
         println(io, isempty(run.silent) ? "Every reader that was launched wrote its file, and none of them reported a defect." :
                     "Every reader that wrote reported no defect; the ones named above wrote nothing, so this is not a clean result.")
     else
-        # What was found in the WORKING NOTES comes first and apart (ruled 2026-09-23): a reader given
+        # What was found in the working notes comes first and apart (ruled 2026-09-23): a reader given
         # the design documents as material to consult found something there. It was never a fixer's —
         # those documents are not targets of the review — and it may be the most valuable line on the
         # page, a formula the API's docstrings copy. It is the owner's to read.

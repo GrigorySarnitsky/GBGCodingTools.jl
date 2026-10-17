@@ -3,7 +3,7 @@
 """
     Rules.Site
 
-The rules that read the BUILT SITE rather than its source: what a reader actually meets on the page. A
+The rules that read the built site rather than its source: what a reader actually meets on the page. A
 formula that did not render, markup showing as literal asterisks, and one docstring collected onto two
 pages are all invisible in the source and obvious on the page.
 
@@ -21,7 +21,7 @@ using ...Texts
 Every rendered page under the built site that a rule may read. The arguments are `build`, the site's
 directory, and `cfg`, the package's config. Returns the paths, sorted.
 
-A page built from a file the config excludes is left out BEFORE any rule reads it: filtering the
+A page built from a file the config excludes is left out before any rule reads it: filtering the
 findings afterwards made a rule comparing pages depend on which page sorted first, so a docstring shown
 on an excluded page and a kept one was reported or not by the pages' names (found in review, 2026-09-29).
 """
@@ -48,7 +48,7 @@ function rendered_math(build::AbstractString, cfg)
         doc = Texts.parse_page(page)
         art = Texts.article_of(doc)
         art === nothing && continue
-        # The INNERMOST block holding the span: a `div` whose only text is its `p`'s formula has the same
+        # The innermost block holding the span: a `div` whose only text is its `p`'s formula has the same
         # text, and reporting both counted one defect once per enclosing block.
         is_span(el) = (t = strip(Texts.text_of(el));
                        ((length(t) > 1 && startswith(t, "\$") && endswith(t, "\$")) ||
@@ -119,7 +119,7 @@ function rendered_markup(build::AbstractString, cfg)
     for page in pages_of(build, cfg)
         text = replace(article_prose(page), r"\\\[.*?\\\]"s => " ", r"\\\(.*?\\\)"s => " ", r"\$[^\$\n]*\$" => " ")
         for line in split(text, '\n')
-            # A PAIRED span, which is what emphasis that failed to render leaves: a lone asterisk — a
+            # A paired span, which is what emphasis that failed to render leaves: a lone asterisk — a
             # glob, a product — is not markup, and Markdown left it because it was not. One per line.
             m = match(UNRENDERED, line)
             m === nothing && continue

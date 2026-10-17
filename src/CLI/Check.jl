@@ -29,7 +29,7 @@ Runs the rules and the wiring check over the package at `root` and prints what t
 Returns the exit code: 0 clean, 1 findings, 2 the package could not be read or a history rule could
 not be evaluated here.
 
-Clean means clean OVER WHAT RAN HERE. The rules that read the built site or the loaded package are
+Clean means clean over what ran here. The rules that read the built site or the loaded package are
 the build's and the suite's, and this verb builds and loads nothing; it names them rather than counting
 them into a total, since exit 0 printed as "every rule" was read as every rule (review, 2026-09-26).
 """
@@ -48,7 +48,7 @@ function run(root::AbstractString; intention = nothing, network::Bool = false, i
         return 2
     end
 
-    # The rules that read the history run HERE, never in a build: this verb is a session's, run in a
+    # The rules that read the history run here, never in a build: this verb is a session's, run in a
     # package where git is, and the end-of-turn hook runs the same lines.
     found = Engine.Checks.run_all(cfg, root; intention, network, history = true)
     # A history rule that could not run says so in its one location, and that is exit 2, not a finding
@@ -96,7 +96,7 @@ end
 """
     rebaseline(root; only = "", io = stdout) -> Int
 
-Records what the package's prose measures NOW as the ceiling it may not rise above, printing every row
+Records what the package's prose measures now as the ceiling it may not rise above, printing every row
 it raises, adds or drops first.
 
 # Arguments
@@ -107,7 +107,7 @@ it raises, adds or drops first.
 
 Exit 0 when written, 2 when the config cannot be read.
 
-`RULE.DOC.SHAPE` may only report growth against a recorded baseline; without a way to WRITE one, a
+`RULE.DOC.SHAPE` may only report growth against a recorded baseline; without a way to write one, a
 finding on a ratcheted file could not be cleared from either end — which is why a consumer kept its own
 prose lint after wiring, and switched the rule off for the files the two disagreed about.
 

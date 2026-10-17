@@ -5,8 +5,8 @@
 The built site a run reads: building it inside the run, and cutting it into the units a withheld reader
 is given one at a time.
 
-Two of the three reader bundles are rendered, not written: the WITHHELD reader is given one built page
-and nothing else, and the RENDERED reader the whole site. Neither can be served from the source — what
+Two of the three reader bundles are rendered, not written: the withheld reader is given one built page
+and nothing else, and the rendered reader the whole site. Neither can be served from the source — what
 the build made of a comment, a formula or a docstring is visible only after the build — so a run builds
 the site itself, from the package's own `docs/make.jl`, before it launches those readers.
 
@@ -96,16 +96,16 @@ Returns one entry per page, sorted by path, with:
 
 A file with no article body is not a page a reader reads — the search page, an asset — and is left out.
 
-TWO KINDS OF PAGE ARE LEFT OUT because the package said so, and this walk could not hear it until
+Two kinds of page are left out because the package said so, and this walk could not hear it until
 2026-09-22: it took a directory and no config, while the file surfaces dropped both in one filter with
 the reason beside them.
 
-A GENERATED page — the rulebook, the readers, the instruments — is by construction full of text that
+A generated page — the rulebook, the readers, the instruments — is by construction full of text that
 breaks the rules it states, since it quotes every banned spelling in order to ban it, and a reader sent
 to one spends its whole budget there. Three were, on [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)'s first real
 run, and returned seventeen findings nobody should act on.
 
-A page built from a declared COPY is kept or dropped by its SOURCE: kept, under the source's name, where
+A page built from a declared copy is kept or dropped by its source: kept, under the source's name, where
 the source is a target — the architecture document — and dropped where it is not, which is every other
 rationale document, whose text no reader is given. A finding on a kept copy names the source through
 [`source_of`](@ref), so a fix lands where the next build will not overwrite it, and the count is not
@@ -127,7 +127,7 @@ function pages(dir::AbstractString, cfg::Model.Config, root::AbstractString)
                 nothing                              # an unparseable page is not a page a reader reads
             end
             article === nothing && continue
-            # A page is kept by what it was WRITTEN FROM (ruled 2026-09-23): a generated page is nobody's;
+            # A page is kept by what it was written from (ruled 2026-09-23): a generated page is nobody's;
             # a copy resolves to its source, and stays only if that source is a target — so the
             # architecture document's page is read, under the source's name, and the copies of the
             # package's working notes are not. Until now every copy was dropped, so the one rationale
@@ -174,11 +174,11 @@ is `docs/src/guide/config.md`, and the home page is `docs/src/index.md`.
 
 Returns the path relative to the package, or `""` where no such file exists.
 
-Where `cfg` is given and the page was built from a declared COPY, the SOURCE is named instead. A fix
+Where `cfg` is given and the page was built from a declared copy, the source is named instead. A fix
 landing in a copy is gone at the next build, and a finding that names the copy sends its fixer to a file
 the guard will refuse — so it names the file the text is actually written in.
 
-It is a HINT, not an answer. A page also carries docstrings collected from the source, and a quote read
+It is a hint, not an answer. A page also carries docstrings collected from the source, and a quote read
 in one of those is not in this file at all; the collector searches the documentation for the quote and
 reports what it cannot place. The hint is what makes the common case — a defect in a page's own prose —
 land in the right file without a search.
@@ -195,7 +195,7 @@ function source_of(root::AbstractString, path::AbstractString; cfg::Union{Model.
         edit === nothing || return edit
         here = replace(candidate, '\\' => '/')
         cfg === nothing && return candidate
-        # A declared COPY is written by the build from a tracked source, and a fix landing in the copy is
+        # A declared copy is written by the build from a tracked source, and a fix landing in the copy is
         # gone at the next build. Name the source instead: the guard refuses the copy either way, but a
         # finding that names the copy sends its fixer to a file nobody may edit.
         k = findfirst(c -> replace(first(c), '\\' => '/') == here, cfg.copies)

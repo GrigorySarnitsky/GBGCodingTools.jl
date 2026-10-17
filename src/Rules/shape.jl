@@ -3,11 +3,11 @@
 """
     Rules.Shape
 
-The rule that holds the SHAPE of prose: a paragraph no longer than the house cap, few enough admonitions,
+The rule that holds the shape of prose: a paragraph no longer than the house cap, few enough admonitions,
 and — for text that was already there when the cap arrived — no growth. It is the one rule with a frozen
 baseline, because the cap alone would have failed thousands of lines of prose written before it.
 
-A unit is one docstring or one section of a page. A NEW unit is held to the caps; an existing one is held
+A unit is one docstring or one section of a page. A new unit is held to the caps; an existing one is held
 to its own recorded numbers, which may fall and never rise. The baseline is rewritten only deliberately,
 with a reason, which is what keeps "rewrite, do not append" from becoming "re-baseline and carry on".
 """
@@ -52,7 +52,7 @@ section by its file and heading. The arguments are `root`, the package root, and
 read. Returns the units with their metrics.
 
 A heading, a numbered top-level item and a bold lettered finding each open a new unit, which is what lets
-an append-only document grow by NEW units rather than by swelling one. A key is where the unit is, never
+an append-only document grow by new units rather than by swelling one. A key is where the unit is, never
 its position among others of its name; two sections that would still share one are listed in
 `collisions` and the later is left out. The row each key had before 2026-09-26 goes in `legacy`.
 """
@@ -75,7 +75,7 @@ function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,St
     # read share a basename, or their units would be one.
     shared = Set(b for b in basename.(files) if count(==(b), basename.(files)) > 1)
     label(f) = basename(f) in shared ? f : basename(f)
-    # A key that already exists is a DIFFERENT unit with the same name. It used to take a positional
+    # A key that already exists is a different unit with the same name. It used to take a positional
     # suffix, `(2)`, which moved to another unit whenever one of the same name was inserted above it —
     # silently re-pointing a baseline row. It is reported instead, and the author gives it a name.
     function add!(key, m, f, was)
@@ -88,7 +88,7 @@ function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,St
         if endswith(f, ".jl")
             for d in Texts.docstrings_of(read(path, String))
                 isempty(strip(d.text)) && continue
-                # Keyed by the SIGNATURE a docstring displays, falling back to the binding where it
+                # Keyed by the signature a docstring displays, falling back to the binding where it
                 # shows none — a module or a type documented without one. Two methods of a generic have
                 # one binding and two docstrings, so a key that is only the binding collapses them and
                 # matches neither in a package's recorded baseline.
@@ -121,7 +121,7 @@ function units(root::AbstractString, files, owners::Union{Nothing,Dict{String,St
                 if startswith(line, "#")
                     flush!(); heading = strip(replace(String(line), r"^#+" => "")); section = heading; tail = ""
                 elseif (m = match(r"^(\d+)\. ", line)) !== nothing
-                    # Keyed UNDER its heading. A document restarts its numbering in each section, so
+                    # Keyed under its heading. A document restarts its numbering in each section, so
                     # `item 1` occurs three times in one file here; keyed by the number alone they are
                     # one unit and two of the three are tracked by nothing. A positional suffix would
                     # also separate them, and would move every later one when an item is inserted —
@@ -148,7 +148,7 @@ end
 The recorded numbers each unit was at when the baseline was last written, or `nothing` where the package
 keeps none. The argument is `root`, the package root. Returns the rows.
 
-A MISSING baseline is not an empty one: a package with prose and no baseline has never been measured, and
+A missing baseline is not an empty one: a package with prose and no baseline has never been measured, and
 saying so is the point — a check that passes vacuously is worse than one that refuses.
 """
 function baseline(root::AbstractString)
@@ -171,7 +171,7 @@ csvkey(k) = replace(k, "\"" => "'")
 How many words a unit recorded at `n` may grow by inside a run: ten, or five percent of `n` where that
 is more. The argument is `n`, the recorded count. Returns the allowance.
 
-A fix that must ADD a qualifier to be correct was refused for one word, and paid for it by cutting
+A fix that must add a qualifier to be correct was refused for one word, and paid for it by cutting
 elsewhere; the first wording that fit read badly ([GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)' finding 005, 2026-09-24). Outside
 a run the ratchet is strict, and the close records what grew within the allowance [ruled 2026-09-26].
 """
@@ -245,7 +245,7 @@ Every unit of prose that breaks its cap or has grown past its recorded numbers, 
 units share. The arguments are `root`, the package root, and `cfg`, the package's config, which names
 the files. Returns one location per unit.
 
-A unit the baseline does not hold is NEW and is held to the caps; one it holds may fall and never rise,
+A unit the baseline does not hold is new and is held to the caps; one it holds may fall and never rise,
 except by the [`allowance`](@ref) while a run is open.
 """
 function prose_shape(root::AbstractString, cfg)
@@ -264,7 +264,7 @@ function prose_shape(root::AbstractString, cfg)
     end
     for (key, u) in sort!(collect(us))
         recorded = base === nothing ? nothing : recorded_row(base, key, legacy, us)[1]
-        # The finding NAMES its file. It carried an empty one, so a per-file switch could never reach
+        # The finding names its file. It carried an empty one, so a per-file switch could never reach
         # this rule and a reader was left to find the unit from the key alone.
         where_ = get(owners, key, "")
         if recorded === nothing
@@ -380,7 +380,7 @@ nothing. The arguments are `root`, the package root, and `cfg`, the package's co
 function files_of(root::AbstractString, cfg)
     files = String[]
     # Per file set, and through the same expander every other rule uses. Reading the package's patterns
-    # with `isfile` dropped every GLOB, and taking the fallback only when ALL THREE sets were silent
+    # with `isfile` dropped every glob, and taking the fallback only when all three sets were silent
     # meant a package naming its rationale documents — the one thing this instruction asks it to do —
     # silently stopped this rule reading its code and its pages at all.
     for fs in (Model.FileSet.CODE, Model.FileSet.PAGES, Model.FileSet.RATIONALE)

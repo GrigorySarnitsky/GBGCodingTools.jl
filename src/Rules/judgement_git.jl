@@ -2,7 +2,7 @@
 """
     Rules.JudgementGit
 
-The `RULE.GIT.*` rules, split three ways (ruled 2026-09-22). Five are decided from the FILES and run
+The `RULE.GIT.*` rules, split three ways (ruled 2026-09-22). Five are decided from the files and run
 in every test suite: the workflows, the ignore file, environment paths, requests and the licence.
 
 Three ask about commits and branches — what no build or test may read, since a fresh clone and CI
@@ -269,7 +269,7 @@ The check of a rule the end-of-turn hook decides: runs `fragment` — the hook's
 rule — in the package root, with `GBG_BRANCH` set to the configured branch, and reads one location per
 line it prints. The argument is `fragment`, the lines. Returns `run(root, cfg)::Vector{Model.Location}`.
 
-The hook and this check are ONE program: the hook renderer splices the same lines into the script, so what
+The hook and this check are one program: the hook renderer splices the same lines into the script, so what
 `gbg check` reports and what the hook refuses to end a turn over cannot disagree. Where `bash` or `git`
 is missing it returns one location whose text begins `cannot evaluate: `.
 """
@@ -407,7 +407,7 @@ function local_paths(root::AbstractString, cfg::Model.Config)
         end
     end
     home = rstrip(normpath(abspath(root)), '/')
-    # Absolute on ANY host: a Windows path read on Linux is not relative, nor the reverse (found in review).
+    # Absolute on any host: a Windows path read on Linux is not relative, nor the reverse (found in review).
     absolute(s) = isabspath(s) || startswith(s, '/') || occursin(r"^[A-Za-z]:[\\/]", s) || startswith(s, "\\\\")
     outside(env, s) = absolute(s) ||
         !startswith(rstrip(normpath(joinpath(home, env, replace(s, '\\' => '/'))), '/') * "/", home * "/")

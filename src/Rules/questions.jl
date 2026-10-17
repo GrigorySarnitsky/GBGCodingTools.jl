@@ -7,7 +7,7 @@ tool's, with every identifier moved out of the sentence and into the exhibit.
 
 These are batch e of the conversion, and the only rules in the rulebook with no ancestor — nothing in
 the old tree checked how a person was addressed. They read a [`Model.Question`](@ref) rather than a file,
-so they run when a question is PUT and never when a record is read: a question already answered was
+so they run when a question is put and never when a record is read: a question already answered was
 written under whatever rules stood then, and re-judging it would fail to load an old record.
 """
 module Questions
@@ -31,7 +31,7 @@ function one_decision(q::Model.Question, cfg)
     isempty(d) && return [at("decision", "the decision is empty")]
     out = Model.Location[]
     endswith(d, "?") || push!(out, at("decision", "does not end in a question mark: " * String(d)))
-    # A sentence end INSIDE the decision, not the one closing it. `e.g.` and `i.e.` are not ends.
+    # A sentence end inside the decision, not the one closing it. `e.g.` and `i.e.` are not ends.
     body = replace(String(d[1:prevind(d, lastindex(d))]), r"\b(e\.g|i\.e|cf|vs|no)\.\s" => " ")
     occursin(r"[.!?]\s+\p{Lu}", body) && push!(out, at("decision", "more than one sentence: " * String(d)))
     return out
@@ -108,7 +108,7 @@ function no_coordinates(q::Model.Question, cfg)
             m = match(re, masked)
             m === nothing && continue
             push!(out, at(field, what * " in the $field: " * m.match))
-            # Consumed before the next pattern looks: `src/Rules/shape.jl` is a file path AND reads as a
+            # Consumed before the next pattern looks: `src/Rules/shape.jl` is a file path and reads as a
             # qualified name, and one coordinate reported twice tells a reader there are two things
             # wrong with a sentence that has one.
             masked = replace(masked, re => " ")
@@ -146,7 +146,7 @@ function no_house_terms(q::Model.Question, cfg)
     for (field, text) in (("decision", q.decision), ("context", q.context))
         masked = replace(text, r"`[^`]*`" => " ")
         for t in terms
-            # LITERAL, word by word, as `retired_claims` does: a term a package writes — `C++`, `f(x)` —
+            # Literal, word by word, as `retired_claims` does: a term a package writes — `C++`, `f(x)` —
             # is never compiled as a pattern.
             words = [replace(w, r"([\\^$.|?*+()\[\]{}])" => s"\\\1") for w in split(strip(t))]
             isempty(words) && continue

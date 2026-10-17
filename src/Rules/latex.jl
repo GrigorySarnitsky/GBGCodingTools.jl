@@ -90,7 +90,7 @@ const DOLLAR_MATH = r"\$[^$\n]*[\\_^{}][^$\n]*\$"
 const FORMULA_GLYPHS = r"[≤≥≠∈∉∇Δ⟨⟩‖√×⋅]"
 # Every glyph above is also legal Julia — `≤`, `×`, `⋅`, `√` and `∈` are operators, `Δ` is an ordinary
 # letter in a name — so the glyph alone cannot tell a formula from code. What tells them apart is
-# SYNTAX: a call, an index, a keyword argument, an assignment, a field access or a lambda arrow is code
+# syntax: a call, an index, a keyword argument, an assignment, a field access or a lambda arrow is code
 # and nothing else. A code span holding one of those is naming code, however mathematical it looks.
 const CODE_SYNTAX = r"[(\[{=;\"]|->|\w\.\w"
 # Julia prints an array's dimensions this way, and a docstring quoting that print is quoting code.
@@ -158,7 +158,7 @@ const RENDERED_MATH = Model.Rule(
             [Model.Location(; file = "docs/src/page.md", line = 3)], "never inside a code span"),
         Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe bound ``x \\le y`` holds.\n",
             Model.Location[], "never inside a code span"),
-        # A code span holding CODE is not mathematics, however mathematical its glyphs look: `⋅` and `×`
+        # A code span holding code is not mathematics, however mathematical its glyphs look: `⋅` and `×`
         # are Julia operators, and `64×64×64` is how Julia prints an array's dimensions.
         Model.TextExample(Model.FileSet.PAGES, "# A page\n\nThe bound `x ≤ y` in `clamp(x ≤ y, lo, hi)`.\n",
             [Model.Location(; file = "docs/src/page.md", line = 3)], "never inside a code span"),
@@ -187,7 +187,7 @@ const RENDERED_MATH = Model.Rule(
 
 # The thin space before a differential is the one the statement excepts, in every spelling of the
 # differential: `\\,\\mathrm{d}x`, `\\, \\mathrm{d}x`, `\\,dx` and `\\,d^3x`. A differential is `d`
-# and ONE variable — a letter or a control word such as `\\theta` — and then no letter: `a\\,d_k` is
+# and one variable — a letter or a control word such as `\\theta` — and then no letter: `a\\,d_k` is
 # a product with an index, and reading any `d` as a differential let it through.
 const DIFFERENTIAL = r"\\,(?!\s*(?:\\mathrm\s*\{\s*d\s*\}|\\mathrm\s+d|d)\s*(?:\^\{?\d+\}?)?\s*(?:\\[A-Za-z]+|[A-Za-z])(?![A-Za-z]))"
 const SPACING_PATTERNS = [

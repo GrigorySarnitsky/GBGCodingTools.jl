@@ -2,22 +2,22 @@
 """
     Roles.DocumentationReview
 
-Who reads a package during a documentation review, and what each of them is given — DERIVED from the
+Who reads a package during a documentation review, and what each of them is given — derived from the
 rules, not listed.
 
 Until 2026-09-20 this file held nineteen readers written by hand, twelve of them given identical
 material on the identical model and differing only in the sentence saying who they were. What replaced
 them is a computation over two tags each reader's rule carries: what deciding it requires a reader to
-be GIVEN (`Rule.access`) and, for the rare rule whose own words are a field's, which field
+be given (`Rule.access`) and, for the rare rule whose own words are a field's, which field
 (`Rule.discipline`). Three blind readers put the access tags on from the rules' text alone and agreed on
 them (Fleiss' kappa 0.90 in round 1; 0.74 in round 0, before the rewording).
 
-The readers come in two kinds. A BOUND reader carries rules: one per bundle of material under one
+The readers come in two kinds. A bound reader carries rules: one per bundle of material under one
 principle — a reader given more material can decide any rule needing less, except that a rule needing
-NOTHING goes to a reader given nothing, because more material would change the answer — plus, for a rule
+`NOTHING` goes to a reader given nothing, because more material would change the answer — plus, for a rule
 that names a discipline, that discipline's reader where the package declares it.
 
-An OPEN reader carries a standpoint and no checklist, and finds what no rule names: the two standpoints
+An open reader carries a standpoint and no checklist, and finds what no rule names: the two standpoints
 here, whose yield was recorded highest in the one review that recorded it, and one expert per discipline
 the package declares — the same model with a specialist's standpoint, reading the whole documentation for
 what is wrong in its field. On 2026-09-21 the owner ruled, on the record of what checked each rule before,
@@ -25,11 +25,11 @@ that formulas true of the code, notation, coverage and the identity sentence are
 with the source open, not an expert's; only stating maps without flattening is a geometer's.
 
 A rule no reader can be given — one needing the network, or git history, or a discipline the package does
-not declare — is reported as a GAP: a reader that cannot recognise the defect returns a pass
+not declare — is reported as a gap: a reader that cannot recognise the defect returns a pass
 indistinguishable from not looking.
 
 **`kept_from_code` and `site` are the load-bearing fields.** The withheld reader's whole value is that
-the source and the other pages are not in front of it; it reads the BUILT page, which is exactly one
+the source and the other pages are not in front of it; it reads the built page, which is exactly one
 page with nothing else in it.
 """
 module DocumentationReview
@@ -68,7 +68,7 @@ const DISCIPLINES = Model.Discipline[
 #
 # Three, in the order a rule is tried against them. `given` is the material; a rule fits a bundle when
 # everything it needs is in `given`. The first bundle a rule fits is the one it goes to, which is the
-# merging principle above — and NOTHING sits only in the first, so a rule needing nothing can go nowhere
+# merging principle above — and `NOTHING` sits only in the first, so a rule needing nothing can go nowhere
 # else.
 
 const WITHHELD = (

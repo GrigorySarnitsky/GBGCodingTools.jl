@@ -9,8 +9,8 @@ A line number is not a place. A fix earlier in a file moves every line below it,
 that, and a finding carried from an earlier run had its lines read at an older commit — so a stale number
 points at whatever now sits there, which is how a fix lands in the wrong paragraph.
 
-A [`Model.Location`](@ref) is therefore the file, the NODE (for Julia the binding, method or field of a
-constant documented; for Markdown the heading path), the QUOTE as it read then, and the line as a hint
+A [`Model.Location`](@ref) is therefore the file, the node (for Julia the binding, method or field of a
+constant documented; for Markdown the heading path), the quote as it read then, and the line as a hint
 only. The function [`reanchor`](@ref) finds the node, then the quote inside it; failing that the quote, nearest
 the old line; failing that it says `OUTDATED` rather than guessing.
 
@@ -26,7 +26,7 @@ using AbstractTrees: PreOrderDFS
 using JuliaSyntax: JuliaSyntax
 const JS = JuliaSyntax   # the registered parser, pinned: its trees do not change when Julia does
 
-# A directory that disappears while a walk is running is SKIPPED, not thrown over. Every walk here is
+# A directory that disappears while a walk is running is skipped, not thrown over. Every walk here is
 # over a working tree, and a working tree has git in it: git packs and removes its own object
 # directories while it commits, and a walk that started before a commit and finished after one died
 # with ENOENT on `.git/objects/81` — on CI, where the tests commit far faster than a person does.
@@ -44,7 +44,7 @@ const DEFAULT_PATTERNS = Dict{Model.FileSet.T,Vector{String}}(
     Model.FileSet.PAGES      => ["docs/src/**/*.md"],
     # Every design document a package keeps directly under `docs/` — the site's pages live in `docs/src/`
     # and history deeper down. Deterministic checks are cheap and carry no risk of an agent's misreading,
-    # so they read these by default [ruled 2026-09-24]; which of them a READER is given is a separate
+    # so they read these by default [ruled 2026-09-24]; which of them a reader is given is a separate
     # question, answered by `architecture_doc` and `material`.
     Model.FileSet.RATIONALE  => ["docs/*.md"],
     Model.FileSet.LITERATE   => ["examples/**/*.jl"],
@@ -121,7 +121,7 @@ the file a reader names. Both ask this.
 glob_matches(pattern::AbstractString, path::AbstractString) =
     occursin(Regex("^" * wildcard_source(pattern; classes = false) * "\$"), replace(path, '\\' => '/'))
 
-# ONE grammar for every pattern this module matches. A file-set pattern and a `.gitignore` line share
+# One grammar for every pattern this module matches. A file-set pattern and a `.gitignore` line share
 # git's wildcards, and the walk, the guard's test and the ignore predicate each had a rewrite of their
 # own: only the dot was escaped in two of them, so `docs/a+b.md` matched `docs/ab.md`, `foo(1).txt`
 # ignored `foo1.txt`, and a line holding `)` threw out of every check (found in review, 2026-09-23 and
@@ -129,7 +129,7 @@ glob_matches(pattern::AbstractString, path::AbstractString) =
 # `?` one character, `[…]` a class (`[!…]` negated, as git writes it), and `**` any run of directories —
 # `**/` at the start or `/**/` in the middle matching none as well, a trailing `/**` everything below.
 # A backslash makes the character after it literal, which is how a name holding a space, a `#` or a
-# `!` is written in a `.gitignore`. A FILE-SET pattern (`classes = false`) has the two wildcards `*` and
+# `!` is written in a `.gitignore`. A file-set pattern (`classes = false`) has the two wildcards `*` and
 # `**` alone: a `?` or a `[` there is literal, as it was on 2026-09-23, because a path may hold them
 # (found verifying the review's fixes, 2026-09-27).
 function wildcard_source(pattern::AbstractString; classes::Bool = true)
@@ -207,7 +207,7 @@ with no link — so a rule matching a bracketed construct line by line reports a
 having no DOI. The same assumption cost `RULE.DOC.ARGS_FORM` a wrapped signature.
 
 Two bounds on the joining, both from one false positive
-[[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/), 2026-09-22]. A BLANK LINE
+[[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/), 2026-09-22]. A blank line
 ends a logical line whatever the brackets say: a paragraph break is a break, and a bracket left open
 before one is unmatched, not wrapped. And brackets inside a code or math span do not count: the `[`
 of a half-open interval written ``[a, b)`` has no `]` and never will. Without either bound, that one
@@ -261,11 +261,11 @@ line_at(start::Integer, breaks::AbstractVector{<:Integer}, s::AbstractString, of
     wrapped_lines(text) -> Vector{Tuple{Int,String}}
 
 The text as logical lines, each with the number of the line it starts on: a continuation of the line
-above is joined to it. A blank line, a heading, and a bullet or numbered item each START a line.
+above is joined to it. A blank line, a heading, and a bullet or numbered item each start a line.
 
 The argument is `text`. Returns the pairs, in order.
 
-This is for a rule about ADJACENCY, where [`unwrapped`](@ref) is not enough: `unwrapped` joins only when
+This is for a rule about adjacency, where [`unwrapped`](@ref) is not enough: `unwrapped` joins only when
 brackets are open, and a line ending in a cross-reference has balanced brackets while the formula naming
 that reference sits on the next line. A bullet has to start a new logical line, or the end of one item and the start
 of the next read as adjacent when they are two entries of a list.
@@ -293,10 +293,10 @@ end
 
 What a Julia name looks like, as regex source for a rule to build a larger pattern around.
 
-It is NOT `[A-Za-z_][A-Za-z0-9_!]*`, and it is not that list with Greek appended either. Julia admits
+It is not `[A-Za-z_][A-Za-z0-9_!]*`, and it is not that list with Greek appended either. Julia admits
 any Unicode letter in an identifier, and the packages this rulebook serves are full of them — `φ`, `ν`
 and `σ` are ordinary field and argument names in a physics package. An incomplete pattern does not
-merely miss such a name: it REPORTS it. A struct field the pattern cannot see is a field the type does
+merely miss such a name: it reports it. A struct field the pattern cannot see is a field the type does
 not have, so the docstring documenting it is reported as documenting a ghost — which is exactly what
 happened to `_MapValues(φ, orders)` when this was spelled out by hand in four places.
 """
@@ -461,7 +461,7 @@ end
 """
     string_macro(head) -> Bool
 
-Whether a macro call's head is a STRING macro's, `r"…"`, `raw"…"`, `v"…"`, on either parser. The
+Whether a macro call's head is a string macro's, `r"…"`, `raw"…"`, `v"…"`, on either parser. The
 argument is `head`, the first child of a `macrocall` node. Returns the answer.
 """
 string_macro(head) = string(JS.kind(head)) in ("StringMacroName", "StrMacroName")
@@ -505,7 +505,7 @@ The argument is `path`, the file to read. A file that does not parse yields what
 error, since a caller asking where something is must not be stopped by a file that is temporarily broken.
 Returns the spans.
 
-A name is BARE, `g` and not `Inner.g`, inside a submodule as at the top: a location's node is looked up
+A name is bare, `g` and not `Inner.g`, inside a submodule as at the top: a location's node is looked up
 by the name a reader writes, and no reader writes the qualified one.
 """
 function definitions(path::AbstractString)
@@ -528,7 +528,7 @@ function walk!(out, node, src)
         k = JS.kind(c)
         parts = doc_parts(c)
         if parts !== nothing
-            # A docstring and what it documents are ONE node here: the parser wraps them together, and a
+            # A docstring and what it documents are one node here: the parser wraps them together, and a
             # finding is nearly always in the docstring, which sits above the definition and so outside
             # its own byte range. Anchoring to the definition alone would send every such finding down the
             # weaker path, the quote searched over the whole file.
@@ -584,7 +584,7 @@ end
 
 function line_range(src::AbstractString, bytes::UnitRange{Int})
     isempty(bytes) && return 1:0
-    # The parser reports BYTE offsets and `SubString` wants character indices. A package whose source
+    # The parser reports byte offsets and `SubString` wants character indices. A package whose source
     # holds `π`, `Δ` or any other multi-byte name eventually has a node boundary land inside one, and
     # slicing there throws `StringIndexError` out of a rule — which is what happened on a real package.
     at(i) = thisind(src, clamp(i, 1, lastindex(src)))
@@ -636,7 +636,7 @@ function docs!(out, node)
     for c in cs
         parts = doc_parts(c)
         if parts !== nothing
-            # The INDENTATION is kept: a docstring opens with its signature, indented, and stripping
+            # The indentation is kept: a docstring opens with its signature, indented, and stripping
             # the text of leading space hides that line from any rule that reads it. Only the quotes
             # and the blank lines around the body come off.
             raw = String(JS.sourcetext(first(parts)))
@@ -656,7 +656,7 @@ end
 """
     prose_text(path; comments = true) -> String
 
-The file's PROSE alone, with every other line left empty so that line numbers are unchanged.
+The file's prose alone, with every other line left empty so that line numbers are unchanged.
 
 # Arguments
 
@@ -665,7 +665,7 @@ The file's PROSE alone, with every other line left empty so that line numbers ar
 
 Returns the masked text.
 
-The distinction matters to a rule about RENDERING: a docstring is published and a comment is not, so a
+The distinction matters to a rule about rendering: a docstring is published and a comment is not, so a
 rule that exists because a reader would see the wrong thing on the page reads docstrings alone, while a
 rule about what the text says reads both.
 
@@ -709,7 +709,7 @@ end
     mask_code_spans(line) -> String
 
 The line with every single-backtick code span blanked to spaces of the same length, so that a pattern
-about MATHEMATICS does not match a code span that merely looks like it. The argument is `line`, the line
+about mathematics does not match a code span that merely looks like it. The argument is `line`, the line
 to mask. Returns the masked line, whose length and column positions are unchanged.
 """
 mask_code_spans(line::AbstractString) = replace(String(line), r"(?<!`)`[^`\n]+`(?!`)" => m -> " "^length(m))
@@ -720,7 +720,7 @@ mask_code_spans(line::AbstractString) = replace(String(line), r"(?<!`)`[^`\n]+`(
 The line with every double-backtick span blanked to spaces of the same length, so a bracket inside a
 math span is not read as prose. The argument is `line`. Returns it, length preserved.
 
-Kept APART from [`mask_code_spans`](@ref) on purpose: the LaTeX rules read their mathematics inside
+Kept apart from [`mask_code_spans`](@ref) on purpose: the LaTeX rules read their mathematics inside
 exactly these spans, and masking them everywhere blinded eleven rules at once. Only what counts
 brackets or scans for links wants them gone — the `[` of a half-open interval written ``[a, b)`` has
 no `]` and never will.
@@ -732,9 +732,9 @@ mask_math_spans(line::AbstractString) = replace(String(line), r"``[^`\n]+?``" =>
 
 The line with every doubled LaTeX backslash written singly, so that a rule about LaTeX reads the same
 text whether it came from a Markdown page or from a Julia docstring. The argument is `line`, the line to
-read. Returns it rewritten; its length is NOT preserved, so a rule using this reports the whole line.
+read. Returns it rewritten; its length is not preserved, so a rule using this reports the whole line.
 
-The doubling is not a mistake to be reported — `RULE.TEX.SWALLOWED_ESCAPE` REQUIRES it, because Julia
+The doubling is not a mistake to be reported — `RULE.TEX.SWALLOWED_ESCAPE` requires it, because Julia
 eats a single backslash in a docstring before LaTeX ever sees it. So a page carries `\\int f \\, g` and the
 docstring saying the same thing carries `\\\\int f \\\\, g`, and a pattern written for one of them silently
 misreads the other. `RULE.TEX.SPACING` reported every correct `\\\\,\\\\mathrm{d}x` in a consumer's
@@ -757,15 +757,15 @@ are ignored, all five are rewritten every build, and the default pages pattern `
 them. On a built tree that was 264 findings against 108 real ones, and once its `docs/make.jl` called
 this package the build would have been linting its own output.
 
-It is read from the FILES rather than from `git check-ignore`, because the harness that runs these
+It is read from the files rather than from `git check-ignore`, because the harness that runs these
 checks starts no child process: a rule must give the same answer on a machine with no git on its path.
 Checked against `git check-ignore` over 3,203 files in four repositories, it disagrees on two, both
 deliberate and both the same name:
 
-- a file that a pattern matches but the repository TRACKS. Git never ignores a tracked file; knowing
+- a file that a pattern matches but the repository tracks. Git never ignores a tracked file; knowing
   which are tracked needs git, so this skips it. The difference is conservative — a file the package
   told git to ignore goes unread — and it is a file the package asked not to have around.
-- a file ignored by the user's GLOBAL excludes (`~/.config/git/ignore`). Those are per-machine, and
+- a file ignored by the user's global excludes (`~/.config/git/ignore`). Those are per-machine, and
   reading them would make a rule answer differently on two machines from the same commit, which is the
   one thing this may not do.
 """
@@ -834,7 +834,7 @@ function gitignore_rules_of(text::AbstractString)
         negated = startswith(line, "!")
         negated && (line = line[2:end])
         isdir_only = endswith(line, "/")
-        # Anchoring is decided BEFORE the leading slash is stripped. `!/Manifest.toml` anchors to the
+        # Anchoring is decided before the leading slash is stripped. `!/Manifest.toml` anchors to the
         # root; read after stripping it looks unanchored, and the negation then re-includes the file at
         # every depth — which is exactly what GBGHomogeneousTurbulence's `Manifest.toml` / `!/Manifest.toml`
         # pair is written to prevent.
@@ -893,7 +893,7 @@ opens with prose.
 A docstring may display several arities — `weighted_inner(f, w)`, `weighted_inner(f, g, w)` — and a
 rule about how many arguments something takes must see all of them. Reading only the first reported
 `weighted_inner` as taking two, and asked for the prose form on a binding whose three-argument form
-needs bullets. Only the LEADING block counts: an indented line further down is a code example.
+needs bullets. Only the leading block counts: an indented line further down is a code example.
 """
 function signature_lines(doc::AbstractString)
     out = String[]
@@ -952,7 +952,7 @@ end
 """
     argument_list(signature) -> Union{String,Nothing}
 
-What sits between the parentheses of a call: the FIRST opening parenthesis and the one that closes it,
+What sits between the parentheses of a call: the first opening parenthesis and the one that closes it,
 matched by depth. The argument is `signature`, the signature line. Returns the text inside, or `nothing`
 where the line holds no balanced call.
 
@@ -979,7 +979,7 @@ end
 """
     parameters(inside) -> Tuple{Vector{String},Vector{String}}
 
-The positional and keyword parameter NAMES of an argument list, with their types and defaults taken off.
+The positional and keyword parameter names of an argument list, with their types and defaults taken off.
 The argument is `inside`, the text between the parentheses. Returns the two lists, positional first.
 
 A bare [keyword splat](https://docs.julialang.org/en/v1/manual/functions/#Keyword-Arguments), `kwargs...`,
@@ -1057,7 +1057,7 @@ end
 One argument per entry, splitting only at the commas that separate arguments. The argument is `text`,
 part of an argument list. Returns the entries, stripped, with empty ones dropped.
 
-A comma inside a type is not a separator: `offset::NTuple{3, Real}` is ONE argument, and splitting on
+A comma inside a type is not a separator: `offset::NTuple{3, Real}` is one argument, and splitting on
 every comma makes it two — the second of which, `Real}`, carries no name, so a count came out right by
 luck wherever names were what mattered and wrong wherever the count was.
 """
@@ -1078,7 +1078,7 @@ end
     arity(inside) -> Tuple{Int,Int}
 
 How many positional and keyword arguments a signature's argument list holds, counting a slot that has
-no NAME. The argument is `inside`, what sits between the parentheses. Returns the two counts.
+no name. The argument is `inside`, what sits between the parentheses. Returns the two counts.
 
 `field_spectral_shape(grid, fourier_layout, ::Val{R})` takes three; [`parameters`](@ref) returns two,
 because the third slot is typed and unnamed and there is no name to return. A rule about how many
@@ -1096,7 +1096,7 @@ end
 """
     headings(path) -> Vector{NodeSpan}
 
-Every heading of the Markdown file at `path`, each named by its HEADING PATH — the headings above it and
+Every heading of the Markdown file at `path`, each named by its heading path — the headings above it and
 itself, joined by `" / "` — so a section keeps its name when a sibling is renamed. A heading inside a
 fenced code block is not a heading.
 
@@ -1267,7 +1267,7 @@ find_nodes(root::AbstractString, file::AbstractString, node::AbstractString) =
 spans_named(spans::Vector{NodeSpan}, node::AbstractString) =
     isempty(node) ? UnitRange{Int}[] : [s.lines for s in spans if s.name == node]
 
-# Every named node of one file, parsed ONCE: a caller with several lines to place in one file asks
+# Every named node of one file, parsed once: a caller with several lines to place in one file asks
 # this and then `node_in`, since parsing the file again for each of 235 hits cost two seconds where the
 # search itself cost a fifth of one (found in review, 2026-09-26).
 nodes_of(path::AbstractString) = endswith(path, ".jl") ? definitions(path) : headings(path)
@@ -1320,7 +1320,7 @@ function reanchor(root::AbstractString, loc::Model.Location; loose::Bool = true)
     isempty(loc.text) && return outdated(loc)
 
     # The quote as written on one line; as written, across the lines the source wraps it over; and, only
-    # where both fail, as it READS on the built page, whose quote lost the source's markup. The reading
+    # where both fail, as it reads on the built page, whose quote lost the source's markup. The reading
     # comes last because it erases differences: tried first, it lost 1769 quotes spelled as the source
     # spells them and found text the finding was not about (both found in review, 2026-09-24).
     exact = [i for (i, l) in pairs(lines) if occursin(loc.text, l)]
@@ -1352,11 +1352,11 @@ Where a quote is written, searched across the package's documentation.
 
 Returns the one location that holds it, or `nothing` when no file holds it or more than one does.
 
-This is for a quote read somewhere that is not a file: a reader given one BUILT page quotes the page,
+This is for a quote read somewhere that is not a file: a reader given one built page quotes the page,
 and the words may have been rendered from a docstring in the source rather than written on the page.
 Searching the documentation for them is what puts the finding in the file a fixer can edit.
 
-Two files holding the same words is NOT placed. A fixer sent to one of two identical sentences is a
+Two files holding the same words is not placed. A fixer sent to one of two identical sentences is a
 fixer sent to a coin toss, and the report naming the quote as unplaced is the honest answer. The pages,
 docstrings and examples are searched first and the rationale documents only when none of them holds the
 quote, so a sentence a decision log repeats is still the docstring's. Whitespace
@@ -1367,7 +1367,7 @@ function place(cfg::Model.Config, root::AbstractString, text::AbstractString)
     # As the source writes it first, across every file; as the page reads it only where no file holds it
     # so. Within each, the text a user reads first and the rationale documents only where none of it holds
     # the quote: a docstring whose sentence a decision log also records is the docstring's (found in
-    # review, 2026-09-23), while a decision-log sentence a code comment merely READS like is the log's.
+    # review, 2026-09-23), while a decision-log sentence a code comment merely reads like is the log's.
     for form in (:written, :read)
         for tier in ((Model.FileSet.PAGES, Model.FileSet.DOCSTRINGS, Model.FileSet.LITERATE), (Model.FileSet.RATIONALE,))
             hits = Model.Location[]
@@ -1440,7 +1440,7 @@ formula, is often written in several places, and a fix made where the reader hap
 others standing. A fourth copy of a corrected formula once survived a whole run that way.
 """
 function occurrences(cfg::Model.Config, root::AbstractString, text::AbstractString)
-    # As WRITTEN only: a copy is the same spelling. The reading form erases exactly the difference a
+    # As written only: a copy is the same spelling. The reading form erases exactly the difference a
     # markup rule is about, and listed text already written right as a copy of the defect (found in
     # review, 2026-09-24).
     isempty(flatten(text)) && return Model.Location[]
@@ -1573,7 +1573,7 @@ end
 
 # ────────────────────────────────────────────────────────────────────────────────── the built site
 #
-# Harvested from `HtmlWalker` of the tree being replaced: what a rule about the RENDERED page needs is
+# Harvested from `HtmlWalker` of the tree being replaced: what a rule about the rendered page needs is
 # the page as a reader meets it, not as its source was written. A built-site rule reads through these.
 
 parse_page(path::AbstractString) = parsehtml(read(path, String); preserve_whitespace = true)

@@ -47,7 +47,7 @@ module Input; @enum T SOURCE_TEXT FILE_TREE LOADED_MODULE BUILT_SITE QUESTION HI
 module FileSet; @enum T DOCSTRINGS PAGES RATIONALE LITERATE CODE TESTS; end
 
 """
-What deciding one rule requires beyond the unit it is about — the material a reader must be GIVEN.
+What deciding one rule requires beyond the unit it is about — the material a reader must be given.
 `NOTHING` is exclusive: the unit alone decides, and more material would change the answer (a term
 undefined on the page may be defined in the source, and the rule asks about the page). The others
 combine. Tagged on each rule from its own text by three blind readers, 2026-09-19.
@@ -134,7 +134,7 @@ end
 """
     relocated(d, locations) -> FindingDraft
 
-The same draft with its locations replaced and EVERY other field carried. The arguments are `d`, the
+The same draft with its locations replaced and every other field carried. The arguments are `d`, the
 draft, and the new `locations`. Returns the copy.
 
 Two places rebuilt a draft field by field to re-anchor it — the fix stage and the carry-over — and
@@ -279,7 +279,7 @@ end
 
 A phrase a package has retired, and must not assert again.
 
-It carries a PHRASE and never a regular expression. A pattern written in a package's config would be
+It carries a phrase and never a regular expression. A pattern written in a package's config would be
 compiled inside every docs build of that package, which puts a malformed pattern, a pathological one and
 an over-broad one into the build; a literal costs nothing and covers what the fleet's own retired claims
 need, because what makes them hard to match is line wrapping, which the check handles itself.
@@ -458,7 +458,7 @@ end
 One rule of the rulebook, carrying its own statement, the check that decides a violation, and the
 examples that show the check matches the statement.
 
-A rule with an access tag is a READER'S rule: the readers of a documentation review are derived from
+A rule with an access tag is a reader's rule: the readers of a documentation review are derived from
 these tags rather than listed. A rule naming a discipline goes to that discipline's reader where the package
 declares it, and to nobody — said in the report — where it does not.
 
@@ -542,7 +542,7 @@ A field of expertise a package may declare it needs a reader to have, catalogued
 and shared: a fluid-dynamics theoretician serves two of the science packages.
 
 A reader with a discipline is the same model with a standpoint, not a different model. It is derived
-into the panel as an OPEN reader — a specialist reading the whole documentation for whatever is wrong in
+into the panel as an open reader — a specialist reading the whole documentation for whatever is wrong in
 its field — bound only to a rule that names its discipline.
 
 # Fields

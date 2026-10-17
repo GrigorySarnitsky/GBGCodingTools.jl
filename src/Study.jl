@@ -3,21 +3,21 @@
 """
     Study
 
-Whether a rule's text says what deciding it requires — MEASURED, and not argued.
+Whether a rule's text says what deciding it requires — measured, and not argued.
 
 Three readers are given a rule's text and nothing else, and answer the same questions about it: what
 must be read to decide it, whether deciding it needs a discipline, and whether the wording left them
-guessing. Their AGREEMENT is the result. A rule they answer differently about is a rule whose text says
+guessing. Their agreement is the result. A rule they answer differently about is a rule whose text says
 two things, and that is a fact about the wording, which no amount of discussion can move.
 
 **It converges on nothing, and there is nothing to converge.** This was called an attack on the rules
 until 2026-09-21, and the name was wrong twice over: an attack collects objections until they stop,
 which rewards a text that claims less, and the narrowing that produced is a measured failure of this
 project rather than a worry [2026-09-21]. Here nobody objects. Three
-readers answer, the answers agree or they do not, and rewording is what the disagreement is FOR.
+readers answer, the answers agree or they do not, and rewording is what the disagreement is for.
 
 **What it does with a disagreement.** Nothing, by itself. A rule the readers split on is reported, and a
-rule whose majority answer differs from the tag the rulebook actually carries becomes a PROPOSAL, which
+rule whose majority answer differs from the tag the rulebook actually carries becomes a proposal, which
 becomes a question to the owner. A tag is code: it changes on his answer and never on a measurement.
 """
 module Study
@@ -87,7 +87,7 @@ for the text alone; `<R>_c`, `G` for a generalist's rule and `D` for a disciplin
 recorded it, `<R>_f`, `1` where the wording left that reader guessing. A round without the flag columns
 is read as a round where nobody flagged anything, which is what round 0 was.
 
-A vote is written in the SHORTHAND the readers were offered and read back in the rulebook's own access
+A vote is written in the shorthand the readers were offered and read back in the rulebook's own access
 names, so `OTHER` and `CITED_WORK` are the same answer written twice. Without that, every rule needing
 another document drifts from the rulebook by spelling alone, and ten questions are put to the owner
 about nothing.
@@ -183,7 +183,7 @@ Where the readers' majority answer differs from the tag a rule actually carries.
 `round`, a measured round, and `rules`, the rulebook. Returns one entry per disagreement, each with the
 rule's id, what the rulebook says, and what the readers said.
 
-A rule the readers SPLIT on is left out: they did not agree on an answer, so there is no majority to
+A rule the readers split on is left out: they did not agree on an answer, so there is no majority to
 hold the rulebook to, and the finding about it is the split itself.
 """
 function drift(round::Round, rules::AbstractVector{Model.Rule})

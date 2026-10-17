@@ -6,7 +6,7 @@
 at that version.
 
 It moves the pin and regenerates; it checks nothing first. The new version's rules are not installed
-until the environments move, AFTER the bump, so a check here ran the old rules and could refuse nothing
+until the environments move, after the bump, so a check here ran the old rules and could refuse nothing
 it existed to refuse (removed 2026-09-27, the owner's word). The package's next docs build and test run
 the new rules, and that is where a newer rulebook's opinions about its prose appear.
 """
@@ -49,7 +49,7 @@ Moves the pin of the package at `root` to `version` and rewrites its wiring.
 Exit 0 when the pin moved, 1 when a generated path is the package's own file and was kept, 2 when the
 config, or an environment's `Project.toml`, could not be read, or the pin line could not be found.
 
-A PRERELEASE may be pinned. It was refused here until 2026-09-18, on the reasoning that a candidate is
+A prerelease may be pinned. It was refused here until 2026-09-18, on the reasoning that a candidate is
 not a release; the refusal bought nothing and the cost was concrete. A tag is immutable whether or not
 it carries `-rc.N`, so a candidate resolves from GitHub exactly as a release does.
 
@@ -87,7 +87,7 @@ end
 """
     stale_warning(io, version, running, root)
 
-Says that what was just written is the RUNNING version's, not the pinned one's, and prints the commands
+Says that what was just written is the running version's, not the pinned one's, and prints the commands
 that move each environment onto the pinned tag.
 
 # Arguments
@@ -97,7 +97,7 @@ that move each environment onto the pinned tag.
 - `running` — the version of the copy that wrote.
 - `root` — the package root, whose environments the commands move.
 
-The pin moves first and the regeneration follows, and the regeneration runs on the code that is LOADED —
+The pin moves first and the regeneration follows, and the regeneration runs on the code that is loaded —
 which is the version the environment's manifest still holds, not the one just pinned. So every generated file it writes is the
 old version's content under the new version's banner: a file the new version would add is absent, and a
 file it would word differently is worded the old way. [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) met this on 2026-09-22 going

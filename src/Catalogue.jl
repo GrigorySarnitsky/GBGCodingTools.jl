@@ -5,7 +5,7 @@
 What this package knows, as values rather than as files: the always-on checks, the instruments, the
 rulebook, and the readers derived from it.
 
-It is the third module of the order and holds DATA — a rule sits here beside the check that decides it,
+It is the third module of the order and holds data — a rule sits here beside the check that decides it,
 and nothing here runs anything: the instrument table, the rulebook as `RULES`, the retired rules, the
 fleet, and the reader derivation of the documentation review.
 
@@ -103,19 +103,19 @@ const INSTRUMENTS = Model.Instrument[
 Every package this one serves, and itself. Each row carries `name`, the package name; `github`, its
 `owner/repo` slug; and `path`, where its checkout sits relative to this repository — `"."` for this one.
 
-ONE home for the fleet. Until 2026-09-18 the roster was `[[consumer]]` rows in `fleet.toml` and the
+One home for the fleet. Until 2026-09-18 the roster was `[[consumer]]` rows in `fleet.toml` and the
 sibling sites were a second list in `Rules/pages.jl`: the same five packages written twice, in two files,
-with nothing comparing them. A rename applied to one alone fails silently in BOTH directions — a package
+with nothing comparing them. A rename applied to one alone fails silently in both directions — a package
 writing the new name gets no finding from `RULE.DOC.SIBLING_LINK`, which has nothing to say about a name
 it does not hold, and a package writing the old name is linked to a URL that 404s. `fleet.toml` keeps
 only the sweep state, which a verb writes rather than a person declaring it.
 """
 const FLEET = [
-    # The tool's own row (D15): pin `dev+<sha>[-dirty]`, OK/RED by its own wiring check, never BEHIND.
+    # The tool's own row (D15): pin `dev+<sha>[-dirty]`, `OK`/`RED` by its own wiring check, never `BEHIND`.
     (name = "GBGCodingTools",         github = "GrigorySarnitsky/GBGCodingTools.jl",         path = "."),
     (name = "GBGPeriodicFields",      github = "GrigorySarnitsky/GBGPeriodicFields.jl",      path = "../../Isotropic Turbulence/GBGPeriodicFields"),
     # Renamed from GBGIsotropicTurbulence on 2026-09-18: homogeneity is what a triple-periodic box
-    # enforces, and isotropy only what one forcing chooses. The PARENT folder is still "Isotropic
+    # enforces, and isotropy only what one forcing chooses. The parent folder is still "Isotropic
     # Turbulence" — that is the directory on disk, not a stale reference.
     (name = "GBGHomogeneousTurbulence", github = "GrigorySarnitsky/GBGHomogeneousTurbulence.jl", path = "../../Isotropic Turbulence/GBGHomogeneousTurbulence"),
     (name = "GBGStreamingStatistics", github = "GrigorySarnitsky/GBGStreamingStatistics.jl", path = "../../Statistics/GBGStreamingStatistics"),
@@ -235,7 +235,7 @@ readers — derived from the rules' access tags and the package's declared disci
 and one line per gap: a rule no reader is given, or the discipline rules where no discipline is
 declared. An instrument without derived readers returns none.
 
-A role says WHO reads and what is withheld from them; what they are asked comes from the rulebook and
+A role says who reads and what is withheld from them; what they are asked comes from the rulebook and
 the instrument, so a reworded rule reaches every role without a second copy of it being edited.
 """
 function panel(instrument::Symbol, cfg::Model.Config)
@@ -277,10 +277,10 @@ function architecture_doc(cfg::Model.Config)
 end
 
 # Every value the package's settings give `architecture_doc`, in the order of the rules that carry the
-# parameter, duplicates removed. The parameter belongs to TWO rules and a setting is per rule, so every
+# parameter, duplicates removed. The parameter belongs to two rules and a setting is per rule, so every
 # rule is asked and a setting on any of them wins; reading the first rule alone left a setting on the
 # second ignored by the one predicate that decides what is a target (found in review, 2026-09-23). Two
-# rules set to DIFFERENT documents is a package contradicting itself: the first in rule order wins here,
+# rules set to different documents is a package contradicting itself: the first in rule order wins here,
 # and `missing_documents` reports the disagreement at every launch and in the report.
 function architecture_settings(cfg::Model.Config)
     out = String[]
@@ -312,7 +312,7 @@ Returns the spelling every predicate here compares against.
 
 A reader names a file in whatever form it read it, and an absolute path or a `./` prefix is the same
 file; comparing the raw string routed a finding on a target page to the owner as "in the working
-notes" (found in review, 2026-09-23). An absolute path OUTSIDE the package returns `""`: it names
+notes" (found in review, 2026-09-23). An absolute path outside the package returns `""`: it names
 nothing this package documents, and a location with no file is anchored nowhere rather than read from
 wherever it points.
 """
@@ -321,7 +321,7 @@ function normal_path(cfg::Model.Config, root::AbstractString, path::AbstractStri
     isempty(p) && return p
     r = rstrip(norm_rel(root), '/')
     if isabspath(p)
-        # under the root means under it as a DIRECTORY: `/x/repo-other/…` is not inside `/x/repo`. An
+        # under the root means under it as a directory: `/x/repo-other/…` is not inside `/x/repo`. An
         # absolute path outside the package names nothing this package documents, and is not read.
         p == r && return ""
         startswith(p, r * "/") || return ""
@@ -336,7 +336,7 @@ end
 
 # One spelling for a path this module compares: forward slashes, repeated slashes collapsed, `.` and
 # `..` segments resolved, no leading `./`, and `.` alone is the empty name. Applied to what a reader
-# names AND to what a config names, or the two never meet: a setting spelled `./docs/ARCHITECTURE.md`
+# names and to what a config names, or the two never meet: a setting spelled `./docs/ARCHITECTURE.md`
 # made the architecture document material (found in review, 2026-09-23).
 function norm_rel(path::AbstractString)
     p = replace(replace(String(path), '\\' => '/'), r"/{2,}" => "/")
@@ -349,13 +349,13 @@ end
 """
     material_doc(cfg, path) -> Bool
 
-Whether a path is MATERIAL: a document a reader may consult and never report on — one the package
+Whether a path is material: a document a reader may consult and never report on — one the package
 lists in `material`, a rationale document that is not a target, or a generated page, which is written
 by this package's own generators and is nobody's to fix. The arguments are `cfg` and `path`,
 normalised. Returns the answer. A path that is neither target nor material — a test file, the README, an
 empty name — is neither, and a finding there is an ordinary finding.
 
-The rationale set is matched by its PATTERNS, the way [`target`](@ref) matches the others, so a set
+The rationale set is matched by its patterns, the way [`target`](@ref) matches the others, so a set
 spelled as a glob is one thing here and in the fixer's refusal alike; comparing the raw pattern text
 made `docs/*.md` material to nobody and refused to the fixer (found in review, 2026-09-23).
 """
@@ -372,7 +372,7 @@ end
 """
     in_material(cfg, locations) -> Bool
 
-Whether a finding is IN MATERIAL: it has locations and every one of them is in a material document.
+Whether a finding is in material: it has locations and every one of them is in a material document.
 The arguments are `cfg` and the finding's `locations`, their files normalised. Returns the answer.
 """
 in_material(cfg::Model.Config, locations::AbstractVector) =
@@ -381,15 +381,15 @@ in_material(cfg::Model.Config, locations::AbstractVector) =
 """
     target(cfg, path) -> Bool
 
-Whether a path is a TARGET of the documentation review: something a user reads, which a reader is given
+Whether a path is a target of the documentation review: something a user reads, which a reader is given
 to judge and a finding may be located in. The arguments are `cfg`, the package's config, and `path`,
 relative to the package root. Returns the answer, without touching disk.
 
 The targets are exactly [ruled 2026-09-23]: the docstrings, the hand-written pages, the Literate
 examples, and the one document [`architecture_doc`](@ref) names. A generated page or a declared copy is
 not one, whatever pattern it matches. Every other rationale document, and every generated page, is
-MATERIAL — something a reader may open to judge a target and never report on — whether or not the
-package lists it; a reader is GIVEN a material document only when the package lists it in `material`,
+material — something a reader may open to judge a target and never report on — whether or not the
+package lists it; a reader is given a material document only when the package lists it in `material`,
 and by default nobody is given any.
 
 The review is for the text a user meets. The working notes a package keeps for the sessions that build
@@ -460,7 +460,7 @@ rule(id::Symbol) = findfirst(r -> r.id === id, RULES) === nothing ? nothing : RU
 
 
 # `ALWAYS_ON_RULES` stood here until 2026-09-17: the rules no package could switch off. The owner ruled
-# the concept away, and the reasoning is in the design's §9 — the rulebook is the DEFAULT, and a package
+# the concept away, and the reasoning is in the design's §9 — the rulebook is the default, and a package
 # overrides any part of it by saying so where a reader can see it. A switch already names the rule, gives
 # the reason, and is rendered into the package's own rulebook and onto its site, so an escape is on the
 # record whether or not a refusal exists; what the refusal added was a package with a red build and no

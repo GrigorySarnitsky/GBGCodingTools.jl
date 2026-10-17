@@ -34,7 +34,7 @@ than the text.
 """
 function ask(root::AbstractString; io::IO = stdout)
     qs = Engine.Questions.open_questions(root)
-    # The questions RUNS put, which live in their records: until 2026-09-23 this read only the standalone
+    # The questions a run put, which live in its record: until 2026-09-23 this read only the standalone
     # store and said nothing was waiting while a run's question stood.
     runs_q = Orchestration.Runs.open_questions(root)
     isempty(qs) && isempty(runs_q) && (println(io, "Nothing is waiting for an answer."); return 0)
@@ -89,13 +89,13 @@ The `settled` flag is "not a defect, do not ask again": it appends a [`Model.Set
 `.gbg/settled.jl`, holding his words and the locations the ruling covers. Nothing a build, a test or a
 check runs reads that file — only the agents of a later run, which is the point of it.
 
-TWO STORES, one command. A question a run put is kept in that run's record and nowhere else; every
+Two stores, one command. A question a run put is kept in that run's record and nowhere else; every
 other question is in `.gbg/questions.json`. The owner reads an id off a report and types it, and which
 store it came from is not his to know, so this tries the standalone one and then the runs. Until
 2026-09-21 it tried only the first, and the report of every run that parked a finding printed an
 instruction that answered `no question here is called …`.
 
-A run's question is answered ON its own terms. Where the answer is that the reader was wrong — the
+A run's question is answered on its own terms. Where the answer is that the reader was wrong — the
 option a `HIDES_CODE_DEFECT` question offers as "not a defect" — the ruling is recorded as settled
 without the flag, with the finding's own locations, because the next run derives its readers from the
 same rulebook and would otherwise raise it again and spend another pass on it.
@@ -129,12 +129,12 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
         isempty(q.options) || option in [o.label for o in q.options] ||
             (println(io, "answer: ", option, " is not one of its options: ", join([o.label for o in q.options], ", ")); return 2)
         fid = replace(id, r"-code$" => "")
-        # "do not report it again" is a ruling that the READER was wrong; it is refused on an answer that
+        # "do not report it again" is a ruling that the reader was wrong; it is refused on an answer that
         # wants the code or the documentation changed (review, 2026-09-23)
         settled && option != NOT_A_DEFECT &&
             (println(io, "answer: refused — --settled means the reader was wrong, which `", option, "` does not say"); return 2)
         if option == R.DOCS_ANSWER
-            # the edit is made again BEFORE the answer is recorded, so an edit that cannot be made leaves
+            # the edit is made again before the answer is recorded, so an edit that cannot be made leaves
             # the question standing; and never while a run is open, whose collect the commit would block
             open_run_here(root) === nothing ||
                 (println(io, "answer: refused — a run is open; answer this once it has closed, since re-making the edit commits"); return 2)
@@ -183,7 +183,7 @@ function answer(root::AbstractString, id::AbstractString, option::AbstractString
     elseif of_run && option == R.RULED_ANSWER
         println(io, "answer: the finding is the fixer's again, to be made as you say; commit it with `gbg docfix commit --finding ", fid, "`, and a verifier closes it.")
     elseif of_run && option in (R.CODE_ANSWER, R.OWNER_ANSWER)
-        # onto the OWNER's list, which no close rewrites: the finding lives only in its run's record, and
+        # onto the owner's list, which no close rewrites: the finding lives only in its run's record, and
         # a line on the tool's section was erased at the next close (review, 2026-09-23)
         _, run, _ = found
         f = run.findings[findfirst(x -> R.code_question_id(run, x.id) == id, run.findings)]
@@ -284,7 +284,7 @@ a notification, and this is not how a session tells the owner something.
 
 Its id is the date and a number, so two questions put on one day do not collide and an id sorts by
 when it was asked. The `RULE.ASK.*` rules judge the wording, and a question that fails one is recorded
-ANYWAY with the rule named: a question withheld because the tool disliked its phrasing is a question
+anyway with the rule named: a question withheld because the tool disliked its phrasing is a question
 the owner never gets to answer.
 
 Until 2026-09-21 nothing in this package called [`Engine.Questions.put`](@ref) at all. `.gbg/questions.json`

@@ -1,14 +1,14 @@
 # Witnesses.jl — the witness runner: the mechanical half of /bug-hunt. Sources: PF bug-hunt/witnesses.jl
 # (directory as argument, the zero-assertion guard) + IT bug-hunt/witnesses.jl (Base.julia_cmd(),
-# expect fail|pass, BROKEN ⇒ non-zero, the subset filter, empty ⇒ 2). Added: BLOCKED (a witness whose
-# header declares `# blocked: <reason>` and errors is reported apart) and the REFUSAL of any witness
+# expect fail|pass, `BROKEN` ⇒ non-zero, the subset filter, empty ⇒ 2). Added: `BLOCKED` (a witness whose
+# header declares `# blocked: <reason>` and errors is reported apart) and the refusal of any witness
 # that loads code, forges its verdict, or loads anything but the package under test, Test and the stdlib.
 
 """
     Witnesses
 
-The witness runner of `/bug-hunt`. A witness is a self-contained Julia file asserting the CORRECT
-behaviour of the package, so it FAILS on a defective tree and PASSES once the defect is fixed;
+The witness runner of `/bug-hunt`. A witness is a self-contained Julia file asserting the correct
+behaviour of the package, so it fails on a defective tree and passes once the defect is fixed;
 [`Witnesses.run`](@ref) executes every witness of a directory in a fresh process and holds the set to
 one expectation, reporting each file as a [`WitnessResult`](@ref). The directory is usually a run's —
 one run of one instrument over one consumer, recorded under `.gbg/runs/<id>/`. An agent's account of
@@ -54,7 +54,7 @@ const STDLIBS = Set(String.(readdir(Sys.STDLIB)))
 """
     refusal(path, package) -> Union{String,Nothing}
 
-The reason `path` may not run as a witness, or `nothing`. Refused: the NAME, anywhere in the file and
+The reason `path` may not run as a witness, or `nothing`. Refused: the name, anywhere in the file and
 however it is reached — called, aliased (`const inc = include`), passed (`invokelatest(include, …)`),
 qualified or quoted — of `include`, `include_string`, `evalfile`, `require`, `eval`, `invokelatest`,
 `exit` or `ccall`, and the macros `@eval` and `@ccall`; `ARGS` and any `__gbg_` name, which are the
@@ -74,7 +74,7 @@ function refusal(path::AbstractString, package::AbstractString)
     return refusal_in(tree, package)
 end
 
-# Refused as NAMES rather than as call heads: a call-head check let `const inc = include; inc("h.jl")`
+# Refused as names rather than as call heads: a call-head check let `const inc = include; inc("h.jl")`
 # and `invokelatest(include, "h.jl")` through (found verifying the review's fixes, 2026-09-27).
 const FORBIDDEN = Set([:include, :include_string, :evalfile, :require, :eval, :invokelatest, :exit, :ccall, :ARGS])
 const FORBIDDEN_MACROS = Set([Symbol("@eval"), Symbol("@ccall")])
@@ -214,16 +214,16 @@ Runs one witness file in a fresh Julia process and classifies the outcome.
 - `package` — the package it may load.
 
 The file is first read, never included: a witness that loads another file, or that loads anything
-outside `package`, `Test` and the standard library, is REFUSED before it runs. The run wraps the file
-in an outer testset; THE EXIT CODE IS THE VERDICT — 0 clean, 1 an assertion failed, 3 an exception
+outside `package`, `Test` and the standard library, is refused before it runs. The run wraps the file
+in an outer testset; the exit code is the verdict — 0 clean, 1 an assertion failed, 3 an exception
 outside every assertion — and the counts line the wrapper prints is the detail. A witness runs in the
 wrapper's own process, so nothing the wrapper holds is secret from it: a token on the line was readable
 by the witness it was meant to exclude (found verifying the review's fixes, 2026-09-27). What keeps the
-exit code the wrapper's is [`refusal`](@ref); the LAST counts line is read, and one that disagrees with
+exit code the wrapper's is [`refusal`](@ref); the last counts line is read, and one that disagrees with
 the exit code is `:broken`.
 
 The result is `:pass` (exit 0 with assertions), `:fail` (exit 1 — the evidence a hunt wants), `:broken`
-(exit 3, an assertion that threw, a pass with ZERO assertions, which is evidence of nothing, or no
+(exit 3, an assertion that threw, a pass with zero assertions, which is evidence of nothing, or no
 counts at all), or `:blocked` (an assertion threw, none failed, and it carries a `# blocked: <reason>`
 header; one that also failed is `:broken`, its reason naming both counts, and so is one that reported no
 counts at all — an exit or a crash — header or not). Returns the result with the counts and the reason.
@@ -234,7 +234,7 @@ function run_one(path::AbstractString; project::AbstractString, package::Abstrac
     r === nothing || return WitnessResult(name, :refused, 0, 0, 0, r)
     out = IOBuffer()
     cmd = `$(Base.julia_cmd()) --startup-file=no --project=$project -e $WRAPPER -- $path`
-    # the working directory is the project's: a directory as given, or the directory of a project FILE
+    # the working directory is the project's: a directory as given, or the directory of a project file
     proc = Base.run(pipeline(Cmd(cmd; dir = isdir(project) ? project : dirname(project), ignorestatus = true);
                              stdout = out, stderr = out))
     text = String(take!(out))
@@ -278,10 +278,10 @@ Runs every witness under `dir` and holds the set to an expectation.
 - `names` — restrict the run to the files whose names contain one of these.
 - `io` — where the per-witness lines and the summary go.
 
-An empty directory is a refusal (nothing was verified), exit 2, as is any REFUSED witness. A witness
-that PASSES when failure was expected is a PHANTOM (the defect does not exist) and one that FAILS when
-a pass was expected is UNFIXED; either is exit 1. A BROKEN witness is exit 1 too — evidence of nothing
-in either direction. BLOCKED witnesses are reported apart and do not fail the run.
+An empty directory is a refusal (nothing was verified), exit 2, as is any refused witness. A witness
+that passes when failure was expected is a `PHANTOM` (the defect does not exist) and one that fails when
+a pass was expected is `UNFIXED`; either is exit 1. A `BROKEN` witness is exit 1 too — evidence of nothing
+in either direction. `BLOCKED` witnesses are reported apart and do not fail the run.
 
 Returns the exit code and the per-witness results.
 """

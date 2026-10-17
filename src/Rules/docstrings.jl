@@ -2,7 +2,7 @@
 """
     Rules.Docstrings
 
-The rules that hold the SHAPE of documentation: how an argument or a field is named, what a type's
+The rules that hold the shape of documentation: how an argument or a field is named, what a type's
 docstring must list, and the words the house does not use. Each is a rule value carrying its own
 statement, the program that decides it and the examples that show the two agree.
 
@@ -55,9 +55,9 @@ Every argument or field bullet that names its argument in a bold code span rathe
 arguments are `text`, the file's prose, and `cfg`, the package's config, which this rule does not read.
 Returns one location per bullet.
 
-A bold PROSE label — `- **Positions.**` — is a different device and is not a hit: the backtick must
+A bold prose label — `- **Positions.**` — is a different device and is not a hit: the backtick must
 follow the asterisks, which is what makes it a name rather than a heading. Nor is a bulleted name
-OUTSIDE an argument or field list, which is why the list's heading has to be found first: a design
+outside an argument or field list, which is why the list's heading has to be found first: a design
 document indexes its types that way, and bold there is doing the job bold is for.
 """
 function arg_bullet(text::AbstractString, cfg)
@@ -101,7 +101,7 @@ const ARG_BULLET = Model.Rule(
         Model.TextExample(Model.FileSet.DOCSTRINGS,
             "\"\"\"\n    S\n\nA thing.\n\n# Fields\n\n- **`a`** — the first.\n\"\"\"\nstruct S\n    a::Int\nend\n",
             [Model.Location(; file = "src/Example.jl", line = 8)], "a plain code span, never a bold one"),
-        # A design document's glossary of types is a bulleted list of NAMES, not of arguments, and bold
+        # A design document's glossary of types is a bulleted list of names, not of arguments, and bold
         # there is doing the job bold is for.
         Model.TextExample(Model.FileSet.RATIONALE,
             "# The design\n\nThe types are, in layers:\n\n- **`Point{T}`** — a single position.\n",
@@ -119,7 +119,7 @@ const QUOTED = [r"`[^`]*`" => " ", r"\"[^\"]*\"" => " ", r"“[^”]*”" => " "
 Every line calling a setting a `knob` or a `tweak`. The arguments are `text`, the file's prose, and `cfg`,
 the package's config, which this rule does not read. Returns one location per line.
 
-Quoted words and code spans are taken out before the match, so a sentence that NAMES the banned word —
+Quoted words and code spans are taken out before the match, so a sentence that names the banned word —
 this rule's own statement, for one — is not a hit.
 """
 function register(text::AbstractString, cfg)
@@ -410,7 +410,7 @@ Every sentence that opens with a lowercase identifier or a formula rather than a
 word. The arguments are `text`, the file's prose, and `cfg`, the package's config, which this rule does
 not read. Returns one location per sentence.
 
-Where a sentence STARTS is computed rather than matched: the beginning of a line whose predecessor ended
+Where a sentence starts is computed rather than matched: the beginning of a line whose predecessor ended
 one or was blank, and any point after a full stop within a line. A reader meeting a lowercase name at a
 full stop cannot tell whether a new sentence has begun or the last one is still running.
 
@@ -506,7 +506,7 @@ const SENTENCE_OPENER = Model.Rule(
             [Model.Location(; file = "docs/src/page.md", line = 9)], "never a formula"),
         Model.TextExample(Model.FileSet.PAGES,
             "# A page\n\n- `measure` returns the mean.\n",
-            # An EXEMPTION is not a clause: it can have no breaking example, so these two are complying
+            # An exemption is not a clause: it can have no breaking example, so these two are complying
             # examples of the clauses they exempt — a bullet, and an abbreviation that ends no sentence.
             Model.Location[], "never a lowercase identifier"),
         Model.TextExample(Model.FileSet.PAGES,

@@ -4,7 +4,7 @@
     This page is written by AI and is not reviewed regularly by a human.
 
 `.gbg/config.jl` is the one file a [consumer](@ref install) writes by hand. It holds one `Config(…)` value
-and is read as DATA: only literals and the constructors of `Model` are accepted, so a function call or an
+and is read as data: only literals and the constructors of `Model` are accepted, so a function call or an
 interpolation is refused. `gbg init` writes a first one; `gbg sync` writes everything the config generates.
 
 What it states: the package's name and the version it pins; its build and test commands; its file sets where

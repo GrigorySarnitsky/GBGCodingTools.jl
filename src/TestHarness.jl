@@ -50,7 +50,7 @@ function package_operations(pkg::Module, modules::AbstractVector{Module})
         f = try getfield(mod, n) catch; continue end
         f isa Function && !startswith(String(n), "#") && push!(found, n)
     end
-    # plus every EXTERNAL generic the package extends: a method defined under a qualified name
+    # plus every external generic the package extends: a method defined under a qualified name
     # (`Base.show(io, ::T) = …`) creates no binding in the package, so the loaded modules are walked —
     # their submodules too, since `Base.Broadcast.broadcasted` is as much a generic as `Base.show` and
     # was missed (found in review, 2026-09-26) — and each function asked whether a package module owns
@@ -115,7 +115,7 @@ end
     AUDITED_ALLOCATION_OPS
 
 The operations [`@alloc_below`](@ref) has exercised in this process, recorded from the callee of each
-audited call so [`allocation_completeness`](@ref) can be DERIVED from the export list rather than
+audited call so [`allocation_completeness`](@ref) can be derived from the export list rather than
 trusted to memory.
 """
 const AUDITED_ALLOCATION_OPS = Set{Symbol}()
@@ -329,7 +329,7 @@ One array's row in an audited call.
 - `frozen` — the `(reads, writes)` asserted exactly.
 - `ideal` — the fused ideal documented beside it (each needed input element read once, each output
   written once).
-- `holder` — the named holder REQUIRED when the two differ.
+- `holder` — the named holder required when the two differ.
 """
 struct Traffic
     role::String
@@ -475,7 +475,7 @@ The function object a surface name denotes.
 - `modules` — the package modules.
 - `externals` — the external modules whose generics the package extends, searched last.
 
-A package module that OWNS the name is searched before anything else, so `run` and `diff` denote
+A package module that owns the name is searched before anything else, so `run` and `diff` denote
 `Git.run` and `Git.diff` and not the `Base` exports they collide with — the first owning module in
 `modules` wins when two own a name; ordering the externals last does not achieve that on its own,
 because `isdefined(pkg, :run)` is already true through the implicit `using Base`.
@@ -485,7 +485,7 @@ Returns the function, or `nothing`.
 function resolve_function(name::Symbol, pkg::Module, modules::AbstractVector{Module}; externals = (Base,))
     # `pkg` first would decide every colliding name before `modules` is reached: `isdefined(pkg, :read)`
     # is true through the implicit `using Base`, so ordering `externals` last alone changed nothing (421
-    # names, zero moved). A package module that OWNS the name wins; `pkg` and the externals follow.
+    # names, zero moved). A package module that owns the name wins; `pkg` and the externals follow.
     owned = [m for m in modules if isdefined(m, name) && getfield(m, name) isa Function && parentmodule(getfield(m, name)) === m]
     for mod in Iterators.flatten((owned, (pkg,), modules, externals))
         isdefined(mod, name) || continue
@@ -498,7 +498,7 @@ end
 """
     module_method_count(mod, pkg, modules; externals = (Base,)) -> Int
 
-Every method module `mod` OWNS, summed over the package's whole function surface (internals included,
+Every method module `mod` owns, summed over the package's whole function surface (internals included,
 not `names(mod)` — a method defined under a qualified name creates no binding).
 
 # Arguments
@@ -625,7 +625,7 @@ end
 Every concrete struct type the modules define, keyed by name: parametric types unwrapped first (a
 `UnionAll` is not a `DataType`, and asking silently drops most of a package); abstract types skipped;
 an empty NON-parametric struct skipped as a singleton whose default display is its constructor, while
-an empty PARAMETRIC one is kept (its content lives in the type parameter). Returns the map.
+an empty parametric one is kept (its content lives in the type parameter). Returns the map.
 """
 function struct_types(modules::AbstractVector{Module})
     owned = Set(modules)
@@ -656,7 +656,7 @@ has_display(type, modules::AbstractVector{Module}) = any(m -> m.module in module
     display_gate(modules; no_display = Dict{Symbol,String}, min_types = 1,
                  falsify = true)
 
-The display gate, DERIVED rather than listed: every concrete struct type has a package-owned `show`
+The display gate, derived rather than listed: every concrete struct type has a package-owned `show`
 or an exemption with a reason.
 
 # Arguments
@@ -984,7 +984,7 @@ module `Regression_<name>`, so top-level helpers cannot collide across files. An
 honest state and runs nothing. Returns the list of files run.
 """
 function run_regressions(dir::AbstractString; parent::Module = Main)
-    # the wiring passes the TEST directory (`@__DIR__` of runtests.jl); the witnesses live in its
+    # the wiring passes the test directory (`@__DIR__` of runtests.jl); the witnesses live in its
     # `regressions/` subdirectory — passing that directory itself is accepted too
     basename(dir) == "regressions" || (dir = joinpath(dir, "regressions"))
     files = isdir(dir) ? sort!(filter(f -> endswith(f, ".jl"), readdir(dir))) : String[]

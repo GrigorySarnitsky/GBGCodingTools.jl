@@ -3,7 +3,7 @@
     ConfigIO
 
 Reading a package's own two Julia files — `.gbg/config.jl`, its settings, and `.gbg/settled.jl`, the
-rulings its owner has already given — WITHOUT EVALUATING THEM. Both are parsed, and only literals and
+rulings its owner has already given — without evaluating them. Both are parsed, and only literals and
 keyword calls to the constructors of [`Model`](@ref) are accepted: a function call, an interpolation, an unknown
 keyword or an unknown constructor is refused.
 
@@ -225,7 +225,7 @@ function build(node, path, problems)
         # the source text for one refused the owner's own rulings (found in review, 2026-09-26).
         kids = [c for c in cs if JS.kind(c) !== JS.K"String"]
         isempty(kids) || (push!(problems, "line $line: an interpolated string is not data: $(first(text, 60))"); return nothing)
-        # The value the PARSER gives each piece, joined: a `\`-newline continuation, a triple-quoted
+        # The value the parser gives each piece, joined: a `\`-newline continuation, a triple-quoted
         # string's indent and every escape come out as Julia evaluates them. Unquoting the source text
         # kept the continuations, and a switch's reason reached a consumer's public page with a `\` and
         # a run of spaces at every line end (found upgrading GBGPeriodicFields, 2026-09-24).
@@ -245,13 +245,13 @@ function build(node, path, problems)
             (push!(problems, "line $line: a quoted expression is not data: $(first(text, 60))"); return nothing)
         return Symbol(node_name(cs[1]))
     elseif k === JS.K"vect"
-        # NARROWED to the element type where every element shares one. A `Vector{Any}` is refused by
+        # Narrowed to the element type where every element shares one. A `Vector{Any}` is refused by
         # every field typed `Vector{String}` — `Setting.value` among them — so the one documented way to
         # declare a package's admitted `\mathbf` strings could not be written at all.
         return narrow(Any[build(c, path, problems) for c in cs])
     elseif k === JS.K"ref"
         # A typed array literal — `String[]`, `Switch[]` — is data: the type names an element type the
-        # model already has, and an empty one is how a config says "none of these". It is built AS that
+        # model already has, and an empty one is how a config says "none of these". It is built as that
         # type: an `Any[]` was refused by every union-typed field, so `value = String[]` could not be
         # written at all (found in review, 2026-09-26).
         elem = node_name(first(cs))
@@ -375,7 +375,7 @@ function validate(cfg::Model.Config, root::AbstractString)
     # The config is published with the package, so a list of private words in it publishes them.
     isempty(cfg.leak_terms) || push!(problems, "`leak_terms` is never in the config, which is published: list the words in ~/.gbg/leak-terms on each machine")
     # The name is what every rule about a package's own name reads — which of its mentions is a sibling's
-    # and which is its own. A config that names the DIRECTORY rather than the package passes every other
+    # and which is its own. A config that names the directory rather than the package passes every other
     # check and then reports a package's every mention of itself as an unlinked sibling.
     let proj = joinpath(root, "Project.toml")
         if isfile(proj)

@@ -2,8 +2,8 @@
 """
     Guard
 
-The change guard: the program that decides whether one changed file is a DOCUMENTATION change, which the
-documentation fixer may commit on its own, or a CODE change, which waits for the owner
+The change guard: the program that decides whether one changed file is a documentation change, which the
+documentation fixer may commit on its own, or a code change, which waits for the owner
 . It is the gate the whole automatic half rests on, so it answers `CODE`
 whenever it is unsure.
 
@@ -13,8 +13,8 @@ names. Everything else is code: other `.jl` files whole, config, stored data, ge
 hook files, the rest of `CLAUDE.md`, and normative documents.
 
 For a `.jl` file that is on the documentation list, being on it is not enough: both versions must parse,
-and with the text inside the docstrings and comments it already has taken out, THE FILE MUST BE
-IDENTICAL BYTE FOR BYTE — the simple rule of 2026-09-23 that [`regions`](@ref) states. A docstring or a
+and with the text inside the docstrings and comments it already has taken out, the file must be
+identical byte for byte — the simple rule of 2026-09-23 that [`regions`](@ref) states. A docstring or a
 comment is never added, removed or moved by the fixer, and the literal pieces of an interpolated
 docstring are its prose while the interpolations are code.
 
@@ -54,7 +54,7 @@ end
 const LITERATE_MARKS = ("#src", "#md", "#jl", "#nb", "#!md", "#!jl", "#!nb")
 
 # What Julia's Markdown parser reads in one text, in document order: every formula, and the sequence of
-# spans — inline code, inline mathematics, or a DISPLAY formula — with their text, which is what a
+# spans — inline code, inline mathematics, or a display formula — with their text, which is what a
 # respelling is judged on. A formula is inline when it stands inside a paragraph, a heading or a table
 # cell (a cell holds inline content only), and display anywhere else; the two were one kind, so a display formula made a plain code fence with the
 # same text passed as a respelling (found in review, 2026-09-26).
@@ -113,7 +113,7 @@ The mathematics this change adds, alters, removes or reorders.
 Returns the expressions that differ — those added, then those removed — and, where the same expressions
 now stand in a different order, all of them; empty when the mathematics is untouched.
 
-CLAUSE 6, and the owner's ruling of 2026-09-21: no edit inside a math span is made automatically.
+Clause 6, and the owner's ruling of 2026-09-21: no edit inside a math span is made automatically.
 A program has no oracle for whether a formula is true — only the code it documents has that, and code
 that is itself wrong then certifies prose that matches it — so a changed symbol, number or sign is put
 to the owner as a question rather than committed. Deleting a formula and swapping two are edits too.
@@ -169,8 +169,8 @@ Returns whether documentation may live there.
 """
 function on_documentation_list(cfg::Model.Config, path::AbstractString)
     p = replace(path, '\\' => '/')
-    # THREE refusals come first, before any path rule can admit the file. A normative document, a declared
-    # build-time copy and a GENERATED page all LOOK like ordinary prose and none of them is. A copy's text
+    # Three refusals come first, before any path rule can admit the file. A normative document, a declared
+    # build-time copy and a generated page all look like ordinary prose and none of them is. A copy's text
     # belongs to the source it is copied from and a fix landing in it is overwritten by the next build;
     # the same is true of a generated page, which is written from this package's own values, and which is
     # additionally full of text that breaks the rules it states — the rulebook page quotes every banned
@@ -188,22 +188,22 @@ function on_documentation_list(cfg::Model.Config, path::AbstractString)
     return rationale(cfg, p)
 end
 
-# A LITERATE example is a `.jl` file that both runs and renders, and it was readable and unfixable until
+# A Literate example is a `.jl` file that both runs and renders, and it was readable and unfixable until
 # 2026-09-22: two rules judge it, and no path here admitted it, so every finding on one could only park
 # on the owner's queue. Reported by GBGPeriodicFields on its first real run — and the hole was not its
-# alone, since the DEFAULT pattern is `examples/**/*.jl`, so every package with an examples directory had
+# alone, since the default pattern is `examples/**/*.jl`, so every package with an examples directory had
 # it whether or not it declared the set.
 #
 # Nothing downstream needed changing, which is why this is one line. A Literate file is not a third kind
 # of thing beside documentation and code: it is a `.jl` file, and the clauses after this one already
-# decide per CHANGE rather than per file. Clause 2 parses both versions and refuses any change to the
+# decide per change rather than per file. Clause 2 parses both versions and refuses any change to the
 # code itself, so a comment may be edited and a statement may not; clause 4 refuses a change that moves a
 # Literate mark, which is what makes a comment render as prose; clause 5 refuses an executed block.
 literate(cfg::Model.Config, p) =
     any(pat -> Texts.glob_matches(pat, p), get(cfg.filesets, Model.FileSet.LITERATE,
                                                Texts.DEFAULT_PATTERNS[Model.FileSet.LITERATE]))
 
-# The rationale set by its PATTERNS and with its default, as every other file set is read: comparing the
+# The rationale set by its patterns and with its default, as every other file set is read: comparing the
 # raw entries, with no default, refused a fix to `docs/ARCHITECTURE.md` in every package that declared no
 # set, although that document is a target of the review (found 2026-09-24).
 rationale(cfg::Model.Config, p) =
@@ -320,11 +320,11 @@ A Julia file split into what the documentation fixer may change and everything e
 - `rule_prose` — whether the plain strings given as a top-level `Rule(…)` constant's own `statement`
   and `why` keywords count as prose too (clause 3, GBGCodingTools only).
 
-Returns `(outer, texts)` — the file with the changeable TEXT taken out, and each docstring's value and
+Returns `(outer, texts)` — the file with the changeable text taken out, and each docstring's value and
 each Literate prose run — or `nothing` when the source does not parse.
 
-THE SIMPLE RULE [ruled 2026-09-23]. A Julia file must be the same byte for byte, whitespace included,
-except the text INSIDE docstrings it already has and the text of comments it already has. A docstring
+The simple rule [ruled 2026-09-23]. A Julia file must be the same byte for byte, whitespace included,
+except the text inside docstrings it already has and the text of comments it already has. A docstring
 or a comment cannot be added, removed or moved by the fixer — that is the owner's to approve — because
 every hole the review passes found in earlier guards came from judging when a docstring's presence, or
 a comment's place, changes what loads: attaching a loose string to a call, a docstring above `@enum`,
@@ -396,7 +396,7 @@ function walk_docs!(cut, texts, s, n; rule_prose::Bool, top::Bool)
     if k === JS.K"doc" && !isempty(cs) && JS.kind(cs[1]) === JS.K"string"
         cut_text!(cut, cs[1]); push!(texts, value(s, cs[1]))
     end
-    # clause 3: the statement and why of a Rule(…) that IS a top-level constant's value
+    # clause 3: the statement and why of a Rule(…) that is a top-level constant's value
     if rule_prose && top && k in (JS.K"const", JS.K"=")
         asg = k === JS.K"const" ? (isempty(cs) ? nothing : cs[1]) : n
         ac = asg === nothing ? () : something(JS.children(asg), ())
@@ -405,7 +405,7 @@ function walk_docs!(cut, texts, s, n; rule_prose::Bool, top::Bool)
             for c in JS.children(ac[2])[2:end]
                 for kwn in (JS.kind(c) === JS.K"parameters" ? something(JS.children(c), ()) : (c,))
                     kc = something(JS.children(kwn), ())
-                    # a PLAIN string only: an interpolated statement is code, and its literal pieces
+                    # a plain string only: an interpolated statement is code, and its literal pieces
                     # were being cut as prose (found in review, 2026-09-26)
                     if JS.kind(kwn) === JS.K"=" && length(kc) == 2 && JS.kind(kc[1]) === JS.K"Identifier" &&
                        strip(String(JS.sourcetext(kc[1]))) in ("statement", "why") && JS.kind(kc[2]) === JS.K"string" &&
@@ -422,7 +422,7 @@ function walk_docs!(cut, texts, s, n; rule_prose::Bool, top::Bool)
     end
 end
 
-# The literal text pieces of one string: its OWN String children, never its delimiters and never a
+# The literal text pieces of one string: its own String children, never its delimiters and never a
 # string inside an interpolation — `$(parse(Int, "1"))` runs at load, and cutting its "1" as text let a
 # changed argument through (found in review, 2026-09-23).
 cut_text!(cut, n) = append!(cut, (brange(c) for c in something(JS.children(n), ()) if JS.kind(c) === JS.K"String"))
@@ -533,7 +533,7 @@ end
 """
     fenced_kept(before, after) -> Bool
 
-Whether every fenced block that is RUN rather than read is identical in both, in the same order and
+Whether every fenced block that is run rather than read is identical in both, in the same order and
 with the same info string: a doctest (` ```jldoctest `) and every Documenter block whose info string
 starts with `@`. Their content is executed or collected at build time, so an edit to one is a code
 change however much it looks like prose.

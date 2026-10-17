@@ -22,7 +22,7 @@ using ...Texts
 # A line may lead into the bullets inside the section — "All keyword, all required:" — and the list is
 # still under the heading; a bullet past the next heading is not.
 const BULLETED = r"(?m)^#\s+Arguments\s*\n(?:(?!#)[^\n]*\n)*?\s*[-*]\s"
-# The sentence that ENDS at "are" or "are:" with bullets under it. Any text after "are" on the line made a
+# The sentence that ends at "are" or "are:" with bullets under it. Any text after "are" on the line made a
 # prose binding followed by an unrelated list read as a bulleted one (found in review, 2026-09-29).
 const UNDER_PHRASE = r"The\s+arguments\s+are:?[ \t]*\n\s*\n?\s*[-*]\s"
 const IN_PROSE = r"The\s+arguments?\s+(is|are)\s+`"
@@ -116,7 +116,7 @@ function args_form_one(d; exempt = true)
         exempt && startswith(d.node, "_") && return out
         exempt && occursin(WRAPPER_PHRASE, d.text) && return out
 
-        # The WIDEST of the displayed signatures, not the first: a docstring showing a two- and a
+        # The widest of the displayed signatures, not the first: a docstring showing a two- and a
         # four-argument form is a docstring whose reader meets four, and the bulleted form is for them.
         positional, keyword = String[], String[]
         npos, nkw = 0, 0
@@ -126,21 +126,21 @@ function args_form_one(d; exempt = true)
             a, b = Texts.arity(inside)
             a + b > npos + nkw || continue
             npos, nkw = a, b
-            positional, keyword = Texts.parameters(inside)      # the NAMES of the widest, for the carve-out
+            positional, keyword = Texts.parameters(inside)      # the names of the widest, for the carve-out
         end
         npos + nkw == 0 && return out
 
         prosed = occursin(IN_PROSE, d.text)
         bulleted = occursin(BULLETED, d.text)
-        # The rule's last exemption, and no wider: ONE element-type keyword BOUND IN A PROSE CLAUSE. A
+        # The rule's last exemption, and no wider: one element-type keyword bound in a prose clause. A
         # docstring that binds nothing at all is not a prose clause, and exempting it would turn a hit
         # into silence — the direction that costs a reader something.
         element_type = nkw == 1 && length(keyword) == 1 && first(keyword) in ("T", "eltype", "element_type") &&
                        prosed && npos + nkw < THRESHOLD
         wants_bullets = npos + nkw >= THRESHOLD || (nkw > 0 && !element_type)
-        # Bullets under the old sentence are judged AFTER the count: a two-argument call bulleted so was
+        # Bullets under the old sentence are judged after the count: a two-argument call bulleted so was
         # told to add a heading, where the rule wants it in prose (found in review, 2026-09-28).
-        # Bullets heading the arguments' own names under ANY sentence, outside a `# Fields` section, are the
+        # Bullets heading the arguments' own names under any sentence, outside a `# Fields` section, are the
         # bulleted form without its heading: read only under "The arguments are", "The arguments run from
         # the largest scale to the smallest:" was told to use bullets it already had (HT, 2026-09-29).
         names = Set(replace.(vcat(positional, keyword), r"\.\.\.$" => ""))

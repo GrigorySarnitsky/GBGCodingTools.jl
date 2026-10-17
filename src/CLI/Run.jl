@@ -5,12 +5,12 @@
 `gbg run <instrument>`, `gbg run next`, `gbg run collect`, `gbg run close` and `gbg run abandon`: one
 execution of one instrument, a stage at a time.
 
-Each stage is a HANDOFF. Julia cannot launch an agent and only the session can, so `next` writes what
+Each stage is a handoff. Julia cannot launch an agent and only the session can, so `next` writes what
 the session needs and exits, the session runs the one fixed driver, and `collect` reads what the agents
 wrote. `Runs` refuses any stage but the next, which is what stops a session from grading findings that
 were never collected.
 
-Two of the three reader bundles are RENDERED, so a run builds the site itself, from the package's own
+Two of the three reader bundles are rendered, so a run builds the site itself, from the package's own
 `docs/make.jl`, before it launches them, and again before each verifier stage that needs one: what the
 build made of a comment or a docstring is visible nowhere else. A reader of the withheld bundle is
 launched once per built page, each given that page's text and nothing else. A build that fails leaves
@@ -19,7 +19,7 @@ were tagged for.
 
 A documentation review's pass is two stages. At `fix` the open findings are re-anchored and written
 for the session, which commits each through `gbg docfix commit --finding <id>` or parks it. At `verify`
-one verifier per UNIT holding open findings — a built page, an example's source, a file — is given
+one verifier per unit holding open findings — a built page, an example's source, a file — is given
 those findings, the text as it now stands and the diff of the pass, and answers each with a verdict and
 a quote (one verifier with the diff, and one pass, ruled 2026-09-26 on the measurements of
 [GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/)). The grade is a
@@ -80,7 +80,7 @@ Opens a run and writes its first stage's arguments.
 
 Exit 0 when it opened, 2 when it did not.
 
-A `:changed` run that has no base READS FULL and says which of the five reasons it is — no closed run of
+A `:changed` run that has no base reads `:full` and says which of the five reasons it is — no closed run of
 this reader combination, one that stopped short, an uncommitted record, a moved pin, an edited config —
 rather than refusing. The reason is printed because a silent fall back to full is a run whose cost the
 session cannot explain, and the owner asked for the cheap run and got the dear one.
@@ -125,12 +125,12 @@ Moves the open run to its next stage and writes what the session needs to launch
 
 Exit 0 when it moved, 2 when it could not.
 
-It writes the arguments and EXITS. The session launches the driver itself, because only a session can;
+It writes the arguments and exits. The session launches the driver itself, because only a session can;
 a verb that waited for agents would be a verb that cannot run. From a collect it chooses: `close` when
 no finding can be worked on or the passes are used, else the pass's next stage.
 
 At a stage whose agents were launched and not collected — a run interrupted, and continued by the next
-session — it CONTINUES the stage rather than skipping it: the roles that wrote are kept, the rest are
+session — it continues the stage rather than skipping it: the roles that wrote are kept, the rest are
 marked to launch again, and it says so. It stops, exit 2, when the tree is at a different commit than
 the stage was launched at, which is the one case the owner is waited for.
 """
@@ -192,7 +192,7 @@ function next(root::AbstractString; io::IO = stdout)
         to = :close
     end
     cfg = ConfigIO.read_config(root)
-    # The site is built BEFORE the run moves: a build that failed must leave the run at the stage it was
+    # The site is built before the run moves: a build that failed must leave the run at the stage it was
     # at, rather than at one whose arguments were never written.
     site = ""
     if to === :find || to === :verify
@@ -221,7 +221,7 @@ function next(root::AbstractString; io::IO = stdout)
     to === :fix && return fix_stage(root, moved, cfg; io)
     to === :verify && return verifier_stage(root, moved, cfg, site; io)
     roles, extras, site_pages = reader_roles(root, moved, cfg, site; io)
-    # The sha comes from the placement write_arguments made, WITH the arguments spliced in. A second
+    # The sha comes from the placement write_arguments made, with the arguments spliced in. A second
     # placement here, passing none, rewrote the driver without them: every fresh find stage handed the
     # session a driver whose `args` was undefined (found verifying the review's fixes, 2026-09-27).
     Agents.write_arguments(root, moved, cfg; roles, extras, site, site_pages, io)
@@ -290,7 +290,7 @@ The agents a reading stage launches, with what each needs beyond its derived rea
 
 Returns the roles and their extras, ready for the arguments.
 
-A reader of the WITHHELD bundle is expanded into ONE LAUNCH PER BUILT PAGE, each given that page's text
+A reader of the withheld bundle is expanded into one launch per built page, each given that page's text
 and nothing else: the bundle is defined as one page alone, and a single agent handed every page at once
 would be the reader with siblings that the rules tagged for that bundle were kept away from.
 """
@@ -315,7 +315,7 @@ function reader_roles(root::AbstractString, run::Model.Run, cfg::Model.Config, s
             continue
         end
         if r.site && r.kept_from_code
-            # A rule judged on a Literate example's SOURCE goes to a reader given that file alone; a built
+            # A rule judged on a Literate example's source goes to a reader given that file alone; a built
             # page cannot show a comment's habits, and an example with no page was read by nobody (found
             # in review, 2026-09-23). The rest are the page's.
             on_page = filter(!on_source, r.rules)
@@ -509,7 +509,7 @@ Every further place in the documentation that says what these locations say.
 
 Returns the locations to add, none of them one the finding already holds.
 
-A sentence, and above all a FORMULA, is written in more places than the reader who reported it looked
+A sentence, and above all a formula, is written in more places than the reader who reported it looked
 at, and a fix made only where it was reported leaves the rest standing: a fourth copy of a corrected
 formula once survived a whole run. So each location's quote is searched for across the documentation,
 and so is each expression inside it, which travels between documents without the sentence that carried
@@ -536,7 +536,7 @@ end
 """
     verifier_stage(root, run, cfg, site; io = stdout) -> Int
 
-Writes the verify stage's arguments: one verifier per UNIT that holds open findings, each given those
+Writes the verify stage's arguments: one verifier per unit that holds open findings, each given those
 findings, the unit as it now stands, and the diff of the pass.
 
 # Arguments
@@ -685,7 +685,7 @@ anything is read: the agents read one package and their quotes would be anchored
 nothing distinguishes a finding that moved from one that was fixed. The owner restores the tree or
 abandons the run.
 
-A role that wrote NOTHING is exit 2, not a quiet zero. A crashed agent and a careful one that found
+A role that wrote nothing is exit 2, not a quiet zero. A crashed agent and a careful one that found
 nothing are the same empty set here; the driver relaunches a silent role once, and what is still silent
 after that is named here, never read as a clean result. A stage is collected once: the results are read
 in whole and the run moves on, so a second collect is refused rather than counting the same findings twice.
@@ -713,10 +713,10 @@ function collect(root::AbstractString; io::IO = stdout)
     Agents.stale_arguments(root, id) && return stale(io, id, launched)
     cfg = ConfigIO.read_config(root)
     drafts, verdicts, silent, arrived, wrote = Agents.collect_results(root, id, cfg)
-    # A role that wrote nothing readable is launched ONCE more before the stage moves on, and then named:
+    # A role that wrote nothing readable is launched once more before the stage moves on, and then named:
     # a silent reader is not a clean one (found in review, 2026-09-23: the stage moved on at once, and
     # the report said every reader wrote).
-    # Once per STAGE — verifier keys repeat across passes — and a relaunched agent that then writes is
+    # Once per stage — verifier keys repeat across passes — and a relaunched agent that then writes is
     # not silent (both found in review, 2026-09-23). The relaunched set lives in the stage's own scratch.
     mark = joinpath(Agents.stage_dir(root, id), "relaunched-" * string(run.passes))
     again = isfile(mark) ? String[strip(l) for l in eachline(mark) if !isempty(strip(l))] : String[]
@@ -762,9 +762,9 @@ function collect(root::AbstractString; io::IO = stdout)
         println(io, "run: these wrote nothing even launched again, and are not clean; the report names them:")
         for s in silent; println(io, "  ", s); end
         launched === :verify && println(io, "  The findings they were to judge are graded NOT_FIXED and stay open; the run goes on.")
-        return 2                                  # a role that wrote NOTHING is exit 2, never a quiet zero
+        return 2                                  # a role that wrote nothing is exit 2, never a quiet zero
     end
-    # 1 when something was FOUND, a finding in the working notes included: it is not open — no pass
+    # 1 when something was found, a finding in the working notes included: it is not open — no pass
     # works on it — but it is the owner's to read, and a collect that answered 0 would have hidden it.
     return isempty(Runs.open_findings(run)) && isempty(Runs.in_material(run)) ? 0 : 1
 end
@@ -784,7 +784,7 @@ merged locations are working notes. Returns the merged list, in the order the fi
 
 Several readers see the same sentence, and each filed it: one defect became three findings, three
 verifiers and one fix commit, which left two verifiers with no change of their own to read (found in
-review, 2026-09-23). What merges is narrow on purpose. A shared LINE is not a shared defect: a paragraph
+review, 2026-09-23). What merges is narrow on purpose. A shared line is not a shared defect: a paragraph
 is often one line, one reader's two classes under one rule share a site, and two open readers can say
 two different things of one sentence — merging those lost the second fix (found in review,
 2026-09-24). The merged finding keeps every location, and the other readers' claims, evidence and
@@ -901,7 +901,7 @@ function grade(root::AbstractString, run::Model.Run, verdicts; cfg::Model.Config
                         " — the fix made things worse and could NOT be reverted (a later fix conflicts); the edit stays and the run cannot end as evaluated")
         end
     end
-    # A finding whose fix was in a commit reverted for ANOTHER finding is no longer fixed, whatever its own
+    # A finding whose fix was in a commit reverted for another finding is no longer fixed, whatever its own
     # verdict said: the text it was judged on has gone back. Its verifier's verdict stays on the record,
     # and this is written after it.
     for f in todo
@@ -984,7 +984,7 @@ function put_question(q::Model.Question, cfg::Model.Config; io::IO = stdout)
     return q
 end
 
-# The question a HIDES_CODE_DEFECT verdict puts: the documentation was made to describe code that looks
+# The question a `HIDES_CODE_DEFECT` verdict puts: the documentation was made to describe code that looks
 # wrong, the edit is reverted, and the owner says which half is right.
 function code_question(f::Model.Finding, run::Model.Run)
     Model.Question(id = Runs.code_question_id(run, f.id),
@@ -1010,25 +1010,25 @@ Exit 0 when it closed clean, 1 when it closed with findings open, 2 when it coul
 
 Close runs two programs before it writes anything.
 
-It BUILDS. A red docs build must not be left on the branch by a run whose whole subject was the
+It builds. A red docs build must not be left on the branch by a run whose whole subject was the
 documentation, so close reverts the run's last guarded commit and builds again, and where that is still
 red reverts every guarded commit of the run. Each revert goes through the guard like any other edit of
 the run. What was reverted is named in the report and its findings stay open, which carries them.
 
-It CLASSIFIES every commit since the run's first commit, and a code change made outside `gbg docfix
+It classifies every commit since the run's first commit, and a code change made outside `gbg docfix
 commit` ends the run `CANNOT_EVALUATE` with the owner asked to keep or revert it. A review that edited
 code behind its own guard has not been reviewed.
 
 What is still open goes to the owner's work queue, one line each, under the heading the end-of-turn hook
 does not count.
 
-A RE-BASELINE IS A CLOSING STEP, never a fix pass's (ruled 2026-09-23). Some fixes ADD information that
+A re-baseline is a closing step, never a fix pass's (ruled 2026-09-23). Some fixes add information that
 no rewording returns — binding a term defined nowhere, writing a form out because the compressed one was
 not valid code — and those raise the prose-shape numbers a package is held to.
 
 Those numbers are a tracked file, so raising one inside a run is a code change and would end the run
 unevaluable; and the ratchet exists so that a raise is deliberate. The run closes first, and the raise
-is a SEPARATE commit with its reason: one diff a person reads, rather than a number slipped through
+is a separate commit with its reason: one diff a person reads, rather than a number slipped through
 under cover of a fix. Most such findings need no raise at all — of the 28 that tripped on the first real
 review, four fifths were the fixer's own verbosity and came back inside budget by writing tersely.
 """
@@ -1061,8 +1061,8 @@ function close_run(root::AbstractString; io::IO = stdout)
     end
     unguarded = Runs.unguarded_code(root, run.first_commit; run)
     stop = isempty(unguarded) ? run.stop : Model.Stop.CANNOT_EVALUATE
-    # A silent READER leaves part of the package unjudged, so the run cannot end as evaluated. A silent
-    # verifier does not: its fix is graded NOT_FIXED, and its finding stays open and is carried.
+    # A silent reader leaves part of the package unjudged, so the run cannot end as evaluated. A silent
+    # verifier does not: its fix is graded `NOT_FIXED`, and its finding stays open and is carried.
     silent_readers = [k for k in run.silent if !startswith(k, "verify-")]
     if !isempty(silent_readers)
         stop = Model.Stop.CANNOT_EVALUATE
@@ -1085,7 +1085,7 @@ function close_run(root::AbstractString; io::IO = stdout)
     stop = isempty(undone) ? stop : Model.Stop.CANNOT_EVALUATE
     closed = with(run; stage = :close, stop = stop)
     # Always: findings in the working notes and questions waiting are carried by no run, so a close
-    # that did not end DONE must not lose them; open findings go to the queue only on DONE, since a run
+    # that did not end `DONE` must not lose them; open findings go to the queue only on `DONE`, since a run
     # that could not be evaluated carries them instead (review, 2026-09-23).
     queued = queue_leftovers(root, closed; open_too = stop === Model.Stop.DONE)
     dir = Runs.dir(root, id)
@@ -1141,24 +1141,24 @@ is never reused.
 
 Exit 0 when a run was abandoned, 2 when none was open.
 
-The findings are DROPPED, not queued: the owner stopping a run is the owner saying its findings are not
+The findings are dropped, not queued: the owner stopping a run is the owner saying its findings are not
 wanted, and a leftover line from a run nobody finished would be read as a finding somebody stood behind.
 What the run committed through the guard stays; a fix already verified is not undone by stopping.
 
-A RUN THAT LAUNCHED NOTHING IS DELETED WHOLE, the findings carried into it included [ruled 2026-09-23,
+A run that launched nothing is deleted whole, the findings carried into it included [ruled 2026-09-23,
 decision 14 of the plan, superseding the ruling of 2026-09-22 that its record made the drop stick]. Such
 a run has no standing over findings it never looked at: every finding it holds was carried from the run
 that found them, and with its record gone the next start reads past it to that run and carries them
 again. Its id is free again.
 
-HOW MANY were dropped is kept, in `dropped`, and a finding a verdict had already CLOSED — fixed and
+How many were dropped is kept, in `dropped`, and a finding a verdict had already closed — fixed and
 verified twice, or called no defect — stays on the record with its pass, since the fix stays in the
 history and nobody threw it away. Without the count, a record whose open findings are gone and whose
 launch count stays says twenty-six readers wrote their files and none of them found anything — of a
 run that found a hundred and was stopped. A report is written from the record, so a record that cannot
 tell the two apart makes a report that lies.
 
-ITS RECORD AND REPORT ARE COMMITTED, like a closed run's [ruled 2026-09-22, on
+Its record and report are committed, like a closed run's [ruled 2026-09-22, on
 GBGPeriodicFields's question, after two
 abandoned runs left it with no rule to follow]. "Was this package ever reviewed, and
 what came of it?" is answered from the repository or not at all, and an attempt that leaves no trace
@@ -1173,11 +1173,11 @@ function abandon(root::AbstractString; io::IO = stdout)
     run = Runs.load(root, id)
     cfg = ConfigIO.read_config(root)
     dir = Runs.dir(root, id)
-    # A run that launched nothing is deleted WHOLE, findings carried into it included (ruled 2026-09-23,
+    # A run that launched nothing is deleted whole, findings carried into it included (ruled 2026-09-23,
     # decision 14, superseding 2026-09-22): it has no standing over findings it never looked at, and
     # with its record gone the next start reads past it to the run that found them, which carries them
     # again. A finding of its own it cannot have — nothing ran — so the second test is a guard, not a case.
-    # Launched means an agent RAN: a stage interrupted before its collect has results on disk and no
+    # Launched means an agent ran: a stage interrupted before its collect has results on disk and no
     # launches counted yet, and deleting it threw away what its readers wrote (review, 2026-09-23).
     ran = run.agent_launches > 0 || (isdir(Agents.results_dir(root, id)) && !isempty(readdir(Agents.results_dir(root, id))))
     if !ran && all(f -> !startswith(f.id, run.id), run.findings)
@@ -1193,8 +1193,8 @@ function abandon(root::AbstractString; io::IO = stdout)
         end
         return 0
     end
-    # What the stop throws away is the OPEN findings and the ones in the working notes: none is carried
-    # into the next run. Their TEXT stays on the record, marked dropped [ruled 2026-09-26]: two runs'
+    # What the stop throws away is the open findings and the ones in the working notes: none is carried
+    # into the next run. Their text stays on the record, marked dropped [ruled 2026-09-26]: two runs'
     # findings were kept only as a count, and a triage made of them pointed at nothing. A finding fixed
     # and verified was not thrown away by anyone and stays with its pass (found in review, 2026-09-23).
     gone = vcat([f.id for f in Runs.open_findings(run)], [f.id for f in Runs.in_material(run)])
@@ -1250,7 +1250,7 @@ function restore_green(root::AbstractString, run::Model.Run, cfg::Model.Config; 
         return (String[], true, false)
     end
     println(io, "run: the docs build is red at close; the documentation is going back.")
-    # A revert that does not apply is a FAILURE, never evidence that the build was red before the run:
+    # A revert that does not apply is a failure, never evidence that the build was red before the run:
     # reading it that way left a breaking fix on the branch (found in review, 2026-09-23).
     if !Runs.revert!(root, first(mine); why = "the docs build was red at close")
         println(io, "run: the last fix, ", first(first(mine), 8), ", could not be reverted; the build is still red and the run cannot be evaluated")
@@ -1305,7 +1305,7 @@ stay as they were.
 """
 function queue_leftovers(root::AbstractString, run::Model.Run; open_too::Bool = true)
     # A finding waiting on the owner's answer is carried by no run, and its line is the only place the
-    # queue names its question: it is listed whether or not the run ended DONE (found in review, 2026-09-24).
+    # queue names its question: it is listed whether or not the run ended `DONE` (found in review, 2026-09-24).
     open = [f for f in Runs.open_findings(run) if open_too || Runs.parked(run, f.id)]
     notes = Runs.in_material(run)
     waiting = [(rid, q) for (rid, q) in Runs.open_questions(root) if rid != run.id]
@@ -1329,11 +1329,11 @@ function queue_leftovers(root::AbstractString, run::Model.Run; open_too::Bool = 
         push!(lines, "- [ ] " * f.id * " " * one_line(f.draft.claim) * one_line(where_) *
                      (Runs.parked(run, f.id) ? " — waits on the owner's answer: `gbg answer " * Runs.code_question_id(run, f.id) * " \"<option>\"`" : ""))
     end
-    # a question an EARLIER run put, still unanswered: its finding is carried nowhere, so it stays here
+    # a question an earlier run put, still unanswered: its finding is carried nowhere, so it stays here
     for (rid, q) in waiting
         push!(lines, "- [ ] " * q.id * " waits on the owner's answer (run " * rid * "): `gbg answer " * q.id * " \"<option>\"`")
     end
-    # The section is the EXACT heading line to the next heading of any level, and it is rewritten every
+    # The section is the exact heading line to the next heading of any level, and it is rewritten every
     # close — emptied when nothing is left — so an earlier run's lines never outlive their findings, and
     # no text of the owner's around it is touched (found in review, 2026-09-23).
     ls = split(text, '\n')

@@ -85,18 +85,18 @@ Opens a run of `instrument` in the package at `root`.
 - `base` — the commit a `:changed` run measures from, empty for a full one.
 - `io` — where a refusal is reported.
 
-The base is DECIDED above this module and passed in, because deciding it reads run records through
+The base is decided above this module and passed in, because deciding it reads run records through
 `Scope`, which is included after this one and may reach back into it; the arrow goes one way.
 
 Returns the run, or `nothing` when one may not start: the instrument is unknown or switched off, it has
 no readers, another run is open, or a tracked file is changed and uncommitted.
 
-The budget is fixed HERE, from the instrument's own value, and nothing later raises it. Inside a run the
+The budget is fixed here, from the instrument's own value, and nothing later raises it. Inside a run the
 program stops the work, from this number; across runs the owner does, by asking or not. What the last
-closed run of the same instrument left open is CARRIED into this one, re-anchored, under its old id, so
+closed run of the same instrument left open is carried into this one, re-anchored, under its old id, so
 the report says where it came from; a finding parked on a question is not, since the question stands.
 
-A DIRTY tree is refused because close classifies every commit since the first one: an edit that was
+A dirty tree is refused because close classifies every commit since the first one: an edit that was
 already in the tree when the run started would be committed by the fixer under the guard's name, and a
 code change would pass as documentation. Untracked files do not count — a built site, a scratch
 directory — since nothing commits them unasked.
@@ -185,7 +185,7 @@ version_running() = string(VERSION_OF[]())
 The documentation rules a program finds a violation of right now. The arguments are `cfg`, the package's
 config, and `root`, the package root. Returns their ids, without repetition.
 
-A run records these when it starts, so `gbg docfix check` can tell a rule the FIX broke from one that was
+A run records these when it starts, so `gbg docfix check` can tell a rule the fix broke from one that was
 already broken when the run opened. Without that baseline a fixer is held to a standard the package did
 not meet before it touched anything, and the honest report of a rule it did not break reads as its fault.
 """
@@ -199,7 +199,7 @@ What the last closed run of `instrument` in the package at `root` left open and 
 re-anchored on the tree as it is now. The arguments are `root`, the package root, and `instrument`.
 Returns the findings, or none where no run of the instrument has closed.
 
-Only the LAST closed run is read: an earlier one's leftovers were carried into it already, or were
+Only the last closed run is read: an earlier one's leftovers were carried into it already, or were
 dropped when the owner abandoned it, and either way are not this run's to revive.
 """
 function carry_over(root::AbstractString, instrument::Symbol)
@@ -210,7 +210,7 @@ function carry_over(root::AbstractString, instrument::Symbol)
         prev = load(root, d)
         (prev === nothing || prev.instrument !== instrument) && continue
         # Re-anchored through `relocated`, so no field is dropped on the way; and `in_material` is
-        # decided AGAIN against the config as it stands, because a record written before the ruling
+        # decided again against the config as it stands, because a record written before the ruling
         # of 2026-09-23 carries findings in the working notes with the flag unset, and carrying those
         # as workable sent the fixer to a file it may not touch, pass after pass, run after run.
         cfg = ConfigIO.read_config(root)
@@ -318,7 +318,7 @@ Moves a run to its next stage, and refuses any other.
 
 Returns whether the run moved.
 
-The ORDER is the point. The session launches each stage itself, so nothing but this stops a session
+The order is the point. The session launches each stage itself, so nothing but this stops a session
 from grading findings that were never collected, or closing a run whose passes never ran; a stage out of
 order is exit 2 in the verb above, never a warning.
 """
@@ -330,7 +330,7 @@ function advance!(root::AbstractString, id::AbstractString, to::Symbol; io::IO =
     at == 0 && (println(io, "run: $id is at $(stage_of(root, id)), which is not a stage of $(run.instrument)"); return false)
     here = order[at]
     # A stage may repeat where the instrument repeats it — a documentation review's passes, a bug hunt's
-    # second collect — and may never go backwards or skip one. The candidates are POSITIONS: a pass
+    # second collect — and may never go backwards or skip one. The candidates are positions: a pass
     # repeats in place, a second collect is the next position, and `close` is reached by position too.
     candidates = Int[]
     at + 1 <= length(order) && push!(candidates, at + 1)
@@ -369,7 +369,7 @@ no verdict yet is open.
 function closed(run::Model.Run, id::AbstractString)
     # The owner's answer closes it — the reader was wrong, or the documentation stands as fixed.
     answer_of(run, id) in (NOT_A_DEFECT_ANSWER, DOCS_ANSWER) && return true
-    # Otherwise the LATEST verdict does. An earlier FIXED is not the finding's state once a later pass,
+    # Otherwise the latest verdict does. An earlier `FIXED` is not the finding's state once a later pass,
     # or a close that reverted the fix to get the build back, has said otherwise (found in review,
     # 2026-09-23: a fix undone at close left its finding "closed", carried nowhere and lost).
     k = findlast(f -> f.finding == id, run.fixes)
@@ -628,7 +628,7 @@ end
 """
     answer!(root, id, option; item = "", direction = "") -> Union{String,Nothing}
 
-Records the owner's answer on a question a RUN put, or the reason it could not be.
+Records the owner's answer on a question a run put, or the reason it could not be.
 
 # Arguments
 
@@ -722,7 +722,7 @@ end
 Reads a run's record back. The arguments are `root`, the package root, and `id`, the run's id. Returns
 the run, or `nothing` where there is none.
 
-The language rules are NOT re-applied to the questions in it. A question was written under whatever
+The language rules are not re-applied to the questions in it. A question was written under whatever
 rules stood when it was put, and judging an old record by today's would fail to load it.
 """
 function load(root::AbstractString, id::AbstractString)
@@ -843,7 +843,7 @@ end
 """
     unguarded_code(root, since; run = nothing) -> Vector{String}
 
-Every commit since `since` that changed CODE without going through the change guard.
+Every commit since `since` that changed code without going through the change guard.
 
 # Arguments
 
@@ -871,8 +871,8 @@ function unguarded_code(root::AbstractString, since::AbstractString; run = nothi
         length(parts) >= 2 || continue
         sha, subject = String(parts[1]), String(parts[2])
         body = length(parts) >= 3 ? String(parts[3]) : ""
-        # EVERY commit is classified, the guard's and its reverts included; a trailer is typed text and
-        # proves nothing. What this looks for is CODE changed around the guard. A revert this package
+        # Every commit is classified, the guard's and its reverts included; a trailer is typed text and
+        # proves nothing. What this looks for is code changed around the guard. A revert this package
         # made may put a formula back that its fix had taken out, so for a commit carrying the revert
         # mark a refusal for mathematics alone is not counted — mathematics is not code, and a forged
         # mark buys nothing else (simplified 2026-09-23: recognising "exact" reverts took four review
@@ -960,7 +960,7 @@ end
 git_file(root, rev, path) = git_out(root, "show", "$rev:$path")
 
 # Each file a commit touched, with its status (A, M, D, T; a rename is read as its delete and its add)
-# and whether it is ODD — a symlink or a submodule on either side, or a mode change — which is never
+# and whether it is odd — a symlink or a submodule on either side, or a mode change — which is never
 # prose, since the docs build follows a link and runs what it finds (found in review, 2026-09-23). NUL
 # separated, so no name is quoted: a quoted name read back failed on both sides and was called unchanged.
 function touched(root::AbstractString, sha::AbstractString)
@@ -1014,16 +1014,16 @@ changed_files(root::AbstractString, sha::AbstractString) = [f for (_, f, _) in t
 """
     own_record(path) -> Bool
 
-Whether a path is a run's OWN record rather than the package's work. The argument is `path`. Returns
+Whether a path is a run's own record rather than the package's work. The argument is `path`. Returns
 whether close should look past it.
 
 A session commits what a run wrote — that is the design — so a run's record, its arguments and its
 results appear in the history between its first commit and its close. Counted as code they would end
 every run `CANNOT_EVALUATE` on its own artefacts, which is a check that fires on itself and on nothing
-else. The package's own `.gbg/config.jl` is NOT excluded: that is the owner's file, and a change to it
+else. The package's own `.gbg/config.jl` is not excluded: that is the owner's file, and a change to it
 during a run is exactly the kind of thing worth asking about.
 
-THE WORK QUEUE IS ON THIS LIST for the same reason and one more. It is the session's note of what it
+The work queue is on this list for the same reason and one more. It is the session's note of what it
 still owes, read by the end-of-turn hook, and that hook is what holds a session to a run it would
 otherwise stop in the middle of. So the queue is most useful exactly while a run is open.
 
@@ -1212,7 +1212,7 @@ Returns the shas.
 function fix_commits(root::AbstractString, since::AbstractString, id::AbstractString;
                      run::Union{Model.Run,Nothing} = nothing)
     (isempty(since) || since == "unknown") && return String[]
-    # The WHOLE trailer line, not a substring: `…-100` is a prefix of `…-1000`, and a substring match
+    # The whole trailer line, not a substring: `…-100` is a prefix of `…-1000`, and a substring match
     # handed one finding's diff to another's verifier and reverted the wrong fix (found in review,
     # 2026-09-23). A finding's own commits, less any a revert this package made has undone.
     log = git_out(root, "log", "--format=%H%x1f%b%x1e", "$since..HEAD")
@@ -1249,7 +1249,7 @@ These are the run's own edits: what close undoes when it has to put the document
 """
 function guarded_commits(root::AbstractString, since::AbstractString; run::Union{Model.Run,Nothing} = nothing)
     (isempty(since) || since == "unknown") && return String[]
-    # A fix commit, not a revert: close undoes the run's EDITS, and undoing a revert would put back a
+    # A fix commit, not a revert: close undoes the run's edits, and undoing a revert would put back a
     # fix a verifier rejected (found in review, 2026-09-23). Nor one a revert already undid.
     log = git_out(root, "log", "--format=%H%x1f%b%x1e", "$since..HEAD")
     log === nothing && return String[]
@@ -1315,7 +1315,7 @@ Where a finding's location is now.
 Returns the located copy, carrying how it was found.
 
 `Texts.reanchor` is tried first: the node, then the quote, neither of which needs anything but the file.
-Where both fail, the old LINE is mapped through `git` across the changes since — `BY_DIFF`. The git step
+Where both fail, the old line is mapped through `git` across the changes since — `BY_DIFF`. The git step
 lives here and not in `Texts` because nothing a consumer's build or test runs may read git state, and
 `Texts` is reached from both.
 
@@ -1328,7 +1328,7 @@ function reanchor(root::AbstractString, loc::Model.Location; since::AbstractStri
     found.found === Model.Anchor.OUTDATED || return stamped(found, now)
     since = isempty(loc.at) ? since : loc.at             # the tree the line was last read in
     isempty(since) && return found
-    # A file that is GONE is outdated whatever git says. `git diff` over a path that no longer exists
+    # A file that is gone is outdated whatever git says. `git diff` over a path that no longer exists
     # prints nothing, and an empty patch otherwise means "nothing moved" — so without this the deleted
     # file came back `BY_DIFF` at its original line, which is the one answer the design forbids.
     isfile(joinpath(root, loc.file)) || return found
@@ -1359,11 +1359,11 @@ Returns the new line, or `nothing` where the diff does not say.
 The hunk headers are what is read, not the patch text: each says where a span began and how far it
 moved, which is enough to carry a line across edits above it without reading content at all.
 
-A line INSIDE a changed span maps to where that span now begins. This is the case `BY_DIFF` exists for
+A line inside a changed span maps to where that span now begins. This is the case `BY_DIFF` exists for
 and it would otherwise be unreachable: it is tried only after the node and the quote have both failed,
 and both fail precisely when the text there was rewritten — so a mapping that gave up on a rewritten
 span would fire only where the quote had already succeeded. Pointing at the start of the region that
-replaced it is a different claim from pointing at whatever now sits on the old line NUMBER, which the
+replaced it is a different claim from pointing at whatever now sits on the old line number, which the
 design forbids and which is what an unmapped line would be.
 """
 function mapped_line(root::AbstractString, loc::Model.Location, since::AbstractString)
@@ -1380,7 +1380,7 @@ function mapped_line(root::AbstractString, loc::Model.Location, since::AbstractS
         old_len = m.captures[2] === nothing ? 1 : parse(Int, m.captures[2])
         new_start = parse(Int, m.captures[3])
         new_len = m.captures[4] === nothing ? 1 : parse(Int, m.captures[4])
-        # The hunk is below the line and cannot move it. A pure insertion (`-n,0`) is AFTER line n, so
+        # The hunk is below the line and cannot move it. A pure insertion (`-n,0`) is after line n, so
         # one right after the finding's line is below it too.
         (old_len == 0 ? old_start >= loc.line : old_start > loc.line) && break
         if old_len > 0 && old_start <= loc.line < old_start + old_len
