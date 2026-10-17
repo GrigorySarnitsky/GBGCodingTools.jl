@@ -621,11 +621,189 @@ const JULIA_MANUAL = Model.Rule(
                           [Model.Location(; file = "src/Example.jl", line = 2)], "a `do` block links the manual"),
     ])
 
+# ─────────────────────────────────────────────────────────────── bold marks structure, never stress
+
+# A line that is its own block: a heading, a table row, an admonition's opening line.
+const OWN_BLOCK = r"^\s{0,3}(?:#{1,6}\s|\||!!!)"
+# A line that opens a block after its leader: a list item, a quotation.
+const LEADER = r"^\s*(?:(?:[-*+]|\d+[.)])\s+|>\s?)"
+# Bold, opened and closed by two asterisks against text; bold italic is three.
+const BOLD_SPAN = r"(?s)(?<![\\*])\*\*(?=[^\s*])(.+?)(?<=[^\s\\])\*\*(?!\*)"
+const BOLD_ITALIC = r"\*\*\*(?=\S)|(?<=\S)\*\*\*|\*\*_(?=\S)|_\*\*(?=\S)"
+
+# The prose of a Literate source, as the page it renders to: a full-line `# ` comment, or one Literate
+# keeps for the page alone (`#md # `), is Markdown with its prefix taken off, and every other line is
+# blank. The line numbering is kept.
+const LITERATE_PROSE = r"^(?:#md[ \t]+)?#(?:[ \t]|$)"
+literate_prose(text) = join((occursin(LITERATE_PROSE, l) ? replace(l, r"^(?:#md[ \t]+)?#[ \t]?" => "") : "" for l in split(text, '\n')), '\n')
+
+# Code spans, mathematics and escaped asterisks filled with a letter, one per code unit, so an asterisk in
+# any of them is not markup, every offset stays where it was, and a bold span that opens or closes on a
+# code span still opens and closes against text (blanked to spaces, `**`x`**` was no bold at all, and
+# about 120 spans in three packages went unseen; found in review).
+const MASKED = [r"``[^`\n]+?``", r"(?<!`)`[^`\n]+`(?!`)", r"\$[^$\n]+\$", r"\\\*"]
+function emphasis_mask(line)
+    out = String(line)
+    for re in MASKED
+        out = replace(out, re => m -> "x"^ncodeunits(m))
+    end
+    return out
+end
+
+"""
+    emphasis(text, cfg) -> Vector{Model.Location}
+
+Every bold span that does not open a block, and every bold italic. The arguments are `text`, the file's
+prose, and `cfg`, the package's config, which this rule does not read. Returns one location per span.
+
+A block is a paragraph, a list item, a quotation or a table cell; a heading and an admonition's title are
+structure whole. Bold that opens one is a run-in head, which is what bold is for; bold anywhere after its
+first word is stress or a definition, which are italic. A Literate source is read as the page it renders
+to, and code spans, mathematics and fenced code are not prose.
+"""
+function emphasis(text::AbstractString, cfg)
+    occursin(LITERATE_HEADING, text) && (text = literate_prose(text))
+    lines = split(text, '\n')
+    out = Model.Location[]
+    # The open block: its text so far, with the line each character came from; and whether bold anywhere
+    # in it is structure, as in a heading.
+    # the block as masked, the same block as written, and the line each code unit came from
+    buf = IOBuffer(); src = IOBuffer(); from = Int[]; whole = false
+    function close_block()
+        body = String(take!(buf)); written = String(take!(src))
+        if !whole && !isempty(strip(body))
+            lead = ncodeunits(body) - ncodeunits(lstrip(body))
+            for m in eachmatch(BOLD_SPAN, body)
+                m.offset - 1 == lead && continue              # a run-in head: the block opens with it
+                line = from[clamp(m.offset, 1, length(from))]
+                quoted = written[m.offset:prevind(written, m.offset + ncodeunits(m.match))]
+                push!(out, Model.Location(; file = "", line = line, text = first(split(quoted, '\n'))))
+            end
+        end
+        empty!(from); whole = false
+    end
+    function add(segment, original, line)
+        for _ in 1:ncodeunits(segment); push!(from, line); end
+        write(buf, segment); write(src, original)
+    end
+    fence = false
+    for (i, raw) in pairs(lines)
+        line = String(raw)
+        if occursin(r"^\s*(```|~~~)", line)
+            close_block(); fence = !fence; continue
+        end
+        fence && continue
+        masked = emphasis_mask(line)
+        for m in eachmatch(BOLD_ITALIC, masked)
+            push!(out, Model.Location(; file = "", line = i, text = strip(line)))
+            break
+        end
+        if isempty(strip(masked)) || occursin("\"\"\"", line)
+            close_block(); continue
+        end
+        if occursin(OWN_BLOCK, masked)
+            close_block()
+            if occursin(r"^\s*\|", masked)
+                # a table row: each cell is a block of its own, and the header row, over its separator,
+                # is structure whole
+                header = i < length(lines) && occursin(r"^\s*\|?\s*:?-{3,}", lines[i + 1])
+                at = 1
+                for cell in split(masked, r"(?<!\\)\|")
+                    n = ncodeunits(cell)
+                    whole = header; add(cell, String(codeunits(line)[at:at + n - 1]), i); close_block()
+                    at += n + 1
+                end
+            else
+                whole = true; add(masked, line, i); close_block()     # a heading or an admonition's title
+            end
+            continue
+        end
+        if occursin(LEADER, masked)
+            # a list item or a quotation opens a block; its leader is blanked, so the block opens where
+            # its text does
+            close_block()
+            lead = ncodeunits(match(LEADER, masked).match)
+            add(" "^lead * masked[lead + 1:end], " "^lead * line[lead + 1:end], i)
+            continue
+        end
+        if position(buf) > 0
+            write(buf, "\n"); write(src, "\n"); push!(from, i)
+        end
+        add(masked, line, i)
+    end
+    close_block()
+    return sort!(out; by = l -> l.line)
+end
+
+const EMPHASIS = Model.Rule(
+    id = Symbol("RULE.DOC.EMPHASIS"),
+    statement = "Bold marks structure alone: a heading, an admonition's title, a table's header row, and a run-in head that opens a paragraph, a list item, a quotation or a table cell. Bold anywhere else in a sentence, and bold italic, is never used; what it marked is stress or a term at its definition, which are italic, or a sentence that should carry its weight by its order.",
+    why = "One mark doing three jobs tells the reader none of them: in one package bold opened bullets, introduced defined terms and stressed `not`, hundreds of times inside a sentence. The authorities agree that emphasis and a defined term are italic and bold is for structure — Knuth slants the emphasised `not` and never bolds it (The TeXbook, ch. 4), LaTeX's `\\emph` sets italic, SIAM's style manual says \"Bold is not used for emphasis\", and the Chicago, Google, Microsoft and Apple guides and Wikipedia agree — and a reader finds a run-in head by where bold stands, which bold scattered through the sentences hides. A journal's volume in a reference is plain as well: some citation styles bold it, and no rule here asks for it (the owner, 2026-10-17). Where a bold span stands decides the question, so a program does; whether its italic is earned is `RULE.DOC.EMPHASIS_RARE`'s (the owner, 2026-10-16, on GBGHomogeneousTurbulence's request).",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.LITERATE],
+    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, emphasis, false),
+    examples = [
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe solver does **not** form the product.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "Bold anywhere else in a sentence"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe solver does *not* form the product.\n\n**Kept.** The old form stays.\n\n- **Positions.** Where each sits.\n\n| **Grid** | **Points** |\n|---|---|\n| **cubic** | 64 |\n\n## A **bold** heading\n",
+            Model.Location[], "Bold anywhere else in a sentence"),
+        # a run-in head written in the middle of a paragraph opens nothing
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe rate holds. **The state.** A run settles.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "Bold anywhere else in a sentence"),
+        # a span wrapped onto the next line is found on the line it opens
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe solver is\nexact for **every\nmode** of the grid.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 4)], "Bold anywhere else in a sentence"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n***Never*** do this.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3)], "bold italic"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n*Never* do this.\n",
+            Model.Location[], "bold italic"),
+        # code spans, mathematics and fences are not prose
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nThe power `a**b` and ``x^{**}`` are code.\n\n```julia\ny = x ** 2  # **not** prose\n```\n",
+            Model.Location[], "Bold anywhere else in a sentence"),
+        Model.TextExample(Model.FileSet.DOCSTRINGS,
+            "\"\"\"\n    f(x)\n\nReturns **both** halves.\n\"\"\"\nf(x) = x\n",
+            [Model.Location(; file = "src/Example.jl", line = 4)], "Bold anywhere else in a sentence"),
+        Model.TextExample(Model.FileSet.DOCSTRINGS,
+            "\"\"\"\n    f(x)\n\nReturns the halves.\n\n!!! note \"Cost\"\n    **One pass.** It reads the input once.\n\"\"\"\nf(x) = x\n",
+            Model.Location[], "Bold anywhere else in a sentence"),
+        # a Literate source is read as the page it renders to
+        Model.TextExample(Model.FileSet.LITERATE,
+            "# # The example\n#\n# **Setup.** The grid is **cubic**.\n\nx = 2^3\n",
+            [Model.Location(; file = "examples/example.jl", line = 3)], "Bold anywhere else in a sentence"),
+        # a line Literate keeps for the page alone is on the page
+        Model.TextExample(Model.FileSet.LITERATE,
+            "# # The example\n\nx = 1\n#md # The heart is **no allocation** here.\n",
+            [Model.Location(; file = "examples/example.jl", line = 4)], "Bold anywhere else in a sentence"),
+        # bold that opens or closes on a code span is bold all the same
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\nIt lives in **`Fields`**, a sibling, and the **`f` alias** too.\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3), Model.Location(; file = "docs/src/page.md", line = 3)],
+            "Bold anywhere else in a sentence"),
+        # after the first words of a list item, a quotation or a table cell, bold is inside a sentence
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n- The item is **bold** late.\n\n> The quotation is **bold** late.\n\n| Grid | Speed-up |\n|---|---|\n| cubic | about **5.1×** |\n",
+            [Model.Location(; file = "docs/src/page.md", line = 3), Model.Location(; file = "docs/src/page.md", line = 5),
+             Model.Location(; file = "docs/src/page.md", line = 9)], "Bold anywhere else in a sentence"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n> **Note.** A quotation's run-in head.\n\n| The **x** column | y |\n|---|---|\n| 1 | 2 |\n",
+            Model.Location[], "a table's header row"),
+        Model.TextExample(Model.FileSet.PAGES,
+            "# A page\n\n| x | y |\n|---|---|\n| the **one** | 2 |\n",
+            [Model.Location(; file = "docs/src/page.md", line = 5)], "a table's header row"),
+    ])
+
 """
     RULES
 
 The rules of this batch, in the order they were converted.
 """
-const RULES = Model.Rule[AI_BANNER, SIGNATURE_MIRROR, BLOCK_LIST, NO_DEAD_REFS, INTERNAL_API, SIBLING_LINK, RETIRED, JULIA_MANUAL]
+const RULES = Model.Rule[AI_BANNER, SIGNATURE_MIRROR, BLOCK_LIST, NO_DEAD_REFS, INTERNAL_API, SIBLING_LINK, RETIRED, JULIA_MANUAL, EMPHASIS]
 
 end # module Pages

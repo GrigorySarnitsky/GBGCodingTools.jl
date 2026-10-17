@@ -113,7 +113,7 @@ The mathematics this change adds, alters, removes or reorders.
 Returns the expressions that differ — those added, then those removed — and, where the same expressions
 now stand in a different order, all of them; empty when the mathematics is untouched.
 
-CLAUSE 6, and the owner's ruling of 2026-09-21: **no edit inside a math span is made automatically**.
+CLAUSE 6, and the owner's ruling of 2026-09-21: no edit inside a math span is made automatically.
 A program has no oracle for whether a formula is true — only the code it documents has that, and code
 that is itself wrong then certifies prose that matches it — so a changed symbol, number or sign is put
 to the owner as a question rather than committed. Deleting a formula and swapping two are edits too.

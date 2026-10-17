@@ -5,8 +5,8 @@
 One execution of one instrument: the stages in order, the record on disk, and finding a location again
 after the text has moved under it.
 
-It is the seventh module of the order. **Nothing a consumer's build, test or wiring check runs may reach
-it** — review state turned a science package's tests red once, and the rule that came out of that is
+It is the seventh module of the order. Nothing a consumer's build, test or wiring check runs may reach
+it — review state turned a science package's tests red once, and the rule that came out of that is
 enforced by `test/architecture.jl` rather than remembered.
 
 A run never searches twice, never extends its budget, never starts another run and never changes an

@@ -33,6 +33,6 @@ version the package in the current directory pins; `gbg --dev` runs the dev chec
 
 ## Exit contract
 
-Every verb: **0** clean · **1** a finding · **2** cannot evaluate (a missing config or path, a tool not
-on the path) · **3** crash (an uncaught exception, never read as a finding). Output is never truncated,
+Every verb: `0` clean · `1` a finding · `2` cannot evaluate (a missing config or path, a tool not
+on the path) · `3` crash (an uncaught exception, never read as a finding). Output is never truncated,
 and a log is never read for a verdict.

@@ -84,7 +84,7 @@ An argument or field bullet names its argument in a plain code span, never a bol
 const ARG_BULLET = Model.Rule(
     id = Symbol("RULE.DOC.ARG_BULLET"),
     statement = "An argument or field bullet names its argument in a plain code span, never a bold one.",
-    why = "Bold marks emphasis; a name set in bold reads as a heading over the paragraph rather than as the argument.",
+    why = "Bold marks structure (`RULE.DOC.EMPHASIS`); a name set in bold reads as a heading over the paragraph rather than as the argument.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
     check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, arg_bullet, false),

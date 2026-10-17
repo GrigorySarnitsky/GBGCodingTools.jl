@@ -3,9 +3,9 @@
 !!! info "Written by AI, not regularly reviewed"
     This page is written by AI and is not reviewed regularly by a human.
 
-The tool reaches a machine in two ways, both per machine and never synced: the **pinned copy** Pkg
-fetches into the consumer's `docs/` environment, and the **shim** `~/.local/bin/gbg` that executes it.
-A **consumer** is a package that pins this tool and is reviewed by it — one of the four GBG science
+The tool reaches a machine in two ways, both per machine and never synced: the *pinned copy* Pkg
+fetches into the consumer's `docs/` environment, and the *shim* `~/.local/bin/gbg` that executes it.
+A *consumer* is a package that pins this tool and is reviewed by it — one of the four GBG science
 packages, the tool itself, which is its own fifth consumer, or the toy fixture under `fixture/` the
 tests run over; the [glossary](@ref glossary) binds the term.
 

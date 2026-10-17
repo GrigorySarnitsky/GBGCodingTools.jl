@@ -6,7 +6,7 @@ What a run is: the stages in order, the record of one, and the arguments each st
 that read the package.
 
 It is the seventh module of the order, above `Render` and below `CLI`, and it is the boundary the design
-draws hardest: **nothing a consumer's docs build, test suite or wiring check runs may reach it**. Review
+draws hardest: nothing a consumer's docs build, test suite or wiring check runs may reach it. Review
 state that leaked into a test suite turned a science package red, and `test/architecture.jl` fails on any
 reference from below rather than trusting that nobody will write one.
 """

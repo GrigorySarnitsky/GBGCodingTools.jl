@@ -20,8 +20,9 @@ tagged() = [r for r in G.Catalogue.RULES if !isempty(r.access)]
 @testset "the readers follow from the rules" begin
 
     @testset "the tags themselves" begin
-        @test length(tagged()) == 27                          # the reader's rules; a change here is a decision
-        # (27th: RULE.DOC.COST_STRUCTURAL, a reader's by the owner's ruling of 2026-10-08)
+        @test length(tagged()) == 28                          # the reader's rules; a change here is a decision
+        # (27th: RULE.DOC.COST_STRUCTURAL, a reader's by the owner's ruling of 2026-10-08; 28th:
+        # RULE.DOC.EMPHASIS_RARE, by his ruling of 2026-10-16)
         for r in tagged()
             @test !(AC.NOTHING in r.access && length(r.access) > 1)   # NOTHING is exclusive
             @test r.check === nothing || r.check isa G.Model.AgentCheck  # a program's rule needs no reader

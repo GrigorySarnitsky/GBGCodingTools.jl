@@ -263,11 +263,20 @@ const COST_STRUCTURAL = Model.Rule(
     check = Model.AgentCheck("Where a docstring states an operation's cost, it states it by its structure — its complexity, the number of passes, the memory it needs, or a comparison with a named operation — and, where the faster of two choices depends on the case, says which way in words. A measured figure of its speed — a timing, a ratio of times or a throughput — is not stated in a docstring, nor the hardware it was measured on: it goes, dated, to the package's performance document, which the docstring may link.", Model.WhyAgent.MEANING),
     access = [Model.Access.OTHER_DOCUMENTS])
 
+const EMPHASIS_RARE = Model.Rule(
+    id = Symbol("RULE.DOC.EMPHASIS_RARE"),
+    statement = "Emphasis is italic, and rare: a sentence carries its weight by its order first, and a word is set in italic only where, read aloud, it would be stressed against what the reader expects, or where a term is defined. Italic is never set inside italic, where it does not show, nor beside bold or quotation marks on the same words; capitals and underlining are never emphasis.",
+    why = "Emphasis marked everywhere marks nothing: the authorities who agree that it is italic agree that it is occasional, and that a sentence places its stress first by putting the stressed words at its end or its start (Fowler's ITALICS, 1926; Strunk's rule 18; Gopen and Swan, 1990). A defined term is italic where it is defined and roman after. Markdown has no underline, and on a Documenter page italic inside italic stays italic, so the reversal LaTeX makes is lost. Whether a stress is earned, or a word is a definition, is a reading of the sentence, so a reader judges it; where bold may stand is `RULE.DOC.EMPHASIS`'s (the owner, 2026-10-16).",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.LITERATE],
+    check = Model.AgentCheck("Emphasis is italic, and rare: a sentence carries its weight by its order first, and a word is set in italic only where, read aloud, it would be stressed against what the reader expects, or where a term is defined. Italic is never set inside italic, where it does not show, nor beside bold or quotation marks on the same words; capitals and underlining are never emphasis.", Model.WhyAgent.MEANING),
+    access = [Model.Access.NOTHING])
+
 """
     RULES
 
 The rules of this family that no program decides.
 """
-const RULES = Model.Rule[TWO_TIER, HOME_ORDER, LEADING_IDENTITY, ONE_HOME, VARIANT_PAIR, ADMONITION_TITLE, STEER, ALIASING_BULLET, COVERAGE_BASES, GRAMMAR, VERIFIED, SELF_CONTAINED, TERMS_DEFINED, CLASS_SWEEP, BATTERY, LITERATE, LITERATE_RENDERED, BUILD_VERIFY, ONE_NOTATION, COORD_FREE, MODULE_MAP, RETURNS, COST_STRUCTURAL]
+const RULES = Model.Rule[TWO_TIER, HOME_ORDER, LEADING_IDENTITY, ONE_HOME, VARIANT_PAIR, ADMONITION_TITLE, STEER, ALIASING_BULLET, COVERAGE_BASES, GRAMMAR, VERIFIED, SELF_CONTAINED, TERMS_DEFINED, CLASS_SWEEP, BATTERY, LITERATE, LITERATE_RENDERED, BUILD_VERIFY, ONE_NOTATION, COORD_FREE, MODULE_MAP, RETURNS, COST_STRUCTURAL, EMPHASIS_RARE]
 
 end # module JudgementDoc

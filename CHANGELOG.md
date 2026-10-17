@@ -4,6 +4,24 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.79 — 2026-10-17
+
+MINOR, on the owner's word of 2026-10-16, from GBGHomogeneousTurbulence's request:
+
+- **`RULE.DOC.EMPHASIS`: bold marks structure alone.** A heading, a run-in head that opens a
+  paragraph, a list item or a table cell, and a table's header may be bold; bold anywhere else in a
+  sentence, and bold italic, is a finding. A program decides it by where the span stands, in
+  docstrings, pages, rationale documents and Literate examples, so a package moving to this release has
+  a red docs build until its prose is swept: each bold span stays as structure, becomes italic as stress
+  or a definition, or goes with a sentence reworded to carry its own weight. A journal's volume in a
+  reference is plain too, by the owner's ruling of 2026-10-17.
+- **`RULE.DOC.EMPHASIS_RARE`: emphasis is italic, and rare.** A reader judges whether an italic is a
+  definition or an earned stress, and asks that a sentence carry its weight by its order first; no
+  italic inside italic, no capitals or underlining for emphasis. Both rules rest on the practice of
+  Knuth, LaTeX's `\emph`, SIAM, Chicago, the Google, Microsoft and Apple guides, Wikipedia and Fowler.
+- `RULE.DOC.ARG_BULLET`'s reason said bold marks emphasis; it now says bold marks structure. The tool's
+  own prose is swept: its defined terms are italic.
+
 ## 2.0.0-rc.78 — 2026-10-16
 
 PATCH, on the owner's word of 2026-10-16, from GBGStreamingStatistics' trace:
