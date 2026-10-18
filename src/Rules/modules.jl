@@ -585,7 +585,6 @@ function displayed_signatures(root::AbstractString, cfg)
     ordered = Dict{Key,Vector{Tuple{Vector{Symbol},Int}}}()     # each signature's positionals, in order
     note!(d, key, args) = union!(get!(d, key, Set{Symbol}()), args)
     function harvest!(ex, file, line)
-        ex isa Expr && ex.head === :where && return harvest!(ex.args[1], file, line)
         (ex isa Expr && ex.head === :call) || return
         name = ex.args[1]; name isa Symbol || return
         key = (name, file)
@@ -612,20 +611,29 @@ function displayed_signatures(root::AbstractString, cfg)
             get!(arg_in, (name, file, a), line)
         end
     end
+    # A docstring's leading block first, every file, then the lists in docstrings' bodies: where a name is
+    # shown is where a finding about it goes, and a list in another binding's docstring took a finding away
+    # from the name's own docstring when it came first in the file (found in review, 2026-10-18).
+    later = Tuple{String,String,Int}[]
     for f in Texts.files(cfg, root, Model.FileSet.CODE)
         path = joinpath(root, f)
         for d in Texts.docstrings_of(read(path, String))
             # The one reader of a signature block, which reads across the blank lines between signatures:
             # a block cut at the first blank line never compared a later signature at all, and reported its
             # keywords as missing (GBGPeriodicFields' request of 2026-09-27).
+            # and a list of signatures in its body, read the same way (GBGHomogeneousTurbulence's request,
+            # 2026-10-18: five constructors listed after a sentence of prose went unchecked, and a keyword
+            # shown only there counted as shown nowhere)
             for signature in Texts.signature_lines(d.text)
-                # The `-> T` a signature ends in is not part of the call. Written `\$` inside the
-                # pattern it was a literal dollar, nothing was cut, and every signature with a return
-                # annotation parsed as a lambda and was dropped (found in review, 2026-09-26).
-                ex = try Meta.parse(replace(signature, r"\s*->.*$" => "")) catch; nothing end
+                ex = Texts.signature_expr(signature)
                 ex === nothing || harvest!(ex, f, d.line)
             end
+            for signature in Texts.body_signatures(d.text); push!(later, (signature, f, d.line)); end
         end
+    end
+    for (signature, f, line) in later
+        ex = Texts.signature_expr(signature)
+        ex === nothing || harvest!(ex, f, line)
     end
     return (positional, keyword, elided, shown_in, arg_in, ordered)
 end
@@ -774,12 +782,78 @@ end
 
 const SIGNATURE_FIDELITY = Model.Rule(
     id = Symbol("RULE.DOC.SIGNATURE_FIDELITY"),
-    statement = "The signature a docstring displays and the methods the module defines agree, argument for argument, in name and in position.",
+    statement = "The signature a docstring displays — in its leading block, or listed in its body — and the methods the module defines agree, argument for argument, in name and in position.",
     why = "A displayed signature is what a reader calls and the names a reader learns: one the method table has moved past is a call that fails, and a renamed argument is one the reader looks for in the code and does not find.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE],
     check = Model.ProgramCheck(Model.Input.LOADED_MODULE, signature_fidelity, false),
     examples = [
+        # a list of signatures in a docstring's body is read as the leading block is, and counts as shown;
+        # an example call, which passes a call as a positional, is not a signature
+        Model.ModuleExample("""
+            module Example
+            export Family, member, other
+            \"\"\"
+                Family
+
+            The family. Its members are built as
+
+                member(; rate = 1.0, seed = rand(Int))
+                other(x::Int; depth)
+
+            and an example is
+
+                other(member(), 3)
+            \"\"\"
+            struct Family end
+            \"\"\"
+                member()
+
+            One member.
+            \"\"\"
+            member(; rate = 1.0, seed = 0) = rate
+            \"\"\"
+                other(x)
+
+            Another.
+            \"\"\"
+            other(x::Int; depth = 1) = x
+            end
+            """, Model.Location[], "listed in its body"),
+        Model.ModuleExample("""
+            module Example
+            export Family, member
+            \"\"\"
+                Family
+
+            The family. Its members are built as
+
+                member(; pace = 1.0)
+            \"\"\"
+            struct Family end
+            \"\"\"
+                member()
+
+            One member.
+            \"\"\"
+            member(; rate = 1.0) = rate
+            end
+            """, [Model.Location(; file = "src/Example.jl", line = 3), Model.Location(; file = "src/Example.jl", line = 11)],
+            "listed in its body"),
+        # an example call passing values is not a list of signatures, however its keywords default
+        Model.ModuleExample("""
+            module Example
+            export measure
+            \"\"\"
+                measure(field; window)
+
+            The measure. It is computed as
+
+                measure(u; window = hann(n))
+            \"\"\"
+            measure(field; window = 1) = field
+            end
+            """, Model.Location[], "listed in its body"),
         Model.ModuleExample("""
             module Example
             export measure

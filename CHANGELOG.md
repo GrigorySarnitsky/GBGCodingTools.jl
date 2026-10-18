@@ -4,6 +4,27 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.83 — 2026-10-18
+
+PATCH, on the owner's word of 2026-10-18:
+
+- **`RULE.DOC.LINKS` counts a page's links per section.** A heading starts the count again: a reader
+  lands in a section of a long page from a search, a heading's link or the sidebar, and has not met the
+  links above it. The rule's reason said a second link is invisible in the rendered text, which it is
+  not; it now says what a repeat costs — another pull on the eye, diluting the links that matter. Of
+  the repeats rc.82 found on pages, GBGHomogeneousTurbulence's three and GBGPeriodicFields' two were
+  each in a later section, and are no longer findings.
+- **`RULE.DOC.SIGNATURE_FIDELITY` reads a list of signatures in a docstring's body**, from
+  GBGHomogeneousTurbulence's request: held to its methods in both directions as the leading block is,
+  and counted as shown. A body block is such a list when it is an indented code block opened by a blank
+  line, outside an admonition and a list item, every entry is written as a call whose positionals are
+  names — bare, typed or splatted — and whose keyword defaults are literals, names or calls on literals
+  and types (`seed = rand(Int)`), so an example call passing a call or values is not read. A finding
+  about a name goes to the docstring that leads with it before any body list. Both readers now take off
+  a return annotation (`-> T`, `::T`) and every `where` after parsing, so a keyword defaulting to a
+  function keeps its arguments. Measured on every GBG tree: the two `DeferredForcing` lists are read,
+  all matching; no finding is added.
+
 ## 2.0.0-rc.82 — 2026-10-18
 
 MINOR, on the owner's word of 2026-10-18, from GBGHomogeneousTurbulence's request:

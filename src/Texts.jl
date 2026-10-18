@@ -920,6 +920,100 @@ function signature_lines(doc::AbstractString)
     return out
 end
 
+"""
+    signature_expr(s) -> Union{Expr,Nothing}
+
+The call a displayed signature shows, parsed: a return annotation, written `-> T` or `::T`, is taken off, and
+so is every `where` around it — however many are nested. The argument is `s`, the signature's text. Returns
+the call, or `nothing` where the text is not one.
+
+The annotation is taken off after parsing, so a keyword whose default is a function, `g = y -> y^2`, keeps
+it: cut as text at its first arrow, the signature lost every argument after it (found in review, 2026-10-18).
+"""
+function signature_expr(s::AbstractString)
+    ex = try Meta.parse(s) catch; return nothing end
+    ex isa Expr && ex.head === :-> && (ex = ex.args[1])                      # `f(x) -> T`
+    while ex isa Expr && ex.head in (:where, :(::)) && ex.args[1] isa Expr   # `f(x)::T`, `… where T where S`
+        ex = ex.args[1]
+    end
+    return ex isa Expr && ex.head === :call ? ex : nothing
+end
+
+"""
+    body_signatures(doc) -> Vector{String}
+
+The signatures a docstring lists in its body, after its prose has begun, as [`signature_lines`](@ref)
+reads the leading block. The argument is `doc`, the docstring's text. Returns the signatures, joined.
+
+A body block is a list of signatures when it is a code block indented four spaces, opened by a blank line,
+outside an admonition, a list item and a fence; and each entry — its lines joined until its parentheses
+balance, a comment line skipped — is written as a call, `name(…)`, whose positionals are names, bare,
+typed or splatted, and whose keyword defaults are literals, names or calls on literals and types, as
+`seed = rand(Int)`. A qualified name, or one with type parameters, keeps the block a list.
+
+An example call is told from a signature by what it passes: `weighted_inner(f, radial_kernel(identity,
+m))` passes a call, and `cache(state; closure = empty_closure(g, state))` a call on values, so neither is
+read (GBGHomogeneousTurbulence's request, 2026-10-18, measured over every GBG tree; narrowed in review).
+"""
+function body_signatures(doc::AbstractString)
+    lines = split(doc, '\n')
+    first_prose = findfirst(l -> !isempty(strip(l)) && !startswith(l, (' ', '\t')), lines)
+    first_prose === nothing && return String[]
+    out = String[]
+    container = :prose; fence = ""; i = first_prose
+    plain(a) = a isa Symbol || a isa Number || a isa AbstractString || a isa QuoteNode || a === nothing ||
+               (a isa Expr && a.head === :. ) || (a isa Expr && a.head === :call && a.args[1] === :- && length(a.args) == 2 && a.args[2] isa Number) ||
+               (a isa Expr && a.head in (:tuple, :vect) && all(plain, a.args))
+    type_or_literal(a) = (a isa Symbol && isuppercase(first(String(a)))) || (plain(a) && !(a isa Symbol))
+    default_ok(d) = plain(d) || (d isa Expr && d.head === :call && d.args[1] isa Symbol && all(type_or_literal, d.args[2:end]))
+    name_arg(a) = a isa Symbol || (a isa Expr && a.head === :(::) && (length(a.args) == 1 || a.args[1] isa Symbol))
+    positional_ok(a) = name_arg(a) || (a isa Expr && a.head === :(...) && name_arg(a.args[1])) ||
+                       (a isa Expr && a.head === :kw && name_arg(a.args[1]) && default_ok(a.args[2]))
+    keyword_ok(k) = name_arg(k) || (k isa Expr && k.head === :(...) && name_arg(k.args[1])) ||
+                    (k isa Expr && k.head === :kw && name_arg(k.args[1]) && default_ok(k.args[2]))
+    function signature_call(s)
+        occursin(Regex("^@?(?:" * NAME * "\\.)*" * NAME * "(?:\\{[^}]*\\})?\\("), s) || return false
+        ex = signature_expr(s)
+        ex === nothing && return false
+        return all(ex.args[2:end]) do a
+            a isa Expr && a.head === :parameters ? all(keyword_ok, a.args) : positional_ok(a)
+        end
+    end
+    indented(l) = startswith(l, "    ") || startswith(l, '\t')
+    while i <= length(lines)
+        l = lines[i]
+        m = match(r"^\s*(`{3,}|~{3,})", l)
+        if isempty(fence) && m !== nothing
+            fence = m.captures[1]; i += 1; continue
+        elseif !isempty(fence)
+            strip(l) == fence && (fence = "")
+            i += 1; continue
+        end
+        if !isempty(strip(l)) && !startswith(l, (' ', '\t'))
+            container = startswith(l, "!!!") ? :admonition :
+                        occursin(r"^(?:[-*+]|\d+[.)])\s", l) ? :list : :prose
+            i += 1; continue
+        end
+        # an indented block opened by a blank line, at the docstring's own level
+        if indented(l) && !isempty(strip(l)) && i > 1 && isempty(strip(lines[i-1])) && container === :prose
+            j = i
+            while j < length(lines) && (isempty(strip(lines[j+1])) || indented(lines[j+1])); j += 1; end
+            entries = String[]; current = ""
+            for k in i:j
+                code = strip(without_comment(lines[k]))
+                isempty(code) && continue                                   # a blank or a comment line
+                current = isempty(current) ? String(code) : current * " " * code
+                count(==('('), current) == count(==(')'), current) && (push!(entries, current); current = "")
+            end
+            isempty(current) || push!(entries, current)
+            !isempty(entries) && all(signature_call, entries) && append!(out, entries)
+            i = j + 1; continue
+        end
+        i += 1
+    end
+    return out
+end
+
 # A line with its comments cut. A `#` outside a string, a command and a character literal opens a comment
 # in Julia, with or without a space before it; `#= … =#` closes on the same line and only its own text
 # goes. `comment = '#'` is a default, not a comment, and cutting there lost every argument after it; a
@@ -1589,8 +1683,12 @@ page's, or the list item's — starting with the same run of fence characters an
 is no fence. An underlined heading is one line, not a list item or a quotation, opening its block — after
 a blank line, a heading or a fence — under three `=` or `-` or more. A comment is shown as text.
 """
-function page_prose(text::AbstractString)
+page_prose(text::AbstractString) = first(page_structure(text))
+
+# The masked page and its heading lines, read once for both.
+function page_structure(text::AbstractString)
     lines = String.(split(text, '\n'))
+    heading = Int[]
     bare = [replace(l, r"^\s*(?:>[ \t]?)+" => "") for l in lines]   # a quotation holds blocks as a page does
     keep = trues(length(lines))
     item = r"^(\s*(?:[-*+]|\d+[.)])\s+)"
@@ -1615,15 +1713,15 @@ function page_prose(text::AbstractString)
                 continue
             end
         end
-        occursin(r"^\s{0,3}#{1,6}(\s|$)", l) && (keep[i] = false)
+        occursin(r"^\s{0,3}#{1,6}(\s|$)", l) && (keep[i] = false; push!(heading, i))
         if i > 1 && occursin(r"^\s{0,3}(={3,}|-{3,})\s*$", l) && !isempty(strip(bare[i-1])) &&
            !occursin(r"^\s*([|>]|[-*+]\s|\d+[.)]\s|\[\^)", lines[i-1]) &&
            (i == 2 || isempty(strip(bare[i-2])) || !keep[i-2])
-            keep[i] = false; keep[i-1] = false
+            keep[i] = false; keep[i-1] = false; push!(heading, i - 1)
         end
         i += 1
     end
-    return join((keep[k] ? lines[k] : " "^ncodeunits(lines[k]) for k in eachindex(lines)), '\n')
+    return (join((keep[k] ? lines[k] : " "^ncodeunits(lines[k]) for k in eachindex(lines)), '\n'), heading)
 end
 
 # A Documenter cross-reference: its text, which may hold one level of brackets, and its target, which may

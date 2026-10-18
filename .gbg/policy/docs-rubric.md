@@ -177,9 +177,9 @@ Covered by a reader given other documents, because this needs meaning.
 This package may set `leading_identity`; unset, it is `physical meaning`.
 
 ### RULE.DOC.LINKS
-Cross-referencing is discriminating: a target is linked at most once in one docstring, or in the prose of one page under `docs/src/` outside its tables, at its first genuine mention; a heading is not prose.
+Cross-referencing is discriminating: a target is linked at most once in one docstring, or in the prose of one section of a page under `docs/src/` outside its tables, at its first genuine mention; a heading begins a section and is not prose.
 
-A second link to the same target is invisible in the rendered text and tells the reader nothing new. A page's prose is held to it as a docstring is, now that `RULE.DOC.XLINK` asks a page to link its names (2026-10-18); a table is not, since a row stands alone and is read alone. A target is a binding, one target under any text that reaches it, qualified or bare; a link to a heading is a way around the site, which no rule here counts.
+A link draws the eye and says the target is worth following; a second one to the same target adds nothing a reader of the same docstring or section has not just met, and dilutes the links that matter. A long page is read from the middle — a reader lands in a section from a search, a heading's link or the sidebar — so a page's count starts again at each heading (the owner, 2026-10-18). A table is not held to it, since a row stands alone and is read alone. A target is a binding, one target under any text that reaches it, qualified or bare; a link to a heading is a way around the site, which no rule here counts.
 
 Covered by a program.
 
@@ -299,7 +299,7 @@ A reader meeting the name for the first time must be able to reach it, and a fou
 Covered by a program.
 
 ### RULE.DOC.SIGNATURE_FIDELITY
-The signature a docstring displays and the methods the module defines agree, argument for argument, in name and in position.
+The signature a docstring displays — in its leading block, or listed in its body — and the methods the module defines agree, argument for argument, in name and in position.
 
 A displayed signature is what a reader calls and the names a reader learns: one the method table has moved past is a call that fails, and a renamed argument is one the reader looks for in the code and does not find.
 

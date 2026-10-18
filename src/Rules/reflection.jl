@@ -277,9 +277,9 @@ end
 """
     page_dupref(text, cfg) -> Vector{Model.Location}
 
-Every cross-reference target linked more than once in a hand-written page's prose. The arguments are
-`text`, the page, and `cfg`, the package's config, which this rule does not read. Returns one location
-per repeated link.
+Every cross-reference target linked more than once in one section of a page's prose, a heading starting
+a section. The arguments are `text`, the page, and `cfg`, the package's config, which this rule does not
+read. Returns one location per repeated link.
 
 The prose is what the page shows as running text, outside its fenced blocks — a docstring an `@docs`
 block renders there carries its own links, judged as that docstring's — and outside its tables, where a
@@ -287,17 +287,21 @@ row stands alone and a reader scanning it wants its link there.
 """
 function page_dupref(text::AbstractString, cfg)
     out = Model.Location[]
-    prose = Texts.page_prose(text)
+    prose, headings = Texts.page_structure(text)
     lines = split(prose, '\n')
     starts = [0; findall(==('\n'), prose)]
     seen = Dict{String,Int}()
+    section = 0                                         # the heading the links are under
     for l in Texts.ref_links(prose)
         at = searchsortedlast(starts, l.offset - 1)
+        # a heading starts the count again: a reader landing in a section has not met the links above it
+        under = searchsortedlast(headings, at)
+        under == section || (empty!(seen); section = under)
         occursin(r"^\s*\|", lines[at]) && continue          # a table's row stands alone
         first_at = Texts.same_link!(seen, l, at)
         first_at === nothing && continue
         push!(out, Model.Location(; file = "", line = at,
-            text = "`$(l.target)` is linked here and " * (first_at == at ? "earlier on this line" : "at line $first_at") * " of this page; the first mention carries the link"))
+            text = "`$(l.target)` is linked here and " * (first_at == at ? "earlier on this line" : "at line $first_at") * " of this section; the first mention carries the link"))
     end
     return out
 end
@@ -305,7 +309,7 @@ end
 """
     links(root, cfg) -> Vector{Model.Location}
 
-Every target linked more than once in one docstring, or on one hand-written page. The arguments are
+Every target linked more than once in one docstring, or in one section of a page. The arguments are
 `root`, the package root, and `cfg`, the package's config, which names the files. Returns the locations.
 
 It reads the files itself, since a docstring is found in Julia source and a page's prose in Markdown, and
@@ -327,8 +331,8 @@ end
 
 const LINKS = Model.Rule(
     id = Symbol("RULE.DOC.LINKS"),
-    statement = "Cross-referencing is discriminating: a target is linked at most once in one docstring, or in the prose of one page under `docs/src/` outside its tables, at its first genuine mention; a heading is not prose.",
-    why = "A second link to the same target is invisible in the rendered text and tells the reader nothing new. A page's prose is held to it as a docstring is, now that `RULE.DOC.XLINK` asks a page to link its names (2026-10-18); a table is not, since a row stands alone and is read alone. A target is a binding, one target under any text that reaches it, qualified or bare; a link to a heading is a way around the site, which no rule here counts.",
+    statement = "Cross-referencing is discriminating: a target is linked at most once in one docstring, or in the prose of one section of a page under `docs/src/` outside its tables, at its first genuine mention; a heading begins a section and is not prose.",
+    why = "A link draws the eye and says the target is worth following; a second one to the same target adds nothing a reader of the same docstring or section has not just met, and dilutes the links that matter. A long page is read from the middle — a reader lands in a section from a search, a heading's link or the sidebar — so a page's count starts again at each heading (the owner, 2026-10-18). A table is not held to it, since a row stands alone and is read alone. A target is a binding, one target under any text that reaches it, qualified or bare; a link to a heading is a way around the site, which no rule here counts.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.CODE, Model.FileSet.PAGES],
     check = Model.ProgramCheck(Model.Input.FILE_TREE, links, false),
@@ -346,11 +350,16 @@ const LINKS = Model.Rule(
         Model.TreeExample(["src/Example.jl" => "\"\"\"\n\n    f(x)\n\nSee [`g`](@ref) and then [`g`](@ref) again.\n\"\"\"\nf(x) = x\n"],
             [Model.Location(; file = "src/Example.jl", line = 5)], "linked at most once"),
         # a page's prose, outside its fenced blocks; a source file's own string is not prose
+        # a heading starts a section, whose count starts again
+        Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`g`](@ref P.g).\n\n## Later\n\nThen [`g`](@ref P.g) again, and [`g`](@ref P.g) once more.\n"],
+            [Model.Location(; file = "docs/src/page.md", line = 7)], "in the prose of one section of a page"),
+        Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`g`](@ref P.g).\n\nLater\n-----\n\nThen [`g`](@ref P.g) again.\n"],
+            Model.Location[], "in the prose of one section of a page"),
         Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`g`](@ref P.g).\n\n```@docs\nP.g\n```\n\nLater, [`g`](@ref P.g) again.\n",
                            "src/Example.jl" => "const PAGE = \"see [`g`](@ref) and [`g`](@ref)\"\n"],
-            [Model.Location(; file = "docs/src/page.md", line = 9)], "in one hand-written page's prose"),
+            [Model.Location(; file = "docs/src/page.md", line = 9)], "in the prose of one section of a page"),
         Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`g`](@ref P.g), and [`h`](@ref P.h).\n\n```julia\n[`g`](@ref P.g)\n```\n"],
-            Model.Location[], "in one hand-written page's prose"),
+            Model.Location[], "in the prose of one section of a page"),
         # a table's rows each stand alone
         Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`g`](@ref P.g).\n\n| symbol | object |\n|---|---|\n| ``a`` | [`g`](@ref P.g) |\n| ``b`` | [`g`](@ref P.g) |\n"],
             Model.Location[], "outside its tables"),
@@ -358,12 +367,12 @@ const LINKS = Model.Rule(
             [Model.Location(; file = "docs/src/page.md", line = 7)], "outside its tables"),
         # one target under any text, across a line break; a heading is not prose; two modules' names differ
         Model.TreeExample(["docs/src/page.md" => "# About [`g`](@ref P.g)\n\nSee [`g`](@ref P.g), then\n[the g function](@ref\nP.g) and [`g`](@ref Q.g).\n"],
-            [Model.Location(; file = "docs/src/page.md", line = 4)], "a heading is not prose"),
+            [Model.Location(; file = "docs/src/page.md", line = 4)], "is not prose"),
         # a comment is text on the page, so its link is the page's
         Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`g`](@ref P.g), then [`g`](@ref Q.g).\n\n<!-- [`g`](@ref P.g) -->\n"],
-            [Model.Location(; file = "docs/src/page.md", line = 5)], "a heading is not prose"),
+            [Model.Location(; file = "docs/src/page.md", line = 5)], "is not prose"),
         Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`g`](@ref P.g), then [`g`](@ref Q.g).\n"],
-            Model.Location[], "a heading is not prose"),
+            Model.Location[], "is not prose"),
         # a link to a heading's anchor is not a binding's, and two methods named by signature are two
         Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`gbg run`](@ref verbs) and [`gbg check`](@ref verbs); [`f`](@ref f(::Int)) and [`f`](@ref f(::Float64)).\n"],
             Model.Location[], "linked at most once"),
