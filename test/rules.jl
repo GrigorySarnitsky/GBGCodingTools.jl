@@ -259,6 +259,58 @@ end
     @test !isempty(CK.run_rule(r, cfg, dir))                      # and it may not rise above it
 end
 
+# A re-baseline of named units drops what it reports as dropped among them: a renamed unit's old row was
+# reported DROPPED and kept (found by GBGHomogeneousTurbulence, 2026-10-18).
+@testset "a named re-baseline drops the rows it reports dropped" begin
+    dir = mktempdir(; cleanup = true)
+    mkpath(joinpath(dir, ".gbg")); mkpath(joinpath(dir, "src"))
+    write(joinpath(dir, ".gbg", "config.jl"), """Config(package = "P", tool = :dev)""")
+    src = joinpath(dir, "src", "P.jl")
+    doc(name) = "module P\n\n\"\"\"\n    $name(x)\n\nThe scale of `x`.\n\"\"\"\n$name(x) = x\n\n\"\"\"\n    other(x)\n\nAnother.\n\"\"\"\nother(x) = x\n\nend\n"
+    write(src, doc("integral_scale"))
+    cfg = G.ConfigIO.read_config(dir)
+    S = G.Catalogue.Shape
+    S.write_baseline(dir, cfg)
+    @test any(k -> occursin("integral_scale", k), keys(S.baseline(dir)))
+    write(src, doc("integral_length"))
+    said = sprint(io -> G.Check.rebaseline(dir; only = "P.jl :: integral_", io))
+    @test occursin("DROPPED", said) && occursin("integral_scale", said)
+    base = S.baseline(dir)
+    @test !any(k -> occursin("integral_scale", k), keys(base))           # dropped, as reported
+    @test any(k -> occursin("integral_length", k), keys(base))
+    @test any(k -> occursin("other", k), keys(base))                     # an unnamed row is kept
+end
+
+# What a named re-baseline prints is what it writes: a renamed unit measured against its old row has that
+# row replaced, not kept beside the new one, and the name is matched alone, not the printed line (both
+# found in review, 2026-10-18).
+@testset "a named re-baseline writes what it prints" begin
+    S = G.Catalogue.Shape
+    function pkg(files)
+        dir = mktempdir(; cleanup = true); mkpath(joinpath(dir, ".gbg")); mkpath(joinpath(dir, "docs"))
+        write(joinpath(dir, ".gbg", "config.jl"), """Config(package = "P", tool = :dev)""")
+        for (p, t) in files; mkpath(dirname(joinpath(dir, p))); write(joinpath(dir, p), t); end
+        return dir
+    end
+    doc(name) = "\"\"\"\n    $name(x)\n\nThe scale.\n\"\"\"\n$name(x) = x\n"
+    # a row in the old form, which two files of one basename are measured against until re-recorded
+    dir = pkg(["src/A/x.jl" => "module A\n" * doc("f") * "end\n", "src/B/x.jl" => "module B\n" * doc("g") * "end\n"])
+    write(joinpath(dir, S.BASELINE), "unit,words,longest_paragraph,admonitions\n\"x.jl :: f(x)\",2,2,0\n\"x.jl :: g(x)\",2,2,0\n")
+    @test G.Check.rebaseline(dir; only = "f(x)", io = devnull) == 0
+    base = S.baseline(dir)
+    @test haskey(base, "src/A/x.jl :: f(x)") && !haskey(base, "x.jl :: f(x)")   # replaced, not kept beside
+    @test haskey(base, "x.jl :: g(x)")                                         # the other unit's row is its own
+    @test !any(startswith("DROPPED"), S.changes(dir, G.ConfigIO.read_config(dir)))
+    # the name is matched, never the printed line
+    dir = pkg(["docs/src/page.md" => "# Old\n\nSome text.\n\n# Keep\n\nMore.\n"])
+    S.write_baseline(dir, G.ConfigIO.read_config(dir))
+    write(joinpath(dir, "docs", "src", "page.md"), "# New\n\nSome text.\n\n# Keep\n\nMore words now.\n")
+    said = sprint(io -> G.Check.rebaseline(dir; only = "DROPPED", io))
+    @test !occursin("§ Old", said) && haskey(S.baseline(dir), "page.md § Old")   # nothing printed, nothing written
+    said = sprint(io -> G.Check.rebaseline(dir; only = "§ Old", io))
+    @test occursin("DROPPED  page.md § Old", said) && !haskey(S.baseline(dir), "page.md § Old")
+end
+
 # A unit whose name repeats is a DIFFERENT unit: one document restarting its numbering under a later
 # heading had 28 of 144 entries tracked by nothing, in both this rule and the lint it was compared with.
 @testset "two units of one name are two units" begin

@@ -121,8 +121,9 @@ function rebaseline(root::AbstractString; only::AbstractString = "", io::IO = st
         err isa ConfigIO.ConfigError || rethrow()
         println(io, sprint(showerror, err)); return 2
     end
-    changes = Catalogue.Shape.changes(root, cfg)
-    isempty(only) || (changes = [c for c in changes if occursin(only, c)])
+    # matched on the unit's name alone, as the write matches it: matched on the printed line, a text such
+    # as `DROPPED` printed rows the write then left as they were (found in review, 2026-10-18)
+    changes = [c.text for c in Catalogue.Shape.change_rows(root, cfg) if isempty(only) || occursin(only, c.key)]
     if isempty(changes)
         println(io, "rebaseline: nothing has grown; the baseline already records this prose.")
     else

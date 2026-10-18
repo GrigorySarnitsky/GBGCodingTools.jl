@@ -4,6 +4,18 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.81 — 2026-10-18
+
+PATCH, from GBGHomogeneousTurbulence's request of 2026-10-18, on the owner's word that the tool decide:
+
+- **`gbg check --rebaseline --unit` drops the rows it reports dropped.** A unit renamed and then
+  re-recorded by name was reported `DROPPED` and its old row kept, where a later unit of the old name
+  would have inherited its ceiling; only the full re-baseline removed it. What it writes is now what it
+  printed: among the units the text names, a row the report lists as dropped goes; a renamed unit still
+  measured against its old row has that row replaced by its new one, as the close's own re-recording
+  does, where it had been kept beside it; and the text is matched against the unit's name alone, where
+  a text such as `DROPPED` matched the printed line and printed rows the write then left alone.
+
 ## 2.0.0-rc.80 — 2026-10-17
 
 PATCH, from GBGHomogeneousTurbulence's request of 2026-10-17 (owner-approved):

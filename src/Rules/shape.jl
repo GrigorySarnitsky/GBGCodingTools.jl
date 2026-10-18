@@ -320,11 +320,21 @@ function write_baseline(root::AbstractString, cfg; only::AbstractString = "")
     us = units(root, files_of(root, cfg))
     rows = Dict{String,NTuple{3,Int}}(csvkey(k) => (u.words, u.longest, u.admonitions) for (k, u) in us)
     # Named units only: every other row stays as it was, so a reviewer of the commit sees the one raise
-    # that was meant and not a hundred rows lowered beside it (found by PF, 2026-09-24).
+    # that was meant and not a hundred rows lowered beside it (found by PF, 2026-09-24). What is written
+    # for them is what `change_rows` reports: a named unit's row, recorded under its key now; the old row
+    # a renamed unit was measured against, gone with it, as `record_grown` does; and a row no unit carries
+    # any more, gone. Reported DROPPED and kept, a renamed unit's old row stayed for a later unit of that
+    # name to inherit its ceiling (found by GBGHomogeneousTurbulence, 2026-10-18; the carried row in review).
     if !isempty(only)
         kept = something(baseline(root), Dict{String,NTuple{3,Int}}())
-        for (k, v) in rows
-            occursin(only, k) && (kept[k] = v)
+        for c in change_rows(root, cfg; all = true)
+            occursin(only, c.key) || continue
+            if c.kind === :dropped
+                delete!(kept, c.key)
+            else
+                isempty(c.row) || c.row == c.key || delete!(kept, c.row)
+                kept[c.key] = c.now
+            end
         end
         rows = kept
     end
@@ -350,24 +360,49 @@ are `root`, the package root, and `cfg`, the package's config.
 A row that only goes down is not listed: a lowered ceiling constrains more, never less. Returns the
 lines, sorted.
 """
-function changes(root::AbstractString, cfg)
+changes(root::AbstractString, cfg) = [c.text for c in change_rows(root, cfg)]
+
+"""
+    change_rows(root, cfg; all = false) -> Vector{NamedTuple}
+
+What rewriting the baseline would change, as [`changes`](@ref) prints it, one entry per row with its
+parts kept apart, so that a re-baseline of named units matches the name alone and writes what it
+printed.
+
+# Arguments
+
+- `root` — the package root.
+- `cfg` — the package's config.
+- `all` — whether a unit that would not change is listed too, as `:same`.
+
+Returns entries with `kind` (`:new`, `:raised`, `:same` or `:dropped`), `key` (the unit's key, or the
+dropped row's), `row` (the row the unit is measured against now, which a renamed unit's old key may be;
+empty for a new unit), `now` (its numbers) and `text` (the printed line).
+"""
+function change_rows(root::AbstractString, cfg; all::Bool = false)
     base = something(baseline(root), Dict{String,NTuple{3,Int}}())
     legacy = Dict{String,String}()
     us = units(root, files_of(root, cfg), nothing, String[], legacy)
-    out = String[]
+    out = NamedTuple{(:kind, :key, :row, :now, :text),Tuple{Symbol,String,String,NTuple{3,Int},String}}[]
     carried = Set{String}()           # old rows a unit is still measured against, under its new key
     for k in sort!(collect(keys(us)))
         u = us[k]; now = (u.words, u.longest, u.admonitions); key = csvkey(k)
         b, row = recorded_row(base, k, legacy, us)
         push!(carried, row)
         if b === nothing
-            push!(out, "NEW      $key: words $(now[1]), longest paragraph $(now[2]), admonitions $(now[3])")
+            push!(out, (kind = :new, key, row, now,
+                        text = "NEW      $key: words $(now[1]), longest paragraph $(now[2]), admonitions $(now[3])"))
         elseif any(now .> b)
-            push!(out, "RAISED   $key: words $(b[1])→$(now[1]), longest paragraph $(b[2])→$(now[2]), admonitions $(b[3])→$(now[3])")
+            push!(out, (kind = :raised, key, row, now,
+                        text = "RAISED   $key: words $(b[1])→$(now[1]), longest paragraph $(b[2])→$(now[2]), admonitions $(b[3])→$(now[3])"))
+        elseif all
+            push!(out, (kind = :same, key, row, now, text = ""))
         end
     end
     kept = union(Set(csvkey.(keys(us))), carried)
-    append!(out, ["DROPPED  $k" for k in sort!([k for k in keys(base) if !(k in kept)])])
+    for k in sort!([k for k in keys(base) if !(k in kept)])
+        push!(out, (kind = :dropped, key = k, row = k, now = (0, 0, 0), text = "DROPPED  $k"))
+    end
     return out
 end
 
