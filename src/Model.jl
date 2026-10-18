@@ -375,14 +375,17 @@ Julia source loaded into a fresh module, judged by a check that reads the loaded
 # Fields
 
 - `source` — the source to load.
-- `expect` — the locations the check must report, empty when the source complies.
-- `clause` — the clause of the rule's statement this example is for.
+- `expect` — what the check must report; empty when it complies.
+- `clause` — the statement's clause it shows.
+- `pages` — pages beside it, by path.
 """
 struct ModuleExample <: Example
     source::String
     expect::Vector{Location}
     clause::String
+    pages::Vector{Pair{String,String}}
 end
+ModuleExample(source, expect, clause) = ModuleExample(source, expect, clause, Pair{String,String}[])
 
 """
     SiteExample

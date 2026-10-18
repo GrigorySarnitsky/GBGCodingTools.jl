@@ -177,9 +177,9 @@ Covered by a reader given other documents, because this needs meaning.
 This package may set `leading_identity`; unset, it is `physical meaning`.
 
 ### RULE.DOC.LINKS
-Cross-referencing is discriminating: a target is linked at most once in one docstring, at its first genuine mention.
+Cross-referencing is discriminating: a target is linked at most once in one docstring, or in the prose of one page under `docs/src/` outside its tables, at its first genuine mention; a heading is not prose.
 
-A second link to the same target is invisible in the rendered text and tells the reader nothing new.
+A second link to the same target is invisible in the rendered text and tells the reader nothing new. A page's prose is held to it as a docstring is, now that `RULE.DOC.XLINK` asks a page to link its names (2026-10-18); a table is not, since a row stands alone and is read alone. A target is a binding, one target under any text that reaches it, qualified or bare; a link to a heading is a way around the site, which no rule here counts.
 
 Covered by a program.
 
@@ -356,9 +356,9 @@ A plausible 'X is just Y' is a false claim until the expansion matches. Run this
 Covered by a reader given source, because this needs meaning.
 
 ### RULE.DOC.XLINK
-A name another module owns, mentioned on its own, is linked at its first mention in a docstring, qualified so the link resolves; a name inside a code expression owes no link.
+A name another module owns, mentioned on its own, is linked at its first mention in a docstring; in the prose of a page under `docs/src/`, every name a module of the package exports and documents is linked at its first mention there. Each link is qualified so it resolves; a name inside a code expression owes no link, and a heading is not prose.
 
-A reader meeting a name from elsewhere has nowhere to go: the docstring in front of him does not define it.
+A reader meeting a name from elsewhere has nowhere to go: the docstring in front of him does not define it, and a page defines nothing of itself — its section leads, module maps and tables send him to docstrings he cannot reach without the link (one package's pages named 85 such names plain, 2026-10-18). A design document is not such a page: it is read raw as well, where a link to a docstring does not resolve. Documenter's build checks that a link resolves. An argument that shares a documented name is written as the expression it is — `depth > 1`, `depth = 3` — which owes no link, since a program cannot tell the argument from the binding.
 
 Covered by a program.
 

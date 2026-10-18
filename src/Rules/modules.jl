@@ -48,14 +48,37 @@ function owners(pkg::Module, cfg)
 end
 
 """
+    documented(pkg, own_of) -> Set{String}
+
+The names of `own_of` — what the package exports, by owner — that carry a docstring in the module that
+owns them. The arguments are `pkg`, the loaded package, and `own_of`, the map [`owners`](@ref) returns.
+Returns the names.
+"""
+function documented(pkg::Module, own_of)
+    mods = Dict{Symbol,Module}(nameof(pkg) => pkg)
+    for n in names(pkg; all = true)
+        isdefined(pkg, n) || continue
+        v = getfield(pkg, n)
+        v isa Module && (mods[nameof(v)] = v)
+    end
+    out = Set{String}()
+    for (name, owner) in own_of
+        mod = get(mods, owner, nothing)
+        mod === nothing && continue
+        Base.Docs.hasdoc(mod, Symbol(name)) && push!(out, name)
+    end
+    return out
+end
+
+"""
     xlink(loaded, cfg) -> Vector{Model.Location}
 
-Every cross-module name mentioned bare in a docstring where a reader would need a link to reach it. The
-arguments are `loaded`, the loaded package with the package root, and `cfg`, the package's config, which
-names the files. Returns one location per first bare mention.
+Every name mentioned bare that owes a link: in a docstring, one another module owns; on a page, one
+the package exports and documents. The arguments are `loaded`, the loaded package and root, and `cfg`,
+the config. Returns one location per first bare mention.
 
-Only a first mention is judged; a later link comes too late. A name the same module owns needs no link,
-nor does the signature's name or a parameter; a call inside it exempts nothing.
+Only a first mention is judged. A docstring's own module's names, its signature's name and parameters
+need no link; a call inside it exempts nothing.
 """
 function xlink(loaded, cfg)
     own_of = owners(loaded.pkg, cfg)
@@ -105,32 +128,83 @@ function xlink(loaded, cfg)
             # The first mention decides, as the statement says. Read as "linked anywhere in the docstring",
             # a bare first mention with a link forty lines further down was never reported
             # (GBGHomogeneousTurbulence's `StochasticOU`, found verifying its findings, 2026-09-28).
+            # A link is read as a page's is, through `Texts.ref_links`: any text reaching the binding counts,
+            # or this rule and RULE.DOC.LINKS judged one docstring by two readings and contradicted each
+            # other (found in review, 2026-10-18).
             seen = Set{String}()
-            for x in eachmatch(Regex("`(" * Texts.NAME * ")`"), prose)
-                name = String(x.captures[1])
+            prose = Texts.mask_even_code(prose)
+            links = Texts.ref_links(prose; bindings = keys(own_of))
+            events = Tuple{Int,Bool,String}[(l.offset, true, l.name) for l in links]
+            for (at, name) in Texts.name_mentions(prose, links); push!(events, (at, false, name)); end
+            for (offset, linked, name) in sort!(events)
                 (haskey(own_of, name) && !(name in in_signature) && !(name in seen)) || continue
                 push!(seen, name)
-                is_link = x.offset > 1 && prose[prevind(prose, x.offset)] == '[' &&
-                          startswith(SubString(prose, x.offset + ncodeunits(x.match)), "](@")
-                is_link && continue
+                linked && continue
                 own_of[name] === me && continue
                 own_of[name] in out_of_scope && continue
                 before = first_prose == 1 ? 0 : ncodeunits(join(lines[1:first_prose-1], "\n")) + 1
-                at = Texts.docstring_line(d, before + x.offset)
+                at = Texts.docstring_line(d, before + offset)
                 push!(out, Model.Location(; file = f, line = at, node = d.node,
-                    text = "`$name` is owned by $(own_of[name]) and mentioned here without a link"))
+                    text = "`$name` is owned by $(own_of[name]) and mentioned here without a link to its docstring"))
             end
         end
+    end
+    # A hand-written page links nothing of itself: its section leads, its module maps and its tables send
+    # the reader to docstrings he could not reach, and nothing reported it (GBGHomogeneousTurbulence,
+    # 2026-10-18: 85 names on 11 pages, `max_speed` the one the owner asked about).
+    doc_names = setdiff(documented(loaded.pkg, own_of), Set(n for (n, o) in own_of if o in out_of_scope))
+    for f in Texts.files(cfg, loaded.root, Model.FileSet.PAGES)
+        endswith(f, ".md") || continue
+        for l in page_xlinks(read(joinpath(loaded.root, f), String), doc_names, f)
+            push!(out, Model.Location(; file = f, line = l.line, node = Texts.node_at(loaded.root, f, l.line), text = l.text))
+        end
+    end
+    return out
+end
+
+"""
+    page_xlinks(text, names, file) -> Vector{Model.Location}
+
+Every name of `names` whose first mention in a page's prose is a bare code span.
+
+# Arguments
+
+- `text` — the page.
+- `names` — the documented names the package exports.
+- `file` — the page's path, which each location carries.
+
+Returns one location per name.
+
+The prose is what [`Texts.page_prose`](@ref) leaves: not a fenced block — `@docs`, `@example` and every
+other Documenter block among them — and not a heading. A name inside a code expression (`f(x)`,
+`depth > 1`) is not a mention; a link of any text to the binding counts as one, linked.
+"""
+function page_xlinks(text::AbstractString, names, file::AbstractString)
+    out = Model.Location[]
+    prose = Texts.mask_even_code(Texts.page_prose(text))
+    starts = [0; findall(==('\n'), prose)]
+    line_of(at) = searchsortedlast(starts, at - 1)
+    # The mentions in the order a reader meets them: a link, whose target names the binding it reaches
+    # whatever its text says, and a code span holding a name alone — a macro's included.
+    links = Texts.ref_links(prose; bindings = names)
+    events = Tuple{Int,Bool,String}[(l.offset, true, l.name) for l in links]
+    for (at, name) in Texts.name_mentions(prose, links); push!(events, (at, false, name)); end
+    seen = Set{String}()
+    for (at, linked, name) in sort!(events)
+        (name in names && !(name in seen)) || continue
+        push!(seen, name)
+        linked || push!(out, Model.Location(; file, line = line_of(at),
+            text = "`$name` is documented by the package and its first mention on this page is not a link to its docstring"))
     end
     return out
 end
 
 const XLINK = Model.Rule(
     id = Symbol("RULE.DOC.XLINK"),
-    statement = "A name another module owns, mentioned on its own, is linked at its first mention in a docstring, qualified so the link resolves; a name inside a code expression owes no link.",
-    why = "A reader meeting a name from elsewhere has nowhere to go: the docstring in front of him does not define it.",
+    statement = "A name another module owns, mentioned on its own, is linked at its first mention in a docstring; in the prose of a page under `docs/src/`, every name a module of the package exports and documents is linked at its first mention there. Each link is qualified so it resolves; a name inside a code expression owes no link, and a heading is not prose.",
+    why = "A reader meeting a name from elsewhere has nowhere to go: the docstring in front of him does not define it, and a page defines nothing of itself — its section leads, module maps and tables send him to docstrings he cannot reach without the link (one package's pages named 85 such names plain, 2026-10-18). A design document is not such a page: it is read raw as well, where a link to a docstring does not resolve. Documenter's build checks that a link resolves. An argument that shares a documented name is written as the expression it is — `depth > 1`, `depth = 3` — which owes no link, since a program cannot tell the argument from the binding.",
     intention = Model.Intention.DOCUMENTATION,
-    filesets = [Model.FileSet.CODE],
+    filesets = [Model.FileSet.CODE, Model.FileSet.PAGES],
     check = Model.ProgramCheck(Model.Input.LOADED_MODULE, xlink, false),
     examples = [
         Model.ModuleExample("""
@@ -352,6 +426,139 @@ const XLINK = Model.Rule(
             Inner.helper(x::Float64) = x
             end
             """, Model.Location[], "a name inside a code expression owes no link"),
+
+        # a page: the first mention of a documented name is linked, wherever it stands in the prose
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper, plain
+                \"\"\"
+                    helper(x)
+
+                A helper.
+                \"\"\"
+                helper(x) = x
+                plain(x) = x
+            end
+            using .Inner
+            end
+            """, [Model.Location(; file = "docs/src/page.md", line = 7)],
+            "every name a module of the package exports and documents is linked at its first mention there",
+            ["docs/src/page.md" => "# A page about `helper`\n\n```@docs\nExample.Inner.helper\n```\n\nThe map: `helper` does it, `plain` too, and `helper(x)` is the call; see [`helper`](@ref Example.Inner.helper).\n"]),
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper, plain
+                \"\"\"
+                    helper(x)
+
+                A helper.
+                \"\"\"
+                helper(x) = x
+                plain(x) = x
+            end
+            using .Inner
+            end
+            """, Model.Location[],
+            "every name a module of the package exports and documents is linked at its first mention there",
+            ["docs/src/page.md" => "# A page\n\nThe map: [the helper](@ref Example.Inner.helper) does it; `helper` again needs none.\n\n| name | role |\n|---|---|\n| [`helper`](@ref Example.Inner.helper) | helps |\n\nWith `helper > 1`, an expression, nothing is owed.\n"]),
+        # a table cell is prose, and a link later on the same line comes too late
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper, plain
+                \"\"\"
+                    helper(x)
+
+                A helper.
+                \"\"\"
+                helper(x) = x
+                plain(x) = x
+            end
+            using .Inner
+            end
+            """, [Model.Location(; file = "docs/src/page.md", line = 5)],
+            "every name a module of the package exports and documents is linked at its first mention there",
+            ["docs/src/page.md" => "# A page\n\n| name | role |\n|---|---|\n| `helper` | see [`helper`](@ref Example.Inner.helper) |\n"]),
+
+        # read as Julia's Markdown reads a page, as Documenter does: a link broken across a line, a heading
+        # of either kind, a fence closed only by its own line, and a target holding a signature
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper, plain
+                \"\"\"
+                    helper(x)
+
+                A helper.
+                \"\"\"
+                helper(x) = x
+                plain(x) = x
+            end
+            using .Inner
+            end
+            """, Model.Location[],
+            "every name a module of the package exports and documents is linked at its first mention there",
+            ["docs/src/page.md" => "# About `helper`\n\nThe `helper`\n===\n\n~~~\n```\n`helper`\n~~~\n\nSee [the\nhelper](@ref Example.Inner.helper(::Any)); `helper` after it.\n"]),
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper, plain
+                \"\"\"
+                    helper(x)
+
+                A helper.
+                \"\"\"
+                helper(x) = x
+                plain(x) = x
+            end
+            using .Inner
+            end
+            """, [Model.Location(; file = "docs/src/page.md", line = 8)],
+            "every name a module of the package exports and documents is linked at its first mention there",
+            ["docs/src/page.md" => "# A page\n\n````markdown\n```julia\n`helper`\n```\n````\nNow `helper`.\n"]),
+
+        # what Julia's Markdown shows: two lines over an underline are a paragraph, a comment is text, a
+        # fence never closed is none, a quotation holds a fence, and a one-word link to a documented name
+        # reaches it
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper, plain
+                \"\"\"
+                    helper(x)
+
+                A helper.
+                \"\"\"
+                helper(x) = x
+                plain(x) = x
+            end
+            using .Inner
+            end
+            """, [Model.Location(; file = "docs/src/page.md", line = 3)],
+            "every name a module of the package exports and documents is linked at its first mention there",
+            ["docs/src/page.md" => "# A page\n\nThe `helper` is\nhere\n---\n\n<!-- `plain` ```\n-->\n\n> ```\n> `helper`\n> ```\n\nSee [the helper](@ref helper); `helper` after it.\n"]),
+        # in a docstring, a link of prose text reaches the binding as one of code text does
+        Model.ModuleExample("""
+            module Example
+            module Inner
+                export helper
+                \"\"\"
+                    helper(x)
+
+                A helper.
+                \"\"\"
+                helper(x) = x
+            end
+            using .Inner
+            \"\"\"
+                caller(x)
+
+            Calls [the helper](@ref Example.Inner.helper); `helper` returns it.
+            \"\"\"
+            caller(x) = Inner.helper(x)
+            end
+            """, Model.Location[], "linked at its first mention"),
     ])
 
 # ────────────────────────────────────────── what a docstring shows against what the module defines

@@ -36,11 +36,14 @@ end
 # The words of a prose text: mathematics is not prose, so a formula counts as one word however it is
 # laid out — breaking a long one into aligned rows, which RULE.TEX.NO_HSCROLL asks for, grew a unit by
 # the `&` and `\\` it added — and a dash standing alone between words is not a word (both found by PF,
-# 2026-09-24).
+# 2026-09-24). A link counts as the text a reader sees: its target split at a space into a second word,
+# and linking 84 names on one package's pages grew 23 sections by exactly their links (found by
+# GBGHomogeneousTurbulence, 2026-10-18).
 function words(text::AbstractString)
     # the stand-in carries no spaces, so a formula and the punctuation on it stay one word, as they were
     t = replace(String(text), r"```math.*?```"s => "M", r"(?<!`)``(?!`).*?(?<!`)``(?!`)"s => "M",
                 r"\\\[.*?\\\]"s => "M", r"(?<!\$)\$[^\$\n]+\$(?!\$)" => "M")
+    t = replace(t, r"\[((?:[^\[\]\n]|\n(?![ \t]*\n)|\[[^\[\]\n]*\])*)\]\((?:[^()\n]|\n(?![ \t]*\n)|\([^()\n]*\))*\)" => s"\1")
     return count(w -> !(w in ("—", "–", "-")), split(t))
 end
 

@@ -256,21 +256,69 @@ function dupref(src::AbstractString, cfg)
     for d in Texts.docstrings_of(src)
         # The line of each link, not just its target: a module docstring runs to seventy lines, and a
         # finding anchored at its first one sends the fixer to search the whole of it for the repeat.
-        seen = Dict{String,Int}()
-        repeats = Dict{String,Vector{Int}}()
+        # One target under any text, `[`g`](@ref)` and `[the g](@ref P.g)` alike, as a page's links are
+        # read (2026-10-18).
         opens = body_line(src, d)
-        for m in eachmatch(r"\[`([^`]+)`\]\(@ref\s*([^)]*)\)", d.text)
-            # The target, not the link text: `[`g`](@ref)` and `[`g(x)`](@ref g)` are one target, and
-            # `[`g`](@ref)` and `[`g`](@ref h)` are two.
-            t = strip(String(m.captures[2]))
-            isempty(t) && (t = replace(String(m.captures[1]), r"\(.*$" => ""))
-            at = opens + count(==('\n'), d.text[1:prevind(d.text, m.offset)])
-            haskey(seen, t) ? push!(get!(repeats, t, Int[]), at) : (seen[t] = at)
+        seen = Dict{String,Int}()
+        repeats = Tuple{String,Int,Int}[]
+        for l in Texts.ref_links(d.text)
+            at = opens + count(==('\n'), d.text[1:prevind(d.text, l.offset)])
+            first_at = Texts.same_link!(seen, l, at)
+            first_at === nothing || push!(repeats, (l.target, at, first_at))
         end
-        for t in sort!(collect(keys(repeats)))
-            for at in repeats[t]
-                push!(out, Model.Location(; file = "", line = at, node = d.node,
-                    text = "`$t` is linked here and again at line $(seen[t]); the first mention carries the link"))
+        for (t, at, first_at) in repeats
+            push!(out, Model.Location(; file = "", line = at, node = d.node,
+                text = "`$t` is linked here and again at line $first_at; the first mention carries the link"))
+        end
+    end
+    return out
+end
+
+"""
+    page_dupref(text, cfg) -> Vector{Model.Location}
+
+Every cross-reference target linked more than once in a hand-written page's prose. The arguments are
+`text`, the page, and `cfg`, the package's config, which this rule does not read. Returns one location
+per repeated link.
+
+The prose is what the page shows as running text, outside its fenced blocks — a docstring an `@docs`
+block renders there carries its own links, judged as that docstring's — and outside its tables, where a
+row stands alone and a reader scanning it wants its link there.
+"""
+function page_dupref(text::AbstractString, cfg)
+    out = Model.Location[]
+    prose = Texts.page_prose(text)
+    lines = split(prose, '\n')
+    starts = [0; findall(==('\n'), prose)]
+    seen = Dict{String,Int}()
+    for l in Texts.ref_links(prose)
+        at = searchsortedlast(starts, l.offset - 1)
+        occursin(r"^\s*\|", lines[at]) && continue          # a table's row stands alone
+        first_at = Texts.same_link!(seen, l, at)
+        first_at === nothing && continue
+        push!(out, Model.Location(; file = "", line = at,
+            text = "`$(l.target)` is linked here and " * (first_at == at ? "earlier on this line" : "at line $first_at") * " of this page; the first mention carries the link"))
+    end
+    return out
+end
+
+"""
+    links(root, cfg) -> Vector{Model.Location}
+
+Every target linked more than once in one docstring, or on one hand-written page. The arguments are
+`root`, the package root, and `cfg`, the package's config, which names the files. Returns the locations.
+
+It reads the files itself, since a docstring is found in Julia source and a page's prose in Markdown, and
+neither reading fits the other: read as a page, a source file's string holding a link would be prose.
+"""
+function links(root::AbstractString, cfg)
+    out = Model.Location[]
+    for (fs, judge) in ((Model.FileSet.CODE, dupref), (Model.FileSet.PAGES, page_dupref))
+        for f in Texts.files(cfg, root, fs)
+            endswith(f, fs === Model.FileSet.CODE ? ".jl" : ".md") || continue
+            for l in judge(read(joinpath(root, f), String), cfg)
+                node = isempty(l.node) ? Texts.node_at(root, f, l.line) : l.node
+                push!(out, Model.Location(; file = f, line = l.line, node, text = l.text))
             end
         end
     end
@@ -279,29 +327,46 @@ end
 
 const LINKS = Model.Rule(
     id = Symbol("RULE.DOC.LINKS"),
-    statement = "Cross-referencing is discriminating: a target is linked at most once in one docstring, at its first genuine mention.",
-    why = "A second link to the same target is invisible in the rendered text and tells the reader nothing new.",
+    statement = "Cross-referencing is discriminating: a target is linked at most once in one docstring, or in the prose of one page under `docs/src/` outside its tables, at its first genuine mention; a heading is not prose.",
+    why = "A second link to the same target is invisible in the rendered text and tells the reader nothing new. A page's prose is held to it as a docstring is, now that `RULE.DOC.XLINK` asks a page to link its names (2026-10-18); a table is not, since a row stands alone and is read alone. A target is a binding, one target under any text that reaches it, qualified or bare; a link to a heading is a way around the site, which no rule here counts.",
     intention = Model.Intention.DOCUMENTATION,
-    filesets = [Model.FileSet.CODE],
-    check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, dupref, false),
+    filesets = [Model.FileSet.CODE, Model.FileSet.PAGES],
+    check = Model.ProgramCheck(Model.Input.FILE_TREE, links, false),
     examples = [
-        Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    f(x)\n\nSee [`g`](@ref) and then [`g`](@ref) again.\n\"\"\"\nf(x) = x\n",
+        Model.TreeExample(["src/Example.jl" => "\"\"\"\n    f(x)\n\nSee [`g`](@ref) and then [`g`](@ref) again.\n\"\"\"\nf(x) = x\n"],
             [Model.Location(; file = "src/Example.jl", line = 4)], "linked at most once"),
-        Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    f(x)\n\nSee [`g`](@ref), which does the rest.\n\"\"\"\nf(x) = x\n",
+        Model.TreeExample(["src/Example.jl" => "\"\"\"\n    f(x)\n\nSee [`g`](@ref), which does the rest.\n\"\"\"\nf(x) = x\n"],
             Model.Location[], "linked at most once"),
         # One target under two link texts is one target; one text sent to two targets is two.
-        Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    f(x)\n\nSee [`g`](@ref) and then [`g(x)`](@ref g) again.\n\"\"\"\nf(x) = x\n",
+        Model.TreeExample(["src/Example.jl" => "\"\"\"\n    f(x)\n\nSee [`g`](@ref) and then [`g(x)`](@ref g) again.\n\"\"\"\nf(x) = x\n"],
             [Model.Location(; file = "src/Example.jl", line = 4)], "a target is linked at most once"),
-        Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n    f(x)\n\nSee [`g`](@ref) and then [`g`](@ref h) again.\n\"\"\"\nf(x) = x\n",
+        Model.TreeExample(["src/Example.jl" => "\"\"\"\n    f(x)\n\nSee [`g`](@ref) and then [`g`](@ref h) again.\n\"\"\"\nf(x) = x\n"],
             Model.Location[], "a target is linked at most once"),
         # A docstring opening with a blank line: the repeat is reported where it stands.
-        Model.TextExample(Model.FileSet.CODE,
-            "\"\"\"\n\n    f(x)\n\nSee [`g`](@ref) and then [`g`](@ref) again.\n\"\"\"\nf(x) = x\n",
+        Model.TreeExample(["src/Example.jl" => "\"\"\"\n\n    f(x)\n\nSee [`g`](@ref) and then [`g`](@ref) again.\n\"\"\"\nf(x) = x\n"],
             [Model.Location(; file = "src/Example.jl", line = 5)], "linked at most once"),
+        # a page's prose, outside its fenced blocks; a source file's own string is not prose
+        Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`g`](@ref P.g).\n\n```@docs\nP.g\n```\n\nLater, [`g`](@ref P.g) again.\n",
+                           "src/Example.jl" => "const PAGE = \"see [`g`](@ref) and [`g`](@ref)\"\n"],
+            [Model.Location(; file = "docs/src/page.md", line = 9)], "in one hand-written page's prose"),
+        Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`g`](@ref P.g), and [`h`](@ref P.h).\n\n```julia\n[`g`](@ref P.g)\n```\n"],
+            Model.Location[], "in one hand-written page's prose"),
+        # a table's rows each stand alone
+        Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`g`](@ref P.g).\n\n| symbol | object |\n|---|---|\n| ``a`` | [`g`](@ref P.g) |\n| ``b`` | [`g`](@ref P.g) |\n"],
+            Model.Location[], "outside its tables"),
+        Model.TreeExample(["docs/src/page.md" => "# A page\n\n| symbol | object |\n|---|---|\n| ``a`` | [`g`](@ref P.g) |\n\nSee [`g`](@ref P.g), then [`g`](@ref P.g).\n"],
+            [Model.Location(; file = "docs/src/page.md", line = 7)], "outside its tables"),
+        # one target under any text, across a line break; a heading is not prose; two modules' names differ
+        Model.TreeExample(["docs/src/page.md" => "# About [`g`](@ref P.g)\n\nSee [`g`](@ref P.g), then\n[the g function](@ref\nP.g) and [`g`](@ref Q.g).\n"],
+            [Model.Location(; file = "docs/src/page.md", line = 4)], "a heading is not prose"),
+        # a comment is text on the page, so its link is the page's
+        Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`g`](@ref P.g), then [`g`](@ref Q.g).\n\n<!-- [`g`](@ref P.g) -->\n"],
+            [Model.Location(; file = "docs/src/page.md", line = 5)], "a heading is not prose"),
+        Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`g`](@ref P.g), then [`g`](@ref Q.g).\n"],
+            Model.Location[], "a heading is not prose"),
+        # a link to a heading's anchor is not a binding's, and two methods named by signature are two
+        Model.TreeExample(["docs/src/page.md" => "# A page\n\nSee [`gbg run`](@ref verbs) and [`gbg check`](@ref verbs); [`f`](@ref f(::Int)) and [`f`](@ref f(::Float64)).\n"],
+            Model.Location[], "linked at most once"),
     ])
 
 # ─────────────────────────────────────────────────────── one run of names, linked or bare, not both

@@ -66,6 +66,9 @@ function materialise(rule, example)
         dir = mktempdir(; cleanup = true)
         mkpath(joinpath(dir, "src"))
         write(joinpath(dir, "src", "Example.jl"), example.source)
+        for (path, content) in example.pages
+            mkpath(joinpath(dir, dirname(path))); write(joinpath(dir, path), content)
+        end
         holder = Module(:ExampleHolder)
         Base.include_string(holder, "module Holder\n" * example.source * "\nend")
         # The module is named in the source; fetching it needs `invokelatest`, since it was defined after
@@ -74,7 +77,8 @@ function materialise(rule, example)
         inner = Base.invokelatest(getfield, holder, :Holder)
         pkg = Base.invokelatest(getfield, inner, name)
         cfg = MR.Config(package = "Example", tool = :dev,
-                        filesets = Dict(MR.FileSet.CODE => ["src/Example.jl"]))
+                        filesets = Dict(MR.FileSet.CODE => ["src/Example.jl"],
+                                        MR.FileSet.PAGES => isempty(example.pages) ? ["docs/src/none.md"] : first.(example.pages)))
         # `invokelatest`: the module was defined a moment ago, and a check reading its names cannot see
         # them from this method's world age.
         return Base.invokelatest(CK.run_rule, rule, cfg, dir; pkg)
@@ -309,6 +313,16 @@ end
     @test !occursin("§ Old", said) && haskey(S.baseline(dir), "page.md § Old")   # nothing printed, nothing written
     said = sprint(io -> G.Check.rebaseline(dir; only = "§ Old", io))
     @test occursin("DROPPED  page.md § Old", said) && !haskey(S.baseline(dir), "page.md § Old")
+end
+
+# A link counts as the text a reader sees: linking a name must not grow its section by the target's words
+# (found by GBGHomogeneousTurbulence, 2026-10-18).
+@testset "a link counts as the words it shows" begin
+    S = G.Catalogue.Shape
+    @test S.words("read through `max_speed`, as stored") == S.words("read through [`max_speed`](@ref GBGHomogeneousTurbulence.Observables.max_speed), as stored") == 5
+    @test S.words("see [the cache page](cache.md#the-cache-(old)) now") == 5
+    @test S.words("a formula ``a + b`` and [`f`](@ref P.f)") == 5
+    @test S.words("see [the\nhelper](@ref P.helper) now") == S.words("see [`f` [old]](@ref P.f) now") == 4
 end
 
 # A unit whose name repeats is a DIFFERENT unit: one document restarting its numbering under a later

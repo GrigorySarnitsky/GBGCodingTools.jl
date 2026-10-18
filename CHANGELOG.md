@@ -4,6 +4,38 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.82 — 2026-10-18
+
+MINOR, on the owner's word of 2026-10-18, from GBGHomogeneousTurbulence's request:
+
+- **`RULE.DOC.XLINK` reaches hand-written pages.** On a page under `docs/src/`, every name the package
+  exports and documents is linked at its first mention there, qualified so the link resolves. A page's
+  prose is read outside its fenced blocks (`@docs`, `@example` and the rest) and its headings; a table
+  is prose; a link of any text to the binding counts. A name inside a code expression owes no link,
+  which is how an argument that shares a documented name is written (`depth > 1`). A design document is
+  not a page here: it is read raw as well, where such a link does not resolve. A package moving to this
+  release has a red docs build until its pages are linked.
+- **`RULE.DOC.LINKS` reaches them too:** a target is linked at most once in a page's prose, outside its
+  tables, whose rows stand alone. A target is a binding, one target under any text that reaches it —
+  `[`g`](@ref)`, `[`g`](@ref P.g)` and `[the g function](@ref P.g)` alike — in a docstring as on a page,
+  where only links of code-span text with the same written target were compared before. The rule now
+  reads the file tree, so a source file's own string holding a link is never taken for prose.
+- Both read a page through one reader of its prose, `Texts.page_prose`, built to read a page as
+  Documenter does, through Julia's own Markdown parser rather than CommonMark, each case measured against
+  `Markdown.parse`: a fence, which may open on a list item's line, closes on a line at its container's
+  left edge starting with the same run of fence characters, and one never closed is none; an underlined
+  heading is one line, not a list item or a quotation, opening its block, under three `=` or `-` or more;
+  a comment is shown as text, so it is prose; a quotation holds fences and headings as a page does. A link
+  may run across a line break and its target may hold a signature; inline code of an odd run of
+  backticks is code, and of an even run is mathematics. Both read a link
+  through one reader, `Texts.ref_links`, and a mention through one, `Texts.name_mentions`, in a docstring
+  as on a page: a link to a heading's anchor is not a binding's, a method named by its signature is its own
+  target, and a code span beside a bracket, or the text of a link to a page or a web address, is a mention.
+- **`RULE.DOC.SHAPE` counts a link as the text it shows.** Its target split at a space into a second
+  word, so linking a name grew its section by one; one package's 84 new links grew 23 sections by exactly
+  their number. A baseline recorded before counts links higher, so nothing turns red; a section may now
+  read as shorter than its row.
+
 ## 2.0.0-rc.81 — 2026-10-18
 
 PATCH, from GBGHomogeneousTurbulence's request of 2026-10-18, on the owner's word that the tool decide:

@@ -469,7 +469,7 @@ An example's locations carry file and line only: a fixture is built fresh each r
 abstract type Example end
 struct TextExample     <: Example; fileset::FileSet.T; text::String; expect::Vector{Location}; clause::String; settings::Vector{Setting}; end
 struct TreeExample     <: Example; files::Vector{Pair{String,String}}; expect::Vector{Location}; clause::String; end
-struct ModuleExample   <: Example; source::String; expect::Vector{Location}; clause::String; end
+struct ModuleExample   <: Example; source::String; expect::Vector{Location}; clause::String; pages::Vector{Pair{String,String}}; end
 struct SiteExample     <: Example; pages::Vector{Pair{String,String}}; expect::Vector{Location}; clause::String; end
 struct QuestionExample <: Example; question::Question; expect::Vector{Location}; clause::String; end
 struct HistoryExample  <: Example; script::String; expect::Vector{Location}; clause::String; end   # a repository a script builds

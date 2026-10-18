@@ -1571,6 +1571,168 @@ function node_at(root::AbstractString, file::AbstractString, line::Integer)
     return node_in(path, nodes_of(path), line)
 end
 
+# ──────────────────────────────────────────────────────────── a page's prose, and the links in it
+
+"""
+    page_prose(text) -> String
+
+A Markdown page with what is not its running prose blanked to spaces, every line and column where it
+was: fenced blocks and headings. Tables, lists, quotations, admonition bodies and HTML comments stay. The
+argument is `text`, the page. Returns the masked page.
+
+A page is read as Documenter reads it, through Julia's own Markdown parser, which is not CommonMark; each
+case was measured against `Markdown.parse` (2026-10-18), after a reader built to CommonMark hid prose
+the site shows. Rules that read a page's prose read it through this, so they agree on what it is.
+
+A fence, which may open on a list item's own line, closes on a line at its container's left edge — the
+page's, or the list item's — starting with the same run of fence characters and no more; one never closed
+is no fence. An underlined heading is one line, not a list item or a quotation, opening its block — after
+a blank line, a heading or a fence — under three `=` or `-` or more. A comment is shown as text.
+"""
+function page_prose(text::AbstractString)
+    lines = String.(split(text, '\n'))
+    bare = [replace(l, r"^\s*(?:>[ \t]?)+" => "") for l in lines]   # a quotation holds blocks as a page does
+    keep = trues(length(lines))
+    item = r"^(\s*(?:[-*+]|\d+[.)])\s+)"
+    list_col = 0                       # the left edge of the list item the page is in, 0 outside one
+    i = 1
+    while i <= length(lines)
+        l = bare[i]
+        if !isempty(strip(l)) && !startswith(l, " ")
+            mi = match(item, l)
+            list_col = mi === nothing ? 0 : ncodeunits(mi.captures[1])
+        end
+        m = match(r"^((?:\s*(?:[-*+]|\d+[.)])\s+)?)(\s*)(`{3,}|~{3,})(.*)$", l)
+        if m !== nothing && !occursin(first(m.captures[3]), m.captures[4])
+            run = m.captures[3]
+            edge = !isempty(m.captures[1]) ? ncodeunits(m.captures[1]) :
+                   (list_col > 0 && ncodeunits(m.captures[2]) >= list_col) ? list_col : 0
+            closer = Regex("^ {" * string(edge) * "}" * repeat(first(run) == '`' ? "`" : "~", length(run)) * "(?![" * first(run) * "])")
+            close = findnext(k -> occursin(closer, bare[k]), eachindex(bare), i + 1)
+            if close !== nothing
+                keep[i:close] .= false
+                i = close + 1
+                continue
+            end
+        end
+        occursin(r"^\s{0,3}#{1,6}(\s|$)", l) && (keep[i] = false)
+        if i > 1 && occursin(r"^\s{0,3}(={3,}|-{3,})\s*$", l) && !isempty(strip(bare[i-1])) &&
+           !occursin(r"^\s*([|>]|[-*+]\s|\d+[.)]\s|\[\^)", lines[i-1]) &&
+           (i == 2 || isempty(strip(bare[i-2])) || !keep[i-2])
+            keep[i] = false; keep[i-1] = false
+        end
+        i += 1
+    end
+    return join((keep[k] ? lines[k] : " "^ncodeunits(lines[k]) for k in eachindex(lines)), '\n')
+end
+
+# A Documenter cross-reference: its text, which may hold one level of brackets, and its target, which may
+# hold one level of parentheses — `@ref f(::Int)` — and either may run onto the next line of a paragraph.
+const REF_LINK = r"\[((?:[^\[\]\n]|\n(?![ \t]*\n)|\[[^\[\]\n]*\])*)\]\(@ref(?:\s+((?:[^()\n]|\([^()\n]*\))*))?\s*\)"
+
+"""
+    ref_links(text; bindings = nothing) -> Vector{NamedTuple}
+
+Every cross-reference in `text` that reaches a binding, in order.
+
+# Arguments
+
+- `text` — the text.
+- `bindings` — the names a one-word target may be known to be, or `nothing`.
+
+Returns entries with `offset` and `stop` (where the link opens and ends), `name` (the binding's own name),
+`path` (the target as qualified as written, or the name) and `target` (with a method's signature, where
+one is written).
+
+A link reaches a binding when its target is qualified; when it has no target and its text is a code span;
+or when its one-word target is the name its code-span text shows, or is among `bindings`. Any other
+link to one word is read as reaching a heading's anchor — the site's `@ref verbs` is one — since the
+two are written alike.
+"""
+function ref_links(text::AbstractString; bindings = nothing)
+    out = NamedTuple{(:offset, :stop, :name, :path, :target),Tuple{Int,Int,String,String,String}}[]
+    for m in eachmatch(REF_LINK, text)
+        label = strip(String(m.captures[1]))
+        code = occursin(r"^`[^`]+`$", label)
+        shown = code ? replace(strip(label, '`'), r"\(.*$"s => "") : ""
+        written = m.captures[2] === nothing ? "" : strip(String(m.captures[2]))
+        if isempty(written)
+            code || continue                      # no target and prose text: a heading
+            written = strip(label, '`')
+        end
+        path = replace(written, r"\(.*$"s => "")
+        occursin(Regex("^(?:" * NAME * "\\.)*@?" * NAME * "\$"), path) || continue
+        name = String(last(split(path, '.')))
+        # one word reaches a binding only as the name its text shows, or one known to be a binding
+        occursin('.', path) || name == last(split(shown, '.')) ||
+            (bindings !== nothing && name in bindings) || continue
+        push!(out, (offset = m.offset, stop = m.offset + ncodeunits(m.match) - 1, name, path = String(path), target = String(written)))
+    end
+    return out
+end
+
+"""
+    mask_even_code(text) -> String
+
+The text with every span between even runs of backticks blanked to spaces, which Julia's Markdown reads
+as mathematics, not code; an odd run is left alone, three backticks being code as one is. The argument
+is `text`. Returns the masked text, every column where it was.
+"""
+mask_even_code(text::AbstractString) =
+    replace(String(text), r"(?<!`)(``(?:``)*)(?!`)[^\n]+?(?<!`)\1(?!`)" => m -> replace(m, r"[^\n]" => " "))
+
+"""
+    name_mentions(text, links) -> Vector{Tuple{Int,String}}
+
+Every code span in `text` holding a name alone — a macro's included — with where it opens, except the
+code-span text of a link in `links`, which is that link and not a mention. The arguments are `text` and
+`links`, what [`ref_links`](@ref) found in it. Returns the offsets and names.
+
+A span beside a bracket is a mention like any other — ``` [`a`, `b`] ``` names two — and a link to a page
+or a web address leaves its text a bare mention, as a docstring was always read.
+"""
+function name_mentions(text::AbstractString, links)
+    out = Tuple{Int,String}[]
+    # an odd run of backticks, as Julia's Markdown reads inline code: three are code as one is, and an
+    # even run is mathematics (found in review, 2026-10-18: ``L_i`` was read as a name)
+    for m in eachmatch(Regex("(?<!`)(`(?:``)*)(@?" * NAME * ")\\1(?!`)"), text)
+        any(l -> l.offset <= m.offset <= l.stop, links) && continue
+        push!(out, (m.offset, String(m.captures[2])))
+    end
+    return out
+end
+
+"""
+    same_link!(seen, link, line) -> Union{Int,Nothing}
+
+Records a link and says whether it reaches a target linked before: the line of the earlier link, or
+`nothing`. A target written qualified and the same name written bare are one target, since a reader
+meets one docstring either way; two qualified targets differ when their modules do.
+
+# Arguments
+
+- `seen` — what was linked before, by target and by name; filled in as it goes.
+- `link` — one entry of [`ref_links`](@ref).
+- `line` — where this link stands.
+"""
+function same_link!(seen::Dict{String,Int}, link, line::Integer)
+    # A method named by its signature is its own target, Documenter sending each to its own docstring; the
+    # signature goes with the name into every key, bare or qualified alike (found in review, 2026-10-18).
+    sig = link.target[ncodeunits(link.path)+1:end]
+    bare = "bare:" * link.name * sig
+    named = "name:" * link.name * sig
+    if occursin('.', link.path)
+        hit = get(seen, link.target, get(seen, bare, nothing))
+        hit === nothing || return hit
+        seen[link.target] = line; get!(seen, named, line)
+    else
+        hit = get(seen, bare, get(seen, named, nothing))
+        hit === nothing || return hit
+        seen[bare] = line
+    end
+    return nothing
+end
+
 # ────────────────────────────────────────────────────────────────────────────────── the built site
 #
 # Harvested from `HtmlWalker` of the tree being replaced: what a rule about the rendered page needs is
