@@ -15,6 +15,9 @@ GBGCodingTools.TestHarness.allocated_call
 GBGCodingTools.TestHarness.CountingArray
 GBGCodingTools.TestHarness.counting
 GBGCodingTools.TestHarness.Traffic
+GBGCodingTools.TestHarness.UNDERIVED
+GBGCodingTools.TestHarness.Underived
+GBGCodingTools.TestHarness.UNDERIVED_ROWS
 GBGCodingTools.TestHarness.audit
 GBGCodingTools.TestHarness.AUDITED_ALLOCATION_OPS
 GBGCodingTools.TestHarness.AUDITED_TRAFFIC_OPS

@@ -25,7 +25,7 @@ module TestHarness
 using Test, TOML
 import ..GBGCodingTools
 
-export @alloc_below, CountingArray, Traffic, counting, audit, run_regressions
+export @alloc_below, CountingArray, Traffic, UNDERIVED, counting, audit, run_regressions
 
 # ────────────────────────────────────────────── the public surface, derived from the loaded package
 
@@ -318,18 +318,37 @@ Base.@propagate_inbounds function Base.setindex!(a::CountingArray, value, i::Int
 end
 
 """
+    Underived
+
+The type of [`UNDERIVED`](@ref), the ideal of a row whose ideal has not been derived yet.
+"""
+struct Underived end
+
+"""
+    UNDERIVED
+
+Stands for a [`Traffic`](@ref) row's ideal while it has not been derived: the row is held to its frozen
+count alone, and [`audit`](@ref) lists it as owing its ideal, so what is left to derive is on the record and
+can be searched for. Writing it is the claim that nobody has derived the ideal yet. No row takes its ideal
+from the count measured unless it is written there: a three-part form that did so silently could never fail,
+and was the easiest to write (found by a consumer, 2026-10-19).
+"""
+const UNDERIVED = Underived()
+
+"""
     Traffic
 
-One array's row in an audited call.
+A row of an audited call: `Traffic(role, array, frozen, ideal)`, a holder fifth where they differ, or
+[`UNDERIVED`](@ref) as the ideal.
 
 # Fields
 
-- `role` — the array's role in the call (`"source"`, `"dest"`, `"kernel"`).
+- `role` — the array's part in the call.
 - `array` — the [`CountingArray`](@ref) measured.
-- `frozen` — the `(reads, writes)` asserted exactly.
-- `ideal` — the fused ideal documented beside it (each needed input element read once, each output
-  written once).
-- `holder` — the named holder required when the two differ.
+- `frozen` — the `(reads, writes)` asserted.
+- `ideal` — what the operation needs.
+- `holder` — needed where they differ.
+- `derived` — `false` for an ideal not derived.
 """
 struct Traffic
     role::String
@@ -337,8 +356,21 @@ struct Traffic
     frozen::NTuple{2,Int}
     ideal::NTuple{2,Int}
     holder::String
+    derived::Bool
+    function Traffic(role, array, frozen, ideal, holder, derived)
+        derived || ideal == frozen || throw(ArgumentError("a row not derived is held to its frozen count; its ideal is that count"))
+        return new(String(role), array, Tuple(frozen), Tuple(ideal), String(holder), derived)
+    end
 end
-Traffic(role, array, frozen) = Traffic(role, array, frozen, frozen, "")
+Traffic(role, array, frozen, ideal::Union{Tuple,AbstractVector}, holder::Union{AbstractString,Symbol} = "") =
+    Traffic(role, array, Tuple(frozen), Tuple(ideal), String(holder), true)
+# a row read from a baseline file passes its ideal on as it came, UNDERIVED included, and keeps the mark
+Traffic(role, array, frozen, ::Underived, holder::Union{AbstractString,Symbol} = "") =
+    Traffic(role, array, Tuple(frozen), Tuple(frozen), String(holder), false)
+Traffic(role, array, frozen) = throw(ArgumentError(
+    "a traffic row states its ideal: Traffic(role, array, frozen, ideal) — the (reads, writes) the operation " *
+    "needs, with a holder when it differs from the frozen count — or Traffic(role, array, frozen, UNDERIVED) " *
+    "while the ideal is not derived"))
 
 """
     AUDITED_TRAFFIC_OPS
@@ -360,9 +392,9 @@ One row of the traffic audit (the per-operation table of array reads and writes)
 - `rows` — one [`Traffic`](@ref) per array with its frozen `(reads, writes)`.
 - `print` — print every measured count for re-baselining.
 
-It zeroes the counters of every row, runs the operation, and asserts for every row that the measured
-pair equals the frozen pair exactly; a frozen count differing from its ideal must carry a named holder. Returns
-`nothing`.
+It zeroes the counters, runs the operation, and asserts that each measured pair equals the frozen pair; a
+frozen pair differing from its ideal needs a holder, and a row not derived goes in [`UNDERIVED_ROWS`](@ref).
+Returns `nothing`.
 """
 function audit(operation!, name::AbstractString, rows::Traffic...; print::Bool = false)
     token = match(r"^[^\s(∘]+", name)
@@ -373,7 +405,9 @@ function audit(operation!, name::AbstractString, rows::Traffic...; print::Bool =
     @testset "$name" begin
         for r in rows
             measured = (r.array.reads[], r.array.writes[])
-            print && println(rpad(name, 52), rpad(r.role, 14), "measured ", measured, "  frozen ", r.frozen, "  ideal ", r.ideal)
+            print && println(rpad(name, 52), rpad(r.role, 14), "measured ", measured, "  frozen ", r.frozen,
+                             "  ideal ", r.derived ? r.ideal : "not derived")
+            r.derived || lock(() -> (name * " / " * r.role) in UNDERIVED_ROWS || push!(UNDERIVED_ROWS, name * " / " * r.role), UNDERIVED_LOCK)
             @test measured == r.frozen
             r.frozen != r.ideal && @test !isempty(r.holder)
         end
@@ -382,10 +416,19 @@ function audit(operation!, name::AbstractString, rows::Traffic...; print::Bool =
 end
 
 """
+    UNDERIVED_ROWS
+
+The rows [`audit`](@ref) has measured whose ideal is [`UNDERIVED`](@ref), as `"<row> / <role>"`, which
+[`traffic_completeness`](@ref) reports: the record of what is left to derive.
+"""
+const UNDERIVED_ROWS = String[]
+const UNDERIVED_LOCK = ReentrantLock()
+
+"""
     traffic_completeness(pkg, modules; exempt = Dict{Symbol,String}())
 
-The derived completeness check of the traffic audit, the twin of [`allocation_completeness`](@ref)
-over [`AUDITED_TRAFFIC_OPS`](@ref).
+The traffic audit's completeness check, the twin of [`allocation_completeness`](@ref) over
+[`AUDITED_TRAFFIC_OPS`](@ref).
 
 # Arguments
 
@@ -393,7 +436,7 @@ over [`AUDITED_TRAFFIC_OPS`](@ref).
 - `modules` — its owned modules.
 - `exempt` — operation name to reason, for the operations deliberately not audited.
 
-Runs as a `@testset`. Returns `nothing`.
+Runs as a `@testset`; prints and empties [`UNDERIVED_ROWS`](@ref). Returns `nothing`.
 """
 function traffic_completeness(pkg::Module, modules::AbstractVector{Module}; exempt::AbstractDict = Dict{Symbol,String}())
     @testset "every exported in-place operation has a traffic row" begin
@@ -406,6 +449,10 @@ function traffic_completeness(pkg::Module, modules::AbstractVector{Module}; exem
         isempty(phantoms) || @error "row labels that parse to no real operation — fix the label" phantoms
         @test isempty(phantoms)
     end
+    # What is left to derive, on the record and never a failure: each row written with UNDERIVED, every one
+    # printed — a list shown as its ends alone cannot be read as the record (found in review, 2026-10-19).
+    owed = lock(() -> (o = copy(UNDERIVED_ROWS); empty!(UNDERIVED_ROWS); o), UNDERIVED_LOCK)
+    isempty(owed) || println("traffic rows whose ideal is not derived yet (", length(owed), "):\n  ", join(owed, "\n  "))
     return nothing
 end
 
@@ -444,9 +491,8 @@ One row of a frozen traffic table, evaluated.
 - `name` — the `[[row]]` entry's name.
 - `symbols` — the values of the count symbols (`P`, `M`) for the fixture at hand.
 
-The row's `arrays = [{label, reads, writes, ideal_reads?, ideal_writes?, holder?}]` counts are
-evaluated over `symbols`. Returns named tuples `(label, frozen, ideal, holder)`; a missing row is an
-error naming it.
+Each array is `{label, reads, writes, ideal_reads, ideal_writes, holder?}`, or `ideal = "underived"`.
+Returns `(label, frozen, ideal, holder)` tuples for `Traffic`; a missing row is an error.
 """
 function traffic_rows(baseline::AbstractDict, name::AbstractString, symbols::AbstractDict{String,Int})
     rows = get(baseline, "row", Any[])
@@ -455,7 +501,16 @@ function traffic_rows(baseline::AbstractDict, name::AbstractString, symbols::Abs
     out = NamedTuple[]
     for a in rows[i]["arrays"]
         frozen = (count_expression(string(a["reads"]), symbols), count_expression(string(a["writes"]), symbols))
-        ideal = (count_expression(string(get(a, "ideal_reads", a["reads"])), symbols), count_expression(string(get(a, "ideal_writes", a["writes"])), symbols))
+        stated = haskey(a, "ideal_reads") || haskey(a, "ideal_writes")
+        where_ = "pass_audit_baseline.toml row $(repr(name)), array $(repr(a["label"]))"
+        if get(a, "ideal", "") == "underived"
+            stated && error("$where_: ideal = \"underived\" beside a stated ideal; keep one")
+            ideal = UNDERIVED
+        else
+            (haskey(a, "ideal_reads") && haskey(a, "ideal_writes")) ||
+                error("$where_: state ideal_reads and ideal_writes, or ideal = \"underived\"")
+            ideal = (count_expression(string(a["ideal_reads"]), symbols), count_expression(string(a["ideal_writes"]), symbols))
+        end
         push!(out, (label = String(a["label"]), frozen = frozen, ideal = ideal, holder = String(get(a, "holder", ""))))
     end
     return out

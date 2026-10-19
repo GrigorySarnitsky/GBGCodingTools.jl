@@ -4,6 +4,25 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0-rc.84 — 2026-10-19
+
+MINOR, on the owner's word of 2026-10-19, from GBGHomogeneousTurbulence's request; it breaks a package's
+traffic audit until the package moves, as below:
+
+- **Every traffic row states its ideal.** `TestHarness.Traffic(role, array, frozen)` took the ideal from
+  the measured count, so a row written that way could not fail; that form now refuses, naming the two
+  that replace it. `Traffic(role, array, frozen, ideal)` states what the operation needs (with a holder
+  when it differs from the frozen count, as before); `Traffic(role, array, frozen, UNDERIVED)` says the
+  ideal is not derived yet. A row so marked is held to its frozen count alone and is listed by
+  `traffic_completeness` as owing its ideal, every row printed — a record, never a failure. In a baseline
+  TOML an array states `ideal_reads` and `ideal_writes`, or `ideal = "underived"`; stating neither, or
+  both, is an error, and `traffic_rows` hands an underived ideal on as `UNDERIVED`, so the mark survives.
+  `RULE.TEST.PASS_AUDIT` says the ideal is what the operation needs, never a measured count.
+- **Moving to it:** the usual `gbg bump`, `Pkg.update` and `gbg sync` (the sync rewrites the rule's
+  text); then each old three-part row gains `, UNDERIVED`, and the import of the harness names gains
+  `UNDERIVED`. Measured on copies of GBGPeriodicFields (142 rows) and GBGHomogeneousTurbulence (7) at
+  their trees of 2026-10-19: the edit is mechanical, and both full test suites pass.
+
 ## 2.0.0-rc.83 — 2026-10-18
 
 PATCH, on the owner's word of 2026-10-18:

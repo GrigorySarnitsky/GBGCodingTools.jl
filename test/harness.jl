@@ -138,3 +138,43 @@ alloc_out = zeros(Float32, 8); alloc_many = Tuple(fill(ones(Float32, 8), 33))
     TH.@alloc_below 1 alloc_use!(alloc_fresh!(alloc_token))
     @test alloc_token[] == 0
 end
+
+# Every traffic row states its ideal: the form that took it from the measured count made a row that could
+# not fail (GBGHomogeneousTurbulence, 2026-10-19). One not derived yet says so, and is on the record.
+@testset "a traffic row states its ideal, or that it is not derived" begin
+    src = TH.counting(ones(4)); dst = TH.counting(zeros(4))
+    copy4!() = (for i in 1:4; dst[i] = src[i]; end)
+    @test_throws ArgumentError TH.Traffic("source", src, (4, 0))
+    r = TH.Traffic("source", src, (4, 0), (4, 0))
+    @test r.derived && r.ideal == (4, 0) && isempty(r.holder)
+    u = TH.Traffic("dest", dst, (0, 4), TH.UNDERIVED)
+    @test !u.derived && u.ideal == u.frozen
+    empty!(TH.UNDERIVED_ROWS)
+    TH.audit(copy4!, "copy4! here", r, u)
+    @test TH.UNDERIVED_ROWS == ["copy4! here / dest"]
+    # a stated ideal below the frozen count needs its holder
+    h = TH.Traffic("source", src, (4, 0), (2, 0), "reads twice: the halo")
+    @test h.derived && h.holder == "reads twice: the halo"
+    # the baseline file states both ideals, or `ideal = "underived"`
+    base = Dict("row" => [Dict("name" => "copy4!", "arrays" => [
+        Dict("label" => "s", "reads" => "P", "writes" => "0", "ideal_reads" => "P", "ideal_writes" => "0"),
+        Dict("label" => "d", "reads" => "0", "writes" => "P", "ideal" => "underived")])])
+    rows = TH.traffic_rows(base, "copy4!", Dict("P" => 4))
+    @test rows[1].ideal == (4, 0) && rows[2].ideal === TH.UNDERIVED
+    # passed on as it came, a baseline row keeps its mark
+    t = TH.Traffic(rows[2].label, dst, rows[2].frozen, rows[2].ideal, rows[2].holder)
+    @test !t.derived && t.ideal == t.frozen
+    bad = Dict("row" => [Dict("name" => "x", "arrays" => [Dict("label" => "s", "reads" => "P", "writes" => "0")])])
+    @test_throws ErrorException TH.traffic_rows(bad, "x", Dict("P" => 4))
+    both = Dict("row" => [Dict("name" => "x", "arrays" => [Dict("label" => "s", "reads" => "P", "writes" => "0",
+                "ideal" => "underived", "ideal_reads" => "P", "ideal_writes" => "0")])])
+    @test_throws ErrorException TH.traffic_rows(both, "x", Dict("P" => 4))
+    # a vector ideal is a pair; a row not derived cannot claim another ideal
+    @test TH.Traffic("s", src, (4, 0), [4, 0]).ideal == (4, 0)
+    @test_throws ArgumentError TH.Traffic("s", src, (4, 0), (2, 0), "", false)
+    # the record is each row once, and is emptied when reported
+    empty!(TH.UNDERIVED_ROWS)
+    TH.audit(copy4!, "copy4! again", u); TH.audit(copy4!, "copy4! again", u)
+    @test TH.UNDERIVED_ROWS == ["copy4! again / dest"]
+    empty!(TH.UNDERIVED_ROWS)
+end

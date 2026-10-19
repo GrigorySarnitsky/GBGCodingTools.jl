@@ -68,8 +68,8 @@ const DEVICE_COST = Model.Rule(
 
 const PASS_AUDIT = Model.Rule(
     id = Symbol("RULE.TEST.PASS_AUDIT"),
-    statement = "In a package that declares the traffic audit, every audited operation has a frozen per-array traffic row with a named holder for any gap.",
-    why = "A raised count is a fusion regression unless a new holder justifies it; the frozen values are refrozen in the same commit as the change, with the reason.",
+    statement = "In a package that declares the traffic audit, every audited operation has a frozen per-array traffic row, each stating its ideal — what the operation needs, derived without reading the code it judges, never a measured count — or marked as not derived yet; a row whose stated ideal differs from its frozen count names its holder.",
+    why = "A raised count is a fusion regression unless a new holder justifies it; the frozen values are refrozen in the same commit as the change, with the reason. A three-part row that took its ideal from the measured count silently could never fail, and was the easiest to write (GBGHomogeneousTurbulence, 2026-10-19); `TestHarness.Traffic` now refuses it, and a row whose ideal is not derived yet says so with `UNDERIVED`, which the audit lists. An ideal can still be written as the count measured; that is then a claim in plain sight, for a reviewer.",
     intention = Model.Intention.CODE,
     filesets = [Model.FileSet.TESTS, Model.FileSet.CODE],
     unchecked_reason = "an instruction to the session of a package that has declared this contract by calling `TestHarness.traffic_completeness` from its suite, where that suite checks it; a package that has not declared it is not bound, and nothing checks it here")
