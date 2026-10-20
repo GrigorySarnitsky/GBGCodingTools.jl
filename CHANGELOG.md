@@ -4,6 +4,26 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.0.0 — 2026-10-20
+
+MAJOR. The first release of the rebuilt tool, on the owner's word of 2026-10-20, and the first made
+public. The 1.0.0 line is abandoned: its eleven candidates stand and 1.0.0 is never released.
+
+Against 1.0.0's candidates everything a package sees changed: its config (`.gbg/config.jl`, read as
+data), the verbs (`gbg <noun> <verb>`), and both entry points, the docs-build wrapper and the test
+harness. The rulebook is a set of Julia values, each rule with its statement, its check and the
+examples that show the two agree, rendered into every package by `gbg sync`; the wiring check judges a
+package's wiring in every docs build and test run. Beside them stand the documentation review, which
+reads, fixes through the change guard and verifies; the question channel; and the leak scan. The
+candidates below, `2.0.0-rc.1` to `2.0.0-rc.84`, give each change with its reason.
+
+Since rc.84:
+
+- **The leak scan reads a run that wrote no log.** GitHub serves a cancelled run's log as an archive
+  holding no file; `unzip` failed on it, and the scan counted it a download refused, so six such runs
+  kept a pass `INCOMPLETE` however often it was retried. An empty archive is now read, with nothing
+  in it.
+
 ## 2.0.0-rc.84 — 2026-10-19
 
 MINOR, on the owner's word of 2026-10-19, from GBGHomogeneousTurbulence's request; it breaks a package's

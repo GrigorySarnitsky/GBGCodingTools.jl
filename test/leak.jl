@@ -185,6 +185,13 @@ end
         @test G.Publication.fetch_log("o/r", "limited", zip; waits = (0, 0, 0)) === :refused
         rm(count_file; force = true)
         @test G.Publication.fetch_log("o/r", "late", zip; waits = (0, 0, 0)) === :read     # waited out
+        # a run that wrote no log is served as an archive holding no file: read, with nothing in it
+        empty = tempname()
+        write(empty, UInt8[0x50, 0x4b, 0x05, 0x06], zeros(UInt8, 18))
+        @test G.Publication.empty_archive(empty)
+        write(empty, UInt8[0x50, 0x4b, 0x03, 0x04], zeros(UInt8, 18))
+        @test !G.Publication.empty_archive(empty)
+        @test !G.Publication.empty_archive(tempname())
         # a shared pace: a hold delays every download, not only the one refused
         pace = G.Publication.Throttle(0.0)
         G.Publication.hold!(pace, 1.0)

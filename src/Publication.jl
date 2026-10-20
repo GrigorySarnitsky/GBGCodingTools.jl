@@ -435,6 +435,10 @@ function github(root::AbstractString; io::IO = stdout, waits = (0, 60, 180, 420)
         status = fetch_log(slug, id, zip; waits, pace)
         status === :refused && (given_up[] = true)
         status === :read || return (id, status, "")
+        # An archive with no file in it is a run that wrote no log — a cancelled one — and is read, with
+        # nothing in it: `unzip` fails on it, and six such runs kept a pass INCOMPLETE however often it
+        # was retried (2026-10-20).
+        empty_archive(zip) && (rm(zip; force = true); return (id, :read, ""))
         out = IOBuffer()
         # an archive that does not unpack is a log not read, never one no longer kept
         unpacked = success(pipeline(`unzip -p $zip`; stdout = out, stderr = devnull))
@@ -451,6 +455,16 @@ function github(root::AbstractString; io::IO = stdout, waits = (0, 60, 180, 420)
     append!(missed, refused)
     return out_dir, files, missed, length(refused)
 end
+
+"""
+    empty_archive(path) -> Bool
+
+Whether the file at `path` is a zip archive holding no file: the 22 bytes of an end-of-central-directory
+record and nothing else, which is what GitHub serves for a run that wrote no log. The argument is
+`path`. Returns the answer.
+"""
+empty_archive(path::AbstractString) =
+    isfile(path) && filesize(path) == 22 && read(path, 4) == UInt8[0x50, 0x4b, 0x05, 0x06]
 
 """
     Throttle(interval)
