@@ -1144,6 +1144,12 @@ function claude_block(cfg::Model.Config)
     A run an earlier session left open is continued before anything else, and the chat says so:
     `gbg run next` says what to launch or that the stage is ready to collect, and the run goes on to
     its close. It waits for the owner only when `gbg run next` says the tree moved since the launch.
+
+    A version is released on the owner's word, with `gbg release <version>` run here, and no other way:
+    it refuses unless the tree is clean and pushed, `CHANGELOG.md` has a `## <version> — <date>` entry,
+    `Project.toml` names that version, the tests, the docs build and the wiring check pass, and CI
+    passed at the commit — start it first with `gh workflow run CI --ref <branch>` — then tags and
+    pushes. A tag is never moved or cut again.
     <!-- $END_MARK -->
     """
 end

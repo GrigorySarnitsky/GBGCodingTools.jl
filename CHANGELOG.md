@@ -4,6 +4,17 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.1.0 — 2026-10-21
+
+MINOR, on the owner's word of 2026-10-21:
+
+- **A package releases itself with `gbg release <version>`.** Run in a package's root, the verb tags
+  that package, with the checks the tool's own release passes: a clean tree on its branch, pushed; the
+  `CHANGELOG.md` entry and the version in `Project.toml`; its test suite and docs build, as its config
+  names them; the wiring check; and CI green at the commit. It read the tool's own checkout wherever it
+  was run, so a package had no way to tag a release. The rendered instructions of every package now
+  say how a version is released, so the next `gbg sync` writes them into its `CLAUDE.md`.
+
 ## 2.0.0 — 2026-10-20
 
 MAJOR. The first release of the rebuilt tool, on the owner's word of 2026-10-20, and the first made

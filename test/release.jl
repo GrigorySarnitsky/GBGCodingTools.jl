@@ -92,3 +92,24 @@ end
     ok, said = G.Git.said(root, "tag", "v2.0.1")
     @test ok
 end
+
+# A package releases itself: run in a package, the verb reads that package, with its own build and test
+# commands; until 2026-10-21 it read the tool's own checkout wherever it was run.
+@testset "run in a package, the release is the package's" begin
+    root, gg = repo("0.1.0")
+    out = mktemp() do path, io
+        redirect_stdout(io) do
+            cd(root) do
+                @test G.cmd_release(["0.2.0"]) == 2
+            end
+        end
+        close(io); read(path, String)
+    end
+    @test occursin("Project.toml version is 0.1.0, the release is 0.2.0", out)   # the package's, not the tool's
+    @test occursin("no `## 0.2.0 — <date>` entry", out)
+    # the gates run what the package's config names, with the `julia` running here
+    j = G.gate_command(["julia", "--project=docs", "docs/make.jl"], `-e 1`)
+    @test j.exec[end-1:end] == ["--project=docs", "docs/make.jl"] && occursin("julia", j.exec[1])
+    @test G.gate_command(String[], `-e 1`).exec[end-1:end] == ["-e", "1"]
+    @test G.gate_command(["make", "docs"], `-e 1`).exec == ["make", "docs"]
+end

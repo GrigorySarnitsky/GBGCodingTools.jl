@@ -818,12 +818,11 @@ their passing tests [one was a real blocker].
 state turned science tests red]. The work-queue file lists only what is left; the guard holds a session on an
 open or done line, not a `BLOCKED:` one. A close writes leftovers under an uncounted heading, `gbg answer` the owner's.
 
-**Release** of GBGCodingTools needs a clean tree on `master`, pushed; a green `Pkg.test()`, a green docs build and a
-green wiring check; and the `CHANGELOG.md` entry; the tag is never moved. `gbg release --counts` prints, for
-`v2.0.0` alone, what still holds that release (IMPLEMENTATION §6). `gbg release` prints, and the tag message and
-that entry carry, two lines it does not act on: the commits whose keep-or-revert question is still open, and how many
-confirmed failing tests wait unanswered in `test/regressions/escalated/`. Nothing else holds a release: no review run,
-no open finding, no unanswered question, no audit.
+**Release**, of GBGCodingTools or of a package, by `gbg release` run in its root, needs a clean tree on its branch,
+pushed; a green test suite, a green docs build — each as the package's config names it — and a green wiring check;
+CI green at the commit; `Project.toml` naming the version; and the `CHANGELOG.md` entry; the tag is never moved. `gbg release --counts` prints, for
+`v2.0.0` alone, what still holds that release (IMPLEMENTATION §6). Nothing else holds a release: no review run, no
+open finding, no unanswered question, no audit.
 
 **Who stops.** Inside a run, the program, from the pass cap; there is no ceiling on launches — the panel over the
 units, one relaunch each, one verifier per place holding open findings and one pass bound a run by design [ruled

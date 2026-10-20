@@ -39,7 +39,8 @@ function ci_verdict(root::AbstractString, sha::AbstractString)
     catch
         return "GitHub could not be reached, so CI's verdict on $sha cannot be read"
     end
-    isempty(newest) && return "CI has no run at $sha — dispatch one (`gh workflow run CI --ref master`) and wait for it"
+    branch = something(Git.run(root, "rev-parse", "--abbrev-ref", "HEAD"), "master")
+    isempty(newest) && return "CI has no run at $sha — dispatch one (`gh workflow run CI --ref $branch`) and wait for it"
     newest == "completed success" && return nothing
     return "the newest CI run at $sha is `$newest`, not a completed success"
 end
@@ -117,15 +118,15 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
     m = match(r"^(\d+\.\d+\.\d+)(-rc\.(\d+))?$", ver)
     m === nothing && (println(io, "release: $ver is neither X.Y.Z nor X.Y.Z-rc.N"); return 2)
     base = m.captures[1]; rc = m.captures[2] !== nothing
-    ispath(joinpath(root, ".git")) || (println(io, "release: the dev checkout only — $root is not a git working tree"); return 2)
+    ispath(joinpath(root, ".git")) || (println(io, "release: $root is not a git working tree, which is what gets tagged and pushed"); return 2)
     cfg = ConfigIO.read_config(root)
     fails = release_fails(cfg, root, ver, base, rc)
     if !isempty(fails)
         println(io, "release: refused —"); foreach(f -> println(io, "  - ", f), fails); return 2
     end
     if !skip_tests
-        for (label, cmd) in (("Pkg.test()", `$(Base.julia_cmd()) --startup-file=no --project=$root -e "using Pkg; Pkg.test()"`),
-                             ("docs build (SELF.DOCS)", `$(Base.julia_cmd()) --startup-file=no --project=$(joinpath(root, "docs")) $(joinpath(root, "docs", "make.jl"))`))
+        for (label, cmd) in (("Pkg.test()", gate_command(cfg.test, `--project=$root -e "using Pkg; Pkg.test()"`)),
+                             ("docs build", gate_command(cfg.docs_build, `--project=$(joinpath(root, "docs")) $(joinpath(root, "docs", "make.jl"))`)))
             println(io, "release: running $label …"); flush(io)
             said = IOBuffer()
             ok = success(pipeline(setenv(cmd; dir = root); stdout = said, stderr = said))
@@ -150,12 +151,13 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
     end
     # A refused tag or push is a named condition with git's reason, exit 2 — no exception escaped, so
     # it is not the crash code.
-    ok, said = Git.said(root, "tag", "-a", "v$ver", "-m", "GBGCodingTools v$ver")
+    ok, said = Git.said(root, "tag", "-a", "v$ver", "-m", "$(cfg.package) v$ver")
     ok || (println(io, "release: git tag failed:\n    ", replace(said, "\n" => "\n    ")); return 2)
     ok, said = Git.said(root, "push", "origin", "v$ver")
     ok || (println(io, "release: tag created but the push failed — push it by hand: git push origin v$ver\n    ",
                    replace(said, "\n" => "\n    ")); return 2)
-    println(io, "release: v$ver tagged and pushed", rc ? " (a prerelease; `gbg bump $ver` pins it)" : "")
+    tool = cfg.package == PKG_NAME
+    println(io, "release: v$ver tagged and pushed", rc ? (tool ? " (a prerelease; `gbg bump $ver` pins it)" : " (a prerelease)") : "")
     return 0
 end
 
@@ -184,10 +186,20 @@ function counts(; io::IO = stdout, root::AbstractString = pkgdir(GBGCodingTools)
     return 0
 end
 
+# The command a gate runs: the package's own, as its config names it, with `julia` the one running here;
+# where it names none, the default over the package's own environments.
+function gate_command(declared::AbstractVector, default::Cmd)
+    isempty(declared) && return `$(Base.julia_cmd()) --startup-file=no $default`
+    first(declared) == "julia" && return `$(Base.julia_cmd()) $(declared[2:end])`
+    return Cmd(String.(declared))
+end
+
 function cmd_release(args)
     o = parse_options(args)
     "counts" in o.flags && return counts()
     isempty(o.positional) && (println(stderr, "usage: gbg release <ver> | gbg release <ver>-rc.<n> | gbg release --counts"); return 2)
-    return release(o.positional[1])
+    # The package it is run in, the tool's own checkout among them; outside any, the running copy
+    # (2026-10-21: a package had no way to tag its own release).
+    return release(o.positional[1]; root = something(ConfigIO.find_root(), pkgdir(GBGCodingTools)))
 end
 VERBS["release"] = cmd_release
