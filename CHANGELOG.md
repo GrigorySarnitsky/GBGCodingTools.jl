@@ -4,6 +4,25 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.3.0 — 2026-10-21
+
+MINOR, on the owner's word of 2026-10-21:
+
+- **RULE.DOC.INSTALL: a released package installs by name.** Once `CHANGELOG.md` has an entry for a
+  final version, every set of install instructions in a package's `README.md` and pages adds `General`
+  and the fleet's registry before it installs, installs a fleet package by name, never by its URL or
+  at a branch, and no sentence calls the package unregistered. Installed by URL, a package is its
+  newest commit; by name, its latest release. `General` is named because, on a fresh Julia, adding the
+  fleet's registry alone leaves `General` out and the install fails (measured). The rule runs in the
+  docs build, so a released package learns it on its first build at this version. It reads a page's
+  code blocks and inline code, a `pkg>` line with Pkg's own parser and Julia with JuliaSyntax.
+- **The rendered instructions say what a release asks of a package:** that it is recorded only after
+  the fleet packages it depends on, and that its install instructions move to the registry with the
+  release's own commit.
+- The tool's install page shows the registry and how a user installs from it.
+- `GBGCodingTools.REGISTRY_URL` is now `GBGCodingTools.Catalogue.REGISTRY`, beside the fleet it serves, so that
+  the rule reads it too.
+
 ## 2.2.0 — 2026-10-21
 
 MINOR, on the owner's word of 2026-10-21:

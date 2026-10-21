@@ -9,6 +9,7 @@ What this package knows, as values.
 GBGCodingTools.Catalogue
 GBGCodingTools.Catalogue.ALWAYS_ON
 GBGCodingTools.Catalogue.INSTRUMENTS
+GBGCodingTools.Catalogue.REGISTRY
 GBGCodingTools.Catalogue.RULES
 GBGCodingTools.Catalogue.axes
 GBGCodingTools.Catalogue.doc

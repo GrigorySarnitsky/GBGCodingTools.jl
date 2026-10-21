@@ -18,13 +18,28 @@ entries, which [`gbg sync`](@ref GBGCodingTools.Wire.sync) sets from the pin in 
 [deps]
 GBGCodingTools = "3aee1de0-bb62-4679-b1c5-a861fbcaaa51"
 [sources]
-GBGCodingTools = {url = "https://github.com/GrigorySarnitsky/GBGCodingTools.jl.git", rev = "v1.0.0"}
+GBGCodingTools = {url = "https://github.com/GrigorySarnitsky/GBGCodingTools.jl.git", rev = "v<version>"}
 [compat]
-GBGCodingTools = "=1.0.0"
+GBGCodingTools = "=<version>"
 ```
 
 `julia --project=docs -e 'using Pkg; Pkg.instantiate()'` fetches the tagged tree. The tool is never a
 dependency of the package proper.
+
+## The registry
+
+Since 2.2.0, `gbg release` records each final release of the tool and of each package in the fleet's own
+registry, [GBGRegistry](https://github.com/GrigorySarnitsky/GBGRegistry), and `gbg release --register`
+one whose recording failed, so a user installs a package by name and gets its latest release:
+
+```julia
+using Pkg
+Pkg.Registry.add("General")
+Pkg.Registry.add(url = "https://github.com/GrigorySarnitsky/GBGRegistry")
+Pkg.add("GBGPeriodicFields")
+```
+
+The install instructions on a released package's README and pages answer to `RULE.DOC.INSTALL`.
 
 ## The shim
 

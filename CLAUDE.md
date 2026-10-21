@@ -22,7 +22,9 @@ it refuses unless the tree is clean and pushed, `CHANGELOG.md` has a `## <versio
 `Project.toml` names that version, the tests, the docs build and the wiring check pass, and CI
 passed at the commit — start it first with `gh workflow run CI --ref <branch>` — then tags and
 pushes, and records a final release in the fleet's registry (`gbg release --register` records one
-whose recording failed). A tag is never moved or cut again.
+whose recording failed). A package is recorded only after every fleet package it depends on, and
+its README and pages answer to `RULE.DOC.INSTALL`, which the release's own commit already meets. A
+tag is never moved or cut again.
 <!-- gbg:managed end -->
 
 # CLAUDE.md — GBGCodingTools

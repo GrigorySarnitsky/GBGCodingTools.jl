@@ -12,8 +12,9 @@ module Pages
 
 using ...Model
 using ...Texts
-using ..Catalogue: FLEET, site_of
+using ..Catalogue: FLEET, REGISTRY, site_of
 using ..Docstrings: body_line
+import Pkg
 
 const JS = Texts.JS
 
@@ -621,6 +622,625 @@ const JULIA_MANUAL = Model.Rule(
                           [Model.Location(; file = "src/Example.jl", line = 2)], "a `do` block links the manual"),
     ])
 
+# ─────────────────────────────────────────────────────────────── a released package installs by name
+
+# A fleet package's repository URL, in any spelling Pkg accepts; the registry's; the fleet's names; and
+# `General`'s uuid, by which it may be added too.
+const FLEET_URL = Regex("github\\.com[/:](?:" * join((replace(r.github, "." => "\\.") for r in FLEET), "|") * ")(?:\\.git)?/?\$", "i")
+const REGISTRY_SLUG = Regex("github\\.com[/:]" * replace(match(r"github\.com/(.+?)(?:\.git)?$", REGISTRY).captures[1], "." => "\\.") * "(?:\\.git)?/?\$", "i")
+const FLEET_NAMES = Set(r.name for r in FLEET)
+const GENERAL_UUID = "23338594-aafe-5451-b93e-139f81909106"
+
+# What one command does: adds registries (`general`, `fleet`), or installs packages (`url`, `named`,
+# `branch` over the fleet's), placed by its line within the code it stands in.
+struct InstallCommand
+    line::Int
+    registry::Bool
+    general::Bool
+    fleet::Bool
+    url::Bool
+    named::Bool
+    branch::Bool
+end
+
+fleet_spec(name, url) = (name !== nothing && replace(String(name), r"\.jl$" => "") in FLEET_NAMES) ||
+                        (url !== nothing && occursin(FLEET_URL, String(url)))
+
+# A command at the `pkg>` prompt, read by Pkg's own parser, so `#rev`, `@version` and `Name.jl` mean what
+# they mean to Pkg; `nothing` for any command but adding a package or a registry, or one Pkg cannot read.
+function prompt_command(cmd::AbstractString, line::Int)
+    statements = try Pkg.REPLMode.parse(String(cmd)) catch; return InstallCommand[] end
+    out = InstallCommand[]
+    for st in statements
+        # Pkg says what it makes of a local directory of that name, which a page's reading must not depend on
+        c = try Base.CoreLogging.with_logger(() -> Pkg.REPLMode.Command(st), Base.CoreLogging.NullLogger()) catch; continue end
+        c.spec.canonical_name == "add" || continue
+        if c.spec === Pkg.REPLMode.SPECS["registry"]["add"]
+            regs = [a for a in c.arguments if a isa Pkg.Registry.RegistrySpec]
+            general = isempty(regs) || any(r -> (r.name !== nothing && is_general(r.name)) || string(r.uuid) == GENERAL_UUID ||
+                                                (r.url !== nothing && is_general(r.url)), regs)
+            push!(out, InstallCommand(line, true, general, any(r -> r.url !== nothing && occursin(REGISTRY_SLUG, r.url), regs), false, false, false))
+        else
+            specs = [a for a in c.arguments if a isa Pkg.Types.PackageSpec && fleet_spec(a.name, a.url)]
+            push!(out, InstallCommand(line, false, false, false, any(s -> s.url !== nothing, specs), !isempty(specs),
+                                      any(s -> s.rev !== nothing, specs)))
+        end
+    end
+    return out
+end
+
+# A call's dotted name, `Pkg.Registry.add`; "" for anything else.
+callee(x) = x isa Symbol ? String(x) : x isa QuoteNode ? callee(x.value) :
+            (x isa Expr && x.head === :. && length(x.args) == 2) ? callee(x.args[1]) * "." * callee(x.args[2]) : ""
+
+# A call's keyword arguments and positional ones, however written: `f(a; k = v)` and `f(a, k = v)`.
+function call_parts(ex::Expr)
+    pos, kw = Any[], Dict{Symbol,Any}()
+    for a in ex.args[2:end]
+        if a isa Expr && a.head === :parameters
+            for p in a.args; p isa Expr && p.head === :kw && p.args[1] isa Symbol && (kw[p.args[1]] = p.args[2]); end
+        elseif a isa Expr && a.head === :kw
+            a.args[1] isa Symbol && (kw[a.args[1]] = a.args[2])   # `url::String = …` names nothing
+        else
+            push!(pos, a)
+        end
+    end
+    return pos, kw
+end
+literal(x) = x isa String ? x : nothing
+revision(x) = x === :nothing ? nothing : x          # `rev = nothing` asks for no revision
+
+# The packages a `Pkg.add` call names, as `(name, url, rev)`: a string, a vector of them, `PackageSpec(…)`
+# calls, positional or with keywords, or the call's own keywords; only a string literal names anything.
+function add_specs(ex::Expr)
+    pos, kw = call_parts(ex)
+    out = Tuple{Any,Any,Any}[]
+    function one(x)
+        if x isa String
+            push!(out, occursin(FLEET_URL, x) ? (nothing, x, nothing) : (x, nothing, nothing))
+        elseif x isa Expr && x.head === :call && callee(x.args[1]) in PACKAGE_SPEC
+            p, k = call_parts(x)
+            name = isempty(p) ? literal(get(k, :name, nothing)) : literal(p[1])
+            push!(out, (name, literal(get(k, :url, nothing)), revision(get(k, :rev, nothing))))
+        elseif x isa Expr && x.head in (:vect, :tuple)
+            foreach(one, x.args)
+        end
+    end
+    foreach(one, pos)
+    isempty(kw) || push!(out, (literal(get(kw, :name, nothing)), literal(get(kw, :url, nothing)), revision(get(kw, :rev, nothing))))
+    return out
+end
+
+# Whether a registry named or located so is `General`, or the fleet's.
+const GENERAL_URL = r"github\.com[/:]JuliaRegistries/General(?:\.jl)?(?:\.git)?/?$"i
+is_general(t) = t == "General" || t == GENERAL_UUID || occursin(GENERAL_URL, t)
+const REGISTRY_SPEC = ("RegistrySpec", "Pkg.RegistrySpec", "Registry.RegistrySpec", "Pkg.Registry.RegistrySpec")
+const PACKAGE_SPEC = ("PackageSpec", "Pkg.PackageSpec", "Pkg.Types.PackageSpec")
+
+# The registries a `Pkg.Registry.add` call adds, as `(general, fleet)`: with no argument the default ones,
+# `General` among them; otherwise each string, vector or `RegistrySpec(…)` it is handed.
+function registry_adds(ex::Expr)
+    pos, kw = call_parts(ex)
+    isempty(pos) && isempty(kw) && return (true, false)
+    texts = String[]
+    function one(x)
+        if x isa String
+            push!(texts, x)
+        elseif x isa Expr && x.head === :call && callee(x.args[1]) in REGISTRY_SPEC
+            p, k = call_parts(x)
+            append!(texts, [v for v in vcat(p, collect(values(k))) if v isa String])
+        elseif x isa Expr && x.head in (:vect, :tuple)
+            foreach(one, x.args)
+        end
+    end
+    foreach(one, pos)
+    append!(texts, [v for v in values(kw) if v isa String])
+    return (any(is_general, texts), any(t -> occursin(REGISTRY_SLUG, t), texts))
+end
+
+# A block longer than this is not read: no install a page shows comes near it.
+const MAX_CODE = 10_000
+# Code longer than `SHALLOW` bytes is parsed on a stack of `PARSER_STACK` bytes. Every level of nesting
+# costs at least a byte, and the default 8 MB stack held 421 levels of the shallowest form measured, `(`,
+# under the bounds checks `Pkg.test` runs with, so code half that long cannot overflow it; the deep stack
+# is about three times what the deepest `MAX_CODE` bytes were measured to need, 165 MB on 1.12
+# (2026-10-21).
+const SHALLOW = 200
+const PARSER_STACK = 1 << 29
+
+# One long-lived task holding the deep stack, so a page of many blocks reserves it once. A job comes
+# with its own reply channel, so a caller interrupted while it waits cannot hand its answer to the next.
+const DEEP = Ref{Any}(nothing)
+const DEEP_LOCK = ReentrantLock()
+
+function deep_worker()
+    lock(DEEP_LOCK) do
+        if DEEP[] === nothing || istaskdone(DEEP[][1])
+            jobs = Channel{Any}(Inf)
+            # each job at the latest world, so a method redefined since the worker started is the one run
+            worker = Task(() -> for (g, reply) in jobs
+                                    put!(reply, try (Base.invokelatest(g),) catch; nothing end)
+                                end, PARSER_STACK)
+            schedule(worker)
+            DEEP[] = (worker, jobs)
+        end
+        return DEEP[]
+    end
+end
+
+# `f()`, on the deep stack when `code` is longer than `SHALLOW` bytes, or `nothing` if it throws. A job
+# already on the deep stack runs in place.
+function parse_safely(f, code::AbstractString)
+    (ncodeunits(code) <= SHALLOW || (DEEP[] !== nothing && current_task() === DEEP[][1])) &&
+        return try f() catch; nothing end
+    worker, jobs = deep_worker()
+    reply = Channel{Any}(1)
+    put!(jobs, (f, reply))
+    r = take!(reply)
+    return r === nothing ? nothing : r[1]
+end
+
+# Every install and registry command in a piece of code, in the order written. A line at the `pkg>`
+# prompt (`]add …`, `julia> ]add …`, `pkg> add …`, `(@v1.12) pkg> add …`) is Pkg's to read, unless it
+# stands inside a Julia comment or string; a shell line running `julia -e '…'` is the Julia it quotes;
+# a fence line is nothing; the rest, `julia>` prompts taken off, is Julia, parsed by JuliaSyntax. A line
+# that does not parse is skipped, and the code after it still read.
+function commands(code::AbstractString)
+    out = InstallCommand[]
+    (occursin("add", code) && ncodeunits(code) <= MAX_CODE) || return out
+    lines = split(code, '\n')
+    starts = cumsum(vcat(1, [ncodeunits(l) + 1 for l in lines[1:end-1]]))
+    quoted = something(parse_safely(() -> [t.range for t in JS.tokenize(code) if JS.kind(t) in (JS.K"Comment", JS.K"String", JS.K"CmdString")], code),
+                       UnitRange{UInt32}[])
+    julia = String[]
+    for (n, l) in enumerate(lines)
+        # `]` opens a prompt only before a command's name: the `])` closing a vector is Julia
+        m = match(r"^\s*(?:(?:julia>\s*)?\](?=\s*[A-Za-z])|(?:\([^)\n]*\)\s*)?pkg>)\s*(.*)$", l)
+        shell = match(r"\bjulia\b[^'\"\n]*?\s-e\s+(?:'([^']*)'|\"((?:[^\"\\]|\\.)*)\")", l)
+        inside = any(r -> starts[n] in r, quoted)     # a line that opens in a comment or string is Julia's
+        if m !== nothing && !inside
+            append!(out, prompt_command(m.captures[1], n)); push!(julia, "")
+        elseif shell !== nothing && !inside
+            push!(julia, something(shell.captures[1], replace(something(shell.captures[2], ""), "\\\"" => "\"")))
+        elseif occursin(r"^\s*(?:`{3,}|~{3,})", l)
+            push!(julia, "")
+        else
+            push!(julia, replace(l, r"^\s*julia>\s?" => ""))
+        end
+    end
+    source = join(julia, '\n')
+    line = 1; base = 0
+    function visit(x)
+        x isa LineNumberNode && (line = base + x.line; return)
+        x isa Expr || return
+        if x.head === :macrocall && x.args[1] === Symbol("@pkg_str")
+            for a in x.args; a isa LineNumberNode && (line = base + a.line); end
+            cmd = findfirst(a -> a isa String, x.args)
+            if cmd !== nothing
+                # a `pkg"""` alone on its line starts its commands on the next one
+                after = 1 <= line <= length(julia) && occursin(r"pkg\"\"\"\s*$", julia[line])
+                for (k, c) in enumerate(split(x.args[cmd], '\n'))
+                    append!(out, prompt_command(c, line + k - 1 + after))
+                end
+            end
+            return
+        end
+        if x.head === :call
+            f = callee(x.args[1])
+            if f in ("Pkg.Registry.add", "Registry.add")
+                g, r = registry_adds(x)
+                push!(out, InstallCommand(line, true, g, r, false, false, false))
+            elseif f == "Pkg.add"
+                specs = [s for s in add_specs(x) if fleet_spec(s[1], s[2])]
+                push!(out, InstallCommand(line, false, false, false, any(s -> s[2] !== nothing, specs), !isempty(specs),
+                                          any(s -> s[3] !== nothing, specs)))
+            end
+        end
+        foreach(visit, x.args)
+    end
+    # code JuliaSyntax refuses as a whole is read a line at a time, so a refused line, as a run of
+    # thousands of unclosed brackets is, does not take the install beside it; a line longer than
+    # `SHALLOW` bytes is not reread, since no install line is that long
+    if parse_safely(() -> (visit(JS.parseall(Expr, source; ignore_errors = true)); true), source) !== true
+        for (k, l) in enumerate(julia)
+            (isempty(strip(l)) || ncodeunits(l) > SHALLOW) && continue
+            base = k - 1
+            parse_safely(() -> visit(JS.parseall(Expr, l; ignore_errors = true)), l)
+        end
+    end
+    return sort!(out; by = c -> c.line)                # stable: one line's commands keep their order
+end
+
+# A file's text, readable whatever its encoding and line ends: a byte that is not UTF-8 becomes U+FFFD,
+# and a CRLF or a lone CR a LF.
+readable(text) = replace(isvalid(String, text) ? String(text) : String(map(c -> isvalid(c) ? c : '�', collect(text))),
+                         "\r\n" => "\n", "\r" => "\n")
+
+# A line without its block-quote marks, `> > text` read as `text`; counted byte by byte, since a mark
+# is ASCII, so a run of them costs nothing.
+function unquote(l::AbstractString)
+    i = 1; n = ncodeunits(l)
+    while true
+        j = i; spaces = 0
+        while j <= n && codeunit(l, j) == UInt8(' ') && spaces < 3; j += 1; spaces += 1; end
+        (j <= n && codeunit(l, j) == UInt8('>')) || break
+        j += 1; (j <= n && codeunit(l, j) == UInt8(' ')) && (j += 1)
+        i = j
+    end
+    return SubString(l, i)
+end
+
+# The inline code of a paragraph, as `(first byte, byte after it, code)`, the way Markdown pairs backticks: a run opens a
+# span closed by the next run of the same length, and a run never closed is literal text. One pass over
+# the runs, so a page of stray backticks costs no more than a page of text.
+function code_spans(t::AbstractString)
+    runs = Tuple{Int,Int}[]                            # (first byte, length)
+    i = 1; n = ncodeunits(t)
+    while i <= n
+        if codeunit(t, i) == UInt8('`')
+            j = i; while j <= n && codeunit(t, j) == UInt8('`'); j += 1; end
+            push!(runs, (i, j - i)); i = j
+        else
+            i += 1
+        end
+    end
+    by_length = Dict{Int,Vector{Int}}()
+    for (k, r) in enumerate(runs); push!(get!(by_length, r[2], Int[]), k); end
+    out = Tuple{Int,Int,String}[]
+    k = 1
+    while k <= length(runs)
+        start, len = runs[k]
+        same = by_length[len]
+        at = searchsortedfirst(same, k + 1)
+        if at > length(same)
+            k += 1; continue
+        end
+        close = same[at]
+        stop = runs[close][1]
+        body = SubString(t, start + len, prevind(t, stop))
+        push!(out, (start, stop + len, String(strip(replace(body, '\n' => ' ')))))
+        k = close + 1
+    end
+    return out
+end
+
+# A file cut into what a reader sees, in order, each with the line it starts on: `(:block, line, code)`
+# for a code block, fenced or indented four columns past the content it stands in (the page, an
+# admonition's body, a list item's text, a footnote's), a block quote's included; `(:inline, line, code)`
+# for inline code; and `(:prose, line, text)` for a paragraph, a heading, a list item or an admonition's
+# title, its marks taken off. An HTML comment is blanked first where `hide_comments`, keeping its lines:
+# GitHub hides one, and Documenter shows it.
+function install_units(text::AbstractString; hide_comments::Bool)
+    hide_comments && (text = replace(text, r"<!--.*?-->"s => m -> replace(m, r"[^\n]" => "")))
+    out = Tuple{Symbol,Int,String}[]
+    para = String[]; para_line = 0
+    function prose!(line, t)
+        t = String(t)                                  # its own text, not a view of the whole file
+        push!(out, (:prose, line, t))
+        nl = findall(==('\n'), t)
+        for (o, _, c) in code_spans(t)
+            push!(out, (:inline, line + searchsortedfirst(nl, o) - 1, c))
+        end
+    end
+    flush_para!() = (isempty(para) || prose!(para_line, join(para, '\n')); empty!(para))
+    indented = String[]; indented_line = 0
+    flush_indented!() = (isempty(indented) || push!(out, (:block, indented_line, join(indented, '\n'))); empty!(indented))
+    fence = nothing; code = String[]; code_line = 0
+    containers = [0]                                   # the content column of each container the line is in
+    blank_before = true
+    for (n, raw) in enumerate(split(text, '\n'))
+        l = unquote(raw)
+        m = match(r"^[ \t]*(`{3,}|~{3,})(.*)$", l)
+        if fence !== nothing
+            if m !== nothing && m.captures[1][1] == fence[1] && length(m.captures[1]) >= length(fence) && isempty(strip(m.captures[2]))
+                push!(out, (:block, code_line, join(code, '\n'))); fence = nothing; blank_before = true
+            else
+                push!(code, l)
+            end
+            continue
+        end
+        if isempty(strip(l))
+            flush_para!(); isempty(indented) || push!(indented, ""); blank_before = true
+            continue
+        end
+        indent = sum(c -> c == '\t' ? 4 : 1, match(r"^[ \t]*", l).match; init = 0)
+        opens_fence = m !== nothing && !(m.captures[1][1] == '`' && occursin('`', m.captures[2]))
+        opener = match(r"^(\s*)!!!\s*\w*\s*(.*)$", l)
+        footnote = match(r"^(\s*)\[\^[^\]]+\]:\s*(.*)$", l)
+        heading = occursin(r"^\s{0,3}#{1,6}(?:\s|$)", l)
+        item = match(r"^(\s*)((?:[-*+]|\d+[.)])(?:\s+|$))", l)
+        starts_block = opens_fence || opener !== nothing || footnote !== nothing || heading || item !== nothing
+        # a line leaves the containers it is dedented out of, unless it continues a paragraph lazily
+        if isempty(para) || starts_block
+            while length(containers) > 1 && containers[end] > indent; pop!(containers); end
+        end
+        if indent >= containers[end] + 4 && isempty(para) && (blank_before || !isempty(indented))
+            isempty(indented) && (indented_line = n); push!(indented, l); blank_before = false
+            continue
+        end
+        flush_indented!()
+        blank_before = false
+        if opens_fence
+            flush_para!(); fence = m.captures[1]; empty!(code); code_line = n + 1
+        elseif opener !== nothing
+            flush_para!(); push!(containers, length(opener.captures[1]) + 4)
+            prose!(n, strip(opener.captures[2], ['"', ' '])); blank_before = true
+        elseif heading
+            flush_para!(); prose!(n, l); blank_before = true
+        elseif footnote !== nothing || item !== nothing
+            flush_para!()
+            if footnote !== nothing
+                push!(containers, length(footnote.captures[1]) + 4); rest = footnote.captures[2]
+            else
+                push!(containers, length(item.captures[1]) + length(item.captures[2])); rest = SubString(l, ncodeunits(item.match) + 1)
+            end
+            para_line = n; push!(para, rest)
+        else
+            isempty(para) && (para_line = n); push!(para, l)
+        end
+    end
+    flush_para!(); flush_indented!()
+    fence === nothing || push!(out, (:block, code_line, join(code, '\n')))
+    # a paragraph's inline code is placed after the paragraph it stands in
+    return sort!(out; by = u -> (u[2], u[1] === :inline))
+end
+
+# A release is a level-two `CHANGELOG.md` heading opening on a version that is not a prerelease, the
+# entry `gbg release` will not tag without: `## 0.1.0 — <date>` is one, `## 0.1.0-rc.1 — <date>` is
+# not, and a line in a code block is no heading.
+function released(root::AbstractString)
+    log = joinpath(root, "CHANGELOG.md")
+    isfile(log) || return false
+    return any(u -> u[1] === :prose && occursin(r"^\s{0,3}##[ \t]+v?\d+\.\d+\.\d+(?=\s|$)", u[3]),
+               install_units(readable(read(log, String)); hide_comments = true))
+end
+
+# The sentences of a paragraph, each with the line its word `unregistered` stands on, or its first line;
+# a sentence ends at `.`, `!` or `?` before a space or the end. Inline code that is only a name reads as
+# the name; other code, and a link's target, read as nothing; a heading's marks are dropped.
+function sentences(text::AbstractString, first_line::Int)
+    buf = IOBuffer(); last = 1
+    for (o, after, c) in code_spans(text)
+        print(buf, SubString(text, last, prevind(text, o)))
+        # the span's line breaks are kept, so every line after it is still counted right
+        print(buf, occursin(r"^[\w.]+$", c) ? c : " ", repeat('\n', count(==('\n'), SubString(text, o, prevind(text, after)))))
+        last = after
+    end
+    last <= ncodeunits(text) && print(buf, SubString(text, last))
+    t = replace(String(take!(buf)), r"\]\([^)\n]*\)" => "]", r"^\s{0,3}#{1,6}\s+" => "")
+    nl = findall(==('\n'), t)
+    out = Tuple{Int,String}[]
+    start = 1
+    for (i, c) in pairs(t)
+        stop = c in ".!?" && (i == lastindex(t) || isspace(t[nextind(t, i)]))
+        (stop || i == lastindex(t)) || continue
+        sentence = SubString(t, start, i)
+        w = findfirst(r"\bunregistered\b"i, sentence)
+        at = w === nothing ? start : start + first(w) - 1
+        push!(out, (first_line + searchsortedfirst(nl, at) - 1, String(sentence)))
+        start = nextind(t, i)
+    end
+    return out
+end
+
+# What may stand between the package's `is` and `unregistered`: an article or an adjective, and not a
+# word that turns the sentence onto something else ("It is the dependency that is unregistered").
+const NOT_ABOUT_PACKAGE = Set(["that", "which", "who", "the", "how", "what", "where", "why", "to", "not", "no", "never"])
+
+"""
+    install(root, cfg) -> Vector{Model.Location}
+
+`RULE.DOC.INSTALL` over a released package's `README.md` and hand-written pages. The arguments are
+`root`, the package root, and `cfg`, its config, which names the package and its pages. Returns a
+location for each install of a fleet package by its URL or at a branch; for each set of instructions
+that installs one before adding `General` and the fleet's registry; and for each sentence that calls the
+package unregistered.
+
+A set of instructions is a code block, fenced or indented, in a list, an admonition, a footnote or a
+quote, which a reader copies and runs alone; inline code is judged against everything above it in the
+file, blocks included. Text that is not code is never a command, nor is an HTML comment in `README.md`,
+which GitHub hides; on a page Documenter shows one, and it is read.
+
+Code is read by the parsers that run it: a line at the `pkg>` prompt by Pkg's own, so `#rev`,
+`@version` and `Name.jl` mean what they mean to Pkg; Julia, and the Julia a shell's `julia -e` quotes,
+by JuliaSyntax, so a comment or a string holds no command. Only a string literal names a package, a URL
+or a registry, so a URL held in a variable is not followed; `Pkg.develop` is not read, nor a block that
+never says `add` or is longer than `MAX_CODE` bytes.
+
+Code longer than `SHALLOW` bytes is parsed on a stack deep enough for
+any nesting a block that size can hold, and shorter code cannot nest deep enough to overflow the
+default 8 MB one, so no code overflows the parsers; code JuliaSyntax refuses as a whole is
+read a line at a time, its lines of at most `SHALLOW` bytes.
+
+A sentence calls the package unregistered when it says what the package is and then, within three
+words none of which turns it elsewhere, `unregistered`: `This package is`, `The package is` or its name
+and `is` (or `'s`) anywhere in it, and `This is` or `It is` where it opens, past an alert's marker or a `Note:`
+label, emphasis marks aside. A package is released once its `CHANGELOG.md` has a level-two heading
+opening on a version that is not a prerelease; before that, nothing is reported.
+"""
+function install(root::AbstractString, cfg)
+    released(root) || return Model.Location[]
+    files = Texts.files(cfg, root, Model.FileSet.PAGES)
+    isfile(joinpath(root, "README.md")) && !Texts.excluded(cfg, "README.md") && pushfirst!(files, "README.md")
+    out = Model.Location[]
+    name = replace(cfg.package, "." => "\\.")
+    # the package named, anywhere in a sentence; `This is` and `It is` only where the sentence opens, past
+    # an alert's marker or a label, since anywhere else they may be about something else. Emphasis marks
+    # are taken off the sentence first, so neither pattern backtracks over a run of them.
+    between = "(?:\\s+is|['’]s)\\s+((?:[\\w-]+,?\\s+){0,3}?)unregistered\\b"
+    named = Regex("(?<![\\w.])\\[?(?:this package|the package|$name(?:\\.jl)?)\\]?" * between, "i")
+    opening = Regex("^\\s*(?:\\[![A-Za-z]+\\]\\s*)?(?:note:\\s*)?(?:this|it)" * between, "i")
+    for file in unique(files)
+        above = Set{Symbol}()                          # what the file has added so far, blocks included
+        units = install_units(readable(read(joinpath(root, file), String)); hide_comments = file == "README.md")
+        for (kind, first_line, text) in units
+            if kind === :prose
+                for (line, sentence) in sentences(text, first_line)
+                    occursin(r"unregistered"i, sentence) || continue
+                    plain = replace(sentence, r"[*_`]+" => "")
+                    m = something(match(named, plain), match(opening, plain), Some(nothing))
+                    (m !== nothing && !any(w -> lowercase(strip(w, [',', '*', '_'])) in NOT_ABOUT_PACKAGE, split(m.captures[1]))) || continue
+                    push!(out, Model.Location(; file, line,
+                        text = "calls the package unregistered, which a released package is not: it is in the fleet's registry, $REGISTRY"))
+                end
+                continue
+            end
+            have = kind === :block ? Set{Symbol}() : above
+            reported = false
+            for c in commands(text)
+                line = first_line + c.line - 1
+                if c.registry
+                    c.general && (push!(have, :general); push!(above, :general))
+                    c.fleet && (push!(have, :fleet); push!(above, :fleet))
+                    continue
+                end
+                c.named || continue
+                c.url && push!(out, Model.Location(; file, line,
+                    text = "installs a fleet package by its URL, which is its newest commit; install it by name, which is its latest release"))
+                c.branch && push!(out, Model.Location(; file, line,
+                    text = "installs a fleet package at a branch or commit; install it by name, which is its latest release"))
+                if !reported && !(:general in have && :fleet in have)
+                    push!(out, Model.Location(; file, line,
+                        text = "installs a fleet package before adding `General` and the fleet's registry: `Pkg.Registry.add(\"General\")`, then `Pkg.Registry.add(url = \"$REGISTRY\")`"))
+                    reported = true                    # one finding per set of instructions
+                end
+            end
+        end
+    end
+    return out
+end
+
+const INSTALL_STEPS = "```julia\nusing Pkg\nPkg.Registry.add(\"General\")\nPkg.Registry.add(url = \"https://github.com/GrigorySarnitsky/GBGRegistry\")\nPkg.add(\"GBGPeriodicFields\")\n```\n"
+const RELEASE_LOG = "CHANGELOG.md" => "# Changelog\n\n## 0.1.0 — 2026-10-21\n\nMINOR.\n"
+const PF_URL = "https://github.com/GrigorySarnitsky/GBGPeriodicFields.jl"
+const GBG_REG = "https://github.com/GrigorySarnitsky/GBGRegistry"
+install_readme(body) = [RELEASE_LOG, "README.md" => "# P\n\n" * body]
+install_at(file, lines...) = [Model.Location(; file, line = l) for l in lines]
+
+const INSTALL = Model.Rule(
+    id = Symbol("RULE.DOC.INSTALL"),
+    statement = "Once a package is released, its README and its pages install it as released: every set of instructions adds `General` and the fleet's registry before it installs, installs a fleet package by its name, never by its URL or at a branch, and no sentence calls the package unregistered.",
+    why = "Installed by its URL, or at a branch, a package is a commit no release vouches for; installed by name through the fleet's registry it is its latest release, and moves only between releases (a package's request, the owner's ruling, 2026-10-21). `General` is added too because adding any registry to a fresh Julia stops Pkg from adding `General` itself, and every dependency outside the fleet is there. A package is released once its `CHANGELOG.md` has an entry for a final version; before that, its URL is the only way to install it.",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.PAGES],
+    check = Model.ProgramCheck(Model.Input.FILE_TREE, install, false),
+    examples = [
+        # unreleased, its URL is the only way; a prerelease's entry is no release
+        Model.TreeExample(["README.md" => "# P\n\n```julia\n]add $PF_URL\n```\n"], Model.Location[], "Once a package is released"),
+        Model.TreeExample(install_readme("```julia\n]add $PF_URL\n```\n"), install_at("README.md", 4, 4), "Once a package is released"),
+        Model.TreeExample(["CHANGELOG.md" => "# Changelog\n\n## 0.1.0-rc.1 — 2026-10-21\n", "README.md" => "# P\n\n```julia\n]add $PF_URL\n```\n"],
+                          Model.Location[], "Once a package is released"),
+        # the registries, in any order, before the install; a comment that names `General` adds nothing
+        Model.TreeExample(install_readme(INSTALL_STEPS), Model.Location[], "adds `General` and the fleet's registry before it installs"),
+        Model.TreeExample(install_readme("```julia\nusing Pkg\nPkg.Registry.add(url = \"$GBG_REG\")   # General is added by Pkg\nPkg.add(\"GBGPeriodicFields\")\n```\n"),
+                          install_at("README.md", 6), "adds `General` and the fleet's registry before it installs"),
+        Model.TreeExample(install_readme("```julia\nusing Pkg\nPkg.Registry.add(\n    url = \"$GBG_REG.git\",\n)\nPkg.Registry.add(\"General\")\nPkg.add(\"GBGPeriodicFields\")\n```\n"),
+                          Model.Location[], "adds `General` and the fleet's registry before it installs"),
+        Model.TreeExample(install_readme("```julia\nusing Pkg\nPkg.add(\"GBGPeriodicFields\")\nPkg.Registry.add(\"General\")\nPkg.Registry.add(url = \"$GBG_REG\")\n```\n"),
+                          install_at("README.md", 5), "adds `General` and the fleet's registry before it installs"),
+        # each block is run alone, an admonition's indented one included; the prompt's and the macro's forms
+        Model.TreeExample([RELEASE_LOG, "docs/src/index.md" => "# P\n\n```\n]registry add General $GBG_REG\n]add GBGPeriodicFields\n```\n\nOr:\n\n```julia\nusing Pkg; Pkg.add(\"GBGPeriodicFields\")\n```\n"],
+                          install_at("docs/src/index.md", 11), "every set of instructions adds `General` and the fleet's registry before it installs"),
+        Model.TreeExample([RELEASE_LOG, "docs/src/index.md" => "# P\n\n!!! note \"Once\"\n    ```julia\n    using Pkg; Pkg.Registry.add(\"General\"); Pkg.Registry.add(url = \"$GBG_REG\")\n    ```\n\n!!! tip \"Then\"\n    ```\n    pkg> add GBGPeriodicFields\n    ```\n"],
+                          install_at("docs/src/index.md", 10), "every set of instructions adds `General` and the fleet's registry before it installs"),
+        Model.TreeExample([RELEASE_LOG, "docs/src/index.md" => "# P\n\n```julia\nusing Pkg; Pkg.Registry.add(\"General\"); Pkg.Registry.add(url = \"$GBG_REG.git\"); Pkg.add([\"GBGPeriodicFields\", \"GBGHomogeneousTurbulence\"])\n```\n\nThen `pkg\"add GBGPeriodicFields\"` updates it.\n"],
+                          Model.Location[], "every set of instructions adds `General` and the fleet's registry before it installs"),
+        # an install in the prose reads what came above it; a block does not read the prose
+        Model.TreeExample(install_readme("Install with `]add GBGPeriodicFields`.\n\n```\n]add GBGHomogeneousTurbulence\n```\n"),
+                          install_at("README.md", 3, 6), "every set of instructions adds `General` and the fleet's registry before it installs"),
+        # by URL, in a call across lines, in the macro, at a branch
+        Model.TreeExample(install_readme(replace(INSTALL_STEPS, "Pkg.add(\"GBGPeriodicFields\")" => "Pkg.add(\n    url = \"$PF_URL\",\n)")),
+                          install_at("README.md", 7), "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme(replace(INSTALL_STEPS, "Pkg.add(\"GBGPeriodicFields\")" => "pkg\"add $PF_URL\"")),
+                          install_at("README.md", 7), "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme(replace(INSTALL_STEPS, "Pkg.add(\"GBGPeriodicFields\")" => "Pkg.add(PackageSpec(url = \"$PF_URL\"))")),
+                          install_at("README.md", 7), "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme(replace(INSTALL_STEPS, "Pkg.add(\"GBGPeriodicFields\")" => "Pkg.add(name = \"GBGPeriodicFields\", rev = \"master\")")),
+                          install_at("README.md", 7), "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("```\n]registry add General $GBG_REG\n]add GBGPeriodicFields#master\n```\n"),
+                          install_at("README.md", 5), "installs a fleet package by its name, never by its URL or at a branch"),
+        # another package by URL, a developer's checkout, a fleet name in a comment, a URL in a sentence
+        Model.TreeExample(install_readme(replace(INSTALL_STEPS, "Pkg.add(\"GBGPeriodicFields\")" => "Pkg.add(\"GBGPeriodicFields\"); Pkg.add(url = \"https://github.com/example/Other.jl\")")),
+                          Model.Location[], "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("The source is at $PF_URL.\n\n```julia\nusing Pkg\nPkg.develop(url = \"$PF_URL\")\nPkg.develop(PackageSpec(url = \"$PF_URL\"))\nPkg.add(\"Plots\")   # to plot GBGPeriodicFields output\n```\n"),
+                          Model.Location[], "installs a fleet package by its name, never by its URL or at a branch"),
+        # the package called unregistered, and sentences that are not that
+        Model.TreeExample(install_readme("This is an unregistered package.\n\n" * INSTALL_STEPS), install_at("README.md", 3), "no sentence calls the package unregistered"),
+        Model.TreeExample([RELEASE_LOG, "README.md" => "# Example\n\nExample is\nunregistered in `General`.\n\n" * INSTALL_STEPS], install_at("README.md", 4), "no sentence calls the package unregistered"),
+        Model.TreeExample(install_readme("It is not in the `General` registry, but in the fleet's own. Its dependency `Foo` is unregistered.\nSee [the manual](https://pkgdocs.julialang.org/v1/managing-packages/#Adding-unregistered-packages).\n\n" * INSTALL_STEPS * "\n```julia\n# this adds an unregistered dependency\n```\n"),
+                          Model.Location[], "no sentence calls the package unregistered"),
+        Model.TreeExample([RELEASE_LOG, "README.md" => "# Example\n\nExample.jl is an unregistered package.\n\n" * INSTALL_STEPS], install_at("README.md", 3), "no sentence calls the package unregistered"),
+        Model.TreeExample(install_readme("This package needs `Foo`, which is unregistered.\n\n<!-- ]add $PF_URL -->\n\n" * INSTALL_STEPS), Model.Location[], "no sentence calls the package unregistered"),
+        # what the parsers make of it: a comment, a block comment and Markdown are no command
+        Model.TreeExample(install_readme(replace(INSTALL_STEPS, "Pkg.add(\"GBGPeriodicFields\")" => "Pkg.add(\"GBGPeriodicFields\")   # never ]add $PF_URL\n#= Pkg.add(url = \"$PF_URL\") =#")),
+                          Model.Location[], "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("- [x] add GBGPeriodicFields to the project\n\n" * INSTALL_STEPS), Model.Location[], "every set of instructions adds `General` and the fleet's registry before it installs"),
+        Model.TreeExample(install_readme("See issue #3: run `Pkg.add(url = \"$PF_URL\")`.\n"), install_at("README.md", 3, 3), "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("Run `]registry add General $GBG_REG`, then `]add $PF_URL`.\n"), install_at("README.md", 3), "installs a fleet package by its name, never by its URL or at a branch"),
+        # Pkg's own reading of the prompt: a revision after a space, `Name.jl`, and a version, which is a release
+        Model.TreeExample(install_readme("```\n]registry add General $GBG_REG\n]add GBGPeriodicFields #master\n```\n"), install_at("README.md", 5), "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("```\n]registry add General $GBG_REG\n]add GBGPeriodicFields@0.1\n```\n"), Model.Location[], "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("```\n]add GBGPeriodicFields.jl\n```\n"), install_at("README.md", 4), "every set of instructions adds `General` and the fleet's registry before it installs"),
+        # a vector across lines, `Registry.add()` adding the default registries, and a revision on another package
+        Model.TreeExample(install_readme("```julia\nusing Pkg\nPkg.Registry.add(url = \"$GBG_REG\")\nPkg.add([\n    \"GBGPeriodicFields\",\n])\n```\n"), install_at("README.md", 6), "every set of instructions adds `General` and the fleet's registry before it installs"),
+        Model.TreeExample(install_readme("```julia\nusing Pkg\nPkg.Registry.add()\nPkg.Registry.add(url = \"$GBG_REG\")\nPkg.add([PackageSpec(name = \"GBGPeriodicFields\"), PackageSpec(url = \"https://github.com/example/Other.jl\", rev = \"main\")])\n```\n"),
+                          Model.Location[], "every set of instructions adds `General` and the fleet's registry before it installs"),
+        # placed on its own line: the same inline code twice, blocks whose first line is empty, a sentence over two lines
+        Model.TreeExample(install_readme("`]add GBGPeriodicFields`\n\n`]add GBGPeriodicFields`\n"), install_at("README.md", 3, 5), "every set of instructions adds `General` and the fleet's registry before it installs"),
+        Model.TreeExample(install_readme("```\n\n]add $PF_URL\n```\n\n```\n\n]add $PF_URL\n```\n"), install_at("README.md", 5, 5, 10, 10), "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("Foo is unregistered somewhere\nbut. This is an unregistered package.\n"), install_at("README.md", 4), "no sentence calls the package unregistered"),
+        # a `pkg>` line inside a Julia block comment or string is Julia's; an indented code block is no set of instructions
+        Model.TreeExample(install_readme(replace(INSTALL_STEPS, "Pkg.add(\"GBGPeriodicFields\")" => "#=\n]add $PF_URL\n=#\ns = \"\"\"\npkg> add $PF_URL\n\"\"\"\nPkg.add(\"GBGPeriodicFields\")")),
+                          Model.Location[], "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("Para.\n\n    ]add $PF_URL\n"), install_at("README.md", 5, 5), "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("!!! note \"Install\"\n    This is an unregistered package.\n\n        ]add GBGPeriodicFields\n\n- This is an unregistered package too.\n> It is unregistered.\n\n[^1]: This is an unregistered package.\n"),
+                          install_at("README.md", 4, 6, 8, 9, 11), "no sentence calls the package unregistered"),
+        # the package's name in backticks, `This package is`, and a heading
+        Model.TreeExample([RELEASE_LOG, "README.md" => "# Example\n\n`Example.jl` is unregistered.\n\n" * INSTALL_STEPS], install_at("README.md", 3), "no sentence calls the package unregistered"),
+        Model.TreeExample([RELEASE_LOG, "README.md" => "# Example is unregistered\n\nThis package is unregistered too.\n\n" * INSTALL_STEPS], install_at("README.md", 1, 3), "no sentence calls the package unregistered"),
+        # `General` by its URL or in a vector; a `PackageSpec` named positionally; the lines of a `pkg\"\"\"…\"\"\"`
+        Model.TreeExample(install_readme("```julia\nusing Pkg\nPkg.Registry.add([RegistrySpec(url = \"https://github.com/JuliaRegistries/General\"), RegistrySpec(url = \"$GBG_REG\")])\nPkg.add(\"GBGPeriodicFields\")\n```\n"),
+                          Model.Location[], "adds `General` and the fleet's registry before it installs"),
+        Model.TreeExample(install_readme("```julia\nusing Pkg\nPkg.add(PackageSpec(\"GBGPeriodicFields\"))\n```\n"), install_at("README.md", 5), "adds `General` and the fleet's registry before it installs"),
+        Model.TreeExample(install_readme("```julia\nusing Pkg\npkg\"\"\"\nregistry add General $GBG_REG\nadd $PF_URL\n\"\"\"\n```\n"), install_at("README.md", 7), "installs a fleet package by its name, never by its URL or at a branch"),
+        # a file that is not UTF-8 is read, not a crash
+        Model.TreeExample(["CHANGELOG.md" => "## 0.1.0 caf\xe9\n", "README.md" => "## Caf\xe9\n\n" * INSTALL_STEPS], Model.Location[], "Once a package is released"),
+        # the forms a README writes: `julia> ]add`, a shell's `julia -e`, a code block in a GitHub alert, code under a heading
+        Model.TreeExample(install_readme("```julia-repl\njulia> ] add $PF_URL\n```\n"), install_at("README.md", 4, 4), "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("```sh\njulia -e 'using Pkg; Pkg.add(url = \"$PF_URL\")'\n```\n"), install_at("README.md", 4, 4), "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("> [!NOTE]\n> ```julia\n> ]add $PF_URL\n> ```\n"), install_at("README.md", 5, 5), "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("## Install\n    ]add GBGPeriodicFields\n"), install_at("README.md", 4), "every set of instructions adds `General` and the fleet's registry before it installs"),
+        # a list item's own paragraphs are prose, and inline code may break across lines
+        Model.TreeExample(install_readme("- Install\n    - once per machine\n\n    Then:\n\n    Run `]add\n    GBGPeriodicFields`.\n"), install_at("README.md", 8), "every set of instructions adds `General` and the fleet's registry before it installs"),
+        # `RegistrySpec` reached through `Pkg.Registry`; a sentence about something else
+        Model.TreeExample(install_readme("```julia\nusing Pkg\nPkg.Registry.add(Pkg.Registry.RegistrySpec(name = \"General\"))\nPkg.Registry.add(Pkg.Registry.RegistrySpec(url = \"$GBG_REG\"))\nPkg.add(\"GBGPeriodicFields\")\n```\n"),
+                          Model.Location[], "adds `General` and the fleet's registry before it installs"),
+        Model.TreeExample(install_readme("It is the dependency Foo that is unregistered, not this package. This is how to add an unregistered dependency.\n\n" * INSTALL_STEPS),
+                          Model.Location[], "no sentence calls the package unregistered"),
+        # a `pkg\"\"\"…\"\"\"` starting on its own line; an HTML comment, hidden in a README and shown on a page
+        Model.TreeExample(install_readme("```julia\nusing Pkg\npkg\"\"\"registry add General $GBG_REG\nadd $PF_URL\"\"\"\n```\n"), install_at("README.md", 6), "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample([RELEASE_LOG, "README.md" => "# P\n\n<!-- Run `]add $PF_URL` -->\n", "docs/src/index.md" => "# P\n\n<!-- Run `]add $PF_URL` -->\n"],
+                          install_at("docs/src/index.md", 3, 3), "installs a fleet package by its name, never by its URL or at a branch"),
+        # a lead-in before the package, emphasis on the word; a keyword that names nothing; a shell's escaped quotes
+        Model.TreeExample(install_readme("> [!NOTE]\n> This package is unregistered.\n\n**Note:** this is *still* unregistered.\n\nCurrently, the package is **unregistered**.\n\n" * INSTALL_STEPS),
+                          install_at("README.md", 4, 6, 8), "no sentence calls the package unregistered"),
+        Model.TreeExample(install_readme("Foo needs a fork, and it is unregistered.\n\n" * INSTALL_STEPS), Model.Location[], "no sentence calls the package unregistered"),
+        Model.TreeExample(install_readme("```julia\nPkg.add(url::String = \"$PF_URL\")\n```\n"), Model.Location[], "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("```bat\njulia -e \"using Pkg; Pkg.add(url=\\\"$PF_URL\\\")\"\n```\n"), install_at("README.md", 4, 4), "installs a fleet package by its name, never by its URL or at a branch"),
+        # `rev = nothing` asks for no revision; "It's"; a shell line in a comment; a deep unclosed nest keeps its prompt lines
+        Model.TreeExample(install_readme(replace(INSTALL_STEPS, "Pkg.add(\"GBGPeriodicFields\")" => "Pkg.add(PackageSpec(name = \"GBGPeriodicFields\", rev = nothing))")),
+                          Model.Location[], "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("It's unregistered for now.\n\n" * INSTALL_STEPS), install_at("README.md", 3), "no sentence calls the package unregistered"),
+        Model.TreeExample(install_readme(replace(INSTALL_STEPS, "Pkg.add(\"GBGPeriodicFields\")" => "# from a shell: julia -e 'using Pkg; Pkg.add(url=\"$PF_URL\")'\nPkg.add(\"GBGPeriodicFields\")")),
+                          Model.Location[], "installs a fleet package by its name, never by its URL or at a branch"),
+        Model.TreeExample(install_readme("```julia\nx = " * "("^150 * "\n]add $PF_URL\n```\n"), install_at("README.md", 5, 5), "installs a fleet package by its name, never by its URL or at a branch"),
+        # a block JuliaSyntax refuses as a whole, read a line at a time
+        Model.TreeExample(install_readme("```julia\nPkg.add(url = \"$PF_URL\")\n" * "("^9000 * "\n```\n"), install_at("README.md", 4, 4), "installs a fleet package by its name, never by its URL or at a branch"),
+        # a version heading in a CHANGELOG's code block is no release
+        Model.TreeExample(["CHANGELOG.md" => "# Changelog\n\n```\n## 1.0.0 — 2026-10-21\n```\n", "README.md" => "# P\n\n```julia\n]add $PF_URL\n```\n"],
+                          Model.Location[], "Once a package is released"),
+    ])
+
 # ─────────────────────────────────────────────────────────────── bold marks structure, never stress
 
 # A line that is its own block: a heading, a table row, an admonition's opening line.
@@ -826,6 +1446,6 @@ const EMPHASIS = Model.Rule(
 
 The rules of this batch, in the order they were converted.
 """
-const RULES = Model.Rule[AI_BANNER, SIGNATURE_MIRROR, BLOCK_LIST, NO_DEAD_REFS, INTERNAL_API, SIBLING_LINK, RETIRED, JULIA_MANUAL, EMPHASIS]
+const RULES = Model.Rule[AI_BANNER, SIGNATURE_MIRROR, BLOCK_LIST, NO_DEAD_REFS, INTERNAL_API, SIBLING_LINK, RETIRED, JULIA_MANUAL, EMPHASIS, INSTALL]
 
 end # module Pages

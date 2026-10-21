@@ -123,6 +123,16 @@ const FLEET = [
 ]
 
 """
+    REGISTRY
+
+The fleet's Julia registry, `GrigorySarnitsky/GBGRegistry`, as the URL it is cloned and added from. Since
+2.2.0, `gbg release` records each final release of a package of `FLEET` in it, so a package installed
+through it is its latest release, where one installed by its URL is its newest commit (a package's
+request, the owner's ruling, 2026-10-21). One home, read by the release and by `RULE.DOC.INSTALL`.
+"""
+const REGISTRY = "https://github.com/GrigorySarnitsky/GBGRegistry.git"
+
+"""
     site_of(slug) -> String
 
 Where a repository's documentation is published, from its `owner/repo` slug. The argument is `slug`.

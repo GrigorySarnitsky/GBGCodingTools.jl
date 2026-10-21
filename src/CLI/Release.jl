@@ -160,15 +160,9 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
     return r
 end
 
-"""
-The fleet's registry, where every final release of a package and of GBGCodingTools is recorded, so that
-one added with `Pkg.Registry.add(url = …)` installs the latest release by name and updates only between
-releases (a package's request, the owner's ruling, 2026-10-21).
-"""
-const REGISTRY_URL = "https://github.com/GrigorySarnitsky/GBGRegistry.git"
 
 """
-    register(root; io = stdout, registry = REGISTRY_URL) -> Int
+    register(root; io = stdout, registry = Catalogue.REGISTRY) -> Int
 
 Records the release `root` is checked out at in the fleet's registry: a clone of the registry in a
 temporary directory, the version added with LocalRegistry, pushed, and the clone deleted, so no copy of
@@ -189,7 +183,7 @@ registry knows cannot be installed by name. Returns 0 when recorded, or when the
 version already at the same tree; 2 when it holds that version at another tree, or the recording
 failed three times, each from a fresh clone.
 """
-function register(root::AbstractString; io::IO = stdout, registry::AbstractString = REGISTRY_URL)
+function register(root::AbstractString; io::IO = stdout, registry::AbstractString = Catalogue.REGISTRY)
     project = TOML.parsefile(joinpath(root, "Project.toml"))
     name, ver = String(project["name"]), String(project["version"])
     haskey(project, "uuid") || (println(io, "release: $name has no uuid in Project.toml, which a registry records it by"); return 2)
