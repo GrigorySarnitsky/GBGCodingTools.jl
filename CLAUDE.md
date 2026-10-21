@@ -21,7 +21,8 @@ A version is released on the owner's word, with `gbg release <version>` run here
 it refuses unless the tree is clean and pushed, `CHANGELOG.md` has a `## <version> — <date>` entry,
 `Project.toml` names that version, the tests, the docs build and the wiring check pass, and CI
 passed at the commit — start it first with `gh workflow run CI --ref <branch>` — then tags and
-pushes. A tag is never moved or cut again.
+pushes, and records a final release in the fleet's registry (`gbg release --register` records one
+whose recording failed). A tag is never moved or cut again.
 <!-- gbg:managed end -->
 
 # CLAUDE.md — GBGCodingTools
@@ -131,7 +132,8 @@ hand-edit one, and do not re-create an instrument outside its phase.
 
 1. Clean tree on `master`, pushed; `tools/floor.sh` green; `gbg sync --check` clean at the root.
 2. `CHANGELOG.md` carries the entry `## <ver> — <date>` with MAJOR | MINOR | PATCH.
-3. `gbg --dev release <ver>` (or `<ver>-rc.<n>`) tags and pushes; a tag is never moved or re-issued.
+3. `gbg --dev release <ver>` (or `<ver>-rc.<n>`) tags and pushes, and records a final release in GBGRegistry;
+   a tag is never moved or re-issued.
 4. Nothing else holds a release: no review, no open finding, no unanswered question, no audit.
 5. The 1.0.0 line is abandoned: the eleven `v1.0.0-rc.*` tags stand, 1.0.0 is never released, and the
    next release is `2.0.0`, cut where `IMPLEMENTATION.md` §5 says.

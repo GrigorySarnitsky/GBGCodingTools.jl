@@ -4,6 +4,18 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.2.0 — 2026-10-21
+
+MINOR, on the owner's word of 2026-10-21:
+
+- **A final release is recorded in the fleet's registry.** After `gbg release <version>` pushes a final
+  tag, it records the version in `GrigorySarnitsky/GBGRegistry`, from a clone made for it and deleted
+  after; a prerelease is not recorded. A package installed through the registry gets its latest release
+  by name, where installing by URL gave the newest commit (GBGPeriodicFields' request). It records
+  only a tag that is on `origin` at the checked-out commit, refuses a package with a dependency no
+  registry in the depot knows, and never records a version twice. A recording that failed is made with
+  `gbg release --register`, run at the tag. The tool depends on LocalRegistry for it.
+
 ## 2.1.0 — 2026-10-21
 
 MINOR, on the owner's word of 2026-10-21:

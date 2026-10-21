@@ -101,17 +101,13 @@ Tags and pushes `v<ver>` from the dev checkout.
 - `skip_tests` — skips all four gates after the refusal list: `Pkg.test()`, the docs build, the
   wiring check and the question to GitHub; for the self-tests of this verb only, never set by the CLI.
 
-- `root` — the checkout to release, the running package directory by default; the CLI never passes it.
-  A keyword because the verb read `pkgdir(GBGCodingTools)` directly and so had no test at all. Every
-  refusal below reads `root`, the dev-checkout guard included: `root` must be a git working tree, since
-  it is what gets tagged and pushed.
+- `root` — the git working tree to release: the package the CLI is run in, else the running copy.
 
-Refused (exit 2) unless: the tree is clean and on the configured branch; the tag is absent; `CHANGELOG.md`
-carries `## <ver> — `; `Project.toml`'s version equals the release version (the base version for a
-prerelease); `Pkg.test()` is green; the tool's own docs build exits 0 (`SELF.DOCS`); `gbg sync --check`
-is clean at the root; the newest CI run at this commit is a success ([`ci_verdict`](@ref)). Nothing else
-holds a release — no review, no open finding, no unanswered question, no audit. A tag is never moved or
-re-issued. Returns the exit code; a failed gate, tag or push prints the reason its command gave.
+Refused (exit 2) unless the tree is clean, pushed and on its branch; the tag is new; `CHANGELOG.md`
+carries `## <ver> — `; `Project.toml` names the version (the base version for a prerelease); the tests,
+the docs build and `gbg sync --check` pass; and CI passed at the commit ([`ci_verdict`](@ref)). Nothing
+else holds a release. A tag is never moved. A final release is then recorded by [`register`](@ref),
+whose failure returns 2 after the push. A failed gate, tag or push prints its command's reason.
 """
 function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
                  root::AbstractString = pkgdir(GBGCodingTools))
@@ -158,7 +154,107 @@ function release(ver::AbstractString; io::IO = stdout, skip_tests::Bool = false,
                    replace(said, "\n" => "\n    ")); return 2)
     tool = cfg.package == PKG_NAME
     println(io, "release: v$ver tagged and pushed", rc ? (tool ? " (a prerelease; `gbg bump $ver` pins it)" : " (a prerelease)") : "")
-    return 0
+    rc && return 0
+    r = register(root; io)
+    r == 0 || println(io, "release: v$ver is tagged and pushed but not in the registry; once the above is put right, `gbg release --register` records it")
+    return r
+end
+
+"""
+The fleet's registry, where every final release of a package and of GBGCodingTools is recorded, so that
+one added with `Pkg.Registry.add(url = …)` installs the latest release by name and updates only between
+releases (a package's request, the owner's ruling, 2026-10-21).
+"""
+const REGISTRY_URL = "https://github.com/GrigorySarnitsky/GBGRegistry.git"
+
+"""
+    register(root; io = stdout, registry = REGISTRY_URL) -> Int
+
+Records the release `root` is checked out at in the fleet's registry: a clone of the registry in a
+temporary directory, the version added with LocalRegistry, pushed, and the clone deleted, so no copy of
+the registry is kept anywhere. Run by [`release`](@ref) after a final release's tag is pushed, and by
+`gbg release --register` to record a tag whose recording failed.
+
+# Arguments
+
+- `root` — the package, at the commit its tag names.
+- `io` — where it reports.
+- `registry` — the registry's URL.
+
+Refused (exit 2) unless the checkout is clean, at the commit tagged `v<version>`, and that tag is on
+`origin` at the same commit, since the registry names a tree everyone must be able to fetch; unless
+`origin` is an address anyone can clone; and unless every dependency, weak ones included, is a standard
+library or in a registry this depot has or the fleet's own, since a package recorded with one no
+registry knows cannot be installed by name. Returns 0 when recorded, or when the registry holds the
+version already at the same tree; 2 when it holds that version at another tree, or the recording
+failed three times, each from a fresh clone.
+"""
+function register(root::AbstractString; io::IO = stdout, registry::AbstractString = REGISTRY_URL)
+    project = TOML.parsefile(joinpath(root, "Project.toml"))
+    name, ver = String(project["name"]), String(project["version"])
+    haskey(project, "uuid") || (println(io, "release: $name has no uuid in Project.toml, which a registry records it by"); return 2)
+    uuid = Base.UUID(project["uuid"])
+    origin = Git.run(root, "remote", "get-url", "origin")
+    origin === nothing && (println(io, "release: no `origin` remote to record $name under; the registry is not updated"); return 2)
+    url = public_url(origin)
+    url === nothing && (println(io, "release: `origin` is not an address anyone can clone, so $name cannot be recorded under it"); return 2)
+    # what is recorded is the tree the tag names: the checkout must be at it, clean, and the tag pushed
+    "v$ver" in split(something(Git.run(root, "tag", "--points-at", "HEAD"), "")) ||
+        (println(io, "release: HEAD is not tagged v$ver, so there is no release to record"); return 2)
+    isempty(Git.porcelain(root; untracked = false)) || (println(io, "release: the tree is not clean, so it is not the release's tree"); return 2)
+    head = Git.run(root, "rev-parse", "HEAD")
+    remote = something(Git.run(root, "ls-remote", "--tags", "origin", "refs/tags/v$ver", "refs/tags/v$ver^{}"), "")
+    any(l -> first(split(l, '\t')) == head, split(remote, '\n'; keepempty = false)) ||
+        (println(io, "release: the tag v$ver is not on `origin` at this commit, so nobody could fetch what would be recorded"); return 2)
+    tree = Git.run(root, "rev-parse", "HEAD:./")                   # the package's own tree, as LocalRegistry records it
+    for attempt in 1:3
+        clone = mktempdir()
+        try
+            Git.run(dirname(clone), "clone", "-q", registry, clone) === nothing &&
+                (println(io, "release: the registry at $registry could not be cloned; record it later with `gbg release --register`"); return 2)
+            known = TOML.parsefile(joinpath(clone, "Registry.toml"))["packages"]
+            deps = merge(get(project, "deps", Dict()), get(project, "weakdeps", Dict()))
+            unknown = [d for (d, u) in deps if !(Pkg.Types.is_stdlib(Base.UUID(u)) || haskey(known, u) ||
+                       any(r -> haskey(r, Base.UUID(u)), Pkg.Registry.reachable_registries()))]
+            isempty(unknown) ||
+                (println(io, "release: no registry knows ", join(sort(unknown), ", "), "; record those first, or update this depot's registries if one was registered lately"); return 2)
+            entry = get(known, string(uuid), nothing)
+            versions = entry === nothing ? Dict() : TOML.parsefile(joinpath(clone, entry["path"], "Versions.toml"))
+            if haskey(versions, ver)
+                versions[ver]["git-tree-sha1"] == tree &&
+                    (println(io, "release: $name $ver is in the registry already"); return 0)
+                println(io, "release: the registry holds $name $ver at another tree; a version is never recorded twice"); return 2
+            end
+            done = try
+                LocalRegistry.register(root; registry = clone, repo = url, push = true)
+                true
+            catch err
+                println(io, "release: recording $name $ver failed (attempt $attempt): ", first(sprint(showerror, err), 300))
+                false
+            end
+            done && (println(io, "release: $name $ver recorded in the registry"); return 0)
+        finally
+            rm(clone; recursive = true, force = true)
+        end
+    end
+    println(io, "release: $name $ver is tagged but not in the registry; record it with `gbg release --register`")
+    return 2
+end
+
+# The repository a package is recorded under: its `origin` as anyone can clone it, or `nothing`.
+repo_url(root::AbstractString) = (u = Git.run(root, "remote", "get-url", "origin"); u === nothing ? nothing : public_url(u))
+
+# A remote URL as the registry records it, which anyone can clone: GitHub in any spelling as
+# `https://github.com/<owner>/<repo>.git`; another https URL, or a local path, as it is, less a credential
+# and a trailing slash; `nothing` for anything else (an ssh host alias, another host over ssh), which
+# would record an address only its owner can reach.
+function public_url(u::AbstractString)
+    u = rstrip(strip(u), '/')
+    m = match(r"^(?:(?:git\+)?ssh://|git://|https?://)?(?:[^@/]*@)?(?:www\.)?github\.com(?::\d+)?[:/]([^/]+/[^/]+?)(?:\.git)?/*$"i, u)
+    m === nothing || return "https://github.com/" * m.captures[1] * ".git"
+    startswith(u, "https://") && return String(replace(u, r"^https://[^@/]*@" => "https://"))
+    (startswith(u, "/") || startswith(u, "file://")) && return String(u)
+    return nothing
 end
 
 """
@@ -197,7 +293,11 @@ end
 function cmd_release(args)
     o = parse_options(args)
     "counts" in o.flags && return counts()
-    isempty(o.positional) && (println(stderr, "usage: gbg release <ver> | gbg release <ver>-rc.<n> | gbg release --counts"); return 2)
+    if "register" in o.flags
+        isempty(o.positional) || (println(stderr, "release: --register records the tag already made, and takes no version"); return 2)
+        return register(something(ConfigIO.find_root(), pkgdir(GBGCodingTools)))
+    end
+    isempty(o.positional) && (println(stderr, "usage: gbg release <ver> | gbg release <ver>-rc.<n> | gbg release --register | gbg release --counts"); return 2)
     # The package it is run in, the tool's own checkout among them; outside any, the running copy
     # (2026-10-21: a package had no way to tag its own release).
     return release(o.positional[1]; root = something(ConfigIO.find_root(), pkgdir(GBGCodingTools)))

@@ -85,4 +85,6 @@ GBGCodingTools.Bump.bump
 GBGCodingTools.release
 GBGCodingTools.release_fails
 GBGCodingTools.ci_verdict
+GBGCodingTools.register
+GBGCodingTools.REGISTRY_URL
 ```

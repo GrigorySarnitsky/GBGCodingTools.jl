@@ -1149,7 +1149,8 @@ function claude_block(cfg::Model.Config)
     it refuses unless the tree is clean and pushed, `CHANGELOG.md` has a `## <version> — <date>` entry,
     `Project.toml` names that version, the tests, the docs build and the wiring check pass, and CI
     passed at the commit — start it first with `gh workflow run CI --ref <branch>` — then tags and
-    pushes. A tag is never moved or cut again.
+    pushes, and records a final release in the fleet's registry (`gbg release --register` records one
+    whose recording failed). A tag is never moved or cut again.
     <!-- $END_MARK -->
     """
 end

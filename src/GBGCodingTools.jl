@@ -41,6 +41,7 @@ Two engines a consumer's own build and tests call: [`makedocs`](@ref), the manda
 module GBGCodingTools
 
 using TOML, SHA, Dates, Pkg, Random, JSON3
+import LocalRegistry
 
 const PKG_UUID = Base.UUID("3aee1de0-bb62-4679-b1c5-a861fbcaaa51")
 const PKG_NAME = "GBGCodingTools"

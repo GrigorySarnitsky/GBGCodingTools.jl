@@ -113,3 +113,66 @@ end
     @test G.gate_command(String[], `-e 1`).exec[end-1:end] == ["-e", "1"]
     @test G.gate_command(["make", "docs"], `-e 1`).exec == ["make", "docs"]
 end
+
+# A final release is recorded in the fleet's registry; shown on a registry and an origin made here, never
+# the real ones. The identity is the test's own: a clean checkout on CI has none, and a registry commits.
+@testset "a release is recorded in the registry, once" begin
+    withenv("GIT_AUTHOR_NAME" => "t", "GIT_AUTHOR_EMAIL" => "t@t", "GIT_COMMITTER_NAME" => "t", "GIT_COMMITTER_EMAIL" => "t@t") do
+        regdir = mktempdir(; cleanup = true)
+        bare, origin, work = joinpath(regdir, "registry.git"), joinpath(regdir, "origin.git"), joinpath(regdir, "work")
+        quiet(c) = Base.run(pipeline(c; stdout = devnull, stderr = devnull))
+        G.LocalRegistry.create_registry(work, bare; description = "a test registry", push = false)
+        quiet(`git init -q --bare $bare`); quiet(`git init -q --bare $origin`)
+        quiet(`git -C $work push -q $bare HEAD:master`)
+        root, gg = repo("0.1.0")
+        open(joinpath(root, "Project.toml"), "a") do io; println(io, "uuid = \"8e7c1a5b-0f3d-4c2e-9a1b-2c3d4e5f6a7b\""); end
+        mkpath(joinpath(root, "src")); write(joinpath(root, "src", "Sample.jl"), "module Sample end\n")
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "a package"); gg("remote", "add", "origin", origin)
+        gg("push", "-q", "origin", "master")
+        io = IOBuffer()
+        said() = String(take!(io))
+        @test G.register(root; io, registry = bare) == 2                  # not tagged: nothing to record
+        @test occursin("not tagged v0.1.0", said())
+        gg("tag", "v0.1.0-rc.1")                                           # a prerelease's tag is not the release's
+        @test G.register(root; io, registry = bare) == 2
+        said()
+        gg("tag", "v0.1.0")                                                # tagged here, never pushed
+        @test G.register(root; io, registry = bare) == 2
+        @test occursin("not on `origin`", said())
+        gg("push", "-q", "origin", "v0.1.0")
+        @test G.register(root; io, registry = bare) == 0
+        @test occursin("recorded in the registry", said())
+        @test G.register(root; io, registry = bare) == 0                  # once is enough
+        @test occursin("in the registry already", said())
+        check = joinpath(regdir, "check")
+        quiet(`git clone -q $bare $check`)
+        @test haskey(G.TOML.parsefile(joinpath(check, "S", "Sample", "Versions.toml")), "0.1.0")
+        # the same version at another tree is refused, never recorded over
+        write(joinpath(root, "src", "Sample.jl"), "module Sample\nend\n"); gg("commit", "-q", "-am", "another tree")
+        gg("tag", "-d", "v0.1.0"); gg("push", "-q", "origin", ":v0.1.0"); gg("tag", "v0.1.0"); gg("push", "-q", "origin", "master", "v0.1.0")
+        @test G.register(root; io, registry = bare) == 2
+        @test occursin("at another tree", said())
+        # a dependency no registry knows would make the package uninstallable by name
+        open(joinpath(root, "Project.toml"), "w") do f
+            print(f, "name = \"Sample\"\nuuid = \"8e7c1a5b-0f3d-4c2e-9a1b-2c3d4e5f6a7b\"\nversion = \"0.2.0\"\n\n[deps]\nNobodysDep = \"11111111-2222-3333-4444-555555555555\"\n")
+        end
+        gg("commit", "-q", "-am", "0.2.0"); gg("tag", "v0.2.0"); gg("push", "-q", "origin", "master", "v0.2.0")
+        @test G.register(root; io, registry = bare) == 2
+        @test occursin("no registry knows NobodysDep", said())
+    end
+end
+
+# The registry records a URL anyone can clone: GitHub in every spelling, and never a credential.
+@testset "the URL a release is recorded under" begin
+    for u in ("git@github.com:O/R.git", "git@github.com:O/R", "git@github.com:O/R.git/", "ssh://git@github.com/O/R.git",
+              "https://github.com/O/R", "https://github.com/O/R/", "https://github.com/O/R.git", "http://github.com/O/R",
+              "https://tok:x-oauth@github.com/O/R", "ssh://git@github.com:22/O/R.git", "git+ssh://git@github.com/O/R.git",
+              "https://www.github.com/O/R", "https://GitHub.com/O/R", "github.com:O/R.git")
+        @test G.public_url(u) == "https://github.com/O/R.git"
+    end
+    @test G.public_url("https://user:pw@example.org/R.git/") == "https://example.org/R.git"
+    @test G.public_url("/a/local/path") == "/a/local/path"
+    @test G.public_url("  ") === nothing
+    @test G.public_url("git@github-work:O/R.git") === nothing           # an ssh alias only its owner can reach
+    @test G.public_url("git@example.org:O/R.git") === nothing
+end
