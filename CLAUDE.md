@@ -19,7 +19,9 @@ its close. It waits for the owner only when `gbg run next` says the tree moved s
 
 A version is released on the owner's word, with `gbg release <version>` run here, and no other way:
 it refuses unless the tree is clean and pushed, `CHANGELOG.md` has a `## <version> — <date>` entry,
-`Project.toml` names that version, the tests, the docs build and the wiring check pass, and CI
+`Project.toml` names that version, no direct dependency of the package is taken from `[sources]`
+(its tests must run against the versions its users get), the tests, the docs build and the wiring
+check pass, and CI
 passed at the commit — start it first with `gh workflow run CI --ref <branch>` — then tags and
 pushes, and records a final release in the fleet's registry (`gbg release --register` records one
 whose recording failed). A package is recorded only after every fleet package it depends on, and

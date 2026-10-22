@@ -86,7 +86,46 @@ function release_fails(cfg::Model.Config, root::AbstractString, ver::AbstractStr
     end
     pv = String(TOML.parsefile(joinpath(root, "Project.toml"))["version"])
     pv == base || push!(fails, "Project.toml version is $pv, the release is $base")
+    append!(fails, pinned_dependencies(root))
     return fails
+end
+
+"""
+    pinned_dependencies(root) -> Vector{String}
+
+Each of the package's own direct dependencies (its `[deps]` and `[weakdeps]`) that its `Project.toml`,
+its test environment or its docs environment takes from `[sources]` (a URL, a commit, a path) instead of
+the registry, as a refusal of the release; a file that cannot be read is a refusal too. The argument is
+`root`, the package. Returns one line per such entry, empty when none.
+
+Julia obeys `[sources]` only inside the package's own folder; a user who installs the package gets each
+dependency from the registry, at a version its `[compat]` allows. A pinned dependency therefore means
+the tests ran against code no user gets
+([GBGHomogeneousTurbulence](https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/) pinned
+[GBGPeriodicFields](https://grigorysarnitsky.github.io/GBGPeriodicFields.jl/) to a commit older than its
+first release, 2026-10-22). A package taking itself from its own folder, and the tool's
+pin, are not the package's dependencies and are never reported.
+"""
+function pinned_dependencies(root::AbstractString)
+    # a named refusal, never a crash, for a file that does not parse or a `[sources]` that is no table
+    read_toml(file) = try TOML.parsefile(joinpath(root, file)) catch; nothing end
+    project = read_toml("Project.toml")
+    project isa AbstractDict || return ["Project.toml cannot be read as TOML"]
+    table(x) = x isa AbstractDict ? x : Dict{String,Any}()
+    own = union(keys(table(get(project, "deps", nothing))), keys(table(get(project, "weakdeps", nothing))))
+    out = String[]
+    for file in ("Project.toml", joinpath("test", "Project.toml"), joinpath("docs", "Project.toml"))
+        isfile(joinpath(root, file)) || continue
+        env = read_toml(file)
+        env isa AbstractDict || (push!(out, "$file cannot be read as TOML"); continue)
+        what = startswith(file, "docs") ? "the docs build does" : "the tests do"
+        for (name, source) in sort!(collect(table(get(env, "sources", nothing))); by = first)
+            name in own || continue
+            from = source isa AbstractDict ? join(("$k = $(repr(v))" for (k, v) in sort!(collect(source); by = first)), ", ") : repr(source)
+            push!(out, "$file takes $name from `[sources]` ($from), not from the registry its users install it from, so $what not run against the $name they get: remove that line")
+        end
+    end
+    return out
 end
 
 """
@@ -104,7 +143,8 @@ Tags and pushes `v<ver>` from the dev checkout.
 - `root` — the git working tree to release: the package the CLI is run in, else the running copy.
 
 Refused (exit 2) unless the tree is clean, pushed and on its branch; the tag is new; `CHANGELOG.md`
-carries `## <ver> — `; `Project.toml` names the version (the base version for a prerelease); the tests,
+carries `## <ver> — `; `Project.toml` names the version (the base version for a prerelease); no
+direct dependency is taken from `[sources]` ([`pinned_dependencies`](@ref)); the tests,
 the docs build and `gbg sync --check` pass; and CI passed at the commit ([`ci_verdict`](@ref)). Nothing
 else holds a release. A tag is never moved. A final release is then recorded by [`register`](@ref),
 whose failure returns 2 after the push. A failed gate, tag or push prints its command's reason.

@@ -1,6 +1,6 @@
 name = "GBGCodingTools"
 uuid = "3aee1de0-bb62-4679-b1c5-a861fbcaaa51"
-version = "2.3.0"
+version = "2.4.0"
 authors = ["Grigory Sarnitsky <grigory@sarnitsky.se>"]
 
 [deps]

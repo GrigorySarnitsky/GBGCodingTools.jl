@@ -84,6 +84,7 @@ GBGCodingTools.Fleet.rows
 GBGCodingTools.Bump.bump
 GBGCodingTools.release
 GBGCodingTools.release_fails
+GBGCodingTools.pinned_dependencies
 GBGCodingTools.ci_verdict
 GBGCodingTools.register
 ```

@@ -819,9 +819,9 @@ state turned science tests red]. The work-queue file lists only what is left; th
 open or done line, not a `BLOCKED:` one. A close writes leftovers under an uncounted heading, `gbg answer` the owner's.
 
 **Release**, of GBGCodingTools or of a package, by `gbg release` in its root, needs a clean, pushed tree on its
-branch; green tests, docs build and wiring check, as its config names them; CI green at the commit; and the version
-in `Project.toml` and `CHANGELOG.md`. The tag is never moved. A final release is recorded in
-`GrigorySarnitsky/GBGRegistry` from a throwaway clone; `gbg release --register` retries one that failed.
+branch; green tests, docs build and wiring check, as its config names them; CI green at the commit; the version
+in `Project.toml` and `CHANGELOG.md`; and none of its dependencies taken from `[sources]`. The tag is never moved.
+A final release is then recorded in `GrigorySarnitsky/GBGRegistry` from a throwaway clone; `--register` retries one.
 `gbg release --counts` prints what still held `v2.0.0` (IMPLEMENTATION §6). Nothing else holds a release.
 
 **Who stops.** Inside a run, the program, from the pass cap; there is no ceiling on launches — the panel over the

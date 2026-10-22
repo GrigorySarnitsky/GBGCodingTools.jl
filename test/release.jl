@@ -69,6 +69,50 @@ end
                   G.release_fails(cfg, root, "2.0.0", "2.0.0", false))
     end
 
+    # A dependency taken from `[sources]` is tested as code no user gets: refused, in each environment.
+    @testset "a dependency pinned by [sources] is named, the package's own folder is not" begin
+        root, gg = repo("0.1.0")
+        dep = "11111111-2222-3333-4444-555555555555"
+        write(joinpath(root, "Project.toml"), """
+            name = "Sample"
+            version = "0.1.0"
+
+            [deps]
+            Dep = "$dep"
+
+            [sources]
+            Dep = {url = "https://github.com/example/Dep.jl", rev = "abc123"}
+            """)
+        mkpath(joinpath(root, "docs")); mkpath(joinpath(root, "test"))
+        write(joinpath(root, "docs", "Project.toml"), """
+            [deps]
+            Dep = "$dep"
+            Sample = "22222222-2222-3333-4444-555555555555"
+
+            [sources]
+            Dep = {url = "https://github.com/example/Dep.jl"}
+            Sample = {path = ".."}
+            """)
+        write(joinpath(root, "test", "Project.toml"), "[deps]\nTest = \"8dfed614-e22c-5e08-85e1-65c5234f0b40\"\n")
+        lines = G.pinned_dependencies(root)
+        @test length(lines) == 2
+        @test occursin("Project.toml takes Dep from `[sources]` (rev = \"abc123\", url = \"https://github.com/example/Dep.jl\")", lines[1])
+        @test startswith(lines[2], joinpath("docs", "Project.toml") * " takes Dep") && occursin("the docs build does not run", lines[2])
+        @test !any(l -> occursin("takes Sample", l), lines)          # its own folder, in its docs
+        gg("add", "--all", "."); gg("commit", "-q", "-m", "pinned")
+        fails = G.release_fails(G.ConfigIO.read_config(root), root, "0.1.0", "0.1.0", false)
+        @test count(f -> occursin("from `[sources]`", f), fails) == 2
+        # with the pins gone, nothing is said
+        write(joinpath(root, "Project.toml"), "name = \"Sample\"\nversion = \"0.1.0\"\n\n[deps]\nDep = \"$dep\"\n")
+        write(joinpath(root, "docs", "Project.toml"), "[deps]\nDep = \"$dep\"\n\n[sources]\nSample = {path = \"..\"}\n")
+        @test isempty(G.pinned_dependencies(root))
+        # a file that does not parse, or a `[sources]` that is no table, is a refusal, not a crash
+        write(joinpath(root, "docs", "Project.toml"), "[deps\n")
+        @test G.pinned_dependencies(root) == [joinpath("docs", "Project.toml") * " cannot be read as TOML"]
+        write(joinpath(root, "docs", "Project.toml"), "sources = 3\n")
+        @test isempty(G.pinned_dependencies(root))
+    end
+
     # A package that renamed its branch is not refused for working on it.
     @testset "a package that named its own branch is held to that one" begin
         root, gg = repo("2.0.0"; settings = [(value = "main",)])

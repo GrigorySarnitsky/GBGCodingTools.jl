@@ -4,6 +4,19 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.4.0 — 2026-10-22
+
+MINOR, on the owner's word of 2026-10-22:
+
+- **A release refuses a dependency taken from `[sources]`.** `gbg release` refuses while the package's
+  `Project.toml`, its test environment or its docs environment takes one of the package's own
+  direct dependencies from `[sources]` (a URL, a commit, a path) instead of the registry. Julia obeys
+  `[sources]` only inside the package's folder, so such a package is tested against code its users
+  never get: GBGHomogeneousTurbulence's tests ran against a GBGPeriodicFields commit older than its first
+  release, and GBGCloudPhysics' against the newest commits of two packages. The refusal names the file,
+  the dependency and where it comes from. A package's own folder, and the tool's pin, are not its
+  dependencies and are never refused.
+
 ## 2.3.0 — 2026-10-21
 
 MINOR, on the owner's word of 2026-10-21:
