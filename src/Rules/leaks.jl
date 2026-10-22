@@ -37,8 +37,14 @@ const PUBLIC_EMAILS = [raw"(?i)^[A-Za-z0-9._%+-]+@users\.noreply\.github\.com$",
                        raw"(?i)^noreply@anthropic\.com$"]
 
 # The home of GitHub's hosted runners, on Linux, macOS and Windows: public, and in every workflow log
-# (39,299 of this package's findings before it was allowed, 2026-10-02).
-const RUNNER_HOMES = [raw"^/home/runner$", raw"^/Users/runner$", raw"(?i)^[A-Za-z]:\\{1,2}Users\\{1,2}runneradmin$"]
+# (39,299 of this package's findings before it was allowed, 2026-10-02). Also each form of it cut short
+# after its first letter: Gitleaks reads its input in chunks and reports a match a chunk boundary splits
+# as its first part, `/home/r` or `/home/runne` (two of 17,418 in one of GBGHomogeneousTurbulence's logs,
+# 2026-10-22). The price: a real home whose name begins like the runner's, or one cut there by a chunk
+# boundary at its only occurrence, is not reported; any other occurrence of it, written in full, is.
+cut_short(word) = word[1:1] * foldr((c, rest) -> "(?:" * c * rest * ")?", collect(word[2:end]); init = "")
+const RUNNER_HOMES = ["^/home/" * cut_short("runner") * "\$", "^/Users/" * cut_short("runner") * "\$",
+                      "(?i)^[A-Za-z]:\\\\{1,2}Users\\\\{1,2}" * cut_short("runneradmin") * "\$"]
 # A domain reserved for documentation (RFC 2606, RFC 6761) belongs to no one, so no address in it is
 # personal; the three left in this package's records after its first scan were all such (2026-10-03).
 const RESERVED_DOMAIN = raw"(?i)@(?:[A-Za-z0-9-]+\.)*(?:example\.(?:com|org|net)|example|invalid|test|localhost)$"

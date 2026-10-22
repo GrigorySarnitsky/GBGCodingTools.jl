@@ -4,6 +4,30 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.5.0 — 2026-10-22
+
+MINOR, on the owner's word of 2026-10-22, from GBGHomogeneousTurbulence's pre-publication leak scan:
+
+- **The runner's home, cut short, is allowed.** Gitleaks reads its input in chunks and reports a match
+  a chunk boundary splits as its first part: `/home/r` or `/home/runne` where the log reads
+  `/home/runner` (two of 17,418 in one of HT's logs, so a few in every run). Each such cut form of the
+  hosted runners' homes is now allowed. The price, small: a real home whose name begins like the
+  runner's, or one a chunk boundary cuts at its only occurrence, is not reported.
+- **A dependency's uuid in a Julia project or manifest is no credential.** `oneAPI = "<uuid>"` has a
+  key's name and a random-looking value, which Gitleaks' generic-api-key rule takes for a key. The line
+  must be exactly `name = "<uuid>"`, in a Julia project or manifest file.
+- **A credential finding the owner judges false can be recorded.** `gbg leak --github --not-credential
+  <fingerprint> --why "…"` records one credential finding with the owner's reason; it then leaves the
+  blocking tier. It is refused unless the scan reads the GitHub side and found that finding, and the
+  current files hold neither what it matched, under any name, nor its file unchanged; the reason
+  itself must hold nothing the scan reports. Until now nothing could clear a false credential match
+  short of rewriting history.
+- **A credential is told apart by what it matched.** Its fingerprint carries the Gitleaks rule and a
+  hash of the matched value (the matched text itself is never kept or printed), so two credentials on
+  one line are two findings. The current files are read from git's own objects, so a file
+  `.gitattributes` marks `export-ignore` is read too, and a credential they hold that no single commit
+  shows whole is now a finding of its own. Notes keep their fingerprints.
+
 ## 2.4.0 — 2026-10-22
 
 MINOR, on the owner's word of 2026-10-22:

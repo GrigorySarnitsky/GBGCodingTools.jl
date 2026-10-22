@@ -133,6 +133,8 @@ One thing a repository would publish that a rule forbids, without the thing itse
 - `file` — the file it is in, which a switch naming files is matched against; empty where none.
 - `fingerprint` — what tells this finding from another of the same rule at the same place.
 - `current` — whether the default branch's files hold it still, or only the history does.
+- `value` — for a credential found in a file's contents, a hash of what it matched, which tells it
+  apart from another on its line and finds it in the current files under a new name; empty otherwise.
 """
 Base.@kwdef struct Finding
     rule::Symbol
@@ -141,13 +143,15 @@ Base.@kwdef struct Finding
     file::String = ""
     fingerprint::String = ""
     current::Bool = false
+    value::String = ""
 end
 
 """
     ACCEPTED
 
 Where a package records the notes its owner accepts: `.gbg/leak-accepted.txt`, one fingerprint a line,
-written by `gbg leak --accept` and committed. It holds hashes alone, so it publishes nothing it names.
+written by `gbg leak --accept` and committed; a credential finding judged false carries the owner's
+reason after it (`NOT_CREDENTIAL`). It holds hashes and reasons alone, so it publishes nothing it names.
 """
 const ACCEPTED = joinpath(".gbg", "leak-accepted.txt")
 
@@ -158,7 +162,27 @@ The fingerprints the package at `root` has accepted. The argument is `root`. Ret
 file is absent.
 """
 accepted(root::AbstractString) = (f = joinpath(root, ACCEPTED);
-    isfile(f) ? Set(String(strip(l)) for l in readlines(f) if occursin(r"^[0-9a-f]{16}$", strip(l))) : Set{String}())
+    isfile(f) ? Set(String(m.captures[1]) for m in (match(r"^([0-9a-f]{16})(?:\s|$)", strip(l)) for l in readlines(f)) if m !== nothing) : Set{String}())
+
+"""
+    NOT_CREDENTIAL
+
+What marks a line of `ACCEPTED` that records a credential finding the owner judged false:
+`<fingerprint>  not a credential: <why>`. Only a finding the history alone holds may be so recorded,
+by `gbg leak --not-credential <fingerprint> --why "…"`; one in the current files is removed instead.
+"""
+const NOT_CREDENTIAL = "not a credential: "
+
+"""
+    not_credentials(root) -> Set{String}
+
+The fingerprints of the credential findings the package at `root` has recorded as judged false, each
+with a reason of at least 12 characters. The argument is `root`. Returns them; none where the file is
+absent.
+"""
+not_credentials(root::AbstractString) = (f = joinpath(root, ACCEPTED);
+    isfile(f) ? Set(String(m.captures[1]) for m in (match(r"^([0-9a-f]{16})\s+not a credential: (\S.{11,})$", strip(l)) for l in readlines(f)) if m !== nothing) : Set{String}())
+
 
 """
     blocking(f) -> Bool
@@ -202,11 +226,13 @@ const LOG_OPTS = "--log-opts=--all --reflog -m --text --no-textconv"
 # One Gitleaks pass. `args` are its subcommand and target; `conf` its configuration; `text` its standard
 # input. The report lands in a temporary directory, never in the package: its matches are redacted, and
 # its author fields are not, so it is read and removed at once.
-function pass(args::Vector{String}, conf::AbstractString, dir::AbstractString; text = nothing, skipped = nothing)
+function pass(args::Vector{String}, conf::AbstractString, dir::AbstractString; text = nothing, skipped = nothing,
+              redact::Bool = true)
     report = joinpath(dir, "report-$(rand(UInt32)).json")
     ignore = mkpath(joinpath(dir, "no-ignore"))
     level = skipped === nothing ? String[] : ["-l", "debug"]
-    cmd = clean(`$(gitleaks()) $args -c $conf -i $ignore --ignore-gitleaks-allow --redact --no-banner --exit-code 0 -f json -r $report $level`)
+    hide = redact ? ["--redact"] : String[]
+    cmd = clean(`$(gitleaks()) $args -c $conf -i $ignore --ignore-gitleaks-allow $hide --no-banner --exit-code 0 -f json -r $report $level`)
     err = IOBuffer()
     ok = success(text === nothing ? pipeline(cmd; stdout = devnull, stderr = err) :
                  pipeline(cmd; stdin = IOBuffer(text), stdout = devnull, stderr = err))
@@ -221,13 +247,20 @@ function pass(args::Vector{String}, conf::AbstractString, dir::AbstractString; t
 end
 
 # Both passes over one input: Gitleaks' own rules, from its default configuration given explicitly, then
-# this package's alone, where the default allowlist cannot hide a home path.
+# this package's alone, where the default allowlist cannot hide a home path. Each finding comes back as
+# the fields the scan reads. A credential also carries `value`, a hash of what it matched: the pass that
+# finds it runs unredacted for that alone, and the matched text leaves this function as that hash and
+# nothing else, so two credentials on one line are two findings, and one still in the current files is
+# known there whatever its file is now called (review, 2026-10-22).
 function both(args::Vector{String}, cfg, dir; text = nothing, skipped = nothing)
     defaults = joinpath(dir, "defaults.toml")
-    isfile(defaults) || write(defaults, without_global_allowlist(read(defaults_file(), String)))
+    isfile(defaults) || write(defaults, with_dependency_uuids(without_global_allowlist(read(defaults_file(), String))))
     own = joinpath(dir, "gbg-leak.toml"); write(own, config_toml(cfg))
-    return vcat([(own = false, f = f) for f in pass(args, defaults, dir; text, skipped)],
-                [(own = true, f = f) for f in pass(args, own, dir; text, skipped)])
+    fields(f, value) = (RuleID = String(f.RuleID), File = String(get(f, :File, "")), Commit = String(get(f, :Commit, "")),
+                        StartLine = Int(f.StartLine), value)
+    held(f) = fingerprint(String(f.RuleID), String(get(f, :Secret, "")), String(get(f, :Match, "")))
+    return vcat([(own = false, f = fields(f, held(f))) for f in pass(args, defaults, dir; text, skipped, redact = false)],
+                [(own = true, f = fields(f, "")) for f in pass(args, own, dir; text, skipped)])
 end
 
 # Gitleaks' default rules with the global allowlist that precedes them cut out: what it skips by path —
@@ -238,7 +271,56 @@ function without_global_allowlist(text)
     return text[1:first(a)] * text[first(r)+1:end]
 end
 
+# A dependency's uuid, `oneAPI = "8f75cd03-…"` on a line of a Julia project or manifest, has a key's
+# name and a value random enough for Gitleaks' generic-api-key rule, and is published by design: allowed
+# there, the file and the whole line both required to match (a weak dependency of a manifest in
+# GBGHomogeneousTurbulence's history, 2026-10-22).
+const DEPENDENCY_UUID = raw"""
+[[rules.allowlists]]
+description = "A dependency's uuid in a Julia project or manifest (GBGCodingTools)"
+condition = "AND"
+paths = ['''(?:^|/)(?:Julia)?(?:Project|Manifest)(?:-v[0-9.]+)?\.toml$''']
+regexTarget = "line"
+regexes = ['''^\s*[A-Za-z_][\w.-]*\s*=\s*"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"\s*$''']
+"""
+
+# Gitleaks' default rules with `DEPENDENCY_UUID` added to its generic-api-key rule.
+function with_dependency_uuids(text)
+    at = findfirst("\nid = \"generic-api-key\"", text)
+    at === nothing && error("Gitleaks' default rules have no generic-api-key rule")
+    next = findnext("\n[[rules]]", text, last(at))
+    next === nothing && error("Gitleaks' generic-api-key rule is not followed by another")
+    return text[1:first(next)] * DEPENDENCY_UUID * text[first(next)+1:end]
+end
+
+# The default branch's files, written into `head` from git's own objects: `git archive` would leave out
+# a file the repository's `.gitattributes` marks `export-ignore`, and so keep it from the current tier
+# (review, 2026-10-22). A symlink is written as the file git holds, its target's path; a submodule is no
+# file of this repository. Returns the ids of the blobs written.
+function head_files!(repo::AbstractString, head::AbstractString)
+    blobs = Tuple{String,String}[]
+    for entry in split(git(repo, "ls-tree", "-r", "-z", "--full-tree", "HEAD"), '\0'; keepempty = false)
+        meta, path = split(entry, '\t'; limit = 2)
+        mode, kind, id = split(meta)
+        # a component `.` or `..` names no file of the tree; git refuses such a tree, a crafted one has it
+        kind == "blob" && !any(in((".", "..")), split(path, '/')) && push!(blobs, (String(id), String(path)))
+    end
+    isempty(blobs) && return Set{String}()
+    io = IOBuffer(read(pipeline(clean(`git -C $repo cat-file --batch`); stdin = IOBuffer(join(first.(blobs), '\n') * "\n"))))
+    for (_, path) in blobs
+        size = parse(Int, split(readline(io))[3])
+        data = read(io, size); read(io, UInt8)
+        target = normpath(joinpath(head, path))
+        startswith(target, normpath(head) * "/") || continue        # never outside, whatever a path says
+        mkpath(dirname(target)); write(target, data)
+    end
+    return Set(first.(blobs))
+end
+
 rule_of(r) = r.own ? Symbol(String(r.f.RuleID)) : CREDENTIAL
+# What a credential's fingerprint adds: which Gitleaks rule matched and the hash of what it matched; a
+# note's fingerprint is unchanged, so what a package accepted stays accepted.
+held_by(r) = r.own ? () : (r.f.RuleID, r.f.value)
 detail_of(r) = r.own ? "" : String(r.f.RuleID)
 short(sha) = first(String(sha), 8)
 
@@ -524,7 +606,7 @@ function item_findings(items::AbstractString, places::Dict{String,String}, cfg, 
         place = get(places, f, f)
         # the item's file is in the fingerprint: two comments on one issue share a place (review)
         Finding(; rule = rule_of(r), detail = detail_of(r), place,
-                fingerprint = fingerprint(rule_of(r), place, f, r.f.StartLine - 2), current = true)
+                fingerprint = fingerprint(rule_of(r), place, f, r.f.StartLine - 2, held_by(r)...), current = true)
     end
     return found, length(unique(skipped))
 end
@@ -603,7 +685,7 @@ function scan(root::AbstractString, cfg::Model.Config; github::Bool = false, io:
         p, s = every_path[r.f.StartLine]
         push!(flagged, p)
         push!(out, Finding(; rule = rule_of(r), detail = detail_of(r), place = "a file's path, first in commit $s",
-                           file = p, fingerprint = fingerprint(rule_of(r), p)))
+                           file = p, fingerprint = fingerprint(rule_of(r), p, held_by(r)...)))
     end
     never = Regex(Catalogue.Leaks.NEVER_FILE)
     for (p, s) in every_path
@@ -615,8 +697,8 @@ function scan(root::AbstractString, cfg::Model.Config; github::Bool = false, io:
     for r in both(["git", repo, LOG_OPTS], cfg, dir)
         file = String(r.f.File)
         push!(out, Finding(; rule = rule_of(r), detail = detail_of(r),
-                           place = "commit $(short(r.f.Commit)) $(label(file)):$(r.f.StartLine)", file,
-                           fingerprint = fingerprint(rule_of(r), r.f.Commit, file, r.f.StartLine)))
+                           place = "commit $(short(r.f.Commit)) $(label(file)):$(r.f.StartLine)", file, value = r.f.value,
+                           fingerprint = fingerprint(rule_of(r), r.f.Commit, file, r.f.StartLine, held_by(r)...)))
     end
     blobs = loose_blobs(repo, dir)
     if !isempty(blobs)
@@ -624,19 +706,45 @@ function scan(root::AbstractString, cfg::Model.Config; github::Bool = false, io:
         for r in both(["dir", joinpath(dir, "blobs")], cfg, dir)
             id = get(names, basename(String(r.f.File)), "?")
             push!(out, Finding(; rule = rule_of(r), detail = detail_of(r), place = "blob $(short(id)), held by no commit:$(r.f.StartLine)",
-                               fingerprint = fingerprint(rule_of(r), id, r.f.StartLine)))
+                               value = r.f.value, fingerprint = fingerprint(rule_of(r), id, r.f.StartLine, held_by(r)...)))
         end
     end
     # The default branch's files as they stand: a finding they still hold is the owner's to clean, and
     # one only the history holds his to accept (ruled 2026-10-02).
+    # A credential is in them when what it matched is, under any file's name: a renamed file keeps its
+    # secret and loses its old path (review, 2026-10-22).
     head = mkpath(joinpath(dir, "head"))
-    success(pipeline(clean(`git -C $repo archive HEAD`), clean(`tar -x -C $head`)))
+    now_blobs = head_files!(repo, head)
     now_files = Set(split(git(repo, "ls-tree", "-r", "--name-only", "-z", "HEAD"), '\0'; keepempty = false))
-    now_rules = Set((rule_of(r), relpath(String(r.f.File), head)) for r in both(["dir", head], cfg, dir))
-    out = [Finding(; rule = f.rule, detail = f.detail, place = f.place, file = f.file, fingerprint = f.fingerprint,
-                   current = !isempty(f.file) && (f.file in now_files) &&
-                             (startswith(f.place, "commit ") ? (f.rule, f.file) in now_rules : true))
+    now = both(["dir", head], cfg, dir)
+    now_rules = Set((rule_of(r), relpath(String(r.f.File), head)) for r in now)
+    now_values = Set(r.f.value for r in now if !r.own)
+    # Gitleaks skips a file it takes for binary, an archive among them, when it reads a directory, and
+    # reads it in the history; a credential found in a blob the default branch holds unchanged is
+    # current whatever the file is called (second review, 2026-10-22).
+    blob_of = Dict{Tuple{String,String},String}()
+    held_now(f) = startswith(f.place, "commit ") && !isempty(f.file) &&
+        get!(blob_of, (f.place, f.file)) do
+            something(try strip(git(repo, "rev-parse", "--verify", "-q",
+                                    match(r"^commit (\S+)", f.place).captures[1] * ":" * f.file)) catch; nothing end, "")
+        end in now_blobs
+    out = [Finding(; rule = f.rule, detail = f.detail, place = f.place, file = f.file, fingerprint = f.fingerprint, value = f.value,
+                   current = f.current || (f.rule === CREDENTIAL && ((!isempty(f.value) && f.value in now_values) || held_now(f))) ||
+                             (!isempty(f.file) && (f.file in now_files) &&
+                              (startswith(f.place, "commit ") ? (f.rule, f.file) in now_rules : true)))
            for f in out]
+    # A credential the default branch holds and no commit shows whole — added over two commits, then
+    # renamed — is found only here, and is a finding of its own (second review, 2026-10-22).
+    seen = Set(f.value for f in out if f.rule === CREDENTIAL)
+    for r in now
+        r.own && continue
+        r.f.value in seen && continue
+        push!(seen, r.f.value)
+        file = relpath(String(r.f.File), head)
+        push!(out, Finding(; rule = CREDENTIAL, detail = String(r.f.RuleID), place = "the default branch's $(label(file)):$(r.f.StartLine)",
+                           file, value = r.f.value, current = true,
+                           fingerprint = fingerprint(CREDENTIAL, "HEAD", file, r.f.StartLine, held_by(r)...)))
+    end
     text, places = metadata(repo)
     commits = count(p -> startswith(p, "the message of commit"), unique(places))
     read_what = ["every commit on every ref and in the reflog, merges and binary-marked files included",
@@ -667,7 +775,7 @@ function scan(root::AbstractString, cfg::Model.Config; github::Bool = false, io:
             # the line within its place tells two findings in one message apart, and does not move when
             # another commit is added (second review)
             push!(out, Finding(; rule = rule_of(r), detail = detail_of(r), place,
-                               fingerprint = fingerprint(rule_of(r), place, n - get(start, place, n)), current = live))
+                               fingerprint = fingerprint(rule_of(r), place, n - get(start, place, n), held_by(r)...), current = live))
         end
     end
     return (findings = unique(filter(f -> !switched_off(cfg, f.rule, f.file), out)), read = read_what, missed = missed,

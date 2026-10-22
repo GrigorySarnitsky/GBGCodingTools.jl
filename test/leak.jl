@@ -162,6 +162,100 @@ end
     again = String(take!(again_out))
     @test occursin(r"0 only in history; \d+ accepted before", again)
     @test occursin("now.md", again) && !occursin("rewritten.txt", again)
+
+    # the token deleted from old.toml is still in inline.toml at HEAD, so that finding is current
+    @test pick("RULE.LEAK.CREDENTIAL", "old.toml:1").current
+end
+
+# A credential the owner judged false, that only the history holds, is recorded with his reason and leaves
+# the blocking tier; nothing else is recorded so, and a credential still in the current files under any
+# name, or hidden from an archive, is not one the history alone holds (GBGHomogeneousTurbulence and the
+# review, 2026-10-22).
+@testset "a credential judged false is recorded one at a time, and only from history" begin
+    tok(seed) = (rng = G.Random.MersenneTwister(seed); "ghp_" * String([rand(rng, ['a':'z'; 'A':'Z'; '0':'9']) for _ in 1:36]))
+    aws = "AKIA" * "QYLPMN5HHHFPZAM2"
+    dir = mktempdir(; cleanup = true)
+    env = ["GIT_AUTHOR_NAME" => "t", "GIT_AUTHOR_EMAIL" => "t@users.noreply.github.com",
+           "GIT_COMMITTER_NAME" => "t", "GIT_COMMITTER_EMAIL" => "t@users.noreply.github.com", "HOME" => dir]
+    g(a...) = run(pipeline(setenv(`git -C $dir $a`, env); stdout = devnull, stderr = devnull))
+    w(path, text) = (mkpath(dirname(joinpath(dir, path))); write(joinpath(dir, path), text))
+    g("init", "-q", "--initial-branch=master")
+    w("gone.toml", "hat = \"$(tok(1))\"\n")                                   # deleted below: history only
+    w("pair.toml", "a = \"$(tok(2))\"  b = \"$aws\"\n")                       # two on one line, deleted below
+    w("moved.toml", "k = \"$(tok(3))\"\n")                                     # renamed below: still current
+    w("kept.toml", "k = \"$(tok(4))\"\n"); w(".gitattributes", "kept.toml export-ignore\n")
+    g("add", "-A"); g("commit", "-q", "-m", "one")
+    g("rm", "-q", "gone.toml", "pair.toml"); g("mv", "moved.toml", "renamed.toml"); g("commit", "-q", "-m", "two")
+    fs = G.Publication.scan(dir, G.Model.Config(package = "P", tool = :dev)).findings
+    creds = [f for f in fs if f.rule === Symbol("RULE.LEAK.CREDENTIAL")]
+    at(file) = [f for f in creds if f.file == file]
+    @test length(at("pair.toml")) == 2 && length(unique(f.fingerprint for f in at("pair.toml"))) == 2
+    @test !only(at("gone.toml")).current
+    @test all(f -> f.current, at("moved.toml"))                    # renamed, its secret still at HEAD
+    @test all(f -> f.current, at("kept.toml"))                     # export-ignore hides nothing
+    said(; kw...) = (b = IOBuffer(); code = G.Leak.scan(dir; io = b, kw...); (code, String(take!(b))))
+    gone = only(at("gone.toml")).fingerprint
+    @test occursin("run it with --github", said(not_credential = gone, why = "a panel name, not a key")[2])
+    @test occursin("in the current files", said(not_credential = first(at("moved.toml")).fingerprint, why = "a panel name, not a key", local_only = true)[2])
+    @test occursin("in the current files", said(not_credential = first(at("kept.toml")).fingerprint, why = "a panel name, not a key", local_only = true)[2])
+    @test occursin("--why holds something", said(not_credential = gone, why = "it is $(tok(5)) anyway", local_only = true)[2])
+    @test occursin("--why needs", said(not_credential = gone, why = "a reason\rhidden", local_only = true)[2])
+    blocking(out) = parse(Int, match(r"finding\(s\): (\d+) blocking", out).captures[1])
+    before = blocking(said()[2])
+    code, out = said(not_credential = gone, why = "a panel name, not a key", local_only = true)
+    @test occursin("recorded [$gone] as not a credential", out)
+    @test occursin("recorded already", said(not_credential = gone, why = "a panel name, not a key", local_only = true)[2])
+    after = said()[2]
+    @test blocking(after) == before - 1 && !occursin(gone, after)
+    # one of the two on a line recorded, the other stays
+    pa, pb = (f.fingerprint for f in at("pair.toml"))
+    said(not_credential = pa, why = "the first is a test value", local_only = true)
+    left = said()[2]
+    @test !occursin(pa, left) && occursin(pb, left)
+    # a reason too short to be one, written by hand, is not honoured; `--accept` keeps every reason
+    open(joinpath(dir, G.Publication.ACCEPTED), "a") do io; println(io, pb, "  not a credential: x"); end
+    @test !(pb in G.Publication.not_credentials(dir))
+    said(accept = true)
+    @test gone in G.Publication.not_credentials(dir) && pa in G.Publication.not_credentials(dir)
+
+    # a credential in a file Gitleaks reads as binary when it reads a directory (an archive) is still
+    # current while the default branch holds that file; one only the default branch holds whole, added
+    # over two commits, is a finding of its own (second review, 2026-10-22)
+    src = mkpath(joinpath(dir, "packed")); write(joinpath(src, "inner.toml"), "k = \"$(tok(6))\"\n")
+    run(pipeline(setenv(`tar -cf $(joinpath(dir, "bundle.tar")) -C $src inner.toml`, env); stdout = devnull))
+    rm(src; recursive = true)
+    g("add", "bundle.tar"); g("commit", "-q", "-m", "three")
+    half = tok(7)
+    w("split.toml", "k = \"" * half[1:20]); g("add", "split.toml"); g("commit", "-q", "-m", "four")
+    w("split.toml", "k = \"" * half * "\"\n"); g("add", "split.toml"); g("commit", "-q", "-m", "five")
+    fs2 = G.Publication.scan(dir, G.Model.Config(package = "P", tool = :dev)).findings
+    packed = [f for f in fs2 if f.rule === Symbol("RULE.LEAK.CREDENTIAL") && f.file == "bundle.tar"]
+    @test !isempty(packed) && all(f -> f.current, packed)
+    @test occursin("in the current files", said(not_credential = first(packed).fingerprint, why = "a panel name, not a key", local_only = true)[2])
+    @test any(f -> f.rule === Symbol("RULE.LEAK.CREDENTIAL") && f.current && occursin("split.toml", f.place), fs2)
+end
+
+# The runner's home, and each form of it Gitleaks cuts short at a chunk boundary, is allowed; a real home
+# is not, whole or cut (GBGHomogeneousTurbulence, 2026-10-22).
+@testset "the runner's home, whole or cut short, and nothing else" begin
+    allowed(s) = any(p -> occursin(Regex(p), s), G.Catalogue.Leaks.RUNNER_HOMES)
+    @test all(allowed, ["/home/runner", "/home/runne", "/home/r", "/Users/run", "C:\\Users\\runneradmin", "C:\\Users\\runnera"])
+    @test !any(allowed, ["/home/rob", "/home/runners", "/home/grigory", "/Users/alice", "C:\\Users\\rob"])
+end
+
+# A dependency's uuid on a line of a Julia project or manifest is no credential; the same text anywhere
+# else, or a line that is not `name = "<uuid>"`, still is.
+@testset "a dependency's uuid in a manifest is not a credential" begin
+    isfile(G.Publication.gitleaks()) || return
+    dir = mktempdir(; cleanup = true); t = mkpath(joinpath(dir, "t", "docs"))
+    uuid = "8f75cd03-7ff8-4ecb-9b8f-daf728133b1b"
+    write(joinpath(dir, "t", "Manifest.toml"), "[[deps.Foo]]\n\n    [deps.Foo.weakdeps]\n    oneAPI = \"$uuid\"\n")
+    write(joinpath(dir, "t", "settings.txt"), "oneAPI = \"$uuid\"\n")
+    write(joinpath(t, "Project.toml"), "api_token = \"$uuid\" # x\n")
+    conf = joinpath(dir, "d.toml")
+    write(conf, G.Publication.with_dependency_uuids(G.Publication.without_global_allowlist(read(G.Publication.defaults_file(), String))))
+    found = sort([basename(String(r.File)) for r in G.Publication.pass(["dir", joinpath(dir, "t")], conf, dir)])
+    @test found == ["Project.toml", "settings.txt"]
 end
 
 # A log GitHub refuses is a log not read, never one no longer kept: eight downloads at a time ran into the
