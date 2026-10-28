@@ -107,7 +107,7 @@ Covered by a program.
 ### RULE.TEX.RENDERED_MATH
 Mathematics is written in a double-backtick span: never between dollar signs, and never inside a code span.
 
-Dollars render as literal text and a code span renders as monospace; neither comes out as mathematics.
+One spelling of mathematics in every file, the owner's ruling of 2026-10-28: in a docstring a dollar sign interpolates, so mathematics there is written in double backticks, and a page writes it the same way although its dollars would render, so a formula reads, searches and moves between files unchanged. A code span renders as monospace, not as mathematics.
 
 Covered by a program.
 

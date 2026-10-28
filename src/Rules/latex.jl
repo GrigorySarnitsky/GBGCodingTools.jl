@@ -99,13 +99,12 @@ const DIMENSIONS = r"^\d+(?:×\d+)+$"
 """
     rendered_math(text, cfg) -> Vector{Model.Location}
 
-Every formula written so that it does not render as mathematics: one delimited by dollar signs, and one
-put inside a code span. The arguments are `text`, the file's prose, and `cfg`, which this rule does not
-read. Returns one location per line.
+Every formula not written in a double-backtick span: one delimited by dollar signs, and one put inside a
+code span. The arguments are `text`, the file's prose, and `cfg`, which this rule does not read. Returns
+one location per line.
 
-Both come out as something else on the page — dollars and backslashes as literal text, a code span as
-monospace at the wrong size and weight — which is why one rule covers the two: they are the same defect
-with two spellings.
+A code span comes out as monospace, not as mathematics. Dollar signs render on a Documenter page, but
+interpolate in a docstring; mathematics takes the one spelling that works in both, in every file.
 """
 function rendered_math(text::AbstractString, cfg)
     out = Model.Location[]
@@ -145,7 +144,7 @@ end
 const RENDERED_MATH = Model.Rule(
     id = Symbol("RULE.TEX.RENDERED_MATH"),
     statement = "Mathematics is written in a double-backtick span: never between dollar signs, and never inside a code span.",
-    why = "Dollars render as literal text and a code span renders as monospace; neither comes out as mathematics.",
+    why = "One spelling of mathematics in every file, the owner's ruling of 2026-10-28: in a docstring a dollar sign interpolates, so mathematics there is written in double backticks, and a page writes it the same way although its dollars would render, so a formula reads, searches and moves between files unchanged. A code span renders as monospace, not as mathematics.",
     intention = Model.Intention.DOCUMENTATION,
     filesets = [Model.FileSet.PAGES, Model.FileSet.RATIONALE, Model.FileSet.DOCSTRINGS],
     check = Model.ProgramCheck(Model.Input.SOURCE_TEXT, rendered_math, false),
