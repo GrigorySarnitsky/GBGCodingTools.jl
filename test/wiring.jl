@@ -127,29 +127,18 @@ end
         @test released["compat"][RN.PKG] == "=2.0.0"
     end
 
-    # A runner cannot fetch a private dependency without a credential, and a workflow that omits the
-    # step fails at resolve time with a message about a missing package. Only a RELEASED pin needs it:
-    # a checkout resolves over a path. Both directions, both pins.
-    @testset "a released pin needs its workflows to authenticate" begin
+    # The GBG packages are public, so no workflow is asked to authenticate, and the action a workflow may
+    # still name does nothing, with or without its token (2026-10-28).
+    @testset "no workflow is asked to authenticate, and the old action does nothing" begin
         dir, _ = wired_package()
         mkpath(joinpath(dir, ".github", "workflows"))
         write(joinpath(dir, ".github", "workflows", "CI.yml"),
               "jobs:\n  test:\n    steps:\n      - uses: actions/checkout@v6\n      - uses: julia-actions/julia-runtest@v1\n")
-        dev = G.ConfigIO.read_config(dir)
-        @test isempty(RN.ci_drift(dev, dir))                       # a checkout needs no credential
         write(joinpath(dir, ".gbg", "config.jl"), """Config(package = "Sample", tool = v"2.0.0")""")
         pinned = G.ConfigIO.read_config(dir)
-        @test length(RN.ci_drift(pinned, dir)) == 1                # a release does
-        # a workflow that resolves nothing — TagBot, a linter — is not told to authenticate: it turned
-        # every build and test of a released pin red with nothing to fix (found in review, 2026-09-26)
-        write(joinpath(dir, ".github", "workflows", "TagBot.yml"),
-              "jobs:\n  TagBot:\n    steps:\n      - uses: JuliaRegistries/TagBot@v1\n")
-        @test [l.file for l in RN.ci_drift(pinned, dir)] == [".github/workflows/CI.yml"]
-        write(joinpath(dir, ".github", "workflows", "CI.yml"),
-              "jobs:\n  test:\n    steps:\n      - uses: ./.github/actions/gbg-auth\n      - run: julia --project -e 'using Pkg; Pkg.test()'\n")
-        @test isempty(RN.ci_drift(pinned, dir))
-        rm(joinpath(dir, ".github"); recursive = true)
-        @test isempty(RN.ci_drift(pinned, dir))                    # a package with no workflows is told nothing
+        @test !any(l -> occursin("gbg-auth", l.text), RN.wiring(pinned, dir))
+        action = RN.ci(pinned)
+        @test !occursin("insteadOf", action) && occursin("required: false", action)
     end
 
     # The ONE page a consumer's site carries about this tool (ruled 2026-09-23): what the documentation is
@@ -486,7 +475,7 @@ end
         @test RN.pin_envs(dir) == ["docs", "test", "test/gpu/cuda"]
         # the wiring check reports it, and the bump says how to move it
         @test any(l -> l.file == joinpath("test/gpu/cuda", "Project.toml"), RN.wiring(cfg, dir))
-        @test occursin("--project=\"test/gpu/cuda\" -e 'using Pkg; Pkg.update(\"GBGCodingTools\")'",
+        @test occursin("--project=\"test/gpu/cuda\" -e 'using Pkg; Pkg.update()'",
                        sprint(io -> G.Bump.stale_warning(io, v"2.0.0-rc.57", v"2.0.0-rc.56", dir)))
         # a release moves one line; the comment stays where it was
         moved = G.Model.Config(package = "Sample", tool = v"2.0.0-rc.57")

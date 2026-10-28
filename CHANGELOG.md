@@ -4,6 +4,24 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.6.0 — 2026-10-28
+
+MINOR, on the owner's word of 2026-10-28, from GBGCloudPhysics' wiring rehearsal:
+
+- **`gbg bump` prints a full `Pkg.update()` for every environment with a manifest.** It printed a
+  resolve where a manifest did not hold the tool yet, and a resolve keeps every version a manifest
+  holds: a docs manifest holding Parsers 3, which the tool's JSON3 does not accept, could not take the
+  tool, where an update moved Parsers back. An environment with no manifest still gets a resolve.
+- **No workflow is asked to authenticate any longer.** The wiring check demanded that every workflow
+  name `./.github/actions/gbg-auth`, which gave GitHub's address a token while the GBG packages were
+  private; they are public since 2026-10-21. The action is still written, now doing nothing and its
+  token optional, so a workflow that names it keeps running; remove the step, and a later release stops
+  writing the action.
+- **`RULE.TEX.RENDERED_MATH` states its true reason.** It said dollar-delimited mathematics renders as
+  literal text; on a Documenter page it renders, measured. The rule stands, on the owner's ruling of one
+  spelling everywhere: a dollar sign interpolates in a docstring, so mathematics is written in double
+  backticks there, and pages write it alike.
+
 ## 2.5.0 — 2026-10-22
 
 MINOR, on the owner's word of 2026-10-22, from GBGHomogeneousTurbulence's pre-publication leak scan:

@@ -2287,9 +2287,10 @@ end
     @test occursin("Pkg.resolve()", G.Bump.move_command(root, "docs"))          # no manifest
     @test G.Bump.move_command(root, "test") == ""                               # Pkg.test resolves it
     write(joinpath(root, "docs", "Manifest.toml"), "[[deps.Documenter]]\nuuid = \"x\"\n")
-    @test occursin("Pkg.resolve()", G.Bump.move_command(root, "docs"))          # a manifest without the tool
+    @test occursin("Pkg.update()", G.Bump.move_command(root, "docs"))           # a manifest without the tool: a
+                                                                                # resolve would keep what it holds
     write(joinpath(root, "test", "Manifest.toml"), "[[deps.GBGCodingTools]]\nuuid = \"x\"\n")
-    @test occursin("Pkg.update(\"GBGCodingTools\")", G.Bump.move_command(root, "test"))  # the old hash exists
+    @test occursin("Pkg.update()", G.Bump.move_command(root, "test"))           # the old hash exists
     @test G.Bump.move_command(root, "nowhere") == ""
 end
 

@@ -121,11 +121,11 @@ function stale_warning(io::IO, version, running, root::AbstractString)
     end
     println(io, "    gbg sync")
     println(io, "")
-    println(io, "`Pkg.update` where a manifest already holds the tool, and not `Pkg.resolve`: a resolve writes")
-    println(io, "the new rev while keeping the old tree hash where the clone has never fetched the tag, which")
-    println(io, "leaves the old code running under the new revision — seen twice, at rc.4 and at rc.7. Where no")
-    println(io, "manifest holds the tool yet, as on a first wiring, there is no old hash to keep and a resolve")
-    println(io, "fetches the tag; a test environment with no manifest is resolved by `Pkg.test()` itself.")
+    println(io, "`Pkg.update` where a manifest exists, and not `Pkg.resolve`: a resolve keeps what the manifest")
+    println(io, "holds, so it keeps the tool's old tree hash under the new revision (seen at rc.4 and rc.7), and it")
+    println(io, "fails where the tool cannot sit beside a version the manifest holds (Parsers 3, GBGCloudPhysics,")
+    println(io, "2026-10-28). Where there is no manifest there is nothing to keep and a resolve fetches the tag;")
+    println(io, "a test environment with no manifest is resolved by `Pkg.test()` itself.")
 end
 
 """
@@ -135,13 +135,16 @@ The command that moves the environment `env` of the package at `root` onto the t
 empty string when there is nothing to move. The arguments are `root`, the package root, and `env`, the
 environment's directory under it, one of `Render.pin_envs`.
 
-Returns an update of the tool where the environment's manifest already holds it, and a resolve where
-it does not. A test environment with no manifest gets nothing: `Pkg.test()` resolves it, and resolving
-it alone fails when it names an unregistered package that only the root environment says where to find.
+Returns an update of the whole environment where it has a manifest, and a resolve where it has none. A
+test environment with no manifest gets nothing: `Pkg.test()` resolves it, and resolving it alone fails
+when it names an unregistered package that only the root environment says where to find.
 
 The update alone was printed until 2026-09-28, and on a first wiring it fails: an update of a package
 no manifest holds says "expected package `GBGCodingTools` to be registered". Both environments of
 [GBGHomogeneousTurbulence](https://grigorysarnitsky.github.io/GBGHomogeneousTurbulence.jl/) failed so in its wiring rehearsal.
+And a resolve of a manifest that does not hold the tool keeps every version it holds: a package's docs
+manifest held Parsers 3, which the tool's JSON3 does not accept, and its resolve failed where an update
+moved Parsers back (a wiring rehearsal, 2026-10-28).
 """
 function move_command(root::AbstractString, env::AbstractString)
     isfile(joinpath(root, env, "Project.toml")) || return ""
@@ -152,9 +155,7 @@ function move_command(root::AbstractString, env::AbstractString)
         env == "test" && return ""
         return "julia --project=\"$env\" -e 'using Pkg; Pkg.resolve()'"
     end
-    holds = any(m -> occursin(r"(?m)^\[\[deps\.GBGCodingTools\]\]", read(joinpath(root, env, m), String)), manifests)
-    return holds ? "julia --project=\"$env\" -e 'using Pkg; Pkg.update(\"GBGCodingTools\")'" :
-                   "julia --project=\"$env\" -e 'using Pkg; Pkg.resolve()'"
+    return "julia --project=\"$env\" -e 'using Pkg; Pkg.update()'"
 end
 
 function cmd_bump(args)

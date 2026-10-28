@@ -895,64 +895,30 @@ const CI_ACTION = ".github/actions/gbg-auth/action.yml"
 """
     ci(cfg) -> String
 
-The composite GitHub action a consumer's workflows call before resolving their environment: the token
-rewrite that lets a private dependency be fetched on a runner. The argument is `cfg`, the package's
-config, which this generator does not read. Returns the action file.
+The composite GitHub action `CI_ACTION`, which a package's workflows may name; it does nothing. The
+argument is `cfg`, the package's config, which this generator does not read. Returns the action file.
 
-It is a whole file that a workflow names in one line, not a fragment spliced into the workflow. A
-fragment has to be inserted at the right indentation inside somebody else's `steps:` list, and getting
-that wrong produces YAML that is valid and does nothing. A `uses:` line is one line, and the wiring
-check can read it the way it reads any other call.
-
-Only a package pinned to a released version needs this. A checkout resolves this package over a path,
-and a path needs no credential.
+It let a runner fetch the GBG packages while they were private, by giving GitHub's address a token.
+They are public since 2026-10-21, so no workflow is asked to name it (2026-10-28). It is kept, doing
+nothing, so that a workflow naming it still runs until the step is removed; a later release stops
+writing it.
 """
 function ci(cfg::Model.Config)
     return """
     # $BEGIN_MARK $(version_tag(cfg)) — rewritten by `gbg sync`; do not edit
-    name: GBG private dependencies
-    description: Lets a runner fetch the GBG packages, which are private repositories.
+    name: GBG dependencies (no longer needed)
+    description: Did nothing needed since the GBG packages became public; remove the step that names it.
     inputs:
       token:
-        description: A token that can read the GBG repositories.
-        required: true
+        description: Not read.
+        required: false
     runs:
       using: composite
       steps:
         - shell: bash
-          # Before any julia-actions step: Pkg fetches the pinned tool over https, and this rewrite is
-          # what lets a private repository resolve on the runner.
-          run: git config --global url."https://x-access-token:\${{ inputs.token }}@github.com/".insteadOf "https://github.com/"
+          run: echo "gbg-auth is no longer needed; remove the step that names it"
     # $END_MARK
     """
-end
-
-"""
-    ci_drift(cfg, root) -> Vector{Model.Location}
-
-Every GitHub workflow in the package at `root` that resolves this package without authenticating first.
-The arguments are `cfg`, the package's config, and `root`, the package root. Returns one location per
-workflow.
-
-Nothing is reported for a package pinned to a checkout, which needs no credential, or for one with no
-workflows at all. A workflow that runs no Julia step — TagBot, a linter — resolves nothing and is not told to
-authenticate; one that runs Julia for any reason, CompatHelper included, is.
-"""
-function ci_drift(cfg::Model.Config, root::AbstractString)
-    cfg.tool isa VersionNumber || return Model.Location[]
-    dir = joinpath(root, ".github", "workflows")
-    isdir(dir) || return Model.Location[]
-    out = Model.Location[]
-    for f in sort!(readdir(dir))
-        (endswith(f, ".yml") || endswith(f, ".yaml")) || continue
-        path = joinpath(".github", "workflows", f)
-        text = read(joinpath(dir, f), String)
-        (occursin("julia-actions/", text) || occursin("julia ", text)) || continue
-        occursin("./.github/actions/gbg-auth", text) && continue
-        push!(out, Model.Location(; file = path,
-            text = "does not use `./.github/actions/gbg-auth`, so a runner cannot fetch this package"))
-    end
-    return out
 end
 
 """
@@ -2094,7 +2060,6 @@ function wiring(cfg::Model.Config, root::AbstractString)
     end
     # The two calls that make any of this run at all, and the one a runner needs.
     append!(out, call_drift(root))
-    append!(out, ci_drift(cfg, root))
     # `.claude/settings.json` is the package's own file too: only this package's hook is looked for.
     why = settings_drift(root)
     why === nothing || push!(out, Model.Location(; file = ".claude/settings.json", text = why))
