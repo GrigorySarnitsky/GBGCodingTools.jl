@@ -40,6 +40,17 @@ const IMAGINARY = Model.Rule(
     check = Model.AgentCheck("The imaginary unit is upright \\mathrm{i}; i, j, k are indices.", Model.WhyAgent.DERIVATION),
     access = [Model.Access.NOTHING])
 
+const UPRIGHT_LABEL_STATEMENT = "A subscript or superscript that stands for a quantity, a variable or a running index is italic; one that stands for a word, a name or a label is upright: `\\kappa_{\\mathrm{p}}` for the peak wavenumber, `C_{\\mathrm{K}}` for the Kolmogorov constant, `u^{\\mathrm{ref}}` for a reference velocity, but `u_i` for a component and `C_p` at constant pressure. Which it is depends on what the letter means where it stands, so one letter may be an italic index in one formula and an upright label in another: `u_i` for a component, `L_{\\mathrm{i}}` for ice."
+
+const UPRIGHT_LABEL = Model.Rule(
+    id = Symbol("RULE.TEX.UPRIGHT_LABEL"),
+    statement = UPRIGHT_LABEL_STATEMENT,
+    why = "ISO 80000-1, which replaced ISO 31-0, prints a subscript that represents a physical quantity or a mathematical variable, such as a running number, in italic, and every other subscript upright; a superscript follows the same rule. IEC 60050, the IUPAC Green Book and NIST SP 811 (§10.2.1) agree. An italic label misreads: `\\kappa_p` reads as κ at an index p, not as the peak wavenumber. `RULE.TEX.IMAGINARY` applies the same principle to the imaginary unit and the differential. A reader decides it, because a letter's meaning is not in the TeX; it is read where the symbol is defined. Asked by GBGHomogeneousTurbulence [ruled 2026-11-06].",
+    intention = Model.Intention.DOCUMENTATION,
+    filesets = [Model.FileSet.DOCSTRINGS, Model.FileSet.PAGES, Model.FileSet.RATIONALE],
+    check = Model.AgentCheck(UPRIGHT_LABEL_STATEMENT, Model.WhyAgent.MEANING),
+    access = [Model.Access.OTHER_DOCUMENTS])
+
 const GREEK_AB = Model.Rule(
     id = Symbol("RULE.TEX.GREEK_AB"),
     statement = "The accumulation scalars are written as Unicode α and β wherever they appear. Two ASCII spellings stay, both named in this rule's `why`: a flag whose name carries the α/β variant, and an external window-shape parameter `beta` inside an English-register block.",
@@ -54,6 +65,6 @@ const GREEK_AB = Model.Rule(
 
 The rules of this family that no program decides.
 """
-const RULES = Model.Rule[NO_HSCROLL, CODE_SPAN_JULIA, IMAGINARY, GREEK_AB]
+const RULES = Model.Rule[NO_HSCROLL, CODE_SPAN_JULIA, IMAGINARY, UPRIGHT_LABEL, GREEK_AB]
 
 end # module JudgementTex

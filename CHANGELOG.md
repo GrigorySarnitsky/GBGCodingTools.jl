@@ -4,6 +4,17 @@ Every tag has one entry: version, date, and MAJOR | MINOR | PATCH. Entries up to
 carry "instruments affected" and "rates comparable", which the 2.0.0 line drops: the instruments are
 being rebuilt, and nothing measures a recall rate any more.
 
+## 2.7.0 — 2026-11-06
+
+MINOR, on the owner's word of 2026-11-06, from GBGHomogeneousTurbulence's request:
+
+- **`RULE.TEX.UPRIGHT_LABEL`: a label in a subscript or superscript is upright.** A subscript or
+  superscript that stands for a quantity, a variable or a running index is italic, and one that stands
+  for a word, a name or a label is upright, as ISO 80000-1 sets them. A reader decides it, given the
+  package's other documents, because whether a letter is a label depends on what it means where it
+  stands: one letter may be an italic index in one formula and an upright label in another. No spelling
+  of the upright form is required.
+
 ## 2.6.0 — 2026-10-28
 
 MINOR, on the owner's word of 2026-10-28, from GBGCloudPhysics' wiring rehearsal:
